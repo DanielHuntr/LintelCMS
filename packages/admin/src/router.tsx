@@ -1,4 +1,9 @@
-import { createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import {
+  createRootRoute,
+  createRoute,
+  createRouter,
+  lazyRouteComponent,
+} from "@tanstack/react-router";
 import { DashboardPage } from "./dashboard/DashboardPage.js";
 import { AdminLayout } from "./layout/AdminLayout.js";
 import { ComingSoonPage } from "./sections/ComingSoonPage.js";
@@ -47,8 +52,26 @@ const placeholderRoutes = sectionRoutes.map(({ path, title }) =>
   }),
 );
 
+// The design review page exists in development, or in a build made with VITE_DESIGN_REVIEW=true.
+// It is loaded lazily, so a normal production build doesn't ship it.
+const showsDesignReview = import.meta.env.DEV || import.meta.env.VITE_DESIGN_REVIEW === "true";
+
+const designReviewRoutes = showsDesignReview
+  ? [
+      createRoute({
+        getParentRoute: () => rootRoute,
+        path: "/design-system",
+        component: lazyRouteComponent(
+          () => import("./design-review/DesignReviewPage.js"),
+          "DesignReviewPage",
+        ),
+      }),
+    ]
+  : [];
+
 const routeTree = rootRoute.addChildren([
   signInRoute,
+  ...designReviewRoutes,
   adminRoute.addChildren([dashboardRoute, ...placeholderRoutes]),
 ]);
 
