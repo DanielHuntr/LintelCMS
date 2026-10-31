@@ -11,6 +11,7 @@
     },
     "./permissions": {
       "types": "./dist/roles/permissions.d.ts",
+      "development": "./src/roles/permissions.ts",
       "default": "./dist/roles/permissions.js"
     }
   },
