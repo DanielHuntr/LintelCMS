@@ -8,6 +8,7 @@ import { SignInForm } from "./SignInForm.js";
 const session: Session = {
   user: { id: "user-1", email: "editor@example.com", name: "Ada Editor" },
   permissions: ["entries:*"],
+  enabledPlugins: [],
 };
 
 async function fillInAndSubmit() {
@@ -56,5 +57,26 @@ describe("SignInForm", () => {
     await fillInAndSubmit();
 
     expect(screen.getByRole("status")).toHaveTextContent(/couldn't reach the server/);
+  });
+
+  it("offers to fix a typo in the email domain", async () => {
+    const signIn = vi.fn().mockResolvedValue(session);
+    render(<SignInForm signIn={signIn} onSignedIn={vi.fn()} />);
+
+    await userEvent.type(screen.getByLabelText("Email address"), "editor@gmai.com");
+    await userEvent.tab();
+    await userEvent.click(screen.getByRole("button", { name: "Did you mean editor@gmail.com?" }));
+
+    expect(screen.getByLabelText("Email address")).toHaveValue("editor@gmail.com");
+  });
+
+  it("can show the password as typed", async () => {
+    render(<SignInForm signIn={vi.fn()} onSignedIn={vi.fn()} />);
+    const toggle = screen.getByRole("button", { name: "Show password" });
+
+    await userEvent.click(toggle);
+
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByLabelText("Password")).toHaveAttribute("type", "text");
   });
 });

@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { ApiError } from "../api/client.js";
 import { Button } from "../design/Button.js";
-import { TextField } from "../design/TextField.js";
+import { EmailField } from "../design/EmailField.js";
+import { PasswordField } from "../design/PasswordField.js";
 import { t } from "../i18n/strings.js";
 import type { Session } from "../session/session.api.js";
 
@@ -14,21 +15,23 @@ interface SignInFormProps {
 /**
  * The email and password form. It shows the API's own message when sign-in fails
  * ("That email and password don't match", "Too many sign-in attempts..."), because
- * those messages are written for people.
+ * those messages are written for people. The email field offers a fix for domain typos,
+ * a common reason for "doesn't match" when the account was created with the right address.
  */
 export function SignInForm({ signIn, onSignedIn }: SignInFormProps) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
 
     setIsSigningIn(true);
     setErrorMessage("");
 
     try {
-      const session = await signIn(String(form.get("email")), String(form.get("password")));
+      const session = await signIn(email.trim(), password);
       onSignedIn(session);
     } catch (error) {
       setErrorMessage(error instanceof ApiError ? error.message : t("signIn.unreachable"));
@@ -42,17 +45,19 @@ export function SignInForm({ signIn, onSignedIn }: SignInFormProps) {
         onSubmit={handleSubmit}
         className="mt-8 flex w-full flex-col gap-5 rounded-panel bg-surface p-7 shadow-float"
       >
-        <TextField
+        <EmailField
           label={t("signIn.email")}
           name="email"
-          type="email"
+          value={email}
+          onValueChange={setEmail}
           autoComplete="email"
           required
         />
-        <TextField
+        <PasswordField
           label={t("signIn.password")}
           name="password"
-          type="password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
           autoComplete="current-password"
           required
         />
