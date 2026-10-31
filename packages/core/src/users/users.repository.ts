@@ -40,3 +40,35 @@ export async function recordSignIn(
 ): Promise<void> {
   await database.update(usersTable).set({ lastSignedInAt: now }).where(eq(usersTable.id, userId));
 }
+
+/** True as soon as one user exists; cheaper than counting them all. */
+export async function hasAnyUsers(
+  database: DatabaseOrTransaction,
+  tenantId: string,
+): Promise<boolean> {
+  const [user] = await database
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(eq(usersTable.tenantId, tenantId))
+    .limit(1);
+  return user !== undefined;
+}
+
+export async function listUserEmails(
+  database: DatabaseOrTransaction,
+  tenantId: string,
+): Promise<string[]> {
+  const rows = await database
+    .select({ email: usersTable.email })
+    .from(usersTable)
+    .where(eq(usersTable.tenantId, tenantId));
+  return rows.map((row) => row.email);
+}
+
+export async function updatePasswordHash(
+  database: DatabaseOrTransaction,
+  userId: string,
+  passwordHash: string,
+): Promise<void> {
+  await database.update(usersTable).set({ passwordHash }).where(eq(usersTable.id, userId));
+}

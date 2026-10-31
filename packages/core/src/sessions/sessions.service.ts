@@ -1,8 +1,9 @@
 import { createHash, randomBytes } from "node:crypto";
-import type { Database } from "../database/client.js";
+import type { Database, DatabaseOrTransaction } from "../database/client.js";
 import {
   deleteSessionById,
   deleteSessionByTokenHash,
+  deleteSessionsForUser,
   findSessionByTokenHash,
   insertSession,
   updateSessionExpiry,
@@ -98,4 +99,15 @@ export async function findActiveSession(
 
 export async function endSession(database: Database, token: string): Promise<void> {
   await deleteSessionByTokenHash(database, hashSessionToken(token));
+}
+
+/**
+ * Signs a user out everywhere at once, for example after their password is reset, so
+ * anyone who knew the old password loses access straight away.
+ */
+export function endAllSessionsForUser(
+  database: DatabaseOrTransaction,
+  userId: string,
+): Promise<number> {
+  return deleteSessionsForUser(database, userId);
 }

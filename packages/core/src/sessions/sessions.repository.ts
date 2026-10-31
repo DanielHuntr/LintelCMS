@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import type { Database } from "../database/client.js";
+import type { Database, DatabaseOrTransaction } from "../database/client.js";
 import { type NewSession, type Session, sessionsTable } from "./sessions.table.js";
 
 /**
@@ -44,4 +44,16 @@ export async function deleteSessionByTokenHash(
   tokenHash: string,
 ): Promise<void> {
   await database.delete(sessionsTable).where(eq(sessionsTable.tokenHash, tokenHash));
+}
+
+/** Returns how many sessions were ended, so a script can say so. */
+export async function deleteSessionsForUser(
+  database: DatabaseOrTransaction,
+  userId: string,
+): Promise<number> {
+  const deleted = await database
+    .delete(sessionsTable)
+    .where(eq(sessionsTable.userId, userId))
+    .returning({ id: sessionsTable.id });
+  return deleted.length;
 }
