@@ -12,9 +12,9 @@
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "lint": "eslint .",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "lint": "eslint packages eslint.config.js",
+    "format": "prettier --write packages docs .github \"*.{js,json,md,yml,yaml}\"",
+    "format:check": "prettier --check packages docs .github \"*.{js,json,md,yml,yaml}\"",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "prepare": "husky"

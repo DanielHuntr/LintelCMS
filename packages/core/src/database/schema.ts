@@ -9,3 +9,4 @@ export { rolesTable, userRolesTable } from "../roles/roles.table.js";
 export { blueprintsTable } from "../blueprints/blueprints.table.js";
 export { collectionsTable } from "../collections/collections.table.js";
 export { entriesTable, revisionsTable } from "../entries/entries.table.js";
+export { sessionsTable } from "../sessions/sessions.table.js";

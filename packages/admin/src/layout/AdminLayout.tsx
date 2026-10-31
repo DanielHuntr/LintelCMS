@@ -1,39 +1,35 @@
-import { Link, Outlet } from "@tanstack/react-router";
+import { Outlet } from "@tanstack/react-router";
 import { t } from "../i18n/strings.js";
-import { visibleSections } from "../navigation/sections.js";
+import { Sidebar } from "./Sidebar.js";
+import type { SignedInUser } from "./SidebarAccount.js";
 
 interface AdminLayoutProps {
-  /** The signed-in person's permissions. Hard-coded until sign-in exists. */
+  /** The signed-in person's permissions; decides which sections the sidebar shows. */
   permissions: readonly string[];
+  /** Shown at the bottom of the sidebar. */
+  signedInUser?: SignedInUser;
+  onSignOut?: () => void;
 }
 
 /**
- * The frame around every admin screen: the sidebar on the left, the page on the right.
+ * The frame around every admin screen: a floating, translucent sidebar on the left
+ * and the page on the right.
  */
-export function AdminLayout({ permissions }: AdminLayoutProps) {
+export function AdminLayout({ permissions, signedInUser, onSignOut }: AdminLayoutProps) {
   return (
-    <div className="flex min-h-screen bg-stone-50 text-stone-900">
-      <aside className="w-60 shrink-0 border-r border-stone-200 bg-white p-4">
-        <p className="mb-6 px-3 text-lg font-semibold">{t("app.name")}</p>
-        <nav aria-label={t("nav.label")}>
-          <ul className="space-y-1">
-            {visibleSections(permissions).map((section) => (
-              <li key={section.path}>
-                <Link
-                  to={section.path}
-                  className="block rounded-md px-3 py-2 text-sm hover:bg-stone-100 focus-visible:outline-2 focus-visible:outline-brand"
-                  activeProps={{ className: "bg-brand-soft font-medium" }}
-                  activeOptions={{ exact: section.path === "/" }}
-                >
-                  {t(section.label)}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </aside>
-      <main className="flex-1 p-8">
-        <Outlet />
+    <div className="min-h-screen bg-background text-label">
+      <a
+        href="#main"
+        className="fixed top-3 left-3 z-20 -translate-y-16 rounded-control bg-surface px-3 py-2 text-body font-medium text-accent shadow-float focus:translate-y-0 focus:focus-ring"
+      >
+        {t("nav.skipToContent")}
+      </a>
+      <Sidebar permissions={permissions} signedInUser={signedInUser} onSignOut={onSignOut} />
+      {/* Leaves room for the 240px sidebar and its 12px margin. */}
+      <main id="main" tabIndex={-1} className="pl-[264px] outline-none">
+        <div className="mx-auto max-w-[960px] px-10 pt-14 pb-20">
+          <Outlet />
+        </div>
       </main>
     </div>
   );
