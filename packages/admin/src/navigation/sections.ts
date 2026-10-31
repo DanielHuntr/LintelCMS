@@ -1,4 +1,16 @@
 import { hasPermission, type Permission } from "@lintel/core/permissions";
+import {
+  CircleHelp,
+  FileText,
+  Image,
+  LayoutGrid,
+  ListChecks,
+  Palette,
+  Settings,
+  ShoppingBag,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import type { StringKey } from "../i18n/strings.js";
 
 /**
@@ -9,20 +21,22 @@ import type { StringKey } from "../i18n/strings.js";
 export interface Section {
   path: string;
   label: StringKey;
+  /** Shown beside the label in the sidebar. */
+  icon: LucideIcon;
   /** The permission needed to see this section. Undefined means everyone can see it. */
   permission?: Permission;
 }
 
 export const sections: readonly Section[] = [
-  { path: "/", label: "nav.dashboard" },
-  { path: "/content", label: "nav.content", permission: "entries:read" },
-  { path: "/design", label: "nav.design", permission: "design:read" },
-  { path: "/commerce", label: "nav.commerce", permission: "commerce:read" },
-  { path: "/media", label: "nav.media", permission: "media:read" },
-  { path: "/forms", label: "nav.forms", permission: "forms:read" },
-  { path: "/users", label: "nav.users", permission: "users:read" },
-  { path: "/settings", label: "nav.settings", permission: "settings:read" },
-  { path: "/help", label: "nav.help" },
+  { path: "/", label: "nav.dashboard", icon: LayoutGrid },
+  { path: "/content", label: "nav.content", permission: "entries:read", icon: FileText },
+  { path: "/design", label: "nav.design", permission: "design:read", icon: Palette },
+  { path: "/commerce", label: "nav.commerce", permission: "commerce:read", icon: ShoppingBag },
+  { path: "/media", label: "nav.media", permission: "media:read", icon: Image },
+  { path: "/forms", label: "nav.forms", permission: "forms:read", icon: ListChecks },
+  { path: "/users", label: "nav.users", permission: "users:read", icon: Users },
+  { path: "/settings", label: "nav.settings", permission: "settings:read", icon: Settings },
+  { path: "/help", label: "nav.help", icon: CircleHelp },
 ];
 
 /** The sections a person with these permissions is allowed to see. */
