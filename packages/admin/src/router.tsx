@@ -150,7 +150,10 @@ function SignedInAdmin() {
 const dashboardRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: "/",
-  component: DashboardPage,
+  component: function Dashboard() {
+    const { session } = adminRoute.useRouteContext();
+    return <DashboardPage showSales={session.enabledPlugins.includes("commerce")} />;
+  },
 });
 
 // One placeholder route per section. Each is replaced by real screens as its phase is built.

@@ -22,6 +22,7 @@ const english = {
   "account.signOut": "Sign out",
   "dashboard.title": "Dashboard",
   "dashboard.intro": "Recent edits, tasks and sales will appear here.",
+  "dashboard.introWithoutSales": "Recent edits and tasks will appear here.",
   "dashboard.recentEdits.title": "Recent edits",
   "dashboard.recentEdits.emptyTitle": "No edits yet",
   "dashboard.recentEdits.emptyDescription": "Pages and entries you change will show up here.",
