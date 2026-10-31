@@ -1,7 +1,8 @@
-import { useNavigate, useRouter, useSearch } from "@tanstack/react-router";
-import { AppMark } from "../design/AppMark.js";
+import { useLocation, useNavigate, useRouter, useSearch } from "@tanstack/react-router";
+import { DisplayTitle } from "../design/DisplayTitle.js";
 import { t } from "../i18n/strings.js";
 import { signIn } from "../session/session.api.js";
+import { FullScreenLayout } from "../layout/FullScreenLayout.js";
 import { SignInForm } from "./SignInForm.js";
 
 /**
@@ -11,7 +12,9 @@ import { SignInForm } from "./SignInForm.js";
 export function SignInPage() {
   const navigate = useNavigate();
   const router = useRouter();
-  const { redirect } = useSearch({ from: "/sign-in" });
+  const { redirect } = useSearch({ from: "/setup-gate/sign-in" });
+  // Set when someone arrived from setup, only to find Lintel was already set up.
+  const setupAlreadyDone = useLocation({ select: (location) => location.state.setupAlreadyDone });
 
   async function handleSignedIn() {
     // Re-run the admin's session check so it picks up the new cookie.
@@ -20,14 +23,17 @@ export function SignInPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-12 text-label">
-      <div className="flex w-full max-w-[380px] flex-col items-center">
-        <AppMark size="large" />
-        <h1 className="mt-6 text-title text-label">{t("signIn.title")}</h1>
-        <p className="mt-1.5 text-center text-body text-label-secondary">{t("signIn.subtitle")}</p>
-        <SignInForm signIn={signIn} onSignedIn={handleSignedIn} />
+    <FullScreenLayout>
+      <div className="flex min-h-dvh flex-col items-center justify-center px-6 py-24">
+        <div className="w-full max-w-[420px]">
+          <DisplayTitle>{t("signIn.title")}</DisplayTitle>
+          <p className="mt-3 text-headline font-normal text-label-secondary">
+            {setupAlreadyDone ? t("signIn.alreadySetUp") : t("signIn.subtitle")}
+          </p>
+          <SignInForm signIn={signIn} onSignedIn={handleSignedIn} />
+        </div>
       </div>
-    </main>
+    </FullScreenLayout>
   );
 }
 

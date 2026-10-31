@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { classNames } from "./classNames.js";
 
 export type ButtonVariant = "filled" | "tinted" | "plain";
-export type ButtonSize = "small" | "medium" | "large";
+export type ButtonSize = "small" | "medium" | "large" | "extra-large";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   /** filled for the one main action on a screen, tinted for secondary actions, plain for the rest. */
@@ -24,6 +24,7 @@ const sizeClasses: Record<ButtonSize, string> = {
   small: "h-7 gap-1.5 rounded-full px-3 text-footnote font-medium",
   medium: "h-9 gap-2 rounded-control px-4 text-body font-medium",
   large: "h-11 gap-2 rounded-card px-5 text-headline",
+  "extra-large": "h-[52px] gap-2 rounded-card px-7 text-headline",
 };
 
 export function Button({

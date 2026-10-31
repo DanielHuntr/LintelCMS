@@ -1,5 +1,6 @@
 import { useRef, type KeyboardEvent } from "react";
 import { classNames } from "./classNames.js";
+import { radioGroupTargetIndex } from "./radioGroupKeys.js";
 
 export interface SegmentedControlOption<Value extends string> {
   value: Value;
@@ -34,19 +35,7 @@ export function SegmentedControl<Value extends string>({
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
-    const lastIndex = options.length - 1;
-    const previousIndex = index === 0 ? lastIndex : index - 1;
-    const nextIndex = index === lastIndex ? 0 : index + 1;
-    const targetIndexByKey: Partial<Record<string, number>> = {
-      ArrowLeft: previousIndex,
-      ArrowUp: previousIndex,
-      ArrowRight: nextIndex,
-      ArrowDown: nextIndex,
-      Home: 0,
-      End: lastIndex,
-    };
-
-    const targetIndex = targetIndexByKey[event.key];
+    const targetIndex = radioGroupTargetIndex(event.key, index, options.length);
     if (targetIndex === undefined) return;
     event.preventDefault();
     selectOptionAt(targetIndex);
