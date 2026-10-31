@@ -7,6 +7,7 @@ describe("loadConfig", () => {
 
     expect(config.API_PORT).toBe(4000);
     expect(config.ADMIN_ORIGIN).toBe("http://localhost:5173");
+    expect(config.NODE_ENV).toBe("production");
   });
 
   it("names the setting that is wrong", () => {
