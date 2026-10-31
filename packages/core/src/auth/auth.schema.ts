@@ -15,10 +15,12 @@ export const signInRequestSchema = z.object({
     .max(1000, { error: "Passwords can be at most 1000 characters" }),
 });
 
-/** What `POST /auth/sign-in` and `GET /auth/me` return. */
+/** What `POST /auth/sign-in`, `POST /setup` and `GET /auth/me` return. */
 export const signedInSchema = z.object({
   user: publicUserSchema,
   permissions: z.array(z.string()),
+  /** Which plugins are on, so the admin can show their sections without another request. */
+  enabledPlugins: z.array(z.string()),
 });
 
 export type SignInRequest = z.infer<typeof signInRequestSchema>;

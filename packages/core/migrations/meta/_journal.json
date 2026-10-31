@@ -15,6 +15,13 @@
       "when": 1793480666383,
       "tag": "0001_add_sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793488005325,
+      "tag": "0002_add_settings",
+      "breakpoints": true
     }
   ]
 }
