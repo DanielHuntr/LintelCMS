@@ -7,13 +7,14 @@ import { SidebarAccount, type SignedInUser } from "./SidebarAccount.js";
 interface SidebarProps {
   permissions: readonly string[];
   signedInUser: SignedInUser | undefined;
+  onSignOut?: () => void;
 }
 
 /**
  * The main navigation. It floats over the page background with a frosted-glass effect,
  * like the sidebar in macOS apps.
  */
-export function Sidebar({ permissions, signedInUser }: SidebarProps) {
+export function Sidebar({ permissions, signedInUser, onSignOut }: SidebarProps) {
   return (
     <aside className="fixed inset-y-3 left-3 z-10 flex w-60 flex-col rounded-panel bg-sidebar shadow-float hairline-ring backdrop-blur-2xl backdrop-saturate-150">
       <div className="flex items-center gap-2.5 px-4 pt-5 pb-6">
@@ -44,7 +45,7 @@ export function Sidebar({ permissions, signedInUser }: SidebarProps) {
       </nav>
 
       <div className="hairline-top mx-2.5 py-2.5">
-        <SidebarAccount signedInUser={signedInUser} />
+        <SidebarAccount signedInUser={signedInUser} onSignOut={onSignOut} />
       </div>
     </aside>
   );

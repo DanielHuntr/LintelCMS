@@ -68,10 +68,9 @@ function WhatsNewList() {
       />
       <GroupedListRow
         icon={KeyRound}
-        iconTone="warning"
         label={t("dashboard.whatsNew.signInTitle")}
         description={t("dashboard.whatsNew.signInDescription")}
-        accessory={<Badge tone="warning">{t("badge.inProgress")}</Badge>}
+        accessory={<Badge tone="accent">{t("badge.new")}</Badge>}
       />
       <GroupedListRow
         icon={FileStack}

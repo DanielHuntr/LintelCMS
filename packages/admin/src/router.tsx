@@ -3,28 +3,63 @@ import {
   createRoute,
   createRouter,
   lazyRouteComponent,
+  redirect,
+  useNavigate,
 } from "@tanstack/react-router";
 import { DashboardPage } from "./dashboard/DashboardPage.js";
 import { AdminLayout } from "./layout/AdminLayout.js";
 import { ComingSoonPage } from "./sections/ComingSoonPage.js";
+import { fetchCurrentSession, signOut } from "./session/session.api.js";
 import { SignInPage } from "./sign-in/SignInPage.js";
-
-// Until sign-in exists, the admin behaves as a super admin so every section is visible.
-const temporaryPermissions = ["*"];
 
 const rootRoute = createRootRoute();
 
 const signInRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/sign-in",
+  // `redirect` remembers where the person was going before they were asked to sign in.
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } => ({
+    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+  }),
   component: SignInPage,
 });
 
+/**
+ * Every admin screen sits under this route. Before any of them loads, it asks the API
+ * who is signed in; nobody signed in means a trip to the sign-in screen.
+ */
 const adminRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: "admin",
-  component: () => <AdminLayout permissions={temporaryPermissions} />,
+  beforeLoad: async ({ location }) => {
+    const session = await fetchCurrentSession();
+
+    if (!session) {
+      throw redirect({ to: "/sign-in", search: { redirect: location.href } });
+    }
+
+    return { session };
+  },
+  component: SignedInAdmin,
 });
+
+function SignedInAdmin() {
+  const { session } = adminRoute.useRouteContext();
+  const navigate = useNavigate();
+
+  async function handleSignOut() {
+    await signOut();
+    await navigate({ to: "/sign-in", search: { redirect: undefined } });
+  }
+
+  return (
+    <AdminLayout
+      permissions={session.permissions}
+      signedInUser={session.user}
+      onSignOut={handleSignOut}
+    />
+  );
+}
 
 const dashboardRoute = createRoute({
   getParentRoute: () => adminRoute,

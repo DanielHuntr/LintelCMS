@@ -40,7 +40,7 @@ packages/core/src/orders/
 
 - No hard-coded text: add a key to `packages/admin/src/i18n/strings.ts` and call `t()`.
 - Every input has a visible label; every page has one `h1`; everything works by keyboard.
-- Use brand tokens (`bg-brand`) rather than fixed colours, so agencies can rebrand.
+- Use design tokens (`bg-accent-fill`, `text-label`...) rather than fixed colours, so agencies can rebrand. See `packages/admin/src/design/README.md`.
 - Respect reduced motion. Motion explains cause and effect; it is never decoration.
 
 ## Before you open a pull request

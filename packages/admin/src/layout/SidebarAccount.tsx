@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { UserRound } from "lucide-react";
+import { LogOut, UserRound } from "lucide-react";
 import { t } from "../i18n/strings.js";
 
 export interface SignedInUser {
@@ -7,8 +7,13 @@ export interface SignedInUser {
   email: string;
 }
 
-/** The bottom of the sidebar: who is signed in, or a way to sign in. */
-export function SidebarAccount({ signedInUser }: { signedInUser: SignedInUser | undefined }) {
+interface SidebarAccountProps {
+  signedInUser: SignedInUser | undefined;
+  onSignOut?: () => void;
+}
+
+/** The bottom of the sidebar: who is signed in (with a sign-out button), or a way to sign in. */
+export function SidebarAccount({ signedInUser, onSignOut }: SidebarAccountProps) {
   if (!signedInUser) {
     return (
       <Link
@@ -40,6 +45,17 @@ export function SidebarAccount({ signedInUser }: { signedInUser: SignedInUser | 
         <span className="truncate text-body font-medium text-label">{signedInUser.name}</span>
         <span className="truncate text-footnote text-label-secondary">{signedInUser.email}</span>
       </span>
+      {onSignOut && (
+        <button
+          type="button"
+          onClick={onSignOut}
+          aria-label={t("account.signOut")}
+          title={t("account.signOut")}
+          className="ml-auto flex size-8 shrink-0 items-center justify-center rounded-control text-label-secondary transition-colors duration-150 ease-standard hover:bg-fill hover:text-label focus-visible:focus-ring"
+        >
+          <LogOut aria-hidden="true" strokeWidth={1.75} className="size-[18px]" />
+        </button>
+      )}
     </div>
   );
 }

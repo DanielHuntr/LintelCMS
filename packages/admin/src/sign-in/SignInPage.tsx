@@ -1,19 +1,22 @@
-import { useState, type FormEvent } from "react";
+import { useNavigate, useRouter, useSearch } from "@tanstack/react-router";
 import { AppMark } from "../design/AppMark.js";
-import { Button } from "../design/Button.js";
-import { TextField } from "../design/TextField.js";
 import { t } from "../i18n/strings.js";
+import { signIn } from "../session/session.api.js";
+import { SignInForm } from "./SignInForm.js";
 
 /**
- * The sign-in screen. The form is real and accessible; sending it to the API
- * is wired up in the next pull request, together with sessions in @lintel/core.
+ * The sign-in screen. After signing in, people go back to the page they were trying
+ * to reach (the `redirect` search parameter), or to the dashboard.
  */
 export function SignInPage() {
-  const [message, setMessage] = useState("");
+  const navigate = useNavigate();
+  const router = useRouter();
+  const { redirect } = useSearch({ from: "/sign-in" });
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setMessage(t("signIn.notReady"));
+  async function handleSignedIn() {
+    // Re-run the admin's session check so it picks up the new cookie.
+    await router.invalidate();
+    await navigate({ to: safeRedirect(redirect) });
   }
 
   return (
@@ -22,35 +25,13 @@ export function SignInPage() {
         <AppMark size="large" />
         <h1 className="mt-6 text-title text-label">{t("signIn.title")}</h1>
         <p className="mt-1.5 text-center text-body text-label-secondary">{t("signIn.subtitle")}</p>
-
-        <form
-          onSubmit={handleSubmit}
-          className="mt-8 flex w-full flex-col gap-5 rounded-panel bg-surface p-7 shadow-float"
-        >
-          <TextField
-            label={t("signIn.email")}
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-          />
-          <TextField
-            label={t("signIn.password")}
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-          />
-          <Button type="submit" size="large" fullWidth className="mt-1">
-            {t("signIn.submit")}
-          </Button>
-        </form>
-
-        {/* Always rendered, so screen readers are already listening when the message arrives. */}
-        <p role="status" className="mt-5 min-h-5 text-center text-footnote text-label-secondary">
-          {message}
-        </p>
+        <SignInForm signIn={signIn} onSignedIn={handleSignedIn} />
       </div>
     </main>
   );
+}
+
+/** Only follow redirects within the admin, so a link can't send people to another site. */
+export function safeRedirect(redirect: string | undefined): string {
+  return redirect?.startsWith("/") && !redirect.startsWith("//") ? redirect : "/";
 }
