@@ -85,6 +85,13 @@ also changes the text mark (`AppMark`), which shows the first letter of the app 
 | `LargeTitle.tsx`       | The page header: the page's `h1`, subtitle and actions                              |
 | `EmptyState.tsx`       | What to show when there is nothing yet                                              |
 | `AppMark.tsx`          | The app's text mark                                                                 |
+| `PasswordField.tsx`    | A TextField with a "Show password" toggle button (`aria-pressed`)                   |
+| `EmailField.tsx`       | A TextField that offers a one-click fix for domain typos such as "gmai.com"         |
+| `ChoiceCardGroup.tsx`  | Large selectable cards with a sentence each; a radio group like SegmentedControl    |
+
+Helpers: `suggestEmailCorrection.ts` (the typo check behind EmailField: popular domains and
+edit distance, never blocking) and `radioGroupKeys.ts` (the arrow-key rules every radio group
+shares).
 
 ## Rules
 
