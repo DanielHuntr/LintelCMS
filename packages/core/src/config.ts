@@ -9,6 +9,9 @@ const configSchema = z.object({
   DATABASE_URL: z.string().url(),
   API_PORT: z.coerce.number().int().positive().default(4000),
   ADMIN_ORIGIN: z.string().url().default("http://localhost:5173"),
+  // Defaults to production so a server started without it gets the safe settings
+  // (for example, session cookies that only travel over HTTPS).
+  NODE_ENV: z.enum(["development", "test", "production"]).default("production"),
 });
 
 export type Config = z.infer<typeof configSchema>;

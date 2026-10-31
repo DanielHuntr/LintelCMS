@@ -1,0 +1,55 @@
+# Auth
+
+Signing in to the admin, signing out, and checking what the signed-in person may do.
+
+## Endpoints
+
+| Method and path       | Body                  | Success                                  | Failure                                  |
+| --------------------- | --------------------- | ---------------------------------------- | ---------------------------------------- |
+| `POST /auth/sign-in`  | `{ email, password }` | 200 `{ user, permissions }`, sets cookie | 400 bad body, 401 no match, 429 too many |
+| `POST /auth/sign-out` | none                  | 204, clears cookie (fine if signed out)  |                                          |
+| `GET /auth/me`        | none                  | 200 `{ user, permissions }`              | 401 signed out or session expired        |
+
+`user` is `{ id, email, name }`. `permissions` is every permission from all the user's
+roles, without duplicates, sorted. Errors look like
+`{ statusCode, code, error, message }` (see `src/http/README.md`).
+
+Wrong email and wrong password give the same 401 and take about the same time, so
+sign-in can't be used to find out who has an account. Sign-in is limited to 10 attempts
+a minute per IP address.
+
+## The session cookie
+
+`lintel_session`: httpOnly, SameSite=Lax, Path=/, Secure except when
+`NODE_ENV=development`, expires with the session (30 days, extended on use).
+Browsers must send it, so the admin calls the API with `credentials: "include"`.
+How sessions are stored and extended: `src/sessions/README.md`.
+
+## Protecting a route
+
+```ts
+server.post(
+  "/entries/:id/publish",
+  { preHandler: requirePermission("entries:publish") },
+  async (request) => {
+    const { user } = getSignedIn(request);
+    // ...
+  },
+);
+```
+
+- `requirePermission(permission)` gives 401 when signed out, 403 when not allowed.
+- `requireSignedIn` only checks that someone is signed in.
+- Both set `request.signedIn` to `{ user, permissions }`; `getSignedIn(request)` reads it.
+
+## Files
+
+| File                    | What it does                                         |
+| ----------------------- | ---------------------------------------------------- |
+| `auth.routes.ts`        | The three endpoints and the sign-in rate limit       |
+| `auth.service.ts`       | Sign in, sign out, find who a session belongs to     |
+| `auth.schema.ts`        | Zod schemas for the sign-in request and the response |
+| `auth.errors.ts`        | Named errors with the messages people see            |
+| `require-permission.ts` | Route guards: `requireSignedIn`, `requirePermission` |
+| `session-cookie.ts`     | Reading, setting and clearing the cookie             |
+| `passwords.ts`          | scrypt hashing and constant-time checking            |
