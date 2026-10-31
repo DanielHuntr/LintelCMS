@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import { Check, type LucideIcon } from "lucide-react";
 import { useId, useRef, type KeyboardEvent, type ReactNode } from "react";
 import { classNames } from "./classNames.js";
 import { radioGroupTargetIndex } from "./radioGroupKeys.js";
@@ -6,32 +6,50 @@ import { radioGroupTargetIndex } from "./radioGroupKeys.js";
 export interface ChoiceCard<Value extends string> {
   value: Value;
   title: string;
+  /** One line under the title. */
   description: string;
-  icon?: LucideIcon;
+  icon: LucideIcon;
   /** Something small beside the title, such as a "Recommended" Badge. */
   accessory?: ReactNode;
 }
 
 interface ChoiceCardGroupProps<Value extends string> {
   /** Read by screen readers to say what the choice is about. */
-  label: string;
+  label?: string;
+  /** The id of a visible heading that names the choice, used instead of `label`. */
+  labelledBy?: string;
   options: readonly ChoiceCard<Value>[];
   value: Value;
   onChange: (value: Value) => void;
+  /**
+   * Called when a tile is clicked, or pressed with Enter or Space, but not when the arrow
+   * keys move the choice. Screens use it to move on as soon as someone picks.
+   */
+  onActivate?: (value: Value) => void;
+  /** Tiles per row on wide screens. On phones they always stack. */
+  columns?: 2 | 3;
 }
 
+const columnClasses = {
+  2: "sm:basis-[calc((100%-1rem)/2)]",
+  3: "sm:basis-[calc((100%-2rem)/3)]",
+};
+
 /**
- * Large cards for a choice that deserves a sentence of explanation per option, such as where
- * to keep content. Like SegmentedControl it is a radio group: one tab stop, arrow keys move.
+ * Large tiles for a choice that deserves an icon and a sentence, such as what someone is
+ * building. Like SegmentedControl it is a radio group: one tab stop, and arrow keys move.
  */
 export function ChoiceCardGroup<Value extends string>({
   label,
+  labelledBy,
   options,
   value,
   onChange,
+  onActivate,
+  columns = 2,
 }: ChoiceCardGroupProps<Value>) {
   const groupId = useId();
-  const cardElements = useRef<Array<HTMLButtonElement | null>>([]);
+  const tileElements = useRef<Array<HTMLButtonElement | null>>([]);
 
   function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     const targetIndex = radioGroupTargetIndex(event.key, index, options.length);
@@ -39,21 +57,32 @@ export function ChoiceCardGroup<Value extends string>({
     if (targetIndex === undefined || !target) return;
     event.preventDefault();
     onChange(target.value);
-    cardElements.current[targetIndex]?.focus();
+    tileElements.current[targetIndex]?.focus();
+  }
+
+  function handleClick(chosen: Value) {
+    onChange(chosen);
+    onActivate?.(chosen);
   }
 
   return (
-    <div role="radiogroup" aria-label={label} className="flex flex-col gap-3">
+    <div
+      role="radiogroup"
+      aria-label={labelledBy ? undefined : label}
+      aria-labelledby={labelledBy}
+      className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-4"
+    >
       {options.map((option, index) => {
         const isSelected = option.value === value;
         const titleId = `${groupId}-${option.value}-title`;
         const descriptionId = `${groupId}-${option.value}-description`;
+        const Icon = option.icon;
 
         return (
           <button
             key={option.value}
             ref={(element) => {
-              cardElements.current[index] = element;
+              tileElements.current[index] = element;
             }}
             type="button"
             role="radio"
@@ -61,18 +90,30 @@ export function ChoiceCardGroup<Value extends string>({
             aria-labelledby={titleId}
             aria-describedby={descriptionId}
             tabIndex={isSelected ? 0 : -1}
-            onClick={() => onChange(option.value)}
+            onClick={() => handleClick(option.value)}
             onKeyDown={(event) => handleKeyDown(event, index)}
             className={classNames(
-              "flex w-full items-start gap-3 rounded-card p-4 text-left",
-              "transition duration-150 ease-standard focus-visible:focus-ring",
+              "relative flex items-center gap-4 rounded-panel p-4 text-left",
+              "sm:min-h-[184px] sm:flex-col sm:items-start sm:justify-start sm:gap-5 sm:p-5",
+              "transition duration-200 ease-standard focus-visible:focus-ring",
+              "motion-safe:active:scale-[0.98]",
+              columnClasses[columns],
               isSelected
                 ? "bg-accent/8 ring-2 ring-accent"
-                : "bg-fill/60 ring-1 ring-separator hover:bg-fill",
+                : "bg-surface ring-1 ring-separator hover:ring-label-tertiary",
             )}
           >
-            {option.icon && <CardIcon icon={option.icon} isSelected={isSelected} />}
-            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span
+              className={classNames(
+                "flex size-12 shrink-0 items-center justify-center rounded-card",
+                "transition-colors duration-200 ease-standard",
+                isSelected ? "bg-accent-fill text-on-accent" : "bg-accent/10 text-accent",
+              )}
+            >
+              <Icon aria-hidden="true" strokeWidth={1.75} className="size-7" />
+            </span>
+
+            <span className="flex min-w-0 flex-1 flex-col gap-1 pr-7 sm:flex-none sm:pr-0">
               <span className="flex flex-wrap items-center gap-2">
                 <span id={titleId} className="text-headline text-label">
                   {option.title}
@@ -83,7 +124,8 @@ export function ChoiceCardGroup<Value extends string>({
                 {option.description}
               </span>
             </span>
-            <RadioMark isSelected={isSelected} />
+
+            <SelectedMark isSelected={isSelected} />
           </button>
         );
       })}
@@ -91,32 +133,19 @@ export function ChoiceCardGroup<Value extends string>({
   );
 }
 
-function CardIcon({ icon: Icon, isSelected }: { icon: LucideIcon; isSelected: boolean }) {
-  return (
-    <span
-      className={classNames(
-        "flex size-9 shrink-0 items-center justify-center rounded-control",
-        "transition-colors duration-150 ease-standard",
-        isSelected ? "bg-accent-fill text-on-accent" : "bg-fill text-label-secondary",
-      )}
-    >
-      <Icon aria-hidden="true" strokeWidth={1.75} className="size-5" />
-    </span>
-  );
-}
-
-/** The round radio mark: a ring, filled with a dot once chosen. */
-function RadioMark({ isSelected }: { isSelected: boolean }) {
+/** A check in the tile's corner once it's chosen; an empty ring before. */
+function SelectedMark({ isSelected }: { isSelected: boolean }) {
   return (
     <span
       aria-hidden="true"
       className={classNames(
-        "mt-0.5 flex size-[18px] shrink-0 items-center justify-center rounded-full",
-        "transition-colors duration-150 ease-standard",
-        isSelected ? "bg-accent-fill" : "border-[1.5px] border-label-tertiary",
+        "absolute top-1/2 right-4 flex size-6 -translate-y-1/2 items-center justify-center rounded-full",
+        "sm:top-4 sm:translate-y-0",
+        "transition duration-200 ease-standard",
+        isSelected ? "bg-accent-fill text-on-accent" : "border-[1.5px] border-separator",
       )}
     >
-      {isSelected && <span className="size-[7px] rounded-full bg-on-accent" />}
+      {isSelected && <Check strokeWidth={3} className="size-3.5" />}
     </span>
   );
 }

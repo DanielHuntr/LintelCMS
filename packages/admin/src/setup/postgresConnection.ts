@@ -61,3 +61,15 @@ export function fieldForDatabaseError(code: string | undefined): ConnectionField
       return undefined;
   }
 }
+
+/** Where to show a problem from the API: on a connection field, or in the status line. */
+export function placeDatabaseProblem(problem: { code?: string; message: string }): {
+  errors: ConnectionErrors;
+  statusMessage: string;
+  field?: ConnectionField;
+} {
+  const field = fieldForDatabaseError(problem.code);
+  return field
+    ? { errors: { [field]: problem.message }, statusMessage: "", field }
+    : { errors: {}, statusMessage: problem.message };
+}

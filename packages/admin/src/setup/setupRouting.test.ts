@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  accountScreensFor,
   destinationOnceSetUp,
   mustChooseSiteFirst,
   mustFinishSetupFirst,
-  setupStepsFor,
-  stepNumberOf,
+  setupProgress,
 } from "./setupRouting.js";
 import { setupStatus } from "./testStatus.js";
 
@@ -51,36 +51,56 @@ describe("mustChooseSiteFirst", () => {
   });
 });
 
-describe("setupStepsFor", () => {
-  it("asks about the database, the account and the site", () => {
-    expect(setupStepsFor(setupStatus())).toEqual(["database", "account", "site"]);
+describe("accountScreensFor", () => {
+  it("welcomes, asks about the database, then builds the account one question at a time", () => {
+    expect(accountScreensFor(setupStatus(), "built-in")).toEqual([
+      "welcome",
+      "database",
+      "name",
+      "email",
+      "password",
+    ]);
   });
 
-  it("skips the database step when DATABASE_URL has already chosen", () => {
+  it("asks for the PostgreSQL details only once PostgreSQL is chosen", () => {
+    expect(accountScreensFor(setupStatus(), "postgres")).toEqual([
+      "welcome",
+      "database",
+      "postgres",
+      "name",
+      "email",
+      "password",
+    ]);
+  });
+
+  it("skips both database screens when DATABASE_URL has already chosen", () => {
     const status = setupStatus({ database: { kind: "postgres", chosenBy: "environment" } });
-    expect(setupStepsFor(status)).toEqual(["account", "site"]);
+    expect(accountScreensFor(status, "postgres")).toEqual(["welcome", "name", "email", "password"]);
   });
 
-  it("asks for the setup code first when setting up from another computer", () => {
-    expect(setupStepsFor(setupStatus({ requiresSetupCode: true }))).toEqual([
+  it("asks for the setup code straight after the welcome when setting up from elsewhere", () => {
+    expect(accountScreensFor(setupStatus({ requiresSetupCode: true }), "built-in")).toEqual([
+      "welcome",
       "setup-code",
       "database",
-      "account",
-      "site",
+      "name",
+      "email",
+      "password",
     ]);
   });
 });
 
-describe("stepNumberOf", () => {
-  it("numbers the steps without counting the setup code", () => {
-    const status = setupStatus({ requiresSetupCode: true });
-    expect(stepNumberOf("setup-code", status)).toBeUndefined();
-    expect(stepNumberOf("database", status)).toEqual({ current: 1, total: 3 });
-    expect(stepNumberOf("site", status)).toEqual({ current: 3, total: 3 });
+describe("setupProgress", () => {
+  it("runs from 0 at the welcome to 1 when done, across both halves of setup", () => {
+    const status = setupStatus();
+    // welcome, database, name, email, password, site-type, features, done
+    expect(setupProgress("welcome", status, "built-in")).toBe(0);
+    expect(setupProgress("name", status, "built-in")).toBeCloseTo(2 / 7);
+    expect(setupProgress("site-type", status, "built-in")).toBeCloseTo(5 / 7);
+    expect(setupProgress("done", status, "built-in")).toBe(1);
   });
 
-  it("renumbers when the database step is skipped", () => {
-    const status = setupStatus({ database: { kind: "postgres", chosenBy: "environment" } });
-    expect(stepNumberOf("account", status)).toEqual({ current: 1, total: 2 });
+  it("makes room for the PostgreSQL screen when it is part of the flow", () => {
+    expect(setupProgress("postgres", setupStatus(), "postgres")).toBeCloseTo(2 / 8);
   });
 });

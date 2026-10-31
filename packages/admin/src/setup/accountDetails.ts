@@ -1,44 +1,51 @@
 import { t } from "../i18n/strings.js";
 import type { FirstAccountDetails } from "./setup.api.js";
 
-export type AccountField = keyof FirstAccountDetails;
-export type AccountErrors = Partial<Record<AccountField, string>>;
+/**
+ * The checks behind the name, email and password screens. Each returns what to fix, or
+ * undefined when the answer is fine. The API has the final say; these only catch obvious slips
+ * before anything is sent, so nobody is told "too short" three screens later.
+ */
 
-/** Matches the API's rule, so nobody is told "too short" only after pressing the button. */
+export type AccountField = keyof FirstAccountDetails;
+
+/** Matches the API's rule. */
 export const minimumPasswordLength = 12;
+
+export function nameProblem(name: string): string | undefined {
+  return name.trim() ? undefined : t("name.missing");
+}
+
+export function emailProblem(email: string): string | undefined {
+  const trimmed = email.trim();
+  if (!trimmed) return t("email.missing");
+  return looksLikeEmail(trimmed) ? undefined : t("email.invalid");
+}
+
+export function passwordProblem(password: string): string | undefined {
+  return passwordIsLongEnough(password) ? undefined : t("password.tooShort");
+}
 
 export function passwordIsLongEnough(password: string): boolean {
   return password.length >= minimumPasswordLength;
 }
 
-/**
- * The details to send, trimmed, or what to fix first. The password is sent exactly as typed:
- * a space at the end of a passphrase is part of it.
- */
-export function readAccountDetails(
-  typed: FirstAccountDetails,
-): { details: FirstAccountDetails; errors?: undefined } | { errors: AccountErrors } {
-  const name = typed.name.trim();
-  const email = typed.email.trim();
-
-  const errors: AccountErrors = {};
-  if (!name) errors.name = t("account.nameMissing");
-  if (!email) errors.email = t("account.emailMissing");
-  else if (!looksLikeEmail(email)) errors.email = t("account.emailInvalid");
-  if (!passwordIsLongEnough(typed.password)) errors.password = t("account.passwordTooShort");
-
-  if (Object.keys(errors).length > 0) return { errors };
-  return { details: { name, email, password: typed.password } };
-}
-
-/** Something@something.something. The API has the final say; this only catches obvious slips. */
+/** Something@something.something. */
 export function looksLikeEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 /**
- * The API's 400 messages are plain English but don't name a field, so this places the message
- * by what it talks about. Undefined means it goes in the status line instead.
+ * The details to send: name and email trimmed, the password exactly as typed, because a space
+ * at the end of a passphrase is part of it.
+ */
+export function cleanAccountDetails(typed: FirstAccountDetails): FirstAccountDetails {
+  return { name: typed.name.trim(), email: typed.email.trim(), password: typed.password };
+}
+
+/**
+ * The API's 400 messages are plain English but don't name a field, so this places a message
+ * by what it talks about. Undefined means it stays on the screen where it happened.
  */
 export function fieldForAccountMessage(message: string): AccountField | undefined {
   const lowered = message.toLowerCase();

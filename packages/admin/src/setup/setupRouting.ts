@@ -1,4 +1,4 @@
-import { fetchSetupStatus, type SetupStatus } from "./setup.api.js";
+import { fetchSetupStatus, type DatabaseKind, type SetupStatus } from "./setup.api.js";
 
 /**
  * The decisions the router makes about setup, kept apart from the router so they can be
@@ -27,32 +27,55 @@ export function destinationOnceSetUp(
   return siteSetupCompleted ? "/" : "/setup/site";
 }
 
-export type SetupStep = "setup-code" | "database" | "account" | "site";
+/** Every screen of setup, in the order they can appear. */
+export type SetupScreen =
+  | "welcome"
+  | "setup-code"
+  | "database"
+  | "postgres"
+  | "name"
+  | "email"
+  | "password"
+  | "site-type"
+  | "features"
+  | "done";
+
+export type AccountScreen = Extract<
+  SetupScreen,
+  "welcome" | "setup-code" | "database" | "postgres" | "name" | "email" | "password"
+>;
+export type SiteScreen = Extract<SetupScreen, "site-type" | "features" | "done">;
+
+export const siteScreens: readonly SiteScreen[] = ["site-type", "features", "done"];
 
 /**
- * Every step this person will see, in order. The setup code only appears when setting up
- * from another computer, and the database step is skipped when DATABASE_URL already decided,
- * since asking would offer a choice that does nothing.
+ * The screens at /setup, before the account exists. The setup code only appears when
+ * setting up from another computer. The database screens are skipped when DATABASE_URL
+ * already decided, since asking would offer a choice that does nothing, and the PostgreSQL
+ * details only appear once PostgreSQL is chosen.
  */
-export function setupStepsFor(status: SetupStatus): SetupStep[] {
-  const steps: SetupStep[] = [];
-  if (status.requiresSetupCode) steps.push("setup-code");
-  if (status.database.chosenBy !== "environment") steps.push("database");
-  steps.push("account", "site");
-  return steps;
+export function accountScreensFor(
+  status: SetupStatus,
+  databaseKind: DatabaseKind,
+): AccountScreen[] {
+  const screens: AccountScreen[] = ["welcome"];
+  if (status.requiresSetupCode) screens.push("setup-code");
+  if (status.database.chosenBy !== "environment") {
+    screens.push("database");
+    if (databaseKind === "postgres") screens.push("postgres");
+  }
+  screens.push("name", "email", "password");
+  return screens;
 }
 
-/**
- * "Step 2 of 3" for the step indicator. The setup code is a check rather than a step of
- * setting up, so it isn't counted and has no number.
- */
-export function stepNumberOf(
-  step: SetupStep,
+/** How far through the whole of setup a screen is, from 0 (welcome) to 1 (done). */
+export function setupProgress(
+  screen: SetupScreen,
   status: SetupStatus,
-): { current: number; total: number } | undefined {
-  const numberedSteps: SetupStep[] = setupStepsFor(status).filter((each) => each !== "setup-code");
-  const index = numberedSteps.indexOf(step);
-  return index === -1 ? undefined : { current: index + 1, total: numberedSteps.length };
+  databaseKind: DatabaseKind,
+): number {
+  const allScreens: SetupScreen[] = [...accountScreensFor(status, databaseKind), ...siteScreens];
+  return Math.max(allScreens.indexOf(screen), 0) / (allScreens.length - 1);
 }
 
 let finishedStatus: SetupStatus | undefined;

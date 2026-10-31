@@ -65,7 +65,7 @@ describe("SignInForm", () => {
 
     await userEvent.type(screen.getByLabelText("Email address"), "editor@gmai.com");
     await userEvent.tab();
-    await userEvent.click(screen.getByRole("button", { name: "Did you mean editor@gmail.com?" }));
+    await userEvent.click(screen.getByRole("button", { name: "Use editor@gmail.com" }));
 
     expect(screen.getByLabelText("Email address")).toHaveValue("editor@gmail.com");
   });

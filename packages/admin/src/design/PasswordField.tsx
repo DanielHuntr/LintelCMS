@@ -1,6 +1,7 @@
 import { Eye, EyeOff } from "lucide-react";
 import { useState, type ComponentProps } from "react";
 import { t } from "../i18n/strings.js";
+import { classNames } from "./classNames.js";
 import { TextField } from "./TextField.js";
 
 type PasswordFieldProps = Omit<ComponentProps<typeof TextField>, "type" | "trailingAccessory">;
@@ -12,6 +13,7 @@ type PasswordFieldProps = Omit<ComponentProps<typeof TextField>, "type" | "trail
 export function PasswordField(fieldProps: PasswordFieldProps) {
   const [isVisible, setIsVisible] = useState(false);
   const Icon = isVisible ? EyeOff : Eye;
+  const isLarge = fieldProps.fieldSize === "large";
 
   return (
     <TextField
@@ -29,9 +31,17 @@ export function PasswordField(fieldProps: PasswordFieldProps) {
           aria-pressed={isVisible}
           title={t("passwordField.show")}
           onClick={() => setIsVisible(!isVisible)}
-          className="flex size-8 items-center justify-center rounded-control text-label-secondary transition-colors duration-150 ease-standard hover:text-label focus-visible:focus-ring"
+          className={classNames(
+            "flex items-center justify-center rounded-control text-label-secondary",
+            "transition-colors duration-150 ease-standard hover:text-label focus-visible:focus-ring",
+            isLarge ? "size-10" : "size-8",
+          )}
         >
-          <Icon aria-hidden="true" strokeWidth={1.75} className="size-[18px]" />
+          <Icon
+            aria-hidden="true"
+            strokeWidth={1.75}
+            className={isLarge ? "size-5" : "size-[18px]"}
+          />
         </button>
       }
     />

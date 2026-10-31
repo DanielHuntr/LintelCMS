@@ -4,18 +4,18 @@ The control panel: a React app that talks to `@lintel/core`.
 
 ## Where things live
 
-| Folder              | What it does                                                   |
-| ------------------- | -------------------------------------------------------------- |
-| `src/design`        | Design tokens and base components (see its README)             |
-| `src/layout`        | The frame around every screen: sidebar and page area           |
-| `src/navigation`    | The main sections and who can see them                         |
-| `src/dashboard`     | The home screen                                                |
-| `src/sign-in`       | The sign-in screen                                             |
-| `src/setup`         | First-run setup: database, first account and kind of site      |
-| `src/session`       | Who is signed in, and signing in and out                       |
-| `src/sections`      | Placeholders for sections not built yet                        |
-| `src/i18n`          | Every word the admin shows (`t("key")`)                        |
-| `src/design-review` | `/design-system`: every component in light and dark (dev only) |
+| Folder              | What it does                                                    |
+| ------------------- | --------------------------------------------------------------- |
+| `src/design`        | Design tokens and base components (see its README)              |
+| `src/layout`        | The frames around screens: the admin's sidebar, and full screen |
+| `src/navigation`    | The main sections and who can see them                          |
+| `src/dashboard`     | The home screen                                                 |
+| `src/sign-in`       | The sign-in screen                                              |
+| `src/setup`         | First-run setup: database, first account and kind of site       |
+| `src/session`       | Who is signed in, and signing in and out                        |
+| `src/sections`      | Placeholders for sections not built yet                         |
+| `src/i18n`          | Every word the admin shows (`t("key")`)                         |
+| `src/design-review` | `/design-system`: every component in light and dark (dev only)  |
 
 Rules for screens:
 

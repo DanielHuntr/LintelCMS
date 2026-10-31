@@ -2,11 +2,13 @@ import { apiRequest } from "../api/client.js";
 import type { Session } from "../session/session.api.js";
 
 /** What the API says about first-run setup. Matches `GET /setup/status`. */
+export type DatabaseKind = "built-in" | "postgres";
+
 export interface SetupStatus {
   /** True until the first account exists. */
   needsSetup: boolean;
   database: {
-    kind: "built-in" | "postgres";
+    kind: DatabaseKind;
     /** "environment" means DATABASE_URL already decided it, so setup doesn't ask. */
     chosenBy: "environment" | "setup" | "default";
   };

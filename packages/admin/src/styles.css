@@ -13,6 +13,11 @@
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
 
   /* Type scale. Each step carries its own line height, weight and tracking. */
+  /* The one big question on each full-screen setup step. */
+  --text-display: 2.375rem; /* 38px */
+  --text-display--line-height: 2.875rem;
+  --text-display--letter-spacing: -0.028em;
+  --text-display--font-weight: 600;
   --text-large-title: 2.125rem; /* 34px */
   --text-large-title--line-height: 2.625rem;
   --text-large-title--letter-spacing: -0.022em;
@@ -171,10 +176,76 @@
   outline-offset: 1px;
 }
 
+/* The focus ring for a field with an error, so the two rings don't mix into purple. */
+@utility focus-ring-danger {
+  outline: 3px solid color-mix(in srgb, var(--color-danger) 40%, transparent);
+  outline-offset: 0;
+}
+
 /* The same ring drawn inside the element, for rows clipped by a rounded list. */
 @utility focus-ring-inset {
   outline: 3px solid color-mix(in srgb, var(--color-accent) 45%, transparent);
   outline-offset: -3px;
+}
+
+/*
+ * Setup's screen-to-screen motion, run through the View Transitions API (see
+ * src/setup/useWizardScreens.ts). Only the screen's content moves: the progress bar and the
+ * buttons stay put. The new screen slides in from the side it comes from; the old one fades.
+ */
+::view-transition-old(root),
+::view-transition-new(root),
+::view-transition-group(wizard-screen) {
+  animation: none;
+}
+
+::view-transition-old(wizard-screen) {
+  animation: 160ms var(--ease-standard) both fade-out;
+}
+
+::view-transition-new(wizard-screen) {
+  animation: 280ms var(--ease-standard) both slide-in-from-right;
+}
+
+:root[data-wizard-direction="back"]::view-transition-new(wizard-screen) {
+  animation-name: slide-in-from-left;
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes slide-in-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+
+@keyframes slide-in-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+}
+
+/* The success mark on the last setup screen settles into place. */
+@keyframes settle-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  70% {
+    transform: scale(1.04);
+  }
 }
 
 /* Respect people who ask their device for less motion. */
@@ -184,5 +255,15 @@
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /* Setup screens crossfade instead of sliding, whichever way they go. */
+  ::view-transition-new(wizard-screen),
+  :root[data-wizard-direction]::view-transition-new(wizard-screen) {
+    animation: 150ms linear both fade-in;
+  }
+
+  ::view-transition-old(wizard-screen) {
+    animation: 150ms linear both fade-out;
   }
 }

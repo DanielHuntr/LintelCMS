@@ -41,11 +41,9 @@ export function SignInForm({ signIn, onSignedIn }: SignInFormProps) {
 
   return (
     <>
-      <form
-        onSubmit={handleSubmit}
-        className="mt-8 flex w-full flex-col gap-5 rounded-panel bg-surface p-7 shadow-float"
-      >
+      <form onSubmit={handleSubmit} className="mt-10 flex w-full flex-col gap-6">
         <EmailField
+          fieldSize="large"
           label={t("signIn.email")}
           name="email"
           value={email}
@@ -54,6 +52,7 @@ export function SignInForm({ signIn, onSignedIn }: SignInFormProps) {
           required
         />
         <PasswordField
+          fieldSize="large"
           label={t("signIn.password")}
           name="password"
           value={password}
@@ -61,13 +60,13 @@ export function SignInForm({ signIn, onSignedIn }: SignInFormProps) {
           autoComplete="current-password"
           required
         />
-        <Button type="submit" size="large" fullWidth className="mt-1" disabled={isSigningIn}>
+        <Button type="submit" size="extra-large" fullWidth className="mt-2" disabled={isSigningIn}>
           {isSigningIn ? t("signIn.submitting") : t("signIn.submit")}
         </Button>
       </form>
 
       {/* Always rendered, so screen readers are already listening when a message arrives. */}
-      <p role="status" className="mt-5 min-h-5 text-center text-footnote text-danger">
+      <p role="status" className="mt-5 text-footnote text-danger empty:mt-0">
         {errorMessage}
       </p>
     </>
