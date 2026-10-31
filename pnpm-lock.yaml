@@ -47,6 +47,9 @@ importers:
       '@lintel/core':
         specifier: workspace:*
         version: link:../core
+      '@tanstack/history':
+        specifier: ^1.162.5
+        version: 1.162.5
       '@tanstack/react-router':
         specifier: ^1.170.46
         version: 1.170.46(react-dom@19.3.1(react@19.3.1))(react@19.3.1)

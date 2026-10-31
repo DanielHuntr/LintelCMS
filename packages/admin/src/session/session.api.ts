@@ -5,6 +5,8 @@ export interface Session {
   user: { id: string; email: string; name: string };
   /** May contain wildcards such as "*" or "entries:*": check with hasPermission, not includes. */
   permissions: string[];
+  /** Features switched on for this site, such as "commerce". Sections for the rest stay hidden. */
+  enabledPlugins: string[];
 }
 
 export function signIn(email: string, password: string): Promise<Session> {

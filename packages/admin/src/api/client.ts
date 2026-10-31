@@ -21,6 +21,8 @@ interface RequestOptions {
   method?: "GET" | "POST" | "PATCH" | "DELETE";
   /** Sent as JSON. Leave out for requests without a body. */
   body?: unknown;
+  /** Extra headers, such as the setup code a first-run request has to carry. */
+  headers?: Record<string, string>;
 }
 
 export async function apiRequest<Result>(path: string, options: RequestOptions = {}) {
@@ -29,8 +31,7 @@ export async function apiRequest<Result>(path: string, options: RequestOptions =
   const response = await fetch(`${apiUrl}${path}`, {
     method: options.method ?? "GET",
     credentials: "include",
-    // Only send a content type with a body: the API rejects an empty JSON body.
-    headers: hasBody ? { "content-type": "application/json" } : undefined,
+    headers: requestHeaders(hasBody, options.headers),
     body: hasBody ? JSON.stringify(options.body) : undefined,
   });
 
@@ -43,6 +44,12 @@ export async function apiRequest<Result>(path: string, options: RequestOptions =
   }
 
   return (await response.json()) as Result;
+}
+
+// Only send a content type with a body: the API rejects an empty JSON body.
+function requestHeaders(hasBody: boolean, extraHeaders: Record<string, string> = {}) {
+  const headers = hasBody ? { "content-type": "application/json", ...extraHeaders } : extraHeaders;
+  return Object.keys(headers).length > 0 ? headers : undefined;
 }
 
 async function toApiError(response: Response): Promise<ApiError> {
