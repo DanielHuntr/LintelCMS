@@ -8,6 +8,8 @@ interface GroupedListRowProps {
   label: string;
   /** A second, quieter line under the label. */
   description?: string;
+  /** Lets a long label and description wrap instead of being cut short, as in settings. */
+  wrapsText?: boolean;
   /** A short value on the right, e.g. the current language "English". */
   detail?: string;
   icon?: LucideIcon;
@@ -32,6 +34,7 @@ const iconToneClasses: Record<Tone, string> = {
 export function GroupedListRow({
   label,
   description,
+  wrapsText = false,
   detail,
   icon: Icon,
   iconTone = "accent",
@@ -59,9 +62,15 @@ export function GroupedListRow({
       */}
       <span className="flex min-h-11 min-w-0 flex-1 items-center gap-3 py-2.5 pr-4 [li+li>*>&]:hairline-top">
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-body text-label">{label}</span>
+          <span className={classNames("text-body text-label", !wrapsText && "truncate")}>
+            {label}
+          </span>
           {description && (
-            <span className="truncate text-footnote text-label-secondary">{description}</span>
+            <span
+              className={classNames("text-footnote text-label-secondary", !wrapsText && "truncate")}
+            >
+              {description}
+            </span>
           )}
         </span>
         {detail && <span className="text-body text-label-secondary">{detail}</span>}

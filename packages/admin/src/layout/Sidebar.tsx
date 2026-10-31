@@ -6,6 +6,7 @@ import { SidebarAccount, type SignedInUser } from "./SidebarAccount.js";
 
 interface SidebarProps {
   permissions: readonly string[];
+  enabledPlugins: readonly string[];
   signedInUser: SignedInUser | undefined;
   onSignOut?: () => void;
 }
@@ -14,7 +15,7 @@ interface SidebarProps {
  * The main navigation. It floats over the page background with a frosted-glass effect,
  * like the sidebar in macOS apps.
  */
-export function Sidebar({ permissions, signedInUser, onSignOut }: SidebarProps) {
+export function Sidebar({ permissions, enabledPlugins, signedInUser, onSignOut }: SidebarProps) {
   return (
     <aside className="fixed inset-y-3 left-3 z-10 flex w-60 flex-col rounded-panel bg-sidebar shadow-float hairline-ring backdrop-blur-2xl backdrop-saturate-150">
       <div className="flex items-center gap-2.5 px-4 pt-5 pb-6">
@@ -24,7 +25,7 @@ export function Sidebar({ permissions, signedInUser, onSignOut }: SidebarProps) 
 
       <nav aria-label={t("nav.label")} className="flex-1 overflow-y-auto px-2.5">
         <ul className="flex flex-col gap-0.5">
-          {visibleSections(permissions).map((section) => (
+          {visibleSections(permissions, enabledPlugins).map((section) => (
             <li key={section.path}>
               {/* TanStack Router marks the current page's link with data-status="active". */}
               <Link

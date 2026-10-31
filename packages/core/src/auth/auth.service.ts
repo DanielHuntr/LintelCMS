@@ -1,5 +1,6 @@
 import type { Database } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
+import { findEnabledPluginIds } from "../plugins/plugins.service.js";
 import { findPermissionsForUser } from "../roles/roles.service.js";
 import {
   endSession,
@@ -8,7 +9,7 @@ import {
   startSession,
 } from "../sessions/sessions.service.js";
 import { findUserByEmail, findUserById, recordSignIn } from "../users/users.repository.js";
-import type { User } from "../users/users.table.js";
+import type { PublicUser } from "../users/users.schema.js";
 import { SignInFailedError } from "./auth.errors.js";
 import type { SignedIn, SignInRequest } from "./auth.schema.js";
 import { hashPassword, verifyPassword } from "./passwords.js";
@@ -57,6 +58,19 @@ export async function signIn(
     throw new SignInFailedError();
   }
 
+  return startSignedInSession(database, user, userAgent, now);
+}
+
+/**
+ * Starts a session for someone whose identity is already settled: after a password check,
+ * or for the first admin right after setup creates them.
+ */
+export async function startSignedInSession(
+  database: Database,
+  user: PublicUser,
+  userAgent: string | undefined,
+  now = new Date(),
+): Promise<SignInResult> {
   const session = await startSession(database, user.id, userAgent, now);
   await recordSignIn(database, user.id, now);
 
@@ -90,9 +104,10 @@ export async function signOut(database: Database, token: string): Promise<void> 
   await endSession(database, token);
 }
 
-async function describeSignedIn(database: Database, user: User): Promise<SignedIn> {
+async function describeSignedIn(database: Database, user: PublicUser): Promise<SignedIn> {
   return {
     user: { id: user.id, email: user.email, name: user.name },
     permissions: await findPermissionsForUser(database, user.id),
+    enabledPlugins: await findEnabledPluginIds(database),
   };
 }

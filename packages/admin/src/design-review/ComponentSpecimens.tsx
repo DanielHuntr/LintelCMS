@@ -3,10 +3,13 @@ import { useState } from "react";
 import { Badge } from "../design/Badge.js";
 import { Button } from "../design/Button.js";
 import { Card } from "../design/Card.js";
+import { ChoiceCardGroup } from "../design/ChoiceCardGroup.js";
+import { EmailField } from "../design/EmailField.js";
 import { EmptyState } from "../design/EmptyState.js";
 import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
+import { PasswordField } from "../design/PasswordField.js";
 import { SegmentedControl } from "../design/SegmentedControl.js";
 import { TextField } from "../design/TextField.js";
 import { Toggle } from "../design/Toggle.js";
@@ -57,7 +60,12 @@ export function ComponentSpecimens() {
             defaultValue="/about"
             error={t("designReview.sample.slugError")}
           />
+          <AccountFieldSpecimens />
         </div>
+      </SpecimenGroup>
+
+      <SpecimenGroup title={t("designReview.choiceCards")}>
+        <ChoiceCardSpecimen />
       </SpecimenGroup>
 
       <SpecimenGroup title={t("designReview.cardsAndBadges")}>
@@ -192,6 +200,56 @@ function ControlSpecimens() {
         options={orderViews}
         value={orderView}
         onChange={setOrderView}
+      />
+    </div>
+  );
+}
+
+/** The email field (type "ada@gmai.com" and leave it to see the suggestion) and password field. */
+function AccountFieldSpecimens() {
+  const [email, setEmail] = useState("ada@gmai.com");
+  return (
+    <>
+      <EmailField
+        label={t("designReview.sample.emailLabel")}
+        value={email}
+        onValueChange={setEmail}
+      />
+      <PasswordField
+        label={t("designReview.sample.passwordLabel")}
+        defaultValue="correct horse battery"
+        hint={t("designReview.sample.passwordHint")}
+        hintTone="success"
+      />
+    </>
+  );
+}
+
+type Delivery = "post" | "collect";
+
+function ChoiceCardSpecimen() {
+  const [delivery, setDelivery] = useState<Delivery>("post");
+  return (
+    <div className="rounded-card bg-surface p-5">
+      <ChoiceCardGroup
+        label={t("designReview.sample.deliveryLabel")}
+        value={delivery}
+        onChange={setDelivery}
+        options={[
+          {
+            value: "post",
+            title: t("designReview.sample.deliveryPost"),
+            description: t("designReview.sample.deliveryPostDescription"),
+            icon: Inbox,
+            accessory: <Badge tone="accent">{t("database.recommended")}</Badge>,
+          },
+          {
+            value: "collect",
+            title: t("designReview.sample.deliveryCollect"),
+            description: t("designReview.sample.deliveryCollectDescription"),
+            icon: Globe,
+          },
+        ]}
       />
     </div>
   );

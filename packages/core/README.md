@@ -13,14 +13,17 @@ its routes and its tests.
 | `src/users`       | People who sign in to the admin                      |
 | `src/roles`       | Roles and the permission check used everywhere       |
 | `src/auth`        | Sign-in, sign-out, `/auth/me` and route guards       |
+| `src/setup`       | First-run setup: database, first admin, site type    |
+| `src/plugins`     | Which features (blog, shop...) are switched on       |
+| `src/settings`    | Small site-wide settings stored as JSON              |
 | `src/sessions`    | Server-side sessions behind the sign-in cookie       |
 | `src/blueprints`  | Field definitions for content                        |
 | `src/collections` | Groups of entries (Pages, Blog...)                   |
 | `src/entries`     | Entries and their revisions                          |
 | `src/health`      | `GET /health` for uptime checks                      |
-| `src/database`    | Connection, shared columns and the full schema list  |
+| `src/database`    | Built-in or Postgres, choosing one, friendly errors  |
 | `src/http`        | Error responses and request parsing shared by routes |
-| `src/scripts`     | Command-line tasks, such as `create-admin`           |
+| `src/scripts`     | `create-admin`, `reset-password`, `db:migrate`       |
 | `src/testing`     | Test database helpers                                |
 
 As features grow, each folder follows the same shape:
@@ -38,13 +41,19 @@ orders/
 
 ## Commands
 
+Run from this folder, or from the repository root with `pnpm --filter @lintel/core <command>`.
+
 ```bash
-pnpm dev            # start the API on http://localhost:4000 (needs .env)
-pnpm test           # run tests (database tests need TEST_DATABASE_URL, see src/testing)
+pnpm dev            # start the API on http://localhost:4000 (no .env needed)
+pnpm test           # run tests on the built-in database (TEST_DATABASE_URL for Postgres)
 pnpm db:generate --name <what_changed>   # create a migration after changing a *.table.ts file
-pnpm db:migrate     # apply migrations to the database in DATABASE_URL
+pnpm db:migrate     # apply migrations now (the server also does this on every start)
 pnpm create-admin --email <email> --name "<name>"   # create a Super admin
+pnpm reset-password --email <email>                 # new password, signs the user out everywhere
 ```
 
-`dev` and `create-admin` read the root `.env` file if there is one; real environment
-variables win over it.
+Every setting has a default, so no `.env` is needed. If the root `.env` exists it is
+read; real environment variables win over it. Without `DATABASE_URL` the API uses the
+database chosen on the setup screen, or else the built-in one (see `src/database`).
+`pnpm dev` runs with `NODE_ENV=development` (from `development.env`) so the sign-in
+cookie works over plain `http://localhost`.

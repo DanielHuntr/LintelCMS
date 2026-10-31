@@ -4,14 +4,18 @@ Signing in to the admin, signing out, and checking what the signed-in person may
 
 ## Endpoints
 
-| Method and path       | Body                  | Success                                  | Failure                                  |
-| --------------------- | --------------------- | ---------------------------------------- | ---------------------------------------- |
-| `POST /auth/sign-in`  | `{ email, password }` | 200 `{ user, permissions }`, sets cookie | 400 bad body, 401 no match, 429 too many |
-| `POST /auth/sign-out` | none                  | 204, clears cookie (fine if signed out)  |                                          |
-| `GET /auth/me`        | none                  | 200 `{ user, permissions }`              | 401 signed out or session expired        |
+| Method and path       | Body                  | Success                                                  | Failure                                  |
+| --------------------- | --------------------- | -------------------------------------------------------- | ---------------------------------------- |
+| `POST /auth/sign-in`  | `{ email, password }` | 200 `{ user, permissions, enabledPlugins }`, sets cookie | 400 bad body, 401 no match, 429 too many |
+| `POST /auth/sign-out` | none                  | 204, clears cookie (fine if signed out)                  |                                          |
+| `GET /auth/me`        | none                  | 200 `{ user, permissions, enabledPlugins }`              | 401 signed out or session expired        |
 
 `user` is `{ id, email, name }`. `permissions` is every permission from all the user's
-roles, without duplicates, sorted. Errors look like
+roles, without duplicates, sorted. `enabledPlugins` lists the ids of the plugins that are
+switched on (see `src/plugins`), so the admin knows which sections to show.
+
+The first admin is created by `POST /setup` (see `src/setup`), which starts a session the
+same way, through `startSignedInSession`. Errors look like
 `{ statusCode, code, error, message }` (see `src/http/README.md`).
 
 Wrong email and wrong password give the same 401 and take about the same time, so

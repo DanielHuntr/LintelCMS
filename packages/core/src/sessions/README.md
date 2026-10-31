@@ -12,6 +12,8 @@ A session is one signed-in browser. Signing in starts one; signing out ends it.
    request, the expiry is pushed forward at most once a day (`wasExtended` tells the
    caller to renew the cookie as well).
 4. `endSession` deletes the row, so signing out takes effect immediately everywhere.
+5. `endAllSessionsForUser` deletes all of a user's sessions; resetting a password uses it,
+   so the old password stops working on every device at once.
 
 Why sessions rather than JWTs: see `docs/decisions/0004-sessions-not-jwt.md`.
 

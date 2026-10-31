@@ -1,0 +1,31 @@
+import { z } from "zod";
+
+/**
+ * Every setting, with the shape its value must have. Reading a key that has never been
+ * saved gives its default, so a fresh install needs no rows at all.
+ */
+export const siteTypes = ["business", "blog", "shop", "portfolio", "blank"] as const;
+
+export const siteTypeSchema = z.enum(siteTypes, {
+  error: `The site type should be one of: ${siteTypes.join(", ")}`,
+});
+
+export type SiteType = z.infer<typeof siteTypeSchema>;
+
+export const settingSchemas = {
+  /** The ids of the plugins that are switched on, in registry order. */
+  enabledPlugins: z.array(z.string()),
+  /** What the site is for, picked in the last setup step. Null until then. */
+  siteType: siteTypeSchema.nullable(),
+  /** Whether the "What are you building?" step has been done. */
+  siteSetupCompleted: z.boolean(),
+};
+
+export type SettingKey = keyof typeof settingSchemas;
+export type SettingValue<Key extends SettingKey> = z.infer<(typeof settingSchemas)[Key]>;
+
+export const settingDefaults: { [Key in SettingKey]: SettingValue<Key> } = {
+  enabledPlugins: [],
+  siteType: null,
+  siteSetupCompleted: false,
+};

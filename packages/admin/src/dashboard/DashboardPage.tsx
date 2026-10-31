@@ -14,11 +14,19 @@ import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { t } from "../i18n/strings.js";
 
+interface DashboardPageProps {
+  /** The Sales card only makes sense when the online shop is switched on. */
+  showSales: boolean;
+}
+
 /** The home screen. Each card is a placeholder until its feature is built. */
-export function DashboardPage() {
+export function DashboardPage({ showSales }: DashboardPageProps) {
   return (
     <>
-      <LargeTitle title={t("dashboard.title")} subtitle={t("dashboard.intro")} />
+      <LargeTitle
+        title={t("dashboard.title")}
+        subtitle={t(showSales ? "dashboard.intro" : "dashboard.introWithoutSales")}
+      />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card title={t("dashboard.recentEdits.title")}>
@@ -37,13 +45,15 @@ export function DashboardPage() {
           />
         </Card>
 
-        <Card title={t("dashboard.sales.title")}>
-          <EmptyState
-            icon={ShoppingBag}
-            title={t("dashboard.sales.emptyTitle")}
-            description={t("dashboard.sales.emptyDescription")}
-          />
-        </Card>
+        {showSales && (
+          <Card title={t("dashboard.sales.title")}>
+            <EmptyState
+              icon={ShoppingBag}
+              title={t("dashboard.sales.emptyTitle")}
+              description={t("dashboard.sales.emptyDescription")}
+            />
+          </Card>
+        )}
 
         <Card title={t("dashboard.whatsNew.title")}>
           <WhatsNewList />

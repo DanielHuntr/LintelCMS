@@ -16,15 +16,18 @@
     }
   },
   "scripts": {
-    "dev": "tsx watch --env-file-if-exists=../../.env src/main.ts",
+    "dev": "tsx watch --env-file=development.env src/main.ts",
+    "start": "node dist/main.js",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "create-admin": "tsx --env-file-if-exists=../../.env src/scripts/create-admin.ts"
+    "db:migrate": "tsx src/scripts/migrate.ts",
+    "create-admin": "tsx src/scripts/create-admin.ts",
+    "reset-password": "tsx src/scripts/reset-password.ts"
   },
   "dependencies": {
+    "@electric-sql/pglite": "^0.5.14",
     "@fastify/cookie": "^11.1.5",
     "@fastify/cors": "^11.3.1",
     "@fastify/rate-limit": "^11.2.1",

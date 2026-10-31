@@ -1,27 +1,66 @@
-import { loadConfig } from "./config.js";
-import { createDatabase } from "./database/client.js";
+import type { FastifyInstance } from "fastify";
+import { loadConfig, loadProjectEnvFile } from "./config.js";
+import { describeActiveDatabase } from "./database/active-database.js";
 import { buildServer } from "./server.js";
+import { isSetupNeeded } from "./setup/setup.service.js";
+import { openConfiguredDatabase, PortInUseError, runWithFriendlyErrors } from "./startup.js";
 
 /**
- * Starts the API server. Run with `pnpm --filter @lintel/core dev`.
+ * Starts the API server. Run with `pnpm dev` from the repository root.
+ * The database's tables are created or updated on every start, before it listens.
  */
-const config = loadConfig();
-const { database, close: closeDatabase } = createDatabase(config.DATABASE_URL);
-const server = buildServer({
-  adminOrigin: config.ADMIN_ORIGIN,
-  database,
-  // Local development usually runs over plain HTTP, where Secure cookies wouldn't be sent.
-  secureCookies: config.NODE_ENV !== "development",
-  logger: true,
+await runWithFriendlyErrors(async () => {
+  loadProjectEnvFile();
+  const config = loadConfig();
+  const activeDatabase = await openConfiguredDatabase(config);
+  say(describeActiveDatabase(activeDatabase));
+
+  const server = buildServer({
+    adminOrigin: config.ADMIN_ORIGIN,
+    database: activeDatabase,
+    // Local development usually runs over plain HTTP, where Secure cookies wouldn't be sent.
+    secureCookies: config.NODE_ENV !== "development",
+    logger: true,
+  });
+  server.addHook("onClose", () => activeDatabase.close());
+
+  try {
+    await server.listen({ port: config.API_PORT, host: "0.0.0.0" });
+  } catch (error) {
+    await server.close();
+    if (error instanceof Error && "code" in error && error.code === "EADDRINUSE") {
+      throw new PortInUseError(config.API_PORT);
+    }
+    throw error;
+  }
+
+  await sayWhatToDoNext(server, config.ADMIN_ORIGIN);
+  closeCleanlyOnStop(server);
 });
 
-server.addHook("onClose", async () => {
-  await closeDatabase();
-});
+async function sayWhatToDoNext(server: FastifyInstance, adminOrigin: string): Promise<void> {
+  if (!(await isSetupNeeded(server.database))) {
+    say(`Lintel's API is running. Open ${adminOrigin} to sign in.`);
+    return;
+  }
 
-try {
-  await server.listen({ port: config.API_PORT, host: "0.0.0.0" });
-} catch (error) {
-  server.log.error(error);
-  process.exit(1);
+  say(`Lintel's API is running. Open ${adminOrigin} to finish setting up.`);
+  say(`Setup code: ${server.setupCode} (needed only when setting up from another computer)`);
+}
+
+/**
+ * Ctrl+C (and `tsx watch` restarting) should let the built-in database finish writing
+ * and release its lock, rather than cutting it off mid-write.
+ */
+function closeCleanlyOnStop(server: FastifyInstance): void {
+  const stop = async () => {
+    await server.close();
+    process.exit(0);
+  };
+  process.once("SIGINT", stop);
+  process.once("SIGTERM", stop);
+}
+
+function say(message: string): void {
+  process.stdout.write(`\n${message}\n`);
 }

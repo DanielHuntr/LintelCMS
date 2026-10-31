@@ -47,6 +47,9 @@ importers:
       '@lintel/core':
         specifier: workspace:*
         version: link:../core
+      '@tanstack/history':
+        specifier: ^1.162.5
+        version: 1.162.5
       '@tanstack/react-router':
         specifier: ^1.170.46
         version: 1.170.46(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -96,6 +99,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@electric-sql/pglite':
+        specifier: ^0.5.14
+        version: 0.5.14
       '@fastify/cookie':
         specifier: ^11.1.5
         version: 11.1.5
@@ -107,7 +113,7 @@ importers:
         version: 11.2.1
       drizzle-orm:
         specifier: ^0.45.4
-        version: 0.45.4(postgres@4.0.0)
+        version: 0.45.4(@electric-sql/pglite@0.5.14)(postgres@4.0.0)
       fastify:
         specifier: ^5.12.7
         version: 5.12.7
@@ -263,6 +269,9 @@ packages:
 
   '@drizzle-team/brocli@0.10.2':
     resolution: {integrity: sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w==}
+
+  '@electric-sql/pglite@0.5.14':
+    resolution: {integrity: sha512-aAQe7iArcFB2w1xtx91l3l9trxhMzD6aZf+WnosSHNhwgp70EJz80Igw/bHnW14fUEFYWPBoQ1sGom8Xc0Jttg==}
 
   '@esbuild-kit/core-utils@3.3.2':
     resolution: {integrity: sha512-sPRAnw9CdSsRmEtnsl2WXWdyquogVpB3yZ3dgwJfe8zrOzTsV7cJvmwrKVa+0ma5BoiGJ+BoqkMvawbayKUsqQ==}
@@ -2573,6 +2582,8 @@ snapshots:
 
   '@drizzle-team/brocli@0.10.2': {}
 
+  '@electric-sql/pglite@0.5.14': {}
+
   '@esbuild-kit/core-utils@3.3.2':
     dependencies:
       esbuild: 0.18.20
@@ -3393,8 +3404,9 @@ snapshots:
       esbuild: 0.25.12
       tsx: 4.23.15
 
-  drizzle-orm@0.45.4(postgres@4.0.0):
+  drizzle-orm@0.45.4(@electric-sql/pglite@0.5.14)(postgres@4.0.0):
     optionalDependencies:
+      '@electric-sql/pglite': 0.5.14
       postgres: 4.0.0
 
   electron-to-chromium@1.5.472: {}

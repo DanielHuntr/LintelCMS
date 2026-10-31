@@ -9,6 +9,9 @@
   },
   "scripts": {
     "dev": "turbo run dev",
+    "create-admin": "pnpm --silent --filter @lintel/core create-admin",
+    "reset-password": "pnpm --silent --filter @lintel/core reset-password",
+    "db:migrate": "pnpm --silent --filter @lintel/core db:migrate",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",

@@ -22,3 +22,6 @@ dist/
 
 # Local uploads during development
 storage/
+
+# The built-in database and the database chosen during setup (which can hold a password)
+.lintel/
