@@ -1,20 +1,55 @@
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { z } from "zod";
+import { DATABASE_URL_ADVICE } from "./database/database-errors.js";
 
 /**
- * Every setting the API server reads from the environment, in one place.
- * If a value is missing or malformed the server refuses to start and says which one,
- * instead of failing later in some unrelated part of the code.
+ * Every setting the API server reads from the environment, in one place. Each one has a
+ * default, so Lintel starts with no .env file at all. If a value is set but malformed the
+ * server refuses to start and says which one, instead of failing later somewhere else.
  */
 const configSchema = z.object({
-  DATABASE_URL: z.string().url(),
+  // Leave out to use the built-in database, or the one chosen on the setup screen.
+  // An empty `DATABASE_URL=` line (copied from .env.example) counts as left out.
+  DATABASE_URL: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z
+      .string()
+      .refine(isPostgresUrl, {
+        error: `This isn't a valid Postgres address. ${DATABASE_URL_ADVICE}`,
+      })
+      .optional(),
+  ),
   API_PORT: z.coerce.number().int().positive().default(4000),
   ADMIN_ORIGIN: z.string().url().default("http://localhost:5173"),
   // Defaults to production so a server started without it gets the safe settings
-  // (for example, session cookies that only travel over HTTPS).
+  // (for example, session cookies that only travel over HTTPS). `pnpm dev` sets it
+  // to development (see packages/core/development.env).
   NODE_ENV: z.enum(["development", "test", "production"]).default("production"),
 });
 
 export type Config = z.infer<typeof configSchema>;
+
+export class ConfigError extends Error {
+  constructor(problems: string) {
+    super(`Lintel can't start because some settings are wrong:\n${problems}`);
+    this.name = "ConfigError";
+  }
+}
+
+/** The optional .env file at the repository root; the same place from `src` and `dist`. */
+const PROJECT_ENV_FILE = fileURLToPath(new URL("../../../.env", import.meta.url));
+
+/**
+ * Reads the root .env file into the environment, if there is one. Most people won't have
+ * one, so its absence is not worth a warning (Node's --env-file-if-exists prints one).
+ * Real environment variables win, because loadEnvFile never overwrites them.
+ */
+export function loadProjectEnvFile(envFile = PROJECT_ENV_FILE): void {
+  if (existsSync(envFile)) {
+    process.loadEnvFile(envFile);
+  }
+}
 
 export function loadConfig(environment: NodeJS.ProcessEnv = process.env): Config {
   const result = configSchema.safeParse(environment);
@@ -23,8 +58,21 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): Config
     const problems = result.error.issues
       .map((issue) => `  - ${issue.path.join(".")}: ${issue.message}`)
       .join("\n");
-    throw new Error(`Lintel can't start because some settings are wrong:\n${problems}`);
+    throw new ConfigError(problems);
   }
 
   return result.data;
+}
+
+/**
+ * A password with an unencoded "#" or "/" makes the URL unreadable (everything after a
+ * "#" is dropped, and a "/" ends the host part), which is the usual way this fails.
+ */
+function isPostgresUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return (url.protocol === "postgres:" || url.protocol === "postgresql:") && url.hostname !== "";
+  } catch {
+    return false;
+  }
 }

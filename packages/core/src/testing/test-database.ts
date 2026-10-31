@@ -1,48 +1,47 @@
-import { fileURLToPath } from "node:url";
-import { sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import { migrate } from "drizzle-orm/postgres-js/migrator";
-import postgres from "postgres";
-import { afterAll, beforeAll, beforeEach, describe } from "vitest";
-import { createDatabase, type Database } from "../database/client.js";
+import { readFile } from "node:fs/promises";
+import { getTableName, is, sql } from "drizzle-orm";
+import { PgTable } from "drizzle-orm/pg-core";
+import { afterAll, beforeAll, beforeEach, inject } from "vitest";
+import { ActiveDatabase } from "../database/active-database.js";
+import { openBuiltInDatabase } from "../database/built-in-database.js";
+import type { Database, OpenedDatabase } from "../database/client.js";
+import { connectToPostgres } from "../database/postgres-database.js";
+import * as schema from "../database/schema.js";
 
-/**
- * Tests that need Postgres use a real one, named by TEST_DATABASE_URL. Without it they
- * are skipped (global-setup.ts says so once), so `pnpm test` still works on a laptop
- * with no database running.
- *
- * The database is emptied before every test, so never point this at real data.
- */
-export const testDatabaseUrl = process.env.TEST_DATABASE_URL;
-
-/** Use instead of `describe` for tests that need the database. */
-export function describeWithDatabase(name: string, tests: () => void): void {
-  if (testDatabaseUrl) {
-    describe(name, tests);
-  } else {
-    describe.skip(`${name} (skipped: TEST_DATABASE_URL is not set)`, tests);
+declare module "vitest" {
+  export interface ProvidedContext {
+    /** A file holding an already migrated built-in database, made by global-setup.ts. */
+    builtInDatabaseTemplate: string;
   }
 }
 
-const migrationsFolder = fileURLToPath(new URL("../../migrations", import.meta.url));
+/**
+ * Database tests run against the built-in database (PGlite) by default: nothing to
+ * install, and each test file gets its own copy in memory. Set TEST_DATABASE_URL to run
+ * them against a real Postgres server instead, as CI does.
+ *
+ * The database is emptied before every test, so never point TEST_DATABASE_URL at real data.
+ */
+export const testDatabaseUrl = process.env.TEST_DATABASE_URL || undefined;
 
-export async function applyMigrations(databaseUrl: string): Promise<void> {
-  // On every run after the first, Postgres sends "already exists, skipping" notices
-  // for Drizzle's own bookkeeping table. They're expected, so don't print them.
-  const connection = postgres(databaseUrl, { onnotice: () => {} });
-  try {
-    await migrate(drizzle(connection), { migrationsFolder });
-  } finally {
-    await connection.end();
+/**
+ * A fresh, migrated database for one test. Starting from the template takes a fraction
+ * of a second, where creating a built-in database from nothing takes a few.
+ */
+export async function openTestDatabase(): Promise<OpenedDatabase> {
+  if (testDatabaseUrl) {
+    return connectToPostgres(testDatabaseUrl);
   }
+  const template = await readFile(inject("builtInDatabaseTemplate"));
+  return openBuiltInDatabase({ startFrom: new Blob([template]) });
 }
 
 /**
  * Opens the test database for one test file and empties it before each test.
- * Call inside `describeWithDatabase`; read `.database` inside tests and hooks.
+ * Read `.database` (or `.activeDatabase`, for `buildServer`) inside tests and hooks.
  */
 export function useTestDatabase() {
-  let opened: ReturnType<typeof createDatabase> | undefined;
+  let opened: OpenedDatabase | undefined;
 
   const handle = {
     get database(): Database {
@@ -51,13 +50,21 @@ export function useTestDatabase() {
       }
       return opened.database;
     },
+    /** For `buildServer`. Closing the server leaves the shared test database open. */
+    get activeDatabase(): ActiveDatabase {
+      return new ActiveDatabase({ ...openedOrFail(), close: async () => {} }, "default");
+    },
   };
 
-  beforeAll(() => {
-    if (!testDatabaseUrl) {
-      throw new Error("TEST_DATABASE_URL is not set.");
+  function openedOrFail(): OpenedDatabase {
+    if (!opened) {
+      throw new Error("The test database is only available inside tests and hooks.");
     }
-    opened = createDatabase(testDatabaseUrl);
+    return opened;
+  }
+
+  beforeAll(async () => {
+    opened = await openTestDatabase();
   });
   beforeEach(() => emptyAllTables(handle.database));
   afterAll(() => opened?.close());
@@ -66,17 +73,13 @@ export function useTestDatabase() {
 }
 
 /**
- * Removes every row from every table we own. Drizzle keeps its record of applied
+ * Removes every row from every table in the schema. Drizzle keeps its record of applied
  * migrations in a separate "drizzle" schema, so that survives.
  */
-async function emptyAllTables(database: Database): Promise<void> {
-  const tables = await database.execute<{ tablename: string }>(
-    sql`select tablename from pg_tables where schemaname = 'public'`,
-  );
-  if (tables.length === 0) {
-    return;
-  }
+export async function emptyAllTables(database: Database): Promise<void> {
+  const tableNames = Object.values(schema)
+    .filter((value) => is(value, PgTable))
+    .map((table) => sql.identifier(getTableName(table)));
 
-  const tableNames = tables.map((table) => sql.identifier(table.tablename));
   await database.execute(sql`truncate table ${sql.join(tableNames, sql`, `)} cascade`);
 }
