@@ -1,0 +1,29 @@
+---
+title: Lintel documentation
+description: How to use Lintel to run your website, and how to build websites with it.
+template: splash
+editUrl: false
+hero:
+  title: Lintel
+  tagline: A self-hosted CMS with a visual builder, animation studio and commerce. These docs cover what you can use today.
+  actions:
+    - text: Using Lintel
+      link: /using/
+      icon: right-arrow
+    - text: Building with Lintel
+      link: /building/
+      variant: minimal
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+<CardGrid>
+  <Card title="Using Lintel" icon="pencil">
+    For anyone who writes or looks after a site: setting up, writing and publishing, media, content
+    types and accounts. No technical knowledge needed. [Start here](/using/).
+  </Card>
+  <Card title="Building with Lintel" icon="seti:typescript">
+    For developers: installing, how the code is organised, the delivery API your website reads
+    content from, and the Next.js starter. [Start here](/building/).
+  </Card>
+</CardGrid>

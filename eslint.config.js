@@ -8,7 +8,15 @@ import globals from "globals";
 
 export default tseslint.config(
   {
-    ignores: ["**/dist/**", "**/node_modules/**", "**/.turbo/**", "**/migrations/**"],
+    ignores: [
+      "**/dist/**",
+      "**/node_modules/**",
+      "**/.turbo/**",
+      "**/migrations/**",
+      "**/.next/**",
+      "**/.astro/**",
+      "**/next-env.d.ts",
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -24,7 +32,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["packages/admin/**/*.{ts,tsx}"],
+    files: ["packages/admin/**/*.{ts,tsx}", "starters/**/*.{ts,tsx}"],
     plugins: { "react-hooks": reactHooks },
     rules: reactHooks.configs.recommended.rules,
   },
