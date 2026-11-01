@@ -1,6 +1,7 @@
 // The documentation site. Pages live in src/content/docs as Markdown; this file only says
 // how the site is put together. See README.md and docs/decisions/0010-docs-with-starlight.md.
 import starlight from "@astrojs/starlight";
+import mermaid from "astro-mermaid";
 import { defineConfig } from "astro/config";
 import { sidebar } from "./src/sidebar.ts";
 
@@ -10,6 +11,8 @@ export default defineConfig({
   // Set DOCS_SITE_URL when the docs are published, for canonical links and the sitemap.
   site: process.env.DOCS_SITE_URL,
   integrations: [
+    // Draws ```mermaid diagrams (the whitepaper's). It must come before Starlight.
+    mermaid({ autoTheme: true }),
     starlight({
       title: "Lintel",
       description: "How to use Lintel, and how to build websites with it.",
