@@ -22,7 +22,7 @@ import { BackLink } from "../design/BackLink.js";
 import { Button } from "../design/Button.js";
 import { ConfirmDialog } from "../design/ConfirmDialog.js";
 import { TextField } from "../design/TextField.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { deleteGlobalSet, updateGlobalSet } from "./globals.api.js";
 import { globalKeys } from "./globals.queries.js";
 import type { GlobalSet } from "./globals.types.js";
@@ -120,10 +120,7 @@ export function GlobalFieldsEditor({ globalSet }: { globalSet: GlobalSet }) {
             {t("globals.fieldsTitle", { name: state.name.trim() || globalSet.name })}
           </h1>
           <p className="mt-1 text-body text-label-secondary">
-            {tCount(
-              { one: "builder.fieldCount.one", other: "builder.fieldCount.other" },
-              state.fields.length,
-            )}
+            {t("builder.fieldCount", { count: state.fields.length })}
           </p>
         </div>
         <div className="flex items-center gap-2 pb-1">

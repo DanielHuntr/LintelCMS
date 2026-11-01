@@ -82,7 +82,7 @@ export function BlockCard({
           hasErrors && "ring-1 ring-danger/60",
         )}
       >
-        <div className="flex items-center gap-1 py-1.5 pr-1.5 pl-1">
+        <div className="flex items-center gap-1 py-1.5 pe-1.5 ps-1">
           <span
             ref={setActivatorNodeRef}
             aria-hidden="true"
@@ -103,7 +103,7 @@ export function BlockCard({
                   : t("fields.blocks.collapse", { name })
               }
               onClick={onToggleCollapsed}
-              className="flex w-full min-w-0 items-center gap-2 rounded-control px-1.5 py-1 text-left transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring"
+              className="flex w-full min-w-0 items-center gap-2 rounded-control px-1.5 py-1 text-start transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring"
             >
               {isCollapsed ? (
                 <ChevronRight

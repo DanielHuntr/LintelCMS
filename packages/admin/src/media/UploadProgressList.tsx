@@ -44,7 +44,7 @@ export function UploadProgressList({ items, onDismiss }: UploadProgressListProps
               type="button"
               aria-label={t("media.uploads.dismiss", { name: item.name })}
               onClick={() => onDismiss(item.key)}
-              className="-mr-1 flex size-6 shrink-0 items-center justify-center rounded-full text-label-tertiary transition-colors duration-150 hover:bg-fill hover:text-label focus-visible:focus-ring"
+              className="-me-1 flex size-6 shrink-0 items-center justify-center rounded-full text-label-tertiary transition-colors duration-150 hover:bg-fill hover:text-label focus-visible:focus-ring"
             >
               <X aria-hidden="true" className="size-3.5" />
             </button>

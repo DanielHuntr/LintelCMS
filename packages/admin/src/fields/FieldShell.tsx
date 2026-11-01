@@ -52,7 +52,7 @@ export function FieldShell({
       {/* The space keeps "Excerpt Required" two words for screen readers. */}
       {field.required && " "}
       {field.required && (
-        <span className="ml-0.5 font-normal text-label-tertiary">{t("fields.required")}</span>
+        <span className="ms-0.5 font-normal text-label-tertiary">{t("fields.required")}</span>
       )}
     </>
   );

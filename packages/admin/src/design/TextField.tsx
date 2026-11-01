@@ -69,7 +69,7 @@ export function TextField({
             error
               ? "ring-1 ring-danger focus:focus-ring-danger"
               : "focus:focus-ring focus:outline-offset-0",
-            trailingAccessory !== undefined && (isLarge ? "pr-14" : "pr-11"),
+            trailingAccessory !== undefined && (isLarge ? "pe-14" : "pe-11"),
           )}
           {...inputProps}
         />
@@ -77,7 +77,7 @@ export function TextField({
           <div
             className={classNames(
               "absolute inset-y-0 flex items-center",
-              isLarge ? "right-2" : "right-1",
+              isLarge ? "inset-e-2" : "inset-e-1",
             )}
           >
             {trailingAccessory}

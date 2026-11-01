@@ -60,7 +60,7 @@ export function GroupedListRow({
         Rows after the first get a separator. It sits on this inner part (li + li > row > here),
         so it starts at the label rather than the edge, as in iOS.
       */}
-      <span className="flex min-h-11 min-w-0 flex-1 items-center gap-3 py-2.5 pr-4 [li+li>*>&]:hairline-top">
+      <span className="flex min-h-11 min-w-0 flex-1 items-center gap-3 py-2.5 pe-4 [li+li>*>&]:hairline-top">
         <span className="flex min-w-0 flex-1 flex-col">
           <span className={classNames("text-body text-label", !wrapsText && "truncate")}>
             {label}
@@ -79,14 +79,14 @@ export function GroupedListRow({
           <ChevronRight
             aria-hidden="true"
             strokeWidth={2}
-            className="-mr-1 size-4 shrink-0 text-label-tertiary"
+            className="-me-1 size-4 shrink-0 text-label-tertiary"
           />
         )}
       </span>
     </>
   );
 
-  const rowClasses = "flex w-full items-center gap-3 pl-4 text-left";
+  const rowClasses = "flex w-full items-center gap-3 ps-4 text-start";
   const interactiveClasses = classNames(
     rowClasses,
     "transition-colors duration-150 ease-standard hover:bg-fill/60 active:bg-fill",

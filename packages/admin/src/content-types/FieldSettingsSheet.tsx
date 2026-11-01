@@ -46,7 +46,7 @@ export function FieldSettingsSheet({
       footer={
         <>
           {!isTitle && (
-            <Button variant="destructive" className="mr-auto" onClick={() => onRemove(field)}>
+            <Button variant="destructive" className="me-auto" onClick={() => onRemove(field)}>
               {t("builder.remove")}
             </Button>
           )}

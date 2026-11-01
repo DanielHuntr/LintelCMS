@@ -54,7 +54,7 @@ export function Toggle({
         className={classNames(
           "size-[22px] rounded-full bg-knob shadow-thumb",
           "transition-transform duration-200 ease-standard",
-          checked ? "translate-x-[18px]" : "translate-x-0",
+          checked ? "translate-x-[18px] rtl:-translate-x-[18px]" : "translate-x-0",
         )}
       />
     </button>

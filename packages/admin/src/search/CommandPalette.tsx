@@ -3,7 +3,7 @@ import { Search, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type RefObject } from "react";
 import { useCollections } from "../content/content.queries.js";
 import { classNames } from "../design/classNames.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { useDebouncedValue } from "../media/useDebouncedValue.js";
 import { useSession } from "../session/SessionContext.js";
 import {
@@ -162,10 +162,7 @@ function PaletteContents({
         ? t("search.failed")
         : items.length === 0
           ? t("search.noResults", { query: query.trim() })
-          : tCount(
-              { one: "search.resultCount.one", other: "search.resultCount.other" },
-              items.length,
-            );
+          : t("search.resultCount", { count: items.length });
 
   return (
     <div className="flex max-h-[min(560px,76vh)] flex-col">

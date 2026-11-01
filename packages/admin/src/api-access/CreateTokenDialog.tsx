@@ -56,7 +56,7 @@ export function CreateTokenDialog({ open, onClose }: CreateTokenDialogProps) {
         }
       >
         <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2 rounded-control bg-fill p-2 pl-3">
+          <div className="flex items-center gap-2 rounded-control bg-fill p-2 ps-3">
             <code
               aria-label={t("apiAccess.tokenLabel")}
               className="min-w-0 flex-1 font-mono text-footnote break-all text-label select-all"

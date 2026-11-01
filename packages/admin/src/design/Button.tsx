@@ -19,7 +19,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
-  filled: "bg-accent-fill text-on-accent hover:brightness-110 active:brightness-95",
+  filled: "bg-accent-fill text-on-accent hover:bg-accent-fill-hover active:brightness-95",
   tinted: "bg-accent/12 text-accent hover:bg-accent/18",
   plain: "text-accent hover:bg-fill",
   destructive: "bg-danger/14 text-danger hover:bg-danger/20",
@@ -62,7 +62,7 @@ export function Button({
       className={classNames(buttonClasses(variant, size), fullWidth && "w-full", className)}
       {...buttonProps}
     >
-      {icon && <span className="-ml-0.5 flex [&>svg]:size-[1.1em]">{icon}</span>}
+      {icon && <span className="-ms-0.5 flex [&>svg]:size-[1.1em]">{icon}</span>}
       {children}
     </button>
   );

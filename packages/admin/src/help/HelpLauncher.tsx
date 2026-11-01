@@ -46,7 +46,7 @@ export function HelpLauncher() {
         aria-controls={isOpen ? panelId : undefined}
         aria-label={t("help.open")}
         title={t("help.open")}
-        className="fixed top-4 right-4 z-20 flex size-9 items-center justify-center rounded-full bg-surface text-label-secondary shadow-float hairline-ring transition-colors duration-150 ease-standard hover:text-label focus-visible:focus-ring motion-safe:active:scale-95"
+        className="fixed top-4 inset-e-4 z-20 flex size-9 items-center justify-center rounded-full bg-surface text-label-secondary shadow-float hairline-ring transition-colors duration-150 ease-standard hover:text-label focus-visible:focus-ring motion-safe:active:scale-95"
       >
         <CircleHelp aria-hidden="true" strokeWidth={1.75} className="size-5" />
       </button>
@@ -55,7 +55,7 @@ export function HelpLauncher() {
           fallback={
             <p
               role="status"
-              className="fixed top-4 right-16 z-30 rounded-full bg-surface px-3 py-2 text-footnote text-label-secondary shadow-float"
+              className="fixed top-4 inset-e-16 z-30 rounded-full bg-surface px-3 py-2 text-footnote text-label-secondary shadow-float"
             >
               {t("help.loading")}
             </p>

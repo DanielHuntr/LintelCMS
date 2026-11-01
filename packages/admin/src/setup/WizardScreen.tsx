@@ -161,7 +161,7 @@ function ActionBar({ onBack, isBusy, width, children }: ActionBarProps) {
             onClick={onBack}
             disabled={isBusy}
             icon={<ChevronLeft aria-hidden="true" strokeWidth={2} />}
-            className="-ml-3"
+            className="-ms-3"
           >
             {t("setup.back")}
           </Button>

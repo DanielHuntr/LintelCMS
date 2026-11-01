@@ -78,16 +78,13 @@ export const contentModelStrings = {
   "taxonomies.emptyDescription":
     "A taxonomy groups content: Categories and Tags for a blog, or Locations for events. Add one, then give a content type a “Categories or tags” field.",
   "taxonomies.footer": "Content types choose terms through a “Categories or tags” field.",
-  "taxonomies.termCount.one": "{count} term",
-  "taxonomies.termCount.other": "{count} terms",
+  "taxonomies.termCount": "{count, plural, one {# term} other {# terms}}",
   "taxonomies.moreActions": "More actions for {name}",
   "taxonomies.rename": "Rename",
   "taxonomies.delete": "Delete taxonomy",
   "taxonomies.deleteTitle": "Delete {name}?",
-  "taxonomies.deleteMessage.one":
-    "Its {count} term will be deleted and taken off every entry that uses it.",
-  "taxonomies.deleteMessage.other":
-    "Its {count} terms will be deleted and taken off every entry that uses them.",
+  "taxonomies.deleteMessage":
+    "{count, plural, one {Its # term will be deleted and taken off every entry that uses it.} other {Its # terms will be deleted and taken off every entry that uses them.}}",
 
   "terms.loading": "Loading terms",
   "terms.add": "Add term",
@@ -149,10 +146,8 @@ export const contentModelStrings = {
   "menus.emptyDescription":
     "A menu is the list of links people use to find their way around your site.",
   "menus.footer": "Menus link to pages, so they keep working when a page’s address changes.",
-  "menus.itemCount.one": "{count} item",
-  "menus.itemCount.other": "{count} items",
-  "menus.levels.one": "One level",
-  "menus.levels.other": "Up to {count} levels",
+  "menus.itemCount": "{count, plural, one {# item} other {# items}}",
+  "menus.levels": "{count, plural, one {One level} other {Up to # levels}}",
   "menus.levelsLabel": "Levels",
   "menus.levels.flat": "Flat",
   "menus.levels.two": "2 levels",

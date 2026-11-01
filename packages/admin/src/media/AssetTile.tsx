@@ -41,7 +41,7 @@ export function AssetTile({
       onClick={onActivate}
       onFocus={onFocus}
       onKeyDown={onKeyDown}
-      className="group flex w-full flex-col gap-2 rounded-card text-left outline-none"
+      className="group flex w-full flex-col gap-2 rounded-card text-start outline-none"
     >
       <span
         className={classNames(
@@ -64,7 +64,7 @@ export function AssetTile({
           <DocumentPreview asset={asset} />
         )}
         {isCurrent && (
-          <span className="absolute right-2 bottom-2 flex size-6 items-center justify-center rounded-full bg-accent-fill text-on-accent shadow-thumb">
+          <span className="absolute inset-e-2 bottom-2 flex size-6 items-center justify-center rounded-full bg-accent-fill text-on-accent shadow-thumb">
             <Check aria-hidden="true" strokeWidth={2.5} className="size-3.5" />
           </span>
         )}

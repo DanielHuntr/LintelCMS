@@ -8,7 +8,7 @@ import { LargeTitle } from "../design/LargeTitle.js";
 import { LinkButton } from "../design/LinkButton.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { LocalePicker } from "../locales/LocalePicker.js";
 import { useCan } from "../session/SessionContext.js";
 import { reorderEntries } from "./content.api.js";
@@ -54,11 +54,7 @@ export function EntriesListPage({
     <>
       <LargeTitle
         title={collection.data.name}
-        subtitle={
-          list
-            ? tCount({ one: "entries.count.one", other: "entries.count.other" }, list.total)
-            : undefined
-        }
+        subtitle={list ? t("entries.count", { count: list.total }) : undefined}
         actions={
           <>
             <LocalePicker

@@ -63,7 +63,7 @@ export function FeaturesScreen({
         type="button"
         onClick={onSkip}
         disabled={savingAs !== undefined}
-        className="mt-8 -ml-1 w-fit rounded-control px-1 text-body text-label-secondary transition-colors duration-150 ease-standard hover:text-label focus-visible:focus-ring disabled:opacity-40"
+        className="mt-8 -ms-1 w-fit rounded-control px-1 text-body text-label-secondary transition-colors duration-150 ease-standard hover:text-label focus-visible:focus-ring disabled:opacity-40"
       >
         {t("features.skip")}
       </button>

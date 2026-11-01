@@ -64,7 +64,7 @@ export function HelpPanel({ id, slug, onClose }: HelpPanelProps) {
       id={id}
       aria-labelledby={headingId}
       onKeyDown={handleKeyDown}
-      className="fixed inset-y-3 right-3 z-30 flex w-[min(400px,calc(100vw-24px))] flex-col rounded-panel bg-surface text-label shadow-float hairline-ring motion-safe:transition-[opacity,translate] motion-safe:duration-200 motion-safe:ease-standard motion-safe:starting:translate-x-4 starting:opacity-0"
+      className="fixed inset-y-3 inset-e-3 z-30 flex w-[min(400px,calc(100vw-24px))] flex-col rounded-panel bg-surface text-label shadow-float hairline-ring motion-safe:transition-[opacity,translate] motion-safe:duration-200 motion-safe:ease-standard motion-safe:starting:translate-x-4 motion-safe:rtl:starting:-translate-x-4 starting:opacity-0"
     >
       <header className="flex shrink-0 items-center gap-2 px-4 pt-4 pb-3 hairline-bottom">
         {history.length > 1 && (

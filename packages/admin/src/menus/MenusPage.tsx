@@ -11,7 +11,7 @@ import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import { MenuSettingsSheet } from "./MenuSettingsSheet.js";
 import { createMenu } from "./menus.api.js";
@@ -75,10 +75,7 @@ export function MenusPage() {
               key={menu.id}
               icon={ListTree}
               label={menu.name}
-              description={tCount(
-                { one: "menus.itemCount.one", other: "menus.itemCount.other" },
-                menu.itemCount,
-              )}
+              description={t("menus.itemCount", { count: menu.itemCount })}
               to={`/content/navigation/${encodeURIComponent(menu.handle)}`}
             />
           ))}

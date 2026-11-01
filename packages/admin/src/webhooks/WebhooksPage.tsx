@@ -11,7 +11,7 @@ import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import { DeliveryStatusBadge } from "./DeliveryStatusBadge.js";
 import { useCreateWebhook, useWebhooks } from "./webhooks.queries.js";
@@ -68,10 +68,7 @@ export function WebhooksPage() {
                 icon={WebhookIcon}
                 iconTone={webhook.enabled ? "accent" : "neutral"}
                 label={webhook.name}
-                description={`${webhook.url} · ${tCount(
-                  { one: "webhooks.eventCount.one", other: "webhooks.eventCount.other" },
-                  webhook.events.length,
-                )}`}
+                description={`${webhook.url} · ${t("webhooks.eventCount", { count: webhook.events.length })}`}
                 accessory={
                   webhook.enabled ? (
                     webhook.lastDelivery && (

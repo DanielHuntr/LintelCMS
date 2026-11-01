@@ -1,3 +1,4 @@
+import { useBranding } from "../branding/brandingStore.js";
 import { t } from "../i18n/strings.js";
 import { classNames } from "./classNames.js";
 
@@ -6,7 +7,8 @@ interface AppMarkProps {
 }
 
 /**
- * Lintel's mark: a bird sitting on a branch, drawn in white on the accent colour. The shape
+ * The app's small square mark: the agency's own when it's branded (Settings → Branding),
+ * otherwise Lintel's bird on a branch, drawn in white on the accent colour. The bird
  * comes from brand/lintel-mark.svg at the repository root; keep the two the same.
  */
 export const BIRD_PATH =
@@ -14,6 +16,20 @@ export const BIRD_PATH =
 
 export function AppMark({ size = "small" }: AppMarkProps) {
   const isLarge = size === "large";
+  const { mark } = useBranding();
+
+  if (mark) {
+    return (
+      <img
+        src={mark}
+        alt=""
+        className={classNames(
+          "shrink-0 object-contain",
+          isLarge ? "size-14 rounded-panel" : "size-7 rounded-control",
+        )}
+      />
+    );
+  }
 
   return (
     <span

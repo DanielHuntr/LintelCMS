@@ -59,7 +59,7 @@ export function EntryPreviewPane({
     >
       <header className="flex shrink-0 items-center gap-2 px-4 py-2.5 hairline-bottom">
         <h2 className="text-headline text-label">{t("preview.title")}</h2>
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ms-auto flex items-center gap-1">
           <SegmentedControl
             label={t("preview.sizeLabel")}
             value={size}

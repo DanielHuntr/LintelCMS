@@ -1,4 +1,5 @@
 import { Outlet } from "@tanstack/react-router";
+import { useBranding } from "../branding/brandingStore.js";
 import { HelpLauncher } from "../help/HelpLauncher.js";
 import { t } from "../i18n/strings.js";
 import { CommandPalette } from "../search/CommandPalette.js";
@@ -27,11 +28,13 @@ export function AdminLayout({
   onSignOut,
 }: AdminLayoutProps) {
   const palette = useCommandPalette();
+  // The "?" button opens Lintel's own help pages, so it goes when an agency hides them.
+  const { hideLintelHelp } = useBranding();
   return (
     <div className="min-h-screen bg-background text-label">
       <a
         href="#main"
-        className="fixed top-3 left-3 z-20 -translate-y-16 rounded-control bg-surface px-3 py-2 text-body font-medium text-accent shadow-float focus:translate-y-0 focus:focus-ring"
+        className="fixed top-3 inset-s-3 z-20 -translate-y-16 rounded-control bg-surface px-3 py-2 text-body font-medium text-accent shadow-float focus:translate-y-0 focus:focus-ring"
       >
         {t("nav.skipToContent")}
       </a>
@@ -43,12 +46,12 @@ export function AdminLayout({
         onOpenSearch={palette.open}
       />
       <CommandPalette open={palette.isOpen} onClose={palette.close} />
-      <HelpLauncher />
+      {!hideLintelHelp && <HelpLauncher />}
       {/*
         Leaves room for the 240px sidebar and its 12px margin. A size container, so screens
         that need the full width (the editor's split view) can measure it with cqw.
       */}
-      <main id="main" tabIndex={-1} className="@container pl-[264px] outline-none">
+      <main id="main" tabIndex={-1} className="@container ps-[264px] outline-none">
         <div className="mx-auto max-w-[960px] px-10 pt-14 pb-20">
           <Outlet />
         </div>

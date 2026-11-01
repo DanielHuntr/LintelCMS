@@ -1,4 +1,4 @@
-import { Globe, KeyRound, Languages, Search, Shapes, Webhook } from "lucide-react";
+import { Globe, KeyRound, Languages, Palette, Search, Shapes, Type, Webhook } from "lucide-react";
 import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
@@ -12,6 +12,7 @@ import { useCan, useSession } from "../session/SessionContext.js";
 export function SettingsPage() {
   const canSeeContentTypes = useCan("blueprints:read");
   const canSeeSiteSettings = useCan("settings:read");
+  const canBrand = useCan("branding:update");
   const { enabledPlugins } = useSession();
 
   return (
@@ -56,6 +57,23 @@ export function SettingsPage() {
             />
           </GroupedList>
         )}
+        <GroupedList header={t("settings.yourAdminHeader")}>
+          <GroupedListRow
+            icon={Type}
+            iconTone="neutral"
+            label={t("interfaceLanguage.title")}
+            description={t("settings.interfaceLanguageDescription")}
+            to="/settings/interface-language"
+          />
+          {canBrand && (
+            <GroupedListRow
+              icon={Palette}
+              label={t("branding.title")}
+              description={t("settings.brandingDescription")}
+              to="/settings/branding"
+            />
+          )}
+        </GroupedList>
         <GroupedList header={t("settings.siteHeader")} footer={t("settings.moreSoon")}>
           {canSeeSiteSettings && (
             <GroupedListRow

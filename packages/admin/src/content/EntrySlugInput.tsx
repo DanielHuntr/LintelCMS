@@ -24,7 +24,7 @@ export function EntrySlugInput({ routePattern, slug, onChange, error }: EntrySlu
   return (
     <div data-field-handle="slug" className="flex flex-col gap-1">
       <p className="flex min-w-0 items-center text-footnote text-label-secondary">
-        <label htmlFor={inputId} className="mr-1.5 shrink-0 font-medium text-label-secondary">
+        <label htmlFor={inputId} className="me-1.5 shrink-0 font-medium text-label-secondary">
           {t("editor.url")}
         </label>
         <span aria-hidden="true" className="shrink-0">

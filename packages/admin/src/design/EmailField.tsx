@@ -64,7 +64,7 @@ function EmailSuggestion({ suggestion, onUse }: { suggestion: string; onUse: () 
   const [before, after] = t("emailField.suggestion").split("{email}");
 
   return (
-    <div className="mt-2.5 flex w-fit max-w-full items-center gap-3 rounded-full bg-accent/10 py-1 pr-1 pl-4">
+    <div className="mt-2.5 flex w-fit max-w-full items-center gap-3 rounded-full bg-accent/10 py-1 pe-1 ps-4">
       <p className="min-w-0 text-footnote text-label">
         {before}
         <span className="font-semibold break-all">{suggestion}</span>

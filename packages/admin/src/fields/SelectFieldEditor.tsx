@@ -33,7 +33,7 @@ function SingleChoice({
         aria-required={field.required || undefined}
         aria-invalid={hasError || undefined}
         aria-describedby={describedBy}
-        className={classNames("h-10 appearance-none pr-9", controlClasses({ hasError }))}
+        className={classNames("h-10 appearance-none pe-9", controlClasses({ hasError }))}
       >
         {/* Optional fields can go back to having no choice; required ones ask for one. */}
         <option value="" disabled={field.required}>
@@ -48,7 +48,7 @@ function SingleChoice({
       <ChevronsUpDown
         aria-hidden="true"
         strokeWidth={2}
-        className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-label-secondary"
+        className="pointer-events-none absolute top-1/2 inset-e-3 size-4 -translate-y-1/2 text-label-secondary"
       />
     </div>
   );

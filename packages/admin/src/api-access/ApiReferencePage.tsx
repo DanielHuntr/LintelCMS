@@ -95,7 +95,7 @@ function OperationDetails({ operation }: { operation: ReferenceOperation }) {
           {operation.method}
         </Badge>
         <code className="font-mono text-footnote text-label">{operation.path}</code>
-        <span className="ml-auto truncate text-footnote text-label-secondary">
+        <span className="ms-auto truncate text-footnote text-label-secondary">
           {operation.summary}
         </span>
       </summary>
@@ -108,7 +108,7 @@ function OperationDetails({ operation }: { operation: ReferenceOperation }) {
             : t("apiReference.public")}
         </p>
         {operation.parameters.length > 0 && (
-          <table className="w-full text-left">
+          <table className="w-full text-start">
             <caption className="sr-only">{t("apiReference.parameters")}</caption>
             <thead className="text-label-secondary">
               <tr>

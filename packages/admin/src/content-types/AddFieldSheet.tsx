@@ -40,7 +40,7 @@ export function AddFieldSheet({ open, onClose, onPick }: AddFieldSheetProps) {
               <button
                 type="button"
                 onClick={() => onPick(fieldtype.type, fieldtype.name)}
-                className="flex w-full items-start gap-3 rounded-card p-2.5 text-left transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring"
+                className="flex w-full items-start gap-3 rounded-card p-2.5 text-start transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring"
               >
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-[9px] bg-accent/12 text-accent">
                   <FieldtypeIcon type={fieldtype.type} className="size-[18px]" />

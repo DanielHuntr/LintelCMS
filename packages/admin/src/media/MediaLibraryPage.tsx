@@ -61,11 +61,7 @@ export function MediaLibraryPage({
       <LargeTitle
         title={t("media.title")}
         subtitle={
-          total === undefined || isLibraryEmpty
-            ? undefined
-            : total === 1
-              ? t("media.count.one")
-              : t("media.count.other", { count: total })
+          total === undefined || isLibraryEmpty ? undefined : t("media.count", { count: total })
         }
         actions={
           canUpload &&
@@ -101,11 +97,11 @@ export function MediaLibraryPage({
             placeholder={t("media.search.placeholder")}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            className="[&_input]:pl-9"
+            className="[&_input]:ps-9"
           />
           <Search
             aria-hidden="true"
-            className="pointer-events-none absolute bottom-3 left-3 size-4 text-label-tertiary"
+            className="pointer-events-none absolute bottom-3 inset-s-3 size-4 text-label-tertiary"
           />
         </div>
         <div className="flex flex-col gap-1.5">

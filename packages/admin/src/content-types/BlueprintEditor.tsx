@@ -10,7 +10,7 @@ import { Button } from "../design/Button.js";
 import { ConfirmDialog } from "../design/ConfirmDialog.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { TextField } from "../design/TextField.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import { AddFieldSheet } from "./AddFieldSheet.js";
 import {
@@ -102,10 +102,7 @@ export function BlueprintEditor({ blueprint }: { blueprint: Blueprint }) {
       <BackLink to="/settings/content-types">{t("contentTypes.title")}</BackLink>
       <LargeTitle
         title={state.name.trim() || blueprint.name}
-        subtitle={tCount(
-          { one: "builder.fieldCount.one", other: "builder.fieldCount.other" },
-          state.fields.length,
-        )}
+        subtitle={t("builder.fieldCount", { count: state.fields.length })}
         actions={
           canEdit && (
             <Button onClick={() => void save()} disabled={isSaving || !isUnsaved}>

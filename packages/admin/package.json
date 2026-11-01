@@ -9,7 +9,9 @@
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "strings:check": "node scripts/check-strings.mjs",
+    "codemods": "node scripts/codemods/plural-messages.mjs && node scripts/codemods/product-name.mjs && node scripts/codemods/logical-direction-classes.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

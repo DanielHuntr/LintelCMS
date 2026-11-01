@@ -1,3 +1,5 @@
+import { formattingLocale } from "../i18n/formatting.js";
+
 /**
  * Languages offered when adding one to the site, so most people can pick from a list rather
  * than know a language code. Anything else can still be typed as a code.
@@ -34,12 +36,10 @@ export const commonLocaleCodes = [
   "ga-IE",
 ] as const;
 
-const languageNames = new Intl.DisplayNames(["en"], { type: "language" });
-
-/** "French (Canada)" for "fr-CA". The API names new languages the same way. */
+/** "French (Canada)" for "fr-CA", in the admin's own language. */
 export function describeLanguage(code: string): string {
   try {
-    return languageNames.of(code) ?? code;
+    return new Intl.DisplayNames([formattingLocale()], { type: "language" }).of(code) ?? code;
   } catch {
     return code;
   }

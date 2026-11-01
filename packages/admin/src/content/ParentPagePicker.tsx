@@ -52,7 +52,7 @@ export function ParentPagePicker({
             id={selectId}
             value={parentId ?? ""}
             onChange={(event) => onChange(event.target.value === "" ? null : event.target.value)}
-            className={classNames("h-9 appearance-none pr-9", controlClasses())}
+            className={classNames("h-9 appearance-none pe-9", controlClasses())}
           >
             <option value="">{t("editor.parentNone")}</option>
             {options.map((page) => (
@@ -66,7 +66,7 @@ export function ParentPagePicker({
           <ChevronsUpDown
             aria-hidden="true"
             strokeWidth={2}
-            className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-label-secondary"
+            className="pointer-events-none absolute top-1/2 inset-e-3 size-4 -translate-y-1/2 text-label-secondary"
           />
         </div>
         <p className="text-footnote text-label-secondary">{t("editor.parentHint")}</p>

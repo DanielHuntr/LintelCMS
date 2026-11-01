@@ -53,7 +53,7 @@ export function AssetActions({ asset, canDelete, onDeleted }: AssetActionsProps)
         <Button
           variant="plain"
           size="small"
-          className="ml-auto text-danger! hover:bg-danger/10"
+          className="ms-auto text-danger! hover:bg-danger/10"
           icon={<Trash2 aria-hidden="true" />}
           onClick={() => setIsConfirmingDelete(true)}
         >

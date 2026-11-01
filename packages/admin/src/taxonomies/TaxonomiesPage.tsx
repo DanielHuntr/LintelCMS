@@ -12,7 +12,7 @@ import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import { createTaxonomy } from "./taxonomies.api.js";
 import { taxonomyKeys, useTaxonomies } from "./taxonomies.queries.js";
@@ -82,10 +82,7 @@ export function TaxonomiesPage() {
               key={taxonomy.id}
               icon={Tags}
               label={taxonomy.name}
-              description={tCount(
-                { one: "taxonomies.termCount.one", other: "taxonomies.termCount.other" },
-                taxonomy.termCount,
-              )}
+              description={t("taxonomies.termCount", { count: taxonomy.termCount })}
               to={`/content/taxonomies/${encodeURIComponent(taxonomy.handle)}`}
             />
           ))}

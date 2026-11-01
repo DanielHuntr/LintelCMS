@@ -10,5 +10,9 @@
 - **Search engines** (`/settings/seo` and `/settings/seo/redirects`) lives in `src/seo`, and
   only shows while the SEO plugin is on.
 
+- **Interface language** (`/settings/interface-language`) lives in `src/interface-language`.
+- **Branding** (`/settings/branding`) lives in `src/branding`, and only shows to people with
+  `branding:update`.
+
 Add a row here when a new settings screen is built, and hide it with `useCan` when the
 signed-in person can't use it.

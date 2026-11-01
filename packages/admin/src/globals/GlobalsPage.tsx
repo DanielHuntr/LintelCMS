@@ -12,7 +12,7 @@ import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import { createGlobalSet } from "./globals.api.js";
 import { globalKeys, useGlobalSets } from "./globals.queries.js";
@@ -78,10 +78,7 @@ export function GlobalsPage() {
               key={globalSet.id}
               icon={SlidersHorizontal}
               label={globalSet.name}
-              description={tCount(
-                { one: "builder.fieldCount.one", other: "builder.fieldCount.other" },
-                globalSet.fieldCount,
-              )}
+              description={t("builder.fieldCount", { count: globalSet.fieldCount })}
               to={`/content/globals/${encodeURIComponent(globalSet.handle)}`}
             />
           ))}

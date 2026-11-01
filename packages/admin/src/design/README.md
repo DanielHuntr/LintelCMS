@@ -51,26 +51,22 @@ raised panels), so links pass WCAG AA everywhere. The mark (`AppMark`) is the bi
 
 ## Rebranding for a client
 
-Override the colour tokens after `styles.css` is loaded, for both schemes:
+Agencies don't edit CSS: **Settings → Branding** (or `lintel.config.json` when deploying)
+takes one accent colour, and `src/branding/applyBranding.ts` overrides `accent`,
+`accent-fill`, `accent-fill-hover` and `on-accent` for both schemes with shades worked out
+by `@lintel/core/accent-colours`, so both contrast checks (on-accent on accent-fill, and
+accent text on the backgrounds) reach 4.5:1 or the screen warns. The name, logo, mark and
+favicon come from the same place; `AppMark` shows the agency's mark when there is one. See
+`src/branding/README.md`.
 
-```css
-:root,
-[data-color-scheme] {
-  --color-accent: #8a3ffc;
-  --color-accent-fill: #7c3aed;
-  --color-on-accent: #ffffff;
-}
+Components must keep using the tokens (never a fixed colour) for this to reach them.
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-color-scheme="light"]) {
-    --color-accent: #b38cff;
-  }
-}
-```
+### Right-to-left languages
 
-Check two things after rebranding: `on-accent` text on `accent-fill` reaches 4.5:1, and `accent`
-text on `surface` reaches 4.5:1 in both schemes. Renaming the app in `src/i18n/strings.ts`
-also changes the text mark (`AppMark`), which shows the first letter of the app name.
+Use logical utilities so screens mirror in Arabic or Hebrew: `ms-*`/`me-*`, `ps-*`/`pe-*`,
+`inset-s-*`/`inset-e-*`, `text-start`, `rounded-s-*`, `border-e`. Anything that moves
+sideways needs an `rtl:` twin (`translate-x-[18px] rtl:-translate-x-[18px]` on the Toggle).
+Chevrons and arrows mirror on their own (see the end of `styles.css`).
 
 ## Components
 

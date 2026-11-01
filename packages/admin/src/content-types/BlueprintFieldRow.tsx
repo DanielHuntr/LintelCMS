@@ -51,7 +51,7 @@ export function BlueprintFieldRow({
         aria-hidden="true"
         {...(isLocked ? {} : listeners)}
         className={classNames(
-          "flex items-center self-stretch pl-2 text-label-tertiary",
+          "flex items-center self-stretch ps-2 text-label-tertiary",
           isLocked
             ? "opacity-0"
             : "cursor-grab touch-none opacity-0 group-hover:opacity-100 active:cursor-grabbing",
@@ -64,7 +64,7 @@ export function BlueprintFieldRow({
         type="button"
         onClick={onOpenSettings}
         aria-label={t("builder.editField", { label })}
-        className="flex min-w-0 flex-1 items-center gap-3 py-3 pr-3 pl-2 text-left transition-colors duration-150 ease-standard hover:bg-fill/50 focus-visible:focus-ring-inset"
+        className="flex min-w-0 flex-1 items-center gap-3 py-3 pe-3 ps-2 text-start transition-colors duration-150 ease-standard hover:bg-fill/50 focus-visible:focus-ring-inset"
       >
         <span className="flex size-8 shrink-0 items-center justify-center rounded-control bg-fill text-label-secondary">
           <FieldtypeIcon type={field.type} className="size-4" />
@@ -85,12 +85,12 @@ export function BlueprintFieldRow({
 
       {/* The same width on every row, so the badges line up whether a row can move or not. */}
       {isLocked ? (
-        <span className="flex w-25 shrink-0 items-center justify-end gap-1 pr-4 text-caption text-label-tertiary">
+        <span className="flex w-25 shrink-0 items-center justify-end gap-1 pe-4 text-caption text-label-tertiary">
           <Lock aria-hidden="true" strokeWidth={2} className="size-3" />
           {t("builder.alwaysFirst")}
         </span>
       ) : (
-        <span className="flex w-25 shrink-0 items-center justify-end gap-0.5 pr-3 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
+        <span className="flex w-25 shrink-0 items-center justify-end gap-0.5 pe-3 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
           <RowButton
             label={t("builder.moveUp", { label })}
             disabled={!canMoveUp}

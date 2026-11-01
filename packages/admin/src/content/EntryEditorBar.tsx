@@ -58,14 +58,14 @@ export function EntryEditorBar({
       <Link
         to="/content/$collection"
         params={{ collection: collectionHandle }}
-        className="-ml-2 flex h-8 min-w-0 items-center gap-0.5 rounded-control pr-2.5 pl-1 text-body text-accent transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring"
+        className="-ms-2 flex h-8 min-w-0 items-center gap-0.5 rounded-control pe-2.5 ps-1 text-body text-accent transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring"
       >
         <ChevronLeft aria-hidden="true" strokeWidth={2.25} className="size-5 shrink-0" />
         <span className="truncate">{collectionName}</span>
       </Link>
 
-      <div className="ml-auto flex items-center gap-1.5">
-        <div className="mr-2">{saveIndicator}</div>
+      <div className="ms-auto flex items-center gap-1.5">
+        <div className="me-2">{saveIndicator}</div>
         <button
           type="button"
           onClick={onTogglePreview}
@@ -98,7 +98,7 @@ export function EntryEditorBar({
           trigger={<Ellipsis aria-hidden="true" strokeWidth={2} className="size-[18px]" />}
           items={moreItems}
         />
-        <div className="ml-1.5">{primaryAction}</div>
+        <div className="ms-1.5">{primaryAction}</div>
       </div>
     </div>
   );

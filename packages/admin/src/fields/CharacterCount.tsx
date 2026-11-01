@@ -12,7 +12,7 @@ export function CharacterCount({ length, maxLength }: { length: number; maxLengt
   return (
     <p
       className={classNames(
-        "ml-auto shrink-0 pt-px text-caption tabular-nums",
+        "ms-auto shrink-0 pt-px text-caption tabular-nums",
         isNearLimit ? "text-warning" : "text-label-tertiary",
       )}
     >

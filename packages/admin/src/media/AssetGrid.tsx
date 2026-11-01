@@ -32,9 +32,11 @@ export function AssetGrid({ assets, label, onActivate, currentAssetId }: AssetGr
   function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     const lastIndex = assets.length - 1;
     const columns = columnCount();
+    // In a right-to-left language the grid runs from the right, so the arrows swap.
+    const forwards = document.documentElement.dir === "rtl" ? -1 : 1;
     const targets: Partial<Record<string, number>> = {
-      ArrowLeft: index - 1,
-      ArrowRight: index + 1,
+      ArrowLeft: index - forwards,
+      ArrowRight: index + forwards,
       ArrowUp: index - columns,
       ArrowDown: index + columns,
       Home: 0,

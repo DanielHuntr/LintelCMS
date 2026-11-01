@@ -71,6 +71,7 @@
   --color-label-tertiary: #8e8e93;
   --color-accent: #6a2cf0;
   --color-accent-fill: #7539fd;
+  --color-accent-fill-hover: #6a2cf0;
   --color-on-accent: #ffffff;
   --color-success: #248a3d;
   --color-warning: #b25000;
@@ -116,6 +117,8 @@
      */
     --color-accent: #6a2cf0;
     --color-accent-fill: #7539fd;
+    /* Filled buttons on hover: a step further from their text, so hovering never fades it. */
+    --color-accent-fill-hover: #6a2cf0;
     --color-on-accent: #ffffff;
     --color-success: #248a3d;
     --color-warning: #b25000;
@@ -140,6 +143,7 @@
       /* Lighter violet for text on dark surfaces: 5.1:1 even on raised panels. */
       --color-accent: #a68aff;
       --color-accent-fill: #7539fd;
+      --color-accent-fill-hover: #6a2cf0;
       --color-on-accent: #ffffff;
       --color-success: #30d158;
       --color-warning: #ff9f0a;
@@ -217,6 +221,15 @@
 
 :root[data-wizard-direction="back"]::view-transition-new(wizard-screen) {
   animation-name: slide-in-from-left;
+}
+
+/* In right-to-left languages "forwards" is towards the left, so the slides swap. */
+:root[dir="rtl"]::view-transition-new(wizard-screen) {
+  animation-name: slide-in-from-left;
+}
+
+:root[dir="rtl"][data-wizard-direction="back"]::view-transition-new(wizard-screen) {
+  animation-name: slide-in-from-right;
 }
 
 @keyframes fade-out {
@@ -307,7 +320,7 @@
 
     & ul,
     & ol {
-      padding-left: 1.4em;
+      padding-inline-start: 1.4em;
     }
 
     & ul {
@@ -327,8 +340,8 @@
     }
 
     & blockquote {
-      border-left: 3px solid var(--color-fill-strong);
-      padding-left: 1em;
+      border-inline-start: 3px solid var(--color-fill-strong);
+      padding-inline-start: 1em;
       color: var(--color-label-secondary);
     }
 
@@ -347,4 +360,19 @@
       margin-top: 0;
     }
   }
+}
+
+/*
+ * Arrows and chevrons point the way the page reads, so they mirror in right-to-left
+ * languages. Arrows that mean a real direction (such as the focal point's) aren't icons.
+ */
+[dir="rtl"]
+  :is(
+    .lucide-chevron-left,
+    .lucide-chevron-right,
+    .lucide-arrow-left,
+    .lucide-arrow-right,
+    .lucide-arrow-up-right
+  ) {
+  transform: scaleX(-1);
 }

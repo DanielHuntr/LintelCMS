@@ -77,7 +77,7 @@ export function MenuItemRow({
       <span
         aria-hidden="true"
         {...listeners}
-        className="flex cursor-grab touch-none items-center self-stretch pl-2 text-label-tertiary opacity-0 group-hover:opacity-100 active:cursor-grabbing"
+        className="flex cursor-grab touch-none items-center self-stretch ps-2 text-label-tertiary opacity-0 group-hover:opacity-100 active:cursor-grabbing"
       >
         <GripVertical strokeWidth={1.75} className="size-4" />
       </span>
@@ -86,13 +86,13 @@ export function MenuItemRow({
         onClick={onEdit}
         aria-label={t("menus.item.edit", { label })}
         style={{ paddingLeft: `${0.5 + item.depth * 1.75}rem` }}
-        className="flex min-w-0 flex-1 items-center gap-3 py-3 pr-3 text-left transition-colors duration-150 ease-standard hover:bg-fill/50 focus-visible:focus-ring-inset"
+        className="flex min-w-0 flex-1 items-center gap-3 py-3 pe-3 text-start transition-colors duration-150 ease-standard hover:bg-fill/50 focus-visible:focus-ring-inset"
       >
         {item.depth > 0 && (
           <CornerDownRight
             aria-hidden="true"
             strokeWidth={1.75}
-            className="-ml-1 size-4 shrink-0 text-label-tertiary"
+            className="-ms-1 size-4 shrink-0 text-label-tertiary"
           />
         )}
         <span className="flex size-8 shrink-0 items-center justify-center rounded-control bg-fill text-label-secondary">
@@ -117,7 +117,7 @@ export function MenuItemRow({
           />
         )}
       </button>
-      <span className="flex shrink-0 items-center gap-0.5 pr-3 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
+      <span className="flex shrink-0 items-center gap-0.5 pe-3 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
         <RowButton
           label={t("menus.item.moveUp", { label })}
           disabled={!canMoveUp}

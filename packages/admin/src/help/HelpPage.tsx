@@ -1,6 +1,7 @@
 import { findHelpPage } from "@lintel/docs/help";
 import { ArrowUpRight } from "lucide-react";
 import { useEffect } from "react";
+import { useBranding } from "../branding/brandingStore.js";
 import { BackLink } from "../design/BackLink.js";
 import { buttonClasses } from "../design/Button.js";
 import { Card } from "../design/Card.js";
@@ -9,6 +10,7 @@ import { t } from "../i18n/strings.js";
 import { fullDocsUrl } from "./docsLinks.js";
 import { HelpArticle } from "./HelpArticle.js";
 import { HelpTopicList } from "./HelpTopicList.js";
+import { SupportCard } from "./SupportCard.js";
 
 interface HelpPageProps {
   /** The open topic, kept in the address (`/help?topic=using/media`) so it can be shared. */
@@ -18,10 +20,15 @@ interface HelpPageProps {
   anchor?: string;
 }
 
-/** The Help section: every "Using Lintel" page, readable without leaving the admin. */
+/**
+ * The Help section: who to ask (from Settings → Branding), then every "Using Lintel" page,
+ * readable without leaving the admin. An agency can hide Lintel's own pages and links,
+ * leaving only its support details and guides.
+ */
 export function HelpPage({ topic, onOpenTopic, anchor }: HelpPageProps) {
-  const page = topic ? findHelpPage(topic) : undefined;
-  const fullDocsLink = (
+  const { hideLintelHelp } = useBranding();
+  const page = topic && !hideLintelHelp ? findHelpPage(topic) : undefined;
+  const fullDocsLink = hideLintelHelp ? undefined : (
     <a
       href={fullDocsUrl(page?.slug ?? "using")}
       target="_blank"
@@ -44,10 +51,15 @@ export function HelpPage({ topic, onOpenTopic, anchor }: HelpPageProps) {
       <>
         <LargeTitle
           title={t("help.pageTitle")}
-          subtitle={t("help.pageSubtitle")}
+          subtitle={hideLintelHelp ? t("help.support.pageSubtitle") : t("help.pageSubtitle")}
           actions={fullDocsLink}
         />
-        <HelpTopicList onOpenPage={(slug) => onOpenTopic(slug)} />
+        <SupportCard />
+        {hideLintelHelp ? (
+          <NoBuiltInHelp />
+        ) : (
+          <HelpTopicList onOpenPage={(slug) => onOpenTopic(slug)} />
+        )}
       </>
     );
   }
@@ -63,4 +75,11 @@ export function HelpPage({ topic, onOpenTopic, anchor }: HelpPageProps) {
       </Card>
     </>
   );
+}
+
+/** With Lintel's pages hidden and no support details set, say where help would appear. */
+function NoBuiltInHelp() {
+  const { supportUrl, supportEmail, docsUrl } = useBranding();
+  if (supportUrl || supportEmail || docsUrl) return null;
+  return <p className="text-body text-label-secondary">{t("help.support.none")}</p>;
 }

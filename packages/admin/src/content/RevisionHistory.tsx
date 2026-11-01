@@ -56,7 +56,7 @@ export function RevisionHistory({ entryId, isWorking, onRestore }: RevisionHisto
                 <span className="text-footnote font-medium text-label">
                   {t(actionLabels[revision.action] ?? "revisions.saved")}
                   {index === 0 && (
-                    <span className="ml-1.5 font-normal text-label-tertiary">
+                    <span className="ms-1.5 font-normal text-label-tertiary">
                       {t("revisions.current")}
                     </span>
                   )}

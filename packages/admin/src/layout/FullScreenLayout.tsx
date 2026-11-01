@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { AppMark } from "../design/AppMark.js";
+import { BrandLogo } from "../branding/BrandLogo.js";
 import { t } from "../i18n/strings.js";
 
 interface FullScreenLayoutProps {
@@ -7,6 +7,8 @@ interface FullScreenLayoutProps {
   progress?: number;
   /** Hidden on screens that already show a large mark of their own, such as the welcome. */
   showsAppMark?: boolean;
+  /** A picture behind everything, such as the sign-in background chosen in Branding. */
+  backgroundImage?: string | null;
   children: ReactNode;
 }
 
@@ -17,17 +19,25 @@ interface FullScreenLayoutProps {
 export function FullScreenLayout({
   progress,
   showsAppMark = true,
+  backgroundImage,
   children,
 }: FullScreenLayoutProps) {
   return (
-    <div className="min-h-dvh bg-background text-label">
+    <div className="relative min-h-dvh bg-background text-label">
+      {backgroundImage && (
+        <div
+          aria-hidden="true"
+          className="fixed inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url("${encodeURI(backgroundImage)}")` }}
+        />
+      )}
       {progress !== undefined && <ProgressBar progress={progress} />}
       {showsAppMark && (
-        <div className="absolute top-0 left-0 p-5 sm:p-7">
-          <AppMark />
+        <div className="absolute top-0 inset-s-0 p-5 sm:p-7">
+          <BrandLogo showsName={false} />
         </div>
       )}
-      <main>{children}</main>
+      <main className="relative">{children}</main>
     </div>
   );
 }
@@ -45,7 +55,7 @@ function ProgressBar({ progress }: { progress: number }) {
       className="fixed inset-x-0 top-0 z-20 h-[3px] bg-fill"
     >
       <div
-        className="h-full rounded-r-full bg-accent-fill transition-[width] duration-500 ease-standard"
+        className="h-full rounded-e-full bg-accent-fill transition-[width] duration-500 ease-standard"
         style={{ width: `${percent}%` }}
       />
     </div>

@@ -7,4 +7,6 @@ interface ImportMetaEnv {
   readonly VITE_DESIGN_REVIEW?: string;
   /** Where the full docs are published, for the help panel's links. See src/help/docsLinks.ts. */
   readonly VITE_DOCS_URL?: string;
+  /** Set to "true" to offer the pseudo-languages for testing translations. See src/i18n. */
+  readonly VITE_PSEUDO_LANGUAGES?: string;
 }

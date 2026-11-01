@@ -69,7 +69,7 @@ export function DashboardPage({ showSales }: DashboardPageProps) {
  */
 function WhatsNewList() {
   return (
-    <ul className="-mr-5 -mb-2 -ml-4">
+    <ul className="-me-5 -mb-2 -ms-4">
       <GroupedListRow
         icon={Paintbrush}
         label={t("dashboard.whatsNew.designTitle")}
@@ -89,7 +89,7 @@ function WhatsNewList() {
         description={t("dashboard.whatsNew.contentDescription")}
         accessory={
           <Badge>
-            <Clock aria-hidden="true" className="mr-1 size-3" />
+            <Clock aria-hidden="true" className="me-1 size-3" />
             {t("badge.planned")}
           </Badge>
         }
