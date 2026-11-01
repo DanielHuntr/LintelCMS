@@ -70,6 +70,7 @@
   --color-success: #248a3d;
   --color-warning: #b25000;
   --color-danger: #d70015;
+  --color-scrim: rgb(0 0 0 / 0.25);
 }
 
 /*
@@ -111,6 +112,8 @@
     --color-success: #248a3d;
     --color-warning: #b25000;
     --color-danger: #d70015;
+    /* The dimmed layer behind dialogs and sheets. */
+    --color-scrim: rgb(0 0 0 / 0.25);
 
     @variant scheme-dark {
       color-scheme: dark;
@@ -132,6 +135,7 @@
       --color-success: #30d158;
       --color-warning: #ff9f0a;
       --color-danger: #ff453a;
+      --color-scrim: rgb(0 0 0 / 0.55);
     }
   }
 
@@ -184,5 +188,78 @@
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/*
+ * Rich text inside the entry editor. Kept close to how a well-set article reads, using the
+ * type scale, so editors see structure (headings, lists, quotes) without a page builder's noise.
+ */
+@layer components {
+  .rich-text {
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    color: var(--color-label);
+
+    & > * + * {
+      margin-top: 0.85em;
+    }
+
+    & h2 {
+      margin-top: 1.4em;
+      font-size: var(--text-title);
+      line-height: var(--text-title--line-height);
+      letter-spacing: var(--text-title--letter-spacing);
+      font-weight: 600;
+    }
+
+    & h3 {
+      margin-top: 1.2em;
+      font-size: var(--text-headline);
+      line-height: var(--text-headline--line-height);
+      font-weight: 600;
+    }
+
+    & ul,
+    & ol {
+      padding-left: 1.4em;
+    }
+
+    & ul {
+      list-style: disc;
+    }
+
+    & ol {
+      list-style: decimal;
+    }
+
+    & li + li {
+      margin-top: 0.3em;
+    }
+
+    & li::marker {
+      color: var(--color-label-secondary);
+    }
+
+    & blockquote {
+      border-left: 3px solid var(--color-fill-strong);
+      padding-left: 1em;
+      color: var(--color-label-secondary);
+    }
+
+    & a {
+      color: var(--color-accent);
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 2px;
+    }
+
+    & strong {
+      font-weight: 600;
+    }
+
+    & > :first-child {
+      margin-top: 0;
+    }
   }
 }

@@ -1,7 +1,8 @@
 import { useId, type InputHTMLAttributes } from "react";
 import { classNames } from "./classNames.js";
+import { controlClasses } from "./controlStyles.js";
 
-interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "id"> {
+interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   /** Always visible above the field. */
   label: string;
   /** Extra guidance under the field, e.g. "At least 12 characters". */
@@ -11,8 +12,10 @@ interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "id
 }
 
 /** A labelled text input. Hints and errors are linked with aria-describedby so screen readers read them. */
-export function TextField({ label, hint, error, className, ...inputProps }: TextFieldProps) {
-  const inputId = useId();
+export function TextField({ label, hint, error, className, id, ...inputProps }: TextFieldProps) {
+  const generatedId = useId();
+  // An id can be passed in when something else needs to find the input, e.g. to focus it.
+  const inputId = id ?? generatedId;
   const messageId = useId();
   const message = error ?? hint;
 
@@ -25,12 +28,7 @@ export function TextField({ label, hint, error, className, ...inputProps }: Text
         id={inputId}
         aria-invalid={error ? true : undefined}
         aria-describedby={message ? messageId : undefined}
-        className={classNames(
-          "h-10 w-full rounded-control bg-fill px-3 text-body text-label",
-          "placeholder:text-label-tertiary transition-shadow duration-150 ease-standard",
-          "focus:focus-ring focus:outline-offset-0",
-          error && "ring-1 ring-danger",
-        )}
+        className={classNames("h-10", controlClasses({ hasError: Boolean(error) }))}
         {...inputProps}
       />
       {message && (

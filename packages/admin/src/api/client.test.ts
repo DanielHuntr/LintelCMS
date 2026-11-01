@@ -43,4 +43,21 @@ describe("apiRequest", () => {
       new ApiError(403, "PERMISSION_DENIED", "You don't have permission to do that"),
     );
   });
+
+  it("keeps per-field messages from validation errors", async () => {
+    respondWith(400, {
+      statusCode: 400,
+      code: "INVALID_REQUEST",
+      error: "Bad Request",
+      message: "Some fields need attention",
+      fields: { title: "Add a title" },
+    });
+
+    const error = await apiRequest("/entries/1", { method: "PATCH", body: {} }).catch(
+      (caught: unknown) => caught,
+    );
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect((error as ApiError).fields).toEqual({ title: "Add a title" });
+  });
 });

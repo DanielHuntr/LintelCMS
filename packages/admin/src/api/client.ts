@@ -5,12 +5,17 @@
 
 const apiUrl = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
 
+/** Per-field messages from a validation error, keyed by field handle. */
+export type FieldMessages = Readonly<Record<string, string>>;
+
 /** The error shape every API route uses: branch on `code`, show `message` to the person. */
 export class ApiError extends Error {
   constructor(
     readonly status: number,
     readonly code: string,
     message: string,
+    /** Set on validation errors about entry or blueprint fields. */
+    readonly fields?: FieldMessages,
   ) {
     super(message);
     this.name = "ApiError";
@@ -18,7 +23,7 @@ export class ApiError extends Error {
 }
 
 interface RequestOptions {
-  method?: "GET" | "POST" | "PATCH" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   /** Sent as JSON. Leave out for requests without a body. */
   body?: unknown;
 }
@@ -47,11 +52,16 @@ export async function apiRequest<Result>(path: string, options: RequestOptions =
 
 async function toApiError(response: Response): Promise<ApiError> {
   try {
-    const details = (await response.json()) as { code?: string; message?: string };
+    const details = (await response.json()) as {
+      code?: string;
+      message?: string;
+      fields?: FieldMessages;
+    };
     return new ApiError(
       response.status,
       details.code ?? "UNKNOWN",
       details.message ?? response.statusText,
+      details.fields,
     );
   } catch {
     return new ApiError(response.status, "UNKNOWN", response.statusText);

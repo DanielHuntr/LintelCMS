@@ -12,6 +12,10 @@ interface ToggleProps {
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   disabled?: boolean;
+  /** Set when a label elsewhere on the page points at this switch with `htmlFor`. */
+  id?: string;
+  /** Ids of help or error text that describe the switch. */
+  describedBy?: string;
 }
 
 /** An on/off switch. It is a button with role="switch", so Space and Enter work by default. */
@@ -21,8 +25,11 @@ export function Toggle({
   checked,
   onCheckedChange,
   disabled = false,
+  id,
+  describedBy,
 }: ToggleProps) {
-  const switchId = useId();
+  const generatedId = useId();
+  const switchId = id ?? generatedId;
   const showLabel = labelVisibility === "visible";
 
   const control = (
@@ -32,6 +39,7 @@ export function Toggle({
       role="switch"
       aria-checked={checked}
       aria-label={showLabel ? undefined : label}
+      aria-describedby={describedBy}
       disabled={disabled}
       onClick={() => onCheckedChange(!checked)}
       className={classNames(

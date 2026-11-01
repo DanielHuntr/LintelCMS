@@ -11,9 +11,19 @@ The control panel: a React app that talks to `@lintel/core`.
 | `src/navigation`    | The main sections and who can see them                         |
 | `src/dashboard`     | The home screen                                                |
 | `src/sign-in`       | The sign-in screen                                             |
+| `src/content`       | Collections, entry lists and the entry editor                  |
+| `src/content-types` | The blueprint builder under Settings                           |
+| `src/fields`        | One editor per fieldtype, used by the entry editor             |
+| `src/settings`      | The Settings index                                             |
+| `src/session`       | Who is signed in; `useCan` for permission checks               |
+| `src/api`           | The API client, the query cache and plain-English errors       |
+| `src/testing`       | Helpers for component tests                                    |
 | `src/sections`      | Placeholders for sections not built yet                        |
 | `src/i18n`          | Every word the admin shows (`t("key")`)                        |
 | `src/design-review` | `/design-system`: every component in light and dark (dev only) |
+
+Data comes through TanStack Query (`src/api/queryClient.ts`): screens show skeletons while
+loading and `LoadError` (with Try again) when something fails.
 
 Rules for screens:
 

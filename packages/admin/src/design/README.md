@@ -21,6 +21,7 @@ All tokens live in `src/styles.css`. Components only use tokens, never fixed col
 | `accent`                                     | Links, tinted buttons, the selected sidebar item                     |
 | `accent-fill`, `on-accent`                   | Filled buttons, the toggle's on track, and the text on them          |
 | `success`, `warning`, `danger`               | Status colours for badges, list icons and errors                     |
+| `scrim`                                      | The dimmed layer behind dialogs and sheets                           |
 
 Non-colour tokens: the type scale (`text-large-title`, `text-title`, `text-headline`,
 `text-body`, `text-footnote`, `text-caption`, each with its own line height and tracking),
@@ -74,7 +75,9 @@ also changes the text mark (`AppMark`), which shows the first letter of the app 
 
 | File                   | What it is                                                                          |
 | ---------------------- | ----------------------------------------------------------------------------------- |
-| `Button.tsx`           | `filled` (the one main action), `tinted`, `plain`; `small`, `medium`, `large`       |
+| `Button.tsx`           | `filled` (the one main action), `tinted`, `plain`, `destructive`; three sizes       |
+| `LinkButton.tsx`       | A link that looks like a Button, for actions that go to another screen              |
+| `BackLink.tsx`         | "‹ Settings" above a page title                                                     |
 | `TextField.tsx`        | A labelled input with an optional hint or error                                     |
 | `Card.tsx`             | A rounded surface with an optional title and accessory                              |
 | `GroupedList.tsx`      | An iOS Settings-style inset group of rows, with header and footer                   |
@@ -84,6 +87,12 @@ also changes the text mark (`AppMark`), which shows the first letter of the app 
 | `Badge.tsx`            | A short coloured status label                                                       |
 | `LargeTitle.tsx`       | The page header: the page's `h1`, subtitle and actions                              |
 | `EmptyState.tsx`       | What to show when there is nothing yet                                              |
+| `SearchField.tsx`      | A search box with a magnifying glass                                                |
+| `Skeleton.tsx`         | A grey shape standing in for content that's loading; wrap in `LoadingRegion`        |
+| `Dialog.tsx`           | A modal on the native `<dialog>`: `alert` for questions, `sheet` for tasks          |
+| `ConfirmDialog.tsx`    | "Are you sure?" before deleting or restoring, instead of the browser's `confirm()`  |
+| `Menu.tsx`             | A button that opens a short list of actions (the ARIA menu button pattern)          |
+| `controlStyles.ts`     | The shared look of inputs, text areas and selects                                   |
 | `AppMark.tsx`          | The app's text mark                                                                 |
 
 ## Rules
