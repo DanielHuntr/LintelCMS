@@ -19,6 +19,13 @@ an entry has) plus a collection (where its entries live). People only ever see "
   because entries store their content under it.
 - "Add field" (`AddFieldSheet.tsx`) lists the fieldtypes from `GET /fieldtypes` with their
   plain descriptions. Picking one adds the field and opens its settings (`FieldSettingsSheet.tsx`).
+- A blocks field's settings list its block types (`BlockTypesEditor.tsx`): each has a name,
+  a handle made from the name until edited, a description editors see when adding a block,
+  and its own fields (any type except blocks), with Required and, for selects, choices.
+  `blockTypesDraft.ts` holds the rules; each block type and inner field carries `draft`
+  bookkeeping (a stable key, whether its handle follows its name) that isn't saved.
+- "Live preview" under the fields connects each collection using the content type to its
+  website's preview page (see `src/preview`).
 - Changes are saved together with Save (`PUT /blueprints/:handle`). Problems are checked here
   first (`blueprintProblems`), then any the API finds are shown on the right rows.
 

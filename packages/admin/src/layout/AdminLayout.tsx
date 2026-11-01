@@ -1,5 +1,7 @@
 import { Outlet } from "@tanstack/react-router";
 import { t } from "../i18n/strings.js";
+import { CommandPalette } from "../search/CommandPalette.js";
+import { useCommandPalette } from "../search/useCommandPalette.js";
 import { Sidebar } from "./Sidebar.js";
 import type { SignedInUser } from "./SidebarAccount.js";
 
@@ -23,6 +25,7 @@ export function AdminLayout({
   signedInUser,
   onSignOut,
 }: AdminLayoutProps) {
+  const palette = useCommandPalette();
   return (
     <div className="min-h-screen bg-background text-label">
       <a
@@ -36,9 +39,14 @@ export function AdminLayout({
         enabledPlugins={enabledPlugins}
         signedInUser={signedInUser}
         onSignOut={onSignOut}
+        onOpenSearch={palette.open}
       />
-      {/* Leaves room for the 240px sidebar and its 12px margin. */}
-      <main id="main" tabIndex={-1} className="pl-[264px] outline-none">
+      <CommandPalette open={palette.isOpen} onClose={palette.close} />
+      {/*
+        Leaves room for the 240px sidebar and its 12px margin. A size container, so screens
+        that need the full width (the editor's split view) can measure it with cqw.
+      */}
+      <main id="main" tabIndex={-1} className="@container pl-[264px] outline-none">
         <div className="mx-auto max-w-[960px] px-10 pt-14 pb-20">
           <Outlet />
         </div>

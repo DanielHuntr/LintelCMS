@@ -12,20 +12,35 @@ One editor per fieldtype, used by the entry editor to draw a blueprint's fields.
   version of a blueprint) and turn input back into stored values. Cleared optional fields are
   stored as `null`.
 
-| Type       | Editor                    | Stores                                     |
-| ---------- | ------------------------- | ------------------------------------------ |
-| `text`     | `TextFieldEditor.tsx`     | string                                     |
-| `textarea` | `TextareaFieldEditor.tsx` | string                                     |
-| `richText` | `RichTextFieldEditor.tsx` | TipTap JSON document                       |
-| `number`   | `NumberFieldEditor.tsx`   | number, or `null` when cleared             |
-| `toggle`   | `ToggleFieldEditor.tsx`   | boolean                                    |
-| `select`   | `SelectFieldEditor.tsx`   | string, or string[] when `multiple`        |
-| `date`     | `DateFieldEditor.tsx`     | `YYYY-MM-DD`, or an ISO datetime with time |
-| `link`     | `LinkFieldEditor.tsx`     | `{ url, label? }`, or `null`               |
-| `image`    | `ImageFieldEditor.tsx`    | asset id, or `null`                        |
+| Type       | Editor                         | Stores                                       |
+| ---------- | ------------------------------ | -------------------------------------------- |
+| `text`     | `TextFieldEditor.tsx`          | string                                       |
+| `textarea` | `TextareaFieldEditor.tsx`      | string                                       |
+| `richText` | `RichTextFieldEditor.tsx`      | TipTap JSON document                         |
+| `number`   | `NumberFieldEditor.tsx`        | number, or `null` when cleared               |
+| `toggle`   | `ToggleFieldEditor.tsx`        | boolean                                      |
+| `select`   | `SelectFieldEditor.tsx`        | string, or string[] when `multiple`          |
+| `date`     | `DateFieldEditor.tsx`          | `YYYY-MM-DD`, or an ISO datetime with time   |
+| `link`     | `LinkFieldEditor.tsx`          | `{ url, label? }`, or `null`                 |
+| `image`    | `ImageFieldEditor.tsx`         | asset id, or `null`                          |
+| `blocks`   | `blocks/BlocksFieldEditor.tsx` | `[{ id, type, data }]`, or `null` when empty |
 
 Rich text uses TipTap's StarterKit, trimmed to headings (two levels), bold, italic, links,
 lists and quotes (`richTextExtensions.ts`). Its toolbar is one tab stop with arrow keys
 between buttons; links are added in a small form under the toolbar, not a browser prompt.
 
 Image fields use `MediaPicker` from `src/media`, which the media feature owns.
+
+## Blocks
+
+A blocks field is a page builder (`blocks/`). Editors add a block from the field's block
+types (a sheet with each type's description), drag blocks by their grip or move them with
+the arrow buttons (each move is announced), collapse them to a one-line summary, and
+duplicate or remove them from each block's menu. Removing a block with content asks first.
+Each block's fields are drawn by `FieldEditor` itself, handed in as `renderField`, so every
+fieldtype works inside a block without the blocks editor importing them all.
+
+New blocks get an id from `crypto.randomUUID()`. The API's messages for block fields arrive
+as `sections.<block id>.<handle>`; `innerErrors` and `blockErrors` (in `blockValues.ts`) pick
+out the ones for each block, and a block with a problem stays open. `blockValues.ts` holds
+every change to the list as a plain function.

@@ -4,11 +4,38 @@
  */
 
 export type FieldType =
-  "text" | "textarea" | "richText" | "number" | "toggle" | "select" | "date" | "image" | "link";
+  | "text"
+  | "textarea"
+  | "richText"
+  | "number"
+  | "toggle"
+  | "select"
+  | "date"
+  | "image"
+  | "link"
+  | "blocks";
 
 export interface SelectChoice {
   value: string;
   label: string;
+}
+
+/**
+ * One kind of block a blocks field offers (Hero, Text...), with its own fields.
+ * `draft` is the blueprint builder's bookkeeping and is never sent to the API.
+ */
+export interface BlockType {
+  handle: string;
+  name: string;
+  description?: string;
+  fields: Field[];
+  draft?: DraftBookkeeping;
+}
+
+/** A stable key for lists, and whether the handle still follows the name or label. */
+export interface DraftBookkeeping {
+  key: string;
+  handleFollows: boolean;
 }
 
 /** Every option any fieldtype can have. Each type reads only the ones that apply to it. */
@@ -24,6 +51,9 @@ export interface FieldOptions {
   multiple?: boolean;
   /** date */
   includeTime?: boolean;
+  /** blocks */
+  blockTypes?: BlockType[];
+  maxBlocks?: number;
 }
 
 export interface Field {
@@ -33,6 +63,8 @@ export interface Field {
   required: boolean;
   helpText?: string;
   options: FieldOptions;
+  /** Only on fields inside a block type, while the builder edits them. */
+  draft?: DraftBookkeeping;
 }
 
 /** A TipTap (ProseMirror) document, stored as JSON. */
@@ -54,11 +86,19 @@ export interface LinkValue {
   label?: string;
 }
 
+/** One block in a blocks field: its own id, its block type's handle, and its values. */
+export interface BlockValue {
+  id: string;
+  type: string;
+  data: EntryData;
+}
+
 /**
  * What an entry's `data` holds for one field. `null` means "deliberately empty": the editor
  * sends it when someone clears an optional field, so the value is removed on save.
  */
-export type FieldValue = string | string[] | number | boolean | RichTextDocument | LinkValue | null;
+export type FieldValue =
+  string | string[] | number | boolean | RichTextDocument | LinkValue | BlockValue[] | null;
 
 /** An entry's data: field handle to value. Values arrive from the API untyped. */
 export type EntryData = Record<string, unknown>;

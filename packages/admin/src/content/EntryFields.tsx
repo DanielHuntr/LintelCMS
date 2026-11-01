@@ -1,4 +1,5 @@
 import type { FieldMessages } from "../api/client.js";
+import { innerErrors } from "../fields/blocks/blockValues.js";
 import { FieldEditor } from "../fields/FieldEditor.js";
 import {
   titleFieldHandle,
@@ -27,6 +28,7 @@ export function EntryFields({ fields, data, errors, onChange }: EntryFieldsProps
             value={data[field.handle]}
             onChange={onChange}
             error={errors[field.handle]}
+            innerErrors={innerErrors(errors, field.handle)}
           />
         ))}
     </div>

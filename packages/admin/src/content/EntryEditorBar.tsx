@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ChevronLeft, Ellipsis, PanelRight, Trash2 } from "lucide-react";
+import { ChevronLeft, Copy, Ellipsis, Eye, PanelRight, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { classNames } from "../design/classNames.js";
 import { Menu, type MenuItem } from "../design/Menu.js";
@@ -14,8 +14,13 @@ interface EntryEditorBarProps {
   isPanelOpen: boolean;
   panelId: string;
   onTogglePanel: () => void;
-  /** Undefined hides the "More" menu (nothing to delete yet, or not allowed). */
+  /** Undefined leaves Delete out of the "More" menu (nothing to delete yet, or not allowed). */
   onDelete: (() => void) | undefined;
+  /** Undefined leaves "Duplicate entry" out (nothing saved yet, or not allowed). */
+  onDuplicate: (() => void) | undefined;
+  isPreviewOpen: boolean;
+  previewId: string;
+  onTogglePreview: () => void;
 }
 
 /**
@@ -31,10 +36,22 @@ export function EntryEditorBar({
   panelId,
   onTogglePanel,
   onDelete,
+  onDuplicate,
+  isPreviewOpen,
+  previewId,
+  onTogglePreview,
 }: EntryEditorBarProps) {
-  const moreItems: MenuItem[] = onDelete
-    ? [{ label: t("editor.delete"), icon: Trash2, tone: "danger", onSelect: onDelete }]
-    : [];
+  const moreItems: MenuItem[] = [
+    {
+      label: isPreviewOpen ? t("editor.hidePreview") : t("editor.preview"),
+      icon: Eye,
+      onSelect: onTogglePreview,
+    },
+    ...(onDuplicate ? [{ label: t("editor.duplicate"), icon: Copy, onSelect: onDuplicate }] : []),
+    ...(onDelete
+      ? [{ label: t("editor.delete"), icon: Trash2, tone: "danger" as const, onSelect: onDelete }]
+      : []),
+  ];
 
   return (
     <div className="sticky top-0 z-20 -mx-10 -mt-14 mb-8 flex h-16 items-center gap-3 bg-background/80 px-10 pt-2 backdrop-blur-xl backdrop-saturate-150">
@@ -51,6 +68,19 @@ export function EntryEditorBar({
         <div className="mr-2">{saveIndicator}</div>
         <button
           type="button"
+          onClick={onTogglePreview}
+          aria-expanded={isPreviewOpen}
+          aria-controls={previewId}
+          className={classNames(
+            "flex h-9 items-center gap-1.5 rounded-control px-2.5 text-body transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring",
+            isPreviewOpen ? "text-accent" : "text-label-secondary",
+          )}
+        >
+          <Eye aria-hidden="true" strokeWidth={1.75} className="size-[18px]" />
+          {t("editor.preview")}
+        </button>
+        <button
+          type="button"
           onClick={onTogglePanel}
           aria-expanded={isPanelOpen}
           aria-controls={panelId}
@@ -63,13 +93,11 @@ export function EntryEditorBar({
         >
           <PanelRight aria-hidden="true" strokeWidth={1.75} className="size-[18px]" />
         </button>
-        {moreItems.length > 0 && (
-          <Menu
-            label={t("editor.more")}
-            trigger={<Ellipsis aria-hidden="true" strokeWidth={2} className="size-[18px]" />}
-            items={moreItems}
-          />
-        )}
+        <Menu
+          label={t("editor.more")}
+          trigger={<Ellipsis aria-hidden="true" strokeWidth={2} className="size-[18px]" />}
+          items={moreItems}
+        />
         <div className="ml-1.5">{primaryAction}</div>
       </div>
     </div>

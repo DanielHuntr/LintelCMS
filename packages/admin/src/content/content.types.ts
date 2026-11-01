@@ -12,6 +12,8 @@ export interface Collection {
   structure: CollectionStructure;
   /** Where entries live on the site, e.g. "/blog/{slug}". */
   routePattern: string;
+  /** Where the website shows drafts for live preview; null until a site is connected. */
+  previewUrlPattern: string | null;
   entryCount: number;
   updatedAt: string;
 }

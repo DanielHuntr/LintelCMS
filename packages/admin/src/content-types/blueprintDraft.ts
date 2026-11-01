@@ -8,6 +8,7 @@ import {
 } from "../fields/field.types.js";
 import { t } from "../i18n/strings.js";
 import type { Blueprint } from "./blueprints.types.js";
+import { blockTypesForSaving, blockTypesProblem, withDraftKeys } from "./blockTypesDraft.js";
 import { cleanTypedHandle, handleFromLabel, isValidHandle, uniqueHandle } from "./handle.js";
 
 /**
@@ -50,12 +51,19 @@ export function draftFromBlueprint(blueprint: Blueprint): BlueprintDraftState {
     name: blueprint.name,
     fields: blueprint.fields.map((field) => ({
       ...field,
-      options: field.options ?? {},
+      options: withDraftOptions(field.options ?? {}),
       key: `saved:${field.handle}`,
       handleIsCustom: true,
       isSaved: true,
     })),
   };
+}
+
+/** A blocks field's block types get the builder's bookkeeping; other options stay as they are. */
+function withDraftOptions(options: FieldOptions): FieldOptions {
+  return options.blockTypes
+    ? { ...options, blockTypes: withDraftKeys(options.blockTypes) }
+    : options;
 }
 
 export function isTitleField(field: Pick<Field, "handle">): boolean {
@@ -169,7 +177,9 @@ function handlesOf(fields: readonly DraftField[]): string[] {
 }
 
 function defaultOptionsFor(fieldType: FieldType): FieldOptions {
-  return fieldType === "select" ? { choices: [], multiple: false } : {};
+  if (fieldType === "select") return { choices: [], multiple: false };
+  if (fieldType === "blocks") return { blockTypes: [] };
+  return {};
 }
 
 /** Keeps only the options that apply to the field's type, so the API gets a clean blueprint. */
@@ -189,6 +199,11 @@ export function optionsForType(fieldType: FieldType, options: FieldOptions): Fie
       return { choices: options.choices ?? [], multiple: options.multiple === true };
     case "date":
       return { includeTime: options.includeTime === true };
+    case "blocks":
+      return {
+        blockTypes: blockTypesForSaving(options.blockTypes ?? [], optionsForType),
+        ...(options.maxBlocks !== undefined ? { maxBlocks: options.maxBlocks } : {}),
+      };
     default:
       return {};
   }
@@ -227,6 +242,9 @@ export function blueprintProblems(state: BlueprintDraftState): FieldMessages {
       problems[field.key] = t("builder.problem.duplicate");
     else if (field.type === "select" && (field.options.choices ?? []).length === 0) {
       problems[field.key] = t("builder.problem.choices");
+    } else if (field.type === "blocks") {
+      const problem = blockTypesProblem(field.options.blockTypes ?? []);
+      if (problem) problems[field.key] = problem;
     }
   }
   return problems;

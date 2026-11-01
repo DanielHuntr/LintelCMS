@@ -5,6 +5,7 @@ import {
   fieldErrorsFrom,
   firstFieldWithError,
   focusField,
+  focusTargetFor,
 } from "./fieldErrors.js";
 
 const onScreenOrder = ["title", "slug", "excerpt", "category"];
@@ -30,6 +31,17 @@ describe("field errors from the API", () => {
     const errors = { excerpt: "Add an excerpt.", parentId: "That page no longer exists." };
 
     expect(errorsWithoutAField(onScreenOrder, errors)).toEqual(["That page no longer exists."]);
+  });
+
+  it("show messages inside a blocks field there, focusing the first block field with one", () => {
+    const errors = {
+      excerpt: "Hero (block 2): Heading is required",
+      "excerpt.b2.heading": "Heading is required",
+    };
+
+    expect(errorsWithoutAField(onScreenOrder, errors)).toEqual([]);
+    expect(focusTargetFor("excerpt", errors)).toBe("excerpt.b2.heading");
+    expect(focusTargetFor("category", errors)).toBe("category");
   });
 });
 

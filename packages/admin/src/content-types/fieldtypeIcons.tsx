@@ -2,6 +2,7 @@ import {
   AlignLeft,
   Calendar,
   Hash,
+  LayoutTemplate,
   ImageIcon,
   Link2,
   ListChecks,
@@ -23,6 +24,7 @@ export const fieldtypeIcons: Record<FieldType, LucideIcon> = {
   date: Calendar,
   image: ImageIcon,
   link: Link2,
+  blocks: LayoutTemplate,
 };
 
 interface FieldtypeIconProps {

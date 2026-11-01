@@ -24,11 +24,20 @@ type Filter = "all" | AssetKind;
 const SEARCH_DELAY_MILLISECONDS = 250;
 
 /** The media library at /media: every uploaded file, searchable, with uploads by button or drop. */
-export function MediaLibraryPage({ permissions }: { permissions: readonly string[] }) {
+export function MediaLibraryPage({
+  permissions,
+  initialAssetId,
+  initialSearch,
+}: {
+  permissions: readonly string[];
+  /** A file whose details open straight away, such as one picked in search. */
+  initialAssetId?: string;
+  initialSearch?: string;
+}) {
   const canUpload = hasPermission(permissions, "media:upload");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch ?? "");
   const [filter, setFilter] = useState<Filter>("all");
-  const [openAssetId, setOpenAssetId] = useState<string | null>(null);
+  const [openAssetId, setOpenAssetId] = useState<string | null>(initialAssetId ?? null);
   const fileInput = useRef<HTMLInputElement>(null);
   const debouncedSearch = useDebouncedValue(search, SEARCH_DELAY_MILLISECONDS);
   const assetList = useAssetList(debouncedSearch, filter === "all" ? undefined : filter);

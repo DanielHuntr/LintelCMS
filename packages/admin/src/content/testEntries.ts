@@ -30,6 +30,7 @@ export const postsCollection: Collection = {
   blueprintHandle: "post",
   structure: "dated",
   routePattern: "/blog/{slug}",
+  previewUrlPattern: null,
   entryCount: 1,
   updatedAt: "2026-10-01T09:00:00.000Z",
 };

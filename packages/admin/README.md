@@ -17,6 +17,8 @@ The control panel: a React app that talks to `@lintel/core`.
 | `src/settings`      | The Settings index                                              |
 | `src/testing`       | Helpers for component tests                                     |
 | `src/media`         | The media library and the `MediaPicker` for image fields        |
+| `src/preview`       | Live preview beside the entry editor, and preview addresses     |
+| `src/search`        | The command palette (Cmd/Ctrl+K): one search for everything     |
 | `src/api`           | Talking to the API, and the shared TanStack Query cache         |
 | `src/setup`         | First-run setup: database, first account and kind of site       |
 | `src/session`       | Who is signed in, signing out; `useCan`                         |

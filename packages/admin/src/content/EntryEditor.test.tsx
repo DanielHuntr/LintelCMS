@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { apiErrorResponse, mockApi } from "../testing/mockApi.js";
@@ -86,5 +86,74 @@ describe("EntryEditor", () => {
       .filter(({ method }) => method !== "GET")
       .map(({ method, url }) => `${method} ${url.pathname}`);
     expect(writes).toEqual(["PATCH /entries/p1", "POST /entries/p1/publish"]);
+  });
+
+  it("duplicates from the More menu and opens the copy", async () => {
+    const api = mockApi(({ method, url }) => {
+      if (method === "POST" && url.pathname === "/entries/p1/duplicate") {
+        return samplePost({ id: "p2", title: "Hello world (copy)", slug: "hello-world-copy" });
+      }
+      if (url.pathname === "/collections") return { collections: [] };
+      return { revisions: [] };
+    });
+    const { router } = renderScreen(
+      <EntryEditor
+        collection={postsCollection}
+        blueprint={postBlueprint}
+        initialEntry={samplePost()}
+        onCreated={() => undefined}
+      />,
+    );
+    await screen.findByRole("textbox", { name: "Title" });
+
+    await userEvent.click(screen.getByRole("button", { name: "More actions" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Duplicate entry" }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/content/posts/p2"));
+    expect(api.calls.some(({ url }) => url.pathname === "/entries/p1/duplicate")).toBe(true);
+  });
+
+  it("leaves Duplicate out for people who can't create entries", async () => {
+    mockApi(() => ({ revisions: [] }));
+    await renderEditor(["entries:read", "entries:update"]);
+
+    await userEvent.click(screen.getByRole("button", { name: "More actions" }));
+
+    expect(screen.getByRole("menuitem", { name: "Preview" })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "Duplicate entry" })).not.toBeInTheDocument();
+  });
+
+  it("opens the preview beside the document in place of the side panel", async () => {
+    mockApi(({ method, url }) => {
+      if (method === "POST" && url.pathname === "/entries/p1/preview") {
+        return { token: "t.k", expiresAt: "2026-11-01T10:00:00Z", previewUrl: null };
+      }
+      if (url.pathname === "/preview") {
+        return {
+          collection: "posts",
+          entry: {
+            id: "p1",
+            slug: "hello-world",
+            url: null,
+            publishedAt: null,
+            data: { title: "Hello world" },
+          },
+        };
+      }
+      return { revisions: [] };
+    });
+    await renderEditor();
+    const previewButton = screen.getByRole("button", { name: "Preview" });
+
+    await userEvent.click(previewButton);
+
+    expect(previewButton).toHaveAttribute("aria-expanded", "true");
+    const pane = screen.getByRole("complementary", { name: "Preview" });
+    expect(
+      await within(pane).findByRole("heading", { level: 1, name: "Hello world" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("complementary", { name: "Blog posts" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Close preview" }));
+    expect(screen.getByRole("complementary", { name: "Blog posts" })).toBeInTheDocument();
   });
 });
