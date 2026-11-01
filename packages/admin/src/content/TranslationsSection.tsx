@@ -75,10 +75,11 @@ export function TranslationsSection({ collectionHandle, entry, locale }: Transla
                 <Link
                   to="/content/$collection/$entryId"
                   params={{ collection: collectionHandle, entryId: translation.id }}
-                  aria-label={t("translations.open", { language: other.name })}
                   className="flex items-center gap-2 rounded-control px-2 py-1.5 text-footnote text-label hover:bg-fill focus-visible:focus-ring"
                 >
+                  {/* Named by what it shows: the language, then its status. */}
                   <span className="min-w-0 flex-1 truncate">{other.name}</span>
+                  <span className="sr-only">, </span>
                   <EntryStatusBadge status={translation.status} />
                   <ChevronRight
                     aria-hidden="true"

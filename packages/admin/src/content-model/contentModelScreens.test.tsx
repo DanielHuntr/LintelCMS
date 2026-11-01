@@ -159,7 +159,7 @@ describe("TranslationsSection", () => {
     );
 
     expect(
-      await screen.findByRole("link", { name: "Open the French (France) version" }),
+      await screen.findByRole("link", { name: /^French \(France\),\s?Draft$/ }),
     ).toHaveAttribute("href", "/content/posts/p2");
   });
 });

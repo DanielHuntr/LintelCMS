@@ -179,7 +179,6 @@ export const contentModelStrings = {
   "menus.item.add": "Add",
   "menus.item.remove": "Remove link",
   "menus.item.removeNamed": "Remove “{label}”",
-  "menus.item.edit": "Edit “{label}”",
   "menus.item.linksTo": "Links to",
   "menus.item.page": "A page",
   "menus.item.address": "A web address",
@@ -232,7 +231,6 @@ export const contentModelStrings = {
 
   "translations.title": "Language",
   "translations.writtenIn": "Written in {language}",
-  "translations.open": "Open the {language} version",
   "translations.translate": "Translate",
   "translations.translateInto": "Translate into {language}",
   "translations.saveFirst": "Save this entry first, then you can translate it.",

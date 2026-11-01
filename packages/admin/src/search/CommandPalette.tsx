@@ -258,7 +258,8 @@ function PaletteOption({
   return (
     <>
       {groupLabel && (
-        // Group names are read as part of the first option of each group, not as options.
+        // Group names are read as part of the first option of each group (at the end of its
+        // name), not as options.
         <li
           role="presentation"
           aria-hidden="true"
@@ -271,7 +272,6 @@ function PaletteOption({
         id={id}
         role="option"
         aria-selected={isActive}
-        aria-label={[groupLabel, item.label, item.detail].filter(Boolean).join(", ")}
         onMouseMove={onHover}
         onClick={onChoose}
         className={classNames(
@@ -298,7 +298,12 @@ function PaletteOption({
           )
         )}
         <span className="flex min-w-0 flex-col">
+          {/*
+           * Named by what it shows, so the name matches what people see. The first row of
+           * each group also ends with the group's name, which is drawn above it.
+           */}
           <span className="truncate text-body font-medium">{item.label}</span>
+          {item.detail && <span className="sr-only">, </span>}
           {item.detail && (
             <span
               className={classNames(
@@ -309,6 +314,7 @@ function PaletteOption({
               {item.detail}
             </span>
           )}
+          {groupLabel && <span className="sr-only">, {groupLabel}</span>}
         </span>
       </li>
     </>

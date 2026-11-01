@@ -48,7 +48,7 @@ describe("the command palette", () => {
     await userEvent.type(input, "hello");
 
     const option = await screen.findByRole("option", {
-      name: /Hello world, Blog posts · Published/,
+      name: /Hello world,\s?Blog posts · Published/,
     });
     expect(option).toHaveAttribute("aria-selected", "true");
     expect(input).toHaveAttribute("aria-activedescendant", option.id);
@@ -65,7 +65,7 @@ describe("the command palette", () => {
     // "Blog" matches the Blog posts collection right away, and the API's entry after.
     await userEvent.type(input, "blog");
     await screen.findByRole("option", { name: /Hello world/ });
-    expect(screen.getByRole("option", { name: /Blog posts, All Blog posts/ })).toHaveAttribute(
+    expect(screen.getByRole("option", { name: /Blog posts,\s?All Blog posts/ })).toHaveAttribute(
       "aria-selected",
       "true",
     );
