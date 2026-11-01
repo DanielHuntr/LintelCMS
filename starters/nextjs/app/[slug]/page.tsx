@@ -3,7 +3,6 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { LintelImage } from "../../components/LintelImage";
 import { LintelUnavailable, loadFromLintel } from "../../components/LintelUnavailable";
 import { RichText } from "../../components/RichText";
-import type { PageData } from "../../lib/content-types";
 import { imageUrl } from "../../lib/images";
 import { getEntry, listAllEntries } from "../../lib/lintel";
 import { HOME_PAGE_SLUG } from "../../lib/site";
@@ -23,7 +22,7 @@ interface PageProps {
  */
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
   try {
-    const pages = await listAllEntries<PageData>("pages");
+    const pages = await listAllEntries("pages");
     return pages
       .filter((page) => page.slug !== HOME_PAGE_SLUG)
       .map((page) => ({ slug: page.slug }));
@@ -34,7 +33,7 @@ export async function generateStaticParams(): Promise<{ slug: string }[]> {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const page = await getEntry<PageData>("pages", slug).catch(() => null);
+  const page = await getEntry("pages", slug).catch(() => null);
   if (!page) return {};
   const image = page.data.hero_image;
   return {
@@ -54,7 +53,7 @@ export default async function LintelPage({ params }: PageProps) {
   const { slug } = await params;
   if (slug === HOME_PAGE_SLUG) permanentRedirect("/");
 
-  const loaded = await loadFromLintel(() => getEntry<PageData>("pages", slug));
+  const loaded = await loadFromLintel(() => getEntry("pages", slug));
   if (loaded.unreachable) return <LintelUnavailable error={loaded.unreachable} />;
   const page = loaded.result;
   if (!page) notFound();

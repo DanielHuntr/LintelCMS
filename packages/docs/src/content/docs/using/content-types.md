@@ -47,3 +47,17 @@ Drag fields to change the order editors see them in, then press **Save**.
   saved field's handle doesn't change when you relabel it, so existing content isn't lost.
 - If your website has been built to show a field, check with your developer before
   removing or renaming it.
+
+## “Managed in code”
+
+On some sites the content types screen says **Managed in code**. It means your developer
+keeps the content types (and taxonomies, global settings fields and menus) in files with
+the website's code, so they're the same on every copy of the site and every change is
+reviewed. You can still write, edit and publish everything as usual; there's just no
+**New content type** button or field editing. To add or change a field, ask your
+developer.
+
+Sometimes the screen lists **changes waiting for you to confirm**. Your developer's new
+version would delete content that's already written, such as the text in a field they've
+removed, so Lintel waits rather than delete it silently. Each line says exactly what would
+go. If you're unsure, check with your developer before pressing **Make these changes**.

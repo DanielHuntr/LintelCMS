@@ -13,6 +13,7 @@ import { BackLink } from "../design/BackLink.js";
 import { Button } from "../design/Button.js";
 import { ConfirmDialog } from "../design/ConfirmDialog.js";
 import { EmptyState } from "../design/EmptyState.js";
+import { useContentModelEditable } from "../content-model-sync/contentModelSync.queries.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { Menu as ActionsMenu } from "../design/Menu.js";
 import { t, tCount } from "../i18n/strings.js";
@@ -48,6 +49,8 @@ export function MenuEditor({ menu }: { menu: Menu }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const canEdit = useCan("navigation:update");
+  // The menu's name and levels are part of the content model; its items are content.
+  const canChangeSettings = useContentModelEditable();
   const [saved, setSaved] = useState(() => flattenMenu(menu.items));
   const [items, setItems] = useState(saved);
   const [settings, setSettings] = useState({ name: menu.name, maxDepth: menu.maxDepth });
@@ -143,23 +146,25 @@ export function MenuEditor({ menu }: { menu: Menu }) {
         actions={
           canEdit && (
             <>
-              <ActionsMenu
-                label={t("menus.moreActions", { name: settings.name })}
-                trigger={<Ellipsis aria-hidden="true" className="size-5" />}
-                items={[
-                  {
-                    label: t("menus.settings"),
-                    icon: Settings2,
-                    onSelect: () => setIsEditingSettings(true),
-                  },
-                  {
-                    label: t("menus.delete"),
-                    icon: Trash2,
-                    tone: "danger",
-                    onSelect: () => setIsDeleting(true),
-                  },
-                ]}
-              />
+              {canChangeSettings && (
+                <ActionsMenu
+                  label={t("menus.moreActions", { name: settings.name })}
+                  trigger={<Ellipsis aria-hidden="true" className="size-5" />}
+                  items={[
+                    {
+                      label: t("menus.settings"),
+                      icon: Settings2,
+                      onSelect: () => setIsEditingSettings(true),
+                    },
+                    {
+                      label: t("menus.delete"),
+                      icon: Trash2,
+                      tone: "danger",
+                      onSelect: () => setIsDeleting(true),
+                    },
+                  ]}
+                />
+              )}
               <Button
                 variant="tinted"
                 icon={<Plus aria-hidden="true" />}

@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { loadConfig, loadProjectEnvFile } from "./config.js";
+import { contentModelOptionsFromConfig } from "./content-model-sync/content-model-config.js";
 import { describeActiveDatabase } from "./database/active-database.js";
 import { buildServer } from "./server.js";
 import { isSetupNeeded } from "./setup/setup.service.js";
@@ -23,6 +24,7 @@ await runWithFriendlyErrors(async () => {
     publicApiUrl: config.API_PUBLIC_URL ?? `http://localhost:${config.API_PORT}`,
     graphiql: config.NODE_ENV === "development",
     webhooks: { allowPrivateAddresses: config.WEBHOOKS_ALLOW_PRIVATE_ADDRESSES },
+    contentModel: contentModelOptionsFromConfig(config),
     logger: true,
   });
   server.addHook("onClose", () => activeDatabase.close());

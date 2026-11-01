@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { LintelImage } from "../../../components/LintelImage";
 import { LintelUnavailable, loadFromLintel } from "../../../components/LintelUnavailable";
 import { RichText } from "../../../components/RichText";
-import type { PostData } from "../../../lib/content-types";
 import { formatDate } from "../../../lib/dates";
 import { imageUrl } from "../../../lib/images";
 import { getEntry, listEntries } from "../../../lib/lintel";
@@ -17,16 +16,10 @@ interface PostPageProps {
   params: Promise<{ slug: string }>;
 }
 
-const categoryNames: Record<NonNullable<PostData["category"]>, string> = {
-  news: "News",
-  guides: "Guides",
-  updates: "Updates",
-};
-
 /** The newest posts are made when the site is built; older ones on their first visit. */
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
   try {
-    const posts = await listEntries<PostData>("posts", { perPage: 50 });
+    const posts = await listEntries("posts", { perPage: 50 });
     return (posts?.items ?? []).map((post) => ({ slug: post.slug }));
   } catch {
     return [];
@@ -35,7 +28,7 @@ export async function generateStaticParams(): Promise<{ slug: string }[]> {
 
 export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = await getEntry<PostData>("posts", slug).catch(() => null);
+  const post = await getEntry("posts", slug).catch(() => null);
   if (!post) return {};
   const image = post.data.featured_image;
   return {
@@ -53,7 +46,7 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
 
 export default async function PostPage({ params }: PostPageProps) {
   const { slug } = await params;
-  const loaded = await loadFromLintel(() => getEntry<PostData>("posts", slug));
+  const loaded = await loadFromLintel(() => getEntry("posts", slug));
   if (loaded.unreachable) return <LintelUnavailable error={loaded.unreachable} />;
   const post = loaded.result;
   if (!post) notFound();
@@ -63,7 +56,9 @@ export default async function PostPage({ params }: PostPageProps) {
       <header className="hero">
         <p className="meta">
           <Link href="/blog">Blog</Link>
-          {post.data.category && <> · {categoryNames[post.data.category]}</>}
+          {post.data.categories && post.data.categories.length > 0 && (
+            <> · {post.data.categories.map((category) => category.title).join(", ")}</>
+          )}
           {post.publishedAt && (
             <>
               {" · "}

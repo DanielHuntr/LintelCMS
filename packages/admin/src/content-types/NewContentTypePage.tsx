@@ -8,6 +8,7 @@ import type { CollectionStructure } from "../content/content.types.js";
 import { entryUrlPreview } from "../content/slug.js";
 import { BackLink } from "../design/BackLink.js";
 import { Button } from "../design/Button.js";
+import { ManagedInCodeBanner } from "../content-model-sync/ManagedInCodeBanner.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { LinkButton } from "../design/LinkButton.js";
 import { TextField } from "../design/TextField.js";
@@ -78,6 +79,7 @@ export function NewContentTypePage() {
     <>
       <BackLink to="/settings/content-types">{t("contentTypes.title")}</BackLink>
       <LargeTitle title={t("contentTypes.newTitle")} subtitle={t("contentTypes.newSubtitle")} />
+      <ManagedInCodeBanner />
 
       <form
         onSubmit={(event) => void handleSubmit(event)}

@@ -9,18 +9,19 @@ import { Button } from "../design/Button.js";
 import { EmptyState } from "../design/EmptyState.js";
 import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
+import { useCanChangeContentModel } from "../content-model-sync/contentModelSync.queries.js";
+import { ManagedInCodeBanner } from "../content-model-sync/ManagedInCodeBanner.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { t, tCount } from "../i18n/strings.js";
-import { useCan } from "../session/SessionContext.js";
 import { createGlobalSet } from "./globals.api.js";
 import { globalKeys, useGlobalSets } from "./globals.queries.js";
 
 /** /content/globals: site-wide settings, such as the footer text and social links. */
 export function GlobalsPage() {
   const globalSets = useGlobalSets();
-  const canCreate = useCan("blueprints:update");
+  const canCreate = useCanChangeContentModel("blueprints:update");
   const [isCreating, setIsCreating] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -52,6 +53,7 @@ export function GlobalsPage() {
         subtitle={t("globals.subtitle")}
         actions={globalSets.data?.length === 0 ? undefined : newButton("tinted")}
       />
+      <ManagedInCodeBanner />
       {globalSets.isError && (
         <LoadError error={globalSets.error} onRetry={() => void globalSets.refetch()} />
       )}

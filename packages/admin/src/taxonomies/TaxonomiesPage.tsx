@@ -9,18 +9,19 @@ import { Button } from "../design/Button.js";
 import { EmptyState } from "../design/EmptyState.js";
 import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
+import { useCanChangeContentModel } from "../content-model-sync/contentModelSync.queries.js";
+import { ManagedInCodeBanner } from "../content-model-sync/ManagedInCodeBanner.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { t, tCount } from "../i18n/strings.js";
-import { useCan } from "../session/SessionContext.js";
 import { createTaxonomy } from "./taxonomies.api.js";
 import { taxonomyKeys, useTaxonomies } from "./taxonomies.queries.js";
 
 /** /content/taxonomies: the ways content is grouped, such as Categories and Tags. */
 export function TaxonomiesPage() {
   const taxonomies = useTaxonomies();
-  const canCreate = useCan("taxonomies:update");
+  const canCreate = useCanChangeContentModel("taxonomies:update");
   const [isCreating, setIsCreating] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -51,6 +52,7 @@ export function TaxonomiesPage() {
         subtitle={t("taxonomies.subtitle")}
         actions={taxonomies.data?.length === 0 ? undefined : newButton("tinted")}
       />
+      <ManagedInCodeBanner />
 
       {taxonomies.isError && (
         <LoadError error={taxonomies.error} onRetry={() => void taxonomies.refetch()} />

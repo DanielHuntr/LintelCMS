@@ -1,5 +1,8 @@
 import { Plus, Shapes } from "lucide-react";
 import { LoadError } from "../api/LoadError.js";
+import { useCanChangeContentModel } from "../content-model-sync/contentModelSync.queries.js";
+import { ManagedInCodeBanner } from "../content-model-sync/ManagedInCodeBanner.js";
+import { ModelSyncNotices } from "../content-model-sync/ModelSyncNotices.js";
 import { BackLink } from "../design/BackLink.js";
 import { EmptyState } from "../design/EmptyState.js";
 import { GroupedList } from "../design/GroupedList.js";
@@ -9,13 +12,12 @@ import { LinkButton } from "../design/LinkButton.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { t, tCount } from "../i18n/strings.js";
-import { useCan } from "../session/SessionContext.js";
 import { useBlueprints } from "./blueprints.queries.js";
 
 /** /settings/content-types: every content type, and a way to make a new one. */
 export function ContentTypesPage() {
   const blueprints = useBlueprints();
-  const canCreate = useCan("blueprints:update");
+  const canCreate = useCanChangeContentModel("blueprints:update");
 
   const newButton = canCreate && (
     <LinkButton to="/settings/content-types/new" icon={<Plus aria-hidden="true" />}>
@@ -31,6 +33,8 @@ export function ContentTypesPage() {
         subtitle={t("contentTypes.subtitle")}
         actions={blueprints.data?.length === 0 ? undefined : newButton}
       />
+      <ModelSyncNotices />
+      <ManagedInCodeBanner />
 
       {blueprints.isError && (
         <LoadError error={blueprints.error} onRetry={() => void blueprints.refetch()} />

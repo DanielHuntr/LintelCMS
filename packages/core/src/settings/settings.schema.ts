@@ -28,6 +28,8 @@ export const settingSchemas = {
   deliveryAllowedOrigins: z.array(z.string()),
   /** Search engine defaults from the SEO plugin (see src/seo). */
   seoDefaults: seoDefaultsSchema,
+  /** What each content model unit was when files and database last agreed (src/content-model-sync). */
+  contentModelSyncBase: z.record(z.string(), z.string()),
 };
 
 export type SettingKey = keyof typeof settingSchemas;
@@ -41,4 +43,5 @@ export const settingDefaults: { [Key in SettingKey]: SettingValue<Key> } = {
   deliveryRequiresToken: false,
   deliveryAllowedOrigins: [],
   seoDefaults: defaultSeoDefaults,
+  contentModelSyncBase: {},
 };

@@ -10,6 +10,7 @@ import { BackLink } from "../design/BackLink.js";
 import { Button } from "../design/Button.js";
 import { ConfirmDialog } from "../design/ConfirmDialog.js";
 import { EmptyState } from "../design/EmptyState.js";
+import { useCanChangeContentModel } from "../content-model-sync/contentModelSync.queries.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { LinkButton } from "../design/LinkButton.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
@@ -59,7 +60,7 @@ function GlobalValuesForm({
 }) {
   const queryClient = useQueryClient();
   const canSave = useCan("globals:update");
-  const canEditFields = useCan("blueprints:update");
+  const canEditFields = useCanChangeContentModel("blueprints:update");
   const localeName = useLocaleName();
   const locales = useLocales();
   const [saved, setSaved] = useState<EntryData>(globalSet.data);

@@ -1,4 +1,5 @@
 import { contentModelStrings } from "./contentModelStrings.js";
+import { contentModelSyncStrings } from "./contentModelSyncStrings.js";
 
 /**
  * Every word the admin shows lives here, so the admin can be translated and
@@ -8,6 +9,7 @@ import { contentModelStrings } from "./contentModelStrings.js";
  */
 const english = {
   ...contentModelStrings,
+  ...contentModelSyncStrings,
   "app.name": "Lintel",
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",

@@ -22,6 +22,7 @@ export const buildingPages = [
   "building/feature-folders",
   "building/delivery-api",
   "building/images",
+  "building/content-model-as-code",
   "building/nextjs-starter",
   "building/plugins",
   "building/contributing",

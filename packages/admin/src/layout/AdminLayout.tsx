@@ -1,4 +1,5 @@
 import { Outlet } from "@tanstack/react-router";
+import { useContentModelEvents } from "../content-model-sync/useContentModelEvents.js";
 import { HelpLauncher } from "../help/HelpLauncher.js";
 import { t } from "../i18n/strings.js";
 import { CommandPalette } from "../search/CommandPalette.js";
@@ -27,6 +28,8 @@ export function AdminLayout({
   onSignOut,
 }: AdminLayoutProps) {
   const palette = useCommandPalette();
+  // Screens showing content types reload when a developer changes the content model files.
+  useContentModelEvents();
   return (
     <div className="min-h-screen bg-background text-label">
       <a

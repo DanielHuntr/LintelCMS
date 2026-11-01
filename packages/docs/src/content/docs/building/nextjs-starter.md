@@ -30,14 +30,15 @@ in the way when you're only working on Lintel.
 
 ## Where things are
 
-| File                         | What it does                                            |
-| ---------------------------- | ------------------------------------------------------- |
-| `lib/lintel.ts`              | Typed fetch helpers: `getEntry`, `listEntries`          |
-| `lib/content-types.ts`       | The fields of Pages and Blog posts, as TypeScript types |
-| `lib/images.ts`              | Building resized, focal-point-cropped image URLs        |
-| `components/LintelImage.tsx` | A responsive `<img>` with `srcset`                      |
-| `components/RichText.tsx`    | Renders a rich text field's HTML                        |
-| `app/`                       | The routes                                              |
+| File                         | What it does                                      |
+| ---------------------------- | ------------------------------------------------- |
+| `lib/lintel.ts`              | Typed fetch helpers: `getEntry`, `listEntries`    |
+| `lib/lintel.generated.ts`    | Types and a client from `model types`; don't edit |
+| `lib/content-types.ts`       | Short names for the generated types               |
+| `lib/images.ts`              | Building resized, focal-point-cropped image URLs  |
+| `components/LintelImage.tsx` | A responsive `<img>` with `srcset`                |
+| `components/RichText.tsx`    | Renders a rich text field's HTML                  |
+| `app/`                       | The routes                                        |
 
 The starter's [README](https://github.com/DanielHuntr/lintelcms/blob/main/starters/nextjs/README.md)
 walks through it step by step, including deploying and adding your own content types.

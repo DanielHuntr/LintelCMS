@@ -18,6 +18,7 @@ import { useFieldtypes } from "../content-types/blueprints.queries.js";
 import { FieldSettingsSheet } from "../content-types/FieldSettingsSheet.js";
 import { isSameValue } from "../content/sameValue.js";
 import { useLeaveWarning } from "../content/useLeaveWarning.js";
+import { ManagedInCodeBanner } from "../content-model-sync/ManagedInCodeBanner.js";
 import { BackLink } from "../design/BackLink.js";
 import { Button } from "../design/Button.js";
 import { ConfirmDialog } from "../design/ConfirmDialog.js";
@@ -114,6 +115,7 @@ export function GlobalFieldsEditor({ globalSet }: { globalSet: GlobalSet }) {
       <BackLink to="/content/globals/$handle" params={{ handle: globalSet.handle }}>
         {globalSet.name}
       </BackLink>
+      <ManagedInCodeBanner />
       <div className="mb-8 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
         <div className="min-w-0">
           <h1 className="text-large-title text-label">

@@ -101,7 +101,9 @@ if (response.status === 404) {
 const post: DeliveredEntry<PostData> = await response.json();
 ```
 
-The [Next.js starter](/building/nextjs-starter/) has typed helpers ready to copy.
+Rather than writing these by hand, `model types` generates them for every content type,
+with a typed client (see [Content model as code](/building/content-model-as-code/)). The
+[Next.js starter](/building/nextjs-starter/) uses it.
 
 ## Errors
 

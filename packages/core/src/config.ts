@@ -38,6 +38,15 @@ const configSchema = z.object({
     .enum(["true", "false", ""])
     .default("false")
     .transform((value) => value === "true"),
+  // Content model as code (see src/content-model-sync). The folder is relative to the
+  // repository root; the editing switch defaults to on in development, off in production.
+  CONTENT_MODEL_FOLDER: z.string().default("content-model"),
+  CONTENT_MODEL_FORMAT: z.enum(["typescript", "yaml"]).default("typescript"),
+  CONTENT_MODEL_EDITABLE_IN_ADMIN: z
+    .enum(["true", "false", ""])
+    .default("")
+    .transform((value) => (value === "" ? undefined : value === "true")),
+  CONTENT_MODEL_TYPES_FILE: z.string().default("generated/lintel-content.ts"),
 });
 
 export type Config = z.infer<typeof configSchema>;
