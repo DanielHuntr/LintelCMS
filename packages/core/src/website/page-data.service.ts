@@ -12,6 +12,7 @@ import {
 } from "@lintel/builder-model";
 import type { MenuItem } from "@lintel/site-components";
 import { listDeliveredEntries } from "../delivery/delivery.service.js";
+import { TaxonomyNotFoundError, TermNotFoundError } from "../taxonomies/taxonomies.errors.js";
 import type { DeliveredEntry } from "../delivery/delivery.schema.js";
 import { entryAsItem } from "./bound-entries.js";
 import { entryTitle } from "./delivered-to-site.js";
@@ -36,8 +37,8 @@ const SORT_LIMIT = 500;
 export interface PageDataOptions {
   item?: BoundItem;
   product?: ShopProduct;
-  /** The entry being shown, left out of lists that ask for it to be. */
-  currentEntryId?: string;
+  /** The entry being shown, left out of lists of its collection that ask for it to be. */
+  currentEntry?: { id: string; collection: string };
 }
 
 export async function loadPageData(
@@ -54,7 +55,7 @@ export async function loadPageData(
       request,
       node,
       node === paged ? request.query.page : 1,
-      options.currentEntryId,
+      options.currentEntry,
     );
     if (list) lists[node.id] = list;
   }
@@ -158,7 +159,7 @@ async function loadCollectionList(
   request: PageRequest,
   node: PageNode,
   page: number,
-  currentEntryId: string | undefined,
+  currentEntry: PageDataOptions["currentEntry"],
 ): Promise<CollectionListData | null> {
   const { dependencies, context, locale } = request;
   const collection = context.collections.find(({ handle }) => handle === node.props.collection);
@@ -169,7 +170,10 @@ async function loadCollectionList(
   // The collection's own order (newest first for dated ones) comes from the database a page
   // at a time; any other order sorts the newest entries here.
   const ownOrder = sort === "manual" || (sort === "newest" && collection.structure === "dated");
-  const skip = node.props.skipCurrent === true && currentEntryId ? currentEntryId : null;
+  const skip =
+    node.props.skipCurrent === true && currentEntry?.collection === collection.handle
+      ? currentEntry.id
+      : null;
   const read = (pageNumber: number, perPage: number) =>
     listDeliveredEntries(
       dependencies.database,
@@ -182,7 +186,13 @@ async function loadCollectionList(
         term: term || undefined,
       },
       dependencies.assetLookup,
-    );
+    ).catch((error: unknown) => {
+      // A filter by a term that has since been deleted shows the list's empty state.
+      if (error instanceof TermNotFoundError || error instanceof TaxonomyNotFoundError) {
+        return { items: [], total: 0 };
+      }
+      throw error;
+    });
   let entries: DeliveredEntry[];
   let total: number;
   if (ownOrder) {

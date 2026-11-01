@@ -32,7 +32,7 @@ export async function designEntryView(
     const sampleData = designFor ? await loadSample(request, designFor) : undefined;
     const data = await loadPageData(request, own, {
       item: sampleData ?? entryAsItem(entry, url, locale),
-      currentEntryId: entry.id,
+      currentEntry: { id: entry.id, collection: collectionHandle },
     });
     return { ...view, design: drawPageDesign(own, data) };
   }
@@ -40,7 +40,7 @@ export async function designEntryView(
   if (!itemDesign) return view;
   const data = await loadPageData(request, itemDesign, {
     item: entryAsItem(entry, url, locale),
-    currentEntryId: entry.id,
+    currentEntry: { id: entry.id, collection: collectionHandle },
   });
   return {
     kind: "page",

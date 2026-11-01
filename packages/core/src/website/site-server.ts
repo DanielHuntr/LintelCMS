@@ -1,7 +1,7 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import { siteApiRoutes } from "./site-api.routes.js";
 import { siteRoutes } from "./site.routes.js";
-import { storefrontSources } from "./site-sources.js";
+import { type SiteSources, storefrontSources } from "./site-sources.js";
 
 /**
  * The built-in website, as its own small server on its own port (3000 unless SITE_PORT
@@ -10,7 +10,12 @@ import { storefrontSources } from "./site-sources.js";
  * setup screen switching databases, an editor publishing a page. See
  * docs/decisions/0011-built-in-website.md.
  */
-export function buildSiteServer(options: { api: FastifyInstance; logger?: boolean }) {
+export function buildSiteServer(options: {
+  api: FastifyInstance;
+  logger?: boolean;
+  /** Where the shop's products and the forms come from; their APIs by default. */
+  sources?: SiteSources;
+}) {
   const { api } = options;
   const server = Fastify({ logger: options.logger ?? false });
 
@@ -26,7 +31,7 @@ export function buildSiteServer(options: { api: FastifyInstance; logger?: boolea
       );
   });
 
-  const sources = storefrontSources(api);
+  const sources = options.sources ?? storefrontSources(api);
   server.register(siteApiRoutes, { api });
   server.register(siteRoutes, {
     dependencies: () => ({
