@@ -5,6 +5,8 @@ test("the search palette finds a post and opens it with the keyboard", async ({
   content,
 }) => {
   await page.goto("/");
+  // The shortcut works once the admin has loaded, as it would for someone at the keyboard.
+  await expect(page.getByRole("heading", { level: 1, name: "Dashboard" })).toBeVisible();
   await page.keyboard.press("ControlOrMeta+k");
   const palette = page.getByRole("dialog", { name: "Search Lintel" });
   await expect(palette).toBeVisible();
