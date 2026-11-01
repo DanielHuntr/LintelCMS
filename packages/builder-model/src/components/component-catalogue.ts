@@ -6,6 +6,7 @@ import {
   textBlockComponent,
 } from "./block-components.js";
 import { codeBlockComponent } from "./code-block-component.js";
+import { effectComponents } from "./effect-components.js";
 import type { AnyComponentDefinition, ComponentDefinition } from "./component-definition.js";
 import {
   buttonComponent,
@@ -110,6 +111,8 @@ export const standardComponents: readonly AnyComponentDefinition[] = [
   eraseProps(callToActionBlockComponent),
   eraseProps(questionBlockComponent),
   eraseProps(codeBlockComponent),
+  // Ready-made animated elements, which start with their effects (see effect-components.ts).
+  ...effectComponents,
 ];
 
 function eraseProps<Props extends Record<string, unknown>>(

@@ -133,6 +133,7 @@ export const tabsComponent = defineComponent({
     { type: "tabPanel", props: { label: "Second tab" } },
     { type: "tabPanel", props: { label: "Third tab" } },
   ],
+  defaultEffects: [{ effect: "tab-slider", params: {} }],
   allowedChildren: ["tabPanel"],
   editableFields: [{ kind: "text", prop: "label", label: "Name for screen readers" }],
 });

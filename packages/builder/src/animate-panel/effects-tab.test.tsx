@@ -134,6 +134,43 @@ describe("rendering effects", () => {
     expect(rendered.html).not.toContain("data-node-id");
   });
 
+  it("starts the ready-made animated elements with their effects, as readable HTML", () => {
+    const document = createEmptyPage();
+    const ids = createCountingNodeIds("x");
+    const elements = [
+      "magneticButton",
+      "toggleSwitch",
+      "radialMenu",
+      "notificationToast",
+      "cardStack",
+    ].map((type) => createNode({ type }, standardCatalogue, ids));
+    expect(elements.map((node) => node.effects?.map((effect) => effect.effect))).toEqual([
+      ["magnetic-pull", "press-squish"],
+      ["spring-switch"],
+      ["radial-menu"],
+      ["toast"],
+      ["card-stack"],
+    ]);
+    const rendered = renderPage(
+      { ...document, root: { ...document.root, children: elements } },
+      standardRegistry,
+      { withMotion: true },
+    );
+    expect(rendered.html).toContain(
+      'role="switch" aria-checked="false" aria-label="Yearly prices"',
+    );
+    expect(rendered.html).toContain('<a href="mailto:" class="lintel-radial-menu__link">Email</a>');
+    expect(rendered.html).toContain("lintel-toast--bottom-right");
+    expect(rendered.effects.map((binding) => binding.behaviour)).toEqual([
+      "magnetic",
+      "springPress",
+      "springToggle",
+      "radialMenu",
+      "toast",
+      "cardStack",
+    ]);
+  });
+
   it("knows which kind of element each component is", () => {
     expect(elementKindOf("heading")).toBe("text");
     expect(elementKindOf("image")).toBe("image");

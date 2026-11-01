@@ -89,7 +89,7 @@ describe("effects performance", () => {
     const { page } = await openEffectsPage(browser, html, effects);
     await page.waitForTimeout(800);
     const measured = await measureScroll(page);
-    console.info(
+    console.warn(
       `Busy page while scrolling (CPU at half speed): ${measured.fps.toFixed(1)} fps, 95th percentile frame ${measured.ninetyFifth.toFixed(1)} ms, longest task ${measured.longestTask.toFixed(0)} ms`,
     );
     expect(measured.longestTask).toBeLessThanOrEqual(50);
@@ -104,7 +104,7 @@ describe("effects performance", () => {
     ]);
     await page.waitForTimeout(800);
     const measured = await measureScroll(page);
-    console.info(
+    console.warn(
       `WebGL liquid gradient while scrolling (CPU at half speed): ${measured.fps.toFixed(1)} fps, longest task ${measured.longestTask.toFixed(0)} ms`,
     );
     expect(measured.longestTask).toBeLessThanOrEqual(50);

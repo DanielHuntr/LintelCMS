@@ -32,6 +32,8 @@ export interface ComponentDefinition<
   defaultProps: Props;
   /** Styles a new one starts with, so it looks right straight away. */
   defaultStyles?: NodeStyles;
+  /** Effects a new one starts with (see @lintel/motion/effects), such as a magnetic pull. */
+  defaultEffects?: readonly NodeEffect[];
   /** Elements a new one starts with, such as the two halves of Columns. */
   defaultChildren?: readonly NodeBlueprint[];
   /** "none" for leaves, "any" for containers, or a list of the types it accepts. */

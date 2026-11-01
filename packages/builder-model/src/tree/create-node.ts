@@ -22,6 +22,7 @@ export function createNode(
   const definition = catalogue.find(blueprint.type);
   if (!definition) throw new UnknownComponentError(blueprint.type);
   const children = blueprint.children ?? definition.defaultChildren ?? [];
+  const effects = blueprint.effects ?? definition.defaultEffects ?? [];
   return {
     id: createId(),
     type: blueprint.type,
@@ -32,7 +33,7 @@ export function createNode(
     hidden: false,
     locked: false,
     ...(blueprint.animation ? { animation: structuredCopy(blueprint.animation) } : {}),
-    ...(blueprint.effects?.length ? { effects: structuredCopy([...blueprint.effects]) } : {}),
+    ...(effects.length ? { effects: structuredCopy([...effects]) } : {}),
     ...(blueprint.freeLayout ? { freeLayout: { ...blueprint.freeLayout } } : {}),
     ...(blueprint.backgroundVideo ? { backgroundVideo: { ...blueprint.backgroundVideo } } : {}),
     ...(blueprint.bindings ? { bindings: { ...blueprint.bindings } } : {}),

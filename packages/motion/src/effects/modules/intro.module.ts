@@ -1,6 +1,6 @@
 import type { EffectBehaviour, EffectModule } from "../effect-types.js";
 import { combine, listen } from "../kit/listen.js";
-import { readText } from "../kit/params.js";
+import { readNumber, readText } from "../kit/params.js";
 import { addOverlay } from "../kit/styles.js";
 
 /**
@@ -118,5 +118,59 @@ const sectionLoader: EffectBehaviour = (element, _params, context) => {
   };
 };
 
-export const behaviours = { siteIntro, sectionLoader };
+/**
+ * A notification that slides in after a moment, waits, then leaves by itself. It is a
+ * polite live region, so screen readers announce it without interrupting; its close button
+ * (any button inside) dismisses it, and the timer pauses while the pointer or focus is on it.
+ */
+const toast: EffectBehaviour = (element, params, context) => {
+  const delay = readNumber(params, "delay", 1.5) * 1000;
+  const stay = readNumber(params, "stay", 6) * 1000;
+  const from = readText(params, "from", "bottom") === "top" ? "-120%" : "120%";
+  const hidden = { opacity: 0, transform: `translateY(${context.reduced ? "0" : from})` };
+  const shown = { opacity: 1, transform: "translateY(0)" };
+  element.setAttribute("role", "status");
+  element.setAttribute("aria-live", "polite");
+  element.style.opacity = "0";
+  element.style.visibility = "hidden";
+  let leaveTimer = 0;
+  let paused = false;
+  const leave = () => {
+    void element
+      .animate([shown, hidden], { duration: 300, easing: "ease-in", fill: "forwards" })
+      .finished.then(() => (element.style.visibility = "hidden"));
+  };
+  const scheduleLeave = () => {
+    window.clearTimeout(leaveTimer);
+    if (stay > 0 && !paused) leaveTimer = window.setTimeout(leave, stay);
+  };
+  const enterTimer = window.setTimeout(() => {
+    element.style.visibility = "visible";
+    element.animate([hidden, shown], {
+      duration: context.reduced ? 200 : 500,
+      easing: "cubic-bezier(.2,.8,.2,1)",
+      fill: "forwards",
+    });
+    scheduleLeave();
+  }, delay);
+  return combine(
+    listen(element, {
+      click: (event: MouseEvent) =>
+        (event.target as Element).closest("button") && (window.clearTimeout(leaveTimer), leave()),
+      pointerenter: () => ((paused = true), window.clearTimeout(leaveTimer)),
+      pointerleave: () => ((paused = false), scheduleLeave()),
+      focusin: () => ((paused = true), window.clearTimeout(leaveTimer)),
+      focusout: () => ((paused = false), scheduleLeave()),
+    }),
+    () => {
+      window.clearTimeout(enterTimer);
+      window.clearTimeout(leaveTimer);
+      element.getAnimations().forEach((animation) => animation.cancel());
+      element.style.removeProperty("opacity");
+      element.style.removeProperty("visibility");
+    },
+  );
+};
+
+export const behaviours = { siteIntro, sectionLoader, toast };
 export default { behaviours } satisfies EffectModule;

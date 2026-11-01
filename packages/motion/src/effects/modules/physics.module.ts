@@ -402,7 +402,159 @@ const glidingSlider: EffectBehaviour = (element, _params, context) => {
   );
 };
 
+/**
+ * A round menu: its button (the first one inside) fans the links out in a circle with a
+ * springy stagger. Enter or Space opens it, Escape closes it and returns focus, and the
+ * arrow keys move round the links. Closed, the links are out of the tab order.
+ */
+const radialMenu: EffectBehaviour = (element, params, context) => {
+  const toggle = element.querySelector<HTMLButtonElement>("button");
+  const links = Array.from(element.querySelectorAll<HTMLElement>("li > a, li > button"));
+  if (!toggle || links.length === 0) return;
+  const radius = readNumber(params, "radius", 96);
+  const spread = readNumber(params, "spread", 180);
+  const restore = setStyles(element, { position: "relative" });
+  const items = links.map((link) => link.parentElement as HTMLElement);
+  items.forEach((item) =>
+    Object.assign(item.style, {
+      position: "absolute",
+      left: "50%",
+      top: "50%",
+      translate: "-50% -50%",
+      opacity: "0",
+      pointerEvents: "none",
+    }),
+  );
+  let open = false;
+  let stops: Array<() => void> = [];
+  const place = (item: HTMLElement, index: number, amount: number) => {
+    const angle =
+      ((-90 - spread / 2 + (spread * index) / Math.max(1, items.length - 1)) * Math.PI) / 180;
+    item.style.transform = `translate(${Math.cos(angle) * radius * amount}px, ${Math.sin(angle) * radius * amount}px) scale(${0.4 + 0.6 * amount})`;
+    item.style.opacity = String(Math.min(1, Math.max(0, amount)));
+  };
+  const set = (next: boolean, focusFirst = false) => {
+    open = next;
+    toggle.setAttribute("aria-expanded", String(open));
+    stops.forEach((stop) => stop());
+    stops = items.map((item, index) => {
+      item.style.pointerEvents = open ? "auto" : "none";
+      links[index]!.tabIndex = open ? 0 : -1;
+      const from = Number.parseFloat(item.style.opacity) || 0;
+      const update = (value: number) => place(item, index, value);
+      if (context.reduced) {
+        update(open ? 1 : 0);
+        return () => undefined;
+      }
+      let stopSpring = () => undefined as void;
+      const timer = window.setTimeout(
+        () => (stopSpring = springTo(from, open ? 1 : 0, 0, update, 0.4)),
+        open ? index * 40 : 0,
+      );
+      return () => (window.clearTimeout(timer), stopSpring());
+    });
+    if (open && focusFirst) links[0]?.focus();
+  };
+  set(false);
+  return combine(
+    listen(toggle, { click: () => set(!open) }),
+    listen(element, {
+      keydown: (event: KeyboardEvent) => {
+        const at = links.indexOf(document.activeElement as HTMLElement);
+        if (event.key === "Escape" && open) {
+          set(false);
+          toggle.focus();
+        } else if (open && at >= 0 && (event.key === "ArrowRight" || event.key === "ArrowDown")) {
+          event.preventDefault();
+          links[(at + 1) % links.length]?.focus();
+        } else if (open && at >= 0 && (event.key === "ArrowLeft" || event.key === "ArrowUp")) {
+          event.preventDefault();
+          links[(at - 1 + links.length) % links.length]?.focus();
+        }
+      },
+      focusout: (event: FocusEvent) =>
+        !element.contains(event.relatedTarget as Node) && open && set(false),
+    }),
+    () => stops.forEach((stop) => stop()),
+    () => {
+      items.forEach((item) =>
+        ["position", "left", "top", "translate", "opacity", "pointer-events", "transform"].forEach(
+          (name) => item.style.removeProperty(name),
+        ),
+      );
+      links.forEach((link) => link.removeAttribute("tabindex"));
+    },
+    restore,
+  );
+};
+
+/**
+ * A sliding underline for tabs: it glides (and stretches) to whichever tab is chosen, by
+ * pointer or keyboard. Works on any tab list inside the element.
+ */
+const tabSlider: EffectBehaviour = (element, params, context) => {
+  const list = element.querySelector<HTMLElement>("[role='tablist']");
+  if (!list) return;
+  const restore = setStyles(list, { position: "relative" });
+  const bar = document.createElement("span");
+  bar.setAttribute("aria-hidden", "true");
+  Object.assign(bar.style, {
+    position: "absolute",
+    bottom: "0",
+    left: "0",
+    height: `${readNumber(params, "thickness", 3)}px`,
+    borderRadius: "999px",
+    background: readText(params, "colour", "currentColor"),
+    pointerEvents: "none",
+  });
+  list.append(bar);
+  let x = 0;
+  let width = 0;
+  let stops: Array<() => void> = [];
+  const draw = () => {
+    bar.style.transform = `translateX(${x}px)`;
+    bar.style.width = `${width}px`;
+  };
+  const move = () => {
+    const tab = list.querySelector<HTMLElement>("[role='tab'][aria-selected='true']");
+    if (!tab) return;
+    const targetX = tab.offsetLeft;
+    const targetWidth = tab.offsetWidth;
+    stops.forEach((stop) => stop());
+    stops = [
+      springTo(
+        x,
+        targetX,
+        0,
+        (value) => ((x = value), draw()),
+        0.2,
+        context.reduced || width === 0,
+      ),
+      springTo(
+        width,
+        targetWidth,
+        0,
+        (value) => ((width = value), draw()),
+        0.1,
+        context.reduced || width === 0,
+      ),
+    ];
+  };
+  move();
+  const observer = new MutationObserver(move);
+  observer.observe(list, { attributes: true, subtree: true, attributeFilter: ["aria-selected"] });
+  return combine(
+    listen(window, { resize: move }),
+    () => observer.disconnect(),
+    () => stops.forEach((stop) => stop()),
+    () => bar.remove(),
+    restore,
+  );
+};
+
 export const behaviours = {
+  radialMenu,
+  tabSlider,
   dragMomentum,
   elasticDrag,
   springToggle,

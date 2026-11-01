@@ -230,6 +230,78 @@ describe("physics", () => {
   });
 });
 
+describe("ready-made elements", () => {
+  it("fans a round menu out, moves round it with arrow keys and closes on Escape", async () => {
+    const { page } = await openEffectsPage(
+      browser,
+      `<nav data-node-id="r" style="margin:200px"><button aria-expanded="false">Menu</button><ul><li><a href="#a">A</a></li><li><a href="#b">B</a></li><li><a href="#c">C</a></li></ul></nav>`,
+      [{ nodeId: "r", module: "physics", behaviour: "radialMenu" }],
+    );
+    await waitFor(
+      page,
+      () => document.querySelector("[data-node-id=r] a")?.getAttribute("tabindex") === "-1",
+    );
+    await page.focus("[data-node-id=r] button");
+    await page.keyboard.press("Enter");
+    expect(await page.getAttribute("[data-node-id=r] button", "aria-expanded")).toBe("true");
+    await page.focus("[data-node-id=r] a[href='#a']");
+    await page.keyboard.press("ArrowRight");
+    expect(await page.evaluate(() => document.activeElement?.getAttribute("href"))).toBe("#b");
+    await page.keyboard.press("Escape");
+    expect(await page.getAttribute("[data-node-id=r] button", "aria-expanded")).toBe("false");
+    expect(await page.evaluate(() => document.activeElement?.tagName)).toBe("BUTTON");
+    await page.close();
+  });
+
+  it("slides a notification in as a polite live region, and its button dismisses it", async () => {
+    const { page } = await openEffectsPage(
+      browser,
+      `<div data-node-id="n"><p>Free delivery</p><button aria-label="Close">×</button></div>`,
+      [{ nodeId: "n", module: "intro", behaviour: "toast", params: { delay: 0.1, stay: 0 } }],
+    );
+    await waitFor(
+      page,
+      () => document.querySelector<HTMLElement>("[data-node-id=n]")!.style.visibility === "visible",
+    );
+    expect(await page.getAttribute("[data-node-id=n]", "aria-live")).toBe("polite");
+    await page.waitForTimeout(600);
+    await page.click("[data-node-id=n] button");
+    await waitFor(
+      page,
+      () => document.querySelector<HTMLElement>("[data-node-id=n]")!.style.visibility === "hidden",
+    );
+    await page.close();
+  });
+
+  it("glides the tab marker to the chosen tab", async () => {
+    const { page } = await openEffectsPage(
+      browser,
+      `<div data-node-id="tabs"><div role="tablist"><button role="tab" aria-selected="true" style="width:100px">One</button><button role="tab" aria-selected="false" style="width:140px">Two</button></div></div>`,
+      [{ nodeId: "tabs", module: "physics", behaviour: "tabSlider" }],
+    );
+    await waitFor(
+      page,
+      () => document.querySelector("[role=tablist] > span[aria-hidden]") !== null,
+    );
+    await page.evaluate(() => {
+      const [one, two] = document.querySelectorAll("[role=tab]");
+      one!.setAttribute("aria-selected", "false");
+      two!.setAttribute("aria-selected", "true");
+    });
+    await waitFor(
+      page,
+      () =>
+        Math.abs(
+          Number.parseFloat(
+            document.querySelector<HTMLElement>("[role=tablist] > span[aria-hidden]")!.style.width,
+          ) - 140,
+        ) < 1,
+      3000,
+    );
+    await page.close();
+  });
+});
+
 describe("SVG", () => {
   it("morphs a shape through built-in outlines", async () => {
     const { page } = await openEffectsPage(

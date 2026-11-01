@@ -1,3 +1,5 @@
+import { effectElementsStylesheet } from "./effects.js";
+
 /**
  * The element library's own look, in one stylesheet the website and the canvas both load
  * (after the design base rules). Every rule is wrapped in `:where()`, so it has no weight
@@ -457,6 +459,7 @@ const reducedMotion = `
 
 export const elementStylesheet = [
   layout,
+  effectElementsStylesheet,
   media,
   text,
   navigation,

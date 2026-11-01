@@ -1,5 +1,5 @@
 import { defineEffect } from "../effect-definition.js";
-import { choice, number } from "../parameters.js";
+import { choice, colour, number } from "../parameters.js";
 
 /** Physical feel: momentum, springs and stretch. Everything also works by keyboard. */
 
@@ -151,5 +151,40 @@ export const physicsEffects = [
     reducedMotion: "The divider stops where you leave it.",
     preview: "image",
     keywords: ["before after", "compare", "slider"],
+  }),
+  defineEffect({
+    id: "radial-menu",
+    name: "Radial menu",
+    description:
+      "Its button fans the links out in a circle with a springy stagger. Escape closes it.",
+    category: "physics",
+    kind: "behaviour",
+    module: "physics",
+    behaviour: "radialMenu",
+    suits: ["container", "list"],
+    params: {
+      radius: number("How far out the links sit", 96, 50, 220, { unit: "px" }),
+      spread: number("How wide the fan opens", 180, 60, 360, { unit: "°" }),
+    },
+    reducedMotion: "The links appear in place without springing out.",
+    preview: "button",
+    keywords: ["menu", "fan", "circle", "fab"],
+  }),
+  defineEffect({
+    id: "tab-slider",
+    name: "Sliding tab marker",
+    description: "A marker glides under whichever tab is chosen, stretching as it goes.",
+    category: "physics",
+    kind: "behaviour",
+    module: "physics",
+    behaviour: "tabSlider",
+    suits: ["container"],
+    params: {
+      colour: colour("Marker colour", "#7539fd"),
+      thickness: number("Thickness", 3, 1, 8, { unit: "px" }),
+    },
+    reducedMotion: "The marker moves without gliding.",
+    preview: "list",
+    keywords: ["tabs", "underline", "indicator"],
   }),
 ];

@@ -1,6 +1,6 @@
 import { fromTo, through } from "../../presets/preset.js";
 import { defineEffect } from "../effect-definition.js";
-import { number } from "../parameters.js";
+import { choice, number } from "../parameters.js";
 
 /** Loaders for sections and elements. The site intro lives in the builder's site settings. */
 
@@ -94,5 +94,27 @@ export const loaderEffects = [
     }),
     reducedMotion: "Shows full.",
     preview: "progress",
+  }),
+  defineEffect({
+    id: "toast",
+    name: "Notification pop-up",
+    description:
+      "Slides in after a moment, stays a few seconds and leaves by itself. Screen readers announce it politely.",
+    category: "loaders",
+    kind: "behaviour",
+    module: "intro",
+    behaviour: "toast",
+    suits: ["container"],
+    params: {
+      delay: number("Appears after", 1.5, 0, 20, { step: 0.5, unit: "s" }),
+      stay: number("Stays for (0 keeps it)", 6, 0, 30, { step: 1, unit: "s" }),
+      from: choice("Slides in from", "bottom", [
+        ["bottom", "Below"],
+        ["top", "Above"],
+      ]),
+    },
+    reducedMotion: "Fades in and out without sliding.",
+    preview: "card",
+    keywords: ["toast", "notification", "alert", "snackbar"],
   }),
 ];
