@@ -19,6 +19,11 @@
       "types": "./dist/i18n/builder-strings.d.ts",
       "development": "./src/i18n/builder-strings.ts",
       "default": "./dist/i18n/builder-strings.js"
+    },
+    "./canvas-frame": {
+      "types": "./dist/canvas/canvas-frame-script.d.ts",
+      "development": "./src/canvas/canvas-frame-script.ts",
+      "default": "./dist/canvas/canvas-frame-script.js"
     }
   },
   "scripts": {

@@ -23,7 +23,17 @@ import { type StringKey, t } from "../i18n/strings.js";
 import { getAsset } from "../media/media.api.js";
 import { MediaPickerDialog } from "../media/MediaPickerDialog.js";
 import { useCan } from "../session/SessionContext.js";
+import { runtimeSettings } from "../runtime-settings.js";
 import { usePageDesignSaving } from "./usePageDesignSaving.js";
+
+/**
+ * The canvas frame's script, served beside the admin (see vite.config.ts), because the admin's
+ * Content-Security-Policy refuses inline scripts and the frame inherits it.
+ */
+const canvasFrameScriptUrl = new URL(
+  `${runtimeSettings.basePath.replace(/\/?$/, "/")}canvas-frame.js`,
+  globalThis.location?.origin ?? "http://localhost",
+).href;
 
 interface PageDesignPageProps {
   collectionHandle: string;
@@ -108,6 +118,7 @@ function PageDesigner({
         text={text}
         pickImage={imagePicker.pick}
         onSaveNow={saving.saveNow}
+        frameScriptUrl={canvasFrameScriptUrl}
         toolbarStart={
           <Link
             to="/content/$collection/$entryId"

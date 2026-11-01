@@ -180,7 +180,23 @@ a { cursor: default; }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
 `;
 
-/** The frame's whole document; the page itself arrives by message. */
-export function canvasFrameSource(): string {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style id="lintel-page-style"></style><style>${canvasStyles}</style></head><body><div id="lintel-page"></div><div id="lintel-overlay"></div><script>(${runCanvasFrame.toString()})();</script></body></html>`;
+/**
+ * The frame's script as a file of its own. A host with a Content-Security-Policy that
+ * refuses inline scripts (the admin's does) serves this text at an address of its own and
+ * passes that address as `frameScriptUrl`, since a frame drawn from `srcdoc` inherits the
+ * policy of the page around it.
+ */
+export function canvasFrameScript(): string {
+  return `(${runCanvasFrame.toString()})();\n`;
+}
+
+/**
+ * The frame's whole document (the page itself arrives by message): the script inline by
+ * default, or loaded from `frameScriptUrl`.
+ */
+export function canvasFrameSource(frameScriptUrl?: string): string {
+  const script = frameScriptUrl
+    ? `<script src="${frameScriptUrl.replaceAll('"', "&quot;")}"></script>`
+    : `<script>${canvasFrameScript()}</script>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style id="lintel-page-style"></style><style>${canvasStyles}</style></head><body><div id="lintel-page"></div><div id="lintel-overlay"></div>${script}</body></html>`;
 }

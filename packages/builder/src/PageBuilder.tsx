@@ -60,6 +60,11 @@ export interface PageBuilderProps {
   toolbarStart?: ReactNode;
   toolbarEnd?: ReactNode;
   onSaveNow?: () => void;
+  /**
+   * Where the canvas frame's script is served, for hosts whose Content-Security-Policy refuses
+   * inline scripts (see `canvasFrameScript`). Inline when left out.
+   */
+  frameScriptUrl?: string;
   createId?: CreateNodeId;
 }
 
@@ -347,6 +352,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
               labels={labels}
               revealId={revealId}
               onMessage={handleFrameMessage}
+              frameScriptUrl={props.frameScriptUrl}
             />
           )}
         </main>

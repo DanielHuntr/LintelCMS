@@ -17,6 +17,8 @@ export const canvasWidths: Record<Breakpoint, string> = {
 };
 
 interface CanvasProps {
+  /** Where the frame's script is served (see `canvasFrameScript`); inline when left out. */
+  frameScriptUrl?: string;
   html: string;
   css: string;
   breakpoint: Breakpoint;
@@ -42,11 +44,12 @@ export function Canvas({
   labels,
   revealId,
   onMessage,
+  frameScriptUrl,
 }: CanvasProps) {
   const text = useBuilderText();
   const frame = useRef<HTMLIFrameElement>(null);
   const [isReady, setIsReady] = useState(false);
-  const source = useMemo(() => canvasFrameSource(), []);
+  const source = useMemo(() => canvasFrameSource(frameScriptUrl), [frameScriptUrl]);
   const latestOnMessage = useRef(onMessage);
 
   useEffect(() => {
