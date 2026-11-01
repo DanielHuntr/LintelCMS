@@ -1,7 +1,8 @@
-import { CalendarClock, HardDrive, ListTodo, PenLine, Sparkles } from "lucide-react";
+import { CalendarClock, HardDrive, History, ListTodo, PenLine, Sparkles } from "lucide-react";
 import { t } from "../../i18n/strings.js";
 import type { DashboardWidget } from "../../plugins/adminPlugin.js";
 import { MediaUsageWidget } from "./MediaUsageWidget.js";
+import { MyEditsWidget } from "./MyEditsWidget.js";
 import { NeedsAttentionWidget } from "./NeedsAttentionWidget.js";
 import { RecentEditsWidget } from "./RecentEditsWidget.js";
 import { ScheduledWidget } from "./ScheduledWidget.js";
@@ -30,6 +31,15 @@ export const builtInWidgets: readonly DashboardWidget[] = [
     defaultSize: "medium",
     permission: "entries:read",
     onDefaultDashboard: true,
+  },
+  {
+    id: "my-edits",
+    title: t("dashboard.myEdits.title"),
+    description: t("dashboard.myEdits.description"),
+    icon: History,
+    component: MyEditsWidget,
+    defaultSize: "medium",
+    permission: "entries:read",
   },
   {
     id: "needs-attention",

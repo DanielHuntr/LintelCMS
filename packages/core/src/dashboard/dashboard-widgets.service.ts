@@ -3,6 +3,7 @@ import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import {
   countEntries,
   type DashboardEntryRow,
+  listEntriesEditedBy,
   listEntriesNeedingAttention,
   listRecentlyEditedEntries,
   listScheduledEntries,
@@ -17,6 +18,15 @@ export async function findRecentEdits(
   database: DatabaseOrTransaction,
 ): Promise<DashboardEntryList> {
   const rows = await listRecentlyEditedEntries(database, DEFAULT_TENANT_ID, ENTRIES_PER_WIDGET);
+  return { entries: rows.map(describeEntry), total: rows.length };
+}
+
+/** "Your recent edits": what the signed-in person changed last, to pick up where they left off. */
+export async function findMyRecentEdits(
+  database: DatabaseOrTransaction,
+  userId: string,
+): Promise<DashboardEntryList> {
+  const rows = await listEntriesEditedBy(database, DEFAULT_TENANT_ID, userId, ENTRIES_PER_WIDGET);
   return { entries: rows.map(describeEntry), total: rows.length };
 }
 

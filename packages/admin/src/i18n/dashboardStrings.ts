@@ -72,6 +72,12 @@ export const dashboardStrings = {
   "dashboard.recentEdits.emptyDescription": "Pages and entries you change will show up here.",
   "dashboard.recentEdits.detail": "{collection} · {time} by {person}",
   "dashboard.recentEdits.detailNobody": "{collection} · {time}",
+  "dashboard.myEdits.title": "Your recent edits",
+  "dashboard.myEdits.description": "What you changed last, to pick up where you left off.",
+  "dashboard.myEdits.emptyTitle": "Nothing yet",
+  "dashboard.myEdits.emptyDescription":
+    "Things you change show up here, so you can pick up where you left off.",
+  "dashboard.myEdits.detail": "{collection} · {time}",
 
   "dashboard.scheduled.title": "Scheduled",
   "dashboard.scheduled.description": "What will go live by itself, and when.",

@@ -4,6 +4,7 @@ import { parseRequest } from "../http/http-errors.js";
 import {
   findEntriesNeedingAttention,
   findMediaUsage,
+  findMyRecentEdits,
   findRecentEdits,
   findScheduledEntries,
 } from "./dashboard-widgets.service.js";
@@ -32,6 +33,7 @@ import {
  * The built-in widgets' data:
  *
  *   GET /dashboard/widgets/recent-edits     (entries:read)  -> { entries, total }
+ *   GET /dashboard/widgets/my-edits         (entries:read)  -> the same, changed by the signed-in person
  *   GET /dashboard/widgets/scheduled        (entries:read)  -> { entries, total }
  *   GET /dashboard/widgets/needs-attention  (entries:read)  -> { entries, total }
  *   GET /dashboard/widgets/media-usage      (media:read)    -> { fileCount, totalBytes, ... }
@@ -69,6 +71,9 @@ export async function dashboardRoutes(server: FastifyInstance) {
 
   server.get("/dashboard/widgets/recent-edits", editors, async () =>
     findRecentEdits(server.database),
+  );
+  server.get("/dashboard/widgets/my-edits", editors, async (request) =>
+    findMyRecentEdits(server.database, getSignedIn(request).user.id),
   );
   server.get("/dashboard/widgets/scheduled", editors, async () =>
     findScheduledEntries(server.database),
