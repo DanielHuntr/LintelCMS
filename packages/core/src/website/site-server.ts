@@ -31,6 +31,7 @@ export function buildSiteServer(options: { api: FastifyInstance; logger?: boolea
       templates: api.website.templates,
       builtInSiteUrl: api.website.builtInSiteUrl,
       cache: api.website.renderedPages,
+      publicApiUrl: api.publicApiUrl,
     }),
   });
 

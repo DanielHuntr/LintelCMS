@@ -50,6 +50,9 @@ import { pluginRegistry } from "./plugins/plugins.registry.js";
 import { pagesRoutes } from "./pages/pages.routes.js";
 import { pluginsRoutes } from "./plugins/plugins.routes.js";
 import { previewRoutes } from "./preview/preview.routes.js";
+import type { PublishingOptions } from "./publishing/publishing-context.js";
+import { publishingRoutes } from "./publishing/publishing.routes.js";
+import { registerPublishing } from "./publishing/register-publishing.js";
 import { registerScheduledJobs } from "./scheduler/scheduled-jobs.js";
 import { searchRoutes } from "./search/search.routes.js";
 import { dashboardRoutes } from "./dashboard/dashboard.routes.js";
@@ -199,6 +202,8 @@ export interface ServerOptions {
   formsTurnstileVerifier?: TurnstileVerifier;
   /** How the online shop reaches payment services. Every part has a default. */
   commerce?: CommerceOptions;
+  /** Publishing the website as files to other hosting (see src/publishing). */
+  publishing?: PublishingOptions & { automaticDelayMilliseconds?: number };
 }
 
 export interface WebhookOptions {
@@ -326,6 +331,10 @@ export function buildServer(options: ServerOptions) {
     media,
     runScheduledJobs: options.commerce?.runScheduledJobs ?? options.runScheduledJobs ?? true,
   });
+  registerPublishing(server, {
+    ...options.publishing,
+    runScheduledJobs: options.runScheduledJobs ?? true,
+  });
   server.register(async (api) => registerApiRoutes(api, options, media), { prefix: apiPrefix });
 
   if (options.runScheduledJobs ?? true) {
@@ -386,6 +395,7 @@ function registerApiRoutes(
   server.register(emailRoutes);
   server.register(websiteRoutes);
   server.register(pagesRoutes);
+  server.register(publishingRoutes);
   registerContentModelSyncRoutes(server);
   server.register(mediaRoutes, media);
 }

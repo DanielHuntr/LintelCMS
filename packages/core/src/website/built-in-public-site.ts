@@ -35,6 +35,7 @@ export const builtInPublicSite: PublicSite = async (server, options) => {
       templates: server.website.templates,
       builtInSiteUrl: server.website.builtInSiteUrl,
       cache: server.website.renderedPages,
+      publicApiUrl: server.publicApiUrl,
     }),
   });
 };

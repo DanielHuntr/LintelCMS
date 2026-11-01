@@ -15,6 +15,7 @@
     "db:migrate": "pnpm --silent --filter @lintel/core db:migrate",
     "media:move-to-s3": "pnpm --silent --filter @lintel/core media:move-to-s3",
     "send-test-email": "pnpm --silent --filter @lintel/core send-test-email",
+    "lintel": "pnpm --silent --filter @lintel/core lintel",
     "build": "turbo run build",
     "start": "pnpm --filter @lintel/core start",
     "typecheck": "turbo run typecheck",

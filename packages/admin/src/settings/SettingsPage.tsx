@@ -7,6 +7,7 @@ import {
   Shapes,
   ShieldCheck,
   Sparkles,
+  UploadCloud,
   Webhook,
 } from "lucide-react";
 import { GroupedList } from "../design/GroupedList.js";
@@ -88,6 +89,15 @@ export function SettingsPage() {
               label={t("website.title")}
               description={t("website.settingsDescription")}
               to="/settings/site"
+            />
+          )}
+          {canSeeSiteSettings && (
+            <GroupedListRow
+              icon={UploadCloud}
+              iconTone="accent"
+              label={t("publishing.title")}
+              description={t("publishing.settingsDescription")}
+              to="/settings/publishing"
             />
           )}
           {canSeeSiteSettings && (

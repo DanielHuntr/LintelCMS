@@ -20,6 +20,7 @@ untouched; set `SITE_ENABLED=false` when the site is built separately.
 | `/blog/<taxonomy>/<term>`     | The posts filed under a term (`/blog/categories/bread`) |
 | `/fr-FR/...`                  | The same in another of the site's languages             |
 | `/sitemap.xml`, `/robots.txt` | From the SEO plugin, with the site's own addresses      |
+| `/blog/feed.xml`              | The newest posts as RSS, for each dated collection      |
 | anything else                 | A friendly 404                                          |
 
 `/home` and addresses with a trailing slash redirect (301) to their one true address, as
@@ -32,6 +33,14 @@ The site's address is the one `siteAddress` setting (see `src/sites`), typed in 
 Your website. Left empty, it is the built-in site's own (`SITE_PUBLIC_URL`, or
 `http://localhost:<SITE_PORT>`). The sitemap, robots.txt, canonical addresses and "View page"
 all use the same answer (`readEffectiveSiteAddress`).
+
+## Forms
+
+A page's Form section is drawn as a plain HTML form (`site-forms.service.ts`), posting to
+the API's `/delivery/forms/<handle>/submissions`; `/_lintel/forms.js` fetches its anti-spam
+token when the page opens. A site published as files draws exactly the same form, posting
+to the PHP companion instead (see `src/static-site` and `src/bridge`). Without the Forms
+plugin, Form sections are left out.
 
 ## Caching
 
@@ -81,6 +90,8 @@ There is no repository: everything is kept in settings and read through other fe
 | `site-chrome.service.ts`  | The header and footer: site settings and the main menu    |
 | `site-head.service.ts`    | Title, description, canonical and Open Graph              |
 | `site-views.ts`           | Which layout an entry gets                                |
+| `site-forms.service.ts`   | Form sections: the form's questions, and where it posts   |
+| `site-feed.service.ts`    | The RSS feeds                                             |
 | `site-documents.ts`       | Views to HTML responses, with headers                     |
 | `delivered-to-site.ts`    | Delivered values to component props, read carefully       |
 | `rendered-pages-cache.ts` | The in-memory cache                                       |

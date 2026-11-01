@@ -1,6 +1,7 @@
 import type { FaqBlock, SiteBlock } from "./block.types.js";
 import { CallToAction } from "./CallToAction.js";
 import { FaqList } from "./FaqList.js";
+import { FormSection } from "./FormSection.js";
 import { Hero } from "./Hero.js";
 import { ImageSection } from "./ImageSection.js";
 import { TextSection } from "./TextSection.js";
@@ -68,5 +69,7 @@ function SingleBlock({
       return <ImageSection {...block} />;
     case "call_to_action":
       return <CallToAction {...block} />;
+    case "form":
+      return <FormSection {...block} />;
   }
 }

@@ -38,3 +38,8 @@ export {
   formSubmissionNotesTable,
 } from "../forms/forms.table.js";
 export * from "../commerce/commerce.tables.js";
+export {
+  publishTargetsTable,
+  publishRunsTable,
+  bridgeReceiptsTable,
+} from "../publishing/publishing.table.js";

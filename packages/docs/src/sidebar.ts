@@ -46,6 +46,7 @@ export const buildingPages = [
 export const whyPages = ["why", "why/whitepaper"] as const;
 export const hostingPages = [
   "hosting",
+  "hosting/without-node",
   "hosting/vps-docker",
   "hosting/railway",
   "hosting/render",

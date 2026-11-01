@@ -46,7 +46,50 @@ export interface FaqBlock {
   answer: string;
 }
 
-export type SiteBlock = HeroBlock | TextBlock | ImageBlock | CallToActionBlock | FaqBlock;
+/** One question of a form, as a website draws it. */
+export interface SiteFormField {
+  handle: string;
+  type: string;
+  label: string;
+  helpText: string;
+  placeholder: string;
+  required: boolean;
+  /** The answers to pick from, for choice, checkboxes and dropdown fields. */
+  choices: string[];
+}
+
+/**
+ * A form, drawn as plain HTML that works without scripts on the visitor's side apart from
+ * fetching its anti-spam token. `action` is where answers are posted: Lintel's API, or the
+ * small PHP companion on a website published as files.
+ */
+export interface SiteForm {
+  handle: string;
+  name: string;
+  submitLabel: string;
+  acceptingSubmissions: boolean;
+  action: string;
+  /** Answers `{ "token": "…" }`, the signed "opened at" time the answers are sent with. */
+  tokenUrl: string;
+  /** The small script that fetches the token. */
+  scriptUrl: string;
+  honeypotField: string;
+  tokenField: string;
+  fields: SiteFormField[];
+}
+
+export interface FormBlock {
+  type: "form";
+  id: string;
+  heading: string;
+  /** The handle of the form chosen for this section. */
+  handle: string;
+  /** Null when the form was deleted or forms are switched off. */
+  form: SiteForm | null;
+}
+
+export type SiteBlock =
+  HeroBlock | TextBlock | ImageBlock | CallToActionBlock | FaqBlock | FormBlock;
 
 export type SiteBlockType = SiteBlock["type"];
 
@@ -56,4 +99,5 @@ export const siteBlockTypes: readonly SiteBlockType[] = [
   "image",
   "call_to_action",
   "faq",
+  "form",
 ];

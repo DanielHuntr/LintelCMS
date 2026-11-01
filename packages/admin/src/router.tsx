@@ -39,6 +39,7 @@ import {
 } from "./setup/setupRouting.js";
 import { SessionProvider } from "./session/SessionContext.js";
 import { SettingsPage } from "./settings/SettingsPage.js";
+import { PublishingPage } from "./publishing/PublishingPage.js";
 import { PublishedPageView } from "./content/PublishedPageView.js";
 import { FeaturesSettingsPage } from "./features/FeaturesSettingsPage.js";
 import { SignInPage } from "./sign-in/SignInPage.js";
@@ -302,6 +303,13 @@ const siteSettingsRoute = createRoute({
   component: SiteSettingsPage,
 });
 
+/** Settings → Publishing: the website as files, to hosting that can't run Lintel. */
+const publishingRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/settings/publishing",
+  component: PublishingPage,
+});
+
 /** Settings → Features: switching plugins on and off. */
 const featuresRoute = createRoute({
   getParentRoute: () => adminRoute,
@@ -312,6 +320,7 @@ const featuresRoute = createRoute({
 /** API access, webhooks and the website. (The SEO plugin's settings are plugin screens.) */
 const integrationRoutes = [
   siteSettingsRoute,
+  publishingRoute,
   apiAccessRoute,
   apiReferenceRoute,
   webhooksRoute,

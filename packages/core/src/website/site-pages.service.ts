@@ -12,6 +12,8 @@ import { loadSiteContext, type SiteContext } from "./site-context.service.js";
 import { redirectResponse, renderPage, textResponse } from "./site-documents.js";
 import { buildPageHead, type HeadSubject } from "./site-head.service.js";
 import { findListView, type ListRoute } from "./site-lists.service.js";
+import { findFeedCollection, renderFeed } from "./site-feed.service.js";
+import { attachForms, type FormEndpoints } from "./site-forms.service.js";
 import { renderPreview } from "./site-preview.service.js";
 import {
   HOME_SLUG,
@@ -36,6 +38,10 @@ export interface SiteDependencies {
   builtInSiteUrl: string | null;
   cache: RenderedPagesCache;
   now?: () => Date;
+  /** The API's address as browsers reach it, where forms post by default. */
+  publicApiUrl?: string;
+  /** Where forms post instead, for a site published as files (see src/static-site). */
+  formEndpoints?: FormEndpoints;
 }
 
 /** What one page render can reach: the dependencies and what every page shares. */
@@ -122,6 +128,10 @@ async function resolveSitePath(
     localPath,
     path: path ?? "/",
   };
+  const feedCollection = path === null ? undefined : findFeedCollection(request);
+  if (feedCollection) {
+    return renderFeed(request, feedCollection);
+  }
   if (path !== null) {
     for (const route of matchSiteRoute(localPath, context.collections)) {
       const response = await respondToRoute(request, route);
@@ -215,7 +225,10 @@ export async function renderEntry(
   options: { private?: boolean } = {},
 ): Promise<SiteResponse> {
   const { context, locale } = request;
-  const view = entryView(context, collectionHandle, entry, locale);
+  const view = await attachForms(
+    request.dependencies,
+    entryView(context, collectionHandle, entry, locale),
+  );
   const subject = headForEntry(context, entry, view, request.path, locale);
   const translations = new Map(
     subject.alternates.map((alternate) => [alternate.locale, alternate.path] as const),
@@ -326,4 +339,34 @@ async function searchEngineFile(
     pathFor: (row, entryPath) => localiseUrl(entryPath, row.locale, context.defaultLocale),
   });
   return textResponse("application/xml; charset=utf-8", xml);
+}
+
+/**
+ * A page of the site's own that isn't an entry, such as the search page of a site
+ * published as files: the given view in the site's layout, header and footer.
+ */
+export async function renderStandalonePage(
+  dependencies: SiteDependencies,
+  path: string,
+  view: SiteView,
+  title: string,
+  description = "",
+): Promise<SiteResponse> {
+  const context = await readSiteContext(dependencies);
+  const { locale, path: localPath } = splitLocale(
+    path,
+    context.defaultLocale,
+    context.locales.map(({ code }) => code),
+  );
+  const chrome = await readSiteChrome(dependencies, context, locale);
+  return renderWithHead({ dependencies, context, chrome, locale, localPath, path }, view, {
+    entryId: null,
+    title,
+    description,
+    image: null,
+    path,
+    type: "website",
+    publishedAt: null,
+    alternates: [],
+  });
 }
