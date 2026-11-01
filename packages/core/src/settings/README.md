@@ -6,7 +6,7 @@ Small site-wide settings, stored one per row in the `settings` table as JSON.
 | ------------------------ | --------------------------------------------------------- |
 | `settings.table.ts`      | The `settings` table: tenant, key, JSON value, timestamps |
 | `settings.schema.ts`     | Every setting key, the shape of its value and its default |
-| `settings.service.ts`    | `readSetting` and `writeSetting`, checked by those shapes |
+| `settings.service.ts`    | `readSetting`, `writeSetting` and `readOrCreateSetting`   |
 | `settings.repository.ts` | Database reads and writes                                 |
 
 To add a setting, add its key, schema and default to `settings.schema.ts`. Nothing else
@@ -16,3 +16,5 @@ Current settings:
 
 - `enabledPlugins`: which plugins are switched on (see `src/plugins`).
 - `siteType` and `siteSetupCompleted`: the "What are you building?" setup step (see `src/setup`).
+- `previewSigningSecret`: signs live preview links (see `src/preview`). Made once, the first
+  time someone opens a preview, by `readOrCreateSetting`.

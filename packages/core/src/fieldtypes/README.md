@@ -6,22 +6,47 @@ check an entry's values against any blueprint.
 
 ## The fieldtypes
 
-| type       | Stored value                                        | Options                                    |
-| ---------- | --------------------------------------------------- | ------------------------------------------ |
-| `text`     | string                                              | `maxLength?`                               |
-| `textarea` | string                                              | `maxLength?`                               |
-| `richText` | TipTap/ProseMirror JSON `{ "type": "doc", ... }`    | none                                       |
-| `number`   | number                                              | `min?`, `max?`, `step?`                    |
-| `toggle`   | boolean                                             | none                                       |
-| `select`   | string, or string[] when `multiple`                 | `choices: [{ value, label }]`, `multiple?` |
-| `date`     | `YYYY-MM-DD`, or a date and time with `includeTime` | `includeTime?`                             |
-| `image`    | asset id (uuid)                                     | none                                       |
-| `link`     | `{ url, label? }`                                   | none                                       |
+| type       | Stored value                                        | Options                                                              |
+| ---------- | --------------------------------------------------- | -------------------------------------------------------------------- |
+| `text`     | string                                              | `maxLength?`                                                         |
+| `textarea` | string                                              | `maxLength?`                                                         |
+| `richText` | TipTap/ProseMirror JSON `{ "type": "doc", ... }`    | none                                                                 |
+| `number`   | number                                              | `min?`, `max?`, `step?`                                              |
+| `toggle`   | boolean                                             | none                                                                 |
+| `select`   | string, or string[] when `multiple`                 | `choices: [{ value, label }]`, `multiple?`                           |
+| `date`     | `YYYY-MM-DD`, or a date and time with `includeTime` | `includeTime?`                                                       |
+| `image`    | asset id (uuid)                                     | none                                                                 |
+| `link`     | `{ url, label? }`                                   | none                                                                 |
+| `blocks`   | `[{ id, type, data }]`, in order                    | `blockTypes: [{ handle, name, description?, fields }]`, `maxBlocks?` |
 
 Empty values (missing, null, blank text, empty lists, a rich text document with only empty
 paragraphs, a link without an address) are stored as null, and are an error only when the
 field is `required`. Link addresses must start with `https://`, `http://`, `mailto:`,
 `tel:`, `/` or `#`, so a `javascript:` link can't be saved.
+
+## Blocks (the page builder)
+
+A `blocks` field holds an ordered list of blocks. Each block type the blueprint defines
+(Hero, Text, Call to action...) has its own `fields`, which are ordinary field definitions
+of any type except `blocks`, checked the same way when the blueprint is saved
+(`checkInnerFields`). Each stored block has an `id` the admin makes when the block is
+added; it never changes, so messages and moves follow the block.
+
+Saving checks each block against its block type (`checkNestedValues`), using the same rules
+as an entry's own fields. Problems come back keyed by the field, then the block id:
+
+```json
+{
+  "fields": {
+    "sections": "Hero (block 1): Heading is required",
+    "sections.0b6c9c4e-....heading": "Heading is required"
+  }
+}
+```
+
+Blocks of a type that has since been removed from the blueprint are dropped on save, the
+way values of a removed field are. The delivery API serves the list as `[{ id, type, data }]`
+with each block's `data` expanded like an entry's (images, rich text).
 
 ## Endpoint
 
@@ -71,6 +96,7 @@ show its values differently, add that to `src/delivery/delivered-values.ts`.
 | `text-fieldtypes.ts`         | `text`, `textarea`, `richText`                                   |
 | `value-fieldtypes.ts`        | `number`, `toggle`, `date`                                       |
 | `reference-fieldtypes.ts`    | `select`, `image`, `link`                                        |
+| `blocks-fieldtype.ts`        | `blocks`: block types and their fields, and checking each block  |
 | `field-definition.schema.ts` | A field in a blueprint, with its options checked by its type     |
 | `entry-data-validator.ts`    | `buildEntryDataValidator`: checking an entry against a blueprint |
 | `rich-text.ts`               | Checking rich text documents and rendering them to HTML          |

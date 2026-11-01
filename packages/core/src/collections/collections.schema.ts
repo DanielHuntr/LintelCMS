@@ -32,6 +32,32 @@ function usesOnlyKnownPlaceholders(pattern: string): boolean {
   );
 }
 
+/** The placeholders a preview address may use. See src/preview/preview-urls.ts. */
+export const PREVIEW_PLACEHOLDERS = ["{url}", "{slug}", "{token}", "{collection}", "{id}"] as const;
+
+/**
+ * Where the website shows a draft, such as "https://example.com/api/preview?path={url}&token={token}".
+ * null means no website is connected yet, and the admin uses its built-in preview.
+ */
+const previewUrlPatternSchema = z
+  .string({ error: "The preview address should be text, like https://example.com/preview" })
+  .trim()
+  .max(500, { error: "The preview address can be at most 500 characters" })
+  .regex(/^https?:\/\/[^\s]+$/i, {
+    error: "The preview address should start with https:// (or http:// for a local site)",
+  })
+  .refine(usesOnlyPreviewPlaceholders, {
+    error: `The preview address can use ${PREVIEW_PLACEHOLDERS.join(", ")}`,
+  })
+  .nullable();
+
+function usesOnlyPreviewPlaceholders(pattern: string): boolean {
+  const placeholders = pattern.match(/\{[^}]*\}/g) ?? [];
+  return placeholders.every((placeholder) =>
+    (PREVIEW_PLACEHOLDERS as readonly string[]).includes(placeholder),
+  );
+}
+
 const collectionNameSchema = z
   .string({ error: "Please give the collection a name" })
   .trim()
@@ -49,6 +75,7 @@ export const createCollectionRequestSchema = z.object({
   blueprintHandle: blueprintHandleSchema,
   structure: structureSchema,
   routePattern: routePatternSchema.optional(),
+  previewUrlPattern: previewUrlPatternSchema.optional(),
 });
 
 /** `PUT /collections/:handle`. Anything left out stays as it is; the handle can't change. */
@@ -57,6 +84,7 @@ export const updateCollectionRequestSchema = z.object({
   blueprintHandle: blueprintHandleSchema.optional(),
   structure: structureSchema.optional(),
   routePattern: routePatternSchema.optional(),
+  previewUrlPattern: previewUrlPatternSchema.optional(),
 });
 
 export const collectionHandleParamsSchema = z.object({ handle: z.string() });
@@ -69,6 +97,7 @@ export const collectionSchema = z.object({
   blueprintHandle: z.string(),
   structure: structureSchema,
   routePattern: z.string().nullable(),
+  previewUrlPattern: z.string().nullable(),
   entryCount: z.number().int(),
   updatedAt: z.iso.datetime(),
 });

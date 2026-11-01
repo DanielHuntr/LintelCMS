@@ -19,6 +19,66 @@ function field(
 
 const titleField = field("title", "Title", "text", { required: true });
 
+/**
+ * The page builder every new site's pages start with: the sections most small-business
+ * pages are made of. Agencies can add, change or remove block types in Content types.
+ */
+const pageSectionsField = field("sections", "Page sections", "blocks", {
+  helpText: "Build the page from sections. Drag them, or use the arrows, to change the order.",
+  options: {
+    blockTypes: [
+      {
+        handle: "hero",
+        name: "Hero",
+        description: "A big heading at the top of the page, with an optional picture and button.",
+        fields: [
+          field("heading", "Heading", "text", { required: true }),
+          field("subheading", "Subheading", "textarea"),
+          field("image", "Background image", "image"),
+          field("button", "Button", "link"),
+        ],
+      },
+      {
+        handle: "text",
+        name: "Text",
+        description: "Paragraphs, lists and subheadings.",
+        fields: [
+          field("heading", "Heading", "text"),
+          field("body", "Text", "richText", { required: true }),
+        ],
+      },
+      {
+        handle: "image",
+        name: "Image",
+        description: "A picture across the page, with an optional caption.",
+        fields: [
+          field("image", "Image", "image", { required: true }),
+          field("caption", "Caption", "text"),
+        ],
+      },
+      {
+        handle: "call_to_action",
+        name: "Call to action",
+        description: "A short invitation with a button, such as “Book a call”.",
+        fields: [
+          field("heading", "Heading", "text", { required: true }),
+          field("text", "Text", "textarea"),
+          field("button", "Button", "link", { required: true }),
+        ],
+      },
+      {
+        handle: "faq",
+        name: "FAQ",
+        description: "One question and its answer. Add one for each question.",
+        fields: [
+          field("question", "Question", "text", { required: true }),
+          field("answer", "Answer", "richText", { required: true }),
+        ],
+      },
+    ],
+  },
+});
+
 export const pagesCollection: CollectionDefaults = {
   handle: "pages",
   name: "Pages",
@@ -34,6 +94,7 @@ export const pagesCollection: CollectionDefaults = {
       }),
       field("hero_image", "Hero image", "image", { helpText: "Shown at the top of the page" }),
       field("body", "Body", "richText"),
+      pageSectionsField,
     ],
   },
 };

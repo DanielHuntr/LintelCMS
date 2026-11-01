@@ -1,9 +1,40 @@
 import type { z } from "zod";
+import type { FieldMessages } from "../http/http-errors.js";
+import type { FieldDefinition } from "./field-definition.schema.js";
 import type { AssetExists } from "./image-assets.js";
 
 /** What a fieldtype may need while checking a value, handed in by the caller. */
 export interface FieldCheckContext {
   assetExists: AssetExists;
+}
+
+/**
+ * Checks values against a list of fields with the same rules as a whole entry. Handed to
+ * fieldtypes that hold other fields (blocks), so they don't import the entry validator,
+ * which itself imports every fieldtype.
+ */
+export type CheckFieldValues = (
+  fields: readonly FieldDefinition[],
+  data: Readonly<Record<string, unknown>>,
+) => Promise<{ values: Record<string, unknown>; messages: FieldMessages }>;
+
+/**
+ * Checks the fields a fieldtype holds inside it (a block type's fields), with the same
+ * rules as a blueprint's own fields. `where` names the list in messages ("Hero").
+ */
+export type CheckInnerFieldList = (
+  candidates: readonly unknown[],
+  where: string,
+) => { fields: FieldDefinition[] } | { problem: string };
+
+/**
+ * What checking a value with fields inside gives back: the value to store, or messages.
+ * `messages` holds one summary for the field itself under `""`, and one per inner field
+ * under a key such as `"<blockId>.heading"`; the validator adds the field's handle in front.
+ */
+export interface NestedCheckResult {
+  value: unknown;
+  messages: FieldMessages;
 }
 
 /**
@@ -33,6 +64,21 @@ export interface FieldtypeDefinition<OptionsSchema extends z.ZodType> {
     label: string,
     context: FieldCheckContext,
   ): Promise<string | null>;
+  /**
+   * For fieldtypes that hold other fields: checks those field definitions when the
+   * blueprint is saved, and gives back the options with them filled in.
+   */
+  checkInnerFields?(
+    options: z.output<OptionsSchema>,
+    checkFieldList: CheckInnerFieldList,
+  ): { options: z.output<OptionsSchema> } | { problem: string };
+  /** For fieldtypes that hold other fields: checks the values inside them. */
+  checkNestedValues?(
+    value: unknown,
+    options: z.output<OptionsSchema>,
+    label: string,
+    checkFieldValues: CheckFieldValues,
+  ): Promise<NestedCheckResult>;
 }
 
 /**
@@ -52,16 +98,35 @@ export interface Fieldtype {
     label: string,
     context: FieldCheckContext,
   ): Promise<string | null>;
+  checkInnerFields?(
+    options: unknown,
+    checkFieldList: CheckInnerFieldList,
+  ): { options: unknown } | { problem: string };
+  checkNestedValues?(
+    value: unknown,
+    options: unknown,
+    label: string,
+    checkFieldValues: CheckFieldValues,
+  ): Promise<NestedCheckResult>;
 }
 
 export function defineFieldtype<OptionsSchema extends z.ZodType>(
   definition: FieldtypeDefinition<OptionsSchema>,
 ): Fieldtype {
+  const { checkInnerFields, checkNestedValues } = definition;
   return {
     ...definition,
     buildValueSchema: (options, label) =>
       definition.buildValueSchema(definition.optionsSchema.parse(options), label),
     isEmpty: (value) => isBlank(value) || (definition.isEmpty?.(value) ?? false),
+    checkInnerFields: checkInnerFields
+      ? (options, checkFieldList) =>
+          checkInnerFields(definition.optionsSchema.parse(options), checkFieldList)
+      : undefined,
+    checkNestedValues: checkNestedValues
+      ? (value, options, label, checkFieldValues) =>
+          checkNestedValues(value, definition.optionsSchema.parse(options), label, checkFieldValues)
+      : undefined,
   };
 }
 

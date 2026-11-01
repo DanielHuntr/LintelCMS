@@ -1,3 +1,4 @@
+import { blocksFieldtype } from "./blocks-fieldtype.js";
 import type { Fieldtype } from "./fieldtype.js";
 import { imageFieldtype, linkFieldtype, selectFieldtype } from "./reference-fieldtypes.js";
 import { richTextFieldtype, textareaFieldtype, textFieldtype } from "./text-fieldtypes.js";
@@ -17,6 +18,7 @@ export const fieldtypeRegistry: readonly Fieldtype[] = [
   dateFieldtype,
   imageFieldtype,
   linkFieldtype,
+  blocksFieldtype,
 ];
 
 export const fieldtypeNames = fieldtypeRegistry.map((fieldtype) => fieldtype.type);

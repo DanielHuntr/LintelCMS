@@ -11,6 +11,14 @@ export const deliveryListQuerySchema = z.object({
     .default(25),
 });
 
+/**
+ * `GET /delivery/:collection/:slug`. A preview token (from the admin's live preview) may be
+ * sent as `?preview=` or the `Lintel-Preview` header; see src/preview.
+ */
+export const deliveryEntryQuerySchema = z.object({
+  preview: z.string().min(1).optional(),
+});
+
 export const deliveryListParamsSchema = z.object({ collection: z.string() });
 export const deliveryEntryParamsSchema = z.object({ collection: z.string(), slug: z.string() });
 

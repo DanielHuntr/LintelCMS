@@ -251,6 +251,7 @@ describe("GET /fieldtypes", () => {
       "date",
       "image",
       "link",
+      "blocks",
     ]);
     expect(response.json().fieldtypes[0]).toEqual({
       type: "text",

@@ -106,7 +106,9 @@ export async function insertCollectionIfMissing(
 export async function updateCollectionRow(
   database: DatabaseOrTransaction,
   collectionId: string,
-  changes: Partial<Pick<Collection, "name" | "blueprintId" | "structure" | "routePattern">>,
+  changes: Partial<
+    Pick<Collection, "name" | "blueprintId" | "structure" | "routePattern" | "previewUrlPattern">
+  >,
 ): Promise<void> {
   await database
     .update(collectionsTable)

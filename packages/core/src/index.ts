@@ -23,6 +23,8 @@ export type {
   RevisionSummaryResponse,
 } from "./entries/entries.schema.js";
 export type { DeliveredEntry, DeliveredList } from "./delivery/delivery.schema.js";
+export type { EntryPreview, PreviewedEntry } from "./preview/preview.schema.js";
+export type { SearchResults } from "./search/search.schema.js";
 export {
   createAssetLookup,
   noAssetUsage,

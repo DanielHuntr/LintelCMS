@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import { getSignedIn, requirePermission } from "../auth/require-permission.js";
 import { parseRequest } from "../http/http-errors.js";
 import { EntryNotFoundError } from "./entries.errors.js";
+import { duplicateEntry } from "./entry-duplication.service.js";
 import { listEntries } from "./entry-listing.service.js";
 import { reorderEntries } from "./entry-ordering.service.js";
 import { publishEntry, scheduleEntry, unpublishEntry } from "./entry-publishing.service.js";
@@ -34,6 +35,7 @@ import {
  *   POST   /entries/:id/unpublish                (entries:publish)
  *   POST   /entries/:id/schedule                 (entries:publish)  { publishAt }
  *   DELETE /entries/:id                          (entries:delete)   -> 204
+ *   POST   /entries/:id/duplicate                (entries:create)   -> 201, a draft copy
  */
 export async function entriesRoutes(server: FastifyInstance) {
   const can = (permission: `entries:${string}`) => ({ preHandler: requirePermission(permission) });
@@ -87,6 +89,12 @@ export async function entriesRoutes(server: FastifyInstance) {
     const id = readEntryId(request.params);
     const { publishAt } = parseRequest(scheduleEntryRequestSchema, request.body);
     return scheduleEntry(server.database, id, publishAt);
+  });
+
+  server.post("/entries/:id/duplicate", can("entries:create"), async (request, reply) => {
+    const id = readEntryId(request.params);
+    const copy = await duplicateEntry(server.database, id, changeContext(request));
+    return reply.code(201).send(copy);
   });
 
   server.delete("/entries/:id", can("entries:delete"), async (request, reply) => {

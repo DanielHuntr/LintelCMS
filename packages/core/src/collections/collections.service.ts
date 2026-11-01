@@ -41,6 +41,7 @@ export function describeCollection(collection: CollectionWithDetails): Collectio
     blueprintHandle: collection.blueprintHandle,
     structure: collection.structure,
     routePattern: collection.routePattern,
+    previewUrlPattern: collection.previewUrlPattern,
     entryCount: collection.entryCount,
     updatedAt: collection.updatedAt.toISOString(),
   };
@@ -105,6 +106,7 @@ export async function createCollection(
       structure: request.structure,
       routePattern:
         request.routePattern === undefined ? `/${request.handle}/{slug}` : request.routePattern,
+      previewUrlPattern: request.previewUrlPattern ?? null,
     });
   } catch (error) {
     // Someone else created the same handle between the check and the insert.
@@ -137,6 +139,7 @@ export async function updateCollection(
       blueprintId: blueprint?.id,
       structure: request.structure,
       routePattern: request.routePattern,
+      previewUrlPattern: request.previewUrlPattern,
     });
     if (collection.structure === "tree" && request.structure && request.structure !== "tree") {
       await clearParentsInCollection(transaction, collection.id);

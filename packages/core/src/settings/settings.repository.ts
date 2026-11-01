@@ -17,6 +17,21 @@ export async function findSettingValue(
   return setting?.value;
 }
 
+/** Saves a value only if the key has none yet. Returns whether this call saved it. */
+export async function insertSettingValueIfMissing(
+  database: DatabaseOrTransaction,
+  tenantId: string,
+  key: string,
+  value: unknown,
+): Promise<boolean> {
+  const inserted = await database
+    .insert(settingsTable)
+    .values({ tenantId, key, value })
+    .onConflictDoNothing({ target: [settingsTable.tenantId, settingsTable.key] })
+    .returning({ id: settingsTable.id });
+  return inserted.length > 0;
+}
+
 export async function upsertSettingValue(
   database: DatabaseOrTransaction,
   tenantId: string,
