@@ -27,6 +27,7 @@ import {
   translateEntryRequestSchema,
   updateEntryRequestSchema,
 } from "../entries/entries.schema.js";
+import { formHandleParamsSchema } from "../forms/forms.schema.js";
 import { deliveredGlobalSetSchema, globalSetParamsSchema } from "../globals/globals.schema.js";
 import { navigationParamsSchema } from "../navigation/navigation.schema.js";
 import { entryPreviewSchema } from "../preview/preview.schema.js";
@@ -506,5 +507,48 @@ export const openApiOperations: Operation[] = [
     params: assetIdParamsSchema,
     query: fileTransformQuerySchema,
     responses: { 200: { description: "The file.", contentType: "application/octet-stream" } },
+  },
+  {
+    method: "get",
+    path: "/delivery/forms.js",
+    tag: "Delivery",
+    summary: "The embeddable forms script",
+    description:
+      'Add `<script src=".../delivery/forms.js" data-form="contact"></script>` to any page to show a form.',
+    access: "public",
+    responses: { 200: { description: "The script.", contentType: "text/javascript" } },
+  },
+  {
+    method: "get",
+    path: "/delivery/forms/{handle}",
+    tag: "Delivery",
+    summary: "Get a form to draw",
+    description:
+      "Its fields, steps and confirmation, and a spam-protection token to send back. Never cached. Open even when delivery needs a token.",
+    access: "public",
+    params: formHandleParamsSchema,
+    responses: {
+      200: { description: "The form." },
+      404: { description: "There is no form with this handle, or Forms are switched off." },
+    },
+  },
+  {
+    method: "post",
+    path: "/delivery/forms/{handle}/submissions",
+    tag: "Delivery",
+    summary: "Send a form",
+    description:
+      "Answers keyed by field handle, with `_token` from the form. JSON, multipart (for files) or a plain form post. Rate limited to 10 a minute per address.",
+    access: "public",
+    params: formHandleParamsSchema,
+    body: z.record(z.string(), z.unknown()),
+    responses: {
+      201: { description: "Received: `{ received: true, confirmation }`." },
+      400: {
+        description: "Answers to fix (`fields`), an expired form, or a failed Turnstile check.",
+      },
+      403: { description: "The form isn't taking submissions." },
+      429: { description: "Too many submissions from one address." },
+    },
   },
 ];

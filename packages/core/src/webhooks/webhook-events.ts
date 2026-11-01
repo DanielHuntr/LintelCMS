@@ -8,6 +8,7 @@ export const webhookEventNames = [
   "entry.deleted",
   "asset.uploaded",
   "asset.deleted",
+  "form.submitted",
 ] as const;
 
 export type WebhookEventName = (typeof webhookEventNames)[number];

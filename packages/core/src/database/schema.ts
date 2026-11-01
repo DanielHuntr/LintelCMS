@@ -19,3 +19,8 @@ export { navigationsTable } from "../navigation/navigation.table.js";
 export { apiTokensTable } from "../api-tokens/api-tokens.table.js";
 export { webhooksTable, webhookDeliveriesTable } from "../webhooks/webhooks.table.js";
 export { entrySeoTable, redirectsTable } from "../seo/seo.table.js";
+export {
+  formsTable,
+  formSubmissionsTable,
+  formSubmissionNotesTable,
+} from "../forms/forms.table.js";

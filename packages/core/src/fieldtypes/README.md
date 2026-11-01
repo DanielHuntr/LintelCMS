@@ -25,6 +25,7 @@ check an entry's values against any blueprint.
 | `entries`  | entry ids (uuid[]), in the chosen order             | `collections?: [handle]`, `maxItems?`                                |
 | `terms`    | term ids (uuid[]), in the chosen order              | `taxonomy` (handle), `maxItems?`                                     |
 | `blocks`   | `[{ id, type, data }]`, in order                    | `blockTypes: [{ handle, name, description?, fields }]`, `maxBlocks?` |
+| `form`     | a form's handle (see `src/forms`)                   | none                                                                 |
 
 Empty values (missing, null, blank text, empty lists, a rich text document with only empty
 paragraphs, a link without an address) are stored as null, and are an error only when the

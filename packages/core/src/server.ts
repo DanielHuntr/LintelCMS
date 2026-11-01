@@ -14,7 +14,11 @@ import { deliveryRoutes } from "./delivery/delivery.routes.js";
 import { entriesRoutes } from "./entries/entries.routes.js";
 import { findEntriesUsingAsset } from "./entries/entries.service.js";
 import { revisionsRoutes } from "./entries/revisions.routes.js";
+import { DevOutbox } from "./email/dev-outbox.js";
+import type { EmailSender } from "./email/email-sender.js";
 import { fieldtypesRoutes } from "./fieldtypes/fieldtypes.routes.js";
+import { formsFeature } from "./forms/forms.feature.js";
+import type { TurnstileVerifier } from "./forms/spam-protection.js";
 import { graphqlRoutes } from "./graphql/graphql.routes.js";
 import type { AssetExists, AssetLookup } from "./fieldtypes/image-assets.js";
 import { healthRoutes } from "./health/health.routes.js";
@@ -64,6 +68,8 @@ declare module "fastify" {
     publicApiUrl: string;
     /** Sends queued webhook deliveries (see src/webhooks). */
     webhooks: WebhookDispatcher;
+    /** Sends email (see src/email). Logs instead of sending unless a sender is configured. */
+    email: EmailSender;
   }
 }
 
@@ -108,6 +114,10 @@ export interface ServerOptions {
   graphiql?: boolean;
   /** How webhooks are sent. Every part has a default. */
   webhooks?: WebhookOptions;
+  /** Defaults to a DevOutbox that writes each message to the log. */
+  email?: EmailSender;
+  /** Forms' Cloudflare Turnstile check. Defaults to asking Cloudflare; tests pass their own. */
+  formsTurnstileVerifier?: TurnstileVerifier;
 }
 
 export interface WebhookOptions {
@@ -151,6 +161,13 @@ export function buildServer(options: ServerOptions) {
     onError: (error) => server.log.error(error, "Sending webhooks failed"),
   });
   server.decorate("webhooks", webhooks);
+  server.decorate(
+    "email",
+    options.email ??
+      new DevOutbox((message) =>
+        server.log.info({ to: message.to, subject: message.subject }, "Email (not sent)"),
+      ),
+  );
   server.addHook("onClose", () => webhooks.finishSending());
   server.decorateRequest("signedIn", null);
   server.setErrorHandler(sendHttpErrorDetails);
@@ -188,13 +205,21 @@ export function buildServer(options: ServerOptions) {
   if (options.runScheduledJobs ?? true) {
     registerScheduledJobs(server);
   }
-  server.register(mediaRoutes, {
+  const media = {
     storage: options.media?.storage ?? new LocalDiskStorage(),
     cacheFolder: options.media?.transformCacheFolder ?? DEFAULT_TRANSFORM_CACHE_FOLDER,
     // An asset still used by an entry can't be deleted.
     usageFinder: options.media?.usageFinder ?? {
-      findEntriesUsingAsset: (assetId) => findEntriesUsingAsset(server.database, assetId),
+      findEntriesUsingAsset: (assetId: string) => findEntriesUsingAsset(server.database, assetId),
     },
+  };
+  server.register(mediaRoutes, media);
+  // The Forms plugin (src/forms): its routes, its guard and its retention timer.
+  server.register(formsFeature, {
+    ...media,
+    adminOrigin: options.adminOrigin,
+    runScheduledJobs: options.runScheduledJobs ?? true,
+    verifyTurnstile: options.formsTurnstileVerifier,
   });
 
   return server;

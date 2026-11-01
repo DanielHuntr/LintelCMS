@@ -26,7 +26,7 @@ admin can show the right sections without an extra request.
 | ---------- | ----------- | ----------------------------------------------------------------- |
 | `blog`     | Blog        |                                                                   |
 | `commerce` | Online shop | `/commerce`                                                       |
-| `forms`    | Forms       | `/forms`                                                          |
+| `forms`    | Forms       | `/forms`; its API and the Form section on pages (see `src/forms`) |
 | `seo`      | SEO tools   | Settings → Search engines; the editor's SEO panel (see `src/seo`) |
 
 Which ones are on is stored per tenant in the `enabledPlugins` setting (see `src/settings`).
@@ -35,7 +35,8 @@ Which ones are on is stored per tenant in the `enabledPlugins` setting (see `src
 
 When a plugin is switched on, `setEnabledPlugins` makes sure its content exists, from the
 `contentForPlugins` list in `plugins.service.ts`. Today that is the blog's **Blog posts**
-collection (see `src/collections/default-collections.ts`). It only creates what is missing,
+collection (see `src/collections/default-collections.ts`) and the Forms plugin's **Form**
+section on pages (see `src/forms/form-block.ts`). It only creates what is missing,
 and switching the plugin off deletes nothing, so posts survive being toggled.
 
 ## Files

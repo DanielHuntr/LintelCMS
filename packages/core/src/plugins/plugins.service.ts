@@ -1,5 +1,6 @@
 import { ensureBlogPostsCollection } from "../collections/default-collections.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
+import { ensureFormBlockOnPages } from "../forms/form-block.js";
 import { readSetting, writeSetting } from "../settings/settings.service.js";
 import { isPluginId, type PluginId, pluginRegistry } from "./plugins.registry.js";
 import type { PluginList } from "./plugins.schema.js";
@@ -12,6 +13,7 @@ const contentForPlugins: Partial<
   Record<PluginId, (database: DatabaseOrTransaction) => Promise<void>>
 > = {
   blog: ensureBlogPostsCollection,
+  forms: ensureFormBlockOnPages,
 };
 
 /**

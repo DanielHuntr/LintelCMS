@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { formsSpamSettingsSchema } from "../forms/forms-settings.schema.js";
 import { defaultSeoDefaults, seoDefaultsSchema } from "../seo/seo-defaults.schema.js";
 
 /**
@@ -28,6 +29,10 @@ export const settingSchemas = {
   deliveryAllowedOrigins: z.array(z.string()),
   /** Search engine defaults from the SEO plugin (see src/seo). */
   seoDefaults: seoDefaultsSchema,
+  /** Cloudflare Turnstile keys for forms (see src/forms). */
+  formsSpamProtection: formsSpamSettingsSchema,
+  /** Signs the "when was this form opened" token (see src/forms/spam-protection.ts). */
+  formsSigningSecret: z.string().min(32).nullable(),
 };
 
 export type SettingKey = keyof typeof settingSchemas;
@@ -41,4 +46,6 @@ export const settingDefaults: { [Key in SettingKey]: SettingValue<Key> } = {
   deliveryRequiresToken: false,
   deliveryAllowedOrigins: [],
   seoDefaults: defaultSeoDefaults,
+  formsSpamProtection: { turnstileSiteKey: null, turnstileSecretKey: null },
+  formsSigningSecret: null,
 };

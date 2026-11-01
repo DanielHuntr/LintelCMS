@@ -72,7 +72,14 @@ const blueprintHandleSchema = z
  * Handles the delivery API (and the admin's Content section) use for other kinds of content,
  * so `/delivery/globals` can't mean a collection.
  */
-export const RESERVED_COLLECTION_HANDLES = ["taxonomies", "globals", "navigation", "locales"];
+export const RESERVED_COLLECTION_HANDLES = [
+  "taxonomies",
+  "globals",
+  "navigation",
+  "locales",
+  // /delivery/forms/:handle serves forms (see src/forms).
+  "forms",
+];
 
 /** `POST /collections`. Without a route pattern, entries live at /<handle>/{slug}. */
 export const createCollectionRequestSchema = z.object({
