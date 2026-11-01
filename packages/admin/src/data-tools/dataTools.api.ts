@@ -73,14 +73,7 @@ export function exportDownloadUrl(options: { revisions: boolean; files: boolean 
 }
 
 export type ImportKind =
-  | "blueprint"
-  | "collection"
-  | "taxonomy"
-  | "term"
-  | "global"
-  | "menu"
-  | "media"
-  | "entry";
+  "blueprint" | "collection" | "taxonomy" | "term" | "global" | "menu" | "media" | "entry";
 export type ImportAction = "create" | "update" | "skip";
 export type ConflictStrategy = "skip" | "overwrite";
 

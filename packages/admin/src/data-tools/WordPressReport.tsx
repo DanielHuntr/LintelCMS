@@ -1,7 +1,15 @@
 import { t, type StringKey } from "../i18n/strings.js";
 import type { WordPressImportReport, WordPressItemKind } from "./wordpressImport.api.js";
 
-const shownKinds: WordPressItemKind[] = ["post", "page", "attachment", "image", "author", "category", "tag"];
+const shownKinds: WordPressItemKind[] = [
+  "post",
+  "page",
+  "attachment",
+  "image",
+  "author",
+  "category",
+  "tag",
+];
 
 /** What an import did (or, from a dry run, would do), in sections people can act on. */
 export function WordPressReport({ report }: { report: WordPressImportReport }) {
@@ -16,19 +24,33 @@ export function WordPressReport({ report }: { report: WordPressImportReport }) {
       <table className="w-full text-left text-body text-label">
         <thead className="text-footnote text-label-secondary">
           <tr>
-            <th scope="col" className="pb-2 font-medium">{t("wordpress.column.what")}</th>
-            <th scope="col" className="pb-2 text-right font-medium">{t("wordpress.column.done")}</th>
-            <th scope="col" className="pb-2 text-right font-medium">{t("wordpress.column.skipped")}</th>
-            <th scope="col" className="pb-2 text-right font-medium">{t("wordpress.column.failed")}</th>
+            <th scope="col" className="pb-2 font-medium">
+              {t("wordpress.column.what")}
+            </th>
+            <th scope="col" className="pb-2 text-right font-medium">
+              {t("wordpress.column.done")}
+            </th>
+            <th scope="col" className="pb-2 text-right font-medium">
+              {t("wordpress.column.skipped")}
+            </th>
+            <th scope="col" className="pb-2 text-right font-medium">
+              {t("wordpress.column.failed")}
+            </th>
           </tr>
         </thead>
         <tbody>
           {rows.map((kind) => (
             <tr key={kind} className="hairline-top">
-              <th scope="row" className="py-2 font-normal">{t(`wordpress.count.${kind}` as StringKey)}</th>
+              <th scope="row" className="py-2 font-normal">
+                {t(`wordpress.count.${kind}` as StringKey)}
+              </th>
               <td className="py-2 text-right tabular-nums">{report.counts[kind].done}</td>
-              <td className="py-2 text-right tabular-nums text-label-secondary">{report.counts[kind].skipped}</td>
-              <td className={`py-2 text-right tabular-nums ${report.counts[kind].failed > 0 ? "text-danger" : "text-label-secondary"}`}>
+              <td className="py-2 text-right tabular-nums text-label-secondary">
+                {report.counts[kind].skipped}
+              </td>
+              <td
+                className={`py-2 text-right tabular-nums ${report.counts[kind].failed > 0 ? "text-danger" : "text-label-secondary"}`}
+              >
                 {report.counts[kind].failed}
               </td>
             </tr>
@@ -81,7 +103,9 @@ function ReportSection({
 }) {
   return (
     <section className="flex flex-col gap-1.5">
-      <h3 className={`text-headline ${tone === "danger" ? "text-danger" : "text-label"}`}>{title}</h3>
+      <h3 className={`text-headline ${tone === "danger" ? "text-danger" : "text-label"}`}>
+        {title}
+      </h3>
       {text && <p className="text-footnote text-label-secondary">{text}</p>}
       <ul className="flex list-disc flex-col gap-0.5 pl-5 text-footnote text-label">
         {children.map((line, index) => (

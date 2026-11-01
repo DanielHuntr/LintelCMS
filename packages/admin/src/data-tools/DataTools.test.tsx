@@ -7,7 +7,8 @@ import { BackupsPage } from "./BackupsPage.js";
 import type { Backup, ImportPlan } from "./dataTools.api.js";
 import { ImportPage } from "./ImportPage.js";
 import { RestorePage } from "./RestorePage.js";
-import type { WordPressImportReport } from "./wordpressImport.api.js";
+import type { WordPressImportMapping, WordPressImportReport } from "./wordpressImport.api.js";
+import { WordPressMappingStep } from "./WordPressMappingStep.js";
 import { WordPressReport } from "./WordPressReport.js";
 
 const finishedBackup: Backup = {
@@ -196,5 +197,71 @@ describe("the WordPress import report", () => {
     expect(
       screen.getByText("bunny.gif: Not brought in: the old site answered 404."),
     ).toBeInTheDocument();
+  });
+});
+
+describe("the WordPress mapping screen", () => {
+  it("sends the other addresses images may come from with the mapping", async () => {
+    const mapping: WordPressImportMapping = {
+      postsCollection: "posts",
+      pagesCollection: "pages",
+      categoriesTaxonomy: "categories",
+      tagsTaxonomy: "tags",
+      media: "download",
+      mediaHosts: [],
+      authors: "invite",
+      drafts: "import",
+      redirects: true,
+    };
+    const { calls } = mockApi(({ method, url, body }) => {
+      if (url.pathname === "/wordpress-imports/w1/mapping" && method === "GET") {
+        return {
+          import: {
+            id: "w1",
+            filename: "bakery.xml",
+            siteTitle: "Hillside Bakery",
+            siteAddress: "https://hillside-bakery.example",
+            status: "ready",
+            found: {
+              posts: 2,
+              pages: 1,
+              attachments: 1,
+              authors: 1,
+              categories: 1,
+              tags: 1,
+              ignored: {},
+            },
+            mapping: null,
+            progress: { done: 0, total: 0 },
+            hasContentZip: false,
+            lastError: null,
+            createdAt: "2026-10-31T09:00:00Z",
+            completedAt: null,
+          },
+          collections: [{ handle: "posts", name: "Blog posts" }],
+          taxonomies: [{ handle: "categories", name: "Categories" }],
+          suggested: mapping,
+        };
+      }
+      if (url.pathname === "/wordpress-imports/w1/mapping" && method === "PUT") {
+        return { mapping: body, fields: { posts: null, pages: null } };
+      }
+      throw new Error(`Unexpected request: ${method} ${url.pathname}`);
+    });
+    renderScreen(
+      <WordPressMappingStep
+        importId="w1"
+        isStarting={false}
+        startError={null}
+        onStart={() => undefined}
+      />,
+    );
+
+    const hosts = await screen.findByLabelText("Other addresses images may come from (optional)");
+    await userEvent.type(hosts, "cdn.example.com, i0.wp.com");
+    await userEvent.click(screen.getByRole("button", { name: "Start import" }));
+
+    const saved = calls.find((call) => call.method === "PUT");
+    expect(saved?.body).toMatchObject({ mediaHosts: ["cdn.example.com", "i0.wp.com"] });
   });
 });

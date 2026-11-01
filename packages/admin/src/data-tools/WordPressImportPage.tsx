@@ -29,7 +29,9 @@ export function WordPressImportPage({ importId }: { importId: string }) {
         title={data?.siteTitle || data?.filename || t("wordpress.title")}
         subtitle={data?.siteAddress}
       />
-      {current.isError && <LoadError error={current.error} onRetry={() => void current.refetch()} />}
+      {current.isError && (
+        <LoadError error={current.error} onRetry={() => void current.refetch()} />
+      )}
       {current.isPending && (
         <LoadingRegion label={t("wordpress.loading")}>
           <Skeleton className="h-64 max-w-2xl rounded-card" />
@@ -54,7 +56,9 @@ export function WordPressImportPage({ importId }: { importId: string }) {
                 <div className="flex flex-col gap-2">
                   <h2 className="text-headline text-label">{t("wordpress.pausedTitle")}</h2>
                   <p className="text-body text-label-secondary">{t("wordpress.pausedText")}</p>
-                  {data.lastError && <p className="text-footnote text-label-secondary">{data.lastError}</p>}
+                  {data.lastError && (
+                    <p className="text-footnote text-label-secondary">{data.lastError}</p>
+                  )}
                   <ProgressBar progress={data.progress} />
                   <div>
                     <Button onClick={() => start.mutate()} disabled={start.isPending}>
@@ -82,7 +86,9 @@ export function WordPressImportPage({ importId }: { importId: string }) {
 
 function FoundCard({ found }: { found: WordPressImport["found"] }) {
   const { ignored: ignoredTypes, ...counts } = found;
-  const ignored = Object.entries(ignoredTypes).map(([type, count]) => `${count} ${type.replace(/_/g, " ")}`);
+  const ignored = Object.entries(ignoredTypes).map(
+    ([type, count]) => `${count} ${type.replace(/_/g, " ")}`,
+  );
   return (
     <Card title={t("wordpress.foundTitle")}>
       <p className="text-body text-label">{t("wordpress.found", counts)}</p>

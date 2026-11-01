@@ -22,7 +22,11 @@ export function dataToolsRoutes<Parent extends AnyRoute>(getParentRoute: () => P
       },
     }),
     createRoute({ getParentRoute, path: "/settings/import", component: ImportPage }),
-    createRoute({ getParentRoute, path: "/settings/import/wordpress", component: WordPressImportsPage }),
+    createRoute({
+      getParentRoute,
+      path: "/settings/import/wordpress",
+      component: WordPressImportsPage,
+    }),
     createRoute({
       getParentRoute,
       path: "/settings/import/wordpress/$importId",

@@ -106,7 +106,8 @@ export function useStartWordPressImport(importId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => startWordPressImport(importId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: dataToolsKeys.wordpressImport(importId) }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: dataToolsKeys.wordpressImport(importId) }),
   });
 }
 

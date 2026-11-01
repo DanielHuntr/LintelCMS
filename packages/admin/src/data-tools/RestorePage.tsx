@@ -45,7 +45,9 @@ export function RestorePage({ backupId }: { backupId: string }) {
     <>
       <BackLink to="/settings/backups">{t("backups.title")}</BackLink>
       <LargeTitle title={t("restore.title")} />
-      {preview.isError && <LoadError error={preview.error} onRetry={() => void preview.refetch()} />}
+      {preview.isError && (
+        <LoadError error={preview.error} onRetry={() => void preview.refetch()} />
+      )}
       {preview.isPending && (
         <LoadingRegion label={t("restore.loading")}>
           <Skeleton className="h-64 max-w-2xl rounded-card" />
@@ -97,9 +99,15 @@ function ComparisonTable({ summary }: { summary: RestoreSummary }) {
       <table className="w-full text-left text-body text-label">
         <thead className="text-footnote text-label-secondary">
           <tr>
-            <th scope="col" className="pb-2 font-medium">{t("restore.compareWhat")}</th>
-            <th scope="col" className="pb-2 text-right font-medium">{t("restore.compareNow")}</th>
-            <th scope="col" className="pb-2 text-right font-medium">{t("restore.compareBackup")}</th>
+            <th scope="col" className="pb-2 font-medium">
+              {t("restore.compareWhat")}
+            </th>
+            <th scope="col" className="pb-2 text-right font-medium">
+              {t("restore.compareNow")}
+            </th>
+            <th scope="col" className="pb-2 text-right font-medium">
+              {t("restore.compareBackup")}
+            </th>
           </tr>
         </thead>
         <tbody>

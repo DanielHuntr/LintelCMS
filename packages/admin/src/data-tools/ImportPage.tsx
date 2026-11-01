@@ -41,7 +41,11 @@ function ExportCard() {
       <p className="mb-4 text-body text-label-secondary">{t("import.exportDescription")}</p>
       <div className="mb-5 flex flex-col gap-3">
         <Toggle label={t("import.exportFiles")} checked={files} onCheckedChange={setFiles} />
-        <Toggle label={t("import.exportRevisions")} checked={revisions} onCheckedChange={setRevisions} />
+        <Toggle
+          label={t("import.exportRevisions")}
+          checked={revisions}
+          onCheckedChange={setRevisions}
+        />
       </div>
       <div>
         <a href={exportDownloadUrl({ revisions, files })} className={buttonClasses("tinted")}>

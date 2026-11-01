@@ -44,6 +44,26 @@ export const wordpressImportMappingSchema = z.object({
   media: z
     .enum(["download", "zip", "skip"], { error: "Choose where images come from" })
     .default("download"),
+  /**
+   * Images are only downloaded from the old site's own address and these, such as a CDN
+   * the old site used ("cdn.example.com"). Anything else is listed in the report instead.
+   */
+  mediaHosts: z
+    .array(
+      z
+        .string()
+        .trim()
+        .toLowerCase()
+        // People often paste a whole address; only the host name (and port) matters.
+        .transform((host) => host.replace(/^[a-z]+:\/\//, "").replace(/\/.*$/, ""))
+        .pipe(
+          z
+            .string()
+            .regex(/^[a-z0-9.-]+(:\d+)?$/, { error: "Write each address like cdn.example.com" }),
+        ),
+    )
+    .max(20)
+    .default([]),
   /** Add the old site's authors as people who are invited to set a password, or not at all. */
   authors: z.enum(["invite", "skip"]).default("invite"),
   /** Bring in drafts and pending posts as drafts, or leave them behind. */

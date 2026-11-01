@@ -57,20 +57,58 @@ export interface DownloadOptions {
 }
 
 /**
- * Downloads from the old site. Addresses on the server's own network are refused, checked
- * on the address actually connected to and again after every redirect, so a WordPress
- * export can't be used to make Lintel fetch something private.
+ * The addresses images may be downloaded from: the old site's own (with and without
+ * "www."), and any the person added on the mapping screen. Host names include the port,
+ * if there is one.
  */
-export function downloadingMediaSource(options: DownloadOptions): MediaSource {
+export function allowedMediaHosts(
+  siteAddress: string,
+  extraHosts: readonly string[] = [],
+): Set<string> {
+  const hosts = new Set(extraHosts.map((host) => host.toLowerCase()));
+  try {
+    const siteHost = new URL(siteAddress).host.toLowerCase();
+    hosts.add(siteHost);
+    hosts.add(siteHost.startsWith("www.") ? siteHost.slice(4) : `www.${siteHost}`);
+  } catch {
+    // An export without a site address: only the hosts given are allowed.
+  }
+  return hosts;
+}
+
+function checkMediaHost(url: string, allowedHosts: ReadonlySet<string>): void {
+  const host = new URL(url).host.toLowerCase();
+  if (!allowedHosts.has(host)) {
+    throw new MediaNotAllowedError(
+      `${host} isn't the old site's address. Add it to the addresses images may come from to bring it in`,
+    );
+  }
+}
+
+/**
+ * Downloads from the old site. Only allowed hosts are fetched from, after every redirect
+ * too, and addresses on the server's own network are refused (checked on the address
+ * actually connected to), so a WordPress export can't be used to make Lintel fetch
+ * something private or from anywhere it likes.
+ */
+export function downloadingMediaSource(
+  options: DownloadOptions,
+  allowedHosts: ReadonlySet<string>,
+): MediaSource {
+  const checkAddress = (url: string) => {
+    checkMediaAddress(url);
+    checkMediaHost(url, allowedHosts);
+  };
   return {
-    check: async (url) => checkMediaAddress(url),
+    check: async (url) => checkAddress(url),
     async fetch(url) {
-      checkMediaAddress(url);
+      checkAddress(url);
       let address = url;
       for (let redirects = 0; redirects <= MAX_REDIRECTS; redirects += 1) {
         const response = await requestFile(address, options);
         if (response.redirectTo) {
           address = new URL(response.redirectTo, address).toString();
+          checkMediaHost(address, allowedHosts);
           continue;
         }
         return response.body ?? Buffer.alloc(0);

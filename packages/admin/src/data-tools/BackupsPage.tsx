@@ -45,7 +45,9 @@ export function BackupsPage() {
           {describeError(createBackup.error)}
         </p>
       )}
-      {backups.isError && <LoadError error={backups.error} onRetry={() => void backups.refetch()} />}
+      {backups.isError && (
+        <LoadError error={backups.error} onRetry={() => void backups.refetch()} />
+      )}
       {backups.isPending && (
         <LoadingRegion label={t("backups.loading")}>
           <Skeleton className="h-40 max-w-2xl rounded-card" />

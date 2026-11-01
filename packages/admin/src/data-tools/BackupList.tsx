@@ -24,7 +24,13 @@ export function BackupList({ backups, canManage }: { backups: Backup[]; canManag
           <GroupedListRow
             key={backup.id}
             icon={Archive}
-            iconTone={backup.status === "failed" ? "danger" : backup.trigger === "scheduled" ? "neutral" : "accent"}
+            iconTone={
+              backup.status === "failed"
+                ? "danger"
+                : backup.trigger === "scheduled"
+                  ? "neutral"
+                  : "accent"
+            }
             label={formatDateTime(backup.createdAt)}
             description={describeBackup(backup)}
             wrapsText
@@ -41,7 +47,9 @@ export function BackupList({ backups, canManage }: { backups: Backup[]; canManag
       <ConfirmDialog
         open={deleting !== null}
         title={t("backups.deleteTitle")}
-        message={t("backups.deleteMessage", { when: deleting ? formatDateTime(deleting.createdAt) : "" })}
+        message={t("backups.deleteMessage", {
+          when: deleting ? formatDateTime(deleting.createdAt) : "",
+        })}
         confirmLabel={t("backups.delete")}
         cancelLabel={t("common.cancel")}
         isDestructive
@@ -82,7 +90,9 @@ function BackupActions({
     return <Badge tone="accent">{t("backups.status.running")}</Badge>;
   }
   if (!canManage) {
-    return backup.status === "failed" ? <Badge tone="danger">{t("backups.status.failed")}</Badge> : null;
+    return backup.status === "failed" ? (
+      <Badge tone="danger">{t("backups.status.failed")}</Badge>
+    ) : null;
   }
   return (
     <div className="flex items-center gap-1">

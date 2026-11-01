@@ -59,7 +59,8 @@ export const dataToolsStrings = {
     "Every page, post, image, person and setting will be replaced by what was in the backup from {when}. Anything added or changed since then will be gone from the site.",
   "restore.safetyNote":
     "Before anything is replaced, Lintel backs up your site as it is now. If you restore the wrong backup, you can restore that one to undo it.",
-  "restore.signOutNote": "Everyone will be signed out, including you. Sign in again with an account from the backup.",
+  "restore.signOutNote":
+    "Everyone will be signed out, including you. Sign in again with an account from the backup.",
   "restore.compareTitle": "What changes",
   "restore.compareWhat": "What",
   "restore.compareNow": "Now",
@@ -107,7 +108,8 @@ export const dataToolsStrings = {
   "import.kind.menu": "Menus",
   "import.kind.media": "Media",
   "import.kind.entry": "Pages and posts",
-  "import.nothingToDo": "Everything in this file is already here. Importing it again changes nothing.",
+  "import.nothingToDo":
+    "Everything in this file is already here. Importing it again changes nothing.",
   "import.run": "Import",
   "import.running": "Importing…",
   "import.doneTitle": "Import finished",
@@ -138,7 +140,8 @@ export const dataToolsStrings = {
   "wordpress.status.complete": "Finished",
   "wordpress.loading": "Loading the import",
   "wordpress.foundTitle": "In this export",
-  "wordpress.found": "{posts} posts, {pages} pages, {attachments} files, {authors} authors, {categories} categories and {tags} tags",
+  "wordpress.found":
+    "{posts} posts, {pages} pages, {attachments} files, {authors} authors, {categories} categories and {tags} tags",
   "wordpress.ignored": "Not imported: {list}.",
   "wordpress.mappingTitle": "Where things go",
   "wordpress.postsInto": "Posts go into",
@@ -150,6 +153,9 @@ export const dataToolsStrings = {
   "wordpress.media.download": "Download them from the old site",
   "wordpress.media.zip": "Take them from the uploaded zip",
   "wordpress.media.skip": "Don’t import images",
+  "wordpress.mediaHosts": "Other addresses images may come from (optional)",
+  "wordpress.mediaHostsHint":
+    "Images on the old site’s own address are always brought in. Add any other, such as a CDN, separated by commas. Images anywhere else are listed in the report instead.",
   "wordpress.authors": "Authors",
   "wordpress.authors.invite": "Add them as people (they set their own password)",
   "wordpress.authors.skip": "Don’t add them",
@@ -180,7 +186,8 @@ export const dataToolsStrings = {
   "wordpress.start": "Start import",
   "wordpress.resume": "Resume import",
   "wordpress.pausedTitle": "This import stopped part way",
-  "wordpress.pausedText": "Everything brought in so far is safe. Resume to carry on where it stopped.",
+  "wordpress.pausedText":
+    "Everything brought in so far is safe. Resume to carry on where it stopped.",
   "wordpress.progressTitle": "Importing",
   "wordpress.progress": "{done} of {total} done",
   "wordpress.progressHint": "You can leave this page; the import carries on.",
@@ -205,7 +212,8 @@ export const dataToolsStrings = {
   "wordpress.htmlKind.image": "images inside text",
   "wordpress.renamedTitle": "Addresses that had to change",
   "wordpress.renamed": "{title}: {from} is taken, so it’s {to}",
-  "wordpress.redirectsSuggested": "{count} redirects suggested. Review them in Settings → SEO tools → Redirects.",
+  "wordpress.redirectsSuggested":
+    "{count} redirects suggested. Review them in Settings → SEO tools → Redirects.",
   "wordpress.problemsTitle": "Problems",
   "wordpress.problem": "{title}: {message}",
   "wordpress.delete": "Remove from this list",

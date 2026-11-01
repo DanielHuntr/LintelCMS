@@ -3,7 +3,8 @@ import { apiRequest } from "../api/client.js";
 /** Calls to the API's WordPress import routes (see packages/core/src/wordpress-import). */
 
 export type WordPressImportStatus = "ready" | "running" | "paused" | "complete";
-export type WordPressItemKind = "author" | "category" | "tag" | "attachment" | "image" | "page" | "post";
+export type WordPressItemKind =
+  "author" | "category" | "tag" | "attachment" | "image" | "page" | "post";
 
 export interface WordPressImportMapping {
   postsCollection: string | null;
@@ -11,6 +12,8 @@ export interface WordPressImportMapping {
   categoriesTaxonomy: string | null;
   tagsTaxonomy: string | null;
   media: "download" | "zip" | "skip";
+  /** Other hosts images may be downloaded from, besides the old site's own. */
+  mediaHosts: string[];
   authors: "invite" | "skip";
   drafts: "import" | "skip";
   redirects: boolean;
@@ -84,7 +87,10 @@ export function saveMapping(importId: string, mapping: WordPressImportMapping) {
   return apiRequest<{
     mapping: WordPressImportMapping;
     fields: { posts: WordPressFieldMapping | null; pages: WordPressFieldMapping | null };
-  }>(`/wordpress-imports/${encodeURIComponent(importId)}/mapping`, { method: "PUT", body: mapping });
+  }>(`/wordpress-imports/${encodeURIComponent(importId)}/mapping`, {
+    method: "PUT",
+    body: mapping,
+  });
 }
 
 export function dryRunWordPressImport(importId: string) {

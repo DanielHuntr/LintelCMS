@@ -99,7 +99,10 @@ export function LintelImportCard() {
           <PlanTable plan={step.plan} />
           <Warnings warnings={step.plan.warnings} />
           <div>
-            <Button disabled={busy} onClick={() => void runImport(step.uploadId, step.plan.strategy)}>
+            <Button
+              disabled={busy}
+              onClick={() => void runImport(step.uploadId, step.plan.strategy)}
+            >
               {busy ? t("import.running") : t("import.run")}
             </Button>
           </div>
@@ -137,9 +140,9 @@ function sum(plan: ImportPlan, action: "create" | "update" | "skip"): number {
 }
 
 export function PlanTable({ plan }: { plan: ImportPlan }) {
-  const rows = (Object.entries(plan.totals) as Array<[ImportKind, ImportPlan["totals"][ImportKind]]>).filter(
-    ([, counts]) => counts.create + counts.update + counts.skip > 0,
-  );
+  const rows = (
+    Object.entries(plan.totals) as Array<[ImportKind, ImportPlan["totals"][ImportKind]]>
+  ).filter(([, counts]) => counts.create + counts.update + counts.skip > 0);
   if (rows.length === 0 || sum(plan, "create") + sum(plan, "update") === 0) {
     return <p className="text-body text-label-secondary">{t("import.nothingToDo")}</p>;
   }
@@ -147,16 +150,26 @@ export function PlanTable({ plan }: { plan: ImportPlan }) {
     <table className="w-full text-left text-body text-label">
       <thead className="text-footnote text-label-secondary">
         <tr>
-          <th scope="col" className="pb-2 font-medium">{t("import.column.what")}</th>
-          <th scope="col" className="pb-2 text-right font-medium">{t("import.column.create")}</th>
-          <th scope="col" className="pb-2 text-right font-medium">{t("import.column.update")}</th>
-          <th scope="col" className="pb-2 text-right font-medium">{t("import.column.skip")}</th>
+          <th scope="col" className="pb-2 font-medium">
+            {t("import.column.what")}
+          </th>
+          <th scope="col" className="pb-2 text-right font-medium">
+            {t("import.column.create")}
+          </th>
+          <th scope="col" className="pb-2 text-right font-medium">
+            {t("import.column.update")}
+          </th>
+          <th scope="col" className="pb-2 text-right font-medium">
+            {t("import.column.skip")}
+          </th>
         </tr>
       </thead>
       <tbody>
         {rows.map(([kind, counts]) => (
           <tr key={kind} className="hairline-top">
-            <th scope="row" className="py-2 font-normal">{t(`import.kind.${kind}` as StringKey)}</th>
+            <th scope="row" className="py-2 font-normal">
+              {t(`import.kind.${kind}` as StringKey)}
+            </th>
             <td className="py-2 text-right tabular-nums">{counts.create}</td>
             <td className="py-2 text-right tabular-nums">{counts.update}</td>
             <td className="py-2 text-right tabular-nums text-label-secondary">{counts.skip}</td>

@@ -34,6 +34,7 @@ import {
 import {
   contentZipMediaSource,
   type DownloadOptions,
+  allowedMediaHosts,
   downloadingMediaSource,
 } from "./wordpress-media.js";
 import type { WordPressItem } from "./wxr-parser.js";
@@ -164,7 +165,10 @@ async function buildItemContext(
         ? null
         : zip
           ? contentZipMediaSource(zip)
-          : downloadingMediaSource(options.download),
+          : downloadingMediaSource(
+              options.download,
+              allowedMediaHosts(row.siteAddress, mapping.mediaHosts),
+            ),
     mediaContext: (mediaDatabase) => ({
       database: mediaDatabase,
       storage: options.storage,

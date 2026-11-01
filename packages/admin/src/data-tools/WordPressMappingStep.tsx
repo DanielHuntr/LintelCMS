@@ -8,6 +8,7 @@ import { classNames } from "../design/classNames.js";
 import { controlClasses } from "../design/controlStyles.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
+import { TextField } from "../design/TextField.js";
 import { Toggle } from "../design/Toggle.js";
 import { t, type StringKey } from "../i18n/strings.js";
 import { useDryRun, useMappingChoices, useSaveMapping } from "./dataTools.queries.js";
@@ -37,7 +38,8 @@ export function WordPressMappingStep({
   onStart: () => void;
 }) {
   const choices = useMappingChoices(importId);
-  if (choices.isError) return <LoadError error={choices.error} onRetry={() => void choices.refetch()} />;
+  if (choices.isError)
+    return <LoadError error={choices.error} onRetry={() => void choices.refetch()} />;
   if (!choices.data) {
     return (
       <LoadingRegion label={t("wordpress.loading")}>
@@ -69,7 +71,11 @@ function MappingForm({
   startError: string | null;
   onStart: () => void;
 }) {
-  const [mapping, setMapping] = useState<WordPressImportMapping>(choices.suggested);
+  const [mapping, setMapping] = useState<WordPressImportMapping>({
+    ...choices.suggested,
+    mediaHosts: choices.suggested.mediaHosts ?? [],
+  });
+  const [mediaHostsText, setMediaHostsText] = useState(mapping.mediaHosts.join(", "));
   const save = useSaveMapping(importId);
   const dryRun = useDryRun(importId);
   const change = (changes: Partial<WordPressImportMapping>) => {
@@ -89,21 +95,58 @@ function MappingForm({
     <>
       <Card title={t("wordpress.mappingTitle")}>
         <div className="grid gap-4 sm:grid-cols-2">
-          <ChoiceSelect label={t("wordpress.postsInto")} value={mapping.postsCollection} options={collections} onChange={(postsCollection) => change({ postsCollection })} />
-          <ChoiceSelect label={t("wordpress.pagesInto")} value={mapping.pagesCollection} options={collections} onChange={(pagesCollection) => change({ pagesCollection })} />
-          <ChoiceSelect label={t("wordpress.categoriesInto")} value={mapping.categoriesTaxonomy} options={taxonomies} onChange={(categoriesTaxonomy) => change({ categoriesTaxonomy })} />
-          <ChoiceSelect label={t("wordpress.tagsInto")} value={mapping.tagsTaxonomy} options={taxonomies} onChange={(tagsTaxonomy) => change({ tagsTaxonomy })} />
+          <ChoiceSelect
+            label={t("wordpress.postsInto")}
+            value={mapping.postsCollection}
+            options={collections}
+            onChange={(postsCollection) => change({ postsCollection })}
+          />
+          <ChoiceSelect
+            label={t("wordpress.pagesInto")}
+            value={mapping.pagesCollection}
+            options={collections}
+            onChange={(pagesCollection) => change({ pagesCollection })}
+          />
+          <ChoiceSelect
+            label={t("wordpress.categoriesInto")}
+            value={mapping.categoriesTaxonomy}
+            options={taxonomies}
+            onChange={(categoriesTaxonomy) => change({ categoriesTaxonomy })}
+          />
+          <ChoiceSelect
+            label={t("wordpress.tagsInto")}
+            value={mapping.tagsTaxonomy}
+            options={taxonomies}
+            onChange={(tagsTaxonomy) => change({ tagsTaxonomy })}
+          />
           <ChoiceSelect
             label={t("wordpress.mediaFrom")}
             value={mapping.media}
             required
             options={[
               { value: "download", label: t("wordpress.media.download") },
-              ...(choices.import.hasContentZip ? [{ value: "zip", label: t("wordpress.media.zip") }] : []),
+              ...(choices.import.hasContentZip
+                ? [{ value: "zip", label: t("wordpress.media.zip") }]
+                : []),
               { value: "skip", label: t("wordpress.media.skip") },
             ]}
-            onChange={(media) => change({ media: (media ?? "skip") as WordPressImportMapping["media"] })}
+            onChange={(media) =>
+              change({ media: (media ?? "skip") as WordPressImportMapping["media"] })
+            }
           />
+          {mapping.media === "download" && (
+            <TextField
+              className="sm:col-span-2"
+              label={t("wordpress.mediaHosts")}
+              hint={t("wordpress.mediaHostsHint")}
+              placeholder="cdn.example.com"
+              value={mediaHostsText}
+              onChange={(event) => {
+                setMediaHostsText(event.target.value);
+                change({ mediaHosts: hostsFromText(event.target.value) });
+              }}
+            />
+          )}
           <ChoiceSelect
             label={t("wordpress.authors")}
             value={mapping.authors}
@@ -112,7 +155,9 @@ function MappingForm({
               { value: "invite", label: t("wordpress.authors.invite") },
               { value: "skip", label: t("wordpress.authors.skip") },
             ]}
-            onChange={(authors) => change({ authors: (authors ?? "skip") as WordPressImportMapping["authors"] })}
+            onChange={(authors) =>
+              change({ authors: (authors ?? "skip") as WordPressImportMapping["authors"] })
+            }
           />
           <ChoiceSelect
             label={t("wordpress.drafts")}
@@ -122,11 +167,17 @@ function MappingForm({
               { value: "import", label: t("wordpress.drafts.import") },
               { value: "skip", label: t("wordpress.drafts.skip") },
             ]}
-            onChange={(drafts) => change({ drafts: (drafts ?? "skip") as WordPressImportMapping["drafts"] })}
+            onChange={(drafts) =>
+              change({ drafts: (drafts ?? "skip") as WordPressImportMapping["drafts"] })
+            }
           />
         </div>
         <div className="mt-5 flex flex-col gap-1">
-          <Toggle label={t("wordpress.redirects")} checked={mapping.redirects} onCheckedChange={(redirects) => change({ redirects })} />
+          <Toggle
+            label={t("wordpress.redirects")}
+            checked={mapping.redirects}
+            onCheckedChange={(redirects) => change({ redirects })}
+          />
           <p className="text-footnote text-label-secondary">{t("wordpress.redirectsHint")}</p>
         </div>
       </Card>
@@ -154,7 +205,11 @@ function MappingForm({
         </p>
       )}
       <div className="flex flex-wrap gap-3">
-        <Button variant="tinted" onClick={() => void checkWithDryRun()} disabled={save.isPending || dryRun.isPending}>
+        <Button
+          variant="tinted"
+          onClick={() => void checkWithDryRun()}
+          disabled={save.isPending || dryRun.isPending}
+        >
           {t("wordpress.dryRun")}
         </Button>
         <Button
@@ -166,6 +221,14 @@ function MappingForm({
       </div>
     </>
   );
+}
+
+/** "cdn.example.com, i0.wp.com" → one host each; the server checks each is an address. */
+function hostsFromText(text: string): string[] {
+  return text
+    .split(/[\s,]+/)
+    .map((host) => host.trim())
+    .filter((host) => host !== "");
 }
 
 function ChoiceSelect({
@@ -191,7 +254,9 @@ function ChoiceSelect({
         <select
           id={id}
           value={value ?? LEAVE_OUT}
-          onChange={(event) => onChange(event.target.value === LEAVE_OUT ? null : event.target.value)}
+          onChange={(event) =>
+            onChange(event.target.value === LEAVE_OUT ? null : event.target.value)
+          }
           className={classNames("h-10 appearance-none pr-9", controlClasses())}
         >
           {options.map((option) => (
@@ -213,7 +278,13 @@ function ChoiceSelect({
 
 const parts = ["body", "excerpt", "featuredImage", "categories", "tags"] as const;
 
-function FieldMappingCard({ kind, fields }: { kind: "post" | "page"; fields: WordPressFieldMapping | null }) {
+function FieldMappingCard({
+  kind,
+  fields,
+}: {
+  kind: "post" | "page";
+  fields: WordPressFieldMapping | null;
+}) {
   if (!fields) return null;
   return (
     <Card title={t("wordpress.fieldsTitle", { kind: t(`wordpress.kind.${kind}`) })}>

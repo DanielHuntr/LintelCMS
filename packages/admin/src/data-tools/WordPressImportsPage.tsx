@@ -44,7 +44,9 @@ export function WordPressImportsPage() {
                 label={item.siteTitle || item.filename}
                 description={formatDateTime(item.createdAt)}
                 accessory={
-                  <Badge tone={statusTones[item.status]}>{t(`wordpress.status.${item.status}`)}</Badge>
+                  <Badge tone={statusTones[item.status]}>
+                    {t(`wordpress.status.${item.status}`)}
+                  </Badge>
                 }
                 to={`/settings/import/wordpress/${encodeURIComponent(item.id)}`}
               />
@@ -74,7 +76,10 @@ function UploadCard() {
       if (contentFile) files.content = contentFile;
       const created = await uploadFiles<WordPressImport>("/wordpress-imports", files, setProgress);
       await queryClient.invalidateQueries({ queryKey: dataToolsKeys.wordpressImports() });
-      void navigate({ to: "/settings/import/wordpress/$importId", params: { importId: created.id } });
+      void navigate({
+        to: "/settings/import/wordpress/$importId",
+        params: { importId: created.id },
+      });
     } catch (failure) {
       setError(describeError(failure));
     } finally {
