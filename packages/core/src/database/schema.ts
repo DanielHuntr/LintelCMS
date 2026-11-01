@@ -40,3 +40,5 @@ export {
 } from "../forms/forms.table.js";
 export * from "../commerce/commerce.tables.js";
 export { userInterfaceLanguagesTable } from "../interface-languages/interface-languages.table.js";
+export { recycleBinItemsTable } from "../recycle-bin/recycle-bin.table.js";
+export { contentRootAddressesTable } from "../content-roots/content-roots.table.js";

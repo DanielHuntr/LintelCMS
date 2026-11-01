@@ -9,7 +9,6 @@ import type { DatabaseOrTransaction } from "../database/client.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
 import type { AssetLookup } from "../fieldtypes/image-assets.js";
 import { resolveLocale } from "../sites/locales.service.js";
-import { addPathPrefix } from "../sites/site-addresses.js";
 import { findSiteByIdOrFail, siteOrDefault } from "../sites/sites.service.js";
 import type { Site } from "../sites/sites.table.js";
 import { findTaxonomyOrFail } from "../taxonomies/taxonomies.service.js";
@@ -33,6 +32,7 @@ import type {
   DeliveredList,
   DeliveryListQuery,
 } from "./delivery.schema.js";
+import { placeEntryUrls } from "../content-roots/content-roots.service.js";
 import { buildEntryUrl } from "./entry-urls.js";
 
 /**
@@ -211,16 +211,24 @@ async function deliverWithTranslations(
   if (!delivered) {
     throw new PublishedEntryNotFoundError(entry.slug);
   }
-  const family = await listPublishedTranslations(database, entry.originId ?? entry.id);
+  const family = (await listPublishedTranslations(database, entry.originId ?? entry.id)).filter(
+    (member) => member.id !== entry.id,
+  );
+  const urls = await placeEntryUrls(
+    database,
+    family.map((member) => ({
+      id: member.id,
+      url: buildEntryUrl(collection.routePattern, member),
+    })),
+    { site },
+  );
   return {
     ...delivered,
-    translations: family
-      .filter((member) => member.id !== entry.id)
-      .map((member) => ({
-        locale: member.locale,
-        slug: member.slug,
-        url: addPathPrefix(site.pathPrefix, buildEntryUrl(collection.routePattern, member)),
-      })),
+    translations: family.map((member) => ({
+      locale: member.locale,
+      slug: member.slug,
+      url: urls.get(member.id) ?? null,
+    })),
   };
 }
 
@@ -238,17 +246,23 @@ async function deliverEntries(
   const assets = imageIds.length > 0 ? await assetLookup.findAssetsByIds(imageIds) : new Map();
   const locale = entries[0]?.locale ?? "";
   const references = await lookUpReferences(database, fields, dataList, locale);
-  return entries.map((entry) => ({
-    id: entry.id,
-    slug: entry.slug,
-    // A draft that has never been published gets today's date in its address, as it would.
-    url: addPathPrefix(
-      site.pathPrefix,
-      buildEntryUrl(collection.routePattern, {
+  // Addresses are put under their site start and their site's path prefix (see src/content-roots).
+  const urls = await placeEntryUrls(
+    database,
+    entries.map((entry) => ({
+      id: entry.id,
+      // A draft that has never been published gets today's date in its address, as it would.
+      url: buildEntryUrl(collection.routePattern, {
         slug: entry.slug,
         publishedAt: entry.publishedAt ?? new Date(),
       }),
-    ),
+    })),
+    { site },
+  );
+  return entries.map((entry) => ({
+    id: entry.id,
+    slug: entry.slug,
+    url: urls.get(entry.id) ?? null,
     locale: entry.locale,
     publishedAt: entry.publishedAt?.toISOString() ?? null,
     data: deliverValues(fields, entry.values, assets, references),

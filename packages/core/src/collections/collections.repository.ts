@@ -116,6 +116,9 @@ export async function updateCollectionRow(
       | "previewUrlPattern"
       | "siteScope"
       | "siteIds"
+      | "allowedAtRoot"
+      | "allowedChildren"
+      | "childrenAsCollection"
     >
   >,
 ): Promise<void> {

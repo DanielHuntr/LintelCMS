@@ -10,7 +10,6 @@ publish, unpublish and restore is kept as a revision.
 | ------------------------------------------------- | ----------------- | ------------------------------- | ------------------------------------------ |
 | `GET /collections/:handle/entries`                | `entries:read`    | query below                     | 200 `{ entries, total, page, perPage }`    |
 | `POST /collections/:handle/entries`               | `entries:create`  | `{ data, slug?, parentId? }`    | 201 `Entry`                                |
-| `POST /collections/:handle/entries/reorder`       | `entries:update`  | `{ order: [{ id, parentId }] }` | 204                                        |
 | `GET /entries/:id`                                | `entries:read`    | none                            | 200 `Entry`                                |
 | `PATCH /entries/:id`                              | `entries:update`  | `{ data?, slug?, parentId? }`   | 200 `Entry`                                |
 | `POST /entries/:id/publish`                       | `entries:publish` | none                            | 200 `Entry`, or 400 `NOT_READY_TO_PUBLISH` |
@@ -78,12 +77,16 @@ it stays live until then. Slug and parent changes take effect straight away.
 ## Order
 
 `dated` collections list newest first (by publish date, else due date, else creation).
-`flat` and `tree` collections use `sortOrder`, set by `reorder` and by new entries going
-last among their siblings. Trees list depth first: each page, then its children.
-`reorder` counts each entry's place among the listed entries with the same parent, so
-send the whole tree (or all the children of one parent); entries left out keep their
-place. It refuses entries from elsewhere, parents in a flat collection, and loops.
-Deleting a page moves its children up to its parent.
+`flat` and `tree` collections use `sortOrder`, set by the content tree's `move` and `sort`
+(`src/content-tree`) and by new entries going last among their siblings. Trees list depth
+first: each page, then its children. (The old `POST /collections/:handle/entries/reorder`
+is gone; `move` and `sort` replace it.)
+Deleting a page moves its children up to its parent. A parent can be in another collection when
+its content type allows that kind of child (`allowedChildren`, see `src/collections`), and a
+collection that isn't `allowedAtRoot` can't be created or moved to the top level; both
+give 400 `PLACEMENT_NOT_ALLOWED`. Only a change of parent is checked, so an entry placed
+before its content type's rules changed still saves. Children of one parent share one
+order across collections.
 
 ## Duplicating
 
@@ -106,7 +109,7 @@ whose saved or published values use an asset, as `[{ entryId, title }]`, for
 | `entries.schema.ts`                        | Zod schemas for requests and responses               |
 | `entries.service.ts`                       | Creating, saving, deleting; checking values; slugs   |
 | `entry-listing.service.ts`                 | Lists in each structure's order, a page at a time    |
-| `entry-ordering.service.ts`                | Parents and `reorder`                                |
+| `entry-ordering.service.ts`                | Checking parents                                     |
 | `entry-publishing.service.ts`              | Publish, unpublish, schedule and `publishDueEntries` |
 | `entry-translations.service.ts`            | Starting a translation                               |
 | `entry-references.ts`                      | Checking and tidying ids in entries and terms fields |

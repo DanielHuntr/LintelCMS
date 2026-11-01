@@ -26,7 +26,16 @@ export function cleanTypedSlug(typed: string): string {
   return slugFromTitle(typed.replace(/\s/g, "-")) + (/[-\s]$/.test(typed) ? "-" : "");
 }
 
-/** The address an entry will have on the site, e.g. "/blog/my-first-post" from "/blog/{slug}". */
+/**
+ * The address an entry will have on the site, e.g. "/blog/my-first-post" from "/blog/{slug}".
+ * `{path}` (the page's place in the tree) is shown as the slug alone; the saved page's real
+ * address comes from the server.
+ */
 export function entryUrlPreview(routePattern: string, slug: string): string {
-  return routePattern.replace("{slug}", slug);
+  return slugPattern(routePattern).replace("{slug}", slug);
+}
+
+/** A route pattern with `{path}` read as `{slug}`, for showing where the slug goes. */
+export function slugPattern(routePattern: string): string {
+  return routePattern.replace("{path}", "{slug}");
 }

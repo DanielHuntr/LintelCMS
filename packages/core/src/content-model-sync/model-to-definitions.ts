@@ -1,7 +1,8 @@
 import { TITLE_FIELD_HANDLE } from "../blueprints/blueprint-fields.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
 import { findFieldtype } from "../fieldtypes/fieldtypes.registry.js";
-import type { ModelCollection, ModelUnit } from "./content-model.schema.js";
+import { defaultAllowedChildren } from "../collections/collections.schema.js";
+import { canonicalJson, type ModelCollection, type ModelUnit } from "./content-model.schema.js";
 import type { CollectionDefinition, ModelDefinition } from "./define-content-model.js";
 import { type FieldSpec, labelFromHandle } from "./field-helpers.js";
 import { defaultRoutePattern } from "./model-from-definitions.js";
@@ -82,6 +83,16 @@ function collectionDefinition(collection: ModelCollection): CollectionDefinition
   };
   if (collection.routePattern !== defaultRoutePattern(collection.handle)) {
     definition.route = collection.routePattern;
+  }
+  if (!collection.allowedAtRoot) {
+    definition.allowedAtRoot = false;
+  }
+  const defaultChildren = defaultAllowedChildren(collection.handle, collection.structure);
+  if (canonicalJson(collection.allowedChildren) !== canonicalJson(defaultChildren)) {
+    definition.allowedChildren = collection.allowedChildren;
+  }
+  if (collection.childrenAsCollection) {
+    definition.childrenAsCollection = true;
   }
   return definition;
 }

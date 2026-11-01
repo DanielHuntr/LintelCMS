@@ -23,6 +23,9 @@ import { DEFAULT_LINTEL_FOLDER, type LintelFolder } from "./database/database-ch
 import { deliveryAccessRoutes } from "./delivery/delivery-access.routes.js";
 import { deliveryRoutes } from "./delivery/delivery.routes.js";
 import { entriesRoutes } from "./entries/entries.routes.js";
+import { contentTreeRoutes } from "./content-tree/content-tree.routes.js";
+import { recycleBinRoutes } from "./recycle-bin/recycle-bin.routes.js";
+import { contentRootsRoutes } from "./content-roots/content-roots.routes.js";
 import { findEntriesUsingAsset } from "./entries/entries.service.js";
 import { revisionsRoutes } from "./entries/revisions.routes.js";
 import { fieldtypesRoutes } from "./fieldtypes/fieldtypes.routes.js";
@@ -381,6 +384,9 @@ function registerApiRoutes(
   server.register(collectionsRoutes);
   server.register(entriesRoutes);
   server.register(revisionsRoutes);
+  server.register(contentTreeRoutes);
+  server.register(recycleBinRoutes);
+  server.register(contentRootsRoutes);
   server.register(deliveryRoutes);
   server.register(localesRoutes);
   server.register(sitesRoutes);

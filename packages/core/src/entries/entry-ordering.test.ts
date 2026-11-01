@@ -61,39 +61,54 @@ describe("ordering entries", () => {
     expect(await pageTitles("?perPage=2&page=2")).toEqual(["History", "Contact"]);
   });
 
-  it("reorders and re-parents a tree", async () => {
+  it("reorders and re-parents a tree through the content tree", async () => {
     const about = await createPage("About");
     const contact = await createPage("Contact");
     const team = await createPage("Team", about);
 
-    const response = await api("POST", "/collections/pages/entries/reorder", {
-      order: [
-        { id: contact, parentId: null },
-        { id: about, parentId: null },
-        { id: team, parentId: contact },
-      ],
+    const sorted = await api("POST", "/content-tree/sort", {
+      parentId: null,
+      collection: "pages",
+      order: [contact, about],
+    });
+    const moved = await api("POST", "/content-tree/move", {
+      entryId: team,
+      parentId: contact,
+      index: 0,
     });
 
-    expect(response.statusCode).toBe(204);
+    expect(sorted.statusCode, sorted.body).toBe(200);
+    expect(moved.statusCode, moved.body).toBe(200);
     expect(await pageTitles()).toEqual(["Contact", "Team", "About"]);
     expect((await api("GET", `/entries/${team}`)).json().parentId).toBe(contact);
   });
 
-  it("refuses orders that would loop or leave the collection", async () => {
+  it("no longer offers the old reorder route; the content tree's move and sort replace it", async () => {
+    const about = await createPage("About");
+
+    const response = await api("POST", "/collections/pages/entries/reorder", {
+      order: [{ id: about, parentId: null }],
+    });
+
+    expect(response.statusCode).toBe(404);
+  });
+
+  it("refuses moves that would loop or leave the collection", async () => {
     const about = await createPage("About");
     const team = await createPage("Team", about);
     const post = (
       await api("POST", "/collections/posts/entries", { data: { title: "Post" } })
     ).json().id;
 
-    const loop = await api("POST", "/collections/pages/entries/reorder", {
-      order: [{ id: about, parentId: team }],
+    const loop = await api("POST", "/content-tree/move", {
+      entryId: about,
+      parentId: team,
+      index: 0,
     });
-    const stranger = await api("POST", "/collections/pages/entries/reorder", {
-      order: [{ id: post, parentId: null }],
-    });
-    const dated = await api("POST", "/collections/posts/entries/reorder", {
-      order: [{ id: post, parentId: null }],
+    const dated = await api("POST", "/content-tree/move", {
+      entryId: post,
+      parentId: null,
+      index: 0,
     });
     const underItself = await api("PATCH", `/entries/${about}`, { parentId: team });
     const ownParent = await api("PATCH", `/entries/${about}`, { parentId: about });
@@ -106,15 +121,15 @@ describe("ordering entries", () => {
       statusCode: 400,
       message: "An entry can't be moved under one of its own children.",
     });
-    expect(stranger.json().message).toBe(`The entry ${post} isn't in Pages.`);
     expect(dated.json().message).toContain("ordered by date");
     expect(underItself.json().message).toBe(
       "An entry can't be moved under one of its own children.",
     );
     expect(ownParent.json().message).toBe("An entry can't be its own parent.");
-    expect(otherCollectionParent.json().message).toBe(
-      "The parent has to be another entry in Pages.",
-    );
+    expect(otherCollectionParent.json()).toMatchObject({
+      code: "PLACEMENT_NOT_ALLOWED",
+      message: "Pages can't go under an entry in Blog posts.",
+    });
     expect(await pageTitles()).toEqual(["About", "Team"]);
   });
 
@@ -135,11 +150,15 @@ describe("ordering entries", () => {
       ids.push((await api("POST", "/collections/faqs/entries", { data: { title } })).json().id);
     }
 
-    await api("POST", "/collections/faqs/entries/reorder", {
-      order: [ids[2], ids[0], ids[1]].map((id) => ({ id, parentId: null })),
+    await api("POST", "/content-tree/sort", {
+      parentId: null,
+      collection: "faqs",
+      order: [ids[2], ids[0], ids[1]],
     });
-    const withParent = await api("POST", "/collections/faqs/entries/reorder", {
-      order: [{ id: ids[0], parentId: ids[1] }],
+    const withParent = await api("POST", "/content-tree/move", {
+      entryId: ids[0],
+      parentId: ids[1],
+      index: 0,
     });
 
     const list = await api("GET", "/collections/faqs/entries");
@@ -148,7 +167,7 @@ describe("ordering entries", () => {
       "First",
       "Second",
     ]);
-    expect(withParent.json().message).toBe("FAQs isn't a tree, so its entries can't have parents.");
+    expect(withParent.statusCode).toBe(400);
   });
 
   it("flattens a tree when the collection stops being one", async () => {

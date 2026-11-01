@@ -1,4 +1,4 @@
-import { pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, jsonb, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { collectionSiteScopes, collectionStructures } from "./collections.schema.js";
 import { id, tenantId, timestamps } from "../database/columns.js";
 import { blueprintsTable } from "../blueprints/blueprints.table.js";
@@ -16,6 +16,11 @@ import { blueprintsTable } from "../blueprints/blueprints.table.js";
  *                 which sites have the collection at all; null means every site.
  *   - "shared"    one set of entries every site shows (team members, FAQs). They are kept
  *                 with the default site, in its languages.
+ *
+ * Where its entries may go in the content tree (see src/content-tree):
+ *   - `allowedAtRoot`  entries can sit at the top of the collection's own section
+ *   - `allowedChildren` handles of the collections whose entries may go under one of these
+ *   - `childrenAsCollection` children are shown as a list in the workspace, not in the tree
  */
 export const collectionsTable = pgTable(
   "collections",
@@ -33,6 +38,9 @@ export const collectionsTable = pgTable(
     structure: text("structure", { enum: collectionStructures }).notNull().default("flat"),
     siteScope: text("site_scope", { enum: collectionSiteScopes }).notNull().default("per-site"),
     siteIds: uuid("site_ids").array(),
+    allowedAtRoot: boolean("allowed_at_root").notNull().default(true),
+    allowedChildren: jsonb("allowed_children").$type<string[]>().notNull().default([]),
+    childrenAsCollection: boolean("children_as_collection").notNull().default(false),
     ...timestamps(),
   },
   (table) => [uniqueIndex("collections_tenant_handle_unique").on(table.tenantId, table.handle)],

@@ -16,6 +16,9 @@ export const modelCollectionSchema = z.object({
   name: z.string(),
   structure: z.enum(collectionStructures),
   routePattern: z.string().nullable(),
+  allowedAtRoot: z.boolean(),
+  allowedChildren: z.array(z.string()),
+  childrenAsCollection: z.boolean(),
 });
 
 export const modelUnitSchema = z.discriminatedUnion("kind", [

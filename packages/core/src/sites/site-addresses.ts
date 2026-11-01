@@ -52,7 +52,7 @@ export function normalizePathPrefix(value: string): string | null {
 }
 
 /** Whether a site hostname covers the one a request came to. No port on the site means any. */
-function hostnameMatches(siteHostname: string, requestHost: string): boolean {
+export function hostnameMatches(siteHostname: string, requestHost: string): boolean {
   if (siteHostname === requestHost) {
     return true;
   }

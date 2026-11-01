@@ -32,6 +32,7 @@ import type {
   CreateCollectionRequest,
   UpdateCollectionRequest,
 } from "./collections.schema.js";
+import { defaultAllowedChildren } from "./collections.schema.js";
 import type { Collection } from "./collections.table.js";
 import { findOrCreateDefaultSite, findSiteOrFail, siteOrDefault } from "../sites/sites.service.js";
 import type { Site } from "../sites/sites.table.js";
@@ -91,6 +92,9 @@ export function describeCollection(collection: CollectionWithDetails): Collectio
     previewUrlPattern: collection.previewUrlPattern,
     siteScope: collection.siteScope,
     siteIds: collection.siteIds,
+    allowedAtRoot: collection.allowedAtRoot,
+    allowedChildren: collection.allowedChildren,
+    childrenAsCollection: collection.childrenAsCollection,
     entryCount: collection.entryCount,
     updatedAt: collection.updatedAt.toISOString(),
   };
@@ -168,6 +172,10 @@ export async function createCollection(
       previewUrlPattern: request.previewUrlPattern ?? null,
       siteScope: request.siteScope,
       siteIds: await findSiteIdsForHandles(database, request.siteHandles),
+      allowedAtRoot: request.allowedAtRoot ?? true,
+      allowedChildren:
+        request.allowedChildren ?? defaultAllowedChildren(request.handle, request.structure),
+      childrenAsCollection: request.childrenAsCollection ?? false,
     });
   } catch (error) {
     // Someone else created the same handle between the check and the insert.
@@ -214,6 +222,9 @@ export async function updateCollection(
       previewUrlPattern: request.previewUrlPattern,
       siteScope: request.siteScope,
       siteIds,
+      allowedAtRoot: request.allowedAtRoot,
+      allowedChildren: request.allowedChildren,
+      childrenAsCollection: request.childrenAsCollection,
     });
     if (collection.structure === "tree" && request.structure && request.structure !== "tree") {
       await clearParentsInCollection(transaction, collection.id);
@@ -264,5 +275,6 @@ export async function ensureCollection(
     blueprintId: blueprint.id,
     structure: defaults.structure,
     routePattern: defaults.routePattern,
+    allowedChildren: defaultAllowedChildren(defaults.handle, defaults.structure),
   });
 }

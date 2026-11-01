@@ -82,17 +82,6 @@ export const scheduleEntryRequestSchema = z.object({
     .transform((value) => new Date(value)),
 });
 
-/** `POST /collections/:handle/entries/reorder`: entries in their new order, with parents. */
-export const reorderEntriesRequestSchema = z.object({
-  order: z.array(
-    z.object({
-      id: z.uuid({ error: "Each item needs the id of an entry" }),
-      parentId: parentIdSchema.default(null),
-    }),
-    { error: "Please send the new order as a list of { id, parentId }" },
-  ),
-});
-
 /** Route params. An id that isn't a uuid can't belong to anything, so routes answer 404. */
 export const entryIdParamsSchema = z.object({ id: z.uuid() });
 
@@ -167,7 +156,6 @@ export type ListEntriesQuery = z.infer<typeof listEntriesQuerySchema>;
 export type CreateEntryRequest = z.infer<typeof createEntryRequestSchema>;
 export type TranslateEntryRequest = z.infer<typeof translateEntryRequestSchema>;
 export type UpdateEntryRequest = z.infer<typeof updateEntryRequestSchema>;
-export type ReorderEntriesRequest = z.infer<typeof reorderEntriesRequestSchema>;
 export type EntrySummaryResponse = z.infer<typeof entrySummarySchema>;
 export type EntryResponse = z.infer<typeof entrySchema>;
 export type EntryTranslation = EntryResponse["translations"][number];

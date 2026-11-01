@@ -77,7 +77,7 @@ describe("collections", () => {
     expect(unknownBlueprint.statusCode).toBe(404);
     expect(badShape.statusCode).toBe(400);
     expect(badShape.json().message).toContain('The structure should be "tree", "dated" or "flat"');
-    expect(badShape.json().message).toContain("The route pattern needs {slug} in it");
+    expect(badShape.json().message).toContain("The route pattern needs {slug} or {path} in it");
     expect(taken.json()).toMatchObject({ statusCode: 409, code: "COLLECTION_HANDLE_TAKEN" });
   });
 
@@ -176,7 +176,7 @@ describe("default collections", () => {
     expect((await api("GET", "/collections/pages")).json()).toMatchObject({
       name: "Pages",
       structure: "tree",
-      routePattern: "/{slug}",
+      routePattern: "/{path}",
       blueprintHandle: "page",
     });
     expect((await api("GET", "/collections/posts")).json()).toMatchObject({

@@ -25,11 +25,11 @@ export function contentTypeHandle(name: string): string {
 }
 
 /**
- * Where entries live on the site. Pages sit at the top level ("/about"); posts and lists
- * get a folder named after the collection ("/team-members/ada").
+ * Where entries live on the site. Pages follow the tree ("/about", and "/about/team" for a
+ * page under About); posts and lists get a folder named after the collection ("/team-members/ada").
  */
 export function routePatternFor(handle: string, structure: CollectionStructure): string {
-  return structure === "tree" ? "/{slug}" : `/${handle.replace(/_/g, "-")}/{slug}`;
+  return structure === "tree" ? "/{path}" : `/${handle.replace(/_/g, "-")}/{slug}`;
 }
 
 /** A content type is a blueprint (its fields) and a collection (where its entries live). This is the first. */

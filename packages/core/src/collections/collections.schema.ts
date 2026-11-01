@@ -9,21 +9,24 @@ export const collectionSiteScopes = ["per-site", "shared"] as const;
 export type CollectionSiteScope = (typeof collectionSiteScopes)[number];
 
 /** What a route pattern may contain besides fixed text. See src/delivery/entry-urls.ts. */
-export const ROUTE_PLACEHOLDERS = ["{slug}", "{year}", "{month}", "{day}"] as const;
+export const ROUTE_PLACEHOLDERS = ["{slug}", "{path}", "{year}", "{month}", "{day}"] as const;
 
 const structureSchema = z.enum(collectionStructures, {
   error: 'The structure should be "tree", "dated" or "flat"',
 });
 
 /**
- * Where an entry lives on the site, such as "/blog/{slug}". null means the collection's
- * entries have no page of their own (testimonials shown on other pages, say).
+ * Where an entry lives on the site, such as "/blog/{slug}". `{path}` follows the page tree:
+ * "/{path}" puts Team under About at "/about/team". null means the collection's entries have
+ * no page of their own (testimonials shown on other pages, say).
  */
 const routePatternSchema = z
   .string({ error: "The route pattern should be text, like /blog/{slug}" })
   .trim()
   .startsWith("/", { error: "The route pattern should start with /, like /blog/{slug}" })
-  .includes("{slug}", { error: "The route pattern needs {slug} in it, like /blog/{slug}" })
+  .refine((pattern) => pattern.includes("{slug}") !== pattern.includes("{path}"), {
+    error: "The route pattern needs {slug} or {path} in it (one of them), like /blog/{slug}",
+  })
   .refine(usesOnlyKnownPlaceholders, {
     error: `The route pattern can use ${ROUTE_PLACEHOLDERS.join(", ")}`,
   })
@@ -106,6 +109,26 @@ const siteHandlesSchema = z
   .array(z.string(), { error: "The sites should be a list of handles" })
   .min(1, { error: "Choose at least one site, or every site" })
   .nullable();
+/**
+ * Where entries of a collection may go in the content tree. `allowedChildren` names the
+ * collections whose entries may be created under one of these; left out, a tree allows its
+ * own kind (pages under pages) and other structures allow nothing.
+ */
+export const collectionPlacementSchema = z.object({
+  allowedAtRoot: z.boolean({ error: "Allowed at the top should be true or false" }),
+  allowedChildren: z
+    .array(z.string().trim().min(1), { error: "Allowed children should be a list of handles" })
+    .max(50, { error: "A content type can allow at most 50 kinds of children" })
+    .transform((handles) => [...new Set(handles)]),
+  childrenAsCollection: z.boolean({ error: "Show children as a list should be true or false" }),
+});
+
+export type CollectionPlacement = z.infer<typeof collectionPlacementSchema>;
+
+/** A tree allows its own kind under each entry; anything else allows nothing until told. */
+export function defaultAllowedChildren(handle: string, structure: CollectionStructure): string[] {
+  return structure === "tree" ? [handle] : [];
+}
 
 /** `POST /collections`. Without a route pattern, entries live at /<handle>/{slug}. */
 export const createCollectionRequestSchema = z.object({
@@ -120,6 +143,7 @@ export const createCollectionRequestSchema = z.object({
   previewUrlPattern: previewUrlPatternSchema.optional(),
   siteScope: siteScopeSchema.default("per-site"),
   siteHandles: siteHandlesSchema.default(null),
+  ...collectionPlacementSchema.partial().shape,
 });
 
 /** `PUT /collections/:handle`. Anything left out stays as it is; the handle can't change. */
@@ -131,6 +155,7 @@ export const updateCollectionRequestSchema = z.object({
   previewUrlPattern: previewUrlPatternSchema.optional(),
   siteScope: siteScopeSchema.optional(),
   siteHandles: siteHandlesSchema.optional(),
+  ...collectionPlacementSchema.partial().shape,
 });
 
 export const collectionHandleParamsSchema = z.object({ handle: z.string() });
@@ -151,6 +176,9 @@ export const collectionSchema = z.object({
   siteScope: siteScopeSchema,
   /** The sites a per-site collection is on; null for every site. */
   siteIds: z.array(z.uuid()).nullable(),
+  allowedAtRoot: z.boolean(),
+  allowedChildren: z.array(z.string()),
+  childrenAsCollection: z.boolean(),
   entryCount: z.number().int(),
   updatedAt: z.iso.datetime(),
 });

@@ -1,7 +1,10 @@
 import type { z } from "zod";
 import { checkBlueprintFields, checkFieldDefinitions } from "../blueprints/blueprint-fields.js";
 import { createBlueprintRequestSchema } from "../blueprints/blueprints.schema.js";
-import { createCollectionRequestSchema } from "../collections/collections.schema.js";
+import {
+  createCollectionRequestSchema,
+  defaultAllowedChildren,
+} from "../collections/collections.schema.js";
 import {
   type FieldsetFields,
   nestedFieldsetProblem,
@@ -179,6 +182,9 @@ function contentTypeUnit(
       blueprintHandle: checked.data.handle,
       structure: collection.structure,
       routePattern: collection.route,
+      allowedAtRoot: collection.allowedAtRoot,
+      allowedChildren: collection.allowedChildren,
+      childrenAsCollection: collection.childrenAsCollection,
     });
     if (!parsed.success) {
       problems.push(...issueMessages(parsed.error).map((message) => `collection: ${message}`));
@@ -190,6 +196,9 @@ function contentTypeUnit(
       name,
       structure,
       routePattern: routePattern === undefined ? defaultRoutePattern(handle) : routePattern,
+      allowedAtRoot: parsed.data.allowedAtRoot ?? true,
+      allowedChildren: parsed.data.allowedChildren ?? defaultAllowedChildren(handle, structure),
+      childrenAsCollection: parsed.data.childrenAsCollection ?? false,
     });
   }
   if (problems.length > 0) {

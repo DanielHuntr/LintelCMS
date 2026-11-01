@@ -15,7 +15,6 @@ import { requireEntryPermission } from "./entry-access.js";
 import { duplicateEntry } from "./entry-duplication.service.js";
 import { copyEntryToSite } from "./entry-site-copy.service.js";
 import { listEntries } from "./entry-listing.service.js";
-import { reorderEntries } from "./entry-ordering.service.js";
 import { publishEntry, scheduleEntry, unpublishEntry } from "./entry-publishing.service.js";
 import {
   collectionEntriesParamsSchema,
@@ -23,7 +22,6 @@ import {
   createEntryRequestSchema,
   entryIdParamsSchema,
   listEntriesQuerySchema,
-  reorderEntriesRequestSchema,
   scheduleEntryRequestSchema,
   updateEntryRequestSchema,
 } from "./entries.schema.js";
@@ -41,7 +39,6 @@ import {
  *
  *   GET    /collections/:handle/entries          (entries:read)     ?status&search&page&perPage&parentId
  *   POST   /collections/:handle/entries          (entries:create)   { data, slug?, parentId? } -> 201
- *   POST   /collections/:handle/entries/reorder  (entries:update)   { order: [{ id, parentId }] } -> 204
  *   GET    /entries/:id                          (entries:read)
  *   PATCH  /entries/:id                          (entries:update)   { data?, slug?, parentId? }
  *   POST   /entries/:id/publish                  (entries:publish)
@@ -84,17 +81,6 @@ export async function entriesRoutes(server: FastifyInstance) {
     );
     return reply.code(201).send(created);
   });
-
-  server.post(
-    "/collections/:handle/entries/reorder",
-    can("entries:update"),
-    async (request, reply) => {
-      const { handle } = parseRequest(collectionEntriesParamsSchema, request.params);
-      const order = parseRequest(reorderEntriesRequestSchema, request.body);
-      await reorderEntries(server.database, handle, order, await resolveEditingSite(request));
-      return reply.code(204).send();
-    },
-  );
 
   server.get("/entries/:id", can("entries:read"), async (request) => {
     const id = readEntryId(request.params);

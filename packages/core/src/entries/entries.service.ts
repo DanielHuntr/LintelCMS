@@ -164,7 +164,9 @@ export async function saveEntry(
     "saving",
     { previousData: entry.data, entryId: entry.id, locale: entry.locale },
   );
-  if (request.parentId !== undefined) {
+  // Only a move is checked, so an entry placed before its content type's rules changed can
+  // still be saved where it is.
+  if (request.parentId !== undefined && request.parentId !== entry.parentId) {
     await checkParent(database, collection, request.parentId, entry.id, entry.locale, entry.siteId);
   }
   const slug =

@@ -53,11 +53,9 @@ export async function siteRoutes(
 ) {
   const visit = async (request: FastifyRequest) => {
     const pathname = request.url.split("?")[0] ?? "/";
-    const { site, path } = await findSiteForAddress(options.database(), {
-      host: requestHost(request),
-      path: pathname,
-    });
-    return { dependencies: options.dependencies(site), path };
+    const host = requestHost(request);
+    const { site, path } = await findSiteForAddress(options.database(), { host, path: pathname });
+    return { dependencies: { ...options.dependencies(site), host }, path };
   };
 
   server.get(`${ILLUSTRATIONS_FOLDER}/:file`, async (request, reply) => {

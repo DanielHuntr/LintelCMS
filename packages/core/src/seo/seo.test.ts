@@ -10,6 +10,7 @@ import {
   type DeliveredAsset,
 } from "../fieldtypes/image-assets.js";
 import { useTestDatabase } from "../testing/test-database.js";
+import { createHomePage } from "../testing/test-home-page.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
 
@@ -71,6 +72,7 @@ describe("the SEO plugin", () => {
   });
 
   it("builds each page's title, description and image from its own settings and the site's", async () => {
+    await createHomePage(api);
     await api("PUT", "/site-address", { siteAddress: "https://www.cornerbakery.example/" });
     await api("PUT", "/seo/defaults", {
       siteName: "Corner Bakery",
@@ -140,6 +142,7 @@ describe("the SEO plugin", () => {
   });
 
   it("uses the address from Settings → Site when the SEO settings have none", async () => {
+    await createHomePage(api);
     await api("PUT", "/site-address", { siteAddress: "https://brightsidebakery.com" });
     await publishPage("Contact");
 
@@ -217,6 +220,7 @@ describe("the SEO plugin", () => {
   });
 
   it("suggests a redirect when a live page's address changes, and accepting it shortens chains", async () => {
+    await createHomePage(api);
     const entryId = await publishPage("About us");
     await api("POST", "/seo/redirects", { fromPath: "/our-story", toPath: "/about-us" });
 

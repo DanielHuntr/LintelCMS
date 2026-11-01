@@ -18,6 +18,12 @@ export interface Collection {
   siteScope?: "per-site" | "shared";
   /** The sites a per-site collection is on; null for every site. */
   siteIds?: string[] | null;
+  /** Whether entries can sit at the top of its section in the content tree. */
+  allowedAtRoot: boolean;
+  /** Handles of the collections whose entries may go under one of these. */
+  allowedChildren: string[];
+  /** Children are listed in the workspace rather than shown in the tree. */
+  childrenAsCollection: boolean;
   entryCount: number;
   updatedAt: string;
 }

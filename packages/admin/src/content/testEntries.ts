@@ -31,6 +31,9 @@ export const postsCollection: Collection = {
   structure: "dated",
   routePattern: "/blog/{slug}",
   previewUrlPattern: null,
+  allowedAtRoot: true,
+  allowedChildren: [],
+  childrenAsCollection: false,
   entryCount: 1,
   updatedAt: "2026-10-01T09:00:00.000Z",
 };

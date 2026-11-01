@@ -171,6 +171,11 @@ class ModelApplier {
     for (const contentType of this.targetUnits("contentType")) {
       for (const collection of contentType.collections) {
         const { handle, name, structure, routePattern } = collection;
+        const placement = {
+          allowedAtRoot: collection.allowedAtRoot,
+          allowedChildren: collection.allowedChildren,
+          childrenAsCollection: collection.childrenAsCollection,
+        };
         const found = existing.get(handle);
         if (!found) {
           await createCollection(this.database, {
@@ -178,6 +183,7 @@ class ModelApplier {
             name,
             structure,
             routePattern,
+            ...placement,
             blueprintHandle: contentType.handle,
             // Content model files don't describe sites: new collections are on every site.
             siteScope: "per-site",
@@ -191,6 +197,7 @@ class ModelApplier {
             name,
             structure,
             routePattern,
+            ...placement,
             blueprintHandle: contentType.handle,
           });
         }

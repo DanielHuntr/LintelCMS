@@ -25,13 +25,14 @@ width every widget takes the full row.
 
 ## Built-in widgets
 
-| Id                     | Shows                                                     | Needs          |
-| ---------------------- | --------------------------------------------------------- | -------------- |
-| `core:welcome`         | A greeting and quick actions (new page, new post, upload) | nothing        |
-| `core:recent-edits`    | The six entries changed most recently, and by whom        | `entries:read` |
-| `core:needs-attention` | Drafts and unpublished changes, oldest first              | `entries:read` |
-| `core:scheduled`       | What goes live by itself, soonest first                   | `entries:read` |
-| `core:media-usage`     | Files, space used, and images without alt text            | `media:read`   |
+| Id                     | Shows                                                                   | Needs          |
+| ---------------------- | ----------------------------------------------------------------------- | -------------- |
+| `core:welcome`         | A greeting and quick actions (new page, new post, upload)               | nothing        |
+| `core:recent-edits`    | The six entries changed most recently, and by whom                      | `entries:read` |
+| `core:my-edits`        | The six entries you changed most recently (also on the Content landing) | `entries:read` |
+| `core:needs-attention` | Drafts and unpublished changes, oldest first                            | `entries:read` |
+| `core:scheduled`       | What goes live by itself, soonest first                                 | `entries:read` |
+| `core:media-usage`     | Files, space used, and images without alt text                          | `media:read`   |
 
 Plugins add more with `dashboardWidgets`, and tabs beside the dashboard with
 `dashboardTabs` (see `src/plugins`).

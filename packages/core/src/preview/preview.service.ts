@@ -1,11 +1,12 @@
 import { findCollectionByIdOrFail } from "../collections/collections.service.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { findDeliveredDraft } from "../delivery/delivery.service.js";
+import { placeEntryUrl } from "../content-roots/content-roots.service.js";
+import { pathOfAddress } from "../content-roots/root-addresses.js";
 import { buildEntryUrl } from "../delivery/entry-urls.js";
 import { findEntryOrFail } from "../entries/entries.service.js";
 import type { AssetLookup } from "../fieldtypes/image-assets.js";
 import { readOrCreateSetting } from "../settings/settings.service.js";
-import { addPathPrefix } from "../sites/site-addresses.js";
 import { findSiteByIdOrFail } from "../sites/sites.service.js";
 import type { Site } from "../sites/sites.table.js";
 import { PreviewTokenExpiredError, PreviewTokenInvalidError } from "./preview.errors.js";
@@ -50,6 +51,15 @@ export async function createEntryPreview(
       ? site
       : await findSiteByIdOrFail(database, entry.siteId);
   const expiresAt = now.getTime() + PREVIEW_TOKEN_LIFETIME_MS;
+  const url = await placeEntryUrl(
+    database,
+    entry.id,
+    buildEntryUrl(collection.routePattern, {
+      slug: entry.slug,
+      publishedAt: entry.publishedAt ?? now,
+    }),
+    { site: previewSite },
+  );
   const token = signPreviewToken(
     { entryId: entry.id, expiresAt },
     await findSigningSecret(database),
@@ -59,13 +69,8 @@ export async function createEntryPreview(
     token,
     expiresAt: new Date(expiresAt).toISOString(),
     previewUrl: buildPreviewUrl(builtInPreviewPattern(collection, previewSite, builtInSiteUrl), {
-      url: addPathPrefix(
-        previewSite.pathPrefix,
-        buildEntryUrl(collection.routePattern, {
-          slug: entry.slug,
-          publishedAt: entry.publishedAt ?? now,
-        }),
-      ),
+      // The built-in website shows previews on its own address, whatever the page's domain.
+      url: url === null ? null : pathOfAddress(url),
       slug: entry.slug,
       token,
       collection: collection.handle,

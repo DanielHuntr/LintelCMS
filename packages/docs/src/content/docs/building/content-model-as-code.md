@@ -79,6 +79,22 @@ export default defineContentType({
   builder offers, with JSDoc, so VS Code completes them and flags mistakes as you type.
 - `collection` can be a list, if several collections share the fields. Leave `route` out
   for `/<handle>/{slug}`, or set it to `null` for entries with no page of their own.
+- Where entries go in the admin's content tree is part of the collection too:
+  `allowedAtRoot: false` for a kind that only lives under another page,
+  `allowedChildren: ["pages", "landing_pages"]` for what may be created under one (a tree
+  allows its own kind when left out), `childrenAsCollection: true` to list a long run of
+  children beside the tree instead of in it, and `listColumns: ["price", "sku"]` for the
+  fields that list shows as columns.
+
+```ts
+collection: {
+  handle: "pages",
+  name: "Pages",
+  structure: "tree",
+  route: "/{slug}",
+  allowedChildren: ["pages", "landing_pages"],
+},
+```
 
 A page builder is a `blocks` field with its block types keyed by handle:
 

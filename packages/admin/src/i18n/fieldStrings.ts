@@ -155,8 +155,6 @@ export const fieldStrings = {
   "editor.fieldTabs": "Parts of the form",
   "editor.mainTab": "Main",
   "editor.tabHasProblem": "Has a field that needs attention",
-  "entries.column.yes": "Yes",
-  "entries.column.no": "No",
 
   "fields.readOnly": "Read only",
   "fields.code.language": "Written in {language}",

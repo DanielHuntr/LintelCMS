@@ -5,6 +5,7 @@ import {
   ensurePagesCollection,
 } from "../collections/default-collections.js";
 import { useTestDatabase } from "../testing/test-database.js";
+import { createHomePage } from "../testing/test-home-page.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
 
@@ -82,6 +83,8 @@ describe("entries on several sites", () => {
 
   it("puts the site's path prefix in front of its addresses", async () => {
     await uk("PATCH", "/sites/france", { hostnames: ["acme.co.uk"], pathPrefix: "/fr" });
+    // The first page at the top is the site's "/"; the page under test comes after it.
+    await createHomePage(france);
     await publish(france, "À propos");
 
     const delivered = await get("/delivery/pages/a-propos?site=france");

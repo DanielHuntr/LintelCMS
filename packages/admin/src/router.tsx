@@ -6,14 +6,18 @@ import {
   redirect,
   useNavigate,
 } from "@tanstack/react-router";
-import { lazy, useCallback } from "react";
+import { useCallback } from "react";
 import { ApiAccessPage } from "./api-access/ApiAccessPage.js";
 import { ApiReferencePage } from "./api-access/ApiReferencePage.js";
 import { adminQueryClient } from "./api/queryClient.js";
-import { ContentOverviewPage } from "./content/ContentOverviewPage.js";
 import type { EntryStatus } from "./content/content.types.js";
-import { EntriesListPage } from "./content/EntriesListPage.js";
-import type { EntriesFilter } from "./content/entriesQuery.js";
+import type { CollectionQuery } from "./content-tree/contentTree.types.js";
+import { ContentSection } from "./content-tree/ContentSection.js";
+import { RecycleBinPage } from "./content-tree/RecycleBinPage.js";
+import { CollectionWorkspace } from "./content-workspace/CollectionWorkspace.js";
+import { ContentLanding } from "./content-workspace/ContentLanding.js";
+import { EntryWorkspacePage } from "./content-workspace/EntryWorkspacePage.js";
+import { readWorkspaceTab, type WorkspaceTab } from "./content-workspace/workspaceTabs.js";
 import { BlueprintEditorPage } from "./content-types/BlueprintEditorPage.js";
 import { commerceRoutes } from "./commerce/commerceRoutes.js";
 import { contentModelRoutes } from "./content-model/contentModelRoutes.js";
@@ -173,16 +177,32 @@ const dashboardRoute = createRoute({
   },
 });
 
-const contentRoute = createRoute({
+/**
+ * The Content section: the content tree beside whatever these routes open. A layout without
+ * a path of its own, so the tree stays put while the workspace beside it changes.
+ */
+const contentSectionRoute = createRoute({
   getParentRoute: () => adminRoute,
+  id: "content-section",
+  component: ContentSection,
+});
+
+const contentRoute = createRoute({
+  getParentRoute: () => contentSectionRoute,
   path: "/content",
-  component: function ContentOverview() {
+  component: function ContentLandingRoute() {
     return (
       <SectionTabs section="/content">
-        <ContentOverviewPage />
+        <ContentLanding />
       </SectionTabs>
     );
   },
+});
+
+const recycleBinRoute = createRoute({
+  getParentRoute: () => contentSectionRoute,
+  path: "/content/recycle-bin",
+  component: RecycleBinPage,
 });
 
 const entryStatuses: readonly string[] = [
@@ -192,55 +212,78 @@ const entryStatuses: readonly string[] = [
 ] satisfies EntryStatus[];
 
 const entriesRoute = createRoute({
-  getParentRoute: () => adminRoute,
+  getParentRoute: () => contentSectionRoute,
   path: "/content/$collection",
-  // The filter lives in the URL, so a filtered list survives a reload and can be shared.
-  validateSearch: (search: Record<string, unknown>): EntriesFilter => ({
+  // The list's search, filter, sort and page live in the address, so they survive a reload.
+  validateSearch: (search: Record<string, unknown>): CollectionQuery => ({
     status: entryStatuses.includes(String(search.status))
       ? (search.status as EntryStatus)
       : undefined,
     search: typeof search.search === "string" && search.search !== "" ? search.search : undefined,
+    sort: typeof search.sort === "string" && search.sort !== "" ? search.sort : undefined,
+    direction:
+      search.direction === "desc" ? "desc" : search.direction === "asc" ? "asc" : undefined,
     page: typeof search.page === "number" && search.page > 1 ? Math.floor(search.page) : undefined,
-    locale: typeof search.locale === "string" && search.locale !== "" ? search.locale : undefined,
   }),
-  component: EntriesListRoute,
+  component: function CollectionRoute() {
+    const { collection } = entriesRoute.useParams();
+    const query = entriesRoute.useSearch();
+    const navigate = entriesRoute.useNavigate();
+    const changeQuery = useCallback(
+      (next: CollectionQuery) => void navigate({ search: next, replace: true }),
+      [navigate],
+    );
+    return (
+      <CollectionWorkspace
+        collectionHandle={collection}
+        query={query}
+        onQueryChange={changeQuery}
+      />
+    );
+  },
 });
 
-function EntriesListRoute() {
-  const { collection } = entriesRoute.useParams();
-  const filter = entriesRoute.useSearch();
-  const navigate = entriesRoute.useNavigate();
-  const changeFilter = useCallback(
-    (next: EntriesFilter) =>
-      void navigate({
-        search: { ...next, page: next.page === 1 ? undefined : next.page },
-        replace: true,
-      }),
-    [navigate],
-  );
-
-  return (
-    <EntriesListPage collectionHandle={collection} filter={filter} onFilterChange={changeFilter} />
-  );
+interface EntryWorkspaceSearch {
+  /** For a new entry started in another language: /content/pages/new?locale=fr-FR. */
+  locale?: string;
+  tab?: WorkspaceTab;
+  preview?: boolean;
 }
 
-// The editor brings the rich text editor with it, so it loads only when someone opens an entry.
-const EntryEditorPage = lazy(async () => ({
-  default: (await import("./content/EntryEditorPage.js")).EntryEditorPage,
-}));
-
-// "/content/posts/new" is this route too, with entryId "new": see EntryEditorPage for why.
+// "/content/posts/new" is this route too, with entryId "new": see EntryWorkspacePage.
 const entryEditorRoute = createRoute({
-  getParentRoute: () => adminRoute,
+  getParentRoute: () => contentSectionRoute,
   path: "/content/$collection/$entryId",
-  // A new entry can be started in another language: /content/pages/new?locale=fr-FR.
-  validateSearch: (search: Record<string, unknown>): { locale?: string } => ({
+  validateSearch: (search: Record<string, unknown>): EntryWorkspaceSearch => ({
     locale: typeof search.locale === "string" && search.locale !== "" ? search.locale : undefined,
+    tab: readWorkspaceTab(search.tab),
+    preview: search.preview === true ? true : undefined,
   }),
-  component: function EntryEditorRoute() {
+  component: function EntryWorkspaceRoute() {
     const { collection, entryId } = entryEditorRoute.useParams();
-    const { locale } = entryEditorRoute.useSearch();
-    return <EntryEditorPage collectionHandle={collection} entryId={entryId} locale={locale} />;
+    const { locale, tab, preview } = entryEditorRoute.useSearch();
+    const navigate = entryEditorRoute.useNavigate();
+    return (
+      <EntryWorkspacePage
+        collectionHandle={collection}
+        entryId={entryId}
+        locale={locale}
+        tab={tab}
+        isPreviewOpen={preview === true}
+        onTabChange={(next) =>
+          void navigate({
+            search: (current) => ({ ...current, tab: next === "content" ? undefined : next }),
+            replace: true,
+          })
+        }
+        onPreviewChange={(isOpen) =>
+          void navigate({
+            search: (current) => ({ ...current, preview: isOpen ? true : undefined }),
+            replace: true,
+          })
+        }
+      />
+    );
   },
 });
 
@@ -358,12 +401,22 @@ const pluginScreensRoute = createRoute({
   component: PluginScreenRoute,
 });
 
+/** Site-wide content (globals, menus, taxonomies) opens beside the tree; languages are a setting. */
+const contentModelScreens = contentModelRoutes(
+  () => contentSectionRoute,
+  () => adminRoute,
+);
+
 const contentRoutes = [
-  contentRoute,
-  ...contentModelRoutes(() => adminRoute),
+  contentSectionRoute.addChildren([
+    contentRoute,
+    recycleBinRoute,
+    ...contentModelScreens.content,
+    entriesRoute,
+    entryEditorRoute,
+  ]),
+  ...contentModelScreens.settings,
   ...fieldsetRoutes(() => adminRoute),
-  entriesRoute,
-  entryEditorRoute,
   publishedPageRoute,
   settingsRoute,
   sitesRoute,

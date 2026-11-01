@@ -4,6 +4,7 @@
  *
  *   /                          the home page
  *   /about                     an entry, through its collection's route pattern ("/{slug}")
+ *   /about/team                a page under About, when the pattern follows the tree ("/{path}")
  *   /blog                      the list of a dated collection ("/blog/{slug}" lists at /blog)
  *   /blog/page/2               ...its second page
  *   /blog/tags/sourdough       an archive: the posts filed under one term
@@ -22,7 +23,13 @@ export interface RoutedCollection {
 
 export type SiteRoute =
   | { kind: "home" }
-  | { kind: "entry"; collection: string; slug: string }
+  | {
+      kind: "entry";
+      collection: string;
+      slug: string;
+      /** Found by its last part only: answer only when the whole address is the page's. */
+      isGuess?: boolean;
+    }
   | { kind: "list"; collection: string; page: number }
   | { kind: "archive"; collection: string; taxonomy: string; term: string; page: number };
 
@@ -116,8 +123,14 @@ function matchEntries(path: string, collections: readonly RoutedCollection[]): S
   return [...collections]
     .sort((first, second) => fixedLength(second.routePattern) - fixedLength(first.routePattern))
     .flatMap((collection): SiteRoute[] => {
-      const slug = patternToExpression(collection.routePattern).exec(path)?.groups?.slug;
-      return slug ? [{ kind: "entry", collection: collection.handle, slug }] : [];
+      const groups = patternToExpression(collection.routePattern).exec(path)?.groups;
+      if (!groups?.slug) {
+        return [];
+      }
+      // "/about/team" is only a guess at Team until its address is checked; "/team" (as it
+      // was before pages followed the tree) may be sent on to it.
+      const route: SiteRoute = { kind: "entry", collection: collection.handle, slug: groups.slug };
+      return [groups.parents ? { ...route, isGuess: true } : route];
     });
 }
 
@@ -127,6 +140,8 @@ function fixedLength(routePattern: string): number {
 
 const placeholderExpressions: Record<string, string> = {
   "{slug}": "(?<slug>[^/]+)",
+  // A page's place in its tree, "about/team": its own slug is the last part.
+  "{path}": "(?<parents>(?:[^/]+/)*)(?<slug>[^/]+)",
   "{year}": "\\d{4}",
   "{month}": "\\d{2}",
   "{day}": "\\d{2}",

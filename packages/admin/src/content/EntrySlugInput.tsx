@@ -2,6 +2,7 @@ import { SquareArrowOutUpRight } from "lucide-react";
 import { useId } from "react";
 import { classNames } from "../design/classNames.js";
 import { t } from "../i18n/strings.js";
+import { slugPattern } from "./slug.js";
 import type { ViewPageTarget } from "./viewPage.js";
 import { ViewPageLink } from "./ViewPageLink.js";
 
@@ -13,6 +14,8 @@ interface EntrySlugInputProps {
   error: string | undefined;
   /** Where the live page is, once the entry is published. */
   viewPage?: ViewPageTarget;
+  /** The whole address, when the slug isn't part of it (the home page is "/"). */
+  fixedAddress?: string;
 }
 
 /**
@@ -25,12 +28,33 @@ export function EntrySlugInput({
   onChange,
   error,
   viewPage,
+  fixedAddress,
 }: EntrySlugInputProps) {
   const inputId = useId();
   const errorId = useId();
-  const [prefix = "", suffix = ""] = routePattern.includes("{slug}")
-    ? routePattern.split("{slug}")
-    : [routePattern.replace(/\/?$/, "/"), ""];
+  if (fixedAddress !== undefined) {
+    return (
+      <div data-field-handle="slug" className="flex flex-col gap-1">
+        <p className="flex min-w-0 items-center text-footnote text-label-secondary">
+          <span className="me-1.5 shrink-0 font-medium">{t("editor.url")}</span>
+          <span className="truncate text-label">{fixedAddress}</span>
+          {viewPage && (
+            <ViewPageLink
+              target={viewPage}
+              label={t("editor.viewPage")}
+              className="ms-1 flex size-6 shrink-0 items-center justify-center rounded-[5px] text-accent transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring"
+            >
+              <SquareArrowOutUpRight aria-hidden="true" strokeWidth={2} className="size-3.5" />
+            </ViewPageLink>
+          )}
+        </p>
+      </div>
+    );
+  }
+  const pattern = slugPattern(routePattern);
+  const [prefix = "", suffix = ""] = pattern.includes("{slug}")
+    ? pattern.split("{slug}")
+    : [pattern.replace(/\/?$/, "/"), ""];
 
   return (
     <div data-field-handle="slug" className="flex flex-col gap-1">

@@ -4,6 +4,7 @@ import { ensurePagesCollection } from "../collections/default-collections.js";
 import { ensureSiteSettings } from "../globals/default-globals.js";
 import { ensureMainMenu } from "../navigation/default-navigation.js";
 import { useTestDatabase } from "../testing/test-database.js";
+import { createHomePage } from "../testing/test-home-page.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
 import { buildSiteServer } from "./site-server.js";
@@ -14,6 +15,7 @@ describe("the built-in website with several sites", () => {
   let website: FastifyInstance;
   let uk: SendRequest;
   let france: SendRequest;
+  let franceHome: string;
 
   beforeEach(async () => {
     api = await startTestServer(testDatabase.activeDatabase, {
@@ -38,6 +40,9 @@ describe("the built-in website with several sites", () => {
     expect(created.statusCode, created.body).toBe(201);
     await uk("PATCH", "/globals/site_settings/values", { data: { site_name: "Acme UK" } });
     await france("PATCH", "/globals/site_settings/values", { data: { site_name: "Acme France" } });
+    // Each site's first page at the top is its "/", so the pages below answer at their own.
+    await createHomePage(uk);
+    franceHome = await createHomePage(france);
   });
 
   afterEach(async () => {
@@ -89,7 +94,66 @@ describe("the built-in website with several sites", () => {
     expect(withLanguages.body).toContain('href="/fr/en-GB" lang="en-GB" hreflang="en-GB"');
     expect(withLanguages.body).not.toMatch(/href="\/en-GB/);
     // A home page address redirects to the site's own root, not the domain's.
+    await france("POST", `/entries/${franceHome}/publish`);
     const home = await visit("/fr/home", "acme.co.uk");
     expect(home.headers.location).toBe("/fr");
+  });
+
+  it("puts pages under their site start and the site's prefix, following the tree", async () => {
+    await uk("PATCH", "/sites/france", { hostnames: ["acme.co.uk"], pathPrefix: "/fr" });
+    const about = (
+      await france("POST", "/collections/pages/entries", { data: { title: "Société" } })
+    ).json().id;
+    const team = (
+      await france("POST", "/collections/pages/entries", {
+        data: { title: "Équipe" },
+        parentId: about,
+      })
+    ).json().id;
+    await france("POST", `/entries/${about}/publish`);
+    await france("POST", `/entries/${team}/publish`);
+
+    // The delivery API's address has the site's prefix, the site start's slug and the tree.
+    const delivered = await france("GET", "/delivery/pages/equipe");
+    expect(delivered.json().url).toBe("/fr/societe/equipe");
+    const page = await visit("/fr/societe/equipe", "acme.co.uk");
+    expect(page.statusCode).toBe(200);
+    expect(page.body).toContain("Équipe");
+    // The old flat address goes on to the new one; parents that aren't its own find nothing.
+    expect((await visit("/fr/societe/equipe/", "acme.co.uk")).headers.location).toBe(
+      "/fr/societe/equipe",
+    );
+    expect((await visit("/fr/elsewhere/equipe", "acme.co.uk")).statusCode).toBe(404);
+  });
+
+  it("answers on a site start's own domain, as a site does on its own", async () => {
+    const shop = (
+      await france("POST", "/collections/pages/entries", { data: { title: "Boutique" } })
+    ).json().id;
+    const boots = (
+      await france("POST", "/collections/pages/entries", {
+        data: { title: "Bottes" },
+        parentId: shop,
+      })
+    ).json().id;
+    await france("POST", `/entries/${shop}/publish`);
+    await france("POST", `/entries/${boots}/publish`);
+    const saved = await france("PUT", `/content-tree/entries/${shop}/hostnames`, {
+      hostname: "boutique.acme.fr",
+    });
+    expect(saved.statusCode, saved.body).toBe(200);
+
+    // The domain belongs to no site, but the site start's site answers there.
+    const start = await visit("/", "boutique.acme.fr");
+    expect(start.statusCode).toBe(200);
+    expect(start.body).toContain("Boutique");
+    expect(start.body).toContain("Acme France");
+    expect((await visit("/bottes", "boutique.acme.fr")).statusCode).toBe(200);
+    // The site's own pages aren't there, and the shop's pages send visitors to its domain.
+    expect((await visit("/home", "boutique.acme.fr")).statusCode).toBe(404);
+    expect((await visit("/boutique/bottes", "acme.fr")).statusCode).toBe(404);
+    expect((await visit("/bottes", "acme.fr")).headers.location).toBe(
+      "https://boutique.acme.fr/bottes",
+    );
   });
 });

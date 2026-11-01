@@ -54,6 +54,19 @@ export async function listRecentlyEditedEntries(
     .limit(limit);
 }
 
+/** The entries this person changed last, most recent first. */
+export async function listEntriesEditedBy(
+  database: DatabaseOrTransaction,
+  tenantId: string,
+  userId: string,
+  limit: number,
+): Promise<DashboardEntryRow[]> {
+  return entriesWithCollections(database, tenantId)
+    .where(and(eq(entriesTable.tenantId, tenantId), eq(entriesTable.updatedBy, userId)))
+    .orderBy(desc(entriesTable.updatedAt))
+    .limit(limit);
+}
+
 const isScheduled = and(eq(entriesTable.status, "scheduled"), isNotNull(entriesTable.scheduledFor));
 
 export async function listScheduledEntries(

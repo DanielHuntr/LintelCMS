@@ -4,6 +4,7 @@ import { Skeleton } from "../design/Skeleton.js";
 import { t } from "../i18n/strings.js";
 import { PreviewAddressSettings } from "../preview/PreviewAddressSettings.js";
 import { BlueprintEditor } from "./BlueprintEditor.js";
+import { ContentTypePlacement } from "./ContentTypePlacement.js";
 import { useBlueprint } from "./blueprints.queries.js";
 import { Page } from "../design/Page.js";
 
@@ -37,6 +38,7 @@ function LoadedBlueprintEditorPage({ handle }: { handle: string }) {
   return (
     <>
       <BlueprintEditor key={blueprint.data.handle} blueprint={blueprint.data} />
+      <ContentTypePlacement blueprint={blueprint.data} />
       <PreviewAddressSettings blueprintHandle={blueprint.data.handle} />
     </>
   );

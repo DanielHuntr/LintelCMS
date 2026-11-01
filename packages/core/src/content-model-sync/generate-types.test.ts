@@ -43,6 +43,9 @@ describe("model types", () => {
           name: "Pages",
           structure: "tree",
           routePattern: "/{slug}",
+          allowedAtRoot: true,
+          allowedChildren: ["pages"],
+          childrenAsCollection: false,
         },
       ],
     });

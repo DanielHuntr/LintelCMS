@@ -64,6 +64,18 @@ describe("routing an address on the website", () => {
     expect(matchSiteRoute("/blog/colours/red", collections)).toEqual([]);
   });
 
+  it("finds a page by the last part of an address that follows the tree", () => {
+    const tree: RoutedCollection[] = [{ ...collections[0]!, routePattern: "/{path}" }];
+
+    expect(matchSiteRoute("/about/team", tree)).toEqual([
+      { kind: "entry", collection: "pages", slug: "team", isGuess: true },
+    ]);
+    // One part is the page itself, or its old flat address: safe to send on.
+    expect(matchSiteRoute("/team", tree)).toEqual([
+      { kind: "entry", collection: "pages", slug: "team" },
+    ]);
+  });
+
   it("reads a language prefix, for the site's other languages only", () => {
     const locales = ["en-GB", "fr-FR"];
     expect(splitLocale("/fr-fr/about", "en-GB", locales)).toEqual({

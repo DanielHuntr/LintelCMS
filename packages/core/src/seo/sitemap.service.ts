@@ -1,9 +1,9 @@
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
+import { placeEntryUrls } from "../content-roots/content-roots.service.js";
 import { buildEntryUrl } from "../delivery/entry-urls.js";
 import { readAddressForSite } from "../sites/site-address.service.js";
 import { SiteAddressMissingError } from "./seo.errors.js";
-import { addPathPrefix } from "../sites/site-addresses.js";
 import { findOrCreateDefaultSite, isDefaultSite, siteOrDefault } from "../sites/sites.service.js";
 import type { Site } from "../sites/sites.table.js";
 import { readSeoDefaults } from "./seo-defaults.service.js";
@@ -42,13 +42,21 @@ export async function buildSitemap(
     siteId: site.id,
     defaultSiteId: defaultSite.id,
   });
+  const urls = await placeEntryUrls(
+    database,
+    rows.map((row) => ({ id: row.id, url: buildEntryUrl(row.routePattern, row) })),
+    { site },
+  );
   const pages = rows.flatMap((row) => {
-    const entryPath = addPathPrefix(site.pathPrefix, buildEntryUrl(row.routePattern, row));
-    const path =
-      entryPath === null || !options.pathFor ? entryPath : options.pathFor(row, entryPath);
-    if (row.noindex === true || path === null) {
+    const entryPath = urls.get(row.id) ?? null;
+    if (row.noindex === true || entryPath === null) {
       return [];
     }
+    // A page under a site start with its own domain has a full address already.
+    if (!entryPath.startsWith("/")) {
+      return [{ location: entryPath, lastModified: row.publishedAt ?? row.updatedAt }];
+    }
+    const path = options.pathFor ? options.pathFor(row, entryPath) : entryPath;
     return [{ location: `${siteUrl}${path}`, lastModified: row.publishedAt ?? row.updatedAt }];
   });
   return buildSitemapXml(pages);

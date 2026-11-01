@@ -9,6 +9,7 @@ import { ensurePagesCollection } from "../collections/default-collections.js";
 import { LocalDiskStorage } from "../media/local-disk-storage.js";
 import { multipartFile } from "../testing/multipart.js";
 import { useTestDatabase } from "../testing/test-database.js";
+import { createHomePage } from "../testing/test-home-page.js";
 import { makeTestPng } from "../testing/test-media.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
@@ -82,6 +83,7 @@ describe("webhooks", () => {
   }
 
   it("sends a signed request when an entry is published, and logs it", async () => {
+    await createHomePage(api);
     const webhook = await addWebhook(["entry.published"]);
     expect(webhook).toMatchObject({
       name: "127.0.0.1:" + new URL(receiver.url).port,

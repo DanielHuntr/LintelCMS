@@ -61,7 +61,7 @@ export async function clearRoleLayout(roleId: string) {
   return (await apiRequest<{ roles: RoleLayout[] }>(path, { method: "DELETE" })).roles;
 }
 
-export type EntryWidgetList = "recent-edits" | "scheduled" | "needs-attention";
+export type EntryWidgetList = "recent-edits" | "my-edits" | "scheduled" | "needs-attention";
 
 export const fetchEntryWidgetList = (list: EntryWidgetList) =>
   apiRequest<DashboardEntryList>(`/dashboard/widgets/${list}`);

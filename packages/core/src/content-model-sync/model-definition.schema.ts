@@ -193,6 +193,18 @@ const collectionDefinitionSchema = z.strictObject({
     .nullable()
     .optional()
     .describe("Where an entry lives on the site, like /blog/{slug}. null for no page."),
+  allowedAtRoot: z
+    .boolean()
+    .optional()
+    .describe("Whether entries can sit at the top of the content tree. Defaults to true."),
+  allowedChildren: z
+    .array(z.string())
+    .optional()
+    .describe("Collections whose entries may go under these. Defaults to itself for a tree."),
+  childrenAsCollection: z
+    .boolean()
+    .optional()
+    .describe("Show children as a list in the workspace instead of the tree. Defaults to false."),
 });
 
 export const modelDefinitionSchema = z.discriminatedUnion("kind", [

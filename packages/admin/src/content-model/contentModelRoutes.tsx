@@ -19,7 +19,11 @@ import { TaxonomyPage } from "../taxonomies/TaxonomyPage.js";
  * Params are read with `strict: false` because these routes are made for any parent; each
  * path has exactly the one param its component reads.
  */
-export function contentModelRoutes<Parent extends AnyRoute>(getParentRoute: () => Parent) {
+export function contentModelRoutes<Parent extends AnyRoute, SettingsParent extends AnyRoute>(
+  getParentRoute: () => Parent,
+  /** Where the languages screen goes, under Settings rather than beside the content tree. */
+  getSettingsParentRoute: () => SettingsParent,
+) {
   const taxonomiesRoute = createRoute({
     getParentRoute,
     path: "/content/taxonomies",
@@ -75,19 +79,21 @@ export function contentModelRoutes<Parent extends AnyRoute>(getParentRoute: () =
   });
 
   const languagesRoute = createRoute({
-    getParentRoute,
+    getParentRoute: getSettingsParentRoute,
     path: "/settings/languages",
     component: LanguagesPage,
   });
 
-  return [
-    taxonomiesRoute,
-    taxonomyRoute,
-    globalsRoute,
-    globalSetRoute,
-    globalFieldsRoute,
-    menusRoute,
-    menuRoute,
-    languagesRoute,
-  ] as const;
+  return {
+    content: [
+      taxonomiesRoute,
+      taxonomyRoute,
+      globalsRoute,
+      globalSetRoute,
+      globalFieldsRoute,
+      menusRoute,
+      menuRoute,
+    ] as const,
+    settings: [languagesRoute] as const,
+  };
 }

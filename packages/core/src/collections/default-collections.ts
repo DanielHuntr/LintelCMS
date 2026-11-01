@@ -90,7 +90,8 @@ export const pagesCollection: CollectionDefaults = {
   handle: "pages",
   name: "Pages",
   structure: "tree",
-  routePattern: "/{slug}",
+  // Follows the tree: Team under About is "/about/team".
+  routePattern: "/{path}",
   blueprint: {
     handle: "page",
     name: "Page",

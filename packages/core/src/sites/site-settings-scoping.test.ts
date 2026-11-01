@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ensurePagesCollection } from "../collections/default-collections.js";
 import { useTestDatabase } from "../testing/test-database.js";
+import { createHomePage } from "../testing/test-home-page.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
 
@@ -104,6 +105,9 @@ describe("site settings on several sites", () => {
   it("writes a sitemap and robots.txt for each site, at its own address", async () => {
     await uk("PUT", "/plugins", { enabled: ["seo"] });
     await uk("PUT", "/site-address", { siteAddress: "https://www.acme.co.uk" });
+    // Each site's first page at the top is its "/"; the pages under test come after.
+    await createHomePage(uk);
+    await createHomePage(france);
     await publish(uk, "About us");
     await publish(france, "À propos");
 
@@ -130,6 +134,7 @@ describe("site settings on several sites", () => {
       previewUrlPattern: "{siteUrl}/api/preview?path={url}&site={site}",
     });
     await uk("PATCH", "/sites/france", { pathPrefix: "/fr" });
+    await createHomePage(france);
     const draft = await france("POST", "/collections/pages/entries", {
       data: { title: "À propos" },
     });

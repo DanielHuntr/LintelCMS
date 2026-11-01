@@ -27,6 +27,7 @@ the admin uses its built-in default. Deleting a user or role deletes their row.
 | `PUT /dashboard/role-layouts/:roleId`    | `settings:update` | `{ widgets }`                                                 |
 | `DELETE /dashboard/role-layouts/:roleId` | `settings:update` | none                                                          |
 | `GET /dashboard/widgets/recent-edits`    | `entries:read`    | none -> `{ entries, total }`                                  |
+| `GET /dashboard/widgets/my-edits`        | `entries:read`    | none -> the signed-in person's own recent edits               |
 | `GET /dashboard/widgets/needs-attention` | `entries:read`    | drafts and unpublished changes                                |
 | `GET /dashboard/widgets/scheduled`       | `entries:read`    | scheduled entries, soonest first                              |
 | `GET /dashboard/widgets/media-usage`     | `media:read`      | `{ fileCount, totalBytes, imageCount, imagesWithoutAltText }` |

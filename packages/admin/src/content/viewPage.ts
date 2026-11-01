@@ -32,12 +32,20 @@ export function viewPageTarget(
   site: ViewPageSite | undefined,
   collection: { handle: string; routePattern: string | null },
   entry: ViewableEntry,
+  /** The address the server worked out for the entry, when known (see pageAddress). */
+  placedUrl?: string | null,
 ): ViewPageTarget | undefined {
   if (entry.status !== "published" || !site) return undefined;
   if (site?.siteAddress && collection.routePattern) {
     return {
       kind: "website",
-      href: pageAddress(site.siteAddress, collection.routePattern, entry, site.defaultLocale),
+      href: pageAddress(
+        site.siteAddress,
+        collection.routePattern,
+        entry,
+        site.defaultLocale,
+        placedUrl,
+      ),
     };
   }
   return { kind: "builtIn", collection: collection.handle, entryId: entry.id };

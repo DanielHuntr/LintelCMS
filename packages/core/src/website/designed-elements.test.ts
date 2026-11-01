@@ -18,6 +18,7 @@ import { acceptAnyAsset } from "../fieldtypes/image-assets.js";
 import { ensureSiteSettings } from "../globals/default-globals.js";
 import { ensureMainMenu } from "../navigation/default-navigation.js";
 import { useTestDatabase } from "../testing/test-database.js";
+import { createHomePage } from "../testing/test-home-page.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
 import { buildSiteServer } from "./site-server.js";
@@ -107,6 +108,8 @@ describe("designed pages with the element library", { timeout: 30000 }, () => {
     await ensureMainMenu(testDatabase.database);
     await createTestUser(testDatabase.database, "owner@example.com", [["*"]]);
     admin = requestsAs(api, await signInAndGetCookies(api, "owner@example.com"));
+    // The first page at the top is "/", so the pages below answer at their own addresses.
+    await createHomePage(admin);
   }, 30000);
 
   afterEach(async () => {

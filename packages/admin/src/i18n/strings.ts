@@ -16,6 +16,7 @@ import { brandingStrings } from "./brandingStrings.js";
 import { translate } from "./translate.js";
 import { starterSiteStrings } from "./starterSiteStrings.js";
 import { fieldStrings } from "./fieldStrings.js";
+import { contentTreeStrings } from "./contentTreeStrings.js";
 
 /**
  * Every word the admin shows lives here, in English: the source every translation in
@@ -43,6 +44,7 @@ const english = {
   "app.name": "{product}",
   ...starterSiteStrings,
   ...fieldStrings,
+  ...contentTreeStrings,
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",
   "documentTitle.page": "{page} · {site}",
@@ -84,7 +86,6 @@ const english = {
   "editor.fillRequiredToPublish":
     "Fill in the required fields to publish. Your changes are saved as a draft.",
   "editor.viewPage": "View page",
-  "entries.viewPage": "View {title} on the site",
   "viewPage.notConnected": "{product} isn’t connected to a website yet. This is a simple preview.",
   "viewPage.connect": "Connect your site in Settings → Your website.",
   "viewPage.starterGuide": "How to build a site with the Next.js starter",
@@ -433,44 +434,11 @@ const english = {
   "pagination.previous": "Previous",
   "pagination.next": "Next",
   "pagination.position": "Page {page} of {count}",
-  "content.title": "Content",
-  "content.subtitle": "Everything on your site, grouped by kind.",
-  "content.loading": "Loading content",
-  "content.updated": "Updated {time}",
-  "content.emptyTitle": "Nothing to write in yet",
-  "content.emptyDescription":
-    "Content types describe what you write, such as pages, blog posts or team members. Create one to get started.",
-  "content.emptyDescriptionAskAdmin":
-    "An administrator needs to set up the kinds of content your site has. Once they do, they’ll appear here.",
   "entry.status.draft": "Draft",
   "entry.status.published": "Published",
   "entry.status.scheduled": "Scheduled",
   "entries.count": "{count, plural, one {# entry} other {# entries}}",
-  "entries.new": "New entry",
-  "entries.loading": "Loading entries",
-  "entries.search": "Search {name}",
-  "entries.filter.label": "Show",
-  "entries.filter.all": "All",
-  "entries.filter.drafts": "Drafts",
-  "entries.filter.published": "Published",
-  "entries.filter.scheduled": "Scheduled",
   "entries.untitled": "Untitled",
-  "entries.updated": "Updated {time}",
-  "entries.updatedBy": "by {name}",
-  "entries.moveUp": "Move “{title}” up",
-  "entries.moveDown": "Move “{title}” down",
-  "entries.moved": "“{title}” moved to position {position} of {count}.",
-  "entries.reorderHint": "Clear the search and filter to change the order.",
-  "entries.nest": "Put “{title}” under “{parent}”",
-  "entries.unnest": "Move “{title}” out of “{parent}”",
-  "entries.nested": "“{title}” is now under “{parent}”.",
-  "entries.unnested": "“{title}” is now at the top level.",
-  "entries.treeHint":
-    "Drag a page up or down to reorder it. Drag it right to put it under the page above, or left to move it out.",
-  "entries.emptyTitle": "No {name} yet",
-  "entries.emptyDescription": "Start with a draft. Nothing goes live until you publish it.",
-  "entries.noMatchesTitle": "No matches",
-  "entries.noMatchesDescription": "Try different words, or show all statuses.",
   "editor.loading": "Loading the editor",
   "editor.untitled": "Untitled",
   "editor.titleFallback": "Title",

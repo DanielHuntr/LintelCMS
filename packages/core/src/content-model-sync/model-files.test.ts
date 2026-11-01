@@ -51,7 +51,15 @@ describe("defining the content model in code", () => {
       handle: "event",
       name: "Event",
       collections: [
-        { handle: "events", name: "Events", structure: "dated", routePattern: "/events/{slug}" },
+        {
+          handle: "events",
+          name: "Events",
+          structure: "dated",
+          routePattern: "/events/{slug}",
+          allowedAtRoot: true,
+          allowedChildren: [],
+          childrenAsCollection: false,
+        },
       ],
       fields: [
         {

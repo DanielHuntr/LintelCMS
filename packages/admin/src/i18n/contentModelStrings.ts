@@ -4,10 +4,6 @@
  * spreads them in, so they are used through `t()` like every other string.
  */
 export const contentModelStrings = {
-  "contentModel.siteWideHeader": "Across the whole site",
-  "contentModel.globalsDescription": "Footer text, social links and other site-wide details",
-  "contentModel.menusDescription": "The links in your site’s menus",
-  "contentModel.taxonomiesDescription": "Categories, tags and other ways to group content",
   "contentModel.handlePreview": "Handle: {handle}",
 
   "fields.email.placeholder": "name@example.com",

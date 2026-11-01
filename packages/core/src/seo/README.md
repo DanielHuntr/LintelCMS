@@ -50,20 +50,21 @@ loops. Accepting a suggestion shortens chains to it in the same way.
 
 ## Endpoints
 
-| Method and path                       | Permission        | Body                                                           |
-| ------------------------------------- | ----------------- | -------------------------------------------------------------- |
-| `GET /seo/defaults`                   | signed in         | none                                                           |
-| `PUT /seo/defaults`                   | `settings:update` | any of the defaults                                            |
-| `GET /seo/entries/:id`                | `entries:read`    | none                                                           |
-| `PUT /seo/entries/:id`                | `entries:update`  | `{ title, description, socialImageId, noindex }`               |
-| `GET /seo/redirects`                  | `settings:read`   | `?status=active\|suggested`                                    |
-| `POST /seo/redirects`                 | `settings:update` | `{ fromPath, toPath, statusCode? }` -> 201                     |
-| `PATCH /seo/redirects/:id`            | `settings:update` | `{ fromPath?, toPath?, statusCode?, status? }`                 |
-| `DELETE /seo/redirects/:id`           | `settings:update` | none -> 204                                                    |
-| `POST /seo/redirects/import`          | `settings:update` | `{ csv }` -> `{ added, updated, problems }`                    |
-| `GET /delivery/seo-redirects`         | delivery access   | none -> `{ redirects: [{ from, to, statusCode }] }`            |
-| `GET /delivery/:collection/:slug/seo` | delivery access   | none -> `{ title, description, canonicalUrl, image, noindex }` |
-| `GET /sitemap.xml`, `GET /robots.txt` | public            | none                                                           |
+| Method and path                       | Permission        | Body                                                                                                                          |
+| ------------------------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `GET /seo/defaults`                   | signed in         | none                                                                                                                          |
+| `PUT /seo/defaults`                   | `settings:update` | any of the defaults                                                                                                           |
+| `GET /seo/entries/:id`                | `entries:read`    | none                                                                                                                          |
+| `PUT /seo/entries/:id`                | `entries:update`  | `{ title, description, socialImageId, noindex }`                                                                              |
+| `GET /seo/redirects`                  | `settings:read`   | `?status=active\|suggested`                                                                                                   |
+| `POST /seo/redirects`                 | `settings:update` | `{ fromPath, toPath, statusCode? }` -> 201                                                                                    |
+| `PATCH /seo/redirects/:id`            | `settings:update` | `{ fromPath?, toPath?, statusCode?, status? }`                                                                                |
+| `DELETE /seo/redirects/:id`           | `settings:update` | none -> 204                                                                                                                   |
+| `POST /seo/redirects/import`          | `settings:update` | `{ csv }` -> `{ added, updated, problems }`                                                                                   |
+| `POST /seo/redirects/moved`           | `settings:update` | `{ redirects: [{ entryId, fromPath, toPath }] }` -> `{ added, kept }`, "Add redirects" after moving pages in the content tree |
+| `GET /delivery/seo-redirects`         | delivery access   | none -> `{ redirects: [{ from, to, statusCode }] }`                                                                           |
+| `GET /delivery/:collection/:slug/seo` | delivery access   | none -> `{ title, description, canonicalUrl, image, noindex }`                                                                |
+| `GET /sitemap.xml`, `GET /robots.txt` | public            | none                                                                                                                          |
 
 "Delivery access" is the delivery API's rule: open, or a token when the site needs one.
 `seo-redirects` can't clash with a collection, because handles can't contain a hyphen.

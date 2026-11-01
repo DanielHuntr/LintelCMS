@@ -161,6 +161,17 @@ describe("dashboards", () => {
       });
     });
 
+    it("show the signed-in person's own recent edits", async () => {
+      await makePage("Mine");
+      await request("POST", "/collections/pages/entries", adminCookies, {
+        data: { title: "Someone else's" },
+      });
+
+      const mine = await request("GET", "/dashboard/widgets/my-edits", editorCookies);
+
+      expect(mine.json().entries.map((entry: { title: string }) => entry.title)).toEqual(["Mine"]);
+    });
+
     it("show drafts and unpublished changes as needing attention, and what is scheduled", async () => {
       const draftId = await makePage("Draft");
       const liveId = await makePage("Live");
