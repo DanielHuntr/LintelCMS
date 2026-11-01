@@ -1,6 +1,7 @@
 import type { Readable } from "node:stream";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import { assetVersion } from "./asset-response.js";
+import { contentDisposition } from "./content-disposition.js";
 import { isImageMimeType } from "./file-types.js";
 import {
   type ImageTransform,
@@ -29,6 +30,11 @@ export interface AssetFile {
   /** True when the request named the asset's current version, so the URL can never change meaning. */
   isCurrentVersion: boolean;
   read(): Promise<{ body: Buffer | Readable; size: number; cache: "hit" | "miss" | "none" }>;
+  /**
+   * A short-lived link straight to the original in storage. Only there for originals, and
+   * only when the storage driver can make one (S3); resized images always come from Lintel.
+   */
+  signedUrl?: (expiresInSeconds: number) => Promise<string>;
 }
 
 export async function findAssetFile(
@@ -50,15 +56,27 @@ export async function findAssetFile(
 
   // Documents have nothing to resize, so a width or format on one is ignored rather than refused.
   if (!isImage || !wantsTransform(query)) {
+    const { storage } = media;
+    const makeSignedUrl = storage.signedUrl?.bind(storage);
     return {
       ...shared,
       etag: `"${asset.contentHash.slice(0, 32)}"`,
       mimeType: asset.mimeType,
       read: async () => ({
-        body: await media.storage.get(asset.storageKey),
+        body: await storage.get(asset.storageKey),
         size: asset.size,
         cache: "none",
       }),
+      ...(makeSignedUrl
+        ? {
+            signedUrl: (expiresInSeconds: number) =>
+              makeSignedUrl(asset.storageKey, {
+                expiresInSeconds,
+                contentType: asset.mimeType,
+                contentDisposition: contentDisposition(shared.disposition, shared.filename),
+              }),
+          }
+        : {}),
     };
   }
 

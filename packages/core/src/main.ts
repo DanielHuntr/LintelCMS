@@ -2,11 +2,14 @@ import type { FastifyInstance } from "fastify";
 import { loadConfig, loadProjectEnvFile } from "./config.js";
 import { contentModelOptionsFromConfig } from "./content-model-sync/content-model-config.js";
 import { describeActiveDatabase } from "./database/active-database.js";
+import { createConfiguredEmailSender } from "./email/index.js";
+import { createConfiguredStorage, signedUrlSeconds } from "./media/configured-storage.js";
 import { loadInstalledPlugins } from "./plugins/installed-plugins.js";
+import { startProductionServer } from "./production/start-production-server.js";
 import { buildServer } from "./server.js";
 import { isSetupNeeded } from "./setup/setup.service.js";
 import {
-  configuredLintelFolder,
+  lintelPaths,
   openConfiguredDatabase,
   PortInUseError,
   runWithFriendlyErrors,
@@ -14,12 +17,21 @@ import {
 import { buildSiteServer } from "./website/site-server.js";
 
 /**
- * Starts the API server. Run with `pnpm dev` from the repository root.
+ * Starts Lintel. `pnpm dev` (NODE_ENV=development) starts the API, beside the admin's own
+ * development server, and the built-in website on SITE_PORT. Anything else, such as
+ * `pnpm start`, serves the API, the built admin and the website from one process on one
+ * port (see src/production).
  * The database's tables are created or updated on every start, before it listens.
  */
 await runWithFriendlyErrors(async () => {
   loadProjectEnvFile();
   const config = loadConfig();
+  if (config.NODE_ENV !== "development") {
+    await startProductionServer(config);
+    return;
+  }
+
+  const paths = lintelPaths(config);
   const activeDatabase = await openConfiguredDatabase(config);
   say(describeActiveDatabase(activeDatabase));
   const installedPlugins = await loadInstalledPlugins();
@@ -29,7 +41,7 @@ await runWithFriendlyErrors(async () => {
   const server = buildServer({
     adminOrigin: config.ADMIN_ORIGIN,
     database: activeDatabase,
-    lintelFolder: configuredLintelFolder(config),
+    lintelFolder: paths.lintelFolder,
     // Local development usually runs over plain HTTP, where Secure cookies wouldn't be sent.
     secureCookies: config.NODE_ENV !== "development",
     publicApiUrl: config.API_PUBLIC_URL ?? `http://localhost:${config.API_PORT}`,
@@ -39,6 +51,12 @@ await runWithFriendlyErrors(async () => {
     plugins: installedPlugins,
     website: { builtInSiteUrl: config.SITE_ENABLED ? siteUrl : null },
     contentModel: contentModelOptionsFromConfig(config),
+    media: {
+      storage: createConfiguredStorage(config, paths.uploadsFolder),
+      transformCacheFolder: paths.transformCacheFolder,
+      signedUrlSeconds: signedUrlSeconds(config),
+    },
+    email: createConfiguredEmailSender(config, paths.root),
     logger: true,
   });
   server.addHook("onClose", () => activeDatabase.close());

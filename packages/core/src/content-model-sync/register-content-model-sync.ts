@@ -15,15 +15,18 @@ declare module "fastify" {
 }
 
 /**
- * Puts content model sync on the server: its routes, and three hooks on every request,
- * which is why this is called from buildServer rather than registered as a plugin (a
- * plugin's hooks would only see its own routes).
+ * Puts content model sync on the server, in two parts because production serves the API
+ * under /api:
  *
- *   - schema changes are refused while the admin may not edit the model;
- *   - in development, a change made in the admin is written to the files straight after;
- *   - the first sync runs when the server is ready, and watching stops when it closes.
+ *   - `setUpContentModelSync` (on the root server): the sync itself, which starts when the
+ *     server is ready and stops when it closes;
+ *   - `registerContentModelSyncRoutes` (beside the API's routes): its routes, and two hooks
+ *     on every API request. They are called from buildServer rather than registered as a
+ *     plugin, since a plugin's hooks would only see its own routes:
+ *       - schema changes are refused while the admin may not edit the model;
+ *       - in development, a change made in the admin is written to the files straight after.
  */
-export function registerContentModelSync(
+export function setUpContentModelSync(
   server: FastifyInstance,
   options: ContentModelOptions | undefined,
 ): void {
@@ -36,21 +39,37 @@ export function registerContentModelSync(
     : null;
   server.decorate("contentModelSync", sync);
   server.decorate("contentModelEvents", events);
-  server.register(contentModelSyncRoutes);
   if (!sync) {
     return;
   }
+  server.addHook("onReady", () => sync.start());
+  server.addHook("onClose", async () => sync.stop());
+}
 
-  server.addHook("preHandler", async (request) => {
-    if (sync.isLocked() && changesContentModel(request)) {
+export function registerContentModelSyncRoutes(api: FastifyInstance): void {
+  api.register(contentModelSyncRoutes);
+  const sync = api.contentModelSync;
+  if (!sync) {
+    return;
+  }
+  // The rules read addresses as the API's own ("/blueprints"), without the /api prefix.
+  const withoutPrefix = <Request extends { url: string }>(request: Request): Request => ({
+    ...request,
+    url: request.url.startsWith(api.prefix)
+      ? request.url.slice(api.prefix.length) || "/"
+      : request.url,
+  });
+
+  api.addHook("preHandler", async (request) => {
+    const asApi = withoutPrefix({ method: request.method, url: request.url, body: request.body });
+    if (sync.isLocked() && changesContentModel(asApi)) {
       throw new ContentModelManagedInCodeError(sync.options.folderLabel);
     }
   });
-  server.addHook("onResponse", async (request, reply) => {
-    if (reply.statusCode < 400 && mayChangeContentModel(request)) {
+  api.addHook("onResponse", async (request, reply) => {
+    const asApi = withoutPrefix({ method: request.method, url: request.url, body: request.body });
+    if (reply.statusCode < 400 && mayChangeContentModel(asApi)) {
       sync.requestSync();
     }
   });
-  server.addHook("onReady", () => sync.start());
-  server.addHook("onClose", async () => sync.stop());
 }

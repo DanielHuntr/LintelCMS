@@ -1,5 +1,5 @@
 import type { Database } from "../../database/client.js";
-import type { EmailSender } from "../../email/email.js";
+import type { EmailSender } from "../../email/index.js";
 import type { EventBus } from "../../events/event-bus.js";
 import type { AssetExists } from "../../fieldtypes/image-assets.js";
 import type { SenderOptions } from "../../webhooks/webhook-sender.js";

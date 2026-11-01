@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { type SignInResult, startSignedInSession } from "../auth/auth.service.js";
 import { hashPassword } from "../auth/passwords.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
-import { sendEmail } from "../email/email.js";
+import { sendEmail } from "../email/index.js";
 import { generateOneTimeTokenSecret } from "../one-time-tokens/one-time-tokens.service.js";
 import { assignRoleToUser } from "../roles/roles.repository.js";
 import { checkRoleCanBeGranted, findRoleOrFail } from "../roles/roles.service.js";

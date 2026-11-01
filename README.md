@@ -144,6 +144,14 @@ pnpm db:migrate                                                # update the tabl
 `create-admin` and `reset-password` ask for the password without showing it. For
 scripted setups, set `LINTEL_ADMIN_PASSWORD` or `LINTEL_NEW_PASSWORD` instead.
 
+## Running it on a server
+
+`pnpm build && pnpm start` serves the website, the admin (`/admin`) and the API (`/api`)
+from one program. For Docker, `deploy/docker-compose.yml` adds Postgres and automatic
+HTTPS. The docs have step-by-step guides for a VPS, Railway, Render and Fly.io, an
+environment variables reference and a production checklist (`packages/docs`, "Running
+Lintel").
+
 ## What's in here
 
 | Path                               | What it is                                                 |

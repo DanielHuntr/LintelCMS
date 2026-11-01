@@ -1,4 +1,4 @@
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { ConfigError, type Config } from "./config.js";
 import {
   type ActiveDatabase,
@@ -14,6 +14,7 @@ import {
 } from "./database/database-choice.js";
 import { PluginPackageError } from "./plugins/installed-plugins.js";
 import { InvalidPluginError } from "./plugins/plugins.errors.js";
+import { StorageUnreachableError } from "./media/storage-driver.js";
 
 /**
  * What the server and the command-line scripts share when they start: opening the
@@ -31,18 +32,33 @@ export class PortInUseError extends Error {
   }
 }
 
-/** `.lintel` at the repository root, or LINTEL_DATA_FOLDER when it is set. */
-export function configuredLintelFolder(config: Config): LintelFolder {
-  return config.LINTEL_DATA_FOLDER
-    ? lintelFolderAt(resolve(config.LINTEL_DATA_FOLDER))
-    : DEFAULT_LINTEL_FOLDER;
+/** Where Lintel keeps its files on this computer. All of it lives in one folder. */
+export interface LintelPaths {
+  /** `.lintel` at the repository root, or LINTEL_FOLDER (the Docker image uses /data). */
+  root: string;
+  /** The built-in database and the setup screen's saved choice. */
+  lintelFolder: LintelFolder;
+  uploadsFolder: string;
+  transformCacheFolder: string;
+}
+
+export function lintelPaths(config: Pick<Config, "LINTEL_FOLDER">): LintelPaths {
+  const root = config.LINTEL_FOLDER
+    ? resolve(config.LINTEL_FOLDER)
+    : resolve(DEFAULT_LINTEL_FOLDER.dataFolder, "..");
+  return {
+    root,
+    lintelFolder: lintelFolderAt(root),
+    uploadsFolder: join(root, "uploads"),
+    transformCacheFolder: join(root, "cache", "media"),
+  };
 }
 
 /** The database from DATABASE_URL, the setup screen's saved choice, or the built-in one. */
 export function openConfiguredDatabase(config: Config): Promise<ActiveDatabase> {
   return openStartupDatabase({
     databaseUrl: config.DATABASE_URL,
-    lintelFolder: configuredLintelFolder(config),
+    lintelFolder: lintelPaths(config).lintelFolder,
   });
 }
 
@@ -70,6 +86,7 @@ function isExplained(error: unknown): error is Error {
     error instanceof SavedConfigUnreadableError ||
     error instanceof PortInUseError ||
     error instanceof PluginPackageError ||
-    error instanceof InvalidPluginError
+    error instanceof InvalidPluginError ||
+    error instanceof StorageUnreachableError
   );
 }

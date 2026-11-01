@@ -61,10 +61,15 @@
     "db:migrate": "tsx src/scripts/migrate.ts",
     "create-admin": "tsx src/scripts/create-admin.ts",
     "reset-password": "tsx src/scripts/reset-password.ts",
-    "model": "tsx src/scripts/model.ts"
+    "model": "tsx src/scripts/model.ts",
+    "media:move-to-s3": "tsx src/scripts/move-media-to-s3.ts",
+    "send-test-email": "tsx src/scripts/send-test-email.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1161.0",
+    "@aws-sdk/s3-request-presigner": "^3.1161.0",
     "@electric-sql/pglite": "^0.5.14",
+    "@fastify/compress": "^9.3.0",
     "@fastify/cookie": "^11.1.5",
     "@fastify/cors": "^11.3.1",
     "@fastify/multipart": "^10.1.6",
@@ -73,6 +78,7 @@
     "@lintel/builder-model": "workspace:*",
     "@lintel/site-components": "workspace:*",
     "@simplewebauthn/server": "^14.0.3",
+    "@fastify/static": "^10.1.8",
     "@tiptap/core": "^3.32.2",
     "@tiptap/html": "^3.32.2",
     "@tiptap/pm": "^3.32.2",
@@ -87,6 +93,7 @@
     "graphql-yoga": "^6.0.1",
     "jiti": "^2.7.0",
     "markdown-it": "^14.3.3",
+    "nodemailer": "^10.3.1",
     "postgres": "^4.0.0",
     "qrcode": "^1.5.4",
     "sharp": "^0.35.5",
@@ -96,6 +103,7 @@
   "devDependencies": {
     "@types/markdown-it": "^14.2.0",
     "@types/node": "^26.6.6",
+    "@types/nodemailer": "^8.0.2",
     "@types/qrcode": "^1.5.6",
     "drizzle-kit": "^0.31.11",
     "tsx": "^4.23.15",

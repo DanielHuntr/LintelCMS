@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { requirePermission } from "../auth/require-permission.js";
-import { describeOutbox } from "./email.service.js";
+import { describeOutbox } from "./outbox.service.js";
 
 /**
  * HTTP only:
@@ -13,6 +13,6 @@ export async function emailRoutes(server: FastifyInstance) {
     { preHandler: requirePermission("settings:read") },
     async (_, reply) =>
       // The messages hold sign-in links; nothing in between should keep a copy.
-      reply.header("cache-control", "no-store").send(describeOutbox(server.emailOutbox)),
+      reply.header("cache-control", "no-store").send(await describeOutbox(server.emailOutbox)),
   );
 }

@@ -33,7 +33,7 @@ describe("forgotten passwords", () => {
     expect(unknown.statusCode).toBe(202);
     expect(known.json()).toEqual(unknown.json());
     expect(known.json()).toEqual({ message: FORGOT_PASSWORD_ANSWER });
-    expect(server.emailOutbox!.list().map((message) => message.to)).toEqual(["ed@example.com"]);
+    expect(server.emailOutbox!.sent.map((email) => email.to)).toEqual([["ed@example.com"]]);
   });
 
   it("stores only a hash of the link's token", async () => {
@@ -116,7 +116,7 @@ describe("forgotten passwords", () => {
     }
 
     expect(answers).toEqual([202, 202, 202, 202, 202, 429]);
-    expect(server.emailOutbox!.list()).toHaveLength(3);
+    expect(server.emailOutbox!.sent).toHaveLength(3);
   });
 
   it("doesn't email a deactivated account", async () => {

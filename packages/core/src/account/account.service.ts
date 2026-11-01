@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { hashPassword } from "../auth/passwords.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
-import { sendEmail } from "../email/email.js";
+import { sendEmail } from "../email/index.js";
 import { assetFileUrl } from "../media/asset-response.js";
 import { isImageMimeType } from "../media/file-types.js";
 import { findAssetById } from "../media/media.repository.js";

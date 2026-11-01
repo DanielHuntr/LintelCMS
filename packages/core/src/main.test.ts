@@ -81,7 +81,7 @@ describe("starting Lintel", () => {
           cwd: CORE_FOLDER,
           env: {
             ...process.env,
-            LINTEL_DATA_FOLDER: dataFolder,
+            LINTEL_FOLDER: dataFolder,
             API_PORT: String(apiPort),
             SITE_PORT: String(sitePort),
             SITE_ENABLED: "true",

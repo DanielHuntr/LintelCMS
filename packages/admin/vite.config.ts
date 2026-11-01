@@ -20,9 +20,12 @@ function contentSecurityPolicyTag(apiUrl: string): Plugin {
   };
 }
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ command, mode }) => {
   const apiUrl = loadEnv(mode, process.cwd(), "VITE_").VITE_API_URL ?? "http://localhost:4000";
   return {
+    // Built with relative paths, so the server can serve the admin under any path
+    // (ADMIN_PATH); it adds a <base> tag saying which (see packages/core/src/production).
+    base: command === "build" ? "./" : "/",
     plugins: [react(), tailwindcss(), lintelPlugins(), contentSecurityPolicyTag(apiUrl)],
     // Plugin packages import React and the router themselves; they must share the admin's copy.
     resolve: { dedupe: ["react", "react-dom", "@tanstack/react-query", "@tanstack/react-router"] },

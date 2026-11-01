@@ -145,7 +145,7 @@ export function describeActiveDatabase(activeDatabase: ActiveDatabase): string {
   if (activeDatabase.kind === "postgres") {
     return "Using the Postgres database chosen during setup (saved in .lintel/config.json).";
   }
-  return "Using the built-in database (stored in .lintel/data). Set DATABASE_URL to use your own Postgres.";
+  return "Using the built-in database (stored in the Lintel folder, .lintel unless LINTEL_FOLDER says otherwise). Set DATABASE_URL to use your own Postgres.";
 }
 
 async function openMigratedBuiltInDatabase(lintelFolder: LintelFolder): Promise<OpenedDatabase> {

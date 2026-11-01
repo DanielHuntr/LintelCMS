@@ -127,8 +127,10 @@ describe("workflows", () => {
       ),
     ).toBe(true);
     expect(
-      server.emailOutbox!.list().map(({ to, subject, text }) => ({ to, subject, text })),
-    ).toEqual([{ to: "team@example.com", subject: 'Published: About "us"', text: "Ticket T-42" }]);
+      server.emailOutbox!.sent.map(({ to, subject, text }) => ({ to, subject, text })),
+    ).toEqual([
+      { to: ["team@example.com"], subject: 'Published: About "us"', text: "Ticket T-42" },
+    ]);
     const run = await latestRun(workflow.id);
     expect(run.status).toBe("succeeded");
     expect(run.logs.map((log) => [log.stepId, log.status])).toEqual([

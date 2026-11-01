@@ -20,6 +20,7 @@ import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
  */
 const PUBLIC_ROUTES: Record<string, string> = {
   "GET /health": "load balancers check it",
+  "GET /ready": "hosting platforms check the database is reachable",
   "POST /auth/sign-in": "how people get a session",
   "POST /auth/sign-out": "ends whatever session the browser has, if any",
   "GET /setup/status": "the admin asks it before anyone has an account",

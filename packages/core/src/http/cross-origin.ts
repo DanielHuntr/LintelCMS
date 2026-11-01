@@ -16,8 +16,11 @@ const ADMIN_METHODS = ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"];
 // POST is for GraphQL queries; everything public is read-only.
 const PUBLIC_METHODS = ["GET", "HEAD", "POST"];
 
-export function isPublicContentPath(url: string): boolean {
-  const path = url.split("?")[0] ?? "";
+export function isPublicContentPath(url: string, apiPrefix = ""): boolean {
+  const fullPath = url.split("?")[0] ?? "";
+  // In production the API lives under /api (see src/production).
+  const path =
+    apiPrefix && fullPath.startsWith(`${apiPrefix}/`) ? fullPath.slice(apiPrefix.length) : fullPath;
   return (
     path === "/delivery" ||
     path.startsWith("/delivery/") ||
@@ -26,7 +29,7 @@ export function isPublicContentPath(url: string): boolean {
   );
 }
 
-export function crossOriginOptions(adminOrigin: string) {
+export function crossOriginOptions(adminOrigin: string, apiPrefix = "") {
   const adminOptions: FastifyCorsOptions = {
     origin: adminOrigin,
     credentials: true,
@@ -36,7 +39,7 @@ export function crossOriginOptions(adminOrigin: string) {
 
   return async function decideCrossOrigin(request: FastifyRequest): Promise<FastifyCorsOptions> {
     const origin = request.headers.origin;
-    if (!origin || origin === adminOrigin || !isPublicContentPath(request.url)) {
+    if (!origin || origin === adminOrigin || !isPublicContentPath(request.url, apiPrefix)) {
       return adminOptions;
     }
     if (await isAllowedSiteOrigin(request.server.database, origin)) {

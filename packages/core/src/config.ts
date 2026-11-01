@@ -2,13 +2,21 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { DATABASE_URL_ADVICE } from "./database/database-errors.js";
+import { checkEmailSettings, emailSettings } from "./email/email.config.js";
+import { checkStorageSettings, storageSettings } from "./media/storage.config.js";
+import {
+  checkProductionSettings,
+  DEFAULT_TRUST_PROXY,
+  parseTrustProxy,
+  productionSettings,
+} from "./production/production.config.js";
 
 /**
  * Every setting the API server reads from the environment, in one place. Each one has a
  * default, so Lintel starts with no .env file at all. If a value is set but malformed the
  * server refuses to start and says which one, instead of failing later somewhere else.
  */
-const configSchema = z.object({
+const coreSettingsSchema = z.object({
   // Leave out to use the built-in database, or the one chosen on the setup screen.
   // An empty `DATABASE_URL=` line (copied from .env.example) counts as left out.
   DATABASE_URL: z.preprocess(
@@ -19,12 +27,6 @@ const configSchema = z.object({
         error: `This isn't a valid Postgres address. ${DATABASE_URL_ADVICE}`,
       })
       .optional(),
-  ),
-  // Where the built-in database and the setup screen's saved choice live. Defaults to
-  // .lintel at the repository root.
-  LINTEL_DATA_FOLDER: z.preprocess(
-    (value) => (value === "" ? undefined : value),
-    z.string().optional(),
   ),
   API_PORT: z.coerce.number().int().positive().default(4000),
   ADMIN_ORIGIN: z.string().url().default("http://localhost:5173"),
@@ -56,19 +58,12 @@ const configSchema = z.object({
     .enum(["true", "false", ""])
     .default("false")
     .transform((value) => value === "true"),
-  // Set when the API sits behind a proxy (nginx, Caddy, a load balancer), so rate limits and
-  // logs see each visitor's own address: "true" trusts any proxy, a number trusts that many
-  // hops, or list the proxies' addresses ("10.0.0.1,10.0.0.2"). Leave empty without a proxy:
-  // trusting one that isn't there lets anyone pretend to be any address.
-  TRUST_PROXY: z
-    .string()
-    .default("")
-    .transform((value): boolean | number | string => {
-      const trimmed = value.trim();
-      if (trimmed === "" || trimmed === "false") return false;
-      if (trimmed === "true") return true;
-      return /^\d+$/.test(trimmed) ? Number(trimmed) : trimmed;
-    }),
+  // Which proxies to believe about the visitor's address, so rate limits and logs see each
+  // visitor's own address: "true" trusts any proxy, a number trusts that many hops, or list
+  // addresses and names ("10.0.0.1, 10.0.0.2"). The default trusts proxies on this machine
+  // and private networks (Caddy, a platform's load balancer, a Docker network); "false"
+  // trusts none. Trusting one that isn't there lets anyone pretend to be any address.
+  TRUST_PROXY: z.string().default(DEFAULT_TRUST_PROXY).transform(parseTrustProxy),
   // Content model as code (see src/content-model-sync). The folder is relative to the
   // repository root; the editing switch defaults to on in development, off in production.
   CONTENT_MODEL_FOLDER: z.string().default("content-model"),
@@ -79,6 +74,20 @@ const configSchema = z.object({
     .transform((value) => (value === "" ? undefined : value === "true")),
   CONTENT_MODEL_TYPES_FILE: z.string().default("generated/lintel-content.ts"),
 });
+
+/**
+ * Each feature that has settings keeps them in its own `*.config.ts`, next to the code
+ * that uses them, along with the rules that need more than one setting.
+ */
+const configSchema = coreSettingsSchema
+  .extend(productionSettings)
+  .extend(storageSettings)
+  .extend(emailSettings)
+  .superRefine((config, context) => {
+    checkProductionSettings(config, context);
+    checkStorageSettings(config, context);
+    checkEmailSettings(config, context);
+  });
 
 export type Config = z.infer<typeof configSchema>;
 

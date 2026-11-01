@@ -1,13 +1,17 @@
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
-import Fastify, { type FastifyServerOptions } from "fastify";
+import compress from "@fastify/compress";
+import Fastify, { type FastifyInstance, type FastifyServerOptions, LogController } from "fastify";
 import { apiTokensRoutes } from "./api-tokens/api-tokens.routes.js";
 import { authRoutes } from "./auth/auth.routes.js";
 import { blueprintsRoutes } from "./blueprints/blueprints.routes.js";
 import { collectionsRoutes } from "./collections/collections.routes.js";
 import type { ContentModelOptions } from "./content-model-sync/model-sync.service.js";
-import { registerContentModelSync } from "./content-model-sync/register-content-model-sync.js";
+import {
+  registerContentModelSyncRoutes,
+  setUpContentModelSync,
+} from "./content-model-sync/register-content-model-sync.js";
 import type { ActiveDatabase } from "./database/active-database.js";
 import type { Database } from "./database/client.js";
 import { DEFAULT_LINTEL_FOLDER, type LintelFolder } from "./database/database-choice.js";
@@ -20,8 +24,12 @@ import { fieldtypesRoutes } from "./fieldtypes/fieldtypes.routes.js";
 import { graphqlRoutes } from "./graphql/graphql.routes.js";
 import type { AssetExists, AssetLookup } from "./fieldtypes/image-assets.js";
 import { healthRoutes } from "./health/health.routes.js";
+import { DEFAULT_EMAIL_FROM } from "./email/email.config.js";
+import { type EmailSender, OutboxEmailDriver, createEmailSender } from "./email/index.js";
 import { crossOriginOptions } from "./http/cross-origin.js";
 import { refuseCrossSiteRequests } from "./http/cross-site-requests.js";
+import { requestIdFor } from "./http/request-ids.js";
+import { type TrustProxy, trustProxyOption } from "./production/production.config.js";
 import { sendHttpErrorDetails } from "./http/http-errors.js";
 import { describeRequestForLog } from "./http/request-logging.js";
 import { addSecurityHeaders } from "./http/security-headers.js";
@@ -52,9 +60,7 @@ import { translationsRoutes } from "./entries/translations.routes.js";
 import { WebhookDispatcher } from "./webhooks/webhook-dispatcher.js";
 import { webhooksRoutes } from "./webhooks/webhooks.routes.js";
 import { accountRoutes } from "./account/account.routes.js";
-import type { EmailSender } from "./email/email.js";
 import { emailRoutes } from "./email/email.routes.js";
-import { OutboxEmailSender } from "./email/outbox-email-sender.js";
 import { invitationsRoutes } from "./invitations/invitations.routes.js";
 import { passkeysRoutes } from "./passkeys/passkeys.routes.js";
 import { passwordResetRoutes } from "./password-reset/password-reset.routes.js";
@@ -100,10 +106,10 @@ declare module "fastify" {
     plugins: PluginCatalogue;
     /** The admin app's address, for links in emails and as the passkeys' site. */
     adminOrigin: string;
-    /** Sends email (see src/email). */
+    /** Sends email: `await server.email.send({ to, subject, text })` (see src/email). */
     email: EmailSender;
-    /** The in-memory outbox when no real sender is set, for Settings → Email outbox. */
-    emailOutbox: OutboxEmailSender | null;
+    /** The outbox, while no real email driver is set, for Settings → Email outbox. */
+    emailOutbox: OutboxEmailDriver | null;
     /** The built-in website's templates, address and rendered pages (see src/website). */
     website: WebsiteRuntime;
     /** What happened, for features to react to (see src/events). */
@@ -119,6 +125,8 @@ export interface MediaOptions {
   transformCacheFolder?: string;
   /** Which entries use an asset, checked before it is deleted. */
   usageFinder?: AssetUsageFinder;
+  /** Send originals as redirects to signed storage links lasting this long (S3 only). */
+  signedUrlSeconds?: number | undefined;
 }
 
 export interface ServerOptions {
@@ -135,15 +143,28 @@ export interface ServerOptions {
   setupCode?: string;
   /** Mark cookies Secure. Turn off only for plain-HTTP local development. */
   secureCookies?: boolean;
-  /** Turn request logging off in tests to keep output readable. */
-  logger?: boolean;
+  /**
+   * Turn request logging off in tests to keep output readable. Production passes pino
+   * options instead (see src/production/logging.ts).
+   */
+  logger?: FastifyServerOptions["logger"];
+  /** Compress responses (gzip, brotli) for browsers that accept it. Off by default. */
+  compression?: boolean;
+  /**
+   * Where the API's routes live. Empty by default (development and tests); production
+   * serves them under /api so the website can use every other address. `/health` and
+   * `/ready` always stay at the root, where hosting platforms look for them.
+   */
+  apiPrefix?: string;
+  /** How email is sent. Defaults to an outbox in memory, so nobody is emailed by accident. */
+  email?: EmailSender;
   /**
    * Which proxies in front of the API to believe about the visitor's address (Fastify's
    * `trustProxy`): true for any, a number of hops, or a list of addresses. Off by default.
    * Behind nginx or Caddy, turn it on, or every visitor shares the proxy's address and one
    * person's failed sign-ins count against everyone's limit.
    */
-  trustProxy?: boolean | number | string;
+  trustProxy?: TrustProxy;
   /**
    * Run timed jobs, such as publishing scheduled entries, from startup until the server
    * closes. On by default; tests that drive the jobs themselves turn it off.
@@ -164,8 +185,6 @@ export interface ServerOptions {
    * lintel.config.ts; tests pass the ones they test. Defaults to none.
    */
   plugins?: readonly LintelPlugin[];
-  /** How email is sent. Defaults to an in-memory outbox (see src/email). */
-  email?: EmailSender;
   /** The built-in website: its address and any templates of your own. Off by default. */
   website?: WebsiteOptions;
   /** Content model as code (see src/content-model-sync). Off when left out, as in tests. */
@@ -191,12 +210,19 @@ export interface WebhookOptions {
  * Every feature registers its routes here, in one visible list (no auto-discovery).
  */
 export function buildServer(options: ServerOptions) {
-  const fastifyOptions: FastifyServerOptions = {
-    logger: options.logger ? { serializers: { req: describeRequestForLog } } : false,
-    trustProxy: proxiesToTrust(options.trustProxy ?? false),
-  };
-  const server = Fastify(fastifyOptions);
+  const server = Fastify({
+    logger: loggerWithSafeRequests(options.logger),
+    trustProxy: trustProxyOption(options.trustProxy ?? false),
+    genReqId: requestIdFor,
+    logController: new LogController({
+      requestIdLogLabel: "requestId",
+      // Docker and uptime checks call it every few seconds; logging each would bury the rest.
+      disableRequestLogging: (request) => request.url === "/health",
+    }),
+  });
   const activeDatabase = options.database;
+  const apiPrefix = options.apiPrefix ?? "";
+  const storage = options.media?.storage ?? new LocalDiskStorage();
 
   server.decorate("database", { getter: () => activeDatabase.database });
   server.decorate("activeDatabase", activeDatabase);
@@ -224,9 +250,11 @@ export function buildServer(options: ServerOptions) {
   // Plugins' own tables are brought up to date before the server takes requests.
   server.addHook("onReady", () => activeDatabase.applyPluginMigrations(plugins.migrations));
   server.decorate("adminOrigin", options.adminOrigin.replace(/\/+$/, ""));
-  const outbox = options.email ? null : new OutboxEmailSender();
-  server.decorate("email", options.email ?? (outbox as OutboxEmailSender));
-  server.decorate("emailOutbox", outbox);
+  const email =
+    options.email ??
+    createEmailSender(new OutboxEmailDriver(), { defaultFrom: DEFAULT_EMAIL_FROM });
+  server.decorate("email", email);
+  server.decorate("emailOutbox", email.outbox);
   server.decorate("website", createWebsiteRuntime(options.website));
   clearRenderedPagesAfterChanges(server);
   server.addHook("onClose", () => webhooks.finishSending());
@@ -242,8 +270,15 @@ export function buildServer(options: ServerOptions) {
   server.setErrorHandler(sendHttpErrorDetails);
   server.addHook("onSend", addSecurityHeaders(server.publicApiUrl));
 
+  // Every response says which request it was, so a visitor's report can be found in the logs.
+  server.addHook("onRequest", async (request, reply) => {
+    reply.header("x-request-id", request.id);
+  });
+  if (options.compression) {
+    server.register(compress, { global: true, threshold: 1024 });
+  }
   // The admin may call everything; websites listed in Settings may call the content APIs.
-  server.register(cors, { delegator: crossOriginOptions(options.adminOrigin) });
+  server.register(cors, { delegator: crossOriginOptions(options.adminOrigin, apiPrefix) });
   server.register(cookie);
   // Runs after cookies are read and before any route: see src/http/cross-site-requests.ts.
   server.addHook(
@@ -253,7 +288,37 @@ export function buildServer(options: ServerOptions) {
   // Off by default; routes that need a limit (like sign-in) set their own.
   server.register(rateLimit, { global: false });
 
-  server.register(healthRoutes);
+  server.register(healthRoutes, { storage });
+  setUpContentModelSync(server, options.contentModel);
+  // The automations engine and its listeners; its routes are the Automations plugin's.
+  registerWorkflows(server, {
+    ...options.workflows,
+    runScheduledJobs: options.runScheduledJobs ?? true,
+    adminOrigin: options.adminOrigin,
+  });
+  server.register(async (api) => registerApiRoutes(api, options, storage), { prefix: apiPrefix });
+
+  if (options.runScheduledJobs ?? true) {
+    registerScheduledJobs(server);
+  }
+
+  return server;
+}
+
+/** Every feature's routes, in one visible list. */
+function registerApiRoutes(
+  server: FastifyInstance,
+  options: ServerOptions,
+  storage: StorageDriver,
+): void {
+  // API answers are about one person or change often, so shared caches must not keep them
+  // unless a route says otherwise (the delivery API and files do).
+  server.addHook("onSend", async (_request, reply) => {
+    if (!reply.hasHeader("cache-control")) {
+      reply.header("cache-control", "no-store");
+    }
+  });
+
   server.register(authRoutes);
   server.register(setupRoutes);
   server.register(pluginsRoutes);
@@ -278,7 +343,7 @@ export function buildServer(options: ServerOptions) {
   server.register(siteAddressRoutes);
   server.register(dashboardRoutes);
   // Every plugin's routes, built in (SEO) and installed, each guarded for being switched on.
-  registerPluginRoutes(server, plugins);
+  registerPluginRoutes(server, server.plugins);
   // People and account security.
   server.register(usersRoutes);
   server.register(rolesRoutes);
@@ -291,32 +356,26 @@ export function buildServer(options: ServerOptions) {
   server.register(emailRoutes);
   server.register(websiteRoutes);
   server.register(pagesRoutes);
-  registerContentModelSync(server, options.contentModel);
-  registerWorkflows(server, {
-    ...options.workflows,
-    runScheduledJobs: options.runScheduledJobs ?? true,
-    adminOrigin: options.adminOrigin,
-  });
-
-  if (options.runScheduledJobs ?? true) {
-    registerScheduledJobs(server);
-  }
+  registerContentModelSyncRoutes(server);
   server.register(mediaRoutes, {
-    storage: options.media?.storage ?? new LocalDiskStorage(),
+    storage,
+    signedUrlSeconds: options.media?.signedUrlSeconds,
     cacheFolder: options.media?.transformCacheFolder ?? DEFAULT_TRANSFORM_CACHE_FOLDER,
     // An asset still used by an entry can't be deleted.
     usageFinder: options.media?.usageFinder ?? {
       findEntriesUsingAsset: (assetId) => findEntriesUsingAsset(server.database, assetId),
     },
   });
-
-  return server;
 }
 
-/** Fastify counts hops itself, but its types only take a function for that. */
-function proxiesToTrust(trustProxy: boolean | number | string): FastifyServerOptions["trustProxy"] {
-  if (typeof trustProxy === "number") {
-    return (_address: string, hop: number) => hop < trustProxy;
-  }
-  return trustProxy;
+/**
+ * The log never records full URLs with secrets in their query (see src/http/request-logging.ts),
+ * whether the logger is the plain one (`true`) or production's options.
+ */
+function loggerWithSafeRequests(
+  logger: FastifyServerOptions["logger"] | undefined,
+): FastifyServerOptions["logger"] {
+  if (!logger) return false;
+  const base = logger === true ? {} : logger;
+  return { ...base, serializers: { req: describeRequestForLog } };
 }

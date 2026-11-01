@@ -43,6 +43,7 @@ import { SignInPage } from "./sign-in/SignInPage.js";
 import { WebhookDetailPage } from "./webhooks/WebhookDetailPage.js";
 import { SiteSettingsPage } from "./website/SiteSettingsPage.js";
 import { WebhooksPage } from "./webhooks/WebhooksPage.js";
+import { runtimeSettings } from "./runtime-settings.js";
 import { workflowsRoutes } from "./workflows/workflowsRoutes.js";
 import "./setup/historyState.js";
 
@@ -437,7 +438,8 @@ export const routeTree = rootRoute.addChildren([
   ...designReviewRoutes,
 ]);
 
-export const router = createRouter({ routeTree });
+// In production the admin lives under ADMIN_PATH, /admin by default (see runtime-settings.ts).
+export const router = createRouter({ routeTree, basepath: runtimeSettings.basePath });
 
 declare module "@tanstack/react-router" {
   interface Register {

@@ -49,6 +49,7 @@ its routes and its tests.
 | `src/security-log`    | Sign-ins, failures and account changes, with CSV       |
 | `src/email`           | Sending email, and the development outbox              |
 | `src/website`         | The website Lintel serves itself, and its theme        |
+| `src/production`      | One server for API, admin and website (`pnpm start`)   |
 
 As features grow, each folder follows the same shape:
 

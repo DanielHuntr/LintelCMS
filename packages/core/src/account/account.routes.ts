@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import { getSignedIn, requireAccountSession } from "../auth/require-permission.js";
 import { readSessionToken } from "../auth/session-cookie.js";
 import { NotSignedInError } from "../auth/auth.errors.js";
-import { sendEmail } from "../email/email.js";
+import { sendEmail } from "../email/index.js";
 import { parseRequest } from "../http/http-errors.js";
 import { recordSecurityEvent, requestOrigin } from "../security-log/security-log.service.js";
 import { SessionNotFoundError } from "./account.errors.js";

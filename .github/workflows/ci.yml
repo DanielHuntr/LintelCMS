@@ -38,3 +38,42 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+
+  docker:
+    # Builds the production image and checks it from the outside, on its own and with
+    # Postgres through deploy/docker-compose.yml.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - uses: docker/setup-buildx-action@v3
+      - name: Build the image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: lintel:local
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke test with the built-in database
+        run: |
+          docker run -d --name lintel -p 4000:4000 -e PUBLIC_URL=http://localhost:4000 lintel:local
+          node deploy/smoke-test.mjs http://localhost:4000
+          # Lintel itself runs as the node user (uid 1000), not root.
+          docker exec lintel grep -E '^Uid:\s+1000\s' /proc/1/status
+      - name: Stop cleanly on SIGTERM
+        run: |
+          docker stop --time 20 lintel
+          test "$(docker inspect --format '{{.State.ExitCode}}' lintel)" = "0"
+      - name: Smoke test with Postgres (docker compose)
+        run: |
+          printf 'PUBLIC_URL=http://localhost:4000\nPOSTGRES_PASSWORD=ci%s\n' "$GITHUB_RUN_ID" > deploy/.env
+          docker compose -f deploy/docker-compose.yml up -d --wait
+          node deploy/smoke-test.mjs http://localhost:4000
+      - name: Show the logs
+        if: failure()
+        run: |
+          docker logs lintel || true
+          docker compose -f deploy/docker-compose.yml logs || true
