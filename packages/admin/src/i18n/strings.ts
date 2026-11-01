@@ -522,6 +522,20 @@ const english = {
     "Handles use lowercase letters, numbers and underscores, and start with a letter.",
   "builder.problem.duplicate": "Another field already uses this handle.",
   "builder.problem.choices": "Add at least one choice.",
+  "help.open": "Help for this screen",
+  "help.panelLabel": "Help",
+  "help.close": "Close help",
+  "help.back": "Back",
+  "help.allTopics": "All help topics",
+  "help.fullDocs": "Open the full docs",
+  "help.newTab": "(opens in a new tab)",
+  "help.loading": "Loading help…",
+  "help.topicsTitle": "Help topics",
+  "help.missingTitle": "No help page here yet",
+  "help.missingDescription": "Choose a topic from the list instead.",
+  "help.pageTitle": "Help",
+  "help.pageSubtitle":
+    "How to use Lintel. It’s built in, so it works without an internet connection.",
 } as const;
 
 export type StringKey = keyof typeof english;

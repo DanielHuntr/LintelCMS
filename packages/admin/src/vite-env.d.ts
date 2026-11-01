@@ -5,4 +5,6 @@ interface ImportMetaEnv {
   readonly VITE_API_URL?: string;
   /** Set to "true" to include the /design-system review page in a production build. */
   readonly VITE_DESIGN_REVIEW?: string;
+  /** Where the full docs are published, for the help panel's links. See src/help/docsLinks.ts. */
+  readonly VITE_DOCS_URL?: string;
 }

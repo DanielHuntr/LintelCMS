@@ -1,4 +1,5 @@
 import { Outlet } from "@tanstack/react-router";
+import { HelpLauncher } from "../help/HelpLauncher.js";
 import { t } from "../i18n/strings.js";
 import { Sidebar } from "./Sidebar.js";
 import type { SignedInUser } from "./SidebarAccount.js";
@@ -37,6 +38,7 @@ export function AdminLayout({
         signedInUser={signedInUser}
         onSignOut={onSignOut}
       />
+      <HelpLauncher />
       {/* Leaves room for the 240px sidebar and its 12px margin. */}
       <main id="main" tabIndex={-1} className="pl-[264px] outline-none">
         <div className="mx-auto max-w-[960px] px-10 pt-14 pb-20">
