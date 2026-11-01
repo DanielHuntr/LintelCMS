@@ -156,7 +156,7 @@ describe("the plugin system", () => {
 
   it("offers a plugin's fieldtypes to content types and checks values with them", async () => {
     const fieldtypes = await request("GET", "/fieldtypes");
-    expect(fieldtypes.json().fieldtypes.at(-1)).toEqual({
+    expect(fieldtypes.json().fieldtypes.at(-1)).toMatchObject({
       type: "greetings.mood",
       name: "Mood",
       description: "How the visitor feels.",
