@@ -35,6 +35,7 @@ export default tseslint.config(
     files: [
       "packages/admin/**/*.{ts,tsx}",
       "packages/builder/**/*.{ts,tsx}",
+      "packages/motion-editor/**/*.{ts,tsx}",
       "starters/**/*.{ts,tsx}",
     ],
     plugins: { "react-hooks": reactHooks },

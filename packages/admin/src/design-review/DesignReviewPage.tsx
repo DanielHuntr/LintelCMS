@@ -1,4 +1,5 @@
 import { LargeTitle } from "../design/LargeTitle.js";
+import { LinkButton } from "../design/LinkButton.js";
 import { t } from "../i18n/strings.js";
 import { ComponentSpecimens } from "./ComponentSpecimens.js";
 
@@ -12,7 +13,15 @@ export function DesignReviewPage() {
   return (
     <main className="min-h-screen bg-background text-label">
       <div className="px-10 pt-14">
-        <LargeTitle title={t("designReview.title")} subtitle={t("designReview.intro")} />
+        <LargeTitle
+          title={t("designReview.title")}
+          subtitle={t("designReview.intro")}
+          actions={
+            <LinkButton to="/design-system/motion" variant="tinted">
+              {t("designReview.motionLink")}
+            </LinkButton>
+          }
+        />
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-2">
         <SchemeColumn scheme="light" />

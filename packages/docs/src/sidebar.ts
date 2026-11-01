@@ -12,6 +12,7 @@ export const usingPages = [
   "using/history",
   "using/media",
   "using/content-types",
+  "using/animating",
   "using/users",
   "using/troubleshooting",
 ] as const;
@@ -24,6 +25,7 @@ export const buildingPages = [
   "building/delivery-api",
   "building/images",
   "building/rendering",
+  "building/animation-spec",
   "building/nextjs-starter",
   "building/plugins",
   "building/contributing",
