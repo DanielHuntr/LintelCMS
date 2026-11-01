@@ -5,6 +5,7 @@ import { GlobalsPage } from "../globals/GlobalsPage.js";
 import { LanguagesPage } from "../locales/LanguagesPage.js";
 import { MenuEditorPage } from "../menus/MenuEditorPage.js";
 import { MenusPage } from "../menus/MenusPage.js";
+import { RequirePermission } from "../session/RequirePermission.js";
 import { TaxonomiesPage } from "../taxonomies/TaxonomiesPage.js";
 import { TaxonomyPage } from "../taxonomies/TaxonomyPage.js";
 
@@ -77,7 +78,11 @@ export function contentModelRoutes<Parent extends AnyRoute>(getParentRoute: () =
   const languagesRoute = createRoute({
     getParentRoute,
     path: "/settings/languages",
-    component: LanguagesPage,
+    component: () => (
+      <RequirePermission permission="settings:read">
+        <LanguagesPage />
+      </RequirePermission>
+    ),
   });
 
   return [

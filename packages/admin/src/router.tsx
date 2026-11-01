@@ -34,6 +34,7 @@ import {
   mustFinishSetupFirst,
 } from "./setup/setupRouting.js";
 import { SiteSetupPage } from "./setup/SiteSetupPage.js";
+import { RequirePermission } from "./session/RequirePermission.js";
 import { SessionProvider } from "./session/SessionContext.js";
 import { RedirectsPage } from "./seo/RedirectsPage.js";
 import { SeoSettingsPage } from "./seo/SeoSettingsPage.js";
@@ -274,19 +275,31 @@ const blueprintRoute = createRoute({
 const apiAccessRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: "/settings/api",
-  component: ApiAccessPage,
+  component: () => (
+    <RequirePermission permission="settings:read">
+      <ApiAccessPage />
+    </RequirePermission>
+  ),
 });
 
 const apiReferenceRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: "/settings/api/reference",
-  component: ApiReferencePage,
+  component: () => (
+    <RequirePermission permission="settings:read">
+      <ApiReferencePage />
+    </RequirePermission>
+  ),
 });
 
 const webhooksRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: "/settings/webhooks",
-  component: WebhooksPage,
+  component: () => (
+    <RequirePermission permission="settings:read">
+      <WebhooksPage />
+    </RequirePermission>
+  ),
 });
 
 const webhookRoute = createRoute({
@@ -294,20 +307,32 @@ const webhookRoute = createRoute({
   path: "/settings/webhooks/$webhookId",
   component: function WebhookRoute() {
     const { webhookId } = webhookRoute.useParams();
-    return <WebhookDetailPage webhookId={webhookId} />;
+    return (
+      <RequirePermission permission="settings:read">
+        <WebhookDetailPage webhookId={webhookId} />
+      </RequirePermission>
+    );
   },
 });
 
 const seoSettingsRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: "/settings/seo",
-  component: SeoSettingsPage,
+  component: () => (
+    <RequirePermission permission="settings:read">
+      <SeoSettingsPage />
+    </RequirePermission>
+  ),
 });
 
 const redirectsRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: "/settings/seo/redirects",
-  component: RedirectsPage,
+  component: () => (
+    <RequirePermission permission="settings:read">
+      <RedirectsPage />
+    </RequirePermission>
+  ),
 });
 
 /** API access, webhooks and the SEO plugin's settings. */
