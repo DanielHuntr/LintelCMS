@@ -39,3 +39,4 @@ export {
 } from "../forms/forms.table.js";
 export * from "../commerce/commerce.tables.js";
 export { recycleBinItemsTable } from "../recycle-bin/recycle-bin.table.js";
+export { contentRootAddressesTable } from "../content-roots/content-roots.table.js";

@@ -111,4 +111,70 @@ describe("building a site in the content tree", () => {
     },
     JOURNEY_TIMEOUT,
   );
+
+  it(
+    "creates pages at the top as site starts, gives one a path, and moves pages between them",
+    async () => {
+      await api("PUT", "/plugins", { enabled: ["seo"] });
+      const info = async (id: string) =>
+        (await api("GET", `/content-tree/entries/${id}/info`)).json();
+
+      // An empty site: nothing at the top yet, so the admin offers "Create your home page".
+      expect((await api("GET", "/content-tree")).json().siteStartCount).toBe(0);
+      const offered = (await api("GET", "/content-tree/allowed-types")).json();
+      expect(offered.types.map((type: { handle: string }) => type.handle)).toEqual(["pages"]);
+
+      // Home is "/", About under it is "/about"; a second page at the top is "/shop".
+      const created = async (title: string, parentId?: string) =>
+        (await api("POST", "/collections/pages/entries", { data: { title }, parentId })).json().id;
+      const home = await created("Home");
+      const about = await created("About", home);
+      const shop = await created("Shop");
+      const boots = await created("Boots", shop);
+      for (const id of [home, about, shop, boots]) {
+        await api("POST", `/entries/${id}/publish`);
+      }
+      expect((await info(home)).url).toBe("/");
+      expect((await info(about)).url).toBe("/about");
+      expect((await info(boots)).url).toBe("/shop/boots");
+      expect((await api("GET", "/content-tree")).json().siteStartCount).toBe(2);
+
+      // Hostnames: Shop answers under /store instead.
+      const hostnames = await api("PUT", `/content-tree/entries/${shop}/hostnames`, {
+        pathPrefix: "/store",
+      });
+      expect(hostnames.json()).toMatchObject({ url: "/store", isAssigned: true });
+      expect((await info(boots)).url).toBe("/store/boots");
+
+      // Drag Boots under Home: its address changes, and redirects are offered and added.
+      const moved = (
+        await api("POST", "/content-tree/move", { entryId: boots, parentId: home, index: 1 })
+      ).json();
+      expect(moved.addressChanges).toEqual([
+        { entryId: boots, title: "Boots", from: "/store/boots", to: "/boots" },
+      ]);
+      const redirects = moved.addressChanges.map(
+        (change: { entryId: string; from: string; to: string }) => ({
+          entryId: change.entryId,
+          fromPath: change.from,
+          toPath: change.to,
+        }),
+      );
+      expect((await api("POST", "/seo/redirects/moved", { redirects })).json()).toEqual({
+        added: 1,
+        kept: 0,
+      });
+
+      // Drag About to the top, after Home: a site start of its own at "/about".
+      await api("POST", "/content-tree/move", { entryId: about, parentId: null, index: 1 });
+      expect((await info(about)).siteStart).toEqual({
+        isDefault: false,
+        isAssigned: false,
+        hostname: "",
+        pathPrefix: "/about",
+      });
+      expect(await titles("collection=pages")).toEqual(["Home", "About", "Shop"]);
+    },
+    JOURNEY_TIMEOUT,
+  );
 });

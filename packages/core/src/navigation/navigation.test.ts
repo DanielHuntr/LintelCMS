@@ -3,6 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ensurePagesCollection } from "../collections/default-collections.js";
 import { useTestDatabase } from "../testing/test-database.js";
+import { createHomePage } from "../testing/test-home-page.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
 import { ensureMainMenu } from "./default-navigation.js";
@@ -126,9 +127,10 @@ describe("navigation menus", () => {
   });
 
   it("delivers addresses ready to print, leaving out pages that aren't live", async () => {
+    await api("POST", "/locales", { code: "fr-FR" });
+    await createHomePage(api, ["fr-FR"]);
     const aboutId = await createPage("About us");
     const draftId = await createPage("Secret", false);
-    await api("POST", "/locales", { code: "fr-FR" });
     const french = await api("POST", `/entries/${aboutId}/translations`, { locale: "fr-FR" });
     await api("PATCH", `/entries/${french.json().id}`, {
       data: { title: "À propos" },

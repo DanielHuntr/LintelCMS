@@ -120,6 +120,13 @@
       "when": 1793547861055,
       "tag": "0016_content_tree_and_recycle_bin",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793557750163,
+      "tag": "0017_content_root_addresses",
+      "breakpoints": true
     }
   ]
 }

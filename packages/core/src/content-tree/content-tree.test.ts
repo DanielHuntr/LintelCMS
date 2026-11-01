@@ -9,6 +9,7 @@ import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import { entriesTable } from "../entries/entries.table.js";
 import { findSiteWithLocales } from "../sites/locales.service.js";
 import { useTestDatabase } from "../testing/test-database.js";
+import { createHomePage } from "../testing/test-home-page.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
 
@@ -199,8 +200,12 @@ describe("the content tree", () => {
       index: 0,
     });
 
-    expect(moved.json()).toEqual({ previous: { parentId: home, index: 1 } });
-    expect(reordered.json()).toEqual({ previous: { parentId: null, index: 1 } });
+    // Nothing here is live, so no address that anyone could have saved has changed.
+    expect(moved.json()).toEqual({ previous: { parentId: home, index: 1 }, addressChanges: [] });
+    expect(reordered.json()).toEqual({
+      previous: { parentId: null, index: 1 },
+      addressChanges: [],
+    });
     expect(await childTitles("collection=pages")).toEqual(["Blog", "Home"]);
     expect(await childTitles(`parentId=${blog}`)).toEqual(["Contact"]);
 
@@ -306,6 +311,7 @@ describe("the content tree", () => {
   });
 
   it("tells the Info tab where an entry lives, who made it and what links to it", async () => {
+    await createHomePage(api);
     const about = await create("pages", "About");
     await api("POST", "/blueprints", {
       handle: "promo",

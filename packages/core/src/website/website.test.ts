@@ -83,6 +83,14 @@ describe("the built-in website", () => {
     return created.json().id as string;
   }
 
+  /**
+   * The first page at the top of the tree is the site's "/"; pages after it answer under
+   * their own slug ("/about"), as before there were site starts.
+   */
+  function publishHome() {
+    return publish("pages", { title: "Home" }, "home");
+  }
+
   it("welcomes a brand new site until its first page is published", async () => {
     const response = await visit("/");
     expect(response.statusCode).toBe(200);
@@ -149,6 +157,7 @@ describe("the built-in website", () => {
         () => "h1",
       ),
     ];
+    await publishHome();
     await publish("pages", { title: "Designed", design }, "designed");
 
     const response = await visit("/designed");
@@ -160,6 +169,7 @@ describe("the built-in website", () => {
   });
 
   it("answers again from its cache, with 304 for an unchanged page, and refreshes on publish", async () => {
+    await publishHome();
     const id = await publish("pages", { title: "About us", summary: "Who we are." });
     const first = await visit("/about-us");
     expect(first.body).toContain("Who we are.");
@@ -225,6 +235,7 @@ describe("the built-in website", () => {
   }, 60_000);
 
   it("shows a draft with a preview token, without caching it, and explains a bad token", async () => {
+    await publishHome();
     const id = await publish("pages", { title: "Prices", summary: "Published prices" });
     await admin("PATCH", `/entries/${id}`, { data: { summary: "New prices, not yet live" } });
 
@@ -246,6 +257,9 @@ describe("the built-in website", () => {
 
   it("serves other languages under their prefix, with links between translations", async () => {
     await admin("POST", "/locales", { code: "fr-FR", name: "Français" });
+    const home = await publishHome();
+    const frenchHome = await admin("POST", `/entries/${home}/translations`, { locale: "fr-FR" });
+    await admin("POST", `/entries/${frenchHome.json().id}/publish`);
     const id = await publish("pages", { title: "About" }, "about");
     const translation = await admin("POST", `/entries/${id}/translations`, { locale: "fr-FR" });
     await admin("PATCH", `/entries/${translation.json().id}`, { data: { title: "À propos" } });
@@ -265,6 +279,7 @@ describe("the built-in website", () => {
 
   it("honours redirects and serves the sitemap and robots.txt with the SEO plugin on", async () => {
     await admin("PUT", "/plugins", { enabled: ["seo"] });
+    await publishHome();
     await publish("pages", { title: "Contact" });
     await admin("POST", "/seo/redirects", { fromPath: "/get-in-touch", toPath: "/contact" });
 

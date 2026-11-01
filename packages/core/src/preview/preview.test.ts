@@ -5,6 +5,7 @@ import {
   ensurePagesCollection,
 } from "../collections/default-collections.js";
 import { useTestDatabase } from "../testing/test-database.js";
+import { createHomePage } from "../testing/test-home-page.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
 import {
@@ -99,6 +100,7 @@ describe("live preview through the API", () => {
   }
 
   it("gives a token, and the website's preview address once the collection has one", async () => {
+    await createHomePage(api);
     const id = await createPage("About us", "Draft words");
 
     const withoutSite = await api("POST", `/entries/${id}/preview`);
@@ -137,6 +139,7 @@ describe("live preview through the API", () => {
   });
 
   it("serves the draft to anyone with the token, never cached, and nothing without it", async () => {
+    await createHomePage(api);
     const id = await createPage("About us", "Draft words");
     const { token } = (await api("POST", `/entries/${id}/preview`)).json();
 

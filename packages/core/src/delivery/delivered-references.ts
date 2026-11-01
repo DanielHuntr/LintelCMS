@@ -3,6 +3,7 @@ import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
 import { findTermsByIds } from "../taxonomies/terms.repository.js";
 import { eachBlock } from "./block-values.js";
 import { findPublishedEntryLinks } from "./delivery.repository.js";
+import { placeEntryUrls } from "../content-roots/content-roots.service.js";
 import { buildEntryUrl } from "./entry-urls.js";
 
 /**
@@ -99,6 +100,10 @@ export async function findDeliveredEntryLinks(
   locale: string,
 ): Promise<Map<string, DeliveredEntryLink>> {
   const rows = await findPublishedEntryLinks(database, entryIds);
+  const urls = await placeEntryUrls(
+    database,
+    rows.map((row) => ({ id: row.id, url: buildEntryUrl(row.routePattern, row) })),
+  );
   const links = new Map<string, DeliveredEntryLink>();
   for (const entryId of entryIds) {
     const family = rows.filter((row) => row.id === entryId || row.originId === entryId);
@@ -109,7 +114,7 @@ export async function findDeliveredEntryLinks(
         id: chosen.id,
         title: chosen.title ?? "",
         slug: chosen.slug,
-        url: buildEntryUrl(chosen.routePattern, chosen),
+        url: urls.get(chosen.id) ?? null,
         collection: chosen.collectionHandle,
         locale: chosen.locale,
       });

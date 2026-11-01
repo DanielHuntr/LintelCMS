@@ -10,6 +10,7 @@ import {
   createRedirectRequestSchema,
   importRedirectsRequestSchema,
   listRedirectsQuerySchema,
+  movedPagesRedirectsRequestSchema,
   redirectIdParamsSchema,
   updateRedirectRequestSchema,
 } from "./redirects.schema.js";
@@ -21,6 +22,7 @@ import {
   listRedirects,
   updateRedirect,
 } from "./redirects.service.js";
+import { addRedirectsForMovedPages } from "./redirect-suggestions.service.js";
 import { RedirectNotFoundError } from "./seo.errors.js";
 import { readSeoDefaults, updateSeoDefaults } from "./seo-defaults.service.js";
 import {
@@ -48,6 +50,7 @@ const WEBSITE_CACHE = "public, max-age=60";
  *   PATCH  /seo/redirects/:id              (settings:update)  { fromPath?, toPath?, statusCode?, status? }
  *   DELETE /seo/redirects/:id              (settings:update)  -> 204
  *   POST   /seo/redirects/import           (settings:update)  { csv } -> { added, updated, problems }
+ *   POST   /seo/redirects/moved            (settings:update)  { redirects: [{ entryId, fromPath, toPath }] } -> { added, kept }
  *
  * For websites and search engines:
  *
@@ -95,6 +98,11 @@ export async function seoRoutes(server: FastifyInstance) {
   server.post("/seo/redirects/import", can("settings:update"), async (request) => {
     const { csv } = parseRequest(importRedirectsRequestSchema, request.body);
     return importRedirects(server.database, csv);
+  });
+
+  server.post("/seo/redirects/moved", can("settings:update"), async (request) => {
+    const { redirects } = parseRequest(movedPagesRedirectsRequestSchema, request.body);
+    return addRedirectsForMovedPages(server.database, redirects);
   });
 
   server.patch("/seo/redirects/:id", can("settings:update"), async (request) => {

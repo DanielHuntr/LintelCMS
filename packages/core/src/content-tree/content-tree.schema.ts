@@ -91,6 +91,14 @@ export const allowedTypesQuerySchema = z
     error: "Send parentId or collection, not both",
   });
 
+/** A page whose address a move changed, for offering a redirect from the old one. */
+export interface AddressChange {
+  entryId: string;
+  title: string;
+  from: string;
+  to: string;
+}
+
 /** `POST /content-tree/move`: put an entry under `parentId` (null: its collection's top level), at `index`. */
 export const moveEntryRequestSchema = z.object({
   entryId: z.uuid({ error: "entryId should be an entry id" }),
@@ -151,6 +159,8 @@ export const treeNodeSchema = z.object({
   childCount: z.number().int(),
   /** Its children are shown as a list in the workspace instead of in the tree. */
   childrenAsCollection: z.boolean(),
+  /** At the top of a page tree: a site start, which "Hostnames" can give a domain or path. */
+  isSiteStart: z.boolean(),
 });
 
 export type TreeNode = z.infer<typeof treeNodeSchema>;
@@ -184,6 +194,8 @@ export interface TreeRootsResponse {
   site: { id: string; name: string; locale: string };
   locale: string;
   roots: TreeRoot[];
+  /** Pages at the top of a page tree; with none, the admin offers to create the home page. */
+  siteStartCount: number;
   recycleBinCount: number;
 }
 

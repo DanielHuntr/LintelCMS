@@ -73,6 +73,23 @@ export const importRedirectsRequestSchema = z.object({
     .max(1_000_000, { error: "The CSV can be at most 1 MB" }),
 });
 
+/**
+ * `POST /seo/redirects/moved`: "Add redirects" after moving pages in the content tree, from
+ * the old addresses the move answered with.
+ */
+export const movedPagesRedirectsRequestSchema = z.object({
+  redirects: z
+    .array(
+      z.object({
+        entryId: z.uuid({ error: "entryId should be an entry id" }),
+        fromPath: fromPathSchema,
+        toPath: toPathSchema,
+      }),
+    )
+    .min(1, { error: "Send at least one moved page" })
+    .max(5000, { error: "Send at most 5000 moved pages at once" }),
+});
+
 export const listRedirectsQuerySchema = z.object({
   status: z.preprocess(
     (value) => (value === "" ? undefined : value),

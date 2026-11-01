@@ -6,6 +6,7 @@ import { localiseUrl } from "./site-chrome.service.js";
 import {
   type PageRequest,
   readSiteChrome,
+  readSiteStarts,
   readSiteContext,
   renderEntry,
   renderMessage,
@@ -37,6 +38,7 @@ export async function renderPreview(
     locale,
     localPath,
     path,
+    siteStarts: await readSiteStarts(dependencies, locale),
   });
 
   let entryId: string;

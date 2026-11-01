@@ -113,6 +113,7 @@ export async function listCollectionItems(
       collection: { handle: row.collectionHandle, name: row.collectionName },
       childCount: counts.get(row.id) ?? 0,
       childrenAsCollection: row.childrenAsCollection,
+      isSiteStart: row.isSiteStart,
       values: row.values,
       updatedBy: row.updatedByName,
     })),

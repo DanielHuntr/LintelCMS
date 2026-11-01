@@ -22,6 +22,7 @@ import {
   collectionItemsQuerySchema,
   type BatchResult,
   bulkActionRequestSchema,
+  type MoveEntryRequest,
   moveEntryRequestSchema,
   sortChildrenRequestSchema,
   treeChildrenQuerySchema,
@@ -52,7 +53,7 @@ import { listCollectionItems } from "./collection-view.service.js";
  *   GET  /content-tree/allowed-types              (entries:read)    ?parentId | ?collection
  *   GET  /content-tree/entries/:id/path           (entries:read)
  *   GET  /content-tree/entries/:id/info           (entries:read)
- *   POST /content-tree/move                       (entries:update)  { entryId, parentId, index }
+ *   POST /content-tree/move                       (entries:update)  { entryId, parentId, index } -> { previous, addressChanges }
  *   POST /content-tree/sort                       (entries:update)  { parentId, collection?, order }
  *   POST /content-tree/entries/:id/publish        (entries:publish) { includeDescendants }
  *   POST /content-tree/entries/:id/unpublish      (entries:publish) { includeDescendants }
@@ -92,7 +93,7 @@ export async function contentTreeRoutes(server: FastifyInstance) {
   );
 
   server.post("/content-tree/move", can("entries:update"), async (request) =>
-    moveEntry(server.database, parseRequest(moveEntryRequestSchema, request.body)),
+    moveAndAnnounce(request, parseRequest(moveEntryRequestSchema, request.body)),
   );
 
   server.post("/content-tree/sort", can("entries:update"), async (request, reply) => {
@@ -221,6 +222,24 @@ async function recycleAndAnnounce(request: FastifyRequest, entryId: string) {
   return result;
 }
 
+/**
+ * Moves an entry, then says "entry.moved" for each live page whose address changed, which
+ * (with SEO tools on) suggests a redirect from the old address, as a slug change does.
+ */
+async function moveAndAnnounce(request: FastifyRequest, move: MoveEntryRequest) {
+  const { database } = request.server;
+  const result = await moveEntry(database, move);
+  for (const change of result.addressChanges) {
+    const entry = await describeEntryForEvent(database, change.entryId);
+    await announceContentEvent(
+      request.server,
+      { name: "entry.moved", entry, previousUrl: change.from },
+      actorOf(request),
+    );
+  }
+  return result;
+}
+
 async function moveAll(
   request: FastifyRequest,
   entryIds: string[],
@@ -229,11 +248,7 @@ async function moveAll(
   const result: BatchResult = { changed: [], skipped: [] };
   for (const entryId of entryIds) {
     try {
-      await moveEntry(request.server.database, {
-        entryId,
-        parentId,
-        index: Number.MAX_SAFE_INTEGER,
-      });
+      await moveAndAnnounce(request, { entryId, parentId, index: Number.MAX_SAFE_INTEGER });
       result.changed.push(entryId);
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);

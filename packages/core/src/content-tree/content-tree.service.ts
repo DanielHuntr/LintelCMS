@@ -13,8 +13,10 @@ import { ReorderNotAllowedError } from "../entries/entries.errors.js";
 import { findAncestorIds } from "../entries/entries.repository.js";
 import { findEntryOrFail } from "../entries/entries.service.js";
 import { checkParent } from "../entries/entry-ordering.service.js";
+import { findLiveAddresses, listSiteStarts } from "../content-roots/content-roots.service.js";
 import { countRecycleBinItems } from "../recycle-bin/recycle-bin.repository.js";
 import { findSiteWithLocales } from "../sites/locales.service.js";
+import { listBranchIds } from "./content-tree-branches.service.js";
 import { EntryNotAtThisPlaceError, SiteNotFoundError } from "./content-tree.errors.js";
 import {
   countChildrenOf,
@@ -30,6 +32,7 @@ import {
   type TreeNodeRow,
 } from "./content-tree.repository.js";
 import type {
+  AddressChange,
   AllowedType,
   MoveEntryRequest,
   PathStep,
@@ -103,6 +106,7 @@ export async function listTreeRoots(
     site,
     locale,
     roots,
+    siteStartCount: (await listSiteStarts(database, site.id, locale)).length,
     recycleBinCount: await countRecycleBinItems(database, DEFAULT_TENANT_ID),
   };
 }
@@ -121,6 +125,7 @@ function describeNode(row: TreeNodeRow, childCount: number): TreeNode {
     collection: { handle: row.collectionHandle, name: row.collectionName },
     childCount,
     childrenAsCollection: row.childrenAsCollection,
+    isSiteStart: row.isSiteStart,
   };
 }
 
@@ -250,12 +255,16 @@ function placeOf(entry: {
 /**
  * Puts an entry under a new parent (or at its collection's top level) at a place among its
  * new siblings, with the same rules as choosing a parent in the editor. Answers where it
- * was, so the admin can offer to undo.
+ * was, so the admin can offer to undo, and the live pages whose addresses changed (moving to
+ * or from the top, or between site starts), so it can offer redirects from the old ones.
  */
 export async function moveEntry(
   database: DatabaseOrTransaction,
   request: MoveEntryRequest,
-): Promise<{ previous: { parentId: string | null; index: number } }> {
+): Promise<{
+  previous: { parentId: string | null; index: number };
+  addressChanges: AddressChange[];
+}> {
   const entry = await findEntryOrFail(database, request.entryId);
   const collection = await findCollectionByIdOrFail(database, entry.collectionId);
   if (collection.structure === "dated") {
@@ -272,6 +281,16 @@ export async function moveEntry(
   const siblings = (await listSiblingIds(database, target)).filter((id) => id !== entry.id);
   siblings.splice(Math.min(request.index, siblings.length), 0, entry.id);
 
+  // To or from the top, the order of site starts can change which one is "/", so all count.
+  const touchesTop = entry.parentId === null || request.parentId === null;
+  const affected = [
+    ...new Set([
+      ...(await listBranchIds(database, entry.id)),
+      ...(touchesTop ? await listSiteStartBranches(database, entry.siteId, entry.locale) : []),
+    ]),
+  ];
+  const before = await findLiveAddresses(database, affected);
+
   await database.transaction(async (transaction) => {
     await renumberSiblings(transaction, siblings, request.parentId);
     if (request.parentId !== entry.parentId) {
@@ -279,7 +298,26 @@ export async function moveEntry(
       await renumberSiblings(transaction, left, entry.parentId);
     }
   });
-  return { previous: { parentId: entry.parentId, index: previousIndex } };
+
+  const after = await findLiveAddresses(database, affected);
+  const addressChanges = [...before].flatMap(([entryId, old]): AddressChange[] => {
+    const now = after.get(entryId);
+    return now && now.url !== old.url
+      ? [{ entryId, title: now.title, from: old.url, to: now.url }]
+      : [];
+  });
+  return { previous: { parentId: entry.parentId, index: previousIndex }, addressChanges };
+}
+
+/** Every entry under the site starts of one site and language, for comparing addresses. */
+async function listSiteStartBranches(
+  database: DatabaseOrTransaction,
+  siteId: string,
+  locale: string,
+): Promise<string[]> {
+  const starts = await listSiteStarts(database, siteId, locale);
+  const branches = await Promise.all(starts.map((start) => listBranchIds(database, start.entryId)));
+  return branches.flat();
 }
 
 /**

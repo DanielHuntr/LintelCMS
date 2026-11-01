@@ -10,6 +10,7 @@ import {
   type DeliveredAsset,
 } from "../fieldtypes/image-assets.js";
 import { useTestDatabase } from "../testing/test-database.js";
+import { createHomePage } from "../testing/test-home-page.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
 import { buildSchema, parse, validate } from "graphql";
@@ -68,6 +69,7 @@ describe("the GraphQL delivery API", () => {
   }
 
   it("has typed queries for every collection, with fields from its blueprint", async () => {
+    await createHomePage(api);
     await createPage({ title: "About us", hero_image: heroImage.id, summary: "Who we are" }, true);
 
     const response = await query(`{

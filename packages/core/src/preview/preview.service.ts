@@ -1,6 +1,8 @@
 import { findCollectionByIdOrFail } from "../collections/collections.service.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { findDeliveredDraft } from "../delivery/delivery.service.js";
+import { placeEntryUrl } from "../content-roots/content-roots.service.js";
+import { pathOfAddress } from "../content-roots/root-addresses.js";
 import { buildEntryUrl } from "../delivery/entry-urls.js";
 import { findEntryOrFail } from "../entries/entries.service.js";
 import type { AssetLookup } from "../fieldtypes/image-assets.js";
@@ -39,6 +41,14 @@ export async function createEntryPreview(
   const entry = await findEntryOrFail(database, entryId);
   const collection = await findCollectionByIdOrFail(database, entry.collectionId);
   const expiresAt = now.getTime() + PREVIEW_TOKEN_LIFETIME_MS;
+  const url = await placeEntryUrl(
+    database,
+    entry.id,
+    buildEntryUrl(collection.routePattern, {
+      slug: entry.slug,
+      publishedAt: entry.publishedAt ?? now,
+    }),
+  );
   const token = signPreviewToken(
     { entryId: entry.id, expiresAt },
     await findSigningSecret(database),
@@ -51,10 +61,8 @@ export async function createEntryPreview(
       collection.previewUrlPattern ??
         (builtInSiteUrl && collection.routePattern ? `${builtInSiteUrl}{url}` : null),
       {
-        url: buildEntryUrl(collection.routePattern, {
-          slug: entry.slug,
-          publishedAt: entry.publishedAt ?? now,
-        }),
+        // The built-in website shows previews on its own address, whatever the page's domain.
+        url: url === null ? null : pathOfAddress(url),
         slug: entry.slug,
         token,
         collection: collection.handle,

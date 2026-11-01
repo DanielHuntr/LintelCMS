@@ -1,5 +1,6 @@
 import { findCollectionByIdOrFail } from "../collections/collections.service.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
+import { placeEntryUrl } from "../content-roots/content-roots.service.js";
 import { buildEntryUrl } from "../delivery/entry-urls.js";
 import { findEntryOrFail } from "../entries/entries.service.js";
 
@@ -39,7 +40,7 @@ export async function describeEntryForEvent(
     collection: collection.handle,
     slug: entry.slug,
     title: typeof title === "string" ? title : "",
-    url: buildEntryUrl(collection.routePattern, entry),
+    url: await placeEntryUrl(database, entry.id, buildEntryUrl(collection.routePattern, entry)),
     status: entry.status,
     publishedAt: entry.publishedAt?.toISOString() ?? null,
   };

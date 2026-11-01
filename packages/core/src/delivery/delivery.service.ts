@@ -29,6 +29,7 @@ import type {
   DeliveredList,
   DeliveryListQuery,
 } from "./delivery.schema.js";
+import { placeEntryUrls } from "../content-roots/content-roots.service.js";
 import { buildEntryUrl } from "./entry-urls.js";
 
 /**
@@ -183,16 +184,23 @@ async function deliverWithTranslations(
   if (!delivered) {
     throw new PublishedEntryNotFoundError(entry.slug);
   }
-  const family = await listPublishedTranslations(database, entry.originId ?? entry.id);
+  const family = (await listPublishedTranslations(database, entry.originId ?? entry.id)).filter(
+    (member) => member.id !== entry.id,
+  );
+  const urls = await placeEntryUrls(
+    database,
+    family.map((member) => ({
+      id: member.id,
+      url: buildEntryUrl(collection.routePattern, member),
+    })),
+  );
   return {
     ...delivered,
-    translations: family
-      .filter((member) => member.id !== entry.id)
-      .map((member) => ({
-        locale: member.locale,
-        slug: member.slug,
-        url: buildEntryUrl(collection.routePattern, member),
-      })),
+    translations: family.map((member) => ({
+      locale: member.locale,
+      slug: member.slug,
+      url: urls.get(member.id) ?? null,
+    })),
   };
 }
 
@@ -209,14 +217,21 @@ async function deliverEntries(
   const assets = imageIds.length > 0 ? await assetLookup.findAssetsByIds(imageIds) : new Map();
   const locale = entries[0]?.locale ?? "";
   const references = await lookUpReferences(database, fields, dataList, locale);
+  const urls = await placeEntryUrls(
+    database,
+    entries.map((entry) => ({
+      id: entry.id,
+      // A draft that has never been published gets today's date in its address, as it would.
+      url: buildEntryUrl(collection.routePattern, {
+        slug: entry.slug,
+        publishedAt: entry.publishedAt ?? new Date(),
+      }),
+    })),
+  );
   return entries.map((entry) => ({
     id: entry.id,
     slug: entry.slug,
-    // A draft that has never been published gets today's date in its address, as it would.
-    url: buildEntryUrl(collection.routePattern, {
-      slug: entry.slug,
-      publishedAt: entry.publishedAt ?? new Date(),
-    }),
+    url: urls.get(entry.id) ?? null,
     locale: entry.locale,
     publishedAt: entry.publishedAt?.toISOString() ?? null,
     data: deliverValues(fields, entry.values, assets, references),

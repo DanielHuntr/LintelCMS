@@ -10,6 +10,7 @@ import {
   type DeliveredAsset,
 } from "../fieldtypes/image-assets.js";
 import { useTestDatabase } from "../testing/test-database.js";
+import { createHomePage } from "../testing/test-home-page.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
 import { buildEntryUrl } from "./entry-urls.js";
@@ -90,6 +91,7 @@ describe("the public delivery API", () => {
   }
 
   it("serves a published entry with its URL, expanded image and rendered rich text", async () => {
+    await createHomePage(api);
     const id = await createAndPublish("pages", {
       title: "About us",
       summary: "Who we are",

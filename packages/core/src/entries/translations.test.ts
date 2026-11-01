@@ -5,6 +5,7 @@ import {
   ensurePagesCollection,
 } from "../collections/default-collections.js";
 import { useTestDatabase } from "../testing/test-database.js";
+import { createHomePage } from "../testing/test-home-page.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
 
@@ -98,6 +99,7 @@ describe("translations", () => {
   });
 
   it("delivers each language at its own address, with links to the others", async () => {
+    await createHomePage(api, ["fr-FR"]);
     const about = await createPage({ title: "About us" });
     const french = (
       await api("POST", `/entries/${about.id}/translations`, { locale: "fr-FR" })

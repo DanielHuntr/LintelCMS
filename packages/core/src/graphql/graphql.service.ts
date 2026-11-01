@@ -5,6 +5,7 @@ import { lookUpReferences } from "../delivery/delivered-references.js";
 import { collectImageIds, deliverValues } from "../delivery/delivered-values.js";
 import { PublishedEntryNotFoundError } from "../delivery/delivery.errors.js";
 import { findDeliveredEntry, listDeliveredEntries } from "../delivery/delivery.service.js";
+import { placeEntryUrls } from "../content-roots/content-roots.service.js";
 import { buildEntryUrl } from "../delivery/entry-urls.js";
 import type { AssetLookup, DeliveredAsset } from "../fieldtypes/image-assets.js";
 import { HttpError } from "../http/http-errors.js";
@@ -208,10 +209,14 @@ async function expandWorkingCopies(
     rows.map((row) => row.data),
     rows[0]?.locale ?? "",
   );
+  const urls = await placeEntryUrls(
+    context.database,
+    rows.map((row) => ({ id: row.id, url: buildEntryUrl(collection.routePattern, row) })),
+  );
   return rows.map((row) => ({
     id: row.id,
     slug: row.slug,
-    url: buildEntryUrl(collection.routePattern, row),
+    url: urls.get(row.id) ?? null,
     status: row.status,
     publishedAt: row.publishedAt?.toISOString() ?? null,
     title: titleOf(row.data),

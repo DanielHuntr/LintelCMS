@@ -1,4 +1,10 @@
 import type { SiteChrome, SiteTemplate, SiteView } from "@lintel/site-components";
+import { listSiteStarts, type SiteStartSummary } from "../content-roots/content-roots.service.js";
+import {
+  matchRootForPath,
+  pathOfAddress,
+  removePathPrefix,
+} from "../content-roots/root-addresses.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { PublishedEntryNotFoundError } from "../delivery/delivery.errors.js";
 import type { DeliveredEntryWithTranslations } from "../delivery/delivery.schema.js";
@@ -6,6 +12,7 @@ import { findDeliveredEntry } from "../delivery/delivery.service.js";
 import type { AssetLookup } from "../fieldtypes/image-assets.js";
 import { listDeliveredRedirects } from "../seo/redirects.service.js";
 import { buildRobots, buildSitemap } from "../seo/sitemap.service.js";
+import { findSiteWithLocales } from "../sites/locales.service.js";
 import type { RenderedPagesCache, SiteResponse } from "./rendered-pages-cache.js";
 import { loadSiteChrome, localiseUrl } from "./site-chrome.service.js";
 import { loadSiteContext, type SiteContext } from "./site-context.service.js";
@@ -15,7 +22,6 @@ import { findListView, type ListRoute } from "./site-lists.service.js";
 import { renderPreview } from "./site-preview.service.js";
 import {
   HOME_SLUG,
-  localisedPath,
   matchSiteRoute,
   type SiteRoute,
   splitLocale,
@@ -48,12 +54,25 @@ export interface PageRequest {
   localPath: string;
   /** The address as visited, with any language prefix. */
   path: string;
+  /** The pages at the top of the page trees, in this language, and where each answers. */
+  siteStarts: SiteStartSummary[];
 }
 
 export function readSiteContext(dependencies: SiteDependencies): Promise<SiteContext> {
   return dependencies.cache.shareValue("context", () =>
     loadSiteContext(dependencies.database, dependencies),
   );
+}
+
+/** The site starts in a language, shared until something changes. */
+export function readSiteStarts(
+  dependencies: SiteDependencies,
+  locale: string,
+): Promise<SiteStartSummary[]> {
+  return dependencies.cache.shareValue(`site-starts:${locale}`, async () => {
+    const site = await findSiteWithLocales(dependencies.database);
+    return listSiteStarts(dependencies.database, site.id, locale);
+  });
 }
 
 export async function readSiteChrome(
@@ -110,9 +129,6 @@ async function resolveSitePath(
     context.defaultLocale,
     context.locales.map(({ code }) => code),
   );
-  if (localPath === `/${HOME_SLUG}`) {
-    return redirectResponse(localisedPath("/", locale, context.defaultLocale), 301);
-  }
   const chrome = await readSiteChrome(dependencies, context, locale);
   const request: PageRequest = {
     dependencies,
@@ -121,8 +137,13 @@ async function resolveSitePath(
     locale,
     localPath,
     path: path ?? "/",
+    siteStarts: await readSiteStarts(dependencies, locale),
   };
   if (path !== null) {
+    const underStart = await respondUnderSiteStart(request);
+    if (underStart) {
+      return underStart;
+    }
     for (const route of matchSiteRoute(localPath, context.collections)) {
       const response = await respondToRoute(request, route);
       if (response) {
@@ -131,6 +152,32 @@ async function resolveSitePath(
     }
   }
   return renderNotFound(request);
+}
+
+/**
+ * A site start answering under a path of its own ("/shop") is that page, and the pages under
+ * it are below it ("/shop/about"). Undefined for an address no such site start covers.
+ */
+async function respondUnderSiteStart(request: PageRequest): Promise<SiteResponse | undefined> {
+  const start = matchRootForPath(request.siteStarts, request.localPath);
+  if (!start || start.pathPrefix === "") {
+    return undefined;
+  }
+  const rest = removePathPrefix(start.pathPrefix, request.localPath);
+  if (rest === "/") {
+    const entry = await findPublished(request, start.collection.handle, start.slug);
+    return entry ? renderEntry(request, start.collection.handle, entry) : undefined;
+  }
+  for (const route of matchSiteRoute(rest, request.context.collections)) {
+    if (route.kind !== "entry") {
+      continue;
+    }
+    const response = await respondToRoute(request, route);
+    if (response) {
+      return response;
+    }
+  }
+  return undefined;
 }
 
 async function respondToRoute(
@@ -145,8 +192,10 @@ async function respondToRoute(
       if (!entry) {
         return undefined;
       }
+      // A page under a site start with a domain of its own has a full address. Which domain
+      // a visit came to is for multisite to decide, so here only the path is compared.
       const canonical = localiseUrl(
-        entry.url ?? request.localPath,
+        pathOfAddress(entry.url ?? request.localPath),
         request.locale,
         request.context.defaultLocale,
       );
@@ -162,8 +211,18 @@ async function respondToRoute(
   }
 }
 
-/** The page with the slug "home", or the newest posts, or a welcome for a new site. */
+/**
+ * The site start that answers at "/", or (for sites from before site starts) the page with
+ * the slug "home", or the newest posts, or a welcome for a new site.
+ */
 async function renderHome(request: PageRequest): Promise<SiteResponse> {
+  const start = request.siteStarts.find(
+    (candidate) => candidate.hostname === "" && candidate.pathPrefix === "",
+  );
+  const startEntry = start && (await findPublished(request, start.collection.handle, start.slug));
+  if (start && startEntry) {
+    return renderEntry(request, start.collection.handle, startEntry);
+  }
   for (const collection of request.context.collections) {
     if (collection.routePattern === "/{slug}") {
       const home = await findPublished(request, collection.handle, HOME_SLUG);
