@@ -1,3 +1,4 @@
+import { customScriptRules } from "@lintel/builder-model";
 import { z } from "zod";
 import { defaultSeoDefaults, seoDefaultsSchema } from "../seo/seo-defaults.schema.js";
 
@@ -28,6 +29,8 @@ export const settingSchemas = {
   deliveryAllowedOrigins: z.array(z.string()),
   /** Search engine defaults from the SEO plugin (see src/seo). */
   seoDefaults: seoDefaultsSchema,
+  /** What happens to scripts in the page builder's code blocks when a page is saved (see src/pages). */
+  builderCustomScripts: z.enum(customScriptRules),
 };
 
 export type SettingKey = keyof typeof settingSchemas;
@@ -41,4 +44,5 @@ export const settingDefaults: { [Key in SettingKey]: SettingValue<Key> } = {
   deliveryRequiresToken: false,
   deliveryAllowedOrigins: [],
   seoDefaults: defaultSeoDefaults,
+  builderCustomScripts: "removeScripts",
 };

@@ -26,6 +26,7 @@ import { mediaRoutes } from "./media/media.routes.js";
 import type { StorageDriver } from "./media/storage-driver.js";
 import { DEFAULT_TRANSFORM_CACHE_FOLDER } from "./media/transform-cache.js";
 import { openApiRoutes } from "./openapi/openapi.routes.js";
+import { pagesRoutes } from "./pages/pages.routes.js";
 import { pluginsRoutes } from "./plugins/plugins.routes.js";
 import { previewRoutes } from "./preview/preview.routes.js";
 import { registerScheduledJobs } from "./scheduler/scheduled-jobs.js";
@@ -184,6 +185,7 @@ export function buildServer(options: ServerOptions) {
   server.register(graphqlRoutes, { graphiql: options.graphiql ?? false });
   server.register(openApiRoutes);
   server.register(seoRoutes);
+  server.register(pagesRoutes);
 
   if (options.runScheduledJobs ?? true) {
     registerScheduledJobs(server);

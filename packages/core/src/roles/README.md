@@ -12,3 +12,6 @@ A user can have several roles; what they may do is all of those lists combined.
 
 Routes don't call `hasPermission` themselves; they use `requirePermission` from
 `src/auth/require-permission.ts`, which also handles "not signed in".
+
+Features may check permissions of their own. `builder:code` lets someone write code in the
+page builder (code blocks and Developer mode); see src/pages.

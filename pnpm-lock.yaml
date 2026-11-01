@@ -163,6 +163,9 @@ importers:
       '@fastify/rate-limit':
         specifier: ^11.2.1
         version: 11.2.1
+      '@lintel/builder-model':
+        specifier: workspace:*
+        version: link:../builder-model
       '@tiptap/core':
         specifier: ^3.32.2
         version: 3.32.2(@tiptap/pm@3.32.2)
