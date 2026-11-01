@@ -9,9 +9,13 @@ export type RedirectSource = (typeof redirectSources)[number];
 /**
  * "/old-page", tidied: a full address loses its domain, the query and fragment go, and a
  * trailing slash is dropped, so "/about/" and "/about" are the same rule.
+ *
+ * Leading slashes (and backslashes, which browsers read as slashes) become one: "//evil.com"
+ * is not a path but another website, so a redirect to it would send visitors off the site.
+ * Tabs and line breaks go too, because browsers drop them from addresses ("/\t/evil.com").
  */
 export function normaliseRedirectPath(value: string): string {
-  const trimmed = value.trim();
+  const trimmed = value.replace(/[\t\n\r]/g, "").trim();
   let path = trimmed;
   if (/^https?:\/\//i.test(trimmed)) {
     try {
@@ -21,9 +25,7 @@ export function normaliseRedirectPath(value: string): string {
     }
   }
   path = path.split(/[?#]/)[0] ?? "";
-  if (!path.startsWith("/")) {
-    path = `/${path}`;
-  }
+  path = `/${path.replace(/^[/\\]+/, "")}`;
   return path.length > 1 ? path.replace(/\/+$/, "") : path;
 }
 

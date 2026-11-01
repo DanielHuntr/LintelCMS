@@ -13,5 +13,8 @@ describe("safeRedirect", () => {
   it("refuses to send people to another site", () => {
     expect(safeRedirect("https://evil.example")).toBe("/");
     expect(safeRedirect("//evil.example")).toBe("/");
+    expect(safeRedirect("/\\evil.example")).toBe("/");
+    expect(safeRedirect("/\t/evil.example")).toBe("/");
+    expect(safeRedirect("/\n/evil.example")).toBe("/");
   });
 });

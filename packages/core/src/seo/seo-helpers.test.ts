@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseRedirectCsv } from "./redirect-csv.js";
-import { normaliseRedirectPath } from "./redirects.schema.js";
+import { normaliseRedirectPath, toPathSchema } from "./redirects.schema.js";
 import { adviseDescriptionLength, adviseTitleLength, applyTitleTemplate } from "./seo-titles.js";
 import { buildSitemapXml } from "./sitemap.js";
 
@@ -30,6 +30,16 @@ describe("redirect addresses", () => {
     expect(normaliseRedirectPath("about")).toBe("/about");
     expect(normaliseRedirectPath("https://example.com/a/b?x=1#top")).toBe("/a/b");
     expect(normaliseRedirectPath("/")).toBe("/");
+  });
+
+  it("never turn into another website's address", () => {
+    expect(normaliseRedirectPath("//evil.example/x")).toBe("/evil.example/x");
+    expect(normaliseRedirectPath("/\\evil.example")).toBe("/evil.example");
+    expect(normaliseRedirectPath("\\\\evil.example")).toBe("/evil.example");
+    expect(normaliseRedirectPath("/\t/evil.example")).toBe("/evil.example");
+    expect(toPathSchema.parse("//evil.example")).toBe("/evil.example");
+    expect(toPathSchema.safeParse("javascript:alert(1)").success).toBe(false);
+    expect(toPathSchema.parse("https://other.example/page")).toBe("https://other.example/page");
   });
 
   it("are read from CSV with quotes, tabs and a heading line", () => {

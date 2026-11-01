@@ -37,7 +37,16 @@ export function SignInPage() {
   );
 }
 
-/** Only follow redirects within the admin, so a link can't send people to another site. */
+/**
+ * Only follow redirects within the admin, so a link can't send people to another site.
+ * Browsers read a backslash as a slash and drop tabs and line breaks, so "/\\evil.example"
+ * and "/\t/evil.example" would both leave the admin: the address must parse as one of ours.
+ */
 export function safeRedirect(redirect: string | undefined): string {
-  return redirect?.startsWith("/") && !redirect.startsWith("//") ? redirect : "/";
+  if (!redirect?.startsWith("/") || /[\\\s]/.test(redirect) || redirect.startsWith("//")) {
+    return "/";
+  }
+  const base = "https://admin.invalid";
+  const resolved = new URL(redirect, base);
+  return resolved.origin === base ? `${resolved.pathname}${resolved.search}${resolved.hash}` : "/";
 }
