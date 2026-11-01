@@ -1,3 +1,5 @@
+import { STATUS_CODES } from "node:http";
+import type { FastifyError, FastifyReply, FastifyRequest } from "fastify";
 import { type z, prettifyError } from "zod";
 
 /**
@@ -7,22 +9,51 @@ import { type z, prettifyError } from "zod";
  *   { "statusCode": 401, "code": "NOT_SIGNED_IN", "error": "Unauthorized", "message": "..." }
  *
  * `code` is stable, for the admin to act on; `message` is for people to read.
+ *
+ * `details` adds more to the body when the admin needs it, such as the `fields` of an
+ * entry that failed validation, or which entries still use an image. Fastify's own
+ * handler would drop those, so `sendHttpErrorDetails` (registered in server.ts) sends them.
  */
 export class HttpError extends Error {
   readonly statusCode: number;
   readonly code: string;
+  readonly details: Readonly<Record<string, unknown>> | undefined;
 
-  constructor(statusCode: number, code: string, message: string) {
+  constructor(
+    statusCode: number,
+    code: string,
+    message: string,
+    details?: Record<string, unknown>,
+  ) {
     super(message);
     this.name = new.target.name;
     this.statusCode = statusCode;
     this.code = code;
+    this.details = details;
   }
 }
 
 export class InvalidRequestError extends HttpError {
   constructor(details: string) {
     super(400, "INVALID_REQUEST", `Some of what was sent isn't right:\n${details}`);
+  }
+}
+
+/** A field handle (or `slug`) and what is wrong with it, in plain English. */
+export type FieldMessages = Record<string, string>;
+
+/**
+ * Validation errors about named fields: an entry's values, or a blueprint's field list.
+ * The same 400 INVALID_REQUEST as any other bad request, plus a `fields` object so the
+ * admin can show each message next to its input.
+ */
+export class InvalidFieldsError extends HttpError {
+  readonly fields: FieldMessages;
+
+  constructor(fields: FieldMessages) {
+    const lines = Object.entries(fields).map(([handle, message]) => `- ${handle}: ${message}`);
+    super(400, "INVALID_REQUEST", `Some fields need attention:\n${lines.join("\n")}`, { fields });
+    this.fields = fields;
   }
 }
 
@@ -39,4 +70,26 @@ export function parseRequest<Schema extends z.ZodType>(
     throw new InvalidRequestError(prettifyError(result.error));
   }
   return result.data;
+}
+
+/**
+ * Fastify error handler for errors that carry `details`. Everything else is thrown on
+ * to Fastify's default handler, so ordinary errors look exactly as they always have.
+ */
+export async function sendHttpErrorDetails(
+  error: FastifyError,
+  _request: FastifyRequest,
+  reply: FastifyReply,
+) {
+  if (!(error instanceof HttpError) || !error.details) {
+    throw error;
+  }
+
+  return reply.code(error.statusCode).send({
+    ...error.details,
+    statusCode: error.statusCode,
+    code: error.code,
+    error: STATUS_CODES[error.statusCode] ?? "Error",
+    message: error.message,
+  });
 }

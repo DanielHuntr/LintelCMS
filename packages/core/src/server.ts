@@ -7,6 +7,7 @@ import type { ActiveDatabase } from "./database/active-database.js";
 import type { Database } from "./database/client.js";
 import { DEFAULT_LINTEL_FOLDER, type LintelFolder } from "./database/database-choice.js";
 import { healthRoutes } from "./health/health.routes.js";
+import { sendHttpErrorDetails } from "./http/http-errors.js";
 import { pluginsRoutes } from "./plugins/plugins.routes.js";
 import { generateSetupCode } from "./setup/setup-code.js";
 import { setupRoutes } from "./setup/setup.routes.js";
@@ -63,6 +64,7 @@ export function buildServer(options: ServerOptions) {
   server.decorate("setupCode", options.setupCode ?? generateSetupCode());
   server.decorate("secureCookies", options.secureCookies ?? true);
   server.decorateRequest("signedIn", null);
+  server.setErrorHandler(sendHttpErrorDetails);
 
   server.register(cors, {
     origin: options.adminOrigin,
