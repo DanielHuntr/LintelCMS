@@ -14,7 +14,7 @@ Every behaviour is `(element, params, context) => cleanup`. `context` says wheth
 visitor asked for less motion, is on a low-power device, or has a fine pointer; each
 behaviour answers all three, and also keyboard focus where the pointer matters.
 
-`scripts/bundle-effect-modules.mjs` builds `modules/` into `dist/effects` as ES modules with
+`scripts/bundle-effect-modules.mjs` builds `modules/` into `dist/effect-modules` as ES modules with
 shared chunks and a `manifest.json`; the server serves them from `/_lintel/effects/`.
 The physics module uses the `spring` and `inertia` generators from the `motion` library
 (MIT); see `docs/decisions/0031-effects-library.md`.

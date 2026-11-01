@@ -58,6 +58,8 @@ function canvasFrameScriptFiles(): Plugin {
         const fileName = (request.url ?? "").replace(/^\//, "").split("?")[0] ?? "";
         const folder = effectsFolder();
         if (!folder || !effectFiles().includes(fileName)) return next();
+        // The canvas frame has no origin of its own, and module imports need this header.
+        response.setHeader("access-control-allow-origin", "*");
         response.setHeader(
           "content-type",
           fileName.endsWith(".json") ? "application/json" : "text/javascript; charset=utf-8",

@@ -5,7 +5,7 @@ import type { Browser, Page } from "playwright";
 /**
  * Pages for the effects tests, served from a made-up address so the effect modules load
  * exactly as on a website: the built site runtime (dist/site-runtime.js) reads the page's
- * `lintel-effects` list and imports modules from dist/effects. Run `pnpm build` first.
+ * `lintel-effects` list and imports modules from dist/effect-modules. Run `pnpm build` first.
  */
 
 const dist = fileURLToPath(new URL("../../dist/", import.meta.url));
@@ -16,7 +16,7 @@ interface Manifest {
 }
 
 export function readManifest(): Manifest {
-  return JSON.parse(readFileSync(`${dist}effects/manifest.json`, "utf8")) as Manifest;
+  return JSON.parse(readFileSync(`${dist}effect-modules/manifest.json`, "utf8")) as Manifest;
 }
 
 export interface EffectOnTest {
@@ -80,7 +80,7 @@ export async function openEffectsPage(
     if (path.startsWith("/_lintel/effects/")) {
       return route.fulfill({
         contentType: "text/javascript",
-        body: readFileSync(`${dist}effects/${path.split("/").pop()}`, "utf8"),
+        body: readFileSync(`${dist}effect-modules/${path.split("/").pop()}`, "utf8"),
       });
     }
     const body = path === "/" ? document(html, effects, options) : options.pages?.[path];

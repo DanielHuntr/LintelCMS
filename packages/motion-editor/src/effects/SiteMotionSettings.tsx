@@ -1,6 +1,5 @@
 import type { SiteEffectSettings } from "@lintel/motion";
 import { Select, TextInput } from "../controls/Field.js";
-import { SegmentedControl } from "../controls/SegmentedControl.js";
 import { Slider } from "../controls/Slider.js";
 import { TranslateProvider, useTranslate, type Translate } from "../strings/translate.js";
 
@@ -61,10 +60,14 @@ function Settings({ value, onChange }: SiteMotionSettingsProps) {
       </div>
 
       <div className="flex flex-col gap-3">
-        <SegmentedControl
+        <Select
           label={t("motionEditor.site.transition")}
           value={pageTransition.style}
-          onChange={(style) => set("pageTransition", { style })}
+          onChange={(event) =>
+            set("pageTransition", {
+              style: event.target.value as SiteEffectSettings["pageTransition"]["style"],
+            })
+          }
           options={(["none", "fade", "slide", "wipe", "zoom"] as const).map((style) => ({
             value: style,
             label: t(`motionEditor.site.transition.${style}`),
@@ -133,10 +136,12 @@ function Settings({ value, onChange }: SiteMotionSettingsProps) {
       </div>
 
       <div className="flex flex-col gap-3">
-        <SegmentedControl
+        <Select
           label={t("motionEditor.site.intro")}
           value={intro.style}
-          onChange={(style) => set("intro", { style })}
+          onChange={(event) =>
+            set("intro", { style: event.target.value as SiteEffectSettings["intro"]["style"] })
+          }
           options={(["none", "curtain", "counter", "name"] as const).map((style) => ({
             value: style,
             label: t(`motionEditor.site.intro.${style}`),

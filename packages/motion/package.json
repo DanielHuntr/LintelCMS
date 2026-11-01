@@ -27,7 +27,7 @@
       "development": "./src/effects-catalogue/index.ts",
       "default": "./dist/effects-catalogue/index.js"
     },
-    "./effect-modules/*": "./dist/effects/*"
+    "./effect-modules/*": "./dist/effect-modules/*"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json && node scripts/bundle-site-runtime.mjs && node scripts/bundle-effect-modules.mjs",

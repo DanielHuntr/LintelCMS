@@ -15,7 +15,10 @@ export interface EffectRegistry {
   find(id: string): EffectDefinition | undefined;
   /** Adds an effect. Throws InvalidEffectError if one with the same id is already there. */
   register(definition: EffectDefinition): void;
-  /** Effects that suit an element of this kind ("any" effects suit everything). */
+  /**
+   * Effects that suit an element of this kind, the ones made for it first, then the ones
+   * that suit anything.
+   */
   suiting(kind: ElementKind): readonly EffectDefinition[];
 }
 

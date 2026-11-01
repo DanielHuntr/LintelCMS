@@ -43,5 +43,5 @@ requests no animation frames.
   `registerEffect` let plugins and code do the same, and `registerEffectBehaviour` lets a
   code block provide the behaviour.
 - Effect modules are served from `/_lintel/effects/` (the website) and `/canvas-effects/`
-  (beside the admin, for previews); both read `dist/effects/manifest.json`.
+  (beside the admin, for previews); both read `dist/effect-modules/manifest.json`.
 - Module sizes are committed in `module-sizes.ts`; a test fails when they drift by 10%.

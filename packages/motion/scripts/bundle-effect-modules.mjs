@@ -1,9 +1,9 @@
-// Writes dist/effects: the effect modules, their shared chunks and manifest.json.
+// Writes dist/effect-modules: the effect modules, their shared chunks and manifest.json.
 import { rmSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { buildEffectModules } from "./effect-modules.mjs";
 
-const outdir = fileURLToPath(new URL("../dist/effects/", import.meta.url));
+const outdir = fileURLToPath(new URL("../dist/effect-modules/", import.meta.url));
 rmSync(outdir, { recursive: true, force: true });
 // Gzipped sizes are measured on the in-memory build, then the same build is written.
 const measured = await buildEffectModules();

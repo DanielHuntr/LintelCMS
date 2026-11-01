@@ -103,7 +103,7 @@ describe("the Effects tab", () => {
     renderBuilder({ value: defaultSiteEffectSettings, onChange });
     await user.click(screen.getByRole("tab", { name: "Animate" }));
     expect(screen.getByRole("heading", { name: "Motion across the site" })).toBeInTheDocument();
-    await user.click(screen.getByRole("radio", { name: "Slide" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Page transition" }), "slide");
     expect(onChange).toHaveBeenLastCalledWith(
       expect.objectContaining({ pageTransition: { style: "slide", duration: 450 } }),
     );

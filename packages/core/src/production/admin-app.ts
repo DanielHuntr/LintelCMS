@@ -62,6 +62,11 @@ export async function adminApp(server: FastifyInstance, options: AdminAppOptions
           : `public, max-age=${ONE_HOUR_IN_SECONDS}`,
       );
       response.header("x-content-type-options", "nosniff");
+      // The builder's canvas is a frame without an origin of its own, and it imports the
+      // effect modules as ES modules, which needs this. They are public, unchanging code.
+      if (path.startsWith(join(options.buildFolder, "canvas-effects"))) {
+        response.header("access-control-allow-origin", "*");
+      }
     },
   });
 
