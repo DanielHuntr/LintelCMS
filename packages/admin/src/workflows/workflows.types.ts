@@ -146,6 +146,7 @@ export interface EntryReview {
   state: "not_submitted" | "in_review" | "approved" | "changes_requested";
   changedSinceApproval: boolean;
   reviewerRole: string | null;
+  reviewerRoleName: string | null;
   pendingApprovalId: string | null;
   canReview: boolean;
   canSkipReview: boolean;

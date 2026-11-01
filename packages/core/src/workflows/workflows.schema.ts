@@ -151,6 +151,8 @@ export const entryReviewSchema = z.object({
   /** Saved since it was approved, so it needs approving again. */
   changedSinceApproval: z.boolean(),
   reviewerRole: z.string().nullable(),
+  /** The role's name, such as "Editor", for people to read. */
+  reviewerRoleName: z.string().nullable(),
   pendingApprovalId: z.uuid().nullable(),
   canReview: z.boolean(),
   /** Whether this person may publish without a review (they may do everything). */

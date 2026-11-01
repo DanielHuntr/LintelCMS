@@ -171,7 +171,11 @@ describe("the builder", () => {
         name: "When: When an entry is published in Blog posts",
       }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Call https:\/\/hooks\.slack\.com/)).toBeInTheDocument();
+    expect(
+      screen.getByRole("article", {
+        name: /^Call a web address: Call https:\/\/hooks\.slack\.com/,
+      }),
+    ).toBeInTheDocument();
 
     const addButtons = screen.getAllByRole("button", { name: "Add a step here" });
     await userEvent.click(addButtons.at(-1) as HTMLElement);
@@ -200,6 +204,7 @@ describe("the review panel", () => {
     state: "in_review",
     changedSinceApproval: false,
     reviewerRole: "editor",
+    reviewerRoleName: "Editor",
     pendingApprovalId: "a1",
     canReview: true,
     canSkipReview: false,

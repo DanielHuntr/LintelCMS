@@ -274,7 +274,7 @@ export const workflowStrings = {
   "review.state.changes_requested": "Changes requested",
   "review.description.not_submitted": "{collection} need approval before they are published.",
   "review.description.changed": "It changed after it was approved, so it needs another review.",
-  "review.description.in_review": "Waiting for someone with the {role} role.",
+  "review.description.in_review": "Waiting for someone with the {role} role to review it.",
   "review.description.approved": "Approved. It can be published.",
   "review.description.changes_requested": "Make the changes asked for, then submit it again.",
   "review.noteLabel": "Note for the reviewer",

@@ -169,6 +169,8 @@ function describeState(review: EntryReview, collectionName: string): string {
   if (review.state === "not_submitted")
     return t("review.description.not_submitted", { collection: collectionName });
   if (review.state === "in_review")
-    return t("review.description.in_review", { role: review.reviewerRole ?? "" });
+    return t("review.description.in_review", {
+      role: review.reviewerRoleName ?? review.reviewerRole ?? "",
+    });
   return t(`review.description.${review.state}`);
 }

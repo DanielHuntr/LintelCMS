@@ -25,6 +25,7 @@ import type {
 } from "../workflows.schema.js";
 import { createWorkflow } from "../workflows.service.js";
 import type { WorkflowRow } from "../workflows.table.js";
+import { listRoles } from "../workflow-people.repository.js";
 import { listApprovalRowsForEntry } from "./approvals.repository.js";
 import { mayAnswer } from "./approvals.service.js";
 import { buildContentApprovalSteps, readContentApprovalSteps } from "./content-approval.steps.js";
@@ -159,6 +160,8 @@ export async function findEntryReview(
   const latestRun = runs.at(-1);
   const latestApproval = approvals.filter((approval) => approval.runId === latestRun?.id).at(-1);
   const reviewerRole = workflow ? readContentApprovalSteps(workflow.steps).reviewerRole : null;
+  const roles = reviewerRole ? await listRoles(database, DEFAULT_TENANT_ID) : [];
+  const reviewerRoleName = roles.find((role) => role.handle === reviewerRole)?.name ?? reviewerRole;
   const stillGoing = latestRun && ["queued", "running", "waiting"].includes(latestRun.status);
 
   let state: EntryReviewResponse["state"] = "not_submitted";
@@ -178,6 +181,7 @@ export async function findEntryReview(
     state,
     changedSinceApproval,
     reviewerRole,
+    reviewerRoleName,
     pendingApprovalId: pending?.id ?? null,
     canReview: pending ? await mayAnswer(database, signedIn, pending.role) : false,
     canSkipReview: signedIn.permissions.includes("*"),
