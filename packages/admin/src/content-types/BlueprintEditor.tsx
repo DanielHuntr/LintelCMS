@@ -8,10 +8,11 @@ import { isSameValue } from "../content/sameValue.js";
 import { BackLink } from "../design/BackLink.js";
 import { Button } from "../design/Button.js";
 import { ConfirmDialog } from "../design/ConfirmDialog.js";
+import { useCanChangeContentModel } from "../content-model-sync/contentModelSync.queries.js";
+import { ManagedInCodeBanner } from "../content-model-sync/ManagedInCodeBanner.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { TextField } from "../design/TextField.js";
 import { t, tCount } from "../i18n/strings.js";
-import { useCan } from "../session/SessionContext.js";
 import { AddFieldSheet } from "./AddFieldSheet.js";
 import {
   blueprintDraftReducer,
@@ -30,7 +31,7 @@ import { FieldSettingsSheet } from "./FieldSettingsSheet.js";
 /** The blueprint builder: a content type's name and its ordered list of fields. */
 export function BlueprintEditor({ blueprint }: { blueprint: Blueprint }) {
   const queryClient = useQueryClient();
-  const canEdit = useCan("blueprints:update");
+  const canEdit = useCanChangeContentModel("blueprints:update");
   const fieldtypes = useFieldtypes();
   const [saved, setSaved] = useState(() => draftFromBlueprint(blueprint));
   const [state, dispatch] = useReducer(blueprintDraftReducer, saved);
@@ -114,6 +115,7 @@ export function BlueprintEditor({ blueprint }: { blueprint: Blueprint }) {
           )
         }
       />
+      <ManagedInCodeBanner />
 
       {saveError && (
         <p

@@ -6,6 +6,8 @@ import { apiTokensRoutes } from "./api-tokens/api-tokens.routes.js";
 import { authRoutes } from "./auth/auth.routes.js";
 import { blueprintsRoutes } from "./blueprints/blueprints.routes.js";
 import { collectionsRoutes } from "./collections/collections.routes.js";
+import type { ContentModelOptions } from "./content-model-sync/model-sync.service.js";
+import { registerContentModelSync } from "./content-model-sync/register-content-model-sync.js";
 import type { ActiveDatabase } from "./database/active-database.js";
 import type { Database } from "./database/client.js";
 import { DEFAULT_LINTEL_FOLDER, type LintelFolder } from "./database/database-choice.js";
@@ -161,6 +163,8 @@ export interface ServerOptions {
   email?: EmailSender;
   /** The built-in website: its address and any templates of your own. Off by default. */
   website?: WebsiteOptions;
+  /** Content model as code (see src/content-model-sync). Off when left out, as in tests. */
+  contentModel?: ContentModelOptions;
 }
 
 export interface WebhookOptions {
@@ -272,6 +276,7 @@ export function buildServer(options: ServerOptions) {
   server.register(emailRoutes);
   server.register(websiteRoutes);
   server.register(pagesRoutes);
+  registerContentModelSync(server, options.contentModel);
 
   if (options.runScheduledJobs ?? true) {
     registerScheduledJobs(server);

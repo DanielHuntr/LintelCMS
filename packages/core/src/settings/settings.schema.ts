@@ -42,8 +42,9 @@ export const settingSchemas = {
   /** Search engine defaults from the SEO plugin (see src/seo). */
   seoDefaults: seoDefaultsSchema,
   /**
-   * The website's public address, such as https://www.example.com, for "View page" in the
-   * admin and full addresses in the sitemap. Empty until someone connects a site.
+   * The website's public address, such as https://www.example.com, typed in Settings → Your
+   * website: the one address the website, "View page", the sitemap and canonical addresses
+   * use (see src/sites). Empty means the built-in website's own address, if there is one.
    */
   siteAddress: z.string(),
   /** The site's name, from the "What's your site called?" setup step. Null until then. */
@@ -52,6 +53,8 @@ export const settingSchemas = {
   website: websiteSettingsSchema,
   /** What happens to scripts in the page builder's code blocks when a page is saved (see src/pages). */
   builderCustomScripts: z.enum(customScriptRules),
+  /** What each content model unit was when files and database last agreed (src/content-model-sync). */
+  contentModelSyncBase: z.record(z.string(), z.string()),
 };
 
 export type SettingKey = keyof typeof settingSchemas;
@@ -69,4 +72,5 @@ export const settingDefaults: { [Key in SettingKey]: SettingValue<Key> } = {
   siteName: null,
   website: defaultWebsiteSettings,
   builderCustomScripts: "removeScripts",
+  contentModelSyncBase: {},
 };

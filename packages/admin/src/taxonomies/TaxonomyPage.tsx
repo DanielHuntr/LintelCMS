@@ -11,6 +11,7 @@ import { ConfirmDialog } from "../design/ConfirmDialog.js";
 import { EmptyState } from "../design/EmptyState.js";
 import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
+import { useCanChangeContentModel } from "../content-model-sync/contentModelSync.queries.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Menu } from "../design/Menu.js";
@@ -44,7 +45,7 @@ function LoadedTaxonomyPage({ handle }: { handle: string }) {
   const taxonomy = useTaxonomy(handle);
   const terms = useTerms(handle);
   const canEditTerms = useCan("terms:update");
-  const canEditTaxonomy = useCan("taxonomies:update");
+  const canEditTaxonomy = useCanChangeContentModel("taxonomies:update");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [editing, setEditing] = useState<Editing>(null);

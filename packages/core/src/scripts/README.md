@@ -3,11 +3,12 @@
 Command-line tasks. Each script only reads its input and calls a service, so the rules
 stay in the feature folders. Run them from the repository root:
 
-| Script              | Command                                             | What it does                                       |
-| ------------------- | --------------------------------------------------- | -------------------------------------------------- |
-| `create-admin.ts`   | `pnpm create-admin --email <email> --name "<name>"` | Creates an Owner (role `["*"]`)                    |
-| `reset-password.ts` | `pnpm reset-password --email <email>`               | New password for a user; signs them out everywhere |
-| `migrate.ts`        | `pnpm db:migrate`                                   | Creates or updates the tables now                  |
+| Script              | Command                                             | What it does                                                                         |
+| ------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `create-admin.ts`   | `pnpm create-admin --email <email> --name "<name>"` | Creates an Owner (role `["*"]`)                                                      |
+| `reset-password.ts` | `pnpm reset-password --email <email>`               | New password for a user; signs them out everywhere                                   |
+| `migrate.ts`        | `pnpm db:migrate`                                   | Creates or updates the tables now                                                    |
+| `model.ts`          | `pnpm --filter @lintel/core model <command>`        | Content model as code: pull, push, diff, types, check (see `src/content-model-sync`) |
 
 Most people never need `create-admin`: the setup screen creates the first admin. Nor
 `db:migrate`: the server migrates on every start.

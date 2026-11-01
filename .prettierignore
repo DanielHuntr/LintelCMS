@@ -6,3 +6,6 @@ packages/core/migrations
 .next
 .astro
 next-env.d.ts
+# Written by `model types`, exactly as the content model check expects it
+starters/nextjs/lib/lintel.generated.ts
+generated

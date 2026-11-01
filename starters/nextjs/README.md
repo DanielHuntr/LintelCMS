@@ -81,17 +81,28 @@ Drafts never appear. Press **Publish** in Lintel, wait up to a minute, and reloa
 Say you add a "Reading time" number field to Blog posts in Lintel (**Settings**, then
 **Content types**), with the handle `reading_time`.
 
-1. Add it to `PostData` in `lib/content-types.ts`: `reading_time: number | null;`
+1. Update the types from your content model. From the Lintel folder, with Lintel stopped
+   (or using Postgres):
+
+   ```bash
+   pnpm --filter @lintel/core model types --from database --out starters/nextjs/lib/lintel.generated.ts
+   ```
+
+   If your site keeps its content model in code (a `content-model` folder), leave out
+   `--from database`. `PostData` now has `reading_time: number | null`.
+
 2. Show it, for example in `app/blog/[slug]/page.tsx`:
    `{post.data.reading_time && <p>{post.data.reading_time} min read</p>}`
+
+TypeScript tells you everywhere a renamed or removed field is still used.
 
 ### Adding a content type
 
 Say you make "Recipes" in Lintel, with the handle `recipes`.
 
-1. Describe its fields in `lib/content-types.ts`, like `PostData`.
+1. Update the types as above. `getEntry("recipes", slug)` now knows a recipe's fields.
 2. Copy `app/blog/[slug]/page.tsx` to `app/recipes/[slug]/page.tsx`, and change
-   `getEntry<PostData>("posts", slug)` to `getEntry<RecipeData>("recipes", slug)`.
+   `getEntry("posts", slug)` to `getEntry("recipes", slug)`.
 3. For a list, copy `app/blog/BlogIndex.tsx` the same way.
 
 ## 5. Publishing changes straight away (optional)
@@ -124,14 +135,15 @@ then made on their first visit instead.
 
 ## How it works
 
-| File                          | What it does                                                               |
-| ----------------------------- | -------------------------------------------------------------------------- |
-| `lib/lintel.ts`               | `getEntry` and `listEntries`: typed reads from Lintel, cached for a minute |
-| `lib/content-types.ts`        | The fields of Pages and Blog posts                                         |
-| `lib/images.ts`               | Image addresses, resized and cropped by Lintel                             |
-| `components/LintelImage.tsx`  | A responsive image that loads the right size                               |
-| `components/RichText.tsx`     | Shows a rich text field                                                    |
-| `app/api/revalidate/route.ts` | Refreshing pages straight away                                             |
+| File                          | What it does                                                                |
+| ----------------------------- | --------------------------------------------------------------------------- |
+| `lib/lintel.ts`               | `getEntry` and `listEntries`: typed reads from Lintel, cached for a minute  |
+| `lib/lintel.generated.ts`     | Types and a client made by `model types` from the content model; don't edit |
+| `lib/content-types.ts`        | Short names for the generated types                                         |
+| `lib/images.ts`               | Image addresses, resized and cropped by Lintel                              |
+| `components/LintelImage.tsx`  | A responsive image that loads the right size                                |
+| `components/RichText.tsx`     | Shows a rich text field                                                     |
+| `app/api/revalidate/route.ts` | Refreshing pages straight away                                              |
 
 It reads Lintel's public delivery API, which only ever serves published content. The
 full reference is in Lintel's docs: "Building with Lintel", then "Delivery API".

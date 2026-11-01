@@ -8,11 +8,12 @@ import { Button } from "../design/Button.js";
 import { EmptyState } from "../design/EmptyState.js";
 import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
+import { useCanChangeContentModel } from "../content-model-sync/contentModelSync.queries.js";
+import { ManagedInCodeBanner } from "../content-model-sync/ManagedInCodeBanner.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { t, tCount } from "../i18n/strings.js";
-import { useCan } from "../session/SessionContext.js";
 import { MenuSettingsSheet } from "./MenuSettingsSheet.js";
 import { createMenu } from "./menus.api.js";
 import { menuKeys, useMenus } from "./menus.queries.js";
@@ -21,7 +22,7 @@ import { Page } from "../design/Page.js";
 /** /content/navigation: the site's menus, such as the main menu and the footer links. */
 export function MenusPage() {
   const menus = useMenus();
-  const canCreate = useCan("navigation:update");
+  const canCreate = useCanChangeContentModel("navigation:update");
   const [isCreating, setIsCreating] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -52,6 +53,7 @@ export function MenusPage() {
         subtitle={t("menus.subtitle")}
         actions={menus.data?.length === 0 ? undefined : newButton("tinted")}
       />
+      <ManagedInCodeBanner />
       {menus.isError && <LoadError error={menus.error} onRetry={() => void menus.refetch()} />}
       {menus.isPending && (
         <LoadingRegion label={t("menus.loading")}>

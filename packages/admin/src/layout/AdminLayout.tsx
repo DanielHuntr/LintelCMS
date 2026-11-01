@@ -1,5 +1,6 @@
 import { Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { useContentModelEvents } from "../content-model-sync/useContentModelEvents.js";
 import { HelpLauncher } from "../help/HelpLauncher.js";
 import { t } from "../i18n/strings.js";
 import { documentTitleFor } from "../navigation/documentTitle.js";
@@ -38,6 +39,8 @@ export function AdminLayout({
     document.title = documentTitleFor(pathname, siteName);
   }, [pathname, siteName]);
 
+  // Screens showing content types reload when a developer changes the content model files.
+  useContentModelEvents();
   return (
     <div className="min-h-screen bg-background text-label">
       <a

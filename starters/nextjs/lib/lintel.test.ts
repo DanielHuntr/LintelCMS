@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PostData } from "./content-types";
 import {
   getEntry,
   LintelRequestError,
@@ -13,7 +12,14 @@ const post = {
   slug: "hello-world",
   url: "/blog/hello-world",
   publishedAt: "2026-10-30T09:15:00.000Z",
-  data: { title: "Hello, world", excerpt: null, featured_image: null, body: null, category: null },
+  data: {
+    title: "Hello, world",
+    excerpt: null,
+    featured_image: null,
+    body: null,
+    categories: null,
+    tags: null,
+  },
 };
 
 const fetchMock = vi.fn<typeof fetch>();
@@ -38,7 +44,7 @@ describe("getEntry", () => {
   it("reads one published entry, cached for a minute and tagged for revalidation", async () => {
     fetchMock.mockResolvedValue(Response.json(post));
 
-    const entry = await getEntry<PostData>("posts", "hello-world");
+    const entry = await getEntry("posts", "hello-world");
 
     expect(entry?.data.title).toBe("Hello, world");
     expect(lastRequest().url).toBe("https://cms.example.com/delivery/posts/hello-world");
@@ -84,7 +90,7 @@ describe("listEntries", () => {
   it("asks for one page of a collection", async () => {
     fetchMock.mockResolvedValue(Response.json({ items: [post], total: 1 }));
 
-    const list = await listEntries<PostData>("posts", { page: 2, perPage: 10 });
+    const list = await listEntries("posts", { page: 2, perPage: 10 });
 
     expect(list?.total).toBe(1);
     expect(lastRequest().url).toBe("https://cms.example.com/delivery/posts?page=2&perPage=10");

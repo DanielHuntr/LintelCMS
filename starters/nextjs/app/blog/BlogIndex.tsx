@@ -2,14 +2,13 @@ import { notFound } from "next/navigation";
 import { LintelUnavailable, loadFromLintel } from "../../components/LintelUnavailable";
 import { Pagination } from "../../components/Pagination";
 import { PostCard } from "../../components/PostCard";
-import type { PostData } from "../../lib/content-types";
 import { listEntries } from "../../lib/lintel";
 import { POSTS_PER_PAGE } from "../../lib/site";
 
 /** One page of the blog, newest first. Shared by /blog and /blog/page/2... */
 export async function BlogIndex({ page }: { page: number }) {
   const loaded = await loadFromLintel(() =>
-    listEntries<PostData>("posts", { page, perPage: POSTS_PER_PAGE }),
+    listEntries("posts", { page, perPage: POSTS_PER_PAGE }),
   );
   if (loaded.unreachable) return <LintelUnavailable error={loaded.unreachable} />;
   const posts = loaded.result;

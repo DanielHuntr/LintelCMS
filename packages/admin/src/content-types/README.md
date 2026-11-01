@@ -36,3 +36,9 @@ an entry has) plus a collection (where its entries live). People only ever see "
 `createContentType.ts` then creates the blueprint (with just a title) and the collection, and
 the builder opens so fields can be added. If the collection step fails, a retry skips the
 blueprint that was already made.
+
+## Managed in code
+
+When the site keeps its content model in files (see `src/content-model-sync`), the list
+shows `ModelSyncNotices` and `ManagedInCodeBanner` under the title, and `New content type`
+and the builder's Save are hidden while editing is switched off there.

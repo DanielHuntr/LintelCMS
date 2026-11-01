@@ -1,4 +1,4 @@
-import { createEmptyPage } from "@lintel/builder-model";
+import { createEmptyPage, createNode, standardCatalogue } from "@lintel/builder-model";
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
@@ -143,8 +143,12 @@ describe("the built-in website", () => {
   it("shows a page's design from the page builder in place of its sections", async () => {
     const design = createEmptyPage();
     design.root.children = [
-      { id: "h1", type: "heading", props: { text: "Bread, baked at dawn", level: 1 } },
-    ] as typeof design.root.children;
+      createNode(
+        { type: "heading", props: { text: "Bread, baked at dawn", level: 1 } },
+        standardCatalogue,
+        () => "h1",
+      ),
+    ];
     await publish("pages", { title: "Designed", design }, "designed");
 
     const response = await visit("/designed");

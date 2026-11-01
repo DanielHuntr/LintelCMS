@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { loadConfig, loadProjectEnvFile } from "./config.js";
+import { contentModelOptionsFromConfig } from "./content-model-sync/content-model-config.js";
 import { describeActiveDatabase } from "./database/active-database.js";
 import { loadInstalledPlugins } from "./plugins/installed-plugins.js";
 import { buildServer } from "./server.js";
@@ -31,6 +32,7 @@ await runWithFriendlyErrors(async () => {
     trustProxy: config.TRUST_PROXY,
     plugins: installedPlugins,
     website: { builtInSiteUrl: config.SITE_ENABLED ? siteUrl : null },
+    contentModel: contentModelOptionsFromConfig(config),
     logger: true,
   });
   server.addHook("onClose", () => activeDatabase.close());

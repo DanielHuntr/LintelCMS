@@ -30,6 +30,11 @@
       "development": "./src/media/focal-crop.ts",
       "default": "./dist/media/focal-crop.js"
     },
+    "./content-model": {
+      "types": "./dist/content-model-sync/content-model.d.ts",
+      "development": "./src/content-model-sync/content-model.ts",
+      "default": "./dist/content-model-sync/content-model.js"
+    },
     "./seo-titles": {
       "types": "./dist/seo/seo-titles.d.ts",
       "development": "./src/seo/seo-titles.ts",
@@ -55,7 +60,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/scripts/migrate.ts",
     "create-admin": "tsx src/scripts/create-admin.ts",
-    "reset-password": "tsx src/scripts/reset-password.ts"
+    "reset-password": "tsx src/scripts/reset-password.ts",
+    "model": "tsx src/scripts/model.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.14",
@@ -79,10 +85,12 @@
     "file-type": "^22.3.0",
     "graphql": "^16.14.2",
     "graphql-yoga": "^6.0.1",
+    "jiti": "^2.7.0",
     "markdown-it": "^14.3.3",
     "postgres": "^4.0.0",
     "qrcode": "^1.5.4",
     "sharp": "^0.35.5",
+    "yaml": "^2.9.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {

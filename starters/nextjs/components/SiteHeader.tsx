@@ -1,5 +1,4 @@
 import Link from "next/link";
-import type { PageData } from "../lib/content-types";
 import { listEntries } from "../lib/lintel";
 import { HOME_PAGE_SLUG, siteName } from "../lib/site";
 
@@ -28,7 +27,7 @@ export async function SiteHeader() {
 async function loadNavigation(): Promise<{ href: string; label: string }[]> {
   try {
     const [pages, posts] = await Promise.all([
-      listEntries<PageData>("pages", { perPage: 6 }),
+      listEntries("pages", { perPage: 6 }),
       listEntries("posts", { perPage: 1 }),
     ]);
     const pageLinks = (pages?.items ?? [])
