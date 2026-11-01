@@ -29,6 +29,7 @@ The control panel: a React app that talks to `@lintel/core`.
 | `src/i18n`          | Every word the admin shows (`t("key")`)                            |
 | `src/help`          | The "?" button, help panel and Help section (from the docs)        |
 | `src/design-review` | `/design-system`: every component in light and dark (dev only)     |
+| `src/security`      | The Content-Security-Policy and headers for the built admin        |
 
 Data comes through TanStack Query (`src/api/queryClient.ts`): screens show skeletons while
 loading and `LoadError` (with Try again) when something fails.

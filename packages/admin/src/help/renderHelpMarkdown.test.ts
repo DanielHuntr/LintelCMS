@@ -13,6 +13,17 @@ function render(markdown: string): HTMLElement {
 }
 
 describe("renderHelpMarkdown", () => {
+  it("shows raw HTML as text and drops script links", () => {
+    const container = render(
+      'Hi <img src=x onerror="alert(1)"> and [click](javascript:alert(1)) or [data](data:text/html,x)',
+    );
+
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.querySelector("a")).toBeNull();
+    expect(container.textContent).toContain("click");
+    expect(container.textContent).toContain('<img src=x onerror="alert(1)">');
+  });
+
   it("keeps links to other help pages inside the panel", () => {
     const link = render("See [Media](/using/media/#uploading).").querySelector("a");
 

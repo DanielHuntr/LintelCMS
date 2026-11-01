@@ -34,6 +34,9 @@ export function headingId(text: string): string {
     .replace(/\s/g, "-");
 }
 
+/** Tags without attributes that only change how text looks. */
+const PLAIN_TAG = /^<\/?(kbd|br|strong|em|code|sub|sup|p)\s*\/?>$/i;
+
 export function renderHelpMarkdown(markdown: string, options: RenderOptions): string {
   const marked = new Marked({
     gfm: true,
@@ -44,8 +47,15 @@ export function renderHelpMarkdown(markdown: string, options: RenderOptions): st
         const level = Math.min(depth - 1 + (options.titleLevel ?? 2), 6);
         return `<h${level} id="${headingId(text)}">${content}</h${level}>\n`;
       },
+      // The docs are ours, but the panel runs inside the admin with an editor's session, so
+      // raw HTML is shown as text, apart from a few plain tags such as <kbd>, and links
+      // can't be javascript: or data: addresses.
+      html({ text }: Tokens.HTML | Tokens.Tag) {
+        return PLAIN_TAG.test(text.trim()) ? text : escapeAttribute(text);
+      },
       link({ href, title, tokens }: Tokens.Link) {
         const content = this.parser.parseInline(tokens);
+        if (!isSafeLink(href)) return content;
         const titleAttribute = title ? ` title="${escapeAttribute(title)}"` : "";
         const helpSlug = /^\/(using(?:\/[^#]*)?)$/.exec(href.split("#")[0] ?? "");
         if (helpSlug?.[1] !== undefined) {
@@ -74,4 +84,9 @@ function escapeAttribute(value: string): string {
     .replace(/"/g, "&quot;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
+}
+
+/** Web and email addresses, and paths and anchors within the docs. */
+function isSafeLink(href: string): boolean {
+  return /^(https?:|mailto:|\/|#)/i.test(href.trim()) || !/^[a-z][a-z0-9+.-]*:/i.test(href.trim());
 }
