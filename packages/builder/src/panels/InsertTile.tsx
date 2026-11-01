@@ -77,15 +77,18 @@ export function InsertTile({
         className={classNames(
           "flex w-full min-w-0 rounded-control text-start transition-colors duration-150 hover:bg-fill focus-visible:focus-ring",
           look === "section" && "flex-col gap-1.5 p-1.5",
-          look === "element" && "h-10 items-center gap-2 pe-7 ps-1.5",
+          look === "element" && "min-h-10 items-center gap-2 py-1 pe-7 ps-1.5",
           look === "compact" && "flex-col items-center gap-1 px-1 py-1.5",
         )}
       >
         <TileArt item={item} look={look} />
         <span
           className={classNames(
-            "min-w-0 truncate font-medium text-label",
-            look === "compact" ? "w-full text-center text-[11px]" : "text-caption",
+            // Names are shown in full, wrapping onto a second line rather than being cut off.
+            "min-w-0 font-medium break-words text-label",
+            look === "compact"
+              ? "w-full text-center text-[11px] leading-tight"
+              : "text-caption leading-snug",
           )}
         >
           {item.label}

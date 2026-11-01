@@ -37,6 +37,7 @@ export async function renderPreview(
     locale,
     localPath,
     path,
+    query: { page: 1 },
   });
 
   let entryId: string;
@@ -66,7 +67,7 @@ export async function renderPreview(
     );
   }
   const draftRequest = await request(draft.entry.locale);
-  const draftPath = localiseUrl(draft.entry.url ?? path, draft.entry.locale, context.defaultLocale);
+  const draftPath = localiseUrl(draft.entry.url ?? path, draft.entry.locale, context);
   return renderEntry({ ...draftRequest, path: draftPath }, draft.collectionHandle, draft.entry, {
     private: true,
   });

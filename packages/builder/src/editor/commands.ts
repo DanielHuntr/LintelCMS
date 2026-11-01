@@ -346,6 +346,29 @@ function withMovedMarks(
   return next;
 }
 
+/** Shows a field of the current entry in a prop, or (with `null`) types it in again. */
+export function changeBinding(
+  context: CommandContext,
+  nodeId: string,
+  prop: string,
+  fieldPath: string | null,
+  propLabel: string,
+): CommandResult {
+  return changeNode(
+    context,
+    nodeId,
+    context.text("pageBuilder.history.changed", { name: propLabel }),
+    (node) => {
+      const bindings = { ...node.bindings };
+      if (fieldPath) bindings[prop] = fieldPath;
+      else delete bindings[prop];
+      const changed: PageNode = { ...node, bindings };
+      if (Object.keys(bindings).length === 0) delete changed.bindings;
+      return changed;
+    },
+  );
+}
+
 export function changeStyles(
   context: CommandContext,
   nodeId: string,

@@ -1,4 +1,4 @@
-import { brandInvitation, contactDetails, questions } from "../sections/closers.js";
+import { brandInvitation, contactDetails, contactForm, questions } from "../sections/closers.js";
 import { featureCards, steps, story } from "../sections/features.js";
 import { pageHeader, splitHero } from "../sections/heroes.js";
 import { pricing, quoteCards } from "../sections/social-proof.js";
@@ -131,6 +131,11 @@ export const localServiceSite: StarterSite = {
             { heading: "Get a price", text: "We reply the same day with a fixed price." },
             { heading: "Pick a time", text: "Choose a two-hour window that suits you." },
           ],
+        }),
+        contactForm({
+          heading: "Ask for a price",
+          text: "Tell us about the job and we’ll reply the same day.",
+          formHandle: "contact",
         }),
         contactDetails({
           heading: "Get in touch",

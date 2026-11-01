@@ -3,6 +3,8 @@ import {
   buildStarterPage,
   createRandomNodeId,
   findStarterSite,
+  formsUsedBy,
+  type StarterPageOptions,
   type StarterPage,
   type StarterSite,
 } from "@lintel/builder-model";
@@ -20,6 +22,9 @@ import { findNavigation, updateNavigation } from "../navigation/navigation.servi
 import type { Site } from "../sites/sites.table.js";
 import { NavigationNotFoundError } from "../navigation/navigation.errors.js";
 import { pageComponentCatalogue } from "../pages/page-components.js";
+import { createForm, listForms } from "../forms/forms.service.js";
+import { type FormTemplateId, formTemplateIds } from "../forms/form-templates.js";
+import { findEnabledPluginIds } from "../plugins/plugins.service.js";
 import { hasPermission } from "../roles/permissions.js";
 import { updateWebsiteRequestSchema } from "../website/website.schema.js";
 import { updateWebsite } from "../website/website.service.js";
@@ -46,6 +51,8 @@ import type {
 
 export interface StarterSiteContext extends EntryChangeContext {
   permissions: readonly string[];
+  /** Who is starting from the template, for forms made for it. */
+  authorEmail?: string;
   /** The site the editor is working on; its Pages and main menu get the template. */
   site?: Site | undefined;
   templates: readonly SiteTemplate[];
@@ -63,10 +70,17 @@ export async function applyStarterSite(
     throw new StarterSiteNotFoundError(starterSiteId);
   }
   await ensurePagesCollection(database);
+  const enabledPlugins = await findEnabledPluginIds(database);
+  const forms = enabledPlugins.includes("forms")
+    ? await ensureTemplateForms(database, site, context)
+    : {};
   const mayPublish = request.publish && hasPermission(context.permissions, "entries:publish");
   const pages: AppliedStarterPage[] = [];
   for (const page of site.pages) {
-    const created = await createStarterPage(database, page, context, context.site);
+    const created = await createStarterPage(database, page, context, context.site, {
+      enabledPlugins,
+      forms,
+    });
     const published = mayPublish ? await publishEntry(database, created.id, context) : created;
     pages.push({
       entryId: created.id,
@@ -98,11 +112,12 @@ async function createStarterPage(
   page: StarterPage,
   context: EntryChangeContext,
   site: Site | undefined,
+  options: StarterPageOptions,
 ): Promise<EntryResponse> {
   const data = {
     title: page.title,
     summary: page.summary,
-    design: buildStarterPage(page, pageComponentCatalogue, createRandomNodeId),
+    design: buildStarterPage(page, pageComponentCatalogue, createRandomNodeId, options),
   };
   for (let attempt = 1; ; attempt += 1) {
     const slug = attempt === 1 ? page.slug : `${page.slug}-${attempt}`;
@@ -115,6 +130,37 @@ async function createStarterPage(
       }
     }
   }
+}
+
+/**
+ * The forms a template's pages show (a contact form, say), made from Forms' template of the
+ * same name when the site has no form with that handle yet, so the page has a working form
+ * straight away. Answers the template's handle → the form's handle.
+ */
+async function ensureTemplateForms(
+  database: DatabaseOrTransaction,
+  site: StarterSite,
+  context: StarterSiteContext,
+): Promise<Record<string, string>> {
+  const wanted = [...new Set(site.pages.flatMap((page) => formsUsedBy(page)))];
+  if (wanted.length === 0) return {};
+  const existing = new Set((await listForms(database)).forms.map((form) => form.handle));
+  const handles: Record<string, string> = {};
+  for (const handle of wanted) {
+    if (!existing.has(handle)) {
+      if (!context.authorId || !hasPermission(context.permissions, "forms:update")) continue;
+      const template = (formTemplateIds as readonly string[]).includes(handle)
+        ? (handle as FormTemplateId)
+        : "blank";
+      await createForm(
+        database,
+        { name: "Contact", handle, template },
+        { id: context.authorId, email: context.authorEmail ?? "" },
+      );
+    }
+    handles[handle] = handle;
+  }
+  return handles;
 }
 
 async function applyTheme(

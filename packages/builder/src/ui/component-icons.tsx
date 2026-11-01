@@ -18,10 +18,11 @@ import {
   Rows3,
   Square,
 } from "lucide-react";
+import { findSiteIcon } from "../render/elements/icon-set.js";
 
 /**
  * The icons components name in their definitions (`icon: "heading"`), in one visible list.
- * Only these are bundled; an unknown name falls back to a plain box.
+ * The element library's icons come from the site's icon set; an unknown name is a plain box.
  */
 const componentIcons: Record<string, LucideIcon> = {
   file: File,
@@ -42,7 +43,7 @@ const componentIcons: Record<string, LucideIcon> = {
 };
 
 export function componentIcon(name: string | undefined): LucideIcon {
-  return (name && componentIcons[name]) || Box;
+  return (name && (componentIcons[name] ?? findSiteIcon(name))) || Box;
 }
 
 /** A component's icon, decorative: the text beside it is the label. */

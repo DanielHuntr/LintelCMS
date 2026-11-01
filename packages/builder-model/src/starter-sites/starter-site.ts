@@ -45,17 +45,66 @@ export interface StarterSite {
 }
 
 /** A starter page as a page design, with fresh ids for every element. */
+/**
+ * What a site has switched on, for the parts of a template that need a plugin: a section
+ * with a form needs Forms, and `forms` says which form fills it (the template's own form
+ * handle, such as "contact", to the handle of the form made for it).
+ */
+export interface StarterPageOptions {
+  enabledPlugins?: readonly string[];
+  forms?: Readonly<Record<string, string>>;
+}
+
 export function buildStarterPage(
   page: StarterPage,
   catalogue: ComponentCatalogue,
   createId: CreateNodeId,
+  options: StarterPageOptions = {},
 ): PageDocument {
   const empty = createEmptyPage();
+  const enabled = options.enabledPlugins ?? [];
+  const usable = (blueprint: NodeBlueprint): boolean => {
+    const plugin = catalogue.find(blueprint.type)?.requiresPlugin;
+    return (!plugin || enabled.includes(plugin)) && (blueprint.children ?? []).every(usable);
+  };
   return {
     ...empty,
     root: {
       ...empty.root,
-      children: page.sections.map((section) => createNode(section, catalogue, createId)),
+      children: page.sections
+        .filter(usable)
+        .map((section) =>
+          createNode(withFormHandles(section, options.forms ?? {}), catalogue, createId),
+        ),
     },
+  };
+}
+
+/** The forms a template's pages show, by the handle the template gives them. */
+export function formsUsedBy(page: StarterPage): string[] {
+  const handles = new Set<string>();
+  const visit = (blueprint: NodeBlueprint) => {
+    if (blueprint.type === "formEmbed" && typeof blueprint.props?.form === "string") {
+      handles.add(blueprint.props.form);
+    }
+    blueprint.children?.forEach(visit);
+  };
+  page.sections.forEach(visit);
+  return [...handles];
+}
+
+function withFormHandles(
+  blueprint: NodeBlueprint,
+  forms: Readonly<Record<string, string>>,
+): NodeBlueprint {
+  const form = blueprint.type === "formEmbed" ? blueprint.props?.form : undefined;
+  return {
+    ...blueprint,
+    ...(typeof form === "string" && forms[form]
+      ? { props: { ...blueprint.props, form: forms[form] } }
+      : {}),
+    ...(blueprint.children
+      ? { children: blueprint.children.map((child) => withFormHandles(child, forms)) }
+      : {}),
   };
 }

@@ -82,5 +82,14 @@ describe("the built-in website with several sites", () => {
     const french = await visit("/fr/a-propos", "acme.co.uk");
     expect(french.statusCode).toBe(200);
     expect(french.body).toContain("Acme France");
+    // The website's own links keep the prefix: home, and the site's other languages.
+    expect(french.body).toContain('class="lintel-header__brand" href="/fr"');
+    await france("POST", "/locales", { code: "en-GB" });
+    const withLanguages = await visit("/fr/a-propos", "acme.co.uk");
+    expect(withLanguages.body).toContain('href="/fr/en-GB" lang="en-GB" hreflang="en-GB"');
+    expect(withLanguages.body).not.toMatch(/href="\/en-GB/);
+    // A home page address redirects to the site's own root, not the domain's.
+    const home = await visit("/fr/home", "acme.co.uk");
+    expect(home.headers.location).toBe("/fr");
   });
 });

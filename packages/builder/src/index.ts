@@ -2,6 +2,7 @@
 export { PageBuilder, type PageBuilderProps } from "./PageBuilder.js";
 export type { ImagePicker, PickedImage } from "./panels/content-fields.js";
 export type { FileUploader, UploadedFile } from "./style-panel/design-tools.js";
+export type { BuilderDataSources } from "./panels/data-sources.js";
 export { builderStrings, type BuilderStringKey } from "./i18n/builder-strings.js";
 export type { Translate } from "./i18n/builder-text.js";
 export * from "./render/index.js";

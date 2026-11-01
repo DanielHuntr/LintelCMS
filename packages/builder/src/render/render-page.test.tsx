@@ -53,6 +53,7 @@ describe("rendering a page", () => {
     expect(result).toEqual({
       html: '<div class="page"></div>',
       css: "",
+      usesBehaviours: false,
       animations: [],
       fontPreloads: [],
       script: "",

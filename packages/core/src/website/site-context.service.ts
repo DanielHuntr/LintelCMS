@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { designBaseStylesheet } from "@lintel/builder/render";
+import { findEnabledPluginIds } from "../plugins/plugins.service.js";
 import type { SiteTemplate } from "@lintel/site-components";
 import { siteStylesheet } from "@lintel/site-components/server";
 import { findBlueprintByIdOrFail } from "../blueprints/blueprints.service.js";
@@ -29,9 +30,13 @@ export interface SiteContext {
   look: WebsiteLook;
   logo: DeliveredAsset | null;
   seoEnabled: boolean;
+  /** The Online shop plugin is on, so the website has shop pages. */
+  shopEnabled: boolean;
   seoDefaults: SeoDefaults;
   /** The site's public address, for canonical links and the sitemap. Null when unknown. */
   siteAddress: string | null;
+  /** The site's path prefix ("/fr"), or "" when it has the whole domain. */
+  pathPrefix: string;
   stylesheet: { css: string; path: string };
 }
 
@@ -48,14 +53,16 @@ export async function loadSiteContext(
   },
 ): Promise<SiteContext> {
   const { site } = options;
-  const [locales, collections, look, seoEnabled, seoDefaults, siteAddress] = await Promise.all([
-    listLocales(database, site),
-    listRoutedCollections(database, site),
-    readWebsiteLook(database, options.templates),
-    isSeoPluginEnabled(database),
-    readSeoDefaults(database),
-    readAddressForSite(database, site).then((address) => address || options.builtInSiteUrl),
-  ]);
+  const [locales, collections, look, seoEnabled, seoDefaults, siteAddress, plugins] =
+    await Promise.all([
+      listLocales(database, site),
+      listRoutedCollections(database, site),
+      readWebsiteLook(database, options.templates),
+      isSeoPluginEnabled(database),
+      readSeoDefaults(database),
+      readAddressForSite(database, site).then((address) => address || options.builtInSiteUrl),
+      findEnabledPluginIds(database),
+    ]);
   const logo = look.logoAssetId
     ? ((await options.assetLookup.findAssetsByIds([look.logoAssetId])).get(look.logoAssetId) ??
       null)
@@ -70,8 +77,10 @@ export async function loadSiteContext(
     look,
     logo,
     seoEnabled,
+    shopEnabled: plugins.includes("commerce"),
     seoDefaults,
     siteAddress,
+    pathPrefix: site.pathPrefix,
     stylesheet: { css, path: `${STYLESHEET_FOLDER}/site-${fingerprint}.css` },
   };
 }

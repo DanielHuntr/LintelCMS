@@ -3,7 +3,7 @@ import {
   type CodeImage,
   type EditableField,
   findCodeMarkers,
-  type LinkProp,
+  type PageDocument,
   type PageFont,
   type PageNode,
 } from "@lintel/builder-model";
@@ -18,16 +18,10 @@ import { useRememberedOpenSections } from "../preferences/open-sections.js";
 import { OpenSectionsContext } from "../ui/CollapsibleSection.js";
 import { PanelSection } from "../ui/controls.js";
 import { contentGroupSummary, fieldsShownTogether, groupContentFields } from "./content-groups.js";
-import {
-  ChoiceField,
-  ImageField,
-  type ImagePicker,
-  LinkInputField,
-  LinkListField,
-  TextInputField,
-  TextListField,
-  ToggleField,
-} from "./content-fields.js";
+import { ImageField, type ImagePicker, TextInputField } from "./content-fields.js";
+import { type BindingScope, findBindingScope, useDataSources } from "./data-sources.js";
+import { FieldControl, SourceField } from "./field-controls.js";
+import { BindingPicker, ItemListField } from "./item-list-field.js";
 
 interface ContentPanelProps {
   node: PageNode;
@@ -35,6 +29,10 @@ interface ContentPanelProps {
   isLocked: boolean;
   pickImage: ImagePicker | undefined;
   onChange: (props: Record<string, unknown>, label: string) => void;
+  /** The page, to find the collection list (or item page) an element shows entries of. */
+  document?: PageDocument;
+  /** Shows a field of each entry in a prop (`null`: type it in again). */
+  onBind?: (prop: string, fieldPath: string | null, label: string) => void;
   /** Styles part of the text (headings and paragraphs). */
   onMarkText?: (
     range: { from: number; to: number; text: string },
@@ -54,14 +52,25 @@ export function ContentPanel({
   isLocked,
   pickImage,
   onChange,
+  document,
+  onBind,
   onMarkText,
   pageFonts = [],
 }: ContentPanelProps) {
   const text = useBuilderText();
+  const sources = useDataSources();
+  const scope = useMemo(
+    () => (document ? findBindingScope(document, node.id, sources) : null),
+    [document, node.id, sources],
+  );
   const fields = definition?.editableFields ?? [];
   const isCode = node.type === "codeBlock";
   const store = usePreferenceStore();
-  const openGroups = useRememberedOpenSections(store, "content.open", ["words", "picture"]);
+  const openGroups = useRememberedOpenSections(store, "content.open", [
+    "source",
+    "words",
+    "picture",
+  ]);
   const groups = useMemo(() => groupContentFields(definition?.editableFields ?? []), [definition]);
   const isGrouped = !isCode && fields.length > fieldsShownTogether && groups.length > 1;
   const groupSections = useMemo(
@@ -103,6 +112,8 @@ export function ContentPanel({
                   node={node}
                   pickImage={pickImage}
                   onChange={onChange}
+                  scope={scope}
+                  onBind={onBind}
                   onMarkText={onMarkText}
                   pageFonts={pageFonts}
                 />
@@ -122,6 +133,8 @@ export function ContentPanel({
                 node={node}
                 pickImage={pickImage}
                 onChange={onChange}
+                scope={scope}
+                onBind={onBind}
                 onMarkText={onMarkText}
                 pageFonts={pageFonts}
               />
@@ -138,6 +151,8 @@ function ContentField({
   node,
   pickImage,
   onChange,
+  scope,
+  onBind,
   onMarkText,
   pageFonts,
 }: {
@@ -145,13 +160,27 @@ function ContentField({
   node: PageNode;
   pickImage: ImagePicker | undefined;
   onChange: ContentPanelProps["onChange"];
+  scope: BindingScope | null;
+  onBind: ContentPanelProps["onBind"];
   onMarkText: ContentPanelProps["onMarkText"];
   pageFonts: readonly PageFont[];
 }) {
   const value = node.props[field.prop];
   const set = (next: unknown) => onChange({ [field.prop]: next }, field.label);
+  const boundTo = node.bindings?.[field.prop];
+  const binding =
+    scope && onBind ? (
+      <BindingPicker
+        field={field}
+        scope={scope}
+        boundTo={boundTo}
+        onChange={(path) => onBind(field.prop, path, field.label)}
+      />
+    ) : null;
+  if (boundTo && binding) return binding;
+  // Typed text that isn't bound to an entry's field can have styled words.
   if (field.prop === "text" && onMarkText && markableTypes.includes(node.type)) {
-    return (
+    const markable = (
       <MarkableTextField
         label={field.label}
         value={String(value ?? "")}
@@ -161,77 +190,71 @@ function ContentField({
         onMark={onMarkText}
       />
     );
+    return binding ? (
+      <div className="flex flex-col gap-2">
+        {binding}
+        {markable}
+      </div>
+    ) : (
+      markable
+    );
   }
-  switch (field.kind) {
-    case "text":
-      return (
-        <TextInputField
-          label={field.label}
-          value={String(value ?? "")}
-          placeholder={field.placeholder}
-          onChange={set}
-        />
-      );
-    case "multilineText":
-      return (
-        <TextInputField
-          multiline
-          label={field.label}
-          value={String(value ?? "")}
-          placeholder={field.placeholder}
-          onChange={set}
-        />
-      );
-    case "choice":
-      // Numeric props (a heading's level) are offered as text and stored as numbers again.
-      return (
-        <ChoiceField
-          label={field.label}
-          value={String(value ?? "")}
-          choices={field.choices}
-          onChange={(next) => set(typeof value === "number" ? Number(next) : next)}
-        />
-      );
-    case "toggle":
-      return <ToggleField label={field.label} value={value === true} onChange={set} />;
-    case "link":
-      return <LinkInputField label={field.label} value={String(value ?? "")} onChange={set} />;
-    case "image":
-      return (
-        <ImageField
-          label={field.label}
-          pickImage={pickImage}
-          value={{
-            src: String(value ?? ""),
-            alt: String(node.props.alt ?? ""),
-            assetId: (node.props.assetId as string | null) ?? null,
-          }}
-          onChange={(picked) =>
-            onChange(
-              { [field.prop]: picked.src, assetId: picked.assetId, alt: picked.alt },
-              field.label,
-            )
-          }
-        />
-      );
-    case "textList":
-      return (
-        <TextListField
-          label={field.label}
-          itemLabel={field.itemLabel}
-          value={Array.isArray(value) ? value.map(String) : []}
-          onChange={set}
-        />
-      );
-    case "linkList":
-      return (
-        <LinkListField
-          label={field.label}
-          value={Array.isArray(value) ? (value as LinkProp[]) : []}
-          onChange={set}
-        />
-      );
-  }
+  const control = (() => {
+    switch (field.kind) {
+      case "itemList":
+        return (
+          <ItemListField
+            field={field}
+            value={Array.isArray(value) ? (value as Record<string, unknown>[]) : []}
+            pickImage={pickImage}
+            onChange={set}
+          />
+        );
+      case "source":
+        return (
+          <SourceField
+            label={field.label}
+            source={field.source}
+            dependsOn={field.dependsOn}
+            node={node}
+            value={String(value ?? "")}
+            onChange={set}
+          />
+        );
+      case "image":
+        // A picture kept as `src` with `alt` and `assetId` beside it, as Picture keeps it.
+        if (field.prop === "src") {
+          return (
+            <ImageField
+              label={field.label}
+              pickImage={pickImage}
+              value={{
+                src: String(value ?? ""),
+                alt: String(node.props.alt ?? ""),
+                assetId: (node.props.assetId as string | null) ?? null,
+              }}
+              onChange={(picked) =>
+                onChange(
+                  { [field.prop]: picked.src, assetId: picked.assetId, alt: picked.alt },
+                  field.label,
+                )
+              }
+            />
+          );
+        }
+        return <FieldControl field={field} value={value} pickImage={pickImage} onChange={set} />;
+      default:
+        return <FieldControl field={field} value={value} pickImage={pickImage} onChange={set} />;
+    }
+  })();
+  return binding ? (
+    <div className="flex flex-col gap-2">
+      {binding}
+      {control}
+    </div>
+  ) : (
+    control
+  );
 }
 
 function CodeMarkerFields({

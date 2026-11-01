@@ -21,6 +21,7 @@ import {
 } from "@lintel/builder-model";
 import { type ComponentRender, createComponentRegistry, drawsProps } from "./component-registry.js";
 import { MarkedText, withLineBreaks } from "./marked-text.js";
+import { elementRenders } from "./elements/index.js";
 import { siteBlockRenders } from "./site-blocks.js";
 
 /**
@@ -193,6 +194,7 @@ export const standInRenders: Readonly<Record<string, ComponentRender>> = {
  */
 export const standardRenders: Readonly<Record<string, ComponentRender>> = {
   ...standInRenders,
+  ...elementRenders,
   ...siteBlockRenders,
 };
 

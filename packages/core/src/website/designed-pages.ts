@@ -1,4 +1,4 @@
-import { validatePageDocument } from "@lintel/builder-model";
+import { type PageData, type PageDocument, validatePageDocument } from "@lintel/builder-model";
 import { renderPage, standardRegistry } from "@lintel/builder/render";
 import type { PageDesign } from "@lintel/site-components";
 import { pageComponentCatalogue } from "../pages/page-components.js";
@@ -13,7 +13,7 @@ import { pageComponentCatalogue } from "../pages/page-components.js";
  * design saved by an older version may hold something this version doesn't know. A design
  * that can't be read, or has nothing on it, counts as no design.
  */
-export function readPageDesign(value: unknown): PageDesign | null {
+export function checkPageDesign(value: unknown): PageDocument | null {
   if (value === null || value === undefined) {
     return null;
   }
@@ -21,10 +21,21 @@ export function readPageDesign(value: unknown): PageDesign | null {
   if (!checked.ok || checked.document.root.children.length === 0) {
     return null;
   }
-  const { html, css, animations, fontPreloads, script } = renderPage(
-    checked.document,
+  return checked.document;
+}
+
+/** Draws a checked design with what its dynamic elements show (see page-data.service.ts). */
+export function drawPageDesign(document: PageDocument, data: PageData = {}): PageDesign {
+  const { html, css, animations, fontPreloads, script, usesBehaviours } = renderPage(
+    document,
     standardRegistry,
-    { withMotion: true },
+    { withMotion: true, data },
   );
-  return { html, css, animations, fontPreloads, script };
+  return { html, css, animations, fontPreloads, script, usesBehaviours };
+}
+
+/** A design drawn without data: what a page's view starts with before its lists are loaded. */
+export function readPageDesign(value: unknown): PageDesign | null {
+  const document = checkPageDesign(value);
+  return document ? drawPageDesign(document) : null;
 }

@@ -34,6 +34,7 @@ export async function starterSitesRoutes(server: FastifyInstance) {
       const signedIn = getSignedIn(request);
       const applied = await applyStarterSite(server.database, id, options, {
         authorId: signedIn.user.id,
+        authorEmail: signedIn.user.email,
         assetExists: server.assetExists,
         permissions: signedIn.permissions,
         templates: server.website.templates,

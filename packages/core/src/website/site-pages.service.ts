@@ -17,12 +17,15 @@ import { findListView, type ListRoute } from "./site-lists.service.js";
 import { renderPreview } from "./site-preview.service.js";
 import {
   HOME_SLUG,
-  localisedPath,
   matchSiteRoute,
   type SiteRoute,
   splitLocale,
   tidyPath,
 } from "./site-routing.js";
+import { designEntryView } from "./entry-designs.service.js";
+import { respondToShopPath } from "./shop-pages.service.js";
+import { renderSearch } from "./site-search.service.js";
+import type { SiteSources } from "./site-sources.js";
 import { entryView, headForEntry } from "./site-views.js";
 
 /**
@@ -41,6 +44,16 @@ export interface SiteDependencies {
   /** The rendered pages cache, for this site's pages. */
   cache: PageCache;
   now?: () => Date;
+  /** The shop's products and the forms, for the elements that show them. None when left out. */
+  sources?: SiteSources;
+}
+
+/** What the address's query asks of the page's lists: `?page=2&sort=priceLowToHigh`. */
+export interface PageQuery {
+  page: number;
+  sort?: string;
+  /** What was typed in a Search box, for `/search`. */
+  search?: string;
 }
 
 /** What one page render can reach: the dependencies and what every page shares. */
@@ -53,6 +66,9 @@ export interface PageRequest {
   localPath: string;
   /** The address as visited, with any site and language prefix. */
   path: string;
+  query: PageQuery;
+  /** On a shop collection's page, the collection its product grids show. */
+  shopCollection?: string;
 }
 
 export function readSiteContext(dependencies: SiteDependencies): Promise<SiteContext> {
@@ -82,6 +98,7 @@ export async function respondToSitePath(
   dependencies: SiteDependencies,
   rawPath: string,
   previewToken: string | undefined,
+  query: PageQuery = { page: 1 },
 ): Promise<SiteResponse> {
   const path = tidyPath(rawPath);
   // "/about/" and "//about" are the same page as "/about": send visitors to the one address.
@@ -91,12 +108,12 @@ export async function respondToSitePath(
   if (previewToken) {
     return renderPreview(dependencies, path ?? "/", previewToken);
   }
-  const key = path ?? "unreadable";
+  const key = `${path ?? "unreadable"}${queryKey(query)}`;
   const cached = dependencies.cache.find(key);
   if (cached) {
     return cached;
   }
-  const response = await resolveSitePath(dependencies, path);
+  const response = await resolveSitePath(dependencies, path, query);
   dependencies.cache.store(key, response);
   return response;
 }
@@ -109,9 +126,20 @@ function onSite(dependencies: SiteDependencies, path: string): string {
   return addPathPrefix(dependencies.site.pathPrefix, path) ?? path;
 }
 
+function queryKey(query: PageQuery): string {
+  const parts = [
+    query.page > 1 ? `page=${query.page}` : "",
+    query.sort ? `sort=${query.sort}` : "",
+    query.search ? `q=${encodeURIComponent(query.search)}` : "",
+  ];
+  const search = parts.filter(Boolean).join("&");
+  return search ? `?${search}` : "";
+}
+
 async function resolveSitePath(
   dependencies: SiteDependencies,
   path: string | null,
+  query: PageQuery,
 ): Promise<SiteResponse> {
   const context = await readSiteContext(dependencies);
   if (path === "/sitemap.xml" || path === "/robots.txt") {
@@ -130,10 +158,7 @@ async function resolveSitePath(
     context.locales.map(({ code }) => code),
   );
   if (localPath === `/${HOME_SLUG}`) {
-    return redirectResponse(
-      onSite(dependencies, localisedPath("/", locale, context.defaultLocale)),
-      301,
-    );
+    return redirectResponse(localiseUrl("/", locale, context), 301);
   }
   const chrome = await readSiteChrome(dependencies, context, locale);
   const request: PageRequest = {
@@ -143,6 +168,7 @@ async function resolveSitePath(
     locale,
     localPath,
     path: onSite(dependencies, path ?? "/"),
+    query,
   };
   if (path !== null) {
     for (const route of matchSiteRoute(localPath, context.collections)) {
@@ -150,6 +176,13 @@ async function resolveSitePath(
       if (response) {
         return response;
       }
+    }
+    if (localPath === "/search") {
+      return renderSearch(request);
+    }
+    const shopPage = await respondToShopPath(request);
+    if (shopPage) {
+      return shopPage;
     }
   }
   return renderNotFound(request);
@@ -170,7 +203,7 @@ async function respondToRoute(
       const canonical = localiseUrl(
         entry.url ?? request.localPath,
         request.locale,
-        request.context.defaultLocale,
+        request.context,
       );
       // A post's address holds its date; an old date in the address finds the right one.
       if (canonical !== request.path) {
@@ -239,8 +272,9 @@ export async function renderEntry(
   options: { private?: boolean } = {},
 ): Promise<SiteResponse> {
   const { context, locale } = request;
-  const view = entryView(context, collectionHandle, entry, locale);
-  const subject = headForEntry(context, entry, view, request.path, locale);
+  const listed = entryView(context, collectionHandle, entry, locale);
+  const subject = headForEntry(context, entry, listed, request.path, locale);
+  const view = await designEntryView(request, collectionHandle, entry, listed);
   const translations = new Map(
     subject.alternates.map((alternate) => [alternate.locale, alternate.path] as const),
   );
@@ -304,7 +338,7 @@ function renderNotFound(request: PageRequest): Promise<SiteResponse> {
   return renderMessage(request, { kind: "notFound" }, 404, "Page not found");
 }
 
-async function renderWithHead(
+export async function renderWithHead(
   request: PageRequest,
   view: SiteView,
   subject: HeadSubject,
@@ -349,7 +383,7 @@ async function searchEngineFile(
   const xml = await buildSitemap(dependencies.database, {
     site: dependencies.site,
     fallbackSiteUrl,
-    pathFor: (row, entryPath) => localiseUrl(entryPath, row.locale, context.defaultLocale),
+    pathFor: (row, entryPath) => localiseUrl(entryPath, row.locale, context),
   });
   return textResponse("application/xml; charset=utf-8", xml);
 }

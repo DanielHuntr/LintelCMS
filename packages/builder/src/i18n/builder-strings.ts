@@ -1,4 +1,5 @@
 import { builderDesignStrings } from "./design-strings.js";
+import { builderElementStrings } from "./element-strings.js";
 import { builderPanelStrings } from "./panel-strings.js";
 import { builderStudioStrings } from "./studio-strings.js";
 
@@ -54,9 +55,9 @@ export const builderStrings = {
   "pageBuilder.insert.sections": "Ready-made sections",
   "pageBuilder.insert.category.blocks": "Your site’s blocks",
   "pageBuilder.insert.category.layout": "Layout",
-  "pageBuilder.insert.category.text": "Text",
-  "pageBuilder.insert.category.media": "Pictures",
-  "pageBuilder.insert.category.navigation": "Buttons and links",
+  "pageBuilder.insert.category.text": "Text and information",
+  "pageBuilder.insert.category.media": "Pictures and media",
+  "pageBuilder.insert.category.navigation": "Menus, buttons and links",
   "pageBuilder.insert.category.code": "Code",
 
   "pageBuilder.history.title": "History",
@@ -297,6 +298,7 @@ export const builderStrings = {
   ...builderStudioStrings,
   ...builderPanelStrings,
   ...builderDesignStrings,
+  ...builderElementStrings,
 } as const;
 
 export type BuilderStringKey = keyof typeof builderStrings;

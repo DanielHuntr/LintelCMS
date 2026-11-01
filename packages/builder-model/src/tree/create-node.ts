@@ -34,6 +34,7 @@ export function createNode(
     ...(blueprint.animation ? { animation: structuredCopy(blueprint.animation) } : {}),
     ...(blueprint.freeLayout ? { freeLayout: { ...blueprint.freeLayout } } : {}),
     ...(blueprint.backgroundVideo ? { backgroundVideo: { ...blueprint.backgroundVideo } } : {}),
+    ...(blueprint.bindings ? { bindings: { ...blueprint.bindings } } : {}),
   };
 }
 

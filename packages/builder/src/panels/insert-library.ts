@@ -52,6 +52,9 @@ export const elementGroupTitles: Record<ComponentCategory, BuilderStringKey> = {
   text: "pageBuilder.insert.category.text",
   media: "pageBuilder.insert.category.media",
   navigation: "pageBuilder.insert.category.navigation",
+  collections: "pageBuilder.insert.category.collections",
+  forms: "pageBuilder.insert.category.forms",
+  shop: "pageBuilder.insert.category.shop",
   code: "pageBuilder.insert.category.code",
 };
 

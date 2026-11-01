@@ -6,9 +6,9 @@ import { STYLESHEET_FOLDER } from "./site-context.service.js";
 
 /**
  * The website's files besides pages and the stylesheet: the motion runtime (only pages with
- * animations load it), the illustrations the starter sites and the section library use, and
- * the fonts that come with Lintel. All are served from `/_lintel`, with fingerprints or long
- * caching.
+ * animations load it), the elements script (only pages with sliders, forms and the like load
+ * it), the illustrations the starter sites and the section library use, and the fonts that
+ * come with Lintel. All are served from `/_lintel`, with fingerprints or long caching.
  */
 
 export interface SiteScript {
@@ -33,6 +33,27 @@ export function readMotionRuntime(): SiteScript | null {
     motionRuntime = null;
   }
   return motionRuntime;
+}
+
+let elementsScript: SiteScript | null | undefined;
+
+/**
+ * The elements script (sliders, tabs, pop-ups, forms, the basket), read once. Only pages
+ * whose design has such elements load it. Null if `@lintel/builder` hasn't been built.
+ */
+export function readElementsScript(): SiteScript | null {
+  if (elementsScript !== undefined) {
+    return elementsScript;
+  }
+  try {
+    const file = createRequire(import.meta.url).resolve("@lintel/builder/site-behaviours.js");
+    const code = readFileSync(file, "utf8");
+    const fingerprint = createHash("sha256").update(code).digest("hex").slice(0, 12);
+    elementsScript = { code, path: `${STYLESHEET_FOLDER}/elements-${fingerprint}.js` };
+  } catch {
+    elementsScript = null;
+  }
+  return elementsScript;
 }
 
 export const ILLUSTRATIONS_FOLDER = `${STYLESHEET_FOLDER}/illustrations`;

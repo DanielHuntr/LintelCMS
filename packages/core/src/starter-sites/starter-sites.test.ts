@@ -145,6 +145,31 @@ describe("starting from a template", () => {
     expect(again.json()).toEqual({ added: 0 });
   });
 
+  it("gives Local service's booking page a working contact form while Forms is on", async () => {
+    await owner("PUT", "/plugins", { enabled: ["forms"] });
+    const applied = (await owner("POST", "/starter-sites/local-service/apply", {})).json();
+    const forms = (await owner("GET", "/forms")).json().forms;
+    expect(forms.map((form: { handle: string }) => form.handle)).toEqual(["contact"]);
+    const booking = applied.pages.find(
+      (page: { wantedSlug: string }) => page.wantedSlug !== "home",
+    );
+    const pages = await Promise.all(
+      applied.pages.map((page: { entryId: string }) => owner("GET", `/entries/${page.entryId}`)),
+    );
+    const designs = JSON.stringify(pages.map((page) => page.json().data.design));
+    expect(designs).toContain('"type":"formEmbed"');
+    expect(designs).toContain('"form":"contact"');
+    expect(booking).toBeDefined();
+  });
+
+  it("leaves the form out of Local service's pages while Forms is off", async () => {
+    const applied = (await owner("POST", "/starter-sites/local-service/apply", {})).json();
+    const pages = await Promise.all(
+      applied.pages.map((page: { entryId: string }) => owner("GET", `/entries/${page.entryId}`)),
+    );
+    expect(JSON.stringify(pages.map((page) => page.json().data.design))).not.toContain("formEmbed");
+  });
+
   it("only does what the person may: an editor's pages stay drafts in the house style", async () => {
     await createTestUser(testDatabase.database, "editor@example.com", [
       ["entries:read", "entries:create", "entries:update"],

@@ -3,6 +3,7 @@ import { requirePermission, requireSignedIn } from "../auth/require-permission.j
 import { parseRequest } from "../http/http-errors.js";
 import { updateWebsiteRequestSchema } from "./website.schema.js";
 import { resolveEditingSite } from "../sites/request-site.js";
+import { readBuilderData } from "./builder-data.service.js";
 import { readCanvasSite } from "./canvas.service.js";
 import { readViewPageAddress, readWebsite, updateWebsite } from "./website.service.js";
 
@@ -13,6 +14,8 @@ import { readViewPageAddress, readWebsite, updateWebsite } from "./website.servi
  *   GET /website/address  (signed in)      -> { siteAddress, defaultLocale }, for "View page"
  *   GET /website/canvas   (entries:read)   -> the stylesheet, header, footer and motion runtime
  *                                             the page builder draws its canvas with
+ *   GET /website/builder-data (entries:read) -> collections (fields, terms, samples), forms
+ *                                             and products the builder's elements can show
  *   PUT /website          (settings:update) any of { template, brandColour, accentColour,
  *                                    fontPairing, cornerStyle, spacing, colourScheme,
  *                                    logoAssetId, siteAddress } -> Website
@@ -45,6 +48,31 @@ export async function websiteRoutes(server: FastifyInstance) {
         site,
         cache: server.website.renderedPages.forSite(site.id),
       });
+    },
+  );
+
+  server.get(
+    "/website/builder-data",
+    { preHandler: requirePermission("entries:read") },
+    async (request) => {
+      const session: Record<string, string> = {};
+      for (const name of ["cookie", "authorization"] as const) {
+        const value = request.headers[name];
+        if (typeof value === "string") session[name] = value;
+      }
+      const site = await resolveEditingSite(request);
+      return readBuilderData(
+        server,
+        {
+          database: server.database,
+          assetLookup: server.assetLookup,
+          templates: server.website.templates,
+          builtInSiteUrl: server.website.builtInSiteUrl,
+          site,
+          cache: server.website.renderedPages.forSite(site.id),
+        },
+        session,
+      );
     },
   );
 

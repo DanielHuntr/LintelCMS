@@ -5,7 +5,7 @@ import { deliverTermBySlug } from "../taxonomies/taxonomies-delivery.service.js"
 import { toPostSummary } from "./delivered-to-site.js";
 import { localiseUrl } from "./site-chrome.service.js";
 import type { PageRequest } from "./site-pages.service.js";
-import { listBase, listPath, localisedPath, type SiteRoute } from "./site-routing.js";
+import { listBase, listPath, type SiteRoute } from "./site-routing.js";
 
 /** Lists of posts: a blog's index and its archives, ten posts a page, newest first. */
 
@@ -53,18 +53,14 @@ export async function findListView(
   const base =
     listBase(collection.routePattern) +
     (route.kind === "archive" ? `/${route.taxonomy}/${route.term}` : "");
-  const pageUrl = (page: number) =>
-    localisedPath(listPath(base, page), locale, context.defaultLocale);
+  const pageUrl = (page: number) => localiseUrl(listPath(base, page), locale, context);
   return {
     view: {
       kind: "postList",
       title: term?.title ?? (isHome ? request.chrome.siteName : collection.name),
       description: term?.description ?? "",
       posts: list.items.map((entry) =>
-        toPostSummary(
-          entry,
-          localiseUrl(entry.url ?? `/${entry.slug}`, locale, context.defaultLocale),
-        ),
+        toPostSummary(entry, localiseUrl(entry.url ?? `/${entry.slug}`, locale, context)),
       ),
       pagination: {
         page: route.page,

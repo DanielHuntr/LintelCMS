@@ -79,6 +79,23 @@ export function panelInvitation(copy: Invitation): NodeBlueprint {
 }
 
 /** Where to find you and how to get in touch, with buttons that call or email. */
+/**
+ * A heading, a line and one of the site's forms (`formHandle`, filled with the form made for
+ * it when the template is used). Left out of the page while Forms is switched off.
+ */
+export function contactForm(copy: { heading: string; text: string; formHandle: string }) {
+  return section("Contact form", [
+    container(
+      [
+        heading(copy.heading, 2),
+        lead(copy.text),
+        { type: "formEmbed", name: "Form", props: { form: copy.formHandle, showTitle: false } },
+      ],
+      { width: "40rem" },
+    ),
+  ]);
+}
+
 export function contactDetails(copy: {
   heading: string;
   text: string;

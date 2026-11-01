@@ -23,6 +23,8 @@ export interface SiteDocumentProps {
    * still ships no script at all.
    */
   motionScriptUrl?: string;
+  /** The elements script's address, for designs with sliders, tabs, forms or the shop. */
+  elementsScriptUrl?: string;
 }
 
 /**
@@ -39,13 +41,20 @@ export function SiteDocument({
   stylesheetUrl,
   year,
   motionScriptUrl,
+  elementsScriptUrl,
 }: SiteDocumentProps) {
   const design = view.kind === "page" ? view.design : null;
   return (
     <html lang={chrome.locale}>
       <head>
         <HeadTags head={head} locale={chrome.locale} stylesheetUrl={stylesheetUrl} />
-        {design && <DesignHead design={design} motionScriptUrl={motionScriptUrl} />}
+        {design && (
+          <DesignHead
+            design={design}
+            motionScriptUrl={motionScriptUrl}
+            elementsScriptUrl={elementsScriptUrl}
+          />
+        )}
       </head>
       <body className={`lintel-site lintel-template-${template.id}`}>
         <SkipLink label={labels.skipToContent} />

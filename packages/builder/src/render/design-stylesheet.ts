@@ -7,9 +7,11 @@
  * The built-in website adds this to its stylesheet, and the canvas draws with that same
  * stylesheet, so a design looks the same in both.
  */
+import { elementStylesheet } from "./elements/element-stylesheet.js";
+
 export const designClassName = "lintel-design";
 
-export const designBaseStylesheet = `:where(.lintel-design) :where(h1, h2, h3, h4, h5, h6) {
+const elementDefaults = `:where(.lintel-design) :where(h1, h2, h3, h4, h5, h6) {
   margin: 0;
   font-family: var(--lintel-font-heading);
   line-height: 1.15;
@@ -72,3 +74,6 @@ export const designBaseStylesheet = `:where(.lintel-design) :where(h1, h2, h3, h
   cursor: pointer;
 }
 `;
+
+/** The element defaults and the element library's own styles (see elements/). */
+export const designBaseStylesheet = `${elementDefaults}\n${elementStylesheet}\n`;

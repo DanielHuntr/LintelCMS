@@ -29,6 +29,14 @@ export {
 export * from "./components/layout-components.js";
 export * from "./components/content-components.js";
 export * from "./components/block-components.js";
+export * from "./components/layout-more-components.js";
+export * from "./components/media-components.js";
+export * from "./components/info-components.js";
+export * from "./components/site-navigation-components.js";
+export * from "./components/form-components.js";
+export * from "./components/collection-components.js";
+export * from "./components/shop-components.js";
+export * from "./data/bound-items.js";
 
 export * from "./styles/style-properties.js";
 export * from "./styles/style-cascade.js";
@@ -76,6 +84,8 @@ export {
 
 export {
   buildStarterPage,
+  formsUsedBy,
+  type StarterPageOptions,
   type StarterPage,
   type StarterSite,
   type StarterTheme,

@@ -8,10 +8,9 @@ import {
 } from "@lintel/site-components";
 import { renderSiteDocument } from "@lintel/site-components/server";
 import type { SiteResponse } from "./rendered-pages-cache.js";
-import { readMotionRuntime } from "./site-assets.js";
+import { readElementsScript, readMotionRuntime } from "./site-assets.js";
 import type { SiteContext } from "./site-context.service.js";
-import { markCurrent } from "./site-chrome.service.js";
-import { localisedPath } from "./site-routing.js";
+import { localiseUrl, markCurrent } from "./site-chrome.service.js";
 
 /** Turning a page's view, header and footer into the response that is sent and cached. */
 
@@ -52,6 +51,7 @@ export function renderPage(
     stylesheetUrl: context.stylesheet.path,
     year: now.getUTCFullYear(),
     motionScriptUrl: readMotionRuntime()?.path,
+    elementsScriptUrl: readElementsScript()?.path,
   });
   return {
     statusCode: page.statusCode ?? 200,
@@ -74,8 +74,7 @@ function languageLinks(
   return context.locales.map((language) => ({
     code: language.code,
     name: language.name,
-    url:
-      translations.get(language.code) ?? localisedPath("/", language.code, context.defaultLocale),
+    url: translations.get(language.code) ?? localiseUrl("/", language.code, context),
     current: language.code === locale,
   }));
 }

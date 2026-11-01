@@ -6,6 +6,7 @@ import type { SiteResponse } from "./rendered-pages-cache.js";
 import {
   FONTS_FOLDER,
   ILLUSTRATIONS_FOLDER,
+  readElementsScript,
   readFontFile,
   readIllustration,
   readMotionRuntime,
@@ -19,6 +20,8 @@ import { readSiteContext, respondToSitePath, type SiteDependencies } from "./sit
  *
  *   GET /_lintel/site-<fingerprint>.css   the theme and component styles, cached for a year
  *   GET /_lintel/motion-<fingerprint>.js  the motion runtime, for pages with animations
+ *   GET /_lintel/elements-<fingerprint>.js the elements script, for sliders, forms, the shop
+ *   ALL /_lintel/api/shop/*, /_lintel/api/forms/*  the storefront and forms APIs (site-api.routes.ts)
  *   GET /_lintel/illustrations/<name>.svg the starter sites' illustrations
  *   GET /_lintel/fonts/<file>.woff2       the fonts that come with Lintel
  *   GET /*                                 a page, a redirect, sitemap.xml, robots.txt or 404
@@ -28,7 +31,18 @@ import { readSiteContext, respondToSitePath, type SiteDependencies } from "./sit
  * (see site-for-address.ts).
  */
 
-const pageQuerySchema = z.object({ preview: z.string().min(1).optional() }).catch({});
+const pageQuerySchema = z
+  .object({
+    preview: z.string().min(1).optional(),
+    page: z.coerce.number().int().min(1).max(1000).optional().catch(undefined),
+    sort: z
+      .string()
+      .regex(/^[A-Za-z]{1,40}$/)
+      .optional()
+      .catch(undefined),
+    q: z.string().trim().max(200).optional().catch(undefined),
+  })
+  .catch({});
 
 export async function siteRoutes(
   server: FastifyInstance,
@@ -74,12 +88,15 @@ export async function siteRoutes(
   });
 
   server.get(`${STYLESHEET_FOLDER}/:file`, async (request, reply) => {
-    const motion = readMotionRuntime();
-    if (motion && request.url.split("?")[0] === motion.path) {
+    const path = request.url.split("?")[0];
+    const script = [readMotionRuntime(), readElementsScript()].find(
+      (candidate) => candidate?.path === path,
+    );
+    if (script) {
       return reply
         .type("text/javascript; charset=utf-8")
         .header("cache-control", "public, max-age=31536000, immutable")
-        .send(motion.code);
+        .send(script.code);
     }
     // The look is shared by every site; the site here only decides which cache keeps it.
     const context = await readSiteContext((await visit(request)).dependencies);
@@ -93,8 +110,12 @@ export async function siteRoutes(
 
   server.get("/*", async (request, reply) => {
     const { dependencies, path } = await visit(request);
-    const { preview } = pageQuerySchema.parse(request.query);
-    const response = await respondToSitePath(dependencies, path, preview);
+    const { preview, page, sort, q } = pageQuerySchema.parse(request.query);
+    const response = await respondToSitePath(dependencies, path, preview, {
+      page: page ?? 1,
+      sort,
+      search: q,
+    });
     // Shared caches must keep each site's pages apart.
     reply.header("vary", "Host, X-Forwarded-Host");
     return send(request, reply, response);

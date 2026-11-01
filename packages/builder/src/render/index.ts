@@ -18,3 +18,15 @@ export { collectAnimations, type PageAnimation } from "./page-animations.js";
 export { designBaseStylesheet, designClassName } from "./design-stylesheet.js";
 export { backgroundVideoScript } from "./background-video.js";
 export { MarkedText } from "./marked-text.js";
+export {
+  elementRenders,
+  elementStylesheet,
+  findSiteIcon,
+  markdownToHtml,
+  placeholderItem,
+  sampleProduct,
+  siteIconNames,
+  siteIcons,
+  usesBehaviours,
+} from "./elements/index.js";
+export { ForItem, PageDataProvider, useCurrentItem, usePageData } from "./data-context.js";

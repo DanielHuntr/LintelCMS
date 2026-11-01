@@ -9,6 +9,7 @@ import { mainMenu } from "../navigation/default-navigation.js";
 import { deliverNavigation } from "../navigation/navigation-delivery.service.js";
 import { NavigationNotFoundError } from "../navigation/navigation.errors.js";
 import type { DeliveredNavigationItem } from "../navigation/navigation.schema.js";
+import { addPathPrefix, removePathPrefix } from "../sites/site-addresses.js";
 import { readImage, readText } from "./delivered-to-site.js";
 import type { SiteContext } from "./site-context.service.js";
 import { HOME_SLUG, localisedPath } from "./site-routing.js";
@@ -23,11 +24,20 @@ export function siteUrlFor(url: string): string {
   return url === `/${HOME_SLUG}` ? "/" : url;
 }
 
-/** An address on the site in a language: "/about" becomes "/fr/about" in French. */
-export function localiseUrl(url: string, locale: string, defaultLocale: string): string {
-  return url.startsWith("/") && !url.startsWith("//")
-    ? localisedPath(siteUrlFor(url), locale, defaultLocale)
-    : url;
+/**
+ * An address on the site as visitors use it, in a language: "/about" becomes "/fr/about" in
+ * French, and on a site served under a path prefix it keeps that prefix in front
+ * ("/shop/fr/about"). Addresses from delivery already carry the prefix; this keeps one.
+ */
+export function localiseUrl(
+  url: string,
+  locale: string,
+  site: Pick<SiteContext, "defaultLocale" | "pathPrefix">,
+): string {
+  if (!url.startsWith("/") || url.startsWith("//")) return url;
+  const onSite = removePathPrefix(site.pathPrefix, url);
+  const localised = localisedPath(siteUrlFor(onSite), locale, site.defaultLocale);
+  return addPathPrefix(site.pathPrefix, localised) ?? localised;
 }
 
 export async function loadSiteChrome(
@@ -48,7 +58,7 @@ export async function loadSiteChrome(
         (link): link is string => typeof link === "string" && link !== "",
       )
     : [];
-  const localise = (url: string) => localiseUrl(url, locale, context.defaultLocale);
+  const localise = (url: string) => localiseUrl(url, locale, context);
   return {
     siteName:
       readText(settings.site_name) || ownName || context.seoDefaults.siteName || "My website",

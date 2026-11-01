@@ -1,15 +1,19 @@
 import {
   type AnyComponentDefinition,
   assignClassNames,
+  bindProps,
   compileStylesheet,
   findNode,
   fontPreloads,
+  type PageData,
   type PageDocument,
   type PageNode,
   readPageFonts,
 } from "@lintel/builder-model";
 import type { ReactElement } from "react";
 import { BackgroundVideo, backgroundVideoScript, hasBackgroundVideo } from "./background-video.js";
+import { PageDataProvider, useCurrentItem, useIsRepeatedCopy } from "./data-context.js";
+import { usesBehaviours } from "./elements/behaviour-types.js";
 import { renderToStaticMarkup } from "react-dom/server";
 import { collectAnimations, type PageAnimation } from "./page-animations.js";
 import type { ComponentRegistry, ElementAttributes, RenderMode } from "./component-registry.js";
@@ -40,6 +44,11 @@ export interface RenderOptions {
    * entrances). The website turns this on; the code view and the clipboard leave it off.
    */
   withMotion?: boolean;
+  /**
+   * What dynamic elements show: collection lists' entries, products, the site's menu. The
+   * website loads it for each page; the canvas passes samples.
+   */
+  data?: PageData;
 }
 
 export interface RenderedPage {
@@ -48,29 +57,40 @@ export interface RenderedPage {
   animations: PageAnimation[];
   fontPreloads: string[];
   script: string;
+  /** The page has sliders, tabs, pop-ups or the like, so it needs the elements script. */
+  usesBehaviours: boolean;
 }
 
 export function renderPage(
   document: PageDocument,
   registry: ComponentRegistry,
-  { mode = "site", nodeId, withMotion = false }: RenderOptions = {},
+  { mode = "site", nodeId, withMotion = false, data = {} }: RenderOptions = {},
 ): RenderedPage {
   const classNames = assignClassNames(document.root, registry.catalogue);
   const start = nodeId ? findNode(document.root, nodeId) : document.root;
   if (!start || start.hidden) {
-    return { html: "", css: "", animations: [], fontPreloads: [], script: "" };
+    return {
+      html: "",
+      css: "",
+      animations: [],
+      fontPreloads: [],
+      script: "",
+      usesBehaviours: false,
+    };
   }
   const animations = collectAnimations(start);
   const marked =
     mode === "site" && withMotion ? motionMarks(animations) : new Map<string, ElementAttributes>();
   const html = renderToStaticMarkup(
-    <NodeView
-      node={start}
-      registry={registry}
-      classNames={classNames}
-      mode={mode}
-      motionMarks={marked}
-    />,
+    <PageDataProvider data={data}>
+      <NodeView
+        node={start}
+        registry={registry}
+        classNames={classNames}
+        mode={mode}
+        motionMarks={marked}
+      />
+    </PageDataProvider>,
   );
   const isWholePage = start.id === document.root.id;
   return {
@@ -79,6 +99,7 @@ export function renderPage(
     animations,
     fontPreloads: isWholePage ? fontPreloads(readPageFonts(document.root.props)) : [],
     script: mode === "site" && hasBackgroundVideo(start) ? backgroundVideoScript : "",
+    usesBehaviours: usesBehaviours(start),
   };
 }
 
@@ -96,6 +117,20 @@ function checkedProps(node: PageNode, definition: AnyComponentDefinition): Recor
   const props = parsed.success ? parsed.data : definition.defaultProps;
   checkedPropsCache.set(node.props, props);
   return props;
+}
+
+/**
+ * Props with the current entry's fields in the bound ones, checked again, since an entry's
+ * value (a long title) may not fit what the element accepts: then the typed props are used.
+ */
+function boundProps(
+  node: PageNode,
+  definition: AnyComponentDefinition,
+  item: Parameters<typeof bindProps>[2],
+): Record<string, unknown> {
+  const typed = checkedProps(node, definition);
+  const parsed = definition.propsSchema.safeParse(bindProps(typed, node.bindings, item));
+  return parsed.success ? parsed.data : typed;
 }
 
 /**
@@ -135,6 +170,8 @@ function NodeView({
   mode,
   motionMarks,
 }: NodeViewProps): ReactElement | null {
+  const item = useCurrentItem();
+  const isCopy = useIsRepeatedCopy();
   if (node.hidden) return null;
   const className = classNames.get(node.id) ?? node.type;
   const entry = registry.find(node.type);
@@ -143,12 +180,17 @@ function NodeView({
       <div className={className} data-lintel-node={node.id} data-lintel-placeholder="unknown" />
     ) : null;
   }
-  const props = checkedProps(node, entry.definition);
+  const props =
+    node.bindings && item
+      ? boundProps(node, entry.definition, item)
+      : checkedProps(node, entry.definition);
   const { Render } = entry;
   const motion = motionMarks.get(node.id);
-  const attributes: ElementAttributes =
-    mode === "canvas"
-      ? { className, "data-lintel-node": node.id, ...freeLayoutMark(node) }
+  const isSelectable = mode === "canvas" && !isCopy;
+  const attributes: ElementAttributes = isSelectable
+    ? { className, "data-lintel-node": node.id, ...freeLayoutMark(node) }
+    : mode === "canvas"
+      ? { className }
       : { ...motion, className };
   return (
     <Render
@@ -157,7 +199,7 @@ function NodeView({
       mode={mode}
       attributes={attributes}
       editableText={(prop): Record<string, string> =>
-        mode === "canvas" ? { "data-lintel-text": prop } : {}
+        isSelectable && !node.bindings?.[prop] ? { "data-lintel-text": prop } : {}
       }
     >
       {node.backgroundVideo && <BackgroundVideo video={node.backgroundVideo} mode={mode} />}

@@ -70,7 +70,15 @@ export interface PageNode {
   freeLayout?: FreeLayout;
   /** A muted, looping video behind its content (see backgrounds/). */
   backgroundVideo?: BackgroundVideo;
+  /**
+   * Inside a collection list (or on a collection's item page), props filled from the current
+   * entry instead of typed in: `{ "text": "title", "src": "image" }`. Left out when unbound.
+   */
+  bindings?: NodeBindings;
 }
+
+/** A prop name to the entry field it shows ("title", "image", "data.price"...). */
+export type NodeBindings = Record<string, string>;
 
 export interface PageDocument {
   version: typeof pageDocumentVersion;
@@ -116,6 +124,17 @@ const nodeAnimationSchema = z.object({
     .optional(),
 });
 
+const fieldPathPattern = /^[A-Za-z][\w.-]{0,79}$/;
+
+export const nodeBindingsSchema = z
+  .record(
+    z.string().regex(fieldPathPattern, { error: "A bound prop should be a name like “text”" }),
+    z.string().regex(fieldPathPattern, { error: "A bound field should be a name like “title”" }),
+  )
+  .refine((bindings) => Object.keys(bindings).length <= 30, {
+    error: "An element can show at most 30 fields",
+  });
+
 export const pageNodeSchema: z.ZodType<PageNode> = z.lazy(() =>
   z.object({
     id: nodeIdSchema,
@@ -138,6 +157,7 @@ export const pageNodeSchema: z.ZodType<PageNode> = z.lazy(() =>
     animation: nodeAnimationSchema.optional(),
     freeLayout: freeLayoutSchema.optional(),
     backgroundVideo: backgroundVideoSchema.optional(),
+    bindings: nodeBindingsSchema.optional(),
   }),
 );
 

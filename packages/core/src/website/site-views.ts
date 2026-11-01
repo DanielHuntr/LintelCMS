@@ -4,7 +4,7 @@ import { toPageView, toPostView } from "./delivered-to-site.js";
 import { localiseUrl } from "./site-chrome.service.js";
 import type { SiteContext } from "./site-context.service.js";
 import type { HeadSubject } from "./site-head.service.js";
-import { listBase, localisedPath } from "./site-routing.js";
+import { listBase } from "./site-routing.js";
 
 /** Which layout an entry gets, and what its `<head>` says. Pure, given the site context. */
 
@@ -20,7 +20,7 @@ export function entryView(
     return toPageView(entry);
   }
   const base = listBase(collection.routePattern);
-  const localise = (path: string) => localisedPath(path, locale, context.defaultLocale);
+  const localise = (path: string) => localiseUrl(path, locale, context);
   return toPostView(entry, {
     termUrl: (taxonomy, slug) =>
       base !== "" && collection.taxonomyHandles.includes(taxonomy)
@@ -44,7 +44,7 @@ export function headForEntry(
       : [
           {
             locale: translation.locale,
-            path: localiseUrl(translation.url, translation.locale, context.defaultLocale),
+            path: localiseUrl(translation.url, translation.locale, context),
           },
         ],
   );

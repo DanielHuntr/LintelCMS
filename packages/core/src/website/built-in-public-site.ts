@@ -1,4 +1,6 @@
 import type { PublicSite } from "../production/public-site.js";
+import { siteApiRoutes } from "./site-api.routes.js";
+import { storefrontSources } from "./site-sources.js";
 import { siteRoutes } from "./site.routes.js";
 
 /**
@@ -28,10 +30,15 @@ export const builtInPublicSite: PublicSite = async (server, options) => {
     return undefined;
   });
 
+  // The basket and forms on the website's pages talk to the API through /_lintel/api, and
+  // shop and form elements read it, all inside this one process (see site-sources.ts).
+  const sources = storefrontSources(server, options.apiPrefix);
+  await server.register(siteApiRoutes, { api: server, apiPrefix: options.apiPrefix });
   await server.register(siteRoutes, {
     database: () => server.database,
     // Each site has its own pages, so each reads and caches its own (see site-for-address.ts).
     dependencies: (site) => ({
+      sources,
       database: server.database,
       assetLookup: server.assetLookup,
       templates: server.website.templates,

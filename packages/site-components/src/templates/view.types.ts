@@ -19,6 +19,8 @@ export interface PageDesign {
   fontPreloads?: readonly string[];
   /** A small script the design needs (background videos); empty or left out for none. */
   script?: string;
+  /** It has sliders, tabs, pop-ups, forms or the shop, so it loads the elements script. */
+  usesBehaviours?: boolean;
 }
 
 /** A page from a collection like Pages: a title, an optional body and its sections. */
