@@ -1,3 +1,4 @@
+import { findBlueprintByIdOrFail } from "../blueprints/blueprints.service.js";
 import { findCollectionOrFail } from "../collections/collections.service.js";
 import type { Collection } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
@@ -46,8 +47,10 @@ export async function listEntries(
           total: await countEntries(database, filters),
         };
 
+  const blueprint = await findBlueprintByIdOrFail(database, collection.blueprintId);
+  const listColumns = blueprint.fields.filter((field) => field.showInList);
   return {
-    entries: rows.map(describeEntrySummary),
+    entries: rows.map((row) => describeEntrySummary(row, listColumns)),
     total,
     page: query.page,
     perPage: query.perPage,

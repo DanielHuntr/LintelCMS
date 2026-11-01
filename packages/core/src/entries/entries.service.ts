@@ -24,6 +24,7 @@ import {
   findEntryWithDetails,
   findNextSortOrder,
   findSlugsStartingWith,
+  hasEntryWithValue,
   insertEntry,
   listTranslationFamily,
   moveChildrenToParent,
@@ -98,11 +99,13 @@ export async function createEntry(
   context: EntryChangeContext,
 ): Promise<EntryResponse> {
   const collection = await findCollectionOrFail(database, collectionHandle);
+  const { site, locale } = await resolveLocale(database, request.locale);
   const data = await validateForCollection(database, collection, request.data, context, "saving", {
     previousData: {},
+    entryId: null,
+    locale,
   });
   const parentId = request.parentId ?? null;
-  const { site, locale } = await resolveLocale(database, request.locale);
   await checkParent(database, collection, parentId, undefined, locale);
   const scope = { collectionId: collection.id, siteId: site.id, locale };
   const slug = await chooseSlug(database, scope, request.slug, data, collection.name);
@@ -151,7 +154,7 @@ export async function saveEntry(
     { ...entry.data, ...request.data },
     context,
     "saving",
-    { previousData: entry.data },
+    { previousData: entry.data, entryId: entry.id, locale: entry.locale },
   );
   if (request.parentId !== undefined) {
     await checkParent(database, collection, request.parentId, entry.id, entry.locale);
@@ -233,7 +236,7 @@ export async function validateForCollection(
    * Given when a person is changing the entry (creating or saving it), with what was stored
    * before, so rules about who may change what apply. Publishing and restoring leave it out.
    */
-  personChange?: { previousData: EntryData },
+  personChange?: { previousData: EntryData; entryId: string | null; locale: string },
 ): Promise<EntryData> {
   const blueprint = await findBlueprintByIdOrFail(database, collection.blueprintId);
   const validate = buildEntryDataValidator(blueprint.fields, {
@@ -246,6 +249,21 @@ export async function validateForCollection(
     requiredFields: when === "saving" ? "allowEmpty" : "enforce",
     // The title names the entry in lists and makes its slug, so even a draft needs one.
     alwaysRequired: ["title"],
+    // Fields marked unique are checked when a person saves; publishing a saved draft doesn't
+    // change its values, so there is nothing new to compare.
+    isValueUnique: personChange
+      ? async (handle, value) =>
+          !(await hasEntryWithValue(
+            database,
+            {
+              collectionId: collection.id,
+              locale: personChange.locale,
+              exceptEntryId: personChange.entryId,
+            },
+            handle,
+            value,
+          ))
+      : undefined,
   });
   return validate(data);
 }

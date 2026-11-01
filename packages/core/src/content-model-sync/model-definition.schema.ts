@@ -1,5 +1,8 @@
+import { fieldConditionsSchema } from "@lintel/field-conditions";
 import { z } from "zod";
 import { collectionStructures } from "../collections/collections.schema.js";
+import { fieldValidationSchema, fieldWidths } from "../fieldtypes/field-settings.schema.js";
+import { codeLanguages } from "../fieldtypes/writing-fieldtypes.js";
 import type { ModelDefinition } from "./define-content-model.js";
 
 /**
@@ -18,6 +21,22 @@ const commonFieldShape = {
   label: z.string().optional().describe("The name editors see. Defaults to the handle in words."),
   required: z.boolean().optional().describe("Whether it has to be filled in before publishing."),
   helpText: z.string().optional().describe("A sentence shown under the input."),
+  helpTextPosition: z.enum(["above", "below"]).optional().describe("Where the help text goes."),
+  width: z
+    .union(fieldWidths.map((width) => z.literal(width)))
+    .optional()
+    .describe("How much of the row the field takes, in percent. Defaults to 100."),
+  placeholder: z.string().optional().describe("Example text shown in an empty input."),
+  default: z.unknown().optional().describe("The value a new entry starts with."),
+  readOnly: z.boolean().optional().describe("Shown but can't be changed."),
+  hidden: z.boolean().optional().describe("Kept out of the editor; still saved."),
+  showInList: z.boolean().optional().describe("Shown as a column in the list of entries."),
+  validation: fieldValidationSchema
+    .optional()
+    .describe("Length, pattern, unique and a custom message."),
+  conditions: fieldConditionsSchema
+    .optional()
+    .describe("Show or hide the field: { rules: [{ field, operator, value }] }."),
 };
 
 function fieldSchema<Type extends string, Shape extends z.ZodRawShape>(
@@ -71,7 +90,68 @@ const innerFieldSchemas = [
   }),
 ] as const;
 
-const innerFieldSchema = z.discriminatedUnion("type", innerFieldSchemas);
+const choices = z
+  .array(z.strictObject({ value: z.string(), label: z.string() }))
+  .describe("The choices, in order: `value` is stored, `label` is shown.");
+const inline = z.boolean().optional().describe("Lay the choices out in a row.");
+
+const moreFieldSchemas = [
+  fieldSchema("radio", "One choice from a short list.", { choices, inline }),
+  fieldSchema("checkboxes", "Any number of choices from a list.", { choices, inline }),
+  fieldSchema("buttonGroup", "One choice from a few, as a row of buttons.", { choices }),
+  fieldSchema("range", "A number picked on a slider.", {
+    min: z.number().optional(),
+    max: z.number().optional(),
+    step: z.number().positive().optional(),
+    suffix: z.string().optional().describe('Shown after the number, like "%".'),
+  }),
+  fieldSchema("time", "A time of day.", {}),
+  fieldSchema("slug", "A web-friendly name made from another field.", {
+    from: z.string().optional().describe('The field it is made from. Defaults to "title".'),
+  }),
+  fieldSchema("code", "A snippet of code.", {
+    language: z.enum(codeLanguages).optional(),
+    maxLength,
+  }),
+  fieldSchema("table", "A small table of text.", {
+    headerRow: z.boolean().optional().describe("The first row is the headings. Defaults to true."),
+    maxRows: z.number().int().positive().optional(),
+    maxColumns: z.number().int().positive().max(20).optional(),
+  }),
+  fieldSchema("video", "A YouTube or Vimeo video, or a video file.", {}),
+  fieldSchema("icon", "A small symbol from the icon set.", {}),
+  fieldSchema("users", "People with an account.", { maxItems }),
+  fieldSchema("hidden", "A value editors don't see.", {}),
+  fieldSchema("section", "A heading starting a new part of the form.", {}),
+  fieldSchema("spacer", "Empty room in the editor.", {}),
+  fieldSchema("revealer", "A Show more button other fields' conditions can look at.", {
+    buttonLabel: z.string().optional(),
+  }),
+  fieldSchema("fieldset", "The fields of a saved fieldset.", {
+    fieldset: z.string().describe("The handle of the fieldset."),
+  }),
+] as const;
+
+// Groups and repeaters hold fields of their own, which can be groups and repeaters too.
+const innerFieldSchema: z.ZodType<unknown> = z.lazy(() => innerFieldUnion);
+const nestedFields = z
+  .record(z.string(), innerFieldSchema)
+  .describe("The fields inside, keyed by handle, in order.");
+const groupFieldSchema = fieldSchema("group", "A few fields kept together.", {
+  fields: nestedFields,
+});
+const repeaterFieldSchema = fieldSchema("repeater", "Rows of the same few fields.", {
+  fields: nestedFields,
+  minRows: z.number().int().positive().optional(),
+  maxRows: z.number().int().positive().optional(),
+  addLabel: z.string().optional().describe('The add button\'s words, like "Add a speaker".'),
+});
+const innerFieldUnion = z.discriminatedUnion("type", [
+  ...innerFieldSchemas,
+  ...moreFieldSchemas,
+  groupFieldSchema,
+  repeaterFieldSchema,
+]);
 
 const blockTypeSchema = z.strictObject({
   name: z.string().optional().describe("The name editors see. Defaults to the handle in words."),
@@ -87,11 +167,16 @@ const blocksFieldSchema = fieldSchema("blocks", "A page builder made of blocks."
 });
 
 const pageFieldSchema = fieldSchema("page", "A page laid out in the visual page builder.", {});
+const tabFieldSchema = fieldSchema("tab", "Starts a new tab in the editor.", {});
 
 export const fieldSpecSchema = z.discriminatedUnion("type", [
   ...innerFieldSchemas,
+  ...moreFieldSchemas,
+  groupFieldSchema,
+  repeaterFieldSchema,
   blocksFieldSchema,
   pageFieldSchema,
+  tabFieldSchema,
 ]);
 
 const fieldsSchema = z
@@ -122,6 +207,12 @@ export const modelDefinitionSchema = z.discriminatedUnion("kind", [
   z.strictObject({ kind: z.literal("taxonomy"), handle: z.string(), name: z.string() }),
   z.strictObject({
     kind: z.literal("globalSet"),
+    handle: z.string(),
+    name: z.string(),
+    fields: fieldsSchema,
+  }),
+  z.strictObject({
+    kind: z.literal("fieldset"),
     handle: z.string(),
     name: z.string(),
     fields: fieldsSchema,

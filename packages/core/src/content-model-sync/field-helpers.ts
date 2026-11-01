@@ -9,6 +9,8 @@
  * set (`hero_image` is labelled "Hero image").
  */
 
+import type { FieldConditionsInput } from "@lintel/field-conditions";
+
 /** What every field can say, whatever its type. */
 export interface CommonFieldOptions {
   /** The name editors see next to the input. Defaults to the handle in words: `hero_image` → "Hero image". */
@@ -17,6 +19,45 @@ export interface CommonFieldOptions {
   required?: boolean;
   /** A sentence shown under the input, to help editors fill it in. */
   helpText?: string;
+  /** Where the help text goes. Defaults to `"below"`. */
+  helpTextPosition?: "above" | "below";
+  /** How much of the row the field takes in the editor, in percent. Defaults to 100. */
+  width?: 25 | 33 | 50 | 66 | 75 | 100;
+  /** Grey example text shown in an empty input, such as `"e.g. Leeds"`. */
+  placeholder?: string;
+  /** The value a new entry starts with. It has to be one the field accepts. */
+  default?: unknown;
+  /** Shown but can't be changed in the editor. */
+  readOnly?: boolean;
+  /** Kept out of the editor; the value is still saved and delivered. */
+  hidden?: boolean;
+  /** Shown as a column in the list of entries. */
+  showInList?: boolean;
+  /** Rules on top of the field's own: length, a pattern, unique, a custom message. */
+  validation?: FieldValidationRules;
+  /**
+   * Show or hide the field depending on other fields:
+   * `{ rules: [{ field: "layout", operator: "is", value: "video" }] }`.
+   * See @lintel/field-conditions for the operators and `$parent.` / `$root.` references.
+   */
+  conditions?: FieldConditionsInput;
+}
+
+export interface FieldValidationRules {
+  /** The fewest characters, for text. */
+  minLength?: number;
+  /** The most characters, for text. */
+  maxLength?: number;
+  /** The smallest number, or the fewest items in a list. */
+  min?: number;
+  /** The largest number, or the most items in a list. */
+  max?: number;
+  /** A regular expression the text has to match, such as `"^[A-Z]{3}$"`. */
+  pattern?: string;
+  /** No two entries in the collection may have the same value. */
+  unique?: boolean;
+  /** Shown instead of Lintel's own message when the value breaks a rule. */
+  message?: string;
 }
 
 export interface MaxLengthOptions extends CommonFieldOptions {
@@ -116,7 +157,139 @@ export interface TermsField extends TermsOptions {
   type: "terms";
 }
 
-/** Any field except a blocks field: what a block type's own fields can be. */
+export interface ChoiceOptions extends CommonFieldOptions {
+  /** The choices, in the order editors see them. Each needs a different value. */
+  choices: SelectChoice[];
+}
+export interface InlineChoiceOptions extends ChoiceOptions {
+  /** Lay the choices out in a row rather than one under another. Defaults to false. */
+  inline?: boolean;
+}
+export interface RadioField extends InlineChoiceOptions {
+  type: "radio";
+}
+export interface CheckboxesField extends InlineChoiceOptions {
+  type: "checkboxes";
+}
+export interface ButtonGroupField extends ChoiceOptions {
+  type: "buttonGroup";
+}
+export interface RangeOptions extends CommonFieldOptions {
+  /** The slider's lowest value. Defaults to 0. */
+  min?: number;
+  /** The slider's highest value. Defaults to 100. */
+  max?: number;
+  /** How far one step moves. Defaults to 1. */
+  step?: number;
+  /** Shown after the number, such as `"%"`. */
+  suffix?: string;
+}
+export interface RangeField extends RangeOptions {
+  type: "range";
+}
+export interface TimeField extends CommonFieldOptions {
+  type: "time";
+}
+export interface SlugOptions extends CommonFieldOptions {
+  /** The field the slug is made from as editors type. Defaults to `"title"`. */
+  from?: string;
+}
+export interface SlugField extends SlugOptions {
+  type: "slug";
+}
+export interface CodeOptions extends CommonFieldOptions {
+  /** For highlighting: plain, html, css, javascript, typescript, json, yaml, markdown, php, python, shell or sql. */
+  language?:
+    | "plain"
+    | "html"
+    | "css"
+    | "javascript"
+    | "typescript"
+    | "json"
+    | "yaml"
+    | "markdown"
+    | "php"
+    | "python"
+    | "shell"
+    | "sql";
+  /** The most characters allowed. */
+  maxLength?: number;
+}
+export interface CodeField extends CodeOptions {
+  type: "code";
+}
+export interface TableOptions extends CommonFieldOptions {
+  /** The first row is the column headings. Defaults to true. */
+  headerRow?: boolean;
+  /** The most rows allowed. */
+  maxRows?: number;
+  /** The most columns allowed, up to 20. */
+  maxColumns?: number;
+}
+export interface TableField extends TableOptions {
+  type: "table";
+}
+export interface VideoField extends CommonFieldOptions {
+  type: "video";
+}
+export interface IconField extends CommonFieldOptions {
+  type: "icon";
+}
+export interface UsersOptions extends CommonFieldOptions {
+  /** The most people that can be chosen. Leave out for no limit. */
+  maxItems?: number;
+}
+export interface UsersField extends UsersOptions {
+  type: "users";
+}
+export interface HiddenField extends CommonFieldOptions {
+  type: "hidden";
+}
+export interface TabField extends CommonFieldOptions {
+  type: "tab";
+}
+export interface SectionField extends CommonFieldOptions {
+  type: "section";
+}
+export interface SpacerField extends CommonFieldOptions {
+  type: "spacer";
+}
+export interface RevealerOptions extends CommonFieldOptions {
+  /** The button's words, such as "Show booking options". Defaults to "Show more". */
+  buttonLabel?: string;
+}
+export interface RevealerField extends RevealerOptions {
+  type: "revealer";
+}
+export interface GroupOptions extends CommonFieldOptions {
+  /** The group's fields, keyed by handle, in the order editors see them. */
+  fields: Record<string, InnerField>;
+}
+export interface GroupField extends GroupOptions {
+  type: "group";
+}
+export interface RepeaterOptions extends CommonFieldOptions {
+  /** The fields of each row, keyed by handle. */
+  fields: Record<string, InnerField>;
+  /** The fewest rows allowed. */
+  minRows?: number;
+  /** The most rows allowed. */
+  maxRows?: number;
+  /** The add button's words, such as "Add a speaker". Defaults to "Add a row". */
+  addLabel?: string;
+}
+export interface RepeaterField extends RepeaterOptions {
+  type: "repeater";
+}
+export interface FieldsetOptions extends CommonFieldOptions {
+  /** The handle of the fieldset whose fields this uses (see `defineFieldset`). */
+  fieldset: string;
+}
+export interface FieldsetField extends FieldsetOptions {
+  type: "fieldset";
+}
+
+/** Any field except a blocks field or a tab: what a block type's or a group's fields can be. */
 export type InnerField =
   | TextField
   | TextareaField
@@ -133,7 +306,25 @@ export type InnerField =
   | MarkdownField
   | ListField
   | EntriesField
-  | TermsField;
+  | TermsField
+  | RadioField
+  | CheckboxesField
+  | ButtonGroupField
+  | RangeField
+  | TimeField
+  | SlugField
+  | CodeField
+  | TableField
+  | VideoField
+  | IconField
+  | UsersField
+  | HiddenField
+  | SectionField
+  | SpacerField
+  | RevealerField
+  | GroupField
+  | RepeaterField
+  | FieldsetField;
 
 /** A kind of block editors can add to a blocks field, such as a Hero or a Call to action. */
 export interface BlockTypeDefinition {
@@ -159,7 +350,7 @@ export interface PageField extends CommonFieldOptions {
 }
 
 /** Any field a content type or a global set can have. */
-export type FieldSpec = InnerField | BlocksField | PageField;
+export type FieldSpec = InnerField | BlocksField | PageField | TabField;
 
 /** Every field type, for checking the helpers cover the fieldtype registry. */
 export type FieldTypeName = FieldSpec["type"];
@@ -252,6 +443,101 @@ export function terms(options: TermsOptions): TermsField {
 /** A page builder: sections such as a hero, text or a call to action, in any order. */
 export function blocks(options: BlocksOptions): BlocksField {
   return { type: "blocks", ...options };
+}
+
+/** One choice from a short list, with every choice in view. */
+export function radio(options: InlineChoiceOptions): RadioField {
+  return { type: "radio", ...options };
+}
+
+/** Any number of choices from a list. The value is a list. */
+export function checkboxes(options: InlineChoiceOptions): CheckboxesField {
+  return { type: "checkboxes", ...options };
+}
+
+/** One choice from a few, as a row of buttons, such as Left, Centre or Right. */
+export function buttonGroup(options: ChoiceOptions): ButtonGroupField {
+  return { type: "buttonGroup", ...options };
+}
+
+/** A number picked on a slider, 0 to 100 unless `min` and `max` say otherwise. */
+export function range(options: RangeOptions = {}): RangeField {
+  return { type: "range", ...options };
+}
+
+/** A time of day, stored as "09:30". */
+export function time(options: CommonFieldOptions = {}): TimeField {
+  return { type: "time", ...options };
+}
+
+/** A web-friendly name like "summer-fair", made from another field (the title by default). */
+export function slug(options: SlugOptions = {}): SlugField {
+  return { type: "slug", ...options };
+}
+
+/** A snippet of code, kept exactly as typed. */
+export function code(options: CodeOptions = {}): CodeField {
+  return { type: "code", ...options };
+}
+
+/** A small table of text; stored as rows of cells. */
+export function table(options: TableOptions = {}): TableField {
+  return { type: "table", ...options };
+}
+
+/** A YouTube or Vimeo video, or a link to a video file. */
+export function video(options: CommonFieldOptions = {}): VideoField {
+  return { type: "video", ...options };
+}
+
+/** A small symbol from the admin's icon set, stored by name ("map-pin"). */
+export function icon(options: CommonFieldOptions = {}): IconField {
+  return { type: "icon", ...options };
+}
+
+/** People with an account, such as an article's authors. */
+export function users(options: UsersOptions = {}): UsersField {
+  return { type: "users", ...options };
+}
+
+/** A value saved with the entry that editors don't see. Give it a `default`. */
+export function hidden(options: CommonFieldOptions = {}): HiddenField {
+  return { type: "hidden", ...options };
+}
+
+/** Starts a new tab in the editor; the fields after it are on that tab. Holds no value. */
+export function tab(options: CommonFieldOptions = {}): TabField {
+  return { type: "tab", ...options };
+}
+
+/** A heading (its label) and a sentence (its help text) starting a new part of the form. */
+export function section(options: CommonFieldOptions = {}): SectionField {
+  return { type: "section", ...options };
+}
+
+/** Empty room in the editor, as wide as its `width`. Holds no value. */
+export function spacer(options: CommonFieldOptions = {}): SpacerField {
+  return { type: "spacer", ...options };
+}
+
+/** A "Show more" button; give other fields `conditions` on it to show them when pressed. */
+export function revealer(options: RevealerOptions = {}): RevealerField {
+  return { type: "revealer", ...options };
+}
+
+/** A few fields kept together under one name, such as an address. */
+export function group(options: GroupOptions): GroupField {
+  return { type: "group", ...options };
+}
+
+/** Rows of the same few fields, such as the speakers at an event. */
+export function repeater(options: RepeaterOptions): RepeaterField {
+  return { type: "repeater", ...options };
+}
+
+/** The fields of a saved fieldset, kept together under this field's handle. */
+export function fieldset(options: FieldsetOptions): FieldsetField {
+  return { type: "fieldset", ...options };
 }
 
 /** `hero_image` → "Hero image": how a field's label and a block type's name default. */

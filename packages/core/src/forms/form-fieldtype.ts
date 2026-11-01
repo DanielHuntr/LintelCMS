@@ -14,6 +14,8 @@ export const formFieldtype = defineFieldtype({
   type: "form",
   name: "Form",
   description: "One of your forms, such as a contact form, to show on the page.",
+  category: "relationships",
+  keywords: ["contact", "signup", "enquiry", "embed form"],
   optionsSchema: z.object({}),
   buildValueSchema: (_options, label) =>
     z

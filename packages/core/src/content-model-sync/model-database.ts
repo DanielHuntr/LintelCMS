@@ -4,6 +4,7 @@ import { type ContentModel, type ModelUnit, modelFromUnits } from "./content-mod
 import {
   listBlueprintModelRows,
   listCollectionModelRows,
+  listFieldsetModelRows,
   listGlobalSetModelRows,
   listMenuModelRows,
   listTaxonomyModelRows,
@@ -13,12 +14,13 @@ import {
 export async function readModelFromDatabase(
   database: DatabaseOrTransaction,
 ): Promise<ContentModel> {
-  const [blueprints, collections, taxonomies, globalSets, menus] = await Promise.all([
+  const [blueprints, collections, taxonomies, globalSets, menus, fieldsets] = await Promise.all([
     listBlueprintModelRows(database, DEFAULT_TENANT_ID),
     listCollectionModelRows(database, DEFAULT_TENANT_ID),
     listTaxonomyModelRows(database, DEFAULT_TENANT_ID),
     listGlobalSetModelRows(database, DEFAULT_TENANT_ID),
     listMenuModelRows(database, DEFAULT_TENANT_ID),
+    listFieldsetModelRows(database, DEFAULT_TENANT_ID),
   ]);
 
   const units: ModelUnit[] = [
@@ -39,6 +41,12 @@ export async function readModelFromDatabase(
     ...taxonomies.map(({ handle, name }): ModelUnit => ({ kind: "taxonomy", handle, name })),
     ...globalSets.map(({ handle, name, fields }): ModelUnit => ({
       kind: "globalSet",
+      handle,
+      name,
+      fields,
+    })),
+    ...fieldsets.map(({ handle, name, fields }): ModelUnit => ({
+      kind: "fieldset",
       handle,
       name,
       fields,

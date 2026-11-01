@@ -2,6 +2,7 @@ import { checkFieldDefinitions } from "../blueprints/blueprint-fields.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import { createContentReferences } from "../entries/entry-references.js";
+import { fillFieldsetImports } from "../fieldsets/fieldsets.service.js";
 import { buildEntryDataValidator } from "../fieldtypes/entry-data-validator.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
 import type { AssetExists } from "../fieldtypes/image-assets.js";
@@ -86,7 +87,7 @@ export async function createGlobalSet(
   database: DatabaseOrTransaction,
   request: CreateGlobalSetRequest,
 ): Promise<GlobalSetResponse> {
-  const fields = checkFieldDefinitions(request.fields);
+  const fields = checkFieldDefinitions(await fillFieldsetImports(database, request.fields));
   const inserted = await insertGlobalSetIfMissing(database, {
     handle: request.handle,
     name: request.name,
@@ -105,7 +106,7 @@ export async function updateGlobalSet(
   request: UpdateGlobalSetRequest,
 ): Promise<GlobalSetResponse> {
   const globalSet = await findGlobalSetOrFail(database, handle);
-  const fields = checkFieldDefinitions(request.fields);
+  const fields = checkFieldDefinitions(await fillFieldsetImports(database, request.fields));
   await updateGlobalSetRow(database, globalSet.id, { name: request.name, fields });
   return findGlobalSet(database, handle, undefined);
 }

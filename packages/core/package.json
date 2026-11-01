@@ -49,6 +49,11 @@
       "types": "./dist/plugins/plugin-testing.d.ts",
       "development": "./src/plugins/plugin-testing.ts",
       "default": "./dist/plugins/plugin-testing.js"
+    },
+    "./video-addresses": {
+      "types": "./dist/fieldtypes/video-addresses.d.ts",
+      "development": "./src/fieldtypes/video-addresses.ts",
+      "default": "./dist/fieldtypes/video-addresses.js"
     }
   },
   "scripts": {
@@ -74,11 +79,12 @@
     "@fastify/cors": "^11.3.1",
     "@fastify/multipart": "^10.1.6",
     "@fastify/rate-limit": "^11.2.1",
+    "@fastify/static": "^10.1.8",
     "@lintel/builder": "workspace:*",
     "@lintel/builder-model": "workspace:*",
+    "@lintel/field-conditions": "workspace:*",
     "@lintel/site-components": "workspace:*",
     "@simplewebauthn/server": "^14.0.3",
-    "@fastify/static": "^10.1.8",
     "@tiptap/core": "^3.32.2",
     "@tiptap/html": "^3.32.2",
     "@tiptap/pm": "^3.32.2",

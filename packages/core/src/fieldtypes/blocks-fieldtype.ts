@@ -66,6 +66,9 @@ export const blocksFieldtype = defineFieldtype({
   type: "blocks",
   name: "Blocks",
   description: "A page builder: sections such as a hero, text or a call to action, in any order.",
+  category: "structure",
+  keywords: ["replicator", "sets", "builder", "flexible", "modules", "sections", "matrix"],
+  canBeInside: false,
   optionsSchema: blocksOptionsSchema,
 
   buildValueSchema: ({ maxBlocks }, label) => {

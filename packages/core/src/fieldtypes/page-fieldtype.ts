@@ -18,6 +18,8 @@ export const pageFieldtype = defineFieldtype({
   type: "page",
   name: "Page design",
   description: "A page you design visually, with sections, text, pictures and buttons.",
+  category: "advanced",
+  keywords: ["visual", "designer", "layout", "canvas", "drag and drop"],
   optionsSchema: z.object({}),
 
   buildValueSchema: (_options, label) =>

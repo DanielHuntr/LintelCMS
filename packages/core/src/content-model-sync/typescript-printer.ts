@@ -30,6 +30,7 @@ const DEFINE_FUNCTION: Record<ModelDefinition["kind"], string> = {
   contentType: "defineContentType",
   taxonomy: "defineTaxonomy",
   globalSet: "defineGlobalSet",
+  fieldset: "defineFieldset",
   menu: "defineMenu",
 };
 

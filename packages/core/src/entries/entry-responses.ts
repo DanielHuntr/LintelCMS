@@ -1,5 +1,6 @@
 import { isDeepStrictEqual } from "node:util";
 import { describeBlueprint } from "../blueprints/blueprints.service.js";
+import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
 import type { EntrySummaryRow, EntryWithDetails } from "./entries.repository.js";
 import type {
   EntryResponse,
@@ -10,8 +11,20 @@ import type {
 
 /** Turns stored rows into the shapes the API returns (see entries.schema.ts). */
 
-export function describeEntrySummary(row: EntrySummaryRow): EntrySummaryResponse {
+/**
+ * An entry in a list. `listColumns` are the blueprint's fields shown as columns ("Show as a
+ * column in lists"); their values come along, with choices given by their labels.
+ */
+export function describeEntrySummary(
+  row: Omit<EntrySummaryRow, "data"> & { data?: EntrySummaryRow["data"] },
+  listColumns: readonly FieldDefinition[] = [],
+): EntrySummaryResponse {
   return {
+    columns: listColumns.map((field) => ({
+      handle: field.handle,
+      label: field.label,
+      value: columnValue(field, row.data?.[field.handle] ?? null),
+    })),
     id: row.id,
     title: row.title ?? "",
     slug: row.slug,
@@ -24,6 +37,14 @@ export function describeEntrySummary(row: EntrySummaryRow): EntrySummaryResponse
     scheduledFor: row.scheduledFor?.toISOString() ?? null,
     updatedBy: describePerson(row.updatedById, row.updatedByName),
   };
+}
+
+function columnValue(field: FieldDefinition, value: unknown): unknown {
+  const choices = field.options.choices as { value: string; label: string }[] | undefined;
+  if (!choices) return value;
+  const label = (choice: unknown) =>
+    choices.find((candidate) => candidate.value === choice)?.label ?? choice;
+  return Array.isArray(value) ? value.map(label) : label(value);
 }
 
 export function describeEntry(

@@ -59,6 +59,7 @@ import { siteAddressRoutes } from "./sites/site-address.routes.js";
 import { localesRoutes } from "./sites/locales.routes.js";
 import { taxonomiesRoutes } from "./taxonomies/taxonomies.routes.js";
 import { globalsRoutes } from "./globals/globals.routes.js";
+import { fieldsetsRoutes } from "./fieldsets/fieldsets.routes.js";
 import { navigationRoutes } from "./navigation/navigation.routes.js";
 import { translationsRoutes } from "./entries/translations.routes.js";
 import { WebhookDispatcher } from "./webhooks/webhook-dispatcher.js";
@@ -362,6 +363,7 @@ function registerApiRoutes(
   server.register(translationsRoutes);
   server.register(taxonomiesRoutes);
   server.register(globalsRoutes);
+  server.register(fieldsetsRoutes);
   server.register(navigationRoutes);
   server.register(previewRoutes);
   server.register(searchRoutes);

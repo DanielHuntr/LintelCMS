@@ -21,6 +21,7 @@ const knownReferences: ContentReferences = {
     ids.filter((id) => taxonomy !== "categories" || ![NEWS, GUIDES].includes(id)),
   findMissingEntryIds: async (collections, ids) =>
     ids.filter((id) => id !== NEWS || (collections.length > 0 && !collections.includes("posts"))),
+  findMissingUserIds: async () => [],
 };
 
 async function check(fields: FieldDefinition[], data: Record<string, unknown>) {

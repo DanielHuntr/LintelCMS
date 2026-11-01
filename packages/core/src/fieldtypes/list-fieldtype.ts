@@ -9,6 +9,8 @@ export const listFieldtype = defineFieldtype({
   type: "list",
   name: "List",
   description: "A list of short items, such as opening times or ingredients.",
+  category: "structure",
+  keywords: ["array", "items", "bullet", "tags"],
   optionsSchema: z.object({
     maxItems: z
       .number({ error: "The most items should be a number" })

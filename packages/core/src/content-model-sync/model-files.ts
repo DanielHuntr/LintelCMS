@@ -26,7 +26,7 @@ import { JSON_SCHEMA_FILE_NAME, printYamlFile, yamlHeader } from "./yaml-printer
  * Reading and writing the content model folder. Every `.ts`, `.yaml` and `.yml` file in
  * it (and its subfolders) is read; a TypeScript file without a default export is a helper
  * other files import (shared fields, say) and is skipped. New files go in a folder per
- * kind: content-types/, taxonomies/, globals/ and menus/.
+ * kind: content-types/, taxonomies/, globals/, fieldsets/ and menus/.
  */
 
 export type ModelFileFormat = "typescript" | "yaml";
@@ -35,6 +35,7 @@ const KIND_FOLDERS: Record<ModelUnitKind, string> = {
   contentType: "content-types",
   taxonomy: "taxonomies",
   globalSet: "globals",
+  fieldset: "fieldsets",
   menu: "menus",
 };
 

@@ -78,6 +78,7 @@ describe("delivering values inside blocks", () => {
       focalPoint: { x: 0.5, y: 0.5 },
     };
     const references: DeliveredReferences = {
+      users: new Map(),
       terms: new Map([
         [TERM_ID, { id: TERM_ID, title: "Recipes", slug: "recipes", taxonomy: "tags" }],
       ]),

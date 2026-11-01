@@ -10,6 +10,8 @@ export const emailFieldtype = defineFieldtype({
   type: "email",
   name: "Email",
   description: "An email address, such as the one people should write to.",
+  category: "relationships",
+  keywords: ["mail", "e-mail", "address", "contact"],
   optionsSchema: z.object({}),
   buildValueSchema: (_options, label) => {
     const message = `${label} should be an email address, like name@example.com`;
@@ -24,6 +26,8 @@ export const urlFieldtype = defineFieldtype({
   type: "url",
   name: "Web address",
   description: "The address of a web page, such as a booking page or a profile.",
+  category: "relationships",
+  keywords: ["link", "website", "web address", "href"],
   optionsSchema: z.object({}),
   buildValueSchema: (_options, label) => {
     const message = `${label} should be a web address starting with https:// or http://`;
@@ -53,6 +57,8 @@ export const colourFieldtype = defineFieldtype({
   type: "colour",
   name: "Colour",
   description: "A colour, such as a brand or background colour. You can suggest a few.",
+  category: "media",
+  keywords: ["color", "hex", "swatch", "palette"],
   optionsSchema: z.object({
     swatches: z
       .array(hexColourSchema, { error: "Suggested colours should be a list" })
@@ -71,6 +77,8 @@ export const markdownFieldtype = defineFieldtype({
   type: "markdown",
   name: "Markdown",
   description: "Writing in Markdown, for people who like to format with symbols.",
+  category: "text",
+  keywords: ["md", "formatted", "plain text"],
   optionsSchema: z.object({
     maxLength: z
       .number({ error: "The maximum length should be a number" })

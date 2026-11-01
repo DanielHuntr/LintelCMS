@@ -3,6 +3,7 @@ import {
   type ContentModel,
   canonicalJson,
   type ContentTypeUnit,
+  type FieldsetUnit,
   type GlobalSetUnit,
   type ModelCollection,
   type ModelUnit,
@@ -19,7 +20,7 @@ import type { BlockLocation } from "./stored-values.js";
  */
 
 /** A content type or a global set: something that has fields. */
-export type FieldOwner = ContentTypeUnit | GlobalSetUnit;
+export type FieldOwner = ContentTypeUnit | GlobalSetUnit | FieldsetUnit;
 
 /** An inner field's place, with the block type's name for messages. */
 export interface InnerFieldLocation extends BlockLocation {
@@ -130,8 +131,8 @@ function unitChanges(
     changes.push({ action: "changeMenuLevels", unit: after, previousLevels: before.maxDepth });
   }
   if (
-    (before.kind === "contentType" || before.kind === "globalSet") &&
-    (after.kind === "contentType" || after.kind === "globalSet")
+    (before.kind === "contentType" || before.kind === "globalSet" || before.kind === "fieldset") &&
+    (after.kind === "contentType" || after.kind === "globalSet" || after.kind === "fieldset")
   ) {
     changes.push(...fieldChanges(after, before.fields, after.fields));
   }

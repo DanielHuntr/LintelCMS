@@ -3,6 +3,7 @@ import { blueprintsTable } from "../blueprints/blueprints.table.js";
 import { collectionsTable } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { entriesTable, type EntryData } from "../entries/entries.table.js";
+import { fieldsetsTable } from "../fieldsets/fieldsets.table.js";
 import { globalSetsTable, globalValuesTable } from "../globals/globals.table.js";
 import { navigationsTable } from "../navigation/navigation.table.js";
 import { taxonomiesTable, termsTable } from "../taxonomies/taxonomies.table.js";
@@ -134,6 +135,18 @@ export async function countEntriesWithParents(
 }
 
 /** Every language's saved values of a global set. */
+export async function listFieldsetModelRows(database: DatabaseOrTransaction, tenantId: string) {
+  return database
+    .select({
+      handle: fieldsetsTable.handle,
+      name: fieldsetsTable.name,
+      fields: fieldsetsTable.fields,
+    })
+    .from(fieldsetsTable)
+    .where(eq(fieldsetsTable.tenantId, tenantId))
+    .orderBy(asc(fieldsetsTable.handle));
+}
+
 export async function listGlobalValueRows(database: DatabaseOrTransaction, globalSetId: string) {
   return database
     .select({ id: globalValuesTable.id, data: globalValuesTable.data })

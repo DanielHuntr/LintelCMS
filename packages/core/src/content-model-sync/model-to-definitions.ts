@@ -19,7 +19,28 @@ const DEFAULT_OPTIONS: Readonly<Record<string, Readonly<Record<string, unknown>>
   select: { multiple: false },
   colour: { swatches: [] },
   entries: { collections: [] },
+  radio: { inline: false },
+  checkboxes: { inline: false },
+  range: { min: 0, max: 100, step: 1, suffix: "" },
+  slug: { from: "title" },
+  code: { language: "plain" },
+  table: { headerRow: true },
+  revealer: { buttonLabel: "" },
+  repeater: { addLabel: "" },
 };
+
+/** The shared settings, in the order files list them, after the type, label and help text. */
+const SETTING_ORDER = [
+  "helpTextPosition",
+  "width",
+  "placeholder",
+  "default",
+  "readOnly",
+  "hidden",
+  "showInList",
+  "validation",
+  "conditions",
+] as const;
 
 export function definitionFromUnit(unit: ModelUnit): ModelDefinition {
   if (unit.kind === "contentType") {
@@ -37,6 +58,10 @@ export function definitionFromUnit(unit: ModelUnit): ModelDefinition {
   if (unit.kind === "globalSet") {
     const fields = fieldSpecs(unit.fields, { isEntry: false });
     return { kind: "globalSet", handle: unit.handle, name: unit.name, fields };
+  }
+  if (unit.kind === "fieldset") {
+    const fields = fieldSpecs(unit.fields, { isEntry: false });
+    return { kind: "fieldset", handle: unit.handle, name: unit.name, fields };
   }
   if (unit.kind === "menu") {
     return {
@@ -85,12 +110,27 @@ function fieldSpec(field: FieldDefinition, isTitle: boolean): FieldSpec {
   if (field.helpText !== "") {
     spec.helpText = field.helpText;
   }
+  // Settings are stored without their defaults already (see field-settings.schema.ts).
+  for (const key of SETTING_ORDER) {
+    if (field[key] !== undefined) {
+      spec[key] = key === "conditions" ? conditionsSpec(field.conditions) : field[key];
+    }
+  }
   const defaults = DEFAULT_OPTIONS[field.type] ?? {};
   for (const [key, value] of inOptionOrder(field)) {
     if (value === undefined || isSameValue(value, defaults[key])) {
       continue;
     }
-    spec[key] = key === "blockTypes" ? blockTypeDefinitions(value) : value;
+    // A fieldset field's copy of the fieldset's fields comes from the fieldset's own file.
+    if (field.type === "fieldset" && key === "fields") {
+      continue;
+    }
+    spec[key] =
+      key === "blockTypes"
+        ? blockTypeDefinitions(value)
+        : key === "fields"
+          ? fieldSpecs(value as FieldDefinition[], { isEntry: false })
+          : value;
   }
   return spec as unknown as FieldSpec;
 }
@@ -131,4 +171,15 @@ function blockTypeDefinitions(value: unknown): Record<string, unknown> {
 
 function isSameValue(value: unknown, other: unknown): boolean {
   return other !== undefined && JSON.stringify(value) === JSON.stringify(other);
+}
+
+/** Conditions without `action: "show"`, `match: "all"` and `keepHiddenValues: false`. */
+function conditionsSpec(conditions: FieldDefinition["conditions"]): Record<string, unknown> {
+  const spec: Record<string, unknown> = {};
+  if (!conditions) return spec;
+  if (conditions.action !== "show") spec.action = conditions.action;
+  if (conditions.match !== "all") spec.match = conditions.match;
+  spec.rules = conditions.rules;
+  if (conditions.keepHiddenValues) spec.keepHiddenValues = true;
+  return spec;
 }

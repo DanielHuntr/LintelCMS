@@ -65,6 +65,8 @@ const summaryColumns = {
   scheduledFor: entriesTable.scheduledFor,
   updatedById: usersTable.id,
   updatedByName: usersTable.name,
+  // For fields shown as columns in the list of entries.
+  data: entriesTable.data,
 };
 
 function matching(filters: EntryFilters): SQL | undefined {
@@ -340,6 +342,31 @@ export async function listTranslationFamily(
     .from(entriesTable)
     .where(or(eq(entriesTable.id, rootId), eq(entriesTable.originId, rootId)))
     .orderBy(asc(entriesTable.createdAt));
+}
+
+/**
+ * Whether another entry in the collection, in the same language, has this value for a field,
+ * for fields marked unique. Values are compared as stored JSON.
+ */
+export async function hasEntryWithValue(
+  database: DatabaseOrTransaction,
+  where: { collectionId: string; locale: string; exceptEntryId: string | null },
+  handle: string,
+  value: unknown,
+): Promise<boolean> {
+  const rows = await database
+    .select({ id: entriesTable.id })
+    .from(entriesTable)
+    .where(
+      and(
+        eq(entriesTable.collectionId, where.collectionId),
+        eq(entriesTable.locale, where.locale),
+        where.exceptEntryId ? sql`${entriesTable.id} <> ${where.exceptEntryId}` : undefined,
+        sql`${entriesTable.data} -> ${handle} = ${JSON.stringify(value)}::jsonb`,
+      ),
+    )
+    .limit(1);
+  return rows.length > 0;
 }
 
 /** Which of these ids are entries, in one of these collections when any are named. */
