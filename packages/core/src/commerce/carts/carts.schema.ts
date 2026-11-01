@@ -73,7 +73,20 @@ export const cartSchema = z.object({
   lines: z.array(cartLineSchema),
   itemCount: z.number().int(),
   subtotal: moneyOutputSchema,
-  discounts: z.array(z.object({ code: z.string(), title: z.string(), amount: moneyOutputSchema })),
+  /**
+   * What each discount takes off. `code` is "" for automatic discounts. A free-shipping
+   * discount's amount is the delivery it saves, already taken off `shipping`.
+   */
+  discounts: z.array(
+    z.object({
+      code: z.string(),
+      title: z.string(),
+      amount: moneyOutputSchema,
+      freeShipping: z.boolean(),
+    }),
+  ),
+  /** Codes in the cart that don't apply (yet), with a message to show the shopper. */
+  discountProblems: z.array(z.object({ code: z.string(), message: z.string() })),
   /** The chosen shipping rate's price, once there is an address and a rate. */
   shipping: moneyOutputSchema.nullable(),
   /** Before tax when prices exclude it; tax is worked out at checkout. */

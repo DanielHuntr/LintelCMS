@@ -12,13 +12,22 @@ import {
 import { OutOfStockError } from "../inventory/inventory.errors.js";
 import { reserveStock } from "../inventory/inventory.service.js";
 import { findOrderRow } from "../orders/orders.repository.js";
+import { holdDiscountUses } from "../discounts/discount-uses.js";
+import { DiscountCodeError } from "../discounts/discounts.errors.js";
+import {
+  marketPaymentProvider,
+  PAYMENT_PROVIDER_NAMES,
+  type PaymentProviderId,
+  ProviderRequestError,
+  type StartedPayment,
+} from "../payments/payment-provider.js";
+import { paymentProviderFor } from "../payments/payment-providers.js";
 import { StripeRequestError } from "../payments/stripe-client.js";
-import { readShopSettingsRow } from "../settings/shop-settings.service.js";
 import { chooseTaxProvider } from "../taxes/taxes.service.js";
 import type { TaxResult } from "../taxes/tax-provider.js";
 import { checkoutTotals } from "./checkout-totals.js";
 import { describeLine } from "./line-names.js";
-import { abandonCheckout, closeStripePayment } from "./checkout-expiry.js";
+import { abandonCheckout, closeProviderPayment } from "./checkout-expiry.js";
 import {
   findCheckoutRow,
   insertCheckout,
@@ -30,11 +39,12 @@ import type {
   StartCheckoutRequest,
   StartedCheckout,
 } from "./checkouts.schema.js";
-import { type PaymentStarted, startEmbeddedPayment, startHostedPayment } from "./stripe-payment.js";
+import type { CheckoutRow } from "./checkouts.table.js";
 
 /**
- * Going from a cart to paying: freeze the prices, work out tax, hold the stock, and ask
- * Stripe for a payment. The order itself is made later, by the webhook (orders/order-placement).
+ * Going from a cart to paying: freeze the prices, work out tax, hold the stock and any
+ * discount's use, and ask the market's payment provider (Stripe, PayPal or Mollie) for a
+ * payment. The order itself is made later, by the webhook (orders/order-placement).
  */
 
 /** How long stock is held, and the payment page stays open. Stripe needs at least 30 minutes. */
@@ -52,12 +62,15 @@ export async function startCheckout(
   if (!email || !shippingAddress) {
     throw new Error("refuseUnreadyCart checks the email and address");
   }
-  const settings = await readShopSettingsRow(shop.database);
-  if (settings.checkoutMode === "hosted") {
+  refuseUnusableDiscounts(cart);
+  const providerId = marketPaymentProvider(cart.market);
+  const provider = paymentProviderFor(shop, providerId);
+  const hosted = await provider.needsPages();
+  if (hosted) {
     await refuseUnknownPages(shop, request);
   }
-  const stripe = await shop.stripe();
-  const keys = await shop.stripeKeys();
+  // Fails now, with "connect it first", rather than after stock is held.
+  await provider.checkReady();
 
   const checkoutId = randomUUID();
   const tax = await calculateTax(shop, cart, checkoutId);
@@ -79,7 +92,14 @@ export async function startCheckout(
       email,
       shippingAddress,
       currency: cart.market.currency,
-      discounts: cart.discounts,
+      discounts: cart.discounts.map(({ code, title, amount, discountId, freeShipping }) => ({
+        code,
+        title,
+        amount,
+        ...(discountId && { discountId }),
+        ...(freeShipping && { freeShipping }),
+      })),
+      paymentProvider: providerId,
       taxCalculation: tax.calculation,
       taxReference: tax.reference,
       expiresAt,
@@ -96,38 +116,35 @@ export async function startCheckout(
       expiresAt,
       now,
     );
+    await holdDiscountUses(transaction, checkoutId, cart.discounts, email, now);
     return previous;
   });
   await closeReplacedPayments(shop, replaced);
 
   const checkout = await findCheckoutRow(shop.database, DEFAULT_TENANT_ID, checkoutId);
   if (!checkout) throw new Error("The checkout just saved couldn't be read");
-  let payment: PaymentStarted;
+  let payment: StartedPayment;
   try {
-    payment =
-      settings.checkoutMode === "hosted"
-        ? await startHostedPayment(stripe, checkout, {
-            successUrl: request.successUrl ?? "",
-            cancelUrl: request.cancelUrl ?? "",
-          })
-        : await startEmbeddedPayment(stripe, checkout);
+    payment = await provider.startPayment(
+      checkout,
+      hosted ? { successUrl: request.successUrl ?? "", cancelUrl: request.cancelUrl ?? "" } : null,
+    );
   } catch (error) {
     await abandonCheckout(shop.database, checkoutId);
-    throw explainStripeError(error, "start the payment");
+    throw explainProviderError(error, providerId, "start the payment");
   }
-  await updateCheckoutRow(shop.database, checkoutId, {
-    stripeCheckoutSessionId: payment.sessionId,
-    stripePaymentIntentId: payment.paymentIntentId,
-  });
+  await updateCheckoutRow(shop.database, checkoutId, payment.saved);
 
   const currency = checkout.currency;
   const amount = (value: number) => ({ amount: value, currency });
+  const publishableKey = providerId === "stripe" ? (await shop.stripeKeys()).publishableKey : null;
   return {
     checkoutId,
-    mode: settings.checkoutMode,
+    provider: providerId,
+    mode: hosted ? "hosted" : "embedded",
     url: payment.url,
     clientSecret: payment.clientSecret,
-    publishableKey: keys.publishableKey?.value ?? null,
+    publishableKey: publishableKey?.value ?? null,
     expiresAt: expiresAt.toISOString(),
     subtotal: amount(totals.subtotalAmount),
     discount: amount(totals.discountAmount),
@@ -230,26 +247,39 @@ async function calculateTax(
       idempotencyKey: `lintel-tax-${checkoutId}`,
     });
   } catch (error) {
-    throw explainStripeError(error, "work out the tax");
+    throw explainProviderError(error, "stripe", "work out the tax");
   }
 }
 
 async function closeReplacedPayments(
   shop: ShopContext,
-  replaced: ReadonlyArray<{
-    id: string;
-    stripeCheckoutSessionId: string | null;
-    stripePaymentIntentId: string | null;
-  }>,
+  replaced: readonly CheckoutRow[],
 ): Promise<void> {
   for (const checkout of replaced) {
-    await closeStripePayment(shop, checkout);
+    await closeProviderPayment(shop, checkout);
   }
 }
 
-function explainStripeError(error: unknown, action: string): unknown {
-  if (error instanceof StripeRequestError) {
-    return new PaymentProviderError(`Stripe couldn't ${action}: ${error.message}`);
+/**
+ * A code that was fine in the cart may have expired or been used up since. The shopper is
+ * told before they pay, rather than paying more than the cart said.
+ */
+function refuseUnusableDiscounts(cart: PricedCart): void {
+  const problem = cart.discountProblems.find((candidate) => candidate.blocking);
+  if (problem) {
+    throw new DiscountCodeError(problem.code, problem.message, 409);
+  }
+}
+
+function explainProviderError(
+  error: unknown,
+  providerId: PaymentProviderId,
+  action: string,
+): unknown {
+  if (error instanceof StripeRequestError || error instanceof ProviderRequestError) {
+    return new PaymentProviderError(
+      `${PAYMENT_PROVIDER_NAMES[providerId]} couldn't ${action}: ${error.message}`,
+    );
   }
   return error;
 }

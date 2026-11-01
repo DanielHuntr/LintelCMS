@@ -1,5 +1,6 @@
 import { DEFAULT_TENANT_ID } from "../../database/columns.js";
 import type { ShopContext } from "../commerce.context.js";
+import { DiscountCodeError } from "../discounts/discounts.errors.js";
 import { findMarketForCountry } from "../markets/markets.service.js";
 import { findProductRow, listVariantRowsById } from "../products/products.repository.js";
 import { findCartByToken, loadPricedCart, type PricedCart } from "./cart-loading.js";
@@ -22,6 +23,7 @@ import type {
   CreateCartRequest,
   UpdateCartRequest,
 } from "./carts.schema.js";
+import type { CartRow } from "./carts.table.js";
 
 /**
  * The storefront's cart: anonymous, opened by its token. Every change answers with the
@@ -104,17 +106,23 @@ export async function updateCart(
   const row = await findCartByToken(shop.database, token);
   const country = request.shippingAddress?.country ?? request.country;
   const market = country ? await findMarketForCountry(shop.database, country) : undefined;
+  const discountCodes = request.discountCodes && [
+    ...new Set(request.discountCodes.map((code) => code.toUpperCase())),
+  ];
   await updateCartRow(shop.database, row.id, {
     ...(request.email !== undefined && { email: request.email.toLowerCase() }),
     ...(country !== undefined && { country }),
     ...(request.shippingAddress !== undefined && { shippingAddress: request.shippingAddress }),
     ...(market && { marketId: market.id }),
     ...(request.shippingRateId !== undefined && { shippingRateId: request.shippingRateId }),
-    ...(request.discountCodes !== undefined && { discountCodes: request.discountCodes }),
+    ...(discountCodes !== undefined && { discountCodes }),
   });
 
   const updated = await findCartByToken(shop.database, token);
   const priced = await loadPricedCart(shop, shop.database, updated);
+  if (discountCodes !== undefined) {
+    await refuseUnusableCodes(shop, row, discountCodes, priced);
+  }
   if (updated.shippingRateId && !priced.chosenShipping) {
     if (request.shippingRateId) {
       throw new ShippingRateNotOfferedError();
@@ -123,6 +131,28 @@ export async function updateCart(
     return findCart(shop, token);
   }
   return describeCart(shop, priced);
+}
+
+/**
+ * A newly entered code that can't be used at all (unknown, expired, used up) is taken out
+ * of the cart again and refused with the reason, for the storefront to show by the code
+ * box. Codes that only need the shopper to spend a little more stay, with their message.
+ */
+async function refuseUnusableCodes(
+  shop: ShopContext,
+  before: CartRow,
+  codes: readonly string[],
+  priced: PricedCart,
+): Promise<void> {
+  const known = new Set(before.discountCodes.map((code) => code.toUpperCase()));
+  const refused = priced.discountProblems.find(
+    (problem) => problem.blocking && !known.has(problem.code.toUpperCase()),
+  );
+  if (!refused) return;
+  await updateCartRow(shop.database, before.id, {
+    discountCodes: codes.filter((code) => code !== refused.code),
+  });
+  throw new DiscountCodeError(refused.code, refused.message);
 }
 
 /** The ways the cart can be shipped to its address (or country), cheapest first. */
@@ -179,7 +209,9 @@ export async function describeCart(shop: ShopContext, priced: PricedCart): Promi
       code: discount.code,
       title: discount.title,
       amount: { amount: discount.amount, currency },
+      freeShipping: discount.freeShipping ?? false,
     })),
+    discountProblems: priced.discountProblems.map(({ code, message }) => ({ code, message })),
     shipping: priced.chosenShipping?.amount ?? null,
     total: {
       amount: priced.subtotal.amount - priced.discountTotal + shippingAmount,

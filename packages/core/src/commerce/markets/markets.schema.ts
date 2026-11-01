@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { countryCodeSchema, currencyCodeSchema } from "../money/currencies.js";
 import { priceRoundingRules } from "../money/price-conversion.js";
+import { paymentProviderIds } from "../payments/payment-provider.js";
 
 const countryListSchema = z
   .array(countryCodeSchema, { error: "Please send a list of country codes, like GB or US" })
@@ -43,6 +44,11 @@ export const updateMarketRequestSchema = z.object({
   priceRounding: marketFields.priceRounding.optional(),
   pricesIncludeTax: marketFields.pricesIncludeTax.optional(),
   isPrimary: z.literal(true, { error: "Only isPrimary: true can be sent" }).optional(),
+  /** Who takes this market's payments; null goes back to Stripe. */
+  paymentProvider: z
+    .enum(paymentProviderIds, { error: "The payment provider should be stripe, paypal or mollie" })
+    .nullable()
+    .optional(),
 });
 
 export const marketSchema = z.object({
@@ -55,6 +61,7 @@ export const marketSchema = z.object({
   exchangeRate: z.number(),
   priceRounding: z.enum(priceRoundingRules),
   pricesIncludeTax: z.boolean(),
+  paymentProvider: z.enum(paymentProviderIds),
 });
 
 export type CreateMarketRequest = z.infer<typeof createMarketRequestSchema>;

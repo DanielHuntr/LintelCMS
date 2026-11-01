@@ -1,3 +1,4 @@
+import { marketPaymentProvider } from "../payments/payment-provider.js";
 import type { DatabaseOrTransaction } from "../../database/client.js";
 import { DEFAULT_TENANT_ID } from "../../database/columns.js";
 import { firstFreeSlug, slugify } from "../../entries/slugs.js";
@@ -124,6 +125,7 @@ export function describeMarket(row: MarketRow): Market {
     exchangeRate: row.exchangeRate,
     priceRounding: row.priceRounding,
     pricesIncludeTax: row.pricesIncludeTax,
+    paymentProvider: marketPaymentProvider(row),
   };
 }
 

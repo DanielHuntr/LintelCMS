@@ -9,6 +9,8 @@ export interface ShippingQuote {
   name: string;
   deliveryEstimate: string;
   amount: Money;
+  /** What it would cost without a free-shipping discount, when one applies. */
+  amountBeforeDiscount?: Money;
 }
 
 export interface Parcel {

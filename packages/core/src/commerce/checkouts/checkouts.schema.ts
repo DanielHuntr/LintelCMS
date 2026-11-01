@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { paymentProviderIds } from "../payments/payment-provider.js";
 import { checkoutModes } from "../settings/shop-settings.table.js";
 import { checkoutStatuses } from "./checkouts.table.js";
 
@@ -19,8 +20,8 @@ const pageUrlSchema = (label: string) =>
     );
 
 /**
- * `POST /delivery/shop/carts/:token/checkout`. Where Stripe's payment page sends the shopper
- * back to; only needed for the hosted checkout.
+ * `POST /delivery/shop/carts/:token/checkout`. Where the payment page sends the shopper back
+ * to; needed for every hosted page (Stripe Checkout, PayPal, Mollie).
  */
 export const startCheckoutRequestSchema = z
   .object({
@@ -35,6 +36,8 @@ const moneySchema = z.object({ amount: z.number().int(), currency: z.string() })
 
 export const startedCheckoutSchema = z.object({
   checkoutId: z.uuid(),
+  /** Who takes the payment: the market's provider. */
+  provider: z.enum(paymentProviderIds),
   mode: z.enum(checkoutModes),
   /** Hosted: send the shopper here. */
   url: z.string().nullable(),

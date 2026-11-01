@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import type { Database } from "../database/client.js";
 import type { AssetLookup } from "../fieldtypes/image-assets.js";
 import type { DiscountProvider } from "./discounts/discount-provider.js";
-import { noDiscounts } from "./discounts/discount-provider.js";
+import { storedDiscounts } from "./discounts/stored-discounts.js";
 import type { EmailProvider } from "./emails/email-provider.js";
 import { OutboxEmailProvider } from "./emails/outbox-email-provider.js";
 import { ShopNotReadyError } from "./commerce.errors.js";
@@ -20,8 +20,16 @@ export interface CommerceOptions {
   environment?: Environment;
   /** How order emails are sent. Defaults to the outbox, readable in the admin. */
   emailProvider?: EmailProvider;
-  /** Where discounts come from. Defaults to none: see discounts/README.md. */
+  /** Where discounts come from. Defaults to the ones made in Shop → Discounts. */
   discountProvider?: DiscountProvider;
+  /** How PayPal and Mollie are called. Tests pass fakes, so they never touch the network. */
+  paymentFetch?: typeof fetch;
+  /** Defaults to PayPal's sandbox or live address, as the credentials say. */
+  payPalApiUrl?: string;
+  /** Defaults to https://api.mollie.com. */
+  mollieApiUrl?: string;
+  /** How the Shopify importer downloads product photos. Tests pass a fake. */
+  importFetch?: typeof fetch;
   /** What time it is, for reservations and webhook signatures. Tests move it on. */
   now?: () => Date;
   /** Release stock held by abandoned checkouts every minute. Off in tests. */
@@ -39,6 +47,10 @@ export interface ShopContext {
   readonly discounts: DiscountProvider;
   readonly environment: Environment;
   readonly publicApiUrl: string;
+  readonly paymentFetch: typeof fetch;
+  readonly payPalApiUrl: string | undefined;
+  readonly mollieApiUrl: string | undefined;
+  readonly importFetch: typeof fetch;
   now(): Date;
   stripeKeys(): Promise<StripeKeys>;
   /** A client for the configured secret key; a clear error when there isn't one yet. */
@@ -63,9 +75,13 @@ export function createShopContext(server: FastifyInstance, options: CommerceOpti
       return server.assetLookup;
     },
     emails: options.emailProvider ?? new OutboxEmailProvider(() => server.database),
-    discounts: options.discountProvider ?? noDiscounts,
+    discounts: options.discountProvider ?? storedDiscounts(() => server.database, now),
     environment,
     publicApiUrl: options.publicApiUrl ?? server.publicApiUrl,
+    paymentFetch: options.paymentFetch ?? globalThis.fetch,
+    payPalApiUrl: options.payPalApiUrl,
+    mollieApiUrl: options.mollieApiUrl,
+    importFetch: options.importFetch ?? globalThis.fetch,
     now,
     stripeKeys: async () =>
       resolveStripeKeys(await readShopSettingsRow(server.database), environment),

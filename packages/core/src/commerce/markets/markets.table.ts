@@ -10,6 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { id, tenantId, timestamps } from "../../database/columns.js";
 import { type PriceRounding, priceRoundingRules } from "../money/price-conversion.js";
+import { paymentProviderIds } from "../payments/payment-provider.js";
 
 /**
  * Where the shop sells, and in what currency: "United Kingdom" in GBP, "Europe" in EUR.
@@ -38,6 +39,8 @@ export const marketsTable = pgTable(
       .default("exact"),
     /** Prices shown with tax in them (UK, EU), or with tax added at checkout (US). */
     pricesIncludeTax: boolean("prices_include_tax").notNull().default(true),
+    /** Who takes payments from this market's shoppers. Null means Stripe, the default. */
+    paymentProvider: text("payment_provider", { enum: paymentProviderIds }),
     position: integer("position").notNull().default(0),
     ...timestamps(),
   },

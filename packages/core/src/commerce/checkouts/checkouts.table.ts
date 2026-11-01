@@ -10,6 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { id, tenantId, timestamps } from "../../database/columns.js";
 import type { Address } from "../customers/address.schema.js";
+import { paymentProviderIds } from "../payments/payment-provider.js";
 
 /** One line of a checkout or order, priced and taxed. Amounts are minor units. */
 export interface PricedLine {
@@ -35,10 +36,17 @@ export interface ShippingLine {
   taxAmount: number;
 }
 
+/**
+ * A discount as it was applied: the code ("" for automatic ones), its title and what it
+ * took off. Free-shipping discounts have `freeShipping` and the delivery cost they saved
+ * as `amount`; that saving is already in the shipping line, not in `discountAmount`.
+ */
 export interface AppliedDiscount {
   code: string;
   title: string;
   amount: number;
+  discountId?: string;
+  freeShipping?: boolean;
 }
 
 export const checkoutStatuses = ["open", "completed", "expired", "needs_review"] as const;
@@ -74,6 +82,12 @@ export const checkoutsTable = pgTable(
     /** "stripe" or "manual", and Stripe's tax calculation id when it did the sums. */
     taxCalculation: text("tax_calculation").notNull(),
     taxReference: text("tax_reference"),
+    /** Who takes the payment: the market's choice when the checkout started. */
+    paymentProvider: text("payment_provider", { enum: paymentProviderIds })
+      .notNull()
+      .default("stripe"),
+    /** PayPal's order id or Mollie's payment id; Stripe's are in the two columns below. */
+    providerPaymentId: text("provider_payment_id"),
     stripeCheckoutSessionId: text("stripe_checkout_session_id"),
     stripePaymentIntentId: text("stripe_payment_intent_id"),
     problem: text("problem"),
@@ -84,6 +98,7 @@ export const checkoutsTable = pgTable(
   (table) => [
     index("shop_checkouts_status_idx").on(table.tenantId, table.status, table.expiresAt),
     index("shop_checkouts_session_idx").on(table.stripeCheckoutSessionId),
+    index("shop_checkouts_provider_payment_idx").on(table.providerPaymentId),
   ],
 );
 

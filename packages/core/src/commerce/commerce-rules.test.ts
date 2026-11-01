@@ -25,6 +25,7 @@ const europe: MarketRow = {
   exchangeRate: 1.17,
   priceRounding: "ninety_nine",
   pricesIncludeTax: true,
+  paymentProvider: null,
   position: 1,
   createdAt: now,
   updatedAt: now,

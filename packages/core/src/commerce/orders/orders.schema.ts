@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { addressSchema } from "../customers/address.schema.js";
 import { minorAmountSchema } from "../money/money.js";
+import { paymentProviderIds } from "../payments/payment-provider.js";
 import { orderDisplayStatuses } from "./order-statuses.js";
 import { fulfilmentStatuses, paymentStatuses, refundStatuses } from "./orders.table.js";
 
@@ -96,6 +97,15 @@ export const orderSchema = orderSummarySchema.extend({
   shippingLine: z.object({ name: z.string(), amount: moneySchema }),
   subtotal: moneySchema,
   discount: moneySchema,
+  /** Each discount the order had: "" as the code for automatic ones. */
+  discounts: z.array(
+    z.object({
+      code: z.string(),
+      title: z.string(),
+      amount: moneySchema,
+      freeShipping: z.boolean(),
+    }),
+  ),
   shipping: moneySchema,
   tax: moneySchema,
   refunded: moneySchema,
@@ -150,6 +160,8 @@ export const orderSchema = orderSummarySchema.extend({
       createdAt: z.iso.datetime(),
     }),
   ),
+  /** Who took the payment. */
+  paymentProvider: z.enum(paymentProviderIds),
   stripePaymentUrl: z.string().nullable(),
 });
 

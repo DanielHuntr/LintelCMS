@@ -6,10 +6,14 @@ import { expireAbandonedCheckouts } from "./checkouts/checkout-expiry.js";
 import { type CommerceOptions, createShopContext } from "./commerce.context.js";
 import { CommercePluginDisabledError } from "./commerce.errors.js";
 import { customersRoutes } from "./customers/customers.routes.js";
+import { discountsRoutes } from "./discounts/discounts.routes.js";
 import { emailsRoutes } from "./emails/emails.routes.js";
 import { inventoryRoutes } from "./inventory/inventory.routes.js";
 import { marketsRoutes } from "./markets/markets.routes.js";
 import { ordersRoutes } from "./orders/orders.routes.js";
+import { mollieWebhookRoutes } from "./payments/mollie/mollie-webhook.routes.js";
+import { paymentProvidersRoutes } from "./payments/payment-providers.routes.js";
+import { payPalWebhookRoutes } from "./payments/paypal/paypal-webhook.routes.js";
 import { stripeWebhookRoutes } from "./payments/stripe-webhook.routes.js";
 import { productCollectionsRoutes } from "./product-collections/product-collections.routes.js";
 import { productsRoutes } from "./products/products.routes.js";
@@ -51,11 +55,15 @@ export async function commercePlugin(server: FastifyInstance, options: CommerceO
   server.register(productCollectionsRoutes);
   server.register(ordersRoutes, withShop);
   server.register(customersRoutes);
+  server.register(discountsRoutes, withShop);
   server.register(emailsRoutes, withShop);
   server.register(salesRoutes, withShop);
   server.register(storefrontRoutes, withShop);
   server.register(cartsRoutes, withShop);
   server.register(stripeWebhookRoutes, withShop);
+  server.register(paymentProvidersRoutes, withShop);
+  server.register(payPalWebhookRoutes, withShop);
+  server.register(mollieWebhookRoutes, withShop);
 
   if (options.runScheduledJobs ?? true) {
     let job: RepeatingJob | undefined;

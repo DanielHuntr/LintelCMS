@@ -4,8 +4,14 @@ import { PaymentProviderError, ShopRecordNotFoundError } from "../commerce.error
 import { sendOrderRefunded } from "../emails/order-notifications.js";
 import { restock } from "../inventory/inventory.service.js";
 import { formatMoney } from "../money/money-format.js";
-import { createStripeRefund, type StripeRefund } from "../payments/stripe-api.js";
-import { StripeRequestError } from "../payments/stripe-client.js";
+import {
+  PAYMENT_PROVIDER_NAMES,
+  type ProviderRefund,
+  ProviderRequestError,
+} from "../payments/payment-provider.js";
+import { paymentProviderFor } from "../payments/payment-providers.js";
+import type { StripeRefund } from "../payments/stripe-api.js";
+import { stripeRefundStatus } from "../payments/stripe-provider.js";
 import { InvalidOrderLinesError, RefundTooLargeError } from "./orders.errors.js";
 import {
   findOrderRow,
@@ -20,15 +26,20 @@ import type { LineQuantity, RefundRow, RefundStatus } from "./orders.table.js";
 import { paidForLine, refreshOrderTotals, refundableAmount } from "./order-totals.js";
 import {
   findRefundRow,
+  findRefundRowByProviderId,
   findRefundRowByStripeId,
   insertRefund,
   updateRefundRow,
 } from "./refunds-and-fulfilments.repository.js";
 
 /**
- * Giving money back, always through Stripe. A refund is saved as `pending` before Stripe is
- * asked, so two clicks can't refund twice (the second sees the first counted against what's
- * left), and Stripe's own idempotency key makes a retried request safe as well.
+ * Giving money back, always through the provider that took it (Stripe, PayPal or Mollie).
+ * A refund is saved as `pending` before the provider is asked, so two clicks can't refund
+ * twice (the second sees the first counted against what's left), and the provider's own
+ * idempotency key makes a retried request safe as well.
+ *
+ * A line's refund is what was paid for it: its price after its share of any discount, plus
+ * its tax when tax was added on top (order-totals.ts).
  */
 
 export interface RefundOutcome {
@@ -47,32 +58,35 @@ export async function refundOrder(
     savePendingRefund(transaction, orderId, request, createdBy),
   );
   const order = await findOrderRow(shop.database, orderId);
-  if (!order?.stripePaymentIntentId) {
-    throw new Error("A paid order always has its Stripe payment");
+  if (!order) {
+    throw new ShopRecordNotFoundError("order");
   }
 
-  let stripeRefund: StripeRefund;
+  let made: ProviderRefund;
   try {
-    stripeRefund = await createStripeRefund(await shop.stripe(), {
-      paymentIntentId: order.stripePaymentIntentId,
-      amount: pending.amount,
-      orderId,
-      refundId: pending.id,
-    });
+    made = await paymentProviderFor(shop, order.paymentProvider).refundPayment(order, pending);
   } catch (error) {
     await shop.database.transaction((transaction) =>
       changeRefundStatus(transaction, pending, "failed"),
     );
-    if (error instanceof StripeRequestError) {
-      throw new PaymentProviderError(`Stripe couldn't make the refund: ${error.message}`);
+    if (error instanceof ProviderRequestError) {
+      throw new PaymentProviderError(
+        `${PAYMENT_PROVIDER_NAMES[order.paymentProvider]} couldn't make the refund: ${error.message}`,
+      );
     }
     throw error;
   }
 
   const outcome = await shop.database.transaction(async (transaction) => {
-    await updateRefundRow(transaction, pending.id, { stripeRefundId: stripeRefund.id });
+    await updateRefundRow(
+      transaction,
+      pending.id,
+      order.paymentProvider === "stripe"
+        ? { stripeRefundId: made.reference }
+        : { providerRefundId: made.reference },
+    );
     const current = (await findRefundRow(transaction, pending.id)) ?? pending;
-    return changeRefundStatus(transaction, current, stripeRefundStatus(stripeRefund.status));
+    return changeRefundStatus(transaction, current, made.status);
   });
   await notifyIfRefunded(shop, outcome);
   return outcome.refund;
@@ -178,6 +192,16 @@ function checkRefundLines(
   });
 }
 
+/** A PayPal or Mollie refund that has settled since it was made. */
+export async function settleProviderRefund(
+  transaction: Transaction,
+  providerRefundId: string,
+  status: RefundStatus,
+): Promise<RefundOutcome | null> {
+  const refund = await findRefundRowByProviderId(transaction, providerRefundId);
+  return refund ? changeRefundStatus(transaction, refund, status) : null;
+}
+
 /**
  * Moves a refund on, doing what each move means exactly once:
  *   pending → succeeded   restock if asked, update the order's numbers, note it
@@ -233,10 +257,4 @@ async function changeRefundStatus(
   }
   await refreshOrderTotals(transaction, order);
   return { refund: { ...refund, status }, justSucceeded: status === "succeeded" };
-}
-
-function stripeRefundStatus(status: string | null | undefined): RefundStatus {
-  if (status === "succeeded") return "succeeded";
-  if (status === "failed" || status === "canceled") return "failed";
-  return "pending";
 }

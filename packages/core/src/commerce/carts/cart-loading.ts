@@ -1,7 +1,7 @@
 import type { DatabaseOrTransaction } from "../../database/client.js";
 import { DEFAULT_TENANT_ID } from "../../database/columns.js";
 import type { ShopContext } from "../commerce.context.js";
-import type { Discount } from "../discounts/discount-provider.js";
+import type { Discount, DiscountProblem } from "../discounts/discount-provider.js";
 import { listOpenCheckoutIdsForCart } from "../checkouts/checkouts.repository.js";
 import { describeStock } from "../inventory/inventory.service.js";
 import { findMarket, findPrimaryMarket } from "../markets/markets.service.js";
@@ -33,6 +33,8 @@ export interface PricedCart {
   subtotal: Money;
   discountTotal: number;
   discounts: Discount[];
+  /** Why codes in the cart don't apply, in words for the shopper. */
+  discountProblems: DiscountProblem[];
   shippingQuotes: ShippingQuote[];
   chosenShipping: ShippingQuote | null;
   weightGrams: number;
@@ -93,18 +95,20 @@ export async function loadPricedCart(
     codes: row.discountCodes,
     email: row.email,
     lines: buyable.map((line) => ({
+      lineId: line.id,
       variantId: line.variantId,
       productId: line.productId ?? "",
       quantity: line.quantity,
+      unitAmount: line.unitPrice?.amount ?? 0,
       subtotalAmount: line.subtotal.amount,
     })),
     subtotalAmount: grossSubtotal,
   });
-  const { lines, discountTotal, applied } = applyDiscounts(priced, offered);
+  const { lines, discountTotal, applied } = applyDiscounts(priced, offered.discounts);
   const subtotal = { amount: grossSubtotal - discountTotal, currency: market.currency };
   const weightGrams = buyable.reduce((sum, line) => sum + line.weightGrams * line.quantity, 0);
   const country = row.shippingAddress?.country ?? row.country;
-  const shippingQuotes = country
+  const quoted = country
     ? await findShippingQuotes(
         database,
         { country, weightGrams, subtotal },
@@ -112,6 +116,10 @@ export async function loadPricedCart(
         primaryCurrency,
       )
     : [];
+  const freeShipping = applied.some((discount) => discount.freeShipping);
+  const shippingQuotes = freeShipping ? quoted.map(makeFree) : quoted;
+  const chosenShipping =
+    shippingQuotes.find((quote) => quote.rateId === row.shippingRateId) ?? null;
 
   return {
     row,
@@ -120,9 +128,23 @@ export async function loadPricedCart(
     lines,
     subtotal: { amount: grossSubtotal, currency: market.currency },
     discountTotal,
-    discounts: applied,
+    // A free-shipping discount is worth what the chosen delivery would have cost.
+    discounts: applied.map((discount) =>
+      discount.freeShipping
+        ? { ...discount, amount: chosenShipping?.amountBeforeDiscount?.amount ?? 0 }
+        : discount,
+    ),
+    discountProblems: offered.problems,
     shippingQuotes,
-    chosenShipping: shippingQuotes.find((quote) => quote.rateId === row.shippingRateId) ?? null,
+    chosenShipping,
     weightGrams,
+  };
+}
+
+function makeFree(quote: ShippingQuote): ShippingQuote {
+  return {
+    ...quote,
+    amount: { amount: 0, currency: quote.amount.currency },
+    amountBeforeDiscount: quote.amount,
   };
 }

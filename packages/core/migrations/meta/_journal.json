@@ -64,6 +64,13 @@
       "when": 1793500482710,
       "tag": "0008_add_commerce",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793533617687,
+      "tag": "0009_add_discounts_and_payment_providers",
+      "breakpoints": true
     }
   ]
 }

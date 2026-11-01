@@ -5,15 +5,19 @@ import { setEnabledPlugins } from "../../plugins/plugins.service.js";
 import { startTestServer } from "../../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../../testing/test-users.js";
 import type { CommerceOptions } from "../commerce.context.js";
+import { FakeMollie } from "./fake-mollie.js";
+import { FakePayPal, payPalWebhookRequest } from "./fake-paypal.js";
 import { FAKE_STRIPE_ENVIRONMENT, FakeStripe, signedStripeWebhook } from "./fake-stripe.js";
 
 /**
- * A server with the shop switched on, Stripe faked, a clock tests can move, and an admin
- * signed in. Each `useTestDatabase` test builds one in beforeEach.
+ * A server with the shop switched on, Stripe, PayPal and Mollie faked, a clock tests can
+ * move, and an admin signed in. Each `useTestDatabase` test builds one in beforeEach.
  */
 export interface TestShop {
   server: FastifyInstance;
   stripe: FakeStripe;
+  paypal: FakePayPal;
+  mollie: FakeMollie;
   clock: { now: Date; advanceMinutes(minutes: number): void };
   admin: (method: Method, url: string, payload?: unknown) => Promise<LightMyRequestResponse>;
   storefront: (method: Method, url: string, payload?: unknown) => Promise<LightMyRequestResponse>;
@@ -22,6 +26,12 @@ export interface TestShop {
     type: string;
     data: { object: Record<string, unknown> };
   }): Promise<LightMyRequestResponse>;
+  sendPayPalWebhook(
+    event: { id: string; event_type: string; resource: Record<string, unknown> },
+    signature?: string,
+  ): Promise<LightMyRequestResponse>;
+  /** What Mollie sends: only the payment's id, form-encoded. */
+  sendMollieWebhook(paymentId: string): Promise<LightMyRequestResponse>;
 }
 
 type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -32,6 +42,12 @@ export async function startTestShop(
   options: Partial<CommerceOptions> = {},
 ): Promise<TestShop> {
   const stripe = new FakeStripe();
+  const paypal = new FakePayPal();
+  const mollie = new FakeMollie();
+  const paymentFetch: typeof fetch = (input, init) =>
+    new URL(String(input)).hostname.includes("paypal")
+      ? paypal.fetch(input, init)
+      : mollie.fetch(input, init);
   const clock = {
     now: new Date("2026-11-01T10:00:00Z"),
     advanceMinutes(minutes: number) {
@@ -41,6 +57,7 @@ export async function startTestShop(
   const server = await startTestServer(activeDatabase, {
     commerce: {
       stripeFetch: stripe.fetch,
+      paymentFetch,
       environment: FAKE_STRIPE_ENVIRONMENT,
       now: () => clock.now,
       runScheduledJobs: false,
@@ -63,6 +80,8 @@ export async function startTestShop(
   return {
     server,
     stripe,
+    paypal,
+    mollie,
     clock,
     admin: send({ cookies }),
     storefront: send({}),
@@ -70,6 +89,17 @@ export async function startTestShop(
       const { payload, headers } = signedStripeWebhook(event, clock.now);
       return server.inject({ method: "POST", url: "/shop/stripe/webhook", payload, headers });
     },
+    sendPayPalWebhook: (event, signature) => {
+      const { payload, headers } = payPalWebhookRequest(event, signature);
+      return server.inject({ method: "POST", url: "/shop/paypal/webhook", payload, headers });
+    },
+    sendMollieWebhook: (paymentId) =>
+      server.inject({
+        method: "POST",
+        url: "/shop/mollie/webhook",
+        payload: `id=${encodeURIComponent(paymentId)}`,
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+      }),
   };
 }
 

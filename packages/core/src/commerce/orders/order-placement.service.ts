@@ -4,8 +4,10 @@ import { describeLine } from "../checkouts/line-names.js";
 import { lockCheckoutRow, updateCheckoutRow } from "../checkouts/checkouts.repository.js";
 import type { CheckoutRow } from "../checkouts/checkouts.table.js";
 import { recordCustomerForOrder } from "../customers/customers.service.js";
+import { markRedemptionsUsed } from "../discounts/discounts.repository.js";
 import { takeStockForOrder } from "../inventory/inventory.service.js";
 import { formatMoney } from "../money/money-format.js";
+import { PAYMENT_PROVIDER_NAMES, type PaymentProviderId } from "../payments/payment-provider.js";
 import { takeNextOrderNumber } from "../settings/shop-settings.repository.js";
 import {
   findOrderRow,
@@ -16,14 +18,20 @@ import {
 import type { OrderRow } from "./orders.table.js";
 
 /**
- * Turning a paid checkout into an order. Called only from the Stripe webhook, after its
- * signature has been checked, inside the transaction that records the event: an order
- * never exists without a payment Stripe has confirmed.
+ * Turning a paid checkout into an order. Called only once the payment provider has
+ * confirmed the payment in a way that can't be forged (Stripe's signed webhook, a PayPal
+ * webhook PayPal verified, a Mollie payment fetched back from Mollie), inside the
+ * transaction that records it: an order never exists without a confirmed payment.
  */
 
 export interface ConfirmedPayment {
+  /** Defaults to Stripe. */
+  provider?: PaymentProviderId;
+  /** Stripe's payment intent, for Stripe payments. */
   paymentIntentId: string | null;
-  /** What Stripe says was paid, in minor units, and in which currency (lowercase from Stripe). */
+  /** PayPal's capture id or Mollie's payment id, which refunds go against. */
+  providerPaymentId?: string | null;
+  /** What the provider says was paid, in minor units, and in which currency (any case). */
   amount: number;
   currency: string;
 }
@@ -53,7 +61,7 @@ export async function placeOrderForPayment(
     payment.currency.toUpperCase() !== checkout.currency
   ) {
     // Never guess: a payment that doesn't match the checkout is left for a person to look at.
-    const problem = `Stripe reported ${formatMoney({ amount: payment.amount, currency: payment.currency.toUpperCase() })} paid, but the checkout came to ${formatMoney({ amount: checkout.totalAmount, currency: checkout.currency })}.`;
+    const problem = `${PAYMENT_PROVIDER_NAMES[payment.provider ?? "stripe"]} reported ${formatMoney({ amount: payment.amount, currency: payment.currency.toUpperCase() })} paid, but the checkout came to ${formatMoney({ amount: checkout.totalAmount, currency: checkout.currency })}.`;
     await updateCheckoutRow(transaction, checkout.id, { status: "needs_review", problem });
     return { outcome: "needs_review", checkout: { ...checkout, status: "needs_review", problem } };
   }
@@ -82,6 +90,8 @@ export async function placeOrderForPayment(
     taxAmount: checkout.taxAmount,
     totalAmount: checkout.totalAmount,
     taxesIncluded: checkout.taxesIncluded,
+    paymentProvider: payment.provider ?? "stripe",
+    providerPaymentId: payment.providerPaymentId ?? null,
     stripePaymentIntentId: payment.paymentIntentId ?? checkout.stripePaymentIntentId,
     paidAt,
   });
@@ -116,6 +126,7 @@ export async function placeOrderForPayment(
     })),
   );
   await updateCheckoutRow(transaction, checkout.id, { status: "completed", orderId: order.id });
+  await markRedemptionsUsed(transaction, checkout.id, order.id);
 
   await insertOrderEvent(transaction, {
     orderId: order.id,
@@ -125,9 +136,23 @@ export async function placeOrderForPayment(
   await insertOrderEvent(transaction, {
     orderId: order.id,
     kind: "paid",
-    message: `Payment of ${formatMoney({ amount: payment.amount, currency: checkout.currency })} received through Stripe`,
-    data: { paymentIntentId: order.stripePaymentIntentId },
+    message: `Payment of ${formatMoney({ amount: payment.amount, currency: checkout.currency })} received through ${PAYMENT_PROVIDER_NAMES[order.paymentProvider]}`,
+    data: {
+      paymentIntentId: order.stripePaymentIntentId,
+      providerPaymentId: order.providerPaymentId,
+    },
   });
+  for (const discount of checkout.discounts) {
+    const name = discount.code ? `Code ${discount.code}` : discount.title;
+    await insertOrderEvent(transaction, {
+      orderId: order.id,
+      kind: "discount",
+      message: discount.freeShipping
+        ? `${name} made delivery free (saving ${formatMoney({ amount: discount.amount, currency: checkout.currency })})`
+        : `${name} took ${formatMoney({ amount: discount.amount, currency: checkout.currency })} off`,
+      data: { discountId: discount.discountId ?? null, code: discount.code },
+    });
+  }
   if (oversold.length > 0) {
     const titles = checkout.lines
       .filter((line) => oversold.includes(line.variantId))

@@ -1,14 +1,18 @@
 import type { DatabaseOrTransaction } from "../../database/client.js";
 import type { ShopContext } from "../commerce.context.js";
+import { releaseRedemptions } from "../discounts/discounts.repository.js";
 import { releaseStock } from "../inventory/inventory.service.js";
 import { releaseExpiredReservationRows } from "../inventory/inventory.repository.js";
-import { cancelStripePaymentIntent, expireStripeCheckoutSession } from "../payments/stripe-api.js";
+import { PAYMENT_PROVIDER_NAMES } from "../payments/payment-provider.js";
+import { paymentProviderFor } from "../payments/payment-providers.js";
 import { expireOpenCheckoutRow, listExpiredOpenCheckoutRows } from "./checkouts.repository.js";
+import type { CheckoutRow } from "./checkouts.table.js";
 
 /**
- * Checkouts nobody paid for. Their stock goes back on sale, and their Stripe payment is
- * closed so it can't be paid later. A payment that still arrives (they can cross in the
- * post) is honoured anyway: see orders/order-placement.service.ts.
+ * Checkouts nobody paid for. Their stock goes back on sale, any discount use they held is
+ * given back, and their payment is closed at the provider so it can't be paid later. A
+ * payment that still arrives (they can cross in the post) is honoured anyway: see
+ * orders/order-placement.service.ts.
  */
 
 /** Marks an open checkout expired and releases its stock. Safe to call twice. */
@@ -18,28 +22,19 @@ export async function abandonCheckout(
 ): Promise<void> {
   await expireOpenCheckoutRow(database, checkoutId);
   await releaseStock(database, checkoutId);
+  await releaseRedemptions(database, checkoutId);
 }
 
-/** Closes the Stripe side. Failures are logged: the checkout is already closed on ours. */
-export async function closeStripePayment(
+/** Closes the provider's side. Failures are logged: the checkout is already closed on ours. */
+export async function closeProviderPayment(
   shop: ShopContext,
-  checkout: {
-    id: string;
-    stripeCheckoutSessionId: string | null;
-    stripePaymentIntentId?: string | null;
-  },
+  checkout: CheckoutRow,
 ): Promise<void> {
-  if (!checkout.stripeCheckoutSessionId && !checkout.stripePaymentIntentId) return;
   try {
-    const stripe = await shop.stripe();
-    if (checkout.stripeCheckoutSessionId) {
-      await expireStripeCheckoutSession(stripe, checkout.stripeCheckoutSessionId);
-    } else if (checkout.stripePaymentIntentId) {
-      await cancelStripePaymentIntent(stripe, checkout.stripePaymentIntentId);
-    }
+    await paymentProviderFor(shop, checkout.paymentProvider).closePayment(checkout);
   } catch (error) {
     shop.log.warn(
-      `Closing the Stripe payment for checkout ${checkout.id} didn't work: ${error instanceof Error ? error.message : String(error)}`,
+      `Closing the ${PAYMENT_PROVIDER_NAMES[checkout.paymentProvider]} payment for checkout ${checkout.id} didn't work: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
 }
@@ -51,9 +46,10 @@ export async function expireAbandonedCheckouts(shop: ShopContext): Promise<numbe
   const expired = await listExpiredOpenCheckoutRows(shop.database, now);
   for (const checkout of expired) {
     if (await expireOpenCheckoutRow(shop.database, checkout.id)) {
-      // Hosted pages expire on Stripe's side at the same moment; only payment intents need closing.
+      await releaseRedemptions(shop.database, checkout.id);
+      // Stripe's hosted pages expire on Stripe's side at the same moment.
       if (!checkout.stripeCheckoutSessionId) {
-        await closeStripePayment(shop, checkout);
+        await closeProviderPayment(shop, checkout);
       }
     }
   }

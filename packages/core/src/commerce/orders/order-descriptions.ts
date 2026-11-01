@@ -46,6 +46,12 @@ export function describeOrder(row: OrderRow, parts: OrderParts): Order {
     shippingLine: { name: row.shippingLine.name, amount: money(row.shippingLine.amount) },
     subtotal: money(row.subtotalAmount),
     discount: money(row.discountAmount),
+    discounts: row.discounts.map((discount) => ({
+      code: discount.code,
+      title: discount.title,
+      amount: money(discount.amount),
+      freeShipping: discount.freeShipping ?? false,
+    })),
     shipping: money(row.shippingAmount),
     tax: money(row.taxAmount),
     refunded: money(row.refundedAmount),
@@ -91,6 +97,7 @@ export function describeOrder(row: OrderRow, parts: OrderParts): Order {
       message: event.message,
       createdAt: event.createdAt.toISOString(),
     })),
+    paymentProvider: row.paymentProvider,
     stripePaymentUrl:
       row.stripePaymentIntentId && parts.stripeMode
         ? `https://dashboard.stripe.com/${parts.stripeMode === "test" ? "test/" : ""}payments/${row.stripePaymentIntentId}`

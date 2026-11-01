@@ -3,11 +3,10 @@ import { HttpError } from "../../http/http-errors.js";
 import { abandonCheckout } from "../checkouts/checkout-expiry.js";
 import type { ShopContext } from "../commerce.context.js";
 import { ShopNotReadyError } from "../commerce.errors.js";
-import { sendOrderConfirmation } from "../emails/order-notifications.js";
-import { insertOrderEvent } from "../orders/orders.repository.js";
-import { placeOrderForPayment, type PlacementResult } from "../orders/order-placement.service.js";
+import { placeOrderForPayment } from "../orders/order-placement.service.js";
 import { notifyIfRefunded, recordStripeRefund } from "../orders/refunds.service.js";
-import { createStripeTaxTransaction, stripeRefundSchema } from "./stripe-api.js";
+import { type AfterCommit, followUpPlacement, runAfterCommit } from "./payment-follow-up.js";
+import { stripeRefundSchema } from "./stripe-api.js";
 import { recordStripeEventIfNew } from "./stripe-events.repository.js";
 import { verifyStripeSignature } from "./stripe-signature.js";
 import {
@@ -34,8 +33,6 @@ export class InvalidStripeSignatureError extends HttpError {
     );
   }
 }
-
-type AfterCommit = () => Promise<void>;
 
 export async function handleStripeWebhook(
   shop: ShopContext,
@@ -69,13 +66,7 @@ export async function handleStripeWebhook(
     return true;
   });
 
-  for (const action of afterCommit) {
-    try {
-      await action();
-    } catch (error) {
-      shop.log.error(error, `Following up Stripe event ${event.id} failed`);
-    }
-  }
+  await runAfterCommit(shop, afterCommit, `Stripe event ${event.id}`);
   return { received: true, duplicate: !isNew };
 }
 
@@ -143,36 +134,6 @@ async function handleEvent(
     default:
       // Events the shop doesn't need are acknowledged, so Stripe stops sending them.
       return;
-  }
-}
-
-function followUpPlacement(
-  shop: ShopContext,
-  result: PlacementResult,
-  afterCommit: AfterCommit[],
-): void {
-  if (result.outcome === "needs_review") {
-    shop.log.warn(`Checkout ${result.checkout.id} needs review: ${result.checkout.problem ?? ""}`);
-    return;
-  }
-  if (result.outcome !== "placed") return;
-  const { order, checkout } = result;
-  afterCommit.push(() => sendOrderConfirmation(shop, order.id));
-  if (checkout.taxCalculation === "stripe" && checkout.taxReference) {
-    const calculationId = checkout.taxReference;
-    afterCommit.push(async () => {
-      try {
-        await createStripeTaxTransaction(await shop.stripe(), calculationId, order.id);
-      } catch (error) {
-        shop.log.error(error, `Recording the tax for order ${order.name} with Stripe failed`);
-        await insertOrderEvent(shop.database, {
-          orderId: order.id,
-          kind: "tax_not_recorded",
-          message:
-            "The tax on this order couldn't be recorded with Stripe Tax. Add it to your tax report by hand.",
-        });
-      }
-    });
   }
 }
 

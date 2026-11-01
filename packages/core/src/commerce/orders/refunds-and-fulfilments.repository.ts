@@ -47,10 +47,22 @@ export async function findRefundRowByStripeId(
   return row;
 }
 
+export async function findRefundRowByProviderId(
+  database: DatabaseOrTransaction,
+  providerRefundId: string,
+): Promise<RefundRow | undefined> {
+  const [row] = await database
+    .select()
+    .from(refundsTable)
+    .where(eq(refundsTable.providerRefundId, providerRefundId))
+    .limit(1);
+  return row;
+}
+
 export async function updateRefundRow(
   database: DatabaseOrTransaction,
   refundId: string,
-  changes: { status?: RefundStatus; stripeRefundId?: string },
+  changes: { status?: RefundStatus; stripeRefundId?: string; providerRefundId?: string },
 ): Promise<void> {
   await database.update(refundsTable).set(changes).where(eq(refundsTable.id, refundId));
 }

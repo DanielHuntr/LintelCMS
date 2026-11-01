@@ -78,29 +78,50 @@ export function priceCartLines(
 }
 
 /**
- * Takes the discounts off the lines that can be bought, in proportion to each line's
- * subtotal, so tax is worked out on what's really paid. Never more than the subtotal.
+ * Takes the discounts off the lines that can be bought, so tax is worked out on what's
+ * really paid. A discount that says which lines it falls on (`lineAmounts`) is taken off
+ * those; any other is spread over every line in proportion to what is left of it. No line
+ * ever goes below zero. Free-shipping discounts pass through for the delivery to use.
  */
 export function applyDiscounts(
   lines: readonly PricedCartLine[],
   discounts: readonly Discount[],
 ): { lines: PricedCartLine[]; discountTotal: number; applied: Discount[] } {
   const buyable = lines.filter((line) => line.problem === null);
-  const subtotal = buyable.reduce((sum, line) => sum + line.subtotal.amount, 0);
-  let remaining = subtotal;
+  const remaining = new Map(buyable.map((line) => [line.id, line.subtotal.amount]));
+  const taken = new Map(buyable.map((line) => [line.id, 0]));
+  const take = (lineId: string, wanted: number): number => {
+    const amount = Math.min(Math.max(0, Math.round(wanted)), remaining.get(lineId) ?? 0);
+    remaining.set(lineId, (remaining.get(lineId) ?? 0) - amount);
+    taken.set(lineId, (taken.get(lineId) ?? 0) + amount);
+    return amount;
+  };
+
   const applied = discounts.flatMap((discount) => {
-    const amount = Math.min(Math.max(0, Math.round(discount.amount)), remaining);
-    remaining -= amount;
+    if (discount.freeShipping) {
+      return [{ ...discount, amount: 0 }];
+    }
+    let amount = 0;
+    if (discount.lineAmounts) {
+      for (const line of buyable) {
+        amount += take(line.id, discount.lineAmounts[line.id] ?? 0);
+      }
+    } else {
+      const left = buyable.map((line) => remaining.get(line.id) ?? 0);
+      const wanted = Math.min(
+        Math.max(0, Math.round(discount.amount)),
+        left.reduce((sum, value) => sum + value, 0),
+      );
+      const shares = allocateAmount(wanted, left);
+      buyable.forEach((line, index) => {
+        amount += take(line.id, shares[index] ?? 0);
+      });
+    }
     return amount > 0 ? [{ ...discount, amount }] : [];
   });
-  const discountTotal = subtotal - remaining;
-  const shares = allocateAmount(
-    discountTotal,
-    buyable.map((line) => line.subtotal.amount),
-  );
-  const shareById = new Map(buyable.map((line, index) => [line.id, shares[index] ?? 0]));
+  const discountTotal = [...taken.values()].reduce((sum, value) => sum + value, 0);
   return {
-    lines: lines.map((line) => ({ ...line, discountAmount: shareById.get(line.id) ?? 0 })),
+    lines: lines.map((line) => ({ ...line, discountAmount: taken.get(line.id) ?? 0 })),
     discountTotal,
     applied,
   };

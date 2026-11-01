@@ -5,6 +5,7 @@
 export { cartLinesTable, cartsTable } from "./carts/carts.table.js";
 export { checkoutsTable } from "./checkouts/checkouts.table.js";
 export { customersTable } from "./customers/customers.table.js";
+export { discountRedemptionsTable, discountsTable } from "./discounts/discounts.table.js";
 export { outboxEmailsTable } from "./emails/outbox.table.js";
 export {
   inventoryLevelsTable,
@@ -19,6 +20,7 @@ export {
   ordersTable,
   refundsTable,
 } from "./orders/orders.table.js";
+export { paymentAccountsTable, paymentEventsTable } from "./payments/payment-accounts.table.js";
 export { stripeEventsTable } from "./payments/stripe-events.table.js";
 export {
   productCollectionItemsTable,

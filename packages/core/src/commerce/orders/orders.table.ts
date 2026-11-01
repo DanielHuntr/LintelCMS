@@ -14,6 +14,7 @@ import { usersTable } from "../../users/users.table.js";
 import type { AppliedDiscount, ShippingLine } from "../checkouts/checkouts.table.js";
 import type { Address } from "../customers/address.schema.js";
 import { customersTable } from "../customers/customers.table.js";
+import { paymentProviderIds } from "../payments/payment-provider.js";
 
 export const paymentStatuses = ["paid", "partially_refunded", "refunded"] as const;
 export type PaymentStatus = (typeof paymentStatuses)[number];
@@ -58,6 +59,11 @@ export const ordersTable = pgTable(
     fulfilmentStatus: text("fulfilment_status", { enum: fulfilmentStatuses })
       .notNull()
       .default("unfulfilled"),
+    paymentProvider: text("payment_provider", { enum: paymentProviderIds })
+      .notNull()
+      .default("stripe"),
+    /** PayPal's capture id or Mollie's payment id, which refunds go against. */
+    providerPaymentId: text("provider_payment_id"),
     stripePaymentIntentId: text("stripe_payment_intent_id"),
     paidAt: timestamp("paid_at", { withTimezone: true }).notNull(),
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
@@ -131,12 +137,15 @@ export const refundsTable = pgTable(
     restock: boolean("restock").notNull().default(false),
     notifyCustomer: boolean("notify_customer").notNull().default(true),
     stripeRefundId: text("stripe_refund_id"),
+    /** PayPal's or Mollie's id for the refund. */
+    providerRefundId: text("provider_refund_id"),
     createdBy: uuid("created_by").references(() => usersTable.id, { onDelete: "set null" }),
     ...timestamps(),
   },
   (table) => [
     index("shop_refunds_order_idx").on(table.orderId),
     uniqueIndex("shop_refunds_stripe_idx").on(table.stripeRefundId),
+    index("shop_refunds_provider_idx").on(table.providerRefundId),
   ],
 );
 
