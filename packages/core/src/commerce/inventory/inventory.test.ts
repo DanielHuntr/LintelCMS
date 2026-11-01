@@ -63,8 +63,9 @@ describe("holding stock for checkouts", () => {
       expect(cart.readyForCheckout).toBe(false);
 
       const refused = await checkout(token);
-      expect(refused.statusCode).toBe(400);
-      expect(refused.json().code).toBe("CART_NOT_READY");
+      expect(refused.statusCode).toBe(409);
+      expect(refused.json()).toMatchObject({ code: "OUT_OF_STOCK", available: 3 });
+      expect(refused.json().message).toBe("Only 3 of Linen shirt (M) are left.");
     },
     SLOW_TEST,
   );

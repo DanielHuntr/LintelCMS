@@ -2,6 +2,7 @@ import type { DatabaseOrTransaction } from "../../database/client.js";
 import { DEFAULT_TENANT_ID } from "../../database/columns.js";
 import type { ShopContext } from "../commerce.context.js";
 import type { Discount } from "../discounts/discount-provider.js";
+import { listOpenCheckoutIdsForCart } from "../checkouts/checkouts.repository.js";
 import { describeStock } from "../inventory/inventory.service.js";
 import { findMarket, findPrimaryMarket } from "../markets/markets.service.js";
 import type { MarketRow } from "../markets/markets.table.js";
@@ -73,7 +74,12 @@ export async function loadPricedCart(
       variants: new Map(variantRows.map((variant) => [variant.id, variant])),
       products: new Map(productRows.map((product) => [product.id, product])),
       prices: await listPriceRows(database, variantIds),
-      stock: await describeStock(database, variantIds, shop.now()),
+      stock: await describeStock(
+        database,
+        variantIds,
+        shop.now(),
+        await listOpenCheckoutIdsForCart(database, row.id),
+      ),
     },
     market,
     primaryCurrency,

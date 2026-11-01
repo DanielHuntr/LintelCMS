@@ -165,14 +165,18 @@ export interface VariantStock {
   available: number;
 }
 
-/** Stock for each variant, for the admin and the storefront. */
+/**
+ * Stock for each variant, for the admin and the storefront. A cart passes the checkouts it
+ * started itself, so stock it is already holding isn't counted against it.
+ */
 export async function describeStock(
   database: DatabaseOrTransaction,
   variantIds: readonly string[],
   now: Date,
+  ownCheckoutIds: readonly string[] = [],
 ): Promise<Map<string, VariantStock>> {
   const levels = await listLevelRows(database, variantIds);
-  const held = await sumHeldQuantities(database, variantIds, now);
+  const held = await sumHeldQuantities(database, variantIds, now, ownCheckoutIds);
   // Stock at a location that's switched off isn't for sale, as in reserveStock.
   const activeLocations = new Set(
     (await listLocationRows(database, DEFAULT_TENANT_ID))

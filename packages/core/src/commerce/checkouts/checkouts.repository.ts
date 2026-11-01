@@ -67,6 +67,18 @@ export async function listOpenCheckoutRowsForCart(
     .for("update");
 }
 
+/** The ids of a cart's open checkouts, without locking them. */
+export async function listOpenCheckoutIdsForCart(
+  database: DatabaseOrTransaction,
+  cartId: string,
+): Promise<string[]> {
+  const rows = await database
+    .select({ id: checkoutsTable.id })
+    .from(checkoutsTable)
+    .where(and(eq(checkoutsTable.cartId, cartId), eq(checkoutsTable.status, "open")));
+  return rows.map((row) => row.id);
+}
+
 export async function listExpiredOpenCheckoutRows(
   database: DatabaseOrTransaction,
   now: Date,

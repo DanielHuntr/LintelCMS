@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, inArray, lte, sql } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, lte, notInArray, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../database/client.js";
 import { variantsTable } from "../products/products.table.js";
 import {
@@ -166,7 +166,7 @@ export async function sumHeldQuantities(
   database: DatabaseOrTransaction,
   variantIds: readonly string[],
   now: Date,
-  exceptCheckoutId?: string,
+  exceptCheckoutIds: readonly string[] = [],
 ): Promise<Map<string, number>> {
   if (variantIds.length === 0) return new Map();
   const rows = await database
@@ -180,9 +180,9 @@ export async function sumHeldQuantities(
         inArray(inventoryReservationsTable.variantId, [...variantIds]),
         eq(inventoryReservationsTable.status, "active"),
         gt(inventoryReservationsTable.expiresAt, now),
-        exceptCheckoutId === undefined
+        exceptCheckoutIds.length === 0
           ? undefined
-          : sql`${inventoryReservationsTable.checkoutId} <> ${exceptCheckoutId}`,
+          : notInArray(inventoryReservationsTable.checkoutId, [...exceptCheckoutIds]),
       ),
     )
     .groupBy(inventoryReservationsTable.variantId);

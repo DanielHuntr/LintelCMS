@@ -9,6 +9,7 @@ import {
   ShopNotReadyError,
   ShopRecordNotFoundError,
 } from "../commerce.errors.js";
+import { OutOfStockError } from "../inventory/inventory.errors.js";
 import { reserveStock } from "../inventory/inventory.service.js";
 import { findOrderRow } from "../orders/orders.repository.js";
 import { StripeRequestError } from "../payments/stripe-client.js";
@@ -169,6 +170,14 @@ function refuseUnreadyCart(cart: PricedCart): void {
     );
   }
   const problem = cart.lines.find((line) => line.problem !== null);
+  if (problem?.problem === "out_of_stock" || problem?.problem === "not_enough_stock") {
+    // The same answer the stock reservation gives, so storefronts handle one case.
+    throw new OutOfStockError(
+      problem.variantId,
+      describeLine(problem.productTitle, problem.variantTitle),
+      problem.quantityAvailable ?? 0,
+    );
+  }
   if (problem) {
     throw new CartNotReadyError(
       `${describeLine(problem.productTitle, problem.variantTitle)} can't be bought as it is. Change or remove it first.`,
