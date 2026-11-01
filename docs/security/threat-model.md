@@ -102,8 +102,16 @@ Out of scope: someone with shell or database access to the server, and plugin co
    it. Read tokens only see published content, but they can't be scoped per site yet.
 4. **The admin's own headers depend on hosting.** The admin is static files; its CSP is
    added to the built HTML, but `frame-ancestors`, HSTS and the rest must be set by
-   whatever serves it (see `packages/admin/README.md`).
+   whatever serves it (see `packages/admin/src/security/README.md`).
 5. **Live preview frames other sites with scripts and same-origin allowed.** If a preview
    address pointed at the admin's own origin the sandbox would not hold. Only people who
    can change collections can set it.
 6. **No audit log for settings, tokens and webhooks.** Revisions cover content only.
+
+## Dependencies
+
+Run `pnpm audit` before each release. On 2026-11-01 it reported two moderate advisories,
+both in development tools only and with no fixed version reachable yet: esbuild's
+development server (pulled in by `drizzle-kit`'s config loader, which never starts that
+server) and minimatch's pattern expansion (pulled in by ESLint, which only matches our own
+globs). Neither ships in the server or the admin.
