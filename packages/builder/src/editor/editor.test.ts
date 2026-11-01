@@ -3,7 +3,6 @@ import {
   createEmptyPage,
   createNode,
   findNode,
-  findSectionTemplate,
   type PageDocument,
   standardCatalogue,
 } from "@lintel/builder-model";
@@ -18,14 +17,11 @@ import {
   type PageChange,
 } from "./editor-state.js";
 import { shortcutFor } from "./shortcuts.js";
+import { simpleHero } from "../testing/simple-hero.js";
 
 function heroPage(): PageDocument {
   const page = createEmptyPage();
-  const hero = createNode(
-    findSectionTemplate("hero")!.blueprint,
-    standardCatalogue,
-    createCountingNodeIds(),
-  );
+  const hero = createNode(simpleHero, standardCatalogue, createCountingNodeIds());
   return { ...page, root: { ...page.root, children: [hero] } };
 }
 

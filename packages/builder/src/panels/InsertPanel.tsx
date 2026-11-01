@@ -3,6 +3,8 @@ import {
   type ComponentCatalogue,
   componentCategories,
   type ComponentCategory,
+  sectionCategories,
+  type SectionCategory,
   type SectionTemplate,
 } from "@lintel/builder-model";
 import type { DragEvent } from "react";
@@ -21,6 +23,18 @@ interface InsertPanelProps {
   canEditCode: boolean;
   onInsert: (key: InsertKey) => void;
 }
+
+const sectionCategoryTitles: Record<SectionCategory, BuilderStringKey> = {
+  hero: "pageBuilder.insert.sectionCategory.hero",
+  features: "pageBuilder.insert.sectionCategory.features",
+  story: "pageBuilder.insert.sectionCategory.story",
+  testimonials: "pageBuilder.insert.sectionCategory.testimonials",
+  pricing: "pageBuilder.insert.sectionCategory.pricing",
+  questions: "pageBuilder.insert.sectionCategory.questions",
+  callToAction: "pageBuilder.insert.sectionCategory.callToAction",
+  contact: "pageBuilder.insert.sectionCategory.contact",
+  footer: "pageBuilder.insert.sectionCategory.footer",
+};
 
 const categoryTitles: Record<ComponentCategory, BuilderStringKey> = {
   blocks: "pageBuilder.insert.category.blocks",
@@ -56,25 +70,38 @@ export function InsertPanel({ catalogue, templates, canEditCode, onInsert }: Ins
         <h3 id="lintel-insert-sections" className="text-footnote font-semibold text-label">
           {text("pageBuilder.insert.sections")}
         </h3>
-        <ul className="grid grid-cols-1 gap-2">
-          {templates.map((template) => (
-            <li key={template.id}>
-              <button
-                type="button"
-                draggable
-                onDragStart={(event) =>
-                  startDrag(event, `template:${template.id}`, template.blueprint.type)
-                }
-                onClick={() => onInsert(`template:${template.id}`)}
-                className="flex w-full flex-col gap-1.5 rounded-card p-2 text-left transition-colors duration-150 hover:bg-fill focus-visible:focus-ring"
-              >
-                <BlueprintSketch blueprint={template.blueprint} />
-                <span className="text-footnote font-medium text-label">{template.label}</span>
-                <span className="text-caption text-label-secondary">{template.description}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        {sectionCategories.map((category) => {
+          const inCategory = templates.filter((template) => template.category === category);
+          if (inCategory.length === 0) return null;
+          return (
+            <div key={category} className="flex flex-col gap-1">
+              <h4 className="pt-1 text-caption font-semibold tracking-wide text-label-secondary uppercase">
+                {text(sectionCategoryTitles[category])}
+              </h4>
+              <ul className="grid grid-cols-1 gap-2">
+                {inCategory.map((template) => (
+                  <li key={template.id}>
+                    <button
+                      type="button"
+                      draggable
+                      onDragStart={(event) =>
+                        startDrag(event, `template:${template.id}`, template.blueprint.type)
+                      }
+                      onClick={() => onInsert(`template:${template.id}`)}
+                      className="flex w-full flex-col gap-1.5 rounded-card p-2 text-left transition-colors duration-150 hover:bg-fill focus-visible:focus-ring"
+                    >
+                      <BlueprintSketch blueprint={template.blueprint} />
+                      <span className="text-footnote font-medium text-label">{template.label}</span>
+                      <span className="text-caption text-label-secondary">
+                        {template.description}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
       </section>
       {componentCategories.map((category) => {
         const definitions = insertable.filter((definition) => definition.category === category);

@@ -1,9 +1,12 @@
 import type { Breakpoint } from "@lintel/builder-model";
-import { Code, History, Monitor, Redo2, Smartphone, Tablet, Undo2 } from "lucide-react";
+import { History, Monitor, Redo2, Smartphone, Tablet, Undo2 } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { ChoiceGroup, classNames, IconButton } from "../ui/controls.js";
 import { isMac } from "../editor/shortcuts.js";
+import { SkillLevelMenu } from "../skill-level/SkillLevelMenu.js";
+import type { SkillLevel } from "../skill-level/skill-levels.js";
+import { HelpMenu } from "../tour/HelpMenu.js";
 
 interface ToolbarProps {
   title: string;
@@ -19,12 +22,14 @@ interface ToolbarProps {
   /** How many steps of `history` are done; the rest are undone and can be redone. */
   historyPosition: number;
   onGoToStep: (index: number) => void;
-  canUseDeveloperMode: boolean;
-  developerMode: boolean;
-  onDeveloperModeChange: (on: boolean) => void;
+  canEditCode: boolean;
+  skillLevel: SkillLevel;
+  onSkillLevelChange: (level: SkillLevel) => void;
+  onReplayTour: () => void;
+  onShowTips: () => void;
 }
 
-/** Back, the page's name, screen sizes, undo and redo, history, Developer mode, and the app's own actions. */
+/** Back, the page's name, screen sizes, undo and redo, history, tools, help, and the app's own actions. */
 export function Toolbar(props: ToolbarProps) {
   const text = useBuilderText();
   const mod = isMac() ? "⌘" : "Ctrl+";
@@ -75,14 +80,12 @@ export function Toolbar(props: ToolbarProps) {
           position={props.historyPosition}
           onGoToStep={props.onGoToStep}
         />
-        {props.canUseDeveloperMode && (
-          <IconButton
-            icon={Code}
-            label={text("pageBuilder.toolbar.developerMode")}
-            pressed={props.developerMode}
-            onClick={() => props.onDeveloperModeChange(!props.developerMode)}
-          />
-        )}
+        <SkillLevelMenu
+          level={props.skillLevel}
+          canEditCode={props.canEditCode}
+          onChange={props.onSkillLevelChange}
+        />
+        <HelpMenu onReplayTour={props.onReplayTour} onShowTips={props.onShowTips} />
         {props.end}
       </div>
     </header>

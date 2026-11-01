@@ -25,13 +25,20 @@ function sketch(blueprint: NodeBlueprint, key: string): ReactNode {
   const centred = styles.alignItems === "center" || styles.textAlign === "center";
   const tinted = styles.backgroundColor?.includes("brand");
   const panel = styles.backgroundColor?.includes("surface");
+  const dark = styles.backgroundColor?.includes("color-text");
 
   switch (blueprint.type) {
+    case "page":
+      return (
+        <div key={key} className="flex flex-1 flex-col gap-1">
+          {children}
+        </div>
+      );
     case "section":
       return (
         <div
           key={key}
-          className={`flex flex-1 flex-col justify-center gap-1 rounded px-2 py-1.5 ${tinted ? "bg-accent-fill/80" : panel ? "bg-fill" : ""}`}
+          className={`flex flex-1 flex-col justify-center gap-1 rounded px-2 py-1.5 ${tinted ? "bg-accent-fill/80" : dark ? "bg-label/80" : panel ? "bg-fill" : ""}`}
         >
           {children}
         </div>
@@ -75,6 +82,13 @@ function sketch(blueprint: NodeBlueprint, key: string): ReactNode {
       return <span key={key} className="block h-1 w-8 rounded-full bg-accent" />;
     case "image":
       return <span key={key} className="block h-12 w-full rounded bg-fill-strong" />;
+    case "list":
+      return (
+        <span key={key} className="flex w-full flex-col gap-0.5">
+          <span className="block h-1 w-1/2 rounded-full bg-label-tertiary/60" />
+          <span className="block h-1 w-2/5 rounded-full bg-label-tertiary/60" />
+        </span>
+      );
     case "divider":
       return <span key={key} className="block h-px w-full bg-separator" />;
     default:

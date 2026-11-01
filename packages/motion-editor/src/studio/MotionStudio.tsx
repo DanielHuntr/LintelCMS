@@ -15,6 +15,8 @@ import { stateFromSpec, withEditedSpec, type StudioState } from "./studioState.j
 
 export type StudioView = "gallery" | "simple" | "advanced";
 
+const allViews: readonly StudioView[] = ["gallery", "simple", "advanced"];
+
 export interface MotionStudioProps {
   /** The animation to start from, or null for none yet. Read once, when the studio opens. */
   initialSpec: MotionSpec | null;
@@ -28,6 +30,11 @@ export interface MotionStudioProps {
   /** The stand-in element the large preview animates. Defaults to the preset's own. */
   previewSample?: PreviewSample;
   initialView?: StudioView;
+  /**
+   * The views on offer, for hosts that keep things simple for beginners (the page builder
+   * leaves out "advanced" until someone asks for the timeline). All three by default.
+   */
+  views?: readonly StudioView[];
 }
 
 /**
@@ -57,9 +64,13 @@ function Studio({
   presets = motionPresets,
   previewSample,
   initialView,
+  views: allowedViews = allViews,
 }: MotionStudioProps) {
   const t = useTranslate();
-  const [view, setView] = useState<StudioView>(initialView ?? (initialSpec ? "simple" : "gallery"));
+  const [chosenView, setView] = useState<StudioView>(
+    initialView ?? (initialSpec ? "simple" : "gallery"),
+  );
+  const view = allowedViews.includes(chosenView) ? chosenView : "simple";
   const history = useHistory<StudioState | null>(
     initialSpec ? stateFromSpec(initialSpec, initialPresetId) : null,
   );
@@ -104,11 +115,13 @@ function Studio({
     }
   }
 
-  const views = [
-    { value: "gallery", label: t("motionEditor.view.gallery") },
-    { value: "simple", label: t("motionEditor.view.simple") },
-    { value: "advanced", label: t("motionEditor.view.advanced") },
-  ] as const;
+  const views = (
+    [
+      { value: "gallery", label: t("motionEditor.view.gallery") },
+      { value: "simple", label: t("motionEditor.view.simple") },
+      { value: "advanced", label: t("motionEditor.view.advanced") },
+    ] as const
+  ).filter((option) => allowedViews.includes(option.value));
 
   return (
     <div className="flex flex-col gap-5 text-label" onKeyDown={handleKeyDown}>

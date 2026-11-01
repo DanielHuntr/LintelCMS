@@ -20,10 +20,11 @@
       "types": "./dist/presets/index.d.ts",
       "development": "./src/presets/index.ts",
       "default": "./dist/presets/index.js"
-    }
+    },
+    "./site-runtime.js": "./dist/site-runtime.js"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node scripts/bundle-site-runtime.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run && vitest run --config vitest.browser.config.ts",
     "test:unit": "vitest run",

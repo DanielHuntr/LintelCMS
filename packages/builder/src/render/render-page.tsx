@@ -8,7 +8,8 @@ import {
 } from "@lintel/builder-model";
 import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { ComponentRegistry, RenderMode } from "./component-registry.js";
+import { collectAnimations, type PageAnimation } from "./page-animations.js";
+import type { ComponentRegistry, ElementAttributes, RenderMode } from "./component-registry.js";
 
 /**
  * Turns a page design into HTML and a stylesheet: the same function draws the editor's canvas
@@ -17,7 +18,9 @@ import type { ComponentRegistry, RenderMode } from "./component-registry.js";
  *   const { html, css } = renderPage(page, standardRegistry);
  *
  * The HTML has one class per element and nothing else, unless `mode` is "canvas", which adds
- * `data-lintel-node` (and `data-lintel-text` on editable text) for selecting and editing.
+ * `data-lintel-node` (and `data-lintel-text` on editable text) for selecting and editing. On
+ * the published page (`withMotion`), animated elements also get `data-node-id`, so the motion
+ * runtime can find them; `animations` lists what to play, and is empty when nothing moves.
  * The CSS uses the theme's tokens (`var(--lintel-color-brand)`); put the theme's stylesheet
  * before it. The output only depends on the page, so the same page always gives the same text.
  */
@@ -26,25 +29,40 @@ export interface RenderOptions {
   mode?: RenderMode;
   /** Draw only this element and what's inside it, as the code view does. */
   nodeId?: string;
+  /**
+   * Mark animated elements for the motion runtime (`data-node-id`, and the cloak on
+   * entrances). The website turns this on; the code view and the clipboard leave it off.
+   */
+  withMotion?: boolean;
 }
 
 export interface RenderedPage {
   html: string;
   css: string;
+  animations: PageAnimation[];
 }
 
 export function renderPage(
   document: PageDocument,
   registry: ComponentRegistry,
-  { mode = "site", nodeId }: RenderOptions = {},
+  { mode = "site", nodeId, withMotion = false }: RenderOptions = {},
 ): RenderedPage {
   const classNames = assignClassNames(document.root, registry.catalogue);
   const start = nodeId ? findNode(document.root, nodeId) : document.root;
-  if (!start || start.hidden) return { html: "", css: "" };
+  if (!start || start.hidden) return { html: "", css: "", animations: [] };
+  const animations = collectAnimations(start);
+  const marked =
+    mode === "site" && withMotion ? motionMarks(animations) : new Map<string, ElementAttributes>();
   const html = renderToStaticMarkup(
-    <NodeView node={start} registry={registry} classNames={classNames} mode={mode} />,
+    <NodeView
+      node={start}
+      registry={registry}
+      classNames={classNames}
+      mode={mode}
+      motionMarks={marked}
+    />,
   );
-  return { html, css: compileStylesheet(start, classNames) };
+  return { html, css: compileStylesheet(start, classNames), animations };
 }
 
 /**
@@ -63,14 +81,43 @@ function checkedProps(node: PageNode, definition: AnyComponentDefinition): Recor
   return props;
 }
 
+/**
+ * The attributes the motion runtime needs on the published page: `data-node-id` on every
+ * animated element and every element an animation points at, and the cloak on entrances.
+ */
+function motionMarks(animations: readonly PageAnimation[]): Map<string, ElementAttributes> {
+  const marks = new Map<string, ElementAttributes>();
+  const mark = (nodeId: string, cloak: boolean) => {
+    const current = marks.get(nodeId);
+    marks.set(nodeId, {
+      className: "",
+      "data-node-id": nodeId,
+      ...(cloak || current?.["data-motion-cloak"] === "" ? { "data-motion-cloak": "" } : {}),
+    });
+  };
+  for (const { nodeId, spec } of animations) {
+    mark(nodeId, spec.trigger.type === "load" || spec.trigger.type === "inView");
+    if (spec.targets.type === "nodes")
+      spec.targets.nodeIds.forEach((target) => mark(target, false));
+  }
+  return marks;
+}
+
 interface NodeViewProps {
   node: PageNode;
   registry: ComponentRegistry;
   classNames: ReadonlyMap<string, string>;
   mode: RenderMode;
+  motionMarks: ReadonlyMap<string, ElementAttributes>;
 }
 
-function NodeView({ node, registry, classNames, mode }: NodeViewProps): ReactElement | null {
+function NodeView({
+  node,
+  registry,
+  classNames,
+  mode,
+  motionMarks,
+}: NodeViewProps): ReactElement | null {
   if (node.hidden) return null;
   const className = classNames.get(node.id) ?? node.type;
   const entry = registry.find(node.type);
@@ -81,12 +128,15 @@ function NodeView({ node, registry, classNames, mode }: NodeViewProps): ReactEle
   }
   const props = checkedProps(node, entry.definition);
   const { Render } = entry;
+  const motion = motionMarks.get(node.id);
+  const attributes: ElementAttributes =
+    mode === "canvas" ? { className, "data-lintel-node": node.id } : { ...motion, className };
   return (
     <Render
       props={props}
       node={node}
       mode={mode}
-      attributes={mode === "canvas" ? { className, "data-lintel-node": node.id } : { className }}
+      attributes={attributes}
       editableText={(prop): Record<string, string> =>
         mode === "canvas" ? { "data-lintel-text": prop } : {}
       }
@@ -98,6 +148,7 @@ function NodeView({ node, registry, classNames, mode }: NodeViewProps): ReactEle
           registry={registry}
           classNames={classNames}
           mode={mode}
+          motionMarks={motionMarks}
         />
       ))}
     </Render>

@@ -1,3 +1,4 @@
+import { motionSpecSchema, type MotionSpec } from "@lintel/motion/schema";
 import { z } from "zod";
 import {
   isSafeStyleValue,
@@ -41,6 +42,15 @@ export interface NodeStyles {
   focus?: StyleDeclarations;
 }
 
+/**
+ * How an element moves: an animation spec from `@lintel/motion`, played on the published
+ * page by the motion runtime, and the preset it started from (so the builder can name it).
+ */
+export interface NodeAnimation {
+  spec: MotionSpec;
+  presetId?: string;
+}
+
 export interface PageNode {
   /** Made when the node is added and never changed, so selection and history follow it. */
   id: string;
@@ -55,6 +65,8 @@ export interface PageNode {
   hidden: boolean;
   /** Can't be moved, changed or deleted until it is unlocked. */
   locked: boolean;
+  /** Left out when the element doesn't move. */
+  animation?: NodeAnimation;
 }
 
 export interface PageDocument {
@@ -93,6 +105,14 @@ export const nodeStylesSchema = z.object({
   focus: styleDeclarationsSchema.optional(),
 });
 
+const nodeAnimationSchema = z.object({
+  spec: motionSpecSchema,
+  presetId: z
+    .string()
+    .regex(/^[a-z0-9-]{1,80}$/, { error: "An animation’s preset should be a name like “fade-up”" })
+    .optional(),
+});
+
 export const pageNodeSchema: z.ZodType<PageNode> = z.lazy(() =>
   z.object({
     id: nodeIdSchema,
@@ -112,6 +132,7 @@ export const pageNodeSchema: z.ZodType<PageNode> = z.lazy(() =>
       .default([]),
     hidden: z.boolean({ error: "hidden should be true or false" }).default(false),
     locked: z.boolean({ error: "locked should be true or false" }).default(false),
+    animation: nodeAnimationSchema.optional(),
   }),
 );
 

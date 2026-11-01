@@ -6,7 +6,11 @@ import {
   findNode,
   type PageDocument,
   sectionTemplates,
+  starterSites as allStarterSites,
+  type StarterSite,
 } from "@lintel/builder-model";
+import type { MotionSpec } from "@lintel/motion";
+import type { Translate as MotionText } from "@lintel/motion-editor";
 import {
   type KeyboardEvent,
   type ReactNode,
@@ -15,9 +19,9 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Canvas } from "./canvas/Canvas.js";
+import { Canvas, type MotionPreview } from "./canvas/Canvas.js";
+import type { CanvasSite } from "./canvas/canvas-frame-script.js";
 import type { ForwardedKey, MessageFromFrame } from "./canvas/canvas-messages.js";
-import { CodePanel } from "./developer/CodePanel.js";
 import { isLocked, layerName } from "./editor/commands.js";
 import { isTypingTarget, shortcutFor } from "./editor/shortcuts.js";
 import { useBuilder } from "./editor/useBuilder.js";
@@ -25,15 +29,23 @@ import { Breadcrumbs } from "./frame/Breadcrumbs.js";
 import { EmptyPageStart } from "./frame/EmptyPageStart.js";
 import { Toolbar } from "./frame/Toolbar.js";
 import { englishText, type Translate, BuilderTextProvider } from "./i18n/builder-text.js";
+import {
+  browserPreferenceStore,
+  type PreferenceStore,
+  usePreference,
+} from "./preferences/builder-preferences.js";
 import type { ImagePicker } from "./panels/content-fields.js";
-import { ContentPanel } from "./panels/ContentPanel.js";
 import { InsertPanel } from "./panels/InsertPanel.js";
 import { LayersPanel } from "./panels/LayersPanel.js";
+import { SelectedElementPanel } from "./panels/SelectedElementPanel.js";
 import type { ComponentRegistry } from "./render/component-registry.js";
+import { designBaseStylesheet } from "./render/design-stylesheet.js";
 import { renderPage } from "./render/render-page.js";
 import { standInBaseStylesheet } from "./render/base-stylesheet.js";
 import { standardRegistry } from "./render/stand-in-components.js";
-import { type StateChoice, StylePanel, type StylePanelMode } from "./style-panel/StylePanel.js";
+import { readSkillLevel, type SkillLevel, toolsFor } from "./skill-level/skill-levels.js";
+import { GuidedTour } from "./tour/GuidedTour.js";
+import { useTips } from "./tour/useTips.js";
 import { Tabs } from "./ui/controls.js";
 
 export interface PageBuilderProps {
@@ -61,17 +73,29 @@ export interface PageBuilderProps {
   toolbarEnd?: ReactNode;
   onSaveNow?: () => void;
   createId?: CreateNodeId;
+  /**
+   * The website around the page: its whole stylesheet, header, footer and the motion
+   * runtime, so the canvas looks exactly like the published page and can play animations.
+   * Without it the canvas uses `themeStylesheet` and `baseStylesheet`.
+   */
+  site?: CanvasSite;
+  /** The app's words for the animation studio (`motionEditorStrings`); English when left out. */
+  motionText?: MotionText;
+  /** Whole pages an empty page can start from. The template library's by default. */
+  starterSites?: readonly StarterSite[];
+  /** Where skill level, the tour and closed tips are remembered. The browser's by default. */
+  preferences?: PreferenceStore;
 }
 
 /** The site's default theme, until the app passes the site's own. */
 const defaultThemeStylesheet = themeStylesheet(defaultTheme);
 
 type LeftTab = "layers" | "insert";
-type RightTab = "style" | "content" | "code";
 
 /**
- * The visual page builder: Layers and Insert on the left, the page in the middle, Style and
- * Content (and, in Developer mode, Code) on the right, with the toolbar on top.
+ * The visual page builder: Layers and Insert on the left, the page in the middle, Style,
+ * Content and Animate (and, for developers, Code) on the right, with the toolbar on top.
+ * The first time someone opens it, a short tour shows them around.
  */
 export function PageBuilder({ text = englishText, ...props }: PageBuilderProps) {
   return (
@@ -85,7 +109,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   const { text, canEditCode, onSaveNow } = props;
   const registry = props.registry ?? standardRegistry;
   const createId = props.createId ?? createRandomNodeId;
-  const { state, selectedId, selectedNode, actions, announcement } = useBuilder({
+  const { state, selectedId, selectedNode, actions, announcement, announce } = useBuilder({
     initialDocument: props.initialDocument,
     registry,
     createId,
@@ -97,24 +121,49 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [revealId, setRevealId] = useState<string | null>(null);
   const [leftTab, setLeftTab] = useState<LeftTab>("layers");
-  const [rightTab, setRightTab] = useState<RightTab>("style");
-  const [styleMode, setStyleMode] = useState<StylePanelMode>("simple");
-  const [styleState, setStyleState] = useState<StateChoice>("none");
-  const [developerMode, setDeveloperMode] = useState(false);
   const [startedBlank, setStartedBlank] = useState(false);
+  const [motionPreview, setMotionPreview] = useState<MotionPreview | null>(null);
+  const preferences = props.preferences ?? browserPreferenceStore;
+  const [skillLevel, setSkillLevel] = usePreference<SkillLevel>(
+    preferences,
+    "skillLevel",
+    (stored) => readSkillLevel(stored, canEditCode),
+  );
+  const [tourSeen, setTourSeen] = usePreference(preferences, "tourSeen", (stored) =>
+    stored === "yes" ? "yes" : "no",
+  );
+  const [isTouring, setIsTouring] = useState(false);
+  const tips = useTips(preferences);
+  const tools = toolsFor(skillLevel, canEditCode);
   const { root } = state.document;
   const catalogue = registry.catalogue;
-  const showsDeveloperTools = canEditCode && developerMode;
-  const activeRightTab = rightTab === "code" && !showsDeveloperTools ? "style" : rightTab;
 
   const rendered = useMemo(
     () => renderPage(state.document, registry, { mode: "canvas" }),
     [state.document, registry],
   );
+  const site = props.site;
   const canvasCss = useMemo(
     () =>
-      `${props.themeStylesheet ?? defaultThemeStylesheet}\n${standInBaseStylesheet}\n${props.baseStylesheet ?? ""}\n${rendered.css}`,
-    [props.themeStylesheet, props.baseStylesheet, rendered.css],
+      site
+        ? `${site.stylesheet}\n${rendered.css}`
+        : `${props.themeStylesheet ?? defaultThemeStylesheet}\n${standInBaseStylesheet}\n${props.baseStylesheet ?? ""}\n${designBaseStylesheet}\n${rendered.css}`,
+    [site, props.themeStylesheet, props.baseStylesheet, rendered.css],
+  );
+
+  const previewMotion = useCallback(
+    (nodeId: string, spec: MotionSpec) =>
+      setMotionPreview((current) => ({ nodeId, spec, playId: (current?.playId ?? 0) + 1 })),
+    [],
+  );
+
+  const changeSkillLevel = useCallback(
+    (level: SkillLevel) => {
+      setSkillLevel(level);
+      const name = text(`pageBuilder.skill.${level}`);
+      announce(text("pageBuilder.skill.changed", { level: name }));
+    },
+    [setSkillLevel, announce, text],
   );
 
   const selectFromPanel = useCallback(
@@ -239,13 +288,11 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     return { selected: nameOf(selectedId), hovered: nameOf(hoveredId) };
   }, [state.document, selectedId, hoveredId, catalogue]);
 
-  const rightTabs: Array<{ value: RightTab; label: string }> = [
-    { value: "style", label: text("pageBuilder.panels.style") },
-    { value: "content", label: text("pageBuilder.panels.content") },
-    ...(showsDeveloperTools
-      ? [{ value: "code" as const, label: text("pageBuilder.panels.code") }]
-      : []),
-  ];
+  const showsTour = isTouring || (tourSeen === "no" && !showsStart);
+  const closeTour = () => {
+    setIsTouring(false);
+    setTourSeen("yes");
+  };
 
   return (
     <div className="flex h-dvh flex-col bg-background text-label" onKeyDown={handleKeyDown}>
@@ -265,12 +312,14 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
         ]}
         historyPosition={state.past.length}
         onGoToStep={actions.goToStep}
-        canUseDeveloperMode={canEditCode}
-        developerMode={developerMode}
-        onDeveloperModeChange={(on) => {
-          setDeveloperMode(on);
-          if (on) setRightTab("code");
+        canEditCode={canEditCode}
+        skillLevel={skillLevel}
+        onSkillLevelChange={changeSkillLevel}
+        onReplayTour={() => {
+          setStartedBlank(true);
+          setIsTouring(true);
         }}
+        onShowTips={tips.showAgain}
       />
       <div className="flex min-h-0 flex-1">
         <aside
@@ -312,7 +361,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
               <InsertPanel
                 catalogue={catalogue}
                 templates={sectionTemplates}
-                canEditCode={canEditCode}
+                canEditCode={tools.codeTools}
                 onInsert={(key) => actions.insert(key)}
               />
             )}
@@ -331,7 +380,9 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
           {showsStart ? (
             <EmptyPageStart
               templates={sectionTemplates}
+              starterSites={props.starterSites ?? allStarterSites}
               onChooseTemplate={(templateId) => actions.insert(`template:${templateId}`)}
+              onChooseStarterPage={actions.useStarterPage}
               onStartBlank={() => {
                 setStartedBlank(true);
                 setLeftTab("insert");
@@ -346,68 +397,36 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
               hoveredId={hoveredId}
               labels={labels}
               revealId={revealId}
+              site={site}
+              motionPreview={motionPreview}
               onMessage={handleFrameMessage}
             />
           )}
         </main>
-        <aside
-          aria-label={text("pageBuilder.panels.rightLabel")}
-          className="flex w-80 shrink-0 flex-col border-l border-separator bg-surface"
-        >
-          <Tabs<RightTab>
-            label={text("pageBuilder.panels.rightLabel")}
-            idPrefix="lintel-right"
-            value={activeRightTab}
-            onChange={setRightTab}
-            tabs={rightTabs}
-          />
-          <div
-            id="lintel-right-panel"
-            role="tabpanel"
-            aria-labelledby={`lintel-right-tab-${activeRightTab}`}
-            className="min-h-0 flex-1 overflow-auto"
-          >
-            {activeRightTab === "code" ? (
-              <CodePanel
-                document={state.document}
-                node={selectedNode ?? null}
-                registry={registry}
-                isLocked={selectedIsLocked}
-                onApplyHtml={actions.applyHtml}
-                onConvertToCode={actions.convertToCode}
-                onChangeCode={actions.changeCode}
-                onPasteHtml={actions.pasteHtml}
-              />
-            ) : !selectedNode ? (
-              <p className="px-4 py-6 text-footnote text-label-secondary">
-                {text("pageBuilder.panels.selectSomething")}
-              </p>
-            ) : activeRightTab === "style" ? (
-              <StylePanel
-                node={selectedNode}
-                definition={definition}
-                breakpoint={breakpoint}
-                mode={styleMode}
-                onModeChange={setStyleMode}
-                state={styleState}
-                onStateChange={setStyleState}
-                isLocked={selectedIsLocked}
-                onChange={(target, values, label) =>
-                  actions.changeStyles(selectedNode.id, target, values, label)
-                }
-              />
-            ) : (
-              <ContentPanel
-                node={selectedNode}
-                definition={definition}
-                isLocked={selectedIsLocked}
-                pickImage={props.pickImage}
-                onChange={(changed, label) => actions.changeProps(selectedNode.id, changed, label)}
-              />
-            )}
-          </div>
-        </aside>
+        <SelectedElementPanel
+          document={state.document}
+          node={selectedNode ?? null}
+          nodeName={labels.selected ?? ""}
+          definition={definition}
+          isLocked={selectedIsLocked}
+          breakpoint={breakpoint}
+          registry={registry}
+          tools={tools}
+          tips={tips}
+          pickImage={props.pickImage}
+          motionText={props.motionText}
+          showCode={skillLevel === "developer"}
+          actions={{
+            ...actions,
+            animate: (nodeId, animation) => {
+              actions.animate(nodeId, animation);
+              if (!animation) setMotionPreview(null);
+            },
+          }}
+          onPreviewMotion={previewMotion}
+        />
       </div>
+      {showsTour && <GuidedTour onClose={closeTour} />}
       {/* The same sentence twice in a row is still read out: the space changes the text. */}
       <div role="status" aria-live="polite" className="sr-only">
         {announcement.message}

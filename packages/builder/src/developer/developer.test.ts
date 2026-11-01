@@ -13,14 +13,11 @@ import { renderPage } from "../render/render-page.js";
 import { standardRegistry } from "../render/stand-in-components.js";
 import { convertToCode } from "./convert-to-code.js";
 import { replaceWithHtml } from "./html-editing.js";
+import { simpleHero } from "../testing/simple-hero.js";
 
 function heroPage(): PageDocument {
   const page = createEmptyPage();
-  const hero = createNode(
-    findSectionTemplate("hero")!.blueprint,
-    standardCatalogue,
-    createCountingNodeIds(),
-  );
+  const hero = createNode(simpleHero, standardCatalogue, createCountingNodeIds());
   return { ...page, root: { ...page.root, children: [hero] } };
 }
 
@@ -93,9 +90,9 @@ describe("converting to code", () => {
 describe("a large page", () => {
   it("renders 300 elements quickly", () => {
     const createId = createCountingNodeIds();
-    const sections = Array.from({ length: 50 }, (_, index) =>
+    const sections = Array.from({ length: 34 }, (_, index) =>
       createNode(
-        findSectionTemplate(index % 2 ? "features" : "hero")!.blueprint,
+        index % 2 ? findSectionTemplate("features")!.blueprint : simpleHero,
         standardCatalogue,
         createId,
       ),

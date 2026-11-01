@@ -6,7 +6,7 @@ import type {
   StyleState,
   StyleTarget,
 } from "@lintel/builder-model";
-import { useMemo } from "react";
+import { type ReactNode, useMemo } from "react";
 import type { BuilderStringKey } from "../i18n/builder-strings.js";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { ChoiceGroup } from "../ui/controls.js";
@@ -34,6 +34,10 @@ interface StylePanelProps {
   state: StateChoice;
   onStateChange: (state: StateChoice) => void;
   isLocked: boolean;
+  /** False for beginners: only the simple choices, and no Simple/Advanced switch. */
+  allowsAdvanced?: boolean;
+  /** Shown to beginners above the styles, such as a tip about more control. */
+  note?: ReactNode;
   onChange: (
     target: StyleTarget,
     values: Partial<Record<StylePropertyName, string | undefined>>,
@@ -63,10 +67,12 @@ export function StylePanel({
   state,
   onStateChange,
   isLocked,
+  allowsAdvanced = true,
+  note,
   onChange,
 }: StylePanelProps) {
   const text = useBuilderText();
-  const advanced = mode === "advanced";
+  const advanced = allowsAdvanced && mode === "advanced";
   const target: StyleTarget = advanced && state !== "none" ? state : breakpoint;
   const editing = useMemo<StyleEditing>(
     () => ({
@@ -82,16 +88,20 @@ export function StylePanel({
   return (
     <div className="flex flex-col">
       <div className="flex flex-col gap-3 hairline-bottom px-4 py-3">
-        <ChoiceGroup<StylePanelMode>
-          label={text("pageBuilder.style.modeLabel")}
-          hideLabel
-          value={mode}
-          onChange={onModeChange}
-          choices={[
-            { value: "simple", label: text("pageBuilder.style.simple") },
-            { value: "advanced", label: text("pageBuilder.style.advanced") },
-          ]}
-        />
+        {allowsAdvanced ? (
+          <ChoiceGroup<StylePanelMode>
+            label={text("pageBuilder.style.modeLabel")}
+            hideLabel
+            value={mode}
+            onChange={onModeChange}
+            choices={[
+              { value: "simple", label: text("pageBuilder.style.simple") },
+              { value: "advanced", label: text("pageBuilder.style.advanced") },
+            ]}
+          />
+        ) : (
+          note
+        )}
         {advanced && (
           <ChoiceGroup<StateChoice>
             label={text("pageBuilder.style.stateLabel")}

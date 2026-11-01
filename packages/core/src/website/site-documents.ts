@@ -8,6 +8,7 @@ import {
 } from "@lintel/site-components";
 import { renderSiteDocument } from "@lintel/site-components/server";
 import type { SiteResponse } from "./rendered-pages-cache.js";
+import { readMotionRuntime } from "./site-assets.js";
 import type { SiteContext } from "./site-context.service.js";
 import { markCurrent } from "./site-chrome.service.js";
 import { localisedPath } from "./site-routing.js";
@@ -50,6 +51,7 @@ export function renderPage(
     labels: englishLabels,
     stylesheetUrl: context.stylesheet.path,
     year: now.getUTCFullYear(),
+    motionScriptUrl: readMotionRuntime()?.path,
   });
   return {
     statusCode: page.statusCode ?? 200,

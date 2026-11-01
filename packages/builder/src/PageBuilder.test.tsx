@@ -3,7 +3,6 @@ import {
   createEmptyPage,
   createNode,
   findNode,
-  findSectionTemplate,
   type PageDocument,
   standardCatalogue,
 } from "@lintel/builder-model";
@@ -11,18 +10,19 @@ import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { PageBuilder } from "./PageBuilder.js";
+import { createMemoryPreferenceStore } from "./preferences/builder-preferences.js";
+import { simpleHero } from "./testing/simple-hero.js";
 
 function heroPage(): PageDocument {
   const page = createEmptyPage();
-  const hero = createNode(
-    findSectionTemplate("hero")!.blueprint,
-    standardCatalogue,
-    createCountingNodeIds(),
-  );
+  const hero = createNode(simpleHero, standardCatalogue, createCountingNodeIds());
   return { ...page, root: { ...page.root, children: [hero] } };
 }
 
-function renderBuilder(document: PageDocument, options: { canEditCode?: boolean } = {}) {
+function renderBuilder(
+  document: PageDocument,
+  options: { canEditCode?: boolean; preferences?: Record<string, string> } = {},
+) {
   const onChange = vi.fn<(document: PageDocument) => void>();
   render(
     <PageBuilder
@@ -31,6 +31,9 @@ function renderBuilder(document: PageDocument, options: { canEditCode?: boolean 
       title="Home"
       canEditCode={options.canEditCode ?? false}
       createId={createCountingNodeIds("new")}
+      preferences={createMemoryPreferenceStore(
+        options.preferences ?? { tourSeen: "yes", skillLevel: "designer" },
+      )}
     />,
   );
   const latest = () => onChange.mock.lastCall?.[0] as PageDocument;
@@ -141,18 +144,21 @@ describe("the page builder", () => {
     expect(findNode(latest().root, "n5")?.props.label).toBe("Book now");
   });
 
-  it("offers Developer mode and code only with the code permission", async () => {
+  it("offers the Developer tools and code only with the code permission", async () => {
     const user = userEvent.setup();
     renderBuilder(heroPage());
-    expect(screen.queryByRole("button", { name: "Developer mode" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Tools: Designer" }));
+    expect(screen.getByRole("radio", { name: /Developer/ })).toBeDisabled();
+    expect(screen.getByText(/Needs permission to edit code/)).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Insert" }));
     expect(screen.queryByRole("button", { name: /^Code/ })).not.toBeInTheDocument();
   });
 
-  it("shows a selected element’s HTML and CSS in Developer mode", async () => {
+  it("shows a selected element’s HTML and CSS to developers", async () => {
     const user = userEvent.setup();
     renderBuilder(heroPage(), { canEditCode: true });
-    await user.click(screen.getByRole("button", { name: "Developer mode" }));
+    await user.click(screen.getByRole("button", { name: "Tools: Designer" }));
+    await user.click(screen.getByRole("radio", { name: /Developer/ }));
     await user.click(within(screen.getByRole("tree")).getByRole("treeitem", { name: "Button" }));
     expect(screen.getByRole("tab", { name: "Code", selected: true })).toBeInTheDocument();
     const html = screen.getByRole("region", { name: "HTML" });

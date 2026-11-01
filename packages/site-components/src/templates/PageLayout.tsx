@@ -8,9 +8,11 @@ import type { PageView } from "./view.types.js";
 /**
  * A page: its title, summary and hero image, its body, then its sections. When the first
  * section is a hero, the hero is the top of the page and its heading is the page's `h1`,
- * so the title isn't shown twice.
+ * so the title isn't shown twice. A page designed in the builder shows its design instead,
+ * exactly as the builder drew it (in `.lintel-design`, which the builder's canvas uses too).
  */
 export function PageLayout({ view }: { view: PageView }) {
+  if (view.design) return <DesignedPage html={view.design.html} />;
   const opensWithHero = view.sections[0]?.type === "hero";
   return (
     <>
@@ -50,5 +52,16 @@ export function PageLayout({ view }: { view: PageView }) {
       )}
       <BlockList blocks={view.sections} heroIsTitle={opensWithHero} />
     </>
+  );
+}
+
+/** The builder's own HTML, made and made safe by the builder's renderer on the server. */
+function DesignedPage({ html }: { html: string }) {
+  return (
+    <div
+      className="lintel-design"
+      data-lintel-component="page_design"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
   );
 }

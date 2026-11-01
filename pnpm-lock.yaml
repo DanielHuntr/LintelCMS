@@ -153,6 +153,12 @@ importers:
       '@lintel/builder-model':
         specifier: workspace:*
         version: link:../builder-model
+      '@lintel/motion':
+        specifier: workspace:*
+        version: link:../motion
+      '@lintel/motion-editor':
+        specifier: workspace:*
+        version: link:../motion-editor
       '@lintel/site-components':
         specifier: workspace:*
         version: link:../site-components
@@ -193,6 +199,9 @@ importers:
 
   packages/builder-model:
     dependencies:
+      '@lintel/motion':
+        specifier: workspace:*
+        version: link:../motion
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -221,9 +230,15 @@ importers:
       '@fastify/rate-limit':
         specifier: ^11.2.1
         version: 11.2.1
+      '@lintel/builder':
+        specifier: workspace:*
+        version: link:../builder
       '@lintel/builder-model':
         specifier: workspace:*
         version: link:../builder-model
+      '@lintel/motion':
+        specifier: workspace:*
+        version: link:../motion
       '@lintel/site-components':
         specifier: workspace:*
         version: link:../site-components

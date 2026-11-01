@@ -9,6 +9,7 @@ import {
   findPlace,
   insertNode,
   moveNode,
+  type NodeAnimation,
   type NodeBlueprint,
   type NodeStyles,
   type PageDocument,
@@ -361,6 +362,45 @@ export function replaceNode(
         insertNode(removeNode(root, nodeId), place.parent.id, place.index, replacement),
       ),
       select: replacement.id,
+    },
+  };
+}
+
+/** Gives an element an animation, changes it, or (with null) takes it away. */
+export function changeAnimation(
+  context: CommandContext,
+  nodeId: string,
+  animation: NodeAnimation | null,
+): CommandResult {
+  const node = findNode(context.document.root, nodeId);
+  if (!node) return { refused: context.text("pageBuilder.refused.nothingSelected") };
+  const name = layerName(node, context.catalogue);
+  return changeNode(
+    context,
+    nodeId,
+    context.text(
+      animation ? "pageBuilder.history.animated" : "pageBuilder.history.removedAnimation",
+      { name },
+    ),
+    ({ animation: _previous, ...rest }) => (animation ? { ...rest, animation } : rest),
+    animation ? { coalesceKey: `animation:${nodeId}` } : {},
+  );
+}
+
+/** Swaps everything on the page for what's on another page, as starting from a template does. */
+export function replacePageContent(
+  context: CommandContext,
+  page: PageDocument,
+  label: string,
+): CommandResult {
+  return {
+    change: {
+      label,
+      update: (document) => ({
+        ...document,
+        root: { ...document.root, children: page.root.children },
+      }),
+      select: null,
     },
   };
 }

@@ -156,3 +156,55 @@ describe("migrating a page", () => {
     expect(() => migrateDocument({ version: 0 }, migrations, 3)).toThrow(UnknownPageVersionError);
   });
 });
+
+describe("animations on elements", () => {
+  const withAnimation = (animation: unknown) => ({
+    version: 1,
+    root: {
+      id: "page",
+      type: "page",
+      children: [{ id: "h1", type: "heading", props: { text: "Hi", level: 1 }, animation }],
+    },
+  });
+
+  it("keeps a valid animation, with the spec's defaults filled in", () => {
+    const checked = validatePageDocument(
+      withAnimation({
+        presetId: "fade-in",
+        spec: {
+          trigger: { type: "inView" },
+          tracks: [
+            {
+              property: "opacity",
+              keyframes: [
+                { offset: 0, value: 0 },
+                { offset: 1, value: 1 },
+              ],
+            },
+          ],
+        },
+      }),
+      standardCatalogue,
+    );
+    expect(checked.ok).toBe(true);
+    if (!checked.ok) return;
+    const animation = checked.document.root.children[0]?.animation;
+    expect(animation?.presetId).toBe("fade-in");
+    expect(animation?.spec.duration).toBe(600);
+    expect(animation?.spec.reducedMotion).toBe("fade");
+  });
+
+  it("refuses an animation the runtime couldn't play", () => {
+    const checked = validatePageDocument(
+      withAnimation({ spec: { trigger: { type: "inView" }, tracks: [] } }),
+      standardCatalogue,
+    );
+    expect(checked.ok).toBe(false);
+  });
+
+  it("leaves elements without an animation as they are", () => {
+    const checked = validatePageDocument(withAnimation(undefined), standardCatalogue);
+    expect(checked.ok).toBe(true);
+    if (checked.ok) expect(checked.document.root.children[0]?.animation).toBeUndefined();
+  });
+});

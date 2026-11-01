@@ -1,0 +1,183 @@
+import { motionCloakCss as runtimeCloakCss } from "@lintel/motion";
+import { motionCloakCss } from "@lintel/site-components";
+import type { FastifyInstance } from "fastify";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { ensurePagesCollection } from "../collections/default-collections.js";
+import { acceptAnyAsset } from "../fieldtypes/image-assets.js";
+import { ensureSiteSettings } from "../globals/default-globals.js";
+import { ensureMainMenu } from "../navigation/default-navigation.js";
+import { useTestDatabase } from "../testing/test-database.js";
+import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
+import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
+import { buildSiteServer } from "../website/site-server.js";
+
+const SITE_URL = "http://localhost:3998";
+
+describe("starting from a template", () => {
+  const testDatabase = useTestDatabase();
+  let api: FastifyInstance;
+  let site: FastifyInstance;
+  let owner: SendRequest;
+
+  beforeEach(async () => {
+    api = await startTestServer(testDatabase.activeDatabase, {
+      assetExists: acceptAnyAsset,
+      website: { builtInSiteUrl: SITE_URL },
+    });
+    site = buildSiteServer({ api });
+    await site.ready();
+    await ensureSiteSettings(testDatabase.database);
+    await ensureMainMenu(testDatabase.database);
+    await createTestUser(testDatabase.database, "owner@example.com", [["*"]]);
+    owner = requestsAs(api, await signInAndGetCookies(api, "owner@example.com"));
+  });
+
+  afterEach(async () => {
+    await site.close();
+    await api.close();
+  });
+
+  const visit = (url: string) => site.inject({ method: "GET", url });
+
+  it("makes the template's pages, publishes them, fills the menu and takes its theme", async () => {
+    const response = await owner("POST", "/starter-sites/bakery/apply", { publish: true });
+    expect(response.statusCode, response.body).toBe(201);
+    const applied = response.json();
+    expect(applied.pages.map((page: { slug: string }) => page.slug)).toEqual([
+      "home",
+      "menu",
+      "about",
+      "visit",
+    ]);
+    expect(applied.pages.every((page: { published: boolean }) => page.published)).toBe(true);
+    expect(applied).toMatchObject({ themeApplied: true, menuFilled: true });
+
+    const website = await owner("GET", "/website");
+    expect(website.json().theme).toMatchObject({ brandColour: "#a8502a", fontPairing: "classic" });
+    const menu = await owner("GET", "/navigation/main");
+    expect(menu.json().items).toHaveLength(4);
+
+    const home = await visit("/");
+    expect(home.statusCode).toBe(200);
+    expect(home.body).toContain("Bread worth getting up for");
+    expect(home.body).toContain('class="lintel-design"');
+    expect(home.body).toContain('src="/_lintel/illustrations/bakery-loaf.svg"');
+    expect(home.body).toContain('href="/menu"');
+  });
+
+  it("plays animations with the motion runtime, only on pages that have them", async () => {
+    await owner("POST", "/starter-sites/consultant/apply", { publish: true });
+    const home = await visit("/");
+    const script = /<script src="(\/_lintel\/motion-[0-9a-f]{12}\.js)" defer="">/.exec(home.body);
+    expect(script, home.body.slice(0, 2000)).not.toBeNull();
+    expect(home.body).toContain('<script type="application/json" id="lintel-motion">');
+    expect(home.body).toMatch(/data-node-id="[\w-]+" data-motion-cloak=""/);
+    expect(home.body).toContain("[data-motion-cloak]");
+
+    const runtime = await visit(script?.[1] ?? "");
+    expect(runtime.statusCode).toBe(200);
+    expect(runtime.headers["content-type"]).toContain("text/javascript");
+    expect(runtime.body).toContain("lintelMotion");
+
+    // A page with no design at all ships no script.
+    const created = await owner("POST", "/collections/pages/entries", {
+      data: { title: "Plain" },
+      slug: "plain",
+    });
+    await owner("POST", `/entries/${created.json().id}/publish`);
+    const plain = await visit("/plain");
+    expect(plain.statusCode).toBe(200);
+    expect(plain.body).not.toContain("<script");
+  });
+
+  it("keeps the website's cloak in step with the motion runtime's", () => {
+    expect(motionCloakCss).toBe(runtimeCloakCss);
+  });
+
+  it("serves the illustrations, and nothing else from that folder", async () => {
+    const picture = await visit("/_lintel/illustrations/bakery-loaf.svg");
+    expect(picture.statusCode).toBe(200);
+    expect(picture.headers["content-type"]).toBe("image/svg+xml");
+    expect(picture.body.startsWith("<svg")).toBe(true);
+    expect((await visit("/_lintel/illustrations/nope.svg")).statusCode).toBe(404);
+    expect((await visit("/_lintel/illustrations/..%2Fsite.css")).statusCode).toBe(404);
+  });
+
+  it("leaves pages that exist alone, giving the template's the next free address", async () => {
+    await ensurePagesCollection(testDatabase.database);
+    await owner("POST", "/collections/pages/entries", {
+      data: { title: "Our menu" },
+      slug: "menu",
+    });
+    const applied = (await owner("POST", "/starter-sites/bakery/apply", {})).json();
+    const menuPage = applied.pages.find(
+      (page: { wantedSlug: string }) => page.wantedSlug === "menu",
+    );
+    expect(menuPage).toMatchObject({ slug: "menu-2", published: false });
+  });
+
+  it("only does what the person may: an editor's pages stay drafts in the house style", async () => {
+    await createTestUser(testDatabase.database, "editor@example.com", [
+      ["entries:read", "entries:create", "entries:update"],
+    ]);
+    const editor = requestsAs(api, await signInAndGetCookies(api, "editor@example.com"));
+    const response = await editor("POST", "/starter-sites/portfolio/apply", { publish: true });
+    expect(response.statusCode, response.body).toBe(201);
+    expect(response.json()).toMatchObject({ themeApplied: false, menuFilled: false });
+    expect(response.json().pages.some((page: { published: boolean }) => page.published)).toBe(
+      false,
+    );
+  });
+
+  it("says plainly when a template doesn't exist", async () => {
+    const response = await owner("POST", "/starter-sites/space-station/apply", {});
+    expect(response.statusCode).toBe(404);
+    expect(response.json().message).toContain("There is no template called");
+  });
+});
+
+describe("the builder's canvas", () => {
+  const testDatabase = useTestDatabase();
+  let api: FastifyInstance;
+  let site: FastifyInstance;
+
+  beforeEach(async () => {
+    api = await startTestServer(testDatabase.activeDatabase, {
+      website: { builtInSiteUrl: SITE_URL },
+    });
+    site = buildSiteServer({ api });
+    await site.ready();
+    await ensureSiteSettings(testDatabase.database);
+    await ensureMainMenu(testDatabase.database);
+  });
+
+  afterEach(async () => {
+    await site.close();
+    await api.close();
+  });
+
+  it("draws with exactly the website's stylesheet, header and footer", async () => {
+    await createTestUser(testDatabase.database, "writer@example.com", [["entries:read"]]);
+    const writer = requestsAs(api, await signInAndGetCookies(api, "writer@example.com"));
+    const response = await writer("GET", "/website/canvas");
+    expect(response.statusCode, response.body).toBe(200);
+    const canvas = response.json();
+
+    const home = await site.inject({ method: "GET", url: "/" });
+    const stylesheetPath = /<link rel="stylesheet" href="([^"]+)"/.exec(home.body)?.[1] ?? "";
+    const served = await site.inject({ method: "GET", url: stylesheetPath });
+    expect(canvas.stylesheet).toBe(served.body);
+    expect(canvas.stylesheet).toContain(":where(.lintel-design)");
+    expect(home.body).toContain(`<body class="${canvas.bodyClassName}">`);
+    expect(canvas.headerHtml).toContain('class="lintel-header');
+    expect(canvas.footerHtml).toContain('class="lintel-footer');
+    expect(canvas.baseUrl).toBe(SITE_URL);
+    expect(canvas.motionScript).toContain("lintelMotion");
+  });
+
+  it("is only for people who can read content", async () => {
+    await createTestUser(testDatabase.database, "nobody@example.com", [[]]);
+    const nobody = requestsAs(api, await signInAndGetCookies(api, "nobody@example.com"));
+    expect((await nobody("GET", "/website/canvas")).statusCode).toBe(403);
+  });
+});

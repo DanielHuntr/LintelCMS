@@ -17,6 +17,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@lintel/motion": "workspace:*",
     "zod": "^4.6.7"
   },
   "devDependencies": {

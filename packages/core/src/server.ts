@@ -47,6 +47,7 @@ import {
   type WebsiteOptions,
   type WebsiteRuntime,
 } from "./website/website-runtime.js";
+import { starterSitesRoutes } from "./starter-sites/starter-sites.routes.js";
 import { websiteRoutes } from "./website/website.routes.js";
 
 declare module "fastify" {
@@ -200,6 +201,7 @@ export function buildServer(options: ServerOptions) {
   server.register(seoRoutes);
   server.register(pagesRoutes);
   server.register(websiteRoutes);
+  server.register(starterSitesRoutes);
 
   if (options.runScheduledJobs ?? true) {
     registerScheduledJobs(server);

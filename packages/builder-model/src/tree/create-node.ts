@@ -31,6 +31,7 @@ export function createNode(
     children: children.map((child) => createNode(child, catalogue, createId)),
     hidden: false,
     locked: false,
+    ...(blueprint.animation ? { animation: structuredCopy(blueprint.animation) } : {}),
   };
 }
 

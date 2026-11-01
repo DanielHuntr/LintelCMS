@@ -7,6 +7,17 @@
  * (`canvasFrameSource`): it must not use anything from outside its own body.
  */
 export function runCanvasFrame(): void {
+  interface Preview {
+    restart(): void;
+    destroy(): void;
+  }
+  interface Runtime {
+    mountMotion(
+      element: HTMLElement,
+      spec: unknown,
+      options: { mode: "manual"; nodeAttribute: string },
+    ): Preview;
+  }
   const builder = window.parent;
   const send = (message: Record<string, unknown>) => builder.postMessage(message, "*");
   const pageStyle = document.getElementById("lintel-page-style") as HTMLStyleElement;
@@ -23,6 +34,12 @@ export function runCanvasFrame(): void {
   };
   let editing: HTMLElement | null = null;
   let editingOriginal = "";
+  // The animation being previewed, if any. Stopped before the page is drawn again.
+  let preview: Preview | null = null;
+  const stopPreview = () => {
+    preview?.destroy();
+    preview = null;
+  };
 
   const nodeElement = (nodeId: string | null) =>
     nodeId
@@ -77,9 +94,16 @@ export function runCanvasFrame(): void {
 
   window.addEventListener("message", (event) => {
     if (event.source !== builder) return;
-    const message = event.data as { type?: string; html?: string; css?: string; nodeId?: string };
+    const message = event.data as {
+      type?: string;
+      html?: string;
+      css?: string;
+      nodeId?: string;
+      spec?: unknown;
+    };
     if (message.type === "render" && typeof message.html === "string") {
       if (editing) return;
+      stopPreview();
       pageStyle.textContent = message.css ?? "";
       root.innerHTML = message.html;
       requestAnimationFrame(drawOutlines);
@@ -88,6 +112,20 @@ export function runCanvasFrame(): void {
       drawOutlines();
     } else if (message.type === "reveal" && message.nodeId) {
       nodeElement(message.nodeId)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    } else if (message.type === "previewMotion" && message.nodeId) {
+      stopPreview();
+      const runtime = (window as unknown as { lintelMotion?: Runtime }).lintelMotion;
+      const element = nodeElement(message.nodeId);
+      if (!runtime || !element) return;
+      element.scrollIntoView({ block: "nearest" });
+      // Manual: the preview plays now, whatever would start it on the site.
+      preview = runtime.mountMotion(element, message.spec, {
+        mode: "manual",
+        nodeAttribute: "data-lintel-node",
+      });
+      preview.restart();
+    } else if (message.type === "stopMotion") {
+      stopPreview();
     }
   });
 
@@ -180,7 +218,34 @@ a { cursor: default; }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
 `;
 
-/** The frame's whole document; the page itself arrives by message. */
-export function canvasFrameSource(): string {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style id="lintel-page-style"></style><style>${canvasStyles}</style></head><body><div id="lintel-page"></div><div id="lintel-overlay"></div><script>(${runCanvasFrame.toString()})();</script></body></html>`;
+/**
+ * The site around the page, so the canvas shows it exactly as the website will: the same
+ * stylesheet and body class, the real header and footer (which can't be selected), and the
+ * motion runtime for previewing animations. The admin gets this from the API.
+ */
+export interface CanvasSite {
+  /** The site's whole stylesheet, as the website serves it. */
+  stylesheet: string;
+  /** The website's `<body>` class, which carries its template. */
+  bodyClassName: string;
+  headerHtml: string;
+  footerHtml: string;
+  /** The website's address, so pictures with site paths (/_lintel/...) load. */
+  baseUrl: string | null;
+  /** The motion runtime (`@lintel/motion/site-runtime.js`), for previews. Empty for none. */
+  motionScript: string;
+}
+
+const escapeAttribute = (value: string) => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+// A script's text ends at the first "</script", so any inside it are written another way.
+const safeScript = (code: string) => code.replace(/<\/(script)/gi, "<\\/$1");
+
+/** The frame's whole document; the page itself arrives by message, inside `.lintel-design`. */
+export function canvasFrameSource(site?: CanvasSite): string {
+  const base = site?.baseUrl ? `<base href="${escapeAttribute(site.baseUrl)}">` : "";
+  const bodyClass = site ? ` class="${escapeAttribute(site.bodyClassName)}"` : "";
+  const header = site?.headerHtml ? `<div inert>${site.headerHtml}</div>` : "";
+  const footer = site?.footerHtml ? `<div inert>${site.footerHtml}</div>` : "";
+  const motion = site?.motionScript ? `<script>${safeScript(site.motionScript)}</script>` : "";
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">${base}<style id="lintel-page-style"></style><style>${canvasStyles}</style></head><body${bodyClass}>${header}<main class="lintel-main"><div id="lintel-page" class="lintel-design"></div></main>${footer}<div id="lintel-overlay"></div>${motion}<script>(${runCanvasFrame.toString()})();</script></body></html>`;
 }
