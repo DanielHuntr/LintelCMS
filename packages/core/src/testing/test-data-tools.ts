@@ -3,7 +3,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach } from "vitest";
-import { ensureBlogPostsCollection, ensurePagesCollection } from "../collections/default-collections.js";
+import {
+  ensureBlogPostsCollection,
+  ensurePagesCollection,
+} from "../collections/default-collections.js";
 import { LocalDiskStorage } from "../media/local-disk-storage.js";
 import type { useTestDatabase } from "./test-database.js";
 import { requestsAs, type SendRequest, startTestServer } from "./test-server.js";

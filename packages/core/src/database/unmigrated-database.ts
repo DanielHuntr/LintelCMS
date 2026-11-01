@@ -1,7 +1,11 @@
 import { openBuiltInDatabase } from "./built-in-database.js";
 import type { OpenedDatabase } from "./client.js";
 import { type LintelFolder, readSavedDatabaseChoice } from "./database-choice.js";
-import { buildPostgresUrl, checkPostgresConnection, connectToPostgres } from "./postgres-database.js";
+import {
+  buildPostgresUrl,
+  checkPostgresConnection,
+  connectToPostgres,
+} from "./postgres-database.js";
 
 /**
  * Opens the database the server would use (DATABASE_URL, the setup screen's choice, then
@@ -20,7 +24,10 @@ export async function openWithoutMigrating(
 ): Promise<UnmigratedDatabase> {
   if (databaseUrl) {
     await checkPostgresConnection(databaseUrl, { connectTimeoutSeconds: 5 });
-    return { opened: connectToPostgres(databaseUrl), description: "the Postgres database in DATABASE_URL" };
+    return {
+      opened: connectToPostgres(databaseUrl),
+      description: "the Postgres database in DATABASE_URL",
+    };
   }
   const choice = readSavedDatabaseChoice(lintelFolder);
   if (choice?.kind === "postgres") {
