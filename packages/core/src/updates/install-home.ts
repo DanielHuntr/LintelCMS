@@ -98,7 +98,7 @@ export async function pointCurrentAt(home: string, target: string): Promise<void
   await rename(temporary, link);
 }
 
-/** Every unpacked version, newest first, saying which one runs. */
+/** Every unpacked version, newest first, saying which one `runningFolder` (usually `current`) is. */
 export async function listInstalledVersions(
   home: string,
   runningFolder: string,

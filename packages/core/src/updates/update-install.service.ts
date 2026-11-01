@@ -5,7 +5,7 @@ import { backupsContextFor, makeBackup } from "../backups/backups.service.js";
 import { isOwner } from "../roles/roles.service.js";
 import { recordSecurityEvent, type RequestOrigin } from "../security-log/security-log.service.js";
 import { readSetting } from "../settings/settings.service.js";
-import { listInstalledVersions, versionFolder } from "./install-home.js";
+import { currentLink, listInstalledVersions, versionFolder } from "./install-home.js";
 import { prepareRelease } from "./release-download.js";
 import { compareVersions } from "./semantic-version.js";
 import {
@@ -144,7 +144,7 @@ export async function startRollback(
   if (updates.isBusy) {
     throw new UpdateAlreadyRunningError();
   }
-  const installed = (await listInstalledVersions(updates.home, updates.installFolder)).find(
+  const installed = (await listInstalledVersions(updates.home, currentLink(updates.home))).find(
     (candidate) => candidate.version === request.version,
   );
   if (!installed || !existsSync(versionFolder(updates.home, request.version))) {

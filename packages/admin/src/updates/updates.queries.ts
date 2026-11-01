@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
+import { ApiError } from "../api/client.js";
 import { useCan } from "../session/SessionContext.js";
 import {
   checkForUpdates,
@@ -104,6 +105,7 @@ const POLL_MILLISECONDS = 2_000;
 export function useUpdateProgress(initial: UpdateProgress | null, following: boolean) {
   const [streamed, setProgress] = useState<UpdateProgress | null>(null);
   const [restarting, setRestarting] = useState(false);
+  const [signedOut, setSignedOut] = useState(false);
   const refresh = useRefreshUpdates();
 
   useEffect(() => {
@@ -128,7 +130,12 @@ export function useUpdateProgress(initial: UpdateProgress | null, following: boo
             }
             askAgain();
           })
-          .catch(() => {
+          .catch((error: unknown) => {
+            // Putting a backup back signs everyone out: the outcome is there after signing in.
+            if (error instanceof ApiError && error.status === 401) {
+              setSignedOut(true);
+              return;
+            }
             // Nothing answers for a moment between the maintenance page and the new version.
             if (!stopped) {
               setRestarting(true);
@@ -160,5 +167,5 @@ export function useUpdateProgress(initial: UpdateProgress | null, following: boo
   // What the stream said, unless the page has since started something newer.
   const progress =
     streamed && (!initial || streamed.startedAt >= initial.startedAt) ? streamed : initial;
-  return { progress, restarting };
+  return { progress, restarting, signedOut };
 }

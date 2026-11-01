@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { isOwner } from "../roles/roles.service.js";
 import { readSetting, writeSetting } from "../settings/settings.service.js";
-import { listInstalledVersions, readUpdateStatus } from "./install-home.js";
+import { currentLink, listInstalledVersions, readUpdateStatus } from "./install-home.js";
 import {
   checkForUpdates,
   recommendedRelease,
@@ -80,7 +80,7 @@ export async function readUpdatesOverview(
     canInstall: await isOwner(server.database, userId),
     installedVersions:
       method.installType === "supervised"
-        ? await listInstalledVersions(updates.home, updates.installFolder)
+        ? await listInstalledVersions(updates.home, currentLink(updates.home))
         : [],
     progress: await readUpdateProgress(server),
   };

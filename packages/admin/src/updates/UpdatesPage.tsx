@@ -90,7 +90,7 @@ function UpdatesContent({ overview }: { overview: UpdatesOverview }) {
   const [confirming, setConfirming] = useState(false);
   const [rollbackTarget, setRollbackTarget] = useState<InstalledVersion | null>(null);
   const underWay = overview.progress !== null && overview.progress.finishedAt === null;
-  const { progress, restarting } = useUpdateProgress(
+  const { progress, restarting, signedOut } = useUpdateProgress(
     install.data ?? rollBack.data ?? overview.progress,
     underWay || install.isSuccess || rollBack.isSuccess,
   );
@@ -110,7 +110,7 @@ function UpdatesContent({ overview }: { overview: UpdatesOverview }) {
     <div className="flex max-w-2xl flex-col gap-6">
       <CheckStatus overview={overview} />
       {showProgress && progress && (
-        <UpdateProgressPanel progress={progress} restarting={restarting} />
+        <UpdateProgressPanel progress={progress} restarting={restarting} signedOut={signedOut} />
       )}
 
       {recommended ? (

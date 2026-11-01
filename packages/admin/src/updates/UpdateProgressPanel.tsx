@@ -1,5 +1,6 @@
 import { Check, CircleAlert, CircleCheck, LoaderCircle } from "lucide-react";
 import { Button } from "../design/Button.js";
+import { LinkButton } from "../design/LinkButton.js";
 import { t, type StringKey } from "../i18n/strings.js";
 import type { UpdateProgress, UpdateStep } from "./updates.api.js";
 
@@ -30,9 +31,12 @@ const phaseOfStep: Record<UpdateStep, Phase> = {
 export function UpdateProgressPanel({
   progress,
   restarting,
+  signedOut = false,
 }: {
   progress: UpdateProgress;
   restarting: boolean;
+  /** The backup was put back, which ended every session, this one included. */
+  signedOut?: boolean;
 }) {
   const failed = progress.step === "failed";
   const done = progress.step === "done";
@@ -120,10 +124,18 @@ export function UpdateProgressPanel({
         </div>
       )}
 
-      <p role="status" aria-live="polite" className="text-body text-label">
+      <p role="status" aria-live="polite" className={done ? "sr-only" : "text-body text-label"}>
         {progress.message}
       </p>
-      {restarting && !done && !failed && (
+      {signedOut && (
+        <div className="flex flex-col items-start gap-2">
+          <p className="text-body text-label">{t("updates.signedOut")}</p>
+          <LinkButton to="/sign-in" reloadDocument>
+            {t("updates.signIn")}
+          </LinkButton>
+        </div>
+      )}
+      {restarting && !signedOut && !done && !failed && (
         <p className="text-footnote text-label-secondary">{t("updates.restartingNote")}</p>
       )}
       {failed && (

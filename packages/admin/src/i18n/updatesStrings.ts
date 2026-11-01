@@ -74,6 +74,9 @@ export const updatesStrings = {
   "updates.phaseState.waiting": "waiting",
   "updates.downloaded": "{percent}% downloaded",
   "updates.reload": "Reload the admin",
+  "updates.signedOut":
+    "Lintel is running again, and the backup was put back, which signed everyone out. Sign in to see how the update went.",
+  "updates.signIn": "Sign in again",
 
   "updates.methodTitle": "How this site is updated",
   "updates.method.supervised":

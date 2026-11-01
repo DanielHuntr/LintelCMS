@@ -130,7 +130,9 @@ describe("Settings → Updates", { timeout: 60_000 }, () => {
       canInstall: false,
       problem: null,
     });
-    expect(overview.installedVersions.map((version) => version.version)).toEqual(["1.0.0"]);
+    expect(overview.installedVersions).toEqual([
+      expect.objectContaining({ version: "1.0.0", current: true }),
+    ]);
 
     await admin("PUT", "/updates/preferences", { channel: "beta" });
     const withBetas = (await admin("GET", "/updates")).json<UpdatesOverview>();
