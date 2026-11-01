@@ -10,7 +10,7 @@ import { Page } from "../design/Page.js";
 /** /settings/content-types/:handle: loads the blueprint, then shows the builder. */
 export function BlueprintEditorPage(props: { handle: string }) {
   return (
-    <Page width="readable">
+    <Page width="wide">
       <LoadedBlueprintEditorPage {...props} />
     </Page>
   );

@@ -84,7 +84,7 @@ export function FieldCard({
     >
       <div
         className={classNames(
-          "flex h-full min-h-16 items-center gap-2 rounded-card pr-3 pl-1 hairline-ring transition-shadow duration-150 ease-standard",
+          "@container/card relative flex h-full min-h-16 items-center gap-2 rounded-card pr-3 pl-1 hairline-ring transition-shadow duration-150 ease-standard",
           field.type === "spacer"
             ? "border border-dashed border-label-tertiary/50 bg-transparent"
             : "bg-surface",
@@ -133,7 +133,7 @@ export function FieldCard({
             </span>
           </span>
         </button>
-        <span className="hidden shrink-0 items-center gap-1 @lg:flex">
+        <span className="hidden shrink-0 items-center gap-1 @[26rem]/card:flex">
           {field.required && <Badge>{t("fields.required")}</Badge>}
           {field.conditions && <Badge tone="accent">{t("builder.badge.conditional")}</Badge>}
           {field.hidden && (
@@ -151,7 +151,8 @@ export function FieldCard({
           )}
         </span>
         {canEdit && !isLocked && (
-          <span className="flex shrink-0 items-center">
+          // Over the card's right end, so the label keeps the room until the pointer is here.
+          <span className="absolute top-1/2 right-2 flex -translate-y-1/2 items-center rounded-control bg-surface opacity-0 shadow-thumb transition-opacity duration-150 group-hover/card:opacity-100 group-focus-within/card:opacity-100">
             <IconButton
               label={t("builder.moveUp", { label })}
               disabled={!canMoveUp}
@@ -228,7 +229,7 @@ function IconButton({
       aria-disabled={disabled || undefined}
       onClick={disabled ? undefined : onClick}
       className={classNames(
-        "flex size-7 shrink-0 items-center justify-center rounded-control text-label-secondary opacity-0 transition duration-150 ease-standard group-hover/card:opacity-100 group-focus-within/card:opacity-100 hover:bg-fill focus-visible:opacity-100 focus-visible:focus-ring aria-disabled:pointer-events-none aria-disabled:opacity-30",
+        "flex size-7 shrink-0 items-center justify-center rounded-control text-label-secondary transition duration-150 ease-standard hover:bg-fill focus-visible:focus-ring aria-disabled:pointer-events-none aria-disabled:opacity-30",
         tone === "danger" ? "hover:text-danger" : "hover:text-label",
       )}
     >
