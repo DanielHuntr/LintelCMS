@@ -37,3 +37,4 @@ Try it at `/design-system/motion` in a development admin.
 | `src/controls`      | The few base controls the studio needs, matching the admin's design system |
 | `src/strings`       | Every word the studio shows, and the translate context                     |
 | `src/testing`       | Test setup: stand-ins for what jsdom lacks                                 |
+| `src/browser-tests` | Pointer drags and scrubbing in a real Chromium, through Playwright         |
