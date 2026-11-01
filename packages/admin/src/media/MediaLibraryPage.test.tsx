@@ -108,4 +108,24 @@ describe("MediaLibraryPage", () => {
     expect(within(inUse).getByText("About us")).toBeInTheDocument();
     expect(within(inUse).queryByRole("button", { name: "Delete file" })).not.toBeInTheDocument();
   });
+
+  it("saves a focal point moved just before the details are closed", async () => {
+    const patches: unknown[] = [];
+    mockApi((path, init) => {
+      if (init?.method === "PATCH") {
+        patches.push(JSON.parse(String(init.body)));
+        return beach;
+      }
+      return { assets: [beach], total: 1 };
+    });
+    renderWithQueries(<MediaLibraryPage permissions={["*"]} />);
+
+    await userEvent.click(await screen.findByRole("button", { name: /beach\.jpg/ }));
+    const sheet = screen.getByRole("dialog", { name: "beach.jpg" });
+    within(sheet).getByRole("application", { name: "Focal point" }).focus();
+    await userEvent.keyboard("{Shift>}{ArrowRight}{/Shift}");
+    await userEvent.click(within(sheet).getByRole("button", { name: "Close" }));
+
+    await waitFor(() => expect(patches).toEqual([{ focalPoint: { x: 0.6, y: 0.5 } }]));
+  });
 });

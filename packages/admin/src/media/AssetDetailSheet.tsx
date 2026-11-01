@@ -44,19 +44,39 @@ export function AssetDetailSheet({
   const [alt, setAlt] = useState(asset.alt);
   const [filename, setFilename] = useState(asset.filename);
   const focalSaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const unsavedFocalPoint = useRef<FocalPoint | undefined>(undefined);
   const image = isImage(asset);
   const aspectRatio = asset.width && asset.height ? asset.width / asset.height : 1;
-
-  useEffect(() => () => clearTimeout(focalSaveTimer.current), []);
 
   function save(changes: AssetChanges) {
     update.mutate({ assetId: asset.id, changes });
   }
 
-  function saveFocalPointSoon(point: FocalPoint) {
+  function saveFocalPointNow() {
     clearTimeout(focalSaveTimer.current);
-    focalSaveTimer.current = setTimeout(() => save({ focalPoint: point }), FOCAL_POINT_SAVE_DELAY);
+    const point = unsavedFocalPoint.current;
+    unsavedFocalPoint.current = undefined;
+    if (point) save({ focalPoint: point });
   }
+
+  function saveFocalPointSoon(point: FocalPoint) {
+    unsavedFocalPoint.current = point;
+    clearTimeout(focalSaveTimer.current);
+    focalSaveTimer.current = setTimeout(saveFocalPointNow, FOCAL_POINT_SAVE_DELAY);
+  }
+
+  // Closing the sheet (or moving to the next file) straight after moving the focal point
+  // saves it then, rather than dropping it.
+  const { mutate } = update;
+  const assetId = asset.id;
+  useEffect(() => {
+    const timer = focalSaveTimer;
+    const unsaved = unsavedFocalPoint;
+    return () => {
+      clearTimeout(timer.current);
+      if (unsaved.current) mutate({ assetId, changes: { focalPoint: unsaved.current } });
+    };
+  }, [mutate, assetId]);
 
   function saveAltIfChanged() {
     if (alt.trim() !== asset.alt) save({ alt: alt.trim() });
