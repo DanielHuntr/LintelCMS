@@ -16,6 +16,8 @@ export interface TreeNode {
   childCount: number;
   /** Its children are listed in the workspace rather than in the tree. */
   childrenAsCollection: boolean;
+  /** At the top of a page tree: a site start, the site's "/" or a "/shop" of its own. */
+  isSiteStart: boolean;
 }
 
 /** A top-level section of the tree: one collection. */
@@ -39,6 +41,8 @@ export interface TreeRoots {
   site: TreeSite;
   locale: string;
   roots: TreeRoot[];
+  /** Pages at the top of a page tree. None yet means the site has no home page. */
+  siteStartCount: number;
   recycleBinCount: number;
 }
 
@@ -84,6 +88,15 @@ export interface RecycleBinItem {
 export interface EntryInfo {
   id: string;
   url: string | null;
+  /** Every address the page answers on. */
+  urls: string[];
+  /** For a page at the top of a page tree: where it answers. */
+  siteStart: {
+    isDefault: boolean;
+    isAssigned: boolean;
+    hostname: string;
+    pathPrefix: string;
+  } | null;
   collection: { handle: string; name: string; structure: string; routePattern: string | null };
   createdAt: string;
   createdBy: { id: string; name: string } | null;
@@ -94,6 +107,31 @@ export interface EntryInfo {
   usedBy: TreeNode[];
   childCount: number;
   childrenAsCollection: boolean;
+}
+
+/** A live page whose address a move changed. */
+export interface AddressChange {
+  entryId: string;
+  title: string;
+  from: string;
+  to: string;
+}
+
+export interface MoveResult {
+  previous: { parentId: string | null; index: number };
+  addressChanges: AddressChange[];
+}
+
+/** What "Hostnames" shows and saves for a page at the top of the tree. */
+export interface RootHostnames {
+  entryId: string;
+  hostname: string;
+  pathPrefix: string;
+  /** Has a domain or path of its own. */
+  isAssigned: boolean;
+  /** Is the site's "/", as the first page at the top without one. */
+  isDefault: boolean;
+  url: string;
 }
 
 export interface ListColumn {

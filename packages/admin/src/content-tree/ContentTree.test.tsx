@@ -6,7 +6,7 @@ import { renderScreen } from "../testing/renderScreen.js";
 import { ContentSection } from "./ContentSection.js";
 import { testNode } from "./testTree.js";
 
-const home = testNode({ id: "home", title: "Home", childCount: 2 });
+const home = testNode({ id: "home", title: "Home", childCount: 2, isSiteStart: true });
 const about = testNode({ id: "about", title: "About", parentId: "home", status: "published" });
 const contact = testNode({
   id: "contact",
@@ -38,6 +38,7 @@ const roots = {
       childrenAsCollection: true,
     },
   ],
+  siteStartCount: 1,
   recycleBinCount: 2,
 };
 
@@ -45,10 +46,29 @@ function level(items: unknown[]) {
   return { items, total: items.length, offset: 0, limit: 100 };
 }
 
-function answerTree() {
-  return mockApi(({ method, url }) => {
+const homeHostnames = {
+  entryId: "home",
+  hostname: "",
+  pathPrefix: "",
+  isAssigned: false,
+  isDefault: true,
+  url: "/",
+};
+
+function answerTree(options: { siteStartCount?: number; addressChanges?: unknown[] } = {}) {
+  return mockApi(({ method, url, body }) => {
     const path = url.pathname;
-    if (path.endsWith("/content-tree")) return roots;
+    if (path.endsWith("/content-tree")) {
+      return { ...roots, siteStartCount: options.siteStartCount ?? 1 };
+    }
+    if (path.endsWith("/content-tree/entries/home/hostnames")) {
+      return method === "PUT"
+        ? { ...homeHostnames, isAssigned: true, url: "/start" }
+        : homeHostnames;
+    }
+    if (method === "POST" && path.endsWith("/seo/redirects/moved")) {
+      return { added: (body as { redirects: unknown[] }).redirects.length, kept: 0 };
+    }
     if (path.endsWith("/content-tree/children")) {
       return url.searchParams.get("parentId") === "home" ? level([about, contact]) : level([home]);
     }
@@ -58,7 +78,10 @@ function answerTree() {
       };
     }
     if (method === "POST" && path.endsWith("/content-tree/move")) {
-      return { previous: { parentId: "home", index: 1 } };
+      return {
+        previous: { parentId: "home", index: 1 },
+        addressChanges: options.addressChanges ?? [],
+      };
     }
     if (method === "POST" && path.endsWith("/collections/pages/entries")) {
       return { ...about, id: "new-page", title: "Team", collectionHandle: "pages" };
@@ -167,5 +190,144 @@ describe("the content tree", () => {
     await waitFor(() =>
       expect(moves()[1]?.body).toEqual({ entryId: "contact", parentId: "home", index: 1 }),
     );
+  });
+
+  it("creates a page at the top from the + beside Content, offering what may go there", async () => {
+    const api = answerTree();
+    renderScreen(<ContentSection />, editor);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Create a page at the top" }));
+    const dialog = await screen.findByRole("dialog", { name: "Create something new" });
+    await userEvent.type(within(dialog).getByRole("textbox", { name: "Name" }), "Shop");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Create" }));
+
+    await waitFor(() =>
+      expect(api.calls.find((call) => call.method === "POST")?.body).toMatchObject({
+        data: { title: "Shop" },
+      }),
+    );
+    // No parent: it goes at the top of its section.
+    const created = api.calls.find((call) => call.method === "POST")?.body as { parentId?: string };
+    expect(created.parentId ?? null).toBeNull();
+    const allowed = api.calls.find((call) => call.url.pathname.endsWith("/allowed-types"));
+    expect([...(allowed?.url.searchParams.keys() ?? [])]).toEqual([]);
+  });
+
+  it("offers Create on a right-click in the tree's empty space", async () => {
+    answerTree();
+    renderScreen(<ContentSection />, editor);
+
+    const tree = await screen.findByRole("tree", { name: "Content tree" });
+    fireEvent.contextMenu(tree.parentElement as Element);
+    await userEvent.click(await screen.findByRole("menuitem", { name: "Create…" }));
+    expect(await screen.findByRole("dialog", { name: "Create something new" })).toBeTruthy();
+  });
+
+  it("asks for the home page while nothing is at the top, with Home as its name", async () => {
+    answerTree({ siteStartCount: 0 });
+    renderScreen(<ContentSection />, editor);
+
+    await screen.findByRole("heading", { name: "Create your home page" });
+    await userEvent.click(screen.getByRole("button", { name: "Create home page" }));
+    const dialog = await screen.findByRole("dialog", { name: "Create your home page" });
+    expect(within(dialog).getByRole("textbox", { name: "Name" })).toHaveProperty("value", "Home");
+  });
+
+  it("drops a page on its section to put it at the top", async () => {
+    window.localStorage.setItem("lintel.contentTree.expanded.main", '["root:pages","home"]');
+    const api = answerTree();
+    renderScreen(<ContentSection />, editor);
+
+    const aboutRow = await screen.findByRole("treeitem", { name: "About, Published" });
+    const pages = screen.getByRole("treeitem", { name: "Pages" });
+    const dataTransfer = { setData: () => undefined, effectAllowed: "", dropEffect: "" };
+    fireEvent.dragStart(aboutRow.firstElementChild as Element, { dataTransfer });
+    fireEvent.dragOver(pages.firstElementChild as Element, { dataTransfer });
+    fireEvent.drop(pages.firstElementChild as Element, { dataTransfer });
+
+    await screen.findByText("Moved “About”.");
+    const move = api.calls.find((call) => call.url.pathname.endsWith("/content-tree/move"));
+    expect(move?.body).toEqual({
+      entryId: "about",
+      parentId: null,
+      index: Number.MAX_SAFE_INTEGER,
+    });
+  });
+
+  it("offers redirects from the old addresses after a move changes them", async () => {
+    window.localStorage.setItem("lintel.contentTree.expanded.main", '["root:pages","home"]');
+    const change = { entryId: "about", title: "About", from: "/about", to: "/about-us/about" };
+    const api = answerTree({ addressChanges: [change] });
+    renderScreen(<ContentSection />, { initialPath: "/content", enabledPlugins: ["seo"] });
+
+    const aboutRow = await screen.findByRole("treeitem", { name: "About, Published" });
+    const pages = screen.getByRole("treeitem", { name: "Pages" });
+    const dataTransfer = { setData: () => undefined, effectAllowed: "", dropEffect: "" };
+    fireEvent.dragStart(aboutRow.firstElementChild as Element, { dataTransfer });
+    fireEvent.dragOver(pages.firstElementChild as Element, { dataTransfer });
+    fireEvent.drop(pages.firstElementChild as Element, { dataTransfer });
+
+    await screen.findByText("Moved “About”. One page address changed.");
+    await userEvent.click(screen.getByRole("button", { name: "Add redirects…" }));
+    const dialog = await screen.findByRole("dialog", {
+      name: "Add redirects from the old addresses?",
+    });
+    expect(within(dialog).getByText("/about-us/about")).toBeTruthy();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Add redirects" }));
+
+    await screen.findByText("Added a redirect.");
+    const added = api.calls.find((call) => call.url.pathname.endsWith("/seo/redirects/moved"));
+    expect(added?.body).toEqual({
+      redirects: [{ entryId: "about", fromPath: "/about", toPath: "/about-us/about" }],
+    });
+  });
+
+  it("doesn't offer redirects without the SEO tools", async () => {
+    window.localStorage.setItem("lintel.contentTree.expanded.main", '["root:pages","home"]');
+    const change = { entryId: "about", title: "About", from: "/about", to: "/about-us/about" };
+    answerTree({ addressChanges: [change] });
+    renderScreen(<ContentSection />, { initialPath: "/content", enabledPlugins: [] });
+
+    const aboutRow = await screen.findByRole("treeitem", { name: "About, Published" });
+    const pages = screen.getByRole("treeitem", { name: "Pages" });
+    const dataTransfer = { setData: () => undefined, effectAllowed: "", dropEffect: "" };
+    fireEvent.dragStart(aboutRow.firstElementChild as Element, { dataTransfer });
+    fireEvent.dragOver(pages.firstElementChild as Element, { dataTransfer });
+    fireEvent.drop(pages.firstElementChild as Element, { dataTransfer });
+
+    await screen.findByText("Moved “About”. One page address changed.");
+    expect(screen.queryByRole("button", { name: "Add redirects…" })).toBeNull();
+  });
+
+  it("gives a page at the top a path of its own from Hostnames", async () => {
+    window.localStorage.setItem("lintel.contentTree.expanded.main", '["root:pages"]');
+    const api = answerTree();
+    renderScreen(<ContentSection />, { initialPath: "/content" });
+
+    const homeRow = await screen.findByRole("treeitem", { name: "Home, Draft" });
+    fireEvent.contextMenu(homeRow.firstElementChild ?? homeRow);
+    await userEvent.click(await screen.findByRole("menuitem", { name: "Hostnames…" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Hostnames for “Home”" });
+    await within(dialog).findByText(
+      "This is your home page, because it’s the first page at the top.",
+    );
+    await userEvent.type(within(dialog).getByRole("textbox", { name: "Path" }), "/start");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+
+    await screen.findByText("Saved. “Home” is now at /start.");
+    const saved = api.calls.find((call) => call.method === "PUT");
+    expect(saved?.body).toEqual({ hostname: "", pathPrefix: "/start" });
+  });
+
+  it("keeps Hostnames from people who can't change settings", async () => {
+    window.localStorage.setItem("lintel.contentTree.expanded.main", '["root:pages"]');
+    answerTree();
+    renderScreen(<ContentSection />, editor);
+
+    const homeRow = await screen.findByRole("treeitem", { name: "Home, Draft" });
+    fireEvent.contextMenu(homeRow.firstElementChild ?? homeRow);
+    await screen.findByRole("menuitem", { name: "Create…" });
+    expect(screen.queryByRole("menuitem", { name: "Hostnames…" })).toBeNull();
   });
 });

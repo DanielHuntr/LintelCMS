@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Trash2 } from "lucide-react";
-import { useState } from "react";
+import { House, Plus, Trash2 } from "lucide-react";
+import { useState, type DragEvent, type MouseEvent } from "react";
 import { LoadError } from "../api/LoadError.js";
+import { Button } from "../design/Button.js";
 import { classNames } from "../design/classNames.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { SearchField } from "../design/SearchField.js";
@@ -13,8 +14,9 @@ import type { TreeRoot } from "./contentTree.types.js";
 import { useTreeRoots, useTreeSearch } from "./contentTree.queries.js";
 import { SiteWideSection } from "./SiteWideSection.js";
 import { nodeState } from "./treeActions.js";
+import { TreeActionsMenu } from "./TreeActionsMenu.js";
 import { TreeBranch } from "./TreeBranch.js";
-import { rootKey, type TreeKey } from "./treeState.js";
+import { type DropPosition, rootKey, type TreeKey } from "./treeState.js";
 import { iconForContent } from "./typeIcons.js";
 import { TreeRow } from "./TreeRow.js";
 import { useActionItems } from "./useActionItems.js";
@@ -22,11 +24,15 @@ import { useActionItems } from "./useActionItems.js";
 /**
  * The content tree beside the main navigation: a site switcher when there is more than one
  * site, a filter, a section per collection (pages first), the site-wide content, and the
- * recycle bin at the bottom.
+ * recycle bin at the bottom. Pages are created at the top with the "+" beside Content, or a
+ * right-click on empty space; until there is one, the tree offers to create the home page.
  */
 export function ContentTree() {
   const tree = useContentTree();
   const roots = useTreeRoots(tree.siteId);
+  const topActions = useActionItems({ kind: "top" });
+  const canCreate = topActions.length > 0;
+  const [topMenuAt, setTopMenuAt] = useState<{ x: number; y: number } | null>(null);
   const [filter, setFilter] = useState("");
   const search = useDebouncedValue(filter.trim(), 250);
   const [focusedKey, setFocusedKey] = useState<TreeKey | undefined>();
@@ -59,15 +65,44 @@ export function ContentTree() {
         />
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-2.5 pb-3">
+      <div
+        className="min-h-0 flex-1 overflow-y-auto px-2.5 pb-3"
+        onContextMenu={(event: MouseEvent<HTMLDivElement>) => {
+          // A right-click on a row opens that row's menu; on empty space, "Create".
+          const target = event.target as Element;
+          if (!canCreate || target.closest("[data-tree-row], a, button, input, select")) return;
+          event.preventDefault();
+          setTopMenuAt({ x: event.clientX, y: event.clientY });
+        }}
+      >
         {roots.isError && <LoadError error={roots.error} onRetry={() => void roots.refetch()} />}
         {roots.isPending && <TreeSkeleton />}
         {roots.data && search !== "" && <FilterResults search={search} />}
         {roots.data && search === "" && (
           <>
-            <h2 className="px-2 pt-2 pb-1 text-caption font-semibold text-label-secondary uppercase">
-              {t("tree.contentHeading")}
-            </h2>
+            <div className="flex items-center justify-between pt-1 pr-1">
+              <h2 className="px-2 pt-1 pb-1 text-caption font-semibold text-label-secondary uppercase">
+                {t("tree.contentHeading")}
+              </h2>
+              {canCreate && (
+                <button
+                  type="button"
+                  aria-label={t("tree.createAtTop")}
+                  title={t("tree.createAtTop")}
+                  onClick={() => tree.runAction("create", { kind: "top" })}
+                  className="flex size-6 items-center justify-center rounded-full text-label-secondary hover:bg-fill hover:text-label focus-visible:focus-ring"
+                >
+                  <Plus aria-hidden="true" strokeWidth={2} className="size-4" />
+                </button>
+              )}
+            </div>
+            {canCreate &&
+              roots.data.siteStartCount === 0 &&
+              roots.data.roots.some((root) => root.structure === "tree") && (
+                <CreateHomeCard
+                  onCreate={() => tree.runAction("create", { kind: "top", isHome: true })}
+                />
+              )}
             <ul role="tree" aria-label={t("tree.label")} className="flex flex-col">
               {roots.data.roots.map((root) => (
                 <RootItem
@@ -88,6 +123,15 @@ export function ContentTree() {
           </>
         )}
       </div>
+
+      {topMenuAt && (
+        <TreeActionsMenu
+          label={t("tree.createAtTop")}
+          items={topActions}
+          position={topMenuAt}
+          onClose={() => setTopMenuAt(null)}
+        />
+      )}
 
       <div className="hairline-top px-2.5 py-2">
         <Link
@@ -119,6 +163,25 @@ interface RootItemProps {
   onRowFocus: (key: TreeKey) => void;
 }
 
+/** Until a page tree has a page at its top: what the home page is, and a button to make it. */
+function CreateHomeCard({ onCreate }: { onCreate: () => void }) {
+  return (
+    <section
+      aria-labelledby="create-home-title"
+      className="mx-1 mt-1 mb-2 flex flex-col items-start gap-1.5 rounded-card bg-surface px-3 py-3 hairline-ring"
+    >
+      <House aria-hidden="true" strokeWidth={1.75} className="size-5 text-accent" />
+      <h3 id="create-home-title" className="text-body font-semibold text-label">
+        {t("tree.createHome.title")}
+      </h3>
+      <p className="text-footnote text-label-secondary">{t("tree.createHome.description")}</p>
+      <Button size="small" onClick={onCreate} className="mt-1">
+        {t("tree.createHome.action")}
+      </Button>
+    </section>
+  );
+}
+
 /** A collection's section: its top level in the tree, or a folder whose items open as a list. */
 function RootItem({ root, isSiteTop, tabStopKey, onRowFocus }: RootItemProps) {
   const tree = useContentTree();
@@ -127,6 +190,26 @@ function RootItem({ root, isSiteTop, tabStopKey, onRowFocus }: RootItemProps) {
   const actions = useActionItems({ kind: "root", root });
   const showsChildren = !root.childrenAsCollection;
   const isExpanded = showsChildren && tree.expanded.has(key);
+  const [dropAt, setDropAt] = useState<DropPosition | undefined>();
+
+  // Dropping a page on its own section puts it at the top, as a page of its own there.
+  function acceptsDrop(): boolean {
+    const dragged = tree.dragged;
+    return (
+      dragged !== undefined &&
+      dragged.collection.handle === root.handle &&
+      root.structure !== "dated"
+    );
+  }
+
+  function handleDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setDropAt(undefined);
+    const dragged = tree.dragged;
+    tree.setDragged(undefined);
+    if (!dragged || !acceptsDrop()) return;
+    void tree.moveWithUndo(dragged, null, Number.MAX_SAFE_INTEGER);
+  }
 
   return (
     <TreeRow
@@ -152,6 +235,18 @@ function RootItem({ root, isSiteTop, tabStopKey, onRowFocus }: RootItemProps) {
           : undefined
       }
       actions={actions}
+      drag={{
+        draggable: false,
+        onDragOver: (event) => {
+          if (!acceptsDrop()) return;
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "move";
+          setDropAt("inside");
+        },
+        onDragLeave: () => setDropAt(undefined),
+        onDrop: handleDrop,
+        dropIndicator: dropAt,
+      }}
     >
       {isExpanded && root.childCount > 0 && (
         <TreeBranch

@@ -34,6 +34,15 @@ export const contentTreeStrings = {
   "tree.moveUndone": "Moved “{title}” back.",
   "tree.moveFailed": "Couldn’t move “{title}”. {reason}",
   "tree.dropInside": "Drop to put it inside “{title}”",
+  "tree.createAtTop": "Create a page at the top",
+  "tree.createHome.title": "Create your home page",
+  "tree.createHome.description":
+    "It’s the first page people see at your website’s address. Everything else goes under it.",
+  "tree.createHome.action": "Create home page",
+  "tree.createHome.name": "Home",
+  "tree.movedAddresses": "Moved “{title}”. {count} page addresses changed.",
+  "tree.movedAddressesOne": "Moved “{title}”. One page address changed.",
+  "tree.addRedirects": "Add redirects…",
   "tree.noRoots": "There’s nothing to write in yet.",
   "tree.noRootsAction": "Make a content type",
 
@@ -49,6 +58,36 @@ export const contentTreeStrings = {
   "tree.action.info": "Info",
   "tree.action.delete": "Delete…",
   "tree.action.openList": "Open the list",
+  "tree.action.hostnames": "Hostnames…",
+
+  "tree.hostnames.title": "Hostnames for “{title}”",
+  "tree.hostnames.description":
+    "Choose where this page and everything under it can be found. Leave both empty to use the default.",
+  "tree.hostnames.domainLabel": "Domain",
+  "tree.hostnames.domainPlaceholder": "shop.example.com",
+  "tree.hostnames.domainHint": "Optional. Point the domain at this website first.",
+  "tree.hostnames.prefixLabel": "Path",
+  "tree.hostnames.prefixPlaceholder": "/shop",
+  "tree.hostnames.prefixHint": "Optional. Pages under it get addresses like /shop/about.",
+  "tree.hostnames.now": "Now",
+  "tree.hostnames.defaultHome": "This is your home page, because it’s the first page at the top.",
+  "tree.hostnames.defaultSlug":
+    "Without a domain or path of its own, it’s found under its name, after the home page.",
+  "tree.hostnames.save": "Save",
+  "tree.hostnames.saved": "Saved. “{title}” is now at {url}.",
+  "tree.hostnames.loading": "Loading the hostnames…",
+
+  "tree.redirects.title": "Add redirects from the old addresses?",
+  "tree.redirects.description":
+    "Links and search results may still use the old addresses. A redirect sends visitors to the new one.",
+  "tree.redirects.from": "Old address",
+  "tree.redirects.to": "New address",
+  "tree.redirects.confirm": "Add redirects",
+  "tree.redirects.notNow": "Not now",
+  "tree.redirects.added": "Added {count} redirects.",
+  "tree.redirects.addedOne": "Added a redirect.",
+  "tree.redirects.kept":
+    "Added {added}. {kept} old addresses already had a redirect of their own, so they were left alone.",
 
   "tree.create.title": "Create in {place}",
   "tree.create.titleAtTop": "Create something new",
@@ -130,6 +169,11 @@ export const contentTreeStrings = {
   "workspace.footer": "Saving and publishing",
 
   "info.address": "Address",
+  "info.addresses": "Addresses",
+  "info.siteStart": "Top of the site",
+  "info.siteStartHome": "The home page, as the first page at the top",
+  "info.siteStartOwn": "Has its own domain or path, set in Hostnames",
+  "info.siteStartSlug": "Found under its name, as another page at the top",
   "info.noAddress": "This content type has no pages of its own.",
   "info.contentType": "Content type",
   "info.layout": "Layout",

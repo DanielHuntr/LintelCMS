@@ -2,11 +2,12 @@ import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { describeError } from "../api/describeError.js";
 import { t } from "../i18n/strings.js";
-import { useCan } from "../session/SessionContext.js";
+import { useCan, useSession } from "../session/SessionContext.js";
 import { ContentTree } from "./ContentTree.js";
 import { ContentTreeContext, type ContentTreeState } from "./ContentTreeContext.js";
 import { moveEntry } from "./contentTree.api.js";
-import type { TreeNode } from "./contentTree.types.js";
+import type { AddressChange, TreeNode } from "./contentTree.types.js";
+import { RedirectsDialog } from "./RedirectsDialog.js";
 import { useEntryPath, useRefreshContent } from "./contentTree.queries.js";
 import { selectedTreeKey } from "./selectedTreeKey.js";
 import { TreeDialogs, type PendingAction } from "./TreeDialogs.js";
@@ -36,6 +37,9 @@ export function ContentSection() {
   const [notice, setNotice] = useState<TreeNotice | null>(null);
   const refresh = useRefreshContent();
   const canUpdate = useCan("entries:update");
+  const canManageRedirects = useCan("settings:update");
+  const isSeoOn = useSession().enabledPlugins.includes("seo");
+  const [redirectOffer, setRedirectOffer] = useState<AddressChange[] | null>(null);
 
   // Opening an entry from elsewhere (a link, search, the back button) opens its branch.
   const isEntry = selectedKey !== undefined && !selectedKey.includes(":");
@@ -55,20 +59,25 @@ export function ContentSection() {
   async function moveWithUndo(node: TreeNode, parentId: string | null, index: number) {
     const title = node.title || t("tree.untitled");
     try {
-      const { previous } = await moveEntry(node.id, parentId, index);
+      const { previous, addressChanges } = await moveEntry(node.id, parentId, index);
       if (parentId !== null) open([parentId]);
       await refresh([node.id]);
+      const undo = {
+        label: t("tree.undo"),
+        run: () =>
+          void moveEntry(node.id, previous.parentId, previous.index).then(async () => {
+            await refresh([node.id]);
+            show({ tone: "neutral", message: t("tree.moveUndone", { title }) });
+          }),
+      };
+      // Redirects are the SEO tools' and a settings change, so they're offered when both allow.
+      const offersRedirects = addressChanges.length > 0 && isSeoOn && canManageRedirects;
       show({
         tone: "neutral",
-        message: t("tree.moved", { title }),
-        action: {
-          label: t("tree.undo"),
-          run: () =>
-            void moveEntry(node.id, previous.parentId, previous.index).then(async () => {
-              await refresh([node.id]);
-              show({ tone: "neutral", message: t("tree.moveUndone", { title }) });
-            }),
-        },
+        message: movedMessage(title, addressChanges.length),
+        actions: offersRedirects
+          ? [undo, { label: t("tree.addRedirects"), run: () => setRedirectOffer(addressChanges) }]
+          : [undo],
       });
     } catch (error) {
       show({
@@ -132,8 +141,21 @@ export function ContentSection() {
         onNotice={show}
         selectedKey={selectedKey}
       />
+      {redirectOffer && (
+        <RedirectsDialog
+          changes={redirectOffer}
+          onClose={() => setRedirectOffer(null)}
+          onNotice={show}
+        />
+      )}
     </ContentTreeContext>
   );
+}
+
+function movedMessage(title: string, changedAddresses: number): string {
+  if (changedAddresses === 0) return t("tree.moved", { title });
+  if (changedAddresses === 1) return t("tree.movedAddressesOne", { title });
+  return t("tree.movedAddresses", { title, count: changedAddresses });
 }
 
 /** Actions that simply open part of an entry's workspace, rather than asking something first. */

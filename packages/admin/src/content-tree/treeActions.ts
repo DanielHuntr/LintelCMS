@@ -1,7 +1,13 @@
 import type { TreeNode, TreeRoot } from "./contentTree.types.js";
 
-/** What an action in the tree is about: one entry, or a collection's whole section. */
-export type TreeTarget = { kind: "entry"; node: TreeNode } | { kind: "root"; root: TreeRoot };
+/**
+ * What an action in the tree is about: one entry, a collection's whole section, or the top
+ * of the tree itself (the "+" beside Content, or a right-click on empty space).
+ */
+export type TreeTarget =
+  | { kind: "entry"; node: TreeNode }
+  | { kind: "root"; root: TreeRoot }
+  | { kind: "top"; isHome?: boolean };
 
 export type TreeAction =
   | "create"
@@ -15,7 +21,8 @@ export type TreeAction =
   | "history"
   | "info"
   | "delete"
-  | "openList";
+  | "openList"
+  | "hostnames";
 
 /** The parts of the signed-in person's permissions the menu cares about. */
 export interface ActionPermissions {
@@ -23,6 +30,8 @@ export interface ActionPermissions {
   update: boolean;
   publish: boolean;
   delete: boolean;
+  /** Giving a page its own domain or path changes where the site answers: a settings change. */
+  settings: boolean;
 }
 
 /**
@@ -30,6 +39,9 @@ export interface ActionPermissions {
  * and what makes no sense here (sorting an empty folder, viewing a page that isn't live).
  */
 export function actionsFor(target: TreeTarget, can: ActionPermissions): TreeAction[] {
+  if (target.kind === "top") {
+    return can.create ? ["create"] : [];
+  }
   if (target.kind === "root") {
     const { root } = target;
     return [
@@ -54,6 +66,7 @@ export function actionsFor(target: TreeTarget, can: ActionPermissions): TreeActi
   if (isLive) actions.push("viewPage");
   actions.push("history", "info");
   if (node.childrenAsCollection && node.childCount > 0) actions.push("openList");
+  if (can.settings && node.isSiteStart) actions.push("hostnames");
   if (can.delete) actions.push("delete");
   return actions;
 }

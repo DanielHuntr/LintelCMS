@@ -17,6 +17,7 @@ export function testNode(overrides: Partial<TreeNode> = {}): TreeNode {
     collection: { handle: "pages", name: "Pages" },
     childCount: 0,
     childrenAsCollection: false,
+    isSiteStart: false,
     ...overrides,
   };
 }

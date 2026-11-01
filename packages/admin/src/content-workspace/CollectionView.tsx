@@ -329,6 +329,7 @@ function placeholderNode(parentId: string, title: string): TreeNode {
     collection: { handle: "", name: "" },
     childCount: 0,
     childrenAsCollection: true,
+    isSiteStart: false,
   };
 }
 

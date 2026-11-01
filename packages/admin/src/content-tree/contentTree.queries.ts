@@ -11,6 +11,7 @@ import {
   getCollectionItems,
   getEntryInfo,
   getEntryPath,
+  getRootHostnames,
   getTreeChildren,
   getTreeRoots,
   listRecycleBin,
@@ -41,7 +42,15 @@ export const treeKeys = {
   items: (place: TreePlace, query: CollectionQuery) =>
     ["content-tree", "items", place, query] as const,
   recycleBin: () => ["content-tree", "recycle-bin"] as const,
+  hostnames: (entryId: string) => ["content-tree", "hostnames", entryId] as const,
 };
+
+export function useRootHostnames(entryId: string) {
+  return useQuery({
+    queryKey: treeKeys.hostnames(entryId),
+    queryFn: () => getRootHostnames(entryId),
+  });
+}
 
 export function useTreeRoots(siteId: string | undefined) {
   return useQuery({ queryKey: treeKeys.roots(siteId), queryFn: () => getTreeRoots(siteId) });

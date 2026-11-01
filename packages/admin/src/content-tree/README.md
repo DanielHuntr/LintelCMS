@@ -45,6 +45,16 @@ The "…" button, a right-click or Shift+F10 opens a row's menu (`TreeActionsMen
 | Preview, History, Info | Open that part of the workspace                                     |
 | View page              | The live page on the website, or Lintel's own view of it            |
 | Delete…                | To the recycle bin, with everything under it                        |
+| Hostnames…             | `HostnamesDialog`: a domain and/or path for a page at the top       |
+
+**Creating at the top**: the "+" beside Content, a right-click on empty space, or Create on
+a section offers only content types allowed at the top. Pages at the top are site starts
+(the first is "/", see `packages/core/src/content-roots`); until there is one, the tree
+shows "Create your home page".
+
+Dropping a page on its own section puts it at the top. When a move changes live pages'
+addresses, the note offers "Add redirects…" (`RedirectsDialog`) beside Undo, for people who
+can change settings while the SEO tools are on.
 
 Dragging a row onto another puts it before, inside or after it, by where it lands
 (`dropPosition`, `moveForDrop`); a note at the bottom of the tree offers Undo. The server

@@ -4,6 +4,7 @@ import {
   Eye,
   EyeOff,
   FolderInput,
+  Globe,
   History,
   Info,
   List,
@@ -32,6 +33,7 @@ const appearance: Record<TreeAction, { label: StringKey; icon: LucideIcon }> = {
   info: { label: "tree.action.info", icon: Info },
   delete: { label: "tree.action.delete", icon: Trash2 },
   openList: { label: "tree.action.openList", icon: List },
+  hostnames: { label: "tree.action.hostnames", icon: Globe },
 };
 
 /** The "…" menu's items for a row: what this person may do with it, in menu order. */
@@ -42,6 +44,7 @@ export function useActionItems(target: TreeTarget): ActionItem[] {
     update: useCan("entries:update"),
     publish: useCan("entries:publish"),
     delete: useCan("entries:delete"),
+    settings: useCan("settings:update"),
   };
   return actionsFor(target, permissions).map((action) => ({
     key: action,

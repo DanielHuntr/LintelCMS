@@ -5,9 +5,12 @@ import type {
   BatchResult,
   CollectionItems,
   CollectionQuery,
+  AddressChange,
   EntryInfo,
+  MoveResult,
   PathStep,
   RecycleBinItem,
+  RootHostnames,
   TreeLevel,
   TreeNode,
   TreePlace,
@@ -66,13 +69,43 @@ export function getCollectionItems(
   return apiRequest(`/content-tree/items${query({ ...placeQuery(place), ...options })}`);
 }
 
-/** Answers where the entry was, so the move can be undone. */
+/** Answers where the entry was, so the move can be undone, and which addresses changed. */
 export function moveEntry(
   entryId: string,
   parentId: string | null,
   index: number,
-): Promise<{ previous: { parentId: string | null; index: number } }> {
+): Promise<MoveResult> {
   return apiRequest("/content-tree/move", { method: "POST", body: { entryId, parentId, index } });
+}
+
+export function getRootHostnames(entryId: string): Promise<RootHostnames> {
+  return apiRequest(`/content-tree/entries/${entryId}/hostnames`);
+}
+
+export function saveRootHostnames(
+  entryId: string,
+  address: { hostname: string; pathPrefix: string },
+): Promise<RootHostnames> {
+  return apiRequest(`/content-tree/entries/${entryId}/hostnames`, {
+    method: "PUT",
+    body: address,
+  });
+}
+
+/** Working redirects from the addresses a move changed (the SEO tools' redirects). */
+export function addRedirectsForMove(
+  changes: readonly AddressChange[],
+): Promise<{ added: number; kept: number }> {
+  return apiRequest("/seo/redirects/moved", {
+    method: "POST",
+    body: {
+      redirects: changes.map((change) => ({
+        entryId: change.entryId,
+        fromPath: change.from,
+        toPath: change.to,
+      })),
+    },
+  });
 }
 
 export function sortChildren(

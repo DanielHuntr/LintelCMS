@@ -13,6 +13,8 @@ afterEach(() => vi.restoreAllMocks());
 const info = {
   id: "p1",
   url: "/blog/hello-world",
+  urls: ["/blog/hello-world"],
+  siteStart: null as null | Record<string, unknown>,
   collection: {
     handle: "posts",
     name: "Blog posts",
@@ -30,10 +32,10 @@ const info = {
   childrenAsCollection: false,
 };
 
-function answerWorkspace() {
+function answerWorkspace(infoChanges: Partial<typeof info> = {}) {
   return mockApi(({ method, url }) => {
     const path = url.pathname;
-    if (path.endsWith("/info")) return info;
+    if (path.endsWith("/info")) return { ...info, ...infoChanges };
     if (path.endsWith("/path")) {
       return {
         path: [
@@ -94,6 +96,20 @@ describe("an entry's workspace", () => {
     expect(screen.getByText(/by Ada Lovelace/)).toBeTruthy();
     expect(screen.getByText("p1")).toBeTruthy();
     expect(screen.getByText("Nothing links to this yet.")).toBeTruthy();
+  });
+
+  it("shows where a page at the top of the site is, and why", async () => {
+    answerWorkspace({
+      url: "/",
+      urls: ["/"],
+      siteStart: { isDefault: true, isAssigned: false, hostname: "", pathPrefix: "" },
+    });
+    renderWorkspace("info");
+
+    expect(await screen.findByText("The home page, as the first page at the top")).toBeTruthy();
+    expect(screen.getByText("Top of the site")).toBeTruthy();
+    // The header shows the address itself, not the slug the home page doesn't use.
+    expect(screen.queryByRole("textbox", { name: "URL:" })).toBeNull();
   });
 
   it("asks before opening another node with unsaved changes", async () => {

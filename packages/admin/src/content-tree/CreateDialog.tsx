@@ -19,6 +19,8 @@ interface CreateDialogProps {
   place: TreePlace | null;
   /** The entry or section's name, for the title; undefined at the top. */
   placeName: string | undefined;
+  /** "Create your home page": a page tree chosen first, and Home as the name. */
+  isHome?: boolean;
   onClose: () => void;
 }
 
@@ -26,18 +28,21 @@ interface CreateDialogProps {
  * "Create": offers only the content types allowed at this place (the server decides, from
  * each content type's "Where it goes"), asks for a name, makes a draft and opens it.
  */
-export function CreateDialog({ place, placeName, onClose }: CreateDialogProps) {
+export function CreateDialog({ place, placeName, isHome = false, onClose }: CreateDialogProps) {
   const navigate = useNavigate();
   const tree = useContentTree();
   const refresh = useRefreshContent();
   const allowed = useAllowedTypes(place);
   const types = allowed.data?.types ?? [];
   const [chosen, setChosen] = useState<string | undefined>();
-  const [name, setName] = useState("");
+  const [name, setName] = useState(isHome ? t("tree.createHome.name") : "");
   const [error, setError] = useState<string | null>(null);
   const [isWorking, setIsWorking] = useState(false);
   const groupLabelId = useId();
-  const chosenType = types.find((type) => type.handle === chosen) ?? types[0];
+  const chosenType =
+    types.find((type) => type.handle === chosen) ??
+    (isHome ? types.find((type) => type.structure === "tree") : undefined) ??
+    types[0];
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -74,7 +79,13 @@ export function CreateDialog({ place, placeName, onClose }: CreateDialogProps) {
     <Dialog
       open
       onClose={onClose}
-      title={placeName ? t("tree.create.title", { place: placeName }) : t("tree.create.titleAtTop")}
+      title={
+        isHome
+          ? t("tree.createHome.title")
+          : placeName
+            ? t("tree.create.title", { place: placeName })
+            : t("tree.create.titleAtTop")
+      }
       footer={
         <>
           <Button variant="plain" onClick={onClose}>

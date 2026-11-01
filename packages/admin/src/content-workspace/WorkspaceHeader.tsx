@@ -10,6 +10,7 @@ import { useEntryPath } from "../content-tree/contentTree.queries.js";
 import type { EntryInfo, TreeNode } from "../content-tree/contentTree.types.js";
 import { TreeActionsMenu } from "../content-tree/TreeActionsMenu.js";
 import { useActionItems } from "../content-tree/useActionItems.js";
+import { entryAddressPattern } from "./entryAddressPattern.js";
 import { Badge } from "../design/Badge.js";
 import { t } from "../i18n/strings.js";
 
@@ -57,12 +58,14 @@ export function WorkspaceHeader({
     collection: { handle: collection.handle, name: collection.name },
     childCount: info?.childCount ?? 0,
     childrenAsCollection: info?.childrenAsCollection ?? false,
+    isSiteStart: info?.siteStart !== null && info?.siteStart !== undefined,
   };
   const actions = useActionItems({ kind: "entry", node }).filter(
     // Those are the workspace's own tabs and buttons.
     (action) => !["preview", "history", "info", "openList"].includes(action.key),
   );
   const [menuAt, setMenuAt] = useState<{ x: number; y: number } | null>(null);
+  const address = entryAddressPattern(collection.routePattern, entry.slug, info);
   const isChanged = entry.status === "published" && entry.hasUnpublishedChanges;
 
   return (
@@ -131,7 +134,8 @@ export function WorkspaceHeader({
         error={fieldErrors.title}
       />
       <EntrySlugInput
-        routePattern={collection.routePattern}
+        routePattern={address.pattern}
+        fixedAddress={address.fixedAddress}
         slug={slug}
         onChange={onSlugChange}
         error={fieldErrors.slug}

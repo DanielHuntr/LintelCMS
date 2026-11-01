@@ -19,6 +19,11 @@ interface InfoTabProps {
   info: UseQueryResult<EntryInfo>;
 }
 
+function describeSiteStart(siteStart: NonNullable<EntryInfo["siteStart"]>): string {
+  if (siteStart.isDefault) return t("info.siteStartHome");
+  return siteStart.isAssigned ? t("info.siteStartOwn") : t("info.siteStartSlug");
+}
+
 /**
  * The Info tab: the entry's address, content type and layout, who made and last changed it,
  * when it was published, what links to it, and its id for developers.
@@ -41,9 +46,22 @@ export function InfoTab({ entry, collection, info }: InfoTabProps) {
   return (
     <div className="grid max-w-4xl items-start gap-5 @min-[60rem]:grid-cols-[1fr_1fr]">
       <dl className="overflow-hidden rounded-card bg-surface">
-        <Detail label={t("info.address")}>
-          {details.url ?? <span className="text-label-secondary">{t("info.noAddress")}</span>}
+        <Detail label={details.urls.length > 1 ? t("info.addresses") : t("info.address")}>
+          {details.urls.length === 0 ? (
+            <span className="text-label-secondary">{t("info.noAddress")}</span>
+          ) : (
+            <ul className="flex flex-col gap-0.5">
+              {details.urls.map((url) => (
+                <li key={url} className="break-all">
+                  {url}
+                </li>
+              ))}
+            </ul>
+          )}
         </Detail>
+        {details.siteStart && (
+          <Detail label={t("info.siteStart")}>{describeSiteStart(details.siteStart)}</Detail>
+        )}
         <Detail label={t("info.contentType")}>{collection.name}</Detail>
         {collection.routePattern && (
           <Detail label={t("info.layout")}>

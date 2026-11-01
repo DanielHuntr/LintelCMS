@@ -8,6 +8,7 @@ import { useViewPageSite } from "../website/website.queries.js";
 import { BranchActionDialog } from "./BranchActionDialog.js";
 import { useContentTree } from "./ContentTreeContext.js";
 import { CreateDialog } from "./CreateDialog.js";
+import { HostnamesDialog } from "./HostnamesDialog.js";
 import { MoveDialog } from "./MoveDialog.js";
 import { SortDialog } from "./SortDialog.js";
 import type { TreeAction, TreeTarget } from "./treeActions.js";
@@ -35,6 +36,12 @@ export function TreeDialogs({ pending, onClose, onNotice, selectedKey }: TreeDia
     return <OpenViewPage entryId={target.node.id} onDone={onClose} onNotice={onNotice} />;
   }
 
+  if (target.kind === "top") {
+    return action === "create" ? (
+      <CreateDialog place={null} placeName={undefined} isHome={target.isHome} onClose={onClose} />
+    ) : null;
+  }
+
   if (target.kind === "root") {
     const place = { collection: target.root.handle };
     if (action === "create") {
@@ -53,6 +60,8 @@ export function TreeDialogs({ pending, onClose, onNotice, selectedKey }: TreeDia
       return <CreateDialog place={{ parentId: node.id }} placeName={name} onClose={onClose} />;
     case "sort":
       return <SortDialog place={{ parentId: node.id }} placeName={name} onClose={onClose} />;
+    case "hostnames":
+      return <HostnamesDialog node={node} onClose={onClose} onNotice={onNotice} />;
     case "move":
       return (
         <MoveDialog
