@@ -1,4 +1,5 @@
 import type { CollectionStructure } from "../collections/collections.schema.js";
+import type { BlockDefinition } from "../blocks/block-definition.js";
 import type { FieldSpec } from "./field-helpers.js";
 
 /**
@@ -104,7 +105,8 @@ export type ModelDefinition =
   | TaxonomyDefinition
   | GlobalSetDefinition
   | FieldsetDefinition
-  | MenuDefinition;
+  | MenuDefinition
+  | BlockDefinition<never>;
 
 /** A kind of content, such as a page or a blog post: its fields and where its entries live. */
 export function defineContentType(input: ContentTypeInput): ContentTypeDefinition {

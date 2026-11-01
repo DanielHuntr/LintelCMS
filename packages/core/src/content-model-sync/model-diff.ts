@@ -32,6 +32,7 @@ export type ModelChange =
   | { action: "removeUnit"; unit: ModelUnit }
   | { action: "renameUnit"; unit: ModelUnit; previousName: string }
   | { action: "changeMenuLevels"; unit: ModelUnit & { kind: "menu" }; previousLevels: number }
+  | { action: "changeBlock"; unit: ModelUnit & { kind: "block" }; what: string[] }
   | { action: "addField"; owner: FieldOwner; field: FieldDefinition; within?: InnerFieldLocation }
   | {
       action: "removeField";
@@ -129,6 +130,12 @@ function unitChanges(
   }
   if (before.kind === "menu" && after.kind === "menu" && before.maxDepth !== after.maxDepth) {
     changes.push({ action: "changeMenuLevels", unit: after, previousLevels: before.maxDepth });
+  }
+  if (before.kind === "block" && after.kind === "block") {
+    const what = (["properties", "template", "icon", "category", "description"] as const).filter(
+      (key) => canonicalJson(before[key]) !== canonicalJson(after[key]),
+    );
+    if (what.length > 0) changes.push({ action: "changeBlock", unit: after, what });
   }
   if (
     (before.kind === "contentType" || before.kind === "globalSet" || before.kind === "fieldset") &&

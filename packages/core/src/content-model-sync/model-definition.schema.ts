@@ -157,7 +157,14 @@ const innerFieldUnion = z.discriminatedUnion("type", [
 const blockTypeSchema = z.strictObject({
   name: z.string().optional().describe("The name editors see. Defaults to the handle in words."),
   description: z.string().optional().describe("A sentence shown when adding a block."),
-  fields: z.record(z.string(), innerFieldSchema).describe("The block's fields, keyed by handle."),
+  block: z
+    .string()
+    .optional()
+    .describe("One of the site's blocks (a file in blocks/): its properties are the fields."),
+  fields: z
+    .record(z.string(), innerFieldSchema)
+    .optional()
+    .describe("The block's fields, keyed by handle. Left out for one of the site's blocks."),
 });
 
 const blocksFieldSchema = fieldSchema("blocks", "A page builder made of blocks.", {
@@ -219,6 +226,23 @@ export const modelDefinitionSchema = z.discriminatedUnion("kind", [
     fields: fieldsSchema,
   }),
   z.strictObject({
+    kind: z.literal("block"),
+    handle: z.string().optional().describe("Defaults to the file's name: team_card.block.ts."),
+    name: z.string(),
+    icon: z.string().optional(),
+    category: z.string().optional(),
+    description: z.string().optional(),
+    properties: fieldsSchema.optional(),
+    render: z
+      .union([
+        z.string().describe("An HTML template with {{property}} slots."),
+        z.custom<(props: never) => unknown>((value) => typeof value === "function", {
+          error: "render should be an HTML template or a React component",
+        }),
+      ])
+      .describe("An HTML template with {{property}} slots, or (in TypeScript) a React component."),
+  }),
+  z.strictObject({
     kind: z.literal("menu"),
     handle: z.string(),
     name: z.string(),
@@ -229,7 +253,8 @@ export const modelDefinitionSchema = z.discriminatedUnion("kind", [
 /** The JSON Schema for YAML content model files, for VS Code's YAML extension. */
 export function modelDefinitionJsonSchema(): Record<string, unknown> {
   return {
-    ...z.toJSONSchema(modelDefinitionSchema, { io: "input" }),
+    // A block's React component can't be written in YAML; its template can.
+    ...z.toJSONSchema(modelDefinitionSchema, { io: "input", unrepresentable: "any" }),
     title: "Lintel content model file",
   };
 }

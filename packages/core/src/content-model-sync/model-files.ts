@@ -26,7 +26,8 @@ import { JSON_SCHEMA_FILE_NAME, printYamlFile, yamlHeader } from "./yaml-printer
  * Reading and writing the content model folder. Every `.ts`, `.yaml` and `.yml` file in
  * it (and its subfolders) is read; a TypeScript file without a default export is a helper
  * other files import (shared fields, say) and is skipped. New files go in a folder per
- * kind: content-types/, taxonomies/, globals/, fieldsets/ and menus/.
+ * kind: content-types/, taxonomies/, globals/, fieldsets/, blocks/ and menus/. Blocks are
+ * named `<handle>.block.ts` (or `.block.tsx` for a React component, `.block.yaml`).
  */
 
 export type ModelFileFormat = "typescript" | "yaml";
@@ -36,10 +37,11 @@ const KIND_FOLDERS: Record<ModelUnitKind, string> = {
   taxonomy: "taxonomies",
   globalSet: "globals",
   fieldset: "fieldsets",
+  block: "blocks",
   menu: "menus",
 };
 
-const TYPESCRIPT_EXTENSIONS = [".ts", ".mts"];
+const TYPESCRIPT_EXTENSIONS = [".ts", ".mts", ".tsx"];
 const YAML_EXTENSIONS = [".yaml", ".yml"];
 
 export interface ModelFolder extends ModelFromFiles {
@@ -121,6 +123,8 @@ function createDefinitionLoader() {
     fsCache: false,
     // A file without a default export is a helper, not a definition.
     interopDefault: false,
+    // Blocks drawn by React components may be written with JSX.
+    jsx: { runtime: "automatic" },
     alias: { [CONTENT_MODEL_IMPORT]: contentModelModulePath() },
   });
 }
@@ -142,7 +146,8 @@ async function loadDefinitionFile(loader: DefinitionLoader, path: string): Promi
 /** Where a unit's file goes when it doesn't have one yet. */
 export function newUnitPath(folder: string, unit: ModelUnit, format: ModelFileFormat): string {
   const extension = format === "yaml" ? ".yaml" : ".ts";
-  return join(folder, KIND_FOLDERS[unit.kind], `${unit.handle}${extension}`);
+  const suffix = unit.kind === "block" ? ".block" : "";
+  return join(folder, KIND_FOLDERS[unit.kind], `${unit.handle}${suffix}${extension}`);
 }
 
 /**
@@ -154,6 +159,10 @@ export async function writeUnitFile(
   path: string,
   unit: ModelUnit,
 ): Promise<boolean> {
+  // A block drawn by a React component is the developer's file; there is nothing to write.
+  if (unit.kind === "block" && unit.template === null) {
+    return false;
+  }
   const existing = existsSync(path) ? await readFile(path, "utf8") : undefined;
   const isYaml = YAML_EXTENSIONS.includes(extname(path));
   const text = isYaml

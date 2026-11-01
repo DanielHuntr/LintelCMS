@@ -1,5 +1,6 @@
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
+import { findBlockUses } from "../blocks/blocks.service.js";
 import { findFieldtype } from "../fieldtypes/fieldtypes.registry.js";
 import { describeUnitKind } from "./content-model.schema.js";
 import {
@@ -61,6 +62,8 @@ export function summarise(change: ModelChange): string {
       return `Rename the ${describeUnitKind(change.unit.kind)} ${change.previousName} to ${change.unit.name}`;
     case "changeMenuLevels":
       return `Let ${change.unit.name} have ${levels(change.unit.maxDepth)} instead of ${levels(change.previousLevels)}`;
+    case "changeBlock":
+      return `Change the ${change.what.map((what) => blockPartWords[what] ?? what).join(", ")} of the block ${change.unit.name}`;
     case "addField":
       return `Add the field \`${change.field.handle}\` to ${place(change.owner, change.within)}`;
     case "removeField":
@@ -92,6 +95,14 @@ export function summarise(change: ModelChange): string {
 function place(owner: FieldOwner, within: { blockTypeName: string } | undefined): string {
   return within ? `${within.blockTypeName} blocks in ${owner.name}` : owner.name;
 }
+
+const blockPartWords: Record<string, string> = {
+  properties: "properties",
+  template: "template",
+  icon: "icon",
+  category: "group",
+  description: "description",
+};
 
 function levels(count: number): string {
   return count === 1 ? "1 level" : `${count} levels`;
@@ -250,6 +261,13 @@ class ImpactContext {
       // A content type's collections are removed as changes of their own, which say what
       // that deletes; a fieldset in use can't be removed at all.
       return null;
+    }
+    if (unit.kind === "block") {
+      // Its instances would show nothing any more, so removing a block pages use waits.
+      const { pages } = await findBlockUses(this.database, unit.handle);
+      return pages.length === 0
+        ? null
+        : `Removing the ${kind} ${unit.name} would take it off ${entries(pages.length)} that use it.`;
     }
     if (unit.kind === "taxonomy") {
       const taxonomy = (await listTaxonomyModelRows(this.database, DEFAULT_TENANT_ID)).find(

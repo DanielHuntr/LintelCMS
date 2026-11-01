@@ -1,4 +1,7 @@
+import type { BlockComponent } from "@lintel/builder/render";
 import type { z } from "zod";
+import type { BlockDefinition } from "../blocks/block-definition.js";
+import { blockFromDefinition } from "../blocks/define-block.js";
 import { checkBlueprintFields, checkFieldDefinitions } from "../blueprints/blueprint-fields.js";
 import { createBlueprintRequestSchema } from "../blueprints/blueprints.schema.js";
 import { createCollectionRequestSchema } from "../collections/collections.schema.js";
@@ -42,7 +45,15 @@ export interface ModelFromFiles {
   model: ContentModel;
   /** The file each unit came from, by unit key. */
   sources: ReadonlyMap<string, string>;
+  /** Blocks drawn by React components, by handle: they live only in their files. */
+  blockComponents: ReadonlyMap<string, BlockComponent>;
 }
+
+/** The site's blocks files define, for blocks fields' block types that name one. */
+type BlockProperties = Map<
+  string,
+  { name: string; description: string; properties: FieldDefinition[] }
+>;
 
 type Definition = z.output<typeof modelDefinitionSchema>;
 
@@ -61,14 +72,20 @@ export function modelFromDefinitions(loaded: readonly LoadedDefinition[]): Model
     parsedDefinitions.push({ source, definition: parsed.data });
   }
 
-  // Fieldsets first: content types and global sets copy their fields (see src/fieldsets).
+  // Fieldsets and blocks first: content types and global sets copy their fields.
   const fieldsets = new Map<string, FieldDefinition[]>();
+  const blocks: BlockProperties = new Map();
+  const blockComponents = new Map<string, BlockComponent>();
+  const comesFirst = (kind: string) => kind === "fieldset" || kind === "block";
   const ordered = [
-    ...parsedDefinitions.filter(({ definition }) => definition.kind === "fieldset"),
-    ...parsedDefinitions.filter(({ definition }) => definition.kind !== "fieldset"),
+    ...parsedDefinitions.filter(({ definition }) => comesFirst(definition.kind)),
+    ...parsedDefinitions.filter(({ definition }) => !comesFirst(definition.kind)),
   ];
   for (const { source, definition } of ordered) {
-    const result = unitFromDefinition(definition, fieldsets);
+    const result =
+      definition.kind === "block"
+        ? blockUnit(definition, source, blockComponents)
+        : unitFromDefinition(definition, fieldsets, blocks);
     if ("problems" in result) {
       problems.push(...result.problems.map((problem) => `${source}: ${problem}`));
       continue;
@@ -86,6 +103,10 @@ export function modelFromDefinitions(loaded: readonly LoadedDefinition[]): Model
     if (result.unit.kind === "fieldset") {
       fieldsets.set(result.unit.handle, result.unit.fields);
     }
+    if (result.unit.kind === "block") {
+      const { handle, name, description, properties } = result.unit;
+      blocks.set(handle, { name, description, properties });
+    }
   }
 
   const model = modelFromUnits(units);
@@ -93,7 +114,89 @@ export function modelFromDefinitions(loaded: readonly LoadedDefinition[]): Model
   if (problems.length > 0) {
     throw new ContentModelProblemsError(problems);
   }
-  return { model, sources };
+  return { model, sources, blockComponents };
+}
+
+/**
+ * A block file: `team_card.block.ts` is the block `team_card` unless it says otherwise,
+ * checked with the same rules as blocks from plugins (see src/blocks/define-block.ts).
+ */
+function blockUnit(
+  definition: Extract<Definition, { kind: "block" }>,
+  source: string,
+  components: Map<string, BlockComponent>,
+): UnitResult {
+  const fileName = source.split("/").at(-1) ?? source;
+  const handle = definition.handle ?? fileName.replace(/(\.block)?\.(tsx?|mts|ya?ml)$/, "");
+  try {
+    // The schema has checked its shape; its properties' types are the field helpers'.
+    const block = blockFromDefinition(definition as unknown as BlockDefinition, handle, "code");
+    if (typeof definition.render === "function") {
+      components.set(handle, definition.render as BlockComponent);
+    }
+    return {
+      unit: {
+        kind: "block",
+        handle: block.handle,
+        name: block.name,
+        icon: block.icon,
+        category: block.category,
+        description: block.description,
+        properties: block.properties as FieldDefinition[],
+        template: block.template,
+      },
+    };
+  } catch (error) {
+    if (error instanceof InvalidFieldsError) {
+      return {
+        problems: Object.entries(error.fields).map(([key, message]) =>
+          key === "render" || key === "handle" || key === "name"
+            ? message
+            : `property "${key}": ${message}`,
+        ),
+      };
+    }
+    throw error;
+  }
+}
+
+/**
+ * Blocks fields' block types that name one of the site's blocks get its name, description
+ * and properties, as the admin stores them (see src/blocks/site-block-types.ts).
+ */
+function withBlockTypes(
+  rawFields: unknown[],
+  blocks: BlockProperties,
+): { fields: unknown[]; problems: string[] } {
+  const problems: string[] = [];
+  const fields = rawFields.map((field) => {
+    const record = field as {
+      handle?: string;
+      type?: string;
+      options?: { blockTypes?: unknown[] };
+    };
+    if (record.type !== "blocks" || !Array.isArray(record.options?.blockTypes)) return field;
+    const blockTypes = record.options.blockTypes.map((candidate) => {
+      const blockType = candidate as { handle: string; block?: string };
+      if (blockType.block === undefined) return blockType;
+      const block = blocks.get(blockType.block);
+      if (!block) {
+        problems.push(
+          `field "${record.handle ?? ""}": the block type ${blockType.handle} uses the block "${blockType.block}", but no file in blocks/ defines it`,
+        );
+        return blockType;
+      }
+      return {
+        handle: blockType.block,
+        name: block.name,
+        description: block.description,
+        block: blockType.block,
+        fields: block.properties,
+      };
+    });
+    return { ...record, options: { ...record.options, blockTypes } };
+  });
+  return { fields, problems };
 }
 
 function describeIssue(source: string, issue: z.core.$ZodIssue): string {
@@ -106,9 +209,13 @@ function describeIssue(source: string, issue: z.core.$ZodIssue): string {
 
 type UnitResult = { unit: ModelUnit } | { problems: string[] };
 
-function unitFromDefinition(definition: Definition, fieldsets: FieldsetFields): UnitResult {
+function unitFromDefinition(
+  definition: Exclude<Definition, { kind: "block" }>,
+  fieldsets: FieldsetFields,
+  blocks: BlockProperties,
+): UnitResult {
   if (definition.kind === "contentType") {
-    return contentTypeUnit(definition, fieldsets);
+    return contentTypeUnit(definition, fieldsets, blocks);
   }
   if (definition.kind === "fieldset") {
     const checked = createFieldsetRequestSchema.safeParse({ ...definition, fields: [] });
@@ -159,8 +266,13 @@ function unitFromDefinition(definition: Definition, fieldsets: FieldsetFields): 
 function contentTypeUnit(
   definition: Extract<Definition, { kind: "contentType" }>,
   fieldsets: FieldsetFields,
+  blocks: BlockProperties,
 ): UnitResult {
-  const rawFields = fieldsFromSpecs(definition.fields);
+  const withBlocks = withBlockTypes(fieldsFromSpecs(definition.fields), blocks);
+  if (withBlocks.problems.length > 0) {
+    return { problems: withBlocks.problems };
+  }
+  const rawFields = withBlocks.fields;
   const checked = createBlueprintRequestSchema.safeParse({ ...definition, fields: rawFields });
   if (!checked.success) {
     return { problems: issueMessages(checked.error) };
@@ -245,7 +357,8 @@ function fieldFromSpec(handle: string, spec: FieldSpec): Record<string, unknown>
     handle: blockHandle,
     name: blockType.name ?? labelFromHandle(blockHandle),
     description: blockType.description ?? "",
-    fields: fieldsFromSpecs(blockType.fields),
+    ...(blockType.block === undefined ? {} : { block: blockType.block }),
+    fields: fieldsFromSpecs(blockType.fields ?? {}),
   }));
   return { ...field, options: { ...options, blockTypes } };
 }

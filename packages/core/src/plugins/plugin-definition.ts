@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import type { PgTable } from "drizzle-orm/pg-core";
 import type { z } from "zod";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import type { BlockDefinition } from "../blocks/define-block.js";
+import type { BlockDefinition } from "../blocks/block-definition.js";
 import type { Fieldtype } from "../fieldtypes/fieldtype.js";
 
 /**

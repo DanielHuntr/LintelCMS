@@ -9,7 +9,8 @@ import { requestsAs, type SendRequest, startTestServer } from "../testing/test-s
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
 import { image, text, toggle } from "../content-model-sync/field-helpers.js";
 import { loadBlockPageData } from "./block-rendering.js";
-import { blockFromDefinition, defineBlock } from "./define-block.js";
+import { defineBlock } from "./block-definition.js";
+import { blockFromDefinition } from "./define-block.js";
 import { drawPageDesign } from "../website/designed-pages.js";
 
 /** The Team card from the spec: a photo, a name, a role and a LinkedIn link that can be hidden. */

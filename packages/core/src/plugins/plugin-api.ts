@@ -44,7 +44,7 @@ export {
 } from "../http/http-errors.js";
 
 // Blocks: offered in the builder while the plugin is on, defined as code blocks are.
-export { defineBlock, type BlockDefinition, type BlockInput } from "../blocks/define-block.js";
+export { defineBlock, type BlockDefinition, type BlockInput } from "../blocks/block-definition.js";
 
 // Fieldtypes: a plugin's kinds of field are defined exactly as core's own.
 export {

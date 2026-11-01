@@ -5,7 +5,7 @@ import { collectionStructures } from "../collections/collections.schema.js";
 /**
  * The content model in one comparable form, whether it was read from files or from the
  * database. It is made of units, one per file: a content type (a blueprint with the
- * collections that use it), a taxonomy, a global set, a fieldset or a menu.
+ * collections that use it), a taxonomy, a global set, a fieldset, a block or a menu.
  *
  * Fields are stored as the admin stores them, with every option's default filled in, so
  * two units are the same exactly when their canonical JSON is the same.
@@ -40,6 +40,17 @@ export const modelUnitSchema = z.discriminatedUnion("kind", [
     fields: z.array(fieldSchema),
   }),
   z.object({
+    kind: z.literal("block"),
+    handle: z.string(),
+    name: z.string(),
+    icon: z.string(),
+    category: z.string(),
+    description: z.string(),
+    properties: z.array(fieldSchema),
+    /** The HTML template, or null for a React component (which lives only in the file). */
+    template: z.string().nullable(),
+  }),
+  z.object({
     kind: z.literal("menu"),
     handle: z.string(),
     name: z.string(),
@@ -53,6 +64,7 @@ export type ModelUnitKind = ModelUnit["kind"];
 export type ContentTypeUnit = Extract<ModelUnit, { kind: "contentType" }>;
 export type GlobalSetUnit = Extract<ModelUnit, { kind: "globalSet" }>;
 export type FieldsetUnit = Extract<ModelUnit, { kind: "fieldset" }>;
+export type BlockUnit = Extract<ModelUnit, { kind: "block" }>;
 
 /** Every unit, keyed by `unitKey`. */
 export type ContentModel = ReadonlyMap<string, ModelUnit>;
@@ -61,6 +73,7 @@ export type ContentModel = ReadonlyMap<string, ModelUnit>;
 export const UNIT_KIND_ORDER: readonly ModelUnitKind[] = [
   "taxonomy",
   "fieldset",
+  "block",
   "contentType",
   "globalSet",
   "menu",
@@ -118,6 +131,7 @@ export function describeUnitKind(kind: ModelUnitKind): string {
     taxonomy: "taxonomy",
     globalSet: "global set",
     fieldset: "fieldset",
+    block: "block",
     menu: "menu",
   }[kind];
 }
