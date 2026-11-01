@@ -1,3 +1,4 @@
+import { commerceStrings } from "./commerceStrings.js";
 import { contentModelStrings } from "./contentModelStrings.js";
 
 /**
@@ -8,6 +9,7 @@ import { contentModelStrings } from "./contentModelStrings.js";
  */
 const english = {
   ...contentModelStrings,
+  ...commerceStrings,
   "app.name": "Lintel",
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",

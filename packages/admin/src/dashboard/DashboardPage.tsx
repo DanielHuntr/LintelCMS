@@ -1,12 +1,5 @@
-import {
-  Clock,
-  FileStack,
-  KeyRound,
-  ListTodo,
-  Paintbrush,
-  PenLine,
-  ShoppingBag,
-} from "lucide-react";
+import { Clock, FileStack, KeyRound, ListTodo, Paintbrush, PenLine } from "lucide-react";
+import { SalesCard } from "../commerce/SalesCard.js";
 import { Badge } from "../design/Badge.js";
 import { Card } from "../design/Card.js";
 import { EmptyState } from "../design/EmptyState.js";
@@ -45,15 +38,7 @@ export function DashboardPage({ showSales }: DashboardPageProps) {
           />
         </Card>
 
-        {showSales && (
-          <Card title={t("dashboard.sales.title")}>
-            <EmptyState
-              icon={ShoppingBag}
-              title={t("dashboard.sales.emptyTitle")}
-              description={t("dashboard.sales.emptyDescription")}
-            />
-          </Card>
-        )}
+        {showSales && <SalesCard />}
 
         <Card title={t("dashboard.whatsNew.title")}>
           <WhatsNewList />
