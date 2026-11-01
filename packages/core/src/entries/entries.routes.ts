@@ -146,5 +146,10 @@ export function readEntryId(params: unknown): string {
 
 /** Who is saving, and how to check that the images they picked exist. */
 export function changeContext(request: FastifyRequest): EntryChangeContext {
-  return { authorId: getSignedIn(request).user.id, assetExists: request.server.assetExists };
+  const signedIn = getSignedIn(request);
+  return {
+    authorId: signedIn.user.id,
+    assetExists: request.server.assetExists,
+    permissions: signedIn.permissions,
+  };
 }

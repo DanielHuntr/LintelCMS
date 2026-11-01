@@ -1,3 +1,4 @@
+import { customScriptRules } from "@lintel/builder-model";
 import { z } from "zod";
 import { defaultSeoDefaults, seoDefaultsSchema } from "../seo/seo-defaults.schema.js";
 import { defaultWebsiteSettings, websiteSettingsSchema } from "../website/website.schema.js";
@@ -49,6 +50,8 @@ export const settingSchemas = {
   siteName: siteNameSchema.nullable(),
   /** The built-in website's template, theme, logo and address (see src/website). */
   website: websiteSettingsSchema,
+  /** What happens to scripts in the page builder's code blocks when a page is saved (see src/pages). */
+  builderCustomScripts: z.enum(customScriptRules),
 };
 
 export type SettingKey = keyof typeof settingSchemas;
@@ -65,4 +68,5 @@ export const settingDefaults: { [Key in SettingKey]: SettingValue<Key> } = {
   siteAddress: "",
   siteName: null,
   website: defaultWebsiteSettings,
+  builderCustomScripts: "removeScripts",
 };

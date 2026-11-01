@@ -7,7 +7,16 @@ import type { SiteImage, TermLink } from "../site.types.js";
  * the address; a template draws each one.
  */
 
-/** A page from a collection like Pages: a title, an optional body and its sections. */
+/** A page laid out in the visual page builder, already drawn by its renderer. */
+export interface PageDesignHtml {
+  html: string;
+  css: string;
+}
+
+/**
+ * A page from a collection like Pages: a title, an optional body and its sections, or a
+ * design from the page builder, which then takes the place of all of them.
+ */
 export interface PageView {
   kind: "page";
   title: string;
@@ -16,6 +25,8 @@ export interface PageView {
   /** HTML from the rich text editor; empty when the page has none. */
   body: string;
   sections: SiteBlock[];
+  /** Null unless the page has a design from the page builder. */
+  design?: PageDesignHtml | null;
 }
 
 /** One blog post. */

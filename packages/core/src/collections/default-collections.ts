@@ -100,6 +100,10 @@ export const pagesCollection: CollectionDefaults = {
       field("hero_image", "Hero image", "image", { helpText: "Shown at the top of the page" }),
       field("body", "Body", "richText"),
       pageSectionsField,
+      field("design", "Design", "page", {
+        helpText:
+          "Lay the page out visually, with Edit design. Leave it empty to use the sections above.",
+      }),
     ],
   },
 };

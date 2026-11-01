@@ -1,0 +1,187 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`rendering a page > prints clean, semantic HTML and a readable stylesheet > css 1`] = `
+".hero {
+  padding-top: var(--lintel-space-8);
+  padding-right: var(--lintel-space-5);
+  padding-bottom: var(--lintel-space-8);
+  padding-left: var(--lintel-space-5);
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--lintel-space-5);
+  margin-right: auto;
+  margin-left: auto;
+  width: 100%;
+  max-width: 48rem;
+  text-align: center;
+}
+
+.button {
+  display: inline-block;
+  padding-top: var(--lintel-space-3);
+  padding-right: var(--lintel-space-5);
+  padding-bottom: var(--lintel-space-3);
+  padding-left: var(--lintel-space-5);
+  width: fit-content;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--lintel-color-on-brand);
+  background-color: var(--lintel-color-brand);
+  border-radius: var(--lintel-radius-button);
+}
+
+.features {
+  padding-top: var(--lintel-space-8);
+  padding-right: var(--lintel-space-5);
+  padding-bottom: var(--lintel-space-8);
+  padding-left: var(--lintel-space-5);
+}
+
+.container-2 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lintel-space-5);
+  margin-right: auto;
+  margin-left: auto;
+  width: 100%;
+  max-width: 72rem;
+}
+
+.columns {
+  display: grid;
+  gap: var(--lintel-space-5);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.feature {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lintel-space-3);
+  padding-top: var(--lintel-space-5);
+  padding-right: var(--lintel-space-5);
+  padding-bottom: var(--lintel-space-5);
+  padding-left: var(--lintel-space-5);
+  background-color: var(--lintel-color-surface);
+  border-radius: var(--lintel-radius-medium);
+}
+
+.feature-2 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lintel-space-3);
+  padding-top: var(--lintel-space-5);
+  padding-right: var(--lintel-space-5);
+  padding-bottom: var(--lintel-space-5);
+  padding-left: var(--lintel-space-5);
+  background-color: var(--lintel-color-surface);
+  border-radius: var(--lintel-radius-medium);
+}
+
+.feature-3 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lintel-space-3);
+  padding-top: var(--lintel-space-5);
+  padding-right: var(--lintel-space-5);
+  padding-bottom: var(--lintel-space-5);
+  padding-left: var(--lintel-space-5);
+  background-color: var(--lintel-color-surface);
+  border-radius: var(--lintel-radius-medium);
+}
+
+.testimonial {
+  padding-top: var(--lintel-space-8);
+  padding-right: var(--lintel-space-5);
+  padding-bottom: var(--lintel-space-8);
+  padding-left: var(--lintel-space-5);
+  background-color: var(--lintel-color-surface);
+}
+
+.container-3 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lintel-space-5);
+  margin-right: auto;
+  margin-left: auto;
+  width: 100%;
+  max-width: 44rem;
+  text-align: center;
+}
+
+.quote {
+  font-size: 1.5rem;
+  line-height: 1.4;
+}
+
+.button:hover {
+  opacity: 0.88;
+}
+
+@media (max-width: 991px) {
+  .columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .hero {
+    padding-top: var(--lintel-space-7);
+    padding-bottom: var(--lintel-space-7);
+  }
+
+  .features {
+    padding-top: var(--lintel-space-7);
+    padding-bottom: var(--lintel-space-7);
+  }
+
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+"
+`;
+
+exports[`rendering a page > prints clean, semantic HTML and a readable stylesheet > html 1`] = `
+"<div class="page">
+  <section class="hero">
+    <div class="container">
+      <h1 class="hero-title">Good things, made well</h1>
+      <p class="paragraph">Say in a sentence or two what you do and who it’s for.</p>
+      <a class="button" href="/contact">Get in touch</a>
+    </div>
+  </section>
+  <section class="features">
+    <div class="container-2">
+      <h2 class="heading">Why people choose us</h2>
+      <div class="columns">
+        <article class="feature">
+          <h3 class="heading-2">Friendly</h3>
+          <p class="paragraph-2">Explain the first thing people love about you.</p>
+        </article>
+        <article class="feature-2">
+          <h3 class="heading-3">Fast</h3>
+          <p class="paragraph-3">And the second, in a sentence or two.</p>
+        </article>
+        <article class="feature-3">
+          <h3 class="heading-4">Local</h3>
+          <p class="paragraph-4">And a third, to round it off.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+  <section class="testimonial">
+    <div class="container-3">
+      <figure class="quote">
+        <blockquote>
+          <p>They were a joy to work with, and the results speak for themselves.</p>
+        </blockquote>
+        <figcaption>Alex, a happy customer</figcaption>
+      </figure>
+    </div>
+  </section>
+</div>"
+`;

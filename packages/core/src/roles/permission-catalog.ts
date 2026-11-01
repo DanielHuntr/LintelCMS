@@ -117,6 +117,18 @@ export const corePermissionGroups: readonly PermissionGroup[] = [
     ],
   },
   {
+    id: "page-designs",
+    name: "Page designs",
+    description: "Pages laid out in the visual page builder.",
+    permissions: [
+      {
+        permission: "builder:code",
+        name: "Write code in page designs",
+        description: "Code blocks and Developer mode. Anyone who can edit a page can design it.",
+      },
+    ],
+  },
+  {
     id: "people",
     name: "People",
     description: "Who can sign in, and what they can do.",

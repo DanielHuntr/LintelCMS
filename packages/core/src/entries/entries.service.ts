@@ -10,6 +10,7 @@ import { buildEntryDataValidator } from "../fieldtypes/entry-data-validator.js";
 import { removeReferencesFromGlobalValues } from "../globals/global-references.js";
 import type { AssetExists } from "../fieldtypes/image-assets.js";
 import { InvalidFieldsError } from "../http/http-errors.js";
+import { findPageCodeContext } from "../pages/page-code.service.js";
 import { resolveLocale } from "../sites/locales.service.js";
 import { checkParent } from "./entry-ordering.service.js";
 import { createContentReferences, removeReferencesFromEntries } from "./entry-references.js";
@@ -48,6 +49,8 @@ import { recordEdit } from "./revision-log.js";
 export interface EntryChangeContext {
   authorId: string | null;
   assetExists: AssetExists;
+  /** What the person making the change may do, for rules such as who may change page code. */
+  permissions?: readonly string[];
 }
 
 const SLUG_INDEX = "entries_collection_site_locale_slug_unique";
@@ -95,7 +98,9 @@ export async function createEntry(
   context: EntryChangeContext,
 ): Promise<EntryResponse> {
   const collection = await findCollectionOrFail(database, collectionHandle);
-  const data = await validateForCollection(database, collection, request.data, context);
+  const data = await validateForCollection(database, collection, request.data, context, "saving", {
+    previousData: {},
+  });
   const parentId = request.parentId ?? null;
   const { site, locale } = await resolveLocale(database, request.locale);
   await checkParent(database, collection, parentId, undefined, locale);
@@ -145,6 +150,8 @@ export async function saveEntry(
     collection,
     { ...entry.data, ...request.data },
     context,
+    "saving",
+    { previousData: entry.data },
   );
   if (request.parentId !== undefined) {
     await checkParent(database, collection, request.parentId, entry.id, entry.locale);
@@ -220,11 +227,20 @@ export async function validateForCollection(
   database: DatabaseOrTransaction,
   collection: Collection,
   data: EntryData,
-  context: Pick<EntryChangeContext, "assetExists">,
+  context: Pick<EntryChangeContext, "assetExists" | "permissions">,
   when: "saving" | "publishing" = "saving",
+  /**
+   * Given when a person is changing the entry (creating or saving it), with what was stored
+   * before, so rules about who may change what apply. Publishing and restoring leave it out.
+   */
+  personChange?: { previousData: EntryData },
 ): Promise<EntryData> {
   const blueprint = await findBlueprintByIdOrFail(database, collection.blueprintId);
   const validate = buildEntryDataValidator(blueprint.fields, {
+    previousData: personChange?.previousData,
+    pageCode: personChange
+      ? await findPageCodeContext(database, blueprint.fields, context.permissions)
+      : undefined,
     assetExists: context.assetExists,
     references: createContentReferences(database),
     requiredFields: when === "saving" ? "allowEmpty" : "enforce",

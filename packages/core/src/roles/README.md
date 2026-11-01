@@ -62,3 +62,6 @@ allow the action only on entries the person created; see `src/entries/entry-acce
 
 Routes don't call `hasPermission` themselves; they use `requirePermission` from
 `src/auth/require-permission.ts`, which also handles "not signed in".
+
+Features may check permissions of their own. `builder:code` lets someone write code in the
+page builder (code blocks and Developer mode); see src/pages.

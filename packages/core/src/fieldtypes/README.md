@@ -25,6 +25,7 @@ check an entry's values against any blueprint.
 | `entries`  | entry ids (uuid[]), in the chosen order             | `collections?: [handle]`, `maxItems?`                                |
 | `terms`    | term ids (uuid[]), in the chosen order              | `taxonomy` (handle), `maxItems?`                                     |
 | `blocks`   | `[{ id, type, data }]`, in order                    | `blockTypes: [{ handle, name, description?, fields }]`, `maxBlocks?` |
+| `page`     | a page design `{ version, root }` (see src/pages)   | none                                                                 |
 
 Empty values (missing, null, blank text, empty lists, a rich text document with only empty
 paragraphs, a link without an address) are stored as null, and are an error only when the
@@ -117,6 +118,7 @@ show its values differently, add that to `src/delivery/delivered-values.ts`.
 | `content-references.ts`      | `ContentReferences`: what entries and terms fields check against |
 | `markdown.ts`                | Rendering Markdown to safe HTML for the delivery API             |
 | `blocks-fieldtype.ts`        | `blocks`: block types and their fields, and checking each block  |
+| `page-fieldtype.ts`          | `page`: a visual builder design, checked with its code rules     |
 | `field-definition.schema.ts` | A field in a blueprint, with its options checked by its type     |
 | `entry-data-validator.ts`    | `buildEntryDataValidator`: checking an entry against a blueprint |
 | `rich-text.ts`               | Checking rich text documents and rendering them to HTML          |

@@ -36,6 +36,7 @@ export const builtInRoles: readonly BuiltInRole[] = [
       "globals:*",
       "collections:*",
       "blueprints:*",
+      "builder:code",
       "users:*",
       "roles:*",
       "settings:*",

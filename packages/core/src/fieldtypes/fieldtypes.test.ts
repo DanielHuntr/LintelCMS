@@ -259,6 +259,7 @@ describe("GET /fieldtypes", () => {
       "entries",
       "terms",
       "blocks",
+      "page",
     ]);
     expect(response.json().fieldtypes[0]).toEqual({
       type: "text",

@@ -1,3 +1,4 @@
+import { createEmptyPage } from "@lintel/builder-model";
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
@@ -137,6 +138,21 @@ describe("the built-in website", () => {
     const home = await visit("/home");
     expect(home.statusCode).toBe(301);
     expect(home.headers.location).toBe("/");
+  });
+
+  it("shows a page's design from the page builder in place of its sections", async () => {
+    const design = createEmptyPage();
+    design.root.children = [
+      { id: "h1", type: "heading", props: { text: "Bread, baked at dawn", level: 1 } },
+    ] as typeof design.root.children;
+    await publish("pages", { title: "Designed", design }, "designed");
+
+    const response = await visit("/designed");
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toContain('data-lintel-component="page_design"');
+    expect(response.body).toMatch(/<h1[^>]*>Bread, baked at dawn<\/h1>/);
+    expect(response.body).not.toContain("lintel-page-header__title");
   });
 
   it("answers again from its cache, with 304 for an unchanged page, and refreshes on publish", async () => {

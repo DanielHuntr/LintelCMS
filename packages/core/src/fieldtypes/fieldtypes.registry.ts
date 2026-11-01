@@ -7,6 +7,7 @@ import {
   urlFieldtype,
 } from "./format-fieldtypes.js";
 import { listFieldtype } from "./list-fieldtype.js";
+import { pageFieldtype } from "./page-fieldtype.js";
 import { imageFieldtype, linkFieldtype, selectFieldtype } from "./reference-fieldtypes.js";
 import { entriesFieldtype, termsFieldtype } from "./relation-fieldtypes.js";
 import { richTextFieldtype, textareaFieldtype, textFieldtype } from "./text-fieldtypes.js";
@@ -34,6 +35,7 @@ export const fieldtypeRegistry: readonly Fieldtype[] = [
   entriesFieldtype,
   termsFieldtype,
   blocksFieldtype,
+  pageFieldtype,
 ];
 
 /**

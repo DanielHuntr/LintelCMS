@@ -13,7 +13,8 @@ import { findFieldtype } from "./fieldtypes.registry.js";
  *      required (and the context enforces required fields), and is stored as null;
  *   2. otherwise the value must have the fieldtype's shape and respect its options;
  *   3. then any outside check runs, such as "this image is still in the media library";
- *   4. a field with fields inside (blocks) checks each block's values the same way.
+ *   4. a field with fields inside (blocks) checks each block's values the same way;
+ *   5. a fieldtype with rules about who changed what (page code) compares with the old value.
  *
  * Keys that aren't fields of the blueprint are dropped, so a renamed or removed field
  * doesn't leave old values behind.
@@ -104,7 +105,17 @@ function buildFieldValuesCheck(fields: readonly FieldDefinition[], context: Fiel
         values[field.handle] = nested.value;
         continue;
       }
-      values[field.handle] = parsed.data;
+      const change = fieldtype.checkChange?.(
+        parsed.data,
+        context.previousData?.[field.handle],
+        field.label,
+        context,
+      ) ?? { value: parsed.data };
+      if ("problem" in change) {
+        messages[field.handle] = change.problem;
+        continue;
+      }
+      values[field.handle] = change.value;
     }
 
     return { values, messages };

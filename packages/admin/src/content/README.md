@@ -38,7 +38,8 @@ A new entry's address changes from `/new` to its id after the first save. The ed
 remounted when that happens (see `useEditorKey` in `EntryEditorPage.tsx`), so nothing typed
 in the meantime is lost.
 
-Each field is drawn by `src/fields`. The side panel (`EntrySidePanel.tsx`) holds status and
+Each field is drawn by `src/fields`. A `page` field shows a summary and **Edit design**, which
+opens the visual builder full screen (`src/page-design`). The side panel (`EntrySidePanel.tsx`) holds status and
 publishing, the parent page for tree collections, and the revision history with restore.
 
 Preview (in the toolbar and the More menu) opens a split view: the document on the left and

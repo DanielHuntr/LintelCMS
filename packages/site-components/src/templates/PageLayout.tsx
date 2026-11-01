@@ -3,14 +3,18 @@ import { RichText } from "../blocks/RichText.js";
 import { Container } from "../layout/Container.js";
 import { Section } from "../layout/Section.js";
 import { ResponsiveImage } from "../media/ResponsiveImage.js";
-import type { PageView } from "./view.types.js";
+import type { PageDesignHtml, PageView } from "./view.types.js";
 
 /**
  * A page: its title, summary and hero image, its body, then its sections. When the first
  * section is a hero, the hero is the top of the page and its heading is the page's `h1`,
- * so the title isn't shown twice.
+ * so the title isn't shown twice. A page with a design from the page builder shows the
+ * design instead, which has its own headings.
  */
 export function PageLayout({ view }: { view: PageView }) {
+  if (view.design) {
+    return <PageDesign design={view.design} />;
+  }
   const opensWithHero = view.sections[0]?.type === "hero";
   return (
     <>
@@ -49,6 +53,24 @@ export function PageLayout({ view }: { view: PageView }) {
         </Section>
       )}
       <BlockList blocks={view.sections} heroIsTitle={opensWithHero} />
+    </>
+  );
+}
+
+/**
+ * The builder's HTML and the stylesheet for its classes. Both come from the builder's
+ * renderer, which only writes known elements and style properties; scripts in code blocks
+ * follow the site's rule when the page is saved (see core's src/pages).
+ */
+function PageDesign({ design }: { design: PageDesignHtml }) {
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: design.css.replaceAll("</style", "<\\/style") }} />
+      <div
+        className="lintel-page-design"
+        data-lintel-component="page_design"
+        dangerouslySetInnerHTML={{ __html: design.html }}
+      />
     </>
   );
 }

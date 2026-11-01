@@ -16,7 +16,25 @@ export interface FieldCheckContext {
   requiredFields?: "enforce" | "allowEmpty";
   /** Handles that stay required even when `requiredFields` is "allowEmpty", such as title. */
   alwaysRequired?: readonly string[];
+  /**
+   * The values stored before this save, for fieldtypes whose rules depend on what changed
+   * (a page's code). Left out when nothing is being changed by a person, such as publishing.
+   */
+  previousData?: Readonly<Record<string, unknown>>;
+  /** Who is saving and the site's rules for page code; see src/pages. */
+  pageCode?: PageCodeContext;
 }
+
+/** What the page fieldtype needs to know about the person saving and the site. */
+export interface PageCodeContext {
+  /** Whether they have `builder:code`, so they may add or change code. */
+  mayEditCode: boolean;
+  /** The site setting `builderCustomScripts`. */
+  scriptRule: "removeScripts" | "allowScripts";
+}
+
+/** What `checkChange` gives back: the value to store, or a message for the editor. */
+export type ChangeCheckResult = { value: unknown } | { problem: string };
 
 /**
  * Checks values against a list of fields with the same rules as a whole entry. Handed to
@@ -93,6 +111,16 @@ export interface FieldtypeDefinition<OptionsSchema extends z.ZodType> {
     label: string,
     checkFieldValues: CheckFieldValues,
   ): Promise<NestedCheckResult>;
+  /**
+   * The last check, for rules about who changed what: compares the value with the one stored
+   * before (`undefined` for a new entry) and may give back a cleaned-up value to store.
+   */
+  checkChange?(
+    value: unknown,
+    previousValue: unknown,
+    label: string,
+    context: FieldCheckContext,
+  ): ChangeCheckResult;
 }
 
 /**
@@ -123,6 +151,12 @@ export interface Fieldtype {
     label: string,
     checkFieldValues: CheckFieldValues,
   ): Promise<NestedCheckResult>;
+  checkChange?(
+    value: unknown,
+    previousValue: unknown,
+    label: string,
+    context: FieldCheckContext,
+  ): ChangeCheckResult;
 }
 
 export function defineFieldtype<OptionsSchema extends z.ZodType>(

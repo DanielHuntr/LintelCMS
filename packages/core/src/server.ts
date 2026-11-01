@@ -33,6 +33,7 @@ import { PluginCatalogue } from "./plugins/plugin-catalogue.js";
 import type { LintelPlugin } from "./plugins/plugin-definition.js";
 import { registerPluginRoutes } from "./plugins/plugin-routes.js";
 import { pluginRegistry } from "./plugins/plugins.registry.js";
+import { pagesRoutes } from "./pages/pages.routes.js";
 import { pluginsRoutes } from "./plugins/plugins.routes.js";
 import { previewRoutes } from "./preview/preview.routes.js";
 import { registerScheduledJobs } from "./scheduler/scheduled-jobs.js";
@@ -270,6 +271,7 @@ export function buildServer(options: ServerOptions) {
   server.register(securityLogRoutes);
   server.register(emailRoutes);
   server.register(websiteRoutes);
+  server.register(pagesRoutes);
 
   if (options.runScheduledJobs ?? true) {
     registerScheduledJobs(server);

@@ -19,6 +19,7 @@ import { useAdminPlugins } from "../plugins/AdminPluginsContext.js";
 import { findPluginFieldEditor } from "../plugins/pluginContributions.js";
 import { LinkFieldEditor } from "./LinkFieldEditor.js";
 import { NumberFieldEditor } from "./NumberFieldEditor.js";
+import { PageFieldEditor } from "../page-design/PageFieldEditor.js";
 import { RichTextFieldEditor } from "./RichTextFieldEditor.js";
 import { SelectFieldEditor } from "./SelectFieldEditor.js";
 import { TextareaFieldEditor } from "./TextareaFieldEditor.js";
@@ -60,6 +61,7 @@ export const fieldEditors: Record<FieldType, FieldEditorRegistration> = {
     labelling: (field) => (field.options.maxItems === 1 ? "label" : "group"),
   },
   blocks: { Editor: BlocksFieldEditor, labelling: () => "group" },
+  page: { Editor: PageFieldEditor, labelling: () => "group" },
 };
 
 /** A plugin's field editor, labelled above the control unless the plugin says otherwise. */
