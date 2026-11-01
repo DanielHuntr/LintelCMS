@@ -85,11 +85,10 @@ describe("content types managed in code", () => {
     const pending = await screen.findByRole("region", {
       name: "Changes waiting for you to confirm",
     });
-    expect(
-      within(pending).getByText(
-        "Removing `excerpt` would delete text from 14 entries in Blog posts.",
-      ),
-    ).toBeInTheDocument();
+    // Handles are shown as code, without the backticks.
+    expect(pending).toHaveTextContent(
+      "Removing excerpt would delete text from 14 entries in Blog posts.",
+    );
 
     await userEvent.click(within(pending).getByRole("button", { name: "Make these changes" }));
     await userEvent.click(await screen.findByRole("button", { name: "Make changes" }));
