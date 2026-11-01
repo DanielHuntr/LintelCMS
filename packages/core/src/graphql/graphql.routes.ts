@@ -45,7 +45,8 @@ export async function graphqlRoutes(server: FastifyInstance, options: GraphqlRou
   };
 
   const yoga = createYoga<ServerContext, GraphqlContext>({
-    graphqlEndpoint: "/graphql",
+    // Under /api in production; `server.prefix` is where this plugin was registered.
+    graphqlEndpoint: `${server.prefix}/graphql`,
     graphiql: options.graphiql ? { title: "Lintel GraphQL" } : false,
     // CORS is decided for the whole server in src/http/cross-origin.ts.
     cors: false,

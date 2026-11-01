@@ -1,7 +1,8 @@
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
-import Fastify from "fastify";
+import compress from "@fastify/compress";
+import Fastify, { type FastifyInstance, type FastifyServerOptions } from "fastify";
 import { apiTokensRoutes } from "./api-tokens/api-tokens.routes.js";
 import { authRoutes } from "./auth/auth.routes.js";
 import { blueprintsRoutes } from "./blueprints/blueprints.routes.js";
@@ -18,7 +19,10 @@ import { fieldtypesRoutes } from "./fieldtypes/fieldtypes.routes.js";
 import { graphqlRoutes } from "./graphql/graphql.routes.js";
 import type { AssetExists, AssetLookup } from "./fieldtypes/image-assets.js";
 import { healthRoutes } from "./health/health.routes.js";
+import { DEFAULT_EMAIL_FROM } from "./email/email.config.js";
+import { type EmailSender, OutboxEmailDriver, createEmailSender } from "./email/index.js";
 import { crossOriginOptions } from "./http/cross-origin.js";
+import { requestIdFor } from "./http/request-ids.js";
 import { sendHttpErrorDetails } from "./http/http-errors.js";
 import { type AssetUsageFinder, createAssetLookup } from "./media/asset-lookup.js";
 import { LocalDiskStorage } from "./media/local-disk-storage.js";
@@ -64,6 +68,8 @@ declare module "fastify" {
     publicApiUrl: string;
     /** Sends queued webhook deliveries (see src/webhooks). */
     webhooks: WebhookDispatcher;
+    /** Sends email: `await server.email.send({ to, subject, text })` (see src/email). */
+    email: EmailSender;
   }
 }
 
@@ -75,6 +81,8 @@ export interface MediaOptions {
   transformCacheFolder?: string;
   /** Which entries use an asset, checked before it is deleted. */
   usageFinder?: AssetUsageFinder;
+  /** Send originals as redirects to signed storage links lasting this long (S3 only). */
+  signedUrlSeconds?: number | undefined;
 }
 
 export interface ServerOptions {
@@ -91,8 +99,23 @@ export interface ServerOptions {
   setupCode?: string;
   /** Mark cookies Secure. Turn off only for plain-HTTP local development. */
   secureCookies?: boolean;
-  /** Turn request logging off in tests to keep output readable. */
-  logger?: boolean;
+  /**
+   * Turn request logging off in tests to keep output readable. Production passes pino
+   * options instead (see src/production/logging.ts).
+   */
+  logger?: FastifyServerOptions["logger"];
+  /** Which proxies to believe about the visitor's address and HTTPS. Off by default. */
+  trustProxy?: FastifyServerOptions["trustProxy"];
+  /** Compress responses (gzip, brotli) for browsers that accept it. Off by default. */
+  compression?: boolean;
+  /**
+   * Where the API's routes live. Empty by default (development and tests); production
+   * serves them under /api so the website can use every other address. `/health` and
+   * `/ready` always stay at the root, where hosting platforms look for them.
+   */
+  apiPrefix?: string;
+  /** How email is sent. Defaults to an outbox in memory, so nobody is emailed by accident. */
+  email?: EmailSender;
   /**
    * Run timed jobs, such as publishing scheduled entries, from startup until the server
    * closes. On by default; tests that drive the jobs themselves turn it off.
@@ -127,8 +150,15 @@ export interface WebhookOptions {
  * Every feature registers its routes here, in one visible list (no auto-discovery).
  */
 export function buildServer(options: ServerOptions) {
-  const server = Fastify({ logger: options.logger ?? false });
+  const server = Fastify({
+    logger: options.logger ?? false,
+    trustProxy: options.trustProxy ?? false,
+    genReqId: requestIdFor,
+    requestIdLogLabel: "requestId",
+  });
   const activeDatabase = options.database;
+  const apiPrefix = options.apiPrefix ?? "";
+  const storage = options.media?.storage ?? new LocalDiskStorage();
 
   server.decorate("database", { getter: () => activeDatabase.database });
   server.decorate("activeDatabase", activeDatabase);
@@ -151,17 +181,55 @@ export function buildServer(options: ServerOptions) {
     onError: (error) => server.log.error(error, "Sending webhooks failed"),
   });
   server.decorate("webhooks", webhooks);
+  server.decorate(
+    "email",
+    options.email ??
+      createEmailSender(new OutboxEmailDriver(), {
+        defaultFrom: DEFAULT_EMAIL_FROM,
+        keepsInOutbox: true,
+      }),
+  );
   server.addHook("onClose", () => webhooks.finishSending());
   server.decorateRequest("signedIn", null);
   server.setErrorHandler(sendHttpErrorDetails);
 
+  // Every response says which request it was, so a visitor's report can be found in the logs.
+  server.addHook("onRequest", async (request, reply) => {
+    reply.header("x-request-id", request.id);
+  });
+  if (options.compression) {
+    server.register(compress, { global: true, threshold: 1024 });
+  }
   // The admin may call everything; websites listed in Settings may call the content APIs.
-  server.register(cors, { delegator: crossOriginOptions(options.adminOrigin) });
+  server.register(cors, { delegator: crossOriginOptions(options.adminOrigin, apiPrefix) });
   server.register(cookie);
   // Off by default; routes that need a limit (like sign-in) set their own.
   server.register(rateLimit, { global: false });
 
-  server.register(healthRoutes);
+  server.register(healthRoutes, { storage });
+  server.register(async (api) => registerApiRoutes(api, options, storage), { prefix: apiPrefix });
+
+  if (options.runScheduledJobs ?? true) {
+    registerScheduledJobs(server);
+  }
+
+  return server;
+}
+
+/** Every feature's routes, in one visible list. */
+function registerApiRoutes(
+  server: FastifyInstance,
+  options: ServerOptions,
+  storage: StorageDriver,
+): void {
+  // API answers are about one person or change often, so shared caches must not keep them
+  // unless a route says otherwise (the delivery API and files do).
+  server.addHook("onSend", async (_request, reply) => {
+    if (!reply.hasHeader("cache-control")) {
+      reply.header("cache-control", "no-store");
+    }
+  });
+
   server.register(authRoutes);
   server.register(setupRoutes);
   server.register(pluginsRoutes);
@@ -184,18 +252,13 @@ export function buildServer(options: ServerOptions) {
   server.register(graphqlRoutes, { graphiql: options.graphiql ?? false });
   server.register(openApiRoutes);
   server.register(seoRoutes);
-
-  if (options.runScheduledJobs ?? true) {
-    registerScheduledJobs(server);
-  }
   server.register(mediaRoutes, {
-    storage: options.media?.storage ?? new LocalDiskStorage(),
+    storage,
+    signedUrlSeconds: options.media?.signedUrlSeconds,
     cacheFolder: options.media?.transformCacheFolder ?? DEFAULT_TRANSFORM_CACHE_FOLDER,
     // An asset still used by an entry can't be deleted.
     usageFinder: options.media?.usageFinder ?? {
       findEntriesUsingAsset: (assetId) => findEntriesUsingAsset(server.database, assetId),
     },
   });
-
-  return server;
 }

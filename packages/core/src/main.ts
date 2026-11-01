@@ -1,17 +1,33 @@
 import type { FastifyInstance } from "fastify";
 import { loadConfig, loadProjectEnvFile } from "./config.js";
 import { describeActiveDatabase } from "./database/active-database.js";
+import { createConfiguredEmailSender } from "./email/index.js";
+import { createConfiguredStorage, signedUrlSeconds } from "./media/configured-storage.js";
+import { startProductionServer } from "./production/start-production-server.js";
 import { buildServer } from "./server.js";
 import { isSetupNeeded } from "./setup/setup.service.js";
-import { openConfiguredDatabase, PortInUseError, runWithFriendlyErrors } from "./startup.js";
+import {
+  lintelPaths,
+  openConfiguredDatabase,
+  PortInUseError,
+  runWithFriendlyErrors,
+} from "./startup.js";
 
 /**
- * Starts the API server. Run with `pnpm dev` from the repository root.
+ * Starts Lintel. `pnpm dev` (NODE_ENV=development) starts only the API, beside the admin's
+ * own development server. Anything else, such as `pnpm start`, serves the API, the built
+ * admin and the website from this one process (see src/production).
  * The database's tables are created or updated on every start, before it listens.
  */
 await runWithFriendlyErrors(async () => {
   loadProjectEnvFile();
   const config = loadConfig();
+  if (config.NODE_ENV !== "development") {
+    await startProductionServer(config);
+    return;
+  }
+
+  const paths = lintelPaths(config);
   const activeDatabase = await openConfiguredDatabase(config);
   say(describeActiveDatabase(activeDatabase));
 
@@ -23,6 +39,13 @@ await runWithFriendlyErrors(async () => {
     publicApiUrl: config.API_PUBLIC_URL ?? `http://localhost:${config.API_PORT}`,
     graphiql: config.NODE_ENV === "development",
     webhooks: { allowPrivateAddresses: config.WEBHOOKS_ALLOW_PRIVATE_ADDRESSES },
+    lintelFolder: paths.lintelFolder,
+    media: {
+      storage: createConfiguredStorage(config, paths.uploadsFolder),
+      transformCacheFolder: paths.transformCacheFolder,
+      signedUrlSeconds: signedUrlSeconds(config),
+    },
+    email: createConfiguredEmailSender(config, paths.root),
     logger: true,
   });
   server.addHook("onClose", () => activeDatabase.close());

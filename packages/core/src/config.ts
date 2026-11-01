@@ -2,13 +2,16 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { DATABASE_URL_ADVICE } from "./database/database-errors.js";
+import { checkEmailSettings, emailSettings } from "./email/email.config.js";
+import { checkStorageSettings, storageSettings } from "./media/storage.config.js";
+import { checkProductionSettings, productionSettings } from "./production/production.config.js";
 
 /**
  * Every setting the API server reads from the environment, in one place. Each one has a
  * default, so Lintel starts with no .env file at all. If a value is set but malformed the
  * server refuses to start and says which one, instead of failing later somewhere else.
  */
-const configSchema = z.object({
+const coreSettingsSchema = z.object({
   // Leave out to use the built-in database, or the one chosen on the setup screen.
   // An empty `DATABASE_URL=` line (copied from .env.example) counts as left out.
   DATABASE_URL: z.preprocess(
@@ -39,6 +42,20 @@ const configSchema = z.object({
     .default("false")
     .transform((value) => value === "true"),
 });
+
+/**
+ * Each feature that has settings keeps them in its own `*.config.ts`, next to the code
+ * that uses them, along with the rules that need more than one setting.
+ */
+const configSchema = coreSettingsSchema
+  .extend(productionSettings)
+  .extend(storageSettings)
+  .extend(emailSettings)
+  .superRefine((config, context) => {
+    checkProductionSettings(config, context);
+    checkStorageSettings(config, context);
+    checkEmailSettings(config, context);
+  });
 
 export type Config = z.infer<typeof configSchema>;
 
