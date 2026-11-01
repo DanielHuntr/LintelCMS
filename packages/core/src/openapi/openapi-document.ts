@@ -22,6 +22,7 @@ const tagDescriptions: Record<Operation["tag"], string> = {
   Collections: "The content model: collections and their content types.",
   Entries: "Creating, editing and publishing entries. Needs an API token or a session.",
   Media: "The media library.",
+  Shop: "The storefront: products, carts and checkout (with the Online shop plugin).",
 };
 
 const errorSchema: JsonSchema = {
