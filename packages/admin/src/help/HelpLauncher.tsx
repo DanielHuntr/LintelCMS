@@ -36,6 +36,8 @@ export function HelpLauncher() {
     button.current?.focus();
   }
 
+  // z-30 keeps the button above sticky toolbars (z-20), such as the entry editor's, so it
+  // can always be clicked; dialogs (z-40) still cover it.
   return (
     <>
       <button
@@ -46,7 +48,7 @@ export function HelpLauncher() {
         aria-controls={isOpen ? panelId : undefined}
         aria-label={t("help.open")}
         title={t("help.open")}
-        className="fixed top-4 right-4 z-20 flex size-9 items-center justify-center rounded-full bg-surface text-label-secondary shadow-float hairline-ring transition-colors duration-150 ease-standard hover:text-label focus-visible:focus-ring motion-safe:active:scale-95"
+        className="fixed top-4 right-4 z-30 flex size-9 items-center justify-center rounded-full bg-surface text-label-secondary shadow-float hairline-ring transition-colors duration-150 ease-standard hover:text-label focus-visible:focus-ring motion-safe:active:scale-95"
       >
         <CircleHelp aria-hidden="true" strokeWidth={1.75} className="size-5" />
       </button>
