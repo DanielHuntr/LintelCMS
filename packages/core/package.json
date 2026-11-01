@@ -19,6 +19,11 @@
       "development": "./src/media/focal-crop.ts",
       "default": "./dist/media/focal-crop.js"
     },
+    "./data-tools": {
+      "types": "./dist/data-tools.d.ts",
+      "development": "./src/data-tools.ts",
+      "default": "./dist/data-tools.js"
+    },
     "./seo-titles": {
       "types": "./dist/seo/seo-titles.d.ts",
       "development": "./src/seo/seo-titles.ts",
@@ -33,7 +38,6 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/scripts/migrate.ts",
-    "create-admin": "tsx src/scripts/create-admin.ts",
     "reset-password": "tsx src/scripts/reset-password.ts"
   },
   "dependencies": {

@@ -16,6 +16,7 @@ import { EntriesListPage } from "./content/EntriesListPage.js";
 import type { EntriesFilter } from "./content/entriesQuery.js";
 import { BlueprintEditorPage } from "./content-types/BlueprintEditorPage.js";
 import { contentModelRoutes } from "./content-model/contentModelRoutes.js";
+import { dataToolsRoutes } from "./data-tools/dataToolsRoutes.js";
 import { ContentTypesPage } from "./content-types/ContentTypesPage.js";
 import { NewContentTypePage } from "./content-types/NewContentTypePage.js";
 import { DashboardPage } from "./dashboard/DashboardPage.js";
@@ -422,6 +423,7 @@ export const routeTree = rootRoute.addChildren([
       helpRoute,
       ...contentRoutes,
       ...integrationRoutes,
+      ...dataToolsRoutes(() => adminRoute),
       ...placeholderRoutes,
     ]),
   ]),

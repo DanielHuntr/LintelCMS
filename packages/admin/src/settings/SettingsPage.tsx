@@ -1,4 +1,13 @@
-import { Globe, KeyRound, Languages, Search, Shapes, Webhook } from "lucide-react";
+import {
+  Archive,
+  FileInput,
+  Globe,
+  KeyRound,
+  Languages,
+  Search,
+  Shapes,
+  Webhook,
+} from "lucide-react";
 import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
@@ -13,6 +22,8 @@ export function SettingsPage() {
   const canSeeContentTypes = useCan("blueprints:read");
   const canSeeSiteSettings = useCan("settings:read");
   const { enabledPlugins } = useSession();
+  const canSeeBackups = useCan("backups:read");
+  const canTransferContent = useCan("content:transfer");
 
   return (
     <>
@@ -54,6 +65,27 @@ export function SettingsPage() {
               description={t("settings.seoDescription")}
               to="/settings/seo"
             />
+          </GroupedList>
+        )}
+        {(canSeeBackups || canTransferContent) && (
+          <GroupedList header={t("settings.dataHeader")}>
+            {canSeeBackups && (
+              <GroupedListRow
+                icon={Archive}
+                iconTone="success"
+                label={t("backups.title")}
+                description={t("settings.backupsDescription")}
+                to="/settings/backups"
+              />
+            )}
+            {canTransferContent && (
+              <GroupedListRow
+                icon={FileInput}
+                label={t("import.title")}
+                description={t("settings.importDescription")}
+                to="/settings/import"
+              />
+            )}
           </GroupedList>
         )}
         <GroupedList header={t("settings.siteHeader")} footer={t("settings.moreSoon")}>
