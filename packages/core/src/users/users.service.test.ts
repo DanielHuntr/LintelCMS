@@ -18,7 +18,7 @@ const ADMIN = { email: "ana@example.com", name: "Ana Admin", password: "a long a
 describe("createAdmin", () => {
   const testDatabase = useTestDatabase();
 
-  it("creates the Super admin role on a fresh install and gives it to the new user", async () => {
+  it("creates the built-in roles on a fresh install and makes the new user an Owner and gives it to the new user", async () => {
     const admin = await createAdmin(testDatabase.database, ADMIN);
 
     expect(admin).toMatchObject({ email: "ana@example.com", name: "Ana Admin" });
@@ -28,12 +28,18 @@ describe("createAdmin", () => {
     expect(await verifyPassword(ADMIN.password, stored!.passwordHash!)).toBe(true);
   });
 
-  it("reuses the existing Super admin role for a second admin", async () => {
+  it("reuses the existing roles for a second admin", async () => {
     await createAdmin(testDatabase.database, ADMIN);
     await createAdmin(testDatabase.database, { ...ADMIN, email: "ben@example.com" });
 
     const roles = await testDatabase.database.select().from(rolesTable);
-    expect(roles.map((role) => role.name)).toEqual(["Super admin"]);
+    expect(roles.map((role) => role.name).sort()).toEqual([
+      "Admin",
+      "Author",
+      "Editor",
+      "Owner",
+      "Viewer",
+    ]);
   });
 
   it("refuses an email that is already used, and changes nothing", async () => {

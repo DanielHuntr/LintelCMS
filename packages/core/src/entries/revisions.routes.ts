@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { requirePermission } from "../auth/require-permission.js";
 import { RevisionNotFoundError } from "./entries.errors.js";
+import { requireEntryPermission } from "./entry-access.js";
 import { changeContext, readEntryId } from "./entries.routes.js";
 import { revisionParamsSchema } from "./entries.schema.js";
 import { findRevision, listRevisions, restoreRevision } from "./revisions.service.js";
@@ -14,7 +15,8 @@ import { findRevision, listRevisions, restoreRevision } from "./revisions.servic
  */
 export async function revisionsRoutes(server: FastifyInstance) {
   const canRead = { preHandler: requirePermission("entries:read") };
-  const canUpdate = { preHandler: requirePermission("entries:update") };
+  // Restoring is a change to the entry, so an Author may restore their own.
+  const canUpdate = { preHandler: requireEntryPermission("update") };
 
   server.get("/entries/:id/revisions", canRead, async (request) => {
     const id = readEntryId(request.params);

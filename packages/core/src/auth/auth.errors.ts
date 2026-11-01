@@ -35,3 +35,24 @@ export class TooManySignInAttemptsError extends HttpError {
     );
   }
 }
+
+/** Only said after the right password, so it reveals nothing to someone guessing. */
+export class AccountDeactivatedError extends HttpError {
+  constructor() {
+    super(
+      403,
+      "ACCOUNT_DEACTIVATED",
+      "Your account has been deactivated. Ask an admin if you need it back.",
+    );
+  }
+}
+
+export class SignInExpiredError extends HttpError {
+  constructor() {
+    super(
+      401,
+      "SIGN_IN_EXPIRED",
+      "That took too long, or too many codes were tried. Please sign in again.",
+    );
+  }
+}

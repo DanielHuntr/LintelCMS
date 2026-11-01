@@ -7,7 +7,7 @@ import { openConfiguredDatabase, runWithFriendlyErrors } from "../startup.js";
 import { fail, readNewPassword } from "./read-new-password.js";
 
 /**
- * Creates a Super admin from the terminal:
+ * Creates an Owner from the terminal:
  *
  *   pnpm create-admin --email ana@example.com --name "Ana Lopez"
  *
@@ -42,7 +42,7 @@ await runWithFriendlyErrors(async () => {
 
   try {
     const admin = await createAdmin(activeDatabase.database, { ...parsedArguments.data, password });
-    process.stdout.write(`Created ${admin.name} <${admin.email}> as a Super admin.\n`);
+    process.stdout.write(`Created ${admin.name} <${admin.email}> as an Owner.\n`);
   } catch (error) {
     if (!(error instanceof EmailAlreadyUsedError)) {
       throw error;

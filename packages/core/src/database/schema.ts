@@ -19,3 +19,8 @@ export { navigationsTable } from "../navigation/navigation.table.js";
 export { apiTokensTable } from "../api-tokens/api-tokens.table.js";
 export { webhooksTable, webhookDeliveriesTable } from "../webhooks/webhooks.table.js";
 export { entrySeoTable, redirectsTable } from "../seo/seo.table.js";
+export { oneTimeTokensTable } from "../one-time-tokens/one-time-tokens.table.js";
+export { securityEventsTable } from "../security-log/security-events.table.js";
+export { invitationsTable } from "../invitations/invitations.table.js";
+export { twoFactorTable, recoveryCodesTable } from "../two-factor/two-factor.table.js";
+export { passkeysTable } from "../passkeys/passkeys.table.js";

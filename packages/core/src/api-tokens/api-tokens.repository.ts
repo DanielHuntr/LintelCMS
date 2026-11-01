@@ -59,10 +59,10 @@ export async function deleteApiTokenRow(
   database: DatabaseOrTransaction,
   tenantId: string,
   tokenId: string,
-): Promise<boolean> {
-  const deleted = await database
+): Promise<{ id: string; name: string } | undefined> {
+  const [deleted] = await database
     .delete(apiTokensTable)
     .where(and(eq(apiTokensTable.tenantId, tenantId), eq(apiTokensTable.id, tokenId)))
-    .returning({ id: apiTokensTable.id });
-  return deleted.length > 0;
+    .returning({ id: apiTokensTable.id, name: apiTokensTable.name });
+  return deleted;
 }

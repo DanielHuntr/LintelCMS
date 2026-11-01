@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, desc, eq, ne } from "drizzle-orm";
 import type { Database, DatabaseOrTransaction } from "../database/client.js";
 import { type NewSession, type Session, sessionsTable } from "./sessions.table.js";
 
@@ -54,6 +54,42 @@ export async function deleteSessionsForUser(
   const deleted = await database
     .delete(sessionsTable)
     .where(eq(sessionsTable.userId, userId))
+    .returning({ id: sessionsTable.id });
+  return deleted.length;
+}
+
+export function listSessionsForUser(
+  database: DatabaseOrTransaction,
+  userId: string,
+): Promise<Session[]> {
+  return database
+    .select()
+    .from(sessionsTable)
+    .where(eq(sessionsTable.userId, userId))
+    .orderBy(desc(sessionsTable.lastUsedAt));
+}
+
+/** Only ends the user's own session. Returns whether there was one. */
+export async function deleteSessionOfUser(
+  database: DatabaseOrTransaction,
+  userId: string,
+  sessionId: string,
+): Promise<boolean> {
+  const deleted = await database
+    .delete(sessionsTable)
+    .where(and(eq(sessionsTable.userId, userId), eq(sessionsTable.id, sessionId)))
+    .returning({ id: sessionsTable.id });
+  return deleted.length > 0;
+}
+
+export async function deleteOtherSessionsOfUser(
+  database: DatabaseOrTransaction,
+  userId: string,
+  keepTokenHash: string,
+): Promise<number> {
+  const deleted = await database
+    .delete(sessionsTable)
+    .where(and(eq(sessionsTable.userId, userId), ne(sessionsTable.tokenHash, keepTokenHash)))
     .returning({ id: sessionsTable.id });
   return deleted.length;
 }

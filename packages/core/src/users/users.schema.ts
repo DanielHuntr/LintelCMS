@@ -24,3 +24,41 @@ export const publicUserSchema = z.object({
 });
 
 export type PublicUser = z.infer<typeof publicUserSchema>;
+
+export const userNameSchema = z
+  .string({ error: "Please enter a name" })
+  .trim()
+  .min(1, { error: "Please enter a name" })
+  .max(100, { error: "Names can be at most 100 characters" });
+
+export const userIdParamsSchema = z.object({ id: z.uuid() });
+
+export const listUsersQuerySchema = z.object({
+  search: z.string().trim().max(200).optional(),
+});
+
+export const changeUserRoleRequestSchema = z.object({
+  roleId: z.uuid({ error: "Please choose a role" }),
+});
+
+export const removeUserRequestSchema = z.object({
+  /** Who their entries, revisions and uploads move to. */
+  reassignToUserId: z.uuid({ error: "Please choose who gets their content" }),
+});
+
+/** One person on the Users screen. */
+export const userListItemSchema = z.object({
+  id: z.uuid(),
+  email: z.string(),
+  name: z.string(),
+  status: z.enum(["active", "deactivated"]),
+  roles: z.array(z.object({ id: z.uuid(), name: z.string(), handle: z.string() })),
+  avatarUrl: z.string().nullable(),
+  twoFactorEnabled: z.boolean(),
+  /** The latest of their last sign-in and the last time a session was used. */
+  lastActiveAt: z.string().nullable(),
+  createdAt: z.string(),
+});
+
+export type UserListItem = z.infer<typeof userListItemSchema>;
+export type ListUsersQuery = z.infer<typeof listUsersQuerySchema>;

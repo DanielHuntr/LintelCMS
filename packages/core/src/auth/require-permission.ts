@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { findRequestApiToken } from "../api-tokens/api-token-auth.js";
 import { hasPermission, type Permission } from "../roles/permissions.js";
+import { TwoFactorSetupRequiredError } from "../two-factor/two-factor.errors.js";
 import { NotSignedInError, PermissionDeniedError } from "./auth.errors.js";
 import type { SignedIn } from "./auth.schema.js";
 import { findSignedIn } from "./auth.service.js";
@@ -24,15 +25,36 @@ declare module "fastify" {
  * Signed out gives 401 and not allowed gives 403, each with a message an editor can follow.
  * Without a session cookie, an API token (`Authorization: Bearer ...`) is accepted instead;
  * it acts for the admin who made it, with the token's narrower permissions (see src/api-tokens).
+ *
+ * Someone whose role requires two-factor authentication, and who hasn't turned it on, gets
+ * 403 TWO_FACTOR_SETUP_REQUIRED from every `requirePermission` route. Routes behind only
+ * `requireSignedIn` (their own account) still work, so they can turn it on.
  */
 
 export async function requireSignedIn(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   await loadSignedIn(request, reply);
 }
 
+/**
+ * For a person's own account (password, two-factor, passkeys, sessions): signed in with a
+ * browser session. An API token can't change the account of the admin who made it.
+ */
+export async function requireAccountSession(
+  request: FastifyRequest,
+  reply: FastifyReply,
+): Promise<void> {
+  if (!readSessionToken(request)) {
+    throw new NotSignedInError();
+  }
+  await loadSignedIn(request, reply);
+}
+
 export function requirePermission(permission: Permission) {
   return async function checkPermission(request: FastifyRequest, reply: FastifyReply) {
     const signedIn = await loadSignedIn(request, reply);
+    if (signedIn.mustSetUpTwoFactor) {
+      throw new TwoFactorSetupRequiredError();
+    }
     if (!hasPermission(signedIn.permissions, permission)) {
       throw new PermissionDeniedError(permission);
     }

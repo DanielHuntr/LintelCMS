@@ -43,6 +43,7 @@ export function describeEntry(
     blueprint: describeBlueprint(blueprint),
     hasUnpublishedChanges: hasUnpublishedChanges(entry),
     translations,
+    createdById: entry.createdBy,
   };
 }
 

@@ -34,7 +34,7 @@ export async function findSetupStatus(
 }
 
 /**
- * Creates the first admin, with the Super admin role, and signs them in. Refuses once
+ * Creates the first admin, with the Owner role, and signs them in. Refuses once
  * any user exists, so it can never be used to add an admin to a running site.
  */
 export async function completeSetup(
