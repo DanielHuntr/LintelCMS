@@ -34,6 +34,8 @@ interface SettingsPage {
   label: StringKey;
   description: StringKey;
   permission: `${string}:${string}`;
+  /** The plugin that provides the screen, when it only exists while that plugin is on. */
+  plugin?: string;
 }
 
 /** Settings screens that aren't in the sidebar. Add new ones here as they are built. */
@@ -43,6 +45,49 @@ const settingsPages: readonly SettingsPage[] = [
     label: "contentTypes.title",
     description: "settings.contentTypesDescription",
     permission: "blueprints:read",
+  },
+  {
+    path: "/content/globals",
+    label: "globals.title",
+    description: "contentModel.globalsDescription",
+    permission: "globals:read",
+  },
+  {
+    path: "/content/navigation",
+    label: "menus.title",
+    description: "contentModel.menusDescription",
+    permission: "navigation:read",
+  },
+  {
+    path: "/content/taxonomies",
+    label: "taxonomies.title",
+    description: "contentModel.taxonomiesDescription",
+    permission: "taxonomies:read",
+  },
+  {
+    path: "/settings/languages",
+    label: "languages.title",
+    description: "settings.languagesDescription",
+    permission: "settings:read",
+  },
+  {
+    path: "/settings/api",
+    label: "apiAccess.title",
+    description: "settings.apiAccessDescription",
+    permission: "settings:read",
+  },
+  {
+    path: "/settings/webhooks",
+    label: "webhooks.title",
+    description: "settings.webhooksDescription",
+    permission: "settings:read",
+  },
+  {
+    path: "/settings/seo",
+    label: "seo.settingsTitle",
+    description: "settings.seoDescription",
+    permission: "settings:read",
+    plugin: "seo",
   },
 ];
 
@@ -73,7 +118,11 @@ export function matchingPages(
     }),
   );
   const settings: PaletteItem[] = settingsPages
-    .filter((page) => hasPermission(context.permissions, page.permission))
+    .filter(
+      (page) =>
+        hasPermission(context.permissions, page.permission) &&
+        (page.plugin === undefined || context.enabledPlugins.includes(page.plugin)),
+    )
     .map((page) => ({
       id: `page:${page.path}`,
       group: "pages",

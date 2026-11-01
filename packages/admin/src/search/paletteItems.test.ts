@@ -36,6 +36,27 @@ describe("command palette items", () => {
     ]);
   });
 
+  it("finds every settings and site-wide screen, with the right permission and plugin", () => {
+    const owner = { permissions: ["*"], enabledPlugins: ["seo"], collections: [] };
+    const paths = (query: string, context = owner) =>
+      matchingPages(query, context).map((item) => item.target);
+
+    expect(paths("webhooks")).toEqual([{ kind: "page", path: "/settings/webhooks" }]);
+    expect(paths("api")).toContainEqual({ kind: "page", path: "/settings/api" });
+    expect(paths("languages")).toEqual([{ kind: "page", path: "/settings/languages" }]);
+    expect(paths("menus")).toEqual([{ kind: "page", path: "/content/navigation" }]);
+    expect(paths("search engines")).toEqual([{ kind: "page", path: "/settings/seo" }]);
+    expect(paths("search engines", { ...owner, enabledPlugins: [] })).toEqual([]);
+
+    const editor = {
+      permissions: ["entries:*", "navigation:read"],
+      enabledPlugins: ["seo"],
+      collections: [],
+    };
+    expect(paths("webhooks", editor)).toEqual([]);
+    expect(paths("menus", editor)).toEqual([{ kind: "page", path: "/content/navigation" }]);
+  });
+
   it("turns the API's results into rows, entries first", () => {
     const items = resultItems({
       query: "hello",
