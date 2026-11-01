@@ -110,14 +110,20 @@ describe("restoring a backup", () => {
 });
 
 describe("Settings → Import", () => {
-  it("offers the WordPress importer and an export with options", async () => {
+  it("offers an importer for each system and an export with options", async () => {
     mockApi(() => undefined);
     renderScreen(<ImportPage />);
 
-    expect(await screen.findByRole("link", { name: /Import from WordPress/ })).toHaveAttribute(
+    expect(await screen.findByRole("link", { name: /^WordPress/ })).toHaveAttribute(
       "href",
       "/settings/import/wordpress",
     );
+    for (const source of ["Webflow", "Framer", "Statamic", "Umbraco"]) {
+      expect(screen.getByRole("link", { name: new RegExp(`^${source}`) })).toHaveAttribute(
+        "href",
+        `/settings/import/${source.toLowerCase()}`,
+      );
+    }
     const download = screen.getByRole("link", { name: "Download export" });
     expect(download).toHaveAttribute("href", expect.stringContaining("revisions=false&files=true"));
     await userEvent.click(
@@ -168,6 +174,8 @@ describe("the WordPress import report", () => {
         image: none,
         page: { done: 3, skipped: 0, failed: 0 },
         post: { done: 10, skipped: 1, failed: 0 },
+        product: none,
+        menu: none,
       },
       invitedPeople: [{ name: "Maria Baker", email: "maria@example.com" }],
       keptAsHtml: { embed: 2, image: 1 },
@@ -209,6 +217,10 @@ describe("the WordPress mapping screen", () => {
       tagsTaxonomy: "tags",
       media: "download",
       mediaHosts: [],
+      postFields: {},
+      pageFields: {},
+      menus: true,
+      products: "import",
       authors: "invite",
       drafts: "import",
       redirects: true,
@@ -240,6 +252,8 @@ describe("the WordPress mapping screen", () => {
           },
           collections: [{ handle: "posts", name: "Blog posts" }],
           taxonomies: [{ handle: "categories", name: "Categories" }],
+          collectionFields: { posts: [] },
+          shopEnabled: false,
           suggested: mapping,
         };
       }

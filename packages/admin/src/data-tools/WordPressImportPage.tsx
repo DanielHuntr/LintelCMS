@@ -85,13 +85,20 @@ export function WordPressImportPage({ importId }: { importId: string }) {
 }
 
 function FoundCard({ found }: { found: WordPressImport["found"] }) {
-  const { ignored: ignoredTypes, ...counts } = found;
+  const { ignored: ignoredTypes, menus = 0, products = 0 } = found;
+  const { posts, pages, attachments, authors, categories, tags } = found;
+  const counts = { posts, pages, attachments, authors, categories, tags };
   const ignored = Object.entries(ignoredTypes).map(
     ([type, count]) => `${count} ${type.replace(/_/g, " ")}`,
   );
   return (
     <Card title={t("wordpress.foundTitle")}>
       <p className="text-body text-label">{t("wordpress.found", counts)}</p>
+      {menus + products > 0 && (
+        <p className="mt-1 text-body text-label">
+          {t("wordpress.foundExtras", { menus, products })}
+        </p>
+      )}
       {ignored.length > 0 && (
         <p className="mt-1 text-footnote text-label-secondary">
           {t("wordpress.ignored", { list: ignored.join(", ") })}
@@ -110,7 +117,8 @@ function ProgressCard({ progress }: { progress: WordPressImport["progress"] }) {
   );
 }
 
-function ProgressBar({ progress }: { progress: WordPressImport["progress"] }) {
+/** How far an import has got; the WordPress and other importers share it. */
+export function ProgressBar({ progress }: { progress: { done: number; total: number } }) {
   const percent = progress.total === 0 ? 100 : Math.round((progress.done / progress.total) * 100);
   const label = t("wordpress.progress", { done: progress.done, total: progress.total });
   return (

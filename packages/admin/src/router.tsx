@@ -23,6 +23,7 @@ import { commerceRoutes } from "./commerce/commerceRoutes.js";
 import { contentModelRoutes } from "./content-model/contentModelRoutes.js";
 import { fieldsetRoutes } from "./fieldsets/fieldsetRoutes.js";
 import { dataToolsRoutes } from "./data-tools/dataToolsRoutes.js";
+import { importersRoutes } from "./importers/importersRoutes.js";
 import { updatesRoutes } from "./updates/updatesRoutes.js";
 import { ContentTypesPage } from "./content-types/ContentTypesPage.js";
 import { NewContentTypePage } from "./content-types/NewContentTypePage.js";
@@ -530,6 +531,7 @@ export const routeTree = rootRoute.addChildren([
       ...commerceRoutes(() => adminRoute),
       designRoute,
       ...dataToolsRoutes(() => adminRoute),
+      ...importersRoutes(() => adminRoute),
       ...updatesRoutes(() => adminRoute),
       pluginScreensRoute,
     ]),

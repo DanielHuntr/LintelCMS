@@ -1,31 +1,27 @@
-import { FileDown, Newspaper } from "lucide-react";
+import { FileDown } from "lucide-react";
 import { useState } from "react";
 import { BackLink } from "../design/BackLink.js";
 import { buttonClasses } from "../design/Button.js";
 import { Card } from "../design/Card.js";
-import { GroupedList } from "../design/GroupedList.js";
-import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { Toggle } from "../design/Toggle.js";
 import { t } from "../i18n/strings.js";
 import { exportDownloadUrl } from "./dataTools.api.js";
+import { MoveYourSiteList } from "../importers/MoveYourSiteList.js";
 import { LintelImportCard } from "./LintelImportCard.js";
 
-/** /settings/import: import a Lintel export, export this site, or go to the WordPress importer. */
+/**
+ * /settings/import: "Move your site to Lintel" (one importer per system: WordPress here in
+ * data-tools, the others in src/importers, Shopify in the shop), then importing a Lintel
+ * export and exporting this site.
+ */
 export function ImportPage() {
   return (
     <>
       <BackLink to="/settings">{t("nav.settings")}</BackLink>
       <LargeTitle title={t("import.title")} subtitle={t("import.subtitle")} />
       <div className="flex max-w-2xl flex-col gap-8">
-        <GroupedList>
-          <GroupedListRow
-            icon={Newspaper}
-            label={t("import.wordpressTitle")}
-            description={t("import.wordpressDescription")}
-            to="/settings/import/wordpress"
-          />
-        </GroupedList>
+        <MoveYourSiteList />
         <LintelImportCard />
         <ExportCard />
       </div>
