@@ -15,6 +15,8 @@ interface RenderScreenOptions {
   permissions?: string[];
   /** The plugins switched on. Defaults to the blog. */
   enabledPlugins?: string[];
+  /** The connected website's address. Defaults to none. */
+  siteAddress?: string;
 }
 
 /**
@@ -24,7 +26,7 @@ interface RenderScreenOptions {
  */
 export function renderScreen(
   screen: ReactNode,
-  { permissions = ["*"], enabledPlugins = ["blog"] }: RenderScreenOptions = {},
+  { permissions = ["*"], enabledPlugins = ["blog"], siteAddress = "" }: RenderScreenOptions = {},
 ) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -33,6 +35,7 @@ export function renderScreen(
     user: { id: "u1", email: "ada@example.com", name: "Ada Lovelace" },
     permissions,
     enabledPlugins,
+    siteAddress,
   };
 
   const rootRoute = createRootRoute({

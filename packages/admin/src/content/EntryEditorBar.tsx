@@ -1,9 +1,19 @@
 import { Link } from "@tanstack/react-router";
-import { ChevronLeft, Copy, Ellipsis, Eye, PanelRight, Trash2 } from "lucide-react";
+import {
+  ChevronLeft,
+  Copy,
+  Ellipsis,
+  Eye,
+  PanelRight,
+  SquareArrowOutUpRight,
+  Trash2,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { classNames } from "../design/classNames.js";
 import { Menu, type MenuItem } from "../design/Menu.js";
 import { t } from "../i18n/strings.js";
+import type { ViewPageTarget } from "./viewPage.js";
+import { ViewPageLink } from "./ViewPageLink.js";
 
 interface EntryEditorBarProps {
   collectionHandle: string;
@@ -21,6 +31,8 @@ interface EntryEditorBarProps {
   isPreviewOpen: boolean;
   previewId: string;
   onTogglePreview: () => void;
+  /** Where "View page" goes; undefined while nothing is live. */
+  viewPage: ViewPageTarget | undefined;
 }
 
 /**
@@ -40,6 +52,7 @@ export function EntryEditorBar({
   isPreviewOpen,
   previewId,
   onTogglePreview,
+  viewPage,
 }: EntryEditorBarProps) {
   const moreItems: MenuItem[] = [
     {
@@ -66,6 +79,15 @@ export function EntryEditorBar({
 
       <div className="ml-auto flex items-center gap-1.5">
         <div className="mr-2">{saveIndicator}</div>
+        {viewPage && (
+          <ViewPageLink
+            target={viewPage}
+            className="flex h-9 items-center gap-1.5 rounded-control px-2.5 text-body text-label-secondary transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring"
+          >
+            <SquareArrowOutUpRight aria-hidden="true" strokeWidth={1.75} className="size-[17px]" />
+            {t("editor.viewPage")}
+          </ViewPageLink>
+        )}
         <button
           type="button"
           onClick={onTogglePreview}

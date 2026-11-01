@@ -7,7 +7,7 @@ import { z } from "zod";
  */
 export const TITLE_PLACEHOLDER = "{title}";
 
-const optionalOrigin = z
+export const optionalOrigin = z
   .string({ error: "The site address should be text" })
   .trim()
   .refine((value) => value === "" || isWebAddress(value), {

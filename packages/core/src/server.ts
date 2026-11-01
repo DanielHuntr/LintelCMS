@@ -33,6 +33,7 @@ import { searchRoutes } from "./search/search.routes.js";
 import { seoRoutes } from "./seo/seo.routes.js";
 import { generateSetupCode } from "./setup/setup-code.js";
 import { setupRoutes } from "./setup/setup.routes.js";
+import { siteAddressRoutes } from "./sites/site-address.routes.js";
 import { localesRoutes } from "./sites/locales.routes.js";
 import { taxonomiesRoutes } from "./taxonomies/taxonomies.routes.js";
 import { globalsRoutes } from "./globals/globals.routes.js";
@@ -184,6 +185,7 @@ export function buildServer(options: ServerOptions) {
   server.register(graphqlRoutes, { graphiql: options.graphiql ?? false });
   server.register(openApiRoutes);
   server.register(seoRoutes);
+  server.register(siteAddressRoutes);
 
   if (options.runScheduledJobs ?? true) {
     registerScheduledJobs(server);

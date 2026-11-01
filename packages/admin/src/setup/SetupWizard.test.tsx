@@ -12,6 +12,7 @@ const session: Session = {
   user: { id: "user-1", email: "daniel@gmail.com", name: "Daniel Roberts" },
   permissions: ["*"],
   enabledPlugins: [],
+  siteAddress: "",
 };
 
 function renderWizard(status: SetupStatus = setupStatus(), apiChanges = {}) {

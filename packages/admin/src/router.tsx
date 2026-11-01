@@ -38,7 +38,9 @@ import { SessionProvider } from "./session/SessionContext.js";
 import { RedirectsPage } from "./seo/RedirectsPage.js";
 import { SeoSettingsPage } from "./seo/SeoSettingsPage.js";
 import { SettingsPage } from "./settings/SettingsPage.js";
+import { PublishedPageView } from "./content/PublishedPageView.js";
 import { SignInPage } from "./sign-in/SignInPage.js";
+import { SiteSettingsPage } from "./site/SiteSettingsPage.js";
 import { WebhookDetailPage } from "./webhooks/WebhookDetailPage.js";
 import { WebhooksPage } from "./webhooks/WebhooksPage.js";
 import "./setup/historyState.js";
@@ -244,6 +246,16 @@ const entryEditorRoute = createRoute({
   },
 });
 
+// "View page" for a published entry when no website is connected yet (see content/viewPage.ts).
+const publishedPageRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/content/$collection/$entryId/view",
+  component: function PublishedPageRoute() {
+    const { collection, entryId } = publishedPageRoute.useParams();
+    return <PublishedPageView collectionHandle={collection} entryId={entryId} />;
+  },
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: "/settings",
@@ -298,6 +310,12 @@ const webhookRoute = createRoute({
   },
 });
 
+const siteSettingsRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/settings/site",
+  component: SiteSettingsPage,
+});
+
 const seoSettingsRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: "/settings/seo",
@@ -316,6 +334,7 @@ const integrationRoutes = [
   apiReferenceRoute,
   webhooksRoute,
   webhookRoute,
+  siteSettingsRoute,
   seoSettingsRoute,
   redirectsRoute,
 ];
@@ -325,6 +344,7 @@ const contentRoutes = [
   ...contentModelRoutes(() => adminRoute),
   entriesRoute,
   entryEditorRoute,
+  publishedPageRoute,
   settingsRoute,
   contentTypesRoute,
   newContentTypeRoute,

@@ -1,6 +1,7 @@
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import { buildEntryUrl } from "../delivery/entry-urls.js";
+import { readSiteAddress } from "../sites/site-address.service.js";
 import { SiteAddressMissingError } from "./seo.errors.js";
 import { readSeoDefaults } from "./seo-defaults.service.js";
 import { listSitemapEntryRows } from "./seo.repository.js";
@@ -12,7 +13,9 @@ import { buildRobotsTxt, buildSitemapXml, MAX_SITEMAP_PAGES } from "./sitemap.js
  */
 export async function buildSitemap(database: DatabaseOrTransaction): Promise<string> {
   const defaults = await readSeoDefaults(database);
-  if (!defaults.siteUrl) {
+  // The SEO settings' own address wins; otherwise the site address from Settings → Site.
+  const siteUrl = defaults.siteUrl || (await readSiteAddress(database));
+  if (!siteUrl) {
     throw new SiteAddressMissingError();
   }
   const rows = await listSitemapEntryRows(database, DEFAULT_TENANT_ID, MAX_SITEMAP_PAGES);
@@ -21,17 +24,16 @@ export async function buildSitemap(database: DatabaseOrTransaction): Promise<str
     if (row.noindex === true || path === null) {
       return [];
     }
-    return [
-      { location: `${defaults.siteUrl}${path}`, lastModified: row.publishedAt ?? row.updatedAt },
-    ];
+    return [{ location: `${siteUrl}${path}`, lastModified: row.publishedAt ?? row.updatedAt }];
   });
   return buildSitemapXml(pages);
 }
 
 export async function buildRobots(database: DatabaseOrTransaction): Promise<string> {
   const defaults = await readSeoDefaults(database);
+  const siteUrl = defaults.siteUrl || (await readSiteAddress(database));
   return buildRobotsTxt({
     discourageSearchEngines: defaults.discourageSearchEngines,
-    sitemapUrl: defaults.siteUrl ? `${defaults.siteUrl}/sitemap.xml` : null,
+    sitemapUrl: siteUrl ? `${siteUrl}/sitemap.xml` : null,
   });
 }

@@ -9,9 +9,12 @@ import {
   ListIndentDecrease,
   ListIndentIncrease,
   type LucideIcon,
+  SquareArrowOutUpRight,
 } from "lucide-react";
 import { classNames } from "../design/classNames.js";
 import { t } from "../i18n/strings.js";
+import type { ViewPageTarget } from "./viewPage.js";
+import { ViewPageLink } from "./ViewPageLink.js";
 import type { EntrySummary } from "./content.types.js";
 import { EntryStatusBadge } from "./EntryStatusBadge.js";
 import { formatDateTime, formatRelativeTime } from "./relativeTime.js";
@@ -45,6 +48,8 @@ interface EntryRowProps {
     nest?: ParentMove;
     unnest?: ParentMove;
   };
+  /** Where the live page is, for published entries. */
+  viewPage?: ViewPageTarget;
 }
 
 /** One entry in the list: its title, status and who changed it last, and when. */
@@ -55,6 +60,7 @@ export function EntryRow({
   now,
   lockHorizontalMovement = false,
   reorder,
+  viewPage,
 }: EntryRowProps) {
   const { setNodeRef, transform, transition, isDragging, listeners } = useSortable({
     id: entry.id,
@@ -113,6 +119,19 @@ export function EntryRow({
         </span>
         <EntryStatusBadge status={entry.status} />
       </Link>
+
+      {viewPage ? (
+        <ViewPageLink
+          target={viewPage}
+          label={t("entries.viewPage", { title })}
+          className="mr-2 flex size-8 shrink-0 items-center justify-center rounded-control text-label-secondary transition-colors duration-150 ease-standard hover:bg-fill hover:text-accent focus-visible:focus-ring"
+        >
+          <SquareArrowOutUpRight aria-hidden="true" strokeWidth={1.75} className="size-4" />
+        </ViewPageLink>
+      ) : (
+        // The same space on every row, so the status badges line up.
+        <span aria-hidden="true" className="mr-2 size-8 shrink-0" />
+      )}
 
       {reorder && (
         <span className="flex shrink-0 items-center gap-0.5 pr-3 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">

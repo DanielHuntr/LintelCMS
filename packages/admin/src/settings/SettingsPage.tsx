@@ -1,4 +1,4 @@
-import { Globe, KeyRound, Languages, Search, Shapes, Webhook } from "lucide-react";
+import { Globe, KeyRound, Languages, Search, Shapes, Sparkles, Webhook } from "lucide-react";
 import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
@@ -59,6 +59,14 @@ export function SettingsPage() {
         <GroupedList header={t("settings.siteHeader")} footer={t("settings.moreSoon")}>
           {canSeeSiteSettings && (
             <GroupedListRow
+              icon={Globe}
+              label={t("siteSettings.title")}
+              description={t("settings.siteDescription")}
+              to="/settings/site"
+            />
+          )}
+          {canSeeSiteSettings && (
+            <GroupedListRow
               icon={Languages}
               label={t("languages.title")}
               description={t("settings.languagesDescription")}
@@ -66,7 +74,7 @@ export function SettingsPage() {
             />
           )}
           <GroupedListRow
-            icon={Globe}
+            icon={Sparkles}
             iconTone="neutral"
             label={t("settings.moreSoonTitle")}
             description={t("section.comingSoon")}

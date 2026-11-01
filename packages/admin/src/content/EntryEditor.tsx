@@ -10,7 +10,7 @@ import { textValue } from "../fields/fieldValues.js";
 import { t } from "../i18n/strings.js";
 import { EntryPreviewPane } from "../preview/EntryPreviewPane.js";
 import { EntrySeoPanel } from "../seo/EntrySeoPanel.js";
-import { useCan } from "../session/SessionContext.js";
+import { useCan, useSession } from "../session/SessionContext.js";
 import type { Collection, Entry } from "./content.types.js";
 import { entryDraftReducer, hasUnsavedChanges, initialDraftState } from "./entryDraft.js";
 import { EntryEditorBar } from "./EntryEditorBar.js";
@@ -28,6 +28,7 @@ import {
 import { SaveIndicator } from "./SaveIndicator.js";
 import { useAutosave } from "./useAutosave.js";
 import { useEntryActions } from "./useEntryActions.js";
+import { viewPageTarget } from "./viewPage.js";
 import { useLeaveWarning } from "./useLeaveWarning.js";
 
 /**
@@ -87,6 +88,8 @@ export function EntryEditor({
   });
   const { entry } = actions;
   const canPublish = useCan("entries:publish");
+  const { siteAddress } = useSession();
+  const viewPage = entry ? viewPageTarget(siteAddress, collection, entry) : undefined;
   const canDelete = useCan("entries:delete");
   const canCreate = useCan("entries:create");
   const canSave = useCan(entry ? "entries:update" : "entries:create");
@@ -182,6 +185,7 @@ export function EntryEditor({
         isPanelOpen={isPanelOpen}
         panelId={panelId}
         onTogglePanel={() => setCompanion((current) => (current === "panel" ? "none" : "panel"))}
+        viewPage={viewPage}
         onDelete={entry && canDelete ? () => setIsConfirmingDelete(true) : undefined}
         onDuplicate={entry && canCreate ? () => void duplicateEntry() : undefined}
         isPreviewOpen={isPreviewOpen}
@@ -270,6 +274,7 @@ export function EntryEditor({
               slug={state.current.slug}
               onChange={(slug) => dispatch({ type: "slugChanged", slug })}
               error={state.fieldErrors.slug}
+              viewPage={viewPage}
             />
           </div>
 

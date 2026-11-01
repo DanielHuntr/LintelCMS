@@ -7,6 +7,8 @@ export interface Session {
   permissions: string[];
   /** Features switched on for this site, such as "commerce". Sections for the rest stay hidden. */
   enabledPlugins: string[];
+  /** The website's address for "View page", or "" when none is connected (Settings → Site). */
+  siteAddress: string;
 }
 
 export function signIn(email: string, password: string): Promise<Session> {

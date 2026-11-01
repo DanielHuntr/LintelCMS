@@ -14,7 +14,10 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { useState } from "react";
 import { t } from "../i18n/strings.js";
 import type { EntrySummary } from "./content.types.js";
+import { useSession } from "../session/SessionContext.js";
+import { useCollection } from "./content.queries.js";
 import { EntryRow, INDENT_PIXELS } from "./EntryRow.js";
+import { viewPageTarget } from "./viewPage.js";
 import {
   moveEntryBy,
   moveEntryInTree,
@@ -50,6 +53,8 @@ interface DragState {
  * same for keyboard and screen reader users.
  */
 export function EntryList({ collectionHandle, entries, isTree, onReorder }: EntryListProps) {
+  const collection = useCollection(collectionHandle);
+  const { siteAddress } = useSession();
   const now = useNow();
   const [announcement, setAnnouncement] = useState("");
   const [drag, setDrag] = useState<DragState | null>(null);
@@ -146,6 +151,9 @@ export function EntryList({ collectionHandle, entries, isTree, onReorder }: Entr
                 key={entry.id}
                 collectionHandle={collectionHandle}
                 entry={entry}
+                viewPage={
+                  collection.data ? viewPageTarget(siteAddress, collection.data, entry) : undefined
+                }
                 depth={isDragged && projection ? projection.depth : (depths.get(entry.id) ?? 0)}
                 now={now}
                 lockHorizontalMovement={isTree}

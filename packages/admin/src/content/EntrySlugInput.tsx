@@ -1,6 +1,9 @@
+import { SquareArrowOutUpRight } from "lucide-react";
 import { useId } from "react";
 import { classNames } from "../design/classNames.js";
 import { t } from "../i18n/strings.js";
+import type { ViewPageTarget } from "./viewPage.js";
+import { ViewPageLink } from "./ViewPageLink.js";
 
 interface EntrySlugInputProps {
   /** The collection's route pattern, e.g. "/blog/{slug}". */
@@ -8,13 +11,21 @@ interface EntrySlugInputProps {
   slug: string;
   onChange: (slug: string) => void;
   error: string | undefined;
+  /** Where the live page is, once the entry is published. */
+  viewPage?: ViewPageTarget;
 }
 
 /**
  * "URL: /blog/my-post" under the title. The slug part is an input that looks like text until
  * you hover or focus it, so the address is visible without adding another box to the form.
  */
-export function EntrySlugInput({ routePattern, slug, onChange, error }: EntrySlugInputProps) {
+export function EntrySlugInput({
+  routePattern,
+  slug,
+  onChange,
+  error,
+  viewPage,
+}: EntrySlugInputProps) {
   const inputId = useId();
   const errorId = useId();
   const [prefix = "", suffix = ""] = routePattern.includes("{slug}")
@@ -48,6 +59,15 @@ export function EntrySlugInput({ routePattern, slug, onChange, error }: EntrySlu
           )}
         />
         {suffix && <span aria-hidden="true">{suffix}</span>}
+        {viewPage && (
+          <ViewPageLink
+            target={viewPage}
+            label={t("editor.viewPage")}
+            className="ml-1 flex size-6 shrink-0 items-center justify-center rounded-[5px] text-accent transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring"
+          >
+            <SquareArrowOutUpRight aria-hidden="true" strokeWidth={2} className="size-3.5" />
+          </ViewPageLink>
+        )}
       </p>
       {error && (
         <p id={errorId} className="text-footnote font-medium text-danger">
