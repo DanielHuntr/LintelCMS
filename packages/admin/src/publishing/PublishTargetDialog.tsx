@@ -151,7 +151,7 @@ export function PublishTargetDialog({
           value={name}
           maxLength={100}
           onChange={(event) => setName(event.target.value)}
-          data-autofocus
+          data-autofocus={target ? true : undefined}
         />
         <TextField
           label={t("publishing.field.siteAddress")}

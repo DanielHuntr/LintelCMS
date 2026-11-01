@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
+import { listMarketRows } from "../commerce/markets/markets.repository.js";
 import { findMollieCredentials } from "../commerce/payments/mollie/mollie-provider.js";
 import { answerFields } from "../forms/form-fields.schema.js";
 import { listFormRows } from "../forms/forms.repository.js";
@@ -52,7 +53,10 @@ export async function prepareBridgePublish(
   testing: { stripeApiBase?: string; mollieApiBase?: string } = {},
 ): Promise<BridgePublishFiles> {
   const usesBridge = targetUsesBridge(target);
-  const shopEnabled = await isPluginEnabled(api.database, "commerce");
+  // A shop that doesn't sell anywhere yet has nothing to publish.
+  const shopEnabled =
+    (await isPluginEnabled(api.database, "commerce")) &&
+    (await listMarketRows(api.database, DEFAULT_TENANT_ID)).length > 0;
   const extraPages = shopEnabled && usesBridge ? await buildShopPages(api.shop) : [];
   const extraFiles: ExtraFile[] =
     extraPages.length > 0 ? [{ path: SHOP_SCRIPT_FILE, content: shopScript }] : [];
