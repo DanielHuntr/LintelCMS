@@ -8,6 +8,11 @@ const vertexShader = `attribute vec2 p;varying vec2 uv;void main(){uv=p*.5+.5;gl
 
 export interface ShaderPass {
   gl: WebGLRenderingContext;
+  /**
+   * The browser draws WebGL on the processor, not a graphics card (no GPU, or it is blocked):
+   * shader effects then draw smaller and less often, so scrolling stays smooth.
+   */
+  software: boolean;
   set(name: string, ...values: number[]): void;
   draw(): void;
   texture(image: TexImageSource): boolean;
@@ -56,8 +61,11 @@ export function createShaderPass(
     if (!locations.has(name)) locations.set(name, gl.getUniformLocation(program, name));
     return locations.get(name) ?? null;
   };
+  const debug = gl.getExtension("WEBGL_debug_renderer_info");
+  const renderer = debug ? String(gl.getParameter(debug.UNMASKED_RENDERER_WEBGL)) : "";
   return {
     gl,
+    software: /swiftshader|llvmpipe|software|basic render/i.test(renderer),
     set(name, ...values) {
       const location = where(name);
       if (values.length === 1) gl.uniform1f(location, values[0]!);

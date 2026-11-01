@@ -16,7 +16,16 @@ export interface Surface {
 export function createSurface(
   element: HTMLElement,
   context: EffectContext,
-  { under = true, onResize = () => {} }: { under?: boolean; onResize?: () => void } = {},
+  {
+    under = true,
+    onResize = () => {},
+    resolution = 1,
+  }: {
+    under?: boolean;
+    onResize?: () => void;
+    /** Fewer pixels than the screen's, for soft images like gradients: 0.5 is half across. */
+    resolution?: number;
+  } = {},
 ): Surface {
   const { overlay, remove } = addOverlay(element, "canvas", under);
   const canvas = overlay as HTMLCanvasElement;
@@ -26,7 +35,7 @@ export function createSurface(
     canvas,
     width: 0,
     height: 0,
-    ratio: context.lowPower ? 1 : Math.min(window.devicePixelRatio || 1, 2),
+    ratio: (context.lowPower ? 1 : Math.min(window.devicePixelRatio || 1, 2)) * resolution,
     remove: () => {
       observer?.disconnect();
       remove();

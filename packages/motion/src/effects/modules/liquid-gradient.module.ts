@@ -23,9 +23,16 @@ vec3 col=mix(mix(a,b,smoothstep(.2,.8,f)),mix(c,d,smoothstep(.3,.9,w.x)),smooths
 col+=(h(uv*r+t)-.5)*g;gl_FragColor=vec4(col,1.);}`;
 
 const liquidGradient: EffectBehaviour = (element, params, context) => {
-  const surface = createSurface(element, context);
+  // The colours blend softly, so half the screen's pixels look the same and cost a quarter.
+  const surface = createSurface(element, context, { resolution: 0.5 });
   const pass = createShaderPass(surface.canvas, shader);
   if (!pass) return surface.remove;
+  if (pass.software) {
+    surface.ratio = 0.25;
+    surface.canvas.width = Math.max(1, Math.round(surface.width * surface.ratio));
+    surface.canvas.height = Math.max(1, Math.round(surface.height * surface.ratio));
+  }
+  let skipped = 0;
   ["one", "two", "three", "four"].forEach((name, index) => {
     const fallback = ["#7539fd", "#ff5c8a", "#ffb347", "#3ec6ff"][index]!;
     pass.set("abcd"[index]!, ...colourToRgb(readColour(params, name, fallback)));
@@ -47,7 +54,9 @@ const liquidGradient: EffectBehaviour = (element, params, context) => {
     time += (elapsed / 1000) * speed * (context.lowPower ? 0.6 : 1);
     eased.x = approach(eased.x, pointer.x, 0.95, elapsed);
     eased.y = approach(eased.y, pointer.y, 0.95, elapsed);
-    draw();
+    // Slow colours lose nothing at 30 frames a second where every frame is costly.
+    skipped += 1;
+    if (!(pass.software || context.lowPower) || skipped % 2 === 0) draw();
     return true;
   });
   return combine(
