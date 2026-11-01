@@ -21,3 +21,23 @@ export function multipartFile(
     headers: { "content-type": `multipart/form-data; boundary=${boundary}` },
   };
 }
+
+/** Like `multipartFile`, with several files in one request, each under its own field name. */
+export function multipartFiles(
+  files: Array<{ fieldName: string; filename: string; contents: Buffer; contentType?: string }>,
+) {
+  const boundary = "----lintel-test-boundary";
+  const parts = files.flatMap((file) => [
+    Buffer.from(
+      `--${boundary}\r\n` +
+        `Content-Disposition: form-data; name="${file.fieldName}"; filename="${file.filename}"\r\n` +
+        `Content-Type: ${file.contentType ?? "application/octet-stream"}\r\n\r\n`,
+    ),
+    file.contents,
+    Buffer.from("\r\n"),
+  ]);
+  return {
+    payload: Buffer.concat([...parts, Buffer.from(`--${boundary}--\r\n`)]),
+    headers: { "content-type": `multipart/form-data; boundary=${boundary}` },
+  };
+}

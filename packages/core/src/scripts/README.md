@@ -1,19 +1,19 @@
 # Scripts
 
 Command-line tasks. Each script only reads its input and calls a service, so the rules
-stay in the feature folders. Run them from the repository root:
+stay in the feature folders. Run them from the repository root. Creating an admin, backups,
+exports and imports are in the `lintel` command instead (`packages/cli`); `pnpm
+create-admin` still works as a shortcut to `pnpm lintel create-admin`.
 
-| Script                | Command                                             | What it does                                                                         |
-| --------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `create-admin.ts`     | `pnpm create-admin --email <email> --name "<name>"` | Creates an Owner (role `["*"]`)                                                      |
-| `reset-password.ts`   | `pnpm reset-password --email <email>`               | New password for a user; signs them out everywhere                                   |
-| `migrate.ts`          | `pnpm db:migrate`                                   | Creates or updates the tables now                                                    |
-| `move-media-to-s3.ts` | `pnpm media:move-to-s3 [--dry-run]`                 | Copies uploads from disk to the S3 bucket                                            |
-| `send-test-email.ts`  | `pnpm send-test-email --to <email>`                 | Sends one email with the current settings                                            |
-| `model.ts`            | `pnpm --filter @lintel/core model <command>`        | Content model as code: pull, push, diff, types, check (see `src/content-model-sync`) |
+| Script                | Command                                      | What it does                                                                         |
+| --------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `reset-password.ts`   | `pnpm reset-password --email <email>`        | New password for a user; signs them out everywhere                                   |
+| `migrate.ts`          | `pnpm db:migrate`                            | Creates or updates the tables now                                                    |
+| `move-media-to-s3.ts` | `pnpm media:move-to-s3 [--dry-run]`          | Copies uploads from disk to the S3 bucket                                            |
+| `send-test-email.ts`  | `pnpm send-test-email --to <email>`          | Sends one email with the current settings                                            |
+| `model.ts`            | `pnpm --filter @lintel/core model <command>` | Content model as code: pull, push, diff, types, check (see `src/content-model-sync`) |
 
-Most people never need `create-admin`: the setup screen creates the first admin. Nor
-`db:migrate`: the server migrates on every start.
+Most people never need `db:migrate`: the server migrates on every start.
 
 Passwords are asked for without echoing them (twice, to catch typos), or read from
 `LINTEL_ADMIN_PASSWORD` / `LINTEL_NEW_PASSWORD` for automated setups. They must be at
@@ -27,7 +27,7 @@ program at a time, so stop `pnpm dev` first; the script says so if you forget.
 Connection problems are explained in one sentence rather than a stack trace.
 
 The root shortcuts pass everything after the command name straight through (`pnpm
-create-admin --email ...`). The long form `pnpm --filter @lintel/core create-admin ...`
+reset-password --email ...`). The long form `pnpm --filter @lintel/core reset-password ...`
 works too.
 
 `read-new-password.ts` and `prompt-password.ts` are the shared password prompts.

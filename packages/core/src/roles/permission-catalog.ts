@@ -172,6 +172,17 @@ export const corePermissionGroups: readonly PermissionGroup[] = [
         name: "See the security log",
         description: "Sign-ins, failures and account changes.",
       },
+      { permission: "backups:read", name: "See backups", description: "" },
+      {
+        permission: "backups:manage",
+        name: "Make and restore backups",
+        description: "Restoring replaces everything on the site with the backup.",
+      },
+      {
+        permission: "content:transfer",
+        name: "Export and import content",
+        description: "Including importing from WordPress.",
+      },
     ],
   },
 ];

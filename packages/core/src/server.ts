@@ -5,6 +5,9 @@ import compress from "@fastify/compress";
 import Fastify, { type FastifyInstance, type FastifyServerOptions, LogController } from "fastify";
 import { apiTokensRoutes } from "./api-tokens/api-tokens.routes.js";
 import { authRoutes } from "./auth/auth.routes.js";
+import { backupsRoutes } from "./backups/backups.routes.js";
+import { DEFAULT_BACKUPS_FOLDER, DEFAULT_IMPORTS_FOLDER } from "./backups/data-tools-folders.js";
+import { contentTransferRoutes } from "./content-transfer/content-transfer.routes.js";
 import { blueprintsRoutes } from "./blueprints/blueprints.routes.js";
 import { collectionsRoutes } from "./collections/collections.routes.js";
 import type { ContentModelOptions } from "./content-model-sync/model-sync.service.js";
@@ -48,6 +51,7 @@ import { pluginRegistry } from "./plugins/plugins.registry.js";
 import { pagesRoutes } from "./pages/pages.routes.js";
 import { pluginsRoutes } from "./plugins/plugins.routes.js";
 import { previewRoutes } from "./preview/preview.routes.js";
+import { BackgroundTasks } from "./scheduler/background-tasks.js";
 import { registerScheduledJobs } from "./scheduler/scheduled-jobs.js";
 import { searchRoutes } from "./search/search.routes.js";
 import { dashboardRoutes } from "./dashboard/dashboard.routes.js";
@@ -80,6 +84,7 @@ import { websiteRoutes } from "./website/website.routes.js";
 import { EventBus } from "./events/event-bus.js";
 import { subscribeEventListeners } from "./events/event-listeners.js";
 import { registerWorkflows, type WorkflowOptions } from "./workflows/register-workflows.js";
+import { wordpressImportRoutes } from "./wordpress-import/wordpress-import.routes.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -116,6 +121,8 @@ declare module "fastify" {
     website: WebsiteRuntime;
     /** What happened, for features to react to (see src/events). */
     events: EventBus;
+    /** Where backups and imports keep their files, and the work they run in the background. */
+    dataTools: DataTools;
   }
 }
 
@@ -129,6 +136,22 @@ export interface MediaOptions {
   usageFinder?: AssetUsageFinder;
   /** Send originals as redirects to signed storage links lasting this long (S3 only). */
   signedUrlSeconds?: number | undefined;
+}
+
+/** Folders for backups and imports. Both default to folders in `.lintel`; tests pass temporary ones. */
+export interface DataToolsOptions {
+  backupsFolder?: string;
+  importsFolder?: string;
+  /** Let the WordPress importer download from private addresses. Defaults to the webhooks setting. */
+  allowPrivateDownloads?: boolean;
+}
+
+export interface DataTools {
+  storage: StorageDriver;
+  backupsFolder: string;
+  importsFolder: string;
+  allowPrivateDownloads: boolean;
+  tasks: BackgroundTasks;
 }
 
 export interface ServerOptions {
@@ -195,6 +218,7 @@ export interface ServerOptions {
   workflows?: WorkflowOptions;
   /** Forms' Cloudflare Turnstile check. Defaults to asking Cloudflare; tests pass their own. */
   formsTurnstileVerifier?: TurnstileVerifier;
+  dataTools?: DataToolsOptions;
 }
 
 export interface WebhookOptions {
@@ -270,6 +294,16 @@ export function buildServer(options: ServerOptions) {
     }),
   );
   subscribeEventListeners(server);
+  const dataTools: DataTools = {
+    storage,
+    backupsFolder: options.dataTools?.backupsFolder ?? DEFAULT_BACKUPS_FOLDER,
+    importsFolder: options.dataTools?.importsFolder ?? DEFAULT_IMPORTS_FOLDER,
+    allowPrivateDownloads:
+      options.dataTools?.allowPrivateDownloads ?? options.webhooks?.allowPrivateAddresses ?? false,
+    tasks: new BackgroundTasks((error) => server.log.error(error, "Background work failed")),
+  };
+  server.decorate("dataTools", dataTools);
+  server.addHook("onClose", () => dataTools.tasks.finishAll());
   server.decorateRequest("signedIn", null);
   server.setErrorHandler(sendHttpErrorDetails);
   server.addHook("onSend", addSecurityHeaders(server.publicApiUrl));
@@ -371,6 +405,9 @@ function registerApiRoutes(
   server.register(websiteRoutes);
   server.register(pagesRoutes);
   registerContentModelSyncRoutes(server);
+  server.register(backupsRoutes);
+  server.register(contentTransferRoutes);
+  server.register(wordpressImportRoutes);
   server.register(mediaRoutes, {
     storage,
     signedUrlSeconds: options.media?.signedUrlSeconds,

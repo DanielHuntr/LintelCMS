@@ -32,7 +32,7 @@ its routes and its tests.
 | `src/health`          | `GET /health` for uptime checks                        |
 | `src/database`        | Built-in or Postgres, choosing one, friendly errors    |
 | `src/http`            | Error responses and request parsing shared by routes   |
-| `src/scripts`         | `create-admin`, `reset-password`, `db:migrate`         |
+| `src/scripts`         | `reset-password`, `db:migrate`, media and email checks |
 | `src/testing`         | Test database helpers                                  |
 | `src/graphql`         | The GraphQL delivery API, typed from the blueprints    |
 | `src/openapi`         | The OpenAPI document for the REST API                  |
@@ -50,6 +50,11 @@ its routes and its tests.
 | `src/email`           | Sending email, and the development outbox              |
 | `src/website`         | The website Lintel serves itself, and its theme        |
 | `src/production`      | One server for API, admin and website (`pnpm start`)   |
+| `src/backups`         | Whole-site backups, restoring, the backup schedule     |
+| `src/archives`        | Reading and writing .zip files safely                  |
+
+Exports and imports between Lintel sites are in `src/content-transfer`, and the WordPress
+importer in `src/wordpress-import`.
 
 As features grow, each folder follows the same shape:
 

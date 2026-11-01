@@ -136,7 +136,7 @@ content) and the setup screen's choice, so the next `pnpm dev` starts setup from
 ### More commands
 
 ```bash
-pnpm create-admin --email you@example.com --name "Your Name"   # another Super admin
+pnpm create-admin --email you@example.com --name "Your Name"   # another Owner
 pnpm reset-password --email you@example.com                    # a new password
 pnpm db:migrate                                                # update the tables now
 ```
@@ -159,6 +159,7 @@ Lintel").
 | `packages/core`                    | The API server: content model, entries, users, permissions |
 | `packages/admin`                   | The control panel (React)                                  |
 | `packages/docs`                    | The documentation site, also the admin's built-in help     |
+| `packages/cli`                     | The `lintel` command: backups, exports, imports, doctor    |
 | `packages/motion`                  | The animation runtime, its schemas and the preset library  |
 | `packages/motion-editor`           | The animation studio the page builder embeds (React)       |
 | `packages/plugin-example-bookings` | An example plugin, the reference for writing one           |

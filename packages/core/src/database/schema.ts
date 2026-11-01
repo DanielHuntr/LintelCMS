@@ -37,3 +37,8 @@ export {
   formSubmissionsTable,
   formSubmissionNotesTable,
 } from "../forms/forms.table.js";
+export { backupsTable } from "../backups/backups.table.js";
+export {
+  wordpressImportsTable,
+  wordpressImportItemsTable,
+} from "../wordpress-import/wordpress-import.table.js";

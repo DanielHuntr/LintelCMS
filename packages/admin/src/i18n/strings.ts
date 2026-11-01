@@ -7,6 +7,7 @@ import { pluginStrings } from "./pluginStrings.js";
 import { peopleStrings } from "./peopleStrings.js";
 import { pageDesignStrings } from "./pageDesignStrings.js";
 import { contentModelSyncStrings } from "./contentModelSyncStrings.js";
+import { dataToolsStrings } from "./dataToolsStrings.js";
 
 /**
  * Every word the admin shows lives here, so the admin can be translated and
@@ -24,6 +25,7 @@ const english = {
   ...workflowStrings,
   ...motionEditorStrings,
   ...formsStrings,
+  ...dataToolsStrings,
   "app.name": "Lintel",
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",

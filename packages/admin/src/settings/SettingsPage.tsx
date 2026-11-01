@@ -1,5 +1,7 @@
 import {
+  Archive,
   Blocks,
+  FileInput,
   Inbox,
   KeyRound,
   Languages,
@@ -25,6 +27,8 @@ export function SettingsPage() {
   const canSeeContentTypes = useCan("blueprints:read");
   const canSeeSiteSettings = useCan("settings:read");
   const canSeeSecurityLog = useCan("security:read");
+  const canSeeBackups = useCan("backups:read");
+  const canTransferContent = useCan("content:transfer");
 
   return (
     <Page width="readable">
@@ -80,6 +84,27 @@ export function SettingsPage() {
           </GroupedList>
         )}
         <PluginSettingsRows />
+        {(canSeeBackups || canTransferContent) && (
+          <GroupedList header={t("settings.dataHeader")}>
+            {canSeeBackups && (
+              <GroupedListRow
+                icon={Archive}
+                iconTone="success"
+                label={t("backups.title")}
+                description={t("settings.backupsDescription")}
+                to="/settings/backups"
+              />
+            )}
+            {canTransferContent && (
+              <GroupedListRow
+                icon={FileInput}
+                label={t("import.title")}
+                description={t("settings.importDescription")}
+                to="/settings/import"
+              />
+            )}
+          </GroupedList>
+        )}
         <GroupedList header={t("settings.siteHeader")} footer={t("settings.moreSoon")}>
           {canSeeSiteSettings && (
             <GroupedListRow
