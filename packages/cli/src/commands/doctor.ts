@@ -1,5 +1,5 @@
 import {
-  DEFAULT_BACKUPS_FOLDER,
+  defaultBackupsFolder,
   DEFAULT_UPLOADS_FOLDER,
   listKnownMigrations,
   loadConfig,
@@ -60,8 +60,8 @@ export const doctorCommand: Command = {
       ),
       checkFolder(
         "Backups folder",
-        DEFAULT_BACKUPS_FOLDER,
-        await probeWritableFolder(DEFAULT_BACKUPS_FOLDER),
+        defaultBackupsFolder(),
+        await probeWritableFolder(defaultBackupsFolder()),
       ),
       ...(await checkPorts(config?.API_PORT ?? 4000, config?.ADMIN_ORIGIN)),
     ].filter((result): result is CheckResult => result !== null);

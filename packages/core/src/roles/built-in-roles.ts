@@ -43,6 +43,7 @@ export const builtInRoles: readonly BuiltInRole[] = [
       "security:read",
       "backups:read",
       "content:transfer",
+      "updates:read",
       "commerce:*",
       "orders:*",
       "forms:*",

@@ -18,6 +18,7 @@ import { placeholderPublicSite, type PublicSite } from "./public-site.js";
 import { contentModelOptionsFromConfig } from "../content-model-sync/content-model-config.js";
 import { loadInstalledPlugins } from "../plugins/installed-plugins.js";
 import { builtInPublicSite } from "../website/built-in-public-site.js";
+import { updatesOptionsFromConfig } from "../updates/updates.config.js";
 
 /**
  * `pnpm start` (and the Docker image): checks the settings and storage, brings the database
@@ -50,6 +51,7 @@ export async function startProductionServer(config: Config, publicSite?: PublicS
       signedUrlSeconds: signedUrlSeconds(config),
     },
     email: createConfiguredEmailSender(config, paths.root),
+    updates: updatesOptionsFromConfig(config),
     plugins: installedPlugins,
     contentModel: contentModelOptionsFromConfig(config),
     // The built-in website is at the site's own address, beside the admin and the API.

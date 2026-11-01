@@ -28,6 +28,8 @@ export const securityEventKinds = [
   "sessions-ended",
   "api-token-created",
   "api-token-deleted",
+  "lintel-update-started",
+  "lintel-rolled-back",
 ] as const;
 export type SecurityEventKind = (typeof securityEventKinds)[number];
 

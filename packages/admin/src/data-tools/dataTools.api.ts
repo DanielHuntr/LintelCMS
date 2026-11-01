@@ -5,7 +5,8 @@ import { apiErrorFromBody, apiRequest, apiUrl } from "../api/client.js";
  * src/content-transfer and src/wordpress-import).
  */
 
-export type BackupTrigger = "manual" | "scheduled" | "before-restore" | "uploaded";
+export type BackupTrigger =
+  "manual" | "scheduled" | "before-restore" | "before-update" | "uploaded";
 export type BackupStatus = "running" | "complete" | "failed";
 export type BackupFrequency = "off" | "daily" | "weekly";
 

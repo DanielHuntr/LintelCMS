@@ -5,10 +5,13 @@ import { pauseInterruptedImports } from "../wordpress-import/wordpress-import.se
 import { announceContentEvent } from "../content-events/content-events.js";
 import { describeEntryForEvent } from "../content-events/entry-event-data.js";
 import { publishDueEntries } from "../entries/entry-publishing.service.js";
+import { checkForUpdatesIfDue } from "../updates/update-checks.service.js";
+import { updateChecksContextFor } from "../updates/updates.service.js";
 import { type RepeatingJob, startRepeatingJob } from "./repeating-job.js";
 
 const ONE_MINUTE = 60_000;
 const FIVE_MINUTES = 5 * ONE_MINUTE;
+const ONE_HOUR = 60 * ONE_MINUTE;
 
 /**
  * Every job the server runs on a timer, in one visible list. Each starts when the server
@@ -61,6 +64,19 @@ export function registerScheduledJobs(server: FastifyInstance): void {
         onError: (error) => server.log.error(error, "Making the scheduled backup failed"),
       }),
     );
+    // Once a day, unless UPDATE_CHECKS=off (see src/updates). Checked hourly so a restart
+    // doesn't push the next check back a day, and doesn't add one either.
+    if (server.updates.checksEnabled) {
+      jobs.push(
+        startRepeatingJob({
+          everyMilliseconds: ONE_HOUR,
+          run: async () => {
+            await checkForUpdatesIfDue(updateChecksContextFor(server));
+          },
+          onError: (error) => server.log.error(error, "Looking for Lintel updates failed"),
+        }),
+      );
+    }
   });
 
   server.addHook("onClose", async () => {

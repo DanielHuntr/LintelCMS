@@ -30,8 +30,9 @@ to keep. Lintel makes them on its own while it is running, and deletes the oldes
 automatic backup when a new one would take it past that number. Backups you make by hand are
 never removed on their own.
 
-Backups are kept in the `.lintel/backups` folder next to Lintel. To keep them somewhere
-else, such as a separate disk, set `LINTEL_BACKUPS_FOLDER` to that folder.
+Backups are kept in the `.lintel/backups` folder next to Lintel (in the Docker image, and
+wherever `LINTEL_FOLDER` is set, in its `backups` folder: `/data/backups`). To keep them
+somewhere else, such as a separate disk, set `LINTEL_BACKUPS_FOLDER` to that folder.
 
 ## Restoring a backup
 

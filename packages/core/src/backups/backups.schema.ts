@@ -1,7 +1,13 @@
 import { z } from "zod";
 import { backupContentsSchema } from "./backup-manifest.js";
 
-export const backupTriggers = ["manual", "scheduled", "before-restore", "uploaded"] as const;
+export const backupTriggers = [
+  "manual",
+  "scheduled",
+  "before-restore",
+  "before-update",
+  "uploaded",
+] as const;
 export const backupStatuses = ["running", "complete", "failed"] as const;
 export const backupFrequencies = ["off", "daily", "weekly"] as const;
 

@@ -50,6 +50,7 @@ its routes and its tests.
 | `src/email`           | Sending email, and the development outbox              |
 | `src/website`         | The website Lintel serves itself, and its theme        |
 | `src/production`      | One server for API, admin and website (`pnpm start`)   |
+| `src/updates`         | Checks for new versions, the Update button, rollback   |
 | `src/backups`         | Whole-site backups, restoring, the backup schedule     |
 | `src/archives`        | Reading and writing .zip files safely                  |
 

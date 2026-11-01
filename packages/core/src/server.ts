@@ -6,7 +6,7 @@ import Fastify, { type FastifyInstance, type FastifyServerOptions, LogController
 import { apiTokensRoutes } from "./api-tokens/api-tokens.routes.js";
 import { authRoutes } from "./auth/auth.routes.js";
 import { backupsRoutes } from "./backups/backups.routes.js";
-import { DEFAULT_BACKUPS_FOLDER, DEFAULT_IMPORTS_FOLDER } from "./backups/data-tools-folders.js";
+import { defaultBackupsFolder, defaultImportsFolder } from "./backups/data-tools-folders.js";
 import { contentTransferRoutes } from "./content-transfer/content-transfer.routes.js";
 import { blueprintsRoutes } from "./blueprints/blueprints.routes.js";
 import { collectionsRoutes } from "./collections/collections.routes.js";
@@ -85,6 +85,8 @@ import { EventBus } from "./events/event-bus.js";
 import { subscribeEventListeners } from "./events/event-listeners.js";
 import { registerWorkflows, type WorkflowOptions } from "./workflows/register-workflows.js";
 import { wordpressImportRoutes } from "./wordpress-import/wordpress-import.routes.js";
+import { updatesRoutes } from "./updates/updates.routes.js";
+import { type UpdatesOptions, UpdatesRuntime } from "./updates/updates-runtime.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -123,6 +125,8 @@ declare module "fastify" {
     events: EventBus;
     /** Where backups and imports keep their files, and the work they run in the background. */
     dataTools: DataTools;
+    /** Looking for and installing new versions of Lintel (see src/updates). */
+    updates: UpdatesRuntime;
   }
 }
 
@@ -219,6 +223,8 @@ export interface ServerOptions {
   /** Forms' Cloudflare Turnstile check. Defaults to asking Cloudflare; tests pass their own. */
   formsTurnstileVerifier?: TurnstileVerifier;
   dataTools?: DataToolsOptions;
+  /** Where updates come from and how they are installed. Every part has a default. */
+  updates?: UpdatesOptions;
 }
 
 export interface WebhookOptions {
@@ -296,13 +302,14 @@ export function buildServer(options: ServerOptions) {
   subscribeEventListeners(server);
   const dataTools: DataTools = {
     storage,
-    backupsFolder: options.dataTools?.backupsFolder ?? DEFAULT_BACKUPS_FOLDER,
-    importsFolder: options.dataTools?.importsFolder ?? DEFAULT_IMPORTS_FOLDER,
+    backupsFolder: options.dataTools?.backupsFolder ?? defaultBackupsFolder(),
+    importsFolder: options.dataTools?.importsFolder ?? defaultImportsFolder(),
     allowPrivateDownloads:
       options.dataTools?.allowPrivateDownloads ?? options.webhooks?.allowPrivateAddresses ?? false,
     tasks: new BackgroundTasks((error) => server.log.error(error, "Background work failed")),
   };
   server.decorate("dataTools", dataTools);
+  server.decorate("updates", new UpdatesRuntime(options.updates));
   server.addHook("onClose", () => dataTools.tasks.finishAll());
   server.decorateRequest("signedIn", null);
   server.setErrorHandler(sendHttpErrorDetails);
@@ -408,6 +415,7 @@ function registerApiRoutes(
   server.register(backupsRoutes);
   server.register(contentTransferRoutes);
   server.register(wordpressImportRoutes);
+  server.register(updatesRoutes);
   server.register(mediaRoutes, {
     storage,
     signedUrlSeconds: options.media?.signedUrlSeconds,

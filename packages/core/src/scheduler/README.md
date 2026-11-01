@@ -8,6 +8,8 @@ Jobs the server runs on a timer, each on startup and then every minute:
   was sending (`server.webhooks.deliverDue`, in `src/webhooks`).
 - every five minutes, making the daily or weekly backup when one is due
   (`runScheduledBackupIfDue`, in `src/backups`).
+- every hour, looking for new versions of Lintel and its plugins if the last look was a day
+  ago or more (`checkForUpdatesIfDue`, in `src/updates`), unless `UPDATE_CHECKS=off`.
 
 On startup it also marks backups cut off by the last stop as failed, and pauses WordPress
 imports that were running so they can be resumed.

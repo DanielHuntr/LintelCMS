@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import {
   BackgroundTasks,
-  DEFAULT_BACKUPS_FOLDER,
+  defaultBackupsFolder,
   inspectBackupArchive,
   makeBackup,
   restoreBackupArchive,
@@ -59,7 +59,7 @@ export const restoreCommand: Command = {
       terminal.say("Backing up the site as it is now, in case you need it back…");
       const tasks = new BackgroundTasks((error) => terminal.warn(String(error)));
       const safety = await makeBackup(
-        { ...context, folder: DEFAULT_BACKUPS_FOLDER, tasks },
+        { ...context, folder: defaultBackupsFolder(), tasks },
         "before-restore",
         "lintel restore",
       );

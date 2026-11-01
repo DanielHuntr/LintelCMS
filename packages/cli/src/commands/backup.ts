@@ -1,6 +1,6 @@
 import {
   BackgroundTasks,
-  DEFAULT_BACKUPS_FOLDER,
+  defaultBackupsFolder,
   makeBackup,
   writeBackupArchive,
 } from "@lintel/core/data-tools";
@@ -43,11 +43,11 @@ export const backupCommand: Command = {
         terminal.say("Backing up into the backups folder…");
         const tasks = new BackgroundTasks((error) => terminal.warn(String(error)));
         const row = await makeBackup(
-          { ...context, folder: DEFAULT_BACKUPS_FOLDER, tasks },
+          { ...context, folder: defaultBackupsFolder(), tasks },
           "manual",
           "lintel backup",
         );
-        path = join(DEFAULT_BACKUPS_FOLDER, row.filename);
+        path = join(defaultBackupsFolder(), row.filename);
         contents = row.contents;
         size = row.size;
       }

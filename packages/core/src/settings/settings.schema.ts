@@ -3,6 +3,12 @@ import { z } from "zod";
 import { formsSpamSettingsSchema } from "../forms/forms-settings.schema.js";
 import { backupScheduleSchema, defaultBackupSchedule } from "../backups/backups.schema.js";
 import { defaultSeoDefaults, seoDefaultsSchema } from "../seo/seo-defaults.schema.js";
+import {
+  defaultUpdatePreferences,
+  emptyUpdateCheck,
+  updateCheckSchema,
+  updatePreferencesSchema,
+} from "../updates/updates.schema.js";
 import { defaultWebsiteSettings, websiteSettingsSchema } from "../website/website.schema.js";
 
 /**
@@ -63,6 +69,10 @@ export const settingSchemas = {
   formsSigningSecret: z.string().min(32).nullable(),
   /** How often Lintel backs itself up, and how many of those it keeps (see src/backups). */
   backupSchedule: backupScheduleSchema,
+  /** What the last look for new versions found (see src/updates). */
+  updateCheck: updateCheckSchema,
+  /** Stable releases only, or betas too (Settings → Updates). */
+  updatePreferences: updatePreferencesSchema,
 };
 
 export type SettingKey = keyof typeof settingSchemas;
@@ -84,4 +94,6 @@ export const settingDefaults: { [Key in SettingKey]: SettingValue<Key> } = {
   formsSpamProtection: { turnstileSiteKey: null, turnstileSecretKey: null },
   formsSigningSecret: null,
   backupSchedule: defaultBackupSchedule,
+  updateCheck: emptyUpdateCheck,
+  updatePreferences: defaultUpdatePreferences,
 };

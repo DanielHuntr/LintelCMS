@@ -72,10 +72,23 @@ const SIGNED_IN_ROUTES = new Set([
   "GET /notifications",
   "POST /notifications/read-all",
   "POST /notifications/:notificationId/read",
+  // Lintel's version for Help, and whether an update is restarting it, for the admin's banner.
+  "GET /about",
+  "GET /updates/status",
   // Each person's own dashboard layout.
   "GET /dashboard/layout",
   "PUT /dashboard/layout",
   "DELETE /dashboard/layout",
+]);
+
+/**
+ * Forms on public websites: open even when delivery needs a token, because a website's form
+ * can't keep one secret (see src/forms/public-forms.routes.ts).
+ */
+const ALWAYS_OPEN_DELIVERY_ROUTES = new Set([
+  "GET /delivery/forms.js",
+  "GET /delivery/forms/:handle",
+  "POST /delivery/forms/:handle/submissions",
 ]);
 
 /** Published content: open by default, a token or session once delivery requires one. */
@@ -190,7 +203,10 @@ describe("access to every route", () => {
       await prepare();
       await writeSetting(testDatabase.database, "deliveryRequiresToken", true);
       const open: string[] = [];
-      for (const route of routes.filter(isDeliveryRoute)) {
+      const tokenRoutes = routes.filter(
+        (route) => isDeliveryRoute(route) && !ALWAYS_OPEN_DELIVERY_ROUTES.has(route),
+      );
+      for (const route of tokenRoutes) {
         const response = await send(route);
         if (response.statusCode !== 401) {
           open.push(`${route} answered ${response.statusCode} without a token`);

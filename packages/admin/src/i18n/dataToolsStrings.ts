@@ -24,6 +24,7 @@ export const dataToolsStrings = {
   "backups.trigger.manualUnknown": "Made by hand",
   "backups.trigger.scheduled": "Scheduled",
   "backups.trigger.before-restore": "Before a restore",
+  "backups.trigger.before-update": "Before an update",
   "backups.trigger.uploaded": "Uploaded",
   "backups.status.running": "Backing up…",
   "backups.status.failed": "Failed",

@@ -179,6 +179,11 @@ export const corePermissionGroups: readonly PermissionGroup[] = [
         description: "Restoring replaces everything on the site with the backup.",
       },
       {
+        permission: "updates:read",
+        name: "See updates",
+        description: "New versions of Lintel and its plugins. Only owners can install them.",
+      },
+      {
         permission: "content:transfer",
         name: "Export and import content",
         description: "Including importing from WordPress.",

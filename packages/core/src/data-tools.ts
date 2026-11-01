@@ -14,7 +14,7 @@ export { countAppliedMigrations, listKnownMigrations } from "./database/migratio
 export { openWithoutMigrating } from "./database/unmigrated-database.js";
 export { LocalDiskStorage, DEFAULT_UPLOADS_FOLDER } from "./media/local-disk-storage.js";
 export { BackgroundTasks } from "./scheduler/background-tasks.js";
-export { DEFAULT_BACKUPS_FOLDER } from "./backups/data-tools-folders.js";
+export { defaultBackupsFolder } from "./backups/data-tools-folders.js";
 export {
   inspectBackupArchive,
   restoreBackupArchive,

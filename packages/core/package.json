@@ -55,6 +55,11 @@
       "development": "./src/plugins/plugin-testing.ts",
       "default": "./dist/plugins/plugin-testing.js"
     },
+    "./updates": {
+      "types": "./dist/updates/command-line-updates.d.ts",
+      "development": "./src/updates/command-line-updates.ts",
+      "default": "./dist/updates/command-line-updates.js"
+    },
     "./content-model-commands": {
       "types": "./dist/content-model-sync/model-commands.d.ts",
       "development": "./src/content-model-sync/model-commands.ts",
