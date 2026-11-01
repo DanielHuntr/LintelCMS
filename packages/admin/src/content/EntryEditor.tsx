@@ -8,6 +8,7 @@ import type { Blueprint } from "../content-types/blueprints.types.js";
 import { titleFieldHandle } from "../fields/field.types.js";
 import { textValue } from "../fields/fieldValues.js";
 import { t } from "../i18n/strings.js";
+import { DesignFirstFields } from "../page-design/DesignFirstFields.js";
 import { EntryPreviewPane } from "../preview/EntryPreviewPane.js";
 import { EntrySeoPanel } from "../seo/EntrySeoPanel.js";
 import { useCan } from "../session/SessionContext.js";
@@ -72,6 +73,9 @@ export function EntryEditor({
   const isPanelOpen = companion === "panel";
   const isPreviewOpen = companion === "preview";
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isStartingDesign, setIsStartingDesign] = useState(false);
+  // A new entry's id, as soon as its first save returns, for opening it in the builder.
+  const createdEntryId = useRef<string | undefined>(undefined);
   const documentElement = useRef<HTMLDivElement>(null);
   const panelId = useId();
   const previewId = useId();
@@ -81,7 +85,10 @@ export function EntryEditor({
     collectionHandle: collection.handle,
     initialEntry,
     dispatch,
-    onCreated,
+    onCreated: (created) => {
+      createdEntryId.current = created.id;
+      onCreated(created);
+    },
     locale,
     onPublishBlocked: (error) => focusFirstFieldError(error),
   });
@@ -94,6 +101,8 @@ export function EntryEditor({
   const isUnsaved = hasUnsavedChanges(state);
   const title = textValue(state.current.data[titleFieldHandle]);
   const titleField = blueprint.fields.find((field) => field.handle === titleFieldHandle);
+  // Pages are designed visually: a blueprint with a page field leads with its design.
+  const designField = blueprint.fields.find((field) => field.type === "page");
   const handlesInOrder = [
     titleFieldHandle,
     "slug",
@@ -128,6 +137,23 @@ export function EntryEditor({
       focusFirstFieldError(error);
       return false;
     }
+  }
+
+  /** A new page: save it (it has a title), then open it in the builder. */
+  async function startDesigning() {
+    if (!designField || title.trim() === "" || isStartingDesign) return;
+    setIsStartingDesign(true);
+    const saved = await saveExplicitly();
+    const entryId = entry?.id ?? createdEntryId.current;
+    if (!saved || !entryId) {
+      setIsStartingDesign(false);
+      return;
+    }
+    await navigate({
+      to: "/content/$collection/$entryId/design/$field",
+      params: { collection: collection.handle, entryId, field: designField.handle },
+      ignoreBlocker: true,
+    });
   }
 
   async function publish() {
@@ -256,6 +282,7 @@ export function EntryEditor({
           <div className="flex flex-col gap-1">
             <EntryTitleInput
               label={titleField?.label ?? t("editor.titleFallback")}
+              onSubmit={designField && !entry ? () => void startDesigning() : undefined}
               value={title}
               onChange={(value) =>
                 dispatch({ type: "fieldChanged", handle: titleFieldHandle, value })
@@ -270,13 +297,29 @@ export function EntryEditor({
             />
           </div>
 
-          <EntryFields
-            key={state.formVersion}
-            fields={blueprint.fields}
-            data={state.current.data}
-            errors={state.fieldErrors}
-            onChange={(handle, value) => dispatch({ type: "fieldChanged", handle, value })}
-          />
+          {designField ? (
+            <DesignFirstFields
+              key={state.formVersion}
+              designField={designField}
+              fields={blueprint.fields}
+              data={state.current.data}
+              errors={state.fieldErrors}
+              onChange={(handle, value) => dispatch({ type: "fieldChanged", handle, value })}
+              collectionHandle={collection.handle}
+              entryId={entry?.id}
+              hasTitle={title.trim() !== ""}
+              onStartDesigning={() => void startDesigning()}
+              isStarting={isStartingDesign}
+            />
+          ) : (
+            <EntryFields
+              key={state.formVersion}
+              fields={blueprint.fields}
+              data={state.current.data}
+              errors={state.fieldErrors}
+              onChange={(handle, value) => dispatch({ type: "fieldChanged", handle, value })}
+            />
+          )}
         </div>
 
         {isPanelOpen && (

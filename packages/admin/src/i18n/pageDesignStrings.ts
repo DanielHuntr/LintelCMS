@@ -21,4 +21,17 @@ export const pageDesignStrings = {
   "pageDesign.publishing": "Publishing…",
   "pageDesign.published": "Published",
   "pageDesign.pickImage": "Choose a picture for {label}",
+  "pageDesign.card.emptyTitle": "This page has no design yet",
+  "pageDesign.card.emptyDescription":
+    "Start from a template, a ready-made section or a blank page. You can change everything afterwards.",
+  "pageDesign.card.start": "Start from a template or section",
+  "pageDesign.card.startDesigning": "Start designing",
+  "pageDesign.card.opening": "Opening…",
+  "pageDesign.card.nameFirst": "Give the page a title, then press Return or Start designing.",
+  "pageDesign.simpleSections.title": "Simple sections (no design)",
+  "pageDesign.simpleSections.description":
+    "Build the page from a form instead of designing it. The website shows these only while the page has no design.",
+  "pageDesign.simpleSections.unused": "Not used",
+  "pageDesign.simpleSections.count.one": "{count} section",
+  "pageDesign.simpleSections.count.other": "{count} sections",
 } as const;

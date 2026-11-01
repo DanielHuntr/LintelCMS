@@ -17,8 +17,10 @@ it all in the page builder, on your own page, without any code.
 2. Open **Animate**, on the right.
 3. Pick one of the ready-made animations. It plays straight away **on your page**, on the
    element you selected, so you see exactly what visitors will see.
-4. Adjust it with the friendly sliders: **Speed**, **Distance**, **Wait before starting**
-   and, for groups of things, **Gap between items**. Each change plays on the page again.
+4. Adjust it with the friendly sliders under **Speed and timing**: **Speed**, **Distance**,
+   **Wait before starting** and, for groups of things, **Gap between items**. Each change
+   plays on the page again. **When it plays** and **For less motion** sit in their own
+   groups; a closed group says what's chosen in it.
 5. Press **Play on the page** whenever you want to see it once more.
 
 Animations are saved with the page, like any other change. **Undo** takes back an

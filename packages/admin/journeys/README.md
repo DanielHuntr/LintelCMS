@@ -6,7 +6,10 @@ Whole journeys through Lintel in a real Chromium, with Playwright. They need a f
 `start-from-template.mjs`: set up a new site, choose **Start from a template** on the last
 setup screen, use the Bakery template, open its home page in the builder, skip the tour,
 change the heading on the canvas, give it the Pop in animation, switch to the Designer tools,
-publish, then check the website: the new heading is there, the page loads the motion
+look through Insert (Sections first, then a search across Elements), check that Advanced
+styles start with their groups closed and that **Style for** is a dropdown, publish, go back
+to the page's Design card, make a new page that opens straight in the builder once it has a
+title, start it from a section, then check the website: the new heading is there, the page loads the motion
 runtime and lists its animations, the heading finishes animating in, and with reduced
 motion it doesn't move at all.
 

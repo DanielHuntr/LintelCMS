@@ -9,6 +9,7 @@ export const usingPages = [
   "using/writing",
   "using/publishing",
   "using/website",
+  "using/designing-pages",
   "using/templates",
   "using/history",
   "using/media",

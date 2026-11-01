@@ -1,6 +1,7 @@
 // The "start from a template" journey, in a real Chromium: set up a new site, start from the
-// Bakery template, change the home page's heading, animate it, publish, and see both on the
-// website. See README.md for how to run it against a fresh Lintel.
+// Bakery template, change the home page's heading, animate it, publish, design a new page
+// from its title, and see it all on the website. See README.md for how to run it against a
+// fresh Lintel.
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 
@@ -78,13 +79,69 @@ async function editAndAnimate(page) {
   await shoot(page, "07-designer-timeline");
 
   await page.getByRole("tab", { name: "Insert" }).click();
-  await page.getByRole("heading", { name: "Ready-made sections" }).waitFor();
+  check(
+    await page.getByRole("radio", { name: "Sections" }).isChecked(),
+    "Insert should open on Sections",
+  );
+  await page.getByRole("button", { name: "Hero with picture", exact: true }).hover();
+  await page.waitForTimeout(700);
   await shoot(page, "08-section-library");
+  await page.getByRole("radio", { name: "Elements" }).click();
+  await page.getByRole("searchbox", { name: "Search sections and elements" }).fill("quote");
+  await page
+    .getByRole("region", { name: "Elements" })
+    .getByRole("button", { name: "Quote", exact: true })
+    .waitFor();
+  await shoot(page, "08b-insert-search");
+  await page.getByRole("searchbox", { name: "Search sections and elements" }).fill("");
+  await page.getByRole("tab", { name: "Layers" }).click();
+
+  const canvasTitle = canvas.locator("h1", { hasText: heading });
+  await canvasTitle.click();
+  await page.getByRole("tab", { name: "Style" }).click();
+  await page.getByRole("radio", { name: "Advanced" }).click();
+  const spacing = page.getByRole("button", { name: /^Spacing/ });
+  check(
+    (await spacing.getAttribute("aria-expanded")) === "false",
+    "Advanced styles should start with their groups closed",
+  );
+  await page.getByRole("combobox", { name: "Style for" }).selectOption({ label: "Pointer over" });
+  await page.getByRole("button", { name: /^Text/ }).click();
+  await shoot(page, "08c-style-groups");
+  await page.getByRole("combobox", { name: "Style for" }).selectOption({ label: "Always" });
 
   await page.getByRole("button", { name: "Publish", exact: true }).click();
   await page.getByText("Saved").first().waitFor({ timeout: 15000 });
   await page.waitForTimeout(1500);
   await shoot(page, "09-published");
+}
+
+async function designANewPage(page) {
+  await page.getByRole("link", { name: "Back to Home" }).click();
+  const homeDesign = page.getByRole("region", { name: "Design" });
+  await homeDesign.getByRole("link", { name: "Edit design" }).waitFor();
+  check(
+    (await page.getByText("Simple sections (no design)").count()) === 0,
+    "A designed page shouldn't offer simple sections",
+  );
+  await page.waitForTimeout(800);
+  await shoot(page, "10-home-design-card");
+
+  await page.goto(`${adminUrl}/content/pages/new`);
+  await page.getByRole("button", { name: "Start designing" }).waitFor();
+  await shoot(page, "11-new-page");
+  await page.getByRole("textbox", { name: "Title" }).fill("Opening hours");
+  await page.keyboard.press("Enter");
+  await page.getByRole("heading", { name: "Start your page" }).waitFor();
+  await shoot(page, "12-new-page-start");
+  await page
+    .getByRole("button", { name: /^Call to action/ })
+    .first()
+    .click();
+  await page.getByText("Saved").first().waitFor({ timeout: 15000 });
+  await page.getByRole("link", { name: "Back to Opening hours" }).click();
+  await page.getByText("1 section on this page").waitFor();
+  await shoot(page, "13-new-page-designed");
 }
 
 async function seeItOnTheWebsite(page) {
@@ -107,10 +164,10 @@ async function seeItOnTheWebsite(page) {
     opacity === "1",
     `The heading should have finished animating in, but its opacity is ${opacity}`,
   );
-  await shoot(page, "10-website-home");
+  await shoot(page, "14-website-home");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(500);
-  await shoot(page, "11-website-phone");
+  await shoot(page, "15-website-phone");
 }
 
 async function reducedMotion(browser) {
@@ -125,14 +182,20 @@ async function reducedMotion(browser) {
 }
 
 const browser = await chromium.launch();
+const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 try {
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await setUpSite(page);
   await startFromBakery(page);
   await editAndAnimate(page);
+  await designANewPage(page);
   await seeItOnTheWebsite(page);
   await reducedMotion(browser);
-  process.stdout.write("The journey worked: template, edit, animate, publish, website.\n");
+  process.stdout.write(
+    "The journey worked: template, edit, animate, publish, a new page, website.\n",
+  );
+} catch (error) {
+  await shoot(page, "failed");
+  throw error;
 } finally {
   await browser.close();
 }

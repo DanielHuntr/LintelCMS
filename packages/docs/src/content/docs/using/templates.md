@@ -39,8 +39,8 @@ yours: every word, picture, colour and animation can be changed.
 Lintel adds the pages to **Pages** and, if your **Main menu** is empty, adds a link to each
 one. The template's home page has the address **home**, so it becomes your home page.
 
-Then press the **Edit** button for any page to open it in the page builder and change the words
-and pictures. When you're happy, press **Publish**.
+Then open any page and press **Edit design** on its **Design** card to change the words and
+pictures in the page builder. When you're happy, press **Publish**.
 
 You only see the options you're allowed to use. Someone who can't change the website's
 look, or can't publish, still gets the pages, as drafts in your current colours.
@@ -59,14 +59,18 @@ builder, open **Content** and press **Choose a picture**.
 
 ## Start one page from a template
 
-An empty page in the page builder offers ready-made sections and, under **Or start from a
-template page**, every page of every template. Pick one and its sections fill the page.
-Press **Undo** if you change your mind.
+A new page opens in the page builder as soon as it has a title (see
+[Designing pages](/using/designing-pages/)). An empty page offers ready-made sections and,
+under **Or start from a template page**, every page of every template. Pick one and its
+sections fill the page. Press **Undo** if you change your mind. A saved page that hasn't been
+designed yet has **Start from a template or section** on its **Design** card, which opens the
+same choice.
 
 ## Ready-made sections
 
-In the page builder, **Insert** has a library of sections you can add to any page, grouped
-by what they're for:
+In the page builder, **Insert** opens on **Sections**: a library of sections you can add to
+any page, grouped by what they're for. Only the first group is open at first; open the others
+with their headings, or search for what you need.
 
 | Group                    | Sections                                          |
 | ------------------------ | ------------------------------------------------- |
@@ -80,7 +84,9 @@ by what they're for:
 | **Contact**              | Contact details, with buttons to call and email   |
 | **Footers**              | Simple footer, Footer with columns                |
 
-Each has a small sketch so you can see its shape before you add it. Press one to add it
-after whatever is selected, or drag it into **Layers** to put it exactly where you want.
+Each has a small sketch so you can see its shape before you add it. Rest the pointer on one,
+or press its ⓘ button, to see what it's for. Press one to add it after whatever is selected,
+or drag it into **Layers** to put it exactly where you want. The ones you use most often wait
+under **Recently used**.
 Sections are made of ordinary headings, text, pictures and buttons, so you change them the
 same way as everything else.
