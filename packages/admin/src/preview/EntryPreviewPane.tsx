@@ -55,7 +55,7 @@ export function EntryPreviewPane({
     <aside
       id={id}
       aria-label={t("preview.title")}
-      className="sticky top-20 flex h-[calc(100vh-9rem)] min-h-96 min-w-0 flex-col overflow-hidden rounded-panel bg-surface"
+      className="flex h-[calc(100vh-9rem)] @min-[52rem]:sticky @min-[52rem]:top-20 min-h-96 min-w-0 flex-col overflow-hidden rounded-panel bg-surface"
     >
       <header className="flex shrink-0 items-center gap-2 px-4 py-2.5 hairline-bottom">
         <h2 className="text-headline text-label">{t("preview.title")}</h2>

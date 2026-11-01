@@ -4,6 +4,7 @@ import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { t } from "../i18n/strings.js";
 import { useCan, useSession } from "../session/SessionContext.js";
+import { Page } from "../design/Page.js";
 
 /**
  * /settings: one row per area of settings, like iOS Settings. Rows appear as their screens
@@ -15,9 +16,9 @@ export function SettingsPage() {
   const { enabledPlugins } = useSession();
 
   return (
-    <>
+    <Page width="readable">
       <LargeTitle title={t("settings.title")} subtitle={t("settings.subtitle")} />
-      <div className="flex max-w-2xl flex-col gap-8">
+      <div className="flex flex-col gap-8">
         {canSeeContentTypes && (
           <GroupedList header={t("settings.contentHeader")}>
             <GroupedListRow
@@ -81,6 +82,6 @@ export function SettingsPage() {
           />
         </GroupedList>
       </div>
-    </>
+    </Page>
   );
 }

@@ -74,36 +74,52 @@ also changes the text mark (`AppMark`), which shows the first letter of the app 
 
 ## Components
 
-| File                   | What it is                                                                             |
-| ---------------------- | -------------------------------------------------------------------------------------- |
-| `Button.tsx`           | `filled` (the main action), `tinted`, `plain`, `destructive`; `small` to `extra-large` |
-| `LinkButton.tsx`       | A link that looks like a Button, for actions that go to another screen                 |
-| `BackLink.tsx`         | "‹ Settings" above a page title                                                        |
-| `TextField.tsx`        | A labelled input with an optional hint or error; `fieldSize="large"` for setup         |
-| `Card.tsx`             | A rounded surface with an optional title and accessory                                 |
-| `GroupedList.tsx`      | An iOS Settings-style inset group of rows, with header and footer                      |
-| `GroupedListRow.tsx`   | A row: icon, label, description, detail, accessory, and a chevron when it navigates    |
-| `Toggle.tsx`           | An on/off switch (`role="switch"`)                                                     |
-| `SegmentedControl.tsx` | A pill of exclusive choices (a radio group; arrow keys move the choice)                |
-| `Badge.tsx`            | A short coloured status label                                                          |
-| `LargeTitle.tsx`       | The page header: the page's `h1`, subtitle and actions                                 |
-| `EmptyState.tsx`       | What to show when there is nothing yet                                                 |
-| `SearchField.tsx`      | A search box with a magnifying glass                                                   |
-| `Skeleton.tsx`         | A grey shape standing in for content that's loading; wrap in `LoadingRegion`           |
-| `Dialog.tsx`           | A modal on the native `<dialog>`: `alert` for questions, `sheet` for tasks             |
-| `ConfirmDialog.tsx`    | "Are you sure?" before deleting or restoring, instead of the browser's `confirm()`     |
-| `Menu.tsx`             | A button that opens a short list of actions (the ARIA menu button pattern)             |
-| `controlStyles.ts`     | The shared look of inputs, text areas and selects                                      |
-| `AppMark.tsx`          | The app's text mark                                                                    |
-| `PasswordField.tsx`    | A TextField with a "Show password" toggle button (`aria-pressed`)                      |
-| `EmailField.tsx`       | A TextField that offers a one-click fix for domain typos such as "gmai.com"            |
-| `ChoiceCardGroup.tsx`  | Large tiles with an icon and a line each; a radio group like SegmentedControl          |
-| `DisplayTitle.tsx`     | The big h1 of full-screen screens such as setup and sign-in                            |
-| `CopyButton.tsx`       | Copies text and says "Copied" (announced to screen readers too)                        |
+| File                   | What it is                                                                              |
+| ---------------------- | --------------------------------------------------------------------------------------- |
+| `Button.tsx`           | `filled` (the main action), `tinted`, `plain`, `destructive`; `small` to `extra-large`  |
+| `LinkButton.tsx`       | A link that looks like a Button, for actions that go to another screen                  |
+| `BackLink.tsx`         | "‹ Settings" above a page title                                                         |
+| `TextField.tsx`        | A labelled input with an optional hint or error; `fieldSize="large"` for setup          |
+| `Card.tsx`             | A rounded surface with an optional title and accessory                                  |
+| `GroupedList.tsx`      | An iOS Settings-style inset group of rows, with header and footer                       |
+| `GroupedListRow.tsx`   | A row: icon, label, description, detail, accessory, and a chevron when it navigates     |
+| `Toggle.tsx`           | An on/off switch (`role="switch"`)                                                      |
+| `SegmentedControl.tsx` | A pill of exclusive choices (a radio group; arrow keys move the choice)                 |
+| `Badge.tsx`            | A short coloured status label                                                           |
+| `LargeTitle.tsx`       | The page header: the page's `h1`, subtitle and actions                                  |
+| `EmptyState.tsx`       | What to show when there is nothing yet                                                  |
+| `SearchField.tsx`      | A search box with a magnifying glass                                                    |
+| `Skeleton.tsx`         | A grey shape standing in for content that's loading; wrap in `LoadingRegion`            |
+| `Dialog.tsx`           | A modal on the native `<dialog>`: `alert` for questions, `sheet` for tasks              |
+| `ConfirmDialog.tsx`    | "Are you sure?" before deleting or restoring, instead of the browser's `confirm()`      |
+| `Menu.tsx`             | A button that opens a short list of actions (the ARIA menu button pattern)              |
+| `controlStyles.ts`     | The shared look of inputs, text areas and selects                                       |
+| `AppMark.tsx`          | The app's text mark                                                                     |
+| `PasswordField.tsx`    | A TextField with a "Show password" toggle button (`aria-pressed`)                       |
+| `EmailField.tsx`       | A TextField that offers a one-click fix for domain typos such as "gmai.com"             |
+| `ChoiceCardGroup.tsx`  | Large tiles with an icon and a line each; a radio group like SegmentedControl           |
+| `DisplayTitle.tsx`     | The big h1 of full-screen screens such as setup and sign-in                             |
+| `CopyButton.tsx`       | Copies text and says "Copied" (announced to screen readers too)                         |
+| `Page.tsx`             | Every screen's outer box: `width="wide"` or `"readable"`; `autoFillGrid` for card grids |
 
 Helpers: `suggestEmailCorrection.ts` (the typo check behind EmailField: popular domains and
 edit distance, never blocking) and `radioGroupKeys.ts` (the arrow-key rules every radio group
 shares).
+
+## Page widths
+
+AdminLayout only adds the gutters (they grow with the window, `--page-gutter`); each screen
+says how wide it goes by wrapping itself in `<Page width>`:
+
+- `wide` (up to 1440px) for overviews, lists, grids and the dashboard. Grids use
+  `autoFillGrid()`, so a big monitor shows more cards rather than bigger ones.
+- `readable` (720px) for forms and settings, in one left-aligned column.
+
+Both start right next to the sidebar, never centred in empty space. The entry editor is
+`wide` and sets its own columns (`src/content/editorLayout.ts`): a writing column of about
+720px and a side panel that grows from 272px to 416px, dropping below the document when the
+page area is narrow. Check new screens at 1280, 1440, 1920 and 2560 pixels wide, and on a
+narrow window, in light and dark.
 
 ## Rules
 

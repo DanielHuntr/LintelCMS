@@ -16,6 +16,7 @@ import { t, tCount } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import { createTaxonomy } from "./taxonomies.api.js";
 import { taxonomyKeys, useTaxonomies } from "./taxonomies.queries.js";
+import { Page } from "../design/Page.js";
 
 /** /content/taxonomies: the ways content is grouped, such as Categories and Tags. */
 export function TaxonomiesPage() {
@@ -44,7 +45,7 @@ export function TaxonomiesPage() {
     );
 
   return (
-    <>
+    <Page width="wide">
       <BackLink to="/content">{t("nav.content")}</BackLink>
       <LargeTitle
         title={t("taxonomies.title")}
@@ -102,6 +103,6 @@ export function TaxonomiesPage() {
         onSubmit={create}
         onClose={() => setIsCreating(false)}
       />
-    </>
+    </Page>
   );
 }

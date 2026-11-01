@@ -43,7 +43,8 @@ publishing, the parent page for tree collections, and the revision history with 
 
 Preview (in the toolbar and the More menu) opens a split view: the document on the left and
 the page as the site renders it on the right (`src/preview`), in place of the side panel. It
-uses the page area's full width, measured with `cqw` (AdminLayout's main is a size container).
+uses the page's full width; otherwise the writing column stays about 720px and the side panel
+grows with the window (`editorLayout.ts`).
 "Duplicate entry" in the More menu saves first, then makes a draft copy after the original
 (`POST /entries/:id/duplicate`) and opens it.
 

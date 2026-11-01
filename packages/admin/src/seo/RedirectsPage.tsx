@@ -15,6 +15,7 @@ import { AddRedirectDialog } from "./AddRedirectDialog.js";
 import { ImportRedirectsDialog } from "./ImportRedirectsDialog.js";
 import type { Redirect } from "./seo.api.js";
 import { useAcceptRedirect, useDeleteRedirect, useRedirects } from "./seo.queries.js";
+import { Page } from "../design/Page.js";
 
 /**
  * /settings/seo/redirects: rules that send visitors from old addresses to new ones, and
@@ -45,7 +46,7 @@ export function RedirectsPage() {
   );
 
   return (
-    <>
+    <Page width="wide">
       <BackLink to="/settings/seo">{t("seo.settingsTitle")}</BackLink>
       <LargeTitle
         title={t("redirects.title")}
@@ -58,11 +59,11 @@ export function RedirectsPage() {
       )}
       {redirects.isPending && (
         <LoadingRegion label={t("redirects.loading")}>
-          <Skeleton className="h-28 max-w-2xl rounded-card" />
+          <Skeleton className="h-28 rounded-card" />
         </LoadingRegion>
       )}
       {redirects.data && (
-        <div className="flex max-w-2xl flex-col gap-8">
+        <div className="flex flex-col gap-8">
           {suggested.length > 0 && (
             <GroupedList
               header={t("redirects.suggestedHeader")}
@@ -147,7 +148,7 @@ export function RedirectsPage() {
 
       {dialog === "add" && <AddRedirectDialog onClose={() => setDialog(null)} />}
       {dialog === "import" && <ImportRedirectsDialog onClose={() => setDialog(null)} />}
-    </>
+    </Page>
   );
 }
 

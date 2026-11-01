@@ -4,9 +4,18 @@ import { Skeleton } from "../design/Skeleton.js";
 import { t } from "../i18n/strings.js";
 import { MenuEditor } from "./MenuEditor.js";
 import { useMenu } from "./menus.queries.js";
+import { Page } from "../design/Page.js";
 
 /** /content/navigation/:handle: loads the menu, then hands over to the editor. */
-export function MenuEditorPage({ handle }: { handle: string }) {
+export function MenuEditorPage(props: { handle: string }) {
+  return (
+    <Page width="readable">
+      <LoadedMenuEditorPage {...props} />
+    </Page>
+  );
+}
+
+function LoadedMenuEditorPage({ handle }: { handle: string }) {
   const menu = useMenu(handle);
 
   if (menu.isError) {

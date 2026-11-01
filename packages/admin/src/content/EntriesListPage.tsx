@@ -19,6 +19,7 @@ import { entriesPerPage, type EntriesFilter } from "./entriesQuery.js";
 import { EntryList } from "./EntryList.js";
 import { Pagination } from "./Pagination.js";
 import { newEntryId } from "./newEntryId.js";
+import { Page } from "../design/Page.js";
 
 interface EntriesListPageProps {
   collectionHandle: string;
@@ -43,15 +44,25 @@ export function EntriesListPage({
   );
 
   if (collection.isError) {
-    return <LoadError error={collection.error} onRetry={() => void collection.refetch()} />;
+    return (
+      <Page width="wide">
+        <LoadError error={collection.error} onRetry={() => void collection.refetch()} />
+      </Page>
+    );
   }
-  if (!collection.data) return <EntriesSkeleton />;
+  if (!collection.data) {
+    return (
+      <Page width="wide">
+        <EntriesSkeleton />
+      </Page>
+    );
+  }
 
   const { data: list } = entries;
   const isFiltered = Boolean(filter.status || filter.search);
 
   return (
-    <>
+    <Page width="wide">
       <LargeTitle
         title={collection.data.name}
         subtitle={
@@ -103,7 +114,7 @@ export function EntriesListPage({
           onPageChange={(page) => onFilterChange({ ...filter, page })}
         />
       )}
-    </>
+    </Page>
   );
 }
 

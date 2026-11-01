@@ -13,6 +13,7 @@ import {
   type OpenApiDocument,
   type ReferenceOperation,
 } from "./openApiReference.js";
+import { Page } from "../design/Page.js";
 
 /**
  * /settings/api/reference: the REST API's endpoints, read from the API's own OpenAPI
@@ -27,7 +28,7 @@ export function ApiReferencePage() {
   const documentUrl = `${apiUrl}/openapi.json`;
 
   return (
-    <>
+    <Page width="readable">
       <BackLink to="/settings/api">{t("apiAccess.title")}</BackLink>
       <LargeTitle
         title={t("apiReference.title")}
@@ -49,7 +50,7 @@ export function ApiReferencePage() {
       )}
       {document.isPending && (
         <LoadingRegion label={t("apiReference.loading")}>
-          <div className="flex max-w-3xl flex-col gap-3">
+          <div className="flex flex-col gap-3">
             {[0, 1, 2].map((row) => (
               <Skeleton key={row} className="h-16 rounded-card" />
             ))}
@@ -57,7 +58,7 @@ export function ApiReferencePage() {
         </LoadingRegion>
       )}
       {document.data && (
-        <div className="flex max-w-3xl flex-col gap-10">
+        <div className="flex flex-col gap-10">
           <p className="text-body text-label-secondary">{document.data.info.description}</p>
           {groupByTag(listOperations(document.data)).map(([tag, operations]) => (
             <section key={tag} aria-labelledby={`tag-${tag}`} className="flex flex-col gap-3">
@@ -75,7 +76,7 @@ export function ApiReferencePage() {
           ))}
         </div>
       )}
-    </>
+    </Page>
   );
 }
 

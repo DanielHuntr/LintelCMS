@@ -6,6 +6,7 @@ import { LoadError } from "../api/LoadError.js";
 import { useBlueprint } from "../content-types/blueprints.queries.js";
 import { BackLink } from "../design/BackLink.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
+import { Page } from "../design/Page.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { fullDocsUrl } from "../help/docsLinks.js";
 import { t } from "../i18n/strings.js";
@@ -40,7 +41,7 @@ export function PublishedPageView({ collectionHandle, entryId }: PublishedPageVi
   const failed = [collection, entry, blueprint, published].find((query) => query.isError);
 
   return (
-    <div className="flex flex-col gap-6">
+    <Page width="wide" className="flex flex-col gap-6">
       <BackLink
         to="/content/$collection/$entryId"
         params={{ collection: collectionHandle, entryId }}
@@ -78,6 +79,6 @@ export function PublishedPageView({ collectionHandle, entryId }: PublishedPageVi
           <BuiltInPreview entry={published.data} fields={blueprint.data.fields} />
         </div>
       )}
-    </div>
+    </Page>
   );
 }

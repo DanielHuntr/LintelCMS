@@ -9,6 +9,7 @@ import { t } from "../i18n/strings.js";
 import { fullDocsUrl } from "./docsLinks.js";
 import { HelpArticle } from "./HelpArticle.js";
 import { HelpTopicList } from "./HelpTopicList.js";
+import { Page } from "../design/Page.js";
 
 interface HelpPageProps {
   /** The open topic, kept in the address (`/help?topic=using/media`) so it can be shared. */
@@ -41,19 +42,19 @@ export function HelpPage({ topic, onOpenTopic, anchor }: HelpPageProps) {
 
   if (!page) {
     return (
-      <>
+      <Page width="readable">
         <LargeTitle
           title={t("help.pageTitle")}
           subtitle={t("help.pageSubtitle")}
           actions={fullDocsLink}
         />
         <HelpTopicList onOpenPage={(slug) => onOpenTopic(slug)} />
-      </>
+      </Page>
     );
   }
 
   return (
-    <>
+    <Page width="readable">
       <BackLink to="/help" search={{}}>
         {t("help.pageTitle")}
       </BackLink>
@@ -61,6 +62,6 @@ export function HelpPage({ topic, onOpenTopic, anchor }: HelpPageProps) {
       <Card>
         <HelpArticle page={page} anchor={anchor} onOpenPage={onOpenTopic} titleLevel={1} />
       </Card>
-    </>
+    </Page>
   );
 }

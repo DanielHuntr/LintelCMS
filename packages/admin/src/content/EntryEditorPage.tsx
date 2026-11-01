@@ -2,11 +2,14 @@ import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { LoadError } from "../api/LoadError.js";
 import { useBlueprint } from "../content-types/blueprints.queries.js";
+import { classNames } from "../design/classNames.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
+import { Page } from "../design/Page.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { t } from "../i18n/strings.js";
 import { useCollection, useEntry } from "./content.queries.js";
 import type { Entry } from "./content.types.js";
+import { editorColumns, editorWidths } from "./editorLayout.js";
 import { EntryEditor } from "./EntryEditor.js";
 import { newEntryId } from "./newEntryId.js";
 
@@ -21,7 +24,16 @@ interface EntryEditorPageProps {
  * Loads what the editor needs (the collection, and the entry or, for a new one, its
  * blueprint), then hands over to `EntryEditor`.
  */
-export function EntryEditorPage({ collectionHandle, entryId, locale }: EntryEditorPageProps) {
+export function EntryEditorPage(props: EntryEditorPageProps) {
+  // Wide, so the split view can use the room; the editor keeps its own writing width.
+  return (
+    <Page width="wide">
+      <LoadedEntryEditor {...props} />
+    </Page>
+  );
+}
+
+function LoadedEntryEditor({ collectionHandle, entryId, locale }: EntryEditorPageProps) {
   const navigate = useNavigate();
   const isNew = entryId === newEntryId;
   const collection = useCollection(collectionHandle);
@@ -89,11 +101,13 @@ function useEditorKey(entryId: string) {
 function EditorSkeleton() {
   return (
     <LoadingRegion label={t("editor.loading")}>
-      <div className="mb-8 flex h-10 items-center justify-between">
+      <div
+        className={classNames("mb-8 flex h-10 items-center justify-between", editorWidths.panel)}
+      >
         <Skeleton className="h-5 w-28" />
         <Skeleton className="h-9 w-24" />
       </div>
-      <div className="grid grid-cols-[minmax(0,1fr)_17rem] gap-8">
+      <div className={classNames("grid items-start", editorWidths.panel, editorColumns.panel)}>
         <div className="flex flex-col gap-3">
           <Skeleton className="h-10 w-3/4" />
           <Skeleton className="h-4 w-48" />

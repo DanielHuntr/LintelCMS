@@ -20,6 +20,7 @@ import { AddLanguageSheet } from "./AddLanguageSheet.js";
 import { addLocale, removeLocale, renameLocale } from "./locales.api.js";
 import { localeKeys, useLocales } from "./locales.queries.js";
 import type { Locale } from "./locales.types.js";
+import { Page } from "../design/Page.js";
 
 /** /settings/languages: the languages the site is written in. */
 export function LanguagesPage() {
@@ -46,7 +47,7 @@ export function LanguagesPage() {
   }
 
   return (
-    <>
+    <Page width="readable">
       <BackLink to="/settings">{t("nav.settings")}</BackLink>
       <LargeTitle
         title={t("languages.title")}
@@ -80,7 +81,7 @@ export function LanguagesPage() {
         </LoadingRegion>
       )}
       {locales.data && (
-        <div className="flex max-w-2xl flex-col gap-8">
+        <div className="flex flex-col gap-8">
           <GroupedList
             footer={
               locales.data.locales.length === 1
@@ -163,7 +164,7 @@ export function LanguagesPage() {
         onCancel={() => setRemoving(null)}
         onConfirm={() => void confirmRemove()}
       />
-    </>
+    </Page>
   );
 }
 

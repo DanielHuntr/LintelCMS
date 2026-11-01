@@ -27,11 +27,20 @@ import {
 import { taxonomyKeys, useTaxonomy, useTerms } from "./taxonomies.queries.js";
 import type { Term, TermChanges } from "./taxonomies.types.js";
 import { TermSheet } from "./TermSheet.js";
+import { Page } from "../design/Page.js";
 
 type Editing = { term: Term | null } | null;
 
 /** /content/taxonomies/:handle: a taxonomy's terms, to add, rename and remove. */
-export function TaxonomyPage({ handle }: { handle: string }) {
+export function TaxonomyPage(props: { handle: string }) {
+  return (
+    <Page width="wide">
+      <LoadedTaxonomyPage {...props} />
+    </Page>
+  );
+}
+
+function LoadedTaxonomyPage({ handle }: { handle: string }) {
   const taxonomy = useTaxonomy(handle);
   const terms = useTerms(handle);
   const canEditTerms = useCan("terms:update");

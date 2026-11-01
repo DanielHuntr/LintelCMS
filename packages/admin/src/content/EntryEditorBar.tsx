@@ -67,7 +67,7 @@ export function EntryEditorBar({
   ];
 
   return (
-    <div className="sticky top-0 z-20 -mx-10 -mt-14 mb-8 flex h-16 items-center gap-3 bg-background/80 px-10 pt-2 backdrop-blur-xl backdrop-saturate-150">
+    <div className="sticky top-0 z-20 -mt-14 -mr-16 -ml-(--page-gutter) mb-8 flex h-16 items-center gap-3 bg-background/80 pt-2 pr-16 pl-(--page-gutter) backdrop-blur-xl backdrop-saturate-150">
       <Link
         to="/content/$collection"
         params={{ collection: collectionHandle }}

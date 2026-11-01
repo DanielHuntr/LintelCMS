@@ -18,6 +18,7 @@ import { DeliveryLog } from "./DeliveryLog.js";
 import { webhookEventLabels } from "./webhooks.api.js";
 import { useDeleteWebhook, useUpdateWebhook, useWebhook } from "./webhooks.queries.js";
 import { WebhookFormDialog } from "./WebhookFormDialog.js";
+import { Page } from "../design/Page.js";
 
 /** /settings/webhooks/:id: one webhook's settings, its signing secret and its delivery log. */
 export function WebhookDetailPage({ webhookId }: { webhookId: string }) {
@@ -44,7 +45,7 @@ export function WebhookDetailPage({ webhookId }: { webhookId: string }) {
       <>
         {back}
         <LoadingRegion label={t("webhooks.loading")}>
-          <Skeleton className="h-40 max-w-2xl rounded-card" />
+          <Skeleton className="h-40 rounded-card" />
         </LoadingRegion>
       </>
     );
@@ -52,7 +53,7 @@ export function WebhookDetailPage({ webhookId }: { webhookId: string }) {
   const current = webhook.data;
 
   return (
-    <>
+    <Page width="readable">
       {back}
       <LargeTitle
         title={current.name}
@@ -78,7 +79,7 @@ export function WebhookDetailPage({ webhookId }: { webhookId: string }) {
           )
         }
       />
-      <div className="flex max-w-2xl flex-col gap-8">
+      <div className="flex flex-col gap-8">
         <GroupedList header={t("webhooks.settingsHeader")}>
           <GroupedListRow
             label={t("webhooks.sendEvents")}
@@ -159,6 +160,6 @@ export function WebhookDetailPage({ webhookId }: { webhookId: string }) {
           })
         }
       />
-    </>
+    </Page>
   );
 }

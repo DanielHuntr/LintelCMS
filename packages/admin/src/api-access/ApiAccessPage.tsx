@@ -9,6 +9,7 @@ import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import { DeliveryAccessSettings } from "./DeliveryAccessSettings.js";
 import { TokenList } from "./TokenList.js";
+import { Page } from "../design/Page.js";
 
 /**
  * /settings/api: how websites, apps and scripts reach the content. Where the APIs are,
@@ -20,10 +21,10 @@ export function ApiAccessPage() {
   const graphqlAddress = `${apiUrl}/graphql`;
 
   return (
-    <>
+    <Page width="readable">
       <BackLink to="/settings">{t("nav.settings")}</BackLink>
       <LargeTitle title={t("apiAccess.title")} subtitle={t("apiAccess.subtitle")} />
-      <div className="flex max-w-2xl flex-col gap-8">
+      <div className="flex flex-col gap-8">
         <GroupedList
           header={t("apiAccess.addressesHeader")}
           footer={t("apiAccess.addressesFooter")}
@@ -60,6 +61,6 @@ export function ApiAccessPage() {
         <DeliveryAccessSettings canChange={canChange} />
         <TokenList canChange={canChange} />
       </div>
-    </>
+    </Page>
   );
 }

@@ -12,13 +12,14 @@ import { TextField } from "../design/TextField.js";
 import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import { fetchSiteAddress, saveSiteAddress } from "./site.api.js";
+import { Page } from "../design/Page.js";
 
 /** /settings/site: the website Lintel's content appears on, for "View page" and the sitemap. */
 export function SiteSettingsPage() {
   const address = useQuery({ queryKey: ["site-address"], queryFn: fetchSiteAddress });
 
   return (
-    <>
+    <Page width="readable">
       <BackLink to="/settings">{t("nav.settings")}</BackLink>
       <LargeTitle title={t("siteSettings.title")} subtitle={t("siteSettings.subtitle")} />
       {address.isError && (
@@ -30,7 +31,7 @@ export function SiteSettingsPage() {
         </LoadingRegion>
       )}
       {address.data && <SiteAddressForm initial={address.data.siteAddress} />}
-    </>
+    </Page>
   );
 }
 
