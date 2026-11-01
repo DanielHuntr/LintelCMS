@@ -1,3 +1,4 @@
+import { builderDesignStrings } from "./design-strings.js";
 import { builderPanelStrings } from "./panel-strings.js";
 import { builderStudioStrings } from "./studio-strings.js";
 
@@ -295,6 +296,7 @@ export const builderStrings = {
     "It’s added after what’s selected. You can also paste HTML straight onto the page.",
   ...builderStudioStrings,
   ...builderPanelStrings,
+  ...builderDesignStrings,
 } as const;
 
 export type BuilderStringKey = keyof typeof builderStrings;

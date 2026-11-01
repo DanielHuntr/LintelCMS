@@ -21,8 +21,10 @@ export function readPageDesign(value: unknown): PageDesign | null {
   if (!checked.ok || checked.document.root.children.length === 0) {
     return null;
   }
-  const { html, css, animations } = renderPage(checked.document, standardRegistry, {
-    withMotion: true,
-  });
-  return { html, css, animations };
+  const { html, css, animations, fontPreloads, script } = renderPage(
+    checked.document,
+    standardRegistry,
+    { withMotion: true },
+  );
+  return { html, css, animations, fontPreloads, script };
 }

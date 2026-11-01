@@ -1,13 +1,14 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { findIllustration } from "@lintel/builder-model";
+import { findIllustration, fontFilesFolder, isCatalogueFontFile } from "@lintel/builder-model";
 import { STYLESHEET_FOLDER } from "./site-context.service.js";
 
 /**
- * The website's two kinds of files besides pages and the stylesheet: the motion runtime
- * (only pages with animations load it) and the illustrations the starter sites and the
- * section library use. Both are served from `/_lintel`, with fingerprints or long caching.
+ * The website's files besides pages and the stylesheet: the motion runtime (only pages with
+ * animations load it), the illustrations the starter sites and the section library use, and
+ * the fonts that come with Lintel. All are served from `/_lintel`, with fingerprints or long
+ * caching.
  */
 
 export interface SiteScript {
@@ -40,4 +41,27 @@ export const ILLUSTRATIONS_FOLDER = `${STYLESHEET_FOLDER}/illustrations`;
 export function readIllustration(fileName: string): string | undefined {
   const name = /^([a-z0-9-]+)\.svg$/.exec(fileName)?.[1];
   return name ? findIllustration(name) : undefined;
+}
+
+export const FONTS_FOLDER = fontFilesFolder;
+
+const fontFiles = new Map<string, Buffer>();
+
+/** One of the bundled fonts' files by name ("inter-latin-400-normal.woff2"), or undefined. */
+export function readFontFile(fileName: string): Buffer | undefined {
+  if (!isCatalogueFontFile(fileName)) {
+    return undefined;
+  }
+  const cached = fontFiles.get(fileName);
+  if (cached) {
+    return cached;
+  }
+  try {
+    const path = createRequire(import.meta.url).resolve(`@lintel/builder-model/fonts/${fileName}`);
+    const contents = readFileSync(path);
+    fontFiles.set(fileName, contents);
+    return contents;
+  } catch {
+    return undefined;
+  }
 }

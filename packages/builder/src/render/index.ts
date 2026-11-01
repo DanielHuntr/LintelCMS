@@ -16,3 +16,5 @@ export { paragraphsHtml, siteBlockRenders } from "./site-blocks.js";
 export { standInBaseStylesheet } from "./base-stylesheet.js";
 export { collectAnimations, type PageAnimation } from "./page-animations.js";
 export { designBaseStylesheet, designClassName } from "./design-stylesheet.js";
+export { backgroundVideoScript } from "./background-video.js";
+export { MarkedText } from "./marked-text.js";

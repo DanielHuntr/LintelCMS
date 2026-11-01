@@ -21,7 +21,11 @@ import {
 } from "react";
 import { Canvas, type MotionPreview } from "./canvas/Canvas.js";
 import type { CanvasSite } from "./canvas/canvas-frame-script.js";
-import type { ForwardedKey, MessageFromFrame } from "./canvas/canvas-messages.js";
+import type {
+  ForwardedKey,
+  MessageFromFrame,
+  TextSelectionMessage,
+} from "./canvas/canvas-messages.js";
 import { isLocked, layerName } from "./editor/commands.js";
 import { isTypingTarget, shortcutFor } from "./editor/shortcuts.js";
 import { useBuilder } from "./editor/useBuilder.js";
@@ -45,6 +49,8 @@ import { renderPage } from "./render/render-page.js";
 import { standInBaseStylesheet } from "./render/base-stylesheet.js";
 import { standardRegistry } from "./render/stand-in-components.js";
 import { readSkillLevel, type SkillLevel, toolsFor } from "./skill-level/skill-levels.js";
+import { SelectedWordsBar } from "./inline-text/SelectedWordsBar.js";
+import type { FileUploader } from "./style-panel/design-tools.js";
 import { GuidedTour } from "./tour/GuidedTour.js";
 import { useTips } from "./tour/useTips.js";
 import { Tabs } from "./ui/controls.js";
@@ -67,6 +73,8 @@ export interface PageBuilderProps {
    */
   baseStylesheet?: string;
   pickImage?: ImagePicker;
+  /** Uploads a font or video file to the media library, for custom fonts and video backgrounds. */
+  uploadFile?: FileUploader;
   /** The admin's `t()`, so the builder's words can be translated with the admin's. */
   text?: Translate;
   /** Before the title: usually a back link. After the toolbar's controls: save state, Publish. */
@@ -124,6 +132,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   const [leftTab, setLeftTab] = useState<LeftTab>("layers");
   const [startedBlank, setStartedBlank] = useState(false);
   const [motionPreview, setMotionPreview] = useState<MotionPreview | null>(null);
+  const [textSelection, setTextSelection] = useState<TextSelectionMessage | null>(null);
   const preferences = props.preferences ?? browserPreferenceStore;
   const [skillLevel, setSkillLevel] = usePreference<SkillLevel>(
     preferences,
@@ -225,6 +234,24 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
         case "selectNext":
           actions.selectAdjacent(1);
           break;
+        case "bringForward":
+        case "sendBackward":
+        case "bringToFront":
+        case "sendToBack":
+          if (selected) {
+            actions.restack(
+              selected,
+              (
+                {
+                  bringForward: "forward",
+                  sendBackward: "backward",
+                  bringToFront: "front",
+                  sendToBack: "back",
+                } as const
+              )[command],
+            );
+          }
+          break;
       }
       return true;
     },
@@ -238,8 +265,22 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
       if (message.type === "editText") actions.editText(message.nodeId, message.prop, message.text);
       if (message.type === "key") runShortcut(message.key);
       if (message.type === "paste") actions.paste(message);
+      if (message.type === "textSelection") {
+        setTextSelection(message.nodeId === null ? null : message);
+      }
+      if (message.type === "rotate") {
+        actions.changeStyles(
+          message.nodeId,
+          breakpoint,
+          { rotate: message.degrees === 0 ? undefined : `${message.degrees}deg` },
+          text("pageBuilder.design.rotate"),
+        );
+      }
+      if (message.type === "place") {
+        actions.placeFreely(message.nodeId, breakpoint, { left: message.left, top: message.top });
+      }
     },
-    [actions, runShortcut],
+    [actions, runShortcut, breakpoint, text],
   );
 
   // Pasting while the builder (not a text box) has focus imports what's on the clipboard.
@@ -379,6 +420,13 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
               selectedId={selectedId}
               onSelect={selectFromPanel}
             />
+            {!showsStart && textSelection && (
+              <SelectedWordsBar
+                document={state.document}
+                selection={textSelection}
+                onApply={(styles, label) => actions.markText(textSelection, styles, label)}
+              />
+            )}
             {showsStart ? (
               <EmptyPageStart
                 templates={sectionTemplates}
@@ -399,6 +447,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                 hoveredId={hoveredId}
                 labels={labels}
                 revealId={revealId}
+                canTransform={selectedNode !== undefined && !selectedIsLocked}
                 site={site}
                 motionPreview={motionPreview}
                 onMessage={handleFrameMessage}
@@ -416,6 +465,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
             tools={tools}
             tips={tips}
             pickImage={props.pickImage}
+            uploadFile={props.uploadFile}
             motionText={props.motionText}
             showCode={skillLevel === "developer"}
             actions={{

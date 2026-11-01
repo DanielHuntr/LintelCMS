@@ -21,6 +21,11 @@ const allowedExtensions = [
   "pptx",
   "txt",
   "csv",
+  "woff2",
+  "ttf",
+  "otf",
+  "mp4",
+  "webm",
 ] as const;
 
 const imageExtensions = ["jpg", "jpeg", "png", "webp", "avif", "gif", "svg"] as const;

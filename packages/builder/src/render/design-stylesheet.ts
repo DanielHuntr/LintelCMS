@@ -38,4 +38,36 @@ export const designBaseStylesheet = `:where(.lintel-design) :where(h1, h2, h3, h
 }
 :where(.lintel-design) :where(nav a) { color: inherit; text-decoration: none; }
 :where(.lintel-design) :where(hr) { margin: 0; border: 0; }
+:where(.lintel-design) .lintel-video-background {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+:where(.lintel-design) .lintel-video-background video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+:where(.lintel-design) .lintel-video-background::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+:where(.lintel-design) .lintel-video-toggle {
+  position: absolute;
+  right: var(--lintel-space-3);
+  bottom: var(--lintel-space-3);
+  z-index: 1;
+  padding: 0.25rem 0.75rem;
+  font: inherit;
+  font-size: 0.8125rem;
+  color: #fff;
+  background: rgb(0 0 0 / 0.55);
+  border: 0;
+  border-radius: 999px;
+  pointer-events: auto;
+  cursor: pointer;
+}
 `;

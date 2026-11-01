@@ -16,8 +16,13 @@ import {
 } from "../preferences/open-sections.js";
 import { OpenSectionsContext } from "../ui/CollapsibleSection.js";
 import { ChoiceGroup, inputClassName } from "../ui/controls.js";
+import { ArrangeSection } from "./ArrangeSection.js";
+import { BackgroundSection } from "./BackgroundSection.js";
+import { type DesignTools, DesignToolsContext } from "./design-tools.js";
+import { FiltersSection } from "./FiltersSection.js";
+import { ShapeSection } from "./ShapeSection.js";
+import { TransformSection } from "./TransformSection.js";
 import {
-  BackgroundSection,
   BordersSection,
   EffectsSection,
   PositionSection,
@@ -49,6 +54,8 @@ interface StylePanelProps {
     values: Partial<Record<StylePropertyName, string | undefined>>,
     label: string,
   ) => void;
+  /** Settings beyond styles: free layout, background video, the page's fonts, stacking. */
+  design: DesignTools;
 }
 
 const textTypes = new Set(["heading", "text", "quote", "list", "button", "link", "navigation"]);
@@ -79,6 +86,7 @@ export function StylePanel({
   allowsAdvanced = true,
   note,
   onChange,
+  design,
 }: StylePanelProps) {
   const text = useBuilderText();
   const advanced = allowsAdvanced && mode === "advanced";
@@ -133,14 +141,20 @@ export function StylePanel({
         <legend className="sr-only">{text("pageBuilder.style.legend")}</legend>
         <OpenSectionsContext.Provider value={openSections}>
           <StyleEditingContext.Provider value={editing}>
-            {holdsElements && <LayoutSection advanced={advanced} />}
-            <SpacingSection advanced={advanced} />
-            {advanced && <SizeSection />}
-            {showsText && <TypographySection advanced={advanced} />}
-            <BackgroundSection />
-            <BordersSection advanced={advanced} />
-            {advanced && <PositionSection />}
-            {advanced && <EffectsSection />}
+            <DesignToolsContext.Provider value={design}>
+              <ArrangeSection advanced={advanced} />
+              {holdsElements && <LayoutSection advanced={advanced} />}
+              <SpacingSection advanced={advanced} />
+              {advanced && <SizeSection />}
+              {showsText && <TypographySection advanced={advanced} />}
+              <BackgroundSection advanced={advanced} />
+              <BordersSection advanced={advanced} />
+              <TransformSection advanced={advanced} />
+              <ShapeSection advanced={advanced} />
+              {advanced && <PositionSection />}
+              {advanced && <EffectsSection />}
+              <FiltersSection advanced={advanced} />
+            </DesignToolsContext.Provider>
           </StyleEditingContext.Provider>
         </OpenSectionsContext.Provider>
       </fieldset>

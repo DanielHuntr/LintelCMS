@@ -9,6 +9,8 @@ import type { ForwardedKey } from "../canvas/canvas-messages.js";
  *   Alt+Right put it inside the element above · Alt+Left move it out of its parent
  *   Shift+Mod+H hide or show · Shift+Mod+L lock or unlock
  *   Up / Down (on the canvas) select the previous or next element
+ *   Mod+] / Mod+[ bring forward or send back · Shift+Mod+] / Shift+Mod+[ to the front or back
+ *   Arrows (on the canvas, in a free layout) nudge the selected element; Shift for 10px
  *
  * Pasting is handled by the paste event, so the system clipboard's HTML can be imported.
  */
@@ -28,7 +30,11 @@ export type ShortcutCommand =
   | "toggleHidden"
   | "toggleLocked"
   | "selectPrevious"
-  | "selectNext";
+  | "selectNext"
+  | "bringForward"
+  | "sendBackward"
+  | "bringToFront"
+  | "sendToBack";
 
 export function isMac(): boolean {
   return (
@@ -49,6 +55,9 @@ export function shortcutFor(key: ForwardedKey, onMac: boolean = isMac()): Shortc
     if (name === "s" && !key.shiftKey) return "save";
     if (name === "h" && key.shiftKey) return "toggleHidden";
     if (name === "l" && key.shiftKey) return "toggleLocked";
+    // With Shift, "]" and "[" arrive as "}" and "{" on most keyboards.
+    if (name === "]" || name === "}") return key.shiftKey ? "bringToFront" : "bringForward";
+    if (name === "[" || name === "{") return key.shiftKey ? "sendToBack" : "sendBackward";
     return null;
   }
   if (key.metaKey || key.ctrlKey) return null;

@@ -1,4 +1,4 @@
-import { type CanvasSite, PageBuilder, type PickedImage } from "@lintel/builder";
+import { type CanvasSite, type FileUploader, PageBuilder, type PickedImage } from "@lintel/builder";
 import {
   createEmptyPage,
   type PageDocument,
@@ -21,7 +21,7 @@ import { ConfirmDialog } from "../design/ConfirmDialog.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { type StringKey, t } from "../i18n/strings.js";
-import { getAsset } from "../media/media.api.js";
+import { getAsset, uploadAsset } from "../media/media.api.js";
 import { MediaPickerDialog } from "../media/MediaPickerDialog.js";
 import { useCan } from "../session/SessionContext.js";
 import { useCanvasSite } from "../website/website.queries.js";
@@ -122,6 +122,7 @@ function PageDesigner({
         text={text}
         motionText={motionText}
         pickImage={imagePicker.pick}
+        uploadFile={uploadToMediaLibrary}
         onSaveNow={saving.saveNow}
         toolbarStart={
           <Link
@@ -189,6 +190,14 @@ function openDesign(stored: unknown): { document: PageDocument } | { problem: st
 }
 
 /** The media library as a promise: `pick()` opens it and resolves with the chosen picture. */
+/** Fonts and videos for the builder go into the media library like any other file. */
+const uploadToMediaLibrary: FileUploader = async (file) => {
+  const asset = await uploadAsset(file, () => undefined).catch(() => null);
+  return asset
+    ? { assetId: asset.id, src: asset.url, mimeType: asset.mimeType, filename: asset.filename }
+    : null;
+};
+
 function useImagePicker() {
   const [request, setRequest] = useState<{ label: string; currentAssetId: string | null } | null>(
     null,

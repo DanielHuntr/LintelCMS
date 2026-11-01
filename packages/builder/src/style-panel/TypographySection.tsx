@@ -1,12 +1,17 @@
-import { colourTokens, fontTokens, tokenValue } from "@lintel/builder-model";
+import { colourTokens } from "@lintel/builder-model";
 import { AlignCenter, AlignJustify, AlignLeft, AlignRight } from "lucide-react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { ChoiceGroup, PanelSection } from "../ui/controls.js";
 import { useStyleField, useStyleReader } from "./style-field.js";
 import { textSummary } from "./style-summaries.js";
+import { FontPicker } from "./FontPicker.js";
 import { ColourPicker, StyleChips, StyleSelect, StyleTextInput } from "./StyleInputs.js";
+import { AdvancedTextEffects, FluidSizeControl, OutlineChips } from "./TextEffects.js";
 
-/** How text looks: size, weight, alignment and colour, then the finer details in Advanced. */
+/**
+ * How text looks: font, size (or a size that grows with the screen), weight, alignment,
+ * colour and outline, then the finer details and text effects in Advanced.
+ */
 export function TypographySection({ advanced }: { advanced: boolean }) {
   const text = useBuilderText();
   const read = useStyleReader();
@@ -17,6 +22,7 @@ export function TypographySection({ advanced }: { advanced: boolean }) {
       sectionId="text"
       summary={textSummary(read, text)}
     >
+      <FontPicker />
       <StyleChips
         properties={["fontSize"]}
         label={text("pageBuilder.style.fontSize")}
@@ -49,18 +55,16 @@ export function TypographySection({ advanced }: { advanced: boolean }) {
           { value: "justify", label: text("pageBuilder.style.alignJustify"), icon: AlignJustify },
         ]}
       />
+      <FluidSizeControl />
       <ColourPicker
         property="color"
         label={text("pageBuilder.style.textColour")}
         tokens={colourTokens}
       />
+      {!advanced && <OutlineChips />}
+      {advanced && <AdvancedTextEffects />}
       {advanced && (
         <div className="grid grid-cols-2 gap-2">
-          <StyleSelect
-            property="fontFamily"
-            label={text("pageBuilder.style.font")}
-            choices={fontTokens.map((token) => ({ value: tokenValue(token), label: token.label }))}
-          />
           <StyleTextInput
             property="fontSize"
             label={text("pageBuilder.style.fontSizeExact")}

@@ -1,12 +1,21 @@
+import { snapBox } from "../free-layout/snapping.js";
+
 /**
  * The script that runs inside the canvas frame. It draws the page it is sent, outlines the
- * selected and hovered elements, and reports clicks, hovering, text typed in place, pasting
- * and keyboard shortcuts back to the builder.
+ * selected and hovered elements, and reports clicks, hovering, text typed in place, the
+ * part of a text that is selected, pasting and keyboard shortcuts back to the builder.
+ *
+ * It also lets people turn the selected element with the round handle above it, and drag
+ * elements around a free layout (snapping to edges and to each other, with guide lines;
+ * Alt while dragging turns snapping off), or nudge them with the arrow keys (Shift for ten
+ * pixels). The element moves on the canvas straight away; the new angle or place is sent
+ * when the pointer is let go.
  *
  * It is written as one self-contained function so it can be put into the frame as text
- * (`canvasFrameSource`): it must not use anything from outside its own body.
+ * (`canvasFrameSource`): it must not use anything from outside its own body, except
+ * `snap`, which is passed in the same way.
  */
-export function runCanvasFrame(): void {
+export function runCanvasFrame(snap: typeof snapBox): void {
   interface Preview {
     restart(): void;
     destroy(): void;
@@ -27,13 +36,40 @@ export function runCanvasFrame(): void {
     selectedId: string | null;
     hoveredId: string | null;
     labels: { selected: string | null; hovered: string | null };
+    canTransform: boolean;
+    rotateLabel: string;
   } = {
     selectedId: null,
     hoveredId: null,
     labels: { selected: null, hovered: null },
+    canTransform: false,
+    rotateLabel: "",
   };
   let editing: HTMLElement | null = null;
   let editingOriginal = "";
+  // A page drawn while text was being typed waits until the typing is finished.
+  let waitingRender: { html: string; css: string } | null = null;
+  let rotating: {
+    element: HTMLElement;
+    nodeId: string;
+    centreX: number;
+    centreY: number;
+    startAngle: number;
+    startRotation: number;
+    degrees: number;
+  } | null = null;
+  let dragging: {
+    element: HTMLElement;
+    nodeId: string;
+    container: HTMLElement;
+    startX: number;
+    startY: number;
+    startLeft: number;
+    startTop: number;
+    moved: boolean;
+    left: number;
+    top: number;
+  } | null = null;
   // The animation being previewed, if any. Stopped before the page is drawn again.
   let preview: Preview | null = null;
   const stopPreview = () => {
@@ -70,11 +106,170 @@ export function runCanvasFrame(): void {
   }
 
   function drawOutlines() {
+    if (rotating || dragging?.moved) return;
     overlay.replaceChildren();
     if (outline.hoveredId && outline.hoveredId !== outline.selectedId) {
       drawBox(outline.hoveredId, "hover", outline.labels.hovered);
     }
     drawBox(outline.selectedId, "selected", outline.labels.selected);
+    drawRotateHandle();
+  }
+
+  function drawRotateHandle() {
+    const element = nodeElement(outline.selectedId);
+    if (!element || !outline.canTransform || editing) return;
+    const rect = element.getBoundingClientRect();
+    const handle = document.createElement("div");
+    handle.className = "lintel-rotate-handle";
+    handle.title = outline.rotateLabel;
+    handle.style.left = `${rect.left + window.scrollX + rect.width / 2}px`;
+    handle.style.top = `${rect.top + window.scrollY - 28}px`;
+    overlay.appendChild(handle);
+  }
+
+  /** The text as stored: text as it is, and a line break for each <br>. */
+  function plainText(holder: Node): string {
+    let text = "";
+    const walk = (node: Node) => {
+      if (node.nodeType === Node.TEXT_NODE) text += node.textContent ?? "";
+      else if (node.nodeName === "BR") text += "\n";
+      else node.childNodes.forEach(walk);
+    };
+    walk(holder);
+    return text;
+  }
+
+  /** How many characters of `holder`'s stored text come before a point in it. */
+  function offsetIn(holder: Node, container: Node, offset: number): number {
+    const range = document.createRange();
+    range.selectNodeContents(holder);
+    range.setEnd(container, offset);
+    return plainText(range.cloneContents()).length;
+  }
+
+  let lastSelection = "";
+  function reportSelection() {
+    const selection = window.getSelection();
+    let report: Record<string, unknown> = { type: "textSelection", nodeId: null };
+    if (selection && selection.rangeCount > 0 && !selection.isCollapsed) {
+      const range = selection.getRangeAt(0);
+      const start =
+        range.commonAncestorContainer instanceof Element
+          ? range.commonAncestorContainer
+          : range.commonAncestorContainer.parentElement;
+      const holder = start?.closest("[data-lintel-text]") as HTMLElement | null;
+      const nodeId = holder ? nodeIdAt(holder) : null;
+      if (holder && nodeId) {
+        report = {
+          type: "textSelection",
+          nodeId,
+          prop: holder.getAttribute("data-lintel-text"),
+          from: offsetIn(holder, range.startContainer, range.startOffset),
+          to: offsetIn(holder, range.endContainer, range.endOffset),
+          text: plainText(holder),
+        };
+      }
+    }
+    const key = JSON.stringify(report);
+    if (key === lastSelection) return;
+    lastSelection = key;
+    send(report);
+  }
+
+  function clearGuides() {
+    overlay.querySelectorAll(".lintel-guide").forEach((guide) => guide.remove());
+  }
+
+  function drawGuides(
+    container: HTMLElement,
+    guides: Array<{ axis: "x" | "y"; position: number }>,
+  ) {
+    clearGuides();
+    const rect = container.getBoundingClientRect();
+    const originX = rect.left + window.scrollX + container.clientLeft;
+    const originY = rect.top + window.scrollY + container.clientTop;
+    for (const guide of guides) {
+      const line = document.createElement("div");
+      line.className = `lintel-guide lintel-guide--${guide.axis}`;
+      if (guide.axis === "x") {
+        line.style.left = `${originX + guide.position}px`;
+        line.style.top = `${originY}px`;
+        line.style.height = `${container.clientHeight}px`;
+      } else {
+        line.style.left = `${originX}px`;
+        line.style.top = `${originY + guide.position}px`;
+        line.style.width = `${container.clientWidth}px`;
+      }
+      overlay.appendChild(line);
+    }
+  }
+
+  /** The selected element when it sits in a free layout and can be moved, or null. */
+  function freeElement(
+    nodeId: string | null,
+  ): { element: HTMLElement; container: HTMLElement } | null {
+    const element = nodeElement(nodeId);
+    const container = element?.parentElement;
+    if (!element || !container || !container.hasAttribute("data-lintel-free")) return null;
+    return getComputedStyle(element).position === "absolute" ? { element, container } : null;
+  }
+
+  function sendPlace(nodeId: string, container: HTMLElement, left: number, top: number) {
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    send({
+      type: "place",
+      nodeId,
+      left: width > 0 ? (left / width) * 100 : 0,
+      top: height > 0 ? (top / height) * 100 : 0,
+    });
+  }
+
+  function drawPage(html: string, css: string) {
+    stopPreview();
+    pageStyle.textContent = css;
+    root.innerHTML = html;
+    restoreSelection();
+    requestAnimationFrame(drawOutlines);
+  }
+
+  /** The text node and offset `offset` characters into a holder's stored text. */
+  function pointAt(holder: Node, offset: number): { node: Node; offset: number } {
+    let remaining = offset;
+    let found: { node: Node; offset: number } | null = null;
+    const walk = (node: Node) => {
+      if (found) return;
+      if (node.nodeType === Node.TEXT_NODE) {
+        const length = (node.textContent ?? "").length;
+        if (remaining <= length) found = { node, offset: remaining };
+        else remaining -= length;
+      } else if (node.nodeName === "BR") {
+        remaining -= 1;
+      } else {
+        node.childNodes.forEach(walk);
+      }
+    };
+    walk(holder);
+    return found ?? { node: holder, offset: holder.childNodes.length };
+  }
+
+  /** After the page is drawn again, the same words are selected as before, so more styles can follow. */
+  function restoreSelection() {
+    const previous = lastSelection ? (JSON.parse(lastSelection) as Record<string, unknown>) : null;
+    if (!previous || typeof previous.nodeId !== "string") return;
+    const element = nodeElement(previous.nodeId);
+    const holder =
+      element?.getAttribute("data-lintel-text") === previous.prop
+        ? element
+        : element?.querySelector(`[data-lintel-text="${String(previous.prop)}"]`);
+    if (!holder) return;
+    const start = pointAt(holder, Number(previous.from));
+    const end = pointAt(holder, Number(previous.to));
+    const range = document.createRange();
+    range.setStart(start.node, start.offset);
+    range.setEnd(end.node, end.offset);
+    window.getSelection()?.removeAllRanges();
+    window.getSelection()?.addRange(range);
   }
 
   function finishEditing(keep: boolean) {
@@ -82,14 +277,17 @@ export function runCanvasFrame(): void {
     if (!element) return;
     editing = null;
     element.removeAttribute("contenteditable");
-    const text = (element.innerText || "").replace(/\n$/, "");
-    if (!keep) {
-      element.innerText = editingOriginal;
-      return;
-    }
+    const text = plainText(element).replace(/\n$/, "");
     const nodeId = nodeIdAt(element);
     const prop = element.getAttribute("data-lintel-text");
-    if (nodeId && prop && text !== editingOriginal) send({ type: "editText", nodeId, prop, text });
+    if (keep && nodeId && prop && text !== editingOriginal) {
+      send({ type: "editText", nodeId, prop, text });
+    }
+    if (!keep) element.innerText = editingOriginal;
+    if (waitingRender) {
+      drawPage(waitingRender.html, waitingRender.css);
+      waitingRender = null;
+    }
   }
 
   window.addEventListener("message", (event) => {
@@ -102,11 +300,11 @@ export function runCanvasFrame(): void {
       spec?: unknown;
     };
     if (message.type === "render" && typeof message.html === "string") {
-      if (editing) return;
-      stopPreview();
-      pageStyle.textContent = message.css ?? "";
-      root.innerHTML = message.html;
-      requestAnimationFrame(drawOutlines);
+      if (editing) {
+        waitingRender = { html: message.html, css: message.css ?? "" };
+        return;
+      }
+      drawPage(message.html, message.css ?? "");
     } else if (message.type === "outline") {
       outline = event.data as typeof outline;
       drawOutlines();
@@ -131,6 +329,7 @@ export function runCanvasFrame(): void {
 
   document.addEventListener("click", (event) => {
     event.preventDefault();
+    if (event.target instanceof Element && event.target.closest(".lintel-rotate-handle")) return;
     if (editing && editing.contains(event.target as Node)) return;
     finishEditing(true);
     send({ type: "select", nodeId: nodeIdAt(event.target) });
@@ -144,13 +343,117 @@ export function runCanvasFrame(): void {
     if (!target) return;
     event.preventDefault();
     editing = target;
-    editingOriginal = target.innerText;
+    editingOriginal = plainText(target);
+    drawOutlines();
     target.setAttribute("contenteditable", "plaintext-only");
     target.focus();
     const range = document.createRange();
     range.selectNodeContents(target);
     window.getSelection()?.removeAllRanges();
     window.getSelection()?.addRange(range);
+  });
+
+  document.addEventListener("selectionchange", reportSelection);
+
+  document.addEventListener("pointerdown", (event) => {
+    if (editing || event.button !== 0 || !(event.target instanceof Element)) return;
+    if (event.target.closest(".lintel-rotate-handle")) {
+      const element = nodeElement(outline.selectedId);
+      if (!element || !outline.selectedId) return;
+      event.preventDefault();
+      const rect = element.getBoundingClientRect();
+      const centreX = rect.left + rect.width / 2;
+      const centreY = rect.top + rect.height / 2;
+      const startRotation = Number.parseFloat(getComputedStyle(element).rotate) || 0;
+      rotating = {
+        element,
+        nodeId: outline.selectedId,
+        centreX,
+        centreY,
+        startAngle: Math.atan2(event.clientY - centreY, event.clientX - centreX),
+        startRotation,
+        degrees: startRotation,
+      };
+      return;
+    }
+    const nodeId = nodeIdAt(event.target);
+    const free = freeElement(nodeId);
+    if (!free || !nodeId) return;
+    dragging = {
+      element: free.element,
+      nodeId,
+      container: free.container,
+      startX: event.clientX,
+      startY: event.clientY,
+      startLeft: free.element.offsetLeft,
+      startTop: free.element.offsetTop,
+      moved: false,
+      left: free.element.offsetLeft,
+      top: free.element.offsetTop,
+    };
+  });
+
+  document.addEventListener("pointermove", (event) => {
+    if (rotating) {
+      const angle = Math.atan2(event.clientY - rotating.centreY, event.clientX - rotating.centreX);
+      let degrees = rotating.startRotation + ((angle - rotating.startAngle) * 180) / Math.PI;
+      degrees = ((((degrees + 180) % 360) + 360) % 360) - 180;
+      degrees = event.shiftKey ? Math.round(degrees / 15) * 15 : Math.round(degrees);
+      rotating.degrees = degrees;
+      rotating.element.style.rotate = `${degrees}deg`;
+      return;
+    }
+    if (!dragging) return;
+    const dx = event.clientX - dragging.startX;
+    const dy = event.clientY - dragging.startY;
+    if (!dragging.moved && Math.hypot(dx, dy) < 3) return;
+    if (!dragging.moved) {
+      dragging.moved = true;
+      overlay.replaceChildren();
+      document.body.style.userSelect = "none";
+      window.getSelection()?.removeAllRanges();
+    }
+    const { element, container } = dragging;
+    const others = Array.from(container.children)
+      .filter((child): child is HTMLElement => child instanceof HTMLElement && child !== element)
+      .filter((child) => child.hasAttribute("data-lintel-node"))
+      .map((child) => ({
+        left: child.offsetLeft,
+        top: child.offsetTop,
+        width: child.offsetWidth,
+        height: child.offsetHeight,
+      }));
+    const box = {
+      left: dragging.startLeft + dx,
+      top: dragging.startTop + dy,
+      width: element.offsetWidth,
+      height: element.offsetHeight,
+    };
+    const frame = { width: container.clientWidth, height: container.clientHeight };
+    const snapped = event.altKey
+      ? { left: box.left, top: box.top, guides: [] }
+      : snap(box, others, frame, 6);
+    dragging.left = snapped.left;
+    dragging.top = snapped.top;
+    element.style.left = `${snapped.left}px`;
+    element.style.top = `${snapped.top}px`;
+    drawGuides(container, snapped.guides);
+  });
+
+  document.addEventListener("pointerup", () => {
+    if (rotating) {
+      send({ type: "rotate", nodeId: rotating.nodeId, degrees: rotating.degrees });
+      rotating = null;
+      return;
+    }
+    if (!dragging) return;
+    const finished = dragging;
+    dragging = null;
+    document.body.style.userSelect = "";
+    clearGuides();
+    if (finished.moved) {
+      sendPlace(finished.nodeId, finished.container, finished.left, finished.top);
+    }
   });
 
   document.addEventListener("focusout", (event) => {
@@ -182,6 +485,25 @@ export function runCanvasFrame(): void {
     }
     const { key, metaKey, ctrlKey, shiftKey, altKey } = event;
     if (key === "Tab") return;
+    const nudges: Record<string, [number, number]> = {
+      ArrowLeft: [-1, 0],
+      ArrowRight: [1, 0],
+      ArrowUp: [0, -1],
+      ArrowDown: [0, 1],
+    };
+    const nudge = nudges[key];
+    const free = nudge && !metaKey && !ctrlKey && !altKey ? freeElement(outline.selectedId) : null;
+    if (nudge && free && outline.selectedId && outline.canTransform) {
+      event.preventDefault();
+      const distance = shiftKey ? 10 : 1;
+      const left = free.element.offsetLeft + nudge[0] * distance;
+      const top = free.element.offsetTop + nudge[1] * distance;
+      free.element.style.left = `${left}px`;
+      free.element.style.top = `${top}px`;
+      drawOutlines();
+      sendPlace(outline.selectedId, free.container, left, top);
+      return;
+    }
     event.preventDefault();
     send({ type: "key", key: { key, metaKey, ctrlKey, shiftKey, altKey } });
   });
@@ -214,6 +536,12 @@ const canvasStyles = `
 [data-lintel-placeholder="unknown"] { min-height: 3rem; background: #fff4e5; }
 [data-lintel-node]:empty:not(img, hr, br, [data-lintel-placeholder]) { min-height: 4rem; outline: 1px dashed #c7c7cc; outline-offset: -1px; }
 [contenteditable] { outline: 2px solid #7539fd; outline-offset: 2px; cursor: text; }
+.lintel-rotate-handle { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border: 2px solid #7539fd; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 0.3); pointer-events: auto; cursor: grab; }
+.lintel-rotate-handle::after { content: ""; position: absolute; left: 50%; top: 100%; width: 1px; height: 12px; background: #7539fd; }
+.lintel-guide { position: absolute; background: #ff2d87; pointer-events: none; }
+.lintel-guide--x { width: 1px; }
+.lintel-guide--y { height: 1px; }
+[data-lintel-free] > [data-lintel-node] { cursor: move; touch-action: none; }
 a { cursor: default; }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
 `;
@@ -247,5 +575,5 @@ export function canvasFrameSource(site?: CanvasSite): string {
   const header = site?.headerHtml ? `<div inert>${site.headerHtml}</div>` : "";
   const footer = site?.footerHtml ? `<div inert>${site.footerHtml}</div>` : "";
   const motion = site?.motionScript ? `<script>${safeScript(site.motionScript)}</script>` : "";
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">${base}<style id="lintel-page-style"></style><style>${canvasStyles}</style></head><body${bodyClass}>${header}<main class="lintel-main"><div id="lintel-page" class="lintel-design"></div></main>${footer}<div id="lintel-overlay"></div>${motion}<script>(${runCanvasFrame.toString()})();</script></body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">${base}<style id="lintel-page-style"></style><style>${canvasStyles}</style></head><body${bodyClass}>${header}<main class="lintel-main"><div id="lintel-page" class="lintel-design"></div></main>${footer}<div id="lintel-overlay"></div>${motion}<script>(${runCanvasFrame.toString()})(${snapBox.toString()});</script></body></html>`;
 }

@@ -23,6 +23,7 @@ export const markStyleProperties = [
   "fontSize",
   "color",
   "textStroke",
+  "textFillColor",
   "backgroundColor",
   "textDecoration",
   "letterSpacing",

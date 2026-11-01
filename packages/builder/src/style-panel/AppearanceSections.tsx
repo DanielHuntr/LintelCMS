@@ -2,8 +2,9 @@ import { colourTokens, radiusTokens } from "@lintel/builder-model";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { Labelled, PanelSection } from "../ui/controls.js";
 import { useStyleField, useStyleReader } from "./style-field.js";
+import { useDesignTools } from "./design-tools.js";
+import { FocalPointPicker } from "./FocalPointPicker.js";
 import {
-  backgroundSummary,
   bordersSummary,
   effectsSummary,
   positionSummary,
@@ -18,11 +19,15 @@ import {
   tokenChips,
 } from "./StyleInputs.js";
 
-/** Size, position, background, borders and effects. */
+/** Size, position, borders and effects. */
 
 export function SizeSection() {
   const text = useBuilderText();
   const read = useStyleReader();
+  const { node } = useDesignTools();
+  const objectPosition = useStyleField("objectPosition", text("pageBuilder.design.objectPosition"));
+  const pictureSrc =
+    node.type === "image" && typeof node.props.src === "string" ? node.props.src : "";
   return (
     <PanelSection
       title={text("pageBuilder.style.size")}
@@ -57,6 +62,11 @@ export function SizeSection() {
             { value: "contain", label: text("pageBuilder.style.fitContain") },
           ]}
         />
+        <StyleTextInput
+          property="objectPosition"
+          label={text("pageBuilder.design.objectPosition")}
+          placeholder="50% 50%"
+        />
         <StyleSelect
           property="overflow"
           label={text("pageBuilder.style.overflow")}
@@ -67,6 +77,14 @@ export function SizeSection() {
           ]}
         />
       </div>
+      {pictureSrc && (
+        <FocalPointPicker
+          label={text("pageBuilder.design.objectFocus")}
+          src={pictureSrc}
+          value={objectPosition.value}
+          onChange={objectPosition.set}
+        />
+      )}
     </PanelSection>
   );
 }
@@ -102,24 +120,6 @@ export function PositionSection() {
         <StyleTextInput property="bottom" label={text("pageBuilder.style.bottom")} />
         <StyleTextInput property="left" label={text("pageBuilder.style.left")} />
       </div>
-    </PanelSection>
-  );
-}
-
-export function BackgroundSection() {
-  const text = useBuilderText();
-  const read = useStyleReader();
-  return (
-    <PanelSection
-      title={text("pageBuilder.style.background")}
-      sectionId="background"
-      summary={backgroundSummary(read)}
-    >
-      <ColourPicker
-        property="backgroundColor"
-        label={text("pageBuilder.style.backgroundColour")}
-        tokens={colourTokens}
-      />
     </PanelSection>
   );
 }

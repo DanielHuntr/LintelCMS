@@ -101,6 +101,8 @@ export const styleProperties = {
   textDecoration: property("text-decoration", "typography"),
   color: property("color", "typography"),
   textStroke: property("-webkit-text-stroke", "typography"),
+  // With a stroke, a see-through fill makes outlined (hollow) letters in the text's colour.
+  textFillColor: property("-webkit-text-fill-color", "typography"),
   textShadow: property("text-shadow", "typography"),
   writingMode: property("writing-mode", "typography"),
   textOrientation: property("text-orientation", "typography"),
