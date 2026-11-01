@@ -18,6 +18,8 @@ interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
   /** A small button inside the right edge of the field, such as "Show password". */
   trailingAccessory?: ReactNode;
+  /** Ids of more text that describes the field, read after the hint or error, e.g. a strength meter. */
+  describedBy?: string;
   /** "large" is for full-screen flows such as setup, where one field fills the screen. */
   fieldSize?: "regular" | "large";
   ref?: Ref<HTMLInputElement>;
@@ -31,6 +33,7 @@ export function TextField({
   announcesHint = false,
   error,
   trailingAccessory,
+  describedBy,
   fieldSize = "regular",
   className,
   id,
@@ -59,7 +62,9 @@ export function TextField({
         <input
           id={inputId}
           aria-invalid={error ? true : undefined}
-          aria-describedby={message ? messageId : undefined}
+          aria-describedby={
+            [message ? messageId : undefined, describedBy].filter(Boolean).join(" ") || undefined
+          }
           className={classNames(
             "w-full bg-fill text-label",
             isLarge
@@ -84,12 +89,13 @@ export function TextField({
           </div>
         )}
       </div>
-      {message && (
+      {/* A field that announces its hint keeps the region, so the first message is heard too. */}
+      {(message || announcesHint) && (
         <p
           id={messageId}
           aria-live={announcesHint ? "polite" : undefined}
           className={classNames(
-            "flex items-start gap-1 text-footnote",
+            "flex items-start gap-1 text-footnote empty:sr-only",
             error ? "text-danger" : isSuccess ? "text-success" : "text-label-secondary",
           )}
         >

@@ -1,5 +1,7 @@
-import { Outlet } from "@tanstack/react-router";
+import { Outlet, useRouterState } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { t } from "../i18n/strings.js";
+import { documentTitleFor } from "../navigation/documentTitle.js";
 import { Sidebar } from "./Sidebar.js";
 import type { SignedInUser } from "./SidebarAccount.js";
 
@@ -8,6 +10,8 @@ interface AdminLayoutProps {
   permissions: readonly string[];
   /** Switched-on plugins; sections for the others are hidden. */
   enabledPlugins: readonly string[];
+  /** The site's name, in the browser tab ("Dashboard · Brightside Bakery") and the sidebar. */
+  siteName?: string | null;
   /** Shown at the bottom of the sidebar. */
   signedInUser?: SignedInUser;
   onSignOut?: () => void;
@@ -20,9 +24,16 @@ interface AdminLayoutProps {
 export function AdminLayout({
   permissions,
   enabledPlugins,
+  siteName = null,
   signedInUser,
   onSignOut,
 }: AdminLayoutProps) {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+
+  useEffect(() => {
+    document.title = documentTitleFor(pathname, siteName);
+  }, [pathname, siteName]);
+
   return (
     <div className="min-h-screen bg-background text-label">
       <a
@@ -34,6 +45,7 @@ export function AdminLayout({
       <Sidebar
         permissions={permissions}
         enabledPlugins={enabledPlugins}
+        siteName={siteName}
         signedInUser={signedInUser}
         onSignOut={onSignOut}
       />

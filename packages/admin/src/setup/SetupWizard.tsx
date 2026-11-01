@@ -1,227 +1,227 @@
-import { useState } from "react";
+import { featuresForSiteType } from "@lintel/core/site-presets";
+import { useEffect, useState } from "react";
 import { ApiError } from "../api/client.js";
 import { t } from "../i18n/strings.js";
+import { FullScreenLayout } from "../layout/FullScreenLayout.js";
+import type { PasswordStrength } from "../password-strength/passwordStrength.js";
 import type { Session } from "../session/session.api.js";
 import {
+  accountFields,
+  accountProblems,
   cleanAccountDetails,
-  emailProblem,
-  fieldForAccountMessage,
-  nameProblem,
-  passwordProblem,
-  type AccountField,
+  firstProblemField,
+  type AccountForm,
+  type AccountProblems,
 } from "./accountDetails.js";
+import { placeFinishProblem } from "./finishProblems.js";
 import {
-  defaultPostgresForm,
-  placeDatabaseProblem,
   readPostgresForm,
+  placeDatabaseProblem,
   type ConnectionErrors,
-  type PostgresForm,
 } from "./postgresConnection.js";
+import { CreateAccountScreen } from "./screens/CreateAccountScreen.js";
 import { DatabaseScreen } from "./screens/DatabaseScreen.js";
-import { EmailScreen } from "./screens/EmailScreen.js";
-import { NameScreen } from "./screens/NameScreen.js";
-import { PasswordScreen } from "./screens/PasswordScreen.js";
+import { DoneScreen } from "./screens/DoneScreen.js";
 import { PostgresScreen, type TestOutcome } from "./screens/PostgresScreen.js";
+import { ReviewScreen } from "./screens/ReviewScreen.js";
 import { SetupCodeScreen } from "./screens/SetupCodeScreen.js";
+import { SiteNameScreen } from "./screens/SiteNameScreen.js";
+import { SiteTypeScreen } from "./screens/SiteTypeScreen.js";
 import { WelcomeScreen } from "./screens/WelcomeScreen.js";
-import type { DatabaseKind, FirstAccountDetails, SetupApi, SetupStatus } from "./setup.api.js";
+import type { SetupApi, SetupAnswersToSend, SetupStatus } from "./setup.api.js";
+import {
+  emptyAnswers,
+  forgetSetup,
+  rememberedSetup,
+  rememberSetup,
+  type SetupAnswers,
+} from "./setupAnswers.js";
 import { rememberedSetupCode, rememberSetupCode, setupCodeLength } from "./setupCode.js";
-import { stepProblemFor, type SetupFailure } from "./setupErrors.js";
-import { accountScreensFor, setupProgress, type AccountScreen } from "./setupRouting.js";
-import { afterSelectionShows, useWizardScreens } from "./useWizardScreens.js";
-import { FullScreenLayout } from "../layout/FullScreenLayout.js";
+import { explainSetupFailure } from "./setupErrors.js";
+import { setupStepsFor, stepOfScreen } from "./setupRouting.js";
+import { siteNameProblem } from "./siteName.js";
+import { StepIndicator } from "./StepIndicator.js";
+import { useSetupNavigation } from "./useSetupNavigation.js";
 
 interface SetupWizardProps {
   status: SetupStatus;
-  api: Pick<SetupApi, "testDatabaseConnection" | "chooseDatabase" | "createFirstAccount">;
-  onAccountCreated: (session: Session) => void;
+  api: Pick<SetupApi, "testDatabaseConnection" | "finishSetup">;
+  /** After "You're all set": the owner is signed in by now. */
+  onFinished: (session: Session) => void;
   onAlreadySetUp: () => void;
 }
 
-type FieldErrors = Partial<Record<AccountField | "setupCode", string>>;
-
 /**
- * The screens at /setup, one question each: welcome, the setup code (from another computer
- * only), where to keep content, the PostgreSQL details (if chosen), then name, email and
- * password. Everything typed lives here, so Back never loses an answer.
+ * /setup: welcome, the setup code (from another computer only), then five steps with an
+ * indicator along the top: Database, Your account, Site name, What you're building and
+ * Review. Steps only check answers; "Finish setup" on the review sends everything at once.
+ * The answers live here (and, without passwords, in sessionStorage), so neither switching
+ * steps nor refreshing loses anything.
  */
-export function SetupWizard({ status, api, onAccountCreated, onAlreadySetUp }: SetupWizardProps) {
-  const { screen, goTo } = useWizardScreens<AccountScreen>("welcome");
+export function SetupWizard({ status, api, onFinished, onAlreadySetUp }: SetupWizardProps) {
+  const [restored] = useState(() => restoredSetup(status));
+  const [answers, setAnswers] = useState<SetupAnswers>(restored?.answers ?? emptyAnswers);
+  const flow = useSetupNavigation(status, answers.databaseKind, restored?.progress);
   const [setupCode, setSetupCode] = useState(rememberedSetupCode() ?? "");
-  const [databaseKind, setDatabaseKind] = useState<DatabaseKind>("built-in");
-  const [postgresForm, setPostgresForm] = useState<PostgresForm>(defaultPostgresForm);
+  const [setupCodeError, setSetupCodeError] = useState<string>();
   const [connectionErrors, setConnectionErrors] = useState<ConnectionErrors>({});
-  const [details, setDetails] = useState<FirstAccountDetails>({
-    name: "",
-    email: "",
-    password: "",
-  });
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [accountErrors, setAccountErrors] = useState<AccountProblems>({});
+  const [siteNameError, setSiteNameError] = useState<string>();
   const [statusMessage, setStatusMessage] = useState("");
-  const [isBusy, setIsBusy] = useState(false);
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [isFinishing, setIsFinishing] = useState(false);
+  const [session, setSession] = useState<Session>();
 
-  const screens = accountScreensFor(status, databaseKind);
+  const { screen } = flow;
   const codeToSend = status.requiresSetupCode ? setupCode : undefined;
+  const wasReloaded = restored !== undefined;
 
-  function move(to: AccountScreen, direction: "forward" | "back" = "forward") {
+  useEffect(() => {
+    if (screen !== "done") rememberSetup(answers, flow.progress);
+  }, [answers, flow.progress, screen]);
+
+  function change(changes: Partial<SetupAnswers>) {
+    setAnswers({ ...answers, ...changes });
     setStatusMessage("");
-    goTo(to, direction);
+    // A changed answer needs checking again before finishing.
+    setIsConfirmed(false);
   }
 
-  /** The next screen, worked out from the choice just made (PostgreSQL adds a screen). */
-  function next(kind: DatabaseKind = databaseKind) {
-    const upcoming = accountScreensFor(status, kind);
-    move(upcoming[upcoming.indexOf(screen) + 1] ?? "password");
-  }
-
-  function back() {
-    move(screens[screens.indexOf(screen) - 1] ?? "welcome", "back");
-  }
-
-  function showFieldError(field: keyof FieldErrors, message: string | undefined) {
-    setFieldErrors({ ...fieldErrors, [field]: message });
-    return message === undefined;
-  }
-
-  function handleInterrupted(failure: Exclude<SetupFailure, { kind: "problem" | "unreachable" }>) {
-    if (failure.kind === "already-set-up") {
-      onAlreadySetUp();
-      return;
-    }
-    // The code was wrong or missing: back to where it's entered, with the API's explanation.
-    setFieldErrors({ ...fieldErrors, setupCode: failure.message });
-    move("setup-code", "back");
-  }
-
-  /**
-   * Sends a request with the busy state on, and returns the problem to show, if any.
-   * `isFine` lets a caller accept an error that only means there's nothing left to do.
-   */
-  async function send(request: () => Promise<void>, isFine?: (error: unknown) => boolean) {
-    setIsBusy(true);
-    setStatusMessage("");
-    try {
-      await request();
-      return { ok: true as const };
-    } catch (error) {
-      if (isFine?.(error)) return { ok: true as const };
-      return { ok: false as const, error, problem: stepProblemFor(error, handleInterrupted) };
-    } finally {
-      setIsBusy(false);
-    }
+  function changeAccount(changes: Partial<AccountForm>) {
+    change({ account: { ...answers.account, ...changes } });
+    const remaining = { ...accountErrors };
+    for (const field of accountFields) if (field in changes) delete remaining[field];
+    setAccountErrors(remaining);
   }
 
   function continueFromSetupCode() {
-    const isComplete = setupCode.length === setupCodeLength;
-    const message = isComplete
-      ? undefined
-      : t("setupCode.incomplete", { length: String(setupCodeLength) });
-    if (!showFieldError("setupCode", message)) return;
-    rememberSetupCode(setupCode);
-    next();
-  }
-
-  async function saveDatabase(kind: DatabaseKind) {
-    if (kind === "postgres") {
-      next("postgres");
+    if (setupCode.length !== setupCodeLength) {
+      setSetupCodeError(t("setupCode.incomplete", { length: String(setupCodeLength) }));
       return;
     }
-    const result = await send(
-      () => api.chooseDatabase({ kind: "built-in" }, codeToSend),
-      isDatabaseDecidedAlready,
-    );
-    if (result.ok) next("built-in");
-    else if (result.problem) setStatusMessage(result.problem.message);
+    rememberSetupCode(setupCode);
+    flow.next();
   }
 
-  async function savePostgres() {
-    const connection = readConnectionOrShowErrors();
-    if (!connection) return;
-    const choice = { kind: "postgres" as const, ...connection };
-    const result = await send(
-      () =>
-        api.chooseDatabase(
-          { ...choice, createIfMissing: postgresForm.createIfMissing },
-          codeToSend,
-        ),
-      isDatabaseDecidedAlready,
-    );
-    if (result.ok) next();
-    else if (result.problem) showDatabaseProblem(result.problem);
+  function continueFromPostgres() {
+    const result = readPostgresForm(answers.postgres);
+    setConnectionErrors(result.errors ?? {});
+    if (result.errors) focusField(Object.keys(result.errors)[0]);
+    else flow.next();
   }
 
   async function testConnection(): Promise<TestOutcome> {
-    const connection = readConnectionOrShowErrors();
-    if (!connection) return "failed";
-    setStatusMessage("");
+    const result = readPostgresForm(answers.postgres);
+    setConnectionErrors(result.errors ?? {});
+    if (result.errors) return "failed";
     try {
-      await api.testDatabaseConnection(connection, codeToSend);
+      await api.testDatabaseConnection(result.connection, codeToSend);
       return "passed";
     } catch (error) {
       // Not finding the database is fine when Lintel is going to create it.
-      if (postgresForm.createIfMissing && hasCode(error, "DATABASE_NOT_FOUND")) {
+      if (answers.postgres.createIfMissing && hasCode(error, "DATABASE_NOT_FOUND")) {
         return "passed-will-create";
       }
-      const problem = stepProblemFor(error, handleInterrupted);
-      if (problem) showDatabaseProblem(problem);
+      showProblem(error, (problem) => {
+        const placed = placeDatabaseProblem(problem);
+        setConnectionErrors(placed.errors);
+        setStatusMessage(placed.statusMessage);
+        focusField(placed.field);
+      });
       return "failed";
     }
   }
 
-  function readConnectionOrShowErrors() {
-    const result = readPostgresForm(postgresForm);
-    if (result.errors) {
-      setConnectionErrors(result.errors);
-      const firstField = Object.keys(result.errors)[0];
-      if (firstField) focusField(firstField);
-      return undefined;
-    }
-    setConnectionErrors({});
-    return result.connection;
+  function continueFromAccount(strength: PasswordStrength | undefined) {
+    const problems = accountProblems(answers.account, strength);
+    setAccountErrors(problems);
+    const firstProblem = firstProblemField(problems);
+    if (firstProblem) focusField(firstProblem);
+    else flow.next();
   }
 
-  function showDatabaseProblem(problem: { code?: string; message: string }) {
-    const placed = placeDatabaseProblem(problem);
-    setConnectionErrors(placed.errors);
-    setStatusMessage(placed.statusMessage);
-    if (placed.field) focusField(placed.field);
+  function continueFromSiteName() {
+    const problem = siteNameProblem(answers.siteName);
+    setSiteNameError(problem);
+    if (!problem) flow.next();
   }
 
-  async function createAccount() {
-    if (!showFieldError("password", passwordProblem(details.password))) return;
-
-    let session: Session | undefined;
-    const result = await send(async () => {
-      session = await api.createFirstAccount(cleanAccountDetails(details), codeToSend);
-    });
-    if (result.ok && session) {
-      onAccountCreated(session);
+  /** Checks the steps a reload or a jump could have left unfinished, then sends everything. */
+  async function finish() {
+    const accountProblem = firstProblemField(accountProblems(answers.account, undefined));
+    if (accountProblem) {
+      setAccountErrors(accountProblems(answers.account, undefined));
+      flow.goToStep("account");
       return;
     }
-    if (!result.problem) return;
+    if (siteNameProblem(answers.siteName)) {
+      setSiteNameError(siteNameProblem(answers.siteName));
+      flow.goToStep("site-name");
+      return;
+    }
 
-    // A problem with an earlier answer is shown on that answer's own screen.
-    const field = hasCode(result.error, "INVALID_REQUEST")
-      ? fieldForAccountMessage(result.problem.message)
-      : undefined;
-    if (field) {
-      setFieldErrors({ ...fieldErrors, [field]: result.problem.message });
-      if (field !== "password") move(field, "back");
-    } else {
-      setStatusMessage(result.problem.message);
+    setIsFinishing(true);
+    setStatusMessage("");
+    try {
+      setSession(await api.finishSetup(answersToSend(answers, status), codeToSend));
+      forgetSetup();
+      flow.show("done");
+    } catch (error) {
+      showProblem(error, () => showFinishProblem(error));
+    } finally {
+      setIsFinishing(false);
     }
   }
 
-  function changeDetail(field: AccountField, value: string) {
-    setDetails({ ...details, [field]: value });
-    setFieldErrors({ ...fieldErrors, [field]: undefined });
+  function showFinishProblem(error: unknown) {
+    const placed = error instanceof ApiError ? placeFinishProblem(error) : undefined;
+    if (!placed) {
+      setStatusMessage(error instanceof ApiError ? error.message : t("setup.unreachable"));
+      return;
+    }
+    setAccountErrors(placed.accountErrors);
+    setConnectionErrors(placed.connectionErrors);
+    setSiteNameError(placed.siteNameError);
+    const usesPostgres = placed.step === "database" && answers.databaseKind === "postgres";
+    flow.show(usesPostgres ? "postgres" : placed.step, "back");
+    setStatusMessage(placed.statusMessage);
   }
 
+  /** "Already set up" and a refused setup code change the page; the rest is for the step. */
+  function showProblem(
+    error: unknown,
+    showOnStep: (problem: { code?: string; message: string }) => void,
+  ) {
+    const failure = explainSetupFailure(error);
+    if (failure.kind === "already-set-up") {
+      forgetSetup();
+      onAlreadySetUp();
+    } else if (failure.kind === "setup-code-rejected") {
+      setSetupCodeError(failure.message);
+      flow.show("setup-code", "back");
+    } else if (failure.kind === "unreachable") {
+      setStatusMessage(t("setup.unreachable"));
+    } else {
+      showOnStep(failure);
+    }
+  }
+
+  const currentStep = stepOfScreen(screen);
+  const stepIndicator = currentStep && (
+    <StepIndicator
+      steps={setupStepsFor(status)}
+      current={currentStep}
+      visited={flow.progress.visitedSteps}
+      completed={flow.progress.completedSteps}
+      onGoTo={(step) => {
+        setStatusMessage("");
+        flow.goToStep(step);
+      }}
+    />
+  );
+
   return (
-    <FullScreenLayout
-      progress={setupProgress(screen, status, databaseKind)}
-      showsAppMark={screen !== "welcome"}
-    >
+    <FullScreenLayout topBar={stepIndicator} showsAppMark={screen !== "welcome"}>
       {renderScreen()}
     </FullScreenLayout>
   );
@@ -229,99 +229,169 @@ export function SetupWizard({ status, api, onAccountCreated, onAlreadySetUp }: S
   function renderScreen() {
     switch (screen) {
       case "welcome":
-        return <WelcomeScreen onContinue={() => next()} />;
+        return <WelcomeScreen onContinue={() => flow.next()} />;
       case "setup-code":
         return (
           <SetupCodeScreen
             code={setupCode}
             onCodeChange={(code) => {
               setSetupCode(code);
-              setFieldErrors({ ...fieldErrors, setupCode: undefined });
+              setSetupCodeError(undefined);
             }}
-            error={fieldErrors.setupCode}
+            error={setupCodeError}
             onContinue={continueFromSetupCode}
-            onBack={back}
+            onBack={flow.back}
           />
         );
       case "database":
         return (
           <DatabaseScreen
-            databaseKind={databaseKind}
-            onDatabaseKindChange={setDatabaseKind}
-            onChosen={(kind) => afterSelectionShows(() => void saveDatabase(kind))}
-            onContinue={() => void saveDatabase(databaseKind)}
-            onBack={back}
-            isBusy={isBusy}
+            databaseKind={answers.databaseKind}
+            onDatabaseKindChange={(databaseKind) => change({ databaseKind })}
+            onContinue={() => flow.next()}
+            onBack={flow.back}
             statusMessage={statusMessage}
           />
         );
       case "postgres":
         return (
           <PostgresScreen
-            form={postgresForm}
+            form={answers.postgres}
             errors={connectionErrors}
             onChange={(changes) => {
-              setPostgresForm({ ...postgresForm, ...changes });
+              change({ postgres: { ...answers.postgres, ...changes } });
               setConnectionErrors({});
-              setStatusMessage("");
             }}
             onTestConnection={testConnection}
-            onContinue={() => void savePostgres()}
-            onBack={back}
-            isBusy={isBusy}
+            onContinue={continueFromPostgres}
+            onBack={flow.back}
             statusMessage={statusMessage}
+            notice={
+              wasReloaded && !answers.postgres.password
+                ? t("postgres.passwordForgotten")
+                : undefined
+            }
           />
         );
-      case "name":
+      case "account":
         return (
-          <NameScreen
-            name={details.name}
-            onNameChange={(name) => changeDetail("name", name)}
-            error={fieldErrors.name}
-            onContinue={() => showFieldError("name", nameProblem(details.name)) && next()}
-            onBack={back}
+          <CreateAccountScreen
+            form={answers.account}
+            onChange={changeAccount}
+            errors={accountErrors}
+            onContinue={continueFromAccount}
+            onBack={flow.back}
+            statusMessage={statusMessage}
+            notice={
+              wasReloaded && !answers.account.password ? t("account.passwordForgotten") : undefined
+            }
           />
         );
-      case "email":
+      case "site-name":
         return (
-          <EmailScreen
-            email={details.email}
-            onEmailChange={(email) => changeDetail("email", email)}
-            error={fieldErrors.email}
-            onContinue={() => showFieldError("email", emailProblem(details.email)) && next()}
-            onBack={back}
+          <SiteNameScreen
+            siteName={answers.siteName}
+            onSiteNameChange={(siteName) => {
+              change({ siteName });
+              setSiteNameError(undefined);
+            }}
+            error={siteNameError}
+            onContinue={continueFromSiteName}
+            onBack={flow.back}
+          />
+        );
+      case "site-type":
+        return (
+          <SiteTypeScreen
+            siteType={answers.siteType}
+            onSiteTypeChange={(siteType) => change({ siteType })}
+            onContinue={() => flow.next()}
+            onBack={flow.back}
+          />
+        );
+      case "review":
+        return (
+          <ReviewScreen
+            answers={answers}
+            showsDatabase={status.database.chosenBy !== "environment"}
+            isConfirmed={isConfirmed}
+            onConfirmedChange={setIsConfirmed}
+            onEdit={flow.goToStep}
+            onFinish={() => void finish()}
+            onBack={flow.back}
+            isBusy={isFinishing}
+            statusMessage={statusMessage}
           />
         );
       default:
         return (
-          <PasswordScreen
-            password={details.password}
-            onPasswordChange={(password) => changeDetail("password", password)}
-            email={details.email}
-            error={fieldErrors.password}
-            onContinue={() => void createAccount()}
-            onBack={back}
-            isBusy={isBusy}
-            statusMessage={statusMessage}
+          <DoneScreen
+            name={firstNameOf(answers.account.name)}
+            summary={summaryOf(answers, status)}
+            onContinue={() => session && onFinished(session)}
           />
         );
     }
   }
 }
 
+/**
+ * The answers kept from before a reload. From another computer the setup code is only kept
+ * in memory, so it has to be entered again first.
+ */
+function restoredSetup(status: SetupStatus) {
+  const restored = rememberedSetup();
+  if (!restored) return undefined;
+  const needsCodeAgain = status.requiresSetupCode && !rememberedSetupCode();
+  const screen = restored.progress.screen === "done" ? "review" : restored.progress.screen;
+  return {
+    ...restored,
+    progress: { ...restored.progress, screen: needsCodeAgain ? ("setup-code" as const) : screen },
+  };
+}
+
+/** What "Finish setup" sends: trimmed, the port as a number, no confirmation. */
+export function answersToSend(answers: SetupAnswers, status: SetupStatus): SetupAnswersToSend {
+  const site = { siteName: answers.siteName.trim(), siteType: answers.siteType };
+  const account = cleanAccountDetails(answers.account);
+  if (status.database.chosenBy === "environment") return { account, site };
+
+  if (answers.databaseKind === "built-in") return { database: { kind: "built-in" }, account, site };
+  const postgres = readPostgresForm(answers.postgres);
+  // The Postgres step checked the fields; if they're wrong now the API says so too.
+  const connection = postgres.errors
+    ? { ...answers.postgres, port: Number(answers.postgres.port) }
+    : postgres.connection;
+  return {
+    database: {
+      kind: "postgres",
+      ...connection,
+      createIfMissing: answers.postgres.createIfMissing,
+    },
+    account,
+    site,
+  };
+}
+
+/** "Daniel Roberts" is greeted as "Daniel". */
+export function firstNameOf(name: string): string {
+  return name.trim().split(/\s+/)[0] ?? name;
+}
+
+/** "Built-in database · Blog, Forms, SEO tools", using the API's own feature names. */
+export function summaryOf(answers: SetupAnswers, status: SetupStatus): string {
+  const kind =
+    status.database.chosenBy === "environment" ? status.database.kind : answers.databaseKind;
+  const database = kind === "postgres" ? t("done.postgres") : t("done.builtIn");
+  const features = featuresForSiteType(answers.siteType).map(({ name }) => name);
+  return t("done.summary", { database, features: features.join(", ") || t("done.noFeatures") });
+}
+
 function hasCode(error: unknown, code: string): boolean {
   return error instanceof ApiError && error.code === code;
 }
 
-/**
- * The database endpoints answer 409 when DATABASE_URL already chose the database. The
- * database screens are normally skipped then, but if not, there is nothing to choose: move on.
- */
-function isDatabaseDecidedAlready(error: unknown): boolean {
-  return hasCode(error, "SETUP_ALREADY_DONE");
-}
-
-function focusField(name: string) {
-  const field = document.querySelector<HTMLInputElement>(`input[name="${name}"]`);
-  field?.focus();
+function focusField(name: string | undefined) {
+  if (!name) return;
+  document.querySelector<HTMLInputElement>(`input[name="${name}"]`)?.focus();
 }

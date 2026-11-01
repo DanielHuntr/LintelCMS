@@ -28,6 +28,7 @@ export function renderScreen(screen: ReactNode, { permissions = ["*"] }: RenderS
     user: { id: "u1", email: "ada@example.com", name: "Ada Lovelace" },
     permissions,
     enabledPlugins: ["blog"],
+    siteName: "Brightside Bakery",
   };
 
   const rootRoute = createRootRoute({

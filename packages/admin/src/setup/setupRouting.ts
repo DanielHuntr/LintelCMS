@@ -5,26 +5,14 @@ import { fetchSetupStatus, type DatabaseKind, type SetupStatus } from "./setup.a
  * tested on their own. src/setup/README.md explains the whole flow.
  */
 
-/** Until the first account exists, every admin address (sign-in included) leads to /setup. */
+/** Until setup has finished, every admin address (sign-in included) leads to /setup. */
 export function mustFinishSetupFirst(pathname: string, needsSetup: boolean): boolean {
   return needsSetup && pathname !== "/setup";
 }
 
-/**
- * The account exists but "What are you building?" hasn't been answered, say because the tab
- * was closed straight after creating the account. The admin sends people back to finish it.
- */
-export function mustChooseSiteFirst(status: SetupStatus): boolean {
-  return !status.needsSetup && !status.siteSetupCompleted;
-}
-
-/** Where /setup sends people once the account exists. */
-export function destinationOnceSetUp(
-  isSignedIn: boolean,
-  siteSetupCompleted: boolean,
-): "/" | "/sign-in" | "/setup/site" {
-  if (!isSignedIn) return "/sign-in";
-  return siteSetupCompleted ? "/" : "/setup/site";
+/** Where /setup sends people once setup is finished. */
+export function destinationOnceSetUp(isSignedIn: boolean): "/" | "/sign-in" {
+  return isSignedIn ? "/" : "/sign-in";
 }
 
 /** Every screen of setup, in the order they can appear. */
@@ -33,49 +21,46 @@ export type SetupScreen =
   | "setup-code"
   | "database"
   | "postgres"
-  | "name"
-  | "email"
-  | "password"
+  | "account"
+  | "site-name"
   | "site-type"
-  | "features"
+  | "review"
   | "done";
 
-export type AccountScreen = Extract<
-  SetupScreen,
-  "welcome" | "setup-code" | "database" | "postgres" | "name" | "email" | "password"
->;
-export type SiteScreen = Extract<SetupScreen, "site-type" | "features" | "done">;
+/** The steps in the indicator at the top. "database" covers the PostgreSQL details too. */
+export type SetupStep = "database" | "account" | "site-name" | "site-type" | "review";
 
-export const siteScreens: readonly SiteScreen[] = ["site-type", "features", "done"];
+const allSteps: readonly SetupStep[] = ["database", "account", "site-name", "site-type", "review"];
 
 /**
- * The screens at /setup, before the account exists. The setup code only appears when
- * setting up from another computer. The database screens are skipped when DATABASE_URL
- * already decided, since asking would offer a choice that does nothing, and the PostgreSQL
- * details only appear once PostgreSQL is chosen.
+ * The steps for this install. The database step is left out when DATABASE_URL already
+ * decided, since asking would offer a choice that does nothing.
  */
-export function accountScreensFor(
-  status: SetupStatus,
-  databaseKind: DatabaseKind,
-): AccountScreen[] {
-  const screens: AccountScreen[] = ["welcome"];
-  if (status.requiresSetupCode) screens.push("setup-code");
-  if (status.database.chosenBy !== "environment") {
-    screens.push("database");
-    if (databaseKind === "postgres") screens.push("postgres");
-  }
-  screens.push("name", "email", "password");
-  return screens;
+export function setupStepsFor(status: SetupStatus): SetupStep[] {
+  return status.database.chosenBy === "environment"
+    ? allSteps.filter((step) => step !== "database")
+    : [...allSteps];
 }
 
-/** How far through the whole of setup a screen is, from 0 (welcome) to 1 (done). */
-export function setupProgress(
-  screen: SetupScreen,
-  status: SetupStatus,
-  databaseKind: DatabaseKind,
-): number {
-  const allScreens: SetupScreen[] = [...accountScreensFor(status, databaseKind), ...siteScreens];
-  return Math.max(allScreens.indexOf(screen), 0) / (allScreens.length - 1);
+/** The step a screen belongs to; undefined for the welcome, the setup code and the end. */
+export function stepOfScreen(screen: SetupScreen): SetupStep | undefined {
+  if (screen === "postgres") return "database";
+  return allSteps.find((step) => step === screen);
+}
+
+/**
+ * Every screen in order, for Back and Continue. The setup code only appears when setting up
+ * from another computer, and the PostgreSQL details only once PostgreSQL is chosen.
+ */
+export function setupScreensFor(status: SetupStatus, databaseKind: DatabaseKind): SetupScreen[] {
+  const screens: SetupScreen[] = ["welcome"];
+  if (status.requiresSetupCode) screens.push("setup-code");
+  for (const step of setupStepsFor(status)) {
+    screens.push(step);
+    if (step === "database" && databaseKind === "postgres") screens.push("postgres");
+  }
+  screens.push("done");
+  return screens;
 }
 
 let finishedStatus: SetupStatus | undefined;

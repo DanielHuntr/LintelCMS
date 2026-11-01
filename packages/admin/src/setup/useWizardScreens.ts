@@ -28,11 +28,3 @@ export function useWizardScreens<Screen extends string>(firstScreen: Screen) {
 
   return { screen, goTo };
 }
-
-/**
- * Runs `moveOn` after a moment, so someone who picks a tile sees it ticked before the
- * screen moves on. Short enough to feel immediate.
- */
-export function afterSelectionShows(moveOn: () => void) {
-  window.setTimeout(moveOn, 220);
-}

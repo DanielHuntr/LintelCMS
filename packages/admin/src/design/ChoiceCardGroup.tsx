@@ -21,11 +21,6 @@ interface ChoiceCardGroupProps<Value extends string> {
   options: readonly ChoiceCard<Value>[];
   value: Value;
   onChange: (value: Value) => void;
-  /**
-   * Called when a tile is clicked, or pressed with Enter or Space, but not when the arrow
-   * keys move the choice. Screens use it to move on as soon as someone picks.
-   */
-  onActivate?: (value: Value) => void;
   /** Tiles per row on wide screens. On phones they always stack. */
   columns?: 2 | 3;
 }
@@ -45,7 +40,6 @@ export function ChoiceCardGroup<Value extends string>({
   options,
   value,
   onChange,
-  onActivate,
   columns = 2,
 }: ChoiceCardGroupProps<Value>) {
   const groupId = useId();
@@ -58,11 +52,6 @@ export function ChoiceCardGroup<Value extends string>({
     event.preventDefault();
     onChange(target.value);
     tileElements.current[targetIndex]?.focus();
-  }
-
-  function handleClick(chosen: Value) {
-    onChange(chosen);
-    onActivate?.(chosen);
   }
 
   return (
@@ -90,7 +79,7 @@ export function ChoiceCardGroup<Value extends string>({
             aria-labelledby={titleId}
             aria-describedby={descriptionId}
             tabIndex={isSelected ? 0 : -1}
-            onClick={() => handleClick(option.value)}
+            onClick={() => onChange(option.value)}
             onKeyDown={(event) => handleKeyDown(event, index)}
             className={classNames(
               "relative flex items-center gap-4 rounded-panel p-4 text-left",

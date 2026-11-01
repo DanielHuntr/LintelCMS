@@ -25,11 +25,8 @@ const databaseChoices: readonly ChoiceCard<DatabaseKind>[] = [
 interface DatabaseScreenProps {
   databaseKind: DatabaseKind;
   onDatabaseKindChange: (kind: DatabaseKind) => void;
-  /** Picking a tile is the whole question, so a click moves straight on. */
-  onChosen: (kind: DatabaseKind) => void;
   onContinue: () => void;
   onBack: () => void;
-  isBusy: boolean;
   statusMessage: string;
 }
 
@@ -37,10 +34,8 @@ interface DatabaseScreenProps {
 export function DatabaseScreen({
   databaseKind,
   onDatabaseKindChange,
-  onChosen,
   onContinue,
   onBack,
-  isBusy,
   statusMessage,
 }: DatabaseScreenProps) {
   const titleId = useId();
@@ -50,8 +45,6 @@ export function DatabaseScreen({
       title={t("database.title")}
       onContinue={onContinue}
       onBack={onBack}
-      isBusy={isBusy}
-      busyLabel={t("database.saving")}
       statusMessage={statusMessage}
     >
       <span id={titleId} className="sr-only">
@@ -62,7 +55,6 @@ export function DatabaseScreen({
         options={databaseChoices}
         value={databaseKind}
         onChange={onDatabaseKindChange}
-        onActivate={onChosen}
         columns={2}
       />
     </WizardScreen>

@@ -16,13 +16,14 @@ interface PostgresScreenProps {
   onTestConnection: () => Promise<TestOutcome>;
   onContinue: () => void;
   onBack: () => void;
-  isBusy: boolean;
   statusMessage: string;
+  /** A sentence above the fields, such as "type the password again" after a reload. */
+  notice?: string;
 }
 
 /**
- * "Connect to your PostgreSQL". Testing is optional reassurance: Continue tests the
- * connection again as it saves, so nobody has to press two buttons.
+ * "Connect to your PostgreSQL". Testing is optional reassurance: Continue only checks the
+ * fields, and the connection is made for real when setup finishes.
  */
 export function PostgresScreen({
   form,
@@ -31,8 +32,8 @@ export function PostgresScreen({
   onTestConnection,
   onContinue,
   onBack,
-  isBusy,
   statusMessage,
+  notice,
 }: PostgresScreenProps) {
   const hostInput = useRef<HTMLInputElement>(null);
   const [testState, setTestState] = useState<TestOutcome | "idle" | "testing">("idle");
@@ -62,9 +63,8 @@ export function PostgresScreen({
       focusTarget={hostInput}
       onContinue={onContinue}
       onBack={onBack}
-      isBusy={isBusy}
-      busyLabel={t("database.saving")}
       statusMessage={statusMessage}
+      notice={notice}
     >
       <PostgresFields form={form} errors={errors} onChange={change} hostRef={hostInput} />
 
@@ -73,7 +73,7 @@ export function PostgresScreen({
           variant="tinted"
           size="large"
           onClick={() => void test()}
-          disabled={testState === "testing" || isBusy}
+          disabled={testState === "testing"}
         >
           {testState === "testing" ? t("database.testing") : t("database.test")}
         </Button>

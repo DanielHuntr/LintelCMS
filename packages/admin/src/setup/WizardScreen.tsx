@@ -10,10 +10,18 @@ interface WizardScreenProps {
   title: string;
   /** At most one short sentence under the question. */
   subtitle?: string;
+  /** A gentle note in a soft panel above the content, such as why a field is empty again. */
+  notice?: string;
   children?: ReactNode;
   /** Called by the Continue button and by Enter in any field. */
   onContinue: () => void;
   continueLabel?: string;
+  /**
+   * Why Continue can't go ahead yet, such as a password that isn't strong enough. Continue
+   * then looks unavailable and this sentence sits beside it, but it can still be pressed:
+   * pressing it shows what to fix, rather than silently doing nothing.
+   */
+  continueBlockedReason?: string;
   /** While true, Continue shows `busyLabel` and can't be pressed again. */
   isBusy?: boolean;
   busyLabel?: string;
@@ -41,9 +49,11 @@ interface WizardScreenProps {
 export function WizardScreen({
   title,
   subtitle,
+  notice,
   children,
   onContinue,
   continueLabel = t("setup.continue"),
+  continueBlockedReason,
   isBusy = false,
   busyLabel,
   onBack,
@@ -54,6 +64,7 @@ export function WizardScreen({
   heroMark,
 }: WizardScreenProps) {
   const headingId = useId();
+  const blockedReasonId = useId();
   const heading = useRef<HTMLHeadingElement>(null);
   const isHero = layout === "hero";
 
@@ -68,11 +79,19 @@ export function WizardScreen({
     if (!isBusy) onContinue();
   }
 
+  const blockedReason = continueBlockedReason && (
+    <p id={blockedReasonId} className="text-footnote text-label-secondary">
+      {continueBlockedReason}
+    </p>
+  );
+
   const continueButton = (
     <Button
       type="submit"
       size="extra-large"
       disabled={isBusy}
+      aria-disabled={continueBlockedReason ? true : undefined}
+      aria-describedby={continueBlockedReason ? blockedReasonId : undefined}
       icon={
         isBusy ? (
           <LoaderCircle
@@ -86,6 +105,7 @@ export function WizardScreen({
         isHero ? "min-w-56" : "flex-1 sm:min-w-44 sm:flex-none",
         // Calmer than the usual faded disabled look: the button is working, not unavailable.
         "disabled:opacity-80",
+        "aria-disabled:opacity-40 aria-disabled:hover:brightness-100",
       )}
     >
       {isBusy && busyLabel ? busyLabel : continueLabel}
@@ -118,6 +138,11 @@ export function WizardScreen({
             {subtitle}
           </p>
         )}
+        {notice && (
+          <p className="mt-6 rounded-card bg-accent/8 px-4 py-3 text-footnote text-label">
+            {notice}
+          </p>
+        )}
         {children && <div className={isHero ? "mt-8" : "mt-10"}>{children}</div>}
 
         {/* Always rendered, so screen readers are already listening when a message arrives. */}
@@ -125,11 +150,16 @@ export function WizardScreen({
           {statusMessage}
         </p>
 
-        {isHero && <div className="mt-10">{continueButton}</div>}
+        {isHero && (
+          <div className="mt-10 flex flex-col items-center gap-3">
+            {continueButton}
+            {blockedReason}
+          </div>
+        )}
       </div>
 
       {!isHero && (
-        <ActionBar onBack={onBack} isBusy={isBusy} width={width}>
+        <ActionBar onBack={onBack} isBusy={isBusy} width={width} note={blockedReason}>
           {continueButton}
         </ActionBar>
       )}
@@ -141,19 +171,22 @@ interface ActionBarProps {
   onBack?: () => void;
   isBusy: boolean;
   width: "regular" | "wide";
+  /** A sentence about Continue, shown above the buttons. */
+  note?: ReactNode;
   children: ReactNode;
 }
 
 /** Back and Continue, pinned to the bottom so they stay in reach on a phone. */
-function ActionBar({ onBack, isBusy, width, children }: ActionBarProps) {
+function ActionBar({ onBack, isBusy, width, note, children }: ActionBarProps) {
   return (
     <div className="fixed inset-x-0 bottom-0 z-10 bg-background/85 backdrop-blur-xl">
       <div
         className={classNames(
-          "mx-auto flex w-full items-center gap-3 px-6 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:pt-5 sm:pb-8",
+          "mx-auto flex w-full flex-wrap items-center gap-3 px-6 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:pt-5 sm:pb-8",
           width === "wide" ? "max-w-[808px]" : "max-w-[588px]",
         )}
       >
+        {note && <div className="w-full text-right">{note}</div>}
         {onBack && (
           <Button
             variant="plain"

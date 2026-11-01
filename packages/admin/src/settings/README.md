@@ -4,6 +4,7 @@
 `GroupedList`. Each row links to its own screen, owned by the feature it configures:
 
 - **Content types** (`/settings/content-types`) lives in `src/content-types`.
+- **Features** (`/settings/features`) lives in `src/features`.
 
 Add a row here when a new settings screen is built, and hide it with `useCan` when the
 signed-in person can't use it.
