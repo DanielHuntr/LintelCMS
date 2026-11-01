@@ -1,0 +1,57 @@
+/**
+ * @lintel/motion/effects: the Effects library. The definitions the builder's gallery
+ * offers, `defineEffect` for adding your own, the site-wide settings, and turning saved
+ * effects into what a published page runs. Uses Zod, so it's for the server and the
+ * editor; published pages only load the small runtime and the modules they use.
+ */
+export {
+  defineEffect,
+  defaultProps,
+  cleanProps,
+  effectAnimation,
+  effectCategories,
+  elementKinds,
+  InvalidEffectError,
+} from "./effect-definition.js";
+export type {
+  AnimationEffect,
+  BehaviourEffect,
+  EffectCategory,
+  EffectDefinition,
+  EffectParameter,
+  EffectParameters,
+  EffectProps,
+  EffectWeight,
+  ElementKind,
+  StyleEffect,
+} from "./effect-definition.js";
+export { number, choice, colour, toggle, text } from "./parameters.js";
+export { standardEffects } from "./catalogue/index.js";
+export { createEffectRegistry, effectRegistry, registerEffect } from "./effect-registry.js";
+export type { EffectRegistry } from "./effect-registry.js";
+export { nodeEffectSchema, nodeEffectsSchema, maxEffectsPerElement } from "./node-effect.schema.js";
+export type { NodeEffect } from "./node-effect.schema.js";
+export { resolveNodeEffects, effectSelector } from "./resolve-effects.js";
+export type { ResolvedEffects } from "./resolve-effects.js";
+export { measurePageWeight } from "./page-weight.js";
+export type { PageWeight, PageWeightWarning } from "./page-weight.js";
+export { effectModuleBytes } from "./module-sizes.js";
+export {
+  siteEffectSettingsSchema,
+  defaultSiteEffectSettings,
+  hasSiteEffects,
+  pageTransitionCss,
+  introMarkup,
+  introCss,
+  introSeenScript,
+} from "./site-effects.js";
+export { effectModuleNames } from "../effects/effect-types.js";
+export type {
+  EffectBinding,
+  EffectBehaviour,
+  EffectContext,
+  EffectModuleName,
+  EffectParams,
+  PageEffects,
+  SiteEffectSettings,
+} from "../effects/effect-types.js";

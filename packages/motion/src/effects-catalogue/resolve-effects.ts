@@ -1,0 +1,49 @@
+import type { EffectBinding } from "../effects/effect-types.js";
+import { cleanProps, type EffectDefinition } from "./effect-definition.js";
+import type { EffectRegistry } from "./effect-registry.js";
+import type { NodeEffect } from "./node-effect.schema.js";
+
+/**
+ * Saved effects turned into what the published page needs: the bindings the runtime
+ * mounts (module, behaviour and settings) and the static CSS written into the page.
+ * "animation" effects are left out: they were saved as the element's animation.
+ */
+
+export interface ResolvedEffects {
+  bindings: EffectBinding[];
+  css: string;
+  /** The definitions used, for the page weight meter. */
+  used: EffectDefinition[];
+}
+
+export function effectSelector(nodeId: string): string {
+  return `[data-node-id="${nodeId.replace(/["\\]/g, "\\$&")}"]`;
+}
+
+export function resolveNodeEffects(
+  list: ReadonlyArray<{ nodeId: string; effects: readonly NodeEffect[] }>,
+  registry: EffectRegistry,
+): ResolvedEffects {
+  const resolved: ResolvedEffects = { bindings: [], css: "", used: [] };
+  const css: string[] = [];
+  for (const { nodeId, effects } of list) {
+    for (const saved of effects) {
+      const definition = registry.find(saved.effect);
+      if (!definition || definition.kind === "animation") continue;
+      const props = cleanProps(definition, saved.params);
+      resolved.used.push(definition);
+      if (definition.staticCss)
+        css.push(definition.staticCss(effectSelector(nodeId), props as never));
+      if (definition.kind === "behaviour") {
+        resolved.bindings.push({
+          nodeId,
+          module: definition.module,
+          behaviour: definition.module === "custom" ? definition.id : definition.behaviour,
+          params: { ...definition.fixed, ...props },
+        });
+      }
+    }
+  }
+  resolved.css = css.filter(Boolean).join("\n");
+  return resolved;
+}
