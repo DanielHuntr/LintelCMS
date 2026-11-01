@@ -9,6 +9,7 @@ import {
   deliveryListQuerySchema,
 } from "./delivery.schema.js";
 import { findDeliveredEntry, listDeliveredEntries } from "./delivery.service.js";
+import { requireDeliveryAccess } from "./require-delivery-access.js";
 
 /**
  * Websites may keep a response for a minute. Short enough that a publish shows up
@@ -17,7 +18,8 @@ import { findDeliveredEntry, listDeliveredEntries } from "./delivery.service.js"
 const CACHE_CONTROL = "public, max-age=60";
 
 /**
- * HTTP only. Public by design: no session, published content only (see README.md).
+ * HTTP only. Public by design: no session, published content only (see README.md). When
+ * the site is set to need a token, `requireDeliveryAccess` asks for one.
  *
  *   GET /delivery/:collection        ?page&perPage&locale&taxonomy&term
  *                                    -> { items: [DeliveredEntry], total }
@@ -27,14 +29,16 @@ const CACHE_CONTROL = "public, max-age=60";
  * slug, its draft is served instead, never cached. A bad or expired token is a 401.
  */
 export async function deliveryRoutes(server: FastifyInstance) {
-  server.get("/delivery/:collection", async (request, reply) => {
+  const access = { preHandler: requireDeliveryAccess };
+
+  server.get("/delivery/:collection", access, async (request, reply) => {
     const { collection } = parseRequest(deliveryListParamsSchema, request.params);
     const query = parseRequest(deliveryListQuerySchema, request.query);
     const list = await listDeliveredEntries(server.database, collection, query, server.assetLookup);
     return reply.header("cache-control", CACHE_CONTROL).send(list);
   });
 
-  server.get("/delivery/:collection/:slug", async (request, reply) => {
+  server.get("/delivery/:collection/:slug", access, async (request, reply) => {
     const { collection, slug } = parseRequest(deliveryEntryParamsSchema, request.params);
     const query = parseRequest(deliveryEntryQuerySchema, request.query);
     const header = request.headers["lintel-preview"];

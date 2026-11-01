@@ -22,12 +22,12 @@ admin can show the right sections without an extra request.
 
 ## The plugins
 
-| id         | Name        | Adds admin sections |
-| ---------- | ----------- | ------------------- |
-| `blog`     | Blog        |                     |
-| `commerce` | Online shop | `/commerce`         |
-| `forms`    | Forms       | `/forms`            |
-| `seo`      | SEO tools   |                     |
+| id         | Name        | Adds admin sections                                               |
+| ---------- | ----------- | ----------------------------------------------------------------- |
+| `blog`     | Blog        |                                                                   |
+| `commerce` | Online shop | `/commerce`                                                       |
+| `forms`    | Forms       | `/forms`                                                          |
+| `seo`      | SEO tools   | Settings → Search engines; the editor's SEO panel (see `src/seo`) |
 
 Which ones are on is stored per tenant in the `enabledPlugins` setting (see `src/settings`).
 

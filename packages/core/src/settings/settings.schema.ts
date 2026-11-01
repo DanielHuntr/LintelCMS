@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { defaultSeoDefaults, seoDefaultsSchema } from "../seo/seo-defaults.schema.js";
 
 /**
  * Every setting, with the shape its value must have. Reading a key that has never been
@@ -21,6 +22,12 @@ export const settingSchemas = {
   siteSetupCompleted: z.boolean(),
   /** Signs live preview links (see src/preview). Made the first time a preview is opened. */
   previewSigningSecret: z.string().min(32).nullable(),
+  /** When true, /delivery and /graphql need an API token (see src/delivery). */
+  deliveryRequiresToken: z.boolean(),
+  /** Website origins allowed to call the content APIs from the browser. */
+  deliveryAllowedOrigins: z.array(z.string()),
+  /** Search engine defaults from the SEO plugin (see src/seo). */
+  seoDefaults: seoDefaultsSchema,
 };
 
 export type SettingKey = keyof typeof settingSchemas;
@@ -31,4 +38,7 @@ export const settingDefaults: { [Key in SettingKey]: SettingValue<Key> } = {
   siteType: null,
   siteSetupCompleted: false,
   previewSigningSecret: null,
+  deliveryRequiresToken: false,
+  deliveryAllowedOrigins: [],
+  seoDefaults: defaultSeoDefaults,
 };

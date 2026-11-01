@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Collection, Entry } from "./content.types.js";
 import { ParentPagePicker } from "./ParentPagePicker.js";
 import { PublishingSection } from "./PublishingSection.js";
@@ -17,6 +18,8 @@ interface EntrySidePanelProps {
   onUnpublish: () => void;
   onSchedule: (publishAt: string) => void;
   onRestore: (revisionId: string) => Promise<void>;
+  /** Sections from plugins, such as SEO, shown above the history. */
+  children?: ReactNode;
 }
 
 /** Everything about the entry that isn't its content: status, place in the tree, history. */
@@ -32,6 +35,7 @@ export function EntrySidePanel({
   onUnpublish,
   onSchedule,
   onRestore,
+  children,
 }: EntrySidePanelProps) {
   return (
     <aside
@@ -56,6 +60,7 @@ export function EntrySidePanel({
           onChange={onParentChange}
         />
       )}
+      {children}
       <RevisionHistory entryId={entry?.id} isWorking={isWorking} onRestore={onRestore} />
     </aside>
   );

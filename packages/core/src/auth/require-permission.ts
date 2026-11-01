@@ -1,4 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { findRequestApiToken } from "../api-tokens/api-token-auth.js";
 import { hasPermission, type Permission } from "../roles/permissions.js";
 import { NotSignedInError, PermissionDeniedError } from "./auth.errors.js";
 import type { SignedIn } from "./auth.schema.js";
@@ -21,6 +22,8 @@ declare module "fastify" {
  *   server.post("/entries/:id/publish", { preHandler: requirePermission("entries:publish") }, ...)
  *
  * Signed out gives 401 and not allowed gives 403, each with a message an editor can follow.
+ * Without a session cookie, an API token (`Authorization: Bearer ...`) is accepted instead;
+ * it acts for the admin who made it, with the token's narrower permissions (see src/api-tokens).
  */
 
 export async function requireSignedIn(request: FastifyRequest, reply: FastifyReply): Promise<void> {
@@ -51,7 +54,12 @@ async function loadSignedIn(request: FastifyRequest, reply: FastifyReply): Promi
 
   const token = readSessionToken(request);
   if (!token) {
-    throw new NotSignedInError();
+    const apiToken = await findRequestApiToken(request);
+    if (!apiToken) {
+      throw new NotSignedInError();
+    }
+    request.signedIn = apiToken.signedIn;
+    return apiToken.signedIn;
   }
 
   const found = await findSignedIn(request.server.database, token);

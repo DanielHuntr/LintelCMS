@@ -18,3 +18,6 @@ Current settings:
 - `siteType` and `siteSetupCompleted`: the "What are you building?" setup step (see `src/setup`).
 - `previewSigningSecret`: signs live preview links (see `src/preview`). Made once, the first
   time someone opens a preview, by `readOrCreateSetting`.
+- `deliveryRequiresToken` and `deliveryAllowedOrigins`: who may read published content
+  (see `src/delivery`).
+- `seoDefaults`: the SEO plugin's site-wide defaults (see `src/seo`).

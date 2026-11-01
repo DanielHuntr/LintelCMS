@@ -2,29 +2,35 @@ import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import Fastify from "fastify";
+import { apiTokensRoutes } from "./api-tokens/api-tokens.routes.js";
 import { authRoutes } from "./auth/auth.routes.js";
 import { blueprintsRoutes } from "./blueprints/blueprints.routes.js";
 import { collectionsRoutes } from "./collections/collections.routes.js";
 import type { ActiveDatabase } from "./database/active-database.js";
 import type { Database } from "./database/client.js";
 import { DEFAULT_LINTEL_FOLDER, type LintelFolder } from "./database/database-choice.js";
+import { deliveryAccessRoutes } from "./delivery/delivery-access.routes.js";
 import { deliveryRoutes } from "./delivery/delivery.routes.js";
 import { entriesRoutes } from "./entries/entries.routes.js";
 import { findEntriesUsingAsset } from "./entries/entries.service.js";
 import { revisionsRoutes } from "./entries/revisions.routes.js";
 import { fieldtypesRoutes } from "./fieldtypes/fieldtypes.routes.js";
+import { graphqlRoutes } from "./graphql/graphql.routes.js";
 import type { AssetExists, AssetLookup } from "./fieldtypes/image-assets.js";
 import { healthRoutes } from "./health/health.routes.js";
+import { crossOriginOptions } from "./http/cross-origin.js";
 import { sendHttpErrorDetails } from "./http/http-errors.js";
 import { type AssetUsageFinder, createAssetLookup } from "./media/asset-lookup.js";
 import { LocalDiskStorage } from "./media/local-disk-storage.js";
 import { mediaRoutes } from "./media/media.routes.js";
 import type { StorageDriver } from "./media/storage-driver.js";
 import { DEFAULT_TRANSFORM_CACHE_FOLDER } from "./media/transform-cache.js";
+import { openApiRoutes } from "./openapi/openapi.routes.js";
 import { pluginsRoutes } from "./plugins/plugins.routes.js";
 import { previewRoutes } from "./preview/preview.routes.js";
 import { registerScheduledJobs } from "./scheduler/scheduled-jobs.js";
 import { searchRoutes } from "./search/search.routes.js";
+import { seoRoutes } from "./seo/seo.routes.js";
 import { generateSetupCode } from "./setup/setup-code.js";
 import { setupRoutes } from "./setup/setup.routes.js";
 import { localesRoutes } from "./sites/locales.routes.js";
@@ -32,6 +38,8 @@ import { taxonomiesRoutes } from "./taxonomies/taxonomies.routes.js";
 import { globalsRoutes } from "./globals/globals.routes.js";
 import { navigationRoutes } from "./navigation/navigation.routes.js";
 import { translationsRoutes } from "./entries/translations.routes.js";
+import { WebhookDispatcher } from "./webhooks/webhook-dispatcher.js";
+import { webhooksRoutes } from "./webhooks/webhooks.routes.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -54,6 +62,8 @@ declare module "fastify" {
     assetLookup: AssetLookup;
     /** The API's address as browsers reach it, for absolute URLs such as an asset's `url`. */
     publicApiUrl: string;
+    /** Sends queued webhook deliveries (see src/webhooks). */
+    webhooks: WebhookDispatcher;
   }
 }
 
@@ -94,6 +104,20 @@ export interface ServerOptions {
   /** The API's address as browsers reach it. Defaults to http://localhost:4000. */
   publicApiUrl?: string;
   media?: MediaOptions;
+  /** Serve GraphiQL, the in-browser GraphQL editor, at /graphql. Development only. */
+  graphiql?: boolean;
+  /** How webhooks are sent. Every part has a default. */
+  webhooks?: WebhookOptions;
+}
+
+export interface WebhookOptions {
+  /**
+   * Allow sending to localhost and private network addresses. Off by default, so
+   * webhooks can't be pointed into the server's own network; for local testing only.
+   */
+  allowPrivateAddresses?: boolean;
+  /** Send as soon as an event happens. Defaults to `runScheduledJobs`; tests send by hand. */
+  sendStraightAway?: boolean;
 }
 
 /**
@@ -120,15 +144,19 @@ export function buildServer(options: ServerOptions) {
     options.assetExists ?? ((assetId) => mediaLibrary.assetExists(assetId)),
   );
   server.decorate("assetLookup", options.assetLookup ?? mediaLibrary);
+  const webhooks = new WebhookDispatcher({
+    database: () => server.database,
+    sender: { allowPrivateAddresses: options.webhooks?.allowPrivateAddresses ?? false },
+    sendStraightAway: options.webhooks?.sendStraightAway ?? options.runScheduledJobs ?? true,
+    onError: (error) => server.log.error(error, "Sending webhooks failed"),
+  });
+  server.decorate("webhooks", webhooks);
+  server.addHook("onClose", () => webhooks.finishSending());
   server.decorateRequest("signedIn", null);
   server.setErrorHandler(sendHttpErrorDetails);
 
-  server.register(cors, {
-    origin: options.adminOrigin,
-    credentials: true,
-    // The plugin's default is GET, HEAD and POST only; the admin also updates and deletes.
-    methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"],
-  });
+  // The admin may call everything; websites listed in Settings may call the content APIs.
+  server.register(cors, { delegator: crossOriginOptions(options.adminOrigin) });
   server.register(cookie);
   // Off by default; routes that need a limit (like sign-in) set their own.
   server.register(rateLimit, { global: false });
@@ -150,6 +178,12 @@ export function buildServer(options: ServerOptions) {
   server.register(navigationRoutes);
   server.register(previewRoutes);
   server.register(searchRoutes);
+  server.register(deliveryAccessRoutes);
+  server.register(apiTokensRoutes);
+  server.register(webhooksRoutes);
+  server.register(graphqlRoutes, { graphiql: options.graphiql ?? false });
+  server.register(openApiRoutes);
+  server.register(seoRoutes);
 
   if (options.runScheduledJobs ?? true) {
     registerScheduledJobs(server);

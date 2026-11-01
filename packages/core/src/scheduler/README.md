@@ -1,7 +1,11 @@
 # Scheduler
 
-Jobs the server runs on a timer. Today there is one: publishing scheduled entries that are
-due (`publishDueEntries`, in `src/entries`), on startup and then every minute.
+Jobs the server runs on a timer, each on startup and then every minute:
+
+- publishing scheduled entries that are due (`publishDueEntries`, in `src/entries`), and
+  announcing them like any other publish (see `src/content-events`);
+- sending webhook deliveries that are due: retries, and anything queued while no server
+  was sending (`server.webhooks.deliverDue`, in `src/webhooks`).
 
 `scheduled-jobs.ts` is the one visible list of jobs. `buildServer` registers it unless
 `runScheduledJobs: false` is passed (tests do, so they decide when jobs run). Jobs start

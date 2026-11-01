@@ -13,6 +13,8 @@ import { SessionProvider } from "../session/SessionContext.js";
 interface RenderScreenOptions {
   /** The signed-in person's permissions. Defaults to everything. */
   permissions?: string[];
+  /** The plugins switched on. Defaults to the blog. */
+  enabledPlugins?: string[];
 }
 
 /**
@@ -20,14 +22,17 @@ interface RenderScreenOptions {
  * query cache (so tests don't share data) and a signed-in session. Every route path leads to
  * the screen, so links inside it can be followed without the whole app's route tree.
  */
-export function renderScreen(screen: ReactNode, { permissions = ["*"] }: RenderScreenOptions = {}) {
+export function renderScreen(
+  screen: ReactNode,
+  { permissions = ["*"], enabledPlugins = ["blog"] }: RenderScreenOptions = {},
+) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   const session = {
     user: { id: "u1", email: "ada@example.com", name: "Ada Lovelace" },
     permissions,
-    enabledPlugins: ["blog"],
+    enabledPlugins,
   };
 
   const rootRoute = createRootRoute({

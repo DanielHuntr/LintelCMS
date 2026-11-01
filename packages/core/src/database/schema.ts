@@ -16,3 +16,6 @@ export { siteLocalesTable } from "../sites/locales.table.js";
 export { taxonomiesTable, termsTable } from "../taxonomies/taxonomies.table.js";
 export { globalSetsTable, globalValuesTable } from "../globals/globals.table.js";
 export { navigationsTable } from "../navigation/navigation.table.js";
+export { apiTokensTable } from "../api-tokens/api-tokens.table.js";
+export { webhooksTable, webhookDeliveriesTable } from "../webhooks/webhooks.table.js";
+export { entrySeoTable, redirectsTable } from "../seo/seo.table.js";

@@ -50,6 +50,13 @@
       "when": 1793497957658,
       "tag": "0006_add_collection_preview_urls",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793498295100,
+      "tag": "0007_add_api_tokens_webhooks_and_seo",
+      "breakpoints": true
     }
   ]
 }
