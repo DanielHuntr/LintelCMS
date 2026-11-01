@@ -41,7 +41,11 @@ export function BlockInstancePanel({
       </p>
     );
   }
-  const values = currentValues(instanceValues(node), block.renamedProperties);
+  // Properties nobody has filled in yet show their defaults, as the canvas does.
+  const values = withDefaults(
+    currentValues(instanceValues(node), block.renamedProperties),
+    block.properties,
+  );
   const change = (next: Record<string, unknown>) => onChange(next, block.name);
 
   return (
@@ -277,4 +281,17 @@ function SimpleProperty({
       {text("pageBuilder.blocks.propertyUnsupported", { label: property.label })}
     </p>
   );
+}
+
+function withDefaults(
+  values: Readonly<Record<string, unknown>>,
+  properties: readonly BlockProperty[],
+): Record<string, unknown> {
+  const filled: Record<string, unknown> = { ...values };
+  for (const property of properties) {
+    if (filled[property.handle] === undefined && property.default !== undefined) {
+      filled[property.handle] = property.default;
+    }
+  }
+  return filled;
 }

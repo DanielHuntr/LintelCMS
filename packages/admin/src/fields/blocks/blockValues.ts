@@ -29,8 +29,9 @@ export function addBlock(
   type: string,
   id: string,
   atIndex = blocks.length,
+  data: BlockValue["data"] = {},
 ): BlockValue[] {
-  return [...blocks.slice(0, atIndex), { id, type, data: {} }, ...blocks.slice(atIndex)];
+  return [...blocks.slice(0, atIndex), { id, type, data }, ...blocks.slice(atIndex)];
 }
 
 export function removeBlock(blocks: readonly BlockValue[], id: string): BlockValue[] {
