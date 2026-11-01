@@ -22,7 +22,9 @@ import { mediaRoutes } from "./media/media.routes.js";
 import type { StorageDriver } from "./media/storage-driver.js";
 import { DEFAULT_TRANSFORM_CACHE_FOLDER } from "./media/transform-cache.js";
 import { pluginsRoutes } from "./plugins/plugins.routes.js";
+import { previewRoutes } from "./preview/preview.routes.js";
 import { registerScheduledJobs } from "./scheduler/scheduled-jobs.js";
+import { searchRoutes } from "./search/search.routes.js";
 import { generateSetupCode } from "./setup/setup-code.js";
 import { setupRoutes } from "./setup/setup.routes.js";
 import { localesRoutes } from "./sites/locales.routes.js";
@@ -146,6 +148,8 @@ export function buildServer(options: ServerOptions) {
   server.register(taxonomiesRoutes);
   server.register(globalsRoutes);
   server.register(navigationRoutes);
+  server.register(previewRoutes);
+  server.register(searchRoutes);
 
   if (options.runScheduledJobs ?? true) {
     registerScheduledJobs(server);

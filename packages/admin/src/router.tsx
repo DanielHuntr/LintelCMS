@@ -287,9 +287,23 @@ const sectionRoutes = [
 const mediaRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: "/media",
+  // `?asset=` opens one file's details, as search does when a file is picked; `?search=`
+  // fills in the library's search, so that file is in the list however old it is.
+  validateSearch: (search: Record<string, unknown>): { asset?: string; search?: string } => ({
+    asset: typeof search.asset === "string" && search.asset !== "" ? search.asset : undefined,
+    search: typeof search.search === "string" && search.search !== "" ? search.search : undefined,
+  }),
   component: function MediaRoute() {
     const { session } = adminRoute.useRouteContext();
-    return <MediaLibraryPage permissions={session.permissions} />;
+    const { asset, search } = mediaRoute.useSearch();
+    return (
+      <MediaLibraryPage
+        key={asset}
+        permissions={session.permissions}
+        initialAssetId={asset}
+        initialSearch={search}
+      />
+    );
   },
 });
 

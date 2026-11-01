@@ -17,6 +17,7 @@ publish, unpublish and restore is kept as a revision.
 | `POST /entries/:id/unpublish`                     | `entries:publish` | none                            | 200 `Entry`                              |
 | `POST /entries/:id/schedule`                      | `entries:publish` | `{ publishAt }` (in the future) | 200 `Entry`                              |
 | `DELETE /entries/:id`                             | `entries:delete`  | none                            | 204                                      |
+| `POST /entries/:id/duplicate`                     | `entries:create`  | none                            | 201 `Entry`, a draft copy                |
 | `GET /entries/:id/revisions`                      | `entries:read`    | none                            | 200 `{ revisions }`, newest first        |
 | `GET /entries/:id/revisions/:revisionId`          | `entries:read`    | none                            | 200, with its `data`                     |
 | `POST /entries/:id/revisions/:revisionId/restore` | `entries:update`  | none                            | 200 `Entry`                              |
@@ -84,6 +85,13 @@ send the whole tree (or all the children of one parent); entries left out keep t
 place. It refuses entries from elsewhere, parents in a flat collection, and loops.
 Deleting a page moves its children up to its parent.
 
+## Duplicating
+
+`duplicate` makes a new draft from the entry's saved values (not its published ones), titled
+"… (copy)" (shortened to fit the title's limit), with a slug of its own. It keeps the
+parent and goes straight after the original among its siblings; in a dated collection it
+sorts by date like any new draft.
+
 ## For the media library
 
 `findEntriesUsingAsset(database, assetId)` in `entries.service.ts` lists the entries
@@ -102,6 +110,7 @@ whose saved or published values use an asset, as `[{ entryId, title }]`, for
 | `entry-publishing.service.ts`              | Publish, unpublish, schedule and `publishDueEntries` |
 | `entry-translations.service.ts`            | Starting a translation                               |
 | `entry-references.ts`                      | Checking and tidying ids in entries and terms fields |
+| `entry-duplication.service.ts`             | "Duplicate entry"                                    |
 | `revisions.service.ts`                     | Listing, viewing and restoring revisions             |
 | `entry-responses.ts`                       | Stored rows to API shapes; `hasUnpublishedChanges`   |
 | `slugs.ts`, `entry-tree.ts`                | Pure helpers: making slugs, putting a tree in order  |

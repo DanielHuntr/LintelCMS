@@ -193,6 +193,7 @@ describe("default collections", () => {
       ["summary", "textarea"],
       ["hero_image", "image"],
       ["body", "richText"],
+      ["sections", "blocks"],
     ]);
     const post = await api("GET", "/blueprints/post");
     expect(post.json().fields.map((field: { handle: string }) => field.handle)).toEqual([

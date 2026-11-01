@@ -113,6 +113,7 @@ describe("the public delivery API", () => {
         summary: "Who we are",
         hero_image: heroImage,
         body: { json: body, html: "<p>Hello <strong>there</strong></p>" },
+        sections: null,
       },
     });
   });

@@ -22,6 +22,8 @@ export const collectionsTable = pgTable(
       .notNull()
       .references(() => blueprintsTable.id),
     routePattern: text("route_pattern"),
+    // Where the website shows unpublished drafts, for live preview. See src/preview.
+    previewUrlPattern: text("preview_url_pattern"),
     structure: text("structure", { enum: collectionStructures }).notNull().default("flat"),
     ...timestamps(),
   },

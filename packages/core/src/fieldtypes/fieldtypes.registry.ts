@@ -1,3 +1,4 @@
+import { blocksFieldtype } from "./blocks-fieldtype.js";
 import type { Fieldtype } from "./fieldtype.js";
 import {
   colourFieldtype,
@@ -32,6 +33,7 @@ export const fieldtypeRegistry: readonly Fieldtype[] = [
   listFieldtype,
   entriesFieldtype,
   termsFieldtype,
+  blocksFieldtype,
 ];
 
 export const fieldtypeNames = fieldtypeRegistry.map((fieldtype) => fieldtype.type);

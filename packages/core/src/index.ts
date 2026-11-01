@@ -35,6 +35,8 @@ export type {
   NavigationResponse,
   NavigationSummaryResponse,
 } from "./navigation/navigation.schema.js";
+export type { EntryPreview, PreviewedEntry } from "./preview/preview.schema.js";
+export type { SearchResults } from "./search/search.schema.js";
 export {
   createAssetLookup,
   noAssetUsage,

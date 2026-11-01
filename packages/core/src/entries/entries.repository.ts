@@ -275,6 +275,27 @@ export async function findNextSortOrder(
   return row?.highest === null || row?.highest === undefined ? 0 : row.highest + 1;
 }
 
+/** Moves every sibling after `sortOrder` one place down, leaving a free place right after it. */
+export async function makeRoomAfter(
+  database: DatabaseOrTransaction,
+  collectionId: string,
+  parentId: string | null,
+  sortOrder: number,
+): Promise<void> {
+  await database
+    .update(entriesTable)
+    .set({ sortOrder: sql`${entriesTable.sortOrder} + 1` })
+    .where(
+      and(
+        eq(entriesTable.collectionId, collectionId),
+        parentId === null
+          ? sql`${entriesTable.parentId} is null`
+          : eq(entriesTable.parentId, parentId),
+        sql`${entriesTable.sortOrder} > ${sortOrder}`,
+      ),
+    );
+}
+
 export async function updateEntryPosition(
   database: DatabaseOrTransaction,
   entryId: string,

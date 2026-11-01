@@ -19,6 +19,8 @@ export const settingSchemas = {
   siteType: siteTypeSchema.nullable(),
   /** Whether the "What are you building?" step has been done. */
   siteSetupCompleted: z.boolean(),
+  /** Signs live preview links (see src/preview). Made the first time a preview is opened. */
+  previewSigningSecret: z.string().min(32).nullable(),
 };
 
 export type SettingKey = keyof typeof settingSchemas;
@@ -28,4 +30,5 @@ export const settingDefaults: { [Key in SettingKey]: SettingValue<Key> } = {
   enabledPlugins: [],
   siteType: null,
   siteSetupCompleted: false,
+  previewSigningSecret: null,
 };

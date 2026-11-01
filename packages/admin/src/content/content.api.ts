@@ -94,6 +94,11 @@ export function scheduleEntry(entryId: string, publishAt: string): Promise<Entry
   });
 }
 
+/** A draft copy of the entry, placed straight after it. */
+export function duplicateEntry(entryId: string): Promise<Entry> {
+  return apiRequest<Entry>(`/entries/${entryId}/duplicate`, { method: "POST" });
+}
+
 export function deleteEntry(entryId: string): Promise<void> {
   return apiRequest<void>(`/entries/${entryId}`, { method: "DELETE" });
 }

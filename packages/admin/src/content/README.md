@@ -40,11 +40,17 @@ in the meantime is lost.
 Each field is drawn by `src/fields`. The side panel (`EntrySidePanel.tsx`) holds status and
 publishing, the parent page for tree collections, and the revision history with restore.
 
+Preview (in the toolbar and the More menu) opens a split view: the document on the left and
+the page as the site renders it on the right (`src/preview`), in place of the side panel. It
+uses the page area's full width, measured with `cqw` (AdminLayout's main is a size container).
+"Duplicate entry" in the More menu saves first, then makes a draft copy after the original
+(`POST /entries/:id/duplicate`) and opens it.
+
 ## Permissions
 
 - `entries:create` shows "New entry"; `entries:update` allows reordering.
 - `entries:publish` shows Publish, Unpublish and Schedule. Without it, the main button is Save.
-- `entries:delete` shows Delete in the "More" menu.
+- `entries:delete` shows Delete in the "More" menu; `entries:create` shows "Duplicate entry".
 - `blueprints:update` shows "New content type" on the overview.
 
 The API checks every permission again; hiding buttons is about clarity, not security.
@@ -53,5 +59,10 @@ The API checks every permission again; hiding buttons is about clarity, not secu
 
 Tree and flat collections can be reordered by dragging (pointer) or with each row's up and
 down buttons (keyboard and screen readers, with a spoken confirmation). Pages move with the
-pages nested under them, and only among their siblings: a page changes parent in the editor.
-`treeOrder.ts` holds those rules. Reordering is off while a search or filter is applied.
+pages nested under them.
+
+In the Pages tree, dragging a page right puts it under the page above, and dragging it left
+moves it out, one level per 20px; the row shows the depth it will land at while dragging
+(`projectTreeDrop`). Keyboard users get two more buttons on each page: "Put … under …" (the
+sibling above) and "Move … out of …" (its parent). A page can also change parent in the
+editor. `treeOrder.ts` holds these rules. Reordering is off while a search or filter is applied.

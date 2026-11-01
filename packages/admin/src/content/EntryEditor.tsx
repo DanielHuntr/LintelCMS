@@ -8,6 +8,7 @@ import type { Blueprint } from "../content-types/blueprints.types.js";
 import { titleFieldHandle } from "../fields/field.types.js";
 import { textValue } from "../fields/fieldValues.js";
 import { t } from "../i18n/strings.js";
+import { EntryPreviewPane } from "../preview/EntryPreviewPane.js";
 import { useCan } from "../session/SessionContext.js";
 import type { Collection, Entry } from "./content.types.js";
 import { entryDraftReducer, hasUnsavedChanges, initialDraftState } from "./entryDraft.js";
@@ -21,11 +22,28 @@ import {
   fieldErrorsFrom,
   firstFieldWithError,
   focusField,
+  focusTargetFor,
 } from "./fieldErrors.js";
 import { SaveIndicator } from "./SaveIndicator.js";
 import { useAutosave } from "./useAutosave.js";
 import { useEntryActions } from "./useEntryActions.js";
 import { useLeaveWarning } from "./useLeaveWarning.js";
+
+/**
+ * What sits beside the document: the side panel (status, parent, history), the live
+ * preview, or nothing. The preview needs the room, so it takes the panel's place.
+ */
+type Companion = "panel" | "preview" | "none";
+
+/**
+ * The split view uses the whole width of the page area rather than the usual reading width.
+ * `cqw` is the page area's width (AdminLayout's main is a size container), so this lines up
+ * exactly with the page's padding at any window size.
+ */
+const splitViewStyle = {
+  width: "calc(100cqw - 5rem)",
+  marginLeft: "min(0px, calc((60rem - 100cqw) / 2))",
+} as const;
 
 interface EntryEditorProps {
   collection: Collection;
@@ -49,10 +67,13 @@ export function EntryEditor({
   locale,
 }: EntryEditorProps) {
   const [state, dispatch] = useReducer(entryDraftReducer, initialEntry, initialDraftState);
-  const [isPanelOpen, setIsPanelOpen] = useState(true);
+  const [companion, setCompanion] = useState<Companion>("panel");
+  const isPanelOpen = companion === "panel";
+  const isPreviewOpen = companion === "preview";
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const documentElement = useRef<HTMLDivElement>(null);
   const panelId = useId();
+  const previewId = useId();
   const navigate = useNavigate();
 
   const actions = useEntryActions({
@@ -65,6 +86,7 @@ export function EntryEditor({
   const { entry } = actions;
   const canPublish = useCan("entries:publish");
   const canDelete = useCan("entries:delete");
+  const canCreate = useCan("entries:create");
   const canSave = useCan(entry ? "entries:update" : "entries:create");
 
   const isUnsaved = hasUnsavedChanges(state);
@@ -86,8 +108,13 @@ export function EntryEditor({
   const leaveWarning = useLeaveWarning(isUnsaved);
 
   function focusFirstFieldError(error: unknown) {
-    const handle = firstFieldWithError(handlesInOrder, fieldErrorsFrom(error));
-    if (handle && documentElement.current) focusField(documentElement.current, handle);
+    const errors = fieldErrorsFrom(error);
+    const handle = firstFieldWithError(handlesInOrder, errors);
+    if (handle && documentElement.current) {
+      // A block opens when it has a problem, so wait a frame for its fields to be drawn.
+      const container = documentElement.current;
+      requestAnimationFrame(() => focusField(container, focusTargetFor(handle, errors)));
+    }
   }
 
   /** Saves now (a new entry is created even if untouched), moving focus to any problem. */
@@ -103,6 +130,17 @@ export function EntryEditor({
 
   async function publish() {
     if (await saveExplicitly()) await actions.publish();
+  }
+
+  /** Saves first, so the copy has the latest changes, then opens the copy. */
+  async function duplicateEntry() {
+    if (!(await saveExplicitly())) return;
+    const copy = await actions.duplicate();
+    if (!copy) return;
+    await navigate({
+      to: "/content/$collection/$entryId",
+      params: { collection: collection.handle, entryId: copy.id },
+    });
   }
 
   async function deleteEntry() {
@@ -130,7 +168,7 @@ export function EntryEditor({
   const bannerMessage = actions.actionError ?? unplacedErrors[0] ?? null;
 
   return (
-    <>
+    <div style={isPreviewOpen ? splitViewStyle : undefined}>
       <h1 className="sr-only">{title || t("editor.untitled")}</h1>
 
       <EntryEditorBar
@@ -138,8 +176,14 @@ export function EntryEditor({
         collectionName={collection.name}
         isPanelOpen={isPanelOpen}
         panelId={panelId}
-        onTogglePanel={() => setIsPanelOpen((wasOpen) => !wasOpen)}
+        onTogglePanel={() => setCompanion((current) => (current === "panel" ? "none" : "panel"))}
         onDelete={entry && canDelete ? () => setIsConfirmingDelete(true) : undefined}
+        onDuplicate={entry && canCreate ? () => void duplicateEntry() : undefined}
+        isPreviewOpen={isPreviewOpen}
+        previewId={previewId}
+        onTogglePreview={() =>
+          setCompanion((current) => (current === "preview" ? "panel" : "preview"))
+        }
         saveIndicator={
           <SaveIndicator
             status={state.saveStatus}
@@ -194,7 +238,9 @@ export function EntryEditor({
       <div
         className={classNames(
           "grid items-start gap-8",
-          isPanelOpen ? "grid-cols-[minmax(0,1fr)_17rem]" : "grid-cols-1",
+          isPanelOpen && "grid-cols-[minmax(0,1fr)_17rem]",
+          isPreviewOpen && "grid-cols-2 gap-6",
+          companion === "none" && "grid-cols-1",
         )}
       >
         <div
@@ -202,7 +248,7 @@ export function EntryEditor({
           // The document sits on a white page over the grey desk, like a document in Pages.
           className={classNames(
             "flex min-w-0 flex-col gap-9 rounded-panel bg-surface px-9 pt-8 pb-10",
-            !isPanelOpen && "mx-auto w-full max-w-[46rem]",
+            companion === "none" && "mx-auto w-full max-w-[46rem]",
           )}
         >
           <div className="flex flex-col gap-1">
@@ -250,6 +296,17 @@ export function EntryEditor({
             }}
           />
         )}
+
+        {isPreviewOpen && (
+          <EntryPreviewPane
+            id={previewId}
+            collection={collection}
+            entry={entry}
+            fields={blueprint.fields}
+            title={title}
+            onClose={() => setCompanion("panel")}
+          />
+        )}
       </div>
 
       <ConfirmDialog
@@ -274,7 +331,7 @@ export function EntryEditor({
         onCancel={leaveWarning.stay}
         onConfirm={leaveWarning.leave}
       />
-    </>
+    </div>
   );
 }
 

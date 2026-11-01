@@ -1,0 +1,1 @@
+ALTER TABLE "collections" ADD COLUMN "preview_url_pattern" text;

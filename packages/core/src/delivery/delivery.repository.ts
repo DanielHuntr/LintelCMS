@@ -5,7 +5,8 @@ import { entriesTable } from "../entries/entries.table.js";
 
 /**
  * Database reads for the public delivery API. Every query here filters on
- * `publishedData`, so drafts and unpublished changes can't leak out by mistake.
+ * `publishedData`, so drafts and unpublished changes can't leak out by mistake. The one
+ * exception, `findDraftEntry`, is only reached with a signed preview token.
  */
 
 export interface PublishedEntryRow {
@@ -81,6 +82,45 @@ export async function countPublishedEntries(
     .from(entriesTable)
     .where(publishedIn(filter));
   return row?.count ?? 0;
+}
+
+/** An entry's working copy, for live preview. Only call this after checking a preview token. */
+export interface DraftEntryRow {
+  id: string;
+  collectionId: string;
+  originId: string | null;
+  locale: string;
+  slug: string;
+  publishedAt: Date | null;
+  data: Record<string, unknown>;
+}
+
+export async function findDraftEntry(
+  database: DatabaseOrTransaction,
+  where: { entryId: string } | { collectionId: string; locale: string; slug: string },
+): Promise<DraftEntryRow | undefined> {
+  const [entry] = await database
+    .select({
+      id: entriesTable.id,
+      collectionId: entriesTable.collectionId,
+      originId: entriesTable.originId,
+      locale: entriesTable.locale,
+      slug: entriesTable.slug,
+      publishedAt: entriesTable.publishedAt,
+      data: entriesTable.data,
+    })
+    .from(entriesTable)
+    .where(
+      "entryId" in where
+        ? eq(entriesTable.id, where.entryId)
+        : and(
+            eq(entriesTable.collectionId, where.collectionId),
+            eq(entriesTable.locale, where.locale),
+            eq(entriesTable.slug, where.slug),
+          ),
+    )
+    .limit(1);
+  return entry;
 }
 
 export async function findPublishedEntryBySlug(

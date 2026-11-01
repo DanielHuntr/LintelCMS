@@ -2,6 +2,7 @@ import { LoadError } from "../api/LoadError.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { t } from "../i18n/strings.js";
+import { PreviewAddressSettings } from "../preview/PreviewAddressSettings.js";
 import { BlueprintEditor } from "./BlueprintEditor.js";
 import { useBlueprint } from "./blueprints.queries.js";
 
@@ -24,5 +25,10 @@ export function BlueprintEditorPage({ handle }: { handle: string }) {
     );
   }
 
-  return <BlueprintEditor key={blueprint.data.handle} blueprint={blueprint.data} />;
+  return (
+    <>
+      <BlueprintEditor key={blueprint.data.handle} blueprint={blueprint.data} />
+      <PreviewAddressSettings blueprintHandle={blueprint.data.handle} />
+    </>
+  );
 }

@@ -5,6 +5,7 @@ import {
   FileStack,
   Globe,
   Hash,
+  LayoutTemplate,
   ImageIcon,
   Link2,
   List,
@@ -37,6 +38,7 @@ export const fieldtypeIcons: Record<FieldType, LucideIcon> = {
   list: List,
   entries: FileStack,
   terms: Tags,
+  blocks: LayoutTemplate,
 };
 
 interface FieldtypeIconProps {

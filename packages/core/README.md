@@ -22,6 +22,8 @@ its routes and its tests.
 | `src/collections` | Groups of entries (Pages, Blog...) and the defaults  |
 | `src/entries`     | Entries, publishing, ordering and revisions          |
 | `src/delivery`    | The public API sites read published content from     |
+| `src/preview`     | Signed links that show drafts, for live preview      |
+| `src/search`      | One search across entries and media                  |
 | `src/scheduler`   | Timed jobs, such as publishing scheduled entries     |
 | `src/media`       | Uploads, image resizing and the storage driver       |
 | `src/health`      | `GET /health` for uptime checks                      |

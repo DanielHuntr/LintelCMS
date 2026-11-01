@@ -1,5 +1,8 @@
 import { findBlueprintByIdOrFail } from "../blueprints/blueprints.service.js";
-import { findCollectionOrFail } from "../collections/collections.service.js";
+import {
+  findCollectionByIdOrFail,
+  findCollectionOrFail,
+} from "../collections/collections.service.js";
 import type { Collection } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
@@ -13,11 +16,12 @@ import { collectImageIds, deliverValues } from "./delivered-values.js";
 import { PublishedEntryNotFoundError } from "./delivery.errors.js";
 import {
   countPublishedEntries,
+  type DraftEntryRow,
+  findDraftEntry,
   findPublishedEntryBySlug,
   listPublishedEntries,
   listPublishedTranslations,
   type PublishedEntryFilter,
-  type PublishedEntryRow,
 } from "./delivery.repository.js";
 import type {
   DeliveredEntry,
@@ -29,8 +33,19 @@ import { buildEntryUrl } from "./entry-urls.js";
 
 /**
  * Published content for websites and apps. Everything served here is the version kept
- * when the entry was last published, never the working copy editors are changing.
+ * when the entry was last published, never the working copy editors are changing, unless
+ * the request carries a preview token for that entry (see src/preview).
  */
+
+/** What delivering needs from a row: published values, or a draft's for preview. */
+interface EntryToDeliver {
+  id: string;
+  originId: string | null;
+  locale: string;
+  slug: string;
+  publishedAt: Date | null;
+  values: Record<string, unknown>;
+}
 
 /** Newest first for dated collections; the hand-set order for the others. */
 export async function listDeliveredEntries(
@@ -50,7 +65,13 @@ export async function listDeliveredEntries(
   const page = { limit: query.perPage, offset: (query.page - 1) * query.perPage };
   const rows = await listPublishedEntries(database, filter, collection.structure === "dated", page);
   return {
-    items: await deliverEntries(database, collection, blueprint.fields, rows, assetLookup),
+    items: await deliverEntries(
+      database,
+      collection,
+      blueprint.fields,
+      rows.map((row) => ({ ...row, values: row.publishedData })),
+      assetLookup,
+    ),
     total: await countPublishedEntries(database, filter),
   };
 }
@@ -80,16 +101,34 @@ async function findTermFilter(
   return { termId: term.id, fieldHandles: fieldHandles.length > 0 ? fieldHandles : [""] };
 }
 
+/**
+ * The published entry at this slug in the requested language, with links to its other
+ * languages. With `previewEntryId` (from a checked preview token), that entry's draft is
+ * served instead when it is the one at this slug, published or not.
+ */
 export async function findDeliveredEntry(
   database: DatabaseOrTransaction,
   collectionHandle: string,
   slug: string,
   requestedLocale: string | undefined,
   assetLookup: AssetLookup,
+  previewEntryId?: string,
 ): Promise<DeliveredEntryWithTranslations> {
   const collection = await findCollectionOrFail(database, collectionHandle);
   const blueprint = await findBlueprintByIdOrFail(database, collection.blueprintId);
   const { locale } = await resolveLocale(database, requestedLocale);
+  if (previewEntryId) {
+    const draft = await findDraftEntry(database, { collectionId: collection.id, locale, slug });
+    if (draft?.id === previewEntryId) {
+      return deliverWithTranslations(
+        database,
+        collection,
+        blueprint.fields,
+        draftToDeliver(draft),
+        assetLookup,
+      );
+    }
+  }
   const row = await findPublishedEntryBySlug(
     database,
     { collectionId: collection.id, locale },
@@ -98,21 +137,57 @@ export async function findDeliveredEntry(
   if (!row) {
     throw new PublishedEntryNotFoundError(slug);
   }
-  const [delivered] = await deliverEntries(
+  return deliverWithTranslations(
     database,
     collection,
     blueprint.fields,
-    [row],
+    { ...row, values: row.publishedData },
     assetLookup,
   );
-  if (!delivered) {
-    throw new PublishedEntryNotFoundError(slug);
+}
+
+/** An entry's draft as a website would get it once published, for live preview. */
+export async function findDeliveredDraft(
+  database: DatabaseOrTransaction,
+  entryId: string,
+  assetLookup: AssetLookup,
+): Promise<{ collectionHandle: string; entry: DeliveredEntryWithTranslations } | undefined> {
+  const draft = await findDraftEntry(database, { entryId });
+  if (!draft) {
+    return undefined;
   }
-  const family = await listPublishedTranslations(database, row.originId ?? row.id);
+  const collection = await findCollectionByIdOrFail(database, draft.collectionId);
+  const blueprint = await findBlueprintByIdOrFail(database, collection.blueprintId);
+  const entry = await deliverWithTranslations(
+    database,
+    collection,
+    blueprint.fields,
+    draftToDeliver(draft),
+    assetLookup,
+  );
+  return { collectionHandle: collection.handle, entry };
+}
+
+function draftToDeliver(draft: DraftEntryRow): EntryToDeliver {
+  return { ...draft, values: draft.data };
+}
+
+async function deliverWithTranslations(
+  database: DatabaseOrTransaction,
+  collection: Collection,
+  fields: readonly FieldDefinition[],
+  entry: EntryToDeliver,
+  assetLookup: AssetLookup,
+): Promise<DeliveredEntryWithTranslations> {
+  const [delivered] = await deliverEntries(database, collection, fields, [entry], assetLookup);
+  if (!delivered) {
+    throw new PublishedEntryNotFoundError(entry.slug);
+  }
+  const family = await listPublishedTranslations(database, entry.originId ?? entry.id);
   return {
     ...delivered,
     translations: family
-      .filter((member) => member.id !== row.id)
+      .filter((member) => member.id !== entry.id)
       .map((member) => ({
         locale: member.locale,
         slug: member.slug,
@@ -126,20 +201,24 @@ async function deliverEntries(
   database: DatabaseOrTransaction,
   collection: Collection,
   fields: readonly FieldDefinition[],
-  rows: readonly PublishedEntryRow[],
+  entries: readonly EntryToDeliver[],
   assetLookup: AssetLookup,
 ): Promise<DeliveredEntry[]> {
-  const dataList = rows.map((row) => row.publishedData);
+  const dataList = entries.map((entry) => entry.values);
   const imageIds = collectImageIds(fields, dataList);
   const assets = imageIds.length > 0 ? await assetLookup.findAssetsByIds(imageIds) : new Map();
-  const locale = rows[0]?.locale ?? "";
+  const locale = entries[0]?.locale ?? "";
   const references = await lookUpReferences(database, fields, dataList, locale);
-  return rows.map((row) => ({
-    id: row.id,
-    slug: row.slug,
-    url: buildEntryUrl(collection.routePattern, row),
-    locale: row.locale,
-    publishedAt: row.publishedAt?.toISOString() ?? null,
-    data: deliverValues(fields, row.publishedData, assets, references),
+  return entries.map((entry) => ({
+    id: entry.id,
+    slug: entry.slug,
+    // A draft that has never been published gets today's date in its address, as it would.
+    url: buildEntryUrl(collection.routePattern, {
+      slug: entry.slug,
+      publishedAt: entry.publishedAt ?? new Date(),
+    }),
+    locale: entry.locale,
+    publishedAt: entry.publishedAt?.toISOString() ?? null,
+    data: deliverValues(fields, entry.values, assets, references),
   }));
 }

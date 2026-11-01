@@ -16,9 +16,13 @@ export const deliveryListQuerySchema = z.object({
   term: emptyMeansMissing(z.string().optional()),
 });
 
-/** `GET /delivery/:collection/:slug` */
+/**
+ * `GET /delivery/:collection/:slug`. A preview token (from the admin's live preview) may be
+ * sent as `?preview=` or the `Lintel-Preview` header; see src/preview.
+ */
 export const deliveryEntryQuerySchema = z.object({
   locale: emptyMeansMissing(z.string().optional()),
+  preview: z.string().min(1).optional(),
 });
 
 function emptyMeansMissing<Schema extends z.ZodType>(schema: Schema) {

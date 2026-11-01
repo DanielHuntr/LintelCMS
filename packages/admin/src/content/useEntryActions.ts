@@ -4,6 +4,7 @@ import { describeError } from "../api/describeError.js";
 import {
   createEntry,
   deleteEntry,
+  duplicateEntry,
   publishEntry,
   restoreRevision,
   scheduleEntry,
@@ -106,6 +107,15 @@ export function useEntryActions({
         dispatch({ type: "entryReplaced", entry: restored });
         return restored;
       }),
+    /** The copy, or undefined when duplicating failed (the banner says why). */
+    duplicate: async (): Promise<Entry | undefined> => {
+      let copy: Entry | undefined;
+      await run(async (id) => {
+        copy = await duplicateEntry(id);
+        await queryClient.invalidateQueries({ queryKey: contentKeys.collections() });
+      });
+      return copy;
+    },
     remove: () =>
       run(async (id) => {
         await deleteEntry(id);

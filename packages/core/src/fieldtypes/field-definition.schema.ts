@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { handleSchema } from "../http/handle.schema.js";
+import type { CheckInnerFieldList } from "./fieldtype.js";
 import { fieldtypeNames, findFieldtype } from "./fieldtypes.registry.js";
 
 /**
@@ -32,8 +33,8 @@ export const fieldDefinitionSchema = z
       .default({}),
   })
   .transform((field, context) => {
-    const optionsSchema = findFieldtype(field.type)?.optionsSchema;
-    const options = optionsSchema?.safeParse(field.options);
+    const fieldtype = findFieldtype(field.type);
+    const options = fieldtype?.optionsSchema.safeParse(field.options);
     if (!options?.success) {
       context.issues.push({
         code: "custom",
@@ -43,7 +44,47 @@ export const fieldDefinitionSchema = z
       });
       return z.NEVER;
     }
-    return { ...field, options: options.data as Record<string, unknown> };
+    // Fields inside this one (a blocks field's block types) are checked the same way.
+    const checked = fieldtype?.checkInnerFields
+      ? fieldtype.checkInnerFields(options.data, checkInnerFieldList)
+      : { options: options.data };
+    if ("problem" in checked) {
+      context.issues.push({
+        code: "custom",
+        message: checked.problem,
+        input: field.options,
+        path: ["options"],
+      });
+      return z.NEVER;
+    }
+    return { ...field, options: checked.options as Record<string, unknown> };
   });
 
 export type FieldDefinition = z.output<typeof fieldDefinitionSchema>;
+
+/**
+ * Checks the fields inside another field, such as a block type's fields: each one as a
+ * blueprint field, with handles unique in the list. They can't hold fields of their own.
+ */
+const checkInnerFieldList: CheckInnerFieldList = (candidates, where) => {
+  const fields: FieldDefinition[] = [];
+  const handles = new Set<string>();
+  for (const [index, candidate] of candidates.entries()) {
+    const parsed = fieldDefinitionSchema.safeParse(candidate);
+    if (!parsed.success) {
+      const message = parsed.error.issues[0]?.message ?? "This field isn't right";
+      return { problem: `${where}, field ${index + 1}: ${message}` };
+    }
+    const inner = parsed.data;
+    const innerFieldtype = findFieldtype(inner.type);
+    if (innerFieldtype?.checkInnerFields) {
+      return { problem: `${where} can't have a ${innerFieldtype.name} field inside it` };
+    }
+    if (handles.has(inner.handle)) {
+      return { problem: `${where} has two fields with the handle "${inner.handle}"` };
+    }
+    handles.add(inner.handle);
+    fields.push(inner);
+  }
+  return { fields };
+};

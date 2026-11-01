@@ -13,14 +13,25 @@ export function firstFieldWithError(
   return handlesInOrder.find((handle) => handle in errors);
 }
 
-/** Errors for things the form doesn't show as fields; these go in the banner instead. */
+/**
+ * Errors for things the form doesn't show as fields; these go in the banner instead.
+ * A message for a field inside another ("sections.<block id>.heading") is shown inside it.
+ */
 export function errorsWithoutAField(
   handlesInOrder: readonly string[],
   errors: FieldMessages,
 ): string[] {
   return Object.entries(errors)
-    .filter(([handle]) => !handlesInOrder.includes(handle))
+    .filter(([key]) => !handlesInOrder.includes(key.split(".")[0] ?? key))
     .map(([, message]) => message);
+}
+
+/**
+ * Where focus should go for a field's problem: the first field inside it that has one
+ * (a block's heading), or the field itself.
+ */
+export function focusTargetFor(handle: string, errors: FieldMessages): string {
+  return Object.keys(errors).find((key) => key.startsWith(`${handle}.`)) ?? handle;
 }
 
 /**

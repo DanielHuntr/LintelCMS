@@ -1,6 +1,8 @@
 import { useId, type ComponentType } from "react";
+import type { FieldMessages } from "../api/client.js";
 import { t } from "../i18n/strings.js";
 import { ColourFieldEditor } from "./ColourFieldEditor.js";
+import { BlocksFieldEditor } from "./blocks/BlocksFieldEditor.js";
 import { DateFieldEditor } from "./DateFieldEditor.js";
 import { EmailFieldEditor } from "./EmailFieldEditor.js";
 import { EntriesFieldEditor } from "./EntriesFieldEditor.js";
@@ -9,7 +11,7 @@ import { MarkdownFieldEditor } from "./MarkdownFieldEditor.js";
 import { TermsFieldEditor } from "./TermsFieldEditor.js";
 import { UrlFieldEditor } from "./UrlFieldEditor.js";
 import type { Field, FieldType, FieldValue } from "./field.types.js";
-import type { FieldEditorProps } from "./fieldEditorProps.js";
+import type { FieldEditorProps, InnerFieldProps } from "./fieldEditorProps.js";
 import { describedByIds, FieldShell, type FieldLabelling } from "./FieldShell.js";
 import { ImageFieldEditor } from "./ImageFieldEditor.js";
 import { LinkFieldEditor } from "./LinkFieldEditor.js";
@@ -54,7 +56,14 @@ export const fieldEditors: Record<FieldType, FieldEditorRegistration> = {
     Editor: TermsFieldEditor,
     labelling: (field) => (field.options.maxItems === 1 ? "label" : "group"),
   },
+  blocks: { Editor: BlocksFieldEditor, labelling: () => "group" },
 };
+
+const noErrors: FieldMessages = {};
+
+function renderInnerField(props: InnerFieldProps) {
+  return <FieldEditor {...props} />;
+}
 
 interface FieldEditorComponentProps {
   field: Field;
@@ -62,10 +71,18 @@ interface FieldEditorComponentProps {
   onChange: (handle: string, value: FieldValue) => void;
   /** The API's message for this field, if the last save rejected it. */
   error?: string;
+  /** Messages for fields inside this one (blocks), keyed "<block id>.<inner handle>". */
+  innerErrors?: FieldMessages;
 }
 
 /** One field of an entry: the right editor for its type, inside the shared label and messages. */
-export function FieldEditor({ field, value, onChange, error }: FieldEditorComponentProps) {
+export function FieldEditor({
+  field,
+  value,
+  onChange,
+  error,
+  innerErrors = noErrors,
+}: FieldEditorComponentProps) {
   const baseId = useId();
   const ids = {
     controlId: `${baseId}-control`,
@@ -101,6 +118,8 @@ export function FieldEditor({ field, value, onChange, error }: FieldEditorCompon
           labelling === "group" ? undefined : describedByIds(field, error, ids.helpId, ids.errorId)
         }
         hasError={error !== undefined}
+        innerErrors={innerErrors}
+        renderField={renderInnerField}
       />
     </FieldShell>
   );

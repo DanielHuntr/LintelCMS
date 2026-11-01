@@ -4,6 +4,7 @@ import type { FieldOptions } from "../fields/field.types.js";
 import { numberFromInput } from "../fields/fieldValues.js";
 import { t } from "../i18n/strings.js";
 import type { DraftField } from "./blueprintDraft.js";
+import { BlockTypesEditor } from "./BlockTypesEditor.js";
 import { ChoicesEditor } from "./ChoicesEditor.js";
 import { EntriesOptions, TermsOptions } from "./RelationOptions.js";
 import { SwatchesEditor } from "./SwatchesEditor.js";
@@ -11,10 +12,12 @@ import { SwatchesEditor } from "./SwatchesEditor.js";
 interface FieldTypeOptionsProps {
   field: DraftField;
   onChange: (options: FieldOptions) => void;
+  /** For blocks: what is wrong with the block types, shown above them. */
+  problem?: string;
 }
 
 /** The settings that only some fieldtypes have: limits, choices, whether to include a time. */
-export function FieldTypeOptions({ field, onChange }: FieldTypeOptionsProps) {
+export function FieldTypeOptions({ field, onChange, problem }: FieldTypeOptionsProps) {
   const { options } = field;
   const set = (changes: FieldOptions) => onChange({ ...options, ...changes });
   const numberText = (value: number | undefined) => (value === undefined ? "" : String(value));
@@ -110,6 +113,27 @@ export function FieldTypeOptions({ field, onChange }: FieldTypeOptionsProps) {
 
     case "entries":
       return <EntriesOptions options={options} onChange={set} />;
+
+    case "blocks":
+      return (
+        <div className="flex flex-col gap-5">
+          <TextField
+            label={t("builder.blocks.maxBlocks")}
+            hint={t("builder.blocks.maxBlocksHint")}
+            type="number"
+            min={1}
+            inputMode="numeric"
+            value={numberText(options.maxBlocks)}
+            onChange={(event) => set({ maxBlocks: numberOption(event.target.value) })}
+            className="max-w-48"
+          />
+          <BlockTypesEditor
+            blockTypes={options.blockTypes ?? []}
+            onChange={(blockTypes) => set({ blockTypes })}
+            problem={problem}
+          />
+        </div>
+      );
 
     default:
       return null;

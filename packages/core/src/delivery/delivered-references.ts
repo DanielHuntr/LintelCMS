@@ -1,6 +1,7 @@
 import type { DatabaseOrTransaction } from "../database/client.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
 import { findTermsByIds } from "../taxonomies/terms.repository.js";
+import { eachBlock } from "./block-values.js";
 import { findPublishedEntryLinks } from "./delivery.repository.js";
 import { buildEntryUrl } from "./entry-urls.js";
 
@@ -34,25 +35,36 @@ export interface DeliveredReferences {
 
 export const noDeliveredReferences: DeliveredReferences = { terms: new Map(), entries: new Map() };
 
-/** Every id listed by fields of this type in these values, once each. */
+/** Every id listed by fields of this type in these values, inside blocks too, once each. */
 export function collectListedIds(
   fields: readonly FieldDefinition[],
   dataList: readonly Readonly<Record<string, unknown>>[],
   fieldType: "terms" | "entries",
 ): string[] {
-  const handles = fields.filter((field) => field.type === fieldType).map((field) => field.handle);
   const ids = new Set<string>();
   for (const data of dataList) {
-    for (const handle of handles) {
-      const value = data[handle];
-      if (Array.isArray(value)) {
-        value
-          .filter((item): item is string => typeof item === "string")
-          .forEach((id) => ids.add(id));
+    addListedIds(fields, data, fieldType, ids);
+  }
+  return [...ids];
+}
+
+function addListedIds(
+  fields: readonly FieldDefinition[],
+  data: Readonly<Record<string, unknown>>,
+  fieldType: "terms" | "entries",
+  ids: Set<string>,
+): void {
+  for (const field of fields) {
+    const value = data[field.handle];
+    if (field.type === fieldType && Array.isArray(value)) {
+      value.filter((item): item is string => typeof item === "string").forEach((id) => ids.add(id));
+    }
+    if (field.type === "blocks") {
+      for (const { block, blockType } of eachBlock(field, value)) {
+        addListedIds(blockType.fields, block.data, fieldType, ids);
       }
     }
   }
-  return [...ids];
 }
 
 /** Looks up the terms and entries these values point at, for delivering them in `locale`. */

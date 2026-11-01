@@ -4,6 +4,7 @@ import { TextField } from "../design/TextField.js";
 import { Toggle } from "../design/Toggle.js";
 import { t } from "../i18n/strings.js";
 import { isTitleField, type BlueprintDraftAction, type DraftField } from "./blueprintDraft.js";
+import { blockTypesProblem } from "./blockTypesDraft.js";
 import { FieldTypeOptions } from "./FieldTypeOptions.js";
 
 interface FieldSettingsSheetProps {
@@ -31,6 +32,10 @@ export function FieldSettingsSheet({
   if (!field) return null;
   const isTitle = isTitleField(field);
   const { key } = field;
+  // A problem with the block types is shown above them, not under the label.
+  const blocksProblem =
+    field.type === "blocks" ? blockTypesProblem(field.options.blockTypes ?? []) : null;
+  const labelProblem = problem === blocksProblem ? undefined : problem;
 
   return (
     <Dialog
@@ -53,7 +58,7 @@ export function FieldSettingsSheet({
         <TextField
           label={t("builder.label")}
           value={field.label}
-          error={problem}
+          error={labelProblem}
           data-autofocus
           onChange={(event) =>
             dispatch({ type: "fieldChanged", key, changes: { label: event.target.value } })
@@ -93,6 +98,7 @@ export function FieldSettingsSheet({
         />
         <FieldTypeOptions
           field={field}
+          problem={problem === blocksProblem ? (problem ?? undefined) : undefined}
           onChange={(options) => dispatch({ type: "fieldOptionsChanged", key, options })}
         />
       </div>
