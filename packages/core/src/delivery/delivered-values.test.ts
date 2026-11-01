@@ -13,18 +13,28 @@ const sections: FieldDefinition = {
   label: "Sections",
   type: "blocks",
   required: false,
+  helpText: "",
   options: {
     blockTypes: [
       {
         handle: "related",
         name: "Related",
+        description: "",
         fields: [
-          { handle: "image", label: "Image", type: "image", required: false, options: {} },
+          {
+            handle: "image",
+            label: "Image",
+            type: "image",
+            required: false,
+            helpText: "",
+            options: {},
+          },
           {
             handle: "topics",
             label: "Topics",
             type: "terms",
             required: false,
+            helpText: "",
             options: { taxonomy: "tags" },
           },
           {
@@ -32,6 +42,7 @@ const sections: FieldDefinition = {
             label: "Further reading",
             type: "entries",
             required: false,
+            helpText: "",
             options: { collections: [] },
           },
         ],

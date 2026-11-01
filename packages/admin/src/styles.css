@@ -69,8 +69,8 @@
   --color-label: #1d1d1f;
   --color-label-secondary: #6e6e73;
   --color-label-tertiary: #8e8e93;
-  --color-accent: #0066cc;
-  --color-accent-fill: #0071e3;
+  --color-accent: #6a2cf0;
+  --color-accent-fill: #7539fd;
   --color-on-accent: #ffffff;
   --color-success: #248a3d;
   --color-warning: #b25000;
@@ -110,9 +110,12 @@
     --color-label: #1d1d1f;
     --color-label-secondary: #6e6e73;
     --color-label-tertiary: #8e8e93;
-    /* Accent text is a shade deeper than the button fill so links pass WCAG AA on white. */
-    --color-accent: #0066cc;
-    --color-accent-fill: #0071e3;
+    /*
+     * Lintel violet (#7539FD) fills buttons; white on it is 5.6:1. Accent text is a shade
+     * deeper so links pass WCAG AA on the light grey background too (6:1).
+     */
+    --color-accent: #6a2cf0;
+    --color-accent-fill: #7539fd;
     --color-on-accent: #ffffff;
     --color-success: #248a3d;
     --color-warning: #b25000;
@@ -134,8 +137,9 @@
       --color-label: #f5f5f7;
       --color-label-secondary: #98989d;
       --color-label-tertiary: #6e6e73;
-      --color-accent: #2997ff;
-      --color-accent-fill: #0071e3;
+      /* Lighter violet for text on dark surfaces: 5.1:1 even on raised panels. */
+      --color-accent: #a68aff;
+      --color-accent-fill: #7539fd;
       --color-on-accent: #ffffff;
       --color-success: #30d158;
       --color-warning: #ff9f0a;

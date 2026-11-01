@@ -43,10 +43,11 @@ follows the device's setting, which would stop the review page showing both sche
 
 ### Contrast
 
-The accent is split in two. `accent` (`#0066cc` light, `#2997ff` dark) is used for text and
-passes WCAG AA on white and on the dark surfaces. `accent-fill` (`#0071e3`) sits behind white
-text on buttons and passes AA too. The familiar `#007aff` fails AA with white text, so we don't
-use it for filled buttons.
+The accent is Lintel violet, split in two. `accent-fill` (`#7539fd`, the brand colour) sits
+behind white text on buttons (5.6:1). `accent` is used for text: a shade deeper in light mode
+(`#6a2cf0`, 6:1 on the grey background) and lighter in dark mode (`#a68aff`, 5.1:1 even on
+raised panels), so links pass WCAG AA everywhere. The mark (`AppMark`) is the bird from
+`brand/` at the repository root.
 
 ## Rebranding for a client
 

@@ -14,6 +14,8 @@ export default defineConfig({
       title: "Lintel",
       description: "How to use Lintel, and how to build websites with it.",
       favicon: "/favicon.svg",
+      logo: { src: "./src/assets/lintel-mark.svg", alt: "" },
+      head: [{ tag: "link", attrs: { rel: "apple-touch-icon", href: "/apple-touch-icon.png" } }],
       social: [{ icon: "github", label: "GitHub", href: repositoryUrl }],
       editLink: { baseUrl: `${repositoryUrl}/edit/main/packages/docs/` },
       customCss: ["./src/styles/lintel.css"],

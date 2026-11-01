@@ -8,6 +8,7 @@ import {
   deliveredEntrySchema,
   deliveredListSchema,
   deliveryEntryParamsSchema,
+  deliveryEntryQuerySchema,
   deliveryListParamsSchema,
   deliveryListQuerySchema,
 } from "../delivery/delivery.schema.js";
@@ -23,8 +24,17 @@ import {
   revisionSchema,
   revisionSummarySchema,
   scheduleEntryRequestSchema,
+  translateEntryRequestSchema,
   updateEntryRequestSchema,
 } from "../entries/entries.schema.js";
+import { deliveredGlobalSetSchema, globalSetParamsSchema } from "../globals/globals.schema.js";
+import { navigationParamsSchema } from "../navigation/navigation.schema.js";
+import { entryPreviewSchema } from "../preview/preview.schema.js";
+import { localeQuerySchema } from "../sites/locales.schema.js";
+import {
+  taxonomyHandleParamsSchema,
+  termSlugParamsSchema,
+} from "../taxonomies/taxonomies.schema.js";
 import {
   assetIdParamsSchema,
   assetSchema,
@@ -90,11 +100,86 @@ export const openApiOperations: Operation[] = [
     path: "/delivery/{collection}/{slug}",
     tag: "Delivery",
     summary: "Get one published entry",
+    description:
+      "In the site's main language unless `locale` is sent, with links to its translations. A live-preview token (`preview`, or the `Lintel-Preview` header) for this entry serves its draft instead.",
     access: "delivery",
     params: deliveryEntryParamsSchema,
+    query: deliveryEntryQuerySchema,
     responses: {
       200: { description: "The entry.", schema: deliveredEntrySchema },
+      401: { description: "The preview token is wrong or has expired." },
       404: { description: "There is no published entry with this slug." },
+    },
+  },
+  {
+    method: "get",
+    path: "/delivery/locales",
+    tag: "Delivery",
+    summary: "List the site's languages",
+    access: "delivery",
+    responses: { 200: { description: "The main language and every language the site has." } },
+  },
+  {
+    method: "get",
+    path: "/delivery/taxonomies/{handle}",
+    tag: "Delivery",
+    summary: "Get a taxonomy and its terms",
+    access: "delivery",
+    params: taxonomyHandleParamsSchema,
+    responses: {
+      200: { description: "The taxonomy, with its terms in order." },
+      404: { description: "There is no taxonomy with this handle." },
+    },
+  },
+  {
+    method: "get",
+    path: "/delivery/taxonomies/{handle}/{slug}",
+    tag: "Delivery",
+    summary: "Get one term",
+    access: "delivery",
+    params: termSlugParamsSchema,
+    responses: {
+      200: { description: "The term." },
+      404: { description: "There is no term with this slug in the taxonomy." },
+    },
+  },
+  {
+    method: "get",
+    path: "/delivery/globals",
+    tag: "Delivery",
+    summary: "Get every set of global values",
+    description:
+      "Values in `locale` where they have been translated, otherwise the main language's.",
+    access: "delivery",
+    query: localeQuerySchema,
+    responses: { 200: { description: "Every global set, keyed by handle." } },
+  },
+  {
+    method: "get",
+    path: "/delivery/globals/{handle}",
+    tag: "Delivery",
+    summary: "Get one set of global values",
+    access: "delivery",
+    params: globalSetParamsSchema,
+    query: localeQuerySchema,
+    responses: {
+      200: { description: "The global set's values.", schema: deliveredGlobalSetSchema },
+      404: { description: "There is no global set with this handle." },
+    },
+  },
+  {
+    method: "get",
+    path: "/delivery/navigation/{handle}",
+    tag: "Delivery",
+    summary: "Get a menu",
+    description:
+      "Links to entries point at their translation in `locale` when there is one; unpublished pages are left out.",
+    access: "delivery",
+    params: navigationParamsSchema,
+    query: localeQuerySchema,
+    responses: {
+      200: { description: "The menu, as a tree of items." },
+      404: { description: "There is no menu with this handle." },
     },
   },
   {
@@ -263,7 +348,48 @@ export const openApiOperations: Operation[] = [
     summary: "Publish an entry's saved values",
     access: "entries:publish",
     params: entryIdParamsSchema,
-    responses: { 200: entryResponse },
+    responses: {
+      200: entryResponse,
+      400: {
+        description:
+          "NOT_READY_TO_PUBLISH: required fields are empty. `fields` has a message for each one.",
+      },
+    },
+  },
+  {
+    method: "post",
+    path: "/entries/{id}/duplicate",
+    tag: "Entries",
+    summary: "Copy an entry as a new draft",
+    access: "entries:create",
+    params: entryIdParamsSchema,
+    responses: { 201: { description: "The copy, a draft.", schema: entrySchema } },
+  },
+  {
+    method: "post",
+    path: "/entries/{id}/translations",
+    tag: "Entries",
+    summary: "Start a translation of an entry",
+    access: "entries:create",
+    params: entryIdParamsSchema,
+    body: translateEntryRequestSchema,
+    responses: {
+      201: { description: "The new translation, a draft.", schema: entrySchema },
+      409: { description: "TRANSLATION_EXISTS: the entry already has one in that language." },
+    },
+  },
+  {
+    method: "post",
+    path: "/entries/{id}/preview",
+    tag: "Entries",
+    summary: "Make a live-preview link for an entry's draft",
+    description:
+      "The token lasts 30 minutes and shows only this entry's draft, through the delivery API or GraphQL.",
+    access: "entries:read",
+    params: entryIdParamsSchema,
+    responses: {
+      200: { description: "The token and when it expires.", schema: entryPreviewSchema },
+    },
   },
   {
     method: "post",

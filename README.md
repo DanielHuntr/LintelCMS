@@ -1,10 +1,16 @@
-# Lintel
+<p align="center">
+  <img src="brand/lintel-app-icon.svg" width="88" height="88" alt="" />
+</p>
+
+<h1 align="center">Lintel</h1>
 
 A self-hosted CMS with a visual builder, an animation studio and built-in commerce,
 written in TypeScript and React.
 
-Lintel is early. This repository currently holds the foundations: the monorepo, the API
-server, the first database schema and the admin shell.
+Lintel is early. Today it has setup in the browser, content types with 17 kinds of field and
+a page builder, languages, categories and menus, media, live preview, search, a REST and
+GraphQL API, webhooks, SEO tools, documentation and a Next.js starter. Commerce, the
+visual builder and the animation studio come next.
 
 ## Getting started
 
