@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { runScheduledBackupIfDue } from "../backups/backup-schedule.service.js";
 import { backupsContextFor, markInterruptedBackups } from "../backups/backups.service.js";
 import { pauseInterruptedImports } from "../wordpress-import/wordpress-import.service.js";
+import { pauseInterruptedSiteImports } from "../importers/site-import.service.js";
 import { announceContentEvent } from "../content-events/content-events.js";
 import { describeEntryForEvent } from "../content-events/entry-event-data.js";
 import { publishDueEntries } from "../entries/entry-publishing.service.js";
@@ -27,6 +28,7 @@ export function registerScheduledJobs(server: FastifyInstance): void {
     try {
       await markInterruptedBackups(server.database);
       await pauseInterruptedImports(server.database);
+      await pauseInterruptedSiteImports(server.database);
     } catch (error) {
       server.log.error(error, "Tidying up interrupted backups and imports failed");
     }

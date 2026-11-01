@@ -19,3 +19,13 @@ export class ArchiveTooLargeError extends HttpError {
     );
   }
 }
+
+export class ArchiveHasTooManyFilesError extends HttpError {
+  constructor(limit: number) {
+    super(
+      400,
+      "ARCHIVE_HAS_TOO_MANY_FILES",
+      `This .zip file holds more than ${limit.toLocaleString("en")} files, the most Lintel accepts here. Leave out anything the import doesn't need, such as old backups, and try again.`,
+    );
+  }
+}
