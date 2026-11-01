@@ -153,6 +153,7 @@ async function buildItemContext(
   return {
     database,
     importId: row.id,
+    siteAddress: row.siteAddress,
     dryRun,
     mapping,
     startedBy: row.startedBy ?? "",
@@ -214,7 +215,7 @@ function rememberTarget(
   targetId: string | null,
   status: string,
 ) {
-  if (status !== "done" || !targetId) {
+  if (status === "failed" || !targetId) {
     return;
   }
   targets.set(`${item.kind}:${item.sourceId}`, targetId);

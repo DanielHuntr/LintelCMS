@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
+import { entriesTable } from "../entries/entries.table.js";
 import { taxonomiesTable, termsTable } from "../taxonomies/taxonomies.table.js";
 import {
   type NewWordPressImportItemRow,
@@ -195,6 +196,38 @@ export async function findTargets(
   return new Map(
     rows.flatMap((row) => (row.targetId ? [[`${row.kind}:${row.sourceId}`, row.targetId]] : [])),
   );
+}
+
+/**
+ * The entry an earlier import from the same WordPress site made from this post or page,
+ * if that entry is still here. Uploading the same export again then skips it instead of
+ * making a copy.
+ */
+export async function findEntryFromEarlierImport(
+  database: DatabaseOrTransaction,
+  importId: string,
+  siteAddress: string,
+  item: { kind: string; sourceId: string },
+): Promise<string | undefined> {
+  const [row] = await database
+    .select({ entryId: entriesTable.id })
+    .from(wordpressImportItemsTable)
+    .innerJoin(
+      wordpressImportsTable,
+      eq(wordpressImportsTable.id, wordpressImportItemsTable.importId),
+    )
+    .innerJoin(entriesTable, eq(entriesTable.id, wordpressImportItemsTable.targetId))
+    .where(
+      and(
+        sql`${wordpressImportsTable.id} <> ${importId}`,
+        eq(wordpressImportsTable.siteAddress, siteAddress),
+        eq(wordpressImportItemsTable.kind, item.kind),
+        eq(wordpressImportItemsTable.sourceId, item.sourceId),
+        eq(wordpressImportItemsTable.status, "done"),
+      ),
+    )
+    .limit(1);
+  return row?.entryId;
 }
 
 export async function findTermInTaxonomy(

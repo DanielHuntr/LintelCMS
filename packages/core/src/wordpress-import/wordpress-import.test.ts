@@ -193,6 +193,26 @@ describe("importing from WordPress", { timeout: 60_000 }, () => {
     expect((await tools.api("GET", "/media")).json().total).toBe(1);
   });
 
+  it("skips posts and pages an earlier import of the same site brought in", async () => {
+    for (let run = 0; run < 2; run += 1) {
+      const created = await uploadBakery();
+      await tools.api("PUT", `/wordpress-imports/${created.id}/mapping`, { media: "zip" });
+      await tools.api("POST", `/wordpress-imports/${created.id}/start`);
+      await tools.server.dataTools.tasks.finishAll();
+      if (run === 1) {
+        const second = (await tools.api("GET", `/wordpress-imports/${created.id}`)).json<{
+          report: Report & { counts: Record<string, { done: number; skipped: number }> };
+        }>();
+        expect(second.report.counts.page).toMatchObject({ done: 0, skipped: 2 });
+      }
+    }
+
+    expect((await entriesIn("posts")).length).toBe(2);
+    const pages = await entriesIn("pages");
+    expect(pages.length).toBe(2);
+    expect(pages.filter((page) => page.parentId !== null)).toHaveLength(1);
+  });
+
   it("refuses a file that isn't a WordPress export, and needs permission", async () => {
     const response = await tools.server.inject({
       method: "POST",

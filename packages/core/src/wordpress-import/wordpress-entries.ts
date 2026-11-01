@@ -10,6 +10,7 @@ import { findRedirectFrom, insertRedirect } from "../seo/redirects.repository.js
 import { normaliseRedirectPath } from "../seo/redirects.schema.js";
 import { plainText, splitWordPressContent } from "./wordpress-content.js";
 import {
+  alreadyImported,
   type CollectionTarget,
   done,
   failed,
@@ -18,7 +19,7 @@ import {
   skipped,
 } from "./wordpress-import-context.js";
 import { assetAddress, importFile, safeDecode } from "./wordpress-item-handlers.js";
-import { insertItemIfMissing } from "./wordpress-import.repository.js";
+import { findEntryFromEarlierImport, insertItemIfMissing } from "./wordpress-import.repository.js";
 import { piecesToRichText } from "./wordpress-rich-text.js";
 import type { WordPressItem } from "./wxr-parser.js";
 
@@ -34,6 +35,15 @@ export async function importEntry(context: ItemContext, item: WordPressItem): Pr
     return skipped(
       `${item.type === "page" ? "Pages" : "Posts"} were left out on the mapping screen.`,
     );
+  }
+  const earlier = await findEntryFromEarlierImport(
+    context.database,
+    context.importId,
+    context.siteAddress,
+    { kind: item.type, sourceId: item.id },
+  );
+  if (earlier) {
+    return alreadyImported(earlier);
   }
   const publishing = choosePublishing(item, context.mapping.drafts === "import");
   if ("skip" in publishing) {

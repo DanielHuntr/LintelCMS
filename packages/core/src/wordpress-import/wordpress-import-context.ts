@@ -21,6 +21,8 @@ export interface CollectionTarget {
 export interface ItemContext {
   database: DatabaseOrTransaction;
   importId: string;
+  /** The old site's address, from the export: imports from the same site share it. */
+  siteAddress: string;
   /** In a dry run nothing is downloaded and every write is rolled back afterwards. */
   dryRun: boolean;
   mapping: WordPressImportMapping;
@@ -51,6 +53,16 @@ export function done(targetId: string, details: Record<string, unknown> | null =
 
 export function skipped(message: string): ItemResult {
   return { status: "skipped", targetId: null, message, details: null };
+}
+
+/** Made by an earlier import; still a target, so pages under it find their parent. */
+export function alreadyImported(targetId: string): ItemResult {
+  return {
+    status: "skipped",
+    targetId,
+    message: "Already brought in by an earlier import of this site, so it was left as it is.",
+    details: null,
+  };
 }
 
 export function failed(message: string): ItemResult {
