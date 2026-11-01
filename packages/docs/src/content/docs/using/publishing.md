@@ -48,9 +48,10 @@ Once an entry is published, **View page** appears in the editor's toolbar, next 
 address under the title, and beside the entry in its list. It opens the page on your
 website in a new tab.
 
-Lintel needs to know your website's address for that: set it in **Settings → Site**
-(for example `https://brightsidebakery.com`). Until then, **View page** shows a simple
-preview of the published version, with a note on connecting your site.
+If Lintel serves your website itself, this just works. If your site lives somewhere else,
+type its address in **Settings → Your website** (for example `https://brightsidebakery.com`).
+With no website at all, **View page** shows a simple preview of the published version, with
+a note on connecting your site.
 
 ## If you can't publish
 

@@ -52,8 +52,9 @@ grows with the window (`editorLayout.ts`).
 
 Published entries get **View page** in the editor's toolbar, an icon after the address under
 the title, and an icon on their row in the list. `viewPage.ts` decides where it goes: with a
-website address in Settings → Site (`siteAddress` in the session) it opens that address plus
-the entry's route in a new tab; without one it opens `PublishedPageView`, which draws the
+website address (typed in Settings → Your website, or else the built-in website's own, from
+`GET /website/address`) it opens the page there in a new tab, built as the website serves it
+(`website/pageAddress.ts`); with neither it opens `PublishedPageView`, which draws the
 published version from `/delivery` with the built-in preview renderer under a banner about
 connecting a site. Drafts have no View page.
 

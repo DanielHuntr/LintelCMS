@@ -1,6 +1,10 @@
+import { pageAddress } from "../website/pageAddress.js";
+
 /**
- * Where "View page" goes for a published entry. With a connected website (Settings → Site)
- * it is the page itself; without one, Lintel's simple preview of the published version.
+ * Where "View page" goes for a published entry. There is one site address (Settings → Your website,
+ * or the built-in website's own when none is typed; `GET /website/address` answers with
+ * whichever applies). With one, it is the page itself, built the way the website serves it
+ * (see website/pageAddress.ts). Without one, Lintel's simple preview of the published version.
  */
 
 export type ViewPageTarget =
@@ -11,30 +15,30 @@ interface ViewableEntry {
   slug: string;
   status: string;
   publishedAt: string | null;
+  locale: string;
 }
 
-/** The page's path on the site, filling in the route pattern from the publish date. */
-export function publishedPath(routePattern: string, entry: ViewableEntry): string | null {
-  if (!routePattern) return null;
-  const published = entry.publishedAt ? new Date(entry.publishedAt) : new Date();
-  const twoDigits = (value: number) => String(value).padStart(2, "0");
-  return routePattern
-    .replaceAll("{slug}", entry.slug)
-    .replaceAll("{year}", String(published.getUTCFullYear()))
-    .replaceAll("{month}", twoDigits(published.getUTCMonth() + 1))
-    .replaceAll("{day}", twoDigits(published.getUTCDate()));
+/** The site's address and default language, from `GET /website/address`. */
+export interface ViewPageSite {
+  siteAddress: string | null;
+  defaultLocale: string;
 }
 
-/** Undefined when there is nothing live to look at yet. */
+/**
+ * Undefined when there is nothing live to look at yet, and while the site's address is still
+ * loading (`site` undefined), so the link doesn't change under someone's pointer.
+ */
 export function viewPageTarget(
-  siteAddress: string,
-  collection: { handle: string; routePattern: string },
+  site: ViewPageSite | undefined,
+  collection: { handle: string; routePattern: string | null },
   entry: ViewableEntry,
 ): ViewPageTarget | undefined {
-  if (entry.status !== "published") return undefined;
-  const path = publishedPath(collection.routePattern, entry);
-  if (siteAddress && path !== null) {
-    return { kind: "website", href: `${siteAddress}${path}` };
+  if (entry.status !== "published" || !site) return undefined;
+  if (site?.siteAddress && collection.routePattern) {
+    return {
+      kind: "website",
+      href: pageAddress(site.siteAddress, collection.routePattern, entry, site.defaultLocale),
+    };
   }
   return { kind: "builtIn", collection: collection.handle, entryId: entry.id };
 }

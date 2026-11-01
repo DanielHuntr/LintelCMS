@@ -1,0 +1,43 @@
+/* Hero. */
+.lintel-hero {
+  text-align: center;
+}
+
+.lintel-hero__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--lintel-space-5);
+  max-width: 50rem;
+  margin-inline: auto;
+}
+
+.lintel-hero__heading {
+  font-size: clamp(2.5rem, 1.5rem + 4.2vw, 4.75rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.04;
+}
+
+.lintel-hero__subheading {
+  max-width: 40rem;
+  color: var(--lintel-color-text-secondary);
+  font-size: clamp(1.125rem, 1rem + 0.6vw, 1.5rem);
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.lintel-hero__actions {
+  margin-top: var(--lintel-space-2);
+}
+
+.lintel-hero__media {
+  margin-top: clamp(var(--lintel-space-7), 5vw, var(--lintel-space-8));
+}
+
+.lintel-hero__image {
+  width: 100%;
+  border-radius: var(--lintel-radius-large);
+  background: var(--lintel-color-surface);
+  object-fit: cover;
+}

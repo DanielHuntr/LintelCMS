@@ -13,7 +13,6 @@ import {
   type RequestOrigin,
 } from "../security-log/security-log.service.js";
 import { readSetting } from "../settings/settings.service.js";
-import { readSiteAddress } from "../sites/site-address.service.js";
 import {
   endSession,
   findActiveSession,
@@ -248,7 +247,6 @@ export async function describeSignedIn(
     user: { id: user.id, email: user.email, name: user.name },
     permissions: await findPermissionsForUser(database, user.id),
     enabledPlugins: await findEnabledPluginIds(database),
-    siteAddress: await readSiteAddress(database),
     siteName: await readSetting(database, "siteName"),
     ...(mustSetUpTwoFactor ? { mustSetUpTwoFactor: true as const } : {}),
   };

@@ -7,7 +7,8 @@ Routes (and the scheduler, for scheduled publishing) call `announceContentEvent`
 change is saved. `content-events.ts` is the one visible list of who listens:
 
 - `src/webhooks` queues a delivery for every webhook that wants the event;
-- `src/seo` suggests a redirect when a live entry moves (`entry.moved`).
+- `src/seo` suggests a redirect when a live entry moves (`entry.moved`);
+- `src/website` empties the built-in website's rendered pages, so the change shows at once.
 
 A listener failing is logged, not turned into an error for the person who made the
 change, since the change itself has already been saved.

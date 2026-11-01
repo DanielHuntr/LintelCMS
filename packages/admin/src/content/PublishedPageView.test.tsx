@@ -28,10 +28,10 @@ describe("View page without a connected website", () => {
 
     const note = await screen.findByRole("note");
     expect(note).toHaveTextContent(
-      "Lintel isn’t connected to a website yet. This is a simple preview. Connect your site in Settings → Site.",
+      "Lintel isn’t connected to a website yet. This is a simple preview. Connect your site in Settings → Your website.",
     );
     expect(
-      screen.getByRole("link", { name: "Connect your site in Settings → Site." }),
+      screen.getByRole("link", { name: "Connect your site in Settings → Your website." }),
     ).toHaveAttribute("href", "/settings/site");
     expect(
       screen.getByRole("link", { name: "How to build a site with the Next.js starter" }),

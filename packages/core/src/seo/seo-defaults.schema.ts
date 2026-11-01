@@ -27,8 +27,6 @@ function isWebAddress(value: string): boolean {
 export const seoDefaultsSchema = z.object({
   /** Shown after page titles by the default template, and in social previews. */
   siteName: z.string().trim().max(100, { error: "The site name can be at most 100 characters" }),
-  /** The public address of the website, for the sitemap and robots.txt. */
-  siteUrl: optionalOrigin,
   /** How page titles are built: "{title} | {siteName}". */
   titleTemplate: z
     .string()
@@ -52,7 +50,6 @@ export type SeoDefaults = z.output<typeof seoDefaultsSchema>;
 
 export const defaultSeoDefaults: SeoDefaults = {
   siteName: "",
-  siteUrl: "",
   titleTemplate: "{title} | {siteName}",
   defaultDescription: "",
   defaultSocialImageId: null,

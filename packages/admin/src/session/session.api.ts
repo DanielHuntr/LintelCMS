@@ -7,8 +7,6 @@ export interface Session {
   permissions: string[];
   /** Features switched on for this site, such as "commerce". Sections for the rest stay hidden. */
   enabledPlugins: string[];
-  /** The website's address for "View page", or "" when none is connected (Settings → Site). */
-  siteAddress: string;
   /** The site's name, for the browser tab and the sidebar. Null until setup names the site. */
   siteName: string | null;
   /** Their role requires two-factor authentication and it isn't on yet: only /account works. */

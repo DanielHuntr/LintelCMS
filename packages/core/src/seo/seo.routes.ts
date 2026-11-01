@@ -126,7 +126,9 @@ export async function seoRoutes(server: FastifyInstance) {
   });
 
   server.get("/sitemap.xml", async (_request, reply) => {
-    const xml = await buildSitemap(server.database);
+    const xml = await buildSitemap(server.database, {
+      fallbackSiteUrl: server.website.builtInSiteUrl,
+    });
     return reply
       .type("application/xml; charset=utf-8")
       .header("cache-control", SEARCH_ENGINE_CACHE)
@@ -134,7 +136,9 @@ export async function seoRoutes(server: FastifyInstance) {
   });
 
   server.get("/robots.txt", async (_request, reply) => {
-    const text = await buildRobots(server.database);
+    const text = await buildRobots(server.database, {
+      fallbackSiteUrl: server.website.builtInSiteUrl,
+    });
     return reply
       .type("text/plain; charset=utf-8")
       .header("cache-control", SEARCH_ENGINE_CACHE)

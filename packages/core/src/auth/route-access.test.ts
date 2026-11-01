@@ -46,6 +46,8 @@ const SIGNED_IN_ROUTES = new Set([
   "GET /search",
   "GET /locales",
   "GET /seo/defaults",
+  // The site's address, for "View page" in the editor.
+  "GET /website/address",
   // Each person's own account and its security.
   "GET /account",
   "PATCH /account",

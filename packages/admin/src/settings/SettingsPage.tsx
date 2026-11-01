@@ -1,9 +1,9 @@
 import {
   Blocks,
-  Globe,
   Inbox,
   KeyRound,
   Languages,
+  MonitorSmartphone,
   Shapes,
   ShieldCheck,
   Sparkles,
@@ -83,9 +83,10 @@ export function SettingsPage() {
         <GroupedList header={t("settings.siteHeader")} footer={t("settings.moreSoon")}>
           {canSeeSiteSettings && (
             <GroupedListRow
-              icon={Globe}
-              label={t("siteSettings.title")}
-              description={t("settings.siteDescription")}
+              icon={MonitorSmartphone}
+              iconTone="success"
+              label={t("website.title")}
+              description={t("website.settingsDescription")}
               to="/settings/site"
             />
           )}

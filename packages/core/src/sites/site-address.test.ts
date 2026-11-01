@@ -17,14 +17,23 @@ describe("the site address", () => {
 
   afterEach(() => server.close());
 
-  it("starts empty, keeps only the origin, and is in everyone's session", async () => {
+  it("starts empty, keeps only the origin, and is the one address everything uses", async () => {
     expect((await api("GET", "/site-address")).json()).toEqual({ siteAddress: "" });
 
     const saved = await api("PUT", "/site-address", {
       siteAddress: "https://brightsidebakery.com/home/",
     });
     expect(saved.json()).toEqual({ siteAddress: "https://brightsidebakery.com" });
-    expect((await api("GET", "/auth/me")).json().siteAddress).toBe("https://brightsidebakery.com");
+    // Settings → Your website and "View page" read the same setting.
+    expect((await api("GET", "/website")).json().siteAddress).toBe("https://brightsidebakery.com");
+    expect((await api("GET", "/website/address")).json().siteAddress).toBe(
+      "https://brightsidebakery.com",
+    );
+
+    await api("PUT", "/website", { siteAddress: "https://www.brightside.example" });
+    expect((await api("GET", "/site-address")).json()).toEqual({
+      siteAddress: "https://www.brightside.example",
+    });
   });
 
   it("explains an address that isn't a web address", async () => {

@@ -1,0 +1,78 @@
+/* Rich text from the editor: paragraphs, headings, lists, quotes and links. */
+.lintel-prose {
+  font-size: 1.125rem;
+  line-height: 1.7;
+  overflow-wrap: break-word;
+}
+
+.lintel-prose > * {
+  margin: 0;
+}
+
+.lintel-prose > * + * {
+  margin-top: 1.1em;
+}
+
+.lintel-prose h2 {
+  margin-top: 2em;
+  font-size: 1.75rem;
+}
+
+.lintel-prose h3 {
+  margin-top: 1.75em;
+  font-size: 1.375rem;
+}
+
+.lintel-prose h2 + *,
+.lintel-prose h3 + * {
+  margin-top: 0.6em;
+}
+
+.lintel-prose ul,
+.lintel-prose ol {
+  padding-left: 1.4em;
+}
+
+.lintel-prose li + li {
+  margin-top: 0.4em;
+}
+
+.lintel-prose li > p {
+  margin: 0;
+}
+
+.lintel-prose blockquote {
+  padding-left: 1.25em;
+  border-left: 3px solid var(--lintel-color-brand);
+  color: var(--lintel-color-text-secondary);
+  font-style: italic;
+}
+
+.lintel-prose a {
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.18em;
+}
+
+.lintel-prose code {
+  padding: 0.1em 0.35em;
+  border-radius: var(--lintel-radius-small);
+  background: var(--lintel-color-surface);
+  font-size: 0.9em;
+}
+
+.lintel-prose pre {
+  padding: var(--lintel-space-4);
+  overflow-x: auto;
+  border-radius: var(--lintel-radius-medium);
+  background: var(--lintel-color-surface);
+}
+
+.lintel-prose pre code {
+  padding: 0;
+  background: none;
+}
+
+.lintel-prose hr {
+  border: 0;
+  border-top: 1px solid var(--lintel-color-border);
+}

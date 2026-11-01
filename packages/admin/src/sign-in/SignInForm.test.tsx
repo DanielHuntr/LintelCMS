@@ -9,7 +9,6 @@ const session: Session = {
   user: { id: "user-1", email: "editor@example.com", name: "Ada Editor" },
   permissions: ["entries:*"],
   enabledPlugins: [],
-  siteAddress: "",
   siteName: null,
 };
 

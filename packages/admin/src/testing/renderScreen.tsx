@@ -15,8 +15,6 @@ interface RenderScreenOptions {
   permissions?: string[];
   /** The plugins switched on. Defaults to the blog. */
   enabledPlugins?: string[];
-  /** The connected website's address. Defaults to none. */
-  siteAddress?: string;
   /** The site's name. Defaults to "Brightside Bakery". */
   siteName?: string | null;
   /** The address the screen starts at. Defaults to "/". */
@@ -33,7 +31,6 @@ export function renderScreen(
   {
     permissions = ["*"],
     enabledPlugins = ["blog"],
-    siteAddress = "",
     siteName = "Brightside Bakery",
     initialPath = "/",
   }: RenderScreenOptions = {},
@@ -45,7 +42,6 @@ export function renderScreen(
     user: { id: "u1", email: "ada@example.com", name: "Ada Lovelace" },
     permissions,
     enabledPlugins,
-    siteAddress,
     siteName,
   };
 

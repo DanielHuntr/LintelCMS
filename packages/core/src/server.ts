@@ -59,6 +59,13 @@ import { rolesRoutes } from "./roles/roles.routes.js";
 import { securityLogRoutes } from "./security-log/security-log.routes.js";
 import { twoFactorRoutes } from "./two-factor/two-factor.routes.js";
 import { usersRoutes } from "./users/users.routes.js";
+import {
+  clearRenderedPagesAfterChanges,
+  createWebsiteRuntime,
+  type WebsiteOptions,
+  type WebsiteRuntime,
+} from "./website/website-runtime.js";
+import { websiteRoutes } from "./website/website.routes.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -91,6 +98,8 @@ declare module "fastify" {
     email: EmailSender;
     /** The in-memory outbox when no real sender is set, for Settings → Email outbox. */
     emailOutbox: OutboxEmailSender | null;
+    /** The built-in website's templates, address and rendered pages (see src/website). */
+    website: WebsiteRuntime;
   }
 }
 
@@ -149,6 +158,8 @@ export interface ServerOptions {
   plugins?: readonly LintelPlugin[];
   /** How email is sent. Defaults to an in-memory outbox (see src/email). */
   email?: EmailSender;
+  /** The built-in website: its address and any templates of your own. Off by default. */
+  website?: WebsiteOptions;
 }
 
 export interface WebhookOptions {
@@ -204,6 +215,8 @@ export function buildServer(options: ServerOptions) {
   const outbox = options.email ? null : new OutboxEmailSender();
   server.decorate("email", options.email ?? (outbox as OutboxEmailSender));
   server.decorate("emailOutbox", outbox);
+  server.decorate("website", createWebsiteRuntime(options.website));
+  clearRenderedPagesAfterChanges(server);
   server.addHook("onClose", () => webhooks.finishSending());
   server.decorateRequest("signedIn", null);
   server.setErrorHandler(sendHttpErrorDetails);
@@ -256,6 +269,7 @@ export function buildServer(options: ServerOptions) {
   server.register(passwordResetRoutes);
   server.register(securityLogRoutes);
   server.register(emailRoutes);
+  server.register(websiteRoutes);
 
   if (options.runScheduledJobs ?? true) {
     registerScheduledJobs(server);

@@ -77,7 +77,6 @@ describe("first-run setup", () => {
       user: { id: expect.any(String), email: "ana@example.com", name: "Ana Lopez" },
       permissions: ["*"],
       enabledPlugins: ["blog", "forms", "seo"],
-      siteAddress: "",
       siteName: "Brightside Bakery",
     });
 

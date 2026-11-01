@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { defaultSeoDefaults, seoDefaultsSchema } from "../seo/seo-defaults.schema.js";
+import { defaultWebsiteSettings, websiteSettingsSchema } from "../website/website.schema.js";
 
 /**
  * Every setting, with the shape its value must have. Reading a key that has never been
@@ -46,6 +47,8 @@ export const settingSchemas = {
   siteAddress: z.string(),
   /** The site's name, from the "What's your site called?" setup step. Null until then. */
   siteName: siteNameSchema.nullable(),
+  /** The built-in website's template, theme, logo and address (see src/website). */
+  website: websiteSettingsSchema,
 };
 
 export type SettingKey = keyof typeof settingSchemas;
@@ -61,4 +64,5 @@ export const settingDefaults: { [Key in SettingKey]: SettingValue<Key> } = {
   seoDefaults: defaultSeoDefaults,
   siteAddress: "",
   siteName: null,
+  website: defaultWebsiteSettings,
 };

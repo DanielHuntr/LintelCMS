@@ -39,8 +39,8 @@ import { SettingsPage } from "./settings/SettingsPage.js";
 import { PublishedPageView } from "./content/PublishedPageView.js";
 import { FeaturesSettingsPage } from "./features/FeaturesSettingsPage.js";
 import { SignInPage } from "./sign-in/SignInPage.js";
-import { SiteSettingsPage } from "./site/SiteSettingsPage.js";
 import { WebhookDetailPage } from "./webhooks/WebhookDetailPage.js";
+import { SiteSettingsPage } from "./website/SiteSettingsPage.js";
 import { WebhooksPage } from "./webhooks/WebhooksPage.js";
 import "./setup/historyState.js";
 
@@ -304,13 +304,13 @@ const featuresRoute = createRoute({
   component: FeaturesSettingsPage,
 });
 
-/** API access, webhooks and the website's address. (The SEO plugin's settings are plugin screens.) */
+/** API access, webhooks and the website. (The SEO plugin's settings are plugin screens.) */
 const integrationRoutes = [
+  siteSettingsRoute,
   apiAccessRoute,
   apiReferenceRoute,
   webhooksRoute,
   webhookRoute,
-  siteSettingsRoute,
 ];
 
 /**

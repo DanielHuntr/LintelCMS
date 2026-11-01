@@ -32,8 +32,6 @@ export const signedInSchema = z.object({
   permissions: z.array(z.string()),
   /** Which plugins are on, so the admin can show their sections without another request. */
   enabledPlugins: z.array(z.string()),
-  /** The website's address for "View page", or "" when none is connected (Settings → Site). */
-  siteAddress: z.string(),
   /** The site's name for the browser tab and the sidebar. Null until setup names it. */
   siteName: z.string().nullable(),
   /**

@@ -117,9 +117,14 @@ describe("EntryEditor", () => {
   });
 
   it("offers View page for a published entry: the website, or Lintel's simple preview", async () => {
-    mockApi(() => ({ revisions: [] }));
+    let siteAddress: string | null = "https://brightsidebakery.com";
+    mockApi(({ url }) =>
+      url.pathname === "/website/address"
+        ? { siteAddress, defaultLocale: "en-GB" }
+        : { revisions: [] },
+    );
     const published = samplePost({ status: "published", publishedAt: "2026-10-01T09:00:00.000Z" });
-    const editor = (siteAddress: string) =>
+    const editor = () =>
       renderScreen(
         <EntryEditor
           collection={postsCollection}
@@ -127,10 +132,9 @@ describe("EntryEditor", () => {
           initialEntry={published}
           onCreated={() => undefined}
         />,
-        { siteAddress },
       );
 
-    editor("https://brightsidebakery.com");
+    editor();
     // One in the toolbar, one at the end of the address under the title.
     const toWebsite = await screen.findAllByRole("link", { name: "View page" });
     expect(toWebsite).toHaveLength(2);
@@ -140,7 +144,8 @@ describe("EntryEditor", () => {
     }
     cleanup();
 
-    editor("");
+    siteAddress = null;
+    editor();
     const [toPreview] = await screen.findAllByRole("link", { name: "View page" });
     expect(toPreview).toHaveAttribute("href", "/content/posts/p1/view");
   });

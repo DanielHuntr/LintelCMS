@@ -44,7 +44,6 @@ describe("signing in and out", () => {
       user: { id: user.id, email: "ana@example.com", name: "Ana Editor" },
       permissions: ["assets:upload", "entries:publish", "entries:read"],
       enabledPlugins: [],
-      siteAddress: "",
       siteName: null,
     });
 
@@ -115,7 +114,6 @@ describe("signing in and out", () => {
       user: { id: user.id, email: "ana@example.com", name: "Ana Editor" },
       permissions: ["entries:read"],
       enabledPlugins: [],
-      siteAddress: "",
       siteName: null,
     });
     expect(signedOut.statusCode).toBe(401);

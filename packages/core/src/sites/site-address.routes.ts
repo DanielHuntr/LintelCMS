@@ -5,7 +5,7 @@ import { updateSiteAddressRequestSchema } from "./site-address.schema.js";
 import { readSiteAddress, saveSiteAddress } from "./site-address.service.js";
 
 /**
- * The website Lintel's content is shown on (Settings → Site). HTTP only:
+ * The website Lintel's content is shown on (Settings → Your website). HTTP only:
  *
  *   GET /site-address  (settings:read)    -> { siteAddress }
  *   PUT /site-address  (settings:update)  { siteAddress } -> the same

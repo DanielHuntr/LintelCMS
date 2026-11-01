@@ -85,6 +85,13 @@
       "when": 1793531832890,
       "tag": "0011_add_people_and_account_security",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793533877039,
+      "tag": "0012_one_site_address",
+      "breakpoints": true
     }
   ]
 }

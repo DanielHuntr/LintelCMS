@@ -10,7 +10,7 @@ import { textValue } from "../fields/fieldValues.js";
 import { t } from "../i18n/strings.js";
 import { EntryPreviewPane } from "../preview/EntryPreviewPane.js";
 import { PluginEditorPanels } from "../plugins/PluginEditorPanels.js";
-import { useCan, useSession } from "../session/SessionContext.js";
+import { useCan } from "../session/SessionContext.js";
 import type { Collection, Entry } from "./content.types.js";
 import { entryDraftReducer, hasUnsavedChanges, initialDraftState } from "./entryDraft.js";
 import { type Companion, editorColumns, editorWidths } from "./editorLayout.js";
@@ -30,6 +30,7 @@ import { SaveIndicator } from "./SaveIndicator.js";
 import { useAutosave } from "./useAutosave.js";
 import { useEntryActions } from "./useEntryActions.js";
 import { viewPageTarget } from "./viewPage.js";
+import { useViewPageSite } from "../website/website.queries.js";
 import { useLeaveWarning } from "./useLeaveWarning.js";
 
 interface EntryEditorProps {
@@ -73,8 +74,8 @@ export function EntryEditor({
   });
   const { entry } = actions;
   const canPublish = useCan("entries:publish");
-  const { siteAddress } = useSession();
-  const viewPage = entry ? viewPageTarget(siteAddress, collection, entry) : undefined;
+  const site = useViewPageSite();
+  const viewPage = entry ? viewPageTarget(site, collection, entry) : undefined;
   const canDelete = useCan("entries:delete");
   const canCreate = useCan("entries:create");
   const canSave = useCan(entry ? "entries:update" : "entries:create");

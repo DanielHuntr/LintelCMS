@@ -7,7 +7,8 @@
 - **API access** (`/settings/api`, and the reference at `/settings/api/reference`) lives in
   `src/api-access`.
 - **Webhooks** (`/settings/webhooks`) lives in `src/webhooks`.
-- **Site** (`/settings/site`) lives in `src/site`: the website's address, used by View page.
+- **Your website** (`/settings/site`) lives in `src/website`: the built-in website's template, theme,
+  logo and the site's one address, which View page uses.
 - **Features** (`/settings/features`) lives in `src/features`.
 - Plugins add their own rows and groups (SEO's **Search engines**, say) through
   `settingsRows`; `PluginSettingsRows` draws them, only while the plugin is on.

@@ -1,0 +1,173 @@
+/* Header and main menu. */
+.lintel-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid var(--lintel-color-border);
+  background: color-mix(in srgb, var(--lintel-color-background) 86%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+
+.lintel-header__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lintel-space-2) var(--lintel-space-5);
+  min-height: 3.5rem;
+  padding-block: var(--lintel-space-2);
+}
+
+.lintel-header__brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--lintel-color-text);
+  font-family: var(--lintel-font-heading);
+  font-size: 1.25rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+
+.lintel-header__logo {
+  width: auto;
+  height: 2rem;
+}
+
+.lintel-header--masthead {
+  position: static;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: var(--lintel-color-background);
+}
+
+.lintel-header--masthead .lintel-header__inner {
+  flex-direction: column;
+  justify-content: center;
+  padding-block: var(--lintel-space-6) var(--lintel-space-3);
+}
+
+.lintel-header--masthead .lintel-header__brand {
+  font-size: clamp(2rem, 1.4rem + 2.4vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.lintel-header--masthead .lintel-header__logo {
+  height: 3.5rem;
+}
+
+.lintel-menu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--lintel-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lintel-menu__item {
+  position: relative;
+}
+
+.lintel-menu__link {
+  display: flex;
+  align-items: center;
+  gap: var(--lintel-space-1);
+  min-height: 2.75rem;
+  padding-inline: var(--lintel-space-3);
+  border-radius: var(--lintel-radius-small);
+  color: var(--lintel-color-text);
+  font-size: 0.9375rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.lintel-menu__link:hover,
+.lintel-menu__link[aria-current="page"],
+.lintel-menu__link[data-current="true"] {
+  color: var(--lintel-color-link);
+}
+
+.lintel-menu__link[aria-current="page"],
+.lintel-menu__link[data-current="true"] {
+  font-weight: 600;
+}
+
+summary.lintel-menu__link {
+  list-style: none;
+}
+
+summary.lintel-menu__link::-webkit-details-marker {
+  display: none;
+}
+
+/* A small chevron that turns when the sub-menu is open. */
+summary.lintel-menu__link::after {
+  content: "";
+  width: 0.4em;
+  height: 0.4em;
+  margin-left: 0.2em;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-0.15em) rotate(45deg);
+}
+
+.lintel-menu__group[open] > summary.lintel-menu__link::after {
+  transform: translateY(0.1em) rotate(225deg);
+}
+
+.lintel-menu__submenu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 20;
+  min-width: 13rem;
+  margin: var(--lintel-space-1) 0 0;
+  padding: var(--lintel-space-2);
+  border: 1px solid var(--lintel-color-border);
+  border-radius: var(--lintel-radius-medium);
+  background: var(--lintel-color-background);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.12);
+  list-style: none;
+}
+
+.lintel-menu__sublink {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding-inline: var(--lintel-space-3);
+  border-radius: var(--lintel-radius-small);
+  color: var(--lintel-color-text);
+  text-decoration: none;
+}
+
+.lintel-menu__sublink:hover {
+  background: var(--lintel-color-surface);
+}
+
+.lintel-menu__sublink[aria-current="page"] {
+  color: var(--lintel-color-link);
+  font-weight: 600;
+}
+
+@media (max-width: 40rem) {
+  .lintel-menu-bar {
+    width: 100%;
+  }
+
+  .lintel-menu {
+    margin-inline: calc(var(--lintel-space-3) * -1);
+  }
+
+  .lintel-menu__submenu {
+    right: auto;
+    left: 0;
+  }
+
+  .lintel-header--masthead .lintel-menu {
+    justify-content: center;
+  }
+}

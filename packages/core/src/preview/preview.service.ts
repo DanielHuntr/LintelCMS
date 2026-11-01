@@ -25,11 +25,16 @@ function findSigningSecret(database: DatabaseOrTransaction): Promise<string> {
   return readOrCreateSetting(database, "previewSigningSecret", generatePreviewSecret);
 }
 
-/** A new token for the entry, and where its website shows it (null when none is connected). */
+/**
+ * A new token for the entry, and where its website shows it (null when none is connected).
+ * A collection without a preview address of its own, whose entries have pages, is shown on
+ * the built-in website when there is one (`builtInSiteUrl`, see src/website).
+ */
 export async function createEntryPreview(
   database: DatabaseOrTransaction,
   entryId: string,
   now: Date = new Date(),
+  builtInSiteUrl: string | null = null,
 ): Promise<EntryPreview> {
   const entry = await findEntryOrFail(database, entryId);
   const collection = await findCollectionByIdOrFail(database, entry.collectionId);
@@ -42,16 +47,20 @@ export async function createEntryPreview(
   return {
     token,
     expiresAt: new Date(expiresAt).toISOString(),
-    previewUrl: buildPreviewUrl(collection.previewUrlPattern, {
-      url: buildEntryUrl(collection.routePattern, {
+    previewUrl: buildPreviewUrl(
+      collection.previewUrlPattern ??
+        (builtInSiteUrl && collection.routePattern ? `${builtInSiteUrl}{url}` : null),
+      {
+        url: buildEntryUrl(collection.routePattern, {
+          slug: entry.slug,
+          publishedAt: entry.publishedAt ?? now,
+        }),
         slug: entry.slug,
-        publishedAt: entry.publishedAt ?? now,
-      }),
-      slug: entry.slug,
-      token,
-      collection: collection.handle,
-      id: entry.id,
-    }),
+        token,
+        collection: collection.handle,
+        id: entry.id,
+      },
+    ),
   };
 }
 

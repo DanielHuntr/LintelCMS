@@ -71,7 +71,7 @@ export async function resolveEntrySeo(
 ): Promise<DeliveredEntrySeo> {
   const own = await findEntrySeo(database, entry.id);
   const defaults = await readSeoDefaults(database);
-  const siteUrl = defaults.siteUrl || (await readSiteAddress(database));
+  const siteUrl = await readSiteAddress(database);
 
   const imageId = own.socialImageId ?? defaults.defaultSocialImageId;
   const image = imageId ? (await assetLookup.findAssetsByIds([imageId])).get(imageId) : undefined;

@@ -71,9 +71,9 @@ describe("the SEO plugin", () => {
   });
 
   it("builds each page's title, description and image from its own settings and the site's", async () => {
+    await api("PUT", "/site-address", { siteAddress: "https://www.cornerbakery.example/" });
     await api("PUT", "/seo/defaults", {
       siteName: "Corner Bakery",
-      siteUrl: "https://www.cornerbakery.example/",
       defaultDescription: "Fresh bread every morning.",
       defaultSocialImageId: socialImage.id,
     });
@@ -108,18 +108,16 @@ describe("the SEO plugin", () => {
   it("checks the site defaults", async () => {
     const response = await api("PUT", "/seo/defaults", {
       titleTemplate: "Corner Bakery",
-      siteUrl: "cornerbakery",
     });
 
     expect(response.statusCode).toBe(400);
     expect(response.json().message).toContain("needs {title} in it");
-    expect(response.json().message).toContain("should start with https://");
   });
 
   it("lists published pages in the sitemap, leaving out hidden ones, and writes robots.txt", async () => {
     expect((await get("/sitemap.xml")).json().code).toBe("SITE_ADDRESS_MISSING");
 
-    await api("PUT", "/seo/defaults", { siteUrl: "https://www.example.com" });
+    await api("PUT", "/site-address", { siteAddress: "https://www.example.com" });
     const hiddenId = await publishPage("Thank you");
     await publishPage("Contact");
     await publishPage("Hello world", "posts");
