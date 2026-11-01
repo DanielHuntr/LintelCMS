@@ -1,3 +1,6 @@
+import { builderPanelStrings } from "./panel-strings.js";
+import { builderStudioStrings } from "./studio-strings.js";
+
 /**
  * Every word the page builder shows, in plain English. The admin spreads this list into its
  * own (`src/i18n/strings.ts`), so these are translated and renamed with everything else.
@@ -11,7 +14,6 @@ export const builderStrings = {
   "pageBuilder.toolbar.redo": "Redo",
   "pageBuilder.toolbar.undoThing": "Undo: {name}",
   "pageBuilder.toolbar.redoThing": "Redo: {name}",
-  "pageBuilder.toolbar.developerMode": "Developer mode",
 
   "pageBuilder.panels.leftLabel": "Page structure",
   "pageBuilder.panels.rightLabel": "Selected element",
@@ -291,6 +293,8 @@ export const builderStrings = {
   "pageBuilder.code.pasteApply": "Add to page",
   "pageBuilder.code.pasteHint":
     "It’s added after what’s selected. You can also paste HTML straight onto the page.",
+  ...builderStudioStrings,
+  ...builderPanelStrings,
 } as const;
 
 export type BuilderStringKey = keyof typeof builderStrings;

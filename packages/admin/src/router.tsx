@@ -31,7 +31,6 @@ import { InterfaceLanguagePage } from "./interface-language/InterfaceLanguagePag
 import { loadInterfaceLanguage } from "./interface-language/loadInterfaceLanguage.js";
 import { AdminLayout } from "./layout/AdminLayout.js";
 import { MediaLibraryPage } from "./media/MediaLibraryPage.js";
-import { ComingSoonPage } from "./sections/ComingSoonPage.js";
 import { fetchCurrentSession, signOut } from "./session/session.api.js";
 import { ServerUnreachablePage } from "./setup/ServerUnreachablePage.js";
 import { SetupPage } from "./setup/SetupPage.js";
@@ -373,9 +372,6 @@ const contentRoutes = [
   interfaceLanguageRoute,
 ];
 
-// One placeholder route per section. Each is replaced by real screens as its phase is built.
-const sectionRoutes = [{ path: "/design", title: "nav.design" }] as const;
-
 /** Help: the "Using Lintel" docs, bundled with the admin. The open topic is in the address. */
 const helpRoute = createRoute({
   getParentRoute: () => adminRoute,
@@ -422,13 +418,15 @@ const mediaRoute = createRoute({
   },
 });
 
-const placeholderRoutes = sectionRoutes.map(({ path, title }) =>
-  createRoute({
-    getParentRoute: () => adminRoute,
-    path,
-    component: () => <ComingSoonPage title={title} />,
-  }),
-);
+/** Design: the template library, loaded when it is opened (it draws page sketches). */
+const designRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/design",
+  component: lazyRouteComponent(
+    () => import("./starter-sites/TemplateLibraryPage.js"),
+    "TemplateLibraryPage",
+  ),
+});
 
 // The design review page exists in development, or in a build made with VITE_DESIGN_REVIEW=true.
 // It is loaded lazily, so a normal production build doesn't ship it.
@@ -473,7 +471,7 @@ export const routeTree = rootRoute.addChildren([
       ...workflowsRoutes(() => adminRoute),
       ...formsRoutes(() => adminRoute),
       ...commerceRoutes(() => adminRoute),
-      ...placeholderRoutes,
+      designRoute,
       pluginScreensRoute,
     ]),
   ]),

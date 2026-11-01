@@ -57,6 +57,17 @@ export { applyScriptRule, findChangedCode } from "./code/code-changes.js";
 
 export {
   findSectionTemplate,
+  sectionCategories,
   sectionTemplates,
+  type SectionCategory,
   type SectionTemplate,
 } from "./templates/section-templates.js";
+
+export {
+  buildStarterPage,
+  type StarterPage,
+  type StarterSite,
+  type StarterTheme,
+} from "./starter-sites/starter-site.js";
+export { findStarterSite, starterSites } from "./starter-sites/starter-sites.js";
+export { findIllustration, illustrationNames } from "./starter-sites/illustrations.js";

@@ -7,16 +7,17 @@ import type { SiteImage, TermLink } from "../site.types.js";
  * the address; a template draws each one.
  */
 
-/** A page laid out in the visual page builder, already drawn by its renderer. */
-export interface PageDesignHtml {
+/**
+ * A page laid out in the visual builder, already drawn: its HTML and stylesheet from the
+ * builder's renderer, and the animations the motion runtime plays (by element id).
+ */
+export interface PageDesign {
   html: string;
   css: string;
+  animations: ReadonlyArray<{ nodeId: string; spec: Readonly<Record<string, unknown>> }>;
 }
 
-/**
- * A page from a collection like Pages: a title, an optional body and its sections, or a
- * design from the page builder, which then takes the place of all of them.
- */
+/** A page from a collection like Pages: a title, an optional body and its sections. */
 export interface PageView {
   kind: "page";
   title: string;
@@ -25,8 +26,8 @@ export interface PageView {
   /** HTML from the rich text editor; empty when the page has none. */
   body: string;
   sections: SiteBlock[];
-  /** Null unless the page has a design from the page builder. */
-  design?: PageDesignHtml | null;
+  /** When the page was designed in the builder, its design is the whole page. */
+  design?: PageDesign | null;
 }
 
 /** One blog post. */

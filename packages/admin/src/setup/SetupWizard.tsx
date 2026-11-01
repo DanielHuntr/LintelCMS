@@ -48,6 +48,8 @@ interface SetupWizardProps {
   api: Pick<SetupApi, "testDatabaseConnection" | "finishSetup">;
   /** After "You're all set": the owner is signed in by now. */
   onFinished: (session: Session) => void;
+  /** The finish screen's other way in: the template library. */
+  onStartFromTemplate?: (session: Session) => void;
   onAlreadySetUp: () => void;
 }
 
@@ -58,7 +60,13 @@ interface SetupWizardProps {
  * The answers live here (and, without passwords, in sessionStorage), so neither switching
  * steps nor refreshing loses anything.
  */
-export function SetupWizard({ status, api, onFinished, onAlreadySetUp }: SetupWizardProps) {
+export function SetupWizard({
+  status,
+  api,
+  onFinished,
+  onStartFromTemplate,
+  onAlreadySetUp,
+}: SetupWizardProps) {
   const [restored] = useState(() => restoredSetup(status));
   const [answers, setAnswers] = useState<SetupAnswers>(restored?.answers ?? emptyAnswers);
   const flow = useSetupNavigation(status, answers.databaseKind, restored?.progress);
@@ -329,6 +337,9 @@ export function SetupWizard({ status, api, onFinished, onAlreadySetUp }: SetupWi
             name={firstNameOf(answers.account.name)}
             summary={summaryOf(answers, status)}
             onContinue={() => session && onFinished(session)}
+            onStartFromTemplate={
+              onStartFromTemplate && (() => session && onStartFromTemplate(session))
+            }
           />
         );
     }

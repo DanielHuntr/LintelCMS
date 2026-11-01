@@ -35,6 +35,10 @@ export type RenderMode = "site" | "canvas";
 export interface ElementAttributes {
   className: string;
   "data-lintel-node"?: string;
+  /** On the published page, only on animated elements: how the motion runtime finds them. */
+  "data-node-id"?: string;
+  /** Entrances start hidden until their animation is ready (see `motionCloakCss`). */
+  "data-motion-cloak"?: "";
 }
 
 export type ComponentRender = ComponentType<RenderProps>;

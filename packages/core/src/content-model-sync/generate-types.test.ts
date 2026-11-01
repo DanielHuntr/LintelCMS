@@ -1,4 +1,6 @@
 import { readFile } from "node:fs/promises";
+import { checkBlueprintFields } from "../blueprints/blueprint-fields.js";
+import { pagesWithSimpleSectionsCollection } from "../collections/default-collections.js";
 import { describe, expect, it } from "vitest";
 import { modelFromUnits } from "./content-model.schema.js";
 import { resolveFromRepository } from "./content-model-config.js";
@@ -28,6 +30,23 @@ describe("model types", () => {
   });
 
   it("types blocks by block type, so `type` tells them apart", () => {
+    // Pages made before page designs have Page sections, a blocks field.
+    const olderPages = new Map(defaultContentModel());
+    olderPages.set("contentType:page", {
+      kind: "contentType",
+      handle: pagesWithSimpleSectionsCollection.blueprint.handle,
+      name: pagesWithSimpleSectionsCollection.blueprint.name,
+      fields: checkBlueprintFields(pagesWithSimpleSectionsCollection.blueprint.fields),
+      collections: [
+        {
+          handle: "pages",
+          name: "Pages",
+          structure: "tree",
+          routePattern: "/{slug}",
+        },
+      ],
+    });
+    const types = generateModelTypes(olderPages);
     expect(types).toContain(
       "export type PageSectionsBlock = PageSectionsHeroBlock | PageSectionsTextBlock | PageSectionsImageBlock | PageSectionsCallToActionBlock | PageSectionsFaqBlock;",
     );

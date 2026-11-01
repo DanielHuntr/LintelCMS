@@ -1,5 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import { type KeyboardEvent, type ReactNode, useId, useRef } from "react";
+import { classNames } from "./classNames.js";
+import { CollapsibleSection, useOpenSections } from "./CollapsibleSection.js";
 
 /**
  * The small controls the builder's panels are made of. They use the admin's design tokens
@@ -10,9 +12,7 @@ import { type KeyboardEvent, type ReactNode, useId, useRef } from "react";
 export const inputClassName =
   "h-8 w-full min-w-0 rounded-control bg-fill px-2 text-footnote text-label placeholder:text-label-tertiary focus-visible:focus-ring";
 
-export function classNames(...names: Array<string | false | null | undefined>): string {
-  return names.filter(Boolean).join(" ");
-}
+export { classNames };
 
 interface IconButtonProps {
   icon: LucideIcon;
@@ -198,11 +198,33 @@ export function Labelled({
 interface PanelSectionProps {
   title: string;
   children: ReactNode;
+  /**
+   * Names the section in a panel with collapsible sections (see `OpenSectionsContext`), so
+   * it can be opened, closed and remembered. Without one it is always open.
+   */
+  sectionId?: string;
+  /** What's set inside, shown while the section is closed. */
+  summary?: string;
 }
 
-/** A titled group of controls in a panel. */
-export function PanelSection({ title, children }: PanelSectionProps) {
+/** A titled group of controls in a panel, collapsible when the panel says so. */
+export function PanelSection({ title, children, sectionId, summary }: PanelSectionProps) {
   const headingId = useId();
+  const openSections = useOpenSections();
+  if (openSections && sectionId) {
+    return (
+      <CollapsibleSection
+        title={title}
+        summary={summary}
+        isOpen={openSections.isOpen(sectionId)}
+        onToggle={() => openSections.toggle(sectionId)}
+        onUse={() => openSections.markUsed(sectionId)}
+        isContentDisabled={openSections.isContentDisabled}
+      >
+        {children}
+      </CollapsibleSection>
+    );
+  }
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-3 hairline-bottom px-4 py-4">
       <h3 id={headingId} className="text-footnote font-semibold text-label">

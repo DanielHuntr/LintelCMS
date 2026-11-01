@@ -39,6 +39,20 @@ describe("the animation studio", () => {
     expect(screen.getByText(/No presets match/)).toBeInTheDocument();
   });
 
+  it("folds the less used settings away, saying what they're set to", async () => {
+    const { user } = renderStudio(findPreset("fade-up")!.spec, "fade-up");
+    const timing = screen.getByRole("button", { name: /^Speed and timing/ });
+    expect(timing).toHaveAttribute("aria-expanded", "true");
+    const reduced = screen.getByRole("button", { name: /^For less motion/ });
+    expect(reduced).toHaveAttribute("aria-expanded", "false");
+    expect(reduced).toHaveTextContent("Just fade");
+    await user.click(timing);
+    expect(timing).toHaveTextContent("1× · waits 0 s");
+    expect(screen.queryByRole("slider", { name: /Speed/ })).not.toBeInTheDocument();
+    await user.click(reduced);
+    expect(reduced).toHaveAttribute("aria-expanded", "true");
+  });
+
   it("explains what to do when there is no animation yet", async () => {
     const { user } = renderStudio();
     await user.click(screen.getByRole("radio", { name: "Simple" }));
@@ -138,5 +152,19 @@ describe("the animation studio", () => {
       start: { element: 0, viewport: 0.5 },
     });
     expect(screen.getByRole("img", { name: /starts at 50% down the screen/ })).toBeInTheDocument();
+  });
+
+  it("offers only the views the host allows", () => {
+    render(
+      <MotionStudio
+        initialSpec={findPreset("fade-up")!.spec}
+        initialPresetId="fade-up"
+        initialView="advanced"
+        views={["gallery", "simple"]}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("radio", { name: "Simple" })).toBeChecked();
+    expect(screen.queryByRole("radio", { name: "Advanced" })).not.toBeInTheDocument();
   });
 });

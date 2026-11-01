@@ -1,19 +1,34 @@
+import type { ComponentCatalogue, SectionTemplate } from "@lintel/builder-model";
+import { Search } from "lucide-react";
 import {
-  type AnyComponentDefinition,
-  type ComponentCatalogue,
-  componentCategories,
-  type ComponentCategory,
-  type SectionTemplate,
-} from "@lintel/builder-model";
-import type { DragEvent } from "react";
-import type { BuilderStringKey } from "../i18n/builder-strings.js";
+  type DragEvent,
+  type KeyboardEvent,
+  type ReactNode,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
-import { ComponentIcon } from "../ui/component-icons.js";
-import { BlueprintSketch } from "./BlueprintSketch.js";
+import { usePreference, usePreferenceStore } from "../preferences/builder-preferences.js";
+import { useRememberedOpenSections } from "../preferences/open-sections.js";
+import { CollapsibleSection } from "../ui/CollapsibleSection.js";
+import { classNames } from "../ui/classNames.js";
+import { ChoiceGroup, inputClassName } from "../ui/controls.js";
+import {
+  groupInsertItems,
+  type InsertItem,
+  type InsertKey,
+  type InsertKind,
+  insertItems,
+  readRecentlyUsed,
+  searchInsertItems,
+  withRecentlyUsed,
+} from "./insert-library.js";
+import { InsertTile } from "./InsertTile.js";
 import { insertDragType } from "./layer-drop.js";
 
-/** What the Insert panel offers: `component:heading` or `template:hero`. */
-export type InsertKey = `component:${string}` | `template:${string}`;
+export type { InsertKey } from "./insert-library.js";
 
 interface InsertPanelProps {
   catalogue: ComponentCatalogue;
@@ -22,115 +37,233 @@ interface InsertPanelProps {
   onInsert: (key: InsertKey) => void;
 }
 
-const categoryTitles: Record<ComponentCategory, BuilderStringKey> = {
-  blocks: "pageBuilder.insert.category.blocks",
-  layout: "pageBuilder.insert.category.layout",
-  text: "pageBuilder.insert.category.text",
-  media: "pageBuilder.insert.category.media",
-  navigation: "pageBuilder.insert.category.navigation",
-  code: "pageBuilder.insert.category.code",
-};
+const recentShown: Record<InsertKind, number> = { sections: 2, elements: 4 };
+
+const kindTitles = {
+  sections: "pageBuilder.insert.kindSections",
+  elements: "pageBuilder.insert.kindElements",
+} as const;
 
 /**
- * Ready-made sections, then single elements by kind, each with a plain description. Press one
- * to add it after the selected element (or inside it, when it holds elements), or drag it
- * into the Layers panel to put it exactly where you want.
+ * The library: ready-made sections (the default) and single elements, each by group with
+ * only the first group open, a search across both, and what was used recently. Press an
+ * item to add it after the selected element (or inside it, when it holds elements), or drag
+ * it into Layers to put it exactly where you want.
  */
 export function InsertPanel({ catalogue, templates, canEditCode, onInsert }: InsertPanelProps) {
   const text = useBuilderText();
-  const insertable = catalogue.definitions.filter(
-    (definition) =>
-      !definition.hiddenFromInsert && (canEditCode || !definition.requiresCodePermission),
+  const store = usePreferenceStore();
+  const searchId = useId();
+  const list = useRef<HTMLDivElement>(null);
+  const [search, setSearch] = useState("");
+  const [kind, setKind] = usePreference<InsertKind>(store, "insert.kind", (stored) =>
+    stored === "elements" ? "elements" : "sections",
   );
+  const [recent, setRecent] = useState(() => readRecentlyUsed(store.read("insert.recent")));
 
-  const startDrag = (event: DragEvent, key: InsertKey, type: string) => {
-    event.dataTransfer.setData(insertDragType, key);
-    event.dataTransfer.setData(`${insertDragType}+${type.toLowerCase()}`, "");
+  const items = useMemo(
+    () =>
+      insertItems(
+        templates,
+        catalogue.definitions.filter(
+          (definition) =>
+            !definition.hiddenFromInsert && (canEditCode || !definition.requiresCodePermission),
+        ),
+      ),
+    [templates, catalogue, canEditCode],
+  );
+  const sectionGroups = useMemo(() => groupInsertItems(items, "sections"), [items]);
+  const elementGroups = useMemo(() => groupInsertItems(items, "elements"), [items]);
+  const groups = kind === "sections" ? sectionGroups : elementGroups;
+  const results = useMemo(
+    () => searchInsertItems(items, search, (key) => text(key)),
+    [items, search, text],
+  );
+  const recentItems = recent
+    .map((key) => items.find((item) => item.key === key))
+    .filter((item): item is InsertItem => item?.kind === kind)
+    .slice(0, recentShown[kind]);
+  // Only the first group is open the first time; after that, whatever was left open.
+  const openSectionGroups = useRememberedOpenSections(
+    store,
+    "insert.sections.open",
+    sectionGroups.slice(0, 1).map((group) => group.id),
+  );
+  const openElementGroups = useRememberedOpenSections(
+    store,
+    "insert.elements.open",
+    elementGroups.slice(0, 1).map((group) => group.id),
+  );
+  const openGroups = kind === "sections" ? openSectionGroups : openElementGroups;
+
+  const remember = (key: InsertKey) => {
+    const next = withRecentlyUsed(recent, key);
+    setRecent(next);
+    store.write("insert.recent", next.join(","));
+  };
+  const insert = (key: InsertKey) => {
+    remember(key);
+    onInsert(key);
+  };
+  const startDrag = (event: DragEvent, item: InsertItem) => {
+    event.dataTransfer.setData(insertDragType, item.key);
+    event.dataTransfer.setData(`${insertDragType}+${item.type.toLowerCase()}`, "");
     event.dataTransfer.effectAllowed = "copy";
   };
+  const endDrag = (event: DragEvent, item: InsertItem) => {
+    if (event.dataTransfer.dropEffect !== "none") remember(item.key);
+  };
+
+  const handleSearchKeys = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Escape" && search !== "") {
+      event.stopPropagation();
+      setSearch("");
+    }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      list.current?.querySelector<HTMLButtonElement>("[data-insert-tile]")?.focus();
+    }
+  };
+
+  const tiles = (shown: readonly InsertItem[], look: "section" | "element" | "compact") => (
+    <ul className={classNames("grid gap-1", look === "compact" ? "grid-cols-4" : "grid-cols-2")}>
+      {shown.map((item, index) => (
+        <li key={item.key} className="min-w-0">
+          <InsertTile
+            item={item}
+            look={look}
+            align={isLeftHalf(index, look === "compact" ? 4 : 2) ? "start" : "end"}
+            onInsert={insert}
+            onDragStart={startDrag}
+            onDragEnd={endDrag}
+          />
+        </li>
+      ))}
+    </ul>
+  );
 
   return (
-    <div className="flex flex-col gap-5 p-4">
-      <p className="text-caption text-label-secondary">{text("pageBuilder.insert.hint")}</p>
-      <section aria-labelledby="lintel-insert-sections" className="flex flex-col gap-2">
-        <h3 id="lintel-insert-sections" className="text-footnote font-semibold text-label">
-          {text("pageBuilder.insert.sections")}
-        </h3>
-        <ul className="grid grid-cols-1 gap-2">
-          {templates.map((template) => (
-            <li key={template.id}>
-              <button
-                type="button"
-                draggable
-                onDragStart={(event) =>
-                  startDrag(event, `template:${template.id}`, template.blueprint.type)
-                }
-                onClick={() => onInsert(`template:${template.id}`)}
-                className="flex w-full flex-col gap-1.5 rounded-card p-2 text-start transition-colors duration-150 hover:bg-fill focus-visible:focus-ring"
+    <div className="flex flex-col">
+      <div className="sticky top-0 z-10 flex flex-col gap-2 bg-surface px-3 pt-3 pb-3 hairline-bottom">
+        <div className="relative">
+          <label htmlFor={searchId} className="sr-only">
+            {text("pageBuilder.insert.searchLabel")}
+          </label>
+          <Search
+            aria-hidden="true"
+            className="pointer-events-none absolute top-1/2 inset-s-2 size-3.5 -translate-y-1/2 text-label-tertiary"
+          />
+          <input
+            id={searchId}
+            type="search"
+            value={search}
+            placeholder={text("pageBuilder.insert.searchLabel")}
+            onChange={(event) => setSearch(event.target.value)}
+            onKeyDown={handleSearchKeys}
+            className={classNames(inputClassName, "ps-7")}
+          />
+        </div>
+        {search.trim() === "" && (
+          <ChoiceGroup<InsertKind>
+            label={text("pageBuilder.insert.kindLabel")}
+            hideLabel
+            value={kind}
+            onChange={setKind}
+            choices={[
+              { value: "sections", label: text("pageBuilder.insert.kindSections") },
+              { value: "elements", label: text("pageBuilder.insert.kindElements") },
+            ]}
+          />
+        )}
+      </div>
+
+      <div ref={list} className="flex flex-col gap-1 px-2 py-2">
+        {search.trim() !== "" ? (
+          <SearchResults
+            results={results}
+            search={search.trim()}
+            render={(shown, kindShown) =>
+              tiles(shown, kindShown === "sections" ? "section" : "element")
+            }
+          />
+        ) : (
+          <>
+            {recentItems.length > 0 && (
+              <section aria-labelledby={`${searchId}-recent`} className="flex flex-col gap-1 pb-1">
+                <h3
+                  id={`${searchId}-recent`}
+                  className="px-1.5 pt-1 text-caption font-semibold tracking-wide text-label-secondary uppercase"
+                >
+                  {text("pageBuilder.insert.recent")}
+                </h3>
+                {tiles(recentItems, kind === "sections" ? "section" : "compact")}
+              </section>
+            )}
+            {groups.map((group) => (
+              <CollapsibleSection
+                key={group.id}
+                variant="group"
+                title={text(group.title)}
+                summary={String(group.items.length)}
+                isOpen={openGroups.isOpen(group.id)}
+                onToggle={() => openGroups.toggle(group.id)}
               >
-                <BlueprintSketch blueprint={template.blueprint} />
-                <span className="text-footnote font-medium text-label">{template.label}</span>
-                <span className="text-caption text-label-secondary">{template.description}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
-      {componentCategories.map((category) => {
-        const definitions = insertable.filter((definition) => definition.category === category);
-        if (definitions.length === 0) return null;
-        return (
-          <section
-            key={category}
-            aria-labelledby={`lintel-insert-${category}`}
-            className="flex flex-col gap-1"
-          >
-            <h3 id={`lintel-insert-${category}`} className="text-footnote font-semibold text-label">
-              {text(categoryTitles[category])}
-            </h3>
-            <ul className="flex flex-col">
-              {definitions.map((definition) => (
-                <li key={definition.type}>
-                  <ComponentButton
-                    definition={definition}
-                    onInsert={onInsert}
-                    onDragStart={startDrag}
-                  />
-                </li>
-              ))}
-            </ul>
-          </section>
-        );
-      })}
+                {tiles(group.items, kind === "sections" ? "section" : "element")}
+              </CollapsibleSection>
+            ))}
+          </>
+        )}
+      </div>
+      <p className="px-4 pt-1 pb-4 text-caption text-label-tertiary">
+        {text("pageBuilder.insert.hint")}
+      </p>
     </div>
   );
 }
 
-function ComponentButton({
-  definition,
-  onInsert,
-  onDragStart,
+function SearchResults({
+  results,
+  search,
+  render,
 }: {
-  definition: AnyComponentDefinition;
-  onInsert: (key: InsertKey) => void;
-  onDragStart: (event: DragEvent, key: InsertKey, type: string) => void;
+  results: readonly InsertItem[];
+  search: string;
+  render: (items: readonly InsertItem[], kind: InsertKind) => ReactNode;
 }) {
-  const key: InsertKey = `component:${definition.type}`;
+  const text = useBuilderText();
+  // The kind with the best match comes first: "heading" shows elements, "hero" sections.
+  const kinds: InsertKind[] =
+    results[0]?.kind === "elements" ? ["elements", "sections"] : ["sections", "elements"];
   return (
-    <button
-      type="button"
-      draggable
-      onDragStart={(event) => onDragStart(event, key, definition.type)}
-      onClick={() => onInsert(key)}
-      className="flex w-full items-start gap-3 rounded-control px-2 py-2 text-start transition-colors duration-150 hover:bg-fill focus-visible:focus-ring"
-    >
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-control bg-fill text-label-secondary">
-        <ComponentIcon name={definition.icon} className="size-4" />
-      </span>
-      <span className="flex min-w-0 flex-col">
-        <span className="text-footnote font-medium text-label">{definition.label}</span>
-        <span className="text-caption text-label-secondary">{definition.description}</span>
-      </span>
-    </button>
+    <>
+      <p role="status" className="sr-only">
+        {results.length === 0
+          ? text("pageBuilder.insert.noResults", { search })
+          : text("pageBuilder.insert.resultCount", { count: results.length })}
+      </p>
+      {results.length === 0 && (
+        <p className="px-2 py-6 text-center text-footnote text-label-secondary">
+          {text("pageBuilder.insert.noResults", { search })}
+        </p>
+      )}
+      {kinds.map((kind) => {
+        const shown = results.filter((item) => item.kind === kind);
+        if (shown.length === 0) return null;
+        const title = text(kindTitles[kind]);
+        return (
+          <section key={kind} aria-label={title} className="flex flex-col gap-1 pb-2">
+            <h3 className="px-1.5 pt-1 text-caption font-semibold tracking-wide text-label-secondary uppercase">
+              {title}
+            </h3>
+            {render(shown, kind)}
+          </section>
+        );
+      })}
+    </>
   );
+}
+
+/** Whether a tile is in the left half of its row, so its cards can open towards the panel. */
+function isLeftHalf(index: number, columns: number): boolean {
+  return index % columns < columns / 2;
 }

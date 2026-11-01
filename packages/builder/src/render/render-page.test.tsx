@@ -50,7 +50,7 @@ describe("rendering a page", () => {
     const createId = createCountingNodeIds();
     const hidden = { ...createNode({ type: "button" }, standardCatalogue, createId), hidden: true };
     const result = renderPage(pageOf(hidden), standardRegistry);
-    expect(result).toEqual({ html: '<div class="page"></div>', css: "" });
+    expect(result).toEqual({ html: '<div class="page"></div>', css: "", animations: [] });
   });
 
   it("draws pictures with alt text, in a figure when they have a caption", () => {
@@ -101,7 +101,7 @@ describe("rendering a page", () => {
     const page = templatePage("hero");
     const { html, css } = renderPage(page, standardRegistry, { nodeId: "n3" });
     expect(html).toBe('<h1 class="hero-title">Good things, made well</h1>');
-    expect(css).toBe("");
+    expect(css).toMatch(/^\.hero-title \{\n {2}font-size: clamp/);
   });
 
   it("draws the site’s blocks with @lintel/site-components, inside the element’s own class", () => {
@@ -127,5 +127,24 @@ describe("rendering a page", () => {
       '<a class="lintel-button lintel-button--primary" href="/order" data-lintel-field="button">Get in touch</a>',
     );
     expect(html).toContain("<p>One &lt;b&gt;</p><p>Two</p>");
+  });
+
+  it("lists the page's animations and marks their elements for the motion runtime", () => {
+    const page = templatePage("hero");
+    const plain = renderPage(page, standardRegistry);
+    expect(plain.html).not.toContain("data-node-id");
+    const { html, animations } = renderPage(page, standardRegistry, { withMotion: true });
+    const heading = animations[0];
+    expect(heading?.nodeId).toBe("n3");
+    expect(heading?.spec.targets).toEqual({ type: "text", split: "words" });
+    expect(html).toContain('<h1 class="hero-title" data-node-id="n3" data-motion-cloak="">');
+    // A press is played by a click, so the button is never hidden while it waits.
+    expect(html).toMatch(/<a class="button" data-node-id="n\d+" href="\/contact">/);
+  });
+
+  it("leaves the animations of hidden elements out", () => {
+    const createId = createCountingNodeIds();
+    const hero = createNode(findSectionTemplate("hero")!.blueprint, standardCatalogue, createId);
+    expect(renderPage(pageOf({ ...hero, hidden: true }), standardRegistry).animations).toEqual([]);
   });
 });

@@ -56,3 +56,17 @@ export function updateWebsite(changes: WebsiteChanges) {
 export function getSiteAddress() {
   return apiRequest<SiteAddress>("/website/address");
 }
+
+/** What the page builder draws its canvas with, so pages look exactly as on the website. */
+export interface CanvasSite {
+  stylesheet: string;
+  bodyClassName: string;
+  headerHtml: string;
+  footerHtml: string;
+  baseUrl: string | null;
+  motionScript: string;
+}
+
+export function getCanvasSite() {
+  return apiRequest<CanvasSite>("/website/canvas");
+}

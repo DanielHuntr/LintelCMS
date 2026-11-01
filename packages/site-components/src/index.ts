@@ -38,3 +38,4 @@ export { journalTemplate } from "./templates/journal-template.js";
 export { builtInTemplates, findTemplate } from "./templates/templates.js";
 export type { PageHead } from "./document/page-head.types.js";
 export { SiteDocument, type SiteDocumentProps } from "./document/SiteDocument.js";
+export { motionCloakCss, scriptSafeJson } from "./document/DesignHead.js";

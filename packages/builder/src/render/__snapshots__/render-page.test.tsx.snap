@@ -2,9 +2,9 @@
 
 exports[`rendering a page > prints clean, semantic HTML and a readable stylesheet > css 1`] = `
 ".hero {
-  padding-top: var(--lintel-space-8);
+  padding-top: var(--lintel-space-9);
   padding-right: var(--lintel-space-5);
-  padding-bottom: var(--lintel-space-8);
+  padding-bottom: var(--lintel-space-9);
   padding-left: var(--lintel-space-5);
 }
 
@@ -18,6 +18,24 @@ exports[`rendering a page > prints clean, semantic HTML and a readable styleshee
   width: 100%;
   max-width: 48rem;
   text-align: center;
+}
+
+.hero-title {
+  font-size: clamp(2.5rem, 6vw, 4.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.introduction {
+  font-size: 1.25rem;
+  line-height: 1.5;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--lintel-space-3);
 }
 
 .button {
@@ -51,7 +69,14 @@ exports[`rendering a page > prints clean, semantic HTML and a readable styleshee
   max-width: 72rem;
 }
 
-.columns {
+.introduction-2 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lintel-space-3);
+  max-width: 44rem;
+}
+
+.grid {
   display: grid;
   gap: var(--lintel-space-5);
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -61,36 +86,36 @@ exports[`rendering a page > prints clean, semantic HTML and a readable styleshee
   display: flex;
   flex-direction: column;
   gap: var(--lintel-space-3);
-  padding-top: var(--lintel-space-5);
-  padding-right: var(--lintel-space-5);
-  padding-bottom: var(--lintel-space-5);
-  padding-left: var(--lintel-space-5);
+  padding-top: var(--lintel-space-6);
+  padding-right: var(--lintel-space-6);
+  padding-bottom: var(--lintel-space-6);
+  padding-left: var(--lintel-space-6);
   background-color: var(--lintel-color-surface);
-  border-radius: var(--lintel-radius-medium);
+  border-radius: var(--lintel-radius-large);
 }
 
 .feature-2 {
   display: flex;
   flex-direction: column;
   gap: var(--lintel-space-3);
-  padding-top: var(--lintel-space-5);
-  padding-right: var(--lintel-space-5);
-  padding-bottom: var(--lintel-space-5);
-  padding-left: var(--lintel-space-5);
+  padding-top: var(--lintel-space-6);
+  padding-right: var(--lintel-space-6);
+  padding-bottom: var(--lintel-space-6);
+  padding-left: var(--lintel-space-6);
   background-color: var(--lintel-color-surface);
-  border-radius: var(--lintel-radius-medium);
+  border-radius: var(--lintel-radius-large);
 }
 
 .feature-3 {
   display: flex;
   flex-direction: column;
   gap: var(--lintel-space-3);
-  padding-top: var(--lintel-space-5);
-  padding-right: var(--lintel-space-5);
-  padding-bottom: var(--lintel-space-5);
-  padding-left: var(--lintel-space-5);
+  padding-top: var(--lintel-space-6);
+  padding-right: var(--lintel-space-6);
+  padding-bottom: var(--lintel-space-6);
+  padding-left: var(--lintel-space-6);
   background-color: var(--lintel-color-surface);
-  border-radius: var(--lintel-radius-medium);
+  border-radius: var(--lintel-radius-large);
 }
 
 .testimonial {
@@ -104,6 +129,7 @@ exports[`rendering a page > prints clean, semantic HTML and a readable styleshee
 .container-3 {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: var(--lintel-space-5);
   margin-right: auto;
   margin-left: auto;
@@ -122,15 +148,15 @@ exports[`rendering a page > prints clean, semantic HTML and a readable styleshee
 }
 
 @media (max-width: 991px) {
-  .columns {
+  .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 767px) {
   .hero {
-    padding-top: var(--lintel-space-7);
-    padding-bottom: var(--lintel-space-7);
+    padding-top: var(--lintel-space-8);
+    padding-bottom: var(--lintel-space-8);
   }
 
   .features {
@@ -138,8 +164,13 @@ exports[`rendering a page > prints clean, semantic HTML and a readable styleshee
     padding-bottom: var(--lintel-space-7);
   }
 
-  .columns {
+  .grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .testimonial {
+    padding-top: var(--lintel-space-7);
+    padding-bottom: var(--lintel-space-7);
   }
 }
 "
@@ -150,25 +181,27 @@ exports[`rendering a page > prints clean, semantic HTML and a readable styleshee
   <section class="hero">
     <div class="container">
       <h1 class="hero-title">Good things, made well</h1>
-      <p class="paragraph">Say in a sentence or two what you do and who it’s for.</p>
-      <a class="button" href="/contact">Get in touch</a>
+      <p class="introduction">Say in a sentence or two what you do and who it’s for.</p>
+      <div class="buttons"><a class="button" href="/contact">Get in touch</a></div>
     </div>
   </section>
   <section class="features">
     <div class="container-2">
-      <h2 class="heading">Why people choose us</h2>
-      <div class="columns">
+      <div class="introduction-2">
+        <h2 class="heading">Why people choose us</h2>
+      </div>
+      <div class="grid">
         <article class="feature">
           <h3 class="heading-2">Friendly</h3>
-          <p class="paragraph-2">Explain the first thing people love about you.</p>
+          <p class="paragraph">Explain the first thing people love about you.</p>
         </article>
         <article class="feature-2">
           <h3 class="heading-3">Fast</h3>
-          <p class="paragraph-3">And the second, in a sentence or two.</p>
+          <p class="paragraph-2">And the second, in a sentence or two.</p>
         </article>
         <article class="feature-3">
           <h3 class="heading-4">Local</h3>
-          <p class="paragraph-4">And a third, to round it off.</p>
+          <p class="paragraph-3">And a third, to round it off.</p>
         </article>
       </div>
     </div>

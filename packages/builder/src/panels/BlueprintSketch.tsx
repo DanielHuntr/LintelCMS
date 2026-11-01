@@ -6,11 +6,18 @@ import type { ReactNode } from "react";
  * bars, text as thin lines, buttons as pills, pictures as tinted boxes, columns side by side.
  * New templates get a thumbnail without anyone drawing one. Purely decorative.
  */
-export function BlueprintSketch({ blueprint }: { blueprint: NodeBlueprint }) {
+export function BlueprintSketch({
+  blueprint,
+  size = "regular",
+}: {
+  blueprint: NodeBlueprint;
+  /** Small fits two to a row in the Insert panel. */
+  size?: "regular" | "small";
+}) {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none flex h-24 w-full flex-col overflow-hidden rounded-control bg-surface p-2 hairline-ring"
+      className={`pointer-events-none flex w-full flex-col overflow-hidden rounded-control bg-surface hairline-ring ${size === "small" ? "h-16 p-1.5" : "h-24 p-2"}`}
     >
       {sketch(blueprint, "0")}
     </div>
@@ -25,13 +32,20 @@ function sketch(blueprint: NodeBlueprint, key: string): ReactNode {
   const centred = styles.alignItems === "center" || styles.textAlign === "center";
   const tinted = styles.backgroundColor?.includes("brand");
   const panel = styles.backgroundColor?.includes("surface");
+  const dark = styles.backgroundColor?.includes("color-text");
 
   switch (blueprint.type) {
+    case "page":
+      return (
+        <div key={key} className="flex flex-1 flex-col gap-1">
+          {children}
+        </div>
+      );
     case "section":
       return (
         <div
           key={key}
-          className={`flex flex-1 flex-col justify-center gap-1 rounded px-2 py-1.5 ${tinted ? "bg-accent-fill/80" : panel ? "bg-fill" : ""}`}
+          className={`flex flex-1 flex-col justify-center gap-1 rounded px-2 py-1.5 ${tinted ? "bg-accent-fill/80" : dark ? "bg-label/80" : panel ? "bg-fill" : ""}`}
         >
           {children}
         </div>
@@ -75,6 +89,13 @@ function sketch(blueprint: NodeBlueprint, key: string): ReactNode {
       return <span key={key} className="block h-1 w-8 rounded-full bg-accent" />;
     case "image":
       return <span key={key} className="block h-12 w-full rounded bg-fill-strong" />;
+    case "list":
+      return (
+        <span key={key} className="flex w-full flex-col gap-0.5">
+          <span className="block h-1 w-1/2 rounded-full bg-label-tertiary/60" />
+          <span className="block h-1 w-2/5 rounded-full bg-label-tertiary/60" />
+        </span>
+      );
     case "divider":
       return <span key={key} className="block h-px w-full bg-separator" />;
     default:

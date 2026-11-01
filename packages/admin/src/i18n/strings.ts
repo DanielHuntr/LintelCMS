@@ -14,6 +14,7 @@ import { contentModelSyncStrings } from "./contentModelSyncStrings.js";
 import { siteStrings } from "./siteStrings.js";
 import { brandingStrings } from "./brandingStrings.js";
 import { translate } from "./translate.js";
+import { starterSiteStrings } from "./starterSiteStrings.js";
 
 /**
  * Every word the admin shows lives here, in English: the source every translation in
@@ -39,6 +40,7 @@ const english = {
   ...siteStrings,
   ...brandingStrings,
   "app.name": "{product}",
+  ...starterSiteStrings,
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",
   "documentTitle.page": "{page} · {site}",

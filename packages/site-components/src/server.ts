@@ -3,3 +3,4 @@
 export { renderSiteDocument } from "./document/render-site-document.js";
 export { renderComponentHtml, lowerCaseAttributes } from "./document/render-html.js";
 export { componentStylesheet, siteStylesheet } from "./document/site-stylesheet.js";
+export { renderSiteChrome, type RenderedSiteChrome } from "./document/render-site-chrome.js";

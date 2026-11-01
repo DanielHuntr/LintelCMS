@@ -148,6 +148,9 @@ importers:
       jsdom:
         specifier: ^30.1.3
         version: 30.1.3
+      playwright:
+        specifier: 1.63.0
+        version: 1.63.0
       tailwindcss:
         specifier: ^4.3.3
         version: 4.3.3
@@ -163,6 +166,12 @@ importers:
       '@lintel/builder-model':
         specifier: workspace:*
         version: link:../builder-model
+      '@lintel/motion':
+        specifier: workspace:*
+        version: link:../motion
+      '@lintel/motion-editor':
+        specifier: workspace:*
+        version: link:../motion-editor
       '@lintel/site-components':
         specifier: workspace:*
         version: link:../site-components
@@ -203,6 +212,9 @@ importers:
 
   packages/builder-model:
     dependencies:
+      '@lintel/motion':
+        specifier: workspace:*
+        version: link:../motion
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -249,6 +261,9 @@ importers:
       '@lintel/builder-model':
         specifier: workspace:*
         version: link:../builder-model
+      '@lintel/motion':
+        specifier: workspace:*
+        version: link:../motion
       '@lintel/site-components':
         specifier: workspace:*
         version: link:../site-components

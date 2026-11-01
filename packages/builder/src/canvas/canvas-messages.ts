@@ -1,3 +1,5 @@
+import type { MotionSpec } from "@lintel/motion";
+
 /**
  * What the builder and its canvas frame say to each other. The frame is sandboxed without
  * same-origin access, so it can't touch the admin and the admin can't touch it; these
@@ -12,7 +14,10 @@ export interface OutlineLabels {
 export type MessageToFrame =
   | { type: "render"; html: string; css: string }
   | { type: "outline"; selectedId: string | null; hoveredId: string | null; labels: OutlineLabels }
-  | { type: "reveal"; nodeId: string };
+  | { type: "reveal"; nodeId: string }
+  /** Plays an animation once on an element, as a preview; the page itself doesn't change. */
+  | { type: "previewMotion"; nodeId: string; spec: MotionSpec }
+  | { type: "stopMotion" };
 
 export interface ForwardedKey {
   key: string;

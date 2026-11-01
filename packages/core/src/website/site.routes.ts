@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import type { Site } from "../sites/sites.table.js";
 import type { SiteResponse } from "./rendered-pages-cache.js";
+import { ILLUSTRATIONS_FOLDER, readIllustration, readMotionRuntime } from "./site-assets.js";
 import { STYLESHEET_FOLDER } from "./site-context.service.js";
 import { findSiteForAddress } from "./site-for-address.js";
 import { readSiteContext, respondToSitePath, type SiteDependencies } from "./site-pages.service.js";
@@ -11,6 +12,8 @@ import { readSiteContext, respondToSitePath, type SiteDependencies } from "./sit
  * HTTP only, on the website's own server (see site-server.ts):
  *
  *   GET /_lintel/site-<fingerprint>.css   the theme and component styles, cached for a year
+ *   GET /_lintel/motion-<fingerprint>.js  the motion runtime, for pages with animations
+ *   GET /_lintel/illustrations/<name>.svg the starter sites' illustrations
  *   GET /*                                 a page, a redirect, sitemap.xml, robots.txt or 404
  *
  * `?preview=<token>` on any page shows a draft (see site-preview.service.ts). Each visit is
@@ -36,7 +39,28 @@ export async function siteRoutes(
     return { dependencies: options.dependencies(site), path };
   };
 
+  server.get(`${ILLUSTRATIONS_FOLDER}/:file`, async (request, reply) => {
+    const { file } = request.params as { file: string };
+    const svg = readIllustration(file);
+    if (!svg) {
+      return reply.code(404).type("text/plain; charset=utf-8").send("Not found");
+    }
+    return reply
+      .type("image/svg+xml")
+      .header("cache-control", "public, max-age=86400")
+      .header("content-security-policy", "default-src 'none'; style-src 'unsafe-inline'")
+      .send(svg);
+  });
+
   server.get(`${STYLESHEET_FOLDER}/:file`, async (request, reply) => {
+    const motion = readMotionRuntime();
+    if (motion && request.url.split("?")[0] === motion.path) {
+      return reply
+        .type("text/javascript; charset=utf-8")
+        .header("cache-control", "public, max-age=31536000, immutable")
+        .send(motion.code);
+    }
+    // The look is shared by every site; the site here only decides which cache keeps it.
     const context = await readSiteContext((await visit(request)).dependencies);
     // An older fingerprint still gets today's styles, but only the current one is kept long.
     const isCurrent = request.url.split("?")[0] === context.stylesheet.path;

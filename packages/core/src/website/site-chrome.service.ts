@@ -1,5 +1,7 @@
 import type { MenuItem, SiteChrome } from "@lintel/site-components";
 import type { DatabaseOrTransaction } from "../database/client.js";
+import { readSetting } from "../settings/settings.service.js";
+import { isDefaultSite } from "../sites/sites.service.js";
 import type { Site } from "../sites/sites.table.js";
 import type { AssetLookup } from "../fieldtypes/image-assets.js";
 import { deliverAllGlobalSets } from "../globals/globals-delivery.service.js";
@@ -35,9 +37,10 @@ export async function loadSiteChrome(
   assetLookup: AssetLookup,
   site?: Site,
 ): Promise<SiteChrome> {
-  const [{ globals }, menuItems] = await Promise.all([
+  const [{ globals }, menuItems, ownName] = await Promise.all([
     deliverAllGlobalSets(database, locale, assetLookup, site),
     loadMainMenu(database, locale, site),
+    readOwnSiteName(database, site),
   ]);
   const settings = globals.site_settings ?? {};
   const socialLinks = Array.isArray(settings.social_links)
@@ -47,7 +50,8 @@ export async function loadSiteChrome(
     : [];
   const localise = (url: string) => localiseUrl(url, locale, context.defaultLocale);
   return {
-    siteName: readText(settings.site_name) || context.seoDefaults.siteName || "My website",
+    siteName:
+      readText(settings.site_name) || ownName || context.seoDefaults.siteName || "My website",
     logo: context.logo ? readImage(context.logo) : null,
     homeUrl: localise("/"),
     menu: menuItems.map((item) => toMenuItem(item, localise)),
@@ -57,6 +61,18 @@ export async function loadSiteChrome(
     languages: [],
     locale,
   };
+}
+
+/**
+ * The site's name when Site settings doesn't give one: the name from setup for the default
+ * site, the name in Settings → Sites for the others.
+ */
+async function readOwnSiteName(
+  database: DatabaseOrTransaction,
+  site: Site | undefined,
+): Promise<string | null> {
+  if (site && !isDefaultSite(site)) return site.name;
+  return readSetting(database, "siteName");
 }
 
 /** A site may have deleted its main menu; then the header shows the name alone. */

@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { designBaseStylesheet } from "@lintel/builder/render";
 import type { SiteTemplate } from "@lintel/site-components";
 import { siteStylesheet } from "@lintel/site-components/server";
 import { findBlueprintByIdOrFail } from "../blueprints/blueprints.service.js";
@@ -59,7 +60,8 @@ export async function loadSiteContext(
     ? ((await options.assetLookup.findAssetsByIds([look.logoAssetId])).get(look.logoAssetId) ??
       null)
     : null;
-  const css = siteStylesheet(look.theme, look.template);
+  // Pages designed in the builder need a few element defaults; the canvas draws with this same file.
+  const css = `${siteStylesheet(look.theme, look.template)}\n\n${designBaseStylesheet}`;
   const fingerprint = createHash("sha256").update(css).digest("hex").slice(0, 12);
   return {
     defaultLocale: locales.defaultLocale,

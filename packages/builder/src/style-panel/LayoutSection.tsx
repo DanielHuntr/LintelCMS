@@ -3,7 +3,8 @@ import { ArrowDown, ArrowRight, Grid3x3, Square } from "lucide-react";
 import { type KeyboardEvent, useRef } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { ChoiceGroup, classNames, Labelled, PanelSection } from "../ui/controls.js";
-import { useStyleEditing, useStyleField } from "./style-field.js";
+import { useStyleEditing, useStyleField, useStyleReader } from "./style-field.js";
+import { layoutSummary } from "./style-summaries.js";
 import { StyleChips, StyleSelect, StyleTextInput, tokenChips } from "./StyleInputs.js";
 
 type Arrangement = "stack" | "row" | "grid" | "normal";
@@ -12,6 +13,7 @@ type Arrangement = "stack" | "row" | "grid" | "normal";
 export function LayoutSection({ advanced }: { advanced: boolean }) {
   const text = useBuilderText();
   const { change } = useStyleEditing();
+  const read = useStyleReader();
   const display = useStyleField("display", text("pageBuilder.style.arrange"));
   const direction = useStyleField("flexDirection", text("pageBuilder.style.arrange"));
   const columns = useStyleField("gridTemplateColumns", text("pageBuilder.style.columns"));
@@ -38,7 +40,11 @@ export function LayoutSection({ advanced }: { advanced: boolean }) {
   const columnCount = Number(/^repeat\((\d+)/.exec(columns.value ?? "")?.[1] ?? 0);
 
   return (
-    <PanelSection title={text("pageBuilder.style.layout")}>
+    <PanelSection
+      title={text("pageBuilder.style.layout")}
+      sectionId="layout"
+      summary={layoutSummary(read, text)}
+    >
       <ChoiceGroup<Arrangement>
         label={label}
         value={arrangement}

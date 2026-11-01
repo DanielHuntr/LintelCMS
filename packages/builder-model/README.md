@@ -1,6 +1,7 @@
 # @lintel/builder-model
 
-The page builder's document model, in plain TypeScript (its only dependency is Zod). The
+The page builder's document model, in plain TypeScript (it depends on Zod, and on
+`@lintel/motion` for the animation spec's schema and presets). The
 server uses it to check pages before saving them, the editor (`@lintel/builder`) to change
 them, and the website to draw them. Nothing here touches React or the DOM.
 
@@ -36,22 +37,26 @@ docs/decisions/0015-page-documents.md explains why the model looks the way it do
 ```
 
 - `props` are what a node shows; each component's Zod schema checks them.
+- `animation` (optional) is how it moves: `{ spec, presetId? }`, where `spec` is an
+  animation spec from `@lintel/motion`, checked by its schema when the page is saved.
 - `styles` are how it looks: `base` (desktop and up), `tablet` and `phone` cascade down,
   `hover` and `focus` are states. Only properties in `styles/style-properties.ts` are allowed,
   and values can't break out of their declaration.
 
 ## Folders
 
-| Folder        | What it holds                                                                            |
-| ------------- | ---------------------------------------------------------------------------------------- |
-| `document/`   | The schema, `createEmptyPage`, `migrateDocument` and `validatePageDocument`              |
-| `components/` | `ComponentDefinition`, the standard components and `createComponentCatalogue`            |
-| `styles/`     | Allowed properties, the breakpoint cascade, class names and `compileStylesheet`          |
-| `tokens/`     | The site's design tokens (`--lintel-color-brand`...) as the style panel offers them      |
-| `tree/`       | Reading (`findPath`, `listVisibleRows`) and changing (`moveNode`, `duplicateNode`) trees |
-| `html/`       | A small HTML parser and writer, `formatHtml` for the code view, and `importHtml`         |
-| `code/`       | Code block markers (`data-lintel-field`), script removal and the code permission rule    |
-| `templates/`  | The ready-made sections offered on an empty page and in the Insert panel                 |
+| Folder           | What it holds                                                                            |
+| ---------------- | ---------------------------------------------------------------------------------------- |
+| `document/`      | The schema, `createEmptyPage`, `migrateDocument` and `validatePageDocument`              |
+| `components/`    | `ComponentDefinition`, the standard components and `createComponentCatalogue`            |
+| `styles/`        | Allowed properties, the breakpoint cascade, class names and `compileStylesheet`          |
+| `tokens/`        | The site's design tokens (`--lintel-color-brand`...) as the style panel offers them      |
+| `tree/`          | Reading (`findPath`, `listVisibleRows`) and changing (`moveNode`, `duplicateNode`) trees |
+| `html/`          | A small HTML parser and writer, `formatHtml` for the code view, and `importHtml`         |
+| `code/`          | Code block markers (`data-lintel-field`), script removal and the code permission rule    |
+| `templates/`     | The section library: ready-made sections by category, for Insert and the empty page      |
+| `sections/`      | The builders sections are made from (heroes, features, prices...), with `animate()`      |
+| `starter-sites/` | Six whole starter sites for "Start from a template", and their SVG illustrations         |
 
 Tree changes never modify a tree: they return a new one that shares every untouched node,
 so undo can keep whole trees and the editor can skip redrawing unchanged layers.

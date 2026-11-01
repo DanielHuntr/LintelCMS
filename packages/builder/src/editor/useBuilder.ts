@@ -1,5 +1,7 @@
 import {
+  buildStarterPage,
   type CreateNodeId,
+  type NodeAnimation,
   createNode,
   findNode,
   findPath,
@@ -9,6 +11,7 @@ import {
   type PageDocument,
   type PageNode,
   rootNodeId,
+  type StarterPage,
   type StylePropertyName,
   type StyleTarget,
 } from "@lintel/builder-model";
@@ -286,6 +289,16 @@ export function useBuilder({
             (node) => ({ ...node, props: { ...node.props, ...code } }),
           ),
         ),
+      animate: (nodeId: string, animation: NodeAnimation | null) =>
+        run(commands.changeAnimation(context(), nodeId, animation), animation ? "" : undefined),
+      useStarterPage: (page: StarterPage, name: string) =>
+        run(
+          commands.replacePageContent(
+            context(),
+            buildStarterPage(page, registry.catalogue, createId),
+            text("pageBuilder.history.usedTemplatePage", { name }),
+          ),
+        ),
       selectAdjacent: adjacent,
       selectParent: () => {
         const selected = latest.current.selectedId;
@@ -302,5 +315,6 @@ export function useBuilder({
     selectedNode: selectedId ? selectedNode : undefined,
     actions,
     announcement,
+    announce,
   };
 }

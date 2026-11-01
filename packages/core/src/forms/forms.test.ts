@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ensurePagesCollection } from "../collections/default-collections.js";
+import { ensureCollection } from "../collections/collections.service.js";
+import { pagesWithSimpleSectionsCollection } from "../collections/default-collections.js";
 import { useTestDatabase } from "../testing/test-database.js";
 import { useFormsTestServer } from "../testing/test-forms.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
@@ -192,9 +193,9 @@ describe("the form builder", () => {
     expect((await forms.api("GET", `/forms/${form.id}`)).statusCode).toBe(200);
   });
 
-  it("adds a Form section to pages when the plugin is switched on", async () => {
+  it("adds a Form section to older sites' Page sections when the plugin is switched on", async () => {
     await forms.api("PUT", "/plugins", { enabled: [] });
-    await ensurePagesCollection(testDatabase.database);
+    await ensureCollection(testDatabase.database, pagesWithSimpleSectionsCollection);
     await forms.api("PUT", "/plugins", { enabled: ["forms"] });
 
     const page = await forms.api("GET", "/blueprints/page");

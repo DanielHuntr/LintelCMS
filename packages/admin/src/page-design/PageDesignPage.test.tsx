@@ -76,8 +76,8 @@ describe("the page design screen", () => {
 
   it("shows the server’s message when it refuses a design", async () => {
     const user = userEvent.setup();
-    mockApi(({ method }) => {
-      if (method === "GET") return samplePage();
+    mockApi(({ method, url }) => {
+      if (method === "GET" && url.pathname.includes("/entries/")) return samplePage();
       throw apiErrorResponse(400, "INVALID_FIELDS", "Some fields need attention", {
         design: "Design: only people allowed to edit code can add or change code.",
       });
@@ -85,13 +85,40 @@ describe("the page design screen", () => {
     renderScreen(<PageDesignPage collectionHandle="pages" entryId="p1" fieldHandle="design" />, {
       permissions: ["entries:*"],
     });
-    await user.click(await screen.findByRole("button", { name: /Hero/ }));
+    await user.click(await screen.findByRole("button", { name: /^Hero\s?A big welcome/ }));
     expect(await screen.findByRole("alert", {}, { timeout: 4000 })).toHaveTextContent(
       "only people allowed to edit code",
     );
-    expect(screen.queryByRole("button", { name: "Developer mode" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Code" })).not.toBeInTheDocument();
     expect(
       within(screen.getByRole("banner")).getByRole("button", { name: "Publish" }),
     ).toBeInTheDocument();
+  });
+
+  it("draws the canvas with the website's own look, header and footer", async () => {
+    mockApi(({ method, url }) => {
+      if (method === "GET" && url.pathname === "/website/canvas") {
+        return {
+          stylesheet: ".lintel-site { color: #222; }",
+          bodyClassName: "lintel-site lintel-template-clean",
+          headerHtml: '<header class="lintel-header">Corner Bakery</header>',
+          footerHtml: '<footer class="lintel-footer">Fresh bread</footer>',
+          baseUrl: "http://localhost:3000",
+          motionScript: "",
+        };
+      }
+      if (method === "GET") return samplePage();
+      throw apiErrorResponse(404, "NOT_FOUND", "Not found");
+    });
+    renderScreen(<PageDesignPage collectionHandle="pages" entryId="p1" fieldHandle="design" />);
+    await userEvent
+      .setup()
+      .click(await screen.findByRole("button", { name: /^Hero\s?A big welcome/ }));
+    const canvas = await screen.findByTitle("Your page");
+    const source = canvas.getAttribute("srcdoc") ?? "";
+    expect(source).toContain('<base href="http://localhost:3000">');
+    expect(source).toContain('<body class="lintel-site lintel-template-clean">');
+    expect(source).toContain("Corner Bakery");
+    expect(source).toContain('<div id="lintel-page" class="lintel-design">');
   });
 });

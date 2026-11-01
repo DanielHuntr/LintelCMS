@@ -84,6 +84,7 @@ import {
   type WebsiteOptions,
   type WebsiteRuntime,
 } from "./website/website-runtime.js";
+import { starterSitesRoutes } from "./starter-sites/starter-sites.routes.js";
 import { websiteRoutes } from "./website/website.routes.js";
 import { EventBus } from "./events/event-bus.js";
 import { subscribeEventListeners } from "./events/event-listeners.js";
@@ -411,6 +412,7 @@ function registerApiRoutes(
   server.register(interfaceLanguagesRoutes);
   server.register(websiteRoutes);
   server.register(pagesRoutes);
+  server.register(starterSitesRoutes);
   registerContentModelSyncRoutes(server);
   server.register(mediaRoutes, media);
 }

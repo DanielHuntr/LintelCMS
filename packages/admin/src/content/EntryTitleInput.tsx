@@ -8,6 +8,8 @@ interface EntryTitleInputProps {
   value: string;
   onChange: (title: string) => void;
   error: string | undefined;
+  /** What Return does, such as opening a new page in the builder. Otherwise nothing. */
+  onSubmit?: () => void;
 }
 
 /**
@@ -15,12 +17,14 @@ interface EntryTitleInputProps {
  * more lines when it's long, as in Pages or Notion. It's a text area for the wrapping, but
  * Enter doesn't add a line, since titles are a single line of text.
  */
-export function EntryTitleInput({ label, value, onChange, error }: EntryTitleInputProps) {
+export function EntryTitleInput({ label, value, onChange, error, onSubmit }: EntryTitleInputProps) {
   const inputId = useId();
   const errorId = useId();
 
   function preventNewLine(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Enter") event.preventDefault();
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    if (value.trim() !== "" && !event.nativeEvent.isComposing) onSubmit?.();
   }
 
   return (

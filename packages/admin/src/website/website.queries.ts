@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getSiteAddress, getWebsite, updateWebsite } from "./website.api.js";
+import { getCanvasSite, getSiteAddress, getWebsite, updateWebsite } from "./website.api.js";
 
 export const websiteKeys = {
   settings: () => ["website", "settings"] as const,
   address: () => ["website", "address"] as const,
+  canvas: () => ["website", "canvas"] as const,
 };
 
 export function useWebsite() {
@@ -35,4 +36,9 @@ export function useViewPageSite():
   const address = useSiteAddress();
   if (address.isError) return { siteAddress: null, defaultLocale: "" };
   return address.data;
+}
+
+/** The website's look for the page builder's canvas. Changes to the look refresh it. */
+export function useCanvasSite() {
+  return useQuery({ queryKey: websiteKeys.canvas(), queryFn: getCanvasSite, retry: false });
 }

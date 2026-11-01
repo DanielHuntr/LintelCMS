@@ -1,13 +1,25 @@
 import type { Breakpoint } from "@lintel/builder-model";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
-import { canvasFrameSource } from "./canvas-frame-script.js";
+import type { MotionSpec } from "@lintel/motion";
+import {
+  type CanvasScriptAddresses,
+  type CanvasSite,
+  canvasFrameSource,
+} from "./canvas-frame-script.js";
 import {
   type MessageFromFrame,
   type MessageToFrame,
   type OutlineLabels,
   readFrameMessage,
 } from "./canvas-messages.js";
+
+/** An animation to play on the canvas; a new `playId` plays it again. */
+export interface MotionPreview {
+  nodeId: string;
+  spec: MotionSpec;
+  playId: number;
+}
 
 /** How wide the canvas is at each screen size; desktop fills the space there is. */
 export const canvasWidths: Record<Breakpoint, string> = {
@@ -17,8 +29,6 @@ export const canvasWidths: Record<Breakpoint, string> = {
 };
 
 interface CanvasProps {
-  /** Where the frame's script is served (see `canvasFrameScript`); inline when left out. */
-  frameScriptUrl?: string;
   html: string;
   css: string;
   breakpoint: Breakpoint;
@@ -27,6 +37,10 @@ interface CanvasProps {
   labels: OutlineLabels;
   /** Scrolls an element into view, e.g. after picking it in the Layers panel. */
   revealId: string | null;
+  site?: CanvasSite;
+  /** Where the frame's scripts are served (see `canvasFrameScript`); inline when left out. */
+  scripts?: CanvasScriptAddresses;
+  motionPreview?: MotionPreview | null;
   onMessage: (message: MessageFromFrame) => void;
 }
 
@@ -43,17 +57,23 @@ export function Canvas({
   hoveredId,
   labels,
   revealId,
+  site,
+  scripts,
+  motionPreview = null,
   onMessage,
-  frameScriptUrl,
 }: CanvasProps) {
   const text = useBuilderText();
   const frame = useRef<HTMLIFrameElement>(null);
-  const [isReady, setIsReady] = useState(false);
-  const source = useMemo(() => canvasFrameSource(frameScriptUrl), [frameScriptUrl]);
+  const source = useMemo(() => canvasFrameSource(site, scripts), [site, scripts]);
+  // A new document (the site's look arrived) is a new frame, which says again when it's ready.
+  const [readySource, setReadySource] = useState<string | null>(null);
+  const isReady = readySource === source;
+  const latestSource = useRef(source);
   const latestOnMessage = useRef(onMessage);
 
   useEffect(() => {
     latestOnMessage.current = onMessage;
+    latestSource.current = source;
   });
 
   useEffect(() => {
@@ -61,7 +81,7 @@ export function Canvas({
       if (!frame.current || event.source !== frame.current.contentWindow) return;
       const message = readFrameMessage(event.data);
       if (!message) return;
-      if (message.type === "ready") setIsReady(true);
+      if (message.type === "ready") setReadySource(latestSource.current);
       latestOnMessage.current(message);
     }
     window.addEventListener("message", receive);
@@ -86,10 +106,26 @@ export function Canvas({
     if (isReady && revealId) post({ type: "reveal", nodeId: revealId });
   }, [isReady, revealId]);
 
+  // After the page is drawn (the render above waits a frame), so the element is there.
+  useEffect(() => {
+    if (!isReady) return;
+    const handle = requestAnimationFrame(() =>
+      requestAnimationFrame(() =>
+        post(
+          motionPreview
+            ? { type: "previewMotion", nodeId: motionPreview.nodeId, spec: motionPreview.spec }
+            : { type: "stopMotion" },
+        ),
+      ),
+    );
+    return () => cancelAnimationFrame(handle);
+  }, [isReady, motionPreview]);
+
   return (
     <div className="flex min-h-0 flex-1 justify-center overflow-auto bg-background p-4">
       <iframe
         ref={frame}
+        data-tour="canvas"
         title={text("pageBuilder.canvas.title")}
         srcDoc={source}
         sandbox="allow-scripts"

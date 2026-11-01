@@ -8,7 +8,7 @@ import type {
   TermLink,
 } from "@lintel/site-components";
 import type { DeliveredEntry } from "../delivery/delivery.schema.js";
-import { renderPageDesign } from "./page-design.js";
+import { readPageDesign } from "./designed-pages.js";
 
 /**
  * Turns entries as the delivery API serves them into the plain props the site components
@@ -153,7 +153,7 @@ export function toPageView(entry: DeliveredEntry): PageView {
     heroImage: entryImage(entry),
     body: readHtml(entry.data.body),
     sections: sections ?? [],
-    design: renderPageDesign(entry.data),
+    design: readPageDesign(entry.data.design),
   };
 }
 

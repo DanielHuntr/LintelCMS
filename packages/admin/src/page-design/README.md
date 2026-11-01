@@ -2,12 +2,35 @@
 
 "Edit design": the visual page builder (`@lintel/builder`) for fields of type `page`.
 
-| File                     | What it is                                                            |
-| ------------------------ | --------------------------------------------------------------------- |
-| `PageFieldEditor.tsx`    | The field in the entry editor: a summary and the **Edit design** link |
-| `pageDesignRoutes.tsx`   | `/content/:collection/:entryId/design/:field`, full screen            |
-| `PageDesignPage.tsx`     | Loads the entry and opens the builder with the admin's services       |
-| `usePageDesignSaving.ts` | Autosave and Publish through the entries API                          |
+| File                     | What it is                                                                |
+| ------------------------ | ------------------------------------------------------------------------- |
+| `DesignFirstFields.tsx`  | A page's fields: the Design card first, then the rest, Page sections last |
+| `PageDesignCard.tsx`     | The Design card: a live picture, **Edit design**, or a way to start       |
+| `DesignThumbnail.tsx`    | The picture: the design drawn with the website's look, scaled down        |
+| `designSummary.ts`       | Counting a design's sections and a blocks field's blocks                  |
+| `PageFieldEditor.tsx`    | A second page field in a form: a summary and the **Edit design** link     |
+| `pageDesignRoutes.tsx`   | `/content/:collection/:entryId/design/:field`, full screen                |
+| `PageDesignPage.tsx`     | Loads the entry and opens the builder with the admin's services           |
+| `usePageDesignSaving.ts` | Autosave and Publish through the entries API                              |
+
+## Design first
+
+A blueprint with a page field (Pages) is edited design first. The entry editor
+(`content/EntryEditor.tsx`) hands its fields to `DesignFirstFields`, which leads with the
+Design card for the first page field:
+
+- **Designed**: a live picture of the page (lazy, so the renderer isn't in the main bundle),
+  how many sections it has, and **Edit design**.
+- **Saved but empty**: **Start from a template or section**, which opens the builder at its
+  empty-page start (templates, sections, blank).
+- **New**: **Start designing** once the page has a title (Return in the title does the same).
+  It saves the page, then opens it in the builder.
+
+Blocks fields (the "Page sections" form sites had before designs) are the alternative to a
+design. They're hidden once the page has a design, and until then are folded away under
+**Simple sections (no design)**, opening by themselves if something in them needs attention.
+New sites' Page blueprint no longer has them (see `packages/core/src/collections`); older
+sites keep theirs, and the website and the delivery API still serve their sections.
 
 The builder fills the window, so its route sits beside the admin layout (under the setup
 gate) and checks the session itself. It loads lazily: the builder isn't in the admin's main
@@ -28,5 +51,9 @@ revision of the entry, so the entry's History can restore an older design. Publi
 `entries:publish`) saves first, then publishes the entry. A design the API refuses shows its
 message at the bottom of the screen.
 
-The builder's design tokens come from the stand-in theme for now; once
-`@lintel/site-components` lands, pass its `themeStylesheet` and base styles to `PageBuilder`.
+- **The website's look**: `GET /website/canvas` gives the site's whole stylesheet, body
+  class, header, footer and the motion runtime, passed to `PageBuilder` as `site`, so the
+  canvas shows the page exactly as the website will and can preview animations on it. The
+  screen waits for it; if it can't be had, the canvas uses the default theme.
+- **Animation words**: `motionText`, the admin's `t()` for the animation studio.
+- **The tour**: the Publish button carries `data-tour="publish"`, so the tour can point at it.

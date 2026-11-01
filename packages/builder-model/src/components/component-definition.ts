@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import type { NodeStyles } from "../document/page-document.schema.js";
+import type { NodeAnimation, NodeStyles } from "../document/page-document.schema.js";
 
 /**
  * What the builder knows about one kind of element, apart from how it draws: its name and
@@ -56,6 +56,7 @@ export interface NodeBlueprint {
   props?: Record<string, unknown>;
   styles?: NodeStyles;
   children?: readonly NodeBlueprint[];
+  animation?: NodeAnimation;
 }
 
 /**

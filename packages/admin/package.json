@@ -14,7 +14,8 @@
     "test": "vitest run",
     "preview": "vite preview",
     "strings:check": "node scripts/check-strings.mjs",
-    "codemods": "node scripts/codemods/plural-messages.mjs && node scripts/codemods/product-name.mjs && node scripts/codemods/logical-direction-classes.mjs"
+    "codemods": "node scripts/codemods/plural-messages.mjs && node scripts/codemods/product-name.mjs && node scripts/codemods/logical-direction-classes.mjs",
+    "journey": "node journeys/start-from-template.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -52,6 +53,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "jsdom": "^30.1.3",
+    "playwright": "1.63.0",
     "tailwindcss": "^4.3.3",
     "vite": "^8.3.5",
     "vitest": "^5.0.5"

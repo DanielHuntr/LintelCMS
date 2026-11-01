@@ -109,75 +109,6 @@ export interface DeliveredTaxonomy {
   items: { id: string; title: string; slug: string; description: string }[];
 }
 
-/** A Hero block in Page sections. */
-export interface PageSectionsHeroBlock {
-  id: string;
-  type: "hero";
-  data: {
-    /** Heading */
-    heading: string;
-    /** Subheading */
-    subheading: string | null;
-    /** Background image */
-    image: DeliveredImage | null;
-    /** Button */
-    button: DeliveredLink | null;
-  };
-}
-
-/** A Text block in Page sections. */
-export interface PageSectionsTextBlock {
-  id: string;
-  type: "text";
-  data: {
-    /** Heading */
-    heading: string | null;
-    /** Text */
-    body: DeliveredRichText;
-  };
-}
-
-/** A Image block in Page sections. */
-export interface PageSectionsImageBlock {
-  id: string;
-  type: "image";
-  data: {
-    /** Image */
-    image: DeliveredImage;
-    /** Caption */
-    caption: string | null;
-  };
-}
-
-/** A Call to action block in Page sections. */
-export interface PageSectionsCallToActionBlock {
-  id: string;
-  type: "call_to_action";
-  data: {
-    /** Heading */
-    heading: string;
-    /** Text */
-    text: string | null;
-    /** Button */
-    button: DeliveredLink;
-  };
-}
-
-/** A FAQ block in Page sections. */
-export interface PageSectionsFaqBlock {
-  id: string;
-  type: "faq";
-  data: {
-    /** Question */
-    question: string;
-    /** Answer */
-    answer: DeliveredRichText;
-  };
-}
-
-/** Any block in Page sections. */
-export type PageSectionsBlock = PageSectionsHeroBlock | PageSectionsTextBlock | PageSectionsImageBlock | PageSectionsCallToActionBlock | PageSectionsFaqBlock;
-
 /** The content type Page (`page`), used by Pages (`pages`). */
 export interface PageData {
   /** Title */
@@ -188,9 +119,7 @@ export interface PageData {
   hero_image: DeliveredImage | null;
   /** Body */
   body: DeliveredRichText | null;
-  /** Page sections. Build the page from sections. Drag them, or use the arrows, to change the order. */
-  sections: PageSectionsBlock[] | null;
-  /** Design. Lay the page out visually, with Edit design. Leave it empty to use the sections above. */
+  /** Design. How the page looks: lay it out visually with Edit design. */
   design: DeliveredPageDesign | null;
 }
 

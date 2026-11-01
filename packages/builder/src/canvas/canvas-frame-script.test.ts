@@ -6,9 +6,21 @@ describe("the canvas frame's document", () => {
     expect(canvasFrameSource()).toContain(`<script>${canvasFrameScript()}</script>`);
   });
 
-  it("loads the script from a file when the host serves one, for a strict Content-Security-Policy", () => {
-    const source = canvasFrameSource("https://example.com/admin/canvas-frame.js");
+  it("loads its scripts from files when the host serves them, for a strict Content-Security-Policy", () => {
+    const site = {
+      stylesheet: "",
+      bodyClassName: "lintel-template-clean",
+      headerHtml: "",
+      footerHtml: "",
+      baseUrl: null,
+      motionScript: "window.lintelMotion = {};",
+    };
+    const source = canvasFrameSource(site, {
+      frame: "https://example.com/admin/canvas-frame.js",
+      motion: "https://example.com/admin/canvas-motion.js",
+    });
     expect(source).toContain('<script src="https://example.com/admin/canvas-frame.js"></script>');
+    expect(source).toContain('<script src="https://example.com/admin/canvas-motion.js"></script>');
     expect(source).not.toContain("<script>");
   });
 

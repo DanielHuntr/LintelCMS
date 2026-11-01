@@ -3,6 +3,7 @@ import { PanelsTopLeft } from "lucide-react";
 import type { FieldEditorProps } from "../fields/fieldEditorProps.js";
 import { newEntryId } from "../content/newEntryId.js";
 import { t } from "../i18n/strings.js";
+import { countDesignSections } from "./designSummary.js";
 
 /**
  * A page design field in the entry editor: how much the page has, and the way into the
@@ -12,7 +13,7 @@ export function PageFieldEditor({ field, value, controlId, describedBy }: FieldE
   const params = useParams({ strict: false });
   const collection = params.collection ?? "";
   const entryId = params.entryId ?? newEntryId;
-  const sections = countSections(value);
+  const sections = countDesignSections(value);
 
   return (
     <div className="flex items-center gap-4 rounded-card bg-surface p-4 hairline-ring">
@@ -39,10 +40,4 @@ export function PageFieldEditor({ field, value, controlId, describedBy }: FieldE
       )}
     </div>
   );
-}
-
-function countSections(value: unknown): number {
-  if (typeof value !== "object" || value === null || !("root" in value)) return 0;
-  const root = (value as { root: { children?: unknown } }).root;
-  return Array.isArray(root?.children) ? root.children.length : 0;
 }

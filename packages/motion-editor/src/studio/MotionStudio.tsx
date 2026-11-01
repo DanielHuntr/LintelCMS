@@ -4,6 +4,7 @@ import { motionSpecSchema } from "@lintel/motion/schema";
 import { Redo2, Sparkles, Undo2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { Button } from "../controls/Button.js";
+import type { OpenGroups } from "../controls/CollapsibleGroup.js";
 import { SegmentedControl } from "../controls/SegmentedControl.js";
 import { PresetGallery } from "../gallery/PresetGallery.js";
 import { useHistory } from "../history/useHistory.js";
@@ -14,6 +15,8 @@ import { StudioPreview } from "./StudioPreview.js";
 import { stateFromSpec, withEditedSpec, type StudioState } from "./studioState.js";
 
 export type StudioView = "gallery" | "simple" | "advanced";
+
+const allViews: readonly StudioView[] = ["gallery", "simple", "advanced"];
 
 export interface MotionStudioProps {
   /** The animation to start from, or null for none yet. Read once, when the studio opens. */
@@ -28,6 +31,16 @@ export interface MotionStudioProps {
   /** The stand-in element the large preview animates. Defaults to the preset's own. */
   previewSample?: PreviewSample;
   initialView?: StudioView;
+  /**
+   * The views on offer, for hosts that keep things simple for beginners (the page builder
+   * leaves out "advanced" until someone asks for the timeline). All three by default.
+   */
+  views?: readonly StudioView[];
+  /**
+   * Which of Simple's groups (trigger, timing, reducedMotion) are open, for hosts that
+   * remember it between visits. Left out, When and Timing start open.
+   */
+  openGroups?: OpenGroups;
 }
 
 /**
@@ -57,9 +70,14 @@ function Studio({
   presets = motionPresets,
   previewSample,
   initialView,
+  views: allowedViews = allViews,
+  openGroups,
 }: MotionStudioProps) {
   const t = useTranslate();
-  const [view, setView] = useState<StudioView>(initialView ?? (initialSpec ? "simple" : "gallery"));
+  const [chosenView, setView] = useState<StudioView>(
+    initialView ?? (initialSpec ? "simple" : "gallery"),
+  );
+  const view = allowedViews.includes(chosenView) ? chosenView : "simple";
   const history = useHistory<StudioState | null>(
     initialSpec ? stateFromSpec(initialSpec, initialPresetId) : null,
   );
@@ -104,11 +122,13 @@ function Studio({
     }
   }
 
-  const views = [
-    { value: "gallery", label: t("motionEditor.view.gallery") },
-    { value: "simple", label: t("motionEditor.view.simple") },
-    { value: "advanced", label: t("motionEditor.view.advanced") },
-  ] as const;
+  const views = (
+    [
+      { value: "gallery", label: t("motionEditor.view.gallery") },
+      { value: "simple", label: t("motionEditor.view.simple") },
+      { value: "advanced", label: t("motionEditor.view.advanced") },
+    ] as const
+  ).filter((option) => allowedViews.includes(option.value));
 
   return (
     <div className="flex flex-col gap-5 text-label" onKeyDown={handleKeyDown}>
@@ -178,6 +198,7 @@ function Studio({
               onCommit={history.checkpoint}
               onReplay={() => replay.current()}
               onBrowse={() => setView("gallery")}
+              openGroups={openGroups}
             />
           ) : (
             <TimelineEditor

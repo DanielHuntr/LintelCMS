@@ -4,24 +4,45 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv, type Plugin } from "vite";
 import { contentSecurityPolicy, securityHeaders } from "./src/security/contentSecurityPolicy.js";
 import { lintelPlugins } from "./vite-plugin-lintel.js";
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { canvasFrameScript } from "@lintel/builder/canvas-frame";
 
 /**
- * The page builder's canvas script as a file of its own, /canvas-frame.js beside the admin:
- * the Content-Security-Policy refuses inline scripts, and the canvas frame inherits it.
+ * The page builder's canvas scripts as files of their own beside the admin: /canvas-frame.js
+ * and /canvas-motion.js (the animation runtime, for previews). The Content-Security-Policy
+ * refuses inline scripts, and the canvas frame inherits it.
  */
-function canvasFrameScriptFile(): Plugin {
-  const fileName = "canvas-frame.js";
+function canvasFrameScriptFiles(): Plugin {
+  const motionRuntime = () => {
+    // Built with @lintel/motion; until then the canvas just can't preview animations.
+    try {
+      return readFileSync(
+        createRequire(import.meta.url).resolve("@lintel/motion/site-runtime.js"),
+        "utf8",
+      );
+    } catch {
+      return "";
+    }
+  };
+  const files: Record<string, () => string> = {
+    "canvas-frame.js": canvasFrameScript,
+    "canvas-motion.js": motionRuntime,
+  };
   return {
-    name: "lintel-canvas-frame-script",
+    name: "lintel-canvas-frame-scripts",
     configureServer(server) {
-      server.middlewares.use(`/${fileName}`, (_request, response) => {
-        response.setHeader("content-type", "text/javascript; charset=utf-8");
-        response.end(canvasFrameScript());
-      });
+      for (const [fileName, contents] of Object.entries(files)) {
+        server.middlewares.use(`/${fileName}`, (_request, response) => {
+          response.setHeader("content-type", "text/javascript; charset=utf-8");
+          response.end(contents());
+        });
+      }
     },
     generateBundle() {
-      this.emitFile({ type: "asset", fileName, source: canvasFrameScript() });
+      for (const [fileName, contents] of Object.entries(files)) {
+        this.emitFile({ type: "asset", fileName, source: contents() });
+      }
     },
   };
 }
@@ -51,7 +72,7 @@ export default defineConfig(({ command, mode }) => {
       react(),
       tailwindcss(),
       lintelPlugins(),
-      canvasFrameScriptFile(),
+      canvasFrameScriptFiles(),
       contentSecurityPolicyTag(apiUrl),
     ],
     // Plugin packages import React and the router themselves; they must share the admin's copy.

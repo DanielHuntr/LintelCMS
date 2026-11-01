@@ -61,6 +61,10 @@ export const motionEditorStrings = {
   "motionEditor.simple.together": "All together",
   "motionEditor.simple.oneByOne": "One by one",
   "motionEditor.simple.milliseconds": "{milliseconds} ms",
+  "motionEditor.simple.groupTrigger": "When it plays",
+  "motionEditor.simple.groupTiming": "Speed and timing",
+  "motionEditor.simple.groupReduced": "For less motion",
+  "motionEditor.simple.timingSummary": "{speed} · waits {seconds}",
 
   "motionEditor.trigger.label": "Starts when",
   "motionEditor.trigger.inView": "It scrolls into view",

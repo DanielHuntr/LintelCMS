@@ -2,7 +2,8 @@ import { spacingTokens, type StylePropertyName } from "@lintel/builder-model";
 import { type ReactNode, useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { classNames, PanelSection } from "../ui/controls.js";
-import { normaliseTypedValue, useStyleField } from "./style-field.js";
+import { normaliseTypedValue, useStyleField, useStyleReader } from "./style-field.js";
+import { spacingSummary } from "./style-summaries.js";
 import { StyleChips, tokenChips } from "./StyleInputs.js";
 
 const sides = ["Top", "Right", "Bottom", "Left"] as const;
@@ -15,9 +16,14 @@ type Side = (typeof sides)[number];
  */
 export function SpacingSection({ advanced }: { advanced: boolean }) {
   const text = useBuilderText();
+  const read = useStyleReader();
   const padding = sides.map((side) => `padding${side}` as StylePropertyName);
   return (
-    <PanelSection title={text("pageBuilder.style.spacing")}>
+    <PanelSection
+      title={text("pageBuilder.style.spacing")}
+      sectionId="spacing"
+      summary={spacingSummary(read, text)}
+    >
       <StyleChips
         properties={padding}
         label={text("pageBuilder.style.paddingAll")}

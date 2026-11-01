@@ -1,6 +1,10 @@
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { ensurePagesCollection } from "../collections/default-collections.js";
+import { ensureCollection } from "../collections/collections.service.js";
+import {
+  ensurePagesCollection,
+  pagesWithSimpleSectionsCollection,
+} from "../collections/default-collections.js";
 import { deliverValues } from "../delivery/delivered-values.js";
 import { InvalidFieldsError } from "../http/http-errors.js";
 import { useTestDatabase } from "../testing/test-database.js";
@@ -197,14 +201,30 @@ describe("the blocks fieldtype", () => {
   });
 });
 
-describe("page sections on the default Pages collection", () => {
+describe("new sites' pages", () => {
+  const testDatabase = useTestDatabase();
+
+  it("start with Design and no Page sections", async () => {
+    const server = await startTestServer(testDatabase.activeDatabase);
+    await ensurePagesCollection(testDatabase.database);
+    await createTestUser(testDatabase.database, "ana@example.com", [["*"]]);
+    const api = requestsAs(server, await signInAndGetCookies(server, "ana@example.com"));
+    const blueprint = (await api("GET", "/blueprints/page")).json();
+    const types = blueprint.fields.map((field: { type: string }) => field.type);
+    expect(types).toContain("page");
+    expect(types).not.toContain("blocks");
+    await server.close();
+  });
+});
+
+describe("page sections on sites made before page designs", () => {
   const testDatabase = useTestDatabase();
   let server: FastifyInstance;
   let api: SendRequest;
 
   beforeEach(async () => {
     server = await startTestServer(testDatabase.activeDatabase, { assetExists: acceptAnyAsset });
-    await ensurePagesCollection(testDatabase.database);
+    await ensureCollection(testDatabase.database, pagesWithSimpleSectionsCollection);
     await createTestUser(testDatabase.database, "ana@example.com", [["*"]]);
     api = requestsAs(server, await signInAndGetCookies(server, "ana@example.com"));
   });
