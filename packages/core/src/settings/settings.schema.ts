@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { brandingOverridesSchema } from "../branding/branding.schema.js";
 import { defaultSeoDefaults, seoDefaultsSchema } from "../seo/seo-defaults.schema.js";
 
 /**
@@ -28,6 +29,10 @@ export const settingSchemas = {
   deliveryAllowedOrigins: z.array(z.string()),
   /** Search engine defaults from the SEO plugin (see src/seo). */
   seoDefaults: seoDefaultsSchema,
+  /** Branding changed in Settings, on top of the deployment's (see src/branding). */
+  brandingOverrides: brandingOverridesSchema,
+  /** The admin's language for anyone who hasn't picked their own (see src/interface-languages). */
+  defaultInterfaceLanguage: z.string().nullable(),
 };
 
 export type SettingKey = keyof typeof settingSchemas;
@@ -41,4 +46,6 @@ export const settingDefaults: { [Key in SettingKey]: SettingValue<Key> } = {
   deliveryRequiresToken: false,
   deliveryAllowedOrigins: [],
   seoDefaults: defaultSeoDefaults,
+  brandingOverrides: {},
+  defaultInterfaceLanguage: null,
 };

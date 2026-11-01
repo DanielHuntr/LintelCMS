@@ -21,3 +21,6 @@ Current settings:
 - `deliveryRequiresToken` and `deliveryAllowedOrigins`: who may read published content
   (see `src/delivery`).
 - `seoDefaults`: the SEO plugin's site-wide defaults (see `src/seo`).
+- `brandingOverrides`: branding changed in Settings → Branding (see `src/branding`).
+- `defaultInterfaceLanguage`: the admin's language for people who haven't chosen one
+  (see `src/interface-languages`). Null means the deployment's default, or English.

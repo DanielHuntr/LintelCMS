@@ -5,6 +5,9 @@ import Fastify from "fastify";
 import { apiTokensRoutes } from "./api-tokens/api-tokens.routes.js";
 import { authRoutes } from "./auth/auth.routes.js";
 import { blueprintsRoutes } from "./blueprints/blueprints.routes.js";
+import { brandingRoutes } from "./branding/branding.routes.js";
+import type { DeploymentBranding } from "./branding/deployment-branding.js";
+import { lintelBranding } from "./branding/branding.schema.js";
 import { collectionsRoutes } from "./collections/collections.routes.js";
 import type { ActiveDatabase } from "./database/active-database.js";
 import type { Database } from "./database/client.js";
@@ -18,6 +21,8 @@ import { fieldtypesRoutes } from "./fieldtypes/fieldtypes.routes.js";
 import { graphqlRoutes } from "./graphql/graphql.routes.js";
 import type { AssetExists, AssetLookup } from "./fieldtypes/image-assets.js";
 import { healthRoutes } from "./health/health.routes.js";
+import { interfaceLanguagesRoutes } from "./interface-languages/interface-languages.routes.js";
+import { SOURCE_INTERFACE_LANGUAGE } from "./interface-languages/interface-languages.schema.js";
 import { crossOriginOptions } from "./http/cross-origin.js";
 import { sendHttpErrorDetails } from "./http/http-errors.js";
 import { type AssetUsageFinder, createAssetLookup } from "./media/asset-lookup.js";
@@ -64,6 +69,10 @@ declare module "fastify" {
     publicApiUrl: string;
     /** Sends queued webhook deliveries (see src/webhooks). */
     webhooks: WebhookDispatcher;
+    /** The branding this server was deployed with (see src/branding). */
+    deploymentBranding: DeploymentBranding;
+    /** The admin's language this server was deployed with (see src/interface-languages). */
+    defaultInterfaceLanguage: string;
   }
 }
 
@@ -108,6 +117,10 @@ export interface ServerOptions {
   graphiql?: boolean;
   /** How webhooks are sent. Every part has a default. */
   webhooks?: WebhookOptions;
+  /** Branding from lintel.config.json and LINTEL_BRAND_*. Defaults to Lintel's own. */
+  branding?: DeploymentBranding;
+  /** The admin's language when the site hasn't chosen one. Defaults to English. */
+  defaultInterfaceLanguage?: string;
 }
 
 export interface WebhookOptions {
@@ -151,6 +164,14 @@ export function buildServer(options: ServerOptions) {
     onError: (error) => server.log.error(error, "Sending webhooks failed"),
   });
   server.decorate("webhooks", webhooks);
+  server.decorate(
+    "deploymentBranding",
+    options.branding ?? { branding: lintelBranding, isCustomised: false },
+  );
+  server.decorate(
+    "defaultInterfaceLanguage",
+    options.defaultInterfaceLanguage ?? SOURCE_INTERFACE_LANGUAGE,
+  );
   server.addHook("onClose", () => webhooks.finishSending());
   server.decorateRequest("signedIn", null);
   server.setErrorHandler(sendHttpErrorDetails);
@@ -184,6 +205,8 @@ export function buildServer(options: ServerOptions) {
   server.register(graphqlRoutes, { graphiql: options.graphiql ?? false });
   server.register(openApiRoutes);
   server.register(seoRoutes);
+  server.register(brandingRoutes);
+  server.register(interfaceLanguagesRoutes);
 
   if (options.runScheduledJobs ?? true) {
     registerScheduledJobs(server);

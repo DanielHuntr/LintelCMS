@@ -23,6 +23,11 @@
       "types": "./dist/seo/seo-titles.d.ts",
       "development": "./src/seo/seo-titles.ts",
       "default": "./dist/seo/seo-titles.js"
+    },
+    "./accent-colours": {
+      "types": "./dist/branding/accent-colours.d.ts",
+      "development": "./src/branding/accent-colours.ts",
+      "default": "./dist/branding/accent-colours.js"
     }
   },
   "scripts": {

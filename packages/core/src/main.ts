@@ -1,5 +1,8 @@
 import type { FastifyInstance } from "fastify";
+import { readDeploymentBranding } from "./branding/deployment-branding.js";
 import { loadConfig, loadProjectEnvFile } from "./config.js";
+import { readDeploymentInterfaceLanguage } from "./interface-languages/deployment-interface-language.js";
+import { readLintelConfigFile } from "./lintel-config-file.js";
 import { describeActiveDatabase } from "./database/active-database.js";
 import { buildServer } from "./server.js";
 import { isSetupNeeded } from "./setup/setup.service.js";
@@ -12,6 +15,7 @@ import { openConfiguredDatabase, PortInUseError, runWithFriendlyErrors } from ".
 await runWithFriendlyErrors(async () => {
   loadProjectEnvFile();
   const config = loadConfig();
+  const configFile = readLintelConfigFile();
   const activeDatabase = await openConfiguredDatabase(config);
   say(describeActiveDatabase(activeDatabase));
 
@@ -23,6 +27,8 @@ await runWithFriendlyErrors(async () => {
     publicApiUrl: config.API_PUBLIC_URL ?? `http://localhost:${config.API_PORT}`,
     graphiql: config.NODE_ENV === "development",
     webhooks: { allowPrivateAddresses: config.WEBHOOKS_ALLOW_PRIVATE_ADDRESSES },
+    branding: readDeploymentBranding(configFile),
+    defaultInterfaceLanguage: readDeploymentInterfaceLanguage(configFile),
     logger: true,
   });
   server.addHook("onClose", () => activeDatabase.close());

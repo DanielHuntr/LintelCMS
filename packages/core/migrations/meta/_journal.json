@@ -57,6 +57,13 @@
       "when": 1793498295100,
       "tag": "0007_add_api_tokens_webhooks_and_seo",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793501316784,
+      "tag": "0008_add_branding_and_interface_languages",
+      "breakpoints": true
     }
   ]
 }
