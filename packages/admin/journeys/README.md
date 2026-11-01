@@ -6,16 +6,18 @@ Whole journeys through Lintel in a real Chromium, with Playwright. They need a f
 `start-from-template.mjs`: set up a new site, choose **Start from a template** on the last
 setup screen, use the Bakery template, open its home page in the builder, skip the tour,
 change the heading on the canvas, give it the Pop in animation, switch to the Designer tools,
-look through Insert (Sections first, then a search across Elements), check that Advanced
+look through Insert (Sections first, in closed groups by purpose, then a search across
+Elements), check that Advanced
 styles start with their groups closed and that **Style for** is a dropdown, publish, go back
 to the page's Design card, make a new page that opens straight in the builder once it has a
-title, start it from a section, then check the website: the new heading is there, the page loads the motion
+title, start it with **Add a section** (which opens Insert with the search ready) and a call
+to action, then check the website: the new heading is there, the page loads the motion
 runtime and lists its animations, the heading finishes animating in, and with reduced
 motion it doesn't move at all.
 
 `more-elements.mjs` (`pnpm --filter @lintel/admin journey:elements`, which also needs
 `API_URL`): set up a new site, switch on the blog and the shop and publish two posts through
-the API, make a page from an empty start, add a **Slider**, a **Collection list** of the blog
+the API, make a page and choose **Add elements** on its empty canvas, add a **Slider**, a **Collection list** of the blog
 posts (checking its heading shows each post's title) and a **Product grid**, publish, then
 check the website: the slider moves with its buttons and arrow keys, the posts are listed
 newest first, the grid shows its empty state, the shop and basket pages answer, and the page

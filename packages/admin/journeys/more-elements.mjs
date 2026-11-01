@@ -76,13 +76,14 @@ async function designThePage(page) {
   await page.getByRole("button", { name: "Start designing" }).waitFor();
   await page.getByRole("textbox", { name: "Title" }).fill("Highlights");
   await page.keyboard.press("Enter");
-  await page.getByRole("heading", { name: "Start your page" }).waitFor();
-  await page.getByRole("button", { name: /Start with an empty page/ }).click();
-  const tour = page.getByRole("dialog", { name: "Welcome to your page builder" });
+  await page.getByRole("heading", { name: "This page is empty" }).waitFor();
+  const tour = page.getByRole("dialog", { name: "Add sections and elements" });
   if (await tour.isVisible().catch(() => false)) await page.keyboard.press("Escape");
-
-  await page.getByRole("tab", { name: "Insert" }).click();
-  await page.getByRole("radio", { name: "Elements" }).click();
+  await page.getByRole("button", { name: "Add elements" }).click();
+  check(
+    await page.getByRole("radio", { name: "Elements" }).isChecked(),
+    "Add elements should open Insert on Elements",
+  );
   await page.getByRole("heading", { name: "Collections" }).first().waitFor();
   await page.waitForTimeout(500);
   await shoot(page, "01-insert-elements");

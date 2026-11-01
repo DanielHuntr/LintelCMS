@@ -11,5 +11,9 @@ into sections that take their words as arguments:
 | `features.ts`     | Feature cards, numbered steps, a story beside a picture, gallery |
 | `social-proof.ts` | One quote, three quotes, prices, facts and figures               |
 | `closers.ts`      | Questions, calls to action, contact details and footers          |
+| `visits.ts`       | Opening times, and booking in three steps                        |
+| `shop.ts`         | Products from the shop in a grid (needs the commerce plugin)     |
 
-The library itself, with default words and categories, is `src/templates/section-templates.ts`.
+The library itself, with default words and categories, is `src/templates/`:
+`section-templates.ts` has the groups (by purpose, never by kind of business) and the shape,
+`opening-sections.ts` and `closing-sections.ts` the sections, each with search keywords.

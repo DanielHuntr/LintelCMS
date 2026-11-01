@@ -21,8 +21,8 @@ Design card for the first page field:
 
 - **Designed**: a live picture of the page (lazy, so the renderer isn't in the main bundle),
   how many sections it has, and **Edit design**.
-- **Saved but empty**: **Start from a template or section**, which opens the builder at its
-  empty-page start (templates, sections, blank).
+- **Saved but empty**: **Start from a template or section**, which opens the builder on its
+  empty page: **Add a section**, **Add elements** and a **Start from a template** link.
 - **New**: **Start designing** once the page has a title (Return in the title does the same).
   It saves the page, then opens it in the builder.
 
@@ -56,4 +56,6 @@ message at the bottom of the screen.
   canvas shows the page exactly as the website will and can preview animations on it. The
   screen waits for it; if it can't be had, the canvas uses the default theme.
 - **Animation words**: `motionText`, the admin's `t()` for the animation studio.
-- **The tour**: the Publish button carries `data-tour="publish"`, so the tour can point at it.
+- **The tour**: Publish and **View page** (shown once the page is live, see
+  `content/viewPage.ts`) sit together inside `data-tour="publish"`, so the tour's last step
+  can point at both.
