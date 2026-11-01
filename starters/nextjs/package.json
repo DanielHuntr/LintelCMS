@@ -1,6 +1,6 @@
 {
   "name": "starter-nextjs",
-  "version": "0.0.0",
+  "version": "1.0.0-rc.1",
   "private": true,
   "description": "A Next.js website that reads its content from Lintel's delivery API.",
   "type": "module",

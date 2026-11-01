@@ -1,6 +1,6 @@
 {
   "name": "@lintel/motion-editor",
-  "version": "0.0.0",
+  "version": "1.0.0-rc.1",
   "private": true,
   "description": "Lintel's animation studio: a preset gallery, simple controls and a timeline editor, as React components.",
   "type": "module",

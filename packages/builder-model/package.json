@@ -1,6 +1,6 @@
 {
   "name": "@lintel/builder-model",
-  "version": "0.0.0",
+  "version": "1.0.0-rc.1",
   "private": true,
   "description": "The page builder's document model: page trees, their components, styles, checks and migrations. Plain TypeScript, shared by the server, the editor and the site.",
   "type": "module",

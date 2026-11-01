@@ -1,6 +1,6 @@
 {
   "name": "@lintel/cli",
-  "version": "0.0.0",
+  "version": "1.0.0-rc.1",
   "private": true,
   "description": "The lintel command: backups, moving sites, imports and checks, from the terminal.",
   "type": "module",
