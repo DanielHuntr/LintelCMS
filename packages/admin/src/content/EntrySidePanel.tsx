@@ -45,6 +45,7 @@ export function EntrySidePanel({
     >
       <PublishingSection
         entry={entry}
+        routePattern={collection.routePattern}
         canPublish={canPublish}
         isWorking={isWorking}
         onUnpublish={onUnpublish}

@@ -309,6 +309,10 @@ describe("the built-in website", () => {
       await createTestUser(testDatabase.database, "editor@example.com", [["settings:read"]]);
       const editor = requestsAs(api, await signInAndGetCookies(api, "editor@example.com"));
       expect((await editor("GET", "/website")).statusCode).toBe(200);
+      expect((await editor("GET", "/website/address")).json()).toEqual({
+        siteAddress: SITE_URL,
+        defaultLocale: "en-GB",
+      });
       expect((await editor("PUT", "/website", { template: "clean" })).statusCode).toBe(403);
     });
   });

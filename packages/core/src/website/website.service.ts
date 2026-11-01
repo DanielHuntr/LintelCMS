@@ -9,6 +9,7 @@ import type { DatabaseOrTransaction } from "../database/client.js";
 import type { AssetExists } from "../fieldtypes/image-assets.js";
 import { readSeoDefaults, updateSeoDefaults } from "../seo/seo-defaults.service.js";
 import { readSetting, writeSetting } from "../settings/settings.service.js";
+import { listLocales } from "../sites/locales.service.js";
 import type { SiteType } from "../settings/settings.schema.js";
 import { LogoNotFoundError, UnknownTemplateError } from "./website.errors.js";
 import type { UpdateWebsiteRequest, WebsiteResponse, WebsiteSettings } from "./website.schema.js";
@@ -75,6 +76,18 @@ export async function findSiteAddress(
 ): Promise<string | null> {
   const { siteUrl } = await readSeoDefaults(database);
   return siteUrl || builtInSiteUrl;
+}
+
+/** What "View page" in the editor needs to build a page's full address. */
+export async function readSiteAddress(
+  database: DatabaseOrTransaction,
+  builtInSiteUrl: string | null,
+): Promise<{ siteAddress: string | null; defaultLocale: string }> {
+  const [siteAddress, { defaultLocale }] = await Promise.all([
+    findSiteAddress(database, builtInSiteUrl),
+    listLocales(database),
+  ]);
+  return { siteAddress, defaultLocale };
 }
 
 export interface WebsiteContext {
