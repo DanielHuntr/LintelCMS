@@ -12,13 +12,18 @@ interface MediaPickerProps {
   onChange: (assetId: string | null) => void;
   /** The field's name, shown above it, e.g. "Hero image". */
   label: string;
+  /**
+   * Leave the name to screen readers only, for forms that already show it, such as the
+   * entry editor's field labels. Shown by default.
+   */
+  hideLabel?: boolean;
 }
 
 /**
  * An image field: shows the chosen image with Replace and Remove, or a "Choose image"
  * button. Both open the library in a dialog, where people can pick or upload in one place.
  */
-export function MediaPicker({ value, onChange, label }: MediaPickerProps) {
+export function MediaPicker({ value, onChange, label, hideLabel = false }: MediaPickerProps) {
   const labelId = useId();
   const [isChoosing, setIsChoosing] = useState(false);
   const asset = useAsset(value);
@@ -30,7 +35,7 @@ export function MediaPicker({ value, onChange, label }: MediaPickerProps) {
 
   return (
     <div role="group" aria-labelledby={labelId} className="flex flex-col gap-1.5">
-      <span id={labelId} className="text-footnote font-medium text-label">
+      <span id={labelId} className={hideLabel ? "sr-only" : "text-footnote font-medium text-label"}>
         {label}
       </span>
 
