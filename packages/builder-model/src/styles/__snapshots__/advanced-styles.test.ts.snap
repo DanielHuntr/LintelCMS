@@ -1,0 +1,150 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`the advanced stylesheet > places a free layout’s children absolutely, and stacks them on phones 1`] = `
+".stage {
+  min-height: 40rem;
+  position: relative;
+}
+
+.word {
+  position: absolute;
+  top: 10%;
+  left: 4%;
+}
+
+.photo {
+  width: 40%;
+  position: absolute;
+  top: 20%;
+  left: 30%;
+  z-index: 2;
+}
+
+.film {
+  padding-top: var(--lintel-space-8);
+  padding-right: var(--lintel-space-5);
+  padding-bottom: var(--lintel-space-8);
+  padding-left: var(--lintel-space-5);
+  position: relative;
+  isolation: isolate;
+}
+
+.film > .lintel-video-background::after {
+  background-color: rgb(0 0 0 / 0.4);
+}
+
+@media (max-width: 767px) {
+  .stage {
+    display: flex;
+    flex-direction: column;
+    gap: var(--lintel-space-4);
+    min-height: auto;
+  }
+
+  .word {
+    width: auto;
+    position: relative;
+    top: auto;
+    left: auto;
+  }
+
+  .photo {
+    width: auto;
+    position: relative;
+    top: auto;
+    left: auto;
+  }
+
+  .film {
+    padding-top: var(--lintel-space-7);
+    padding-bottom: var(--lintel-space-7);
+  }
+}
+"
+`;
+
+exports[`the advanced stylesheet > prints transforms, shapes, masks, layered backgrounds, blends and filters per size and hover 1`] = `
+".hero {
+  background-image: linear-gradient(180deg, rgb(0 0 0 / 0.3) 0%, rgb(0 0 0 / 0.3) 100%), url("/media/field.jpg");
+  background-size: auto, cover;
+  background-position: 0% 0%, 30% 60%;
+  background-repeat: repeat, no-repeat;
+  background-blend-mode: multiply;
+}
+
+.title {
+  font-size: clamp(3rem, 0.77rem + 9.14vw, 9rem);
+  color: transparent;
+  -webkit-text-stroke: 2px currentColor;
+  text-shadow: 0 2px 0 #000;
+  writing-mode: horizontal-tb;
+  text-wrap: balance;
+  background-image: url("/media/eyes.jpg");
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.sticker {
+  grid-row: 1 / span 2;
+  justify-self: end;
+  object-position: 30% 20%;
+  rotate: -14deg;
+  scale: 1.1;
+  translate: 0 -8%;
+  transform: skew(-6deg, 0deg);
+  transform-origin: 50% 50%;
+  clip-path: polygon(0% 0%, 100% 0%, 100% 78%, 0% 100%);
+  -webkit-mask-image: linear-gradient(black 70%, transparent);
+  mask-image: linear-gradient(black 70%, transparent);
+  mix-blend-mode: multiply;
+  filter: grayscale(100%) contrast(120%);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.sticker:hover {
+  rotate: -4deg;
+  filter: none;
+}
+
+@media (max-width: 991px) {
+  .sticker {
+    rotate: -8deg;
+  }
+}
+
+@media (max-width: 767px) {
+  .title {
+    font-size: 3rem;
+  }
+}
+"
+`;
+
+exports[`the advanced stylesheet > starts with the page’s fonts and prints styled parts of text as classes 1`] = `
+"@font-face {
+  font-family: 'Bebas Neue';
+  src: url("/_lintel/fonts/bebas-neue-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Studio Grotesk';
+  src: url("/media/studio.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.title-mark-1 {
+  font-weight: 300;
+}
+
+.title-mark-2 {
+  color: transparent;
+  -webkit-text-stroke: 1px currentColor;
+}
+"
+`;

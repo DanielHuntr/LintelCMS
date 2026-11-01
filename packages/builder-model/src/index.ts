@@ -34,7 +34,18 @@ export * from "./styles/style-properties.js";
 export * from "./styles/style-cascade.js";
 export { assignClassNames, slugifyClassName } from "./styles/class-names.js";
 export { compileStylesheet, formatRule } from "./styles/compile-stylesheet.js";
+export * from "./styles/style-values.js";
+export * from "./styles/clip-shapes.js";
+export * from "./styles/background-layers.js";
+export * from "./styles/effect-values.js";
 export * from "./tokens/design-tokens.js";
+
+export * from "./free-layout/free-layout.js";
+export * from "./free-layout/z-order.js";
+export * from "./backgrounds/background-video.js";
+export * from "./fonts/font-catalogue.js";
+export * from "./fonts/page-fonts.js";
+export * from "./text-marks/text-marks.js";
 
 export * from "./tree/node-ids.js";
 export * from "./tree/tree-queries.js";

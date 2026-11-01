@@ -9,7 +9,8 @@
       "types": "./dist/index.d.ts",
       "development": "./src/index.ts",
       "default": "./dist/index.js"
-    }
+    },
+    "./fonts/*": "./fonts/*"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

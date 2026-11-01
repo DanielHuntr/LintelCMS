@@ -1,4 +1,6 @@
+import { backgroundVideoTypes } from "../backgrounds/background-video.js";
 import type { ComponentCatalogue } from "../components/component-catalogue.js";
+import { freeLayoutTypes } from "../free-layout/free-layout.js";
 import { migrateDocument, UnknownPageVersionError } from "./migrations.js";
 import {
   maxNodeCount,
@@ -83,6 +85,12 @@ export function validatePageDocument(
         nodeId: node.id,
         message: `${where} can’t go inside ${catalogue.find(parent.type)?.label ?? parent.type}`,
       });
+    }
+    if (node.freeLayout && !freeLayoutTypes.includes(node.type)) {
+      problems.push({ nodeId: node.id, message: `${where} can’t have a free layout` });
+    }
+    if (node.backgroundVideo && !backgroundVideoTypes.includes(node.type)) {
+      problems.push({ nodeId: node.id, message: `${where} can’t have a background video` });
     }
     const props = definition.propsSchema.safeParse(node.props);
     if (!props.success) {
