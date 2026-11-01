@@ -1,5 +1,12 @@
 import type { LucideIcon } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
+import {
+  useEffect,
+  useEffectEvent,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
 import { createPortal } from "react-dom";
 import { classNames } from "../design/classNames.js";
 
@@ -41,18 +48,20 @@ export function TreeActionsMenu({ label, items, position, onClose }: TreeActions
     });
   }, [position]);
 
+  // Opening focuses the first item once; the callers' onClose may change on every render.
+  const close = useEffectEvent(() => onClose());
   useEffect(() => {
     itemElements.current[0]?.focus();
     function closeOnOutsidePointer(event: PointerEvent) {
-      if (!menu.current?.contains(event.target as Node)) onClose();
+      if (!menu.current?.contains(event.target as Node)) close();
     }
     document.addEventListener("pointerdown", closeOnOutsidePointer);
-    window.addEventListener("resize", onClose);
+    window.addEventListener("resize", close);
     return () => {
       document.removeEventListener("pointerdown", closeOnOutsidePointer);
-      window.removeEventListener("resize", onClose);
+      window.removeEventListener("resize", close);
     };
-  }, [onClose]);
+  }, []);
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     const focused = itemElements.current.findIndex((item) => item === document.activeElement);
