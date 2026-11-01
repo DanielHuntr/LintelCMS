@@ -1,5 +1,12 @@
 import { apiRequest } from "../api/client.js";
-import type { Menu, MenuItem, MenuSummary } from "./menus.types.js";
+import type {
+  Menu,
+  MenuItem,
+  MenuSource,
+  MenuSummary,
+  PageInMenu,
+  PageTreeSettings,
+} from "./menus.types.js";
 
 /** Calls to the API's navigation routes. One function per route. */
 
@@ -18,7 +25,13 @@ export function createMenu(menu: { handle: string; name: string; maxDepth: numbe
 
 export function saveMenu(
   handle: string,
-  changes: { name?: string; maxDepth?: number; items?: MenuItem[] },
+  changes: {
+    name?: string;
+    maxDepth?: number;
+    items?: MenuItem[];
+    source?: MenuSource;
+    pageTree?: PageTreeSettings;
+  },
 ): Promise<Menu> {
   return apiRequest<Menu>(`/navigation/${encodeURIComponent(handle)}`, {
     method: "PUT",
@@ -28,4 +41,20 @@ export function saveMenu(
 
 export function deleteMenu(handle: string): Promise<void> {
   return apiRequest<void>(`/navigation/${encodeURIComponent(handle)}`, { method: "DELETE" });
+}
+
+export function getPageInMenu(handle: string, entryId: string): Promise<PageInMenu> {
+  return apiRequest<PageInMenu>(`/navigation/${encodeURIComponent(handle)}/pages/${entryId}`);
+}
+
+/** "In the main menu" on a page: adds or takes out its link, and sets its label there. */
+export function setPageInMenu(
+  handle: string,
+  entryId: string,
+  change: { inMenu: boolean; label?: string },
+): Promise<PageInMenu> {
+  return apiRequest<PageInMenu>(`/navigation/${encodeURIComponent(handle)}/pages/${entryId}`, {
+    method: "PUT",
+    body: change,
+  });
 }

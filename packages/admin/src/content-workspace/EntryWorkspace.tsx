@@ -22,6 +22,7 @@ import { classNames } from "../design/classNames.js";
 import { titleFieldHandle } from "../fields/field.types.js";
 import { textValue } from "../fields/fieldValues.js";
 import { t } from "../i18n/strings.js";
+import { PageMenuSection } from "../menus/PageMenuSection.js";
 import { PluginEditorPanels } from "../plugins/PluginEditorPanels.js";
 import { EntryPreviewPane } from "../preview/EntryPreviewPane.js";
 import { useCan } from "../session/SessionContext.js";
@@ -235,6 +236,9 @@ export function EntryWorkspace({
         )}
         {selectedTab === "settings" && (
           <div className="flex max-w-xl flex-col overflow-hidden rounded-card bg-surface">
+            {collection.structure === "tree" && Boolean(collection.routePattern) && (
+              <PageMenuSection entryId={entry.id} pageTitle={title || t("editor.untitled")} />
+            )}
             <TranslationsSection
               collectionHandle={collection.handle}
               entry={entry}

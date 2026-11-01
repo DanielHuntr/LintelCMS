@@ -65,7 +65,7 @@ export function getEntryInfo(entryId: string): Promise<EntryInfo> {
 
 export function getCollectionItems(
   place: TreePlace,
-  options: CollectionQuery & { perPage: number },
+  options: CollectionQuery & { perPage: number; siteId?: string },
 ): Promise<CollectionItems> {
   return apiRequest(`/content-tree/items${query({ ...placeQuery(place), ...options })}`);
 }
