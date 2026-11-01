@@ -4,6 +4,8 @@ import { findBlueprintByIdOrFail } from "../blueprints/blueprints.service.js";
 import { findCollectionOrFail } from "../collections/collections.service.js";
 import type { Database, DatabaseOrTransaction } from "../database/client.js";
 import type { AssetExists } from "../fieldtypes/image-assets.js";
+import { DEFAULT_TENANT_ID } from "../database/columns.js";
+import { findAssetById } from "../media/media.repository.js";
 import { noAssetUsage } from "../media/asset-lookup.js";
 import type { StorageDriver } from "../media/storage-driver.js";
 import { DEFAULT_TRANSFORM_CACHE_FOLDER } from "../media/transform-cache.js";
@@ -45,7 +47,6 @@ export interface RunnerOptions {
   database: Database;
   storage: StorageDriver;
   publicApiUrl: string;
-  assetExists: AssetExists;
   importsFolder: string;
   download: DownloadOptions;
 }
@@ -67,7 +68,10 @@ export async function runWordPressImport(
       }
       for (const item of batch) {
         await options.database.transaction(async (transaction) => {
-          const result = await processItem({ ...context, database: transaction }, item);
+          const result = await processItem(
+            { ...context, database: transaction, assetExists: assetExistsIn(transaction) },
+            item,
+          );
           await finishItem(transaction, item.id, result);
           rememberTarget(context.targets, item, result.targetId, result.status);
         });
@@ -169,9 +173,18 @@ async function buildItemContext(
       usageFinder: noAssetUsage,
     }),
     // A dry run "brings in" images without saving them, so it can't check they exist.
-    assetExists: dryRun ? async () => true : options.assetExists,
+    assetExists: dryRun ? async () => true : assetExistsIn(database),
     targets,
   };
+}
+
+/**
+ * Checks images inside the item's own transaction: the built-in database has a single
+ * connection, so a check from outside would wait for the transaction forever.
+ */
+function assetExistsIn(database: DatabaseOrTransaction): AssetExists {
+  return async (assetId) =>
+    (await findAssetById(database, DEFAULT_TENANT_ID, assetId)) !== undefined;
 }
 
 export async function collectionTarget(

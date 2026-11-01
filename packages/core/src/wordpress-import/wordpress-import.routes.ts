@@ -48,7 +48,6 @@ export async function wordpressImportRoutes(server: FastifyInstance) {
     database: server.database,
     storage: server.dataTools.storage,
     publicApiUrl: server.publicApiUrl,
-    assetExists: server.assetExists,
     importsFolder: server.dataTools.importsFolder,
     download: { allowPrivateAddresses: server.dataTools.allowPrivateDownloads },
     tasks: server.dataTools.tasks,

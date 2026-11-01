@@ -154,6 +154,7 @@ export async function finishItem(
     .where(eq(wordpressImportItemsTable.id, itemId));
 }
 
+/** Items listed at upload that are finished; images found in content along the way aren't counted. */
 export async function countFinishedItems(
   database: DatabaseOrTransaction,
   importId: string,
@@ -165,6 +166,7 @@ export async function countFinishedItems(
       and(
         eq(wordpressImportItemsTable.importId, importId),
         sql`${wordpressImportItemsTable.status} <> 'pending'`,
+        sql`${wordpressImportItemsTable.kind} <> 'image'`,
       ),
     );
   return Number(row?.count ?? 0);

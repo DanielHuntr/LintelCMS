@@ -35,7 +35,8 @@ interface Report {
   problems: Array<{ title: string; message: string }>;
 }
 
-describe("importing from WordPress", () => {
+// A whole import runs per test, which takes a few seconds on the built-in database.
+describe("importing from WordPress", { timeout: 60_000 }, () => {
   const testDatabase = useTestDatabase();
   const tools = useDataToolsTestServer(testDatabase);
 
@@ -55,7 +56,15 @@ describe("importing from WordPress", () => {
 
   async function entriesIn(collection: "posts" | "pages") {
     const response = await tools.api("GET", `/collections/${collection}/entries`);
-    return response.json<{ entries: Array<{ id: string; title: string; slug: string; status: string; parentId: string | null }> }>().entries;
+    return response.json<{
+      entries: Array<{
+        id: string;
+        title: string;
+        slug: string;
+        status: string;
+        parentId: string | null;
+      }>;
+    }>().entries;
   }
 
   it("reads the export, offers a mapping and shows a dry run that changes nothing", async () => {
@@ -80,7 +89,9 @@ describe("importing from WordPress", () => {
       tags: "tags",
     });
 
-    const dryRun = (await tools.api("POST", `/wordpress-imports/${created.id}/dry-run`)).json<Report>();
+    const dryRun = (
+      await tools.api("POST", `/wordpress-imports/${created.id}/dry-run`)
+    ).json<Report>();
     expect(dryRun.dryRun).toBe(true);
     expect(dryRun.counts.post).toEqual({ done: 2, skipped: 1, failed: 0 });
     expect(dryRun.counts.page).toEqual({ done: 2, skipped: 0, failed: 0 });
@@ -94,7 +105,9 @@ describe("importing from WordPress", () => {
     const created = await uploadBakery();
     await tools.api("PUT", `/wordpress-imports/${created.id}/mapping`, { media: "zip" });
 
-    expect((await tools.api("POST", `/wordpress-imports/${created.id}/start`)).statusCode).toBe(202);
+    expect((await tools.api("POST", `/wordpress-imports/${created.id}/start`)).statusCode).toBe(
+      202,
+    );
     await tools.server.dataTools.tasks.finishAll();
 
     const finished = (await tools.api("GET", `/wordpress-imports/${created.id}`)).json<{
@@ -113,7 +126,12 @@ describe("importing from WordPress", () => {
       ["easter-opening-hours", "draft"],
       ["our-new-sourdough", "published"],
     ]);
-    const sourdough = (await tools.api("GET", `/entries/${posts.find((post) => post.slug === "our-new-sourdough")?.id}`)).json<{
+    const sourdough = (
+      await tools.api(
+        "GET",
+        `/entries/${posts.find((post) => post.slug === "our-new-sourdough")?.id}`,
+      )
+    ).json<{
       data: Record<string, unknown>;
       publishedAt: string;
     }>();
@@ -127,11 +145,16 @@ describe("importing from WordPress", () => {
     const about = pages.find((page) => page.slug === "about-us");
     expect(pages.find((page) => page.slug === "our-team")?.parentId).toBe(about?.id);
 
-    const people = await testDatabase.database.select().from(usersTable).where(eq(usersTable.email, "maria@hillside-bakery.example"));
+    const people = await testDatabase.database
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.email, "maria@hillside-bakery.example"));
     expect(people[0]?.passwordHash).toBeNull();
 
     const redirects = await testDatabase.database.select().from(redirectsTable);
-    expect(redirects.map((redirect) => [redirect.fromPath, redirect.toPath, redirect.status]).sort()).toEqual([
+    expect(
+      redirects.map((redirect) => [redirect.fromPath, redirect.toPath, redirect.status]).sort(),
+    ).toEqual([
       ["/2024/03/our-new-sourdough", "/blog/our-new-sourdough", "suggested"],
       ["/about-us/our-team", "/our-team", "suggested"],
     ]);
@@ -145,14 +168,22 @@ describe("importing from WordPress", () => {
 
     // As if the server had stopped before the posts: they're undone and the import was running.
     const database = testDatabase.database;
-    const postItems = await database.select().from(wordpressImportItemsTable).where(eq(wordpressImportItemsTable.kind, "post"));
+    const postItems = await database
+      .select()
+      .from(wordpressImportItemsTable)
+      .where(eq(wordpressImportItemsTable.kind, "post"));
     for (const item of postItems.filter((candidate) => candidate.targetId)) {
       await database.delete(entriesTable).where(eq(entriesTable.id, item.targetId as string));
     }
-    await database.update(wordpressImportItemsTable).set({ status: "pending", targetId: null }).where(eq(wordpressImportItemsTable.kind, "post"));
+    await database
+      .update(wordpressImportItemsTable)
+      .set({ status: "pending", targetId: null })
+      .where(eq(wordpressImportItemsTable.kind, "post"));
     await database.update(wordpressImportsTable).set({ status: "running" });
     await pauseInterruptedImports(database);
-    expect((await tools.api("GET", `/wordpress-imports/${created.id}`)).json().status).toBe("paused");
+    expect((await tools.api("GET", `/wordpress-imports/${created.id}`)).json().status).toBe(
+      "paused",
+    );
 
     await tools.api("POST", `/wordpress-imports/${created.id}/start`);
     await tools.server.dataTools.tasks.finishAll();
@@ -167,11 +198,15 @@ describe("importing from WordPress", () => {
       method: "POST",
       url: "/wordpress-imports",
       cookies: tools.cookies,
-      ...multipartFiles([{ fieldName: "export", filename: "notes.xml", contents: Buffer.from("<notes/>") }]),
+      ...multipartFiles([
+        { fieldName: "export", filename: "notes.xml", contents: Buffer.from("<notes/>") },
+      ]),
     });
     expect(response.statusCode).toBe(400);
     expect(response.json().code).toBe("NOT_A_WORDPRESS_EXPORT");
 
-    expect((await tools.server.inject({ method: "GET", url: "/wordpress-imports" })).statusCode).toBe(401);
+    expect(
+      (await tools.server.inject({ method: "GET", url: "/wordpress-imports" })).statusCode,
+    ).toBe(401);
   });
 });
