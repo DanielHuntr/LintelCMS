@@ -12,6 +12,7 @@ export const usingPages = [
   "using/media",
   "using/content-types",
   "using/selling",
+  "using/moving-from-shopify",
   "using/users",
   "using/troubleshooting",
 ] as const;

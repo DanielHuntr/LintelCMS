@@ -100,6 +100,16 @@ as it is (`unavailable`, `no_price`, `out_of_stock` or `not_enough_stock`, with
 `quantityAvailable`), and the cart's `readyForCheckout` is `true` once every line can be
 bought and the email, address and delivery rate are chosen.
 
+### Discount codes
+
+Send codes as `discountCodes` (one code per order; capital letters don't matter). A code that
+can't be used at all (unknown, not started, expired, used up, already used by this email) is
+refused with `400 DISCOUNT_CODE_INVALID` and a message to show by the code box, such as "This
+code has expired.". A code that only needs a bigger order stays in the cart and is listed in
+`discountProblems` with its message. The cart's `discounts` lists what each discount takes
+off, with `code` empty for automatic discounts; a free-delivery discount has
+`freeShipping: true` and is already taken off `shipping`.
+
 ```ts
 const api = "https://cms.example.com";
 
@@ -119,11 +129,13 @@ await fetch(`${api}/delivery/shop/carts/${token}/lines`, {
 ## Checkout
 
 `POST /delivery/shop/carts/:token/checkout` fixes the prices, works out tax, holds the stock
-and starts the payment with Stripe. It answers `201`:
+(and one use of each discount), and starts the payment with the market's provider: Stripe,
+PayPal or Mollie. It answers `201`:
 
 ```json
 {
   "checkoutId": "0b5e…",
+  "provider": "stripe",
   "mode": "hosted",
   "url": "https://checkout.stripe.com/c/pay/…",
   "clientSecret": null,
@@ -143,9 +155,14 @@ and starts the payment with Stripe. It answers `201`:
   `publishableKey` to Stripe's
   [Payment Element](https://docs.stripe.com/payments/payment-element) on your own page.
 
-Either way, card details go straight to Stripe and never pass through your site or Lintel.
+With PayPal or Mollie the checkout is always hosted: send `{ successUrl, cancelUrl }` and
+send the shopper to `url`, PayPal's or Mollie's own page.
 
-The order is made **only** when Stripe's signed webhook says the payment arrived, never by
+Either way, card details go straight to the provider and never pass through your site or
+Lintel.
+
+The order is made **only** when the provider confirms the payment (Stripe's signed webhook,
+a PayPal webhook PayPal has verified, or a Mollie payment fetched back from Mollie), never by
 the shopper landing on your success page. On that page, poll
 `GET /delivery/shop/checkouts/:checkoutId` until `status` is `completed`, then show
 `orderName` ("#1001").
@@ -161,11 +178,12 @@ Errors use the same shape as the rest of the API, `{ statusCode, code, message }
 | Status | Code                     | When                                                       |
 | ------ | ------------------------ | ---------------------------------------------------------- |
 | 404    | `CART_NOT_FOUND`         | The token doesn't match a cart (or the cart has expired)   |
+| 400    | `DISCOUNT_CODE_INVALID`  | A code can't be used; 409 at checkout if it just ran out   |
 | 400    | `CART_NOT_READY`         | Email, address or delivery rate missing, or a line problem |
 | 409    | `OUT_OF_STOCK`           | Not enough stock, with `available`                         |
 | 400    | `NOT_FOR_SALE`           | The variant isn't on sale in this market                   |
-| 409    | `SHOP_NOT_READY`         | Stripe isn't connected yet                                 |
-| 502    | `PAYMENT_PROVIDER_ERROR` | Stripe couldn't be reached; try again                      |
+| 409    | `SHOP_NOT_READY`         | The market's payment provider isn't connected yet          |
+| 502    | `PAYMENT_PROVIDER_ERROR` | The provider couldn't be reached; try again                |
 | 404    | `PLUGIN_NOT_ENABLED`     | The Online shop plugin is off                              |
 
 ## Stripe's webhook

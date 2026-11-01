@@ -32,7 +32,7 @@ export const shopifyImportStrings = {
   "shop.import.previewHeader": "What's in the files",
   "shop.import.previewCounts":
     "{products} products with {variants} variants and {images} photos, {customers} customers and {orders} orders.",
-  "shop.import.sample": "{variants} variants · {images} photos · {price} {currency}",
+  "shop.import.sample": "Variants: {variants} · Photos: {images} · {price} {currency}",
   "shop.import.mappingHeader": "Where everything goes",
   "shop.import.mappingBody": "Each column in Shopify's files and what it becomes in Lintel.",
   "shop.import.mappingShopify": "In Shopify's file",

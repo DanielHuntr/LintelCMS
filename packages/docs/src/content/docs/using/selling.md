@@ -1,6 +1,6 @@
 ---
 title: Selling with Lintel
-description: Setting up the shop, adding products, taking payments with Stripe, and handling orders.
+description: Setting up the shop, adding products, discounts, taking payments with Stripe, PayPal or Mollie, and handling orders.
 since: "0.3"
 sidebar:
   label: Selling
@@ -22,7 +22,7 @@ right screen, and gets a tick once it's done:
 2. **Set your delivery prices.** Under **Settings → Delivery**, add an area (such as "UK")
    with its countries, then the prices customers can choose from: the same for every order,
    going up with weight, or free over a certain amount.
-3. **Connect Stripe.** See below.
+3. **Connect a payment provider.** Stripe, PayPal or Mollie: see below.
 4. **Add your first product.**
 
 ## Products
@@ -39,14 +39,73 @@ right screen, and gets a tick once it's done:
 - **Status.** _Draft_ products are only visible to you; _On sale_ ones are on your site;
   _Archived_ ones are hidden but kept for your records.
 
+Moving from Shopify? Lintel can bring your products, customers and past orders across from
+Shopify's export files: see [Moving from Shopify](/using/moving-from-shopify/).
+
 Lintel never sells more than you have. While a customer is paying, their items are held for
 them. If they give up, the items go back on sale after a short while.
 
-## Taking payments with Stripe
+## Discounts
 
-Payments go through [Stripe](https://stripe.com). Card numbers are typed into Stripe's own
-page or form and never reach your site, which keeps the paperwork for card security to a
-minimum.
+**Discounts** has two kinds:
+
+- **Codes** customers type in their cart, such as `SUMMER20`. Codes don't care about
+  capital letters.
+- **Automatic discounts**, which apply by themselves to every cart that qualifies, such as
+  free delivery on orders of £75 or more.
+
+Each discount gives one of four things: a **percentage off**, an **amount off** (set in each
+of your currencies; leave one empty and that market isn't offered it), **free delivery**, or
+**buy X, get Y**, such as buy 2, get 1 free. With buy X get Y, the cheapest items in each
+group are the ones discounted.
+
+A discount can be for **everything**, **some products** or **some collections**, and can
+need a **minimum spend** or a **minimum number of items** (counting only the items it's
+for). You can give it **start and end dates**, a **total number of uses**, and limit it to
+**once per customer** (by email address).
+
+At the top of the editor, a one-line summary says what you've set up, in plain words, such
+as "20% off Summer Edit, orders of £50 or more, until 31 Aug". Check it before you save.
+
+### How discounts add up
+
+- One code per order.
+- Automatic discounts apply by themselves: the one that saves the most on the items, plus a
+  free-delivery one if there is one.
+- A code adds to automatic discounts, unless one of them has **Can be combined with other
+  discounts** switched off. Then only the bigger saving applies, and the customer is told
+  why.
+
+### What customers see
+
+If a code can't be used, the customer is told why, in plain words: "This code has expired",
+"You've already used this code", "Spend £50.00 or more to use this code". A code that only
+needs a bigger order stays in the cart and starts working once the cart qualifies.
+
+When a code has a limited number of uses, each checkout holds one use while the customer
+pays, so two customers can't both take the last one. If a customer gives up, the use is
+freed again.
+
+Discounts are shown in the cart's totals and on the order, and tax is worked out on what the
+customer actually pays. When you refund an item, the customer gets back what they paid for
+it after the discount.
+
+## Taking payments
+
+Lintel can take payments through [Stripe](https://stripe.com), [PayPal](https://paypal.com)
+or [Mollie](https://www.mollie.com). Customers always pay on the provider's own secure page
+(or, with Stripe, a payment form that Stripe runs inside your page), so card numbers never
+reach your site. That keeps the paperwork for card security to a minimum.
+
+Each market uses one provider. Stripe is used unless you choose another: at the top of
+**Settings → Payments**, pick a provider for each market. Only connected providers can be
+chosen. You might, for example, use Stripe in the UK and Mollie in the Netherlands, where
+many people pay with iDEAL.
+
+An order is only made once the provider confirms the payment, in a way that can't be faked.
+Coming back to your site's "thank you" page proves nothing by itself.
+
+### Stripe
 
 **Settings → Payments** walks you through connecting Stripe in four steps:
 
@@ -68,6 +127,33 @@ the keys can't be changed in the admin.
 
 You can also choose how customers pay: on **Stripe's checkout page**, or with a **payment
 form on your own site**.
+
+### PayPal
+
+Choose **PayPal** in **Settings → Payments** and follow the three steps:
+
+1. In PayPal's developer dashboard, sign in with your PayPal business account and create an
+   **app**. Start on the **Sandbox** tab to test without real money.
+2. In your app, add a **webhook** with the address Lintel shows you, and tick the events it
+   lists. PayPal then shows the webhook's **ID**.
+3. Paste the app's **Client ID** and **Secret** and the **webhook ID** into Lintel, choose
+   Sandbox or Live, and press **Save and check**.
+
+Customers approve the payment on PayPal's page; Lintel then takes the money and makes the
+order. If a customer approves a payment after their checkout has run out, they aren't
+charged.
+
+### Mollie
+
+Choose **Mollie** in **Settings → Payments**, then copy your **API key** from Mollie's
+dashboard (**Developers → API keys**) and press **Save and check**. Use the test key (it
+begins `test_`) first. There's no webhook to set up: each payment tells Mollie where to
+report back.
+
+:::note
+Mollie can only report back once your site is online. While Lintel runs on your own
+computer, Mollie payments can be tried, but no orders are made from them.
+:::
 
 ## Tax
 
@@ -94,14 +180,16 @@ there you can:
   number, and Lintel emails the customer to say it's on its way. You can send an order in
   more than one parcel.
 - **Refund.** Refund chosen items (and put them back in stock), or any amount up to what
-  was paid. The money goes back to the customer's card through Stripe.
+  was paid. The money goes back to the customer the way they paid: through Stripe, PayPal or
+  Mollie.
 - **Cancel** an order that hasn't been sent, refunding what's left.
 - **Add a note** for the people who run the shop. Customers never see notes.
 
 ## Customers
 
 Everyone who places an order is added to **Customers**, with their orders, how much they've
-spent and their addresses. You can keep a private note on each one.
+spent and their addresses. You can keep a private note on each one. Customers brought over
+from Shopify also show their **orders before the move**.
 
 ## Order emails
 

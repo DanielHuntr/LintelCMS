@@ -47,8 +47,21 @@ export function useStartShopifyImport() {
   return useImportChange(startShopifyImport);
 }
 
+/** Choices show as soon as they're made; the server's answer then replaces them. */
 export function useSaveImportOptions(importId: string) {
-  return useImportChange((options: ImportOptions) => saveImportOptions(importId, options));
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (options: ImportOptions) => saveImportOptions(importId, options),
+    onMutate: (options) => {
+      const previous = queryClient.getQueryData<ShopifyImport>(importKeys.one(importId));
+      if (previous) queryClient.setQueryData(importKeys.one(importId), { ...previous, options });
+      return { previous };
+    },
+    onError: (_error, _options, context) => {
+      if (context?.previous) queryClient.setQueryData(importKeys.one(importId), context.previous);
+    },
+    onSuccess: (updated) => queryClient.setQueryData(importKeys.one(updated.id), updated),
+  });
 }
 
 export function useDryRun(importId: string) {
