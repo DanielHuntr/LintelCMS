@@ -1,4 +1,4 @@
-import { fieldtypeRegistry } from "./fieldtypes.registry.js";
+import { listAllFieldtypes } from "./fieldtypes.registry.js";
 import type { FieldtypeList } from "./fieldtypes.schema.js";
 
 /**
@@ -7,10 +7,11 @@ import type { FieldtypeList } from "./fieldtypes.schema.js";
  */
 export function listFieldtypes(): FieldtypeList {
   return {
-    fieldtypes: fieldtypeRegistry.map((fieldtype) => ({
+    fieldtypes: listAllFieldtypes().map(({ fieldtype, pluginId }) => ({
       type: fieldtype.type,
       name: fieldtype.name,
       description: fieldtype.description,
+      plugin: pluginId,
     })),
   };
 }

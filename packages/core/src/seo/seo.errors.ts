@@ -1,16 +1,5 @@
 import { HttpError } from "../http/http-errors.js";
 
-/** The SEO plugin's endpoints answer this while the plugin is switched off. */
-export class SeoPluginDisabledError extends HttpError {
-  constructor() {
-    super(
-      404,
-      "PLUGIN_NOT_ENABLED",
-      "SEO tools are switched off. An admin can switch them on in Settings → Plugins.",
-    );
-  }
-}
-
 export class RedirectNotFoundError extends HttpError {
   constructor() {
     super(404, "NOT_FOUND", "That redirect doesn't exist. It may have been deleted.");

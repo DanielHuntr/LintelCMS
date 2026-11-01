@@ -40,18 +40,18 @@ describe('the "What are you building?" step', () => {
     expect(body.siteType).toBe("shop");
     expect(body.plugins).toHaveLength(4);
     expect(body.plugins.filter((plugin: { enabled: boolean }) => plugin.enabled)).toEqual([
-      {
+      expect.objectContaining({
         id: "commerce",
         name: "Online shop",
         description: "Products, orders and payments.",
         enabled: true,
-      },
-      {
+      }),
+      expect.objectContaining({
         id: "seo",
         name: "SEO tools",
         description: "Page titles, sitemaps and redirects.",
         enabled: true,
-      },
+      }),
     ]);
     expect(await siteSetupCompleted()).toBe(true);
   });

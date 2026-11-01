@@ -22,7 +22,6 @@ import {
 } from "./redirects.service.js";
 import { RedirectNotFoundError } from "./seo.errors.js";
 import { readSeoDefaults, updateSeoDefaults } from "./seo-defaults.service.js";
-import { requireSeoPlugin } from "./seo-plugin.js";
 import {
   deliveredEntrySeoParamsSchema,
   entrySeoParamsSchema,
@@ -36,7 +35,8 @@ const SEARCH_ENGINE_CACHE = "public, max-age=3600";
 const WEBSITE_CACHE = "public, max-age=60";
 
 /**
- * HTTP only. Everything here answers 404 PLUGIN_NOT_ENABLED while the SEO plugin is off.
+ * HTTP only. Registered as the SEO plugin's routes (see seo.plugin.ts), so everything here
+ * answers 404 PLUGIN_NOT_ENABLED while the plugin is off.
  *
  *   GET    /seo/defaults                   (signed in)
  *   PUT    /seo/defaults                   (settings:update)  any of the defaults
@@ -56,12 +56,12 @@ const WEBSITE_CACHE = "public, max-age=60";
  */
 export async function seoRoutes(server: FastifyInstance) {
   const can = (permission: `${string}:${string}`) => ({
-    preHandler: [requireSeoPlugin, requirePermission(permission)],
+    preHandler: requirePermission(permission),
   });
-  const publicContent = { preHandler: [requireSeoPlugin, requireDeliveryAccess] };
+  const publicContent = { preHandler: requireDeliveryAccess };
 
   // Anyone signed in may read the defaults: the editor's search preview needs them.
-  server.get("/seo/defaults", { preHandler: [requireSeoPlugin, requireSignedIn] }, async () =>
+  server.get("/seo/defaults", { preHandler: requireSignedIn }, async () =>
     readSeoDefaults(server.database),
   );
 
@@ -122,7 +122,7 @@ export async function seoRoutes(server: FastifyInstance) {
     return reply.header("cache-control", WEBSITE_CACHE).send(seo);
   });
 
-  server.get("/sitemap.xml", { preHandler: requireSeoPlugin }, async (_request, reply) => {
+  server.get("/sitemap.xml", async (_request, reply) => {
     const xml = await buildSitemap(server.database);
     return reply
       .type("application/xml; charset=utf-8")
@@ -130,7 +130,7 @@ export async function seoRoutes(server: FastifyInstance) {
       .send(xml);
   });
 
-  server.get("/robots.txt", { preHandler: requireSeoPlugin }, async (_request, reply) => {
+  server.get("/robots.txt", async (_request, reply) => {
     const text = await buildRobots(server.database);
     return reply
       .type("text/plain; charset=utf-8")

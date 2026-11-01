@@ -7,6 +7,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "development": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./permissions": {
@@ -23,10 +24,20 @@
       "types": "./dist/seo/seo-titles.d.ts",
       "development": "./src/seo/seo-titles.ts",
       "default": "./dist/seo/seo-titles.js"
+    },
+    "./plugin": {
+      "types": "./dist/plugins/plugin-api.d.ts",
+      "development": "./src/plugins/plugin-api.ts",
+      "default": "./dist/plugins/plugin-api.js"
+    },
+    "./plugin-testing": {
+      "types": "./dist/plugins/plugin-testing.d.ts",
+      "development": "./src/plugins/plugin-testing.ts",
+      "default": "./dist/plugins/plugin-testing.js"
     }
   },
   "scripts": {
-    "dev": "tsx watch --env-file=development.env src/main.ts",
+    "dev": "tsx watch --conditions=development --env-file=development.env src/main.ts",
     "start": "node dist/main.js",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",

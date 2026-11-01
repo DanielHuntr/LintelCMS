@@ -18,6 +18,7 @@ import {
 } from "./setup.schema.js";
 import { completeSetup, findSetupStatus, isSetupNeeded } from "./setup.service.js";
 import { setUpSite } from "./site-setup.service.js";
+import { installedPluginIdListSchema } from "../plugins/plugins.schema.js";
 
 /** The same limit as sign-in: plenty for a person, far too few for a script guessing codes. */
 const SETUP_ATTEMPTS_PER_MINUTE = 10;
@@ -76,8 +77,13 @@ export async function setupRoutes(server: FastifyInstance) {
     "/setup/site",
     { preHandler: requirePermission("settings:update") },
     async (request) => {
-      const site = parseRequest(siteSetupRequestSchema, request.body);
-      return setUpSite(server.database, site);
+      const site = parseRequest(
+        siteSetupRequestSchema.extend({
+          plugins: installedPluginIdListSchema(server.plugins.ids),
+        }),
+        request.body,
+      );
+      return setUpSite(server.database, server.plugins, site);
     },
   );
 }

@@ -6,6 +6,9 @@ export { ActiveDatabase, openStartupDatabase } from "./database/active-database.
 export { openBuiltInDatabase } from "./database/built-in-database.js";
 export { connectToPostgres } from "./database/postgres-database.js";
 export { pluginRegistry, type PluginId } from "./plugins/plugins.registry.js";
+export { PluginCatalogue, type PluginSource } from "./plugins/plugin-catalogue.js";
+export { loadInstalledPlugins } from "./plugins/installed-plugins.js";
+export { definePlugin, type LintelConfig, type LintelPlugin } from "./plugins/plugin-definition.js";
 export { setupStatusSchema, type SetupStatus } from "./setup/setup.schema.js";
 export { hasPermission, type Permission } from "./roles/permissions.js";
 export { requirePermission, requireSignedIn, getSignedIn } from "./auth/require-permission.js";

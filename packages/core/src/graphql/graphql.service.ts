@@ -11,7 +11,7 @@ import { HttpError } from "../http/http-errors.js";
 import { assetFileUrl } from "../media/asset-response.js";
 import { listAssetRows } from "../media/media.repository.js";
 import type { AssetKind } from "../media/media.schema.js";
-import { isSeoPluginEnabled } from "../seo/seo-plugin.js";
+import { isSeoPluginEnabled } from "../seo/seo-enabled.js";
 import { resolveLocale } from "../sites/locales.service.js";
 import {
   type CollectionWithBlueprint,

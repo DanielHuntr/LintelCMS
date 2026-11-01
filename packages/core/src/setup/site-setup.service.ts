@@ -2,6 +2,7 @@ import { ensurePagesCollection } from "../collections/default-collections.js";
 import type { Database } from "../database/client.js";
 import { ensureSiteSettings } from "../globals/default-globals.js";
 import { ensureMainMenu } from "../navigation/default-navigation.js";
+import type { PluginCatalogue } from "../plugins/plugin-catalogue.js";
 import { setEnabledPlugins } from "../plugins/plugins.service.js";
 import { writeSetting } from "../settings/settings.service.js";
 import type { SiteSetupRequest, SiteSetupResponse } from "./setup.schema.js";
@@ -17,6 +18,7 @@ import type { SiteSetupRequest, SiteSetupResponse } from "./setup.schema.js";
  */
 export async function setUpSite(
   database: Database,
+  catalogue: PluginCatalogue,
   request: SiteSetupRequest,
 ): Promise<SiteSetupResponse> {
   const pluginList = await database.transaction(async (transaction) => {
@@ -25,7 +27,7 @@ export async function setUpSite(
     await ensurePagesCollection(transaction);
     await ensureSiteSettings(transaction);
     await ensureMainMenu(transaction);
-    return setEnabledPlugins(transaction, request.plugins);
+    return setEnabledPlugins(transaction, catalogue, request.plugins);
   });
 
   return { siteType: request.siteType, plugins: pluginList.plugins };

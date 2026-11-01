@@ -20,9 +20,13 @@ export const fieldDefinitionSchema = z
       .trim()
       .min(1, { error: "Each field needs a label" })
       .max(100, { error: "Labels can be at most 100 characters" }),
-    type: z.enum(fieldtypeNames as [string, ...string[]], {
-      error: `The type should be one of: ${fieldtypeNames.join(", ")}`,
-    }),
+    // Checked against the list when a field is read rather than built into an enum, so
+    // fieldtypes from plugins are accepted too.
+    type: z
+      .string({ error: "Each field needs a type" })
+      .refine((type) => findFieldtype(type) !== undefined, {
+        error: () => `The type should be one of: ${fieldtypeNames().join(", ")}`,
+      }),
     required: z.boolean({ error: "required should be true or false" }).default(false),
     helpText: z
       .string({ error: "Help text should be text" })
