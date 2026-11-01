@@ -96,7 +96,7 @@ export function FieldsetsPage() {
           const created = await createFieldset({ name, handle });
           await queryClient.invalidateQueries({ queryKey: fieldsetKeys.fieldsets() });
           setIsCreating(false);
-          await navigate({ to: `/settings/fieldsets/${encodeURIComponent(created.handle)}` });
+          await navigate({ to: "/settings/fieldsets/$handle", params: { handle: created.handle } });
         }}
       />
     </Page>

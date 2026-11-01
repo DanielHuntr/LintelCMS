@@ -299,6 +299,7 @@ export function FieldTypeOptions({
             blockTypes={options.blockTypes ?? []}
             onChange={(blockTypes) => set({ blockTypes })}
             problem={problem}
+            outerLevels={[siblings, ...outerLevels]}
           />
         </div>
       );

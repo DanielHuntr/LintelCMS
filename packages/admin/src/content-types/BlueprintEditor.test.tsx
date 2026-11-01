@@ -44,7 +44,10 @@ describe("BlueprintEditor", () => {
     await screen.findByRole("heading", { name: "Page" });
 
     await userEvent.click(screen.getByRole("button", { name: "Add field" }));
-    await userEvent.click(await screen.findByRole("button", { name: /Image/ }));
+    // The search box has focus: type, then Return adds the highlighted fieldtype.
+    const search = await screen.findByRole("combobox", { name: /Search fields/ });
+    await waitFor(() => expect(search).toHaveFocus());
+    await userEvent.type(search, "picture{Enter}");
     const label = await screen.findByRole("textbox", { name: "Label" });
     await userEvent.clear(label);
     await userEvent.type(label, "Hero image");
@@ -80,6 +83,6 @@ describe("BlueprintEditor", () => {
 
     expect(screen.queryByRole("button", { name: "Move “Title” down" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Remove “Title”" })).not.toBeInTheDocument();
-    expect(screen.getByText("Always first")).toBeInTheDocument();
+    expect(screen.getByLabelText("Always first")).toBeInTheDocument();
   });
 });

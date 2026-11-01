@@ -1,3 +1,4 @@
+import { fieldtypeRegistry } from "./fieldtypes.registry.js";
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { InvalidFieldsError } from "../http/http-errors.js";
@@ -241,31 +242,16 @@ describe("GET /fieldtypes", () => {
 
     expect(response.statusCode).toBe(200);
     const types = response.json().fieldtypes.map((fieldtype: { type: string }) => fieldtype.type);
-    expect(types).toEqual([
-      "text",
-      "textarea",
-      "richText",
-      "number",
-      "toggle",
-      "select",
-      "date",
-      "image",
-      "link",
-      "email",
-      "url",
-      "colour",
-      "markdown",
-      "list",
-      "entries",
-      "terms",
-      "blocks",
-      "page",
-      "form",
-    ]);
+    expect(types).toEqual(fieldtypeRegistry.map((fieldtype) => fieldtype.type));
+    expect(types).toEqual(expect.arrayContaining(["radio", "repeater", "fieldset", "section"]));
     expect(response.json().fieldtypes[0]).toEqual({
       type: "text",
       name: "Text",
       description: "A single line of text, such as a title or a name.",
+      category: "text",
+      keywords: ["input", "string", "line", "heading", "name"],
+      holdsValue: true,
+      canBeInside: true,
       plugin: null,
     });
     expect((await server.inject({ method: "GET", url: "/fieldtypes" })).statusCode).toBe(401);

@@ -23,6 +23,7 @@ export {
   email,
   entries,
   fieldset,
+  form,
   group,
   hidden,
   icon,

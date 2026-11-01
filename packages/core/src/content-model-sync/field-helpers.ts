@@ -245,6 +245,9 @@ export interface UsersField extends UsersOptions {
 export interface HiddenField extends CommonFieldOptions {
   type: "hidden";
 }
+export interface FormField extends CommonFieldOptions {
+  type: "form";
+}
 export interface TabField extends CommonFieldOptions {
   type: "tab";
 }
@@ -324,7 +327,8 @@ export type InnerField =
   | RevealerField
   | GroupField
   | RepeaterField
-  | FieldsetField;
+  | FieldsetField
+  | FormField;
 
 /** A kind of block editors can add to a blocks field, such as a Hero or a Call to action. */
 export interface BlockTypeDefinition {
@@ -443,6 +447,11 @@ export function terms(options: TermsOptions): TermsField {
 /** A page builder: sections such as a hero, text or a call to action, in any order. */
 export function blocks(options: BlocksOptions): BlocksField {
   return { type: "blocks", ...options };
+}
+
+/** One of the site's forms, such as a contact form, stored by its handle. */
+export function form(options: CommonFieldOptions = {}): FormField {
+  return { type: "form", ...options };
 }
 
 /** One choice from a short list, with every choice in view. */

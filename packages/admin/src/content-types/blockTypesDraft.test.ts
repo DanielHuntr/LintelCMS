@@ -11,7 +11,7 @@ import {
   moveBlockType,
   withDraftKeys,
 } from "./blockTypesDraft.js";
-import { optionsForType } from "./blueprintDraft.js";
+import { fieldForSaving } from "./blueprintDraft.js";
 
 describe("block types in the blueprint builder", () => {
   it("makes a new block type's handle from its name until the handle is edited", () => {
@@ -95,7 +95,7 @@ describe("block types in the blueprint builder", () => {
       addInnerField(fields, "f1", "text", "Heading"),
     );
 
-    expect(blockTypesForSaving(types, optionsForType)).toEqual([
+    expect(blockTypesForSaving(types, fieldForSaving)).toEqual([
       {
         handle: "hero",
         name: "Hero",

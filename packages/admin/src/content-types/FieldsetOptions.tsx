@@ -48,7 +48,8 @@ export function FieldsetOptions({
             fields: chosen.fields.map((field) => field.label).join(", ") || "—",
           })}{" "}
           <Link
-            to={`/settings/fieldsets/${encodeURIComponent(chosen.handle)}`}
+            to="/settings/fieldsets/$handle"
+            params={{ handle: chosen.handle }}
             className="text-accent hover:underline"
           >
             {t("fieldOptions.editFieldset")}

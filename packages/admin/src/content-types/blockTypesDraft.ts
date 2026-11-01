@@ -10,9 +10,9 @@ import { cleanTypedHandle, handleFromLabel, isValidHandle, uniqueHandle } from "
  * strips it again.
  */
 
-/** Any fieldtype can go in a block, except another blocks field. */
+/** Any fieldtype can go in a block, except another blocks field or a tab. */
 export function canGoInBlock(type: FieldType): boolean {
-  return type !== "blocks";
+  return type !== "blocks" && type !== "tab";
 }
 
 /** Block types from the API get bookkeeping, with handles that no longer follow their names. */

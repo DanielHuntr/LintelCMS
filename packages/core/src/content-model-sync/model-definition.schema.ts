@@ -127,6 +127,7 @@ const moreFieldSchemas = [
   fieldSchema("revealer", "A Show more button other fields' conditions can look at.", {
     buttonLabel: z.string().optional(),
   }),
+  fieldSchema("form", "One of the site's forms, by its handle.", {}),
   fieldSchema("fieldset", "The fields of a saved fieldset.", {
     fieldset: z.string().describe("The handle of the fieldset."),
   }),

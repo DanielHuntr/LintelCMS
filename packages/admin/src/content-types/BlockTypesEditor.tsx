@@ -1,5 +1,5 @@
-import { ChevronDown, ChevronUp, Plus, X } from "lucide-react";
-import { useId, type ReactNode } from "react";
+import { ChevronDown, ChevronUp, Plus, Settings2, X } from "lucide-react";
+import { useId, useState, type ReactNode } from "react";
 import { Button } from "../design/Button.js";
 import { classNames } from "../design/classNames.js";
 import { controlClasses } from "../design/controlStyles.js";
@@ -18,14 +18,19 @@ import {
   moveInnerField,
   removeBlockType,
   removeInnerField,
+  renameInnerField,
+  retypeInnerField,
 } from "./blockTypesDraft.js";
+import { FieldSettingsDialog } from "./FieldSettingsDialog.js";
+import { settingsProblem } from "./fieldSettingsDraft.js";
 import { cleanTypedHandle } from "./handle.js";
-import { FieldTypeOptions } from "./FieldTypeOptions.js";
 
 interface BlockTypesEditorProps {
   blockTypes: readonly BlockType[];
   onChange: (blockTypes: BlockType[]) => void;
   problem: string | undefined;
+  /** The lists around the blocks field, innermost first, for conditions looking outwards. */
+  outerLevels?: readonly (readonly Field[])[];
 }
 
 let nextKey = 0;
@@ -39,7 +44,12 @@ function newKey(prefix: string): string {
  * description and its own list of fields. Kept to plain inputs and buttons, so it works by
  * keyboard without any dragging.
  */
-export function BlockTypesEditor({ blockTypes, onChange, problem }: BlockTypesEditorProps) {
+export function BlockTypesEditor({
+  blockTypes,
+  onChange,
+  problem,
+  outerLevels = [],
+}: BlockTypesEditorProps) {
   const titleId = useId();
   return (
     <section className="flex flex-col gap-3" aria-labelledby={titleId}>
@@ -64,6 +74,7 @@ export function BlockTypesEditor({ blockTypes, onChange, problem }: BlockTypesEd
               onFieldsChange={(change) => onChange(changeInnerFields(blockTypes, key, change))}
               onMove={(direction) => onChange(moveBlockType(blockTypes, key, direction))}
               onRemove={() => onChange(removeBlockType(blockTypes, key))}
+              outerLevels={outerLevels}
             />
           );
         })}
@@ -90,6 +101,7 @@ interface BlockTypeCardProps {
   onFieldsChange: (change: (fields: Field[]) => Field[]) => void;
   onMove: (direction: -1 | 1) => void;
   onRemove: () => void;
+  outerLevels: readonly (readonly Field[])[];
 }
 
 function BlockTypeCard({
@@ -100,6 +112,7 @@ function BlockTypeCard({
   onFieldsChange,
   onMove,
   onRemove,
+  outerLevels,
 }: BlockTypeCardProps) {
   const fieldtypes = useFieldtypes();
   const name = blockType.name.trim() || t("builder.blocks.untitled");
@@ -171,6 +184,8 @@ function BlockTypeCard({
               isFirst={index === 0}
               isLast={index === blockType.fields.length - 1}
               allowedTypes={allowedTypes}
+              siblings={blockType.fields}
+              outerLevels={outerLevels}
               onFieldsChange={onFieldsChange}
             />
           ))}
@@ -218,6 +233,8 @@ interface InnerFieldRowProps {
   isFirst: boolean;
   isLast: boolean;
   allowedTypes: ReadonlyArray<{ type: FieldType; name: string }>;
+  siblings: readonly Field[];
+  outerLevels: readonly (readonly Field[])[];
   onFieldsChange: (change: (fields: Field[]) => Field[]) => void;
 }
 
@@ -228,11 +245,14 @@ function InnerFieldRow({
   isFirst,
   isLast,
   allowedTypes,
+  siblings,
+  outerLevels,
   onFieldsChange,
 }: InnerFieldRowProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const key = field.draft?.key ?? field.handle;
   const fieldName = field.label.trim() || String(number);
-  const change = (changes: Partial<Pick<Field, "label" | "required" | "options">>) =>
+  const change = (changes: Partial<Pick<Field, "label" | "required">>) =>
     onFieldsChange((fields) => changeInnerField(fields, key, changes));
 
   return (
@@ -249,17 +269,7 @@ function InnerFieldRow({
           value={field.type}
           onChange={(event) => {
             const type = event.target.value as FieldType;
-            onFieldsChange((fields) =>
-              fields.map((candidate) =>
-                candidate.draft?.key === key
-                  ? {
-                      ...candidate,
-                      type,
-                      options: type === "select" ? { choices: [], multiple: false } : {},
-                    }
-                  : candidate,
-              ),
-            );
+            onFieldsChange((fields) => retypeInnerField(fields, key, type));
           }}
           className={classNames("h-8 text-footnote", controlClasses())}
         >
@@ -281,6 +291,13 @@ function InnerFieldRow({
           {t("builder.blocks.fieldRequired")}
         </label>
         <span className="ml-auto flex items-center">
+          <SmallButton
+            label={t("builder.editField", { label: fieldName })}
+            disabled={false}
+            onClick={() => setIsOpen(true)}
+          >
+            <Settings2 aria-hidden="true" strokeWidth={1.75} className="size-4" />
+          </SmallButton>
           <SmallButton
             label={t("builder.blocks.moveUp", { name: fieldName })}
             disabled={isFirst}
@@ -304,10 +321,30 @@ function InnerFieldRow({
           </SmallButton>
         </span>
       </div>
-      {field.type === "select" && (
-        <FieldTypeOptions
-          field={{ ...field, key, handleIsCustom: true, isSaved: false }}
-          onChange={(options) => change({ options })}
+      {isOpen && (
+        <FieldSettingsDialog
+          field={field}
+          typeName={
+            allowedTypes.find((fieldtype) => fieldtype.type === field.type)?.name ?? field.type
+          }
+          siblings={siblings}
+          outerLevels={outerLevels}
+          problem={settingsProblem(field, siblings) ?? undefined}
+          handleHint={t("builder.handleHint")}
+          isHandleLocked={false}
+          canShowInList={false}
+          onChange={(changes) => onFieldsChange((fields) => changeInnerField(fields, key, changes))}
+          onOptionsChange={(options) =>
+            onFieldsChange((fields) => changeInnerField(fields, key, { options }))
+          }
+          onHandleChange={(typed) =>
+            onFieldsChange((fields) => renameInnerField(fields, key, typed))
+          }
+          onRemove={() => {
+            setIsOpen(false);
+            onFieldsChange((fields) => removeInnerField(fields, key));
+          }}
+          onClose={() => setIsOpen(false)}
         />
       )}
     </li>
