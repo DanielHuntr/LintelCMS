@@ -131,6 +131,7 @@ describe("first-run setup", () => {
       finishSetup(
         testDatabase.activeDatabase,
         server.lintelFolder,
+        server.plugins,
         {
           account: { ...FIRST_ADMIN, email: "ana@example.com" },
           site: { ...SITE, siteType: "blog" },
@@ -140,6 +141,7 @@ describe("first-run setup", () => {
       finishSetup(
         testDatabase.activeDatabase,
         server.lintelFolder,
+        server.plugins,
         {
           account: { ...FIRST_ADMIN, email: "ben@example.com" },
           site: { ...SITE, siteType: "blog" },

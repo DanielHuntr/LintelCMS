@@ -62,6 +62,7 @@ export async function setupRoutes(server: FastifyInstance) {
       finishSetup(
         server.activeDatabase,
         server.lintelFolder,
+        server.plugins,
         answers,
         request.headers["user-agent"],
       ),

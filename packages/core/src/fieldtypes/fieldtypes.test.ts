@@ -264,6 +264,7 @@ describe("GET /fieldtypes", () => {
       type: "text",
       name: "Text",
       description: "A single line of text, such as a title or a name.",
+      plugin: null,
     });
     expect((await server.inject({ method: "GET", url: "/fieldtypes" })).statusCode).toBe(401);
   });

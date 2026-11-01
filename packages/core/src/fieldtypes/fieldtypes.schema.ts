@@ -5,6 +5,8 @@ export const fieldtypeSummarySchema = z.object({
   type: z.string(),
   name: z.string(),
   description: z.string(),
+  /** The plugin that adds it, or null for Lintel's own. */
+  plugin: z.string().nullable(),
 });
 
 export const fieldtypeListSchema = z.object({ fieldtypes: z.array(fieldtypeSummarySchema) });

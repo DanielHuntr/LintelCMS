@@ -3,6 +3,7 @@ import type { ActiveDatabase } from "../database/active-database.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import type { LintelFolder } from "../database/database-choice.js";
+import type { PluginCatalogue } from "../plugins/plugin-catalogue.js";
 import { readSetting } from "../settings/settings.service.js";
 import { hasAnyUsers } from "../users/users.repository.js";
 import { createAdmin, requireStrongPassword } from "../users/users.service.js";
@@ -51,6 +52,7 @@ export async function findSetupStatus(
 export async function finishSetup(
   activeDatabase: ActiveDatabase,
   lintelFolder: LintelFolder,
+  catalogue: PluginCatalogue,
   request: FinishSetupRequest,
   userAgent: string | undefined,
 ): Promise<SignInResult> {
@@ -80,7 +82,7 @@ export async function finishSetup(
       throw new SetupAlreadyDoneError();
     }
     const created = await duringStep("account", () => createAdmin(transaction, account));
-    await duringStep("site", () => saveSiteChoices(transaction, site));
+    await duringStep("site", () => saveSiteChoices(transaction, catalogue, site));
     return created;
   });
 

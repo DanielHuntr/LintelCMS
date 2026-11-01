@@ -1,7 +1,7 @@
 import { ArrowRight, ArrowRightLeft, Check, FileUp, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { LoadError } from "../api/LoadError.js";
-import { BackLink } from "../design/BackLink.js";
+import { PluginBackLink } from "../plugins/PluginLink.js";
 import { Button } from "../design/Button.js";
 import { EmptyState } from "../design/EmptyState.js";
 import { GroupedList } from "../design/GroupedList.js";
@@ -47,7 +47,7 @@ export function RedirectsPage() {
 
   return (
     <Page width="wide">
-      <BackLink to="/settings/seo">{t("seo.settingsTitle")}</BackLink>
+      <PluginBackLink to="/settings/seo">{t("seo.settingsTitle")}</PluginBackLink>
       <LargeTitle
         title={t("redirects.title")}
         subtitle={t("redirects.subtitle")}

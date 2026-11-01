@@ -5,8 +5,8 @@
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "types": ["vite/client", "@testing-library/jest-dom/vitest"],
+    "types": ["vite/client", "@testing-library/jest-dom/vitest", "node"],
     "noEmit": true
   },
-  "include": ["src", "vite.config.ts"]
+  "include": ["src", "vite.config.ts", "vite-plugin-lintel.ts"]
 }

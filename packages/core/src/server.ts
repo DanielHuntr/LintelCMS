@@ -29,11 +29,15 @@ import { mediaRoutes } from "./media/media.routes.js";
 import type { StorageDriver } from "./media/storage-driver.js";
 import { DEFAULT_TRANSFORM_CACHE_FOLDER } from "./media/transform-cache.js";
 import { openApiRoutes } from "./openapi/openapi.routes.js";
+import { PluginCatalogue } from "./plugins/plugin-catalogue.js";
+import type { LintelPlugin } from "./plugins/plugin-definition.js";
+import { registerPluginRoutes } from "./plugins/plugin-routes.js";
+import { pluginRegistry } from "./plugins/plugins.registry.js";
 import { pluginsRoutes } from "./plugins/plugins.routes.js";
 import { previewRoutes } from "./preview/preview.routes.js";
 import { registerScheduledJobs } from "./scheduler/scheduled-jobs.js";
 import { searchRoutes } from "./search/search.routes.js";
-import { seoRoutes } from "./seo/seo.routes.js";
+import { dashboardRoutes } from "./dashboard/dashboard.routes.js";
 import { generateSetupCode } from "./setup/setup-code.js";
 import { setupRoutes } from "./setup/setup.routes.js";
 import { siteAddressRoutes } from "./sites/site-address.routes.js";
@@ -68,6 +72,8 @@ declare module "fastify" {
     publicApiUrl: string;
     /** Sends queued webhook deliveries (see src/webhooks). */
     webhooks: WebhookDispatcher;
+    /** The built-in plugins and the installed ones (see src/plugins). */
+    plugins: PluginCatalogue;
   }
 }
 
@@ -119,6 +125,11 @@ export interface ServerOptions {
   graphiql?: boolean;
   /** How webhooks are sent. Every part has a default. */
   webhooks?: WebhookOptions;
+  /**
+   * Plugins from packages, added after the built-in ones. main.ts loads them from
+   * lintel.config.ts; tests pass the ones they test. Defaults to none.
+   */
+  plugins?: readonly LintelPlugin[];
 }
 
 export interface WebhookOptions {
@@ -166,6 +177,10 @@ export function buildServer(options: ServerOptions) {
     onError: (error) => server.log.error(error, "Sending webhooks failed"),
   });
   server.decorate("webhooks", webhooks);
+  const plugins = new PluginCatalogue(pluginRegistry, options.plugins);
+  server.decorate("plugins", plugins);
+  // Plugins' own tables are brought up to date before the server takes requests.
+  server.addHook("onReady", () => activeDatabase.applyPluginMigrations(plugins.migrations));
   server.addHook("onClose", () => webhooks.finishSending());
   server.decorateRequest("signedIn", null);
   server.setErrorHandler(sendHttpErrorDetails);
@@ -204,8 +219,10 @@ export function buildServer(options: ServerOptions) {
   server.register(webhooksRoutes);
   server.register(graphqlRoutes, { graphiql: options.graphiql ?? false });
   server.register(openApiRoutes);
-  server.register(seoRoutes);
   server.register(siteAddressRoutes);
+  server.register(dashboardRoutes);
+  // Every plugin's routes, built in (SEO) and installed, each guarded for being switched on.
+  registerPluginRoutes(server, plugins);
 
   if (options.runScheduledJobs ?? true) {
     registerScheduledJobs(server);

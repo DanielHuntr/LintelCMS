@@ -37,6 +37,10 @@ const SIGNED_IN_ROUTES = new Set([
   "GET /search",
   "GET /locales",
   "GET /seo/defaults",
+  // Each person's own dashboard layout.
+  "GET /dashboard/layout",
+  "PUT /dashboard/layout",
+  "DELETE /dashboard/layout",
 ]);
 
 /** Published content: open by default, a token or session once delivery requires one. */
@@ -83,7 +87,7 @@ describe("access to every route", () => {
 
   // useTestDatabase empties the database before each test, so each test sets up its own.
   async function prepare() {
-    await setEnabledPlugins(testDatabase.database, ["seo"]);
+    await setEnabledPlugins(testDatabase.database, server.plugins, ["seo"]);
     await createTestUser(testDatabase.database, "nobody@example.com", [[]]);
     withoutPermissions = await signInAndGetCookies(server, "nobody@example.com");
   }

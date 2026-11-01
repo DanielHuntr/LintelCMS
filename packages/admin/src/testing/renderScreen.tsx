@@ -19,6 +19,8 @@ interface RenderScreenOptions {
   siteAddress?: string;
   /** The site's name. Defaults to "Brightside Bakery". */
   siteName?: string | null;
+  /** The address the screen starts at. Defaults to "/". */
+  initialPath?: string;
 }
 
 /**
@@ -33,6 +35,7 @@ export function renderScreen(
     enabledPlugins = ["blog"],
     siteAddress = "",
     siteName = "Brightside Bakery",
+    initialPath = "/",
   }: RenderScreenOptions = {},
 ) {
   const queryClient = new QueryClient({
@@ -56,7 +59,7 @@ export function renderScreen(
   });
   const router = createRouter({
     routeTree: rootRoute.addChildren([anyPath]),
-    history: createMemoryHistory({ initialEntries: ["/"] }),
+    history: createMemoryHistory({ initialEntries: [initialPath] }),
   });
 
   render(

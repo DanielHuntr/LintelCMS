@@ -1,4 +1,4 @@
-import type { Database, DatabaseKind, OpenedDatabase } from "./client.js";
+import type { Database, DatabaseKind, OpenedDatabase, PluginMigrations } from "./client.js";
 import { openBuiltInDatabase } from "./built-in-database.js";
 import {
   type DatabaseChoice,
@@ -34,6 +34,7 @@ export type DatabaseChosenBy = "environment" | "setup" | "default";
 export class ActiveDatabase {
   #opened: OpenedDatabase;
   #chosenBy: DatabaseChosenBy;
+  #pluginMigrations: readonly PluginMigrations[] = [];
 
   constructor(opened: OpenedDatabase, chosenBy: DatabaseChosenBy) {
     this.#opened = opened;
@@ -52,8 +53,20 @@ export class ActiveDatabase {
     return this.#chosenBy;
   }
 
+  /**
+   * Brings the installed plugins' tables up to date now, and in any database switched to
+   * later. The server calls this once its plugins are known (see `buildServer`).
+   */
+  async applyPluginMigrations(plugins: readonly PluginMigrations[]): Promise<void> {
+    this.#pluginMigrations = plugins;
+    await this.#opened.applyPluginMigrations(plugins);
+  }
+
   /** Starts using `next` and closes the previous connection once it has been swapped out. */
   async switchTo(next: OpenedDatabase, chosenBy: DatabaseChosenBy): Promise<void> {
+    if (next !== this.#opened) {
+      await next.applyPluginMigrations(this.#pluginMigrations);
+    }
     const previous = this.#opened;
     this.#opened = next;
     this.#chosenBy = chosenBy;

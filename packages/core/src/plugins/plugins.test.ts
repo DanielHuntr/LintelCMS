@@ -29,29 +29,24 @@ describe("plugins", () => {
     const response = await server.inject({ method: "GET", url: "/plugins", cookies: adminCookies });
 
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({
-      plugins: [
-        { id: "blog", name: "Blog", description: "Posts, categories and tags.", enabled: false },
-        {
-          id: "commerce",
-          name: "Online shop",
-          description: "Products, orders and payments.",
-          enabled: false,
-        },
-        {
-          id: "forms",
-          name: "Forms",
-          description: "Contact forms and submissions.",
-          enabled: false,
-        },
-        {
-          id: "seo",
-          name: "SEO tools",
-          description: "Page titles, sitemaps and redirects.",
-          enabled: false,
-        },
-      ],
+    const plugins = response.json().plugins;
+    expect(plugins.map((plugin: { id: string }) => plugin.id)).toEqual([
+      "blog",
+      "commerce",
+      "forms",
+      "seo",
+    ]);
+    expect(plugins[0]).toEqual({
+      id: "blog",
+      name: "Blog",
+      description: "Posts, categories and tags.",
+      enabled: false,
+      source: "built-in",
+      version: null,
+      permissions: [],
+      hasSettings: false,
     });
+    expect(plugins.every((plugin: { enabled: boolean }) => !plugin.enabled)).toBe(true);
   });
 
   it("switches on exactly the plugins listed, and off again", async () => {

@@ -1,4 +1,6 @@
 import { contentModelStrings } from "./contentModelStrings.js";
+import { dashboardStrings } from "./dashboardStrings.js";
+import { pluginStrings } from "./pluginStrings.js";
 
 /**
  * Every word the admin shows lives here, so the admin can be translated and
@@ -8,6 +10,8 @@ import { contentModelStrings } from "./contentModelStrings.js";
  */
 const english = {
   ...contentModelStrings,
+  ...dashboardStrings,
+  ...pluginStrings,
   "app.name": "Lintel",
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",
@@ -42,25 +46,6 @@ const english = {
   "search.entryDetail": "{collection} · {status}",
   "search.collectionDetail": "All {name}",
   "search.failed": "Search isn’t working right now. Check your connection and try again.",
-  "dashboard.title": "Dashboard",
-  "dashboard.intro": "Recent edits, tasks and sales will appear here.",
-  "dashboard.introWithoutSales": "Recent edits and tasks will appear here.",
-  "dashboard.recentEdits.title": "Recent edits",
-  "dashboard.recentEdits.emptyTitle": "No edits yet",
-  "dashboard.recentEdits.emptyDescription": "Pages and entries you change will show up here.",
-  "dashboard.tasks.title": "Tasks",
-  "dashboard.tasks.emptyTitle": "You’re all caught up",
-  "dashboard.tasks.emptyDescription": "Reviews and approvals assigned to you will appear here.",
-  "dashboard.sales.title": "Sales",
-  "dashboard.sales.emptyTitle": "No sales yet",
-  "dashboard.sales.emptyDescription": "Orders and revenue appear here once your shop is open.",
-  "dashboard.whatsNew.title": "What’s new",
-  "dashboard.whatsNew.designTitle": "A calmer admin",
-  "dashboard.whatsNew.designDescription": "New look, with light and dark mode",
-  "dashboard.whatsNew.signInTitle": "Your own account",
-  "dashboard.whatsNew.signInDescription": "Sign in, sign out and role-based access",
-  "dashboard.whatsNew.contentTitle": "Content and media",
-  "dashboard.whatsNew.contentDescription": "Arrive in the next phase of the roadmap",
   "badge.new": "New",
   "badge.inProgress": "In progress",
   "badge.planned": "Planned",
@@ -624,6 +609,13 @@ const english = {
   "features.switchOffTitle": "Switch off {name}?",
   "features.switchOff": "Switch off",
   "features.keepOn": "Keep it on",
+  "features.builtInHeader": "Built into Lintel",
+  "features.installedHeader": "Added by your developer",
+  "features.installedFooter":
+    "These come from packages listed in lintel.config.ts. They run with full access to your site, so only add ones you trust.",
+  "features.version": "Version {version}",
+  "features.keptContent.installed":
+    "Anything it saved is kept; its screens just hide. Switch it back on any time.",
   "features.keptContent.blog":
     "Your posts are kept; the Blog section just hides. Switch it back on any time.",
   "features.keptContent.commerce":

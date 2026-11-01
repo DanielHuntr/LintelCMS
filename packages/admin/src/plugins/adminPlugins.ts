@@ -1,0 +1,18 @@
+import { installedAdminPlugins } from "virtual:lintel-plugins";
+import { formsAdminPlugin } from "../forms/forms.adminPlugin.js";
+import { seoAdminPlugin } from "../seo/seo.adminPlugin.js";
+import type { AdminPluginDefinition } from "./adminPlugin.js";
+
+/**
+ * The admin half of every plugin, in one visible list: the built-in ones, then those from
+ * the packages in lintel.config.ts, in the same order as the server's list. The installed
+ * ones come from a module the build writes from that file (see vite-plugin-lintel.ts), so
+ * they are bundled and type-checked like the rest of the admin.
+ *
+ * The blog and the online shop have nothing of their own here (yet), so they aren't listed.
+ */
+export const adminPlugins: readonly AdminPluginDefinition[] = [
+  formsAdminPlugin,
+  seoAdminPlugin,
+  ...installedAdminPlugins,
+];

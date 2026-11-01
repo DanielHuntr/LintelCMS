@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { loadConfig, loadProjectEnvFile } from "./config.js";
 import { describeActiveDatabase } from "./database/active-database.js";
+import { loadInstalledPlugins } from "./plugins/installed-plugins.js";
 import { buildServer } from "./server.js";
 import { isSetupNeeded } from "./setup/setup.service.js";
 import { openConfiguredDatabase, PortInUseError, runWithFriendlyErrors } from "./startup.js";
@@ -14,6 +15,7 @@ await runWithFriendlyErrors(async () => {
   const config = loadConfig();
   const activeDatabase = await openConfiguredDatabase(config);
   say(describeActiveDatabase(activeDatabase));
+  const installedPlugins = await loadInstalledPlugins();
 
   const server = buildServer({
     adminOrigin: config.ADMIN_ORIGIN,
@@ -24,6 +26,7 @@ await runWithFriendlyErrors(async () => {
     graphiql: config.NODE_ENV === "development",
     webhooks: { allowPrivateAddresses: config.WEBHOOKS_ALLOW_PRIVATE_ADDRESSES },
     trustProxy: config.TRUST_PROXY,
+    plugins: installedPlugins,
     logger: true,
   });
   server.addHook("onClose", () => activeDatabase.close());

@@ -167,7 +167,10 @@ describe("default collections", () => {
   }
 
   it("makes Pages when setup finishes, and Blog posts when the blog is picked", async () => {
-    await saveSiteChoices(testDatabase.database, { siteName: "Brightside", siteType: "blog" });
+    await saveSiteChoices(testDatabase.database, server.plugins, {
+      siteName: "Brightside",
+      siteType: "blog",
+    });
 
     expect(await collectionHandles()).toEqual(["posts", "pages"]);
     expect((await api("GET", "/collections/pages")).json()).toMatchObject({
@@ -214,7 +217,10 @@ describe("default collections", () => {
   });
 
   it("adds Blog posts when the blog is switched on later, and keeps them when it is switched off", async () => {
-    await saveSiteChoices(testDatabase.database, { siteName: "Brightside", siteType: "business" });
+    await saveSiteChoices(testDatabase.database, server.plugins, {
+      siteName: "Brightside",
+      siteType: "business",
+    });
     expect(await collectionHandles()).toEqual(["pages"]);
 
     await api("PUT", "/plugins", { enabled: ["blog"] });
@@ -236,7 +242,10 @@ describe("default collections", () => {
     await ensurePagesCollection(testDatabase.database);
     await ensureBlogPostsCollection(testDatabase.database);
     await ensureBlogPostsCollection(testDatabase.database);
-    await saveSiteChoices(testDatabase.database, { siteName: "Brightside", siteType: "blog" });
+    await saveSiteChoices(testDatabase.database, server.plugins, {
+      siteName: "Brightside",
+      siteType: "blog",
+    });
 
     expect(await collectionHandles()).toEqual(["posts", "pages"]);
     const page = await api("GET", "/blueprints/page");

@@ -6,6 +6,8 @@ import {
 } from "./database/active-database.js";
 import { DataFolderInUseError } from "./database/data-folder-lock.js";
 import { DEFAULT_LINTEL_FOLDER, SavedConfigUnreadableError } from "./database/database-choice.js";
+import { PluginPackageError } from "./plugins/installed-plugins.js";
+import { InvalidPluginError } from "./plugins/plugins.errors.js";
 
 /**
  * What the server and the command-line scripts share when they start: opening the
@@ -53,6 +55,8 @@ function isExplained(error: unknown): error is Error {
     error instanceof DatabaseConnectionError ||
     error instanceof DataFolderInUseError ||
     error instanceof SavedConfigUnreadableError ||
-    error instanceof PortInUseError
+    error instanceof PortInUseError ||
+    error instanceof PluginPackageError ||
+    error instanceof InvalidPluginError
   );
 }

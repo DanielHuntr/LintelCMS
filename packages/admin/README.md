@@ -9,7 +9,10 @@ The control panel: a React app that talks to `@lintel/core`.
 | `src/design`        | Design tokens and base components (see its README)                 |
 | `src/layout`        | The frames around screens: the admin's sidebar, and full screen    |
 | `src/navigation`    | The main sections and who can see them                             |
-| `src/dashboard`     | The home screen                                                    |
+| `src/dashboard`     | The home screen: widgets each person arranges                      |
+| `src/plugins`       | The plugin system's admin half: `defineAdminPlugin` and its hosts  |
+| `src/features`      | Settings → Features: switching plugins on and off                  |
+| `src/forms`         | The Forms plugin's sidebar item and screen                         |
 | `src/sign-in`       | The sign-in screen                                                 |
 | `src/content`       | Collections, entry lists and the entry editor                      |
 | `src/content-types` | The blueprint builder under Settings                               |

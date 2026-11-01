@@ -1,62 +1,69 @@
-import { ensureBlogPostsCollection } from "../collections/default-collections.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { readSetting, writeSetting } from "../settings/settings.service.js";
-import { isPluginId, type PluginId, pluginRegistry } from "./plugins.registry.js";
+import type { PluginCatalogue } from "./plugin-catalogue.js";
+import { UnknownPluginError } from "./plugins.errors.js";
 import type { PluginList } from "./plugins.schema.js";
 
 /**
- * Content a plugin needs, made when the plugin is switched on. Switching it off again
- * leaves the content alone: nobody loses their posts by toggling a setting.
+ * Which plugins are switched on, as saved. Only `setEnabledPlugins` writes the list, and it
+ * accepts only installed plugins in catalogue order, so the list is always tidy. A plugin
+ * that is later uninstalled stays in it until the list is next saved, which is harmless:
+ * nothing it adds is there to show, and installing it again brings it back as it was.
  */
-const contentForPlugins: Partial<
-  Record<PluginId, (database: DatabaseOrTransaction) => Promise<void>>
-> = {
-  blog: ensureBlogPostsCollection,
-};
-
-/**
- * Which plugins are switched on. Ids no longer in the registry (a plugin that was
- * removed) are left out, so the admin is never told about something that doesn't exist.
- */
-export async function findEnabledPluginIds(database: DatabaseOrTransaction): Promise<PluginId[]> {
-  const stored = await readSetting(database, "enabledPlugins");
-  return pluginRegistry.map((plugin) => plugin.id).filter((id) => stored.includes(id));
+export async function findEnabledPluginIds(database: DatabaseOrTransaction): Promise<string[]> {
+  return readSetting(database, "enabledPlugins");
 }
 
-/** Every plugin in the registry, with whether it is on. */
-export async function listPlugins(database: DatabaseOrTransaction): Promise<PluginList> {
-  const enabled = new Set<string>(await findEnabledPluginIds(database));
+/** Whether one plugin is switched on. */
+export async function isPluginEnabled(
+  database: DatabaseOrTransaction,
+  pluginId: string,
+): Promise<boolean> {
+  return (await findEnabledPluginIds(database)).includes(pluginId);
+}
+
+/** Every plugin in the catalogue, with whether it is on. */
+export async function listPlugins(
+  database: DatabaseOrTransaction,
+  catalogue: PluginCatalogue,
+): Promise<PluginList> {
+  const enabled = new Set(await findEnabledPluginIds(database));
   return {
-    plugins: pluginRegistry.map((plugin) => ({
+    plugins: catalogue.entries.map(({ plugin, source }) => ({
       id: plugin.id,
       name: plugin.name,
       description: plugin.description,
       enabled: enabled.has(plugin.id),
+      source,
+      version: plugin.version ?? null,
+      permissions: [...(plugin.permissions ?? [])],
+      hasSettings: plugin.settings !== undefined,
     })),
   };
 }
 
 /**
- * Switches on exactly the given plugins and switches off the rest. Stored in registry
+ * Switches on exactly the given plugins and switches off the rest. Stored in catalogue
  * order without duplicates, so the same choice always looks the same. Plugins that have
- * just been switched on get their content (see `contentForPlugins`).
+ * just been switched on make their content (`createContent`). Switching off deletes
+ * nothing: tables, settings and content all stay for when it is switched on again.
  */
 export async function setEnabledPlugins(
   database: DatabaseOrTransaction,
+  catalogue: PluginCatalogue,
   pluginIds: readonly string[],
 ): Promise<PluginList> {
-  const unknown = pluginIds.filter((id) => !isPluginId(id));
+  const unknown = pluginIds.filter((id) => !catalogue.has(id));
   if (unknown.length > 0) {
-    // Routes check this with plugins.schema.ts first; this guards other callers.
-    throw new Error(`Unknown plugin ids: ${unknown.join(", ")}`);
+    throw new UnknownPluginError(unknown, catalogue.ids);
   }
 
   const wasEnabled = await findEnabledPluginIds(database);
-  const enabled = pluginRegistry.map((plugin) => plugin.id).filter((id) => pluginIds.includes(id));
+  const enabled = catalogue.ids.filter((id) => pluginIds.includes(id));
   await writeSetting(database, "enabledPlugins", enabled);
 
   for (const pluginId of enabled.filter((id) => !wasEnabled.includes(id))) {
-    await contentForPlugins[pluginId]?.(database);
+    await catalogue.find(pluginId)?.createContent?.(database);
   }
-  return listPlugins(database);
+  return listPlugins(database, catalogue);
 }

@@ -1,0 +1,64 @@
+import { CalendarClock, HardDrive, ListTodo, PenLine, Sparkles } from "lucide-react";
+import { t } from "../../i18n/strings.js";
+import type { DashboardWidget } from "../../plugins/adminPlugin.js";
+import { MediaUsageWidget } from "./MediaUsageWidget.js";
+import { NeedsAttentionWidget } from "./NeedsAttentionWidget.js";
+import { RecentEditsWidget } from "./RecentEditsWidget.js";
+import { ScheduledWidget } from "./ScheduledWidget.js";
+import { WelcomeWidget } from "./WelcomeWidget.js";
+
+/**
+ * Lintel's own widgets, in the order a new dashboard shows them. Their full ids are
+ * "core:<id>". Plugins add theirs through `dashboardWidgets` (see src/plugins).
+ */
+export const builtInWidgets: readonly DashboardWidget[] = [
+  {
+    id: "welcome",
+    title: t("dashboard.welcome.title"),
+    description: t("dashboard.welcome.description"),
+    icon: Sparkles,
+    component: WelcomeWidget,
+    defaultSize: "large",
+    onDefaultDashboard: true,
+  },
+  {
+    id: "recent-edits",
+    title: t("dashboard.recentEdits.title"),
+    description: t("dashboard.recentEdits.description"),
+    icon: PenLine,
+    component: RecentEditsWidget,
+    defaultSize: "medium",
+    permission: "entries:read",
+    onDefaultDashboard: true,
+  },
+  {
+    id: "needs-attention",
+    title: t("dashboard.attention.title"),
+    description: t("dashboard.attention.description"),
+    icon: ListTodo,
+    component: NeedsAttentionWidget,
+    defaultSize: "medium",
+    permission: "entries:read",
+    onDefaultDashboard: true,
+  },
+  {
+    id: "scheduled",
+    title: t("dashboard.scheduled.title"),
+    description: t("dashboard.scheduled.description"),
+    icon: CalendarClock,
+    component: ScheduledWidget,
+    defaultSize: "medium",
+    permission: "entries:read",
+    onDefaultDashboard: true,
+  },
+  {
+    id: "media-usage",
+    title: t("dashboard.media.title"),
+    description: t("dashboard.media.description"),
+    icon: HardDrive,
+    component: MediaUsageWidget,
+    defaultSize: "medium",
+    permission: "media:read",
+    onDefaultDashboard: true,
+  },
+];

@@ -75,7 +75,7 @@ export function Sidebar({
                   strokeWidth={1.75}
                   className="size-[18px] shrink-0 text-label-secondary transition-colors duration-150 group-data-[status=active]:text-accent"
                 />
-                {t(section.label)}
+                {section.label}
               </Link>
             </li>
           ))}

@@ -2,7 +2,7 @@ import { mkdirSync } from "node:fs";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
-import { MIGRATIONS_FOLDER, type OpenedDatabase } from "./client.js";
+import { MIGRATIONS_FOLDER, type OpenedDatabase, pluginMigrationsTable } from "./client.js";
 import { lockDataFolder } from "./data-folder-lock.js";
 import * as schema from "./schema.js";
 
@@ -38,6 +38,14 @@ export async function openBuiltInDatabase(
       database,
       kind: "built-in",
       applyMigrations: () => migrate(database, { migrationsFolder: MIGRATIONS_FOLDER }),
+      applyPluginMigrations: async (plugins) => {
+        for (const { pluginId, migrationsFolder } of plugins) {
+          await migrate(database, {
+            migrationsFolder,
+            migrationsTable: pluginMigrationsTable(pluginId),
+          });
+        }
+      },
       close: async () => {
         // Closing lets PGlite finish writing to disk before the lock is given up.
         await client.close();

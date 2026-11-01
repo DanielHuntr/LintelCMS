@@ -1,7 +1,8 @@
 # SEO
 
-The "SEO tools" plugin (`seo`, see `src/plugins`). While it is off, every endpoint here
-answers 404 `PLUGIN_NOT_ENABLED` and no redirects are suggested.
+The "SEO tools" plugin (`seo`), defined in `seo.plugin.ts` with `definePlugin` like any
+other plugin (see `src/plugins`). Its routes are the plugin's routes, so while it is off
+every endpoint here answers 404 `PLUGIN_NOT_ENABLED`; and no redirects are suggested.
 
 ## Page SEO
 
@@ -81,6 +82,6 @@ loops. Accepting a suggestion shortens chains to it in the same way.
 | `sitemap.service.ts`, `sitemap.ts`                               | sitemap.xml and robots.txt                |
 | `seo-titles.ts`                                                  | Title templates and length advice         |
 | `redirect-csv.ts`                                                | Reading CSV                               |
-| `seo-plugin.ts`                                                  | Whether the plugin is on, and the guard   |
+| `seo.plugin.ts`, `seo-enabled.ts`                                | The plugin, and whether it is on          |
 | `seo.repository.ts`, `redirects.repository.ts`                   | Database reads and writes                 |
 | `seo.errors.ts`                                                  | Named errors with the messages people see |

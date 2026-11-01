@@ -1,19 +1,11 @@
-import {
-  Globe,
-  KeyRound,
-  Languages,
-  Puzzle,
-  Search,
-  Shapes,
-  Sparkles,
-  Webhook,
-} from "lucide-react";
+import { Blocks, Globe, KeyRound, Languages, Shapes, Sparkles, Webhook } from "lucide-react";
 import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { t } from "../i18n/strings.js";
-import { useCan, useSession } from "../session/SessionContext.js";
 import { Page } from "../design/Page.js";
+import { PluginSettingsRows } from "../plugins/PluginSettingsRows.js";
+import { useCan } from "../session/SessionContext.js";
 
 /**
  * /settings: one row per area of settings, like iOS Settings. Rows appear as their screens
@@ -22,7 +14,6 @@ import { Page } from "../design/Page.js";
 export function SettingsPage() {
   const canSeeContentTypes = useCan("blueprints:read");
   const canSeeSiteSettings = useCan("settings:read");
-  const { enabledPlugins } = useSession();
 
   return (
     <Page width="readable">
@@ -55,17 +46,7 @@ export function SettingsPage() {
             />
           </GroupedList>
         )}
-        {canSeeSiteSettings && enabledPlugins.includes("seo") && (
-          <GroupedList header={t("settings.searchHeader")}>
-            <GroupedListRow
-              icon={Search}
-              iconTone="success"
-              label={t("seo.settingsTitle")}
-              description={t("settings.seoDescription")}
-              to="/settings/seo"
-            />
-          </GroupedList>
-        )}
+        <PluginSettingsRows />
         <GroupedList header={t("settings.siteHeader")} footer={t("settings.moreSoon")}>
           {canSeeSiteSettings && (
             <GroupedListRow
@@ -77,7 +58,8 @@ export function SettingsPage() {
           )}
           {canSeeSiteSettings && (
             <GroupedListRow
-              icon={Puzzle}
+              icon={Blocks}
+              iconTone="accent"
               label={t("features.title")}
               description={t("settings.featuresDescription")}
               to="/settings/features"

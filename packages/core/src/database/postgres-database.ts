@@ -1,7 +1,12 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
-import { MIGRATIONS_FOLDER, type OpenedDatabase } from "./client.js";
+import {
+  MIGRATIONS_FOLDER,
+  type OpenedDatabase,
+  type PluginMigrations,
+  pluginMigrationsTable,
+} from "./client.js";
 import * as schema from "./schema.js";
 
 /** A Postgres server described field by field, as the setup screen collects it. */
@@ -46,6 +51,7 @@ export function connectToPostgres(databaseUrl: string, options: PostgresOptions 
     database,
     kind: "postgres",
     applyMigrations: () => applyPostgresMigrations(databaseUrl, options),
+    applyPluginMigrations: (plugins) => applyPluginMigrations(databaseUrl, options, plugins),
     close: () => connection.end(),
   };
   return opened;
@@ -85,6 +91,25 @@ async function applyPostgresMigrations(databaseUrl: string, options: PostgresOpt
   const connection = postgres(databaseUrl, { ...connectionOptions(options), max: 1 });
   try {
     await migrate(drizzle(connection), { migrationsFolder: MIGRATIONS_FOLDER });
+  } finally {
+    await connection.end();
+  }
+}
+
+async function applyPluginMigrations(
+  databaseUrl: string,
+  options: PostgresOptions,
+  plugins: readonly PluginMigrations[],
+) {
+  if (plugins.length === 0) return;
+  const connection = postgres(databaseUrl, { ...connectionOptions(options), max: 1 });
+  try {
+    for (const { pluginId, migrationsFolder } of plugins) {
+      await migrate(drizzle(connection), {
+        migrationsFolder,
+        migrationsTable: pluginMigrationsTable(pluginId),
+      });
+    }
   } finally {
     await connection.end();
   }

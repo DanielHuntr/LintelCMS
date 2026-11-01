@@ -14,7 +14,10 @@ its routes and its tests.
 | `src/roles`          | Roles and the permission check used everywhere         |
 | `src/auth`           | Sign-in, sign-out, `/auth/me` and route guards         |
 | `src/setup`          | First-run setup: database, first admin, site type      |
-| `src/plugins`        | Which features (blog, shop...) are switched on         |
+| `src/plugins`        | The plugin system, and which plugins are switched on   |
+| `src/blog`           | The blog plugin                                        |
+| `src/forms`          | The forms plugin                                       |
+| `src/dashboard`      | Home dashboard layouts and the built-in widgets' data  |
 | `src/settings`       | Small site-wide settings stored as JSON                |
 | `src/sessions`       | Server-side sessions behind the sign-in cookie         |
 | `src/fieldtypes`     | Kinds of field, and checking entries against them      |

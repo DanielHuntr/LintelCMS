@@ -10,10 +10,13 @@ import { ListFieldEditor } from "./ListFieldEditor.js";
 import { MarkdownFieldEditor } from "./MarkdownFieldEditor.js";
 import { TermsFieldEditor } from "./TermsFieldEditor.js";
 import { UrlFieldEditor } from "./UrlFieldEditor.js";
+import type { FieldEditorContribution } from "../plugins/adminPlugin.js";
 import type { Field, FieldType, FieldValue } from "./field.types.js";
 import type { FieldEditorProps, InnerFieldProps } from "./fieldEditorProps.js";
 import { describedByIds, FieldShell, type FieldLabelling } from "./FieldShell.js";
 import { ImageFieldEditor } from "./ImageFieldEditor.js";
+import { useAdminPlugins } from "../plugins/AdminPluginsContext.js";
+import { findPluginFieldEditor } from "../plugins/pluginContributions.js";
 import { LinkFieldEditor } from "./LinkFieldEditor.js";
 import { NumberFieldEditor } from "./NumberFieldEditor.js";
 import { RichTextFieldEditor } from "./RichTextFieldEditor.js";
@@ -59,6 +62,14 @@ export const fieldEditors: Record<FieldType, FieldEditorRegistration> = {
   blocks: { Editor: BlocksFieldEditor, labelling: () => "group" },
 };
 
+/** A plugin's field editor, labelled above the control unless the plugin says otherwise. */
+function pluginFieldEditor(
+  contribution: FieldEditorContribution | undefined,
+): FieldEditorRegistration | undefined {
+  if (!contribution) return undefined;
+  return { Editor: contribution.Editor, labelling: contribution.labelling ?? labelAbove };
+}
+
 const noErrors: FieldMessages = {};
 
 function renderInnerField(props: InnerFieldProps) {
@@ -90,9 +101,13 @@ export function FieldEditor({
     helpId: `${baseId}-help`,
     errorId: `${baseId}-error`,
   };
-  const registration = fieldEditors[field.type] as FieldEditorRegistration | undefined;
+  const plugins = useAdminPlugins();
+  const registration =
+    (fieldEditors[field.type] as FieldEditorRegistration | undefined) ??
+    pluginFieldEditor(findPluginFieldEditor(plugins, field.type));
 
-  // A plugin may add a fieldtype this admin doesn't know yet. Say so rather than break the page.
+  // A fieldtype whose plugin has no editor here (or is no longer installed). Say so rather
+  // than break the page.
   if (!registration) {
     return (
       <div data-field-handle={field.handle} className="flex flex-col gap-1">

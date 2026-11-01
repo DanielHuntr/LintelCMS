@@ -8,7 +8,7 @@ import {
   retargetRedirects,
   updateRedirectRow,
 } from "./redirects.repository.js";
-import { isSeoPluginEnabled } from "./seo-plugin.js";
+import { isSeoPluginEnabled } from "./seo-enabled.js";
 
 /**
  * When a live page's address changes ("/about-us" becomes "/about"), links and search

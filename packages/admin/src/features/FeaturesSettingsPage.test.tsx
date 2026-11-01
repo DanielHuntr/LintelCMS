@@ -3,20 +3,44 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { apiErrorResponse, mockApi } from "../testing/mockApi.js";
 import { renderScreen } from "../testing/renderScreen.js";
+import type { Feature } from "./features.api.js";
 import { FeaturesSettingsPage } from "./FeaturesSettingsPage.js";
 
-const registry = [
-  { id: "blog", name: "Blog", description: "Posts, categories and tags." },
-  { id: "commerce", name: "Online shop", description: "Products, orders and payments." },
-  { id: "forms", name: "Forms", description: "Contact forms and submissions." },
-  { id: "seo", name: "SEO tools", description: "Page titles, sitemaps and redirects." },
+type ListedFeature = Omit<Feature, "enabled">;
+
+function feature(id: string, name: string, description: string): ListedFeature {
+  return {
+    id,
+    name,
+    description,
+    source: "built-in",
+    version: null,
+    permissions: [],
+    hasSettings: false,
+  };
+}
+
+const builtIn = [
+  feature("blog", "Blog", "Posts, categories and tags."),
+  feature("commerce", "Online shop", "Products, orders and payments."),
+  feature("forms", "Forms", "Contact forms and submissions."),
+  feature("seo", "SEO tools", "Page titles, sitemaps and redirects."),
 ];
 
+const bookings: ListedFeature = {
+  ...feature("bookings", "Bookings", "Appointments people book on your website."),
+  source: "installed",
+  version: "0.1.0",
+};
+
 /** A fake plugin API that remembers what is switched on. */
-function fakePluginApi(initiallyOn: string[], failPut = false) {
+function fakePluginApi(initiallyOn: string[], failPut = false, installed: ListedFeature[] = []) {
   let enabled = initiallyOn;
   const list = () => ({
-    plugins: registry.map((plugin) => ({ ...plugin, enabled: enabled.includes(plugin.id) })),
+    plugins: [...builtIn, ...installed].map((plugin) => ({
+      ...plugin,
+      enabled: enabled.includes(plugin.id),
+    })),
   });
   return mockApi(({ method, url, body }) => {
     if (url.pathname !== "/plugins") throw new Response(null, { status: 404 });
@@ -109,5 +133,38 @@ describe("FeaturesSettingsPage", () => {
     expect(
       screen.getByText("Ask an admin if you need a feature switched on or off."),
     ).toBeVisible();
+  });
+
+  it("lists installed features apart, with their version, and asks before switching one off", async () => {
+    const { calls } = fakePluginApi(["seo", "bookings"], false, [bookings]);
+    renderScreen(<FeaturesSettingsPage />);
+
+    expect(await toggle("Bookings")).toBeChecked();
+    expect(screen.getByText("Built into Lintel")).toBeVisible();
+    expect(screen.getByText("Added by your developer")).toBeVisible();
+    expect(screen.getByText("Version 0.1.0")).toBeVisible();
+
+    await userEvent.click(await toggle("Bookings"));
+    expect(
+      screen.getByText(
+        "Anything it saved is kept; its screens just hide. Switch it back on any time.",
+      ),
+    ).toBeVisible();
+    await userEvent.click(screen.getByRole("button", { name: "Switch off" }));
+
+    expect(await screen.findByText("Saved")).toBeVisible();
+    expect(calls.find((call) => call.method === "PUT")?.body).toEqual({ enabled: ["seo"] });
+  });
+
+  it("switches an installed feature on, keeping the others as they were", async () => {
+    const { calls } = fakePluginApi(["blog"], false, [bookings]);
+    renderScreen(<FeaturesSettingsPage />);
+
+    await userEvent.click(await toggle("Bookings"));
+
+    expect(await screen.findByText("Saved")).toBeVisible();
+    expect(calls.find((call) => call.method === "PUT")?.body).toEqual({
+      enabled: ["blog", "bookings"],
+    });
   });
 });

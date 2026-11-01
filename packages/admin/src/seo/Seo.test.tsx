@@ -1,8 +1,9 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockApi } from "../testing/mockApi.js";
 import { renderScreen } from "../testing/renderScreen.js";
+import { PluginEditorPanels } from "../plugins/PluginEditorPanels.js";
 import { EntrySeoPanel } from "./EntrySeoPanel.js";
 import { RedirectsPage } from "./RedirectsPage.js";
 import type { Redirect, SeoDefaults } from "./seo.api.js";
@@ -45,7 +46,12 @@ describe("the editor's search engines panel", () => {
   it("previews the search result and saves what is typed", async () => {
     const { calls } = servePanel();
     renderScreen(
-      <EntrySeoPanel entryId="e1" entryTitle="About us" slug="about" routePattern="/{slug}" />,
+      <EntrySeoPanel
+        entryId="e1"
+        entryTitle="About us"
+        slug="about"
+        collection={{ handle: "pages", routePattern: "/{slug}" }}
+      />,
       { enabledPlugins: ["seo"] },
     );
 
@@ -80,7 +86,7 @@ describe("the editor's search engines panel", () => {
         entryId="e1"
         entryTitle="Our complete guide to sourdough, rye, spelt and everything in between"
         slug="guide"
-        routePattern="/{slug}"
+        collection={{ handle: "pages", routePattern: "/{slug}" }}
       />,
       { enabledPlugins: ["seo"] },
     );
@@ -88,11 +94,20 @@ describe("the editor's search engines panel", () => {
     expect(await screen.findByText(/· May be cut off/)).toBeInTheDocument();
   });
 
-  it("isn't shown while the plugin is off", () => {
-    mockApi(() => defaults);
-    renderScreen(<EntrySeoPanel entryId="e1" entryTitle="Hi" slug="hi" routePattern={null} />);
-
+  it("is in the editor's side panel only while the plugin is on", async () => {
+    servePanel();
+    const entry = {
+      entryId: "e1",
+      entryTitle: "Hi",
+      slug: "hi",
+      collection: { handle: "pages", routePattern: null },
+    };
+    renderScreen(<PluginEditorPanels {...entry} />, { enabledPlugins: [] });
     expect(screen.queryByText("Search engines")).not.toBeInTheDocument();
+    cleanup();
+
+    renderScreen(<PluginEditorPanels {...entry} />, { enabledPlugins: ["seo"] });
+    expect(await screen.findByText("Search engines")).toBeInTheDocument();
   });
 });
 

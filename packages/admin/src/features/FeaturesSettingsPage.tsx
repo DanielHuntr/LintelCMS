@@ -11,13 +11,13 @@ import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
+import { Page } from "../design/Page.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { Toggle } from "../design/Toggle.js";
 import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
-import type { Plugin } from "../setup/setup.api.js";
-import { listFeatures, saveEnabledFeatures } from "./features.api.js";
 import { enabledAfterToggle, keptContentMessageFor } from "./featureContent.js";
+import { type Feature, listFeatures, saveEnabledFeatures } from "./features.api.js";
 
 export const featureKeys = { all: () => ["features"] as const };
 
@@ -27,8 +27,9 @@ interface SavedChange {
 }
 
 /**
- * /settings/features: every feature with a switch. Each switch saves straight away. Switching
- * off a feature that holds content asks first, and says the content is kept.
+ * /settings/features: every plugin, built in or installed, with a switch. Each switch saves
+ * straight away and reloads who is signed in, so the sidebar and every screen follow at
+ * once. Switching off a feature that may hold content asks first, and says it is kept.
  */
 export function FeaturesSettingsPage() {
   const features = useQuery({ queryKey: featureKeys.all(), queryFn: listFeatures });
@@ -36,7 +37,7 @@ export function FeaturesSettingsPage() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const [lastChange, setLastChange] = useState<SavedChange>();
-  const [askingToSwitchOff, setAskingToSwitchOff] = useState<Plugin>();
+  const [askingToSwitchOff, setAskingToSwitchOff] = useState<Feature>();
 
   const save = useMutation({
     mutationFn: (change: { enabled: string[]; previouslyEnabled: string[] }) =>
@@ -44,21 +45,23 @@ export function FeaturesSettingsPage() {
     onSuccess: (saved, change) => {
       queryClient.setQueryData(featureKeys.all(), saved);
       setLastChange({ previouslyEnabled: change.previouslyEnabled });
-      // The sidebar shows sections by feature: fetch the session again so it follows.
+      // The session carries enabledPlugins: fetch it again so the sidebar follows.
       void router.invalidate();
     },
   });
 
   const list = features.data ?? [];
   const enabledIds = list.filter((feature) => feature.enabled).map((feature) => feature.id);
+  const builtIn = list.filter((feature) => feature.source === "built-in");
+  const installed = list.filter((feature) => feature.source === "installed");
 
   function saveEnabled(enabled: string[]) {
     setAskingToSwitchOff(undefined);
     save.mutate({ enabled, previouslyEnabled: enabledIds });
   }
 
-  function toggle(feature: Plugin, isOn: boolean) {
-    if (!isOn && keptContentMessageFor(feature.id)) {
+  function toggle(feature: Feature, isOn: boolean) {
+    if (!isOn && keptContentMessageFor(feature)) {
       setAskingToSwitchOff(feature);
       return;
     }
@@ -72,10 +75,11 @@ export function FeaturesSettingsPage() {
     );
   }
 
-  const keptContent = askingToSwitchOff && keptContentMessageFor(askingToSwitchOff.id);
+  const keptContent = askingToSwitchOff && keptContentMessageFor(askingToSwitchOff);
+  const switchesDisabled = !canChange || save.isPending;
 
   return (
-    <>
+    <Page width="readable">
       <BackLink to="/settings">{t("nav.settings")}</BackLink>
       <LargeTitle title={t("features.title")} subtitle={t("features.subtitle")} />
 
@@ -85,7 +89,7 @@ export function FeaturesSettingsPage() {
 
       {features.isPending && (
         <LoadingRegion label={t("features.loading")}>
-          <div className="flex max-w-2xl flex-col gap-px overflow-hidden rounded-card">
+          <div className="flex flex-col gap-px overflow-hidden rounded-card">
             {[0, 1, 2, 3].map((row) => (
               <Skeleton key={row} className="h-16 rounded-none" />
             ))}
@@ -94,27 +98,23 @@ export function FeaturesSettingsPage() {
       )}
 
       {features.data && (
-        <div className="flex max-w-2xl flex-col gap-3">
-          <GroupedList footer={canChange ? t("features.footer") : t("features.readOnly")}>
-            {list.map((feature) => (
-              <GroupedListRow
-                key={feature.id}
-                icon={Puzzle}
-                label={feature.name}
-                description={feature.description}
-                wrapsText
-                accessory={
-                  <Toggle
-                    label={feature.name}
-                    labelVisibility="hidden"
-                    checked={feature.enabled}
-                    disabled={!canChange || save.isPending}
-                    onCheckedChange={(isOn) => toggle(feature, isOn)}
-                  />
-                }
-              />
-            ))}
-          </GroupedList>
+        <div className="flex flex-col gap-8">
+          <FeatureGroup
+            header={installed.length > 0 ? t("features.builtInHeader") : undefined}
+            footer={canChange ? t("features.footer") : t("features.readOnly")}
+            features={builtIn}
+            disabled={switchesDisabled}
+            onToggle={toggle}
+          />
+          {installed.length > 0 && (
+            <FeatureGroup
+              header={t("features.installedHeader")}
+              footer={t("features.installedFooter")}
+              features={installed}
+              disabled={switchesDisabled}
+              onToggle={toggle}
+            />
+          )}
 
           <SaveStatus
             state={
@@ -141,7 +141,41 @@ export function FeaturesSettingsPage() {
           askingToSwitchOff && saveEnabled(enabledIds.filter((id) => id !== askingToSwitchOff.id))
         }
       />
-    </>
+    </Page>
+  );
+}
+
+interface FeatureGroupProps {
+  header: string | undefined;
+  footer: string;
+  features: readonly Feature[];
+  disabled: boolean;
+  onToggle: (feature: Feature, isOn: boolean) => void;
+}
+
+function FeatureGroup({ header, footer, features, disabled, onToggle }: FeatureGroupProps) {
+  return (
+    <GroupedList header={header} footer={footer}>
+      {features.map((feature) => (
+        <GroupedListRow
+          key={feature.id}
+          icon={Puzzle}
+          label={feature.name}
+          description={feature.description}
+          detail={feature.version ? t("features.version", { version: feature.version }) : undefined}
+          wrapsText
+          accessory={
+            <Toggle
+              label={feature.name}
+              labelVisibility="hidden"
+              checked={feature.enabled}
+              disabled={disabled}
+              onCheckedChange={(isOn) => onToggle(feature, isOn)}
+            />
+          }
+        />
+      ))}
+    </GroupedList>
   );
 }
 

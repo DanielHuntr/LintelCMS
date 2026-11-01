@@ -32,6 +32,9 @@
       "prettier --write"
     ]
   },
+  "dependencies": {
+    "@lintel/plugin-example-bookings": "workspace:*"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint": "^10.14.0",

@@ -19,6 +19,8 @@ import { contentModelRoutes } from "./content-model/contentModelRoutes.js";
 import { ContentTypesPage } from "./content-types/ContentTypesPage.js";
 import { NewContentTypePage } from "./content-types/NewContentTypePage.js";
 import { DashboardPage } from "./dashboard/DashboardPage.js";
+import { PluginScreenRoute } from "./plugins/PluginScreenRoute.js";
+import { SectionTabs } from "./plugins/SectionTabs.js";
 import { HelpPage } from "./help/HelpPage.js";
 import { AdminLayout } from "./layout/AdminLayout.js";
 import { MediaLibraryPage } from "./media/MediaLibraryPage.js";
@@ -32,8 +34,6 @@ import {
   mustFinishSetupFirst,
 } from "./setup/setupRouting.js";
 import { SessionProvider } from "./session/SessionContext.js";
-import { RedirectsPage } from "./seo/RedirectsPage.js";
-import { SeoSettingsPage } from "./seo/SeoSettingsPage.js";
 import { SettingsPage } from "./settings/SettingsPage.js";
 import { PublishedPageView } from "./content/PublishedPageView.js";
 import { FeaturesSettingsPage } from "./features/FeaturesSettingsPage.js";
@@ -143,15 +143,24 @@ const dashboardRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: "/",
   component: function Dashboard() {
-    const { session } = adminRoute.useRouteContext();
-    return <DashboardPage showSales={session.enabledPlugins.includes("commerce")} />;
+    return (
+      <SectionTabs section="/">
+        <DashboardPage />
+      </SectionTabs>
+    );
   },
 });
 
 const contentRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: "/content",
-  component: ContentOverviewPage,
+  component: function ContentOverview() {
+    return (
+      <SectionTabs section="/content">
+        <ContentOverviewPage />
+      </SectionTabs>
+    );
+  },
 });
 
 const entryStatuses: readonly string[] = [
@@ -229,12 +238,6 @@ const settingsRoute = createRoute({
   component: SettingsPage,
 });
 
-const featuresSettingsRoute = createRoute({
-  getParentRoute: () => adminRoute,
-  path: "/settings/features",
-  component: FeaturesSettingsPage,
-});
-
 const contentTypesRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: "/settings/content-types",
@@ -289,28 +292,31 @@ const siteSettingsRoute = createRoute({
   component: SiteSettingsPage,
 });
 
-const seoSettingsRoute = createRoute({
+/** Settings → Features: switching plugins on and off. */
+const featuresRoute = createRoute({
   getParentRoute: () => adminRoute,
-  path: "/settings/seo",
-  component: SeoSettingsPage,
+  path: "/settings/features",
+  component: FeaturesSettingsPage,
 });
 
-const redirectsRoute = createRoute({
-  getParentRoute: () => adminRoute,
-  path: "/settings/seo/redirects",
-  component: RedirectsPage,
-});
-
-/** API access, webhooks and the SEO plugin's settings. */
+/** API access, webhooks and the website's address. (The SEO plugin's settings are plugin screens.) */
 const integrationRoutes = [
   apiAccessRoute,
   apiReferenceRoute,
   webhooksRoute,
   webhookRoute,
   siteSettingsRoute,
-  seoSettingsRoute,
-  redirectsRoute,
 ];
+
+/**
+ * Any other address: a plugin's screen, or "page not found" (see PluginScreenRoute). Kept
+ * last in TanStack Router's ranking, so it never hides one of the admin's own routes.
+ */
+const pluginScreensRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "$",
+  component: PluginScreenRoute,
+});
 
 const contentRoutes = [
   contentRoute,
@@ -319,7 +325,6 @@ const contentRoutes = [
   entryEditorRoute,
   publishedPageRoute,
   settingsRoute,
-  featuresSettingsRoute,
   contentTypesRoute,
   newContentTypeRoute,
   blueprintRoute,
@@ -329,7 +334,6 @@ const contentRoutes = [
 const sectionRoutes = [
   { path: "/design", title: "nav.design" },
   { path: "/commerce", title: "nav.commerce" },
-  { path: "/forms", title: "nav.forms" },
   { path: "/users", title: "nav.users" },
 ] as const;
 
@@ -415,7 +419,9 @@ export const routeTree = rootRoute.addChildren([
       helpRoute,
       ...contentRoutes,
       ...integrationRoutes,
+      featuresRoute,
       ...placeholderRoutes,
+      pluginScreensRoute,
     ]),
   ]),
   ...designReviewRoutes,

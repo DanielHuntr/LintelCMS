@@ -8,3 +8,10 @@ interface ImportMetaEnv {
   /** Where the full docs are published, for the help panel's links. See src/help/docsLinks.ts. */
   readonly VITE_DOCS_URL?: string;
 }
+
+/** The admin halves of the plugins in lintel.config.ts, written by vite-plugin-lintel.ts. */
+declare module "virtual:lintel-plugins" {
+  import type { AdminPluginDefinition } from "./plugins/adminPlugin.js";
+
+  export const installedAdminPlugins: readonly AdminPluginDefinition[];
+}
