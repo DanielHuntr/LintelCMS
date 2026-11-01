@@ -30,12 +30,14 @@ await runWithFriendlyErrors(async () => {
     logger: true,
   });
   server.addHook("onClose", () => activeDatabase.close());
-  await listenOrExplain(server, config.API_PORT, "API_PORT");
-
-  // The website reads through the API server, so it starts after it and closes first.
-  if (config.SITE_ENABLED) {
-    const site = buildSiteServer({ api: server, logger: true });
+  // The website reads through the API server, so it starts after it and closes first. Its
+  // hook is added before the API listens, because Fastify takes no hooks once it has started.
+  const site = config.SITE_ENABLED ? buildSiteServer({ api: server, logger: true }) : null;
+  if (site) {
     server.addHook("preClose", () => site.close());
+  }
+  await listenOrExplain(server, config.API_PORT, "API_PORT");
+  if (site) {
     await listenOrExplain(site, config.SITE_PORT, "SITE_PORT", () => server.close());
   }
 
