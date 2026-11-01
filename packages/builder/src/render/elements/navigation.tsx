@@ -310,26 +310,31 @@ const SiteHeader = drawsProps(siteHeaderComponent, ({ props, attributes, node, m
           <span className="lintel-site-header__name">{site.siteName}</span>
         )}
       </a>
-      <nav className="lintel-site-header__nav" aria-label="Main">
-        {showsEmptyMenu ? (
+      {showsEmptyMenu ? (
+        // Shown at every width, in place of both the menu and the phone's menu button.
+        <div className="lintel-site-header__empty-menu">
           <EmptyMenuButton nodeId={node.id} />
-        ) : (
+        </div>
+      ) : (
+        <nav className="lintel-site-header__nav" aria-label="Main">
           <MegaMenu entries={entries} mode={mode} idPrefix={node.id} />
-        )}
-      </nav>
+        </nav>
+      )}
       {props.buttonLabel && (
         <a className="lintel-button lintel-site-header__button" href={href(props.buttonHref, mode)}>
           {props.buttonLabel}
         </a>
       )}
-      <Drawer
-        id={`drawer-${node.id}`}
-        buttonLabel="Menu"
-        side="right"
-        links={drawerLinks(entries)}
-        mode={mode}
-        buttonClassName="lintel-site-header__menu-button lintel-drawer__open"
-      />
+      {!showsEmptyMenu && (
+        <Drawer
+          id={`drawer-${node.id}`}
+          buttonLabel="Menu"
+          side="right"
+          links={drawerLinks(entries)}
+          mode={mode}
+          buttonClassName="lintel-site-header__menu-button lintel-drawer__open"
+        />
+      )}
     </header>
   );
 });

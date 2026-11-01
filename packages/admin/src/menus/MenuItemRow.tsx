@@ -108,17 +108,24 @@ export function MenuItemRow({
         )}
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-body font-medium text-label">{label}</span>
-          <span
-            className={classNames(
-              "truncate text-footnote",
-              problem || isMissing ? "text-danger" : "text-label-secondary",
-            )}
-          >
-            {problem ?? destination}
-          </span>
+          {(!compact || problem || isMissing) && (
+            <span
+              className={classNames(
+                "truncate text-footnote",
+                problem || isMissing ? "text-danger" : "text-label-secondary",
+              )}
+            >
+              {problem ?? destination}
+            </span>
+          )}
         </span>
         {item.style === "button" && (
-          <span className="shrink-0 rounded-full bg-accent/12 px-2 py-0.5 text-caption font-medium text-accent">
+          <span
+            className={classNames(
+              "shrink-0 rounded-full bg-accent/12 text-caption font-medium text-accent",
+              compact ? "px-1.5" : "px-2 py-0.5",
+            )}
+          >
             {t("menus.item.isButton")}
           </span>
         )}
