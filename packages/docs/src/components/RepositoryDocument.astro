@@ -1,0 +1,15 @@
+---
+// Shows a Markdown file from the repository's docs/ folder (the whitepaper, the overview)
+// as a docs page. Those files open with their own "# Title" for readers on GitHub; the docs
+// page already has that title, so the file's first heading is hidden here.
+---
+
+<div class="repository-document">
+  <slot />
+</div>
+
+<style>
+  .repository-document > :global(h1:first-child) {
+    display: none;
+  }
+</style>

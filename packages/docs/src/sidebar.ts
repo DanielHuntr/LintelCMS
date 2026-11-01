@@ -27,7 +27,10 @@ export const buildingPages = [
   "building/contributing",
 ] as const;
 
+export const whyPages = ["why", "why/whitepaper"] as const;
+
 export const sidebar = [
   { label: "Using Lintel", items: usingPages.map((slug) => ({ slug })) },
   { label: "Building with Lintel", items: buildingPages.map((slug) => ({ slug })) },
+  { label: "Why Lintel", items: whyPages.map((slug) => ({ slug })) },
 ];
