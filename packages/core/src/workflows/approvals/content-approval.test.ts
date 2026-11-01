@@ -51,7 +51,7 @@ describe("content approval", () => {
 
   it("is off until switched on for a collection", async () => {
     const entryId = await writePage("About");
-    expect((await author("GET", `/entries/${entryId}/review`)).json().required).toBe(false);
+    expect((await author("GET", `/entry-reviews/${entryId}`)).json().required).toBe(false);
     expect((await author("POST", `/entries/${entryId}/publish`)).statusCode).toBe(200);
     const { settings } = (await admin("GET", "/content-approval")).json();
     expect(settings).toContainEqual(
@@ -67,18 +67,18 @@ describe("content approval", () => {
     expect(refused.statusCode).toBe(409);
     expect(refused.json().code).toBe("APPROVAL_REQUIRED");
 
-    const submitted = await author("POST", `/entries/${entryId}/review`, { note: "First draft" });
+    const submitted = await author("POST", `/entry-reviews/${entryId}`, { note: "First draft" });
     expect(submitted.json().state).toBe("in_review");
-    expect((await author("POST", `/entries/${entryId}/review`, {})).statusCode).toBe(409);
+    expect((await author("POST", `/entry-reviews/${entryId}`, {})).statusCode).toBe(409);
     await server.workflows.runDue();
 
     // The reviewer hears about it and can answer from the entry.
     const inbox = (await reviewer("GET", "/notifications")).json();
     expect(inbox.notifications[0].message).toBe("Ana Editor asked you to review “About”");
     expect(inbox.notifications[0].link).toBe(`/content/pages/${entryId}`);
-    let review = (await reviewer("GET", `/entries/${entryId}/review`)).json();
+    let review = (await reviewer("GET", `/entry-reviews/${entryId}`)).json();
     expect(review).toMatchObject({ state: "in_review", canReview: true, reviewerRole: "editor" });
-    expect((await author("GET", `/entries/${entryId}/review`)).json().canReview).toBe(false);
+    expect((await author("GET", `/entry-reviews/${entryId}`)).json().canReview).toBe(false);
 
     const noComment = await reviewer(
       "POST",
@@ -98,7 +98,7 @@ describe("content approval", () => {
     });
     await server.workflows.runDue();
 
-    review = (await author("GET", `/entries/${entryId}/review`)).json();
+    review = (await author("GET", `/entry-reviews/${entryId}`)).json();
     expect(review.state).toBe("changes_requested");
     const authorInbox = (await author("GET", "/notifications")).json();
     expect(authorInbox.notifications[0].message).toBe(
@@ -106,9 +106,9 @@ describe("content approval", () => {
     );
 
     await author("PATCH", `/entries/${entryId}`, { data: { title: "About us" } });
-    await author("POST", `/entries/${entryId}/review`, {});
+    await author("POST", `/entry-reviews/${entryId}`, {});
     await server.workflows.runDue();
-    review = (await reviewer("GET", `/entries/${entryId}/review`)).json();
+    review = (await reviewer("GET", `/entry-reviews/${entryId}`)).json();
     await reviewer("POST", `/workflow-approvals/${review.pendingApprovalId}/decision`, {
       decision: "approve",
       comment: "Lovely",
@@ -117,7 +117,7 @@ describe("content approval", () => {
 
     const entry = (await author("GET", `/entries/${entryId}`)).json();
     expect(entry.status).toBe("published");
-    review = (await author("GET", `/entries/${entryId}/review`)).json();
+    review = (await author("GET", `/entry-reviews/${entryId}`)).json();
     expect(review.history.map((item: { kind: string }) => item.kind)).toEqual([
       "submitted",
       "changes_requested",
@@ -134,17 +134,17 @@ describe("content approval", () => {
       publishWhenApproved: false,
     });
     const entryId = await writePage("About");
-    await author("POST", `/entries/${entryId}/review`, {});
+    await author("POST", `/entry-reviews/${entryId}`, {});
     await server.workflows.runDue();
-    const { pendingApprovalId } = (await reviewer("GET", `/entries/${entryId}/review`)).json();
+    const { pendingApprovalId } = (await reviewer("GET", `/entry-reviews/${entryId}`)).json();
     await reviewer("POST", `/workflow-approvals/${pendingApprovalId}/decision`, {
       decision: "approve",
     });
     await server.workflows.runDue();
-    expect((await author("GET", `/entries/${entryId}/review`)).json().state).toBe("approved");
+    expect((await author("GET", `/entry-reviews/${entryId}`)).json().state).toBe("approved");
 
     await author("PATCH", `/entries/${entryId}`, { data: { title: "About, changed" } });
-    const review = (await author("GET", `/entries/${entryId}/review`)).json();
+    const review = (await author("GET", `/entry-reviews/${entryId}`)).json();
     expect(review).toMatchObject({ state: "not_submitted", changedSinceApproval: true });
     expect((await author("POST", `/entries/${entryId}/publish`)).statusCode).toBe(409);
     // Someone who may do everything isn't held up.
@@ -154,7 +154,7 @@ describe("content approval", () => {
   it("lists the requests a reviewer can answer", async () => {
     await requireApproval();
     const entryId = await writePage("About");
-    await author("POST", `/entries/${entryId}/review`, {});
+    await author("POST", `/entry-reviews/${entryId}`, {});
     await server.workflows.runDue();
 
     const { approvals } = (await reviewer("GET", "/workflow-approvals")).json();

@@ -25,8 +25,8 @@ import {
  *   POST /workflow-approvals/:approvalId/decision   (signed in, the role) { decision, comment? }
  *   GET  /content-approval                          (workflows:read)     each collection's setting
  *   PUT  /content-approval/:handle                  (workflows:update)   { required, reviewerRole?, publishWhenApproved? }
- *   GET  /entries/:id/review                        (entries:read)       where the entry's review stands
- *   POST /entries/:id/review                        (entries:update)     { note? } submit for review
+ *   GET  /entry-reviews/:id                        (entries:read)       where the entry's review stands
+ *   POST /entry-reviews/:id                        (entries:update)     { note? } submit for review
  */
 export async function approvalsRoutes(server: FastifyInstance) {
   const signedIn = { preHandler: requireSignedIn };
@@ -66,14 +66,14 @@ export async function approvalsRoutes(server: FastifyInstance) {
   );
 
   server.get(
-    "/entries/:id/review",
+    "/entry-reviews/:id",
     { preHandler: requirePermission("entries:read") },
     async (request) =>
       findEntryReview(server.database, readEntryId(request.params), getSignedIn(request)),
   );
 
   server.post(
-    "/entries/:id/review",
+    "/entry-reviews/:id",
     { preHandler: requirePermission("entries:update") },
     async (request) => {
       const { note } = parseRequest(reviewRequestSchema, request.body ?? {});

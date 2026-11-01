@@ -213,7 +213,7 @@ describe("the review panel", () => {
 
   it("lets a reviewer ask for changes with a comment", async () => {
     const { calls } = mockApi(({ method, url }) => {
-      if (url.pathname === "/entries/e1/review") return inReview;
+      if (url.pathname === "/entry-reviews/e1") return inReview;
       if (method === "POST" && url.pathname === "/workflow-approvals/a1/decision") return {};
       throw new Error(`Unexpected request: ${method} ${url.pathname}`);
     });

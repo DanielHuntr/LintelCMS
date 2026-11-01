@@ -75,11 +75,11 @@ export function markAllNotificationsRead() {
 }
 
 export function getEntryReview(entryId: string) {
-  return apiRequest<EntryReview>(`/entries/${path(entryId)}/review`);
+  return apiRequest<EntryReview>(`/entry-reviews/${path(entryId)}`);
 }
 
 export function submitEntryForReview(entryId: string, note: string) {
-  return apiRequest<EntryReview>(`/entries/${path(entryId)}/review`, {
+  return apiRequest<EntryReview>(`/entry-reviews/${path(entryId)}`, {
     method: "POST",
     body: { note },
   });

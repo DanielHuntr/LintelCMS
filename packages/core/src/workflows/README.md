@@ -81,7 +81,7 @@ approved version, except for people who may do everything.
 | `POST /workflow-runs/:runId/cancel`                                                  | `workflows:update`                    |
 | `GET /workflow-approvals`, `POST /workflow-approvals/:id/decision`                   | signed in; the role to answer         |
 | `GET /content-approval`, `PUT /content-approval/:handle`                             | `workflows:read` / `workflows:update` |
-| `GET`/`POST /entries/:id/review`                                                     | `entries:read` / `entries:update`     |
+| `GET`/`POST /entry-reviews/:id`                                                      | `entries:read` / `entries:update`     |
 | `GET /notifications`, `POST /notifications/:id/read`, `POST /notifications/read-all` | signed in                             |
 
 ## Files

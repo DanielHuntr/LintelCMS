@@ -38,7 +38,7 @@ describe('the "What are you building?" step', () => {
     expect(response.statusCode).toBe(200);
     const body = response.json();
     expect(body.siteType).toBe("shop");
-    expect(body.plugins).toHaveLength(4);
+    expect(body.plugins).toHaveLength(5);
     expect(body.plugins.filter((plugin: { enabled: boolean }) => plugin.enabled)).toEqual([
       {
         id: "commerce",

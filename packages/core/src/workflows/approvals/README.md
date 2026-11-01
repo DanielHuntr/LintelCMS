@@ -4,7 +4,7 @@ The approval step pauses a run until someone with a role answers. Content approv
 editorial workflow built on it: a collection that requires approval gets a workflow
 started by `entry.review_requested` (an event this folder declares on the bus).
 
-1. The author presses **Submit for review** (`POST /entries/:id/review`).
+1. The author presses **Submit for review** (`POST /entry-reviews/:id`).
 2. The run asks the reviewer role; its members are notified (or the super admins, when the
    role has nobody).
 3. A reviewer approves or asks for changes, with a comment, from the entry's side panel.
