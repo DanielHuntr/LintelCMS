@@ -1,5 +1,10 @@
 import { existsSync } from "node:fs";
 import {
+  commandLineSources,
+  type CommandLineSource,
+  defaultImportsFolder,
+  importFromFiles,
+  loadConfig,
   conflictStrategies,
   type ConflictStrategy,
   type ImportPlan,
@@ -15,8 +20,10 @@ import { CommandError, formatTable, resolvePath, type Terminal } from "../termin
  * and handle. --strategy says what happens to things this site already has: "skip" keeps
  * them as they are (the default), "overwrite" replaces them with the export's version.
  */
-const usage =
-  "Usage: pnpm lintel import <export.zip|export.json> [--strategy skip|overwrite] [--dry-run]";
+const usage = [
+  "Usage: pnpm lintel import <export.zip|export.json> [--strategy skip|overwrite] [--dry-run]",
+  "       pnpm lintel import <wordpress|webflow|framer|statamic|umbraco> <file|url>... [--dry-run] [--as <email>]",
+].join("\n");
 
 const kindNames: Record<string, string> = {
   blueprint: "Content types",
@@ -31,15 +38,25 @@ const kindNames: Record<string, string> = {
 
 export const importCommand: Command = {
   name: "import",
-  summary: "Import a Lintel export (safe to run again; --dry-run to preview)",
+  summary: "Import a Lintel export, or move a site from another system (--dry-run to preview)",
   usage,
   async run(argumentList, terminal) {
     const { values, positionals } = readArguments(
       argumentList,
-      { strategy: { type: "string", default: "skip" }, "dry-run": { type: "boolean" } },
+      {
+        strategy: { type: "string", default: "skip" },
+        "dry-run": { type: "boolean" },
+        as: { type: "string" },
+      },
       usage,
     );
-    const [file] = positionals;
+    const [file, ...more] = positionals;
+    if (file && (commandLineSources as readonly string[]).includes(file)) {
+      return moveSite(terminal, file as CommandLineSource, more, {
+        dryRun: values["dry-run"] ?? false,
+        asEmail: values.as,
+      });
+    }
     if (!file) {
       throw new CommandError(`Which export? Give the path to the file.\n\n${usage}`);
     }
@@ -93,4 +110,57 @@ export function printPlan(terminal: Terminal, plan: ImportPlan, dryRun: boolean)
     terminal.warn(`Note: ${warning}`);
   }
   terminal.say(dryRun ? "Nothing was changed (dry run)." : "Import finished.");
+}
+
+/**
+ * `lintel import wordpress export.xml [wp-content.zip]` and the like: the importers behind
+ * Settings → Import, with the mapping they suggest. Addresses (https://...) are downloaded.
+ */
+async function moveSite(
+  terminal: Terminal,
+  source: CommandLineSource,
+  inputs: string[],
+  options: { dryRun: boolean; asEmail: string | undefined },
+): Promise<number> {
+  if (inputs.length === 0) {
+    throw new CommandError(`Which files? Give the export's path or address.\n\n${usage}`);
+  }
+  const paths = inputs.map((input) =>
+    /^https?:\/\//i.test(input) ? input : resolvePath(terminal, input),
+  );
+  return withDatabase(async (activeDatabase) => {
+    const config = loadConfig();
+    terminal.say(options.dryRun ? "Checking what would come in..." : "Importing...");
+    const result = await importFromFiles({
+      database: activeDatabase.database,
+      storage: defaultStorage(),
+      importsFolder: defaultImportsFolder(),
+      publicApiUrl: config.API_PUBLIC_URL ?? `http://localhost:${config.API_PORT}`,
+      source,
+      inputs: paths,
+      dryRun: options.dryRun,
+      asEmail: options.asEmail,
+    });
+    const verb = options.dryRun ? "Would bring in" : "Brought in";
+    const rows = result.counts
+      .filter(([, done, skipped, failed]) => done + skipped + failed > 0)
+      .map(([kind, done, skipped, failed]) => [
+        kind,
+        String(done),
+        String(skipped),
+        String(failed),
+      ]);
+    for (const line of formatTable([["", verb, "Left out", "Problems"], ...rows])) {
+      terminal.say(`  ${line}`);
+    }
+    for (const problem of result.problems) terminal.warn(`Problem: ${problem}`);
+    for (const note of result.notes) terminal.warn(`Note: ${note}`);
+    if (result.redirectsSuggested > 0) {
+      terminal.say(
+        `${result.redirectsSuggested} redirects from old addresses are waiting in Settings → Redirects.`,
+      );
+    }
+    terminal.say(options.dryRun ? "Nothing was changed (dry run)." : "Import finished.");
+    return 0;
+  });
 }
