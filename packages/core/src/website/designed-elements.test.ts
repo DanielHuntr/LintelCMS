@@ -277,6 +277,17 @@ describe("designed pages with the element library", { timeout: 30000 }, () => {
     await plain.close();
   });
 
+  it("finds published pages and posts for the Search box", async () => {
+    await publishPosts(2);
+    const results = (await visit("/search?q=number%202")).body;
+    expect(results).toContain("Search results for “number 2”");
+    expect(results).toContain("Post number 2");
+    expect(results).not.toContain("Post number 1");
+    const nothing = (await visit("/search?q=croissant")).body;
+    expect(nothing).toContain("Search results for “croissant”");
+    expect(nothing).not.toContain("Post number");
+  });
+
   it("tells the builder about collections, their fields, terms and samples", async () => {
     await publishPosts(1);
     const response = await admin("GET", "/website/builder-data");

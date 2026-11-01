@@ -12,22 +12,23 @@ untouched; set `SITE_ENABLED=false` when the site is built separately.
 
 ## What an address shows
 
-| Address                           | Shows                                                   |
-| --------------------------------- | ------------------------------------------------------- |
-| `/`                               | The page with the slug `home`, else the newest posts    |
-| `/<slug>`, `/blog/<slug>`         | An entry, through its collection's route pattern        |
-| `/blog`, `/blog/page/2`           | A dated collection's posts, ten a page, newest first    |
-| `/blog/<taxonomy>/<term>`         | The posts filed under a term (`/blog/categories/bread`) |
-| `/fr-FR/...`                      | The same in another of the site's languages             |
-| `/sitemap.xml`, `/robots.txt`     | From the SEO plugin, with the site's own addresses      |
-| `/_lintel/motion-<hash>.js`       | The motion runtime, loaded only by pages that animate   |
-| `/_lintel/elements-<hash>.js`     | The elements script, for sliders, forms, the basket...  |
-| `/_lintel/api/shop/*`, `/forms/*` | The storefront and forms APIs, at the site's address    |
-| `/shop`, `/shop/<collection>`     | With the shop on: products, and a collection of them    |
-| `/products/<handle>`              | A product (the site's product design, or the default)   |
-| `/cart`, `/order-confirmation`    | The basket and checkout, and the thank-you page         |
-| `/_lintel/illustrations/*.svg`    | The starter sites' illustrations                        |
-| anything else                     | A friendly 404                                          |
+| Address                           | Shows                                                       |
+| --------------------------------- | ----------------------------------------------------------- |
+| `/`                               | The page with the slug `home`, else the newest posts        |
+| `/<slug>`, `/blog/<slug>`         | An entry, through its collection's route pattern            |
+| `/blog`, `/blog/page/2`           | A dated collection's posts, ten a page, newest first        |
+| `/blog/<taxonomy>/<term>`         | The posts filed under a term (`/blog/categories/bread`)     |
+| `/fr-FR/...`                      | The same in another of the site's languages                 |
+| `/sitemap.xml`, `/robots.txt`     | From the SEO plugin, with the site's own addresses          |
+| `/_lintel/motion-<hash>.js`       | The motion runtime, loaded only by pages that animate       |
+| `/_lintel/elements-<hash>.js`     | The elements script, for sliders, forms, the basket...      |
+| `/_lintel/api/shop/*`, `/forms/*` | The storefront and forms APIs, at the site's address        |
+| `/shop`, `/shop/<collection>`     | With the shop on: products, and a collection of them        |
+| `/products/<handle>`              | A product (the site's product design, or the default)       |
+| `/cart`, `/order-confirmation`    | The basket and checkout, and the thank-you page             |
+| `/search?q=`                      | What the Search box finds in published titles and summaries |
+| `/_lintel/illustrations/*.svg`    | The starter sites' illustrations                            |
+| anything else                     | A friendly 404                                              |
 
 `/home` and addresses with a trailing slash redirect (301) to their one true address, as
 does a post's address with an old date in it. With the SEO plugin on, its active redirects
@@ -122,6 +123,7 @@ There is no repository: everything is kept in settings and read through other fe
 | `site-sources.ts`          | The storefront and forms APIs, read inside the process    |
 | `site-api.routes.ts`       | Those APIs at the website's own address, for the browser  |
 | `builder-data.service.ts`  | `GET /website/builder-data`: what the builder can show    |
+| `site-search.service.ts`   | `/search`, for the Search box element                     |
 | `canvas.service.ts`        | What the builder's canvas draws around a page             |
 | `site-assets.ts`           | The motion runtime and the illustrations                  |
 | `rendered-pages-cache.ts`  | The in-memory cache                                       |

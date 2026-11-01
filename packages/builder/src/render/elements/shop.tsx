@@ -452,7 +452,6 @@ const CartDrawer = drawsProps(cartDrawerComponent, ({ props, attributes, node, m
         className="lintel-cart-button__open"
         {...({ command: "show-modal", commandfor: dialogId } as Record<string, string>)}
         aria-haspopup="dialog"
-        data-behaviour="modal-opener"
         data-cart-opener=""
       >
         <SiteIcon name="shopping-basket" />

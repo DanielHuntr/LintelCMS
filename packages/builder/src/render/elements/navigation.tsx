@@ -198,7 +198,6 @@ function Drawer({
         className={buttonClassName}
         {...({ command: "show-modal", commandfor: id } as Record<string, string>)}
         aria-haspopup="dialog"
-        data-behaviour="modal-opener"
       >
         <SiteIcon name="text" className="lintel-drawer__icon" />
         <span>{buttonLabel}</span>

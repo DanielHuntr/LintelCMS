@@ -23,6 +23,7 @@ import {
 } from "./site-routing.js";
 import { designEntryView } from "./entry-designs.service.js";
 import { respondToShopPath } from "./shop-pages.service.js";
+import { renderSearch } from "./site-search.service.js";
 import type { SiteSources } from "./site-sources.js";
 import { entryView, headForEntry } from "./site-views.js";
 
@@ -47,6 +48,8 @@ export interface SiteDependencies {
 export interface PageQuery {
   page: number;
   sort?: string;
+  /** What was typed in a Search box, for `/search`. */
+  search?: string;
 }
 
 /** What one page render can reach: the dependencies and what every page shares. */
@@ -109,6 +112,7 @@ function queryKey(query: PageQuery): string {
   const parts = [
     query.page > 1 ? `page=${query.page}` : "",
     query.sort ? `sort=${query.sort}` : "",
+    query.search ? `q=${encodeURIComponent(query.search)}` : "",
   ];
   const search = parts.filter(Boolean).join("&");
   return search ? `?${search}` : "";
@@ -154,6 +158,9 @@ async function resolveSitePath(
       if (response) {
         return response;
       }
+    }
+    if (localPath === "/search") {
+      return renderSearch(request);
     }
     const shopPage = await respondToShopPath(request);
     if (shopPage) {

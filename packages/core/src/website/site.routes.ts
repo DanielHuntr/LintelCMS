@@ -32,6 +32,7 @@ const pageQuerySchema = z
       .regex(/^[A-Za-z]{1,40}$/)
       .optional()
       .catch(undefined),
+    q: z.string().trim().max(200).optional().catch(undefined),
   })
   .catch({});
 
@@ -74,10 +75,11 @@ export async function siteRoutes(
 
   server.get("/*", async (request, reply) => {
     const pathname = request.url.split("?")[0] ?? "/";
-    const { preview, page, sort } = pageQuerySchema.parse(request.query);
+    const { preview, page, sort, q } = pageQuerySchema.parse(request.query);
     const response = await respondToSitePath(options.dependencies(), pathname, preview, {
       page: page ?? 1,
       sort,
+      search: q,
     });
     return send(request, reply, response);
   });
