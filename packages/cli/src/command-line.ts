@@ -1,4 +1,5 @@
 import { HttpError } from "@lintel/core/data-tools";
+import { lintelVersion } from "@lintel/core/updates";
 import type { Command } from "./command.js";
 import { backupCommand } from "./commands/backup.js";
 import { createAdminCommand } from "./commands/create-admin.js";
@@ -8,6 +9,8 @@ import { importCommand } from "./commands/import.js";
 import { migrateCommand } from "./commands/migrate.js";
 import { modelCommand } from "./commands/model.js";
 import { restoreCommand } from "./commands/restore.js";
+import { startCommand } from "./commands/start.js";
+import { updateCommand } from "./commands/update.js";
 import { CommandError, formatTable, type Terminal } from "./terminal.js";
 
 /**
@@ -15,6 +18,8 @@ import { CommandError, formatTable, type Terminal } from "./terminal.js";
  * command is in this one list, in the order `lintel help` shows them.
  */
 export const commands: readonly Command[] = [
+  startCommand,
+  updateCommand,
   doctorCommand,
   backupCommand,
   restoreCommand,
@@ -34,11 +39,15 @@ export function printHelp(terminal: Terminal) {
     terminal.say(`  ${line}`);
   }
   terminal.say();
-  terminal.say("Add --help after a command to see its options.");
+  terminal.say("Add --help after a command to see its options, or run --version for the version.");
 }
 
 export async function runCommandLine(argumentList: string[], terminal: Terminal): Promise<number> {
   const [name, ...rest] = argumentList.filter((argument) => argument !== "--");
+  if (name === "--version" || name === "-v" || name === "version") {
+    terminal.say(`Lintel ${lintelVersion()}`);
+    return 0;
+  }
   if (!name || name === "help" || name === "--help" || name === "-h") {
     printHelp(terminal);
     return 0;

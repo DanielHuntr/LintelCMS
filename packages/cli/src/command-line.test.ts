@@ -1,3 +1,4 @@
+import { lintelVersion } from "@lintel/core/updates";
 import { describe, expect, it } from "vitest";
 import { runCommandLine } from "./command-line.js";
 import { printPlan } from "./commands/import.js";
@@ -22,6 +23,8 @@ describe("the lintel command", () => {
     expect(await runCommandLine([], terminal)).toBe(0);
     const help = terminal.lines.join("\n");
     for (const name of [
+      "start",
+      "update",
       "doctor",
       "backup",
       "restore",
@@ -33,6 +36,15 @@ describe("the lintel command", () => {
     ]) {
       expect(help).toContain(`  ${name} `);
     }
+  });
+
+  it("says which version of Lintel this is", async () => {
+    for (const flag of ["--version", "-v", "version"]) {
+      const terminal = recordingTerminal();
+      expect(await runCommandLine([flag], terminal)).toBe(0);
+      expect(terminal.lines).toEqual([`Lintel ${lintelVersion()}`]);
+    }
+    expect(lintelVersion()).toMatch(/^\d+\.\d+\.\d+/);
   });
 
   it("says when a command doesn't exist, and fails", async () => {

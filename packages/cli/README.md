@@ -26,12 +26,23 @@ core, imported through `@lintel/core/data-tools` (`packages/core/src/data-tools.
 | `doctor/doctor-checks.ts`                 | The checks behind `lintel doctor`, as plain functions            |
 | `doctor/doctor-probes.ts`                 | Finding out about the real machine for those checks              |
 | `content-model/content-model-commands.ts` | Loading the content model commands from core                     |
+| `updating/git-update.ts`                  | `lintel update`: a git clone to the newest release, safely       |
 
 Everything that talks to the person goes through `Terminal`, so tests run commands with a
 recording terminal and check what was said (`command-line.test.ts`).
 
 Named errors from core (`HttpError` and its kind) and `CommandError` are printed as one
 sentence with exit code 1. Anything else is a bug and keeps its stack trace.
+
+## lintel start, update and --version
+
+`lintel start` runs Lintel in production under the supervisor in core
+(`packages/core/src/updates/supervisor`), which restarts it if it stops and installs updates
+from Settings → Updates. `lintel update` is for copies run from a git clone: it refuses to
+start while tracked files have changes, makes a backup, checks out the release tag (or
+follows the branch when there are no tags), runs `pnpm install` and the migrations, and
+says to restart `pnpm dev`. `lintel --version` prints the version. They use
+`@lintel/core/updates` (`packages/core/src/updates/command-line-updates.ts`).
 
 ## lintel model
 
