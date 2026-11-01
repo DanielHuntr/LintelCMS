@@ -23,6 +23,18 @@ export type {
   RevisionSummaryResponse,
 } from "./entries/entries.schema.js";
 export type { DeliveredEntry, DeliveredList } from "./delivery/delivery.schema.js";
+export type { LocaleListResponse, LocaleResponse } from "./sites/locales.schema.js";
+export type { TaxonomyResponse, TermResponse } from "./taxonomies/taxonomies.schema.js";
+export type {
+  DeliveredGlobalSet,
+  GlobalSetResponse,
+  GlobalSetSummaryResponse,
+} from "./globals/globals.schema.js";
+export type {
+  NavigationItem,
+  NavigationResponse,
+  NavigationSummaryResponse,
+} from "./navigation/navigation.schema.js";
 export {
   createAssetLookup,
   noAssetUsage,

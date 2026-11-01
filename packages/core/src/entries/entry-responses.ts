@@ -1,7 +1,12 @@
 import { isDeepStrictEqual } from "node:util";
 import { describeBlueprint } from "../blueprints/blueprints.service.js";
 import type { EntrySummaryRow, EntryWithDetails } from "./entries.repository.js";
-import type { EntryResponse, EntrySummaryResponse, Person } from "./entries.schema.js";
+import type {
+  EntryResponse,
+  EntrySummaryResponse,
+  EntryTranslation,
+  Person,
+} from "./entries.schema.js";
 
 /** Turns stored rows into the shapes the API returns (see entries.schema.ts). */
 
@@ -12,6 +17,8 @@ export function describeEntrySummary(row: EntrySummaryRow): EntrySummaryResponse
     slug: row.slug,
     status: row.status,
     parentId: row.parentId,
+    locale: row.locale,
+    originId: row.originId,
     updatedAt: row.updatedAt.toISOString(),
     publishedAt: row.publishedAt?.toISOString() ?? null,
     scheduledFor: row.scheduledFor?.toISOString() ?? null,
@@ -19,12 +26,10 @@ export function describeEntrySummary(row: EntrySummaryRow): EntrySummaryResponse
   };
 }
 
-export function describeEntry({
-  entry,
-  collectionHandle,
-  blueprint,
-  updatedByName,
-}: EntryWithDetails): EntryResponse {
+export function describeEntry(
+  { entry, collectionHandle, blueprint, updatedByName }: EntryWithDetails,
+  translations: EntryTranslation[] = [],
+): EntryResponse {
   const title = entry.data.title;
   return {
     ...describeEntrySummary({
@@ -37,6 +42,7 @@ export function describeEntry({
     data: entry.data,
     blueprint: describeBlueprint(blueprint),
     hasUnpublishedChanges: hasUnpublishedChanges(entry),
+    translations,
   };
 }
 

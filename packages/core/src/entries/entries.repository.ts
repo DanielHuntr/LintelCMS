@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ilike, or, type SQL, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, or, type SQL, sql } from "drizzle-orm";
 import { type Blueprint, blueprintsTable } from "../blueprints/blueprints.table.js";
 import { collectionsTable } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
@@ -13,6 +13,15 @@ export interface EntryFilters {
   status?: EntryStatus;
   search?: string;
   parentId?: string;
+  locale?: string;
+}
+
+/** Where a slug has to be free: one collection, in one site and language. */
+export interface SlugScope {
+  collectionId: string;
+  siteId: string;
+  locale: string;
+  exceptEntryId?: string;
 }
 
 /** "dated" is newest first; "manual" is the order editors set (`sortOrder`). */
@@ -25,6 +34,8 @@ export interface EntrySummaryRow {
   slug: string;
   status: EntryStatus;
   parentId: string | null;
+  locale: string;
+  originId: string | null;
   updatedAt: Date;
   publishedAt: Date | null;
   scheduledFor: Date | null;
@@ -47,6 +58,8 @@ const summaryColumns = {
   slug: entriesTable.slug,
   status: entriesTable.status,
   parentId: entriesTable.parentId,
+  locale: entriesTable.locale,
+  originId: entriesTable.originId,
   updatedAt: entriesTable.updatedAt,
   publishedAt: entriesTable.publishedAt,
   scheduledFor: entriesTable.scheduledFor,
@@ -60,6 +73,7 @@ function matching(filters: EntryFilters): SQL | undefined {
     filters.status ? eq(entriesTable.status, filters.status) : undefined,
     filters.search ? ilike(titleColumn, `%${escapeLikePattern(filters.search)}%`) : undefined,
     filters.parentId ? eq(entriesTable.parentId, filters.parentId) : undefined,
+    filters.locale ? eq(entriesTable.locale, filters.locale) : undefined,
   );
 }
 
@@ -221,10 +235,10 @@ export async function clearParentsInCollection(
     .where(eq(entriesTable.collectionId, collectionId));
 }
 
-/** Slugs in the collection and site that are `base` or `base-<something>`. */
+/** Slugs in the collection, site and locale that are `base` or `base-<something>`. */
 export async function findSlugsStartingWith(
   database: DatabaseOrTransaction,
-  scope: { collectionId: string; siteId: string; exceptEntryId?: string },
+  scope: SlugScope,
   base: string,
 ): Promise<string[]> {
   const rows = await database
@@ -234,6 +248,7 @@ export async function findSlugsStartingWith(
       and(
         eq(entriesTable.collectionId, scope.collectionId),
         eq(entriesTable.siteId, scope.siteId),
+        eq(entriesTable.locale, scope.locale),
         or(eq(entriesTable.slug, base), sql`${entriesTable.slug} like ${`${base}-%`}`),
       ),
     );
@@ -280,6 +295,68 @@ export async function findEntriesMentioning(
   const quoted = `%"${id}"%`;
   return database
     .select({ entryId: entriesTable.id, title: titleColumn })
+    .from(entriesTable)
+    .where(
+      or(
+        sql`${entriesTable.data}::text like ${quoted}`,
+        sql`${entriesTable.publishedData}::text like ${quoted}`,
+      ),
+    );
+}
+
+/** An entry and its translations: the entry `rootId` and every entry pointing at it. */
+export async function listTranslationFamily(
+  database: DatabaseOrTransaction,
+  rootId: string,
+): Promise<{ id: string; locale: string; title: string | null; status: EntryStatus }[]> {
+  return database
+    .select({
+      id: entriesTable.id,
+      locale: entriesTable.locale,
+      title: titleColumn,
+      status: entriesTable.status,
+    })
+    .from(entriesTable)
+    .where(or(eq(entriesTable.id, rootId), eq(entriesTable.originId, rootId)))
+    .orderBy(asc(entriesTable.createdAt));
+}
+
+/** Which of these ids are entries, in one of these collections when any are named. */
+export async function findExistingEntryIds(
+  database: DatabaseOrTransaction,
+  entryIds: readonly string[],
+  collectionHandles: readonly string[],
+): Promise<string[]> {
+  if (entryIds.length === 0) {
+    return [];
+  }
+  const rows = await database
+    .select({ id: entriesTable.id })
+    .from(entriesTable)
+    .innerJoin(collectionsTable, eq(collectionsTable.id, entriesTable.collectionId))
+    .where(
+      and(
+        inArray(entriesTable.id, [...entryIds]),
+        collectionHandles.length > 0
+          ? inArray(collectionsTable.handle, [...collectionHandles])
+          : undefined,
+      ),
+    );
+  return rows.map((row) => row.id);
+}
+
+/** Every entry whose saved or published values are listed, for tidying up references. */
+export async function findEntryValuesMentioning(
+  database: DatabaseOrTransaction,
+  id: string,
+): Promise<Pick<Entry, "id" | "data" | "publishedData">[]> {
+  const quoted = `%"${id}"%`;
+  return database
+    .select({
+      id: entriesTable.id,
+      data: entriesTable.data,
+      publishedData: entriesTable.publishedData,
+    })
     .from(entriesTable)
     .where(
       or(

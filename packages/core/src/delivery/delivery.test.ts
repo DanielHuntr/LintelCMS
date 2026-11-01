@@ -105,6 +105,8 @@ describe("the public delivery API", () => {
       id,
       slug: "about-us",
       url: "/about-us",
+      locale: "en-GB",
+      translations: [],
       publishedAt: expect.stringMatching(/^\d{4}-/),
       data: {
         title: "About us",

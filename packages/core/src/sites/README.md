@@ -5,10 +5,40 @@ A site is one website served by this install, in one language: "Acme UK in Engli
 can hold each site's own pages.
 
 For now every install has exactly one site, created the first time anything needs it
-(`findOrCreateDefaultSite`). Managing several sites, domains and languages comes later.
+(`findOrCreateDefaultSite`). Managing several sites and domains comes later.
 
-| File                  | What it does                                       |
-| --------------------- | -------------------------------------------------- |
-| `sites.table.ts`      | The `sites` table                                  |
-| `sites.service.ts`    | `findOrCreateDefaultSite` and the default's values |
-| `sites.repository.ts` | Database reads and writes                          |
+## Languages (locales)
+
+A site has one or more locales in `site_locales`. Its main language is the site's `locale`
+column, which always has a row there too (made the first time it's needed). Entries and
+global values are kept per locale; a translation is an entry linked to its origin. See
+`docs/decisions/0007-translations-as-linked-entries.md`.
+
+Codes are BCP 47 language tags, tidied with `Intl` ("FR-fr" becomes "fr-FR"), and named
+in English by default ("French (France)"). `resolveLocale(database, requested)` is what
+other features call for a `?locale=`: the site's main language when none is given, or a
+404 for one the site doesn't have.
+
+| Method and path         | Permission        | Success                                            |
+| ----------------------- | ----------------- | -------------------------------------------------- |
+| `GET /locales`          | signed in         | 200 `{ defaultLocale, locales: [Locale] }`         |
+| `POST /locales`         | `settings:update` | 201 `Locale`, from `{ code, name? }`               |
+| `PATCH /locales/:code`  | `settings:update` | 200 `Locale`, from `{ name }`                      |
+| `DELETE /locales/:code` | `settings:update` | 204, or 409 `DEFAULT_LOCALE` / `LOCALE_IN_USE`     |
+| `GET /delivery/locales` | public            | 200 `{ defaultLocale, locales: [{ code, name }] }` |
+
+`Locale = { code, name, isDefault, entryCount }`. A locale can only be removed when no
+entries are written in it; global values saved in it are kept and come back if it is
+added again.
+
+| File                    | What it does                                         |
+| ----------------------- | ---------------------------------------------------- |
+| `sites.table.ts`        | The `sites` table                                    |
+| `sites.service.ts`      | `findOrCreateDefaultSite` and the default's values   |
+| `sites.repository.ts`   | Database reads and writes                            |
+| `locales.table.ts`      | The `site_locales` table                             |
+| `locales.schema.ts`     | Language codes, requests and responses               |
+| `locales.service.ts`    | Listing, adding, renaming, removing; `resolveLocale` |
+| `locales.repository.ts` | Database reads and writes for locales                |
+| `locales.errors.ts`     | Named errors with the messages people see            |
+| `locales.routes.ts`     | The endpoints                                        |

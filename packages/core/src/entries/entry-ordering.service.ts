@@ -17,14 +17,16 @@ import type { ReorderEntriesRequest } from "./entries.schema.js";
 
 /**
  * Checks that `parentId` can be the parent of `entryId` (or of a new entry, when
- * `entryId` is left out): the collection is a tree, the parent is in it, and the move
- * doesn't put an entry under itself or one of its own children.
+ * `entryId` is left out): the collection is a tree, the parent is in it (and in the same
+ * language, when `locale` is given), and the move doesn't put an entry under itself or one
+ * of its own children.
  */
 export async function checkParent(
   database: DatabaseOrTransaction,
   collection: Collection,
   parentId: string | null,
   entryId?: string,
+  locale?: string,
 ): Promise<void> {
   if (parentId === null) {
     return;
@@ -40,6 +42,9 @@ export async function checkParent(
   const parent = await findEntryById(database, parentId);
   if (!parent || parent.collectionId !== collection.id) {
     throw new InvalidParentError(`The parent has to be another entry in ${collection.name}.`);
+  }
+  if (locale !== undefined && parent.locale !== locale) {
+    throw new InvalidParentError("The parent has to be written in the same language.");
   }
   if (entryId === undefined) {
     return;

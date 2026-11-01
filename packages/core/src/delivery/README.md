@@ -10,12 +10,18 @@ entry gets the same 404 as one that doesn't exist, so the API doesn't reveal it.
 
 ## Endpoints
 
-| Method and path                   | Query             | Success                                  |
-| --------------------------------- | ----------------- | ---------------------------------------- |
-| `GET /delivery/:collection`       | `page`, `perPage` | 200 `{ items: [DeliveredEntry], total }` |
-| `GET /delivery/:collection/:slug` | none              | 200 `DeliveredEntry`, or 404 `NOT_FOUND` |
+| Method and path                   | Query                                              | Success                                                      |
+| --------------------------------- | -------------------------------------------------- | ------------------------------------------------------------ |
+| `GET /delivery/:collection`       | `page`, `perPage`, `locale`, `taxonomy` and `term` | 200 `{ items: [DeliveredEntry], total }`                     |
+| `GET /delivery/:collection/:slug` | `locale`                                           | 200 `DeliveredEntry` with `translations`, or 404 `NOT_FOUND` |
 
-`DeliveredEntry = { id, slug, url, publishedAt, data }`
+`DeliveredEntry = { id, slug, url, locale, publishedAt, data }`. A single entry also has
+`translations: [{ locale, slug, url }]`: where it is published in the site's other
+languages. `locale` defaults to the site's main language; one the site doesn't have is a 404. `?taxonomy=tags&term=recipes` keeps entries that chose that term.
+
+Taxonomies, global sets, menus and locales have delivery endpoints of their own, in their
+feature folders: `/delivery/taxonomies`, `/delivery/globals`, `/delivery/navigation` and
+`/delivery/locales`. Those handles can't be used for collections.
 
 - `url` is the collection's `routePattern` filled in (`/blog/{slug}` becomes `/blog/hello`),
   or null when the collection has none.
@@ -23,6 +29,11 @@ entry gets the same 404 as one that doesn't exist, so the API doesn't reveal it.
   `{ id, url, alt, width, height, focalPoint }` (null if the image has been deleted), looked
   up once per response through `server.assetLookup`. Rich text becomes `{ json, html }`,
   rendered on the server with `@tiptap/html` and the editor's StarterKit extensions.
+  Markdown becomes `{ markdown, html }` (markdown-it, with typed HTML escaped). Terms
+  fields become `[{ id, title, slug, taxonomy }]`; entries fields become links to the
+  published entries, `[{ id, title, slug, url, collection, locale }]`, in the requested
+  language where a translation is published, leaving out entries that aren't live.
+  Both are looked up once per response (`delivered-references.ts`).
 - Lists are newest first for dated collections and in the hand-set order otherwise.
 
 Responses carry `Cache-Control: public, max-age=60`, so a CDN or browser may keep them
@@ -33,12 +44,13 @@ Server-side rendering (the usual way sites use it) isn't affected.
 
 ## Files
 
-| File                     | What it does                                        |
-| ------------------------ | --------------------------------------------------- |
-| `delivery.routes.ts`     | The endpoints and the caching header                |
-| `delivery.service.ts`    | Published entries, with images looked up in one go  |
-| `delivered-values.ts`    | Expanding image and rich text values                |
-| `entry-urls.ts`          | Filling in route patterns                           |
-| `delivery.repository.ts` | Database reads, always limited to published content |
-| `delivery.schema.ts`     | Zod schemas for requests and responses              |
-| `delivery.errors.ts`     | The 404 for an entry that isn't published           |
+| File                      | What it does                                         |
+| ------------------------- | ---------------------------------------------------- |
+| `delivery.routes.ts`      | The endpoints and the caching header                 |
+| `delivery.service.ts`     | Published entries, with images looked up in one go   |
+| `delivered-values.ts`     | Expanding image, rich text, markdown and list values |
+| `delivered-references.ts` | Looking up terms and linked entries for a response   |
+| `entry-urls.ts`           | Filling in route patterns                            |
+| `delivery.repository.ts`  | Database reads, always limited to published content  |
+| `delivery.schema.ts`      | Zod schemas for requests and responses               |
+| `delivery.errors.ts`      | The 404 for an entry that isn't published            |

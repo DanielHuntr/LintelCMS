@@ -1,5 +1,10 @@
 import type { DatabaseOrTransaction } from "../database/client.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
+import {
+  categoriesTaxonomy,
+  ensureBlogTaxonomies,
+  tagsTaxonomy,
+} from "../taxonomies/default-taxonomies.js";
 import { type CollectionDefaults, ensureCollection } from "./collections.service.js";
 
 /**
@@ -53,16 +58,10 @@ export const blogPostsCollection: CollectionDefaults = {
       }),
       field("featured_image", "Featured image", "image"),
       field("body", "Body", "richText"),
-      field("category", "Category", "select", {
-        options: {
-          choices: [
-            { value: "news", label: "News" },
-            { value: "guides", label: "Guides" },
-            { value: "updates", label: "Updates" },
-          ],
-          multiple: false,
-        },
+      field("categories", "Categories", "terms", {
+        options: { taxonomy: categoriesTaxonomy.handle, maxItems: 3 },
       }),
+      field("tags", "Tags", "terms", { options: { taxonomy: tagsTaxonomy.handle } }),
     ],
   },
 };
@@ -71,6 +70,8 @@ export function ensurePagesCollection(database: DatabaseOrTransaction): Promise<
   return ensureCollection(database, pagesCollection);
 }
 
-export function ensureBlogPostsCollection(database: DatabaseOrTransaction): Promise<void> {
-  return ensureCollection(database, blogPostsCollection);
+/** Blog posts, and the Categories and Tags their fields choose from. */
+export async function ensureBlogPostsCollection(database: DatabaseOrTransaction): Promise<void> {
+  await ensureBlogTaxonomies(database);
+  await ensureCollection(database, blogPostsCollection);
 }

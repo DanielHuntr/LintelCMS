@@ -32,6 +32,8 @@ export const listEntriesQuerySchema = z.object({
     .max(100, { error: "perPage can be at most 100" })
     .default(25),
   parentId: optionalQueryValue(z.uuid({ error: "parentId should be an entry id" })),
+  /** Which language's entries to list. Defaults to the site's main language. */
+  locale: optionalQueryValue(z.string().max(35)),
 });
 
 /** `POST /collections/:handle/entries`. Without a slug, one is made from the title. */
@@ -39,6 +41,13 @@ export const createEntryRequestSchema = z.object({
   data: entryDataSchema,
   slug: slugInputSchema.optional(),
   parentId: parentIdSchema.optional(),
+  /** The language it's written in. Defaults to the site's main language. */
+  locale: z.string({ error: "The locale should be a language code, like fr-FR" }).optional(),
+});
+
+/** `POST /entries/:id/translations`: start a translation of an entry into another language. */
+export const translateEntryRequestSchema = z.object({
+  locale: z.string({ error: "Please choose a language to translate into" }),
 });
 
 /**
@@ -88,6 +97,9 @@ export const entrySummarySchema = z.object({
   slug: z.string(),
   status: z.enum(entryStatuses),
   parentId: z.uuid().nullable(),
+  locale: z.string(),
+  /** The entry this one is a translation of, or null for an original. */
+  originId: z.uuid().nullable(),
   updatedAt: z.iso.datetime(),
   publishedAt: z.iso.datetime().nullable(),
   scheduledFor: z.iso.datetime().nullable(),
@@ -101,6 +113,15 @@ export const entrySchema = entrySummarySchema.extend({
   blueprint: blueprintSchema,
   /** True when the saved values differ from the published ones still being served. */
   hasUnpublishedChanges: z.boolean(),
+  /** The same entry in the site's other languages: its origin and the origin's translations. */
+  translations: z.array(
+    z.object({
+      id: z.uuid(),
+      locale: z.string(),
+      title: z.string(),
+      status: z.enum(entryStatuses),
+    }),
+  ),
 });
 
 export const entryListSchema = z.object({
@@ -123,10 +144,12 @@ export const revisionSchema = revisionSummarySchema.extend({
 
 export type ListEntriesQuery = z.infer<typeof listEntriesQuerySchema>;
 export type CreateEntryRequest = z.infer<typeof createEntryRequestSchema>;
+export type TranslateEntryRequest = z.infer<typeof translateEntryRequestSchema>;
 export type UpdateEntryRequest = z.infer<typeof updateEntryRequestSchema>;
 export type ReorderEntriesRequest = z.infer<typeof reorderEntriesRequestSchema>;
 export type EntrySummaryResponse = z.infer<typeof entrySummarySchema>;
 export type EntryResponse = z.infer<typeof entrySchema>;
+export type EntryTranslation = EntryResponse["translations"][number];
 export type EntryListResponse = z.infer<typeof entryListSchema>;
 export type Person = z.infer<typeof personSchema>;
 export type RevisionSummaryResponse = z.infer<typeof revisionSummarySchema>;

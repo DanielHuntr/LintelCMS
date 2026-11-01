@@ -7,10 +7,12 @@ import type { Collection } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { isUniqueViolation } from "../database/database-errors.js";
 import { buildEntryDataValidator } from "../fieldtypes/entry-data-validator.js";
+import { removeReferencesFromGlobalValues } from "../globals/global-references.js";
 import type { AssetExists } from "../fieldtypes/image-assets.js";
 import { InvalidFieldsError } from "../http/http-errors.js";
-import { findOrCreateDefaultSite } from "../sites/sites.service.js";
+import { resolveLocale } from "../sites/locales.service.js";
 import { checkParent } from "./entry-ordering.service.js";
+import { createContentReferences, removeReferencesFromEntries } from "./entry-references.js";
 import { describeEntry } from "./entry-responses.js";
 import { EntryNotFoundError } from "./entries.errors.js";
 import {
@@ -22,10 +24,17 @@ import {
   findNextSortOrder,
   findSlugsStartingWith,
   insertEntry,
+  listTranslationFamily,
   moveChildrenToParent,
+  type SlugScope,
   updateEntryRow,
 } from "./entries.repository.js";
-import type { CreateEntryRequest, EntryResponse, UpdateEntryRequest } from "./entries.schema.js";
+import type {
+  CreateEntryRequest,
+  EntryResponse,
+  EntryTranslation,
+  UpdateEntryRequest,
+} from "./entries.schema.js";
 import type { Entry, EntryData } from "./entries.table.js";
 import { firstFreeSlug, slugify } from "./slugs.js";
 import { insertRevision } from "./revisions.repository.js";
@@ -41,7 +50,7 @@ export interface EntryChangeContext {
   assetExists: AssetExists;
 }
 
-const SLUG_INDEX = "entries_collection_site_slug_unique";
+const SLUG_INDEX = "entries_collection_site_locale_slug_unique";
 
 /** The entry as the API returns it, or a 404. */
 export async function findEntry(
@@ -52,7 +61,18 @@ export async function findEntry(
   if (!found) {
     throw new EntryNotFoundError();
   }
-  return describeEntry(found);
+  return describeEntry(found, await findTranslations(database, found.entry));
+}
+
+/** The entry in the site's other languages, through its origin. */
+async function findTranslations(
+  database: DatabaseOrTransaction,
+  entry: Entry,
+): Promise<EntryTranslation[]> {
+  const family = await listTranslationFamily(database, entry.originId ?? entry.id);
+  return family
+    .filter((member) => member.id !== entry.id)
+    .map((member) => ({ ...member, title: member.title ?? "" }));
 }
 
 /** The stored entry, or a 404. */
@@ -77,15 +97,17 @@ export async function createEntry(
   const collection = await findCollectionOrFail(database, collectionHandle);
   const data = await validateForCollection(database, collection, request.data, context);
   const parentId = request.parentId ?? null;
-  await checkParent(database, collection, parentId);
-  const site = await findOrCreateDefaultSite(database);
-  const scope = { collectionId: collection.id, siteId: site.id };
+  const { site, locale } = await resolveLocale(database, request.locale);
+  await checkParent(database, collection, parentId, undefined, locale);
+  const scope = { collectionId: collection.id, siteId: site.id, locale };
   const slug = await chooseSlug(database, scope, request.slug, data, collection.name);
 
   const entry = await withFriendlySlugConflict(collection.name, () =>
     database.transaction(async (transaction) => {
       const created = await insertEntry(transaction, {
-        ...scope,
+        collectionId: collection.id,
+        siteId: site.id,
+        locale,
         slug,
         parentId,
         data,
@@ -124,14 +146,19 @@ export async function saveEntry(
     context,
   );
   if (request.parentId !== undefined) {
-    await checkParent(database, collection, request.parentId, entry.id);
+    await checkParent(database, collection, request.parentId, entry.id, entry.locale);
   }
   const slug =
     request.slug === undefined
       ? entry.slug
       : await chooseSlug(
           database,
-          { collectionId: collection.id, siteId: entry.siteId, exceptEntryId: entry.id },
+          {
+            collectionId: collection.id,
+            siteId: entry.siteId,
+            locale: entry.locale,
+            exceptEntryId: entry.id,
+          },
           request.slug,
           data,
           collection.name,
@@ -156,13 +183,18 @@ export async function saveEntry(
   return findEntry(database, entry.id);
 }
 
-/** Deletes the entry and its revisions. Its child pages move up to its own parent. */
+/**
+ * Deletes the entry and its revisions. Its child pages move up to its own parent, its
+ * translations stay as entries of their own, and entries fields that chose it forget it.
+ */
 export async function deleteEntry(database: DatabaseOrTransaction, entryId: string): Promise<void> {
   const entry = await findEntryOrFail(database, entryId);
   await database.transaction(async (transaction) => {
     await moveChildrenToParent(transaction, entry.id, entry.parentId);
     await clearOriginReferences(transaction, entry.id);
     await deleteEntryRow(transaction, entry.id);
+    await removeReferencesFromEntries(transaction, entry.id);
+    await removeReferencesFromGlobalValues(transaction, entry.id);
   });
 }
 
@@ -186,7 +218,10 @@ export async function validateForCollection(
   context: Pick<EntryChangeContext, "assetExists">,
 ): Promise<EntryData> {
   const blueprint = await findBlueprintByIdOrFail(database, collection.blueprintId);
-  const validate = buildEntryDataValidator(blueprint.fields, { assetExists: context.assetExists });
+  const validate = buildEntryDataValidator(blueprint.fields, {
+    assetExists: context.assetExists,
+    references: createContentReferences(database),
+  });
   return validate(data);
 }
 
@@ -194,9 +229,9 @@ export async function validateForCollection(
  * A slug the editor typed is tidied up and must be free; one made from the title gets a
  * number added until it is free, so creating "Hello" twice just works.
  */
-async function chooseSlug(
+export async function chooseSlug(
   database: DatabaseOrTransaction,
-  scope: { collectionId: string; siteId: string; exceptEntryId?: string },
+  scope: SlugScope,
   requested: string | undefined,
   data: EntryData,
   collectionName: string,
@@ -219,7 +254,7 @@ async function chooseSlug(
 }
 
 /** Two saves racing for the same slug: the loser gets the same message as a taken slug. */
-async function withFriendlySlugConflict<Result>(
+export async function withFriendlySlugConflict<Result>(
   collectionName: string,
   write: () => Promise<Result>,
 ): Promise<Result> {

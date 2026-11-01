@@ -251,6 +251,13 @@ describe("GET /fieldtypes", () => {
       "date",
       "image",
       "link",
+      "email",
+      "url",
+      "colour",
+      "markdown",
+      "list",
+      "entries",
+      "terms",
     ]);
     expect(response.json().fieldtypes[0]).toEqual({
       type: "text",

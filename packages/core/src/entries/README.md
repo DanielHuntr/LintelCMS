@@ -6,25 +6,44 @@ publish, unpublish and restore is kept as a revision.
 
 ## Endpoints
 
-| Method and path                                   | Permission        | Body                            | Success                                 |
-| ------------------------------------------------- | ----------------- | ------------------------------- | --------------------------------------- |
-| `GET /collections/:handle/entries`                | `entries:read`    | query below                     | 200 `{ entries, total, page, perPage }` |
-| `POST /collections/:handle/entries`               | `entries:create`  | `{ data, slug?, parentId? }`    | 201 `Entry`                             |
-| `POST /collections/:handle/entries/reorder`       | `entries:update`  | `{ order: [{ id, parentId }] }` | 204                                     |
-| `GET /entries/:id`                                | `entries:read`    | none                            | 200 `Entry`                             |
-| `PATCH /entries/:id`                              | `entries:update`  | `{ data?, slug?, parentId? }`   | 200 `Entry`                             |
-| `POST /entries/:id/publish`                       | `entries:publish` | none                            | 200 `Entry`                             |
-| `POST /entries/:id/unpublish`                     | `entries:publish` | none                            | 200 `Entry`                             |
-| `POST /entries/:id/schedule`                      | `entries:publish` | `{ publishAt }` (in the future) | 200 `Entry`                             |
-| `DELETE /entries/:id`                             | `entries:delete`  | none                            | 204                                     |
-| `GET /entries/:id/revisions`                      | `entries:read`    | none                            | 200 `{ revisions }`, newest first       |
-| `GET /entries/:id/revisions/:revisionId`          | `entries:read`    | none                            | 200, with its `data`                    |
-| `POST /entries/:id/revisions/:revisionId/restore` | `entries:update`  | none                            | 200 `Entry`                             |
+| Method and path                                   | Permission        | Body                            | Success                                  |
+| ------------------------------------------------- | ----------------- | ------------------------------- | ---------------------------------------- |
+| `GET /collections/:handle/entries`                | `entries:read`    | query below                     | 200 `{ entries, total, page, perPage }`  |
+| `POST /collections/:handle/entries`               | `entries:create`  | `{ data, slug?, parentId? }`    | 201 `Entry`                              |
+| `POST /collections/:handle/entries/reorder`       | `entries:update`  | `{ order: [{ id, parentId }] }` | 204                                      |
+| `GET /entries/:id`                                | `entries:read`    | none                            | 200 `Entry`                              |
+| `PATCH /entries/:id`                              | `entries:update`  | `{ data?, slug?, parentId? }`   | 200 `Entry`                              |
+| `POST /entries/:id/publish`                       | `entries:publish` | none                            | 200 `Entry`                              |
+| `POST /entries/:id/unpublish`                     | `entries:publish` | none                            | 200 `Entry`                              |
+| `POST /entries/:id/schedule`                      | `entries:publish` | `{ publishAt }` (in the future) | 200 `Entry`                              |
+| `DELETE /entries/:id`                             | `entries:delete`  | none                            | 204                                      |
+| `GET /entries/:id/revisions`                      | `entries:read`    | none                            | 200 `{ revisions }`, newest first        |
+| `GET /entries/:id/revisions/:revisionId`          | `entries:read`    | none                            | 200, with its `data`                     |
+| `POST /entries/:id/revisions/:revisionId/restore` | `entries:update`  | none                            | 200 `Entry`                              |
+| `POST /entries/:id/translations`                  | `entries:create`  | `{ locale }`                    | 201 `Entry`, or 409 `TRANSLATION_EXISTS` |
 
 The list takes `status` (`draft`, `published`, `scheduled`), `search` (in titles, any
-case), `page`, `perPage` (up to 100, default 25) and `parentId` (direct children only).
-Shapes are in `entries.schema.ts`; an `Entry` is a summary plus `collectionHandle`, `data`,
-`blueprint` and `hasUnpublishedChanges`.
+case), `page`, `perPage` (up to 100, default 25), `parentId` (direct children only) and
+`locale` (the site's main language by default). Shapes are in `entries.schema.ts`; a
+summary has `locale` and `originId`, and an `Entry` adds `collectionHandle`, `data`,
+`blueprint`, `hasUnpublishedChanges` and `translations` (`[{ id, locale, title, status }]`).
+
+## Languages
+
+Every entry is written in one of its site's locales (`POST` takes `locale`, defaulting to
+the main language). A translation is an entry of its own linked to its origin through
+`originId`; `POST /entries/:id/translations` starts one as a draft copy, keeping the slug
+where it's free and, in a tree, going under the translation of its origin's parent. Slugs
+are unique per collection, site and locale, and a parent has to be in the same language.
+Deleting an origin leaves its translations as entries of their own. See
+`docs/decisions/0007-translations-as-linked-entries.md`.
+
+## References to other content
+
+Entries and terms fields store lists of ids. They are checked on save through
+`createContentReferences` (`entry-references.ts`). Deleting an entry (or a term) takes its
+id out of every entry's and global set's lists, saved and published values alike, so a
+stale id never stops someone saving an unrelated change.
 
 ## Saving
 
@@ -81,6 +100,8 @@ whose saved or published values use an asset, as `[{ entryId, title }]`, for
 | `entry-listing.service.ts`                 | Lists in each structure's order, a page at a time    |
 | `entry-ordering.service.ts`                | Parents and `reorder`                                |
 | `entry-publishing.service.ts`              | Publish, unpublish, schedule and `publishDueEntries` |
+| `entry-translations.service.ts`            | Starting a translation                               |
+| `entry-references.ts`                      | Checking and tidying ids in entries and terms fields |
 | `revisions.service.ts`                     | Listing, viewing and restoring revisions             |
 | `entry-responses.ts`                       | Stored rows to API shapes; `hasUnpublishedChanges`   |
 | `slugs.ts`, `entry-tree.ts`                | Pure helpers: making slugs, putting a tree in order  |
@@ -89,3 +110,4 @@ whose saved or published values use an asset, as `[{ entryId, title }]`, for
 | `revisions.repository.ts`                  | Database reads and writes for revisions              |
 | `entries.errors.ts`                        | Named errors with the messages people see            |
 | `entries.routes.ts`, `revisions.routes.ts` | The endpoints                                        |
+| `translations.routes.ts`                   | `POST /entries/:id/translations`                     |

@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { parseRequest } from "../http/http-errors.js";
 import {
   deliveryEntryParamsSchema,
+  deliveryEntryQuerySchema,
   deliveryListParamsSchema,
   deliveryListQuerySchema,
 } from "./delivery.schema.js";
@@ -16,8 +17,9 @@ const CACHE_CONTROL = "public, max-age=60";
 /**
  * HTTP only. Public by design: no session, published content only (see README.md).
  *
- *   GET /delivery/:collection        ?page&perPage -> { items: [DeliveredEntry], total }
- *   GET /delivery/:collection/:slug  -> DeliveredEntry, or 404
+ *   GET /delivery/:collection        ?page&perPage&locale&taxonomy&term
+ *                                    -> { items: [DeliveredEntry], total }
+ *   GET /delivery/:collection/:slug  ?locale -> DeliveredEntry with translations, or 404
  */
 export async function deliveryRoutes(server: FastifyInstance) {
   server.get("/delivery/:collection", async (request, reply) => {
@@ -29,7 +31,14 @@ export async function deliveryRoutes(server: FastifyInstance) {
 
   server.get("/delivery/:collection/:slug", async (request, reply) => {
     const { collection, slug } = parseRequest(deliveryEntryParamsSchema, request.params);
-    const entry = await findDeliveredEntry(server.database, collection, slug, server.assetLookup);
+    const { locale } = parseRequest(deliveryEntryQuerySchema, request.query);
+    const entry = await findDeliveredEntry(
+      server.database,
+      collection,
+      slug,
+      locale,
+      server.assetLookup,
+    );
     return reply.header("cache-control", CACHE_CONTROL).send(entry);
   });
 }

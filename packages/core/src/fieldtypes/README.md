@@ -17,6 +17,13 @@ check an entry's values against any blueprint.
 | `date`     | `YYYY-MM-DD`, or a date and time with `includeTime` | `includeTime?`                             |
 | `image`    | asset id (uuid)                                     | none                                       |
 | `link`     | `{ url, label? }`                                   | none                                       |
+| `email`    | string, an email address                            | none                                       |
+| `url`      | string, an `https://` or `http://` address          | none                                       |
+| `colour`   | `#rrggbb`, stored in lowercase                      | `swatches?: ["#rrggbb"]` (up to 24)        |
+| `markdown` | string                                              | `maxLength?`                               |
+| `list`     | string[]; blank items are left out                  | `maxItems?`                                |
+| `entries`  | entry ids (uuid[]), in the chosen order             | `collections?: [handle]`, `maxItems?`      |
+| `terms`    | term ids (uuid[]), in the chosen order              | `taxonomy` (handle), `maxItems?`           |
 
 Empty values (missing, null, blank text, empty lists, a rich text document with only empty
 paragraphs, a link without an address) are stored as null, and are an error only when the
@@ -43,6 +50,12 @@ per field, using the field's label:
   "fields": { "title": "Title is required", "category": "Category should be one of: News, Guides" }
 }
 ```
+
+`entries` and `terms` always store a list, even with `maxItems: 1`, so code reading them
+never has to ask which shape it got. Their ids are checked against the database through
+`ContentReferences` (`content-references.ts`), which the entries feature hands in, the same
+way images are checked through the media library. When an entry or a term is deleted, its
+id is taken out of every list that held it (see `src/entries/entry-references.ts`).
 
 ## Images and the media library
 
@@ -71,6 +84,11 @@ show its values differently, add that to `src/delivery/delivered-values.ts`.
 | `text-fieldtypes.ts`         | `text`, `textarea`, `richText`                                   |
 | `value-fieldtypes.ts`        | `number`, `toggle`, `date`                                       |
 | `reference-fieldtypes.ts`    | `select`, `image`, `link`                                        |
+| `format-fieldtypes.ts`       | `email`, `url`, `colour`, `markdown`                             |
+| `list-fieldtype.ts`          | `list`                                                           |
+| `relation-fieldtypes.ts`     | `entries`, `terms`                                               |
+| `content-references.ts`      | `ContentReferences`: what entries and terms fields check against |
+| `markdown.ts`                | Rendering Markdown to safe HTML for the delivery API             |
 | `field-definition.schema.ts` | A field in a blueprint, with its options checked by its type     |
 | `entry-data-validator.ts`    | `buildEntryDataValidator`: checking an entry against a blueprint |
 | `rich-text.ts`               | Checking rich text documents and rendering them to HTML          |

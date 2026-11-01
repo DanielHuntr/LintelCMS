@@ -200,11 +200,16 @@ describe("default collections", () => {
       "excerpt",
       "featured_image",
       "body",
-      "category",
+      "categories",
+      "tags",
     ]);
-    expect(
-      post.json().fields[4].options.choices.map((choice: { label: string }) => choice.label),
-    ).toEqual(["News", "Guides", "Updates"]);
+    expect(post.json().fields[4].options).toEqual({ taxonomy: "categories", maxItems: 3 });
+    const categories = await api("GET", "/taxonomies/categories/terms");
+    expect(categories.json().terms.map((term: { title: string }) => term.title)).toEqual([
+      "Guides",
+      "News",
+      "Updates",
+    ]);
   });
 
   it("adds Blog posts when the blog is switched on later, and keeps them when it is switched off", async () => {

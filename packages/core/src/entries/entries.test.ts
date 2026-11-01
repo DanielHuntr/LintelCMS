@@ -33,7 +33,6 @@ describe("entries", () => {
     const response = await createPost({
       title: "Café opening hours",
       excerpt: "Now open on Sundays",
-      category: "news",
     });
 
     expect(response.statusCode).toBe(201);
@@ -43,6 +42,9 @@ describe("entries", () => {
       slug: "cafe-opening-hours",
       status: "draft",
       parentId: null,
+      locale: "en-GB",
+      originId: null,
+      translations: [],
       publishedAt: null,
       scheduledFor: null,
       updatedBy: { name: "Ana Editor" },
@@ -53,7 +55,8 @@ describe("entries", () => {
         excerpt: "Now open on Sundays",
         featured_image: null,
         body: null,
-        category: "news",
+        categories: null,
+        tags: null,
       },
       blueprint: { handle: "post", version: 1 },
     });
@@ -64,7 +67,7 @@ describe("entries", () => {
     const response = await createPost({
       title: "",
       excerpt: 12,
-      category: "gossip",
+      categories: ["gossip"],
       featured_image: "not-an-id",
     });
 
@@ -76,7 +79,7 @@ describe("entries", () => {
       fields: {
         title: "Title is required",
         excerpt: "Excerpt should be text",
-        category: "Category should be one of: News, Guides, Updates",
+        categories: "Categories should be a list of terms",
         featured_image: "Featured image should be an image from the media library",
       },
     });
@@ -145,18 +148,17 @@ describe("entries", () => {
     const created = await createPost({
       title: "First title",
       excerpt: "Keep me",
-      category: "news",
     });
 
     const saved = await api("PATCH", `/entries/${created.json().id}`, {
-      data: { title: "Second title", category: null },
+      data: { title: "Second title", tags: null },
     });
 
     expect(saved.statusCode).toBe(200);
     expect(saved.json()).toMatchObject({
       title: "Second title",
       slug: "first-title",
-      data: { title: "Second title", excerpt: "Keep me", category: null },
+      data: { title: "Second title", excerpt: "Keep me", tags: null },
     });
   });
 

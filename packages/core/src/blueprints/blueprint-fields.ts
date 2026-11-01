@@ -19,6 +19,35 @@ export const TITLE_FIELD_HANDLE = "title";
  * Returns the fields to store, with the title marked required whatever was sent.
  */
 export function checkBlueprintFields(input: readonly unknown[]): FieldDefinition[] {
+  const { fields, messages } = collectFieldProblems(input);
+
+  const titleProblem = findTitleProblem(input);
+  if (titleProblem) {
+    messages[TITLE_FIELD_HANDLE] ??= titleProblem;
+  }
+
+  if (Object.keys(messages).length > 0) {
+    throw new InvalidFieldsError(messages);
+  }
+  return fields.map((field) =>
+    field.handle === TITLE_FIELD_HANDLE ? { ...field, required: true } : field,
+  );
+}
+
+/**
+ * The same checks without the title rule, for lists of fields that aren't entries, such
+ * as a global set's.
+ */
+export function checkFieldDefinitions(input: readonly unknown[]): FieldDefinition[] {
+  const { fields, messages } = collectFieldProblems(input);
+  if (Object.keys(messages).length > 0) {
+    throw new InvalidFieldsError(messages);
+  }
+  return fields;
+}
+
+/** Each field on its own, then unique handles. */
+function collectFieldProblems(input: readonly unknown[]) {
   const messages: FieldMessages = {};
   const fields: FieldDefinition[] = [];
   const handles = new Set<string>();
@@ -37,18 +66,7 @@ export function checkBlueprintFields(input: readonly unknown[]): FieldDefinition
     handles.add(parsed.data.handle);
     fields.push(parsed.data);
   });
-
-  const titleProblem = findTitleProblem(input);
-  if (titleProblem) {
-    messages[TITLE_FIELD_HANDLE] ??= titleProblem;
-  }
-
-  if (Object.keys(messages).length > 0) {
-    throw new InvalidFieldsError(messages);
-  }
-  return fields.map((field) =>
-    field.handle === TITLE_FIELD_HANDLE ? { ...field, required: true } : field,
-  );
+  return { fields, messages };
 }
 
 function findTitleProblem(input: readonly unknown[]): string | null {

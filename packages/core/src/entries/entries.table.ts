@@ -29,7 +29,9 @@ export type EntryStatus = (typeof entryStatuses)[number];
  *   it on the site until someone publishes again. Null while nothing is live.
  * - `scheduledFor` is when a "scheduled" entry will be published (see src/scheduler).
  * - `sortOrder` is the entry's place among its siblings, for "tree" and "flat" collections.
+ * - `locale` is the language the entry is written in, one of its site's locales.
  * - `originId` links translations: the French version of a page points at the English one.
+ *   See docs/decisions/0007-translations-as-linked-entries.md.
  * - `parentId` builds the page tree for collections with a "tree" structure.
  */
 export const entriesTable = pgTable(
@@ -43,6 +45,8 @@ export const entriesTable = pgTable(
     siteId: uuid("site_id")
       .notNull()
       .references(() => sitesTable.id),
+    // Entries from before languages existed were in the default site's language, en-GB.
+    locale: text("locale").notNull().default("en-GB"),
     originId: uuid("origin_id").references((): AnyPgColumn => entriesTable.id),
     parentId: uuid("parent_id").references((): AnyPgColumn => entriesTable.id),
     slug: text("slug").notNull(),
@@ -58,13 +62,16 @@ export const entriesTable = pgTable(
   },
   (table) => [
     index("entries_collection_site_idx").on(table.collectionId, table.siteId),
-    // Slugs are unique per collection and site, so "/blog/hello" can only mean one post.
-    uniqueIndex("entries_collection_site_slug_unique").on(
+    // Slugs are unique per collection, site and locale, so "/blog/hello" can only mean one
+    // post in each language, and a translation can keep its origin's slug.
+    uniqueIndex("entries_collection_site_locale_slug_unique").on(
       table.tenantId,
       table.collectionId,
       table.siteId,
+      table.locale,
       table.slug,
     ),
+    index("entries_origin_idx").on(table.originId),
     // The scheduler looks for scheduled entries that are due, every minute.
     index("entries_status_scheduled_for_idx").on(table.status, table.scheduledFor),
   ],

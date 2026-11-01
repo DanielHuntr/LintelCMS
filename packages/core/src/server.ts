@@ -25,6 +25,11 @@ import { pluginsRoutes } from "./plugins/plugins.routes.js";
 import { registerScheduledJobs } from "./scheduler/scheduled-jobs.js";
 import { generateSetupCode } from "./setup/setup-code.js";
 import { setupRoutes } from "./setup/setup.routes.js";
+import { localesRoutes } from "./sites/locales.routes.js";
+import { taxonomiesRoutes } from "./taxonomies/taxonomies.routes.js";
+import { globalsRoutes } from "./globals/globals.routes.js";
+import { navigationRoutes } from "./navigation/navigation.routes.js";
+import { translationsRoutes } from "./entries/translations.routes.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -136,6 +141,11 @@ export function buildServer(options: ServerOptions) {
   server.register(entriesRoutes);
   server.register(revisionsRoutes);
   server.register(deliveryRoutes);
+  server.register(localesRoutes);
+  server.register(translationsRoutes);
+  server.register(taxonomiesRoutes);
+  server.register(globalsRoutes);
+  server.register(navigationRoutes);
 
   if (options.runScheduledJobs ?? true) {
     registerScheduledJobs(server);

@@ -1,5 +1,13 @@
 import type { Fieldtype } from "./fieldtype.js";
+import {
+  colourFieldtype,
+  emailFieldtype,
+  markdownFieldtype,
+  urlFieldtype,
+} from "./format-fieldtypes.js";
+import { listFieldtype } from "./list-fieldtype.js";
 import { imageFieldtype, linkFieldtype, selectFieldtype } from "./reference-fieldtypes.js";
+import { entriesFieldtype, termsFieldtype } from "./relation-fieldtypes.js";
 import { richTextFieldtype, textareaFieldtype, textFieldtype } from "./text-fieldtypes.js";
 import { dateFieldtype, numberFieldtype, toggleFieldtype } from "./value-fieldtypes.js";
 
@@ -17,6 +25,13 @@ export const fieldtypeRegistry: readonly Fieldtype[] = [
   dateFieldtype,
   imageFieldtype,
   linkFieldtype,
+  emailFieldtype,
+  urlFieldtype,
+  colourFieldtype,
+  markdownFieldtype,
+  listFieldtype,
+  entriesFieldtype,
+  termsFieldtype,
 ];
 
 export const fieldtypeNames = fieldtypeRegistry.map((fieldtype) => fieldtype.type);

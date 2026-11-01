@@ -57,7 +57,12 @@ export function buildEntryDataValidator(
         continue;
       }
 
-      const problem = await fieldtype.checkReferences?.(parsed.data, field.label, context);
+      const problem = await fieldtype.checkReferences?.(
+        parsed.data,
+        field.label,
+        context,
+        field.options,
+      );
       if (problem) {
         messages[field.handle] = problem;
         continue;

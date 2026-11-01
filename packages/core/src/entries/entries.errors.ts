@@ -40,3 +40,17 @@ export class EntryNotInCollectionError extends HttpError {
     super(400, "INVALID_REQUEST", `The entry ${entryId} isn't in ${collectionName}.`);
   }
 }
+
+export class TranslationExistsError extends HttpError {
+  constructor(localeName: string, translationId: string) {
+    super(409, "TRANSLATION_EXISTS", `This entry already has a ${localeName} version.`, {
+      translationId,
+    });
+  }
+}
+
+export class SameLocaleTranslationError extends HttpError {
+  constructor(localeName: string) {
+    super(400, "INVALID_REQUEST", `This entry is already written in ${localeName}.`);
+  }
+}

@@ -1,6 +1,7 @@
 import { findCollectionOrFail } from "../collections/collections.service.js";
 import type { Collection } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
+import { resolveLocale } from "../sites/locales.service.js";
 import { orderAsTree } from "./entry-tree.js";
 import { describeEntrySummary } from "./entry-responses.js";
 import {
@@ -22,11 +23,13 @@ export async function listEntries(
   query: ListEntriesQuery,
 ): Promise<EntryListResponse> {
   const collection = await findCollectionOrFail(database, collectionHandle);
+  const { locale } = await resolveLocale(database, query.locale);
   const filters: EntryFilters = {
     collectionId: collection.id,
     status: query.status,
     search: query.search,
     parentId: query.parentId,
+    locale,
   };
   const page = { limit: query.perPage, offset: (query.page - 1) * query.perPage };
 
