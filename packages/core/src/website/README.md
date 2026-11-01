@@ -12,17 +12,22 @@ untouched; set `SITE_ENABLED=false` when the site is built separately.
 
 ## What an address shows
 
-| Address                        | Shows                                                   |
-| ------------------------------ | ------------------------------------------------------- |
-| `/`                            | The page with the slug `home`, else the newest posts    |
-| `/<slug>`, `/blog/<slug>`      | An entry, through its collection's route pattern        |
-| `/blog`, `/blog/page/2`        | A dated collection's posts, ten a page, newest first    |
-| `/blog/<taxonomy>/<term>`      | The posts filed under a term (`/blog/categories/bread`) |
-| `/fr-FR/...`                   | The same in another of the site's languages             |
-| `/sitemap.xml`, `/robots.txt`  | From the SEO plugin, with the site's own addresses      |
-| `/_lintel/motion-<hash>.js`    | The motion runtime, loaded only by pages that animate   |
-| `/_lintel/illustrations/*.svg` | The starter sites' illustrations                        |
-| anything else                  | A friendly 404                                          |
+| Address                           | Shows                                                   |
+| --------------------------------- | ------------------------------------------------------- |
+| `/`                               | The page with the slug `home`, else the newest posts    |
+| `/<slug>`, `/blog/<slug>`         | An entry, through its collection's route pattern        |
+| `/blog`, `/blog/page/2`           | A dated collection's posts, ten a page, newest first    |
+| `/blog/<taxonomy>/<term>`         | The posts filed under a term (`/blog/categories/bread`) |
+| `/fr-FR/...`                      | The same in another of the site's languages             |
+| `/sitemap.xml`, `/robots.txt`     | From the SEO plugin, with the site's own addresses      |
+| `/_lintel/motion-<hash>.js`       | The motion runtime, loaded only by pages that animate   |
+| `/_lintel/elements-<hash>.js`     | The elements script, for sliders, forms, the basket...  |
+| `/_lintel/api/shop/*`, `/forms/*` | The storefront and forms APIs, at the site's address    |
+| `/shop`, `/shop/<collection>`     | With the shop on: products, and a collection of them    |
+| `/products/<handle>`              | A product (the site's product design, or the default)   |
+| `/cart`, `/order-confirmation`    | The basket and checkout, and the thank-you page         |
+| `/_lintel/illustrations/*.svg`    | The starter sites' illustrations                        |
+| anything else                     | A friendly 404                                          |
 
 `/home` and addresses with a trailing slash redirect (301) to their one true address, as
 does a post's address with an old date in it. With the SEO plugin on, its active redirects
@@ -42,6 +47,14 @@ draws it inside `<div class="lintel-design">`, its stylesheet goes in the page's
 the site stylesheet carries the builder's element defaults (`designBaseStylesheet`). The
 builder's canvas draws with exactly that stylesheet, header and footer
 (`GET /website/canvas`, `canvas.service.ts`), so what people design is what visitors see.
+
+Collection lists, product grids, forms and headers in a design are filled in before it is
+drawn (`page-data.service.ts`): `?page=` pages through the first list that links to more
+pages and `?sort=` orders product grids. A published page whose design is the **item design**
+for a collection (`itemDesignFor`) draws every entry of that collection, its bound elements
+showing the entry's fields (`item-designs.service.ts`, `entry-designs.service.ts`). The
+shop's products and the forms are read from their own APIs inside the process
+(`site-sources.ts`), so while a plugin is off its elements show their empty states.
 
 Animated elements get `data-node-id` (and `data-motion-cloak` on entrances); the page lists
 its animations in `<script type="application/json" id="lintel-motion">` and loads the motion
@@ -74,38 +87,47 @@ Anything not chosen follows the template's own theme; no template chosen follows
 type from setup (a blog gets Journal, everything else Clean). An install can add templates
 of its own with `buildServer({ website: { templates } })`.
 
-| Method and path        | Permission        | Success                                         |
-| ---------------------- | ----------------- | ----------------------------------------------- |
-| `GET /website`         | `settings:read`   | 200 `Website`                                   |
-| `PUT /website`         | `settings:update` | 200 `Website`, from any of its settings         |
-| `GET /website/address` | signed in         | 200 `{ siteAddress, defaultLocale }`, View page |
-| `GET /website/canvas`  | `entries:read`    | 200 the stylesheet, header, footer, runtime     |
+| Method and path             | Permission        | Success                                         |
+| --------------------------- | ----------------- | ----------------------------------------------- |
+| `GET /website`              | `settings:read`   | 200 `Website`                                   |
+| `PUT /website`              | `settings:update` | 200 `Website`, from any of its settings         |
+| `GET /website/address`      | signed in         | 200 `{ siteAddress, defaultLocale }`, View page |
+| `GET /website/canvas`       | `entries:read`    | 200 the stylesheet, header, footer, runtime     |
+| `GET /website/builder-data` | `entries:read`    | 200 collections, forms and products to show     |
 
 There is no repository: everything is kept in settings and read through other features.
 
 ## Files
 
-| File                      | What it does                                              |
-| ------------------------- | --------------------------------------------------------- |
-| `site-server.ts`          | The website's own Fastify server, reading through the API |
-| `site.routes.ts`          | Its routes: the stylesheet, and every page                |
-| `site-pages.service.ts`   | What to answer for an address; the cache in front of it   |
-| `site-routing.ts`         | Which content an address could mean (pure)                |
-| `site-lists.service.ts`   | Blog indexes and archives, with pagination                |
-| `site-preview.service.ts` | Drafts with a preview token                               |
-| `site-context.service.ts` | What every page shares: languages, collections, theme     |
-| `site-chrome.service.ts`  | The header and footer: site settings and the main menu    |
-| `site-head.service.ts`    | Title, description, canonical and Open Graph              |
-| `site-views.ts`           | Which layout an entry gets                                |
-| `site-documents.ts`       | Views to HTML responses, with headers                     |
-| `delivered-to-site.ts`    | Delivered values to component props, read carefully       |
-| `designed-pages.ts`       | A page design drawn by the builder's renderer             |
-| `canvas.service.ts`       | What the builder's canvas draws around a page             |
-| `site-assets.ts`          | The motion runtime and the illustrations                  |
-| `rendered-pages-cache.ts` | The in-memory cache                                       |
-| `website-runtime.ts`      | `server.website`, and emptying the cache after writes     |
-| `website.routes.ts`       | Settings, Your website's endpoints                        |
-| `website.service.ts`      | Reading and changing the settings; the resolved look      |
-| `website.schema.ts`       | The `website` setting and the request                     |
-| `site-templates.ts`       | The templates on offer                                    |
-| `website.errors.ts`       | Named errors with the messages people see                 |
+| File                       | What it does                                              |
+| -------------------------- | --------------------------------------------------------- |
+| `site-server.ts`           | The website's own Fastify server, reading through the API |
+| `site.routes.ts`           | Its routes: the stylesheet, and every page                |
+| `site-pages.service.ts`    | What to answer for an address; the cache in front of it   |
+| `site-routing.ts`          | Which content an address could mean (pure)                |
+| `site-lists.service.ts`    | Blog indexes and archives, with pagination                |
+| `site-preview.service.ts`  | Drafts with a preview token                               |
+| `site-context.service.ts`  | What every page shares: languages, collections, theme     |
+| `site-chrome.service.ts`   | The header and footer: site settings and the main menu    |
+| `site-head.service.ts`     | Title, description, canonical and Open Graph              |
+| `site-views.ts`            | Which layout an entry gets                                |
+| `site-documents.ts`        | Views to HTML responses, with headers                     |
+| `delivered-to-site.ts`     | Delivered values to component props, read carefully       |
+| `designed-pages.ts`        | A page design drawn by the builder's renderer             |
+| `page-data.service.ts`     | What a design's lists, product grids and forms show       |
+| `bound-entries.ts`         | Entries as bound items, and fields the builder can show   |
+| `entry-designs.service.ts` | An entry's page with its design (or its item design)      |
+| `item-designs.service.ts`  | Which page is the design of every entry of a collection   |
+| `shop-pages.service.ts`    | The shop's pages, and `shop-designs.ts` their designs     |
+| `site-sources.ts`          | The storefront and forms APIs, read inside the process    |
+| `site-api.routes.ts`       | Those APIs at the website's own address, for the browser  |
+| `builder-data.service.ts`  | `GET /website/builder-data`: what the builder can show    |
+| `canvas.service.ts`        | What the builder's canvas draws around a page             |
+| `site-assets.ts`           | The motion runtime and the illustrations                  |
+| `rendered-pages-cache.ts`  | The in-memory cache                                       |
+| `website-runtime.ts`       | `server.website`, and emptying the cache after writes     |
+| `website.routes.ts`        | Settings, Your website's endpoints                        |
+| `website.service.ts`       | Reading and changing the settings; the resolved look      |
+| `website.schema.ts`        | The `website` setting and the request                     |
+| `site-templates.ts`        | The templates on offer                                    |
+| `website.errors.ts`        | Named errors with the messages people see                 |
