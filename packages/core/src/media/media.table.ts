@@ -1,5 +1,6 @@
 import { index, integer, pgTable, real, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { id, tenantId, timestamps } from "../database/columns.js";
+import { sitesTable } from "../sites/sites.table.js";
 import { usersTable } from "../users/users.table.js";
 
 /**
@@ -11,12 +12,15 @@ import { usersTable } from "../users/users.table.js";
  * - The focal point is where the subject is, from 0 to 1 across and down. Crops keep it in view.
  * - `contentHash` (SHA-256 of the bytes) is unique per tenant, so uploading the same file
  *   twice gives back the asset that already exists instead of a duplicate.
+ * - `siteId` puts the asset in one site's folder. Null means the shared library, which is
+ *   where everything goes unless someone chooses a site's folder. Every site can use any asset.
  */
 export const assetsTable = pgTable(
   "assets",
   {
     id: id(),
     tenantId: tenantId(),
+    siteId: uuid("site_id").references(() => sitesTable.id, { onDelete: "set null" }),
     filename: text("filename").notNull(),
     storageKey: text("storage_key").notNull(),
     mimeType: text("mime_type").notNull(),

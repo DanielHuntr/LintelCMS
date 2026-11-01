@@ -5,6 +5,9 @@ import { usersTable } from "../users/users.table.js";
 /**
  * A role is a named set of permissions, such as "Editor" or "Store manager".
  * Permissions are plain strings (see permissions.ts) so they are easy to read in the database.
+ *
+ * `siteIds` limits the role to some sites: null means every site, which is how every role
+ * starts. Someone with several roles may work on every site any of them allows.
  */
 export const rolesTable = pgTable(
   "roles",
@@ -14,6 +17,7 @@ export const rolesTable = pgTable(
     handle: text("handle").notNull(),
     name: text("name").notNull(),
     permissions: text("permissions").array().notNull().default([]),
+    siteIds: uuid("site_ids").array(),
     ...timestamps(),
   },
   (table) => [uniqueIndex("roles_tenant_handle_unique").on(table.tenantId, table.handle)],

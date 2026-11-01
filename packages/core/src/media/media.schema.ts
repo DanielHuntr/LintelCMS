@@ -31,7 +31,12 @@ export const assetSchema = z.object({
   thumbnailUrl: z.string().nullable(),
   createdAt: z.iso.datetime(),
   uploadedBy: z.object({ id: z.uuid(), name: z.string() }).nullable(),
+  /** The site whose folder it is in; null for the shared library. Every site can use it. */
+  siteId: z.uuid().nullable(),
 });
+
+/** "shared" for the shared library, or a site's handle for that site's folder. */
+export const SHARED_FOLDER = "shared";
 
 export const listAssetsQuerySchema = z.object({
   search: optionalQueryValue(z.string().trim().max(200)),
@@ -42,6 +47,13 @@ export const listAssetsQuerySchema = z.object({
   perPage: optionalQueryValue(z.coerce.number().int().min(1).max(100)).transform(
     (perPage) => perPage ?? 25,
   ),
+  /** Only one folder: "shared", or a site's handle. Left out, every file. */
+  folder: optionalQueryValue(z.string().max(64)),
+});
+
+/** `POST /media?folder=<site handle>` puts the upload in that site's folder. */
+export const uploadAssetQuerySchema = z.object({
+  folder: optionalQueryValue(z.string().max(64)),
 });
 
 export const updateAssetRequestSchema = z.object({
@@ -53,6 +65,8 @@ export const updateAssetRequestSchema = z.object({
     .min(1, { error: "Please enter a filename" })
     .max(200, { error: "Filenames can be at most 200 characters" })
     .optional(),
+  /** A site's handle to move it to that site's folder, or "shared" (or null) for the library. */
+  folder: z.string({ error: "The folder should be a site's handle" }).nullable().optional(),
 });
 
 const transformDimension = optionalQueryValue(

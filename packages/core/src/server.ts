@@ -34,6 +34,7 @@ import { seoRoutes } from "./seo/seo.routes.js";
 import { generateSetupCode } from "./setup/setup-code.js";
 import { setupRoutes } from "./setup/setup.routes.js";
 import { localesRoutes } from "./sites/locales.routes.js";
+import { sitesRoutes } from "./sites/sites.routes.js";
 import { taxonomiesRoutes } from "./taxonomies/taxonomies.routes.js";
 import { globalsRoutes } from "./globals/globals.routes.js";
 import { navigationRoutes } from "./navigation/navigation.routes.js";
@@ -172,6 +173,7 @@ export function buildServer(options: ServerOptions) {
   server.register(revisionsRoutes);
   server.register(deliveryRoutes);
   server.register(localesRoutes);
+  server.register(sitesRoutes);
   server.register(translationsRoutes);
   server.register(taxonomiesRoutes);
   server.register(globalsRoutes);

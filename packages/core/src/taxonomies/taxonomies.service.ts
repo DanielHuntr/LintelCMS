@@ -15,8 +15,8 @@ import {
   findTaxonomyWithCount,
   insertTaxonomyIfMissing,
   listTaxonomiesWithCounts,
-  renameTaxonomy,
   type TaxonomyWithCount,
+  updateTaxonomyRow,
 } from "./taxonomies.repository.js";
 import type {
   CreateTaxonomyRequest,
@@ -24,16 +24,35 @@ import type {
   UpdateTaxonomyRequest,
 } from "./taxonomies.schema.js";
 import type { Taxonomy } from "./taxonomies.table.js";
+import { findSiteOrFail } from "../sites/sites.service.js";
+import type { Site } from "../sites/sites.table.js";
 import { forgetTerms } from "./term-references.js";
 import { insertTermIfMissing, listTermIdsInTaxonomy } from "./terms.repository.js";
 
-/** Business rules for taxonomies. Terms are in terms.service.ts. */
+/**
+ * Business rules for taxonomies. Terms are in terms.service.ts.
+ *
+ * A taxonomy is shared by every site, or belongs to one. Given a site, lookups only see
+ * the shared ones and that site's own; without one (inside the API) they see every one.
+ */
+
+function belongsTo(taxonomy: Pick<Taxonomy, "siteId">, site: Site | undefined): boolean {
+  return site === undefined || taxonomy.siteId === null || taxonomy.siteId === site.id;
+}
+
+async function findSiteIdForHandle(
+  database: DatabaseOrTransaction,
+  siteHandle: string | null,
+): Promise<string | null> {
+  return siteHandle === null ? null : (await findSiteOrFail(database, siteHandle)).id;
+}
 
 export function describeTaxonomy(taxonomy: TaxonomyWithCount): TaxonomyResponse {
   return {
     id: taxonomy.id,
     handle: taxonomy.handle,
     name: taxonomy.name,
+    siteId: taxonomy.siteId,
     termCount: taxonomy.termCount,
     updatedAt: taxonomy.updatedAt.toISOString(),
   };
@@ -41,17 +60,21 @@ export function describeTaxonomy(taxonomy: TaxonomyWithCount): TaxonomyResponse 
 
 export async function listTaxonomies(
   database: DatabaseOrTransaction,
+  site?: Site,
 ): Promise<{ taxonomies: TaxonomyResponse[] }> {
   const taxonomies = await listTaxonomiesWithCounts(database, DEFAULT_TENANT_ID);
-  return { taxonomies: taxonomies.map(describeTaxonomy) };
+  return {
+    taxonomies: taxonomies.filter((taxonomy) => belongsTo(taxonomy, site)).map(describeTaxonomy),
+  };
 }
 
 export async function findTaxonomy(
   database: DatabaseOrTransaction,
   handle: string,
+  site?: Site,
 ): Promise<TaxonomyResponse> {
   const taxonomy = await findTaxonomyWithCount(database, DEFAULT_TENANT_ID, handle);
-  if (!taxonomy) {
+  if (!taxonomy || !belongsTo(taxonomy, site)) {
     throw new TaxonomyNotFoundError(handle);
   }
   return describeTaxonomy(taxonomy);
@@ -61,9 +84,10 @@ export async function findTaxonomy(
 export async function findTaxonomyOrFail(
   database: DatabaseOrTransaction,
   handle: string,
+  site?: Site,
 ): Promise<Taxonomy> {
   const taxonomy = await findTaxonomyByHandle(database, DEFAULT_TENANT_ID, handle);
-  if (!taxonomy) {
+  if (!taxonomy || !belongsTo(taxonomy, site)) {
     throw new TaxonomyNotFoundError(handle);
   }
   return taxonomy;
@@ -73,7 +97,11 @@ export async function createTaxonomy(
   database: DatabaseOrTransaction,
   request: CreateTaxonomyRequest,
 ): Promise<TaxonomyResponse> {
-  const inserted = await insertTaxonomyIfMissing(database, request);
+  const inserted = await insertTaxonomyIfMissing(database, {
+    handle: request.handle,
+    name: request.name,
+    siteId: await findSiteIdForHandle(database, request.siteHandle),
+  });
   if (!inserted) {
     throw new TaxonomyHandleTakenError(request.handle);
   }
@@ -84,9 +112,16 @@ export async function updateTaxonomy(
   database: DatabaseOrTransaction,
   handle: string,
   request: UpdateTaxonomyRequest,
+  site?: Site,
 ): Promise<TaxonomyResponse> {
-  const taxonomy = await findTaxonomyOrFail(database, handle);
-  await renameTaxonomy(database, taxonomy.id, request.name);
+  const taxonomy = await findTaxonomyOrFail(database, handle, site);
+  await updateTaxonomyRow(database, taxonomy.id, {
+    name: request.name,
+    siteId:
+      request.siteHandle === undefined
+        ? undefined
+        : await findSiteIdForHandle(database, request.siteHandle),
+  });
   return findTaxonomy(database, handle);
 }
 
@@ -97,8 +132,9 @@ export async function updateTaxonomy(
 export async function deleteTaxonomy(
   database: DatabaseOrTransaction,
   handle: string,
+  site?: Site,
 ): Promise<void> {
-  const taxonomy = await findTaxonomyOrFail(database, handle);
+  const taxonomy = await findTaxonomyOrFail(database, handle, site);
   const usedBy = await findNamesUsingTaxonomy(database, handle);
   if (usedBy.length > 0) {
     throw new TaxonomyInUseError(taxonomy.name, usedBy);

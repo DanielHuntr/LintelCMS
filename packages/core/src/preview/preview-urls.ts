@@ -5,14 +5,24 @@
  *   becomes "https://example.com/api/preview?path=/about&token=eyJl..."
  *
  * Placeholders: {url} (the entry's address on the site), {slug}, {token}, {collection}
- * (the collection's handle) and {id} (the entry's id). A pattern without {token} gets it
+ * (the collection's handle), {id} (the entry's id), {site} (the site's handle) and
+ * {siteUrl} (the site's address, such as https://acme.fr, so one pattern like
+ * "{siteUrl}/api/preview?path={url}" serves every site). A pattern without {token} gets it
  * added as `preview=<token>`, so a site always receives one.
  *
  * Returns null when the collection has no preview address: no website is connected yet.
  */
 export function buildPreviewUrl(
   pattern: string | null,
-  values: { url: string | null; slug: string; token: string; collection: string; id: string },
+  values: {
+    url: string | null;
+    slug: string;
+    token: string;
+    collection: string;
+    id: string;
+    site?: string;
+    siteUrl?: string;
+  },
 ): string | null {
   if (pattern === null) {
     return null;
@@ -24,9 +34,12 @@ export function buildPreviewUrl(
     "{token}": encodeURIComponent(values.token),
     "{collection}": encodeURIComponent(values.collection),
     "{id}": encodeURIComponent(values.id),
+    "{site}": encodeURIComponent(values.site ?? ""),
+    // An address, not a value inside one: left as it is so its "://" and slashes survive.
+    "{siteUrl}": values.siteUrl ?? "",
   };
   const filled = pattern.replace(
-    /\{[a-z]+\}/g,
+    /\{[a-zA-Z]+\}/g,
     (placeholder) => replacements[placeholder] ?? placeholder,
   );
   if (pattern.includes("{token}")) {

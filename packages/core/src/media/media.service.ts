@@ -17,7 +17,13 @@ import {
   listAssetRows,
   updateAssetRow,
 } from "./media.repository.js";
-import type { Asset, ListAssetsQuery, UpdateAssetRequest } from "./media.schema.js";
+import { findSiteOrFail } from "../sites/sites.service.js";
+import {
+  type Asset,
+  type ListAssetsQuery,
+  SHARED_FOLDER,
+  type UpdateAssetRequest,
+} from "./media.schema.js";
 import type { StorageDriver } from "./storage-driver.js";
 import { assertSvgIsSafe } from "./svg-safety.js";
 import { removeCachedTransforms } from "./transform-cache.js";
@@ -40,6 +46,21 @@ export interface UploadedFile {
 }
 
 /**
+ * The library is shared by every site. A file can also sit in one site's folder, to keep
+ * each site's files easy to find; any site can still use it. Folders are named by the
+ * site's handle, or "shared" for the library itself.
+ */
+export async function findFolderSiteId(
+  database: DatabaseOrTransaction,
+  folder: string | null,
+): Promise<string | null> {
+  if (folder === null || folder === SHARED_FOLDER) {
+    return null;
+  }
+  return (await findSiteOrFail(database, folder)).id;
+}
+
+/**
  * Checks and stores an upload. The same bytes uploaded twice give back the first asset
  * (`created: false`) rather than a duplicate the editor would then have to tidy up.
  */
@@ -47,7 +68,9 @@ export async function uploadAsset(
   media: MediaContext,
   file: UploadedFile,
   uploadedBy: string,
+  folder: string | null = null,
 ): Promise<{ asset: Asset; created: boolean }> {
+  const siteId = await findFolderSiteId(media.database, folder);
   const fileType = await detectFileType(file.contents, file.filename);
   const filename = sanitiseFilename(file.filename, fileType.extension);
 
@@ -82,6 +105,7 @@ export async function uploadAsset(
       height: size?.height ?? null,
       contentHash,
       uploadedBy,
+      siteId,
     });
   } catch (error) {
     await media.storage.delete(storageKey);
@@ -105,6 +129,8 @@ export async function listAssets(
   const { rows, total } = await listAssetRows(media.database, DEFAULT_TENANT_ID, {
     search: query.search,
     kind: query.type,
+    siteId:
+      query.folder === undefined ? undefined : await findFolderSiteId(media.database, query.folder),
     limit: query.perPage,
     offset: (query.page - 1) * query.perPage,
   });
@@ -141,6 +167,9 @@ export async function updateAsset(
   }
   if (changes.filename !== undefined) {
     columns.filename = sanitiseFilename(changes.filename, extension);
+  }
+  if (changes.folder !== undefined) {
+    columns.siteId = await findFolderSiteId(media.database, changes.folder);
   }
 
   // An empty PATCH is allowed and changes nothing (the database refuses an empty update).

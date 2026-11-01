@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { requirePermission } from "../auth/require-permission.js";
+import { requireEntrySiteAccess } from "../sites/request-site.js";
 import { RevisionNotFoundError } from "./entries.errors.js";
 import { changeContext, readEntryId } from "./entries.routes.js";
 import { revisionParamsSchema } from "./entries.schema.js";
@@ -13,8 +14,8 @@ import { findRevision, listRevisions, restoreRevision } from "./revisions.servic
  *   POST /entries/:id/revisions/:revisionId/restore          (entries:update) -> Entry
  */
 export async function revisionsRoutes(server: FastifyInstance) {
-  const canRead = { preHandler: requirePermission("entries:read") };
-  const canUpdate = { preHandler: requirePermission("entries:update") };
+  const canRead = { preHandler: [requirePermission("entries:read"), requireEntrySiteAccess] };
+  const canUpdate = { preHandler: [requirePermission("entries:update"), requireEntrySiteAccess] };
 
   server.get("/entries/:id/revisions", canRead, async (request) => {
     const id = readEntryId(request.params);

@@ -6,6 +6,7 @@ import {
   getTableColumns,
   ilike,
   inArray,
+  isNull,
   not,
   or,
   type SQL,
@@ -23,11 +24,15 @@ export interface AssetRowWithUploader extends AssetRow {
 }
 
 /** The columns editors can change. */
-export type AssetChanges = Partial<Pick<AssetRow, "alt" | "focalX" | "focalY" | "filename">>;
+export type AssetChanges = Partial<
+  Pick<AssetRow, "alt" | "focalX" | "focalY" | "filename" | "siteId">
+>;
 
 export interface AssetListFilter {
   search?: string;
   kind?: AssetKind;
+  /** One folder: a site's id, or null for the shared library. Left out, every file. */
+  siteId?: string | null;
   limit: number;
   offset: number;
 }
@@ -145,6 +150,11 @@ function listConditions(filter: AssetListFilter): SQL[] {
   }
   if (filter.kind === "image") {
     conditions.push(ilike(assetsTable.mimeType, "image/%"));
+  }
+  if (filter.siteId === null) {
+    conditions.push(isNull(assetsTable.siteId));
+  } else if (filter.siteId !== undefined) {
+    conditions.push(eq(assetsTable.siteId, filter.siteId));
   }
   if (filter.kind === "document") {
     conditions.push(not(ilike(assetsTable.mimeType, "image/%")));

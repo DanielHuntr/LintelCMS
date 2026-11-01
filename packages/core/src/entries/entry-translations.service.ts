@@ -1,6 +1,7 @@
 import { findCollectionByIdOrFail } from "../collections/collections.service.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { findLocaleOrFail } from "../sites/locales.service.js";
+import { findSiteByIdOrFail } from "../sites/sites.service.js";
 import { SameLocaleTranslationError, TranslationExistsError } from "./entries.errors.js";
 import {
   findSlugsStartingWith,
@@ -38,7 +39,8 @@ export async function translateEntry(
   context: Pick<EntryChangeContext, "authorId">,
 ): Promise<EntryResponse> {
   const entry = await findEntryOrFail(database, entryId);
-  const { locale } = await findLocaleOrFail(database, request.locale);
+  const site = await findSiteByIdOrFail(database, entry.siteId);
+  const { locale } = await findLocaleOrFail(database, request.locale, site);
   if (locale.code === entry.locale) {
     throw new SameLocaleTranslationError(locale.name);
   }

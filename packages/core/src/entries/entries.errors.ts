@@ -67,3 +67,19 @@ export class NotReadyToPublishError extends HttpError {
     this.fields = fields;
   }
 }
+
+export class SharedEntryCopyError extends HttpError {
+  constructor(collectionName: string) {
+    super(
+      400,
+      "INVALID_REQUEST",
+      `${collectionName} is shared by every site, so its entries are already on all of them.`,
+    );
+  }
+}
+
+export class SameSiteCopyError extends HttpError {
+  constructor(siteName: string) {
+    super(400, "INVALID_REQUEST", `This entry is already on ${siteName}. Pick another site.`);
+  }
+}

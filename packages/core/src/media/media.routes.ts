@@ -18,6 +18,7 @@ import {
   assetIdParamsSchema,
   fileTransformQuerySchema,
   listAssetsQuerySchema,
+  uploadAssetQuerySchema,
   updateAssetRequestSchema,
 } from "./media.schema.js";
 import {
@@ -50,10 +51,10 @@ const FILE_SECURITY_POLICY =
 /**
  * HTTP only:
  *
- *   POST   /media           (media:upload)  multipart "file" -> 201 Asset (200 if already uploaded)
- *   GET    /media           (media:read)    ?search=&type=image|document&page=&perPage=
+ *   POST   /media           (media:upload)  multipart "file", ?folder= -> 201 Asset (200 if already uploaded)
+ *   GET    /media           (media:read)    ?search=&type=image|document&page=&perPage=&folder=
  *   GET    /media/:id       (media:read)    -> Asset
- *   PATCH  /media/:id       (media:update)  { alt?, focalPoint?, filename? } -> Asset
+ *   PATCH  /media/:id       (media:update)  { alt?, focalPoint?, filename?, folder? } -> Asset
  *   DELETE /media/:id       (media:delete)  -> 204, or 409 ASSET_IN_USE with usedBy
  *   GET    /media/:id/file  (public)        ?w=&h=&fit=cover|contain&format=webp|avif|jpeg|png
  */
@@ -75,8 +76,14 @@ export async function mediaRoutes(server: FastifyInstance, options: MediaRoutesO
     "/media",
     { preHandler: requirePermission("media:upload") },
     async (request, reply) => {
+      const { folder } = parseRequest(uploadAssetQuerySchema, request.query);
       const file = await readUploadedFile(request);
-      const { asset, created } = await uploadAsset(context(), file, getSignedIn(request).user.id);
+      const { asset, created } = await uploadAsset(
+        context(),
+        file,
+        getSignedIn(request).user.id,
+        folder ?? null,
+      );
       if (created) {
         await announceContentEvent(server, { name: "asset.uploaded", asset: eventDataFor(asset) });
       }

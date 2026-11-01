@@ -1,6 +1,7 @@
 import { jsonb, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { id, tenantId, timestamps } from "../database/columns.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
+import { sitesTable } from "../sites/sites.table.js";
 import { usersTable } from "../users/users.table.js";
 
 /**
@@ -24,7 +25,10 @@ export const globalSetsTable = pgTable(
   (table) => [uniqueIndex("global_sets_tenant_handle_unique").on(table.tenantId, table.handle)],
 );
 
-/** A global set's values in one language. A language without a row uses the default's. */
+/**
+ * A global set's values for one site, in one language. A language without a row uses the
+ * site's main language's. The set's fields are shared by every site; the values are not.
+ */
 export const globalValuesTable = pgTable(
   "global_values",
   {
@@ -33,12 +37,21 @@ export const globalValuesTable = pgTable(
     globalSetId: uuid("global_set_id")
       .notNull()
       .references(() => globalSetsTable.id, { onDelete: "cascade" }),
+    siteId: uuid("site_id")
+      .notNull()
+      .references(() => sitesTable.id, { onDelete: "cascade" }),
     locale: text("locale").notNull(),
     data: jsonb("data").$type<Record<string, unknown>>().notNull().default({}),
     updatedBy: uuid("updated_by").references(() => usersTable.id, { onDelete: "set null" }),
     ...timestamps(),
   },
-  (table) => [uniqueIndex("global_values_set_locale_unique").on(table.globalSetId, table.locale)],
+  (table) => [
+    uniqueIndex("global_values_set_site_locale_unique").on(
+      table.globalSetId,
+      table.siteId,
+      table.locale,
+    ),
+  ],
 );
 
 export type GlobalSet = typeof globalSetsTable.$inferSelect;

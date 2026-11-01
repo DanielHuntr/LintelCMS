@@ -1,8 +1,11 @@
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq, getTableColumns, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
+import { entriesTable } from "../entries/entries.table.js";
 import { type NewSite, type Site, sitesTable } from "./sites.table.js";
 
 /** Database reads and writes for sites, nothing else. */
+
+export type SiteWithEntryCount = Site & { entryCount: number };
 
 export async function findSiteByHandle(
   database: DatabaseOrTransaction,
@@ -17,13 +20,95 @@ export async function findSiteByHandle(
   return site;
 }
 
-/** Inserts the site unless one with its handle exists. */
+export async function findSiteById(
+  database: DatabaseOrTransaction,
+  siteId: string,
+): Promise<Site | undefined> {
+  const [site] = await database.select().from(sitesTable).where(eq(sitesTable.id, siteId)).limit(1);
+  return site;
+}
+
+/** Every site, in the order the admin lists them: the default first, then by when added. */
+export async function listSiteRows(
+  database: DatabaseOrTransaction,
+  tenantId: string,
+): Promise<Site[]> {
+  return database
+    .select()
+    .from(sitesTable)
+    .where(eq(sitesTable.tenantId, tenantId))
+    .orderBy(asc(sitesTable.sortOrder), asc(sitesTable.createdAt), asc(sitesTable.handle));
+}
+
+export async function listSitesWithEntryCounts(
+  database: DatabaseOrTransaction,
+  tenantId: string,
+): Promise<SiteWithEntryCount[]> {
+  return database
+    .select({
+      ...getTableColumns(sitesTable),
+      // Spelled out in full: without a join, Drizzle leaves column names unqualified.
+      entryCount: sql<number>`(
+        select count(*) from ${entriesTable}
+        where ${entriesTable.siteId} = ${sql.identifier("sites")}.${sql.identifier("id")}
+      )`.mapWith(Number),
+    })
+    .from(sitesTable)
+    .where(eq(sitesTable.tenantId, tenantId))
+    .orderBy(asc(sitesTable.sortOrder), asc(sitesTable.createdAt), asc(sitesTable.handle));
+}
+
+/** Inserts the site unless one with its handle exists; returns undefined if it did. */
 export async function insertSiteIfMissing(
   database: DatabaseOrTransaction,
   site: NewSite,
-): Promise<void> {
-  await database
+): Promise<Site | undefined> {
+  const [inserted] = await database
     .insert(sitesTable)
     .values(site)
-    .onConflictDoNothing({ target: [sitesTable.tenantId, sitesTable.handle] });
+    .onConflictDoNothing({ target: [sitesTable.tenantId, sitesTable.handle] })
+    .returning();
+  return inserted;
+}
+
+export async function updateSiteRow(
+  database: DatabaseOrTransaction,
+  siteId: string,
+  changes: Partial<
+    Pick<Site, "name" | "domain" | "hostnames" | "pathPrefix" | "siteUrl" | "locale" | "branding">
+  >,
+): Promise<void> {
+  await database
+    .update(sitesTable)
+    .set({ ...changes, updatedAt: new Date() })
+    .where(eq(sitesTable.id, siteId));
+}
+
+export async function deleteSiteRow(
+  database: DatabaseOrTransaction,
+  siteId: string,
+): Promise<void> {
+  await database.delete(sitesTable).where(eq(sitesTable.id, siteId));
+}
+
+export async function countEntriesInSite(
+  database: DatabaseOrTransaction,
+  siteId: string,
+): Promise<number> {
+  const [row] = await database
+    .select({ count: sql<number>`count(*)`.mapWith(Number) })
+    .from(entriesTable)
+    .where(eq(entriesTable.siteId, siteId));
+  return row?.count ?? 0;
+}
+
+export async function findHighestSortOrder(
+  database: DatabaseOrTransaction,
+  tenantId: string,
+): Promise<number> {
+  const [row] = await database
+    .select({ highest: sql<number>`coalesce(max(${sitesTable.sortOrder}), 0)`.mapWith(Number) })
+    .from(sitesTable)
+    .where(eq(sitesTable.tenantId, tenantId));
+  return row?.highest ?? 0;
 }

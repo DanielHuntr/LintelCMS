@@ -4,6 +4,7 @@ import { requireDeliveryAccess } from "../delivery/require-delivery-access.js";
 import { EntryNotFoundError } from "../entries/entries.errors.js";
 import { deliveryEntryQuerySchema } from "../delivery/delivery.schema.js";
 import { parseRequest } from "../http/http-errors.js";
+import { resolveDeliverySite } from "../sites/request-site.js";
 import { deliverEntrySeo, findEntrySeo, saveEntrySeo } from "./entry-seo.service.js";
 import {
   createRedirectRequestSchema,
@@ -52,7 +53,7 @@ const WEBSITE_CACHE = "public, max-age=60";
  *
  *   GET /delivery/seo-redirects            the active redirects (delivery access rules apply)
  *   GET /delivery/:collection/:slug/seo    a published entry's finished SEO (the same)
- *   GET /sitemap.xml, GET /robots.txt      always public
+ *   GET /sitemap.xml, GET /robots.txt      always public, one per site (?site= or the domain)
  */
 export async function seoRoutes(server: FastifyInstance) {
   const can = (permission: `${string}:${string}`) => ({
@@ -112,26 +113,28 @@ export async function seoRoutes(server: FastifyInstance) {
   server.get("/delivery/:collection/:slug/seo", publicContent, async (request, reply) => {
     const { collection, slug } = parseRequest(deliveredEntrySeoParamsSchema, request.params);
     const { locale } = parseRequest(deliveryEntryQuerySchema, request.query);
+    const site = await resolveDeliverySite(request, reply);
     const seo = await deliverEntrySeo(
       server.database,
       collection,
       slug,
       locale,
       server.assetLookup,
+      site,
     );
     return reply.header("cache-control", WEBSITE_CACHE).send(seo);
   });
 
-  server.get("/sitemap.xml", { preHandler: requireSeoPlugin }, async (_request, reply) => {
-    const xml = await buildSitemap(server.database);
+  server.get("/sitemap.xml", { preHandler: requireSeoPlugin }, async (request, reply) => {
+    const xml = await buildSitemap(server.database, await resolveDeliverySite(request, reply));
     return reply
       .type("application/xml; charset=utf-8")
       .header("cache-control", SEARCH_ENGINE_CACHE)
       .send(xml);
   });
 
-  server.get("/robots.txt", { preHandler: requireSeoPlugin }, async (_request, reply) => {
-    const text = await buildRobots(server.database);
+  server.get("/robots.txt", { preHandler: requireSeoPlugin }, async (request, reply) => {
+    const text = await buildRobots(server.database, await resolveDeliverySite(request, reply));
     return reply
       .type("text/plain; charset=utf-8")
       .header("cache-control", SEARCH_ENGINE_CACHE)

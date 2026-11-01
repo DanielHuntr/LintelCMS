@@ -4,6 +4,10 @@ import { handleSchema } from "../http/handle.schema.js";
 export const collectionStructures = ["tree", "dated", "flat"] as const;
 export type CollectionStructure = (typeof collectionStructures)[number];
 
+/** Whether each site has its own entries, or every site shows the same ones. */
+export const collectionSiteScopes = ["per-site", "shared"] as const;
+export type CollectionSiteScope = (typeof collectionSiteScopes)[number];
+
 /** What a route pattern may contain besides fixed text. See src/delivery/entry-urls.ts. */
 export const ROUTE_PLACEHOLDERS = ["{slug}", "{year}", "{month}", "{day}"] as const;
 
@@ -33,7 +37,15 @@ function usesOnlyKnownPlaceholders(pattern: string): boolean {
 }
 
 /** The placeholders a preview address may use. See src/preview/preview-urls.ts. */
-export const PREVIEW_PLACEHOLDERS = ["{url}", "{slug}", "{token}", "{collection}", "{id}"] as const;
+export const PREVIEW_PLACEHOLDERS = [
+  "{url}",
+  "{slug}",
+  "{token}",
+  "{collection}",
+  "{id}",
+  "{site}",
+  "{siteUrl}",
+] as const;
 
 /**
  * Where the website shows a draft, such as "https://example.com/api/preview?path={url}&token={token}".
@@ -43,8 +55,9 @@ const previewUrlPatternSchema = z
   .string({ error: "The preview address should be text, like https://example.com/preview" })
   .trim()
   .max(500, { error: "The preview address can be at most 500 characters" })
-  .regex(/^https?:\/\/[^\s]+$/i, {
-    error: "The preview address should start with https:// (or http:// for a local site)",
+  .regex(/^(https?:\/\/|\{siteUrl\})[^\s]+$/i, {
+    error:
+      "The preview address should start with https:// (or http:// for a local site, or {siteUrl})",
   })
   .refine(usesOnlyPreviewPlaceholders, {
     error: `The preview address can use ${PREVIEW_PLACEHOLDERS.join(", ")}`,
@@ -72,7 +85,24 @@ const blueprintHandleSchema = z
  * Handles the delivery API (and the admin's Content section) use for other kinds of content,
  * so `/delivery/globals` can't mean a collection.
  */
-export const RESERVED_COLLECTION_HANDLES = ["taxonomies", "globals", "navigation", "locales"];
+export const RESERVED_COLLECTION_HANDLES = [
+  "taxonomies",
+  "globals",
+  "navigation",
+  "locales",
+  "sites",
+  "site",
+];
+
+const siteScopeSchema = z.enum(collectionSiteScopes, {
+  error: 'The site setting should be "per-site" or "shared"',
+});
+
+/** The handles of the sites a per-site collection is on; null for every site. */
+const siteHandlesSchema = z
+  .array(z.string(), { error: "The sites should be a list of handles" })
+  .min(1, { error: "Choose at least one site, or every site" })
+  .nullable();
 
 /** `POST /collections`. Without a route pattern, entries live at /<handle>/{slug}. */
 export const createCollectionRequestSchema = z.object({
@@ -85,6 +115,8 @@ export const createCollectionRequestSchema = z.object({
   structure: structureSchema,
   routePattern: routePatternSchema.optional(),
   previewUrlPattern: previewUrlPatternSchema.optional(),
+  siteScope: siteScopeSchema.default("per-site"),
+  siteHandles: siteHandlesSchema.default(null),
 });
 
 /** `PUT /collections/:handle`. Anything left out stays as it is; the handle can't change. */
@@ -94,9 +126,14 @@ export const updateCollectionRequestSchema = z.object({
   structure: structureSchema.optional(),
   routePattern: routePatternSchema.optional(),
   previewUrlPattern: previewUrlPatternSchema.optional(),
+  siteScope: siteScopeSchema.optional(),
+  siteHandles: siteHandlesSchema.optional(),
 });
 
 export const collectionHandleParamsSchema = z.object({ handle: z.string() });
+
+/** `GET /collections?site=all` lists every collection, not only the current site's. */
+export const collectionListQuerySchema = z.object({ site: z.string().optional() });
 
 /** A collection as the API returns it. */
 export const collectionSchema = z.object({
@@ -107,6 +144,10 @@ export const collectionSchema = z.object({
   structure: structureSchema,
   routePattern: z.string().nullable(),
   previewUrlPattern: z.string().nullable(),
+  /** "per-site": each site has its own entries; "shared": every site shows the same ones. */
+  siteScope: siteScopeSchema,
+  /** The sites a per-site collection is on; null for every site. */
+  siteIds: z.array(z.uuid()).nullable(),
   entryCount: z.number().int(),
   updatedAt: z.iso.datetime(),
 });

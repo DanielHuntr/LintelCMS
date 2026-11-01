@@ -21,12 +21,14 @@ import {
   type RenameLocaleRequest,
 } from "./locales.schema.js";
 import type { SiteLocale } from "./locales.table.js";
-import { findOrCreateDefaultSite } from "./sites.service.js";
+import { siteOrDefault } from "./sites.service.js";
 import type { Site } from "./sites.table.js";
 
 /**
- * The languages of the site. There is always at least one, the site's default (its
+ * The languages of a site. There is always at least one, the site's default (its
  * `locale`); more are added in Settings. Entries and global values are kept per locale.
+ *
+ * Every function takes the site last, and means the default site when it is left out.
  */
 
 /** The English name of a language tag, such as "French (France)" for "fr-FR". */
@@ -34,9 +36,12 @@ export function describeLanguage(code: string): string {
   return new Intl.DisplayNames(["en"], { type: "language" }).of(code) ?? code;
 }
 
-/** The default site, with a row for its default locale (made the first time it's needed). */
-export async function findSiteWithLocales(database: DatabaseOrTransaction): Promise<Site> {
-  const site = await findOrCreateDefaultSite(database);
+/** The site, with a row for its default locale (made the first time it's needed). */
+export async function findSiteWithLocales(
+  database: DatabaseOrTransaction,
+  forSite?: Site,
+): Promise<Site> {
+  const site = await siteOrDefault(database, forSite);
   await insertSiteLocaleIfMissing(database, {
     siteId: site.id,
     code: site.locale,
@@ -45,8 +50,11 @@ export async function findSiteWithLocales(database: DatabaseOrTransaction): Prom
   return site;
 }
 
-export async function listLocales(database: DatabaseOrTransaction): Promise<LocaleListResponse> {
-  const site = await findSiteWithLocales(database);
+export async function listLocales(
+  database: DatabaseOrTransaction,
+  forSite?: Site,
+): Promise<LocaleListResponse> {
+  const site = await findSiteWithLocales(database, forSite);
   const locales = await listSiteLocales(database, site.id);
   return {
     defaultLocale: site.locale,
@@ -69,8 +77,9 @@ function describeLocale(site: Site, locale: SiteLocale, entryCount: number): Loc
 export async function addLocale(
   database: DatabaseOrTransaction,
   request: AddLocaleRequest,
+  forSite?: Site,
 ): Promise<LocaleResponse> {
-  const site = await findSiteWithLocales(database);
+  const site = await findSiteWithLocales(database, forSite);
   const name = request.name ?? describeLanguage(request.code);
   const inserted = await insertSiteLocaleIfMissing(database, {
     siteId: site.id,
@@ -87,8 +96,9 @@ export async function renameLocale(
   database: DatabaseOrTransaction,
   code: string,
   request: RenameLocaleRequest,
+  forSite?: Site,
 ): Promise<LocaleResponse> {
-  const { site, locale } = await findLocaleOrFail(database, code);
+  const { site, locale } = await findLocaleOrFail(database, code, forSite);
   await renameSiteLocale(database, locale.id, request.name);
   const entryCount = await countEntriesInLocale(database, site.id, locale.code);
   return describeLocale(site, { ...locale, name: request.name }, entryCount);
@@ -99,8 +109,12 @@ export async function renameLocale(
  * entries are written in it. Global values saved in it are kept, and come back if the
  * language is added again.
  */
-export async function removeLocale(database: DatabaseOrTransaction, code: string): Promise<void> {
-  const { site, locale } = await findLocaleOrFail(database, code);
+export async function removeLocale(
+  database: DatabaseOrTransaction,
+  code: string,
+  forSite?: Site,
+): Promise<void> {
+  const { site, locale } = await findLocaleOrFail(database, code, forSite);
   if (locale.code === site.locale) {
     throw new DefaultLocaleRemovalError(locale.name);
   }
@@ -115,8 +129,9 @@ export async function removeLocale(database: DatabaseOrTransaction, code: string
 export async function findLocaleOrFail(
   database: DatabaseOrTransaction,
   code: string,
+  forSite?: Site,
 ): Promise<{ site: Site; locale: SiteLocale }> {
-  const site = await findSiteWithLocales(database);
+  const site = await findSiteWithLocales(database, forSite);
   const parsed = localeCodeSchema.safeParse(code);
   const locale = parsed.success ? await findSiteLocale(database, site.id, parsed.data) : undefined;
   if (!locale) {
@@ -132,11 +147,12 @@ export async function findLocaleOrFail(
 export async function resolveLocale(
   database: DatabaseOrTransaction,
   requested: string | undefined,
+  forSite?: Site,
 ): Promise<{ site: Site; locale: string }> {
   if (requested === undefined) {
-    const site = await findSiteWithLocales(database);
+    const site = await findSiteWithLocales(database, forSite);
     return { site, locale: site.locale };
   }
-  const { site, locale } = await findLocaleOrFail(database, requested);
+  const { site, locale } = await findLocaleOrFail(database, requested, forSite);
   return { site, locale: locale.code };
 }

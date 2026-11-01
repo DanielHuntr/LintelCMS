@@ -3,13 +3,21 @@ import { getSignedIn, requirePermission } from "../auth/require-permission.js";
 import { announceContentEvent } from "../content-events/content-events.js";
 import { describeEntryForEvent } from "../content-events/entry-event-data.js";
 import { parseRequest } from "../http/http-errors.js";
+import {
+  checkSiteAccess,
+  requireEntrySiteAccess,
+  resolveEditingSite,
+} from "../sites/request-site.js";
+import { findSiteOrFail } from "../sites/sites.service.js";
 import { EntryNotFoundError } from "./entries.errors.js";
 import { duplicateEntry } from "./entry-duplication.service.js";
+import { copyEntryToSite } from "./entry-site-copy.service.js";
 import { listEntries } from "./entry-listing.service.js";
 import { reorderEntries } from "./entry-ordering.service.js";
 import { publishEntry, scheduleEntry, unpublishEntry } from "./entry-publishing.service.js";
 import {
   collectionEntriesParamsSchema,
+  copyEntryToSiteRequestSchema,
   createEntryRequestSchema,
   entryIdParamsSchema,
   listEntriesQuerySchema,
@@ -38,20 +46,27 @@ import {
  *   POST   /entries/:id/schedule                 (entries:publish)  { publishAt }
  *   DELETE /entries/:id                          (entries:delete)   -> 204
  *   POST   /entries/:id/duplicate                (entries:create)   -> 201, a draft copy
+ *   POST   /entries/:id/copy-to-site             (entries:create)   { site } -> 201, a draft on that site
+ *
+ * Collection routes work on the admin's current site (see src/sites/request-site.ts). Entry
+ * routes check that the person may work on the entry's site.
  */
 export async function entriesRoutes(server: FastifyInstance) {
-  const can = (permission: `entries:${string}`) => ({ preHandler: requirePermission(permission) });
+  const can = (permission: `entries:${string}`) => ({
+    preHandler: [requirePermission(permission), requireEntrySiteAccess],
+  });
 
   server.get("/collections/:handle/entries", can("entries:read"), async (request) => {
     const { handle } = parseRequest(collectionEntriesParamsSchema, request.params);
     const query = parseRequest(listEntriesQuerySchema, request.query);
-    return listEntries(server.database, handle, query);
+    return listEntries(server.database, handle, query, await resolveEditingSite(request));
   });
 
   server.post("/collections/:handle/entries", can("entries:create"), async (request, reply) => {
     const { handle } = parseRequest(collectionEntriesParamsSchema, request.params);
     const entry = parseRequest(createEntryRequestSchema, request.body);
-    const created = await createEntry(server.database, handle, entry, changeContext(request));
+    const site = await resolveEditingSite(request);
+    const created = await createEntry(server.database, handle, entry, changeContext(request), site);
     return reply.code(201).send(created);
   });
 
@@ -61,7 +76,7 @@ export async function entriesRoutes(server: FastifyInstance) {
     async (request, reply) => {
       const { handle } = parseRequest(collectionEntriesParamsSchema, request.params);
       const order = parseRequest(reorderEntriesRequestSchema, request.body);
-      await reorderEntries(server.database, handle, order);
+      await reorderEntries(server.database, handle, order, await resolveEditingSite(request));
       return reply.code(204).send();
     },
   );
@@ -116,6 +131,15 @@ export async function entriesRoutes(server: FastifyInstance) {
   server.post("/entries/:id/duplicate", can("entries:create"), async (request, reply) => {
     const id = readEntryId(request.params);
     const copy = await duplicateEntry(server.database, id, changeContext(request));
+    return reply.code(201).send(copy);
+  });
+
+  server.post("/entries/:id/copy-to-site", can("entries:create"), async (request, reply) => {
+    const id = readEntryId(request.params);
+    const { site: handle } = parseRequest(copyEntryToSiteRequestSchema, request.body);
+    const target = await findSiteOrFail(server.database, handle);
+    checkSiteAccess(getSignedIn(request), target);
+    const copy = await copyEntryToSite(server.database, id, target, changeContext(request));
     return reply.code(201).send(copy);
   });
 

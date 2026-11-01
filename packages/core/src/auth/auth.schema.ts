@@ -21,6 +21,11 @@ export const signedInSchema = z.object({
   permissions: z.array(z.string()),
   /** Which plugins are on, so the admin can show their sections without another request. */
   enabledPlugins: z.array(z.string()),
+  /**
+   * The ids of the sites they may work on, when their roles are limited to some sites.
+   * Null (or left out) means every site.
+   */
+  siteIds: z.array(z.string()).nullable().optional(),
 });
 
 export type SignInRequest = z.infer<typeof signInRequestSchema>;

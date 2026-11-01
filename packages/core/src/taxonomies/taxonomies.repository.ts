@@ -81,14 +81,14 @@ export async function insertTaxonomyIfMissing(
   return inserted;
 }
 
-export async function renameTaxonomy(
+export async function updateTaxonomyRow(
   database: DatabaseOrTransaction,
   taxonomyId: string,
-  name: string,
+  changes: Partial<Pick<Taxonomy, "name" | "siteId">>,
 ): Promise<void> {
   await database
     .update(taxonomiesTable)
-    .set({ name, updatedAt: new Date() })
+    .set({ ...changes, updatedAt: new Date() })
     .where(eq(taxonomiesTable.id, taxonomyId));
 }
 

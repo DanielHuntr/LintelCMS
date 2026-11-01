@@ -2,6 +2,7 @@ import type { DatabaseOrTransaction } from "../database/client.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
 import { findTermsByIds } from "../taxonomies/terms.repository.js";
 import { eachBlock } from "./block-values.js";
+import { addPathPrefix } from "../sites/site-addresses.js";
 import { findPublishedEntryLinks } from "./delivery.repository.js";
 import { buildEntryUrl } from "./entry-urls.js";
 
@@ -109,7 +110,7 @@ export async function findDeliveredEntryLinks(
         id: chosen.id,
         title: chosen.title ?? "",
         slug: chosen.slug,
-        url: buildEntryUrl(chosen.routePattern, chosen),
+        url: addPathPrefix(chosen.pathPrefix, buildEntryUrl(chosen.routePattern, chosen)),
         collection: chosen.collectionHandle,
         locale: chosen.locale,
       });

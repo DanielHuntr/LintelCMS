@@ -45,6 +45,13 @@ export const createEntryRequestSchema = z.object({
   locale: z.string({ error: "The locale should be a language code, like fr-FR" }).optional(),
 });
 
+/** `POST /entries/:id/copy-to-site`: start a copy of an entry on another site. */
+export const copyEntryToSiteRequestSchema = z.object({
+  site: z.string({ error: "Please choose a site to copy to" }).min(1, {
+    error: "Please choose a site to copy to",
+  }),
+});
+
 /** `POST /entries/:id/translations`: start a translation of an entry into another language. */
 export const translateEntryRequestSchema = z.object({
   locale: z.string({ error: "Please choose a language to translate into" }),

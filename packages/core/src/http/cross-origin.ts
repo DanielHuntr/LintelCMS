@@ -44,7 +44,7 @@ export function crossOriginOptions(adminOrigin: string) {
         origin,
         credentials: false,
         methods: PUBLIC_METHODS,
-        allowedHeaders: ["authorization", "content-type"],
+        allowedHeaders: ["authorization", "content-type", "lintel-site"],
         maxAge: 600,
       };
     }

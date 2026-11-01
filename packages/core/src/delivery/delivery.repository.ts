@@ -2,6 +2,7 @@ import { and, asc, desc, eq, inArray, isNotNull, or, type SQL, sql } from "drizz
 import { collectionsTable } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { entriesTable } from "../entries/entries.table.js";
+import { sitesTable } from "../sites/sites.table.js";
 
 /**
  * Database reads for the public delivery API. Every query here filters on
@@ -18,9 +19,11 @@ export interface PublishedEntryRow {
   publishedData: Record<string, unknown>;
 }
 
-/** Which published entries to list: one collection, in one language. */
+/** Which published entries to list: one collection, on one site, in one language. */
 export interface PublishedEntryFilter {
   collectionId: string;
+  /** Left out by older callers, which mean every site; there is only one on such installs. */
+  siteId?: string;
   locale: string;
   /** Only entries that chose this term in one of these fields. */
   withTerm?: { termId: string; fieldHandles: readonly string[] };
@@ -38,6 +41,7 @@ const publishedColumns = {
 function publishedIn(filter: PublishedEntryFilter): SQL | undefined {
   return and(
     eq(entriesTable.collectionId, filter.collectionId),
+    filter.siteId ? eq(entriesTable.siteId, filter.siteId) : undefined,
     eq(entriesTable.locale, filter.locale),
     isNotNull(entriesTable.publishedData),
     filter.withTerm ? choseTerm(filter.withTerm) : undefined,
@@ -88,6 +92,7 @@ export async function countPublishedEntries(
 export interface DraftEntryRow {
   id: string;
   collectionId: string;
+  siteId: string;
   originId: string | null;
   locale: string;
   slug: string;
@@ -97,12 +102,14 @@ export interface DraftEntryRow {
 
 export async function findDraftEntry(
   database: DatabaseOrTransaction,
-  where: { entryId: string } | { collectionId: string; locale: string; slug: string },
+  where:
+    { entryId: string } | { collectionId: string; siteId: string; locale: string; slug: string },
 ): Promise<DraftEntryRow | undefined> {
   const [entry] = await database
     .select({
       id: entriesTable.id,
       collectionId: entriesTable.collectionId,
+      siteId: entriesTable.siteId,
       originId: entriesTable.originId,
       locale: entriesTable.locale,
       slug: entriesTable.slug,
@@ -115,6 +122,7 @@ export async function findDraftEntry(
         ? eq(entriesTable.id, where.entryId)
         : and(
             eq(entriesTable.collectionId, where.collectionId),
+            eq(entriesTable.siteId, where.siteId),
             eq(entriesTable.locale, where.locale),
             eq(entriesTable.slug, where.slug),
           ),
@@ -163,6 +171,8 @@ export interface PublishedEntryLinkRow {
   publishedAt: Date | null;
   collectionHandle: string;
   routePattern: string | null;
+  /** The path prefix of the entry's site, such as "/fr". */
+  pathPrefix: string;
 }
 
 /** Published entries with these ids, and their published translations. */
@@ -183,9 +193,11 @@ export async function findPublishedEntryLinks(
       publishedAt: entriesTable.publishedAt,
       collectionHandle: collectionsTable.handle,
       routePattern: collectionsTable.routePattern,
+      pathPrefix: sitesTable.pathPrefix,
     })
     .from(entriesTable)
     .innerJoin(collectionsTable, eq(collectionsTable.id, entriesTable.collectionId))
+    .innerJoin(sitesTable, eq(sitesTable.id, entriesTable.siteId))
     .where(
       and(
         isNotNull(entriesTable.publishedData),

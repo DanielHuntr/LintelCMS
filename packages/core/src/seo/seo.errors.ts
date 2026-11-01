@@ -35,11 +35,14 @@ export class RedirectToItselfError extends HttpError {
 
 /** Sitemaps need full addresses, so they can't be made until the site's address is known. */
 export class SiteAddressMissingError extends HttpError {
-  constructor() {
+  /** `siteName` for a site other than the default, whose address is set in Settings → Sites. */
+  constructor(siteName?: string) {
     super(
       404,
       "SITE_ADDRESS_MISSING",
-      "The sitemap needs the website's address. Add it in Settings → Search engines.",
+      siteName === undefined
+        ? "The sitemap needs the website's address. Add it in Settings → Search engines."
+        : `The sitemap needs ${siteName}'s address. Add it in Settings → Sites.`,
     );
   }
 }

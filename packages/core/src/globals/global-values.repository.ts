@@ -4,10 +4,11 @@ import { type GlobalValues, globalValuesTable } from "./globals.table.js";
 
 /** Database reads and writes for global values, nothing else. */
 
-/** The set's values in these languages, one row per language that has any. */
+/** The set's values for one site in these languages, one row per language that has any. */
 export async function findGlobalValues(
   database: DatabaseOrTransaction,
   globalSetId: string,
+  siteId: string,
   locales: readonly string[],
 ): Promise<GlobalValues[]> {
   return database
@@ -16,31 +17,35 @@ export async function findGlobalValues(
     .where(
       and(
         eq(globalValuesTable.globalSetId, globalSetId),
+        eq(globalValuesTable.siteId, siteId),
         inArray(globalValuesTable.locale, [...locales]),
       ),
     );
 }
 
-/** Every set's values in these languages, for delivering all globals at once. */
+/** Every set's values for one site in these languages, for delivering all globals at once. */
 export async function findAllGlobalValues(
   database: DatabaseOrTransaction,
+  siteId: string,
   locales: readonly string[],
 ): Promise<GlobalValues[]> {
   return database
     .select()
     .from(globalValuesTable)
-    .where(inArray(globalValuesTable.locale, [...locales]));
+    .where(
+      and(eq(globalValuesTable.siteId, siteId), inArray(globalValuesTable.locale, [...locales])),
+    );
 }
 
 export async function upsertGlobalValues(
   database: DatabaseOrTransaction,
-  values: Pick<GlobalValues, "globalSetId" | "locale" | "data" | "updatedBy">,
+  values: Pick<GlobalValues, "globalSetId" | "siteId" | "locale" | "data" | "updatedBy">,
 ): Promise<void> {
   await database
     .insert(globalValuesTable)
     .values(values)
     .onConflictDoUpdate({
-      target: [globalValuesTable.globalSetId, globalValuesTable.locale],
+      target: [globalValuesTable.globalSetId, globalValuesTable.siteId, globalValuesTable.locale],
       set: { data: values.data, updatedBy: values.updatedBy, updatedAt: new Date() },
     });
 }

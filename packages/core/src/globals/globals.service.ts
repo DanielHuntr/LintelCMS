@@ -6,6 +6,7 @@ import { buildEntryDataValidator } from "../fieldtypes/entry-data-validator.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
 import type { AssetExists } from "../fieldtypes/image-assets.js";
 import { resolveLocale } from "../sites/locales.service.js";
+import type { Site } from "../sites/sites.table.js";
 import { GlobalSetHandleTakenError, GlobalSetNotFoundError } from "./globals.errors.js";
 import {
   deleteGlobalSetRow,
@@ -28,6 +29,9 @@ import type { GlobalSet } from "./globals.table.js";
  * Business rules for global sets: site-wide fields such as the footer text. Values are
  * kept per language; a language with nothing saved shows the main language's values, and
  * saving it for the first time starts from them.
+ *
+ * The sets and their fields are shared by every site; each site keeps its own values. The
+ * functions that read or save values take the site last, meaning the default when left out.
  */
 
 export function describeGlobalSetSummary(globalSet: GlobalSet): GlobalSetSummaryResponse {
@@ -58,14 +62,15 @@ export async function findGlobalSetOrFail(
   return globalSet;
 }
 
-/** The values shown for a language: its own, or else the main language's, or else none. */
+/** The values a site shows in a language: its own, or else its main language's, or else none. */
 export async function findValuesForLocale(
   database: DatabaseOrTransaction,
   globalSetId: string,
+  site: Site,
   locale: string,
-  defaultLocale: string,
 ): Promise<{ data: Record<string, unknown>; hasOwnValues: boolean }> {
-  const rows = await findGlobalValues(database, globalSetId, [locale, defaultLocale]);
+  const defaultLocale = site.locale;
+  const rows = await findGlobalValues(database, globalSetId, site.id, [locale, defaultLocale]);
   const own = rows.find((row) => row.locale === locale);
   const fallback = rows.find((row) => row.locale === defaultLocale);
   return { data: own?.data ?? fallback?.data ?? {}, hasOwnValues: own !== undefined };
@@ -75,10 +80,11 @@ export async function findGlobalSet(
   database: DatabaseOrTransaction,
   handle: string,
   requestedLocale: string | undefined,
+  forSite?: Site,
 ): Promise<GlobalSetResponse> {
   const globalSet = await findGlobalSetOrFail(database, handle);
-  const { site, locale } = await resolveLocale(database, requestedLocale);
-  const values = await findValuesForLocale(database, globalSet.id, locale, site.locale);
+  const { site, locale } = await resolveLocale(database, requestedLocale, forSite);
+  const values = await findValuesForLocale(database, globalSet.id, site, locale);
   return { ...describeGlobalSetSummary(globalSet), fields: globalSet.fields, locale, ...values };
 }
 
@@ -122,10 +128,11 @@ export async function saveGlobalValues(
   requestedLocale: string | undefined,
   request: SaveGlobalValuesRequest,
   context: GlobalChangeContext,
+  forSite?: Site,
 ): Promise<GlobalSetResponse> {
   const globalSet = await findGlobalSetOrFail(database, handle);
-  const { site, locale } = await resolveLocale(database, requestedLocale);
-  const current = await findValuesForLocale(database, globalSet.id, locale, site.locale);
+  const { site, locale } = await resolveLocale(database, requestedLocale, forSite);
+  const current = await findValuesForLocale(database, globalSet.id, site, locale);
   const validate = buildEntryDataValidator(globalSet.fields, {
     assetExists: context.assetExists,
     references: createContentReferences(database),
@@ -133,11 +140,12 @@ export async function saveGlobalValues(
   const data = await validate({ ...current.data, ...request.data });
   await upsertGlobalValues(database, {
     globalSetId: globalSet.id,
+    siteId: site.id,
     locale,
     data,
     updatedBy: context.authorId,
   });
-  return findGlobalSet(database, handle, locale);
+  return findGlobalSet(database, handle, locale, site);
 }
 
 export async function deleteGlobalSet(

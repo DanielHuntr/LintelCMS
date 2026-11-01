@@ -5,6 +5,9 @@ import { buildEntryUrl } from "../delivery/entry-urls.js";
 import { findEntryOrFail } from "../entries/entries.service.js";
 import type { AssetLookup } from "../fieldtypes/image-assets.js";
 import { readOrCreateSetting } from "../settings/settings.service.js";
+import { addPathPrefix } from "../sites/site-addresses.js";
+import { findSiteByIdOrFail } from "../sites/sites.service.js";
+import type { Site } from "../sites/sites.table.js";
 import { PreviewTokenExpiredError, PreviewTokenInvalidError } from "./preview.errors.js";
 import type { EntryPreview, PreviewedEntry } from "./preview.schema.js";
 import {
@@ -25,14 +28,23 @@ function findSigningSecret(database: DatabaseOrTransaction): Promise<string> {
   return readOrCreateSetting(database, "previewSigningSecret", generatePreviewSecret);
 }
 
-/** A new token for the entry, and where its website shows it (null when none is connected). */
+/**
+ * A new token for the entry, and where its website shows it (null when none is connected).
+ * The address is the entry's site's: its path prefix and, for `{siteUrl}`, its address. An
+ * entry of a shared collection is previewed on `site`, the one the editor is working on.
+ */
 export async function createEntryPreview(
   database: DatabaseOrTransaction,
   entryId: string,
   now: Date = new Date(),
+  site?: Site,
 ): Promise<EntryPreview> {
   const entry = await findEntryOrFail(database, entryId);
   const collection = await findCollectionByIdOrFail(database, entry.collectionId);
+  const previewSite =
+    collection.siteScope === "shared" && site !== undefined
+      ? site
+      : await findSiteByIdOrFail(database, entry.siteId);
   const expiresAt = now.getTime() + PREVIEW_TOKEN_LIFETIME_MS;
   const token = signPreviewToken(
     { entryId: entry.id, expiresAt },
@@ -43,14 +55,19 @@ export async function createEntryPreview(
     token,
     expiresAt: new Date(expiresAt).toISOString(),
     previewUrl: buildPreviewUrl(collection.previewUrlPattern, {
-      url: buildEntryUrl(collection.routePattern, {
-        slug: entry.slug,
-        publishedAt: entry.publishedAt ?? now,
-      }),
+      url: addPathPrefix(
+        previewSite.pathPrefix,
+        buildEntryUrl(collection.routePattern, {
+          slug: entry.slug,
+          publishedAt: entry.publishedAt ?? now,
+        }),
+      ),
       slug: entry.slug,
       token,
       collection: collection.handle,
       id: entry.id,
+      site: previewSite.handle,
+      siteUrl: previewSite.siteUrl,
     }),
   };
 }
@@ -82,5 +99,5 @@ export async function findPreviewedEntry(
   if (!draft) {
     throw new PreviewTokenInvalidError();
   }
-  return { collection: draft.collectionHandle, entry: draft.entry };
+  return { collection: draft.collectionHandle, site: draft.siteHandle, entry: draft.entry };
 }

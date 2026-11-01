@@ -2,6 +2,8 @@ import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import { createContentReferences } from "../entries/entry-references.js";
 import { InvalidFieldsError } from "../http/http-errors.js";
+import { siteOrDefault } from "../sites/sites.service.js";
+import type { Site } from "../sites/sites.table.js";
 import { NavigationHandleTakenError, NavigationNotFoundError } from "./navigation.errors.js";
 import {
   countItems,
@@ -27,7 +29,11 @@ import type {
 } from "./navigation.schema.js";
 import type { Navigation } from "./navigation.table.js";
 
-/** Business rules for navigation menus. The tree's own rules are in navigation-items.ts. */
+/**
+ * Business rules for navigation menus. The tree's own rules are in navigation-items.ts.
+ * Each site has its own menus; every function takes the site last, and means the default
+ * site when it is left out.
+ */
 
 export function describeNavigationSummary(navigation: Navigation): NavigationSummaryResponse {
   return {
@@ -42,16 +48,20 @@ export function describeNavigationSummary(navigation: Navigation): NavigationSum
 
 export async function listNavigations(
   database: DatabaseOrTransaction,
+  forSite?: Site,
 ): Promise<{ navigations: NavigationSummaryResponse[] }> {
-  const navigations = await listNavigationRows(database, DEFAULT_TENANT_ID);
+  const site = await siteOrDefault(database, forSite);
+  const navigations = await listNavigationRows(database, DEFAULT_TENANT_ID, site.id);
   return { navigations: navigations.map(describeNavigationSummary) };
 }
 
 export async function findNavigationOrFail(
   database: DatabaseOrTransaction,
   handle: string,
+  forSite?: Site,
 ): Promise<Navigation> {
-  const navigation = await findNavigationByHandle(database, DEFAULT_TENANT_ID, handle);
+  const site = await siteOrDefault(database, forSite);
+  const navigation = await findNavigationByHandle(database, DEFAULT_TENANT_ID, site.id, handle);
   if (!navigation) {
     throw new NavigationNotFoundError(handle);
   }
@@ -61,8 +71,9 @@ export async function findNavigationOrFail(
 export async function findNavigation(
   database: DatabaseOrTransaction,
   handle: string,
+  forSite?: Site,
 ): Promise<NavigationResponse> {
-  const navigation = await findNavigationOrFail(database, handle);
+  const navigation = await findNavigationOrFail(database, handle, forSite);
   const linked = await findLinkedEntries(database, linkedEntryIds(navigation.items));
   const linkedEntries: Record<string, LinkedEntry> = {};
   for (const entry of linked) {
@@ -78,12 +89,18 @@ export async function findNavigation(
 export async function createNavigation(
   database: DatabaseOrTransaction,
   request: CreateNavigationRequest,
+  forSite?: Site,
 ): Promise<NavigationResponse> {
-  const inserted = await insertNavigationIfMissing(database, { ...request, items: [] });
+  const site = await siteOrDefault(database, forSite);
+  const inserted = await insertNavigationIfMissing(database, {
+    ...request,
+    siteId: site.id,
+    items: [],
+  });
   if (!inserted) {
     throw new NavigationHandleTakenError(request.handle);
   }
-  return findNavigation(database, inserted.handle);
+  return findNavigation(database, inserted.handle, site);
 }
 
 /**
@@ -94,8 +111,9 @@ export async function updateNavigation(
   database: DatabaseOrTransaction,
   handle: string,
   request: UpdateNavigationRequest,
+  forSite?: Site,
 ): Promise<NavigationResponse> {
-  const navigation = await findNavigationOrFail(database, handle);
+  const navigation = await findNavigationOrFail(database, handle, forSite);
   const maxDepth = request.maxDepth ?? navigation.maxDepth;
   const items = request.items ?? navigation.items;
   await checkItems(database, items, maxDepth);
@@ -104,7 +122,7 @@ export async function updateNavigation(
     maxDepth: request.maxDepth,
     items: request.items,
   });
-  return findNavigation(database, handle);
+  return findNavigation(database, handle, forSite);
 }
 
 async function checkItems(
@@ -129,15 +147,39 @@ async function checkItems(
 export async function deleteNavigation(
   database: DatabaseOrTransaction,
   handle: string,
+  forSite?: Site,
 ): Promise<void> {
-  const navigation = await findNavigationOrFail(database, handle);
+  const navigation = await findNavigationOrFail(database, handle, forSite);
   await deleteNavigationRow(database, navigation.id);
 }
 
-/** Makes sure a menu with this handle exists. An existing one is left as it is. */
+/** Makes sure the site has a menu with this handle. An existing one is left as it is. */
 export async function ensureNavigation(
   database: DatabaseOrTransaction,
   defaults: Pick<Navigation, "handle" | "name" | "maxDepth">,
+  forSite?: Site,
 ): Promise<void> {
-  await insertNavigationIfMissing(database, { ...defaults, items: [] });
+  const site = await siteOrDefault(database, forSite);
+  await insertNavigationIfMissing(database, {
+    handle: defaults.handle,
+    name: defaults.name,
+    maxDepth: defaults.maxDepth,
+    siteId: site.id,
+    items: [],
+  });
+}
+
+/**
+ * Gives a new site an empty menu for each of another site's, so a website that prints
+ * "main" and "footer" finds them on every site. The items are left for editors to fill in,
+ * since they link to the other site's pages.
+ */
+export async function copyMenusToSite(
+  database: DatabaseOrTransaction,
+  from: Site,
+  to: Site,
+): Promise<void> {
+  for (const navigation of await listNavigationRows(database, DEFAULT_TENANT_ID, from.id)) {
+    await ensureNavigation(database, navigation, to);
+  }
 }

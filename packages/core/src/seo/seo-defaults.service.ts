@@ -1,5 +1,7 @@
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { readSetting, writeSetting } from "../settings/settings.service.js";
+import { isDefaultSite } from "../sites/sites.service.js";
+import type { Site } from "../sites/sites.table.js";
 import type { SeoDefaults } from "./seo-defaults.schema.js";
 import type { UpdateSeoDefaultsRequest } from "./seo.schema.js";
 
@@ -18,4 +20,15 @@ export async function updateSeoDefaults(
   const updated = { ...current, ...changes };
   await writeSetting(database, "seoDefaults", updated);
   return updated;
+}
+
+/**
+ * A site's public address, for full URLs: its own (Settings → Sites), or for the default
+ * site the one set here before sites had addresses. Empty when neither is known.
+ */
+export function siteAddressFor(site: Site | undefined, defaults: SeoDefaults): string {
+  if (site?.siteUrl) {
+    return site.siteUrl;
+  }
+  return site === undefined || isDefaultSite(site) ? defaults.siteUrl : "";
 }

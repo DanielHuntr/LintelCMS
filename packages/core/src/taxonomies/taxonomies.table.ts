@@ -1,16 +1,21 @@
 import { index, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { id, tenantId, timestamps } from "../database/columns.js";
+import { sitesTable } from "../sites/sites.table.js";
 
 /**
  * A taxonomy is a way of grouping content: "Categories", "Tags", "Topics". Its terms are
  * the groups themselves ("News", "Guides"). Entries choose terms through a field of type
  * `terms`, which stores their ids.
+ *
+ * `siteId` is null for a taxonomy every site shares, or the one site it belongs to. Handles
+ * are unique across the install either way, so a terms field always means one taxonomy.
  */
 export const taxonomiesTable = pgTable(
   "taxonomies",
   {
     id: id(),
     tenantId: tenantId(),
+    siteId: uuid("site_id").references(() => sitesTable.id, { onDelete: "cascade" }),
     handle: text("handle").notNull(),
     name: text("name").notNull(),
     ...timestamps(),

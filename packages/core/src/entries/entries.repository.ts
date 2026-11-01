@@ -10,6 +10,8 @@ import { type Entry, entriesTable, type EntryStatus, type NewEntry } from "./ent
 
 export interface EntryFilters {
   collectionId: string;
+  /** Only this site's entries. */
+  siteId?: string;
   status?: EntryStatus;
   search?: string;
   parentId?: string;
@@ -70,6 +72,7 @@ const summaryColumns = {
 function matching(filters: EntryFilters): SQL | undefined {
   return and(
     eq(entriesTable.collectionId, filters.collectionId),
+    filters.siteId ? eq(entriesTable.siteId, filters.siteId) : undefined,
     filters.status ? eq(entriesTable.status, filters.status) : undefined,
     filters.search ? ilike(titleColumn, `%${escapeLikePattern(filters.search)}%`) : undefined,
     filters.parentId ? eq(entriesTable.parentId, filters.parentId) : undefined,
@@ -119,10 +122,11 @@ export async function countEntries(
   return row?.count ?? 0;
 }
 
-/** Where every entry of a collection sits, for putting a tree in order. */
+/** Where every entry of a collection sits (on one site, if given), for putting a tree in order. */
 export async function listEntryPositions(
   database: DatabaseOrTransaction,
   collectionId: string,
+  siteId?: string,
 ): Promise<TreePosition[]> {
   return database
     .select({
@@ -132,7 +136,12 @@ export async function listEntryPositions(
       createdAt: entriesTable.createdAt,
     })
     .from(entriesTable)
-    .where(eq(entriesTable.collectionId, collectionId));
+    .where(
+      and(
+        eq(entriesTable.collectionId, collectionId),
+        siteId ? eq(entriesTable.siteId, siteId) : undefined,
+      ),
+    );
 }
 
 export async function findEntryById(

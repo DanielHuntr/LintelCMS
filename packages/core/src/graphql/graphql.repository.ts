@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { blueprintsTable } from "../blueprints/blueprints.table.js";
 import { collectionsTable } from "../collections/collections.table.js";
+import type { CollectionSiteScope } from "../collections/collections.schema.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { entriesTable } from "../entries/entries.table.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
@@ -17,6 +18,7 @@ export interface CollectionWithBlueprint {
   name: string;
   structure: string;
   routePattern: string | null;
+  siteScope: CollectionSiteScope;
   updatedAt: Date;
   blueprint: { handle: string; fields: FieldDefinition[]; version: number; updatedAt: Date };
 }
@@ -32,6 +34,7 @@ export async function listCollectionsWithBlueprints(
       name: collectionsTable.name,
       structure: collectionsTable.structure,
       routePattern: collectionsTable.routePattern,
+      siteScope: collectionsTable.siteScope,
       updatedAt: collectionsTable.updatedAt,
       blueprintHandle: blueprintsTable.handle,
       fields: blueprintsTable.fields,
@@ -48,6 +51,7 @@ export async function listCollectionsWithBlueprints(
     name: row.name,
     structure: row.structure,
     routePattern: row.routePattern,
+    siteScope: row.siteScope,
     updatedAt: row.updatedAt,
     blueprint: {
       handle: row.blueprintHandle,
@@ -80,6 +84,7 @@ const workingCopyColumns = {
 export async function listWorkingCopies(
   database: DatabaseOrTransaction,
   collectionId: string,
+  siteId: string,
   locale: string,
   newestFirst: boolean,
   page: { limit: number; offset: number },
@@ -87,7 +92,7 @@ export async function listWorkingCopies(
   const rows = await database
     .select(workingCopyColumns)
     .from(entriesTable)
-    .where(and(eq(entriesTable.collectionId, collectionId), eq(entriesTable.locale, locale)))
+    .where(inCollection(collectionId, siteId, locale))
     .orderBy(
       ...(newestFirst
         ? [desc(entriesTable.createdAt)]
@@ -98,26 +103,29 @@ export async function listWorkingCopies(
   const [counted] = await database
     .select({ total: sql<number>`count(*)`.mapWith(Number) })
     .from(entriesTable)
-    .where(and(eq(entriesTable.collectionId, collectionId), eq(entriesTable.locale, locale)));
+    .where(inCollection(collectionId, siteId, locale));
   return { rows, total: counted?.total ?? 0 };
+}
+
+function inCollection(collectionId: string, siteId: string, locale: string) {
+  return and(
+    eq(entriesTable.collectionId, collectionId),
+    eq(entriesTable.siteId, siteId),
+    eq(entriesTable.locale, locale),
+  );
 }
 
 export async function findWorkingCopyBySlug(
   database: DatabaseOrTransaction,
   collectionId: string,
+  siteId: string,
   locale: string,
   slug: string,
 ): Promise<WorkingCopyRow | undefined> {
   const [row] = await database
     .select(workingCopyColumns)
     .from(entriesTable)
-    .where(
-      and(
-        eq(entriesTable.collectionId, collectionId),
-        eq(entriesTable.locale, locale),
-        eq(entriesTable.slug, slug),
-      ),
-    )
+    .where(and(inCollection(collectionId, siteId, locale), eq(entriesTable.slug, slug)))
     .limit(1);
   return row;
 }
