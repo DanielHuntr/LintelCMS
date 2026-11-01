@@ -71,24 +71,57 @@ function groupOf(title: string): HTMLElement {
 }
 
 describe("the Insert panel", () => {
-  it("opens on ready-made sections, with only the first group open", async () => {
+  it("opens on ready-made sections, in closed groups by purpose with their counts", async () => {
     const person = user();
     const { preferences } = renderBuilder();
     await person.click(screen.getByRole("tab", { name: "Insert" }));
 
     expect(screen.getByRole("radio", { name: "Sections" })).toBeChecked();
-    expect(disclosure("Heroes")).toHaveAttribute("aria-expanded", "true");
-    expect(disclosure("Features")).toHaveAttribute("aria-expanded", "false");
+    const groups = within(screen.getByRole("complementary", { name: "Page structure" }))
+      .getAllByRole("button")
+      .filter(
+        (button) => button.hasAttribute("aria-expanded") && !button.hasAttribute("aria-haspopup"),
+      );
+    expect(groups.map((group) => group.getAttribute("aria-expanded"))).toEqual(
+      groups.map(() => "false"),
+    );
+    expect(groups.map((group) => group.textContent)).toEqual([
+      "Intro and banners6",
+      "Features and steps2",
+      "About and story2",
+      "Pictures and galleries2",
+      "Reviews and proof3",
+      "Pricing1",
+      "Questions1",
+      "Contact and booking4",
+      "Shop2",
+      "Footer-style2",
+    ]);
+    expect(screen.queryByRole("button", { name: "Hero" })).not.toBeInTheDocument();
+
+    await person.click(disclosure("Intro and banners"));
     const hero = screen.getByRole("button", { name: "Hero" });
     expect(hero).toHaveAccessibleDescription(/A big welcome at the top of the page/);
     // Descriptions are in hover cards and details, not in the list.
     expect(
       screen.queryByText(/A big welcome at the top of the page/, { selector: "p" }),
     ).toBeNull();
+    expect(preferences.read("insert.sectionGroups.open")).toBe("intro");
+  });
 
-    await person.click(disclosure("Features"));
-    expect(screen.getByRole("button", { name: "Three features" })).toBeInTheDocument();
-    expect(preferences.read("insert.sections.open")).toBe("hero,features");
+  it("finds sections for a kind of business by search, under neutral names", async () => {
+    const person = user();
+    renderBuilder();
+    await person.click(screen.getByRole("tab", { name: "Insert" }));
+    await person.type(
+      screen.getByRole("searchbox", { name: "Search sections and elements" }),
+      "bakery",
+    );
+    const sections = screen.getByRole("region", { name: "Sections" });
+    expect(within(sections).getByRole("button", { name: "Opening times" })).toBeInTheDocument();
+    expect(
+      within(sections).getByRole("button", { name: "Pictures with prices" }),
+    ).toBeInTheDocument();
   });
 
   it("inserts elements from a compact grid and keeps them under Recently used", async () => {
@@ -137,6 +170,7 @@ describe("the Insert panel", () => {
     const person = user();
     const { latest } = renderBuilder();
     await person.click(screen.getByRole("tab", { name: "Insert" }));
+    await person.click(disclosure("Intro and banners"));
     const about = screen.getByRole("button", { name: "About Hero" });
 
     await person.click(about);

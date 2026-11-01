@@ -116,6 +116,7 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
 
   return (
     <aside
+      data-tour="selected-element"
       aria-label={text("pageBuilder.panels.rightLabel")}
       className="flex w-80 shrink-0 flex-col border-s border-separator bg-surface"
     >

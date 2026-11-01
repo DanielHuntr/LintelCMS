@@ -11,13 +11,13 @@ export function BlueprintSketch({
   size = "regular",
 }: {
   blueprint: NodeBlueprint;
-  /** Small fits two to a row in the Insert panel. */
-  size?: "regular" | "small";
+  /** A thumbnail sits at the start of a row in the Insert panel. */
+  size?: "regular" | "thumbnail";
 }) {
   return (
     <div
       aria-hidden="true"
-      className={`pointer-events-none flex w-full flex-col overflow-hidden rounded-control bg-surface hairline-ring ${size === "small" ? "h-16 p-1.5" : "h-24 p-2"}`}
+      className={`pointer-events-none flex flex-col overflow-hidden rounded-control bg-surface hairline-ring ${size === "thumbnail" ? "h-10 w-16 shrink-0 p-1" : "h-24 w-full p-2"}`}
     >
       {sketch(blueprint, "0")}
     </div>

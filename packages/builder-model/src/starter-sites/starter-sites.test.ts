@@ -3,7 +3,7 @@ import { standardCatalogue } from "../components/component-catalogue.js";
 import type { NodeBlueprint } from "../components/component-definition.js";
 import { validatePageDocument } from "../document/validate-page.js";
 import { listNodes } from "../tree/tree-queries.js";
-import { sectionTemplates } from "../templates/section-templates.js";
+import { sectionCategories, sectionTemplates } from "../templates/section-templates.js";
 import { createCountingNodeIds } from "../tree/node-ids.js";
 import { findIllustration } from "./illustrations.js";
 import { buildStarterPage } from "./starter-site.js";
@@ -63,22 +63,21 @@ describe("starter sites", () => {
 });
 
 describe("the section library", () => {
-  it("has heroes, features, testimonials, prices, questions, calls to action and footers", () => {
+  it("groups sections by what they're for, never by a kind of business", () => {
     const categories = new Set(sectionTemplates.map((template) => template.category));
-    for (const category of [
-      "hero",
-      "features",
-      "testimonials",
-      "pricing",
-      "questions",
-      "callToAction",
-      "footer",
-    ]) {
-      expect(categories.has(category as never), category).toBe(true);
-    }
+    expect([...categories]).toEqual([...sectionCategories]);
     expect(new Set(sectionTemplates.map((template) => template.id)).size).toBe(
       sectionTemplates.length,
     );
+    const businesses = starterSites.map((site) => site.name.toLowerCase());
+    for (const template of sectionTemplates) {
+      for (const business of businesses) {
+        expect(template.label.toLowerCase(), template.id).not.toContain(business);
+      }
+    }
+    const openingTimes = sectionTemplates.find((template) => template.id === "opening-times");
+    expect(openingTimes?.category).toBe("contact");
+    expect(openingTimes?.keywords).toContain("bakery");
   });
 
   it("only holds sections the server accepts", () => {
@@ -87,7 +86,9 @@ describe("the section library", () => {
         { slug: "x", title: "x", summary: "", sections: [template.blueprint] },
         standardCatalogue,
         createCountingNodeIds(),
+        { enabledPlugins: ["commerce", "forms"] },
       );
+      expect(design.root.children, template.id).toHaveLength(1);
       expect(validatePageDocument(design, standardCatalogue).ok, template.id).toBe(true);
     }
   });

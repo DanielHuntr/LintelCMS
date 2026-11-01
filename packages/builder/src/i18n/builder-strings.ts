@@ -32,12 +32,6 @@ export const builderStrings = {
   "pageBuilder.breadcrumbs.label": "Where the selected element is",
   "pageBuilder.breadcrumbs.page": "Page",
 
-  "pageBuilder.start.title": "Start your page",
-  "pageBuilder.start.description":
-    "Pick a section to begin with. You can change everything in it, and add more afterwards.",
-  "pageBuilder.start.blank": "Start with an empty page",
-  "pageBuilder.start.hint": "Tip: double-click text on the page to type straight into it.",
-
   "pageBuilder.layers.title": "Layers",
   "pageBuilder.layers.empty": "Nothing on this page yet. Add a section from Insert.",
   "pageBuilder.layers.keyboardHelp":

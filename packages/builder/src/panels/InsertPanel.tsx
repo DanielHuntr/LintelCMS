@@ -4,6 +4,7 @@ import {
   type DragEvent,
   type KeyboardEvent,
   type ReactNode,
+  useEffect,
   useId,
   useMemo,
   useRef,
@@ -21,6 +22,7 @@ import {
   type InsertKey,
   type InsertKind,
   insertItems,
+  isTemplateAvailable,
   readRecentlyUsed,
   searchInsertItems,
   withRecentlyUsed,
@@ -37,6 +39,16 @@ interface InsertPanelProps {
   /** Elements that belong to a plugin are only offered while it is on. All, when left out. */
   enabledPlugins?: readonly string[];
   onInsert: (key: InsertKey) => void;
+  /**
+   * Opens a segment with the search focused, as the empty page's buttons do. A new `count`
+   * asks again, even for the same segment.
+   */
+  focusRequest?: InsertFocusRequest;
+}
+
+export interface InsertFocusRequest {
+  kind: InsertKind;
+  count: number;
 }
 
 const recentShown: Record<InsertKind, number> = { sections: 2, elements: 4 };
@@ -47,8 +59,9 @@ const kindTitles = {
 } as const;
 
 /**
- * The library: ready-made sections (the default) and single elements, each by group with
- * only the first group open, a search across both, and what was used recently. Press an
+ * The library: ready-made sections (the default) and single elements, each by group, a
+ * search across both, and what was used recently. Section groups start closed, so the list
+ * is short: ten groups by purpose, each with how many it holds. Press an
  * item to add it after the selected element (or inside it, when it holds elements), or drag
  * it into Layers to put it exactly where you want.
  */
@@ -58,11 +71,13 @@ export function InsertPanel({
   canEditCode,
   enabledPlugins,
   onInsert,
+  focusRequest,
 }: InsertPanelProps) {
   const text = useBuilderText();
   const store = usePreferenceStore();
   const searchId = useId();
   const list = useRef<HTMLDivElement>(null);
+  const searchBox = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState("");
   const [kind, setKind] = usePreference<InsertKind>(store, "insert.kind", (stored) =>
     stored === "elements" ? "elements" : "sections",
@@ -72,7 +87,9 @@ export function InsertPanel({
   const items = useMemo(
     () =>
       insertItems(
-        templates,
+        templates.filter((template) =>
+          isTemplateAvailable(template.blueprint, catalogue, enabledPlugins),
+        ),
         catalogue.definitions.filter(
           (definition) =>
             !definition.hiddenFromInsert &&
@@ -95,18 +112,27 @@ export function InsertPanel({
     .map((key) => items.find((item) => item.key === key))
     .filter((item): item is InsertItem => item?.kind === kind)
     .slice(0, recentShown[kind]);
-  // Only the first group is open the first time; after that, whatever was left open.
-  const openSectionGroups = useRememberedOpenSections(
-    store,
-    "insert.sections.open",
-    sectionGroups.slice(0, 1).map((group) => group.id),
-  );
+  // Section groups start closed; element groups with only the first open. After that,
+  // whatever was left open.
+  const openSectionGroups = useRememberedOpenSections(store, "insert.sectionGroups.open", []);
   const openElementGroups = useRememberedOpenSections(
     store,
     "insert.elements.open",
     elementGroups.slice(0, 1).map((group) => group.id),
   );
   const openGroups = kind === "sections" ? openSectionGroups : openElementGroups;
+
+  // A new request starts from an empty search, on the segment asked for.
+  const [answeredRequest, setAnsweredRequest] = useState(focusRequest);
+  if (focusRequest !== answeredRequest) {
+    setAnsweredRequest(focusRequest);
+    setSearch("");
+  }
+  useEffect(() => {
+    if (!focusRequest) return;
+    setKind(focusRequest.kind);
+    searchBox.current?.focus();
+  }, [focusRequest, setKind]);
 
   const remember = (key: InsertKey) => {
     const next = withRecentlyUsed(recent, key);
@@ -137,15 +163,10 @@ export function InsertPanel({
     }
   };
 
-  // Elements get a row each, so every name fits in full at the panel's width.
-  const columns = { compact: 4, element: 1, section: 2 } as const;
+  // Sections and elements get a row each, so every name fits in full at the panel's width.
+  const columns = { compact: 4, element: 1, section: 1 } as const;
   const tiles = (shown: readonly InsertItem[], look: "section" | "element" | "compact") => (
-    <ul
-      className={classNames(
-        "grid gap-1",
-        look === "compact" ? "grid-cols-4" : look === "element" ? "grid-cols-1" : "grid-cols-2",
-      )}
-    >
+    <ul className={classNames("grid gap-1", look === "compact" ? "grid-cols-4" : "grid-cols-1")}>
       {shown.map((item, index) => (
         <li key={item.key} className="min-w-0">
           <InsertTile
@@ -173,6 +194,7 @@ export function InsertPanel({
             className="pointer-events-none absolute top-1/2 inset-s-2 size-3.5 -translate-y-1/2 text-label-tertiary"
           />
           <input
+            ref={searchBox}
             id={searchId}
             type="search"
             value={search}

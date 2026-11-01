@@ -45,44 +45,51 @@ export const builderStudioStrings = {
   "pageBuilder.tour.back": "Back",
   "pageBuilder.tour.skip": "Skip the tour",
   "pageBuilder.tour.finish": "Start building",
-  "pageBuilder.tour.welcome.title": "Welcome to your page builder",
-  "pageBuilder.tour.welcome.text":
-    "This short tour shows you the six things you’ll do most. It takes about a minute, and you can replay it any time from Help and tips.",
-  "pageBuilder.tour.select.title": "Select something",
-  "pageBuilder.tour.select.text":
-    "Click anything on your page to select it. It gets a purple outline, and the panels on the right show what you can change.",
-  "pageBuilder.tour.editText.title": "Change the words",
-  "pageBuilder.tour.editText.text":
-    "Double-click any text on the page and type. Press Enter, or click somewhere else, when you’re done.",
-  "pageBuilder.tour.style.title": "Change how it looks",
-  "pageBuilder.tour.style.text":
-    "With something selected, Style changes its colours, size, spacing and corners. Your site’s colours and fonts are always one click away.",
-  "pageBuilder.tour.insert.title": "Add a section",
+  "pageBuilder.tour.insert.title": "Add sections and elements",
   "pageBuilder.tour.insert.text":
-    "Insert has ready-made sections: heroes, features, prices, questions and more. Pick one and it appears after what you’ve selected.",
-  "pageBuilder.tour.animate.title": "Bring it to life",
-  "pageBuilder.tour.animate.text":
-    "Animate makes the selected element move: choose a ready-made animation, see it play on your page, then tweak it with a few sliders.",
-  "pageBuilder.tour.skill.title": "Show more, or less",
-  "pageBuilder.tour.skill.text":
-    "Tools changes how much the builder shows. Beginner keeps it simple; Designer adds every setting and the animation timeline.",
-  "pageBuilder.tour.publish.title": "Publish it",
+    "Insert has ready-made sections, grouped by what they’re for, and single elements such as headings, pictures and buttons. Search finds either.",
+  "pageBuilder.tour.layers.title": "Everything on the page, in order",
+  "pageBuilder.tour.layers.text":
+    "Layers lists every part of your page. Pick something to select it, drag it to move it, and hide or lock what you don’t want to change.",
+  "pageBuilder.tour.canvas.title": "Click to select, double-click to type",
+  "pageBuilder.tour.canvas.text":
+    "Click anything on your page to select it. Double-click any text to type straight into it, then press Enter or click somewhere else.",
+  "pageBuilder.tour.panel.title": "Change what you’ve selected",
+  "pageBuilder.tour.panel.beginnerText":
+    "Style changes colours, sizes, spacing and corners. Content changes the words, pictures and links. Animate makes it move. Style changes apply to the screen size you’re looking at.",
+  "pageBuilder.tour.panel.designerText":
+    "Style changes colours, sizes, spacing and corners, for the screen size you’re looking at. In Advanced, Style for changes how it looks under the pointer or with keyboard focus. Content changes the words; Animate makes it move.",
+  "pageBuilder.tour.panel.developerText":
+    "Style, for the screen size you’re looking at, with Style for in Advanced for pointer and focus states. Content changes the words, Animate makes it move, and Code shows its HTML and CSS.",
+  "pageBuilder.tour.screens.title": "Every screen size, and every step",
+  "pageBuilder.tour.screens.beginnerText":
+    "Switch between desktop, tablet and phone to see and adjust each one. Undo, redo and History take you back to any earlier step. Tools, beside them, shows more settings when you’re ready.",
+  "pageBuilder.tour.screens.text":
+    "Switch between desktop, tablet and phone to see and adjust each one. Undo, redo and History take you back to any earlier step.",
+  "pageBuilder.tour.publish.title": "Publish and view your page",
   "pageBuilder.tour.publish.text":
-    "Your changes save as you go. When you’re happy, Publish puts the page on your website for everyone to see.",
+    "Your changes save as you go. Publish puts the page on your website, and View page opens it as visitors see it.",
 
-  "pageBuilder.start.fromTemplate": "Or start from a template page",
-  "pageBuilder.start.fromTemplateDescription":
-    "Whole pages from the template library, with words, pictures and animations you can change.",
+  "pageBuilder.start.title": "This page is empty",
+  "pageBuilder.start.description":
+    "Start building by adding a section, or design your own with elements.",
+  "pageBuilder.start.addSection": "Add a section",
+  "pageBuilder.start.addElements": "Add elements",
+  "pageBuilder.start.fromTemplate": "Start from a template",
+  "pageBuilder.start.templatesDescription":
+    "Fill this page with a whole page from the template library. Everything in it can be changed.",
   "pageBuilder.start.templatePage": "{site}: {page}",
+  "pageBuilder.start.closeTemplates": "Close",
   "pageBuilder.history.usedTemplatePage": "Started from {name}",
 
-  "pageBuilder.insert.sectionCategory.hero": "Heroes",
-  "pageBuilder.insert.sectionCategory.features": "Features",
-  "pageBuilder.insert.sectionCategory.story": "Stories and pictures",
-  "pageBuilder.insert.sectionCategory.testimonials": "Testimonials",
-  "pageBuilder.insert.sectionCategory.pricing": "Prices",
+  "pageBuilder.insert.sectionCategory.intro": "Intro and banners",
+  "pageBuilder.insert.sectionCategory.features": "Features and steps",
+  "pageBuilder.insert.sectionCategory.about": "About and story",
+  "pageBuilder.insert.sectionCategory.pictures": "Pictures and galleries",
+  "pageBuilder.insert.sectionCategory.proof": "Reviews and proof",
+  "pageBuilder.insert.sectionCategory.pricing": "Pricing",
   "pageBuilder.insert.sectionCategory.questions": "Questions",
-  "pageBuilder.insert.sectionCategory.callToAction": "Calls to action",
-  "pageBuilder.insert.sectionCategory.contact": "Contact",
-  "pageBuilder.insert.sectionCategory.footer": "Footers",
+  "pageBuilder.insert.sectionCategory.contact": "Contact and booking",
+  "pageBuilder.insert.sectionCategory.shop": "Shop",
+  "pageBuilder.insert.sectionCategory.footer": "Footer-style",
 } as const;
