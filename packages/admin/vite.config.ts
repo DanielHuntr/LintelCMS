@@ -4,13 +4,15 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv, type Plugin } from "vite";
 import { contentSecurityPolicy, securityHeaders } from "./src/security/contentSecurityPolicy.js";
 import { lintelPlugins } from "./vite-plugin-lintel.js";
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
 import { canvasFrameScript } from "@lintel/builder/canvas-frame";
 
 /**
- * The page builder's canvas scripts as files of their own beside the admin: /canvas-frame.js
- * and /canvas-motion.js (the animation runtime, for previews). The Content-Security-Policy
+ * The page builder's canvas scripts as files of their own beside the admin: /canvas-frame.js,
+ * /canvas-motion.js (the animation runtime, for previews) and /canvas-effects/ (the effect
+ * modules and their manifest.json, which the canvas and the Effects gallery import). The Content-Security-Policy
  * refuses inline scripts, and the canvas frame inherits it.
  */
 function canvasFrameScriptFiles(): Plugin {
@@ -25,6 +27,20 @@ function canvasFrameScriptFiles(): Plugin {
       return "";
     }
   };
+  // The effect modules and their manifest, imported by the canvas and the Effects gallery.
+  const effectsFolder = () => {
+    try {
+      return dirname(
+        createRequire(import.meta.url).resolve("@lintel/motion/effect-modules/manifest.json"),
+      );
+    } catch {
+      return null;
+    }
+  };
+  const effectFiles = () => {
+    const folder = effectsFolder();
+    return folder && existsSync(folder) ? readdirSync(folder) : [];
+  };
   const files: Record<string, () => string> = {
     "canvas-frame.js": canvasFrameScript,
     "canvas-motion.js": motionRuntime,
@@ -38,10 +54,28 @@ function canvasFrameScriptFiles(): Plugin {
           response.end(contents());
         });
       }
+      server.middlewares.use("/canvas-effects/", (request, response, next) => {
+        const fileName = (request.url ?? "").replace(/^\//, "").split("?")[0] ?? "";
+        const folder = effectsFolder();
+        if (!folder || !effectFiles().includes(fileName)) return next();
+        response.setHeader(
+          "content-type",
+          fileName.endsWith(".json") ? "application/json" : "text/javascript; charset=utf-8",
+        );
+        response.end(readFileSync(join(folder, fileName), "utf8"));
+      });
     },
     generateBundle() {
       for (const [fileName, contents] of Object.entries(files)) {
         this.emitFile({ type: "asset", fileName, source: contents() });
+      }
+      const folder = effectsFolder();
+      for (const fileName of effectFiles()) {
+        this.emitFile({
+          type: "asset",
+          fileName: `canvas-effects/${fileName}`,
+          source: readFileSync(join(folder ?? "", fileName), "utf8"),
+        });
       }
     },
   };

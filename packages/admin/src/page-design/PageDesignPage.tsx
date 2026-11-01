@@ -26,7 +26,9 @@ import { MediaPickerDialog } from "../media/MediaPickerDialog.js";
 import { useCan, useSession } from "../session/SessionContext.js";
 import { runtimeSettings } from "../runtime-settings.js";
 import { useBuilderData, useCanvasSite } from "../website/website.queries.js";
+import { useEffectModules } from "./useEffectModules.js";
 import { usePageDesignSaving } from "./usePageDesignSaving.js";
+import { useSiteMotion } from "./useSiteMotion.js";
 
 /**
  * The canvas frame's scripts, served beside the admin (see vite.config.ts), because the
@@ -101,6 +103,8 @@ function PageDesigner({
   const builderData = useBuilderData();
   const canEditCode = useCan("builder:code");
   const canPublish = useCan("entries:publish");
+  const effectModules = useEffectModules(besideTheAdmin);
+  const siteMotion = useSiteMotion();
   const imagePicker = useImagePicker();
   const title = String(saving.entry.data.title ?? "") || t("pageDesign.untitled");
   const text = useCallback(
@@ -145,6 +149,8 @@ function PageDesigner({
         uploadFile={uploadToMediaLibrary}
         onSaveNow={saving.saveNow}
         frameScripts={canvasFrameScripts}
+        effectModules={effectModules}
+        siteEffects={siteMotion}
         toolbarStart={
           <Link
             to="/content/$collection/$entryId"

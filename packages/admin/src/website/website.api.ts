@@ -1,3 +1,4 @@
+import type { SiteEffectSettings } from "@lintel/motion";
 import type { BuilderDataSources } from "@lintel/builder";
 import { apiRequest } from "../api/client.js";
 
@@ -56,6 +57,15 @@ export function updateWebsite(changes: WebsiteChanges) {
 
 export function getSiteAddress() {
   return apiRequest<SiteAddress>("/website/address");
+}
+
+/** Page transitions, cursor and intro across the website (see SiteMotionSettings). */
+export function getSiteEffects() {
+  return apiRequest<SiteEffectSettings>("/website/effects");
+}
+
+export function updateSiteEffects(changes: Partial<SiteEffectSettings>) {
+  return apiRequest<SiteEffectSettings>("/website/effects", { method: "PUT", body: changes });
 }
 
 /** What the page builder draws its canvas with, so pages look exactly as on the website. */
