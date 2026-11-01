@@ -119,10 +119,13 @@ export function EntryEditor({
     }
   }
 
-  /** Saves now (a new entry is created even if untouched), moving focus to any problem. */
-  async function saveExplicitly(): Promise<boolean> {
+  /**
+   * Saves now (a new entry is created even if untouched), moving focus to any problem.
+   * `saveVersion` (Cmd/Ctrl+S and the Save button) keeps the save as a version in History.
+   */
+  async function saveExplicitly({ saveVersion = false } = {}): Promise<boolean> {
     try {
-      await saveNow({ force: entry === undefined });
+      await saveNow({ force: entry === undefined || saveVersion, saveVersion });
       return true;
     } catch (error) {
       focusFirstFieldError(error);
@@ -158,7 +161,7 @@ export function EntryEditor({
   const saveWithShortcut = useEffectEvent((event: KeyboardEvent) => {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
       event.preventDefault();
-      void saveExplicitly();
+      void saveExplicitly({ saveVersion: true });
     }
   });
   useEffect(() => {
@@ -204,7 +207,7 @@ export function EntryEditor({
             />
           ) : (
             <Button
-              onClick={() => void saveExplicitly()}
+              onClick={() => void saveExplicitly({ saveVersion: true })}
               disabled={!isUnsaved && entry !== undefined}
             >
               {t("editor.save")}

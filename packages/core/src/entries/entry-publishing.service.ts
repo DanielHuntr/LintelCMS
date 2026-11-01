@@ -11,7 +11,7 @@ import {
   findEntryOrFail,
   validateForCollection,
 } from "./entries.service.js";
-import { insertRevision } from "./revisions.repository.js";
+import { recordEvent } from "./revision-log.js";
 
 /**
  * Publishing copies the saved values into `publishedData`, which is all the public
@@ -36,11 +36,12 @@ export async function publishEntry(
       publishedAt: now,
       scheduledFor: null,
     });
-    await insertRevision(transaction, {
+    await recordEvent(transaction, {
       entryId: entry.id,
       authorId,
-      action: "published",
+      kind: "published",
       data: entry.data,
+      now,
     });
   });
   return findEntry(database, entry.id);
@@ -60,10 +61,10 @@ export async function unpublishEntry(
       publishedAt: null,
       scheduledFor: null,
     });
-    await insertRevision(transaction, {
+    await recordEvent(transaction, {
       entryId: entry.id,
       authorId,
-      action: "unpublished",
+      kind: "unpublished",
       data: entry.data,
     });
   });
@@ -78,7 +79,7 @@ export async function scheduleEntry(
   database: DatabaseOrTransaction,
   entryId: string,
   publishAt: Date,
-  context: Pick<EntryChangeContext, "assetExists">,
+  context: EntryChangeContext,
   now = new Date(),
 ): Promise<EntryResponse> {
   if (publishAt.getTime() <= now.getTime()) {
@@ -86,7 +87,15 @@ export async function scheduleEntry(
   }
   const entry = await findEntryOrFail(database, entryId);
   await checkReadyToPublish(database, entry, context);
-  await updateEntryRow(database, entry.id, { status: "scheduled", scheduledFor: publishAt });
+  await database.transaction(async (transaction) => {
+    await updateEntryRow(transaction, entry.id, { status: "scheduled", scheduledFor: publishAt });
+    await recordEvent(transaction, {
+      entryId: entry.id,
+      authorId: context.authorId,
+      kind: "scheduled",
+      data: entry.data,
+    });
+  });
   return findEntry(database, entry.id);
 }
 
@@ -108,11 +117,12 @@ export async function publishDueEntries(
       const entry = await publishIfStillDue(transaction, entryId, now);
       if (entry) {
         // Nobody pressed a button just now, so the revision has no author.
-        await insertRevision(transaction, {
+        await recordEvent(transaction, {
           entryId,
           authorId: null,
-          action: "published",
+          kind: "published",
           data: entry.data,
+          now,
         });
       }
       return entry !== undefined;

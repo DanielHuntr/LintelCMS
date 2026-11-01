@@ -37,7 +37,7 @@ import type {
 } from "./entries.schema.js";
 import type { Entry, EntryData } from "./entries.table.js";
 import { firstFreeSlug, slugify } from "./slugs.js";
-import { insertRevision } from "./revisions.repository.js";
+import { recordEdit } from "./revision-log.js";
 
 /**
  * Creating, saving and deleting entries. Publishing is in entry-publishing.service.ts,
@@ -115,11 +115,11 @@ export async function createEntry(
         createdBy: context.authorId,
         updatedBy: context.authorId,
       });
-      await insertRevision(transaction, {
+      await recordEdit(transaction, {
         entryId: created.id,
         authorId: context.authorId,
-        action: "saved",
         data,
+        saveVersion: false,
       });
       return created;
     }),
@@ -128,7 +128,8 @@ export async function createEntry(
 }
 
 /**
- * Saves new values, slug or parent and records a "saved" revision. A published entry stays
+ * Saves new values, slug or parent. Autosaves by one person join their open "edited"
+ * revision; Save version (`saveVersion`) keeps it as a version (see revision-log.ts). A published entry stays
  * live with its published values until it is published again.
  */
 export async function saveEntry(
@@ -172,11 +173,11 @@ export async function saveEntry(
         parentId: request.parentId === undefined ? entry.parentId : request.parentId,
         updatedBy: context.authorId,
       });
-      await insertRevision(transaction, {
+      await recordEdit(transaction, {
         entryId: entry.id,
         authorId: context.authorId,
-        action: "saved",
         data,
+        saveVersion: request.saveVersion ?? false,
       });
     }),
   );

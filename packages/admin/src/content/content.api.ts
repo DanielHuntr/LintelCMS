@@ -67,10 +67,20 @@ export function translateEntry(entryId: string, locale: string): Promise<Entry> 
   });
 }
 
-export function updateEntry(entryId: string, changes: EntryChanges): Promise<Entry> {
+/** `saveVersion` keeps this save as a revision of its own, rather than joining the open one. */
+export function updateEntry(
+  entryId: string,
+  changes: EntryChanges,
+  saveVersion = false,
+): Promise<Entry> {
   return apiRequest<Entry>(`/entries/${entryId}`, {
     method: "PATCH",
-    body: { data: changes.data, slug: slugForSaving(changes.slug), parentId: changes.parentId },
+    body: {
+      data: changes.data,
+      slug: slugForSaving(changes.slug),
+      parentId: changes.parentId,
+      ...(saveVersion ? { saveVersion: true } : {}),
+    },
   });
 }
 

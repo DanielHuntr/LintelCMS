@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { blueprintSchema } from "../blueprints/blueprints.schema.js";
-import { entryStatuses, revisionActions } from "./entries.table.js";
+import { entryStatuses, revisionKinds } from "./entries.table.js";
 
 /** Values sent for an entry's fields, keyed by field handle. Checked against the blueprint. */
 const entryDataSchema = z.record(z.string(), z.unknown(), {
@@ -58,6 +58,11 @@ export const updateEntryRequestSchema = z.object({
   data: entryDataSchema.optional(),
   slug: slugInputSchema.optional(),
   parentId: parentIdSchema.optional(),
+  /**
+   * Save version (Cmd/Ctrl+S): keep this save as a revision of its own. Left out, the save
+   * joins the person's open revision, as autosaves do.
+   */
+  saveVersion: z.boolean().optional(),
 });
 
 /** `POST /entries/:id/schedule` */
@@ -133,8 +138,13 @@ export const entryListSchema = z.object({
 
 export const revisionSummarySchema = z.object({
   id: z.uuid(),
-  action: z.enum(revisionActions),
+  /** What happened: edited, published, unpublished, scheduled or restored. */
+  kind: z.enum(revisionKinds),
   createdAt: z.iso.datetime(),
+  /** When it last changed. An "edited" revision keeps taking one person's autosaves. */
+  updatedAt: z.iso.datetime(),
+  /** For "restored": when the revision that was brought back was made. */
+  restoredFromAt: z.iso.datetime().nullable(),
   author: personSchema,
 });
 

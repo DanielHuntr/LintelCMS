@@ -57,12 +57,15 @@ export function useEntryActions({
     void queryClient.invalidateQueries({ queryKey: contentKeys.revisions(updated.id) });
   }
 
-  async function save(draft: EntryDraft): Promise<Entry> {
+  async function save(
+    draft: EntryDraft,
+    { saveVersion }: { saveVersion: boolean } = { saveVersion: false },
+  ): Promise<Entry> {
     dispatch({ type: "saveStarted" });
     try {
       const isNew = entryId.current === undefined;
       const saved = entryId.current
-        ? await updateEntry(entryId.current, draft)
+        ? await updateEntry(entryId.current, draft, saveVersion)
         : await createEntry(collectionHandle, draft, locale);
       dispatch({ type: "saveSucceeded", sent: draft, entry: saved });
       remember(saved);

@@ -57,6 +57,20 @@
       "when": 1793498295100,
       "tag": "0007_add_api_tokens_webhooks_and_seo",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793499846415,
+      "tag": "0008_add_revision_kinds",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793499852815,
+      "tag": "0009_drop_revision_actions",
+      "breakpoints": true
     }
   ]
 }

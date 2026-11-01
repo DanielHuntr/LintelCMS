@@ -111,7 +111,7 @@ describe("publishing entries", () => {
     });
     expect((await api("GET", `/entries/${laterId}`)).json().status).toBe("scheduled");
     const revisions = await api("GET", `/entries/${dueId}/revisions`);
-    expect(revisions.json().revisions[0]).toMatchObject({ action: "published", author: null });
+    expect(revisions.json().revisions[0]).toMatchObject({ kind: "published", author: null });
   });
 
   it("keeps an already published version live while a newer one waits for its time", async () => {

@@ -1,5 +1,6 @@
 import {
   type AnyPgColumn,
+  boolean,
   index,
   integer,
   jsonb,
@@ -77,12 +78,19 @@ export const entriesTable = pgTable(
   ],
 );
 
-export const revisionActions = ["saved", "published", "unpublished", "restored"] as const;
-export type RevisionAction = (typeof revisionActions)[number];
+export const revisionKinds = [
+  "edited",
+  "published",
+  "unpublished",
+  "scheduled",
+  "restored",
+] as const;
+export type RevisionKind = (typeof revisionKinds)[number];
 
 /**
- * Every save of an entry is kept as a revision, so editors can compare and roll back.
- * `action` records what happened: "saved", "published", "unpublished" or "restored".
+ * The history of an entry, so editors can see what changed and roll back. `kind` says what
+ * happened. Autosaves don't each make a revision: they keep updating one open "edited"
+ * revision per person (see revisions.service.ts and docs/decisions/0011).
  */
 export const revisionsTable = pgTable(
   "revisions",
@@ -93,9 +101,18 @@ export const revisionsTable = pgTable(
       .notNull()
       .references(() => entriesTable.id, { onDelete: "cascade" }),
     authorId: uuid("author_id").references(() => usersTable.id, { onDelete: "set null" }),
-    action: text("action", { enum: revisionActions }).notNull(),
+    kind: text("kind", { enum: revisionKinds }).notNull().default("edited"),
     data: jsonb("data").$type<EntryData>().notNull(),
+    /**
+     * An "edited" revision that later autosaves by the same person may still update. Closed
+     * when they press Save version, or when anything else happens to the entry.
+     */
+    isOpen: boolean("is_open").notNull().default(false),
+    /** For "restored": when the revision that was restored was made. */
+    restoredFromAt: timestamp("restored_from_at", { withTimezone: true }),
     createdAt: timestamps().createdAt,
+    /** Moves on when an open revision takes a later autosave; the time History shows. */
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("revisions_entry_idx").on(table.entryId, table.createdAt)],
 );

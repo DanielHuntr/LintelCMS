@@ -67,11 +67,15 @@ export interface EntryPage {
   perPage: number;
 }
 
-export type RevisionAction = "saved" | "published" | "unpublished" | "restored";
+export type RevisionKind = "edited" | "published" | "unpublished" | "scheduled" | "restored";
 
 export interface Revision {
   id: string;
-  action: RevisionAction;
+  kind: RevisionKind;
   createdAt: string;
+  /** When it last changed: an "edited" revision gathers one person's autosaves. */
+  updatedAt: string;
+  /** For "restored": when the revision that was brought back was made. */
+  restoredFromAt: string | null;
   author: Person | null;
 }
