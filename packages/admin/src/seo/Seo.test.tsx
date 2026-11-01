@@ -11,7 +11,6 @@ import { breadcrumb } from "./SearchPreview.js";
 
 const defaults: SeoDefaults = {
   siteName: "Corner Bakery",
-  siteUrl: "https://www.cornerbakery.example",
   titleTemplate: "{title} | {siteName}",
   defaultDescription: "",
   defaultSocialImageId: null,
@@ -35,6 +34,9 @@ describe("the editor's search engines panel", () => {
   function servePanel() {
     return mockApi(({ method, url, body }) => {
       if (url.pathname === "/seo/defaults") return defaults;
+      if (url.pathname === "/website/address") {
+        return { siteAddress: "https://www.cornerbakery.example", defaultLocale: "en-GB" };
+      }
       if (url.pathname === "/seo/entries/e1" && method === "GET") {
         return { title: "", description: "", socialImageId: null, noindex: false };
       }
@@ -57,7 +59,9 @@ describe("the editor's search engines panel", () => {
 
     const preview = await screen.findByRole("figure", { name: "Search result preview" });
     expect(await within(preview).findByText("About us | Corner Bakery")).toBeInTheDocument();
-    expect(within(preview).getByText("www.cornerbakery.example › about")).toBeInTheDocument();
+    expect(
+      await within(preview).findByText("www.cornerbakery.example › about"),
+    ).toBeInTheDocument();
     expect(screen.getByText(/24 of about 60 characters · A good length/)).toBeInTheDocument();
 
     await userEvent.type(

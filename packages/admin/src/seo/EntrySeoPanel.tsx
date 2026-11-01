@@ -15,6 +15,7 @@ import { t } from "../i18n/strings.js";
 import { MediaPicker } from "../media/MediaPicker.js";
 import type { EditorPanelProps } from "../plugins/adminPlugin.js";
 import { useCan } from "../session/SessionContext.js";
+import { useViewPageSite } from "../website/website.queries.js";
 import type { EntrySeo } from "./seo.api.js";
 import { useEntrySeo, useSaveEntrySeo, useSeoDefaults } from "./seo.queries.js";
 import { LengthGuidance } from "./LengthGuidance.js";
@@ -94,7 +95,8 @@ function EntrySeoFields({ entryId, initial, entryTitle, slug, routePattern }: En
   const fullTitle = applyTitleTemplate(template, seo.title || entryTitle, siteName);
   const description = seo.description || defaults.data?.defaultDescription || "";
   const path = routePattern ? entryUrlPreview(routePattern, slug) : `/${slug}`;
-  const address = defaults.data?.siteUrl ? `${defaults.data.siteUrl}${path}` : path;
+  const siteAddress = useViewPageSite()?.siteAddress;
+  const address = siteAddress ? `${siteAddress}${path}` : path;
   const change = (changes: Partial<EntrySeo>) => setSeo({ ...seo, ...changes });
 
   return (

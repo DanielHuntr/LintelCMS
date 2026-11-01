@@ -17,6 +17,7 @@ import { TextField } from "../design/TextField.js";
 import { Toggle } from "../design/Toggle.js";
 import { t, tCount } from "../i18n/strings.js";
 import { MediaPicker } from "../media/MediaPicker.js";
+import { PluginLink } from "../plugins/PluginLink.js";
 import { useCan } from "../session/SessionContext.js";
 import type { SeoDefaults } from "./seo.api.js";
 import { useRedirects, useSeoDefaults, useUpdateSeoDefaults } from "./seo.queries.js";
@@ -71,16 +72,15 @@ function SeoDefaultsForm({ initial }: { initial: SeoDefaults }) {
           disabled={!canChange}
           onChange={(event) => change({ siteName: event.target.value })}
         />
-        <TextField
-          label={t("seo.siteUrl")}
-          hint={t("seo.siteUrlHint")}
-          placeholder="https://www.example.com"
-          type="url"
-          inputMode="url"
-          value={values.siteUrl}
-          disabled={!canChange}
-          onChange={(event) => change({ siteUrl: event.target.value })}
-        />
+        <p className="text-footnote text-label-secondary">
+          {t("seo.siteAddressNote")}{" "}
+          <PluginLink
+            to="/settings/site"
+            className="text-accent underline-offset-2 hover:underline"
+          >
+            {t("seo.siteAddressLink")}
+          </PluginLink>
+        </p>
         <TextField
           label={t("seo.titleTemplate")}
           hint={t("seo.titleTemplateHint", {

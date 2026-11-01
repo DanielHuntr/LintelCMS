@@ -870,8 +870,8 @@ const english = {
   "seo.loading": "Loading search engine settings",
   "seo.siteName": "Site name",
   "seo.siteNameHint": "Added to page titles and shown when pages are shared.",
-  "seo.siteUrl": "Website address",
-  "seo.siteUrlHint": "Used for the sitemap and for each page’s full address.",
+  "seo.siteAddressNote": "The sitemap and each page’s full address use your website’s address.",
+  "seo.siteAddressLink": "Change it in Settings → Your website",
   "seo.titleTemplate": "Page title pattern",
   "seo.titleTemplateHint":
     "{title} is the page’s title and {siteName} the site name. For example: {example}",

@@ -4,7 +4,6 @@ import { apiRequest } from "../api/client.js";
 
 export interface SeoDefaults {
   siteName: string;
-  siteUrl: string;
   titleTemplate: string;
   defaultDescription: string;
   defaultSocialImageId: string | null;
