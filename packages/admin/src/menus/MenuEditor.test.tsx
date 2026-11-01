@@ -23,9 +23,11 @@ const menu: Menu = {
 
 function rowLabels() {
   const list = screen.getByRole("list", { name: "Menu items" });
+  // Each row's main button opens the link's settings and is named "Label, destination".
   return within(list)
-    .getAllByRole("button", { name: /^Edit/ })
-    .map((button) => button.getAttribute("aria-label"));
+    .getAllByRole("button")
+    .filter((button) => button.getAttribute("aria-haspopup") === "dialog")
+    .map((button) => button.textContent?.split(", ")[0]);
 }
 
 afterEach(() => vi.restoreAllMocks());
@@ -48,7 +50,7 @@ describe("MenuEditor", () => {
     await userEvent.type(within(sheet).getByRole("textbox", { name: "Label" }), "Gift cards");
     await userEvent.click(within(sheet).getByRole("button", { name: "Add" }));
 
-    expect(rowLabels()).toEqual(["Edit “Home”", "Edit “Shop”", "Edit “Gift cards”"]);
+    expect(rowLabels()).toEqual(["Home", "Shop", "Gift cards"]);
     await userEvent.click(
       screen.getByRole("button", { name: "Put “Gift cards” inside the link above" }),
     );
@@ -89,6 +91,6 @@ describe("MenuEditor", () => {
     expect(
       await screen.findByText("The page this item linked to has been deleted"),
     ).toBeInTheDocument();
-    expect(rowLabels()).toEqual(["Edit “Shop”", "Edit “Home”"]);
+    expect(rowLabels()).toEqual(["Shop", "Home"]);
   });
 });

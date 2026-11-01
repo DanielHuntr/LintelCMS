@@ -26,9 +26,11 @@ const fieldtypes = [
 
 function fieldLabels() {
   const list = screen.getByRole("list", { name: "Fields" });
+  // Each row's main button opens the field's settings and is named "Label, Type · handle".
   return within(list)
-    .getAllByRole("button", { name: /settings$/ })
-    .map((button) => button.getAttribute("aria-label")?.replace(" settings", ""));
+    .getAllByRole("button")
+    .filter((button) => button.getAttribute("aria-haspopup") === "dialog")
+    .map((button) => button.textContent?.split(", ")[0]);
 }
 
 afterEach(() => vi.restoreAllMocks());

@@ -63,14 +63,19 @@ export function BlueprintFieldRow({
       <button
         type="button"
         onClick={onOpenSettings}
-        aria-label={t("builder.editField", { label })}
+        aria-haspopup="dialog"
         className="flex min-w-0 flex-1 items-center gap-3 py-3 pr-3 pl-2 text-left transition-colors duration-150 ease-standard hover:bg-fill/50 focus-visible:focus-ring-inset"
       >
         <span className="flex size-8 shrink-0 items-center justify-center rounded-control bg-fill text-label-secondary">
           <FieldtypeIcon type={field.type} className="size-4" />
         </span>
         <span className="flex min-w-0 flex-1 flex-col">
+          {/*
+           * The button is named by what it shows (label, type and handle, "Required"), so
+           * the name matches what people see and say to voice control.
+           */}
           <span className="truncate text-body font-medium text-label">{label}</span>
+          <span className="sr-only">, </span>
           <span
             className={classNames(
               "truncate text-footnote",

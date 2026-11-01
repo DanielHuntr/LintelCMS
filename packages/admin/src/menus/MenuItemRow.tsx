@@ -84,7 +84,7 @@ export function MenuItemRow({
       <button
         type="button"
         onClick={onEdit}
-        aria-label={t("menus.item.edit", { label })}
+        aria-haspopup="dialog"
         style={{ paddingLeft: `${0.5 + item.depth * 1.75}rem` }}
         className="flex min-w-0 flex-1 items-center gap-3 py-3 pr-3 text-left transition-colors duration-150 ease-standard hover:bg-fill/50 focus-visible:focus-ring-inset"
       >
@@ -99,7 +99,9 @@ export function MenuItemRow({
           <Icon aria-hidden="true" strokeWidth={1.75} className="size-4" />
         </span>
         <span className="flex min-w-0 flex-1 flex-col">
+          {/* Named by what it shows, the label and where it goes, as people see it. */}
           <span className="truncate text-body font-medium text-label">{label}</span>
+          <span className="sr-only">, </span>
           <span
             className={classNames(
               "truncate text-footnote",
