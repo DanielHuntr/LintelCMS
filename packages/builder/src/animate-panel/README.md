@@ -13,3 +13,14 @@ On the published page the website loads the runtime only when the page has anima
 Simple's settings sit in three collapsible groups: **When it plays** and **Speed and timing**
 open, **For less motion** closed, saying what's chosen. The builder passes the studio an
 `openGroups` that remembers them (`animate.open`).
+
+## Effects
+
+The panel's second tab, **Effects**, is `EffectsPanel` from `@lintel/motion-editor`: the
+element's effects (`node.effects`, saved by `changeEffects` in `editor/commands.ts`) with
+their settings, and the gallery. `element-kinds.ts` says what kind each component is, for
+"Suits this element". Trying an effect posts `previewEffect` to the canvas, which imports
+the module from the addresses the host passes as `effectModules`. "Animation" effects are
+saved as the element's animation instead. With nothing selected, the tab shows the
+site-wide `SiteMotionSettings` when the host passes `siteEffects`. The meter adds up every
+effect on the page with `measurePageWeight`.

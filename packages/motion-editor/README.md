@@ -38,3 +38,8 @@ Try it at `/design-system/motion` in a development admin.
 | `src/strings`       | Every word the studio shows, and the translate context                     |
 | `src/testing`       | Test setup: stand-ins for what jsdom lacks                                 |
 | `src/browser-tests` | Pointer drags and scrubbing in a real Chromium, through Playwright         |
+
+## Effects
+
+`src/effects` holds the Effects tab: `EffectsPanel`, `EffectsGallery`, `PageWeightMeter` and
+`SiteMotionSettings`. See its README.
