@@ -19,6 +19,7 @@ import { contentModelRoutes } from "./content-model/contentModelRoutes.js";
 import { ContentTypesPage } from "./content-types/ContentTypesPage.js";
 import { NewContentTypePage } from "./content-types/NewContentTypePage.js";
 import { DashboardPage } from "./dashboard/DashboardPage.js";
+import { HelpPage } from "./help/HelpPage.js";
 import { AdminLayout } from "./layout/AdminLayout.js";
 import { MediaLibraryPage } from "./media/MediaLibraryPage.js";
 import { ComingSoonPage } from "./sections/ComingSoonPage.js";
@@ -336,8 +337,30 @@ const sectionRoutes = [
   { path: "/commerce", title: "nav.commerce" },
   { path: "/forms", title: "nav.forms" },
   { path: "/users", title: "nav.users" },
-  { path: "/help", title: "nav.help" },
 ] as const;
+
+/** Help: the "Using Lintel" docs, bundled with the admin. The open topic is in the address. */
+const helpRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/help",
+  validateSearch: (search: Record<string, unknown>): { topic?: string; anchor?: string } => ({
+    topic: typeof search.topic === "string" && search.topic !== "" ? search.topic : undefined,
+    anchor: typeof search.anchor === "string" && search.anchor !== "" ? search.anchor : undefined,
+  }),
+  component: function HelpRoute() {
+    const { topic, anchor } = helpRoute.useSearch();
+    const navigate = helpRoute.useNavigate();
+    return (
+      <HelpPage
+        topic={topic}
+        anchor={anchor}
+        onOpenTopic={(nextTopic, nextAnchor) =>
+          void navigate({ search: { topic: nextTopic, anchor: nextAnchor } })
+        }
+      />
+    );
+  },
+});
 
 const mediaRoute = createRoute({
   getParentRoute: () => adminRoute,
@@ -396,6 +419,7 @@ export const routeTree = rootRoute.addChildren([
     adminRoute.addChildren([
       dashboardRoute,
       mediaRoute,
+      helpRoute,
       ...contentRoutes,
       ...integrationRoutes,
       ...placeholderRoutes,

@@ -1,0 +1,29 @@
+{
+  "name": "@lintel/docs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Lintel's documentation site, and the help pages the admin shows offline.",
+  "type": "module",
+  "exports": {
+    "./help": "./src/help/index.ts"
+  },
+  "scripts": {
+    "dev": "astro dev --port 4321",
+    "build": "astro build",
+    "preview": "astro preview --port 4321",
+    "typecheck": "astro check && tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.42.8",
+    "astro": "^7.4.4",
+    "sharp": "^0.35.5"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.12",
+    "@types/node": "^26.6.6",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  }
+}

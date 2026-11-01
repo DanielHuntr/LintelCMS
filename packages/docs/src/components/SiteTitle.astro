@@ -1,0 +1,27 @@
+---
+// Starlight's site title, with the documented version beside it.
+import Default from "@astrojs/starlight/components/SiteTitle.astro";
+import { docsVersion } from "../version.ts";
+---
+
+<div class="site-title-with-version">
+  <Default />
+  <span class="version" title={`These docs describe Lintel ${docsVersion}`}>{docsVersion}</span>
+</div>
+
+<style>
+  .site-title-with-version {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .version {
+    border-radius: 999px;
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-gray-2);
+    padding: 0.0625rem 0.5rem;
+    font-size: var(--sl-text-xs);
+    font-weight: 500;
+  }
+</style>

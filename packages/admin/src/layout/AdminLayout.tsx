@@ -1,4 +1,5 @@
 import { Outlet } from "@tanstack/react-router";
+import { HelpLauncher } from "../help/HelpLauncher.js";
 import { t } from "../i18n/strings.js";
 import { CommandPalette } from "../search/CommandPalette.js";
 import { useCommandPalette } from "../search/useCommandPalette.js";
@@ -42,6 +43,7 @@ export function AdminLayout({
         onOpenSearch={palette.open}
       />
       <CommandPalette open={palette.isOpen} onClose={palette.close} />
+      <HelpLauncher />
       {/*
         Leaves room for the 240px sidebar and its 12px margin. A size container, so screens
         that need the full width (the editor's split view) can measure it with cqw.

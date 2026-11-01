@@ -1,4 +1,4 @@
-# 7. GraphQL delivery with GraphQL Yoga
+# 9. GraphQL delivery with GraphQL Yoga
 
 Date: 2026-11-01
 

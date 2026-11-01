@@ -144,8 +144,22 @@ scripted setups, set `LINTEL_ADMIN_PASSWORD` or `LINTEL_NEW_PASSWORD` instead.
 | ----------------- | ---------------------------------------------------------- |
 | `packages/core`   | The API server: content model, entries, users, permissions |
 | `packages/admin`  | The control panel (React)                                  |
+| `packages/docs`   | The documentation site, also the admin's built-in help     |
+| `starters/nextjs` | A Next.js website that reads Lintel's delivery API         |
 | `docs/decisions`  | Why the big choices were made                              |
 | `CONTRIBUTING.md` | How code is written here. Read this first                  |
+
+## Documentation and the Next.js starter
+
+The docs cover using Lintel and building websites with it. Neither of these starts with
+`pnpm dev`; run them when you need them:
+
+```bash
+pnpm docs:dev                          # the docs, on http://localhost:4321
+pnpm --filter starter-nextjs dev       # the starter site, on http://localhost:3000
+```
+
+The starter's [README](starters/nextjs/README.md) walks through it step by step.
 
 ## Everyday commands
 

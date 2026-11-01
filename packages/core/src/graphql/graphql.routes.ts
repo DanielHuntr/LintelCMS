@@ -13,7 +13,7 @@ import { type GraphqlContext, loadContentModel } from "./graphql.service.js";
 
 /**
  * The GraphQL delivery API at /graphql, served by GraphQL Yoga (see
- * docs/decisions/0007-graphql-with-yoga.md). The schema is rebuilt from the blueprints
+ * docs/decisions/0009-graphql-with-yoga.md). The schema is rebuilt from the blueprints
  * whenever a collection or blueprint changes, and reused until then.
  *
  * Limits keep one request from costing too much: queries may nest at most

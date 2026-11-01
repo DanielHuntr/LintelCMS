@@ -27,6 +27,7 @@ The control panel: a React app that talks to `@lintel/core`.
 | `src/session`       | Who is signed in, signing out; `useCan`                            |
 | `src/sections`      | Placeholders for sections not built yet                            |
 | `src/i18n`          | Every word the admin shows (`t("key")`)                            |
+| `src/help`          | The "?" button, help panel and Help section (from the docs)        |
 | `src/design-review` | `/design-system`: every component in light and dark (dev only)     |
 
 Data comes through TanStack Query (`src/api/queryClient.ts`): screens show skeletons while

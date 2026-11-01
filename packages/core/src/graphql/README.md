@@ -1,7 +1,7 @@
 # GraphQL
 
 The GraphQL delivery API at `/graphql`, served with GraphQL Yoga (see
-`docs/decisions/0007-graphql-with-yoga.md`). It is built from the blueprints, so each
+`docs/decisions/0009-graphql-with-yoga.md`). It is built from the blueprints, so each
 collection gets typed queries and its fields keep the handles they have in the REST API:
 
 ```graphql

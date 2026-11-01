@@ -8,16 +8,17 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "turbo run dev --filter=!starter-nextjs --filter=!@lintel/docs",
+    "docs:dev": "pnpm --filter @lintel/docs dev",
     "create-admin": "pnpm --silent --filter @lintel/core create-admin",
     "reset-password": "pnpm --silent --filter @lintel/core reset-password",
     "db:migrate": "pnpm --silent --filter @lintel/core db:migrate",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "lint": "eslint packages eslint.config.js",
-    "format": "prettier --write packages docs .github \"*.{js,json,md,yml,yaml}\"",
-    "format:check": "prettier --check packages docs .github \"*.{js,json,md,yml,yaml}\"",
+    "lint": "eslint packages starters eslint.config.js",
+    "format": "prettier --write packages starters docs .github \"*.{js,json,md,yml,yaml}\"",
+    "format:check": "prettier --check packages starters docs .github \"*.{js,json,md,yml,yaml}\"",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "prepare": "husky"

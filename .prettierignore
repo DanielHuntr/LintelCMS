@@ -3,3 +3,6 @@ node_modules
 .turbo
 pnpm-lock.yaml
 packages/core/migrations
+.next
+.astro
+next-env.d.ts

@@ -1,0 +1,48 @@
+---
+// Starlight's page title, with the Lintel version that introduced the page beside it.
+import { docsVersion } from "../version.ts";
+
+const { title, since } = Astro.locals.starlightRoute.entry.data;
+const isNew = since === docsVersion;
+---
+
+<div class="page-title">
+  <h1 id="_top">{title}</h1>
+  {
+    since && (
+      <span class:list={["since", { new: isNew }]} title={`Available since Lintel ${since}`}>
+        {isNew ? `New in ${since}` : `Since ${since}`}
+      </span>
+    )
+  }
+</div>
+
+<style>
+  .page-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+  h1 {
+    font-size: var(--sl-text-h1);
+    line-height: var(--sl-line-height-headings);
+    font-weight: 650;
+    letter-spacing: -0.022em;
+    color: var(--sl-color-white);
+  }
+  .since {
+    border-radius: 999px;
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-gray-2);
+    padding: 0.125rem 0.625rem;
+    font-size: var(--sl-text-xs);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .since.new {
+    background: var(--sl-color-accent-low);
+    color: var(--sl-color-text-accent);
+  }
+</style>

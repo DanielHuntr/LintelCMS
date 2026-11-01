@@ -1,7 +1,7 @@
 # Preview
 
 Live preview: letting a website, or the admin's built-in preview, show an entry's draft
-before it is published. See `docs/decisions/0007-signed-preview-tokens.md` for why it works
+before it is published. See `docs/decisions/0008-signed-preview-tokens.md` for why it works
 this way.
 
 ## How it flows

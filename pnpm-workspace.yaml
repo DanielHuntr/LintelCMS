@@ -1,5 +1,6 @@
 packages:
   - "packages/*"
+  - "starters/*"
 
 onlyBuiltDependencies:
   - esbuild

@@ -1,4 +1,4 @@
-# 7. Live preview uses short-lived signed tokens
+# 8. Live preview uses short-lived signed tokens
 
 Date: 2026-11-01
 
