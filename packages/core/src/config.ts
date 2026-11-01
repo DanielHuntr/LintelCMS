@@ -20,6 +20,12 @@ const configSchema = z.object({
       })
       .optional(),
   ),
+  // Where the built-in database and the setup screen's saved choice live. Defaults to
+  // .lintel at the repository root.
+  LINTEL_DATA_FOLDER: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().optional(),
+  ),
   API_PORT: z.coerce.number().int().positive().default(4000),
   ADMIN_ORIGIN: z.string().url().default("http://localhost:5173"),
   // The API's address as browsers reach it, used in the URLs of uploaded files. Set it when

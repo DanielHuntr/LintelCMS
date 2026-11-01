@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { ConfigError, type Config } from "./config.js";
 import {
   type ActiveDatabase,
@@ -5,7 +6,12 @@ import {
   openStartupDatabase,
 } from "./database/active-database.js";
 import { DataFolderInUseError } from "./database/data-folder-lock.js";
-import { DEFAULT_LINTEL_FOLDER, SavedConfigUnreadableError } from "./database/database-choice.js";
+import {
+  DEFAULT_LINTEL_FOLDER,
+  type LintelFolder,
+  lintelFolderAt,
+  SavedConfigUnreadableError,
+} from "./database/database-choice.js";
 import { PluginPackageError } from "./plugins/installed-plugins.js";
 import { InvalidPluginError } from "./plugins/plugins.errors.js";
 
@@ -25,11 +31,18 @@ export class PortInUseError extends Error {
   }
 }
 
+/** `.lintel` at the repository root, or LINTEL_DATA_FOLDER when it is set. */
+export function configuredLintelFolder(config: Config): LintelFolder {
+  return config.LINTEL_DATA_FOLDER
+    ? lintelFolderAt(resolve(config.LINTEL_DATA_FOLDER))
+    : DEFAULT_LINTEL_FOLDER;
+}
+
 /** The database from DATABASE_URL, the setup screen's saved choice, or the built-in one. */
 export function openConfiguredDatabase(config: Config): Promise<ActiveDatabase> {
   return openStartupDatabase({
     databaseUrl: config.DATABASE_URL,
-    lintelFolder: DEFAULT_LINTEL_FOLDER,
+    lintelFolder: configuredLintelFolder(config),
   });
 }
 

@@ -5,7 +5,12 @@ import { describeActiveDatabase } from "./database/active-database.js";
 import { loadInstalledPlugins } from "./plugins/installed-plugins.js";
 import { buildServer } from "./server.js";
 import { isSetupNeeded } from "./setup/setup.service.js";
-import { openConfiguredDatabase, PortInUseError, runWithFriendlyErrors } from "./startup.js";
+import {
+  configuredLintelFolder,
+  openConfiguredDatabase,
+  PortInUseError,
+  runWithFriendlyErrors,
+} from "./startup.js";
 import { buildSiteServer } from "./website/site-server.js";
 
 /**
@@ -24,6 +29,7 @@ await runWithFriendlyErrors(async () => {
   const server = buildServer({
     adminOrigin: config.ADMIN_ORIGIN,
     database: activeDatabase,
+    lintelFolder: configuredLintelFolder(config),
     // Local development usually runs over plain HTTP, where Secure cookies wouldn't be sent.
     secureCookies: config.NODE_ENV !== "development",
     publicApiUrl: config.API_PUBLIC_URL ?? `http://localhost:${config.API_PORT}`,
