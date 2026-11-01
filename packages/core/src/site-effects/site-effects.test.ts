@@ -60,6 +60,35 @@ describe("effects on designed pages", () => {
   });
 });
 
+describe("code blocks that use the motion runtime", () => {
+  it("make the page load it, even without effects of its own", () => {
+    const page = createEmptyPage();
+    const block = (js: string) => ({
+      ...page,
+      root: {
+        ...page.root,
+        children: [
+          {
+            id: "code",
+            type: "codeBlock",
+            name: "",
+            props: { html: "<p>Hi</p>", css: "", js },
+            styles: { base: {} },
+            children: [],
+            hidden: false,
+            locked: false,
+          },
+        ],
+      },
+    });
+    expect(
+      readPageDesign(block("window.lintelMotion.registerEffectBehaviour('glow', () => {})"))
+        ?.usesMotionApi,
+    ).toBe(true);
+    expect(readPageDesign(block("console.log('hello')"))?.usesMotionApi).toBe(false);
+  });
+});
+
 describe("site-wide effects", () => {
   const testDatabase = useTestDatabase();
   let api: FastifyInstance;

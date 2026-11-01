@@ -56,6 +56,7 @@ describe("rendering a page", () => {
       usesBehaviours: false,
       animations: [],
       effects: [],
+      usesMotionApi: false,
       fontPreloads: [],
       script: "",
     });

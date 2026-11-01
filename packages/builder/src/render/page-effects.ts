@@ -44,3 +44,15 @@ export function collectEffects(
   );
   return { bindings, css };
 }
+
+/**
+ * Whether a code block on the page uses the motion runtime (`window.lintelMotion`), so the
+ * website loads it even when the page has no animations or effects of its own.
+ */
+export function usesMotionApi(node: PageNode): boolean {
+  if (node.hidden) return false;
+  const code = node.type === "codeBlock" ? node.props.js : undefined;
+  return (
+    (typeof code === "string" && code.includes("lintelMotion")) || node.children.some(usesMotionApi)
+  );
+}

@@ -16,7 +16,7 @@ import { PageDataProvider, useCurrentItem, useIsRepeatedCopy } from "./data-cont
 import { usesBehaviours } from "./elements/behaviour-types.js";
 import { renderToStaticMarkup } from "react-dom/server";
 import { collectAnimations, type PageAnimation } from "./page-animations.js";
-import { collectEffects } from "./page-effects.js";
+import { collectEffects, usesMotionApi } from "./page-effects.js";
 import type { EffectBinding } from "@lintel/motion/effects";
 import type { ComponentRegistry, ElementAttributes, RenderMode } from "./component-registry.js";
 
@@ -61,6 +61,8 @@ export interface RenderedPage {
   animations: PageAnimation[];
   /** Effects from the Effects library the page runs; empty when it has none. */
   effects: EffectBinding[];
+  /** A code block uses `window.lintelMotion`, so the page needs the runtime. */
+  usesMotionApi: boolean;
   fontPreloads: string[];
   script: string;
   /** The page has sliders, tabs, pop-ups or the like, so it needs the elements script. */
@@ -80,6 +82,7 @@ export function renderPage(
       css: "",
       animations: [],
       effects: [],
+      usesMotionApi: false,
       fontPreloads: [],
       script: "",
       usesBehaviours: false,
@@ -108,6 +111,7 @@ export function renderPage(
     css: [compileStylesheet(start, classNames), effects.css].filter(Boolean).join("\n"),
     animations,
     effects: effects.bindings,
+    usesMotionApi: mode === "site" && usesMotionApi(start),
     fontPreloads: isWholePage ? fontPreloads(readPageFonts(document.root.props)) : [],
     script: mode === "site" && hasBackgroundVideo(start) ? backgroundVideoScript : "",
     usesBehaviours: usesBehaviours(start),

@@ -23,6 +23,8 @@ export interface PageDesign {
   usesBehaviours?: boolean;
   /** Effects from the Effects library, by element id, for the effects runtime. */
   effects?: ReadonlyArray<EffectOnPage>;
+  /** A code block uses `window.lintelMotion`, so the page loads the runtime. */
+  usesMotionApi?: boolean;
 }
 
 /** One effect on one element, as the builder's renderer lists it. */
