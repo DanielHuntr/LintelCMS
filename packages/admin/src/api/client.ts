@@ -3,8 +3,13 @@
  * and every failure becomes an `ApiError` carrying the API's plain-language message.
  */
 
-/** Exported for the few requests `apiRequest` can't make, such as uploads that report progress. */
-export const apiUrl = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
+import { runtimeSettings } from "../runtime-settings.js";
+
+/**
+ * Exported for the few requests `apiRequest` can't make, such as uploads that report
+ * progress. See runtime-settings.ts for where it comes from.
+ */
+export const apiUrl = runtimeSettings.apiUrl;
 
 /** Per-field messages from a validation error, keyed by field handle. */
 export type FieldMessages = Readonly<Record<string, string>>;
