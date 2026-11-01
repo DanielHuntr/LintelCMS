@@ -29,12 +29,16 @@ export const usingPages = [
   "using/users",
   "using/automations",
   "using/interface-languages",
+  "using/backups",
+  "using/updating",
+  "using/wordpress",
   "using/troubleshooting",
 ] as const;
 
 export const buildingPages = [
   "building",
   "building/install",
+  "building/command-line",
   "building/architecture",
   "building/feature-folders",
   "building/delivery-api",
@@ -54,6 +58,7 @@ export const buildingPages = [
   "building/workflows",
   "building/branding",
   "building/translating",
+  "building/releases",
   "building/contributing",
 ] as const;
 

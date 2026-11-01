@@ -1,6 +1,6 @@
 {
   "name": "@lintel/motion",
-  "version": "0.0.0",
+  "version": "1.0.0-rc.1",
   "private": true,
   "description": "Lintel's animation runtime: plays JSON animation specs with the Web Animations API.",
   "type": "module",

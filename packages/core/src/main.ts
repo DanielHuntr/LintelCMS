@@ -8,6 +8,7 @@ import { createConfiguredStorage, signedUrlSeconds } from "./media/configured-st
 import { loadInstalledPlugins } from "./plugins/installed-plugins.js";
 import { startProductionServer } from "./production/start-production-server.js";
 import { buildServer } from "./server.js";
+import { updatesOptionsFromConfig } from "./updates/updates.config.js";
 import { isSetupNeeded } from "./setup/setup.service.js";
 import {
   lintelPaths,
@@ -59,6 +60,7 @@ await runWithFriendlyErrors(async () => {
     },
     email: createConfiguredEmailSender(config, paths.root),
     ...readDeploymentOptions(),
+    updates: updatesOptionsFromConfig(config),
     logger: true,
   });
   server.addHook("onClose", () => activeDatabase.close());

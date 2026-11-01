@@ -82,6 +82,9 @@ const SIGNED_IN_ROUTES = new Set([
   "PUT /interface-language",
   // The sites someone may work on, for the admin's site switcher.
   "GET /sites",
+  // Lintel's version for Help, and whether an update is restarting it, for the admin's banner.
+  "GET /about",
+  "GET /updates/status",
   // Each person's own dashboard layout.
   "GET /dashboard/layout",
   "PUT /dashboard/layout",
@@ -210,8 +213,10 @@ describe("access to every route", () => {
       await prepare();
       await writeSetting(testDatabase.database, "deliveryRequiresToken", true);
       const open: string[] = [];
-      for (const route of routes.filter(isDeliveryRoute)) {
-        if (ALWAYS_OPEN_DELIVERY_ROUTES.has(route)) continue;
+      const tokenRoutes = routes.filter(
+        (route) => isDeliveryRoute(route) && !ALWAYS_OPEN_DELIVERY_ROUTES.has(route),
+      );
+      for (const route of tokenRoutes) {
         const response = await send(route);
         if (response.statusCode !== 401) {
           open.push(`${route} answered ${response.statusCode} without a token`);

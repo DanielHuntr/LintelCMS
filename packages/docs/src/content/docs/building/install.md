@@ -65,6 +65,9 @@ pnpm db:migrate                                                # update the tabl
 Both ask for the password without showing it. For scripts, set `LINTEL_ADMIN_PASSWORD`
 or `LINTEL_NEW_PASSWORD`.
 
+Backups, exports, imports and a check of your setup are in the `lintel` command
+(`pnpm lintel help`); see the [command line reference](/building/command-line/).
+
 ## Starting over
 
 Stop Lintel and delete the `.lintel` folder. That removes the built-in database, uploads

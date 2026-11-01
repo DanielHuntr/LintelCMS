@@ -1,7 +1,11 @@
 import {
+  Archive,
+  ArrowUpCircle,
   Blocks,
   Globe,
+  FileInput,
   Inbox,
+  Info,
   KeyRound,
   Languages,
   MonitorSmartphone,
@@ -19,6 +23,7 @@ import { t } from "../i18n/strings.js";
 import { Page } from "../design/Page.js";
 import { PluginSettingsRows } from "../plugins/PluginSettingsRows.js";
 import { useCan } from "../session/SessionContext.js";
+import { UpdatesCountBadge } from "../updates/UpdatesCountBadge.js";
 
 /**
  * /settings: one row per area of settings, like iOS Settings. Rows appear as their screens
@@ -29,6 +34,9 @@ export function SettingsPage() {
   const canSeeSiteSettings = useCan("settings:read");
   const canSeeSecurityLog = useCan("security:read");
   const canBrand = useCan("branding:update");
+  const canSeeBackups = useCan("backups:read");
+  const canTransferContent = useCan("content:transfer");
+  const canSeeUpdates = useCan("updates:read");
 
   return (
     <Page width="readable">
@@ -101,6 +109,46 @@ export function SettingsPage() {
           )}
         </GroupedList>
         <PluginSettingsRows />
+        {(canSeeBackups || canTransferContent) && (
+          <GroupedList header={t("settings.dataHeader")}>
+            {canSeeBackups && (
+              <GroupedListRow
+                icon={Archive}
+                iconTone="success"
+                label={t("backups.title")}
+                description={t("settings.backupsDescription")}
+                to="/settings/backups"
+              />
+            )}
+            {canTransferContent && (
+              <GroupedListRow
+                icon={FileInput}
+                label={t("import.title")}
+                description={t("settings.importDescription")}
+                to="/settings/import"
+              />
+            )}
+          </GroupedList>
+        )}
+        <GroupedList header={t("settings.systemHeader")}>
+          {canSeeUpdates && (
+            <GroupedListRow
+              icon={ArrowUpCircle}
+              iconTone="success"
+              label={t("updates.title")}
+              description={t("settings.updatesDescription")}
+              accessory={<UpdatesCountBadge />}
+              to="/settings/updates"
+            />
+          )}
+          <GroupedListRow
+            icon={Info}
+            iconTone="neutral"
+            label={t("about.title")}
+            description={t("settings.aboutDescription")}
+            to="/settings/about"
+          />
+        </GroupedList>
         <GroupedList header={t("settings.siteHeader")} footer={t("settings.moreSoon")}>
           {canSeeSiteSettings && (
             <GroupedListRow

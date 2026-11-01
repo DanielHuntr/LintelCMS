@@ -1,6 +1,6 @@
 {
   "name": "@lintel/plugin-example-bookings",
-  "version": "0.1.0",
+  "version": "1.0.0-rc.1",
   "private": true,
   "description": "An example Lintel plugin: appointments, and the people who made them.",
   "type": "module",

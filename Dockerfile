@@ -38,6 +38,7 @@ RUN cp -r packages/core/dist packages/core/migrations /out/ \
 # ---- Run: Node and the built files; Lintel runs as the ordinary `node` user ----
 FROM node:${NODE_VERSION}-bookworm-slim AS runtime
 ENV NODE_ENV=production \
+    LINTEL_DOCKER=1 \
     HOST=0.0.0.0 \
     PORT=4000 \
     LINTEL_FOLDER=/data \

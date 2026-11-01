@@ -177,6 +177,22 @@ export const corePermissionGroups: readonly PermissionGroup[] = [
         name: "See the security log",
         description: "Sign-ins, failures and account changes.",
       },
+      { permission: "backups:read", name: "See backups", description: "" },
+      {
+        permission: "backups:manage",
+        name: "Make and restore backups",
+        description: "Restoring replaces everything on the site with the backup.",
+      },
+      {
+        permission: "updates:read",
+        name: "See updates",
+        description: "New versions of Lintel and its plugins. Only owners can install them.",
+      },
+      {
+        permission: "content:transfer",
+        name: "Export and import content",
+        description: "Including importing from WordPress.",
+      },
     ],
   },
 ];

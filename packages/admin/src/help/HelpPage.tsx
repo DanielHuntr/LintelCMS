@@ -12,6 +12,7 @@ import { HelpArticle } from "./HelpArticle.js";
 import { HelpTopicList } from "./HelpTopicList.js";
 import { Page } from "../design/Page.js";
 import { SupportCard } from "./SupportCard.js";
+import { LintelVersion } from "../updates/LintelVersion.js";
 
 interface HelpPageProps {
   /** The open topic, kept in the address (`/help?topic=using/media`) so it can be shared. */
@@ -61,6 +62,7 @@ export function HelpPage({ topic, onOpenTopic, anchor }: HelpPageProps) {
         ) : (
           <HelpTopicList onOpenPage={(slug) => onOpenTopic(slug)} />
         )}
+        <LintelVersion className="mt-8 text-center text-footnote text-label-tertiary" />
       </Page>
     );
   }

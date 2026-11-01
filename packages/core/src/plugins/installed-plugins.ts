@@ -40,6 +40,14 @@ export async function loadInstalledPlugins(root = REPOSITORY_ROOT): Promise<Lint
   return plugins;
 }
 
+/** The plugin package names lintel.config.ts lists; none without the file. */
+export async function listInstalledPluginPackages(
+  root = REPOSITORY_ROOT,
+): Promise<readonly string[]> {
+  const configFile = join(root, CONFIG_FILE_NAME);
+  return existsSync(configFile) ? (await readConfig(configFile)).plugins : [];
+}
+
 async function readConfig(configFile: string): Promise<LintelConfig> {
   const loaded: unknown = await import(pathToFileURL(configFile).href);
   const config = (loaded as { default?: unknown }).default;

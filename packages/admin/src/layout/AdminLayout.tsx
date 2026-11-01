@@ -1,3 +1,4 @@
+import { hasPermission } from "@lintel/core/permissions";
 import { Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useContentModelEvents } from "../content-model-sync/useContentModelEvents.js";
@@ -8,6 +9,8 @@ import { documentTitleFor } from "../navigation/documentTitle.js";
 import { CommandPalette } from "../search/CommandPalette.js";
 import { useCommandPalette } from "../search/useCommandPalette.js";
 import { NotificationsButton } from "../workflows/NotificationsButton.js";
+import { UpdatesSidebarLink } from "../updates/UpdatesSidebarLink.js";
+import { UpdatingBanner } from "../updates/UpdatingBanner.js";
 import { Sidebar } from "./Sidebar.js";
 import type { SignedInUser } from "./SidebarAccount.js";
 
@@ -60,7 +63,9 @@ export function AdminLayout({
         signedInUser={signedInUser}
         onSignOut={onSignOut}
         onOpenSearch={palette.open}
+        notice={hasPermission(permissions, "updates:read") && <UpdatesSidebarLink />}
       />
+      <UpdatingBanner />
       <CommandPalette open={palette.isOpen} onClose={palette.close} />
       {!hideLintelHelp && <HelpLauncher />}
       {enabledPlugins.includes("automations") && <NotificationsButton />}

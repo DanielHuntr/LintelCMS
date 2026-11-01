@@ -1,6 +1,6 @@
 {
   "name": "@lintel/builder",
-  "version": "0.0.0",
+  "version": "1.0.0-rc.1",
   "private": true,
   "description": "The visual page builder the admin uses, and the renderer that turns a page design into HTML and CSS.",
   "type": "module",

@@ -164,9 +164,10 @@ export function Labelled({
 }: LabelledProps) {
   const id = useId();
   return (
-    <div className="flex min-w-0 flex-col gap-1">
+    // Long labels wrap rather than being cut off; side by side, the controls still line up.
+    <div className="flex min-w-0 flex-col justify-end gap-1">
       <div className="flex items-center gap-1.5">
-        <label htmlFor={id} className="truncate text-caption text-label-secondary">
+        <label htmlFor={id} className="min-w-0 text-caption text-pretty text-label-secondary">
           {label}
         </label>
         {overridden && (

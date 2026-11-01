@@ -123,8 +123,24 @@ Check your settings with `pnpm send-test-email --to you@example.com` (in Docker:
 | `API_PORT`                         | `4000`                  | The port when `PORT` isn't set                                                  |
 | `ADMIN_ORIGIN`                     | `http://localhost:5173` | Development only: where Vite serves the admin                                   |
 
+## Updates
+
+See [Updating Lintel](/using/updating/) and [Releases and the update feed](/building/releases/).
+
+| Variable               | Default                  | What it does                                                                               |
+| ---------------------- | ------------------------ | ------------------------------------------------------------------------------------------ |
+| `UPDATE_CHECKS`        | `true`                   | `false` (or `off`) stops Lintel looking for new versions at all                            |
+| `UPDATE_FEED_URL`      | Lintel's GitHub releases | Another GitHub releases address, or an agency's own feed                                   |
+| `UPDATE_PUBLIC_KEY`    | Lintel's release key     | A minisign public key, for builds an agency signs itself                                   |
+| `LINTEL_INSTALL_TYPE`  | worked out by Lintel     | `supervised`, `process`, `docker`, `source`, `passenger` or `forge`, if the guess is wrong |
+| `LINTEL_HOME`          | the folder it runs in    | Where `lintel start` keeps `versions/` and `current`                                       |
+| `LINTEL_UPDATER_URL`   | none                     | Docker only: `http://lintel-updater:8080` when the opt-in updater runs                     |
+| `LINTEL_UPDATER_TOKEN` | none                     | Docker only: a long random secret shared with lintel-updater                               |
+
 ## Only for Docker Compose
 
 `deploy/docker-compose.yml` also reads `LINTEL_DOMAIN` (the domain Caddy gets a
 certificate for), `POSTGRES_PASSWORD` (the database's password, which it puts into
 `DATABASE_URL` for you) and `LINTEL_PORT` (the port on the server itself, `4000`).
+With `--profile updater` it also reads `LINTEL_REPO_PATH`, the repository's full path on
+the server, for the lintel-updater service.

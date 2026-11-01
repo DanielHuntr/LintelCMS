@@ -5,6 +5,9 @@ import compress from "@fastify/compress";
 import Fastify, { type FastifyInstance, type FastifyServerOptions, LogController } from "fastify";
 import { apiTokensRoutes } from "./api-tokens/api-tokens.routes.js";
 import { authRoutes } from "./auth/auth.routes.js";
+import { backupsRoutes } from "./backups/backups.routes.js";
+import { defaultBackupsFolder, defaultImportsFolder } from "./backups/data-tools-folders.js";
+import { contentTransferRoutes } from "./content-transfer/content-transfer.routes.js";
 import { blueprintsRoutes } from "./blueprints/blueprints.routes.js";
 import { brandingRoutes } from "./branding/branding.routes.js";
 import type { DeploymentBranding } from "./branding/deployment-branding.js";
@@ -58,6 +61,7 @@ import { pluginRegistry } from "./plugins/plugins.registry.js";
 import { pagesRoutes } from "./pages/pages.routes.js";
 import { pluginsRoutes } from "./plugins/plugins.routes.js";
 import { previewRoutes } from "./preview/preview.routes.js";
+import { BackgroundTasks } from "./scheduler/background-tasks.js";
 import { registerScheduledJobs } from "./scheduler/scheduled-jobs.js";
 import { searchRoutes } from "./search/search.routes.js";
 import { dashboardRoutes } from "./dashboard/dashboard.routes.js";
@@ -93,6 +97,9 @@ import { websiteRoutes } from "./website/website.routes.js";
 import { EventBus } from "./events/event-bus.js";
 import { subscribeEventListeners } from "./events/event-listeners.js";
 import { registerWorkflows, type WorkflowOptions } from "./workflows/register-workflows.js";
+import { wordpressImportRoutes } from "./wordpress-import/wordpress-import.routes.js";
+import { updatesRoutes } from "./updates/updates.routes.js";
+import { type UpdatesOptions, UpdatesRuntime } from "./updates/updates-runtime.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -133,6 +140,10 @@ declare module "fastify" {
     deploymentBranding: DeploymentBranding;
     /** The admin's language this server was deployed with (see src/interface-languages). */
     defaultInterfaceLanguage: string;
+    /** Where backups and imports keep their files, and the work they run in the background. */
+    dataTools: DataTools;
+    /** Looking for and installing new versions of Lintel (see src/updates). */
+    updates: UpdatesRuntime;
   }
 }
 
@@ -146,6 +157,22 @@ export interface MediaOptions {
   usageFinder?: AssetUsageFinder;
   /** Send originals as redirects to signed storage links lasting this long (S3 only). */
   signedUrlSeconds?: number | undefined;
+}
+
+/** Folders for backups and imports. Both default to folders in `.lintel`; tests pass temporary ones. */
+export interface DataToolsOptions {
+  backupsFolder?: string;
+  importsFolder?: string;
+  /** Let the WordPress importer download from private addresses. Defaults to the webhooks setting. */
+  allowPrivateDownloads?: boolean;
+}
+
+export interface DataTools {
+  storage: StorageDriver;
+  backupsFolder: string;
+  importsFolder: string;
+  allowPrivateDownloads: boolean;
+  tasks: BackgroundTasks;
 }
 
 export interface ServerOptions {
@@ -218,6 +245,9 @@ export interface ServerOptions {
   branding?: DeploymentBranding;
   /** The admin's language when the site hasn't chosen one. Defaults to English. */
   defaultInterfaceLanguage?: string;
+  dataTools?: DataToolsOptions;
+  /** Where updates come from and how they are installed. Every part has a default. */
+  updates?: UpdatesOptions;
 }
 
 export interface WebhookOptions {
@@ -301,6 +331,17 @@ export function buildServer(options: ServerOptions) {
     }),
   );
   subscribeEventListeners(server);
+  const dataTools: DataTools = {
+    storage,
+    backupsFolder: options.dataTools?.backupsFolder ?? defaultBackupsFolder(),
+    importsFolder: options.dataTools?.importsFolder ?? defaultImportsFolder(),
+    allowPrivateDownloads:
+      options.dataTools?.allowPrivateDownloads ?? options.webhooks?.allowPrivateAddresses ?? false,
+    tasks: new BackgroundTasks((error) => server.log.error(error, "Background work failed")),
+  };
+  server.decorate("dataTools", dataTools);
+  server.decorate("updates", new UpdatesRuntime(options.updates));
+  server.addHook("onClose", () => dataTools.tasks.finishAll());
   server.decorateRequest("signedIn", null);
   server.setErrorHandler(sendHttpErrorDetails);
   server.addHook("onSend", addSecurityHeaders(server.publicApiUrl));
@@ -423,6 +464,10 @@ function registerApiRoutes(
   server.register(starterSitesRoutes);
   registerContentModelSyncRoutes(server);
   server.register(mediaRoutes, media);
+  server.register(backupsRoutes);
+  server.register(contentTransferRoutes);
+  server.register(wordpressImportRoutes);
+  server.register(updatesRoutes);
 }
 
 /**

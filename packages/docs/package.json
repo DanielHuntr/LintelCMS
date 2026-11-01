@@ -1,6 +1,6 @@
 {
   "name": "@lintel/docs",
-  "version": "0.0.0",
+  "version": "1.0.0-rc.1",
   "private": true,
   "description": "Lintel's documentation site, and the help pages the admin shows offline.",
   "type": "module",

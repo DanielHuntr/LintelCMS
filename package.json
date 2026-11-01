@@ -1,5 +1,6 @@
 {
   "name": "lintel",
+  "version": "1.0.0-rc.1",
   "private": true,
   "type": "module",
   "description": "Lintel: a self-hosted CMS with a visual builder, animation studio and commerce.",
@@ -10,7 +11,8 @@
   "scripts": {
     "dev": "turbo run dev --filter=!starter-nextjs --filter=!@lintel/docs",
     "docs:dev": "pnpm --filter @lintel/docs dev",
-    "create-admin": "pnpm --silent --filter @lintel/core create-admin",
+    "lintel": "pnpm --silent --filter @lintel/cli lintel",
+    "create-admin": "pnpm --silent --filter @lintel/cli lintel create-admin",
     "reset-password": "pnpm --silent --filter @lintel/core reset-password",
     "db:migrate": "pnpm --silent --filter @lintel/core db:migrate",
     "media:move-to-s3": "pnpm --silent --filter @lintel/core media:move-to-s3",

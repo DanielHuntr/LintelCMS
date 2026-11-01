@@ -4,6 +4,7 @@ import { z } from "zod";
 import { DATABASE_URL_ADVICE } from "./database/database-errors.js";
 import { checkEmailSettings, emailSettings } from "./email/email.config.js";
 import { checkStorageSettings, storageSettings } from "./media/storage.config.js";
+import { updateSettings } from "./updates/updates.config.js";
 import {
   checkProductionSettings,
   DEFAULT_TRUST_PROXY,
@@ -83,6 +84,7 @@ const configSchema = coreSettingsSchema
   .extend(productionSettings)
   .extend(storageSettings)
   .extend(emailSettings)
+  .extend(updateSettings)
   .superRefine((config, context) => {
     checkProductionSettings(config, context);
     checkStorageSettings(config, context);
