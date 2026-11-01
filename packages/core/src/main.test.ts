@@ -76,7 +76,13 @@ describe("starting Lintel", () => {
       // The same command as `pnpm dev`, without watching for changes.
       child = spawn(
         TSX,
-        ["--conditions=development", "--env-file=development.env", "src/main.ts"],
+        [
+          "--tsconfig",
+          "tsconfig.dev.json",
+          "--conditions=development",
+          "--env-file=development.env",
+          "src/main.ts",
+        ],
         {
           cwd: CORE_FOLDER,
           env: {
