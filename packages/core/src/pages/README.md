@@ -18,7 +18,7 @@ When a person creates or saves an entry, two more rules apply (`page-code.servic
 - **Code needs `builder:code`.** Without it, a save that adds new code or changes existing
   code (the HTML, CSS or JavaScript of a code block) is refused. Moving, duplicating, hiding
   and deleting code blocks, and filling in their marked text and pictures, are fine.
-  Owners and Admins have it; give it to other roles in Settings → Roles to let developers
+  Owners and Admins have it; give it to other roles in Users → Roles to let developers
   write code.
 - **Scripts follow the site setting** `builderCustomScripts`: `removeScripts` (the default)
   takes `<script>`, `on…` attributes and `javascript:` links out of code blocks and empties
