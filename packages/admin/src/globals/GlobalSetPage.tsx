@@ -23,9 +23,18 @@ import { useCan } from "../session/SessionContext.js";
 import { saveGlobalValues } from "./globals.api.js";
 import { globalKeys, useGlobalSet } from "./globals.queries.js";
 import type { GlobalSet } from "./globals.types.js";
+import { Page } from "../design/Page.js";
 
 /** /content/globals/:handle: one global set's values, in each of the site's languages. */
-export function GlobalSetPage({ handle }: { handle: string }) {
+export function GlobalSetPage(props: { handle: string }) {
+  return (
+    <Page width="readable">
+      <LoadedGlobalSetPage {...props} />
+    </Page>
+  );
+}
+
+function LoadedGlobalSetPage({ handle }: { handle: string }) {
   const [locale, setLocale] = useState<string | undefined>(undefined);
   const globalSet = useGlobalSet(handle, locale);
 
@@ -169,7 +178,7 @@ function GlobalValuesForm({
             event.preventDefault();
             void save();
           }}
-          className="flex max-w-[46rem] flex-col gap-7 rounded-panel bg-surface px-9 pt-8 pb-10"
+          className="flex flex-col gap-7 rounded-panel bg-surface px-9 pt-8 pb-10"
         >
           <fieldset disabled={!canSave} className="contents">
             {globalSet.fields.map((field) => (

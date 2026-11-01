@@ -42,6 +42,16 @@ live, it stays live until then.
 
 Changed your mind? Press **Reschedule…** or **Cancel schedule** in the same place.
 
+## Seeing the live page
+
+Once an entry is published, **View page** appears in the editor's toolbar, next to the
+address under the title, and beside the entry in its list. It opens the page on your
+website in a new tab.
+
+Lintel needs to know your website's address for that: set it in **Settings → Site**
+(for example `https://brightsidebakery.com`). Until then, **View page** shows a simple
+preview of the published version, with a note on connecting your site.
+
 ## If you can't publish
 
 Some accounts can write drafts but not publish them. If that's you, the main button says

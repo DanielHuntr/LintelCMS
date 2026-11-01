@@ -2,6 +2,7 @@ import type { Database } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import { findEnabledPluginIds } from "../plugins/plugins.service.js";
 import { findPermissionsForUser } from "../roles/roles.service.js";
+import { readSiteAddress } from "../sites/site-address.service.js";
 import {
   endSession,
   findActiveSession,
@@ -109,5 +110,6 @@ async function describeSignedIn(database: Database, user: PublicUser): Promise<S
     user: { id: user.id, email: user.email, name: user.name },
     permissions: await findPermissionsForUser(database, user.id),
     enabledPlugins: await findEnabledPluginIds(database),
+    siteAddress: await readSiteAddress(database),
   };
 }

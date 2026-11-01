@@ -66,6 +66,8 @@ If a save fails (for example, your connection drops), you'll see **Couldn't save
 
 Saving never changes your live site. Only [publishing](/using/publishing/) does.
 
+See [History](/using/history/) for going back to an earlier version.
+
 ## Pages inside pages
 
 Pages can sit under other pages, like folders: "Our team" under "About us". Choose the

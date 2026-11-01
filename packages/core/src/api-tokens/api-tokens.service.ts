@@ -1,3 +1,4 @@
+import { readSiteAddress } from "../sites/site-address.service.js";
 import type { SignedIn } from "../auth/auth.schema.js";
 import type { Database, DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
@@ -98,6 +99,7 @@ export async function authenticateApiToken(
       user: { id: creator.id, email: creator.email, name: creator.name },
       permissions: permissionsForApiToken(token.access, creatorPermissions),
       enabledPlugins: await findEnabledPluginIds(database),
+      siteAddress: await readSiteAddress(database),
     },
   };
 }

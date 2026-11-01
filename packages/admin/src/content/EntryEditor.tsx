@@ -10,9 +10,10 @@ import { textValue } from "../fields/fieldValues.js";
 import { t } from "../i18n/strings.js";
 import { EntryPreviewPane } from "../preview/EntryPreviewPane.js";
 import { EntrySeoPanel } from "../seo/EntrySeoPanel.js";
-import { useCan } from "../session/SessionContext.js";
+import { useCan, useSession } from "../session/SessionContext.js";
 import type { Collection, Entry } from "./content.types.js";
 import { entryDraftReducer, hasUnsavedChanges, initialDraftState } from "./entryDraft.js";
+import { type Companion, editorColumns, editorWidths } from "./editorLayout.js";
 import { EntryEditorBar } from "./EntryEditorBar.js";
 import { EntryFields } from "./EntryFields.js";
 import { EntrySidePanel } from "./EntrySidePanel.js";
@@ -28,23 +29,8 @@ import {
 import { SaveIndicator } from "./SaveIndicator.js";
 import { useAutosave } from "./useAutosave.js";
 import { useEntryActions } from "./useEntryActions.js";
+import { viewPageTarget } from "./viewPage.js";
 import { useLeaveWarning } from "./useLeaveWarning.js";
-
-/**
- * What sits beside the document: the side panel (status, parent, history), the live
- * preview, or nothing. The preview needs the room, so it takes the panel's place.
- */
-type Companion = "panel" | "preview" | "none";
-
-/**
- * The split view uses the whole width of the page area rather than the usual reading width.
- * `cqw` is the page area's width (AdminLayout's main is a size container), so this lines up
- * exactly with the page's padding at any window size.
- */
-const splitViewStyle = {
-  width: "calc(100cqw - 5rem)",
-  marginLeft: "min(0px, calc((60rem - 100cqw) / 2))",
-} as const;
 
 interface EntryEditorProps {
   collection: Collection;
@@ -87,6 +73,8 @@ export function EntryEditor({
   });
   const { entry } = actions;
   const canPublish = useCan("entries:publish");
+  const { siteAddress } = useSession();
+  const viewPage = entry ? viewPageTarget(siteAddress, collection, entry) : undefined;
   const canDelete = useCan("entries:delete");
   const canCreate = useCan("entries:create");
   const canSave = useCan(entry ? "entries:update" : "entries:create");
@@ -119,10 +107,13 @@ export function EntryEditor({
     }
   }
 
-  /** Saves now (a new entry is created even if untouched), moving focus to any problem. */
-  async function saveExplicitly(): Promise<boolean> {
+  /**
+   * Saves now (a new entry is created even if untouched), moving focus to any problem.
+   * `saveVersion` (Cmd/Ctrl+S and the Save button) keeps the save as a version in History.
+   */
+  async function saveExplicitly({ saveVersion = false } = {}): Promise<boolean> {
     try {
-      await saveNow({ force: entry === undefined });
+      await saveNow({ force: entry === undefined || saveVersion, saveVersion });
       return true;
     } catch (error) {
       focusFirstFieldError(error);
@@ -158,7 +149,7 @@ export function EntryEditor({
   const saveWithShortcut = useEffectEvent((event: KeyboardEvent) => {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
       event.preventDefault();
-      void saveExplicitly();
+      void saveExplicitly({ saveVersion: true });
     }
   });
   useEffect(() => {
@@ -170,7 +161,7 @@ export function EntryEditor({
   const bannerMessage = actions.actionError ?? unplacedErrors[0] ?? null;
 
   return (
-    <div style={isPreviewOpen ? splitViewStyle : undefined}>
+    <div className={classNames("w-full", editorWidths[companion])}>
       <h1 className="sr-only">{title || t("editor.untitled")}</h1>
 
       <EntryEditorBar
@@ -179,6 +170,7 @@ export function EntryEditor({
         isPanelOpen={isPanelOpen}
         panelId={panelId}
         onTogglePanel={() => setCompanion((current) => (current === "panel" ? "none" : "panel"))}
+        viewPage={viewPage}
         onDelete={entry && canDelete ? () => setIsConfirmingDelete(true) : undefined}
         onDuplicate={entry && canCreate ? () => void duplicateEntry() : undefined}
         isPreviewOpen={isPreviewOpen}
@@ -204,7 +196,7 @@ export function EntryEditor({
             />
           ) : (
             <Button
-              onClick={() => void saveExplicitly()}
+              onClick={() => void saveExplicitly({ saveVersion: true })}
               disabled={!isUnsaved && entry !== undefined}
             >
               {t("editor.save")}
@@ -237,21 +229,11 @@ export function EntryEditor({
         </div>
       )}
 
-      <div
-        className={classNames(
-          "grid items-start gap-8",
-          isPanelOpen && "grid-cols-[minmax(0,1fr)_17rem]",
-          isPreviewOpen && "grid-cols-2 gap-6",
-          companion === "none" && "grid-cols-1",
-        )}
-      >
+      <div className={classNames("grid items-start", editorColumns[companion])}>
         <div
           ref={documentElement}
           // The document sits on a white page over the grey desk, like a document in Pages.
-          className={classNames(
-            "flex min-w-0 flex-col gap-9 rounded-panel bg-surface px-9 pt-8 pb-10",
-            companion === "none" && "mx-auto w-full max-w-[46rem]",
-          )}
+          className="flex min-w-0 flex-col gap-9 rounded-panel bg-surface px-9 pt-8 pb-10"
         >
           <div className="flex flex-col gap-1">
             <EntryTitleInput
@@ -267,6 +249,7 @@ export function EntryEditor({
               slug={state.current.slug}
               onChange={(slug) => dispatch({ type: "slugChanged", slug })}
               error={state.fieldErrors.slug}
+              viewPage={viewPage}
             />
           </div>
 

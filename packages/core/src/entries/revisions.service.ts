@@ -10,23 +10,25 @@ import {
   findEntryOrFail,
   validateForCollection,
 } from "./entries.service.js";
+import { recordEvent } from "./revision-log.js";
 import {
   findRevisionForEntry,
-  insertRevision,
   listRevisionsForEntry,
   type RevisionRow,
 } from "./revisions.repository.js";
 
 /**
- * Revisions are written by the entry services on every save, publish, unpublish and
- * restore. This file reads them, and restores one.
+ * Revisions are written through revision-log.ts: one per person's run of edits, and one
+ * for each publish, unpublish, schedule and restore. This file reads them, and restores one.
  */
 
 function describeRevision(revision: RevisionRow): RevisionSummaryResponse {
   return {
     id: revision.id,
-    action: revision.action,
+    kind: revision.kind,
     createdAt: revision.createdAt.toISOString(),
+    updatedAt: revision.updatedAt.toISOString(),
+    restoredFromAt: revision.restoredFromAt?.toISOString() ?? null,
     author: describePerson(revision.authorId, revision.authorName),
   };
 }
@@ -73,11 +75,12 @@ export async function restoreRevision(
 
   await database.transaction(async (transaction) => {
     await updateEntryRow(transaction, entry.id, { data, updatedBy: context.authorId });
-    await insertRevision(transaction, {
+    await recordEvent(transaction, {
       entryId: entry.id,
       authorId: context.authorId,
-      action: "restored",
+      kind: "restored",
       data,
+      restoredFromAt: revision.createdAt,
     });
   });
   return findEntry(database, entry.id);

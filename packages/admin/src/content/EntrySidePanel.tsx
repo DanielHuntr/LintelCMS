@@ -41,7 +41,7 @@ export function EntrySidePanel({
     <aside
       id={id}
       aria-label={collection.name}
-      className="sticky top-20 flex flex-col self-start overflow-hidden rounded-card bg-surface"
+      className="flex flex-col self-start overflow-hidden rounded-card bg-surface @min-[52rem]:sticky @min-[52rem]:top-20"
     >
       <PublishingSection
         entry={entry}

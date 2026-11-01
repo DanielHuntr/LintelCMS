@@ -16,6 +16,7 @@ import { t, tCount } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import { createGlobalSet } from "./globals.api.js";
 import { globalKeys, useGlobalSets } from "./globals.queries.js";
+import { Page } from "../design/Page.js";
 
 /** /content/globals: site-wide settings, such as the footer text and social links. */
 export function GlobalsPage() {
@@ -45,7 +46,7 @@ export function GlobalsPage() {
     );
 
   return (
-    <>
+    <Page width="wide">
       <BackLink to="/content">{t("nav.content")}</BackLink>
       <LargeTitle
         title={t("globals.title")}
@@ -97,6 +98,6 @@ export function GlobalsPage() {
         onSubmit={create}
         onClose={() => setIsCreating(false)}
       />
-    </>
+    </Page>
   );
 }

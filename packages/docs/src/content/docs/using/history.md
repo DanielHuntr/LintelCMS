@@ -1,14 +1,25 @@
 ---
 title: History and restoring
-description: Every save and publish is kept, so you can go back to an earlier version.
+description: What happened to an entry, and going back to an earlier version.
 since: "0.1"
 sidebar:
   label: History
 ---
 
-Lintel keeps a version of an entry every time it's saved, published, unpublished or
-restored. You'll find them under **History** in the editor's details panel, newest first,
-with who made each one. Press **Show all** to see the older ones.
+You'll find **History** in the editor's details panel. It lists what happened to the
+entry, newest first and grouped by day: **Edited**, **Published**, **Unpublished**,
+**Scheduled** and **Restored from…**, with who did it and when. Point at a time to see the
+exact date. The latest 20 are shown; press **Show older** for more.
+
+Your typing doesn't fill it up. Everything one person changes in a sitting appears as a
+single **Edited** line, and the newest one reads **Current draft**. A new line starts when
+someone else edits, after half an hour, or when the entry is published, unpublished,
+scheduled or restored.
+
+## Keeping a version
+
+Press <kbd>Cmd</kbd>+<kbd>S</kbd> on a Mac or <kbd>Ctrl</kbd>+<kbd>S</kbd> on Windows to keep
+what you have as a version of its own, so you can come back to exactly that point later.
 
 ## Going back to an earlier version
 

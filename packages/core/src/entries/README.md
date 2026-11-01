@@ -112,6 +112,7 @@ whose saved or published values use an asset, as `[{ entryId, title }]`, for
 | `entry-references.ts`                      | Checking and tidying ids in entries and terms fields |
 | `entry-duplication.service.ts`             | "Duplicate entry"                                    |
 | `revisions.service.ts`                     | Listing, viewing and restoring revisions             |
+| `revision-log.ts`                          | Writing revisions: autosaves gathered per person     |
 | `entry-responses.ts`                       | Stored rows to API shapes; `hasUnpublishedChanges`   |
 | `slugs.ts`, `entry-tree.ts`                | Pure helpers: making slugs, putting a tree in order  |
 | `entries.repository.ts`                    | Database reads and writes for entries                |
@@ -127,3 +128,12 @@ Saving never loses work: a draft may leave required fields empty (only the title
 needed, since it names the entry and makes its slug). Publishing and scheduling check the
 saved values with every rule and answer 400 `NOT_READY_TO_PUBLISH`, with one message per
 field in `fields`, when something is missing. The admin shows those under each field.
+
+## History
+
+Revisions have a `kind`: `edited`, `published`, `unpublished`, `scheduled` or `restored`.
+One person's autosaves update a single open `edited` revision; `PATCH` with
+`saveVersion: true` (the admin's Cmd/Ctrl+S) keeps the save as a version of its own. A new
+revision also starts when someone else edits, after 30 minutes, or when the entry is
+published, unpublished, scheduled or restored. See `revision-log.ts` and
+`docs/decisions/0011-coalesced-revisions.md`.

@@ -13,6 +13,8 @@ import { EmptyState } from "../design/EmptyState.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { t } from "../i18n/strings.js";
+import { classNames } from "../design/classNames.js";
+import { autoFillGrid, Page } from "../design/Page.js";
 
 interface DashboardPageProps {
   /** The Sales card only makes sense when the online shop is switched on. */
@@ -22,13 +24,13 @@ interface DashboardPageProps {
 /** The home screen. Each card is a placeholder until its feature is built. */
 export function DashboardPage({ showSales }: DashboardPageProps) {
   return (
-    <>
+    <Page width="wide">
       <LargeTitle
         title={t("dashboard.title")}
         subtitle={t(showSales ? "dashboard.intro" : "dashboard.introWithoutSales")}
       />
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      <div className={classNames(autoFillGrid("panel"), "gap-5")}>
         <Card title={t("dashboard.recentEdits.title")}>
           <EmptyState
             icon={PenLine}
@@ -59,7 +61,7 @@ export function DashboardPage({ showSales }: DashboardPageProps) {
           <WhatsNewList />
         </Card>
       </div>
-    </>
+    </Page>
   );
 }
 

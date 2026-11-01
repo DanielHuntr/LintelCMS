@@ -1,4 +1,6 @@
 import { type KeyboardEvent, useRef, useState } from "react";
+import { classNames } from "../design/classNames.js";
+import { autoFillGrid } from "../design/Page.js";
 import { AssetTile } from "./AssetTile.js";
 import type { Asset } from "./media.api.js";
 
@@ -52,7 +54,7 @@ export function AssetGrid({ assets, label, onActivate, currentAssetId }: AssetGr
     <ul
       ref={grid}
       aria-label={label}
-      className="grid grid-cols-[repeat(auto-fill,minmax(148px,1fr))] gap-x-4 gap-y-5"
+      className={classNames(autoFillGrid("tile"), "gap-x-4 gap-y-5")}
     >
       {assets.map((asset, index) => (
         <li key={asset.id}>
@@ -79,7 +81,7 @@ export function AssetGridPlaceholder({ label }: { label: string }) {
     <div
       role="status"
       aria-label={label}
-      className="grid grid-cols-[repeat(auto-fill,minmax(148px,1fr))] gap-x-4 gap-y-5"
+      className={classNames(autoFillGrid("tile"), "gap-x-4 gap-y-5")}
     >
       {Array.from({ length: 10 }, (_, index) => (
         <div key={index} className="flex flex-col gap-2">

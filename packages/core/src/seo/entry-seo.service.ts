@@ -4,6 +4,7 @@ import { findDeliveredEntry } from "../delivery/delivery.service.js";
 import { findEntryOrFail } from "../entries/entries.service.js";
 import type { AssetExists, AssetLookup } from "../fieldtypes/image-assets.js";
 import { InvalidFieldsError } from "../http/http-errors.js";
+import { readSiteAddress } from "../sites/site-address.service.js";
 import { readSeoDefaults } from "./seo-defaults.service.js";
 import { applyTitleTemplate } from "./seo-titles.js";
 import { findEntrySeoRow, upsertEntrySeoRow } from "./seo.repository.js";
@@ -70,6 +71,7 @@ export async function resolveEntrySeo(
 ): Promise<DeliveredEntrySeo> {
   const own = await findEntrySeo(database, entry.id);
   const defaults = await readSeoDefaults(database);
+  const siteUrl = defaults.siteUrl || (await readSiteAddress(database));
 
   const imageId = own.socialImageId ?? defaults.defaultSocialImageId;
   const image = imageId ? (await assetLookup.findAssetsByIds([imageId])).get(imageId) : undefined;
@@ -77,7 +79,7 @@ export async function resolveEntrySeo(
   return {
     title: applyTitleTemplate(defaults.titleTemplate, own.title || entry.title, defaults.siteName),
     description: own.description || defaults.defaultDescription,
-    canonicalUrl: defaults.siteUrl && entry.url ? `${defaults.siteUrl}${entry.url}` : null,
+    canonicalUrl: siteUrl && entry.url ? `${siteUrl}${entry.url}` : null,
     image: image
       ? { url: image.url, alt: image.alt, width: image.width, height: image.height }
       : null,

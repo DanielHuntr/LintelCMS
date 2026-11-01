@@ -16,7 +16,7 @@ import {
   withFriendlySlugConflict,
 } from "./entries.service.js";
 import type { Entry } from "./entries.table.js";
-import { insertRevision } from "./revisions.repository.js";
+import { recordEdit } from "./revision-log.js";
 import { firstFreeSlug } from "./slugs.js";
 
 /**
@@ -69,11 +69,11 @@ export async function translateEntry(
         createdBy: context.authorId,
         updatedBy: context.authorId,
       });
-      await insertRevision(transaction, {
+      await recordEdit(transaction, {
         entryId: created.id,
         authorId: context.authorId,
-        action: "saved",
         data: entry.data,
+        saveVersion: false,
       });
       return created;
     }),

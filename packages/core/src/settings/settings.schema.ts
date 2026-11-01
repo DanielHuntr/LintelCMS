@@ -28,6 +28,11 @@ export const settingSchemas = {
   deliveryAllowedOrigins: z.array(z.string()),
   /** Search engine defaults from the SEO plugin (see src/seo). */
   seoDefaults: seoDefaultsSchema,
+  /**
+   * The website's public address, such as https://www.example.com, for "View page" in the
+   * admin and full addresses in the sitemap. Empty until someone connects a site.
+   */
+  siteAddress: z.string(),
 };
 
 export type SettingKey = keyof typeof settingSchemas;
@@ -41,4 +46,5 @@ export const settingDefaults: { [Key in SettingKey]: SettingValue<Key> } = {
   deliveryRequiresToken: false,
   deliveryAllowedOrigins: [],
   seoDefaults: defaultSeoDefaults,
+  siteAddress: "",
 };

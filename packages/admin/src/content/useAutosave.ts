@@ -6,8 +6,11 @@ interface AutosaveOptions<Draft> {
   hasUnsavedChanges: boolean;
   /** False while saving isn't possible yet, e.g. a new entry with no title. */
   isEnabled: boolean;
-  /** Sends the draft to the API. Rejects when the save fails. */
-  save: (draft: Draft) => Promise<unknown>;
+  /**
+   * Sends the draft to the API. Rejects when the save fails. `saveVersion` is true for a
+   * save someone asked for (Cmd/Ctrl+S), which keeps a revision of its own.
+   */
+  save: (draft: Draft, options: { saveVersion: boolean }) => Promise<unknown>;
   /** How long typing must pause before saving. */
   delayMs?: number;
 }
@@ -35,22 +38,28 @@ export function useAutosave<Draft>({
     latest.current = { draft, hasUnsavedChanges, isEnabled, save };
   });
 
-  const saveNow = useCallback(async ({ force = false }: { force?: boolean } = {}) => {
-    while (saveInFlight.current) {
-      await saveInFlight.current.catch(() => undefined);
-    }
-    const { draft: newest, hasUnsavedChanges: isUnsaved, save: send } = latest.current;
-    if (!isUnsaved && !force) return;
+  const saveNow = useCallback(
+    async ({
+      force = false,
+      saveVersion = false,
+    }: { force?: boolean; saveVersion?: boolean } = {}) => {
+      while (saveInFlight.current) {
+        await saveInFlight.current.catch(() => undefined);
+      }
+      const { draft: newest, hasUnsavedChanges: isUnsaved, save: send } = latest.current;
+      if (!isUnsaved && !force) return;
 
-    const request = send(newest);
-    saveInFlight.current = request;
-    try {
-      await request;
-      setCompletedSaves((count) => count + 1);
-    } finally {
-      saveInFlight.current = null;
-    }
-  }, []);
+      const request = send(newest, { saveVersion });
+      saveInFlight.current = request;
+      try {
+        await request;
+        setCompletedSaves((count) => count + 1);
+      } finally {
+        saveInFlight.current = null;
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!hasUnsavedChanges || !isEnabled) return;

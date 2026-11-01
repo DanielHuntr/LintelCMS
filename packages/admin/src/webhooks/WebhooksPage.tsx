@@ -16,6 +16,7 @@ import { useCan } from "../session/SessionContext.js";
 import { DeliveryStatusBadge } from "./DeliveryStatusBadge.js";
 import { useCreateWebhook, useWebhooks } from "./webhooks.queries.js";
 import { WebhookFormDialog } from "./WebhookFormDialog.js";
+import { Page } from "../design/Page.js";
 
 /** /settings/webhooks: the addresses Lintel tells when content changes. */
 export function WebhooksPage() {
@@ -32,7 +33,7 @@ export function WebhooksPage() {
   );
 
   return (
-    <>
+    <Page width="readable">
       <BackLink to="/settings">{t("nav.settings")}</BackLink>
       <LargeTitle
         title={t("webhooks.title")}
@@ -45,11 +46,11 @@ export function WebhooksPage() {
       )}
       {webhooks.isPending && (
         <LoadingRegion label={t("webhooks.loading")}>
-          <Skeleton className="h-14 max-w-2xl rounded-card" />
+          <Skeleton className="h-14 rounded-card" />
         </LoadingRegion>
       )}
       {webhooks.data?.length === 0 && (
-        <div className="max-w-2xl rounded-card bg-surface">
+        <div className="rounded-card bg-surface">
           <EmptyState
             size="page"
             icon={WebhookIcon}
@@ -60,7 +61,7 @@ export function WebhooksPage() {
         </div>
       )}
       {webhooks.data && webhooks.data.length > 0 && (
-        <div className="max-w-2xl">
+        <div>
           <GroupedList footer={t("webhooks.footer")}>
             {webhooks.data.map((webhook) => (
               <GroupedListRow
@@ -110,6 +111,6 @@ export function WebhooksPage() {
           }
         />
       )}
-    </>
+    </Page>
   );
 }

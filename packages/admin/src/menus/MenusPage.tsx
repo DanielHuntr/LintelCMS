@@ -16,6 +16,7 @@ import { useCan } from "../session/SessionContext.js";
 import { MenuSettingsSheet } from "./MenuSettingsSheet.js";
 import { createMenu } from "./menus.api.js";
 import { menuKeys, useMenus } from "./menus.queries.js";
+import { Page } from "../design/Page.js";
 
 /** /content/navigation: the site's menus, such as the main menu and the footer links. */
 export function MenusPage() {
@@ -44,7 +45,7 @@ export function MenusPage() {
     );
 
   return (
-    <>
+    <Page width="wide">
       <BackLink to="/content">{t("nav.content")}</BackLink>
       <LargeTitle
         title={t("menus.title")}
@@ -94,6 +95,6 @@ export function MenusPage() {
           onClose={() => setIsCreating(false)}
         />
       )}
-    </>
+    </Page>
   );
 }

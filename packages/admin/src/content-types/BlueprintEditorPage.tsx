@@ -5,9 +5,18 @@ import { t } from "../i18n/strings.js";
 import { PreviewAddressSettings } from "../preview/PreviewAddressSettings.js";
 import { BlueprintEditor } from "./BlueprintEditor.js";
 import { useBlueprint } from "./blueprints.queries.js";
+import { Page } from "../design/Page.js";
 
 /** /settings/content-types/:handle: loads the blueprint, then shows the builder. */
-export function BlueprintEditorPage({ handle }: { handle: string }) {
+export function BlueprintEditorPage(props: { handle: string }) {
+  return (
+    <Page width="readable">
+      <LoadedBlueprintEditorPage {...props} />
+    </Page>
+  );
+}
+
+function LoadedBlueprintEditorPage({ handle }: { handle: string }) {
   const blueprint = useBlueprint(handle);
 
   if (blueprint.isError) {

@@ -11,6 +11,8 @@ import { useCan } from "../session/SessionContext.js";
 import { CollectionCard } from "./CollectionCard.js";
 import { useCollections } from "./content.queries.js";
 import { useNow } from "./useNow.js";
+import { classNames } from "../design/classNames.js";
+import { autoFillGrid, Page } from "../design/Page.js";
 
 /** /content: every collection as a card, the way into writing anything. */
 export function ContentOverviewPage() {
@@ -31,7 +33,7 @@ export function ContentOverviewPage() {
     );
 
   return (
-    <>
+    <Page width="wide">
       <LargeTitle
         title={t("content.title")}
         subtitle={t("content.subtitle")}
@@ -45,7 +47,7 @@ export function ContentOverviewPage() {
 
       {collections.isPending && (
         <LoadingRegion label={t("content.loading")}>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className={classNames(autoFillGrid(), "gap-4")}>
             {[0, 1, 2].map((card) => (
               <div key={card} className="flex flex-col gap-5 rounded-card bg-surface p-5">
                 <Skeleton className="size-10 rounded-[10px]" />
@@ -77,7 +79,7 @@ export function ContentOverviewPage() {
       )}
 
       {collections.data && collections.data.length > 0 && (
-        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className={classNames(autoFillGrid(), "gap-4")}>
           {collections.data.map((collection) => (
             <CollectionCard key={collection.id} collection={collection} now={now} />
           ))}
@@ -85,6 +87,6 @@ export function ContentOverviewPage() {
       )}
 
       <SiteWideContent />
-    </>
+    </Page>
   );
 }

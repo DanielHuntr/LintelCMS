@@ -18,6 +18,7 @@ import { UploadTray } from "./UploadTray.js";
 import { useDebouncedValue } from "./useDebouncedValue.js";
 import { useFileDrop } from "./useFileDrop.js";
 import { useUploadQueue } from "./useUploadQueue.js";
+import { Page } from "../design/Page.js";
 
 type Filter = "all" | AssetKind;
 
@@ -57,7 +58,7 @@ export function MediaLibraryPage({
   }
 
   return (
-    <>
+    <Page width="wide">
       <LargeTitle
         title={t("media.title")}
         subtitle={
@@ -189,7 +190,7 @@ export function MediaLibraryPage({
         onClose={uploads.clearFinished}
       />
       <DropOverlay visible={isDraggingFiles} />
-    </>
+    </Page>
   );
 }
 

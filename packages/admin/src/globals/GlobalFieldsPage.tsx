@@ -4,9 +4,18 @@ import { Skeleton } from "../design/Skeleton.js";
 import { t } from "../i18n/strings.js";
 import { GlobalFieldsEditor } from "./GlobalFieldsEditor.js";
 import { useGlobalSet } from "./globals.queries.js";
+import { Page } from "../design/Page.js";
 
 /** /content/globals/:handle/fields: loads the set, then hands over to the fields builder. */
-export function GlobalFieldsPage({ handle }: { handle: string }) {
+export function GlobalFieldsPage(props: { handle: string }) {
+  return (
+    <Page width="readable">
+      <LoadedGlobalFieldsPage {...props} />
+    </Page>
+  );
+}
+
+function LoadedGlobalFieldsPage({ handle }: { handle: string }) {
   const globalSet = useGlobalSet(handle, undefined);
 
   if (globalSet.isError) {

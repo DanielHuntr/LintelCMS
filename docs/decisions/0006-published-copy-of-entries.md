@@ -6,7 +6,7 @@ Date: 2026-10-31
 
 An entry has two sets of values: `data`, the working copy editors save, and
 `publishedData`, a copy taken when it was last published. The public delivery API reads
-only `publishedData`. Every save, publish, unpublish and restore also writes a revision.
+only `publishedData`. Every edit, publish, unpublish and restore also writes a revision (autosaves are gathered; see decision 0011).
 
 ## Why
 

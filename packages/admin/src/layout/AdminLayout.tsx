@@ -45,11 +45,14 @@ export function AdminLayout({
       <CommandPalette open={palette.isOpen} onClose={palette.close} />
       <HelpLauncher />
       {/*
-        Leaves room for the 240px sidebar and its 12px margin. A size container, so screens
-        that need the full width (the editor's split view) can measure it with cqw.
+        Leaves room for the 240px sidebar and its 12px margin. The gutters grow with the
+        window; how wide each screen goes is its own choice (design/Page.tsx). The right
+        gutter never gets narrower than 4rem, which keeps page actions clear of the help
+        button in the corner. A size container, so screens can measure the page area with cqw
+        and container queries; sticky toolbars use --page-gutter to reach the edges.
       */}
       <main id="main" tabIndex={-1} className="@container pl-[264px] outline-none">
-        <div className="mx-auto max-w-[960px] px-10 pt-14 pb-20">
+        <div className="pt-14 pr-16 pb-20 pl-(--page-gutter) [--page-gutter:clamp(1.5rem,3.5cqw,4rem)]">
           <Outlet />
         </div>
       </main>

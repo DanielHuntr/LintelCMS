@@ -20,6 +20,7 @@ import {
   routePatternFor,
 } from "./createContentType.js";
 import { StructureChoice } from "./StructureChoice.js";
+import { Page } from "../design/Page.js";
 
 /** /settings/content-types/new: name a kind of content, say how it's organised, then add fields. */
 export function NewContentTypePage() {
@@ -75,7 +76,7 @@ export function NewContentTypePage() {
   }
 
   return (
-    <>
+    <Page width="readable">
       <BackLink to="/settings/content-types">{t("contentTypes.title")}</BackLink>
       <LargeTitle title={t("contentTypes.newTitle")} subtitle={t("contentTypes.newSubtitle")} />
 
@@ -120,6 +121,6 @@ export function NewContentTypePage() {
           </Button>
         </div>
       </form>
-    </>
+    </Page>
   );
 }

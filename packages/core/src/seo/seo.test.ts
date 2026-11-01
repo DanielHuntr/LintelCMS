@@ -141,6 +141,18 @@ describe("the SEO plugin", () => {
     expect((await get("/delivery/pages/contact/seo")).json().noindex).toBe(true);
   });
 
+  it("uses the address from Settings → Site when the SEO settings have none", async () => {
+    await api("PUT", "/site-address", { siteAddress: "https://brightsidebakery.com" });
+    await publishPage("Contact");
+
+    expect((await get("/sitemap.xml")).body).toContain(
+      "<loc>https://brightsidebakery.com/contact</loc>",
+    );
+    expect((await get("/delivery/pages/contact/seo")).json().canonicalUrl).toBe(
+      "https://brightsidebakery.com/contact",
+    );
+  });
+
   it("manages redirects, tidying addresses and refusing duplicates and loops", async () => {
     const created = await api("POST", "/seo/redirects", {
       fromPath: "https://old.example.com/About-Us/?ref=mail",

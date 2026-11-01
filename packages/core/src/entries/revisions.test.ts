@@ -20,25 +20,78 @@ describe("revisions", () => {
 
   afterEach(() => server.close());
 
-  it("records every save, publish, unpublish and restore, newest first, with the author", async () => {
+  async function kinds(id: string): Promise<string[]> {
+    const { revisions } = (await api("GET", `/entries/${id}/revisions`)).json();
+    return revisions.map((revision: { kind: string }) => revision.kind);
+  }
+
+  it("records edits, publishing, unpublishing and scheduling, newest first, with the author", async () => {
     const created = await api("POST", "/collections/pages/entries", { data: { title: "About" } });
     const id = created.json().id;
     await api("PATCH", `/entries/${id}`, { data: { title: "About us" } });
     await api("POST", `/entries/${id}/publish`);
     await api("POST", `/entries/${id}/unpublish`);
+    await api("POST", `/entries/${id}/schedule`, {
+      publishAt: new Date(Date.now() + 86_400_000).toISOString(),
+    });
 
     const response = await api("GET", `/entries/${id}/revisions`);
 
     expect(response.statusCode).toBe(200);
     const revisions = response.json().revisions;
-    expect(revisions.map((revision: { action: string }) => revision.action)).toEqual([
-      "unpublished",
-      "published",
-      "saved",
-      "saved",
-    ]);
+    expect(await kinds(id)).toEqual(["scheduled", "unpublished", "published", "edited"]);
     expect(revisions[0]).toMatchObject({ author: { id: userId, name: "Ana Editor" } });
-    expect(Object.keys(revisions[0]).sort()).toEqual(["action", "author", "createdAt", "id"]);
+    expect(Object.keys(revisions[0]).sort()).toEqual([
+      "author",
+      "createdAt",
+      "id",
+      "kind",
+      "restoredFromAt",
+      "updatedAt",
+    ]);
+  });
+
+  it("gathers one person's autosaves into one revision that keeps the latest values", async () => {
+    const created = await api("POST", "/collections/pages/entries", { data: { title: "A" } });
+    const id = created.json().id;
+    for (const title of ["Ab", "Abo", "Abou", "About"]) {
+      await api("PATCH", `/entries/${id}`, { data: { title } });
+    }
+
+    const { revisions } = (await api("GET", `/entries/${id}/revisions`)).json();
+    expect(revisions).toHaveLength(1);
+    const only = (await api("GET", `/entries/${id}/revisions/${revisions[0].id}`)).json();
+    expect(only).toMatchObject({ kind: "edited", data: { title: "About" } });
+    expect(Date.parse(only.updatedAt)).toBeGreaterThanOrEqual(Date.parse(only.createdAt));
+  });
+
+  it("starts a new revision after Save version, and after anything else happens", async () => {
+    const created = await api("POST", "/collections/pages/entries", { data: { title: "One" } });
+    const id = created.json().id;
+    await api("PATCH", `/entries/${id}`, { data: { title: "Two" }, saveVersion: true });
+    await api("PATCH", `/entries/${id}`, { data: { title: "Three" } });
+    expect(await kinds(id)).toEqual(["edited", "edited"]);
+
+    await api("POST", `/entries/${id}/publish`);
+    await api("PATCH", `/entries/${id}`, { data: { title: "Four" } });
+    expect(await kinds(id)).toEqual(["edited", "published", "edited", "edited"]);
+  });
+
+  it("starts a new revision when someone else edits", async () => {
+    const benId = (await createTestUser(testDatabase.database, "ben@example.com", [["*"]])).id;
+    const ben = requestsAs(server, await signInAndGetCookies(server, "ben@example.com"));
+    const created = await api("POST", "/collections/pages/entries", { data: { title: "One" } });
+    const id = created.json().id;
+
+    await ben("PATCH", `/entries/${id}`, { data: { title: "Two" } });
+    await api("PATCH", `/entries/${id}`, { data: { title: "Three" } });
+
+    const { revisions } = (await api("GET", `/entries/${id}/revisions`)).json();
+    expect(revisions.map((revision: { author: { id: string } }) => revision.author.id)).toEqual([
+      userId,
+      benId,
+      userId,
+    ]);
   });
 
   it("shows one revision's values, and restores them as a new save", async () => {
@@ -53,7 +106,7 @@ describe("revisions", () => {
     const revision = await api("GET", `/entries/${id}/revisions/${firstSave.id}`);
     expect(revision.json()).toMatchObject({
       id: firstSave.id,
-      action: "saved",
+      kind: "edited",
       data: { title: "About", summary: "Who we are" },
     });
 
@@ -66,7 +119,11 @@ describe("revisions", () => {
       hasUnpublishedChanges: false,
     });
     const latest = (await api("GET", `/entries/${id}/revisions`)).json().revisions[0];
-    expect(latest).toMatchObject({ action: "restored", author: { id: userId } });
+    expect(latest).toMatchObject({
+      kind: "restored",
+      restoredFromAt: firstSave.createdAt,
+      author: { id: userId },
+    });
   });
 
   it("restores values that miss a newly required field, and asks for it before publishing", async () => {

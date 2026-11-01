@@ -20,13 +20,14 @@ import { MediaPicker } from "../media/MediaPicker.js";
 import { useCan } from "../session/SessionContext.js";
 import type { SeoDefaults } from "./seo.api.js";
 import { useRedirects, useSeoDefaults, useUpdateSeoDefaults } from "./seo.queries.js";
+import { Page } from "../design/Page.js";
 
 /** /settings/seo: what search engines see by default, and where the sitemap lives. */
 export function SeoSettingsPage() {
   const defaults = useSeoDefaults();
 
   return (
-    <>
+    <Page width="readable">
       <BackLink to="/settings">{t("nav.settings")}</BackLink>
       <LargeTitle title={t("seo.settingsTitle")} subtitle={t("seo.settingsSubtitle")} />
       {defaults.isError && (
@@ -34,11 +35,11 @@ export function SeoSettingsPage() {
       )}
       {defaults.isPending && (
         <LoadingRegion label={t("seo.loading")}>
-          <Skeleton className="h-80 max-w-2xl rounded-card" />
+          <Skeleton className="h-80 rounded-card" />
         </LoadingRegion>
       )}
       {defaults.data && <SeoDefaultsForm initial={defaults.data} />}
-    </>
+    </Page>
   );
 }
 
@@ -60,7 +61,7 @@ function SeoDefaultsForm({ initial }: { initial: SeoDefaults }) {
   }
 
   return (
-    <div className="flex max-w-2xl flex-col gap-8">
+    <div className="flex flex-col gap-8">
       <form onSubmit={submit} className="flex flex-col gap-5 rounded-card bg-surface p-6">
         <TextField
           label={t("seo.siteName")}

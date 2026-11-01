@@ -31,7 +31,7 @@ describe("useAutosave", () => {
 
     await act(() => vi.advanceTimersByTimeAsync(autosaveDelayMs));
     expect(save).toHaveBeenCalledOnce();
-    expect(save).toHaveBeenCalledWith("He");
+    expect(save).toHaveBeenCalledWith("He", { saveVersion: false });
   });
 
   it("does nothing when there's nothing new, or saving isn't possible yet", async () => {
@@ -49,9 +49,9 @@ describe("useAutosave", () => {
     const save = vi.fn().mockResolvedValue(undefined);
     const { result } = renderAutosave(save, { draft: "Now", hasUnsavedChanges: true });
 
-    await act(() => result.current.saveNow());
+    await act(() => result.current.saveNow({ saveVersion: true }));
 
-    expect(save).toHaveBeenCalledWith("Now");
+    expect(save).toHaveBeenCalledWith("Now", { saveVersion: true });
   });
 
   it("runs one save at a time, then sends whatever is newest", async () => {
@@ -80,7 +80,7 @@ describe("useAutosave", () => {
     });
 
     expect(save).toHaveBeenCalledTimes(2);
-    expect(save).toHaveBeenLastCalledWith("One two");
+    expect(save).toHaveBeenLastCalledWith("One two", { saveVersion: false });
   });
 
   it("doesn't retry a failed save on a loop", async () => {

@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { apiErrorResponse, mockApi } from "../testing/mockApi.js";
@@ -114,6 +114,41 @@ describe("EntryEditor", () => {
         "Fill in the required fields to publish. Your changes are saved as a draft.",
       ),
     ).toBeInTheDocument();
+  });
+
+  it("offers View page for a published entry: the website, or Lintel's simple preview", async () => {
+    mockApi(() => ({ revisions: [] }));
+    const published = samplePost({ status: "published", publishedAt: "2026-10-01T09:00:00.000Z" });
+    const editor = (siteAddress: string) =>
+      renderScreen(
+        <EntryEditor
+          collection={postsCollection}
+          blueprint={postBlueprint}
+          initialEntry={published}
+          onCreated={() => undefined}
+        />,
+        { siteAddress },
+      );
+
+    editor("https://brightsidebakery.com");
+    // One in the toolbar, one at the end of the address under the title.
+    const toWebsite = await screen.findAllByRole("link", { name: "View page" });
+    expect(toWebsite).toHaveLength(2);
+    for (const link of toWebsite) {
+      expect(link).toHaveAttribute("href", "https://brightsidebakery.com/blog/hello-world");
+      expect(link).toHaveAttribute("target", "_blank");
+    }
+    cleanup();
+
+    editor("");
+    const [toPreview] = await screen.findAllByRole("link", { name: "View page" });
+    expect(toPreview).toHaveAttribute("href", "/content/posts/p1/view");
+  });
+
+  it("has no View page while the entry is a draft", async () => {
+    mockApi(() => ({ revisions: [] }));
+    await renderEditor();
+    expect(screen.queryByRole("link", { name: "View page" })).not.toBeInTheDocument();
   });
 
   it("duplicates from the More menu and opens the copy", async () => {

@@ -4,12 +4,13 @@ Where editors write: the collections overview, each collection's entries, and th
 
 ## Screens
 
-| Route                           | File                      | What it is                                 |
-| ------------------------------- | ------------------------- | ------------------------------------------ |
-| `/content`                      | `ContentOverviewPage.tsx` | A card per collection, with counts         |
-| `/content/:collection`          | `EntriesListPage.tsx`     | Search, status filter, reorder, pagination |
-| `/content/:collection/new`      | `EntryEditorPage.tsx`     | A new entry (`newEntryId` is `"new"`)      |
-| `/content/:collection/:entryId` | `EntryEditorPage.tsx`     | The entry editor                           |
+| Route                                | File                      | What it is                                 |
+| ------------------------------------ | ------------------------- | ------------------------------------------ |
+| `/content`                           | `ContentOverviewPage.tsx` | A card per collection, with counts         |
+| `/content/:collection`               | `EntriesListPage.tsx`     | Search, status filter, reorder, pagination |
+| `/content/:collection/new`           | `EntryEditorPage.tsx`     | A new entry (`newEntryId` is `"new"`)      |
+| `/content/:collection/:entryId`      | `EntryEditorPage.tsx`     | The entry editor                           |
+| `/content/:collection/:entryId/view` | `PublishedPageView.tsx`   | Simple preview of the published version    |
 
 The routes are registered in `src/router.tsx`. The list keeps its filter in the URL
 (`?status=draft&search=hello&page=2`), so a filtered list survives a reload.
@@ -42,9 +43,19 @@ publishing, the parent page for tree collections, and the revision history with 
 
 Preview (in the toolbar and the More menu) opens a split view: the document on the left and
 the page as the site renders it on the right (`src/preview`), in place of the side panel. It
-uses the page area's full width, measured with `cqw` (AdminLayout's main is a size container).
+uses the page's full width; otherwise the writing column stays about 720px and the side panel
+grows with the window (`editorLayout.ts`).
 "Duplicate entry" in the More menu saves first, then makes a draft copy after the original
 (`POST /entries/:id/duplicate`) and opens it.
+
+## View page
+
+Published entries get **View page** in the editor's toolbar, an icon after the address under
+the title, and an icon on their row in the list. `viewPage.ts` decides where it goes: with a
+website address in Settings → Site (`siteAddress` in the session) it opens that address plus
+the entry's route in a new tab; without one it opens `PublishedPageView`, which draws the
+published version from `/delivery` with the built-in preview renderer under a banner about
+connecting a site. Drafts have no View page.
 
 ## Permissions
 

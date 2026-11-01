@@ -11,6 +11,7 @@ import { Skeleton } from "../design/Skeleton.js";
 import { t, tCount } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import { useBlueprints } from "./blueprints.queries.js";
+import { Page } from "../design/Page.js";
 
 /** /settings/content-types: every content type, and a way to make a new one. */
 export function ContentTypesPage() {
@@ -24,7 +25,7 @@ export function ContentTypesPage() {
   );
 
   return (
-    <>
+    <Page width="wide">
       <BackLink to="/settings">{t("nav.settings")}</BackLink>
       <LargeTitle
         title={t("contentTypes.title")}
@@ -74,6 +75,6 @@ export function ContentTypesPage() {
           ))}
         </GroupedList>
       )}
-    </>
+    </Page>
   );
 }
