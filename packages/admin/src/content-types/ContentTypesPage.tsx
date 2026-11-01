@@ -1,4 +1,4 @@
-import { Plus, Shapes } from "lucide-react";
+import { BookCopy, Plus, Shapes } from "lucide-react";
 import { LoadError } from "../api/LoadError.js";
 import { useCanChangeContentModel } from "../content-model-sync/contentModelSync.queries.js";
 import { ManagedInCodeBanner } from "../content-model-sync/ManagedInCodeBanner.js";
@@ -79,6 +79,12 @@ export function ContentTypesPage() {
           ))}
         </GroupedList>
       )}
+
+      <div className="mt-8">
+        <GroupedList footer={t("fieldsets.linkFooter")}>
+          <GroupedListRow icon={BookCopy} label={t("fieldsets.title")} to="/settings/fieldsets" />
+        </GroupedList>
+      </div>
     </Page>
   );
 }

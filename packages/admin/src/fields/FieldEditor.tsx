@@ -1,6 +1,12 @@
 import { useId, type ComponentType } from "react";
 import type { FieldMessages } from "../api/client.js";
 import { t } from "../i18n/strings.js";
+import {
+  ButtonGroupFieldEditor,
+  CheckboxesFieldEditor,
+  RadioFieldEditor,
+} from "./ChoiceFieldEditors.js";
+import { CodeFieldEditor } from "./CodeFieldEditor.js";
 import { ColourFieldEditor } from "./ColourFieldEditor.js";
 import { BlocksFieldEditor } from "./blocks/BlocksFieldEditor.js";
 import { DateFieldEditor } from "./DateFieldEditor.js";
@@ -15,7 +21,16 @@ import type { FieldEditorContribution } from "../plugins/adminPlugin.js";
 import type { Field, FieldType, FieldValue } from "./field.types.js";
 import type { FieldEditorProps, InnerFieldProps } from "./fieldEditorProps.js";
 import { describedByIds, FieldShell, type FieldLabelling } from "./FieldShell.js";
+import { GroupFieldEditor } from "./GroupFieldEditor.js";
+import { IconFieldEditor } from "./IconFieldEditor.js";
 import { ImageFieldEditor } from "./ImageFieldEditor.js";
+import { NothingToEdit, RevealerFieldEditor } from "./LayoutFieldEditors.js";
+import { RangeFieldEditor, TimeFieldEditor } from "./MeasureFieldEditors.js";
+import { RepeaterFieldEditor } from "./RepeaterFieldEditor.js";
+import { SlugFieldEditor } from "./SlugFieldEditor.js";
+import { TableFieldEditor } from "./TableFieldEditor.js";
+import { UsersFieldEditor } from "./UsersFieldEditor.js";
+import { VideoFieldEditor } from "./VideoFieldEditor.js";
 import { useAdminPlugins } from "../plugins/AdminPluginsContext.js";
 import { findPluginFieldEditor } from "../plugins/pluginContributions.js";
 import { LinkFieldEditor } from "./LinkFieldEditor.js";
@@ -33,6 +48,8 @@ interface FieldEditorRegistration {
 }
 
 const labelAbove = () => "label" as const;
+const asGroup = () => "group" as const;
+const bare = () => "bare" as const;
 
 /**
  * Every fieldtype and the editor that edits it, in one visible list. A new fieldtype is
@@ -64,6 +81,25 @@ export const fieldEditors: Record<FieldType, FieldEditorRegistration> = {
   blocks: { Editor: BlocksFieldEditor, labelling: () => "group" },
   page: { Editor: PageFieldEditor, labelling: () => "group" },
   form: { Editor: FormPickerFieldEditor, labelling: labelAbove },
+  radio: { Editor: RadioFieldEditor, labelling: asGroup },
+  checkboxes: { Editor: CheckboxesFieldEditor, labelling: asGroup },
+  buttonGroup: { Editor: ButtonGroupFieldEditor, labelling: asGroup },
+  range: { Editor: RangeFieldEditor, labelling: labelAbove },
+  time: { Editor: TimeFieldEditor, labelling: labelAbove },
+  slug: { Editor: SlugFieldEditor, labelling: labelAbove },
+  code: { Editor: CodeFieldEditor, labelling: labelAbove },
+  table: { Editor: TableFieldEditor, labelling: asGroup },
+  video: { Editor: VideoFieldEditor, labelling: labelAbove },
+  icon: { Editor: IconFieldEditor, labelling: asGroup },
+  users: { Editor: UsersFieldEditor, labelling: asGroup },
+  group: { Editor: GroupFieldEditor, labelling: asGroup },
+  fieldset: { Editor: GroupFieldEditor, labelling: asGroup },
+  repeater: { Editor: RepeaterFieldEditor, labelling: asGroup },
+  revealer: { Editor: RevealerFieldEditor, labelling: bare },
+  hidden: { Editor: NothingToEdit, labelling: bare },
+  tab: { Editor: NothingToEdit, labelling: bare },
+  section: { Editor: NothingToEdit, labelling: bare },
+  spacer: { Editor: NothingToEdit, labelling: bare },
 };
 
 /** A plugin's field editor, labelled above the control unless the plugin says otherwise. */

@@ -21,6 +21,7 @@ export function NumberFieldEditor({
   return (
     <input
       id={controlId}
+      placeholder={field.placeholder}
       type="number"
       inputMode="decimal"
       value={text}

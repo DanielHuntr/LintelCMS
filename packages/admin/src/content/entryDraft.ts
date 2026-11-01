@@ -55,8 +55,12 @@ export const emptyDraft: EntryDraft = { data: {}, slug: "", parentId: null };
  * New entries follow the title. So does an entry that has never been published and whose
  * slug still matches its title: changing a live page's address would break links to it.
  */
-export function initialDraftState(entry: Entry | undefined): EntryDraftState {
-  const draft = entry ? draftFromEntry(entry) : emptyDraft;
+export function initialDraftState(
+  entry: Entry | undefined,
+  /** What a new entry starts with: each field's default value. */
+  startingData: EntryData = {},
+): EntryDraftState {
+  const draft = entry ? draftFromEntry(entry) : { ...emptyDraft, data: startingData };
   const title =
     typeof draft.data[titleFieldHandle] === "string" ? draft.data[titleFieldHandle] : "";
   const slugFollowsTitle =

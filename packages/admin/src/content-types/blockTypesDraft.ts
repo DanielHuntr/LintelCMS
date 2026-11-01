@@ -1,6 +1,7 @@
-import type { BlockType, Field, FieldOptions, FieldType } from "../fields/field.types.js";
+import type { BlockType, Field, FieldType } from "../fields/field.types.js";
 import { t } from "../i18n/strings.js";
-import { handleFromLabel, isValidHandle, uniqueHandle } from "./handle.js";
+import { defaultOptionsFor, hasChoices, settingsProblem } from "./fieldSettingsDraft.js";
+import { cleanTypedHandle, handleFromLabel, isValidHandle, uniqueHandle } from "./handle.js";
 
 /**
  * The block types of a blocks field, as the blueprint builder edits them. Each block type
@@ -93,7 +94,7 @@ export function addInnerField(
       label,
       type,
       required: false,
-      options: type === "select" ? { choices: [], multiple: false } : {},
+      options: defaultOptionsFor(type),
       draft: { key, handleFollows: true },
     },
   ];
@@ -102,7 +103,7 @@ export function addInnerField(
 export function changeInnerField(
   fields: readonly Field[],
   key: string,
-  changes: Partial<Pick<Field, "label" | "required" | "options">>,
+  changes: Partial<Omit<Field, "handle" | "type" | "draft">>,
 ): Field[] {
   return fields.map((field) => {
     if (field.draft?.key !== key) return field;
@@ -111,6 +112,28 @@ export function changeInnerField(
     const others = fields.filter((other) => other !== field).map((other) => other.handle);
     return { ...updated, handle: uniqueHandle(handleFromLabel(changes.label) || "field", others) };
   });
+}
+
+/** A handle typed by hand stops following the label; clearing it hands it back. */
+export function renameInnerField(fields: readonly Field[], key: string, typed: string): Field[] {
+  return fields.map((field) => {
+    if (field.draft?.key !== key) return field;
+    const handle = cleanTypedHandle(typed);
+    return handle === ""
+      ? {
+          ...field,
+          handle: handleFromLabel(field.label) || "field",
+          draft: { key, handleFollows: true },
+        }
+      : { ...field, handle, draft: { key, handleFollows: false } };
+  });
+}
+
+/** Changes an inner field's type, starting its options afresh. */
+export function retypeInnerField(fields: readonly Field[], key: string, type: FieldType): Field[] {
+  return fields.map((field) =>
+    field.draft?.key === key ? { ...field, type, options: defaultOptionsFor(type) } : field,
+  );
 }
 
 export function moveInnerField(fields: readonly Field[], key: string, direction: -1 | 1): Field[] {
@@ -146,34 +169,29 @@ export function blockTypesProblem(blockTypes: readonly BlockType[]): string | nu
         });
       }
       fieldHandles.add(field.handle);
-      if (field.type === "select" && (field.options.choices ?? []).length === 0) {
+      if (hasChoices(field.type) && (field.options.choices ?? []).length === 0) {
         return t("builder.blocks.problem.choices", { name: blockType.name, label: field.label });
       }
+      const problem = settingsProblem(field, blockType.fields);
+      if (problem) return `${blockType.name}, ${field.label}: ${problem}`;
     }
   }
   return null;
 }
 
 /**
- * The block types as the API takes them: no bookkeeping, trimmed text, and only the options
- * that apply to each inner field's type (via `cleanOptions`, which the builder shares).
+ * The block types as the API takes them: no bookkeeping, trimmed text, and each inner field
+ * cleaned the way the builder cleans a top-level one (via `cleanField`, which it shares).
  */
 export function blockTypesForSaving(
   blockTypes: readonly BlockType[],
-  cleanOptions: (type: FieldType, options: FieldOptions) => FieldOptions,
+  cleanField: (field: Field) => Field,
 ): BlockType[] {
   return blockTypes.map((blockType) => ({
     handle: blockType.handle,
     name: blockType.name.trim(),
     ...(blockType.description?.trim() ? { description: blockType.description.trim() } : {}),
-    fields: blockType.fields.map((field) => ({
-      handle: field.handle,
-      label: field.label.trim(),
-      type: field.type,
-      required: field.required,
-      ...(field.helpText?.trim() ? { helpText: field.helpText.trim() } : {}),
-      options: cleanOptions(field.type, field.options),
-    })),
+    fields: blockType.fields.map(cleanField),
   }));
 }
 

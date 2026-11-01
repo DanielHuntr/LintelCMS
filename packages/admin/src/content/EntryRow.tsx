@@ -117,6 +117,16 @@ export function EntryRow({
             {entry.updatedBy && ` ${t("entries.updatedBy", { name: entry.updatedBy.name })}`}
           </span>
         </span>
+        {(entry.columns ?? []).length > 0 && (
+          <dl className="hidden max-w-[45%] shrink items-center gap-4 lg:flex">
+            {(entry.columns ?? []).map((column) => (
+              <div key={column.handle} className="flex min-w-0 max-w-48 flex-col">
+                <dt className="truncate text-caption text-label-tertiary">{column.label}</dt>
+                <dd className="truncate text-footnote text-label">{columnText(column.value)}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
         <EntryStatusBadge status={entry.status} />
       </Link>
 
@@ -153,6 +163,15 @@ export function EntryRow({
       )}
     </li>
   );
+}
+
+/** A column's value as short text: lists joined, switches as Yes or No, nothing as a dash. */
+export function columnText(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "–";
+  if (typeof value === "boolean") return value ? t("entries.column.yes") : t("entries.column.no");
+  if (Array.isArray(value)) return value.map((item) => columnText(item)).join(", ");
+  if (typeof value === "object") return "…";
+  return String(value);
 }
 
 function ParentButton({ move, icon: Icon }: { move: ParentMove; icon: LucideIcon }) {

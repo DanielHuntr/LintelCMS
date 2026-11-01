@@ -1,3 +1,5 @@
+import type { FieldConditionsInput } from "@lintel/field-conditions";
+
 /**
  * The shapes of blueprint fields and the values they store, exactly as the content API
  * sends them (see "Fieldtypes" in the phase 1 API contract).
@@ -22,7 +24,26 @@ export type FieldType =
   | "terms"
   | "blocks"
   | "page"
-  | "form";
+  | "form"
+  | "radio"
+  | "checkboxes"
+  | "buttonGroup"
+  | "range"
+  | "time"
+  | "slug"
+  | "code"
+  | "table"
+  | "video"
+  | "icon"
+  | "users"
+  | "hidden"
+  | "group"
+  | "repeater"
+  | "fieldset"
+  | "tab"
+  | "section"
+  | "spacer"
+  | "revealer";
 
 export interface SelectChoice {
   value: string;
@@ -71,6 +92,42 @@ export interface FieldOptions {
   /** blocks */
   blockTypes?: BlockType[];
   maxBlocks?: number;
+  /** radio, checkboxes: lay the choices out in a row */
+  inline?: boolean;
+  /** range: shown after the number, such as "%" */
+  suffix?: string;
+  /** slug: the field it is made from */
+  from?: string;
+  /** code */
+  language?: string;
+  /** table */
+  headerRow?: boolean;
+  maxRows?: number;
+  maxColumns?: number;
+  /** group, repeater, fieldset: the fields inside (a fieldset's are a copy, kept by the API) */
+  fields?: Field[];
+  /** repeater */
+  minRows?: number;
+  addLabel?: string;
+  /** fieldset: the handle of the saved fieldset */
+  fieldset?: string;
+  /** revealer: the button's words */
+  buttonLabel?: string;
+}
+
+/** How much of the row a field takes in the entry editor, in percent. */
+export const fieldWidths = [25, 33, 50, 66, 75, 100] as const;
+export type FieldWidth = (typeof fieldWidths)[number];
+
+/** A field's own rules on top of its type's; see "Validation" in the field settings. */
+export interface FieldValidation {
+  minLength?: number;
+  maxLength?: number;
+  min?: number;
+  max?: number;
+  pattern?: string;
+  unique?: boolean;
+  message?: string;
 }
 
 export interface Field {
@@ -80,6 +137,21 @@ export interface Field {
   required: boolean;
   helpText?: string;
   options: FieldOptions;
+  /** Left out when 100. */
+  width?: FieldWidth;
+  placeholder?: string;
+  /** The value a new entry starts with. */
+  default?: unknown;
+  /** Left out when "below". */
+  helpTextPosition?: "above" | "below";
+  readOnly?: boolean;
+  /** Kept out of the editor; the value is still saved. */
+  hidden?: boolean;
+  /** Shown as a column in the list of entries. */
+  showInList?: boolean;
+  validation?: FieldValidation;
+  /** Show or hide the field depending on others (see @lintel/field-conditions). */
+  conditions?: FieldConditionsInput;
   /** Only on fields inside a block type, while the builder edits them. */
   draft?: DraftBookkeeping;
 }
@@ -115,7 +187,23 @@ export interface BlockValue {
  * sends it when someone clears an optional field, so the value is removed on save.
  */
 export type FieldValue =
-  string | string[] | number | boolean | RichTextDocument | LinkValue | BlockValue[] | null;
+  | string
+  | string[]
+  | string[][]
+  | number
+  | boolean
+  | RichTextDocument
+  | LinkValue
+  | BlockValue[]
+  | RepeaterRow[]
+  | EntryData
+  | null;
+
+/** One row of a repeater: its own id, and its values. */
+export interface RepeaterRow {
+  id: string;
+  data: EntryData;
+}
 // Entries and terms fields store a list of ids (string[]); list fields a list of text.
 
 /** An entry's data: field handle to value. Values arrive from the API untyped. */
