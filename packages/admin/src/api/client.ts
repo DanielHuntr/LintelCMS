@@ -1,6 +1,9 @@
+import { siteHeaders } from "../sites/currentSite.js";
+
 /**
- * The one place the admin talks to the API. Every request sends the session cookie,
- * and every failure becomes an `ApiError` carrying the API's plain-language message.
+ * The one place the admin talks to the API. Every request sends the session cookie and
+ * the site being worked on (see src/sites), and every failure becomes an `ApiError`
+ * carrying the API's plain-language message.
  */
 
 /** Exported for the few requests `apiRequest` can't make, such as uploads that report progress. */
@@ -60,7 +63,8 @@ export async function apiRequest<Result>(path: string, options: RequestOptions =
 
 // Only send a content type with a body: the API rejects an empty JSON body.
 function requestHeaders(hasBody: boolean, extraHeaders: Record<string, string> = {}) {
-  const headers = hasBody ? { "content-type": "application/json", ...extraHeaders } : extraHeaders;
+  const withSite = { ...siteHeaders(), ...extraHeaders };
+  const headers = hasBody ? { "content-type": "application/json", ...withSite } : withSite;
   return Object.keys(headers).length > 0 ? headers : undefined;
 }
 

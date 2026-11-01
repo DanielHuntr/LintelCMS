@@ -11,6 +11,8 @@ import { t } from "../i18n/strings.js";
 import { EntryPreviewPane } from "../preview/EntryPreviewPane.js";
 import { EntrySeoPanel } from "../seo/EntrySeoPanel.js";
 import { useCan } from "../session/SessionContext.js";
+import { CopyToSiteDialog } from "../sites/CopyToSiteDialog.js";
+import { useCurrentSite } from "../sites/SiteContext.js";
 import type { Collection, Entry } from "./content.types.js";
 import { entryDraftReducer, hasUnsavedChanges, initialDraftState } from "./entryDraft.js";
 import { EntryEditorBar } from "./EntryEditorBar.js";
@@ -72,6 +74,10 @@ export function EntryEditor({
   const isPanelOpen = companion === "panel";
   const isPreviewOpen = companion === "preview";
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isCopyingToSite, setIsCopyingToSite] = useState(false);
+  const currentSite = useCurrentSite();
+  const otherSites =
+    currentSite?.sites.filter((site) => site.handle !== currentSite.site.handle) ?? [];
   const documentElement = useRef<HTMLDivElement>(null);
   const panelId = useId();
   const previewId = useId();
@@ -148,6 +154,21 @@ export function EntryEditor({
     });
   }
 
+  /** Saves first, so the copy has the latest changes. */
+  async function startCopyToSite() {
+    if (await saveExplicitly()) setIsCopyingToSite(true);
+  }
+
+  async function openCopy(copyId: string, siteHandle: string) {
+    setIsCopyingToSite(false);
+    await currentSite?.switchSite(siteHandle);
+    await navigate({
+      to: "/content/$collection/$entryId",
+      params: { collection: collection.handle, entryId: copyId },
+      ignoreBlocker: true,
+    });
+  }
+
   async function deleteEntry() {
     if (!(await actions.remove())) return;
     setIsConfirmingDelete(false);
@@ -184,6 +205,11 @@ export function EntryEditor({
         onTogglePanel={() => setCompanion((current) => (current === "panel" ? "none" : "panel"))}
         onDelete={entry && canDelete ? () => setIsConfirmingDelete(true) : undefined}
         onDuplicate={entry && canCreate ? () => void duplicateEntry() : undefined}
+        onCopyToSite={
+          entry && canCreate && otherSites.length > 0 && collection.siteScope !== "shared"
+            ? () => void startCopyToSite()
+            : undefined
+        }
         isPreviewOpen={isPreviewOpen}
         previewId={previewId}
         onTogglePreview={() =>
@@ -332,6 +358,15 @@ export function EntryEditor({
         onCancel={() => setIsConfirmingDelete(false)}
         onConfirm={() => void deleteEntry()}
       />
+
+      {isCopyingToSite && entry && (
+        <CopyToSiteDialog
+          entryId={entry.id}
+          sites={otherSites}
+          onCopied={(copyId, site) => void openCopy(copyId, site.handle)}
+          onClose={() => setIsCopyingToSite(false)}
+        />
+      )}
 
       <ConfirmDialog
         open={leaveWarning.isAsking}

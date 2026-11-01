@@ -4,6 +4,7 @@ import { AppMark } from "../design/AppMark.js";
 import { t } from "../i18n/strings.js";
 import { visibleSections } from "../navigation/sections.js";
 import { isMacPlatform } from "../search/useCommandPalette.js";
+import { SiteSwitcher } from "../sites/SiteSwitcher.js";
 import { SidebarAccount, type SignedInUser } from "./SidebarAccount.js";
 
 interface SidebarProps {
@@ -32,6 +33,8 @@ export function Sidebar({
         <AppMark />
         <span className="text-headline text-label">{t("app.name")}</span>
       </div>
+
+      <SiteSwitcher />
 
       {onOpenSearch && (
         <div className="px-2.5 pb-3">

@@ -59,6 +59,15 @@ export function SettingsPage() {
         <GroupedList header={t("settings.siteHeader")} footer={t("settings.moreSoon")}>
           {canSeeSiteSettings && (
             <GroupedListRow
+              icon={Globe}
+              iconTone="accent"
+              label={t("sites.title")}
+              description={t("settings.sitesDescription")}
+              to="/settings/sites"
+            />
+          )}
+          {canSeeSiteSettings && (
+            <GroupedListRow
               icon={Languages}
               label={t("languages.title")}
               description={t("settings.languagesDescription")}

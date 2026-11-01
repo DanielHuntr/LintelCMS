@@ -12,7 +12,12 @@ export function getTaxonomy(handle: string): Promise<Taxonomy> {
   return apiRequest<Taxonomy>(`/taxonomies/${encodeURIComponent(handle)}`);
 }
 
-export function createTaxonomy(taxonomy: { handle: string; name: string }): Promise<Taxonomy> {
+export function createTaxonomy(taxonomy: {
+  handle: string;
+  name: string;
+  /** The site it belongs to; null (or left out) for one every site shares. */
+  siteHandle?: string | null;
+}): Promise<Taxonomy> {
   return apiRequest<Taxonomy>("/taxonomies", { method: "POST", body: taxonomy });
 }
 

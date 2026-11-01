@@ -1,4 +1,5 @@
 import { contentModelStrings } from "./contentModelStrings.js";
+import { siteStrings } from "./siteStrings.js";
 
 /**
  * Every word the admin shows lives here, so the admin can be translated and
@@ -8,6 +9,7 @@ import { contentModelStrings } from "./contentModelStrings.js";
  */
 const english = {
   ...contentModelStrings,
+  ...siteStrings,
   "app.name": "Lintel",
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",
@@ -528,7 +530,7 @@ const english = {
   "settings.contentHeader": "Content",
   "settings.contentTypesDescription": "The kinds of content you write, and their fields",
   "settings.siteHeader": "Site",
-  "settings.moreSoonTitle": "Site details, domains and languages",
+  "settings.moreSoonTitle": "More site settings",
   "settings.moreSoon": "More settings arrive in later phases of the roadmap.",
   "contentTypes.title": "Content types",
   "contentTypes.subtitle": "Each kind of content and the fields it has.",

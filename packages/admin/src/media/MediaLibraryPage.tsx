@@ -8,10 +8,11 @@ import { LargeTitle } from "../design/LargeTitle.js";
 import { SegmentedControl } from "../design/SegmentedControl.js";
 import { TextField } from "../design/TextField.js";
 import { t } from "../i18n/strings.js";
+import { MediaFolderChoice, useMediaFolder } from "../sites/MediaFolderChoice.js";
 import { AssetDetailSheet } from "./AssetDetailSheet.js";
 import { AssetGrid, AssetGridPlaceholder } from "./AssetGrid.js";
 import { DropOverlay } from "./DropOverlay.js";
-import type { AssetKind } from "./media.api.js";
+import { type AssetKind, uploadAsset } from "./media.api.js";
 import { useAssetList, useRefreshAssetLists } from "./media.queries.js";
 import { acceptedFileTypes } from "./upload-rules.js";
 import { UploadTray } from "./UploadTray.js";
@@ -40,9 +41,19 @@ export function MediaLibraryPage({
   const [openAssetId, setOpenAssetId] = useState<string | null>(initialAssetId ?? null);
   const fileInput = useRef<HTMLInputElement>(null);
   const debouncedSearch = useDebouncedValue(search, SEARCH_DELAY_MILLISECONDS);
-  const assetList = useAssetList(debouncedSearch, filter === "all" ? undefined : filter);
+  const folder = useMediaFolder();
+  const assetList = useAssetList(
+    debouncedSearch,
+    filter === "all" ? undefined : filter,
+    folder.listFolder,
+  );
   const refreshLists = useRefreshAssetLists();
-  const uploads = useUploadQueue({ onUploaded: () => void refreshLists() });
+  const uploads = useUploadQueue({
+    onUploaded: () => void refreshLists(),
+    // With a site's folder open, new files go into it.
+    upload: (file, onProgress, signal) =>
+      uploadAsset(file, onProgress, signal, folder.uploadFolder),
+  });
   const isDraggingFiles = useFileDrop(uploads.addFiles, { enabled: canUpload });
 
   const assets = assetList.data?.pages.flatMap((page) => page.assets) ?? [];
@@ -50,7 +61,8 @@ export function MediaLibraryPage({
   const openIndex = assets.findIndex((asset) => asset.id === openAssetId);
   const openAsset = assets[openIndex];
   // A library with nothing in it at all gets the guide alone, not a search box for nothing.
-  const isLibraryEmpty = total === 0 && !debouncedSearch.trim() && filter === "all";
+  const isLibraryEmpty =
+    total === 0 && !debouncedSearch.trim() && filter === "all" && folder.listFolder === undefined;
 
   function chooseFiles() {
     fileInput.current?.click();
@@ -126,6 +138,7 @@ export function MediaLibraryPage({
             />
           </div>
         </div>
+        <MediaFolderChoice folder={folder} />
       </div>
 
       <LibraryContents

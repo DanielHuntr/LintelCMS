@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ChevronLeft, Copy, Ellipsis, Eye, PanelRight, Trash2 } from "lucide-react";
+import { ChevronLeft, Copy, Ellipsis, Eye, Globe, PanelRight, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { classNames } from "../design/classNames.js";
 import { Menu, type MenuItem } from "../design/Menu.js";
@@ -18,6 +18,8 @@ interface EntryEditorBarProps {
   onDelete: (() => void) | undefined;
   /** Undefined leaves "Duplicate entry" out (nothing saved yet, or not allowed). */
   onDuplicate: (() => void) | undefined;
+  /** Undefined leaves "Copy to site" out (one site only, a shared collection, or not allowed). */
+  onCopyToSite?: () => void;
   isPreviewOpen: boolean;
   previewId: string;
   onTogglePreview: () => void;
@@ -37,6 +39,7 @@ export function EntryEditorBar({
   onTogglePanel,
   onDelete,
   onDuplicate,
+  onCopyToSite,
   isPreviewOpen,
   previewId,
   onTogglePreview,
@@ -48,6 +51,9 @@ export function EntryEditorBar({
       onSelect: onTogglePreview,
     },
     ...(onDuplicate ? [{ label: t("editor.duplicate"), icon: Copy, onSelect: onDuplicate }] : []),
+    ...(onCopyToSite
+      ? [{ label: t("sites.copy.action"), icon: Globe, onSelect: onCopyToSite }]
+      : []),
     ...(onDelete
       ? [{ label: t("editor.delete"), icon: Trash2, tone: "danger" as const, onSelect: onDelete }]
       : []),

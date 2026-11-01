@@ -21,19 +21,19 @@ export const ASSETS_PER_PAGE = 60;
 export const mediaKeys = {
   all: ["media"] as const,
   lists: () => [...mediaKeys.all, "list"] as const,
-  list: (search: string, type: AssetKind | undefined) =>
-    [...mediaKeys.lists(), { search: search.trim(), type }] as const,
+  list: (search: string, type: AssetKind | undefined, folder?: string) =>
+    [...mediaKeys.lists(), { search: search.trim(), type, folder }] as const,
   asset: (assetId: string) => [...mediaKeys.all, "asset", assetId] as const,
 };
 
 type AssetPages = InfiniteData<{ assets: Asset[]; total: number }, number>;
 
 /** The library, newest first, a page at a time ("Show more" loads the next). */
-export function useAssetList(search: string, type: AssetKind | undefined) {
+export function useAssetList(search: string, type: AssetKind | undefined, folder?: string) {
   return useInfiniteQuery({
-    queryKey: mediaKeys.list(search, type),
+    queryKey: mediaKeys.list(search, type, folder),
     queryFn: ({ pageParam }) =>
-      listAssets({ search, type, page: pageParam, perPage: ASSETS_PER_PAGE }),
+      listAssets({ search, type, folder, page: pageParam, perPage: ASSETS_PER_PAGE }),
     initialPageParam: 1,
     getNextPageParam: (lastPage, pages) =>
       pages.length * ASSETS_PER_PAGE < lastPage.total ? pages.length + 1 : undefined,
