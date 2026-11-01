@@ -38,3 +38,39 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+
+  # The browser tests (packages/e2e): journeys, accessibility, screenshots and budgets,
+  # split across two machines. Traces and the HTML report are kept when something fails.
+  browser-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm --filter @lintel/e2e exec playwright install --with-deps chromium
+      - name: Run the browser tests
+        run: pnpm e2e --shard=${{ matrix.shard }}/2
+        env:
+          # Timing budgets are enforced in CI; set to "record" to only report them, or raise
+          # LINTEL_E2E_TIMING_SCALE for a slower runner (see packages/e2e/src/performance).
+          LINTEL_E2E_TIMING_BUDGETS: ${{ vars.LINTEL_E2E_TIMING_BUDGETS || 'enforce' }}
+          LINTEL_E2E_TIMING_SCALE: ${{ vars.LINTEL_E2E_TIMING_SCALE || '1' }}
+      - name: Keep the report and traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-tests-shard-${{ matrix.shard }}
+          path: |
+            packages/e2e/playwright-report
+            packages/e2e/test-results
+          retention-days: 14
