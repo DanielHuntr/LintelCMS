@@ -1,5 +1,5 @@
 // The public surface of @lintel/core. Anything not exported here is internal.
-export { buildServer, type ServerOptions } from "./server.js";
+export { buildServer, type MediaOptions, type ServerOptions } from "./server.js";
 export { loadConfig, type Config } from "./config.js";
 export type { Database, DatabaseKind, OpenedDatabase } from "./database/client.js";
 export { ActiveDatabase, openStartupDatabase } from "./database/active-database.js";
@@ -23,4 +23,18 @@ export type {
   RevisionSummaryResponse,
 } from "./entries/entries.schema.js";
 export type { DeliveredEntry, DeliveredList } from "./delivery/delivery.schema.js";
+export {
+  createAssetLookup,
+  noAssetUsage,
+  type AssetLookupSource,
+  type AssetUsageFinder,
+  type AssetUsage,
+  assetSchema,
+  focalPointSchema,
+  type Asset,
+  type FocalPoint,
+  LocalDiskStorage,
+  StoredFileMissingError,
+  type StorageDriver,
+} from "./media/index.js";
 export * from "./database/schema.js";

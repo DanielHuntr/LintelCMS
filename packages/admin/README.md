@@ -11,6 +11,8 @@ The control panel: a React app that talks to `@lintel/core`.
 | `src/navigation`    | The main sections and who can see them                          |
 | `src/dashboard`     | The home screen                                                 |
 | `src/sign-in`       | The sign-in screen                                              |
+| `src/media`         | The media library and the `MediaPicker` for image fields        |
+| `src/api`           | Talking to the API, and the shared TanStack Query cache         |
 | `src/setup`         | First-run setup: database, first account and kind of site       |
 | `src/session`       | Who is signed in, and signing in and out                        |
 | `src/sections`      | Placeholders for sections not built yet                         |

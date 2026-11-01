@@ -20,6 +20,7 @@ await runWithFriendlyErrors(async () => {
     database: activeDatabase,
     // Local development usually runs over plain HTTP, where Secure cookies wouldn't be sent.
     secureCookies: config.NODE_ENV !== "development",
+    publicApiUrl: config.API_PUBLIC_URL ?? `http://localhost:${config.API_PORT}`,
     logger: true,
   });
   server.addHook("onClose", () => activeDatabase.close());

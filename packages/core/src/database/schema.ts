@@ -11,3 +11,4 @@ export { collectionsTable } from "../collections/collections.table.js";
 export { entriesTable, revisionsTable } from "../entries/entries.table.js";
 export { sessionsTable } from "../sessions/sessions.table.js";
 export { settingsTable } from "../settings/settings.table.js";
+export { assetsTable } from "../media/media.table.js";

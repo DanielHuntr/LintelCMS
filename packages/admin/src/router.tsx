@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { DashboardPage } from "./dashboard/DashboardPage.js";
 import { AdminLayout } from "./layout/AdminLayout.js";
+import { MediaLibraryPage } from "./media/MediaLibraryPage.js";
 import { ComingSoonPage } from "./sections/ComingSoonPage.js";
 import { fetchCurrentSession, signOut } from "./session/session.api.js";
 import { ServerUnreachablePage } from "./setup/ServerUnreachablePage.js";
@@ -161,12 +162,20 @@ const sectionRoutes = [
   { path: "/content", title: "nav.content" },
   { path: "/design", title: "nav.design" },
   { path: "/commerce", title: "nav.commerce" },
-  { path: "/media", title: "nav.media" },
   { path: "/forms", title: "nav.forms" },
   { path: "/users", title: "nav.users" },
   { path: "/settings", title: "nav.settings" },
   { path: "/help", title: "nav.help" },
 ] as const;
+
+const mediaRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/media",
+  component: function MediaRoute() {
+    const { session } = adminRoute.useRouteContext();
+    return <MediaLibraryPage permissions={session.permissions} />;
+  },
+});
 
 const placeholderRoutes = sectionRoutes.map(({ path, title }) =>
   createRoute({
@@ -199,7 +208,7 @@ export const routeTree = rootRoute.addChildren([
     setupRoute,
     siteSetupRoute,
     signInRoute,
-    adminRoute.addChildren([dashboardRoute, ...placeholderRoutes]),
+    adminRoute.addChildren([dashboardRoute, mediaRoute, ...placeholderRoutes]),
   ]),
   ...designReviewRoutes,
 ]);

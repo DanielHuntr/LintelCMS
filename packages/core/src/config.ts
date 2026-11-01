@@ -22,6 +22,12 @@ const configSchema = z.object({
   ),
   API_PORT: z.coerce.number().int().positive().default(4000),
   ADMIN_ORIGIN: z.string().url().default("http://localhost:5173"),
+  // The API's address as browsers reach it, used in the URLs of uploaded files. Set it when
+  // the API sits behind a domain or proxy; it defaults to http://localhost:<API_PORT>.
+  API_PUBLIC_URL: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().url().optional(),
+  ),
   // Defaults to production so a server started without it gets the safe settings
   // (for example, session cookies that only travel over HTTPS). `pnpm dev` sets it
   // to development (see packages/core/development.env).
