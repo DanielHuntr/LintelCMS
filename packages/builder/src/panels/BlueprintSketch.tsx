@@ -6,11 +6,18 @@ import type { ReactNode } from "react";
  * bars, text as thin lines, buttons as pills, pictures as tinted boxes, columns side by side.
  * New templates get a thumbnail without anyone drawing one. Purely decorative.
  */
-export function BlueprintSketch({ blueprint }: { blueprint: NodeBlueprint }) {
+export function BlueprintSketch({
+  blueprint,
+  size = "regular",
+}: {
+  blueprint: NodeBlueprint;
+  /** Small fits two to a row in the Insert panel. */
+  size?: "regular" | "small";
+}) {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none flex h-24 w-full flex-col overflow-hidden rounded-control bg-surface p-2 hairline-ring"
+      className={`pointer-events-none flex w-full flex-col overflow-hidden rounded-control bg-surface hairline-ring ${size === "small" ? "h-16 p-1.5" : "h-24 p-2"}`}
     >
       {sketch(blueprint, "0")}
     </div>

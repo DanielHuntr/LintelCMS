@@ -6,6 +6,7 @@
  */
 export { MotionStudio } from "./studio/MotionStudio.js";
 export type { MotionStudioProps, StudioView } from "./studio/MotionStudio.js";
+export type { OpenGroups } from "./controls/CollapsibleGroup.js";
 export { PresetGallery } from "./gallery/PresetGallery.js";
 export { PreviewSample } from "./preview/PreviewSample.js";
 export { EasingEditor } from "./easing-editor/EasingEditor.js";

@@ -8,7 +8,11 @@ import {
 } from "@lintel/builder-model";
 import { useMemo } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
+import { usePreferenceStore } from "../preferences/builder-preferences.js";
+import { useRememberedOpenSections } from "../preferences/open-sections.js";
+import { OpenSectionsContext } from "../ui/CollapsibleSection.js";
 import { PanelSection } from "../ui/controls.js";
+import { contentGroupSummary, fieldsShownTogether, groupContentFields } from "./content-groups.js";
 import {
   ChoiceField,
   ImageField,
@@ -42,6 +46,14 @@ export function ContentPanel({
   const text = useBuilderText();
   const fields = definition?.editableFields ?? [];
   const isCode = node.type === "codeBlock";
+  const store = usePreferenceStore();
+  const openGroups = useRememberedOpenSections(store, "content.open", ["words", "picture"]);
+  const groups = useMemo(() => groupContentFields(definition?.editableFields ?? []), [definition]);
+  const isGrouped = !isCode && fields.length > fieldsShownTogether && groups.length > 1;
+  const groupSections = useMemo(
+    () => ({ ...openGroups, isContentDisabled: isLocked }),
+    [openGroups, isLocked],
+  );
 
   if (!isCode && fields.length === 0) {
     return (
@@ -51,28 +63,54 @@ export function ContentPanel({
     );
   }
   return (
-    <fieldset disabled={isLocked} className="m-0 min-w-0 border-0 p-0">
+    <fieldset disabled={isLocked && !isGrouped} className="m-0 min-w-0 border-0 p-0">
       <legend className="sr-only">{text("pageBuilder.content.legend")}</legend>
       {isLocked && (
         <p className="px-4 pt-3 text-caption text-warning">
           {text("pageBuilder.style.lockedNote")}
         </p>
       )}
-      <PanelSection title={definition?.label ?? node.type}>
-        {isCode ? (
-          <CodeMarkerFields node={node} pickImage={pickImage} onChange={onChange} />
-        ) : (
-          fields.map((field) => (
-            <ContentField
-              key={field.prop}
-              field={field}
-              node={node}
-              pickImage={pickImage}
-              onChange={onChange}
-            />
-          ))
-        )}
-      </PanelSection>
+      {isGrouped ? (
+        <OpenSectionsContext.Provider value={groupSections}>
+          <h2 className="px-4 pt-3 pb-1 text-footnote font-semibold text-label">
+            {definition?.label ?? node.type}
+          </h2>
+          {groups.map((group) => (
+            <PanelSection
+              key={group.id}
+              title={text(group.title)}
+              sectionId={group.id}
+              summary={contentGroupSummary(group, node, text)}
+            >
+              {group.fields.map((field) => (
+                <ContentField
+                  key={field.prop}
+                  field={field}
+                  node={node}
+                  pickImage={pickImage}
+                  onChange={onChange}
+                />
+              ))}
+            </PanelSection>
+          ))}
+        </OpenSectionsContext.Provider>
+      ) : (
+        <PanelSection title={definition?.label ?? node.type}>
+          {isCode ? (
+            <CodeMarkerFields node={node} pickImage={pickImage} onChange={onChange} />
+          ) : (
+            fields.map((field) => (
+              <ContentField
+                key={field.prop}
+                field={field}
+                node={node}
+                pickImage={pickImage}
+                onChange={onChange}
+              />
+            ))
+          )}
+        </PanelSection>
+      )}
     </fieldset>
   );
 }

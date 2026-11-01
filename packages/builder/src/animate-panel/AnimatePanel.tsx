@@ -4,6 +4,8 @@ import { MotionStudio, type StudioView, type Translate as MotionText } from "@li
 import { Play, Trash2 } from "lucide-react";
 import { useCallback } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
+import { usePreferenceStore } from "../preferences/builder-preferences.js";
+import { useRememberedOpenSections } from "../preferences/open-sections.js";
 import { Tip } from "../tour/Tip.js";
 
 interface AnimatePanelProps {
@@ -41,6 +43,11 @@ export function AnimatePanel({
 }: AnimatePanelProps) {
   const text = useBuilderText();
   const animation = node.animation;
+  // Simple's groups (when it plays, timing, less motion), remembered like the Style panel's.
+  const openGroups = useRememberedOpenSections(usePreferenceStore(), "animate.open", [
+    "trigger",
+    "timing",
+  ]);
   const change = useCallback(
     (spec: MotionSpec, presetId: string | undefined) => {
       onChange(presetId ? { spec, presetId } : { spec });
@@ -95,6 +102,7 @@ export function AnimatePanel({
         onChange={change}
         translate={motionText}
         views={showsTimeline ? allViews : beginnerViews}
+        openGroups={openGroups}
       />
       {!showsTimeline && animation && (
         <p className="text-caption text-label-secondary">

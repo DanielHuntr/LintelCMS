@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { createContext, useCallback, useContext, useState } from "react";
 
 /**
  * What the builder remembers about the person using it, on their own device: their skill
@@ -55,4 +55,11 @@ export function usePreference<Value extends string>(
     [store, key],
   );
   return [value, change];
+}
+
+/** The store the builder was given, for panels deep inside it (open sections, recent picks). */
+export const PreferenceStoreContext = createContext<PreferenceStore>(browserPreferenceStore);
+
+export function usePreferenceStore(): PreferenceStore {
+  return useContext(PreferenceStoreContext);
 }

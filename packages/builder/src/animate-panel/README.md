@@ -9,3 +9,7 @@ and the Simple sliders; Designers and Developers also get the timeline.
 
 On the published page the website loads the runtime only when the page has animations
 (see `render/page-animations.ts` and `packages/core/src/website`).
+
+Simple's settings sit in three collapsible groups: **When it plays** and **Speed and timing**
+open, **For less motion** closed, saying what's chosen. The builder passes the studio an
+`openGroups` that remembers them (`animate.open`).

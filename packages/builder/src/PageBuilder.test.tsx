@@ -127,6 +127,11 @@ describe("the page builder", () => {
       screen.queryByRole("group", { name: "Margin and padding, side by side" }),
     ).not.toBeInTheDocument();
     await user.click(screen.getByRole("radio", { name: "Advanced" }));
+    // Advanced opens with every group closed, each saying what's set inside.
+    const spacing = screen.getByRole("button", { name: /^Spacing/ });
+    expect(spacing).toHaveAttribute("aria-expanded", "false");
+    expect(spacing).toHaveTextContent("Inside 3XL");
+    await user.click(spacing);
     expect(
       screen.getByRole("group", { name: "Margin and padding, side by side" }),
     ).toBeInTheDocument();

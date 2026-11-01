@@ -6,10 +6,16 @@ import type {
   StyleState,
   StyleTarget,
 } from "@lintel/builder-model";
-import { type ReactNode, useMemo } from "react";
+import { type ReactNode, useId, useMemo } from "react";
 import type { BuilderStringKey } from "../i18n/builder-strings.js";
 import { useBuilderText } from "../i18n/builder-text.js";
-import { ChoiceGroup } from "../ui/controls.js";
+import { usePreferenceStore } from "../preferences/builder-preferences.js";
+import {
+  useLastUsedOpenSections,
+  useRememberedOpenSections,
+} from "../preferences/open-sections.js";
+import { OpenSectionsContext } from "../ui/CollapsibleSection.js";
+import { ChoiceGroup, inputClassName } from "../ui/controls.js";
 import {
   BackgroundSection,
   BordersSection,
@@ -47,6 +53,9 @@ interface StylePanelProps {
 
 const textTypes = new Set(["heading", "text", "quote", "list", "button", "link", "navigation"]);
 
+/** What a beginner sees open the first time: the groups people change most. */
+const simpleOpenAtFirst = ["layout", "spacing", "text"];
+
 const breakpointNotes: Record<Breakpoint, BuilderStringKey> = {
   base: "pageBuilder.style.editingDesktop",
   tablet: "pageBuilder.style.editingTablet",
@@ -82,6 +91,14 @@ export function StylePanel({
     }),
     [node.styles, target, onChange],
   );
+  const store = usePreferenceStore();
+  const simpleSections = useRememberedOpenSections(store, "style.simple.open", simpleOpenAtFirst);
+  const advancedSections = useLastUsedOpenSections(store, "style.advanced.lastUsed");
+  const sections = advanced ? advancedSections : simpleSections;
+  const openSections = useMemo(
+    () => ({ ...sections, isContentDisabled: isLocked }),
+    [sections, isLocked],
+  );
   const holdsElements = definition?.allowedChildren !== "none";
   const showsText = advanced || textTypes.has(node.type) || holdsElements;
 
@@ -102,18 +119,7 @@ export function StylePanel({
         ) : (
           note
         )}
-        {advanced && (
-          <ChoiceGroup<StateChoice>
-            label={text("pageBuilder.style.stateLabel")}
-            value={state}
-            onChange={onStateChange}
-            choices={[
-              { value: "none", label: text("pageBuilder.style.stateNone") },
-              { value: "hover", label: text("pageBuilder.style.stateHover") },
-              { value: "focus", label: text("pageBuilder.style.stateFocus") },
-            ]}
-          />
-        )}
+        {advanced && <StateSelect value={state} onChange={onStateChange} />}
         <p className="text-caption text-label-secondary">
           {target === "hover" || target === "focus"
             ? text("pageBuilder.style.editingState")
@@ -123,19 +129,50 @@ export function StylePanel({
           <p className="text-caption text-warning">{text("pageBuilder.style.lockedNote")}</p>
         )}
       </div>
-      <fieldset disabled={isLocked} className="m-0 min-w-0 border-0 p-0">
+      <fieldset className="m-0 min-w-0 border-0 p-0">
         <legend className="sr-only">{text("pageBuilder.style.legend")}</legend>
-        <StyleEditingContext.Provider value={editing}>
-          {holdsElements && <LayoutSection advanced={advanced} />}
-          <SpacingSection advanced={advanced} />
-          {advanced && <SizeSection />}
-          {showsText && <TypographySection advanced={advanced} />}
-          <BackgroundSection />
-          <BordersSection advanced={advanced} />
-          {advanced && <PositionSection />}
-          {advanced && <EffectsSection />}
-        </StyleEditingContext.Provider>
+        <OpenSectionsContext.Provider value={openSections}>
+          <StyleEditingContext.Provider value={editing}>
+            {holdsElements && <LayoutSection advanced={advanced} />}
+            <SpacingSection advanced={advanced} />
+            {advanced && <SizeSection />}
+            {showsText && <TypographySection advanced={advanced} />}
+            <BackgroundSection />
+            <BordersSection advanced={advanced} />
+            {advanced && <PositionSection />}
+            {advanced && <EffectsSection />}
+          </StyleEditingContext.Provider>
+        </OpenSectionsContext.Provider>
       </fieldset>
+    </div>
+  );
+}
+
+/** "Style for": always, while the pointer is over it, or while it has keyboard focus. */
+function StateSelect({
+  value,
+  onChange,
+}: {
+  value: StateChoice;
+  onChange: (state: StateChoice) => void;
+}) {
+  const text = useBuilderText();
+  const id = useId();
+  return (
+    <div className="flex items-center gap-2">
+      <label htmlFor={id} className="shrink-0 text-caption text-label-secondary">
+        {text("pageBuilder.style.stateLabel")}
+      </label>
+      <select
+        id={id}
+        value={value}
+        onChange={(event) => onChange(event.target.value as StateChoice)}
+        className={inputClassName}
+      >
+        <option value="none">{text("pageBuilder.style.stateNone")}</option>
+        <option value="hover">{text("pageBuilder.style.stateHover")}</option>
+        <option value="focus">{text("pageBuilder.style.stateFocus")}</option>
+      </select>
     </div>
   );
 }

@@ -2,15 +2,21 @@ import { colourTokens, fontTokens, tokenValue } from "@lintel/builder-model";
 import { AlignCenter, AlignJustify, AlignLeft, AlignRight } from "lucide-react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { ChoiceGroup, PanelSection } from "../ui/controls.js";
-import { useStyleField } from "./style-field.js";
+import { useStyleField, useStyleReader } from "./style-field.js";
+import { textSummary } from "./style-summaries.js";
 import { ColourPicker, StyleChips, StyleSelect, StyleTextInput } from "./StyleInputs.js";
 
 /** How text looks: size, weight, alignment and colour, then the finer details in Advanced. */
 export function TypographySection({ advanced }: { advanced: boolean }) {
   const text = useBuilderText();
+  const read = useStyleReader();
   const align = useStyleField("textAlign", text("pageBuilder.style.textAlign"));
   return (
-    <PanelSection title={text("pageBuilder.style.text")}>
+    <PanelSection
+      title={text("pageBuilder.style.text")}
+      sectionId="text"
+      summary={textSummary(read, text)}
+    >
       <StyleChips
         properties={["fontSize"]}
         label={text("pageBuilder.style.fontSize")}

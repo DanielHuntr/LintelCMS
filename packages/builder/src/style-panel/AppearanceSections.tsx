@@ -1,7 +1,15 @@
 import { colourTokens, radiusTokens } from "@lintel/builder-model";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { Labelled, PanelSection } from "../ui/controls.js";
-import { useStyleField } from "./style-field.js";
+import { useStyleField, useStyleReader } from "./style-field.js";
+import {
+  backgroundSummary,
+  bordersSummary,
+  effectsSummary,
+  positionSummary,
+  shadows,
+  sizeSummary,
+} from "./style-summaries.js";
 import {
   ColourPicker,
   StyleChips,
@@ -14,8 +22,13 @@ import {
 
 export function SizeSection() {
   const text = useBuilderText();
+  const read = useStyleReader();
   return (
-    <PanelSection title={text("pageBuilder.style.size")}>
+    <PanelSection
+      title={text("pageBuilder.style.size")}
+      sectionId="size"
+      summary={sizeSummary(read, text)}
+    >
       <div className="grid grid-cols-2 gap-2">
         <StyleTextInput property="width" label={text("pageBuilder.style.width")} />
         <StyleTextInput property="height" label={text("pageBuilder.style.height")} />
@@ -60,8 +73,13 @@ export function SizeSection() {
 
 export function PositionSection() {
   const text = useBuilderText();
+  const read = useStyleReader();
   return (
-    <PanelSection title={text("pageBuilder.style.position")}>
+    <PanelSection
+      title={text("pageBuilder.style.position")}
+      sectionId="position"
+      summary={positionSummary(read, text)}
+    >
       <div className="grid grid-cols-2 gap-2">
         <StyleSelect
           property="position"
@@ -90,8 +108,13 @@ export function PositionSection() {
 
 export function BackgroundSection() {
   const text = useBuilderText();
+  const read = useStyleReader();
   return (
-    <PanelSection title={text("pageBuilder.style.background")}>
+    <PanelSection
+      title={text("pageBuilder.style.background")}
+      sectionId="background"
+      summary={backgroundSummary(read)}
+    >
       <ColourPicker
         property="backgroundColor"
         label={text("pageBuilder.style.backgroundColour")}
@@ -103,8 +126,13 @@ export function BackgroundSection() {
 
 export function BordersSection({ advanced }: { advanced: boolean }) {
   const text = useBuilderText();
+  const read = useStyleReader();
   return (
-    <PanelSection title={text("pageBuilder.style.borders")}>
+    <PanelSection
+      title={text("pageBuilder.style.borders")}
+      sectionId="borders"
+      summary={bordersSummary(read, text)}
+    >
       <StyleChips
         properties={["borderRadius"]}
         label={text("pageBuilder.style.corners")}
@@ -147,18 +175,17 @@ export function BordersSection({ advanced }: { advanced: boolean }) {
   );
 }
 
-const shadows = {
-  soft: "0 1px 2px rgb(0 0 0 / 0.06), 0 4px 12px rgb(0 0 0 / 0.06)",
-  medium: "0 2px 4px rgb(0 0 0 / 0.06), 0 12px 32px rgb(0 0 0 / 0.1)",
-  strong: "0 4px 8px rgb(0 0 0 / 0.1), 0 24px 56px rgb(0 0 0 / 0.18)",
-};
-
 export function EffectsSection() {
   const text = useBuilderText();
+  const read = useStyleReader();
   const opacity = useStyleField("opacity", text("pageBuilder.style.opacity"));
   const percent = Math.round(Number(opacity.value ?? 1) * 100);
   return (
-    <PanelSection title={text("pageBuilder.style.effects")}>
+    <PanelSection
+      title={text("pageBuilder.style.effects")}
+      sectionId="effects"
+      summary={effectsSummary(read, text)}
+    >
       <Labelled
         label={text("pageBuilder.style.opacity")}
         overridden={opacity.isOverridden ? text("pageBuilder.style.changedHere") : undefined}

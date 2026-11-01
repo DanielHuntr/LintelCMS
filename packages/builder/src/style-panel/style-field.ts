@@ -28,6 +28,12 @@ export function useStyleEditing(): StyleEditing {
   return editing;
 }
 
+/** Reads any property's value in effect at the current target, for section summaries. */
+export function useStyleReader(): (property: StylePropertyName) => string | undefined {
+  const { styles, target } = useStyleEditing();
+  return (property) => resolveStyle(styles, target, property).value;
+}
+
 export interface StyleField {
   /** The value in effect at the current target, from wherever it cascades. */
   value: string | undefined;

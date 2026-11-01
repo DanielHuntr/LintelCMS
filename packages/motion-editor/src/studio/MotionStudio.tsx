@@ -4,6 +4,7 @@ import { motionSpecSchema } from "@lintel/motion/schema";
 import { Redo2, Sparkles, Undo2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { Button } from "../controls/Button.js";
+import type { OpenGroups } from "../controls/CollapsibleGroup.js";
 import { SegmentedControl } from "../controls/SegmentedControl.js";
 import { PresetGallery } from "../gallery/PresetGallery.js";
 import { useHistory } from "../history/useHistory.js";
@@ -35,6 +36,11 @@ export interface MotionStudioProps {
    * leaves out "advanced" until someone asks for the timeline). All three by default.
    */
   views?: readonly StudioView[];
+  /**
+   * Which of Simple's groups (trigger, timing, reducedMotion) are open, for hosts that
+   * remember it between visits. Left out, When and Timing start open.
+   */
+  openGroups?: OpenGroups;
 }
 
 /**
@@ -65,6 +71,7 @@ function Studio({
   previewSample,
   initialView,
   views: allowedViews = allViews,
+  openGroups,
 }: MotionStudioProps) {
   const t = useTranslate();
   const [chosenView, setView] = useState<StudioView>(
@@ -191,6 +198,7 @@ function Studio({
               onCommit={history.checkpoint}
               onReplay={() => replay.current()}
               onBrowse={() => setView("gallery")}
+              openGroups={openGroups}
             />
           ) : (
             <TimelineEditor
