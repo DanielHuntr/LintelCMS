@@ -79,6 +79,7 @@ export const RESERVED_COLLECTION_HANDLES = [
   "locales",
   // /delivery/forms/:handle serves forms (see src/forms).
   "forms",
+  "shop",
 ];
 
 /** `POST /collections`. Without a route pattern, entries live at /<handle>/{slug}. */

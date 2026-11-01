@@ -37,3 +37,4 @@ export {
   formSubmissionsTable,
   formSubmissionNotesTable,
 } from "../forms/forms.table.js";
+export * from "../commerce/commerce.tables.js";

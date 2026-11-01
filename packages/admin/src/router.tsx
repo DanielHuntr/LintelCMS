@@ -15,6 +15,7 @@ import type { EntryStatus } from "./content/content.types.js";
 import { EntriesListPage } from "./content/EntriesListPage.js";
 import type { EntriesFilter } from "./content/entriesQuery.js";
 import { BlueprintEditorPage } from "./content-types/BlueprintEditorPage.js";
+import { commerceRoutes } from "./commerce/commerceRoutes.js";
 import { contentModelRoutes } from "./content-model/contentModelRoutes.js";
 import { ContentTypesPage } from "./content-types/ContentTypesPage.js";
 import { NewContentTypePage } from "./content-types/NewContentTypePage.js";
@@ -340,10 +341,7 @@ const contentRoutes = [
 ];
 
 // One placeholder route per section. Each is replaced by real screens as its phase is built.
-const sectionRoutes = [
-  { path: "/design", title: "nav.design" },
-  { path: "/commerce", title: "nav.commerce" },
-] as const;
+const sectionRoutes = [{ path: "/design", title: "nav.design" }] as const;
 
 /** Help: the "Using Lintel" docs, bundled with the admin. The open topic is in the address. */
 const helpRoute = createRoute({
@@ -441,6 +439,7 @@ export const routeTree = rootRoute.addChildren([
       ...peopleRoutes(() => adminRoute),
       ...workflowsRoutes(() => adminRoute),
       ...formsRoutes(() => adminRoute),
+      ...commerceRoutes(() => adminRoute),
       ...placeholderRoutes,
       pluginScreensRoute,
     ]),

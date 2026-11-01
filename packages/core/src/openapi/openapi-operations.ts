@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { storefrontOperations } from "../commerce/storefront/storefront.openapi.js";
 import { blueprintHandleParamsSchema, blueprintSchema } from "../blueprints/blueprints.schema.js";
 import {
   collectionHandleParamsSchema,
@@ -69,7 +70,7 @@ export interface Operation {
   method: HttpMethod;
   /** In OpenAPI's style, with `{name}` for path parameters. */
   path: string;
-  tag: "Delivery" | "SEO" | "Collections" | "Entries" | "Media";
+  tag: "Delivery" | "SEO" | "Collections" | "Entries" | "Media" | "Shop";
   summary: string;
   description?: string;
   access: OperationAccess;
@@ -551,4 +552,5 @@ export const openApiOperations: Operation[] = [
       429: { description: "Too many submissions from one address." },
     },
   },
+  ...storefrontOperations,
 ];

@@ -1,4 +1,5 @@
 import { installedAdminPlugins } from "virtual:lintel-plugins";
+import { commerceAdminPlugin } from "../commerce/commerce.adminPlugin.js";
 import { formsAdminPlugin } from "../forms/forms.adminPlugin.js";
 import { seoAdminPlugin } from "../seo/seo.adminPlugin.js";
 import { automationsAdminPlugin } from "../workflows/automations.adminPlugin.js";
@@ -10,9 +11,10 @@ import type { AdminPluginDefinition } from "./adminPlugin.js";
  * ones come from a module the build writes from that file (see vite-plugin-lintel.ts), so
  * they are bundled and type-checked like the rest of the admin.
  *
- * The blog and the online shop have nothing of their own here (yet), so they aren't listed.
+ * The blog has nothing of its own here (yet), so it isn't listed.
  */
 export const adminPlugins: readonly AdminPluginDefinition[] = [
+  commerceAdminPlugin,
   formsAdminPlugin,
   automationsAdminPlugin,
   seoAdminPlugin,

@@ -7,6 +7,8 @@ import { apiTokensRoutes } from "./api-tokens/api-tokens.routes.js";
 import { authRoutes } from "./auth/auth.routes.js";
 import { blueprintsRoutes } from "./blueprints/blueprints.routes.js";
 import { collectionsRoutes } from "./collections/collections.routes.js";
+import type { CommerceOptions } from "./commerce/commerce.context.js";
+import { registerCommerce } from "./commerce/register-commerce.js";
 import type { ContentModelOptions } from "./content-model-sync/model-sync.service.js";
 import {
   registerContentModelSyncRoutes,
@@ -37,7 +39,7 @@ import { describeRequestForLog } from "./http/request-logging.js";
 import { addSecurityHeaders } from "./http/security-headers.js";
 import { type AssetUsageFinder, createAssetLookup } from "./media/asset-lookup.js";
 import { LocalDiskStorage } from "./media/local-disk-storage.js";
-import { mediaRoutes } from "./media/media.routes.js";
+import { type MediaRoutesOptions, mediaRoutes } from "./media/media.routes.js";
 import type { StorageDriver } from "./media/storage-driver.js";
 import { DEFAULT_TRANSFORM_CACHE_FOLDER } from "./media/transform-cache.js";
 import { openApiRoutes } from "./openapi/openapi.routes.js";
@@ -195,6 +197,8 @@ export interface ServerOptions {
   workflows?: WorkflowOptions;
   /** Forms' Cloudflare Turnstile check. Defaults to asking Cloudflare; tests pass their own. */
   formsTurnstileVerifier?: TurnstileVerifier;
+  /** How the online shop reaches payment services. Every part has a default. */
+  commerce?: CommerceOptions;
 }
 
 export interface WebhookOptions {
@@ -300,17 +304,29 @@ export function buildServer(options: ServerOptions) {
     runScheduledJobs: options.runScheduledJobs ?? true,
     adminOrigin: options.adminOrigin,
   });
-  // What the Forms plugin's routes need, and its retention job; its routes are the plugin's.
-  registerForms(server, {
+  const media: MediaRoutesOptions = {
     storage,
+    signedUrlSeconds: options.media?.signedUrlSeconds,
     cacheFolder: options.media?.transformCacheFolder ?? DEFAULT_TRANSFORM_CACHE_FOLDER,
+    // An asset still used by an entry can't be deleted.
     usageFinder: options.media?.usageFinder ?? {
       findEntriesUsingAsset: (assetId) => findEntriesUsingAsset(server.database, assetId),
     },
+  };
+  // What the Forms and Online shop plugins' routes need, and their timed jobs; their routes
+  // are the plugins' own.
+  registerForms(server, {
+    ...media,
     runScheduledJobs: options.runScheduledJobs ?? true,
     verifyTurnstile: options.formsTurnstileVerifier,
   });
-  server.register(async (api) => registerApiRoutes(api, options, storage), { prefix: apiPrefix });
+  registerCommerce(server, {
+    ...options.commerce,
+    // The Shopify importer saves product photos into the media library.
+    media,
+    runScheduledJobs: options.commerce?.runScheduledJobs ?? options.runScheduledJobs ?? true,
+  });
+  server.register(async (api) => registerApiRoutes(api, options, media), { prefix: apiPrefix });
 
   if (options.runScheduledJobs ?? true) {
     registerScheduledJobs(server);
@@ -323,7 +339,7 @@ export function buildServer(options: ServerOptions) {
 function registerApiRoutes(
   server: FastifyInstance,
   options: ServerOptions,
-  storage: StorageDriver,
+  media: MediaRoutesOptions,
 ): void {
   // API answers are about one person or change often, so shared caches must not keep them
   // unless a route says otherwise (the delivery API and files do).
@@ -371,15 +387,7 @@ function registerApiRoutes(
   server.register(websiteRoutes);
   server.register(pagesRoutes);
   registerContentModelSyncRoutes(server);
-  server.register(mediaRoutes, {
-    storage,
-    signedUrlSeconds: options.media?.signedUrlSeconds,
-    cacheFolder: options.media?.transformCacheFolder ?? DEFAULT_TRANSFORM_CACHE_FOLDER,
-    // An asset still used by an entry can't be deleted.
-    usageFinder: options.media?.usageFinder ?? {
-      findEntriesUsingAsset: (assetId) => findEntriesUsingAsset(server.database, assetId),
-    },
-  });
+  server.register(mediaRoutes, media);
 }
 
 /**

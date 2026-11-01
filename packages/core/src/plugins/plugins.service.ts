@@ -1,5 +1,4 @@
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { ensureFormBlockOnPages } from "../forms/form-block.js";
 import { readSetting, writeSetting } from "../settings/settings.service.js";
 import type { PluginCatalogue } from "./plugin-catalogue.js";
 import { UnknownPluginError } from "./plugins.errors.js";
