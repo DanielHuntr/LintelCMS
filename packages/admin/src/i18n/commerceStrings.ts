@@ -149,7 +149,7 @@ export const commerceStrings = {
   "shop.orders.items.one": "{count} item",
   "shop.orders.items.other": "{count} items",
   "shop.orders.orderTitle": "Order {name}",
-  "shop.orders.placedOn": "Placed {date}",
+  "shop.orders.placedOn": "Placed {date} by {email}",
   "shop.orders.cancel": "Cancel order",
   "shop.orders.refund": "Refund",
   "shop.orders.fulfil": "Mark as sent",
