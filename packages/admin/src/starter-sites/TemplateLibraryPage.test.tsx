@@ -13,6 +13,7 @@ const applied = {
   ],
   themeApplied: true,
   menuFilled: true,
+  menuHasLinks: false,
 };
 
 describe("the template library", () => {
@@ -51,6 +52,31 @@ describe("the template library", () => {
     expect(
       screen.getByText("Saved at /menu-2, because /menu was already in use."),
     ).toBeInTheDocument();
+  });
+
+  it("offers to add the pages to a main menu that already had links", async () => {
+    const user = userEvent.setup();
+    const { calls } = mockApi(({ method, url }) => {
+      if (url.pathname === "/website/address") return { siteAddress: null, defaultLocale: "en" };
+      if (method === "POST" && url.pathname === "/starter-sites/bakery/apply")
+        return { ...applied, menuFilled: false, menuHasLinks: true };
+      if (method === "POST" && url.pathname === "/starter-sites/menu") return { added: 2 };
+      return undefined;
+    });
+    renderScreen(<TemplateLibraryPage />, { permissions: ["*"] });
+    const list = await screen.findByRole("list", { name: "Templates to start from" });
+    const bakery = within(list).getByRole("article", { name: "Bakery and café" });
+    await user.click(within(bakery).getByRole("button", { name: /Use this template/ }));
+    await user.click(screen.getByRole("button", { name: "Add the pages" }));
+
+    expect(
+      await screen.findByText("Your main menu already has links, so we left it as it is."),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Add these pages to the menu" }));
+    expect(await screen.findByText("Added to your main menu.")).toBeInTheDocument();
+    expect(calls.find((call) => call.url.pathname === "/starter-sites/menu")?.body).toEqual({
+      entryIds: ["e1", "e2"],
+    });
   });
 
   it("only offers what the person may do", async () => {

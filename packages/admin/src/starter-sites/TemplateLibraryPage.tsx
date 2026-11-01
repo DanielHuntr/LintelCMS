@@ -11,7 +11,11 @@ import { Toggle } from "../design/Toggle.js";
 import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import { useSiteAddress } from "../website/website.queries.js";
-import { type AppliedStarterSite, applyStarterSite } from "./starter-sites.api.js";
+import {
+  type AppliedStarterSite,
+  addPagesToMainMenu,
+  applyStarterSite,
+} from "./starter-sites.api.js";
 import { StarterSiteCard } from "./StarterSiteCard.js";
 
 /**
@@ -181,6 +185,7 @@ function AppliedSummary({
           </li>
         ))}
       </ul>
+      <MenuNote result={result} />
       {published && siteAddress && (
         <a
           href={siteAddress}
@@ -193,5 +198,36 @@ function AppliedSummary({
         </a>
       )}
     </section>
+  );
+}
+
+/** Whether the pages are in the main menu, and a way to add them when it had links. */
+function MenuNote({ result }: { result: AppliedStarterSite }) {
+  const queryClient = useQueryClient();
+  const canEditMenus = useCan("navigation:update");
+  const add = useMutation({
+    mutationFn: () => addPagesToMainMenu(result.pages.map((page) => page.entryId)),
+    onSuccess: () => void queryClient.invalidateQueries(),
+  });
+  if (result.menuFilled || add.isSuccess) {
+    return (
+      <p role="status" className="text-footnote text-label-secondary">
+        {add.isSuccess ? t("templates.addedToMenu") : t("templates.menuFilled")}
+      </p>
+    );
+  }
+  if (!result.menuHasLinks || !canEditMenus) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <p className="text-footnote text-label-secondary">{t("templates.menuHasLinks")}</p>
+      <Button variant="tinted" onClick={() => add.mutate()} disabled={add.isPending}>
+        {add.isPending ? t("templates.addingToMenu") : t("templates.addToMenu")}
+      </Button>
+      {add.isError && (
+        <p role="alert" className="text-footnote text-danger">
+          {describeError(add.error)}
+        </p>
+      )}
+    </div>
   );
 }

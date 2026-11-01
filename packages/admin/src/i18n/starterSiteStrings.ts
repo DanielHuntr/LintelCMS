@@ -27,6 +27,11 @@ export const starterSiteStrings = {
   "templates.editDesign": "Edit {title}",
   "templates.movedSlug": "Saved at /{slug}, because /{wanted} was already in use.",
   "templates.viewSite": "View your website",
+  "templates.menuFilled": "Each page has a link in your main menu.",
+  "templates.menuHasLinks": "Your main menu already has links, so we left it as it is.",
+  "templates.addToMenu": "Add these pages to the menu",
+  "templates.addingToMenu": "Adding…",
+  "templates.addedToMenu": "Added to your main menu.",
   "templates.sectionsNote":
     "Looking for a single section, like prices or questions? Open any page in the page builder and choose Insert.",
   "done.startFromTemplate": "Start from a template",
