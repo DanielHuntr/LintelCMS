@@ -1,0 +1,91 @@
+import { BlockList, isIP } from "node:net";
+
+/**
+ * Which network addresses webhooks may not be sent to. Without this, anyone who can add
+ * a webhook could make the server send requests into its own network: a database's admin
+ * page, a cloud provider's metadata service (169.254.169.254), other machines in the office.
+ *
+ * The check runs on the address a name actually resolves to, at the moment of sending
+ * (see webhook-sender.ts), so a name that points somewhere harmless when the webhook is
+ * saved and somewhere private later is still caught.
+ */
+const privateAddresses = new BlockList();
+
+const privateIpv4Ranges: [string, number][] = [
+  ["0.0.0.0", 8], // "this network"
+  ["10.0.0.0", 8], // private
+  ["100.64.0.0", 10], // carrier-grade NAT
+  ["127.0.0.0", 8], // loopback
+  ["169.254.0.0", 16], // link-local, including cloud metadata services
+  ["172.16.0.0", 12], // private
+  ["192.0.0.0", 24], // protocol assignments
+  ["192.168.0.0", 16], // private
+  ["198.18.0.0", 15], // benchmarking
+  ["224.0.0.0", 4], // multicast
+  ["240.0.0.0", 4], // reserved, and broadcast
+];
+for (const [network, prefix] of privateIpv4Ranges) {
+  privateAddresses.addSubnet(network, prefix, "ipv4");
+}
+
+const privateIpv6Ranges: [string, number][] = [
+  ["::", 128], // unspecified
+  ["::1", 128], // loopback
+  ["64:ff9b:1::", 48], // local-use translation
+  ["fc00::", 7], // unique local
+  ["fe80::", 10], // link-local
+  ["ff00::", 8], // multicast
+];
+for (const [network, prefix] of privateIpv6Ranges) {
+  privateAddresses.addSubnet(network, prefix, "ipv6");
+}
+
+/** True for loopback, private, link-local and other addresses that aren't on the internet. */
+export function isPrivateAddress(address: string): boolean {
+  const version = isIP(address);
+  if (version === 4) {
+    return privateAddresses.check(address, "ipv4");
+  }
+  if (version === 6) {
+    const embeddedIpv4 = ipv4InsideIpv6(address);
+    if (embeddedIpv4) {
+      return privateAddresses.check(embeddedIpv4, "ipv4");
+    }
+    return privateAddresses.check(address, "ipv6");
+  }
+  // Not an address at all: refuse rather than guess.
+  return true;
+}
+
+/**
+ * "::ffff:127.0.0.1" and "::ffff:7f00:1" are both 127.0.0.1 written as IPv6; so are the
+ * NAT64 forms under 64:ff9b::/96. They're checked as the IPv4 address they really are.
+ */
+function ipv4InsideIpv6(address: string): string | undefined {
+  const lower = address.toLowerCase();
+  const prefix = ["::ffff:", "64:ff9b::"].find((start) => lower.startsWith(start));
+  if (!prefix) {
+    return undefined;
+  }
+  const rest = lower.slice(prefix.length);
+  if (isIP(rest) === 4) {
+    return rest;
+  }
+  const groups = rest.split(":");
+  if (groups.length !== 2 || !groups.every((group) => /^[0-9a-f]{1,4}$/.test(group))) {
+    return undefined;
+  }
+  const [high, low] = groups.map((group) => Number.parseInt(group, 16)) as [number, number];
+  return [high >> 8, high & 255, low >> 8, low & 255].join(".");
+}
+
+/** Host names that mean "this machine" whatever DNS says. */
+export function isLocalHostName(hostname: string): boolean {
+  const name = hostname.toLowerCase().replace(/\.$/, "");
+  return name === "localhost" || name.endsWith(".localhost") || name.endsWith(".local");
+}
+
+/** A URL's host without the brackets IPv6 addresses have in URLs. */
+export function bareHostname(url: URL): string {
+  return url.hostname.replace(/^\[(.*)\]$/, "$1");
+}

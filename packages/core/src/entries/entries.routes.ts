@@ -1,5 +1,7 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { getSignedIn, requirePermission } from "../auth/require-permission.js";
+import { announceContentEvent } from "../content-events/content-events.js";
+import { describeEntryForEvent } from "../content-events/entry-event-data.js";
 import { parseRequest } from "../http/http-errors.js";
 import { EntryNotFoundError } from "./entries.errors.js";
 import { listEntries } from "./entry-listing.service.js";
@@ -70,17 +72,37 @@ export async function entriesRoutes(server: FastifyInstance) {
   server.patch("/entries/:id", can("entries:update"), async (request) => {
     const id = readEntryId(request.params);
     const changes = parseRequest(updateEntryRequestSchema, request.body);
-    return saveEntry(server.database, id, changes, changeContext(request));
+    // Only a new slug or parent can move an entry, so only then is its old address needed.
+    const mayMove = changes.slug !== undefined || changes.parentId !== undefined;
+    const before = mayMove ? await describeEntryForEvent(server.database, id) : undefined;
+    const saved = await saveEntry(server.database, id, changes, changeContext(request));
+    if (before?.url && before.publishedAt !== null) {
+      const after = await describeEntryForEvent(server.database, id);
+      if (after.url && after.url !== before.url) {
+        await announceContentEvent(server, {
+          name: "entry.moved",
+          entry: after,
+          previousUrl: before.url,
+        });
+      }
+    }
+    return saved;
   });
 
   server.post("/entries/:id/publish", can("entries:publish"), async (request) => {
     const id = readEntryId(request.params);
-    return publishEntry(server.database, id, getSignedIn(request).user.id);
+    const published = await publishEntry(server.database, id, getSignedIn(request).user.id);
+    const entry = await describeEntryForEvent(server.database, id);
+    await announceContentEvent(server, { name: "entry.published", entry });
+    return published;
   });
 
   server.post("/entries/:id/unpublish", can("entries:publish"), async (request) => {
     const id = readEntryId(request.params);
-    return unpublishEntry(server.database, id, getSignedIn(request).user.id);
+    const unpublished = await unpublishEntry(server.database, id, getSignedIn(request).user.id);
+    const entry = await describeEntryForEvent(server.database, id);
+    await announceContentEvent(server, { name: "entry.unpublished", entry });
+    return unpublished;
   });
 
   server.post("/entries/:id/schedule", can("entries:publish"), async (request) => {
@@ -91,7 +113,9 @@ export async function entriesRoutes(server: FastifyInstance) {
 
   server.delete("/entries/:id", can("entries:delete"), async (request, reply) => {
     const id = readEntryId(request.params);
+    const entry = await describeEntryForEvent(server.database, id);
     await deleteEntry(server.database, id);
+    await announceContentEvent(server, { name: "entry.deleted", entry });
     return reply.code(204).send();
   });
 }

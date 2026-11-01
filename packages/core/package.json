@@ -18,6 +18,11 @@
       "types": "./dist/media/focal-crop.d.ts",
       "development": "./src/media/focal-crop.ts",
       "default": "./dist/media/focal-crop.js"
+    },
+    "./seo-titles": {
+      "types": "./dist/seo/seo-titles.d.ts",
+      "development": "./src/seo/seo-titles.ts",
+      "default": "./dist/seo/seo-titles.js"
     }
   },
   "scripts": {
@@ -44,6 +49,8 @@
     "drizzle-orm": "^0.45.4",
     "fastify": "^5.12.7",
     "file-type": "^22.3.0",
+    "graphql": "^16.14.2",
+    "graphql-yoga": "^6.0.1",
     "postgres": "^4.0.0",
     "sharp": "^0.35.5",
     "zod": "^4.6.7"

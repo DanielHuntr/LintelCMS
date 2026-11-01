@@ -1,6 +1,7 @@
 import multipart from "@fastify/multipart";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { getSignedIn, requirePermission } from "../auth/require-permission.js";
+import { announceContentEvent } from "../content-events/content-events.js";
 import { parseRequest } from "../http/http-errors.js";
 import type { AssetUsageFinder } from "./asset-lookup.js";
 import { contentDisposition } from "./content-disposition.js";
@@ -13,6 +14,7 @@ import {
   NoFileUploadedError,
 } from "./media.errors.js";
 import {
+  type Asset,
   assetIdParamsSchema,
   fileTransformQuerySchema,
   listAssetsQuerySchema,
@@ -75,6 +77,9 @@ export async function mediaRoutes(server: FastifyInstance, options: MediaRoutesO
     async (request, reply) => {
       const file = await readUploadedFile(request);
       const { asset, created } = await uploadAsset(context(), file, getSignedIn(request).user.id);
+      if (created) {
+        await announceContentEvent(server, { name: "asset.uploaded", asset: eventDataFor(asset) });
+      }
       return reply.code(created ? 201 : 200).send(asset);
     },
   );
@@ -96,14 +101,17 @@ export async function mediaRoutes(server: FastifyInstance, options: MediaRoutesO
     "/media/:id",
     { preHandler: requirePermission("media:delete") },
     async (request, reply) => {
+      const assetId = parseAssetId(request.params);
+      const asset = await getAsset(context(), assetId);
       try {
-        await deleteAsset(context(), parseAssetId(request.params));
+        await deleteAsset(context(), assetId);
       } catch (error) {
         if (error instanceof AssetInUseError) {
           return sendAssetInUse(reply, error);
         }
         throw error;
       }
+      await announceContentEvent(server, { name: "asset.deleted", asset: eventDataFor(asset) });
       return reply.code(204).send();
     },
   );
@@ -160,6 +168,10 @@ async function readUploadedFile(request: FastifyRequest) {
     }
     throw error;
   }
+}
+
+function eventDataFor(asset: Asset) {
+  return { id: asset.id, filename: asset.filename, mimeType: asset.mimeType, url: asset.url };
 }
 
 /** A malformed id can't match any asset, so it's a 404 like any other missing one. */

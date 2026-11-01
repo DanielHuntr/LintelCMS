@@ -32,6 +32,12 @@ const configSchema = z.object({
   // (for example, session cookies that only travel over HTTPS). `pnpm dev` sets it
   // to development (see packages/core/development.env).
   NODE_ENV: z.enum(["development", "test", "production"]).default("production"),
+  // Lets webhooks go to localhost and private network addresses, for testing a receiver on
+  // your own machine. Leave it off on a real server (see src/webhooks/README.md).
+  WEBHOOKS_ALLOW_PRIVATE_ADDRESSES: z
+    .enum(["true", "false", ""])
+    .default("false")
+    .transform((value) => value === "true"),
 });
 
 export type Config = z.infer<typeof configSchema>;

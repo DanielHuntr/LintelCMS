@@ -16,3 +16,6 @@ Current settings:
 
 - `enabledPlugins`: which plugins are switched on (see `src/plugins`).
 - `siteType` and `siteSetupCompleted`: the "What are you building?" setup step (see `src/setup`).
+- `deliveryRequiresToken` and `deliveryAllowedOrigins`: who may read published content
+  (see `src/delivery`).
+- `seoDefaults`: the SEO plugin's site-wide defaults (see `src/seo`).

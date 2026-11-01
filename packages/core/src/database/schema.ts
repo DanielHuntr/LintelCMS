@@ -12,3 +12,6 @@ export { entriesTable, revisionsTable } from "../entries/entries.table.js";
 export { sessionsTable } from "../sessions/sessions.table.js";
 export { settingsTable } from "../settings/settings.table.js";
 export { assetsTable } from "../media/media.table.js";
+export { apiTokensTable } from "../api-tokens/api-tokens.table.js";
+export { webhooksTable, webhookDeliveriesTable } from "../webhooks/webhooks.table.js";
+export { entrySeoTable, redirectsTable } from "../seo/seo.table.js";
