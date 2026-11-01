@@ -103,9 +103,10 @@ export async function readUmbracoExport(input: SourceFiles): Promise<SourceSite>
     if (entry) site.entries.push(entry);
   }
   placeAddresses(site.entries);
-  site.contentTypes = [...typesByAlias.values()].filter((type) =>
-    site.entries.some((entry) => entry.typeKey === type.key),
-  );
+  // Types allowed at the top first, as the content tree shows them.
+  site.contentTypes = [...typesByAlias.values()]
+    .filter((type) => site.entries.some((entry) => entry.typeKey === type.key))
+    .sort((first, second) => Number(second.allowedAtRoot) - Number(first.allowedAtRoot));
 
   const dictionary = await configs("Dictionary");
   if (dictionary.length > 0) site.globals.push(readDictionary(dictionary));
@@ -158,7 +159,8 @@ function readContent(
 ): SourceEntry | null {
   const info = asNode(node.Info);
   if (text(info.Trashed) === "true") return null;
-  const type = types.get(text(info.ContentType));
+  // "ContentType" is read as a list everywhere, since document types list their children.
+  const type = types.get(text(asList(info.ContentType)[0]));
   if (!type) return null;
   const name = attribute(asNode(info.NodeName), "Default") || attribute(node, "Alias");
   const parent = normaliseKey(attribute(asNode(info.Parent), "Key"));
