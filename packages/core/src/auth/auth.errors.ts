@@ -1,4 +1,5 @@
 import { HttpError } from "../http/http-errors.js";
+import type { PasswordTip } from "./password-strength.js";
 
 /**
  * Wrong email and wrong password share one error with one message, so the response
@@ -33,5 +34,29 @@ export class TooManySignInAttemptsError extends HttpError {
       "TOO_MANY_SIGN_IN_ATTEMPTS",
       `Too many sign-in attempts. Please try again in ${retryAfter}.`,
     );
+  }
+}
+
+const weakPasswordAdvice: Record<PasswordTip, string> = {
+  "avoid-personal-details": "Leave out your name and email.",
+  "avoid-common-passwords": "It's close to a password many people use.",
+  "avoid-keyboard-patterns": "Avoid rows of keys like qwerty.",
+  "avoid-repeats": "Avoid repeated letters or words.",
+  "avoid-sequences": "Avoid sequences like abc or 123.",
+  "avoid-dates": "Avoid dates and years.",
+  "use-more-characters": "Use at least 12 characters.",
+  "add-another-word": "Add another word or two.",
+};
+
+/**
+ * A new password that is long enough but easy to guess (see password-strength.ts). The same
+ * 400 INVALID_REQUEST as other bad details, with `fields.password`, so the admin can show it
+ * under the password field.
+ */
+export class WeakPasswordError extends HttpError {
+  constructor(tip: PasswordTip | undefined) {
+    const advice = tip ? ` ${weakPasswordAdvice[tip]}` : "";
+    const message = `That password would be too easy to guess.${advice}`;
+    super(400, "INVALID_REQUEST", message, { fields: { password: message } });
   }
 }

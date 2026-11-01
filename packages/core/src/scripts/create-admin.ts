@@ -37,7 +37,11 @@ await runWithFriendlyErrors(async () => {
     fail(`${z.prettifyError(parsedArguments.error)}\n\n${USAGE}`);
   }
 
-  const password = await readNewPassword("LINTEL_ADMIN_PASSWORD", "Nothing was created.");
+  const password = await readNewPassword(
+    "LINTEL_ADMIN_PASSWORD",
+    "Nothing was created.",
+    parsedArguments.data,
+  );
   const activeDatabase = await openConfiguredDatabase(loadConfig());
 
   try {

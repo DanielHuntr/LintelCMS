@@ -1,5 +1,6 @@
 import { parseArgs } from "node:util";
 import { z } from "zod";
+import { WeakPasswordError } from "../auth/auth.errors.js";
 import { loadConfig, loadProjectEnvFile } from "../config.js";
 import { emailSchema } from "../users/users.schema.js";
 import { resetPassword, UserNotFoundError } from "../users/users.service.js";
@@ -31,7 +32,11 @@ await runWithFriendlyErrors(async () => {
     fail(`${z.prettifyError(parsedArguments.error)}\n\n${USAGE}`);
   }
 
-  const password = await readNewPassword("LINTEL_NEW_PASSWORD", "Nothing was changed.");
+  // The name isn't known until the user is found; resetPassword checks again with it.
+  const password = await readNewPassword("LINTEL_NEW_PASSWORD", "Nothing was changed.", {
+    name: "",
+    email: parsedArguments.data.email,
+  });
   const activeDatabase = await openConfiguredDatabase(loadConfig());
 
   try {
@@ -45,7 +50,7 @@ await runWithFriendlyErrors(async () => {
       `Changed the password for ${user.name} <${user.email}> and signed them out of ${signedOut}.\n`,
     );
   } catch (error) {
-    if (!(error instanceof UserNotFoundError)) {
+    if (!(error instanceof UserNotFoundError || error instanceof WeakPasswordError)) {
       throw error;
     }
     // Not fail(): exiting here would skip closing the database below.

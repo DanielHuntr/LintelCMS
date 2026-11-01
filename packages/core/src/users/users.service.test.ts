@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { WeakPasswordError } from "../auth/auth.errors.js";
 import { verifyPassword } from "../auth/passwords.js";
 import { rolesTable } from "../roles/roles.table.js";
 import { startSession } from "../sessions/sessions.service.js";
@@ -9,6 +10,7 @@ import { findUserByEmail } from "./users.repository.js";
 import {
   createAdmin,
   EmailAlreadyUsedError,
+  requireStrongPassword,
   resetPassword,
   UserNotFoundError,
 } from "./users.service.js";
@@ -36,6 +38,13 @@ describe("createAdmin", () => {
     expect(roles.map((role) => role.name)).toEqual(["Super admin"]);
   });
 
+  it("refuses an easily guessed password and creates nobody", async () => {
+    const attempt = createAdmin(testDatabase.database, { ...ADMIN, password: "password1234" });
+
+    await expect(attempt).rejects.toThrow(WeakPasswordError);
+    expect(await findUserByEmail(testDatabase.database, "default", ADMIN.email)).toBeUndefined();
+  });
+
   it("refuses an email that is already used, and changes nothing", async () => {
     await createAdmin(testDatabase.database, ADMIN);
 
@@ -61,6 +70,16 @@ describe("resetPassword", () => {
     expect(await verifyPassword(ADMIN.password, stored!.passwordHash!)).toBe(false);
   });
 
+  it("refuses a new password built from the user's own name, keeping the old one", async () => {
+    await createAdmin(testDatabase.database, ADMIN);
+
+    const attempt = resetPassword(testDatabase.database, "ana@example.com", "ana admin 2024");
+
+    await expect(attempt).rejects.toThrow("Leave out your name and email.");
+    const stored = await findUserByEmail(testDatabase.database, "default", "ana@example.com");
+    expect(await verifyPassword(ADMIN.password, stored!.passwordHash!)).toBe(true);
+  });
+
   it("says when there is no such user, and suggests the closest email", async () => {
     await createAdmin(testDatabase.database, ADMIN);
 
@@ -69,6 +88,17 @@ describe("resetPassword", () => {
     await expect(attempt).rejects.toThrow(UserNotFoundError);
     await expect(attempt).rejects.toThrow(
       "There is no user with the email ana@exmaple.com. Did you mean ana@example.com?",
+    );
+  });
+});
+
+describe("requireStrongPassword", () => {
+  it("passes a strong password and stops a weak one with a tip", () => {
+    expect(() =>
+      requireStrongPassword("maple-orbit-cactus-river-42", "Ana", "ana@example.com"),
+    ).not.toThrow();
+    expect(() => requireStrongPassword("sunshine1234", "Ana", "ana@example.com")).toThrow(
+      "That password would be too easy to guess. It's close to a password many people use.",
     );
   });
 });
