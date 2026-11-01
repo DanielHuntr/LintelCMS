@@ -465,3 +465,34 @@ export async function findEntryValuesMentioning(
       ),
     );
 }
+
+/**
+ * Pages on one site and language with this slug in other collections that have addresses:
+ * the only entries whose address can be the same as a page's (a collection's own slugs are
+ * unique already).
+ */
+export async function findSameSlugPages(
+  database: DatabaseOrTransaction,
+  entry: Pick<Entry, "id" | "siteId" | "locale" | "slug" | "collectionId">,
+) {
+  return database
+    .select({
+      id: entriesTable.id,
+      slug: entriesTable.slug,
+      publishedAt: entriesTable.publishedAt,
+      title: sql<string | null>`${entriesTable.data}->>'title'`,
+      routePattern: collectionsTable.routePattern,
+    })
+    .from(entriesTable)
+    .innerJoin(collectionsTable, eq(collectionsTable.id, entriesTable.collectionId))
+    .where(
+      and(
+        eq(entriesTable.siteId, entry.siteId),
+        eq(entriesTable.locale, entry.locale),
+        eq(entriesTable.slug, entry.slug),
+        sql`${entriesTable.id} <> ${entry.id}`,
+        sql`${entriesTable.collectionId} <> ${entry.collectionId}`,
+        sql`${collectionsTable.routePattern} is not null`,
+      ),
+    );
+}

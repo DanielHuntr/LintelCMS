@@ -87,3 +87,14 @@ export class SameSiteCopyError extends HttpError {
     super(400, "INVALID_REQUEST", `This entry is already on ${siteName}. Pick another site.`);
   }
 }
+
+/**
+ * Two pages can't answer on the same address on one site: visitors would only ever reach
+ * one of them. Shown on the slug, since changing it is the usual way out.
+ */
+export class AddressTakenError extends HttpError {
+  constructor(address: string, otherTitle: string) {
+    const message = `“${otherTitle || "Another page"}” already uses the address ${address} on this site. Choose a different slug, or put this page somewhere else.`;
+    super(409, "ADDRESS_TAKEN", message, { fields: { slug: message } });
+  }
+}

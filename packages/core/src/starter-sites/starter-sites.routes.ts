@@ -9,14 +9,20 @@ import {
   applyStarterSiteRequestSchema,
   starterSiteParamsSchema,
 } from "./starter-sites.schema.js";
-import { addPagesToMainMenu, applyStarterSite } from "./starter-sites.service.js";
+import {
+  addPagesToMainMenu,
+  applyStarterSite,
+  findExistingPages,
+} from "./starter-sites.service.js";
 
 /**
  * HTTP only:
  *
- *   POST /starter-sites/:id/apply  (entries:create)  { useTheme?, publish? }
+ *   GET  /starter-sites/:id/existing-pages  (entries:read)  -> { pageCount, hasHome, clashes }
+ *   POST /starter-sites/:id/apply  (entries:create)  { useTheme?, publish?, existingPages? }
  *        -> 201 { starterSiteId, pages: [{ entryId, title, slug, wantedSlug, published }],
- *                 themeApplied, menuFilled, menuHasLinks }
+ *                 themeApplied, menuFilled, menuHasLinks, skippedHome, replacedCount }
+ *        409 SITE_HAS_PAGES when the site has pages and existingPages is left as "ask"
  *   POST /starter-sites/menu       (navigation:update)  { entryIds } -> { added }
  *        links the pages at the end of the main menu, when it already had links
  *
@@ -25,6 +31,15 @@ import { addPagesToMainMenu, applyStarterSite } from "./starter-sites.service.js
  * the admin reads directly.
  */
 export async function starterSitesRoutes(server: FastifyInstance) {
+  server.get(
+    "/starter-sites/:id/existing-pages",
+    { preHandler: requirePermission("entries:read") },
+    async (request) => {
+      const { id } = parseRequest(starterSiteParamsSchema, request.params);
+      return findExistingPages(server.database, id, await resolveEditingSite(request));
+    },
+  );
+
   server.post(
     "/starter-sites/:id/apply",
     { preHandler: requirePermission("entries:create") },

@@ -15,6 +15,7 @@ import {
   duplicateBranch,
   listBranchIds,
   publishEntries,
+  summarizeBranches,
   unpublishEntries,
 } from "./content-tree-branches.service.js";
 import {
@@ -22,6 +23,7 @@ import {
   collectionItemsQuerySchema,
   type BatchResult,
   bulkActionRequestSchema,
+  bulkSummaryRequestSchema,
   type MoveEntryRequest,
   moveEntryRequestSchema,
   sortChildrenRequestSchema,
@@ -60,6 +62,7 @@ import { listCollectionItems } from "./collection-view.service.js";
  *   POST /content-tree/entries/:id/duplicate      (entries:create)  { includeDescendants } -> 201
  *   POST /content-tree/entries/:id/recycle        (entries:delete)  -> 201 { itemId, entryIds }
  *   POST /content-tree/bulk                       (depends on the action)
+ *   POST /content-tree/bulk/summary               (entries:read)    { entryIds } -> { items, totalCount }
  */
 export async function contentTreeRoutes(server: FastifyInstance) {
   const can = (permission: Permission) => ({ preHandler: requirePermission(permission) });
@@ -151,16 +154,12 @@ export async function contentTreeRoutes(server: FastifyInstance) {
       return moveAll(request, entryIds, parentId ?? null);
     }
     requireToo(request, "entries:delete");
-    const result: BatchResult = { changed: [], skipped: [] };
-    for (const entryId of entryIds) {
-      // An entry under another one in the same batch has already gone with it.
-      const binned = await recycleAndAnnounce(request, entryId).catch((error: unknown) => {
-        if (error instanceof EntryNotFoundError) return undefined;
-        throw error;
-      });
-      if (binned) result.changed.push(entryId);
-    }
-    return result;
+    return recycleAll(request, entryIds);
+  });
+
+  server.post("/content-tree/bulk/summary", can("entries:read"), async (request) => {
+    const { entryIds } = parseRequest(bulkSummaryRequestSchema, request.body);
+    return summarizeBranches(server.database, entryIds);
   });
 }
 
@@ -208,6 +207,25 @@ async function unpublishAndAnnounce(request: FastifyRequest, ids: string[]): Pro
     );
   }
   return result;
+}
+
+/**
+ * Deletes each picked entry with everything under it, one recycle bin item each, so Undo
+ * can restore them all. An entry under another picked one has already gone with it.
+ */
+async function recycleAll(request: FastifyRequest, entryIds: readonly string[]) {
+  const changed: string[] = [];
+  const recycleBinItemIds: string[] = [];
+  for (const entryId of entryIds) {
+    const binned = await recycleAndAnnounce(request, entryId).catch((error: unknown) => {
+      if (error instanceof EntryNotFoundError) return undefined;
+      throw error;
+    });
+    if (!binned) continue;
+    changed.push(entryId);
+    recycleBinItemIds.push(binned.itemId);
+  }
+  return { changed, skipped: [], recycleBinItemIds } satisfies BatchResult;
 }
 
 async function recycleAndAnnounce(request: FastifyRequest, entryId: string) {

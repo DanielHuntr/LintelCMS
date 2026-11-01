@@ -10,3 +10,14 @@ export class StarterSiteNotFoundError extends HttpError {
     this.name = "StarterSiteNotFoundError";
   }
 }
+
+/** The site has pages already, and the request didn't say what to do with them. */
+export class SiteHasPagesError extends HttpError {
+  constructor(pageCount: number) {
+    super(
+      409,
+      "SITE_HAS_PAGES",
+      `This site already has ${pageCount === 1 ? "a page" : `${pageCount} pages`}. Choose whether the template's pages replace them or go alongside them.`,
+    );
+  }
+}

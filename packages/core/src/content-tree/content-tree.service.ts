@@ -7,6 +7,7 @@ import {
   listCollectionsWithDetails,
 } from "../collections/collections.repository.js";
 import type { Collection } from "../collections/collections.table.js";
+import { checkAddressIsFree } from "../entries/address-clash.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import { ReorderNotAllowedError } from "../entries/entries.errors.js";
@@ -296,6 +297,7 @@ export async function moveEntry(
     if (request.parentId !== entry.parentId) {
       const left = previousSiblings.filter((id) => id !== entry.id);
       await renumberSiblings(transaction, left, entry.parentId);
+      await checkAddressIsFree(transaction, entry.id);
     }
   });
 
