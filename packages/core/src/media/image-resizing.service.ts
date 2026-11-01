@@ -1,13 +1,10 @@
 import { loadImageLibrary } from "./image-library.js";
+import type { ImageResizingStatus } from "./media.schema.js";
 
-export interface ImageResizingStatus {
-  /** False when sharp can't load on this server, so images are served at their original size. */
-  available: boolean;
-  /** Why not, in sharp's words, for whoever looks after the server. */
-  problem: string | null;
-}
-
-/** Whether this server can resize images. The admin's media library warns when it can't. */
+/**
+ * Whether this server can resize images: false when sharp can't load, so images are
+ * served at their original size, with sharp's reason. The admin's media library warns.
+ */
 export async function findImageResizingStatus(): Promise<ImageResizingStatus> {
   const library = await loadImageLibrary();
   return library.available

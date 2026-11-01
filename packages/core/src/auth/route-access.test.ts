@@ -40,6 +40,7 @@ const PUBLIC_ROUTES: Record<string, string> = {
   "POST /invitations/preview": "needs the emailed invitation's token",
   "POST /invitations/accept": "needs the emailed invitation's token",
   "POST /account/email/confirm": "needs the link emailed to the new address",
+  "POST /system/run-scheduled-jobs": "for the host's cron, needs the cron secret",
 };
 
 const SIGNED_IN_ROUTES = new Set([
