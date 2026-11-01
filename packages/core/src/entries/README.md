@@ -120,6 +120,15 @@ whose saved or published values use an asset, as `[{ entryId, title }]`, for
 | `entries.errors.ts`                        | Named errors with the messages people see            |
 | `entries.routes.ts`, `revisions.routes.ts` | The endpoints                                        |
 | `translations.routes.ts`                   | `POST /entries/:id/translations`                     |
+| `entry-access.ts`                          | `requireEntryPermission`: anyone's, or only your own |
+
+## Your own entries
+
+Saving, publishing (and unpublishing or scheduling), deleting and restoring a revision of
+one entry are guarded by `requireEntryPermission`. It allows `entries:update` (and so on)
+for any entry, or `entries:update-own` for entries whose `createdBy` is the signed-in person.
+That is the Author role: it sees everyone's content, and changes only its own. The editor
+gets `createdById` with each entry to show the right buttons.
 
 ## Drafts and required fields
 

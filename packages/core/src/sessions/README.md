@@ -12,8 +12,11 @@ A session is one signed-in browser. Signing in starts one; signing out ends it.
    request, the expiry is pushed forward at most once a day (`wasExtended` tells the
    caller to renew the cookie as well).
 4. `endSession` deletes the row, so signing out takes effect immediately everywhere.
-5. `endAllSessionsForUser` deletes all of a user's sessions; resetting a password uses it,
-   so the old password stops working on every device at once.
+5. `endAllSessionsForUser` deletes all of a user's sessions; resetting a password and
+   deactivating someone use it, so access stops on every device at once.
+6. `listUserSessions`, `endUserSession` and `endOtherSessions` are behind "Where you're
+   signed in" on the account page (see `src/account`). `describe-user-agent.ts` turns a
+   user-agent into "Firefox on Windows" for that list.
 
 Why sessions rather than JWTs: see `docs/decisions/0004-sessions-not-jwt.md`.
 

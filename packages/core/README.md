@@ -7,36 +7,44 @@ The API server: content model, entries, users and permissions.
 Code is grouped by feature, not by file type. Each feature folder owns its table,
 its routes and its tests.
 
-| Folder               | What it does                                           |
-| -------------------- | ------------------------------------------------------ |
-| `src/sites`          | Sites and languages served by this install             |
-| `src/users`          | People who sign in to the admin                        |
-| `src/roles`          | Roles and the permission check used everywhere         |
-| `src/auth`           | Sign-in, sign-out, `/auth/me` and route guards         |
-| `src/setup`          | First-run setup: database, first admin, site type      |
-| `src/plugins`        | Which features (blog, shop...) are switched on         |
-| `src/settings`       | Small site-wide settings stored as JSON                |
-| `src/sessions`       | Server-side sessions behind the sign-in cookie         |
-| `src/fieldtypes`     | Kinds of field, and checking entries against them      |
-| `src/blueprints`     | Content types: the fields a kind of content has        |
-| `src/collections`    | Groups of entries (Pages, Blog...) and the defaults    |
-| `src/entries`        | Entries, publishing, ordering and revisions            |
-| `src/delivery`       | The public API sites read published content from       |
-| `src/preview`        | Signed links that show drafts, for live preview        |
-| `src/search`         | One search across entries and media                    |
-| `src/scheduler`      | Timed jobs, such as publishing scheduled entries       |
-| `src/media`          | Uploads, image resizing and the storage driver         |
-| `src/health`         | `GET /health` for uptime checks                        |
-| `src/database`       | Built-in or Postgres, choosing one, friendly errors    |
-| `src/http`           | Error responses and request parsing shared by routes   |
-| `src/scripts`        | `create-admin`, `reset-password`, `db:migrate`         |
-| `src/testing`        | Test database helpers                                  |
-| `src/graphql`        | The GraphQL delivery API, typed from the blueprints    |
-| `src/openapi`        | The OpenAPI document for the REST API                  |
-| `src/api-tokens`     | Bearer tokens for websites, apps and scripts           |
-| `src/webhooks`       | Signed requests to other services when content changes |
-| `src/content-events` | Publish, delete and upload events, and who hears them  |
-| `src/seo`            | The SEO plugin: page SEO, sitemap, robots, redirects   |
+| Folder                | What it does                                           |
+| --------------------- | ------------------------------------------------------ |
+| `src/sites`           | Sites and languages served by this install             |
+| `src/users`           | People who sign in to the admin                        |
+| `src/roles`           | Roles and the permission check used everywhere         |
+| `src/auth`            | Sign-in, sign-out, `/auth/me` and route guards         |
+| `src/setup`           | First-run setup: database, first admin, site type      |
+| `src/plugins`         | Which features (blog, shop...) are switched on         |
+| `src/settings`        | Small site-wide settings stored as JSON                |
+| `src/sessions`        | Server-side sessions behind the sign-in cookie         |
+| `src/fieldtypes`      | Kinds of field, and checking entries against them      |
+| `src/blueprints`      | Content types: the fields a kind of content has        |
+| `src/collections`     | Groups of entries (Pages, Blog...) and the defaults    |
+| `src/entries`         | Entries, publishing, ordering and revisions            |
+| `src/delivery`        | The public API sites read published content from       |
+| `src/preview`         | Signed links that show drafts, for live preview        |
+| `src/search`          | One search across entries and media                    |
+| `src/scheduler`       | Timed jobs, such as publishing scheduled entries       |
+| `src/media`           | Uploads, image resizing and the storage driver         |
+| `src/health`          | `GET /health` for uptime checks                        |
+| `src/database`        | Built-in or Postgres, choosing one, friendly errors    |
+| `src/http`            | Error responses and request parsing shared by routes   |
+| `src/scripts`         | `create-admin`, `reset-password`, `db:migrate`         |
+| `src/testing`         | Test database helpers                                  |
+| `src/graphql`         | The GraphQL delivery API, typed from the blueprints    |
+| `src/openapi`         | The OpenAPI document for the REST API                  |
+| `src/api-tokens`      | Bearer tokens for websites, apps and scripts           |
+| `src/webhooks`        | Signed requests to other services when content changes |
+| `src/content-events`  | Publish, delete and upload events, and who hears them  |
+| `src/seo`             | The SEO plugin: page SEO, sitemap, robots, redirects   |
+| `src/invitations`     | Inviting people by email, and accepting                |
+| `src/account`         | Your own profile, email, password and sessions         |
+| `src/two-factor`      | Authenticator app codes and recovery codes             |
+| `src/passkeys`        | Signing in with WebAuthn passkeys                      |
+| `src/password-reset`  | "Forgot your password?" links                          |
+| `src/one-time-tokens` | Single-use, hashed tokens behind emailed links         |
+| `src/security-log`    | Sign-ins, failures and account changes, with CSV       |
+| `src/email`           | Sending email, and the development outbox              |
 
 As features grow, each folder follows the same shape:
 

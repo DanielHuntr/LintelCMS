@@ -5,7 +5,7 @@ stay in the feature folders. Run them from the repository root:
 
 | Script              | Command                                             | What it does                                       |
 | ------------------- | --------------------------------------------------- | -------------------------------------------------- |
-| `create-admin.ts`   | `pnpm create-admin --email <email> --name "<name>"` | Creates a Super admin (role `["*"]`)               |
+| `create-admin.ts`   | `pnpm create-admin --email <email> --name "<name>"` | Creates an Owner (role `["*"]`)                    |
 | `reset-password.ts` | `pnpm reset-password --email <email>`               | New password for a user; signs them out everywhere |
 | `migrate.ts`        | `pnpm db:migrate`                                   | Creates or updates the tables now                  |
 

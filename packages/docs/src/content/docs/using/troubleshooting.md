@@ -45,4 +45,4 @@ The message under it says what to change, such as "Title is required".
 
 ## Forgotten password
 
-See [Accounts and permissions](/using/users/#forgotten-password).
+See [People and permissions](/using/users/#forgotten-password).
