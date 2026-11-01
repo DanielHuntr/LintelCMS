@@ -29,3 +29,4 @@ export {
 export { productsTable, variantPricesTable, variantsTable } from "./products/products.table.js";
 export { shopSettingsTable } from "./settings/shop-settings.table.js";
 export { shippingRatesTable, shippingZonesTable } from "./shipping/shipping.table.js";
+export { archivedOrdersTable, shopifyImportsTable } from "./shopify-import/shopify-import.table.js";

@@ -1,0 +1,4 @@
+Customer ID,First Name,Last Name,Email,Accepts Email Marketing,Default Address Company,Default Address Address1,Default Address Address2,Default Address City,Default Address Province Code,Default Address Country Code,Default Address Zip,Default Address Phone,Phone,Accepts SMS Marketing,Total Spent,Total Orders,Note,Tax Exempt,Tags
+'7001,Ada,Lovelace,Ada@Example.com,yes,,12 St James's Square,,London,,GB,SW1Y 4JH,+44 20 7946 0000,+44 20 7946 0000,no,104.00,2,Prefers paper receipts,no,"vip, newsletter"
+'7002,Grace,Hopper,grace@example.com,no,Navy,1 Arlington Ridge Rd,,Arlington,VA,US,22202,,,no,18.50,1,,no,
+'7003,No,Email,,no,,,,,,,,,,no,0.00,0,,no,

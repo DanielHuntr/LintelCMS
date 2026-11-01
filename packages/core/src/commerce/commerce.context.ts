@@ -1,6 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import type { Database } from "../database/client.js";
 import type { AssetLookup } from "../fieldtypes/image-assets.js";
+import type { MediaRoutesOptions } from "../media/media.routes.js";
+import type { MediaContext } from "../media/media.service.js";
 import type { DiscountProvider } from "./discounts/discount-provider.js";
 import { storedDiscounts } from "./discounts/stored-discounts.js";
 import type { EmailProvider } from "./emails/email-provider.js";
@@ -30,6 +32,8 @@ export interface CommerceOptions {
   mollieApiUrl?: string;
   /** How the Shopify importer downloads product photos. Tests pass a fake. */
   importFetch?: typeof fetch;
+  /** The media library, where imported product photos go. Passed in by server.ts. */
+  media?: MediaRoutesOptions;
   /** What time it is, for reservations and webhook signatures. Tests move it on. */
   now?: () => Date;
   /** Release stock held by abandoned checkouts every minute. Off in tests. */
@@ -51,6 +55,8 @@ export interface ShopContext {
   readonly payPalApiUrl: string | undefined;
   readonly mollieApiUrl: string | undefined;
   readonly importFetch: typeof fetch;
+  /** The media library for saving files, as the media routes use it. */
+  mediaLibrary(): MediaContext;
   now(): Date;
   stripeKeys(): Promise<StripeKeys>;
   /** A client for the configured secret key; a clear error when there isn't one yet. */
@@ -82,6 +88,10 @@ export function createShopContext(server: FastifyInstance, options: CommerceOpti
     payPalApiUrl: options.payPalApiUrl,
     mollieApiUrl: options.mollieApiUrl,
     importFetch: options.importFetch ?? globalThis.fetch,
+    mediaLibrary: () => {
+      if (!options.media) throw new Error("The shop was registered without the media library");
+      return { ...options.media, database: server.database, publicApiUrl: server.publicApiUrl };
+    },
     now,
     stripeKeys: async () =>
       resolveStripeKeys(await readShopSettingsRow(server.database), environment),

@@ -1,0 +1,13 @@
+﻿Handle,Title,Body (HTML),Vendor,Product Category,Type,Tags,Published,Option1 Name,Option1 Value,Option1 Linked To,Option2 Name,Option2 Value,Option2 Linked To,Option3 Name,Option3 Value,Option3 Linked To,Variant SKU,Variant Grams,Variant Inventory Tracker,Variant Inventory Qty,Variant Inventory Policy,Variant Fulfillment Service,Variant Price,Variant Compare At Price,Variant Requires Shipping,Variant Taxable,Variant Barcode,Image Src,Image Position,Image Alt Text,Gift Card,SEO Title,SEO Description,Google Shopping / Gender,Variant Image,Variant Weight Unit,Variant Tax Code,Cost per item,Status,Collection
+linen-shirt,Linen Shirt,"<p>Breathable linen, cut for warm days.</p>
+<ul>
+<li>100% European flax</li>
+<li>Mother-of-pearl buttons</li>
+</ul>
+<script>alert(""hi"")</script>",Harbour Linen,Apparel & Accessories > Clothing > Shirts & Tops,Shirts,"summer, linen",TRUE,Size,S,,Colour,Sand,,,,,LS-S-SAND,300,shopify,4,deny,manual,45.00,55.00,TRUE,TRUE,'5012345678900,https://cdn.shopify.com/s/files/1/0001/0002/products/linen-shirt-front.jpg?v=1700000000,1,"Linen shirt, front",FALSE,Linen Shirt | Harbour,A breathable linen shirt for summer.,unisex,,kg,,,active,Summer Edit
+linen-shirt,,,,,,,,,M,,,Sand,,,,,LS-M-SAND,320,shopify,2,deny,manual,45.00,55.00,TRUE,TRUE,,https://cdn.shopify.com/s/files/1/0001/0002/products/linen-shirt-back.jpg?v=1700000000,2,"Linen shirt, back",,,,,,kg,,,,
+linen-shirt,,,,,,,,,,,,,,,,,,,,,,,,,,,,https://example.com/hotlinked/linen-shirt-detail.jpg,3,,,,,,,,,,,
+canvas-tote,Canvas Tote,"<p>Heavy canvas, long handles.</p>",Harbour Linen,,Bags,"accessories, summer",FALSE,Title,Default Title,,,,,,,,TOTE-NATURAL,450,,0,continue,manual,18.50,,TRUE,TRUE,,https://cdn.shopify.com/s/files/1/0001/0002/products/moved-tote.jpg,1,,FALSE,,,,,,,,draft,Summer Edit
+gift-card,Gift Card,,Harbour Linen,,Gift Cards,,TRUE,Denominations,£25,,,,,,,,,,,,,,25.00,,,,,,,,TRUE,,,,,,,,active,
+wool-socks,Wool Socks,"<p>Merino blend, ""cosy"" and warm.</p>",Harbour Linen,,Socks,winter,TRUE,Size,4-7,,,,,,,,SOCK-4-7,80,shopify,10,,,12.5,,,,,https://cdn.shopify.com/s/files/1/0001/0002/products/huge-socks.jpg,1,,FALSE,,,,,,,,active,
+wool-socks,,,,,,,,,8-11,,,,,,,,SOCK-8-11,90,shopify,6,,,12.5,,,,,,,,,,,,,,,,,

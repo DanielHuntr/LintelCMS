@@ -1,6 +1,7 @@
 import type { FastifyInstance, InjectOptions, LightMyRequestResponse } from "fastify";
 import type { ActiveDatabase } from "../../database/active-database.js";
 import type { Database } from "../../database/client.js";
+import type { ServerOptions } from "../../server.js";
 import { setEnabledPlugins } from "../../plugins/plugins.service.js";
 import { startTestServer } from "../../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../../testing/test-users.js";
@@ -40,6 +41,7 @@ export async function startTestShop(
   database: Database,
   activeDatabase: ActiveDatabase,
   options: Partial<CommerceOptions> = {},
+  serverOptions: Partial<ServerOptions> = {},
 ): Promise<TestShop> {
   const stripe = new FakeStripe();
   const paypal = new FakePayPal();
@@ -55,6 +57,7 @@ export async function startTestShop(
     },
   };
   const server = await startTestServer(activeDatabase, {
+    ...serverOptions,
     commerce: {
       stripeFetch: stripe.fetch,
       paymentFetch,

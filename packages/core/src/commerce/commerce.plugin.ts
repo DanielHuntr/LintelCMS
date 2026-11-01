@@ -20,6 +20,7 @@ import { productsRoutes } from "./products/products.routes.js";
 import { salesRoutes } from "./sales/sales.routes.js";
 import { shopSettingsRoutes } from "./settings/shop-settings.routes.js";
 import { shippingRoutes } from "./shipping/shipping.routes.js";
+import { shopifyImportRoutes } from "./shopify-import/shopify-import.routes.js";
 import { storefrontRoutes } from "./storefront/storefront.routes.js";
 
 const ONE_MINUTE = 60_000;
@@ -58,6 +59,7 @@ export async function commercePlugin(server: FastifyInstance, options: CommerceO
   server.register(discountsRoutes, withShop);
   server.register(emailsRoutes, withShop);
   server.register(salesRoutes, withShop);
+  server.register(shopifyImportRoutes, withShop);
   server.register(storefrontRoutes, withShop);
   server.register(cartsRoutes, withShop);
   server.register(stripeWebhookRoutes, withShop);

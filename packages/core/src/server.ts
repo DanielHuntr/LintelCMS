@@ -188,22 +188,25 @@ export function buildServer(options: ServerOptions) {
   server.register(graphqlRoutes, { graphiql: options.graphiql ?? false });
   server.register(openApiRoutes);
   server.register(seoRoutes);
+  const media = {
+    storage: options.media?.storage ?? new LocalDiskStorage(),
+    cacheFolder: options.media?.transformCacheFolder ?? DEFAULT_TRANSFORM_CACHE_FOLDER,
+    // An asset still used by an entry can't be deleted.
+    usageFinder: options.media?.usageFinder ?? {
+      findEntriesUsingAsset: (assetId: string) => findEntriesUsingAsset(server.database, assetId),
+    },
+  };
   server.register(commercePlugin, {
     ...options.commerce,
+    // The Shopify importer saves product photos into the media library.
+    media,
     runScheduledJobs: options.commerce?.runScheduledJobs ?? options.runScheduledJobs ?? true,
   });
 
   if (options.runScheduledJobs ?? true) {
     registerScheduledJobs(server);
   }
-  server.register(mediaRoutes, {
-    storage: options.media?.storage ?? new LocalDiskStorage(),
-    cacheFolder: options.media?.transformCacheFolder ?? DEFAULT_TRANSFORM_CACHE_FOLDER,
-    // An asset still used by an entry can't be deleted.
-    usageFinder: options.media?.usageFinder ?? {
-      findEntriesUsingAsset: (assetId) => findEntriesUsingAsset(server.database, assetId),
-    },
-  });
+  server.register(mediaRoutes, media);
 
   return server;
 }
