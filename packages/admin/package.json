@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "preview": "vite preview",
-    "journey": "node journeys/start-from-template.mjs"
+    "journey": "node journeys/start-from-template.mjs",
+    "journey:elements": "node journeys/more-elements.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

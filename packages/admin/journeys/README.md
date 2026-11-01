@@ -13,7 +13,15 @@ title, start it from a section, then check the website: the new heading is there
 runtime and lists its animations, the heading finishes animating in, and with reduced
 motion it doesn't move at all.
 
-Run it against a fresh install, on ports of your own:
+`more-elements.mjs` (`pnpm --filter @lintel/admin journey:elements`, which also needs
+`API_URL`): set up a new site, switch on the blog and the shop and publish two posts through
+the API, make a page from an empty start, add a **Slider**, a **Collection list** of the blog
+posts (checking its heading shows each post's title) and a **Product grid**, publish, then
+check the website: the slider moves with its buttons and arrow keys, the posts are listed
+newest first, the grid shows its empty state, the shop and basket pages answer, and the page
+fits tablet and phone widths.
+
+Run them against a fresh install, on ports of your own:
 
 ```bash
 pnpm build

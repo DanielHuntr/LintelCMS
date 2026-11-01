@@ -60,6 +60,9 @@ ${phone} { :where(.lintel-spacer) { block-size: var(--lintel-space-5); } :where(
 :where(.lintel-card--raised) { box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 8px 24px rgb(0 0 0 / 0.08); }
 :where(.lintel-card--filled) { background: var(--lintel-color-surface); }
 :where(.lintel-card--plain) { padding: 0; background: transparent; }
+/* A linked card is a link: as weak as a class, so it beats the site's link colour while the
+   Style panel's own class (later in the page) still wins. */
+.lintel-card--linked { color: inherit; text-decoration: none; }
 :where(.lintel-card--linked) { transition: transform 0.15s ease, box-shadow 0.15s ease; }
 :where(.lintel-card--linked:hover) { transform: translateY(-2px); }
 :where(.lintel-tabs__list) { display: flex; flex-wrap: wrap; gap: var(--lintel-space-1); border-bottom: 1px solid var(--lintel-color-border); }
