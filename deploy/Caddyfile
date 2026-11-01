@@ -1,0 +1,8 @@
+# Caddy gets and renews a free HTTPS certificate for LINTEL_DOMAIN by itself, as soon as
+# the domain's DNS points at this server and ports 80 and 443 are open.
+{$LINTEL_DOMAIN} {
+	reverse_proxy lintel:4000 {
+		# Lets one request be followed through Caddy's log and Lintel's.
+		header_up X-Request-Id {http.request.uuid}
+	}
+}
