@@ -1,4 +1,5 @@
 import { pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { collectionStructures } from "./collections.schema.js";
 import { id, tenantId, timestamps } from "../database/columns.js";
 import { blueprintsTable } from "../blueprints/blueprints.table.js";
 
@@ -21,9 +22,7 @@ export const collectionsTable = pgTable(
       .notNull()
       .references(() => blueprintsTable.id),
     routePattern: text("route_pattern"),
-    structure: text("structure", { enum: ["tree", "dated", "flat"] })
-      .notNull()
-      .default("flat"),
+    structure: text("structure", { enum: collectionStructures }).notNull().default("flat"),
     ...timestamps(),
   },
   (table) => [uniqueIndex("collections_tenant_handle_unique").on(table.tenantId, table.handle)],

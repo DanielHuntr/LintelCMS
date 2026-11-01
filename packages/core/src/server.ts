@@ -3,12 +3,25 @@ import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import Fastify from "fastify";
 import { authRoutes } from "./auth/auth.routes.js";
+import { blueprintsRoutes } from "./blueprints/blueprints.routes.js";
+import { collectionsRoutes } from "./collections/collections.routes.js";
 import type { ActiveDatabase } from "./database/active-database.js";
 import type { Database } from "./database/client.js";
 import { DEFAULT_LINTEL_FOLDER, type LintelFolder } from "./database/database-choice.js";
+import { deliveryRoutes } from "./delivery/delivery.routes.js";
+import { entriesRoutes } from "./entries/entries.routes.js";
+import { revisionsRoutes } from "./entries/revisions.routes.js";
+import { fieldtypesRoutes } from "./fieldtypes/fieldtypes.routes.js";
+import {
+  acceptAnyAsset,
+  type AssetExists,
+  type AssetLookup,
+  findNoAssets,
+} from "./fieldtypes/image-assets.js";
 import { healthRoutes } from "./health/health.routes.js";
 import { sendHttpErrorDetails } from "./http/http-errors.js";
 import { pluginsRoutes } from "./plugins/plugins.routes.js";
+import { registerScheduledJobs } from "./scheduler/scheduled-jobs.js";
 import { generateSetupCode } from "./setup/setup-code.js";
 import { setupRoutes } from "./setup/setup.routes.js";
 
@@ -27,6 +40,10 @@ declare module "fastify" {
     setupCode: string;
     /** Whether cookies are marked Secure (HTTPS only). Off only in development. */
     secureCookies: boolean;
+    /** Checks that an image picked for an entry is in the media library. */
+    assetExists: AssetExists;
+    /** Expands image ids into images for the delivery API. */
+    assetLookup: AssetLookup;
   }
 }
 
@@ -46,6 +63,14 @@ export interface ServerOptions {
   secureCookies?: boolean;
   /** Turn request logging off in tests to keep output readable. */
   logger?: boolean;
+  /**
+   * Run timed jobs, such as publishing scheduled entries, from startup until the server
+   * closes. On by default; tests that drive the jobs themselves turn it off.
+   */
+  runScheduledJobs?: boolean;
+  /** How images are checked and expanded. Defaults accept any id and expand none. */
+  assetExists?: AssetExists;
+  assetLookup?: AssetLookup;
 }
 
 /**
@@ -63,6 +88,8 @@ export function buildServer(options: ServerOptions) {
   server.decorate("lintelFolder", options.lintelFolder ?? DEFAULT_LINTEL_FOLDER);
   server.decorate("setupCode", options.setupCode ?? generateSetupCode());
   server.decorate("secureCookies", options.secureCookies ?? true);
+  server.decorate("assetExists", options.assetExists ?? acceptAnyAsset);
+  server.decorate("assetLookup", options.assetLookup ?? findNoAssets);
   server.decorateRequest("signedIn", null);
   server.setErrorHandler(sendHttpErrorDetails);
 
@@ -80,6 +107,16 @@ export function buildServer(options: ServerOptions) {
   server.register(authRoutes);
   server.register(setupRoutes);
   server.register(pluginsRoutes);
+  server.register(fieldtypesRoutes);
+  server.register(blueprintsRoutes);
+  server.register(collectionsRoutes);
+  server.register(entriesRoutes);
+  server.register(revisionsRoutes);
+  server.register(deliveryRoutes);
+
+  if (options.runScheduledJobs ?? true) {
+    registerScheduledJobs(server);
+  }
 
   return server;
 }

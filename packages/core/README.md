@@ -17,9 +17,12 @@ its routes and its tests.
 | `src/plugins`     | Which features (blog, shop...) are switched on       |
 | `src/settings`    | Small site-wide settings stored as JSON              |
 | `src/sessions`    | Server-side sessions behind the sign-in cookie       |
-| `src/blueprints`  | Field definitions for content                        |
-| `src/collections` | Groups of entries (Pages, Blog...)                   |
-| `src/entries`     | Entries and their revisions                          |
+| `src/fieldtypes`  | Kinds of field, and checking entries against them    |
+| `src/blueprints`  | Content types: the fields a kind of content has      |
+| `src/collections` | Groups of entries (Pages, Blog...) and the defaults  |
+| `src/entries`     | Entries, publishing, ordering and revisions          |
+| `src/delivery`    | The public API sites read published content from     |
+| `src/scheduler`   | Timed jobs, such as publishing scheduled entries     |
 | `src/health`      | `GET /health` for uptime checks                      |
 | `src/database`    | Built-in or Postgres, choosing one, friendly errors  |
 | `src/http`        | Error responses and request parsing shared by routes |

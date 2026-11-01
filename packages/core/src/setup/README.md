@@ -18,6 +18,8 @@ open without signing in, which is what lets a brand-new install be set up in the
 - `database` is `{ kind: "built-in" | "postgres", chosenBy: "environment" | "setup" | "default" }`.
   `"environment"` means `DATABASE_URL` is set, so the admin skips the database step;
   `"default"` means nothing has been chosen and the built-in database is running.
+- `/setup/site` also makes sure the **Pages** collection exists, and **Blog posts** too when
+  `blog` is among the plugins (see `src/collections`). Running it again changes no content.
 - `siteType` is one of `business`, `blog`, `shop`, `portfolio`, `blank`. `plugins` are ids
   from `src/plugins`; the response lists every plugin with `enabled`, like `GET /plugins`.
   `/setup/site` can be called again later; it isn't limited to first run.

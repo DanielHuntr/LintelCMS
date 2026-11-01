@@ -1,0 +1,84 @@
+import { findCollectionByIdOrFail } from "../collections/collections.service.js";
+import type { DatabaseOrTransaction } from "../database/client.js";
+import { describePerson } from "./entry-responses.js";
+import { RevisionNotFoundError } from "./entries.errors.js";
+import { updateEntryRow } from "./entries.repository.js";
+import type { EntryResponse, RevisionResponse, RevisionSummaryResponse } from "./entries.schema.js";
+import {
+  type EntryChangeContext,
+  findEntry,
+  findEntryOrFail,
+  validateForCollection,
+} from "./entries.service.js";
+import {
+  findRevisionForEntry,
+  insertRevision,
+  listRevisionsForEntry,
+  type RevisionRow,
+} from "./revisions.repository.js";
+
+/**
+ * Revisions are written by the entry services on every save, publish, unpublish and
+ * restore. This file reads them, and restores one.
+ */
+
+function describeRevision(revision: RevisionRow): RevisionSummaryResponse {
+  return {
+    id: revision.id,
+    action: revision.action,
+    createdAt: revision.createdAt.toISOString(),
+    author: describePerson(revision.authorId, revision.authorName),
+  };
+}
+
+/** Newest first. */
+export async function listRevisions(
+  database: DatabaseOrTransaction,
+  entryId: string,
+): Promise<{ revisions: RevisionSummaryResponse[] }> {
+  const entry = await findEntryOrFail(database, entryId);
+  const revisions = await listRevisionsForEntry(database, entry.id);
+  return { revisions: revisions.map(describeRevision) };
+}
+
+export async function findRevision(
+  database: DatabaseOrTransaction,
+  entryId: string,
+  revisionId: string,
+): Promise<RevisionResponse> {
+  const revision = await findRevisionForEntry(database, entryId, revisionId);
+  if (!revision) {
+    throw new RevisionNotFoundError();
+  }
+  return { ...describeRevision(revision), data: revision.data };
+}
+
+/**
+ * Makes an old revision's values the entry's saved values again, checked against the
+ * blueprint as it is today. Like any save, it doesn't change what is published.
+ */
+export async function restoreRevision(
+  database: DatabaseOrTransaction,
+  entryId: string,
+  revisionId: string,
+  context: EntryChangeContext,
+): Promise<EntryResponse> {
+  const entry = await findEntryOrFail(database, entryId);
+  const revision = await findRevisionForEntry(database, entry.id, revisionId);
+  if (!revision) {
+    throw new RevisionNotFoundError();
+  }
+  const collection = await findCollectionByIdOrFail(database, entry.collectionId);
+  const data = await validateForCollection(database, collection, revision.data, context);
+
+  await database.transaction(async (transaction) => {
+    await updateEntryRow(transaction, entry.id, { data, updatedBy: context.authorId });
+    await insertRevision(transaction, {
+      entryId: entry.id,
+      authorId: context.authorId,
+      action: "restored",
+      data,
+    });
+  });
+  return findEntry(database, entry.id);
+}

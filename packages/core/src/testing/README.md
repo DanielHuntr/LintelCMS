@@ -35,4 +35,5 @@ describe("signing in", () => {
 | ------------------ | --------------------------------------------------------------------- |
 | `test-database.ts` | `useTestDatabase`, `openTestDatabase`, `emptyAllTables`               |
 | `test-users.ts`    | `createTestUser` with given permissions, `signInAndGetCookies`        |
+| `test-server.ts`   | `startTestServer` (timed jobs off) and `requestsAs` a signed-in user  |
 | `global-setup.ts`  | Migrates the test databases once before all tests (see vitest.config) |
