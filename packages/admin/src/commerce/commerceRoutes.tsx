@@ -1,6 +1,8 @@
 import { type AnyRoute, createRoute, useParams } from "@tanstack/react-router";
 import { CustomerDetailPage } from "./CustomerDetailPage.js";
 import { CustomersPage } from "./CustomersPage.js";
+import { DiscountEditorPage } from "./DiscountEditorPage.js";
+import { DiscountsPage } from "./DiscountsPage.js";
 import { EmailOutboxPage } from "./EmailOutboxPage.js";
 import { MarketsPage } from "./MarketsPage.js";
 import { OrderDetailPage } from "./OrderDetailPage.js";
@@ -10,6 +12,7 @@ import { ProductEditorPage } from "./ProductEditorPage.js";
 import { ProductsPage } from "./ProductsPage.js";
 import { ShippingPage } from "./ShippingPage.js";
 import { ShopHomePage } from "./ShopHomePage.js";
+import { ShopifyImportPage } from "./ShopifyImportPage.js";
 import { ShopSettingsPage } from "./ShopSettingsPage.js";
 import { TaxesPage } from "./TaxesPage.js";
 
@@ -41,6 +44,12 @@ export function commerceRoutes<Parent extends AnyRoute>(getParentRoute: () => Pa
       const { customerId = "" } = useParams({ strict: false });
       return <CustomerDetailPage key={customerId} customerId={customerId} />;
     }),
+    page("/commerce/discounts", DiscountsPage),
+    page("/commerce/discounts/$discountId", function DiscountRoute() {
+      const { discountId = "new" } = useParams({ strict: false });
+      return <DiscountEditorPage key={discountId} discountId={discountId} />;
+    }),
+    page("/commerce/import/shopify", ShopifyImportPage),
     page("/commerce/settings", ShopSettingsPage),
     page("/commerce/settings/markets", MarketsPage),
     page("/commerce/settings/shipping", ShippingPage),

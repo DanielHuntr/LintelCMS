@@ -57,6 +57,8 @@ export interface Order extends OrderSummary {
   shippingLine: { name: string; amount: Money };
   subtotal: Money;
   discount: Money;
+  /** Each discount, "" as the code for automatic ones; free delivery is already off shipping. */
+  discounts?: Array<{ code: string; title: string; amount: Money; freeShipping: boolean }>;
   shipping: Money;
   tax: Money;
   refunded: Money;
@@ -75,6 +77,7 @@ export interface Order extends OrderSummary {
     createdAt: string;
   }>;
   timeline: Array<{ id: string; kind: string; message: string; createdAt: string }>;
+  paymentProvider?: "stripe" | "paypal" | "mollie";
   stripePaymentUrl: string | null;
 }
 

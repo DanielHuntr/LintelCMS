@@ -1,4 +1,5 @@
 import { CircleCheck } from "lucide-react";
+import { useState } from "react";
 import { LoadError } from "../api/LoadError.js";
 import { BackLink } from "../design/BackLink.js";
 import { Badge } from "../design/Badge.js";
@@ -10,7 +11,12 @@ import { SegmentedControl } from "../design/SegmentedControl.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
+import { ConnectMollieSteps } from "./ConnectMollieSteps.js";
+import { ConnectPayPalSteps } from "./ConnectPayPalSteps.js";
 import { ConnectStripeSteps } from "./ConnectStripeSteps.js";
+import { MarketPaymentProviders } from "./MarketPaymentProviders.js";
+import type { PaymentProviderId, PaymentProviders } from "./paymentProviders.api.js";
+import { usePaymentProviders } from "./paymentProviders.queries.js";
 import type { PaymentSettings } from "./shopSettings.api.js";
 import {
   useDisconnectStripe,
@@ -18,17 +24,55 @@ import {
   useSavePaymentKeys,
 } from "./shopSettings.queries.js";
 
-/** /commerce/settings/payments: connecting Stripe, step by step, and how shoppers pay. */
+/**
+ * /commerce/settings/payments: connecting Stripe, PayPal and Mollie, each step by step, and
+ * which one each market's shoppers pay with.
+ */
 export function PaymentsPage() {
   const payments = usePaymentSettings();
+  const providers = usePaymentProviders();
+  const [provider, setProvider] = useState<PaymentProviderId>("stripe");
+  const canChange = useCan("settings:update");
+  const canChooseMarkets = useCan("commerce:update");
   return (
     <>
       <BackLink to="/commerce/settings">{t("shop.settings.title")}</BackLink>
       <LargeTitle
         title={t("shop.payments.title")}
         subtitle={t("shop.payments.subtitle")}
-        actions={payments.data && <ConnectionBadge settings={payments.data} />}
+        actions={
+          payments.data && <ConnectionBadge settings={payments.data} others={providers.data} />
+        }
       />
+      {payments.data && providers.data && (
+        <div className="mb-6 flex max-w-2xl flex-col gap-6">
+          <MarketPaymentProviders
+            providers={providers.data}
+            stripeConnected={payments.data.connected}
+            canChange={canChooseMarkets}
+          />
+          <SegmentedControl<PaymentProviderId>
+            label={t("shop.providers.chooseLabel")}
+            value={provider}
+            onChange={setProvider}
+            options={[
+              { value: "stripe", label: t("shop.providers.name.stripe") },
+              { value: "paypal", label: t("shop.providers.name.paypal") },
+              { value: "mollie", label: t("shop.providers.name.mollie") },
+            ]}
+          />
+        </div>
+      )}
+      {provider === "paypal" && providers.data && (
+        <div className="max-w-2xl">
+          <ConnectPayPalSteps paypal={providers.data.paypal} canChange={canChange} />
+        </div>
+      )}
+      {provider === "mollie" && providers.data && (
+        <div className="max-w-2xl">
+          <ConnectMollieSteps mollie={providers.data.mollie} canChange={canChange} />
+        </div>
+      )}
       {payments.isError && (
         <LoadError error={payments.error} onRetry={() => void payments.refetch()} />
       )}
@@ -37,16 +81,31 @@ export function PaymentsPage() {
           <Skeleton className="h-64 max-w-2xl rounded-card" />
         </LoadingRegion>
       )}
-      {payments.data && <Payments settings={payments.data} />}
+      {provider === "stripe" && payments.data && <Payments settings={payments.data} />}
     </>
   );
 }
 
-function ConnectionBadge({ settings }: { settings: PaymentSettings }) {
-  if (!settings.connected) return <Badge tone="warning">{t("shop.payments.notConnected")}</Badge>;
+/** Whether the shop can take payments at all, with any provider, and whether for real. */
+function ConnectionBadge({
+  settings,
+  others,
+}: {
+  settings: PaymentSettings;
+  others: PaymentProviders | undefined;
+}) {
+  const connected = [
+    settings.connected ? settings.mode : null,
+    others?.paypal.connected ? others.paypal.mode : null,
+    others?.mollie.connected ? others.mollie.mode : null,
+  ].filter((mode) => mode !== null);
+  if (connected.length === 0) {
+    return <Badge tone="warning">{t("shop.payments.notConnected")}</Badge>;
+  }
+  const live = connected.includes("live");
   return (
-    <Badge tone={settings.mode === "live" ? "success" : "accent"}>
-      {settings.mode === "live" ? t("shop.payments.live") : t("shop.payments.testMode")}
+    <Badge tone={live ? "success" : "accent"}>
+      {live ? t("shop.payments.live") : t("shop.payments.testMode")}
     </Badge>
   );
 }

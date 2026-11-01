@@ -207,13 +207,26 @@ function OrderDetail({ order }: { order: Order }) {
 }
 
 function PaymentSummary({ order }: { order: Order }) {
+  const discounts = order.discounts ?? [];
+  const onItems = discounts.filter((discount) => !discount.freeShipping);
+  const freeDelivery = discounts.some((discount) => discount.freeShipping);
+  const discountRows =
+    onItems.length > 0
+      ? onItems.map((discount) => ({
+          label: discount.code
+            ? `${t("shop.orders.discountCode", { code: discount.code })} · ${discount.title}`
+            : discount.title,
+          value: `−${formatMoney(discount.amount)}`,
+        }))
+      : order.discount.amount > 0
+        ? [{ label: t("shop.orders.discount"), value: `−${formatMoney(order.discount)}` }]
+        : [];
+  const shippingName = t("shop.orders.shippingLine", { name: order.shippingLine.name });
   const rows = [
     { label: t("shop.orders.subtotal"), value: formatMoney(order.subtotal) },
-    ...(order.discount.amount > 0
-      ? [{ label: t("shop.orders.discount"), value: `−${formatMoney(order.discount)}` }]
-      : []),
+    ...discountRows,
     {
-      label: t("shop.orders.shippingLine", { name: order.shippingLine.name }),
+      label: freeDelivery ? t("shop.orders.freeDelivery", { name: shippingName }) : shippingName,
       value: formatMoney(order.shipping),
     },
     {

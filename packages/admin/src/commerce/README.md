@@ -16,15 +16,27 @@ The Shop section (`/commerce`), shown in the sidebar only while the `commerce` p
   tracking), refund by items or by amount through Stripe, cancel, and add notes.
 - **Customers** lists everyone who has ordered; a customer shows their orders, spend,
   addresses and a private note.
-- **Settings** holds Markets, Delivery, Tax, Payments and Order emails. Payments is the
-  guided "Connect Stripe": four numbered steps with links into the right Stripe pages, the
-  webhook address to copy, and a check that the keys work. Keys set on the server are
-  shown as such and can't be changed here.
+- **Discounts** lists codes and automatic offers, each summed up in a sentence ("20% off
+  Summer Edit, orders of £50 or more, until 31 Aug", `discountSummary.ts`). The editor sets
+  how shoppers get it, what it gives (percentage, amount per currency, free delivery, buy X
+  get Y), what it's for, minimums, dates, limits and whether it combines, with the summary
+  kept up to date as the form changes.
+- **Move from Shopify** (`/commerce/import/shopify`) takes Shopify's CSV exports: choose the
+  files, check the preview, the column mapping and the choices, try a dry run, import (in
+  short batches, with progress; closing the page pauses it), then read the report with its
+  redirects. Archived orders show on each customer.
+- **Settings** holds Markets, Delivery, Tax, Payments and Order emails. Payments says which
+  provider each market pays with, then has a guided "Connect" for each: Stripe's four
+  numbered steps with links into the right Stripe pages, the webhook address to copy, and a
+  check that the keys work; PayPal's (app, webhook, details) and Mollie's (account, API
+  key). Keys set on the server are shown as such and can't be changed here.
 - **The dashboard's Sales card** (`SalesCard.tsx`) shows the last 30 days' sales and the
   orders waiting to be sent, from `GET /shop/sales/summary`.
 
 `commerceRoutes.tsx` is the one place the section joins the admin: `router.tsx` spreads it
-under the signed-in route. The words are in `src/i18n/commerceStrings.ts`.
+under the signed-in route. The words are in `src/i18n/commerceStrings.ts`, and for
+discounts, payment providers and the importer in `discountStrings.ts`,
+`paymentProviderStrings.ts` and `shopifyImportStrings.ts` here, all spread into `strings.ts`.
 
 | File                                                   | What it does                                       |
 | ------------------------------------------------------ | -------------------------------------------------- |
@@ -43,6 +55,14 @@ under the signed-in route. The words are in `src/i18n/commerceStrings.ts`.
 | `ShippingPage.tsx`, `ZoneDialog.tsx`, `RateDialog.tsx` | Delivery areas and prices                          |
 | `TaxesPage.tsx`                                        | Stripe Tax or your own rates                       |
 | `PaymentsPage.tsx`, `ConnectStripeSteps.tsx`           | Connecting Stripe                                  |
+| `ConnectPayPalSteps.tsx`, `ConnectMollieSteps.tsx`     | Connecting PayPal and Mollie                       |
+| `ConnectStep.tsx`, `MarketPaymentProviders.tsx`        | A numbered step; which provider each market uses   |
+| `DiscountsPage.tsx`, `DiscountEditorPage.tsx`          | Discounts and one discount                         |
+| `Discount*Section.tsx`, `AmountsByCurrencyFields.tsx`  | The discount editor's sections                     |
+| `discountDraft.ts`, `discountSummary.ts`               | The editor's form state; a discount in a sentence  |
+| `ShopifyImportPage.tsx`, `Import*Step.tsx`             | Moving from Shopify, step by step                  |
+| `ImportReportView.tsx`, `importReport.ts`              | The import's report and redirects                  |
+| `ArchivedOrders.tsx`                                   | A customer's orders from before the move           |
 | `EmailOutboxPage.tsx`                                  | Order emails kept while no email service is set up |
 | `SalesCard.tsx`                                        | The dashboard's Sales card                         |
 | `money.ts`, `currencies.ts`, `CountryPicker.tsx`       | Showing and reading money; currencies; countries   |

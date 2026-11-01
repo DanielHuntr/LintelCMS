@@ -1,3 +1,6 @@
+import { discountStrings } from "../commerce/discountStrings.js";
+import { paymentProviderStrings } from "../commerce/paymentProviderStrings.js";
+import { shopifyImportStrings } from "../commerce/shopifyImportStrings.js";
 import { commerceStrings } from "./commerceStrings.js";
 import { contentModelStrings } from "./contentModelStrings.js";
 
@@ -10,6 +13,9 @@ import { contentModelStrings } from "./contentModelStrings.js";
 const english = {
   ...contentModelStrings,
   ...commerceStrings,
+  ...discountStrings,
+  ...paymentProviderStrings,
+  ...shopifyImportStrings,
   "app.name": "Lintel",
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",

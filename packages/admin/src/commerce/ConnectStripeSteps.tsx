@@ -1,13 +1,12 @@
-import { CircleCheck, ExternalLink } from "lucide-react";
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useState, type FormEvent } from "react";
 import { describeError } from "../api/describeError.js";
 import { Button } from "../design/Button.js";
-import { Card } from "../design/Card.js";
 import { CopyButton } from "../design/CopyButton.js";
 import { PasswordField } from "../design/PasswordField.js";
 import { TextField } from "../design/TextField.js";
 import { t } from "../i18n/strings.js";
 import type { PaymentSettings } from "./shopSettings.api.js";
+import { ExternalButton, Step } from "./ConnectStep.js";
 import { useCheckStripeConnection, useSavePaymentKeys } from "./shopSettings.queries.js";
 
 const STRIPE_KEYS_PAGE = "https://dashboard.stripe.com/test/apikeys";
@@ -202,55 +201,5 @@ export function ConnectStripeSteps({
         )}
       </Step>
     </ol>
-  );
-}
-
-function Step({
-  number,
-  title,
-  done,
-  children,
-}: {
-  number: number;
-  title: string;
-  done: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <li>
-      <Card>
-        <div className="flex gap-4">
-          <span
-            aria-hidden="true"
-            className={`flex size-7 shrink-0 items-center justify-center rounded-full text-footnote font-semibold ${done ? "bg-success text-on-accent" : "bg-accent/14 text-accent"}`}
-          >
-            {done ? <CircleCheck className="size-4" /> : number}
-          </span>
-          <div className="flex min-w-0 flex-1 flex-col gap-3 text-body text-label-secondary">
-            <h2 className="text-headline text-label">
-              <span className="sr-only">{t("shop.payments.stepNumber", { number })} </span>
-              {title}
-              {done && <span className="sr-only"> ({t("shop.setup.done")})</span>}
-            </h2>
-            {children}
-          </div>
-        </div>
-      </Card>
-    </li>
-  );
-}
-
-function ExternalButton({ href, children }: { href: string; children: ReactNode }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className="inline-flex w-fit items-center gap-1.5 text-body font-medium text-accent underline-offset-2 hover:underline focus-visible:focus-ring"
-    >
-      {children}
-      <ExternalLink aria-hidden="true" className="size-4" />
-      <span className="sr-only">{t("help.newTab")}</span>
-    </a>
   );
 }

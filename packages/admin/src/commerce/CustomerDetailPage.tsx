@@ -15,6 +15,7 @@ import { Skeleton } from "../design/Skeleton.js";
 import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import { countryName, formatMoney } from "./money.js";
+import { ArchivedOrders } from "./ArchivedOrders.js";
 import type { Customer } from "./orders.api.js";
 import { formatOrderDate } from "./orderDates.js";
 import { OrderStatusBadge } from "./OrderStatusBadge.js";
@@ -76,6 +77,7 @@ function CustomerDetail({ customer }: { customer: Customer }) {
               ))}
             </GroupedList>
           )}
+          <ArchivedOrders customerId={customer.id} />
         </div>
         <div className="flex flex-col gap-6">
           <Card title={t("shop.customers.spentHeader")}>

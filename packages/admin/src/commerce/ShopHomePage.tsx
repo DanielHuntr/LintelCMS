@@ -1,10 +1,12 @@
 import {
+  ArrowRightLeft,
   CircleCheck,
   CreditCard,
   Globe,
   Package,
   Receipt,
   Settings,
+  Tag,
   Truck,
   Users,
 } from "lucide-react";
@@ -106,11 +108,28 @@ export function ShopHomePage() {
             to="/commerce/customers"
           />
           <GroupedListRow
+            icon={Tag}
+            iconTone="danger"
+            label={t("shop.discounts.title")}
+            description={t("shop.discounts.rowDescription")}
+            to="/commerce/discounts"
+          />
+          <GroupedListRow
             icon={Settings}
             iconTone="neutral"
             label={t("shop.settings.title")}
             description={t("shop.settings.rowDescription")}
             to="/commerce/settings"
+          />
+        </GroupedList>
+        <GroupedList header={t("shop.import.homeHeader")}>
+          <GroupedListRow
+            icon={ArrowRightLeft}
+            iconTone="neutral"
+            label={t("shop.import.title")}
+            description={t("shop.import.rowDescription")}
+            wrapsText
+            to="/commerce/import/shopify"
           />
         </GroupedList>
       </div>
