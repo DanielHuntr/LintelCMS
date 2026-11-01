@@ -1,35 +1,34 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
-import { requirePermission } from "../auth/require-permission.js";
+import { prettifyError } from "zod";
 import { setSessionCookie } from "../auth/session-cookie.js";
-import { parseRequest } from "../http/http-errors.js";
+import { type FieldMessages, InvalidRequestError, parseRequest } from "../http/http-errors.js";
 import { isLocalRequest, SETUP_CODE_HEADER, setupCodeMatches } from "./setup-code.js";
-import { chooseDatabase, testPostgresConnection } from "./setup-database.service.js";
+import { testPostgresConnection } from "./setup-database.service.js";
 import {
   SetupAlreadyDoneError,
   SetupCodeInvalidError,
   SetupCodeRequiredError,
+  SetupStepError,
   TooManySetupAttemptsError,
 } from "./setup.errors.js";
 import {
-  chooseDatabaseRequestSchema,
-  completeSetupRequestSchema,
-  siteSetupRequestSchema,
+  type FinishSetupRequest,
+  finishSetupRequestSchema,
+  type SetupStep,
+  setupSteps,
   testDatabaseRequestSchema,
 } from "./setup.schema.js";
-import { completeSetup, findSetupStatus, isSetupNeeded } from "./setup.service.js";
-import { setUpSite } from "./site-setup.service.js";
+import { findSetupStatus, finishSetup, isSetupNeeded } from "./setup.service.js";
 
 /** The same limit as sign-in: plenty for a person, far too few for a script guessing codes. */
 const SETUP_ATTEMPTS_PER_MINUTE = 10;
 
 /**
- * HTTP only. Everything except /setup/site works only until the first user exists:
+ * HTTP only. Everything except the status works only until the first user exists:
  *
  *   GET  /setup/status         -> { needsSetup, database, requiresSetupCode, siteSetupCompleted }
  *   POST /setup/database/test  { host, port, database, user, password, ssl } -> { ok: true }
- *   POST /setup/database       { kind: "built-in" } or { kind: "postgres", ..., createIfMissing }
- *   POST /setup                { email, name, password } -> { user, permissions, enabledPlugins }
- *   POST /setup/site           (signed in, settings:update) { siteType, plugins }
+ *   POST /setup/finish         { database?, account, site } -> 201 { user, permissions, ... }
  */
 export async function setupRoutes(server: FastifyInstance) {
   const firstRunOnly = {
@@ -57,28 +56,45 @@ export async function setupRoutes(server: FastifyInstance) {
     return { ok: true };
   });
 
-  server.post("/setup/database", firstRunOnly, async (request) => {
-    const choice = parseRequest(chooseDatabaseRequestSchema, request.body);
-    return oneAtATime(() => chooseDatabase(server.activeDatabase, server.lintelFolder, choice));
-  });
-
-  server.post("/setup", firstRunOnly, async (request, reply) => {
-    const admin = parseRequest(completeSetupRequestSchema, request.body);
+  server.post("/setup/finish", firstRunOnly, async (request, reply) => {
+    const answers = parseSetupAnswers(request.body);
     const { session, signedIn } = await oneAtATime(() =>
-      completeSetup(server.activeDatabase, admin, request.headers["user-agent"]),
+      finishSetup(
+        server.activeDatabase,
+        server.lintelFolder,
+        answers,
+        request.headers["user-agent"],
+      ),
     );
 
     setSessionCookie(reply, session.token, session.expiresAt);
     return reply.code(201).send(signedIn);
   });
+}
 
-  server.post(
-    "/setup/site",
-    { preHandler: requirePermission("settings:update") },
-    async (request) => {
-      const site = parseRequest(siteSetupRequestSchema, request.body);
-      return setUpSite(server.database, site);
-    },
+/**
+ * Like parseRequest, but a problem is labelled with the step whose answer is wrong (the
+ * first one, in screen order), with a message per field of that step.
+ */
+function parseSetupAnswers(body: unknown): FinishSetupRequest {
+  const result = finishSetupRequestSchema.safeParse(body);
+  if (result.success) return result.data;
+
+  const stepOf = (path: readonly PropertyKey[]): SetupStep =>
+    setupSteps.find((step) => step === path[0]) ?? "account";
+  const issues = result.error.issues;
+  const step = setupSteps.find((candidate) =>
+    issues.some((issue) => stepOf(issue.path) === candidate),
+  );
+  const fields: FieldMessages = {};
+  for (const issue of issues) {
+    const field = issue.path.at(-1);
+    if (stepOf(issue.path) === step && typeof field === "string") fields[field] ??= issue.message;
+  }
+  throw new SetupStepError(
+    step ?? "account",
+    new InvalidRequestError(prettifyError(result.error)),
+    fields,
   );
 }
 

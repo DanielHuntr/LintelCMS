@@ -34,7 +34,7 @@ handle that is in use is 409 `COLLECTION_HANDLE_TAKEN`; an unknown handle is 404
 `default-collections.ts` holds what every site starts with:
 
 - **Pages** (`pages`, tree, `/{slug}`), blueprint `page`: title, summary, hero image, body.
-  Made by `POST /setup/site` (see `src/setup`).
+  Made when setup finishes (`POST /setup/finish`, see `src/setup`).
 - **Blog posts** (`posts`, dated, `/blog/{slug}`), blueprint `post`: title, excerpt,
   featured image, body, category (News, Guides, Updates). Made when the `blog` plugin is
   switched on, at setup or later with `PUT /plugins` (see `src/plugins`).

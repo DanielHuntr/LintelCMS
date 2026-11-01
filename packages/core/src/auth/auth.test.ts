@@ -44,6 +44,7 @@ describe("signing in and out", () => {
       user: { id: user.id, email: "ana@example.com", name: "Ana Editor" },
       permissions: ["assets:upload", "entries:publish", "entries:read"],
       enabledPlugins: [],
+      siteName: null,
     });
 
     const sessionCookie = response.cookies.find((cookie) => cookie.name === SESSION_COOKIE_NAME);
@@ -113,6 +114,7 @@ describe("signing in and out", () => {
       user: { id: user.id, email: "ana@example.com", name: "Ana Editor" },
       permissions: ["entries:read"],
       enabledPlugins: [],
+      siteName: null,
     });
     expect(signedOut.statusCode).toBe(401);
     expect(signedOut.json()).toMatchObject({ code: "NOT_SIGNED_IN" });

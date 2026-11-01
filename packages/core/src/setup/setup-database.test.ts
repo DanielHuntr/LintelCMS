@@ -11,8 +11,9 @@ import { buildServer } from "../server.js";
 import { emptyAllTables, openTestDatabase, testDatabaseUrl } from "../testing/test-database.js";
 
 /**
- * The setup screen's database step. Each test gets its own database and its own
- * .lintel folder, because choosing a database switches and closes the one in use.
+ * The setup screen's database step: testing a connection, and the database choice applied
+ * when setup finishes. Each test gets its own database and its own .lintel folder, because
+ * choosing a database switches and closes the one in use.
  */
 
 // The built-in database is created from nothing in some of these, which takes seconds.
@@ -55,8 +56,22 @@ describe("choosing the database during setup", () => {
     await rm(temporaryFolder, { recursive: true, force: true });
   });
 
-  function choose(payload: object) {
-    return server.inject({ method: "POST", url: "/setup/database", payload });
+  /** Finishes setup with this database choice. */
+  function choose(database: object) {
+    return server.inject({
+      method: "POST",
+      url: "/setup/finish",
+      payload: {
+        database,
+        account: { email: "ana@example.com", name: "Ana", password: "a long admin password" },
+        site: { siteName: "Brightside", siteType: "business" },
+      },
+    });
+  }
+
+  async function databaseStatus() {
+    const status = await server.inject({ method: "GET", url: "/setup/status" });
+    return status.json().database;
   }
 
   function test(payload: object) {
@@ -68,13 +83,11 @@ describe("choosing the database during setup", () => {
     async () => {
       const response = await choose({ kind: "built-in" });
 
-      expect(response.statusCode).toBe(200);
-      expect(response.json()).toEqual({ database: { kind: "built-in", chosenBy: "setup" } });
+      expect(response.statusCode).toBe(201);
       expect(JSON.parse(await readFile(lintelFolder.configFile, "utf8"))).toEqual({
         database: { kind: "built-in" },
       });
-      const status = await server.inject({ method: "GET", url: "/setup/status" });
-      expect(status.json().database).toEqual({ kind: "built-in", chosenBy: "setup" });
+      expect(await databaseStatus()).toEqual({ kind: "built-in", chosenBy: "setup" });
     },
     SLOW_TEST_TIMEOUT,
   );
@@ -93,9 +106,11 @@ describe("choosing the database during setup", () => {
     const response = await choose({ kind: "postgres", ...unreachableServer });
 
     expect(response.statusCode).toBe(422);
-    expect(response.json()).toMatchObject({ code: "DATABASE_UNREACHABLE" });
+    expect(response.json()).toMatchObject({ code: "DATABASE_UNREACHABLE", step: "database" });
     await expect(stat(lintelFolder.configFile)).rejects.toThrow();
     expect(activeDatabase.chosenBy).toBe("default");
+    const status = await server.inject({ method: "GET", url: "/setup/status" });
+    expect(status.json().needsSetup).toBe(true);
   });
 
   it("checks the details sent for a Postgres server", async () => {
@@ -108,13 +123,22 @@ describe("choosing the database during setup", () => {
     expect(response.json().message).toContain("Please enter the user name");
   });
 
-  it("refuses to change a database set by DATABASE_URL", async () => {
+  it("leaves a database set by DATABASE_URL alone, and finishes on it", async () => {
     activeDatabase.recordChosenBy("environment");
 
-    const response = await choose({ kind: "built-in" });
+    const response = await choose({ kind: "postgres", ...unreachableServer });
+
+    expect(response.statusCode).toBe(201);
+    expect(activeDatabase.chosenBy).toBe("environment");
+    await expect(stat(lintelFolder.configFile)).rejects.toThrow();
+  });
+
+  it("refuses to test a connection when DATABASE_URL set the database", async () => {
+    activeDatabase.recordChosenBy("environment");
+
+    const response = await test(unreachableServer);
 
     expect(response.statusCode).toBe(409);
-    expect(response.json()).toMatchObject({ code: "SETUP_ALREADY_DONE" });
     expect(response.json().message).toContain("DATABASE_URL");
   });
 
@@ -193,20 +217,16 @@ describe("choosing the database during setup", () => {
         };
 
         const withoutCreating = await choose({ kind: "postgres", ...details });
-        expect(withoutCreating.json()).toMatchObject({ code: "DATABASE_NOT_FOUND" });
+        expect(withoutCreating.json()).toMatchObject({
+          code: "DATABASE_NOT_FOUND",
+          step: "database",
+        });
 
         const response = await choose({ kind: "postgres", ...details, createIfMissing: true });
 
-        expect(response.statusCode).toBe(200);
-        expect(response.json()).toEqual({ database: { kind: "postgres", chosenBy: "setup" } });
-
-        // The running server uses it straight away: setup can finish on the new database.
-        const setup = await server.inject({
-          method: "POST",
-          url: "/setup",
-          payload: { email: "ana@example.com", name: "Ana", password: "a long admin password" },
-        });
-        expect(setup.statusCode).toBe(201);
+        // The running server switched to it and finished setup there.
+        expect(response.statusCode).toBe(201);
+        expect(await databaseStatus()).toEqual({ kind: "postgres", chosenBy: "setup" });
         const [owner] = await administrator<{ owner: string }[]>`
           select pg_get_userbyid(datdba) as owner from pg_database where datname = ${createdDatabase}`;
         expect(owner?.owner).toBe(specialUser);
@@ -243,7 +263,7 @@ describe("choosing the database during setup", () => {
     it(
       "prefers DATABASE_URL over the choice saved during setup",
       async () => {
-        expect((await choose({ kind: "built-in" })).statusCode).toBe(200);
+        expect((await choose({ kind: "built-in" })).statusCode).toBe(201);
 
         const started = await openStartupDatabase({ databaseUrl: testDatabaseUrl, lintelFolder });
         try {

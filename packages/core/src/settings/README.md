@@ -16,3 +16,6 @@ Current settings:
 
 - `enabledPlugins`: which plugins are switched on (see `src/plugins`).
 - `siteType` and `siteSetupCompleted`: the "What are you building?" setup step (see `src/setup`).
+- `siteName`: the site's name, from the "What's your site called?" setup step. The admin
+  gets it with the session (`siteName` in `/auth/me`) for the browser tab and the sidebar.
+  This is the one place it is stored for now.
