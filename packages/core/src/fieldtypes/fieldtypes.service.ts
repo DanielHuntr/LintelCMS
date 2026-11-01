@@ -11,6 +11,10 @@ export function listFieldtypes(): FieldtypeList {
       type: fieldtype.type,
       name: fieldtype.name,
       description: fieldtype.description,
+      category: fieldtype.category,
+      keywords: [...fieldtype.keywords],
+      holdsValue: fieldtype.holdsValue,
+      canBeInside: fieldtype.canBeInside,
       plugin: pluginId,
     })),
   };

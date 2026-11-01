@@ -1,4 +1,4 @@
-import { and, asc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, asc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { sessionsTable } from "../sessions/sessions.table.js";
 import { type NewUser, type User, usersTable } from "./users.table.js";
@@ -24,6 +24,35 @@ export async function findUserById(
 ): Promise<User | undefined> {
   const [user] = await database.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
   return user;
+}
+
+/** The ids, of those given, that are people's accounts; for "People" fields. */
+export async function findExistingUserIds(
+  database: DatabaseOrTransaction,
+  userIds: readonly string[],
+): Promise<string[]> {
+  if (userIds.length === 0) {
+    return [];
+  }
+  const rows = await database
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(inArray(usersTable.id, [...userIds]));
+  return rows.map((row) => row.id);
+}
+
+/** Names for "People" fields in the delivery API: never email addresses. */
+export async function findUserNamesByIds(
+  database: DatabaseOrTransaction,
+  userIds: readonly string[],
+): Promise<{ id: string; name: string }[]> {
+  if (userIds.length === 0) {
+    return [];
+  }
+  return database
+    .select({ id: usersTable.id, name: usersTable.name })
+    .from(usersTable)
+    .where(inArray(usersTable.id, [...userIds]));
 }
 
 export async function insertUser(database: DatabaseOrTransaction, user: NewUser): Promise<User> {

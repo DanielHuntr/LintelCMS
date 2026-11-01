@@ -34,6 +34,19 @@ export interface DeliveredPageDesign {
   root: Record<string, unknown>;
 }
 
+/** A video field's value: the address, and where to point a player. */
+export interface DeliveredVideo {
+  url: string;
+  provider: "youtube" | "vimeo" | "file";
+  embedUrl: string;
+}
+
+/** A person chosen in a People field. */
+export interface DeliveredPerson {
+  id: string;
+  name: string;
+}
+
 /** A link field's value. */
 export interface DeliveredLink {
   url: string;

@@ -13,6 +13,7 @@ import {
   GraphQLSchema,
   GraphQLString,
 } from "graphql";
+import { isDelivered } from "../delivery/delivered-values.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
 import { resolveEntrySeo } from "../seo/entry-seo.service.js";
 import { listDeliveredRedirects } from "../seo/redirects.service.js";
@@ -204,7 +205,7 @@ function fieldsTypeFor(
     name: blueprintFieldsTypeName(collection.blueprint.handle),
     fields: () => {
       const fields: GraphQLFieldConfigMap<Record<string, unknown>, GraphqlContext> = {};
-      for (const field of collection.blueprint.fields) {
+      for (const field of collection.blueprint.fields.filter(isDelivered)) {
         fields[field.handle] = {
           type: graphqlTypeFor(field),
           description: field.helpText || field.label,
@@ -221,12 +222,26 @@ function fieldsTypeFor(
   return fieldsType;
 }
 
+const stringList = new GraphQLList(new GraphQLNonNull(GraphQLString));
+
 function graphqlTypeFor(field: FieldDefinition): GraphQLOutputType {
   switch (field.type) {
     case "text":
     case "textarea":
     case "date":
+    case "time":
+    case "slug":
+    case "code":
+    case "icon":
+    case "radio":
+    case "buttonGroup":
       return GraphQLString;
+    case "range":
+      return GraphQLFloat;
+    case "checkboxes":
+      return stringList;
+    case "table":
+      return new GraphQLList(new GraphQLNonNull(stringList));
     case "richText":
       return richTextType;
     case "number":

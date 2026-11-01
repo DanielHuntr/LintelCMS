@@ -130,7 +130,7 @@ describe("blueprints", () => {
       "Starts At":
         "Handles use lowercase letters, numbers and underscores, and start with a letter",
       price:
-        "The type should be one of: text, textarea, richText, number, toggle, select, date, image, link, email, url, colour, markdown, list, entries, terms, blocks, page, form",
+        "The type should be one of: text, textarea, richText, markdown, slug, number, range, toggle, select, radio, checkboxes, buttonGroup, date, time, image, video, colour, icon, link, url, email, entries, terms, users, form, list, table, group, repeater, blocks, fieldset, tab, section, spacer, revealer, code, hidden, page",
       seats: "The minimum can't be more than the maximum",
       audience: "A select field needs at least one choice",
       "field 7": "Each field needs a handle",

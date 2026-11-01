@@ -11,9 +11,12 @@ interface DialogProps {
   description?: string;
   /**
    * "alert" is a small centred box for a question with two answers.
-   * "sheet" is a taller panel for a task, such as picking a field type.
+   * "sheet" is a taller panel for a task, such as editing a choice.
+   * "wide" uses the screen for a task with a lot to see, such as picking a field type.
    */
-  size?: "alert" | "sheet";
+  size?: "alert" | "sheet" | "wide";
+  /** For dialogs that lay out their own body (columns that scroll on their own). */
+  bodyClassName?: string;
   /** Buttons along the bottom. The main action goes last, on the right. */
   footer?: ReactNode;
   children?: ReactNode;
@@ -33,6 +36,7 @@ export function Dialog({
   size = "sheet",
   footer,
   children,
+  bodyClassName,
 }: DialogProps) {
   const dialogElement = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -73,14 +77,17 @@ export function Dialog({
         if (!isAlert && event.target === event.currentTarget) onClose();
       }}
       className={classNames(
-        "m-auto max-h-[min(720px,calc(100vh-48px))] w-[calc(100vw-32px)] overflow-hidden",
+        "m-auto w-[calc(100vw-32px)] overflow-hidden",
+        size === "wide"
+          ? "h-[min(680px,calc(100vh-48px))] max-h-[calc(100vh-48px)]"
+          : "max-h-[min(720px,calc(100vh-48px))]",
         "rounded-panel bg-surface-raised p-0 text-label shadow-float backdrop:bg-scrim",
         "motion-safe:transition-[opacity,scale] motion-safe:duration-200 motion-safe:ease-standard",
         "motion-safe:starting:scale-95 starting:opacity-0",
-        isAlert ? "max-w-[340px]" : "max-w-[540px]",
+        isAlert ? "max-w-[340px]" : size === "wide" ? "max-w-[960px]" : "max-w-[540px]",
       )}
     >
-      <div className="flex max-h-[inherit] flex-col">
+      <div className={classNames("flex max-h-[inherit] flex-col", size === "wide" && "h-full")}>
         <header
           className={classNames(
             "flex shrink-0 items-start gap-3",
@@ -111,7 +118,10 @@ export function Dialog({
 
         {children && (
           <div
-            className={classNames("min-h-0 overflow-y-auto", isAlert ? "px-6 pt-2" : "px-6 pb-4")}
+            className={
+              bodyClassName ??
+              classNames("min-h-0 overflow-y-auto", isAlert ? "px-6 pt-2" : "px-6 pb-4")
+            }
           >
             {children}
           </div>

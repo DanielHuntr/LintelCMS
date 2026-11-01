@@ -15,6 +15,7 @@ export function TextareaFieldEditor({
   return (
     <textarea
       id={controlId}
+      placeholder={field.placeholder}
       value={textValue(value)}
       rows={3}
       maxLength={field.options.maxLength}

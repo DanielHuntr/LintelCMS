@@ -25,6 +25,8 @@ export const textFieldtype = defineFieldtype({
   type: "text",
   name: "Text",
   description: "A single line of text, such as a title or a name.",
+  category: "text",
+  keywords: ["input", "string", "line", "heading", "name"],
   optionsSchema: maxLengthOptionsSchema,
   buildValueSchema: textValueSchema,
 });
@@ -33,6 +35,8 @@ export const textareaFieldtype = defineFieldtype({
   type: "textarea",
   name: "Text area",
   description: "A few lines of plain text, such as a summary or an excerpt.",
+  category: "text",
+  keywords: ["paragraph", "multiline", "summary", "excerpt", "plain"],
   optionsSchema: maxLengthOptionsSchema,
   buildValueSchema: textValueSchema,
 });
@@ -43,6 +47,8 @@ export const richTextFieldtype = defineFieldtype({
   type: "richText",
   name: "Rich text",
   description: "Formatted writing with headings, lists, links and quotes.",
+  category: "text",
+  keywords: ["wysiwyg", "editor", "html", "bard", "formatted", "body", "content"],
   optionsSchema: z.object({}),
   buildValueSchema: (_options, label) =>
     z

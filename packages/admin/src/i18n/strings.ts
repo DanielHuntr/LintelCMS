@@ -15,6 +15,7 @@ import { siteStrings } from "./siteStrings.js";
 import { brandingStrings } from "./brandingStrings.js";
 import { translate } from "./translate.js";
 import { starterSiteStrings } from "./starterSiteStrings.js";
+import { fieldStrings } from "./fieldStrings.js";
 
 /**
  * Every word the admin shows lives here, in English: the source every translation in
@@ -41,6 +42,7 @@ const english = {
   ...brandingStrings,
   "app.name": "{product}",
   ...starterSiteStrings,
+  ...fieldStrings,
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",
   "documentTitle.page": "{page} · {site}",
@@ -672,7 +674,6 @@ const english = {
   "builder.name": "Name",
   "builder.nameHint": "Shown under Content and at the top of each list.",
   "builder.fields": "Fields",
-  "builder.fieldsHint": "What editors fill in, in the order they see it.",
   "builder.fieldCount": "{count, plural, one {# field} other {# fields}}",
   "builder.addField": "Add field",
   "builder.addField.title": "Add a field",
@@ -703,7 +704,6 @@ const english = {
   "builder.helpText": "Help text",
   "builder.helpTextHint": "Shown under the field to guide editors. Optional.",
   "builder.required": "Required",
-  "builder.maxLength": "Character limit",
   "builder.maxLengthHint": "Leave empty for no limit.",
   "builder.min": "Smallest",
   "builder.max": "Largest",

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { fieldSettingsShape } from "../fieldtypes/field-settings.schema.js";
 import { handleSchema } from "../http/handle.schema.js";
 
 /**
@@ -28,7 +29,10 @@ export const updateBlueprintRequestSchema = z.object({
 
 export const blueprintHandleParamsSchema = z.object({ handle: z.string() });
 
-/** A field as the API returns it; the same shape the blueprint builder sends. */
+/**
+ * A field as the API returns it; the same shape the blueprint builder sends. The shared
+ * settings (width, conditions, validation...) are there only when they aren't the default.
+ */
 export const fieldSchema = z.object({
   handle: z.string(),
   label: z.string(),
@@ -36,6 +40,7 @@ export const fieldSchema = z.object({
   required: z.boolean(),
   helpText: z.string(),
   options: z.record(z.string(), z.unknown()),
+  ...fieldSettingsShape,
 });
 
 /** A blueprint as the API returns it. */

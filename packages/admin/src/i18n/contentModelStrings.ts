@@ -47,8 +47,6 @@ export const contentModelStrings = {
   "fields.entries.noMatches": "Nothing matches. Try other words.",
   "fields.entries.noCollections": "There are no collections to choose from yet.",
 
-  "builder.maxItems": "Most items",
-  "builder.maxItemsHint": "Leave empty for no limit.",
   "builder.swatches": "Suggested colours",
   "builder.swatchesHint": "Offered as one-click choices, such as your brand colours. Optional.",
   "builder.swatchNumbered": "Suggested colour {number}",
@@ -125,8 +123,6 @@ export const contentModelStrings = {
   "globals.noFieldsDescription": "Add the fields this set should hold, such as a phone number.",
   "globals.leaveMessage": "Your changes to these settings haven’t been saved yet.",
   "globals.fieldsTitle": "Fields of {name}",
-  "globals.fieldsHint": "What editors fill in. Drag to reorder.",
-  "globals.noFieldsYet": "Add the first field with Add field.",
   "globals.removeFieldMessage":
     "What’s saved in this field will be lost the next time the set is saved.",
   "globals.delete": "Delete set",

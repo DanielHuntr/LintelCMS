@@ -1,3 +1,4 @@
+import { isDelivered } from "../delivery/delivered-values.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
 import { type ContentModel, type ModelUnit, sortedUnits } from "./content-model.schema.js";
 import { labelFromHandle } from "./field-helpers.js";
@@ -51,7 +52,7 @@ class TypesWriter {
         ? `, used by ${unit.collections.map((collection) => `${collection.name} (\`${collection.handle}\`)`).join(" and ")}`
         : "";
     const what = unit.kind === "contentType" ? "content type" : "global set";
-    const members = unit.fields.map((field) => this.member(field, base));
+    const members = unit.fields.filter(isDelivered).map((field) => this.member(field, base));
     this.declarations.push(
       `/** The ${what} ${unit.name} (\`${unit.handle}\`)${usedBy}. */\nexport interface ${name} {\n${members.join("\n")}\n}`,
     );
@@ -71,7 +72,31 @@ class TypesWriter {
       case "email":
       case "url":
       case "colour":
+      case "time":
+      case "slug":
+      case "code":
+      case "icon":
         return "string";
+      case "range":
+        return "number";
+      case "hidden":
+        return "string | number | boolean";
+      case "table":
+        return "string[][]";
+      case "video":
+        return "DeliveredVideo";
+      case "users":
+        return "DeliveredPerson[]";
+      case "radio":
+      case "buttonGroup":
+        return choiceUnion(field);
+      case "checkboxes":
+        return `(${choiceUnion(field)})[]`;
+      case "group":
+      case "fieldset":
+        return this.writeGroup(field, ownerName);
+      case "repeater":
+        return `Array<{ id: string; data: ${this.writeGroup(field, ownerName)} }>`;
       case "date":
         return "string";
       case "number":
@@ -93,8 +118,7 @@ class TypesWriter {
       case "terms":
         return "DeliveredTerm[]";
       case "select": {
-        const choices = (field.options.choices ?? []) as { value: string }[];
-        const union = choices.map((choice) => JSON.stringify(choice.value)).join(" | ") || "string";
+        const union = choiceUnion(field);
         return field.options.multiple ? `(${union})[]` : union;
       }
       case "blocks":
@@ -117,9 +141,9 @@ class TypesWriter {
         `${fieldName}${pascalCase(blockType.handle)}Block`,
         `${fieldName}${pascalCase(blockType.handle)}BlockType`,
       );
-      const members = blockType.fields.map((inner) =>
-        this.member(inner, `${fieldName}${pascalCase(blockType.handle)}`, "    "),
-      );
+      const members = blockType.fields
+        .filter(isDelivered)
+        .map((inner) => this.member(inner, `${fieldName}${pascalCase(blockType.handle)}`, "    "));
       this.declarations.push(
         `/** A ${blockType.name} block in ${field.label}. */\n` +
           `export interface ${name} {\n  id: string;\n  type: ${JSON.stringify(blockType.handle)};\n` +
@@ -132,6 +156,18 @@ class TypesWriter {
       `/** Any block in ${field.label}. */\nexport type ${unionName} = ${blockNames.join(" | ") || "never"};`,
     );
     return unionName;
+  }
+
+  /** An interface for a group's (or fieldset's, or repeater row's) values. */
+  private writeGroup(field: FieldDefinition, ownerName: string): string {
+    const fieldName = `${ownerName}${pascalCase(field.handle)}`;
+    const name = this.claim(`${fieldName}Values`, `${fieldName}GroupValues`);
+    const inner = ((field.options.fields ?? []) as FieldDefinition[]).filter(isDelivered);
+    const members = inner.map((innerField) => this.member(innerField, fieldName, "  "));
+    this.declarations.push(
+      `/** The values of ${field.label}. */\nexport interface ${name} {\n${members.join("\n")}\n}`,
+    );
+    return name;
   }
 
   /** The first name that's free, so two handles that read the same never clash. */
@@ -203,6 +239,8 @@ const RESERVED_NAMES = [
   "DeliveredMarkdown",
   "DeliveredLink",
   "DeliveredTerm",
+  "DeliveredVideo",
+  "DeliveredPerson",
   "DeliveredEntryLink",
   "DeliveredEntry",
   "DeliveredEntryWithTranslations",
@@ -253,6 +291,19 @@ export interface DeliveredMarkdown {
 export interface DeliveredPageDesign {
   version: number;
   root: Record<string, unknown>;
+}
+
+/** A video field's value: the address, and where to point a player. */
+export interface DeliveredVideo {
+  url: string;
+  provider: "youtube" | "vimeo" | "file";
+  embedUrl: string;
+}
+
+/** A person chosen in a People field. */
+export interface DeliveredPerson {
+  id: string;
+  name: string;
 }
 
 /** A link field's value. */
@@ -471,3 +522,9 @@ async function errorMessage(response: Response): Promise<string> {
   }
   return response.statusText;
 }`;
+
+/** The values a choice field can hold, as a union of string literals. */
+function choiceUnion(field: FieldDefinition): string {
+  const choices = (field.options.choices ?? []) as { value: string }[];
+  return choices.map((choice) => JSON.stringify(choice.value)).join(" | ") || "string";
+}

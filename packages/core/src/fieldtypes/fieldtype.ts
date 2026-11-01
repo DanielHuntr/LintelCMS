@@ -23,6 +23,11 @@ export interface FieldCheckContext {
   previousData?: Readonly<Record<string, unknown>>;
   /** Who is saving and the site's rules for page code; see src/pages. */
   pageCode?: PageCodeContext;
+  /**
+   * For fields marked unique: whether no other entry in the collection has this value.
+   * Without it (global sets, unit tests) every value counts as unique.
+   */
+  isValueUnique?: (handle: string, value: unknown) => Promise<boolean>;
 }
 
 /** What the page fieldtype needs to know about the person saving and the site. */
@@ -32,6 +37,20 @@ export interface PageCodeContext {
   /** The site setting `builderCustomScripts`. */
   scriptRule: "removeScripts" | "allowScripts";
 }
+
+/** The groups the builder's "Add a field" sorts fieldtypes into, in the order it shows them. */
+export const fieldtypeCategories = [
+  "text",
+  "choices",
+  "dates",
+  "media",
+  "relationships",
+  "structure",
+  "layout",
+  "advanced",
+] as const;
+
+export type FieldtypeCategory = (typeof fieldtypeCategories)[number];
 
 /** What `checkChange` gives back: the value to store, or a message for the editor. */
 export type ChangeCheckResult = { value: unknown } | { problem: string };
@@ -78,6 +97,20 @@ export interface FieldtypeDefinition<OptionsSchema extends z.ZodType> {
   name: string;
   /** One plain sentence about what the editor gets, for the same list. */
   description: string;
+  /** Where the builder's "Add a field" lists it. Defaults to "advanced". */
+  category?: FieldtypeCategory;
+  /** Other words people search for it by: "dropdown" finds Select. */
+  keywords?: readonly string[];
+  /**
+   * False for fields that only arrange the editor (a section heading, a spacer, a tab): they
+   * store nothing and are left out of the API. Defaults to true.
+   */
+  holdsValue?: boolean;
+  /**
+   * False for fieldtypes that can only be a blueprint's own field, not one inside a group,
+   * repeater or block (a page builder, a tab). Defaults to true.
+   */
+  canBeInside?: boolean;
   optionsSchema: OptionsSchema;
   /** The shape a stored value must have, for a field with these options. */
   buildValueSchema(options: z.output<OptionsSchema>, label: string): z.ZodType;
@@ -132,6 +165,10 @@ export interface Fieldtype {
   type: string;
   name: string;
   description: string;
+  category: FieldtypeCategory;
+  keywords: readonly string[];
+  holdsValue: boolean;
+  canBeInside: boolean;
   optionsSchema: z.ZodType;
   buildValueSchema(options: unknown, label: string): z.ZodType;
   isEmpty(value: unknown): boolean;
@@ -165,6 +202,10 @@ export function defineFieldtype<OptionsSchema extends z.ZodType>(
   const { checkReferences, checkInnerFields, checkNestedValues } = definition;
   return {
     ...definition,
+    category: definition.category ?? "advanced",
+    keywords: definition.keywords ?? [],
+    holdsValue: definition.holdsValue ?? true,
+    canBeInside: definition.canBeInside ?? true,
     buildValueSchema: (options, label) =>
       definition.buildValueSchema(definition.optionsSchema.parse(options), label),
     isEmpty: (value) => isBlank(value) || (definition.isEmpty?.(value) ?? false),

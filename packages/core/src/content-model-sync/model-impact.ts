@@ -202,6 +202,10 @@ class ImpactContext {
     owner: FieldOwner,
     holds: (values: Readonly<Record<string, unknown>> | null) => boolean,
   ): Promise<Count> {
+    if (owner.kind === "fieldset") {
+      // A fieldset holds no values; the content types using it report their own changes.
+      return { total: 0, description: "" };
+    }
     if (owner.kind === "globalSet") {
       const rows = await this.globalValues(owner.handle);
       const total = rows.filter((row) => holds(row.data)).length;
@@ -242,8 +246,9 @@ class ImpactContext {
     unit: Extract<ModelChange, { action: "removeUnit" }>["unit"],
   ): Promise<string | null> {
     const kind = describeUnitKind(unit.kind);
-    if (unit.kind === "contentType") {
-      // Its collections are removed as changes of their own, which say what that deletes.
+    if (unit.kind === "contentType" || unit.kind === "fieldset") {
+      // A content type's collections are removed as changes of their own, which say what
+      // that deletes; a fieldset in use can't be removed at all.
       return null;
     }
     if (unit.kind === "taxonomy") {

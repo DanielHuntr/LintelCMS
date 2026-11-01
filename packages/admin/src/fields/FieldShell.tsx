@@ -10,8 +10,9 @@ import { textValue } from "./fieldValues.js";
  * - "label": one control, named by a `<label>` above it (text, number, select, date...)
  * - "inline": one small control on the same line as its label (a toggle)
  * - "group": several controls under one name, so a fieldset and legend (link, checkboxes, image)
+ * - "bare": the editor draws its own label, or nothing at all (a Show more button, a hidden value)
  */
-export type FieldLabelling = "label" | "inline" | "group";
+export type FieldLabelling = "label" | "inline" | "group" | "bare";
 
 interface FieldShellProps {
   field: Field;
@@ -46,6 +47,7 @@ export function FieldShell({
   const showsCount =
     maxLength !== undefined &&
     (field.type === "text" || field.type === "textarea" || field.type === "markdown");
+  const helpAbove = field.helpTextPosition === "above" && Boolean(field.helpText);
   const labelText = (
     <>
       {field.label}
@@ -54,19 +56,32 @@ export function FieldShell({
       {field.required && (
         <span className="ms-0.5 font-normal text-label-tertiary">{t("fields.required")}</span>
       )}
+      {field.readOnly && " "}
+      {field.readOnly && (
+        <span className="ms-0.5 font-normal text-label-tertiary">{t("fields.readOnly")}</span>
+      )}
     </>
   );
   const labelClasses = "text-footnote font-medium text-label";
+  const helpText = field.helpText && (
+    <p id={helpId} className="text-footnote text-label-secondary">
+      {field.helpText}
+    </p>
+  );
+  // A read-only field's controls are disabled together; the value still shows.
+  const control = field.readOnly ? (
+    <fieldset disabled className="contents">
+      {children}
+    </fieldset>
+  ) : (
+    children
+  );
 
   const messages = (
     <>
-      {(field.helpText || showsCount) && (
+      {((field.helpText && !helpAbove) || showsCount) && (
         <div className="flex items-start justify-between gap-4">
-          {field.helpText && (
-            <p id={helpId} className="text-footnote text-label-secondary">
-              {field.helpText}
-            </p>
-          )}
+          {!helpAbove && helpText}
           {showsCount && <CharacterCount length={textValue(value).length} maxLength={maxLength} />}
         </div>
       )}
@@ -78,6 +93,15 @@ export function FieldShell({
     </>
   );
 
+  if (labelling === "bare") {
+    return (
+      <div data-field-handle={field.handle} className="flex min-w-0 flex-col gap-1.5">
+        {control}
+        {messages}
+      </div>
+    );
+  }
+
   if (labelling === "group") {
     return (
       <fieldset
@@ -88,7 +112,8 @@ export function FieldShell({
         <legend id={labelId} className={classNames(labelClasses, "mb-1.5")}>
           {labelText}
         </legend>
-        {children}
+        {helpAbove && helpText}
+        {control}
         {messages}
       </fieldset>
     );
@@ -100,9 +125,10 @@ export function FieldShell({
         <label id={labelId} htmlFor={controlId} className={labelClasses}>
           {labelText}
         </label>
-        {labelling === "inline" && children}
+        {labelling === "inline" && control}
       </div>
-      {labelling === "label" && children}
+      {helpAbove && helpText}
+      {labelling === "label" && control}
       {messages}
     </div>
   );

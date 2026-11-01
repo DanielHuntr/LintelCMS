@@ -13,6 +13,7 @@ import { useId, type ReactNode, type Ref } from "react";
 import { classNames } from "../../design/classNames.js";
 import { Menu } from "../../design/Menu.js";
 import { t } from "../../i18n/strings.js";
+import { FieldGrid } from "../FieldGrid.js";
 import type { BlockType, BlockValue, FieldValue } from "../field.types.js";
 import type { InnerFieldProps } from "../fieldEditorProps.js";
 import { BlockTypeIcon } from "./blockIcons.js";
@@ -162,20 +163,17 @@ export function BlockCard({
           {!blockType && (
             <p className="text-footnote text-label-secondary">{t("fields.blocks.unknownType")}</p>
           )}
-          {blockType?.fields.map((innerField) => (
-            // The full key matches the API's message key, so a failed save can focus this field.
-            <div
-              key={innerField.handle}
-              data-field-handle={`${fieldHandle}.${block.id}.${innerField.handle}`}
-            >
-              {renderField({
-                field: innerField,
-                value: block.data[innerField.handle],
-                onChange: onFieldChange,
-                error: errors[innerField.handle],
-              })}
-            </div>
-          ))}
+          {blockType && (
+            // Conditions inside a block can look at its other fields, or out at the entry's.
+            <FieldGrid
+              fields={blockType.fields}
+              data={block.data}
+              errors={errors}
+              onChange={onFieldChange}
+              renderField={renderField}
+              handlePrefix={`${fieldHandle}.${block.id}`}
+            />
+          )}
         </div>
       </section>
     </li>

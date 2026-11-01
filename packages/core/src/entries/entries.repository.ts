@@ -111,6 +111,30 @@ export async function listEntrySummaries(
   return page ? query.limit(page.limit).offset(page.offset) : query;
 }
 
+/**
+ * The values of a few fields for a page of entries, for fields shown as columns in the list.
+ * Only asked for when a blueprint has such fields, so lists stay light otherwise.
+ */
+export async function findEntryFieldValues(
+  database: DatabaseOrTransaction,
+  entryIds: readonly string[],
+  handles: readonly string[],
+): Promise<Map<string, Record<string, unknown>>> {
+  if (entryIds.length === 0 || handles.length === 0) {
+    return new Map();
+  }
+  const rows = await database
+    .select({ id: entriesTable.id, data: entriesTable.data })
+    .from(entriesTable)
+    .where(inArray(entriesTable.id, [...entryIds]));
+  return new Map(
+    rows.map((row) => [
+      row.id,
+      Object.fromEntries(handles.map((handle) => [handle, row.data[handle] ?? null])),
+    ]),
+  );
+}
+
 export async function countEntries(
   database: DatabaseOrTransaction,
   filters: EntryFilters,
@@ -349,6 +373,31 @@ export async function listTranslationFamily(
     .from(entriesTable)
     .where(or(eq(entriesTable.id, rootId), eq(entriesTable.originId, rootId)))
     .orderBy(asc(entriesTable.createdAt));
+}
+
+/**
+ * Whether another entry in the collection, in the same language, has this value for a field,
+ * for fields marked unique. Values are compared as stored JSON.
+ */
+export async function hasEntryWithValue(
+  database: DatabaseOrTransaction,
+  where: { collectionId: string; locale: string; exceptEntryId: string | null },
+  handle: string,
+  value: unknown,
+): Promise<boolean> {
+  const rows = await database
+    .select({ id: entriesTable.id })
+    .from(entriesTable)
+    .where(
+      and(
+        eq(entriesTable.collectionId, where.collectionId),
+        eq(entriesTable.locale, where.locale),
+        where.exceptEntryId ? sql`${entriesTable.id} <> ${where.exceptEntryId}` : undefined,
+        sql`${entriesTable.data} -> ${handle} = ${JSON.stringify(value)}::jsonb`,
+      ),
+    )
+    .limit(1);
+  return rows.length > 0;
 }
 
 /** Which of these ids are entries, in one of these collections when any are named. */

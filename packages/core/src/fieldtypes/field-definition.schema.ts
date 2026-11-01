@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { handleSchema } from "../http/handle.schema.js";
+import { conditionReferenceProblem } from "./condition-references.js";
+import { fieldSettingsShape, withoutDefaultSettings } from "./field-settings.schema.js";
 import type { CheckInnerFieldList } from "./fieldtype.js";
 import { fieldtypeNames, findFieldtype } from "./fieldtypes.registry.js";
 
@@ -10,7 +12,9 @@ import { fieldtypeNames, findFieldtype } from "./fieldtypes.registry.js";
  *     "helpText": "Shown at the top of the page", "options": {} }
  *
  * The options are checked against the fieldtype's own schema, and stored with that
- * schema's defaults filled in, so later code never has to guess them.
+ * schema's defaults filled in, so later code never has to guess them. The settings every
+ * field shares (width, conditions, validation...) are in field-settings.schema.ts; those are
+ * stored without their defaults instead, so older blueprints read the same.
  */
 export const fieldDefinitionSchema = z
   .object({
@@ -35,6 +39,7 @@ export const fieldDefinitionSchema = z
     options: z
       .record(z.string(), z.unknown(), { error: "Options should be an object" })
       .default({}),
+    ...fieldSettingsShape,
   })
   .transform((field, context) => {
     const fieldtype = findFieldtype(field.type);
@@ -61,14 +66,44 @@ export const fieldDefinitionSchema = z
       });
       return z.NEVER;
     }
-    return { ...field, options: checked.options as Record<string, unknown> };
+    const checkedOptions = checked.options as Record<string, unknown>;
+    const defaultProblem = findDefaultProblem(field, checkedOptions);
+    if (defaultProblem) {
+      context.issues.push({
+        code: "custom",
+        message: defaultProblem,
+        input: field.default,
+        path: ["default"],
+      });
+      return z.NEVER;
+    }
+    return withoutDefaultSettings({ ...field, options: checkedOptions });
   });
+
+/** A default value has to be one the field would accept. */
+function findDefaultProblem(
+  field: { type: string; label: string; default?: unknown },
+  options: Record<string, unknown>,
+): string | null {
+  const fieldtype = findFieldtype(field.type);
+  if (!fieldtype || fieldtype.isEmpty(field.default)) {
+    return null;
+  }
+  if (!fieldtype.holdsValue) {
+    return `${field.label} doesn't hold a value, so it can't have a default`;
+  }
+  const parsed = fieldtype.buildValueSchema(options, field.label).safeParse(field.default);
+  return parsed.success
+    ? null
+    : `The default for ${field.label} isn't right: ${parsed.error.issues[0]?.message ?? ""}`.trim();
+}
 
 export type FieldDefinition = z.output<typeof fieldDefinitionSchema>;
 
 /**
- * Checks the fields inside another field, such as a block type's fields: each one as a
- * blueprint field, with handles unique in the list. They can't hold fields of their own.
+ * Checks the fields inside another field, such as a block type's or a group's fields: each
+ * one as a blueprint field, with handles unique in the list, and conditions that point at
+ * fields beside them. Groups and repeaters can go inside; a page builder or a tab can't.
  */
 const checkInnerFieldList: CheckInnerFieldList = (candidates, where) => {
   const fields: FieldDefinition[] = [];
@@ -81,7 +116,7 @@ const checkInnerFieldList: CheckInnerFieldList = (candidates, where) => {
     }
     const inner = parsed.data;
     const innerFieldtype = findFieldtype(inner.type);
-    if (innerFieldtype?.checkInnerFields) {
+    if (innerFieldtype && !innerFieldtype.canBeInside) {
       return { problem: `${where} can't have a ${innerFieldtype.name} field inside it` };
     }
     if (handles.has(inner.handle)) {
@@ -89,6 +124,12 @@ const checkInnerFieldList: CheckInnerFieldList = (candidates, where) => {
     }
     handles.add(inner.handle);
     fields.push(inner);
+  }
+  for (const field of fields) {
+    const problem = conditionReferenceProblem(field, fields, null);
+    if (problem) {
+      return { problem: `${where}: ${problem}` };
+    }
   }
   return { fields };
 };

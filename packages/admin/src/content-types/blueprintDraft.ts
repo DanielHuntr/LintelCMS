@@ -9,6 +9,13 @@ import {
 import { t } from "../i18n/strings.js";
 import type { Blueprint } from "./blueprints.types.js";
 import { blockTypesForSaving, blockTypesProblem, withDraftKeys } from "./blockTypesDraft.js";
+import {
+  defaultOptionsFor,
+  hasChoices,
+  holdsFields,
+  settingsForSaving,
+  settingsProblem,
+} from "./fieldSettingsDraft.js";
 import { cleanTypedHandle, handleFromLabel, isValidHandle, uniqueHandle } from "./handle.js";
 
 /**
@@ -33,12 +40,15 @@ export interface BlueprintDraftState {
 
 export type BlueprintDraftAction =
   | { type: "renamed"; name: string }
-  | { type: "fieldAdded"; key: string; fieldType: FieldType; label: string }
   | {
-      type: "fieldChanged";
+      type: "fieldAdded";
       key: string;
-      changes: Partial<Pick<Field, "label" | "required" | "helpText">>;
+      fieldType: FieldType;
+      label: string;
+      /** Put it after this field (the last one of the tab being looked at); otherwise at the end. */
+      afterKey?: string;
     }
+  | { type: "fieldChanged"; key: string; changes: FieldChanges }
   | { type: "fieldOptionsChanged"; key: string; options: FieldOptions }
   | { type: "handleEdited"; key: string; handle: string }
   | { type: "fieldMovedBy"; key: string; direction: -1 | 1 }
@@ -46,6 +56,9 @@ export type BlueprintDraftAction =
   | { type: "fieldRemoved"; key: string }
   | { type: "loaded"; blueprint: Blueprint }
   | { type: "reset"; draft: BlueprintDraftState };
+
+/** What the settings dialog can change on a field, besides its handle, type and options. */
+export type FieldChanges = Partial<Omit<Field, "handle" | "type" | "options" | "draft">>;
 
 export function draftFromBlueprint(blueprint: Blueprint): BlueprintDraftState {
   return draftFromFields(blueprint.name, blueprint.fields);
@@ -65,11 +78,35 @@ export function draftFromFields(name: string, fields: readonly Field[]): Bluepri
   };
 }
 
-/** A blocks field's block types get the builder's bookkeeping; other options stay as they are. */
-function withDraftOptions(options: FieldOptions): FieldOptions {
-  return options.blockTypes
-    ? { ...options, blockTypes: withDraftKeys(options.blockTypes) }
-    : options;
+/**
+ * A blocks field's block types, and a group's or repeater's fields, get the builder's
+ * bookkeeping; other options stay as they are.
+ */
+export function withDraftOptions(options: FieldOptions): FieldOptions {
+  let result = options;
+  if (options.blockTypes) {
+    result = {
+      ...result,
+      blockTypes: withDraftKeys(options.blockTypes).map((blockType) => ({
+        ...blockType,
+        fields: blockType.fields.map((field) => ({
+          ...field,
+          options: withDraftOptions(field.options),
+        })),
+      })),
+    };
+  }
+  if (options.fields) {
+    result = {
+      ...result,
+      fields: options.fields.map((field) => ({
+        ...field,
+        options: withDraftOptions(field.options ?? {}),
+        draft: field.draft ?? { key: `saved:${field.handle}`, handleFollows: false },
+      })),
+    };
+  }
+  return result;
 }
 
 export function isTitleField(field: Pick<Field, "handle">): boolean {
@@ -99,7 +136,11 @@ export function blueprintDraftReducer(
         handleIsCustom: false,
         isSaved: false,
       };
-      return { ...state, fields: [...state.fields, field] };
+      const after = state.fields.findIndex((other) => other.key === action.afterKey);
+      if (after === -1) return { ...state, fields: [...state.fields, field] };
+      const fields = [...state.fields];
+      fields.splice(after + 1, 0, field);
+      return { ...state, fields };
     }
 
     case "fieldChanged":
@@ -185,21 +226,6 @@ function handlesOf(fields: readonly DraftField[]): string[] {
   return fields.map((field) => field.handle);
 }
 
-function defaultOptionsFor(fieldType: FieldType): FieldOptions {
-  switch (fieldType) {
-    case "select":
-      return { choices: [], multiple: false };
-    case "colour":
-      return { swatches: [] };
-    case "entries":
-      return { collections: [] };
-    case "blocks":
-      return { blockTypes: [] };
-    default:
-      return {};
-  }
-}
-
 /** Keeps only the options that apply to the field's type, so the API gets a clean blueprint. */
 export function optionsForType(fieldType: FieldType, options: FieldOptions): FieldOptions {
   const pick = (keys: Array<keyof FieldOptions>): FieldOptions =>
@@ -207,10 +233,34 @@ export function optionsForType(fieldType: FieldType, options: FieldOptions): Fie
       keys.filter((key) => options[key] !== undefined).map((key) => [key, options[key]]),
     );
 
+  if (hasChoices(fieldType) && fieldType !== "select") {
+    return { choices: options.choices ?? [], ...pick(["inline"]) };
+  }
+  if (holdsFields(fieldType)) {
+    return {
+      fields: innerFieldsForSaving(options.fields ?? []),
+      ...pick(["minRows", "maxRows", "addLabel"]),
+    };
+  }
   switch (fieldType) {
     case "text":
     case "textarea":
       return pick(["maxLength"]);
+    case "range":
+      return pick(["min", "max", "step", "suffix"]);
+    case "slug":
+      return pick(["from"]);
+    case "code":
+      return pick(["language", "maxLength"]);
+    case "table":
+      return pick(["headerRow", "maxRows", "maxColumns"]);
+    case "users":
+      return pick(["maxItems"]);
+    case "revealer":
+      return pick(["buttonLabel"]);
+    case "fieldset":
+      // The fieldset's fields are filled in by the API.
+      return { fieldset: options.fieldset ?? "" };
     case "number":
       return pick(["min", "max", "step"]);
     case "select":
@@ -229,7 +279,7 @@ export function optionsForType(fieldType: FieldType, options: FieldOptions): Fie
       return { taxonomy: options.taxonomy ?? "", ...pick(["maxItems"]) };
     case "blocks":
       return {
-        blockTypes: blockTypesForSaving(options.blockTypes ?? [], optionsForType),
+        blockTypes: blockTypesForSaving(options.blockTypes ?? [], fieldForSaving),
         ...(options.maxBlocks !== undefined ? { maxBlocks: options.maxBlocks } : {}),
       };
     default:
@@ -239,15 +289,30 @@ export function optionsForType(fieldType: FieldType, options: FieldOptions): Fie
 
 /** The fields as the API takes them. */
 export function fieldsForSaving(fields: readonly DraftField[]): Field[] {
-  return fields.map(({ handle, label, type, required, helpText, options }) => ({
+  return fields.map((field) => ({
+    ...fieldForSaving(field),
+    // The title is always required; the API insists, and the editor relies on it.
+    required: field.handle === titleFieldHandle ? true : field.required,
+  }));
+}
+
+/** One field as the API takes it, without the builder's bookkeeping. */
+export function fieldForSaving(field: Field): Field {
+  const { handle, label, type, required, helpText, options } = field;
+  return {
     handle,
     label: label.trim(),
     type,
-    // The title is always required; the API insists, and the editor relies on it.
-    required: handle === titleFieldHandle ? true : required,
+    required,
     ...(helpText?.trim() ? { helpText: helpText.trim() } : {}),
+    ...settingsForSaving(field),
     options: optionsForType(type, options),
-  }));
+  };
+}
+
+/** The fields inside a group or repeater, as the API takes them. */
+function innerFieldsForSaving(fields: readonly Field[]): Field[] {
+  return fields.map(fieldForSaving);
 }
 
 /**
@@ -268,12 +333,13 @@ export function blueprintProblems(state: BlueprintDraftState): FieldMessages {
     else if (!isValidHandle(field.handle)) problems[field.key] = t("builder.problem.handle");
     else if ((handleCounts.get(field.handle) ?? 0) > 1)
       problems[field.key] = t("builder.problem.duplicate");
-    else if (field.type === "select" && (field.options.choices ?? []).length === 0) {
-      problems[field.key] = t("builder.problem.choices");
-    } else if (field.type === "terms" && !field.options.taxonomy) {
+    else if (field.type === "terms" && !field.options.taxonomy) {
       problems[field.key] = t("builder.problem.taxonomy");
     } else if (field.type === "blocks") {
       const problem = blockTypesProblem(field.options.blockTypes ?? []);
+      if (problem) problems[field.key] = problem;
+    } else {
+      const problem = settingsProblem(field, state.fields);
       if (problem) problems[field.key] = problem;
     }
   }

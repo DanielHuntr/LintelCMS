@@ -19,6 +19,7 @@ import { entryDraftReducer, hasUnsavedChanges, initialDraftState } from "./entry
 import { type Companion, editorColumns, editorWidths } from "./editorLayout.js";
 import { EntryEditorBar } from "./EntryEditorBar.js";
 import { EntryFields } from "./EntryFields.js";
+import { defaultValues } from "../fields/fieldLayout.js";
 import { EntrySidePanel } from "./EntrySidePanel.js";
 import { EntrySlugInput } from "./EntrySlugInput.js";
 import { EntryTitleInput } from "./EntryTitleInput.js";
@@ -57,7 +58,9 @@ export function EntryEditor({
   onCreated,
   locale,
 }: EntryEditorProps) {
-  const [state, dispatch] = useReducer(entryDraftReducer, initialEntry, initialDraftState);
+  const [state, dispatch] = useReducer(entryDraftReducer, initialEntry, (entry) =>
+    initialDraftState(entry, defaultValues(blueprint.fields)),
+  );
   const [companion, setCompanion] = useState<Companion>("panel");
   const isPanelOpen = companion === "panel";
   const isPreviewOpen = companion === "preview";

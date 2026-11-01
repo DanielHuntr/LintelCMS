@@ -2,6 +2,7 @@ import {
   type FieldDefinition,
   fieldDefinitionSchema,
 } from "../fieldtypes/field-definition.schema.js";
+import { conditionReferenceProblem } from "../fieldtypes/condition-references.js";
 import { type FieldMessages, InvalidFieldsError } from "../http/http-errors.js";
 
 /**
@@ -46,7 +47,7 @@ export function checkFieldDefinitions(input: readonly unknown[]): FieldDefinitio
   return fields;
 }
 
-/** Each field on its own, then unique handles. */
+/** Each field on its own, then unique handles, then conditions that point at real fields. */
 function collectFieldProblems(input: readonly unknown[]) {
   const messages: FieldMessages = {};
   const fields: FieldDefinition[] = [];
@@ -66,6 +67,12 @@ function collectFieldProblems(input: readonly unknown[]) {
     handles.add(parsed.data.handle);
     fields.push(parsed.data);
   });
+  for (const field of fields) {
+    const problem = conditionReferenceProblem(field, fields, fields);
+    if (problem) {
+      messages[field.handle] ??= problem;
+    }
+  }
   return { fields, messages };
 }
 

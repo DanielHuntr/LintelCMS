@@ -72,6 +72,19 @@ export interface GlobalSetDefinition extends GlobalSetInput {
   kind: "globalSet";
 }
 
+export interface FieldsetInput {
+  /** Used by Fieldset fields: `fieldset({ fieldset: "seo" })`. */
+  handle: string;
+  /** What editors see, such as "SEO". */
+  name: string;
+  /** The fields, keyed by handle, in the order editors see them. No fieldsets or tabs inside. */
+  fields: Record<string, FieldSpec>;
+}
+
+export interface FieldsetDefinition extends FieldsetInput {
+  kind: "fieldset";
+}
+
 export interface MenuInput {
   /** Used by the delivery API (`/delivery/navigation/main`). */
   handle: string;
@@ -87,7 +100,11 @@ export interface MenuDefinition extends MenuInput {
 
 /** Anything a content model file can define. Menus hold their items in the database, as content. */
 export type ModelDefinition =
-  ContentTypeDefinition | TaxonomyDefinition | GlobalSetDefinition | MenuDefinition;
+  | ContentTypeDefinition
+  | TaxonomyDefinition
+  | GlobalSetDefinition
+  | FieldsetDefinition
+  | MenuDefinition;
 
 /** A kind of content, such as a page or a blog post: its fields and where its entries live. */
 export function defineContentType(input: ContentTypeInput): ContentTypeDefinition {
@@ -107,4 +124,9 @@ export function defineGlobalSet(input: GlobalSetInput): GlobalSetDefinition {
 /** A navigation menu. Its items are content, edited in the admin. */
 export function defineMenu(input: MenuInput): MenuDefinition {
   return { kind: "menu", ...input };
+}
+
+/** A saved set of fields, such as "SEO", that content types reuse with a Fieldset field. */
+export function defineFieldset(input: FieldsetInput): FieldsetDefinition {
+  return { kind: "fieldset", ...input };
 }

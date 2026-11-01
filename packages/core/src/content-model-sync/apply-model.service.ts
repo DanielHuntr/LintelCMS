@@ -13,6 +13,7 @@ import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import { deleteEntry } from "../entries/entries.service.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
 import { replaceGlobalValuesData } from "../globals/global-values.repository.js";
+import { createFieldset, deleteFieldset, updateFieldset } from "../fieldsets/fieldsets.service.js";
 import { createGlobalSet, deleteGlobalSet, updateGlobalSet } from "../globals/globals.service.js";
 import {
   createNavigation,
@@ -63,12 +64,14 @@ export async function applyModel(
   await database.transaction(async (transaction) => {
     const step = new ModelApplier(transaction, current, target);
     await step.addAndRenameTaxonomies();
+    await step.saveFieldsets();
     await step.saveContentTypes();
     await step.saveCollections();
     await step.removeCollections();
     await step.removeUnits("contentType");
     await step.saveGlobalSets();
     await step.removeUnits("globalSet");
+    await step.removeUnits("fieldset");
     await step.saveMenus();
     await step.removeUnits("menu");
     await step.removeUnits("taxonomy");
@@ -104,6 +107,19 @@ class ModelApplier {
         });
       } else if (before.name !== taxonomy.name) {
         await updateTaxonomy(this.database, taxonomy.handle, { name: taxonomy.name });
+      }
+    }
+  }
+
+  /** Saving a fieldset also gives the content types and global sets using it its fields. */
+  async saveFieldsets(): Promise<void> {
+    for (const fieldset of this.targetUnits("fieldset")) {
+      const before = this.before(fieldset);
+      const { handle, name, fields } = fieldset;
+      if (!before) {
+        await createFieldset(this.database, { handle, name, fields });
+      } else if (before.name !== name || canonicalJson(before.fields) !== canonicalJson(fields)) {
+        await updateFieldset(this.database, handle, { name, fields });
       }
     }
   }
@@ -256,6 +272,7 @@ class ModelApplier {
         contentType: deleteBlueprint,
         taxonomy: deleteTaxonomy,
         globalSet: deleteGlobalSet,
+        fieldset: deleteFieldset,
         menu: deleteNavigation,
       }[unit.kind];
       await remove(this.database, unit.handle);

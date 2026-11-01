@@ -2,7 +2,10 @@ import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
 import type { DeliveredAsset } from "../fieldtypes/image-assets.js";
 import { renderMarkdownHtml } from "../fieldtypes/markdown.js";
 import { renderRichTextHtml, type RichTextDocument } from "../fieldtypes/rich-text.js";
-import { eachBlock } from "./block-values.js";
+import type { FieldsOptions } from "../fieldtypes/container-fieldtypes.js";
+import { findFieldtype } from "../fieldtypes/fieldtypes.registry.js";
+import { describeVideoAddress } from "../fieldtypes/video-addresses.js";
+import { eachBlock, eachRow, innerValueSets } from "./block-values.js";
 import { type DeliveredReferences, noDeliveredReferences } from "./delivered-references.js";
 
 /**
@@ -15,15 +18,20 @@ import { type DeliveredReferences, noDeliveredReferences } from "./delivered-ref
  *   - blocks:   an ordered array of `{ id, type, data }`, each block's `data` delivered by
  *               these same rules against its block type's fields.
  *
- * and three more are expanded the same way:
+ * and more are expanded the same way:
  *
  *   - markdown: the text is kept and its HTML added, as `{ markdown, html }`;
  *   - terms:    the stored ids become `{ id, title, slug, taxonomy }`;
  *   - entries:  the stored ids become links to the published entries (see
- *               delivered-references.ts); unpublished ones are left out.
+ *               delivered-references.ts); unpublished ones are left out;
+ *   - users:    the stored ids become `{ id, name }`;
+ *   - video:    the address becomes `{ url, provider, embedUrl }`;
+ *   - group, fieldset: their values, delivered by these same rules;
+ *   - repeater: `[{ id, data }]`, each row's `data` delivered by these same rules.
  *
  * Only the blueprint's fields are delivered, so values left behind by a removed field
- * (or blocks of a removed block type) never reach a website.
+ * (or blocks of a removed block type) never reach a website. Fields that only arrange the
+ * editor (sections, spacers, tabs, Show more buttons) are left out too.
  */
 export function deliverValues(
   fields: readonly FieldDefinition[],
@@ -33,6 +41,9 @@ export function deliverValues(
 ): Record<string, unknown> {
   const delivered: Record<string, unknown> = {};
   for (const field of fields) {
+    if (!isDelivered(field)) {
+      continue;
+    }
     delivered[field.handle] = deliverValue(field, data[field.handle] ?? null, assets, references);
   }
   return delivered;
@@ -55,6 +66,24 @@ function deliverValue(
   }
   if (field.type === "entries") {
     return listedValues(value, references.entries);
+  }
+  if (field.type === "users") {
+    return listedValues(value, references.users);
+  }
+  if (field.type === "video") {
+    const video = typeof value === "string" ? describeVideoAddress(value) : null;
+    return video ? { url: value, ...video } : null;
+  }
+  if (field.type === "group" || field.type === "fieldset") {
+    const [inner] = innerValueSets(field, value);
+    return inner ? deliverValues(inner.fields, inner.data, assets, references) : null;
+  }
+  if (field.type === "repeater") {
+    const { fields = [] } = field.options as Partial<FieldsOptions>;
+    return eachRow(value).map((row) => ({
+      id: row.id,
+      data: deliverValues(fields, row.data ?? {}, assets, references),
+    }));
   }
   if (field.type === "image") {
     return typeof value === "string" ? (assets.get(value) ?? null) : null;
@@ -94,10 +123,8 @@ function addImageIds(
     if (field.type === "image" && typeof value === "string") {
       ids.add(value);
     }
-    if (field.type === "blocks") {
-      for (const { block, blockType } of eachBlock(field, value)) {
-        addImageIds(blockType.fields, block.data, ids);
-      }
+    for (const inner of innerValueSets(field, value)) {
+      addImageIds(inner.fields, inner.data, ids);
     }
   }
 }
@@ -115,4 +142,10 @@ function listedValues<Value>(value: unknown, found: ReadonlyMap<string, Value>):
 
 function isRichTextDocument(value: unknown): value is RichTextDocument {
   return typeof value === "object" && value !== null && "type" in value && value.type === "doc";
+}
+
+/** Whether a field's value reaches websites: not for fields that only arrange the editor. */
+export function isDelivered(field: FieldDefinition): boolean {
+  const fieldtype = findFieldtype(field.type);
+  return (fieldtype?.holdsValue ?? true) && field.type !== "revealer";
 }

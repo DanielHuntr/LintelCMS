@@ -116,6 +116,8 @@ export const entrySummarySchema = z.object({
   publishedAt: z.iso.datetime().nullable(),
   scheduledFor: z.iso.datetime().nullable(),
   updatedBy: personSchema,
+  /** The values of fields shown as columns in the list of entries, in the blueprint's order. */
+  columns: z.array(z.object({ handle: z.string(), label: z.string(), value: z.unknown() })),
 });
 
 /** One entry with everything the editor needs to show it. */

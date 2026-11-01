@@ -5,7 +5,7 @@ import { defineFieldtype } from "./fieldtype.js";
 
 /**
  * Fieldtypes that link to other content: entries (related posts, the team members on a
- * page) and taxonomy terms (a post's categories and tags). Both store a list of ids, in
+ * page), taxonomy terms (a post's categories and tags) and people. All store a list of ids, in
  * the order the editor chose, even when only one is allowed, so code reading them never
  * has to ask which shape it got.
  */
@@ -37,6 +37,8 @@ export const termsFieldtype = defineFieldtype({
   type: "terms",
   name: "Categories or tags",
   description: "Terms from a taxonomy you set up, such as a post's categories or tags.",
+  category: "relationships",
+  keywords: ["taxonomy", "tags", "categories", "terms"],
   optionsSchema: z.object({
     taxonomy: handleSchema("Choose which taxonomy the terms come from"),
     maxItems: maxItemsSchema,
@@ -53,6 +55,8 @@ export const entriesFieldtype = defineFieldtype({
   type: "entries",
   name: "Entries",
   description: "Links to other entries, such as related posts or the people on a team page.",
+  category: "relationships",
+  keywords: ["relationship", "related", "reference", "entries", "pages", "posts"],
   optionsSchema: z.object({
     collections: z
       .array(z.string({ error: "Collections should be listed by handle" }), {
@@ -68,5 +72,22 @@ export const entriesFieldtype = defineFieldtype({
     return missing.length === 0
       ? null
       : `Some of the entries chosen for ${label} no longer exist, or can't be chosen here`;
+  },
+});
+
+export const usersFieldtype = defineFieldtype({
+  type: "users",
+  name: "People",
+  description: "People with an account here, such as an article's authors or a page's owner.",
+  category: "relationships",
+  keywords: ["users", "author", "authors", "owner", "member", "person", "staff"],
+  optionsSchema: z.object({ maxItems: maxItemsSchema }),
+  buildValueSchema: ({ maxItems }, label) => idListSchema(label, "people", maxItems),
+  checkReferences: async (value, label, context) => {
+    const references = context.references ?? acceptAnyReference;
+    const missing = await references.findMissingUserIds(value as string[]);
+    return missing.length === 0
+      ? null
+      : `Some of the people chosen for ${label} no longer have an account`;
   },
 });

@@ -44,6 +44,8 @@ export interface EntrySummary {
   publishedAt: string | null;
   scheduledFor: string | null;
   updatedBy: Person | null;
+  /** Fields shown as columns in the list ("Show as a column in lists"), with their values. */
+  columns?: Array<{ handle: string; label: string; value: unknown }>;
 }
 
 /** A whole entry, as the editor loads it. */

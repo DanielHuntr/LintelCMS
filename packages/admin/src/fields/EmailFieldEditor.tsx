@@ -20,7 +20,7 @@ export function EmailFieldEditor({
       inputMode="email"
       autoComplete="off"
       spellCheck={false}
-      placeholder={t("fields.email.placeholder")}
+      placeholder={field.placeholder || t("fields.email.placeholder")}
       value={textValue(value)}
       onChange={(event) => onChange(event.target.value)}
       aria-required={field.required || undefined}

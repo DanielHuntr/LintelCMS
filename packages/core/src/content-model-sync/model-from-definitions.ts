@@ -2,7 +2,14 @@ import type { z } from "zod";
 import { checkBlueprintFields, checkFieldDefinitions } from "../blueprints/blueprint-fields.js";
 import { createBlueprintRequestSchema } from "../blueprints/blueprints.schema.js";
 import { createCollectionRequestSchema } from "../collections/collections.schema.js";
+import {
+  type FieldsetFields,
+  nestedFieldsetProblem,
+  withFieldsetFields,
+} from "../fieldsets/fieldset-imports.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
+import { fieldSettingsShape } from "../fieldtypes/field-settings.schema.js";
+import { createFieldsetRequestSchema } from "../fieldsets/fieldsets.schema.js";
 import { createGlobalSetRequestSchema } from "../globals/globals.schema.js";
 import { InvalidFieldsError } from "../http/http-errors.js";
 import { createNavigationRequestSchema } from "../navigation/navigation.schema.js";
@@ -43,6 +50,7 @@ export function modelFromDefinitions(loaded: readonly LoadedDefinition[]): Model
   const problems: string[] = [];
   const units: ModelUnit[] = [];
   const sources = new Map<string, string>();
+  const parsedDefinitions: { source: string; definition: Definition }[] = [];
 
   for (const { source, definition } of loaded) {
     const parsed = modelDefinitionSchema.safeParse(definition);
@@ -50,7 +58,17 @@ export function modelFromDefinitions(loaded: readonly LoadedDefinition[]): Model
       problems.push(...parsed.error.issues.map((issue) => describeIssue(source, issue)));
       continue;
     }
-    const result = unitFromDefinition(parsed.data);
+    parsedDefinitions.push({ source, definition: parsed.data });
+  }
+
+  // Fieldsets first: content types and global sets copy their fields (see src/fieldsets).
+  const fieldsets = new Map<string, FieldDefinition[]>();
+  const ordered = [
+    ...parsedDefinitions.filter(({ definition }) => definition.kind === "fieldset"),
+    ...parsedDefinitions.filter(({ definition }) => definition.kind !== "fieldset"),
+  ];
+  for (const { source, definition } of ordered) {
+    const result = unitFromDefinition(definition, fieldsets);
     if ("problems" in result) {
       problems.push(...result.problems.map((problem) => `${source}: ${problem}`));
       continue;
@@ -65,6 +83,9 @@ export function modelFromDefinitions(loaded: readonly LoadedDefinition[]): Model
     }
     sources.set(key, source);
     units.push(result.unit);
+    if (result.unit.kind === "fieldset") {
+      fieldsets.set(result.unit.handle, result.unit.fields);
+    }
   }
 
   const model = modelFromUnits(units);
@@ -85,16 +106,37 @@ function describeIssue(source: string, issue: z.core.$ZodIssue): string {
 
 type UnitResult = { unit: ModelUnit } | { problems: string[] };
 
-function unitFromDefinition(definition: Definition): UnitResult {
+function unitFromDefinition(definition: Definition, fieldsets: FieldsetFields): UnitResult {
   if (definition.kind === "contentType") {
-    return contentTypeUnit(definition);
+    return contentTypeUnit(definition, fieldsets);
+  }
+  if (definition.kind === "fieldset") {
+    const checked = createFieldsetRequestSchema.safeParse({ ...definition, fields: [] });
+    if (!checked.success) {
+      return { problems: issueMessages(checked.error) };
+    }
+    const rawFields = fieldsFromSpecs(definition.fields);
+    const nested = nestedFieldsetProblem(rawFields);
+    if (nested) {
+      return { problems: [nested] };
+    }
+    const fields = checkFields(rawFields, checkFieldDefinitions);
+    if ("problems" in fields) {
+      return fields;
+    }
+    const { handle, name } = checked.data;
+    return { unit: { kind: "fieldset", handle, name, fields: fields.fields } };
   }
   if (definition.kind === "globalSet") {
     const checked = createGlobalSetRequestSchema.safeParse({ ...definition, fields: [] });
     if (!checked.success) {
       return { problems: issueMessages(checked.error) };
     }
-    const fields = checkFields(fieldsFromSpecs(definition.fields), checkFieldDefinitions);
+    const fields = checkFields(
+      fieldsFromSpecs(definition.fields),
+      checkFieldDefinitions,
+      fieldsets,
+    );
     if ("problems" in fields) {
       return fields;
     }
@@ -114,13 +156,16 @@ function unitFromDefinition(definition: Definition): UnitResult {
     : { problems: issueMessages(checked.error) };
 }
 
-function contentTypeUnit(definition: Extract<Definition, { kind: "contentType" }>): UnitResult {
+function contentTypeUnit(
+  definition: Extract<Definition, { kind: "contentType" }>,
+  fieldsets: FieldsetFields,
+): UnitResult {
   const rawFields = fieldsFromSpecs(definition.fields);
   const checked = createBlueprintRequestSchema.safeParse({ ...definition, fields: rawFields });
   if (!checked.success) {
     return { problems: issueMessages(checked.error) };
   }
-  const fields = checkFields(rawFields, checkBlueprintFields);
+  const fields = checkFields(rawFields, checkBlueprintFields, fieldsets);
   if ("problems" in fields) {
     return fields;
   }
@@ -166,20 +211,33 @@ function listCollections<Collection>(collection: Collection | Collection[] | und
   return Array.isArray(collection) ? collection : [collection];
 }
 
+/** The settings every field has, which sit beside `options` rather than in them. */
+const SETTING_KEYS = new Set(Object.keys(fieldSettingsShape));
+
 /** The fields as the admin sends them: `{ handle, label, type, required, helpText, options }`. */
-export function fieldsFromSpecs(specs: Readonly<Record<string, FieldSpec>>): unknown[] {
-  return Object.entries(specs).map(([handle, spec]) => fieldFromSpec(handle, spec));
+export function fieldsFromSpecs(specs: Readonly<Record<string, unknown>>): unknown[] {
+  // The file's shape has been checked by model-definition.schema.ts already.
+  return Object.entries(specs).map(([handle, spec]) => fieldFromSpec(handle, spec as FieldSpec));
 }
 
 function fieldFromSpec(handle: string, spec: FieldSpec): Record<string, unknown> {
-  const { type, label, required, helpText, ...options } = spec;
+  const { type, label, required, helpText, ...rest } = spec;
+  const settings: Record<string, unknown> = {};
+  const options: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(rest)) {
+    (SETTING_KEYS.has(key) ? settings : options)[key] = value;
+  }
   const field = {
     handle,
     label: label ?? labelFromHandle(handle),
     type,
     required: required ?? false,
     helpText: helpText ?? "",
+    ...settings,
   };
+  if (spec.type === "group" || spec.type === "repeater") {
+    return { ...field, options: { ...options, fields: fieldsFromSpecs(spec.fields) } };
+  }
   if (spec.type !== "blocks") {
     return { ...field, options };
   }
@@ -192,12 +250,22 @@ function fieldFromSpec(handle: string, spec: FieldSpec): Record<string, unknown>
   return { ...field, options: { ...options, blockTypes } };
 }
 
+/**
+ * Checks fields with the admin's rules, after filling in the fields of any fieldsets they
+ * use (a fieldset no file defines is a problem with that field).
+ */
 function checkFields(
   rawFields: unknown[],
   check: (fields: readonly unknown[]) => FieldDefinition[],
+  fieldsets: FieldsetFields = new Map(),
 ): { fields: FieldDefinition[] } | { problems: string[] } {
+  const filled = withFieldsetFields(rawFields, fieldsets);
+  const missing = Object.entries(filled.missing);
+  if (missing.length > 0) {
+    return { problems: missing.map(([handle, message]) => `field "${handle}": ${message}`) };
+  }
   try {
-    return { fields: check(rawFields) };
+    return { fields: check(filled.fields) };
   } catch (error) {
     if (error instanceof InvalidFieldsError) {
       return {
@@ -244,7 +312,7 @@ function findReferenceProblems(
   }
 
   for (const unit of model.values()) {
-    if (unit.kind !== "contentType" && unit.kind !== "globalSet") {
+    if (unit.kind !== "contentType" && unit.kind !== "globalSet" && unit.kind !== "fieldset") {
       continue;
     }
     for (const field of everyField(unit.fields)) {
@@ -270,13 +338,15 @@ function findReferenceProblems(
   return problems;
 }
 
-/** A list of fields and the fields inside its blocks fields' block types. */
+/** A list of fields and every field inside them: in block types, groups and repeaters. */
 export function everyField(fields: readonly FieldDefinition[]): FieldDefinition[] {
   return fields.flatMap((field) => {
-    if (field.type !== "blocks") {
-      return [field];
-    }
+    const inner = (field.options.fields ?? []) as FieldDefinition[];
     const blockTypes = (field.options.blockTypes ?? []) as { fields: FieldDefinition[] }[];
-    return [field, ...blockTypes.flatMap((blockType) => blockType.fields)];
+    return [
+      field,
+      ...everyField(inner),
+      ...everyField(blockTypes.flatMap((blockType) => blockType.fields)),
+    ];
   });
 }

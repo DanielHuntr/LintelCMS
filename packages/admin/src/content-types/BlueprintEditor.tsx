@@ -1,5 +1,4 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
 import { useReducer, useState } from "react";
 import { ApiError, type FieldMessages } from "../api/client.js";
 import { describeError } from "../api/describeError.js";
@@ -13,31 +12,24 @@ import { ManagedInCodeBanner } from "../content-model-sync/ManagedInCodeBanner.j
 import { LargeTitle } from "../design/LargeTitle.js";
 import { TextField } from "../design/TextField.js";
 import { t } from "../i18n/strings.js";
-import { AddFieldSheet } from "./AddFieldSheet.js";
 import {
   blueprintDraftReducer,
   blueprintProblems,
   draftFromBlueprint,
   fieldsForSaving,
   problemsByKey,
-  type DraftField,
 } from "./blueprintDraft.js";
-import { BlueprintFieldList } from "./BlueprintFieldList.js";
+import { FieldsBuilder } from "./FieldsBuilder.js";
 import { updateBlueprint } from "./blueprints.api.js";
-import { blueprintKeys, useFieldtypes } from "./blueprints.queries.js";
+import { blueprintKeys } from "./blueprints.queries.js";
 import type { Blueprint } from "./blueprints.types.js";
-import { FieldSettingsSheet } from "./FieldSettingsSheet.js";
 
 /** The blueprint builder: a content type's name and its ordered list of fields. */
 export function BlueprintEditor({ blueprint }: { blueprint: Blueprint }) {
   const queryClient = useQueryClient();
   const canEdit = useCanChangeContentModel("blueprints:update");
-  const fieldtypes = useFieldtypes();
   const [saved, setSaved] = useState(() => draftFromBlueprint(blueprint));
   const [state, dispatch] = useReducer(blueprintDraftReducer, saved);
-  const [isAddingField, setIsAddingField] = useState(false);
-  const [settingsKey, setSettingsKey] = useState<string | null>(null);
-  const [fieldToRemove, setFieldToRemove] = useState<DraftField | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [serverProblems, setServerProblems] = useState<FieldMessages>({});
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -49,9 +41,6 @@ export function BlueprintEditor({ blueprint }: { blueprint: Blueprint }) {
   const problems: FieldMessages = hasTriedToSave
     ? { ...blueprintProblems(state), ...serverProblems }
     : serverProblems;
-  const typeNameOf = (type: string) =>
-    fieldtypes.data?.find((fieldtype) => fieldtype.type === type)?.name ?? type;
-  const settingsField = state.fields.find((field) => field.key === settingsKey) ?? null;
 
   async function save() {
     setHasTriedToSave(true);
@@ -82,20 +71,6 @@ export function BlueprintEditor({ blueprint }: { blueprint: Blueprint }) {
     } finally {
       setIsSaving(false);
     }
-  }
-
-  function addField(type: DraftField["type"], name: string) {
-    const key = crypto.randomUUID();
-    dispatch({ type: "fieldAdded", key, fieldType: type, label: name });
-    setIsAddingField(false);
-    setSettingsKey(key);
-  }
-
-  function removeField(field: DraftField) {
-    setSettingsKey(null);
-    // A field that's never been saved has no content yet, so there's nothing to confirm.
-    if (field.isSaved) setFieldToRemove(field);
-    else dispatch({ type: "fieldRemoved", key: field.key });
   }
 
   return (
@@ -135,63 +110,16 @@ export function BlueprintEditor({ blueprint }: { blueprint: Blueprint }) {
           />
         </section>
 
-        <section aria-labelledby="blueprint-fields-heading" className="flex flex-col gap-2">
-          <div className="flex items-end justify-between px-1">
-            <div>
-              <h2 id="blueprint-fields-heading" className="text-headline text-label">
-                {t("builder.fields")}
-              </h2>
-              <p className="text-footnote text-label-secondary">{t("builder.fieldsHint")}</p>
-            </div>
-            {canEdit && (
-              <Button
-                variant="tinted"
-                size="small"
-                icon={<Plus aria-hidden="true" />}
-                onClick={() => setIsAddingField(true)}
-              >
-                {t("builder.addField")}
-              </Button>
-            )}
-          </div>
-          <BlueprintFieldList
-            fields={state.fields}
-            problems={problems}
-            typeNameOf={typeNameOf}
-            onMoveBy={(key, direction) => dispatch({ type: "fieldMovedBy", key, direction })}
-            onMoveTo={(key, targetKey) => dispatch({ type: "fieldMovedTo", key, targetKey })}
-            onOpenSettings={setSettingsKey}
-            onRemove={removeField}
-          />
-        </section>
+        <FieldsBuilder
+          fields={state.fields}
+          problems={problems}
+          canEdit={canEdit}
+          dispatch={dispatch}
+          removeMessage={t("builder.removeMessage")}
+          canShowInList
+        />
       </div>
 
-      <AddFieldSheet
-        open={isAddingField}
-        onClose={() => setIsAddingField(false)}
-        onPick={addField}
-      />
-      <FieldSettingsSheet
-        field={settingsField}
-        typeName={settingsField ? typeNameOf(settingsField.type) : ""}
-        problem={settingsField ? problems[settingsField.key] : undefined}
-        dispatch={dispatch}
-        onRemove={removeField}
-        onClose={() => setSettingsKey(null)}
-      />
-      <ConfirmDialog
-        open={fieldToRemove !== null}
-        title={t("builder.removeTitle", { label: fieldToRemove?.label ?? "" })}
-        message={t("builder.removeMessage")}
-        confirmLabel={t("builder.remove")}
-        cancelLabel={t("common.cancel")}
-        isDestructive
-        onCancel={() => setFieldToRemove(null)}
-        onConfirm={() => {
-          if (fieldToRemove) dispatch({ type: "fieldRemoved", key: fieldToRemove.key });
-          setFieldToRemove(null);
-        }}
-      />
       <ConfirmDialog
         open={leaveWarning.isAsking}
         title={t("editor.leaveTitle")}

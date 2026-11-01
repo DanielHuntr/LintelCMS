@@ -24,7 +24,7 @@ export function UrlFieldEditor({
         type="url"
         inputMode="url"
         spellCheck={false}
-        placeholder={t("fields.url.placeholder")}
+        placeholder={field.placeholder || t("fields.url.placeholder")}
         value={textValue(value)}
         onChange={(event) => onChange(event.target.value)}
         aria-required={field.required || undefined}

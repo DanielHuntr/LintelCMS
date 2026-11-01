@@ -15,6 +15,7 @@ export function TextFieldEditor({
   return (
     <input
       id={controlId}
+      placeholder={field.placeholder}
       type="text"
       value={textValue(value)}
       maxLength={field.options.maxLength}

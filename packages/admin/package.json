@@ -27,6 +27,7 @@
     "@lintel/builder-model": "workspace:*",
     "@lintel/core": "workspace:*",
     "@lintel/docs": "workspace:*",
+    "@lintel/field-conditions": "workspace:*",
     "@lintel/motion": "workspace:*",
     "@lintel/motion-editor": "workspace:*",
     "@lintel/site-components": "workspace:*",

@@ -1,6 +1,7 @@
 import type { DatabaseOrTransaction } from "../database/client.js";
 import type { ContentReferences } from "../fieldtypes/content-references.js";
 import { findTermIdsInTaxonomy } from "../taxonomies/terms.repository.js";
+import { findExistingUserIds } from "../users/users.repository.js";
 import {
   findEntryValuesMentioning,
   findExistingEntryIds,
@@ -24,6 +25,10 @@ export function createContentReferences(database: DatabaseOrTransaction): Conten
     async findMissingEntryIds(collectionHandles, entryIds) {
       const existing = new Set(await findExistingEntryIds(database, entryIds, collectionHandles));
       return entryIds.filter((entryId) => !existing.has(entryId));
+    },
+    async findMissingUserIds(userIds) {
+      const existing = new Set(await findExistingUserIds(database, userIds));
+      return userIds.filter((userId) => !existing.has(userId));
     },
   };
 }

@@ -24,6 +24,8 @@ export const numberFieldtype = defineFieldtype({
   type: "number",
   name: "Number",
   description: "A number, such as a price, a quantity or a rating.",
+  category: "choices",
+  keywords: ["integer", "decimal", "price", "quantity", "amount", "digit"],
   optionsSchema: numberOptionsSchema,
   buildValueSchema: ({ min, max, step }, label) => {
     let number = z.number({ error: `${label} should be a number` });
@@ -52,6 +54,8 @@ export const toggleFieldtype = defineFieldtype({
   type: "toggle",
   name: "Toggle",
   description: "An on or off switch, such as “Show in the menu”.",
+  category: "choices",
+  keywords: ["boolean", "switch", "checkbox", "yes no", "true false"],
   optionsSchema: z.object({}),
   buildValueSchema: (_options, label) => z.boolean({ error: `${label} should be on or off` }),
 });
@@ -60,6 +64,8 @@ export const dateFieldtype = defineFieldtype({
   type: "date",
   name: "Date",
   description: "A calendar date, with a time of day if you need one.",
+  category: "dates",
+  keywords: ["calendar", "day", "datetime", "when", "schedule"],
   optionsSchema: z.object({
     includeTime: z.boolean({ error: "includeTime should be true or false" }).default(false),
   }),

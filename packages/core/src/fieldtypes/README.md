@@ -6,27 +6,81 @@ check an entry's values against any blueprint.
 
 ## The fieldtypes
 
-| type       | Stored value                                        | Options                                                              |
-| ---------- | --------------------------------------------------- | -------------------------------------------------------------------- |
-| `text`     | string                                              | `maxLength?`                                                         |
-| `textarea` | string                                              | `maxLength?`                                                         |
-| `richText` | TipTap/ProseMirror JSON `{ "type": "doc", ... }`    | none                                                                 |
-| `number`   | number                                              | `min?`, `max?`, `step?`                                              |
-| `toggle`   | boolean                                             | none                                                                 |
-| `select`   | string, or string[] when `multiple`                 | `choices: [{ value, label }]`, `multiple?`                           |
-| `date`     | `YYYY-MM-DD`, or a date and time with `includeTime` | `includeTime?`                                                       |
-| `image`    | asset id (uuid)                                     | none                                                                 |
-| `link`     | `{ url, label? }`                                   | none                                                                 |
-| `email`    | string, an email address                            | none                                                                 |
-| `url`      | string, an `https://` or `http://` address          | none                                                                 |
-| `colour`   | `#rrggbb`, stored in lowercase                      | `swatches?: ["#rrggbb"]` (up to 24)                                  |
-| `markdown` | string                                              | `maxLength?`                                                         |
-| `list`     | string[]; blank items are left out                  | `maxItems?`                                                          |
-| `entries`  | entry ids (uuid[]), in the chosen order             | `collections?: [handle]`, `maxItems?`                                |
-| `terms`    | term ids (uuid[]), in the chosen order              | `taxonomy` (handle), `maxItems?`                                     |
-| `blocks`   | `[{ id, type, data }]`, in order                    | `blockTypes: [{ handle, name, description?, fields }]`, `maxBlocks?` |
-| `page`     | a page design `{ version, root }` (see src/pages)   | none                                                                 |
-| `form`     | a form's handle (see `src/forms`)                   | none                                                                 |
+| type                       | Stored value                                        | Options                                                              |
+| -------------------------- | --------------------------------------------------- | -------------------------------------------------------------------- |
+| `text`                     | string                                              | `maxLength?`                                                         |
+| `textarea`                 | string                                              | `maxLength?`                                                         |
+| `richText`                 | TipTap/ProseMirror JSON `{ "type": "doc", ... }`    | none                                                                 |
+| `number`                   | number                                              | `min?`, `max?`, `step?`                                              |
+| `toggle`                   | boolean                                             | none                                                                 |
+| `select`                   | string, or string[] when `multiple`                 | `choices: [{ value, label }]`, `multiple?`                           |
+| `date`                     | `YYYY-MM-DD`, or a date and time with `includeTime` | `includeTime?`                                                       |
+| `image`                    | asset id (uuid)                                     | none                                                                 |
+| `link`                     | `{ url, label? }`                                   | none                                                                 |
+| `email`                    | string, an email address                            | none                                                                 |
+| `url`                      | string, an `https://` or `http://` address          | none                                                                 |
+| `colour`                   | `#rrggbb`, stored in lowercase                      | `swatches?: ["#rrggbb"]` (up to 24)                                  |
+| `markdown`                 | string                                              | `maxLength?`                                                         |
+| `list`                     | string[]; blank items are left out                  | `maxItems?`                                                          |
+| `entries`                  | entry ids (uuid[]), in the chosen order             | `collections?: [handle]`, `maxItems?`                                |
+| `terms`                    | term ids (uuid[]), in the chosen order              | `taxonomy` (handle), `maxItems?`                                     |
+| `blocks`                   | `[{ id, type, data }]`, in order                    | `blockTypes: [{ handle, name, description?, fields }]`, `maxBlocks?` |
+| `page`                     | a page design `{ version, root }` (see src/pages)   | none                                                                 |
+| `form`                     | a form's handle (see `src/forms`)                   | none                                                                 |
+| `radio`                    | one choice's value                                  | `choices`, `inline?`                                                 |
+| `checkboxes`               | the chosen values, string[]                         | `choices`, `inline?`                                                 |
+| `buttonGroup`              | one choice's value                                  | `choices`                                                            |
+| `range`                    | number, on a slider                                 | `min` (0), `max` (100), `step` (1), `suffix?`                        |
+| `time`                     | `HH:MM`, or `HH:MM:SS`                              | none                                                                 |
+| `slug`                     | `summer-fair`: lowercase, numbers, single hyphens   | `from` (the field it follows, `title`)                               |
+| `code`                     | string, kept as typed                               | `language` (`plain`), `maxLength?`                                   |
+| `table`                    | string[][], every row the same length               | `headerRow` (true), `maxRows?`, `maxColumns?` (at most 20)           |
+| `video`                    | a YouTube, Vimeo or https video file address        | none                                                                 |
+| `icon`                     | an icon's name, such as `map-pin`                   | none                                                                 |
+| `users`                    | user ids (uuid[]), in order                         | `maxItems?`                                                          |
+| `hidden`                   | text, a number or true/false                        | none                                                                 |
+| `group`                    | `{ handle: value }` of its fields                   | `fields`                                                             |
+| `repeater`                 | `[{ id, data }]` rows of its fields                 | `fields`, `minRows?`, `maxRows?`, `addLabel?`                        |
+| `fieldset`                 | `{ handle: value }` of the fieldset's fields        | `fieldset` (handle), `fields` (a copy kept by src/fieldsets)         |
+| `tab`, `section`, `spacer` | nothing: they arrange the editor                    | none                                                                 |
+| `revealer`                 | boolean: a Show more button conditions look at      | `buttonLabel?`                                                       |
+
+Every fieldtype also says where the builder's "Add a field" lists it (`category`), other
+words people search for it by (`keywords`), whether it holds a value (`holdsValue`: false for
+tabs, sections and spacers, which store nothing and never reach the API) and whether it can
+go inside a group, repeater or block (`canBeInside`: not blocks or tabs).
+
+## Settings every field shares
+
+Beside `options`, a field can say (field-settings.schema.ts), each left out when it is the
+default so older blueprints read the same:
+
+| Setting            | What it does                                                           |
+| ------------------ | ---------------------------------------------------------------------- |
+| `width`            | 25, 33, 50, 66, 75 or 100 (percent of the editor's row)                |
+| `placeholder`      | grey example text in an empty input                                    |
+| `default`          | what a new entry starts with; checked against the fieldtype when saved |
+| `helpTextPosition` | `above` or `below` (the default)                                       |
+| `readOnly`         | shown but not editable in the admin                                    |
+| `hidden`           | kept out of the editor; the value is still saved and delivered         |
+| `showInList`       | a column in the list of entries (`columns` in `GET .../entries`)       |
+| `validation`       | `minLength`, `maxLength`, `min`, `max`, `pattern`, `unique`, `message` |
+| `conditions`       | show or hide the field depending on others; see below                  |
+
+`validation` applies after the fieldtype's own checks (field-validation.ts): lengths and a
+pattern for text, `min`/`max` for numbers or for how many items a list has. `unique` asks the
+caller (`isValueUnique` in the context): entries check other entries in the same collection
+and language when a person saves. `message` replaces Lintel's message for any of these.
+
+## Conditions
+
+`conditions` use `@lintel/field-conditions` (packages/field-conditions), the same rules the
+admin applies as people type: `{ action: "show" | "hide", match: "all" | "any", rules: [{ field,
+operator, value }], keepHiddenValues }`. When an entry is saved, a hidden field isn't checked
+(so it is never required) and its value is cleared, or kept as it was if `keepHiddenValues`.
+Fields in a group, repeater row or block see their own level's values, and outer ones with
+"$parent." and "$root.". When a blueprint is saved, every rule has to point at a field beside
+it (or, with "$root.", one of the blueprint's own); condition-references.ts checks that.
 
 Empty values (missing, null, blank text, empty lists, a rich text document with only empty
 paragraphs, a link without an address) are stored as null, and are an error only when the
@@ -115,7 +169,17 @@ show its values differently, add that to `src/delivery/delivered-values.ts`.
 | `reference-fieldtypes.ts`    | `select`, `image`, `link`                                        |
 | `format-fieldtypes.ts`       | `email`, `url`, `colour`, `markdown`                             |
 | `list-fieldtype.ts`          | `list`                                                           |
-| `relation-fieldtypes.ts`     | `entries`, `terms`                                               |
+| `choice-fieldtypes.ts`       | `radio`, `checkboxes`, `buttonGroup`                             |
+| `measure-fieldtypes.ts`      | `range`, `time`                                                  |
+| `writing-fieldtypes.ts`      | `slug`, `code`, `hidden`                                         |
+| `media-fieldtypes.ts`        | `video`, `icon` (addresses in `video-addresses.ts`)              |
+| `table-fieldtype.ts`         | `table`                                                          |
+| `container-fieldtypes.ts`    | `group`, `repeater`, `fieldset`                                  |
+| `layout-fieldtypes.ts`       | `tab`, `section`, `spacer`, `revealer`                           |
+| `field-settings.schema.ts`   | Width, placeholder, default, validation, conditions...           |
+| `field-validation.ts`        | A field's own validation rules                                   |
+| `condition-references.ts`    | Conditions point at fields that exist                            |
+| `relation-fieldtypes.ts`     | `entries`, `terms`, `users`                                      |
 | `content-references.ts`      | `ContentReferences`: what entries and terms fields check against |
 | `markdown.ts`                | Rendering Markdown to safe HTML for the delivery API             |
 | `blocks-fieldtype.ts`        | `blocks`: block types and their fields, and checking each block  |
