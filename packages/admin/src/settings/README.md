@@ -7,6 +7,8 @@
 - **API access** (`/settings/api`, and the reference at `/settings/api/reference`) lives in
   `src/api-access`.
 - **Webhooks** (`/settings/webhooks`) lives in `src/webhooks`.
+- **Your website** (`/settings/site`) lives in `src/website`: the built-in site's template,
+  theme, logo and address.
 - **Search engines** (`/settings/seo` and `/settings/seo/redirects`) lives in `src/seo`, and
   only shows while the SEO plugin is on.
 

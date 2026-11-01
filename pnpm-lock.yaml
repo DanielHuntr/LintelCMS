@@ -218,6 +218,9 @@ importers:
       '@lintel/builder-model':
         specifier: workspace:*
         version: link:../builder-model
+      '@lintel/site-components':
+        specifier: workspace:*
+        version: link:../site-components
       '@tiptap/core':
         specifier: ^3.32.2
         version: 3.32.2(@tiptap/pm@3.32.2)

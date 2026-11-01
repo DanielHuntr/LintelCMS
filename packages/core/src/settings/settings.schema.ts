@@ -1,6 +1,7 @@
 import { customScriptRules } from "@lintel/builder-model";
 import { z } from "zod";
 import { defaultSeoDefaults, seoDefaultsSchema } from "../seo/seo-defaults.schema.js";
+import { defaultWebsiteSettings, websiteSettingsSchema } from "../website/website.schema.js";
 
 /**
  * Every setting, with the shape its value must have. Reading a key that has never been
@@ -31,6 +32,8 @@ export const settingSchemas = {
   seoDefaults: seoDefaultsSchema,
   /** What happens to scripts in the page builder's code blocks when a page is saved (see src/pages). */
   builderCustomScripts: z.enum(customScriptRules),
+  /** The built-in website's template, theme, logo and address (see src/website). */
+  website: websiteSettingsSchema,
 };
 
 export type SettingKey = keyof typeof settingSchemas;
@@ -45,4 +48,5 @@ export const settingDefaults: { [Key in SettingKey]: SettingValue<Key> } = {
   deliveryAllowedOrigins: [],
   seoDefaults: defaultSeoDefaults,
   builderCustomScripts: "removeScripts",
+  website: defaultWebsiteSettings,
 };

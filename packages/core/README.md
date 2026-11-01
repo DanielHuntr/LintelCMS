@@ -37,6 +37,7 @@ its routes and its tests.
 | `src/webhooks`       | Signed requests to other services when content changes |
 | `src/content-events` | Publish, delete and upload events, and who hears them  |
 | `src/seo`            | The SEO plugin: page SEO, sitemap, robots, redirects   |
+| `src/website`        | The website Lintel serves itself, and its theme        |
 
 As features grow, each folder follows the same shape:
 

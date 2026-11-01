@@ -51,4 +51,12 @@ export interface EmptySiteView {
   kind: "emptySite";
 }
 
-export type SiteView = PageView | PostView | PostListView | NotFoundView | EmptySiteView;
+/** A short message of its own, such as "This preview link has expired". */
+export interface MessageView {
+  kind: "message";
+  title: string;
+  text: string;
+}
+
+export type SiteView =
+  PageView | PostView | PostListView | NotFoundView | EmptySiteView | MessageView;

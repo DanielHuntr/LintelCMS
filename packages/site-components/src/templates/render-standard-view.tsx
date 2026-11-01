@@ -29,6 +29,7 @@ export function renderStandardView(
       );
     case "notFound":
     case "emptySite":
+    case "message":
       return <MessageLayout view={view} labels={labels} homeUrl={chrome.homeUrl} />;
   }
 }

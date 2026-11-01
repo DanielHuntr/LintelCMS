@@ -41,6 +41,13 @@ import { navigationRoutes } from "./navigation/navigation.routes.js";
 import { translationsRoutes } from "./entries/translations.routes.js";
 import { WebhookDispatcher } from "./webhooks/webhook-dispatcher.js";
 import { webhooksRoutes } from "./webhooks/webhooks.routes.js";
+import {
+  clearRenderedPagesAfterChanges,
+  createWebsiteRuntime,
+  type WebsiteOptions,
+  type WebsiteRuntime,
+} from "./website/website-runtime.js";
+import { websiteRoutes } from "./website/website.routes.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -65,6 +72,8 @@ declare module "fastify" {
     publicApiUrl: string;
     /** Sends queued webhook deliveries (see src/webhooks). */
     webhooks: WebhookDispatcher;
+    /** The built-in website's templates, address and rendered pages (see src/website). */
+    website: WebsiteRuntime;
   }
 }
 
@@ -109,6 +118,8 @@ export interface ServerOptions {
   graphiql?: boolean;
   /** How webhooks are sent. Every part has a default. */
   webhooks?: WebhookOptions;
+  /** The built-in website: its address and any templates of your own. Off by default. */
+  website?: WebsiteOptions;
 }
 
 export interface WebhookOptions {
@@ -152,6 +163,8 @@ export function buildServer(options: ServerOptions) {
     onError: (error) => server.log.error(error, "Sending webhooks failed"),
   });
   server.decorate("webhooks", webhooks);
+  server.decorate("website", createWebsiteRuntime(options.website));
+  clearRenderedPagesAfterChanges(server);
   server.addHook("onClose", () => webhooks.finishSending());
   server.decorateRequest("signedIn", null);
   server.setErrorHandler(sendHttpErrorDetails);
@@ -186,6 +199,7 @@ export function buildServer(options: ServerOptions) {
   server.register(openApiRoutes);
   server.register(seoRoutes);
   server.register(pagesRoutes);
+  server.register(websiteRoutes);
 
   if (options.runScheduledJobs ?? true) {
     registerScheduledJobs(server);

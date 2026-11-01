@@ -7,10 +7,13 @@ import { EntryStatusBadge } from "./EntryStatusBadge.js";
 import { PanelSection } from "./PanelSection.js";
 import { formatDateTime } from "./relativeTime.js";
 import { ScheduleForm } from "./ScheduleForm.js";
+import { ViewPageLink } from "../website/ViewPageLink.js";
 
 interface PublishingSectionProps {
   /** Undefined until a new entry is first saved. */
   entry: Entry | undefined;
+  /** Where the collection's entries live on the site, for "View page". */
+  routePattern?: string | null;
   canPublish: boolean;
   isWorking: boolean;
   onUnpublish: () => void;
@@ -23,6 +26,7 @@ interface PublishingSectionProps {
  */
 export function PublishingSection({
   entry,
+  routePattern = null,
   canPublish,
   isWorking,
   onUnpublish,
@@ -43,6 +47,12 @@ export function PublishingSection({
             {t("editor.unpublishedChangesDescription")}
           </span>
         </p>
+      )}
+
+      {entry && status === "published" && (
+        <div className="flex">
+          <ViewPageLink routePattern={routePattern} entry={entry} />
+        </div>
       )}
 
       {!canPublish && (

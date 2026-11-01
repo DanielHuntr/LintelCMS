@@ -9,7 +9,8 @@ import type { AssetEventData, EntryEventData } from "./entry-event-data.js";
  * listens:
  *
  *   - webhooks: every event except "entry.moved" is offered to webhooks (src/webhooks);
- *   - SEO: "entry.moved" suggests a redirect from the old address (src/seo).
+ *   - SEO: "entry.moved" suggests a redirect from the old address (src/seo);
+ *   - the built-in website: every event empties its rendered pages (src/website).
  */
 export type ContentEvent =
   | { name: "entry.published" | "entry.unpublished" | "entry.deleted"; entry: EntryEventData }
@@ -25,6 +26,7 @@ export async function announceContentEvent(
   server: FastifyInstance,
   event: ContentEvent,
 ): Promise<void> {
+  server.website.renderedPages.clear();
   try {
     if (event.name === "entry.moved") {
       await suggestRedirectForMovedEntry(server.database, event.previousUrl, event.entry);

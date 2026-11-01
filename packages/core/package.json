@@ -43,6 +43,7 @@
     "@fastify/multipart": "^10.1.6",
     "@fastify/rate-limit": "^11.2.1",
     "@lintel/builder-model": "workspace:*",
+    "@lintel/site-components": "workspace:*",
     "@tiptap/core": "^3.32.2",
     "@tiptap/html": "^3.32.2",
     "@tiptap/pm": "^3.32.2",

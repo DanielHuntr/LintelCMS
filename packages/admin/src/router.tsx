@@ -41,6 +41,7 @@ import { SeoSettingsPage } from "./seo/SeoSettingsPage.js";
 import { SettingsPage } from "./settings/SettingsPage.js";
 import { SignInPage } from "./sign-in/SignInPage.js";
 import { WebhookDetailPage } from "./webhooks/WebhookDetailPage.js";
+import { SiteSettingsPage } from "./website/SiteSettingsPage.js";
 import { WebhooksPage } from "./webhooks/WebhooksPage.js";
 import "./setup/historyState.js";
 
@@ -311,8 +312,15 @@ const redirectsRoute = createRoute({
   component: RedirectsPage,
 });
 
-/** API access, webhooks and the SEO plugin's settings. */
+const siteSettingsRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/settings/site",
+  component: SiteSettingsPage,
+});
+
+/** API access, webhooks, the SEO plugin's settings and the website's. */
 const integrationRoutes = [
+  siteSettingsRoute,
   apiAccessRoute,
   apiReferenceRoute,
   webhooksRoute,

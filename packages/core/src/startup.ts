@@ -14,10 +14,10 @@ import { DEFAULT_LINTEL_FOLDER, SavedConfigUnreadableError } from "./database/da
  */
 
 export class PortInUseError extends Error {
-  constructor(port: number) {
+  constructor(port: number, setting = "API_PORT") {
     super(
       `Port ${port} is already in use, probably by another copy of Lintel. ` +
-        "Stop that one, or set API_PORT to a different port.",
+        `Stop that one, or set ${setting} to a different port.`,
     );
     this.name = "PortInUseError";
   }

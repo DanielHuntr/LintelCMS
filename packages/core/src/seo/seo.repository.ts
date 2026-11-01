@@ -36,6 +36,7 @@ export async function upsertEntrySeoRow(
 
 export interface SitemapEntryRow {
   slug: string;
+  locale: string;
   routePattern: string;
   publishedAt: Date | null;
   updatedAt: Date;
@@ -51,6 +52,7 @@ export async function listSitemapEntryRows(
   const rows = await database
     .select({
       slug: entriesTable.slug,
+      locale: entriesTable.locale,
       routePattern: collectionsTable.routePattern,
       publishedAt: entriesTable.publishedAt,
       updatedAt: entriesTable.updatedAt,

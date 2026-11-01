@@ -24,7 +24,13 @@ export async function previewRoutes(server: FastifyInstance) {
   server.post(
     "/entries/:id/preview",
     { preHandler: requirePermission("entries:read") },
-    async (request) => createEntryPreview(server.database, readEntryId(request.params)),
+    async (request) =>
+      createEntryPreview(
+        server.database,
+        readEntryId(request.params),
+        new Date(),
+        server.website.builtInSiteUrl,
+      ),
   );
 
   server.get("/preview", async (request, reply) => {
