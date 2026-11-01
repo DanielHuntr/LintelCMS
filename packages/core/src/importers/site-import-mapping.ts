@@ -64,8 +64,11 @@ export function matchFields(
     const match =
       candidates.find((candidate) => candidate.handle === handle) ??
       candidates.find((candidate) => candidate.label.toLowerCase() === field.label.toLowerCase()) ??
-      // A designed page goes into the content type's page field, whatever it is called.
-      (field.kind === "design" ? candidates[0] : undefined);
+      // The main text and a designed page go into the content type's own, whatever its name.
+      (field.kind === "design" ? candidates[0] : undefined) ??
+      (["richText", "markdown"].includes(field.kind) && !taken.has("body")
+        ? candidates.find((candidate) => candidate.type === "richText")
+        : undefined);
     result[field.key] = match ? match.handle : null;
     if (match) taken.add(match.handle);
   }

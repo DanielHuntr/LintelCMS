@@ -1,0 +1,3 @@
+title: News
+route: "/news/{slug}"
+dated: true

@@ -1,0 +1,28 @@
+title: Post
+tabs:
+  main:
+    sections:
+      - fields:
+          - handle: title
+            field:
+              type: text
+              display: Title
+          - handle: intro
+            field:
+              type: bard
+              display: Introduction
+          - handle: hero
+            field:
+              type: assets
+              display: Hero picture
+              max_files: 1
+          - handle: topics
+            field:
+              type: terms
+              display: Topics
+              taxonomies:
+                - topics
+          - handle: gallery_layout
+            field:
+              type: replicator
+              display: Gallery
