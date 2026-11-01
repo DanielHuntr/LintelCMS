@@ -1,6 +1,12 @@
 import {
+  type BackgroundVideo,
   buildStarterPage,
   type CreateNodeId,
+  type FreeLayout,
+  type FreePlace,
+  type MarkStyleProperty,
+  type PageFont,
+  type StackingMove,
   type NodeAnimation,
   createNode,
   findNode,
@@ -24,6 +30,7 @@ import type { ComponentRegistry } from "../render/component-registry.js";
 import { renderPage } from "../render/render-page.js";
 import { type BuilderClipboard, choosePasteSource, writeToSystemClipboard } from "./clipboard.js";
 import * as commands from "./commands.js";
+import * as designCommands from "./design-commands.js";
 import { createEditorState, describeUndo, editorReducer } from "./editor-state.js";
 
 type StyleValues = Partial<Record<StylePropertyName, string | undefined>>;
@@ -248,7 +255,65 @@ export function useBuilder({
         run(commands.changeStyles(context(), nodeId, target, values, label), ""),
       editText: (nodeId: string, prop: string, value: string) => {
         const node = nodeById(nodeId);
-        if (node) run(commands.changeProps(context(), nodeId, { [prop]: value }, name(node)));
+        if (node && node.props[prop] !== value) {
+          run(commands.changeProps(context(), nodeId, { [prop]: value }, name(node)));
+        }
+      },
+      setFreeLayout: (nodeId: string, freeLayout: FreeLayout | null) =>
+        run(designCommands.setFreeLayout(context(), nodeId, freeLayout)),
+      placeFreely: (nodeId: string, target: StyleTarget, place: FreePlace) => {
+        const node = nodeById(nodeId);
+        if (!node) return;
+        run(
+          designCommands.placeFreely(
+            context(),
+            nodeId,
+            target,
+            place,
+            text("pageBuilder.design.history.moved", { name: name(node) }),
+          ),
+        );
+      },
+      restack: (nodeId: string, move: StackingMove) =>
+        run(designCommands.restackNode(context(), nodeId, move)),
+      setBackgroundVideo: (nodeId: string, video: BackgroundVideo | null) =>
+        run(designCommands.setBackgroundVideo(context(), nodeId, video)),
+      changePageFonts: (fonts: PageFont[], label: string) =>
+        run(designCommands.changePageFonts(context(), fonts, label)),
+      /**
+       * Styles part of a text, or with `styles` null clears it. `text` is the text as shown
+       * when it was selected; if it was typed into and not saved yet, it is saved first.
+       */
+      markText: (
+        selection: { nodeId: string; prop: string; from: number; to: number; text: string },
+        styles: Partial<Record<MarkStyleProperty, string | undefined>> | null,
+        label: string,
+      ) => {
+        const node = nodeById(selection.nodeId);
+        if (!node) return;
+        if (node.props[selection.prop] !== selection.text) {
+          run(
+            commands.changeProps(
+              context(),
+              node.id,
+              { [selection.prop]: selection.text },
+              name(node),
+            ),
+            "",
+          );
+        }
+        run(
+          designCommands.markText(
+            context(),
+            node.id,
+            {
+              from: Math.min(selection.from, selection.to),
+              to: Math.max(selection.from, selection.to),
+            },
+            styles,
+            label,
+          ),
+        );
       },
       copy: () => void copySelected(false),
       cut: () => void copySelected(true),

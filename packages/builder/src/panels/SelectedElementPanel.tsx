@@ -1,20 +1,29 @@
-import type {
-  AnyComponentDefinition,
-  Breakpoint,
-  NodeAnimation,
-  PageDocument,
-  PageNode,
-  StylePropertyName,
-  StyleTarget,
+import {
+  type AnyComponentDefinition,
+  type BackgroundVideo,
+  type Breakpoint,
+  findPath,
+  type FreeLayout,
+  type NodeAnimation,
+  type PageDocument,
+  type PageFont,
+  type PageNode,
+  readPageFonts,
+  rootNodeId,
+  type StackingMove,
+  type StylePropertyName,
+  type StyleTarget,
 } from "@lintel/builder-model";
 import type { MotionSpec } from "@lintel/motion";
 import type { Translate as MotionText } from "@lintel/motion-editor";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AnimatePanel } from "../animate-panel/AnimatePanel.js";
 import { CodePanel } from "../developer/CodePanel.js";
 import { useBuilderText } from "../i18n/builder-text.js";
 import type { ComponentRegistry } from "../render/component-registry.js";
 import type { SkillLevelTools } from "../skill-level/skill-levels.js";
+import type { MarkChange } from "../inline-text/TextStyleBar.js";
+import type { DesignTools, FileUploader } from "../style-panel/design-tools.js";
 import { type StateChoice, StylePanel, type StylePanelMode } from "../style-panel/StylePanel.js";
 import { Tip } from "../tour/Tip.js";
 import { Tabs } from "../ui/controls.js";
@@ -36,6 +45,7 @@ interface SelectedElementPanelProps {
   tools: SkillLevelTools;
   tips: { isDismissed: (tip: string) => boolean; dismiss: (tip: string) => void };
   pickImage?: ImagePicker;
+  uploadFile?: FileUploader;
   motionText?: MotionText;
   /** Opens the Code tab, as switching to Developer does. */
   showCode: boolean;
@@ -47,6 +57,15 @@ interface SelectedElementPanelProps {
     convertToCode: (nodeId: string) => void;
     changeCode: (nodeId: string, code: { html: string; css: string; js: string }) => void;
     pasteHtml: (html: string) => void;
+    setFreeLayout: (nodeId: string, freeLayout: FreeLayout | null) => void;
+    setBackgroundVideo: (nodeId: string, video: BackgroundVideo | null) => void;
+    changePageFonts: (fonts: PageFont[], label: string) => void;
+    restack: (nodeId: string, move: StackingMove) => void;
+    markText: (
+      selection: { nodeId: string; prop: string; from: number; to: number; text: string },
+      styles: MarkChange | null,
+      label: string,
+    ) => void;
   };
   onPreviewMotion: (nodeId: string, spec: MotionSpec) => void;
 }
@@ -68,6 +87,22 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
     if (wantsCode) setTab("code");
   }
   const tab = chosenTab === "code" && !tools.codeTools ? "style" : chosenTab;
+  const { document, pickImage, uploadFile } = props;
+  const design = useMemo<DesignTools | null>(() => {
+    if (!node) return null;
+    const parent = findPath(document.root, node.id).at(-2);
+    return {
+      node,
+      parent: parent && parent.id !== rootNodeId ? parent : null,
+      pageFonts: readPageFonts(document.root.props),
+      changePageFonts: actions.changePageFonts,
+      setFreeLayout: (freeLayout) => actions.setFreeLayout(node.id, freeLayout),
+      setBackgroundVideo: (video) => actions.setBackgroundVideo(node.id, video),
+      restack: (move) => actions.restack(node.id, move),
+      pickImage,
+      uploadFile,
+    };
+  }, [node, document, actions, pickImage, uploadFile]);
 
   const tabs: Array<{ value: RightTab; label: string }> = [
     { value: "style", label: text("pageBuilder.panels.style") },
@@ -115,8 +150,9 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
                 : "pageBuilder.panels.selectSomething",
             )}
           </p>
-        ) : tab === "style" ? (
+        ) : tab === "style" && design ? (
           <StylePanel
+            design={design}
             node={node}
             definition={props.definition}
             breakpoint={props.breakpoint}
@@ -153,6 +189,10 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
             isLocked={props.isLocked}
             pickImage={props.pickImage}
             onChange={(changed, label) => actions.changeProps(node.id, changed, label)}
+            pageFonts={design?.pageFonts}
+            onMarkText={(range, styles, label) =>
+              actions.markText({ ...range, nodeId: node.id, prop: "text" }, styles, label)
+            }
           />
         )}
       </div>

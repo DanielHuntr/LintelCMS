@@ -50,7 +50,13 @@ describe("rendering a page", () => {
     const createId = createCountingNodeIds();
     const hidden = { ...createNode({ type: "button" }, standardCatalogue, createId), hidden: true };
     const result = renderPage(pageOf(hidden), standardRegistry);
-    expect(result).toEqual({ html: '<div class="page"></div>', css: "", animations: [] });
+    expect(result).toEqual({
+      html: '<div class="page"></div>',
+      css: "",
+      animations: [],
+      fontPreloads: [],
+      script: "",
+    });
   });
 
   it("draws pictures with alt text, in a figure when they have a caption", () => {

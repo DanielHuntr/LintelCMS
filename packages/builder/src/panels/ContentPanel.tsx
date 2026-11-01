@@ -4,10 +4,15 @@ import {
   type EditableField,
   findCodeMarkers,
   type LinkProp,
+  type PageFont,
   type PageNode,
 } from "@lintel/builder-model";
 import { useMemo } from "react";
+import { readMarks } from "../editor/design-commands.js";
 import { useBuilderText } from "../i18n/builder-text.js";
+import { MarkableTextField } from "../inline-text/MarkableTextField.js";
+import { markableTypes } from "../inline-text/SelectedWordsBar.js";
+import type { MarkChange } from "../inline-text/TextStyleBar.js";
 import { usePreferenceStore } from "../preferences/builder-preferences.js";
 import { useRememberedOpenSections } from "../preferences/open-sections.js";
 import { OpenSectionsContext } from "../ui/CollapsibleSection.js";
@@ -30,6 +35,13 @@ interface ContentPanelProps {
   isLocked: boolean;
   pickImage: ImagePicker | undefined;
   onChange: (props: Record<string, unknown>, label: string) => void;
+  /** Styles part of the text (headings and paragraphs). */
+  onMarkText?: (
+    range: { from: number; to: number; text: string },
+    styles: MarkChange | null,
+    label: string,
+  ) => void;
+  pageFonts?: readonly PageFont[];
 }
 
 /**
@@ -42,6 +54,8 @@ export function ContentPanel({
   isLocked,
   pickImage,
   onChange,
+  onMarkText,
+  pageFonts = [],
 }: ContentPanelProps) {
   const text = useBuilderText();
   const fields = definition?.editableFields ?? [];
@@ -89,6 +103,8 @@ export function ContentPanel({
                   node={node}
                   pickImage={pickImage}
                   onChange={onChange}
+                  onMarkText={onMarkText}
+                  pageFonts={pageFonts}
                 />
               ))}
             </PanelSection>
@@ -106,6 +122,8 @@ export function ContentPanel({
                 node={node}
                 pickImage={pickImage}
                 onChange={onChange}
+                onMarkText={onMarkText}
+                pageFonts={pageFonts}
               />
             ))
           )}
@@ -120,14 +138,30 @@ function ContentField({
   node,
   pickImage,
   onChange,
+  onMarkText,
+  pageFonts,
 }: {
   field: EditableField;
   node: PageNode;
   pickImage: ImagePicker | undefined;
   onChange: ContentPanelProps["onChange"];
+  onMarkText: ContentPanelProps["onMarkText"];
+  pageFonts: readonly PageFont[];
 }) {
   const value = node.props[field.prop];
   const set = (next: unknown) => onChange({ [field.prop]: next }, field.label);
+  if (field.prop === "text" && onMarkText && markableTypes.includes(node.type)) {
+    return (
+      <MarkableTextField
+        label={field.label}
+        value={String(value ?? "")}
+        marks={readMarks(node)}
+        pageFonts={pageFonts}
+        onChange={set}
+        onMark={onMarkText}
+      />
+    );
+  }
   switch (field.kind) {
     case "text":
       return (

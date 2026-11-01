@@ -15,6 +15,9 @@ export const styleGroups = [
   "background",
   "borders",
   "effects",
+  "transform",
+  "shape",
+  "filters",
 ] as const;
 
 export type StyleGroup = (typeof styleGroups)[number];
@@ -22,10 +25,19 @@ export type StyleGroup = (typeof styleGroups)[number];
 interface StylePropertyInfo {
   cssName: string;
   group: StyleGroup;
+  /**
+   * Names browsers still need alongside the standard one, printed first. Kept to the few
+   * that matter today (Safari's `-webkit-backdrop-filter`, `-webkit-background-clip: text`).
+   */
+  alsoPrintedAs?: readonly string[];
 }
 
-function property(cssName: string, group: StyleGroup): StylePropertyInfo {
-  return { cssName, group };
+function property(
+  cssName: string,
+  group: StyleGroup,
+  alsoPrintedAs?: readonly string[],
+): StylePropertyInfo {
+  return alsoPrintedAs ? { cssName, group, alsoPrintedAs } : { cssName, group };
 }
 
 export const styleProperties = {
@@ -41,6 +53,11 @@ export const styleProperties = {
   gridTemplateColumns: property("grid-template-columns", "layout"),
   gridTemplateRows: property("grid-template-rows", "layout"),
   gridColumn: property("grid-column", "layout"),
+  gridRow: property("grid-row", "layout"),
+  gridArea: property("grid-area", "layout"),
+  gridTemplateAreas: property("grid-template-areas", "layout"),
+  justifySelf: property("justify-self", "layout"),
+  justifyItems: property("justify-items", "layout"),
   flexGrow: property("flex-grow", "layout"),
   flexShrink: property("flex-shrink", "layout"),
   flexBasis: property("flex-basis", "layout"),
@@ -63,6 +80,7 @@ export const styleProperties = {
   maxHeight: property("max-height", "size"),
   aspectRatio: property("aspect-ratio", "size"),
   objectFit: property("object-fit", "size"),
+  objectPosition: property("object-position", "size"),
   overflow: property("overflow", "size"),
 
   position: property("position", "position"),
@@ -82,8 +100,22 @@ export const styleProperties = {
   textTransform: property("text-transform", "typography"),
   textDecoration: property("text-decoration", "typography"),
   color: property("color", "typography"),
+  textStroke: property("-webkit-text-stroke", "typography"),
+  // With a stroke, a see-through fill makes outlined (hollow) letters in the text's colour.
+  textFillColor: property("-webkit-text-fill-color", "typography"),
+  textShadow: property("text-shadow", "typography"),
+  writingMode: property("writing-mode", "typography"),
+  textOrientation: property("text-orientation", "typography"),
+  textWrap: property("text-wrap", "typography"),
+  whiteSpace: property("white-space", "typography"),
 
   backgroundColor: property("background-color", "background"),
+  backgroundImage: property("background-image", "background"),
+  backgroundSize: property("background-size", "background"),
+  backgroundPosition: property("background-position", "background"),
+  backgroundRepeat: property("background-repeat", "background"),
+  backgroundAttachment: property("background-attachment", "background"),
+  backgroundClip: property("background-clip", "background", ["-webkit-background-clip"]),
 
   borderWidth: property("border-width", "borders"),
   borderStyle: property("border-style", "borders"),
@@ -93,6 +125,24 @@ export const styleProperties = {
   opacity: property("opacity", "effects"),
   boxShadow: property("box-shadow", "effects"),
   cursor: property("cursor", "effects"),
+
+  rotate: property("rotate", "transform"),
+  scale: property("scale", "transform"),
+  translate: property("translate", "transform"),
+  transform: property("transform", "transform"),
+  transformOrigin: property("transform-origin", "transform"),
+
+  clipPath: property("clip-path", "shape"),
+  maskImage: property("mask-image", "shape", ["-webkit-mask-image"]),
+  maskSize: property("mask-size", "shape", ["-webkit-mask-size"]),
+  maskPosition: property("mask-position", "shape", ["-webkit-mask-position"]),
+  maskRepeat: property("mask-repeat", "shape", ["-webkit-mask-repeat"]),
+
+  mixBlendMode: property("mix-blend-mode", "filters"),
+  backgroundBlendMode: property("background-blend-mode", "filters"),
+  filter: property("filter", "filters"),
+  backdropFilter: property("backdrop-filter", "filters", ["-webkit-backdrop-filter"]),
+  isolation: property("isolation", "filters"),
 } as const satisfies Record<string, StylePropertyInfo>;
 
 export type StylePropertyName = keyof typeof styleProperties;
@@ -103,7 +153,7 @@ export function isStylePropertyName(name: string): name is StylePropertyName {
   return Object.hasOwn(styleProperties, name);
 }
 
-/** The longest value a style may have; real values are far shorter. */
+/** The longest value a style may have; real values are far shorter. Image layers may be longer. */
 export const maxStyleValueLength = 200;
 
 /**

@@ -16,7 +16,7 @@ export interface AllowedFileType {
   mimeType: string;
   /** The extension Lintel gives the file, whatever it was called before. */
   extension: string;
-  kind: "image" | "document";
+  kind: "image" | "document" | "font" | "video";
 }
 
 const allowedFileTypes = [
@@ -44,6 +44,12 @@ const allowedFileTypes = [
   },
   { mimeType: "text/plain", extension: "txt", kind: "document" },
   { mimeType: "text/csv", extension: "csv", kind: "document" },
+  // Fonts and videos for the page builder: custom fonts, and video backgrounds.
+  { mimeType: "font/woff2", extension: "woff2", kind: "font" },
+  { mimeType: "font/ttf", extension: "ttf", kind: "font" },
+  { mimeType: "font/otf", extension: "otf", kind: "font" },
+  { mimeType: "video/mp4", extension: "mp4", kind: "video" },
+  { mimeType: "video/webm", extension: "webm", kind: "video" },
 ] as const satisfies readonly AllowedFileType[];
 
 export type AllowedMimeType = (typeof allowedFileTypes)[number]["mimeType"];

@@ -14,11 +14,13 @@ import {
   type NodeStyles,
   type PageDocument,
   type PageNode,
+  rebaseMarks,
   removeNode,
   rootNodeId,
   setStyles,
   type StylePropertyName,
   type StyleTarget,
+  type TextMark,
   updateNode,
 } from "@lintel/builder-model";
 import type { Translate } from "../i18n/builder-text.js";
@@ -317,9 +319,31 @@ export function changeProps(
     context,
     nodeId,
     context.text("pageBuilder.history.changed", { name: propLabel }),
-    (node) => ({ ...node, props: { ...node.props, ...props } }),
+    (node) => ({ ...node, props: withMovedMarks(node.props, props) }),
     { coalesceKey: `props:${nodeId}:${Object.keys(props).join(",")}` },
   );
+}
+
+/** When a text with styled parts is edited, the styles move with the words they were on. */
+function withMovedMarks(
+  current: Record<string, unknown>,
+  changes: Record<string, unknown>,
+): Record<string, unknown> {
+  const next = { ...current, ...changes };
+  const marks = current.marks;
+  if (
+    !Array.isArray(marks) ||
+    marks.length === 0 ||
+    "marks" in changes ||
+    typeof changes.text !== "string" ||
+    typeof current.text !== "string"
+  ) {
+    return next;
+  }
+  const moved = rebaseMarks(current.text, changes.text, marks as TextMark[]);
+  if (moved.length > 0) return { ...next, marks: moved };
+  delete next.marks;
+  return next;
 }
 
 export function changeStyles(

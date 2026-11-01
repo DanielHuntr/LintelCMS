@@ -37,6 +37,8 @@ interface CanvasProps {
   labels: OutlineLabels;
   /** Scrolls an element into view, e.g. after picking it in the Layers panel. */
   revealId: string | null;
+  /** Whether the selected element can be turned and dragged (it isn't locked). */
+  canTransform: boolean;
   site?: CanvasSite;
   /** Where the frame's scripts are served (see `canvasFrameScript`); inline when left out. */
   scripts?: CanvasScriptAddresses;
@@ -57,6 +59,7 @@ export function Canvas({
   hoveredId,
   labels,
   revealId,
+  canTransform,
   site,
   scripts,
   motionPreview = null,
@@ -98,9 +101,12 @@ export function Canvas({
     return () => cancelAnimationFrame(handle);
   }, [isReady, html, css]);
 
+  const rotateLabel = text("pageBuilder.design.rotateHandle");
   useEffect(() => {
-    if (isReady) post({ type: "outline", selectedId, hoveredId, labels });
-  }, [isReady, selectedId, hoveredId, labels, html, breakpoint]);
+    if (isReady) {
+      post({ type: "outline", selectedId, hoveredId, labels, canTransform, rotateLabel });
+    }
+  }, [isReady, selectedId, hoveredId, labels, html, breakpoint, canTransform, rotateLabel]);
 
   useEffect(() => {
     if (isReady && revealId) post({ type: "reveal", nodeId: revealId });

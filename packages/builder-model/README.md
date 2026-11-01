@@ -41,22 +41,31 @@ docs/decisions/0015-page-documents.md explains why the model looks the way it do
   animation spec from `@lintel/motion`, checked by its schema when the page is saved.
 - `styles` are how it looks: `base` (desktop and up), `tablet` and `phone` cascade down,
   `hover` and `focus` are states. Only properties in `styles/style-properties.ts` are allowed,
-  and values can't break out of their declaration.
+  and values can't break out of their declaration (`styles/style-values.ts` checks the
+  layered ones: background and mask pictures, shapes, filters, skews).
+- `freeLayout` (optional, on sections, boxes and containers) places the children anywhere
+  in it; `backgroundVideo` (optional) plays a muted video behind its content.
+- The page element's `fonts` prop lists fonts added to the theme's; headings and paragraphs
+  may have `marks`, styles on part of their text.
 
 ## Folders
 
-| Folder           | What it holds                                                                            |
-| ---------------- | ---------------------------------------------------------------------------------------- |
-| `document/`      | The schema, `createEmptyPage`, `migrateDocument` and `validatePageDocument`              |
-| `components/`    | `ComponentDefinition`, the standard components and `createComponentCatalogue`            |
-| `styles/`        | Allowed properties, the breakpoint cascade, class names and `compileStylesheet`          |
-| `tokens/`        | The site's design tokens (`--lintel-color-brand`...) as the style panel offers them      |
-| `tree/`          | Reading (`findPath`, `listVisibleRows`) and changing (`moveNode`, `duplicateNode`) trees |
-| `html/`          | A small HTML parser and writer, `formatHtml` for the code view, and `importHtml`         |
-| `code/`          | Code block markers (`data-lintel-field`), script removal and the code permission rule    |
-| `templates/`     | The section library: ready-made sections by category, for Insert and the empty page      |
-| `sections/`      | The builders sections are made from (heroes, features, prices...), with `animate()`      |
-| `starter-sites/` | Six whole starter sites for "Start from a template", and their SVG illustrations         |
+| Folder           | What it holds                                                                               |
+| ---------------- | ------------------------------------------------------------------------------------------- |
+| `document/`      | The schema, `createEmptyPage`, `migrateDocument` and `validatePageDocument`                 |
+| `components/`    | `ComponentDefinition`, the standard components and `createComponentCatalogue`               |
+| `styles/`        | Allowed properties, the breakpoint cascade, class names and `compileStylesheet`             |
+| `tokens/`        | The site's design tokens (`--lintel-color-brand`...) as the style panel offers them         |
+| `free-layout/`   | Free layout: the styles it implies, places as percentages, bring forward and send back      |
+| `backgrounds/`   | Background videos                                                                           |
+| `fonts/`         | The bundled font catalogue (files in `fonts/` at the package root) and a page's fonts       |
+| `text-marks/`    | Styles on part of a text: applying, clearing, moving with edits, drawing as `<em>`/`<span>` |
+| `tree/`          | Reading (`findPath`, `listVisibleRows`) and changing (`moveNode`, `duplicateNode`) trees    |
+| `html/`          | A small HTML parser and writer, `formatHtml` for the code view, and `importHtml`            |
+| `code/`          | Code block markers (`data-lintel-field`), script removal and the code permission rule       |
+| `templates/`     | The section library: ready-made sections by category, for Insert and the empty page         |
+| `sections/`      | The builders sections are made from (heroes, features, prices...), with `animate()`         |
+| `starter-sites/` | Six whole starter sites for "Start from a template", and their SVG illustrations            |
 
 Tree changes never modify a tree: they return a new one that shares every untouched node,
 so undo can keep whole trees and the editor can skip redrawing unchanged layers.

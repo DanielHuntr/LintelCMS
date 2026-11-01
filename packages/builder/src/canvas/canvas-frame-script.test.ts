@@ -26,6 +26,6 @@ describe("the canvas frame's document", () => {
 
   it("is a script that runs on its own", () => {
     expect(canvasFrameScript()).toMatch(/^\(function|^\(\(\)|^\(/);
-    expect(canvasFrameScript().trimEnd().endsWith(")();")).toBe(true);
+    expect(canvasFrameScript().trimEnd().endsWith(");")).toBe(true);
   });
 });

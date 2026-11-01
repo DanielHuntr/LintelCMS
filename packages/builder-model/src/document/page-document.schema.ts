@@ -1,10 +1,9 @@
 import { motionSpecSchema, type MotionSpec } from "@lintel/motion/schema";
 import { z } from "zod";
-import {
-  isSafeStyleValue,
-  isStylePropertyName,
-  type StylePropertyName,
-} from "../styles/style-properties.js";
+import { type BackgroundVideo, backgroundVideoSchema } from "../backgrounds/background-video.js";
+import { type FreeLayout, freeLayoutSchema } from "../free-layout/free-layout.js";
+import { isStylePropertyName, type StylePropertyName } from "../styles/style-properties.js";
+import { isSafeValueFor } from "../styles/style-values.js";
 
 /**
  * A page is a tree of nodes, stored as versioned JSON:
@@ -67,6 +66,10 @@ export interface PageNode {
   locked: boolean;
   /** Left out when the element doesn't move. */
   animation?: NodeAnimation;
+  /** Its children are placed anywhere in it (see free-layout/). Left out for normal flow. */
+  freeLayout?: FreeLayout;
+  /** A muted, looping video behind its content (see backgrounds/). */
+  backgroundVideo?: BackgroundVideo;
 }
 
 export interface PageDocument {
@@ -90,7 +93,7 @@ const styleDeclarationsSchema = z
     for (const [name, value] of Object.entries(declarations)) {
       if (!isStylePropertyName(name)) {
         context.addIssue({ code: "custom", message: `“${name}” isn’t a style the builder knows` });
-      } else if (!isSafeStyleValue(value)) {
+      } else if (!isSafeValueFor(name, value)) {
         context.addIssue({ code: "custom", message: `“${value}” isn’t a value ${name} can have` });
       }
     }
@@ -133,6 +136,8 @@ export const pageNodeSchema: z.ZodType<PageNode> = z.lazy(() =>
     hidden: z.boolean({ error: "hidden should be true or false" }).default(false),
     locked: z.boolean({ error: "locked should be true or false" }).default(false),
     animation: nodeAnimationSchema.optional(),
+    freeLayout: freeLayoutSchema.optional(),
+    backgroundVideo: backgroundVideoSchema.optional(),
   }),
 );
 

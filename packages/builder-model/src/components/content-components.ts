@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { defineComponent } from "./component-definition.js";
+import { marksFitText, textMarksSchema } from "../text-marks/text-marks.js";
 import { imageAddressSchema, linkAddressSchema, linkSchema, plainText } from "./component-props.js";
+
+const marksFitError = { error: "Styled parts of the text should sit inside it, one after another" };
 
 /** Text, pictures, buttons and links: the elements people fill in. */
 
@@ -10,15 +13,19 @@ export const headingComponent = defineComponent({
   description: "A title for the page or for a part of it. Use one main heading per page.",
   icon: "heading",
   category: "text",
-  propsSchema: z.object({
-    text: plainText(500, "Heading"),
-    level: z
-      .number({ error: "A heading level should be a number from 1 to 6" })
-      .int()
-      .min(1, { error: "A heading level should be a number from 1 to 6" })
-      .max(6, { error: "A heading level should be a number from 1 to 6" })
-      .default(2),
-  }),
+  propsSchema: z
+    .object({
+      text: plainText(500, "Heading"),
+      level: z
+        .number({ error: "A heading level should be a number from 1 to 6" })
+        .int()
+        .min(1, { error: "A heading level should be a number from 1 to 6" })
+        .max(6, { error: "A heading level should be a number from 1 to 6" })
+        .default(2),
+      // Styles on part of the text (see text-marks/); left out when there are none.
+      marks: textMarksSchema,
+    })
+    .refine(marksFitText, marksFitError),
   defaultProps: { text: "Heading", level: 2 },
   allowedChildren: "none",
   editableFields: [
@@ -45,7 +52,9 @@ export const textComponent = defineComponent({
   description: "A paragraph of text.",
   icon: "pilcrow",
   category: "text",
-  propsSchema: z.object({ text: plainText(10000, "Write something here.") }),
+  propsSchema: z
+    .object({ text: plainText(10000, "Write something here."), marks: textMarksSchema })
+    .refine(marksFitText, marksFitError),
   defaultProps: { text: "Write something here." },
   allowedChildren: "none",
   editableFields: [{ kind: "multilineText", prop: "text", label: "Text" }],

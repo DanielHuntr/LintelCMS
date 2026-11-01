@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { pageFontsSchema } from "../fonts/page-fonts.js";
 import { defineComponent } from "./component-definition.js";
 
 /** The page itself, sections, boxes and columns: the elements that hold other elements. */
@@ -9,8 +10,9 @@ export const pageComponent = defineComponent({
   description: "The whole page.",
   icon: "file",
   category: "layout",
-  propsSchema: z.object({}),
-  defaultProps: {},
+  // The fonts the page adds to the theme's (see fonts/page-fonts.ts).
+  propsSchema: z.object({ fonts: pageFontsSchema }),
+  defaultProps: { fonts: [] },
   allowedChildren: "any",
   editableFields: [],
   hiddenFromInsert: true,

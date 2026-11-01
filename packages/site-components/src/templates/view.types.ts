@@ -15,6 +15,10 @@ export interface PageDesign {
   html: string;
   css: string;
   animations: ReadonlyArray<{ nodeId: string; spec: Readonly<Record<string, unknown>> }>;
+  /** Font files to preload, such as the page's display font. */
+  fontPreloads?: readonly string[];
+  /** A small script the design needs (background videos); empty or left out for none. */
+  script?: string;
 }
 
 /** A page from a collection like Pages: a title, an optional body and its sections. */

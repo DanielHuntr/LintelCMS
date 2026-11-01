@@ -183,6 +183,12 @@ export async function mediaRoutes(server: FastifyInstance, options: MediaRoutesO
       // Websites on other addresses show these images, so browsers must be allowed to load them.
       .header("cross-origin-resource-policy", "cross-origin");
 
+    // Browsers only use a font from another address when it says they may (the canvas and
+    // the website both load fonts uploaded here).
+    if (file.mimeType.startsWith("font/")) {
+      reply.header("access-control-allow-origin", "*");
+    }
+
     if (request.headers["if-none-match"] === file.etag) {
       return reply.code(304).send();
     }

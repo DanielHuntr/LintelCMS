@@ -1,5 +1,5 @@
 import {
-  isSafeStyleValue,
+  isSafeValueFor,
   isSetAt,
   type NodeStyles,
   resolveStyle,
@@ -70,6 +70,7 @@ const unitless = new Set<StylePropertyName>([
   "order",
   "flexGrow",
   "flexShrink",
+  "scale",
 ]);
 
 /**
@@ -86,5 +87,5 @@ export function normaliseTypedValue(
     /^-?\d+(\.\d+)?$/.test(trimmed) && !unitless.has(property) && trimmed !== "0"
       ? `${trimmed}px`
       : trimmed;
-  return isSafeStyleValue(value) ? value : null;
+  return isSafeValueFor(property, value) ? value : null;
 }

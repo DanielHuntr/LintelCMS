@@ -263,3 +263,54 @@ export function ColourPicker({
     </Labelled>
   );
 }
+
+/**
+ * A slider for a number with a unit (degrees, percent, pixels), with the value shown beside
+ * it. At `neutral` the property is cleared rather than stored, so untouched elements stay
+ * clean. The arrow keys move it by `step`, as with any range input.
+ */
+export function StyleSlider({
+  property,
+  label,
+  min,
+  max,
+  step,
+  unit,
+  neutral,
+}: StyleControlProps & { min: number; max: number; step: number; unit: string; neutral: number }) {
+  const text = useBuilderText();
+  const field = useStyleField(property, label);
+  const parsed = Number.parseFloat(field.value ?? "");
+  const current = Number.isFinite(parsed) ? parsed : neutral;
+  return (
+    <Labelled
+      label={label}
+      overridden={useOverrideNote(field.isOverridden)}
+      onReset={field.reset}
+      resetLabel={text("pageBuilder.style.reset")}
+    >
+      {(id) => (
+        <div className="flex items-center gap-2">
+          <input
+            id={id}
+            type="range"
+            min={min}
+            max={max}
+            step={step}
+            value={Math.min(max, Math.max(min, current))}
+            aria-valuetext={`${current}${unit}`}
+            onChange={(event) => {
+              const value = Number(event.target.value);
+              field.set(value === neutral ? undefined : `${value}${unit}`);
+            }}
+            className="flex-1 accent-[var(--color-accent-fill)]"
+          />
+          <span className="w-12 text-end text-caption text-label-secondary">
+            {current}
+            {unit}
+          </span>
+        </div>
+      )}
+    </Labelled>
+  );
+}

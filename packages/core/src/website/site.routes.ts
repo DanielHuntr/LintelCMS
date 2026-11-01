@@ -3,7 +3,13 @@ import { z } from "zod";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import type { Site } from "../sites/sites.table.js";
 import type { SiteResponse } from "./rendered-pages-cache.js";
-import { ILLUSTRATIONS_FOLDER, readIllustration, readMotionRuntime } from "./site-assets.js";
+import {
+  FONTS_FOLDER,
+  ILLUSTRATIONS_FOLDER,
+  readFontFile,
+  readIllustration,
+  readMotionRuntime,
+} from "./site-assets.js";
 import { STYLESHEET_FOLDER } from "./site-context.service.js";
 import { findSiteForAddress } from "./site-for-address.js";
 import { readSiteContext, respondToSitePath, type SiteDependencies } from "./site-pages.service.js";
@@ -14,6 +20,7 @@ import { readSiteContext, respondToSitePath, type SiteDependencies } from "./sit
  *   GET /_lintel/site-<fingerprint>.css   the theme and component styles, cached for a year
  *   GET /_lintel/motion-<fingerprint>.js  the motion runtime, for pages with animations
  *   GET /_lintel/illustrations/<name>.svg the starter sites' illustrations
+ *   GET /_lintel/fonts/<file>.woff2       the fonts that come with Lintel
  *   GET /*                                 a page, a redirect, sitemap.xml, robots.txt or 404
  *
  * `?preview=<token>` on any page shows a draft (see site-preview.service.ts). Each visit is
@@ -50,6 +57,20 @@ export async function siteRoutes(
       .header("cache-control", "public, max-age=86400")
       .header("content-security-policy", "default-src 'none'; style-src 'unsafe-inline'")
       .send(svg);
+  });
+
+  server.get(`${FONTS_FOLDER}/:file`, async (request, reply) => {
+    const { file } = request.params as { file: string };
+    const font = readFontFile(file);
+    if (!font) {
+      return reply.code(404).type("text/plain; charset=utf-8").send("Not found");
+    }
+    // Any address may use them: the builder's canvas loads them from another origin.
+    return reply
+      .type("font/woff2")
+      .header("cache-control", "public, max-age=604800")
+      .header("access-control-allow-origin", "*")
+      .send(font);
   });
 
   server.get(`${STYLESHEET_FOLDER}/:file`, async (request, reply) => {

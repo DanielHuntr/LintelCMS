@@ -19,8 +19,8 @@ import {
   standardComponents,
   textComponent,
 } from "@lintel/builder-model";
-import { Fragment, type ReactNode } from "react";
 import { type ComponentRender, createComponentRegistry, drawsProps } from "./component-registry.js";
+import { MarkedText, withLineBreaks } from "./marked-text.js";
 import { siteBlockRenders } from "./site-blocks.js";
 
 /**
@@ -28,17 +28,6 @@ import { siteBlockRenders } from "./site-blocks.js";
  * real ones. Each prints clean, semantic HTML: headings, sections, lists, figures with alt
  * text, links. No inline styles: every look comes from the node's class in the stylesheet.
  */
-
-/** Line breaks typed in a text box become <br>, so a paragraph keeps its lines. */
-function withLineBreaks(text: string): ReactNode {
-  const lines = text.split("\n");
-  return lines.map((line, index) => (
-    <Fragment key={index}>
-      {index > 0 && <br />}
-      {line}
-    </Fragment>
-  ));
-}
 
 function linkTarget(openInNewTab: boolean) {
   return openInNewTab ? { target: "_blank", rel: "noopener noreferrer" } : {};
@@ -77,14 +66,14 @@ const Heading = drawsProps(headingComponent, ({ props, attributes, editableText 
   const Element = `h${props.level}` as "h1";
   return (
     <Element {...attributes} {...editableText("text")}>
-      {withLineBreaks(props.text)}
+      <MarkedText text={props.text} marks={props.marks} className={attributes.className} />
     </Element>
   );
 });
 
 const Text = drawsProps(textComponent, ({ props, attributes, editableText }) => (
   <p {...attributes} {...editableText("text")}>
-    {withLineBreaks(props.text)}
+    <MarkedText text={props.text} marks={props.marks} className={attributes.className} />
   </p>
 ));
 

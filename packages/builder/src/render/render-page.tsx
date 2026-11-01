@@ -3,10 +3,13 @@ import {
   assignClassNames,
   compileStylesheet,
   findNode,
+  fontPreloads,
   type PageDocument,
   type PageNode,
+  readPageFonts,
 } from "@lintel/builder-model";
 import type { ReactElement } from "react";
+import { BackgroundVideo, backgroundVideoScript, hasBackgroundVideo } from "./background-video.js";
 import { renderToStaticMarkup } from "react-dom/server";
 import { collectAnimations, type PageAnimation } from "./page-animations.js";
 import type { ComponentRegistry, ElementAttributes, RenderMode } from "./component-registry.js";
@@ -23,6 +26,9 @@ import type { ComponentRegistry, ElementAttributes, RenderMode } from "./compone
  * runtime can find them; `animations` lists what to play, and is empty when nothing moves.
  * The CSS uses the theme's tokens (`var(--lintel-color-brand)`); put the theme's stylesheet
  * before it. The output only depends on the page, so the same page always gives the same text.
+ *
+ * `fontPreloads` are the font files worth `<link rel="preload">`ing, and `script` is the small
+ * script background videos need (empty when there are none); the website puts both in the head.
  */
 
 export interface RenderOptions {
@@ -40,6 +46,8 @@ export interface RenderedPage {
   html: string;
   css: string;
   animations: PageAnimation[];
+  fontPreloads: string[];
+  script: string;
 }
 
 export function renderPage(
@@ -49,7 +57,9 @@ export function renderPage(
 ): RenderedPage {
   const classNames = assignClassNames(document.root, registry.catalogue);
   const start = nodeId ? findNode(document.root, nodeId) : document.root;
-  if (!start || start.hidden) return { html: "", css: "", animations: [] };
+  if (!start || start.hidden) {
+    return { html: "", css: "", animations: [], fontPreloads: [], script: "" };
+  }
   const animations = collectAnimations(start);
   const marked =
     mode === "site" && withMotion ? motionMarks(animations) : new Map<string, ElementAttributes>();
@@ -62,7 +72,14 @@ export function renderPage(
       motionMarks={marked}
     />,
   );
-  return { html, css: compileStylesheet(start, classNames), animations };
+  const isWholePage = start.id === document.root.id;
+  return {
+    html,
+    css: compileStylesheet(start, classNames),
+    animations,
+    fontPreloads: isWholePage ? fontPreloads(readPageFonts(document.root.props)) : [],
+    script: mode === "site" && hasBackgroundVideo(start) ? backgroundVideoScript : "",
+  };
 }
 
 /**
@@ -130,7 +147,9 @@ function NodeView({
   const { Render } = entry;
   const motion = motionMarks.get(node.id);
   const attributes: ElementAttributes =
-    mode === "canvas" ? { className, "data-lintel-node": node.id } : { ...motion, className };
+    mode === "canvas"
+      ? { className, "data-lintel-node": node.id, ...freeLayoutMark(node) }
+      : { ...motion, className };
   return (
     <Render
       props={props}
@@ -141,6 +160,7 @@ function NodeView({
         mode === "canvas" ? { "data-lintel-text": prop } : {}
       }
     >
+      {node.backgroundVideo && <BackgroundVideo video={node.backgroundVideo} mode={mode} />}
       {node.children.map((child) => (
         <NodeView
           key={child.id}
@@ -153,4 +173,9 @@ function NodeView({
       ))}
     </Render>
   );
+}
+
+function freeLayoutMark(node: PageNode): Pick<ElementAttributes, "data-lintel-free"> {
+  if (!node.freeLayout) return {};
+  return { "data-lintel-free": node.freeLayout.stackOnPhone ? "stack-on-phone" : "free" };
 }
