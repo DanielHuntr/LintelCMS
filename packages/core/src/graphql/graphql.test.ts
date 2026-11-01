@@ -30,6 +30,7 @@ describe("the GraphQL delivery API", () => {
   const testDatabase = useTestDatabase();
   let server: FastifyInstance;
   let api: SendRequest;
+  let adminCookies: Record<string, string>;
 
   beforeEach(async () => {
     const assetLookup: AssetLookup = {
@@ -43,7 +44,8 @@ describe("the GraphQL delivery API", () => {
     await ensurePagesCollection(testDatabase.database);
     await ensureBlogPostsCollection(testDatabase.database);
     await createTestUser(testDatabase.database, "admin@example.com", [["*"]]);
-    api = requestsAs(server, await signInAndGetCookies(server, "admin@example.com"));
+    adminCookies = await signInAndGetCookies(server, "admin@example.com");
+    api = requestsAs(server, adminCookies);
   });
 
   afterEach(() => server.close());
@@ -162,16 +164,11 @@ describe("the GraphQL delivery API", () => {
     expect(list.json().errors[0].extensions.code).toBe("PREVIEW_NOT_ALLOWED");
   });
 
-  it("refuses queries that cost too much, but lets ordinary ones and introspection through", async () => {
+  it("refuses queries that cost too much, but lets ordinary ones through", async () => {
     const ordinary = await query(
       `{ pages(perPage: 100) { items { data { title summary hero_image { url alt focalPoint { x y } } } } } }`,
     );
     expect(ordinary.json().errors).toBeUndefined();
-
-    const introspection = await query(
-      `{ __schema { types { name fields { name type { name ofType { name ofType { name ofType { name } } } } } } } }`,
-    );
-    expect(introspection.json().errors).toBeUndefined();
 
     const aliases = Array.from(
       { length: 40 },
@@ -182,6 +179,27 @@ describe("the GraphQL delivery API", () => {
       message: expect.stringContaining("the most allowed is 5000"),
       extensions: { code: "QUERY_TOO_COSTLY" },
     });
+  });
+
+  it("lets signed-in editors and tokens read the schema, but not anonymous visitors", async () => {
+    const introspection = `{ __schema { types { name fields { name type { name ofType { name } } } } } }`;
+    const anonymous = await query(introspection);
+    const signedIn = await server.inject({
+      method: "POST",
+      url: "/graphql",
+      cookies: adminCookies,
+      payload: { query: introspection },
+    });
+
+    expect(anonymous.json().errors[0].message).toContain("introspection has been disabled");
+    expect(signedIn.json().errors).toBeUndefined();
+    expect(signedIn.json().data.__schema.types.length).toBeGreaterThan(5);
+  });
+
+  it("refuses queries too long to be worth reading", async () => {
+    const aliases = Array.from({ length: 2000 }, (_, index) => `t${index}: __typename`);
+    const tooLong = await query(`{ ${aliases.join(" ")} }`);
+    expect(tooLong.json().errors[0].message).toContain("more that 5000 tokens");
   });
 
   it("follows changes to content types without a restart", async () => {
@@ -271,6 +289,12 @@ describe("query limits", () => {
     expect(
       problems(`{ page { ...Up } } fragment Up on Page { parent { parent { parent { title } } } }`),
     ).toHaveLength(1);
+  });
+
+  it("counts __typename like any other value", () => {
+    expect(
+      problems(`{ pages(perPage: 100) { items { __typename parent { __typename } } } }`)[0],
+    ).toContain("could return about");
   });
 
   it("counts every item a page of results may hold", () => {

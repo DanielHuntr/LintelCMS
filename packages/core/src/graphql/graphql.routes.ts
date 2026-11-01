@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import type { GraphQLSchema } from "graphql";
+import { type GraphQLSchema, NoSchemaIntrospectionCustomRule } from "graphql";
 import { createYoga, type Plugin } from "graphql-yoga";
 import { findRequestApiToken } from "../api-tokens/api-token-auth.js";
 import { requireSignedIn } from "../auth/require-permission.js";
@@ -24,9 +24,24 @@ import { type GraphqlContext, loadContentModel } from "./graphql.service.js";
 export const MAX_QUERY_DEPTH = 10;
 export const MAX_QUERY_COST = 5000;
 
+/**
+ * The most tokens (names, braces, values...) one query may have. Ordinary queries use a
+ * few hundred; the limit keeps a huge query from costing much just to read.
+ */
+export const MAX_QUERY_TOKENS = 5000;
+
+/** The largest request body /graphql accepts. Queries are text, so 100 KB is plenty. */
+const MAX_BODY_BYTES = 100 * 1024;
+
 /** Worked out by Fastify before Yoga runs, so a bad session is an ordinary 401. */
 interface ServerContext {
   access: GraphqlContext;
+  /**
+   * Whether the request may read the schema itself (`__schema`, `__type`). Code generators
+   * and GraphiQL need it, so it is open in development and to requests with a token or a
+   * session; anonymous visitors to a live site don't, and it is the costliest kind of query.
+   */
+  allowIntrospection: boolean;
 }
 
 export interface GraphqlRoutesOptions {
@@ -36,10 +51,18 @@ export interface GraphqlRoutesOptions {
 export async function graphqlRoutes(server: FastifyInstance, options: GraphqlRoutesOptions) {
   let cached: { version: string; schema: GraphQLSchema } | undefined;
 
-  const limits: Plugin = {
-    onValidate({ addValidationRule }) {
+  const limits: Plugin<ServerContext> = {
+    onParse({ parseFn, setParseFn }) {
+      setParseFn((source, parseOptions) =>
+        parseFn(source, { ...parseOptions, maxTokens: MAX_QUERY_TOKENS }),
+      );
+    },
+    onValidate({ addValidationRule, context }) {
       for (const rule of queryLimitRules({ maxDepth: MAX_QUERY_DEPTH, maxCost: MAX_QUERY_COST })) {
         addValidationRule(rule);
+      }
+      if (!options.graphiql && !context.allowIntrospection) {
+        addValidationRule(NoSchemaIntrospectionCustomRule);
       }
     },
   };
@@ -66,9 +89,14 @@ export async function graphqlRoutes(server: FastifyInstance, options: GraphqlRou
     url: "/graphql",
     method: ["GET", "POST"],
     preHandler: requireDeliveryAccess,
+    bodyLimit: MAX_BODY_BYTES,
     handler: async (request, reply) => {
       const access = await describeAccess(request, reply);
-      const response = await yoga.handleNodeRequestAndResponse(request, reply, { access });
+      const allowIntrospection = request.signedIn !== null || (await hasApiToken(request));
+      const response = await yoga.handleNodeRequestAndResponse(request, reply, {
+        access,
+        allowIntrospection,
+      });
       response.headers.forEach((value, key) => {
         reply.header(key, value);
       });
@@ -122,4 +150,8 @@ async function readPreviewHeader(request: FastifyRequest): Promise<string | unde
     return undefined;
   }
   return readPreviewToken(request.server.database, header);
+}
+
+async function hasApiToken(request: FastifyRequest): Promise<boolean> {
+  return (await findRequestApiToken(request)) !== undefined;
 }

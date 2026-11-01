@@ -18,8 +18,11 @@ import {
  *     and everything under a field with `perPage` counts once per item it may return.
  *
  * Introspection (`__schema`, `__type`) is left out of both: GraphiQL and code generators
- * need it, and it is limited by the size of the schema anyway.
+ * need it, and only requests with a token or a session may use it (see graphql.routes.ts).
+ * `__typename` counts like any other value, or a query of thousands of aliased
+ * `__typename`s would cost nothing.
  */
+const INTROSPECTION_FIELDS = new Set(["__schema", "__type"]);
 export interface QueryLimits {
   maxDepth: number;
   maxCost: number;
@@ -85,7 +88,7 @@ function measure(
   for (const selection of selectionSet.selections) {
     let result: number;
     if (selection.kind === Kind.FIELD) {
-      if (selection.name.value.startsWith("__")) {
+      if (INTROSPECTION_FIELDS.has(selection.name.value)) {
         continue;
       }
       const children = selection.selectionSet
