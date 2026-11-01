@@ -36,6 +36,8 @@ jobs:
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
+      # The animation runtime's browser tests drive Chromium through Playwright.
+      - run: pnpm --filter @lintel/motion exec playwright install --with-deps chromium
       - run: pnpm test
       - run: pnpm build
 

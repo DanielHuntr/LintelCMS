@@ -23,6 +23,8 @@
     "@lintel/builder-model": "workspace:*",
     "@lintel/core": "workspace:*",
     "@lintel/docs": "workspace:*",
+    "@lintel/motion": "workspace:*",
+    "@lintel/motion-editor": "workspace:*",
     "@lintel/site-components": "workspace:*",
     "@simplewebauthn/browser": "^14.0.0",
     "@tanstack/history": "^1.162.5",

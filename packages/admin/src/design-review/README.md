@@ -10,3 +10,7 @@ Each column sets `data-color-scheme`, which forces that scheme's tokens whatever
 setting (see `src/design/README.md`).
 
 When you add a component to `src/design`, add a specimen to `ComponentSpecimens.tsx`.
+
+`/design-system/motion` reviews the animation studio (`packages/motion-editor`): the studio,
+the animation being edited playing on a real element with its real trigger, and presets on a
+long page so scroll and hover effects can be tried for real. Its files are in `motion/`.

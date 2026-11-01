@@ -2,6 +2,8 @@
 
 /* The page builder's screens live in their own package and use these same tokens. */
 @source "../../builder/src";
+/* The animation studio is its own package; its components use these tokens too. */
+@source "../../motion-editor/src";
 
 /*
  * Lintel's design tokens. src/design/README.md explains each one and how agencies rebrand them.

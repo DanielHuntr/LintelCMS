@@ -6,13 +6,15 @@ since: "0.1"
 
 ## The packages
 
-| Path              | What it is                                                       |
-| ----------------- | ---------------------------------------------------------------- |
-| `packages/core`   | The API: Fastify 5, Drizzle ORM, Zod 4; PGlite or Postgres       |
-| `packages/admin`  | The admin: React 19, Vite, TanStack Router and Query, Tailwind 4 |
-| `packages/docs`   | These docs (Astro Starlight), also bundled into the admin's help |
-| `starters/nextjs` | A Next.js site that reads the delivery API                       |
-| `docs/decisions`  | Decision records: why the big choices were made                  |
+| Path                     | What it is                                                                     |
+| ------------------------ | ------------------------------------------------------------------------------ |
+| `packages/core`          | The API: Fastify 5, Drizzle ORM, Zod 4; PGlite or Postgres                     |
+| `packages/admin`         | The admin: React 19, Vite, TanStack Router and Query, Tailwind 4               |
+| `packages/docs`          | These docs (Astro Starlight), also bundled into the admin's help               |
+| `packages/motion`        | The animation runtime, schemas and presets ([spec](/building/animation-spec/)) |
+| `packages/motion-editor` | The animation studio (React), embedded by the page builder                     |
+| `starters/nextjs`        | A Next.js site that reads the delivery API                                     |
+| `docs/decisions`         | Decision records: why the big choices were made                                |
 
 pnpm workspaces link the packages; Turborepo runs `build`, `typecheck`, `test` and `dev`
 across them in dependency order.
