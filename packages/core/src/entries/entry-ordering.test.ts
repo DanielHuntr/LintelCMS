@@ -112,9 +112,10 @@ describe("ordering entries", () => {
       "An entry can't be moved under one of its own children.",
     );
     expect(ownParent.json().message).toBe("An entry can't be its own parent.");
-    expect(otherCollectionParent.json().message).toBe(
-      "The parent has to be another entry in Pages.",
-    );
+    expect(otherCollectionParent.json()).toMatchObject({
+      code: "PLACEMENT_NOT_ALLOWED",
+      message: "Pages can't go under an entry in Blog posts.",
+    });
     expect(await pageTitles()).toEqual(["About", "Team"]);
   });
 

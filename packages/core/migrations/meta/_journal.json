@@ -113,6 +113,13 @@
       "when": 1793543942188,
       "tag": "0015_add_commerce",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1793547861055,
+      "tag": "0016_content_tree_and_recycle_bin",
+      "breakpoints": true
     }
   ]
 }

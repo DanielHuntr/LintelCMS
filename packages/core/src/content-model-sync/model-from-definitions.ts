@@ -1,7 +1,10 @@
 import type { z } from "zod";
 import { checkBlueprintFields, checkFieldDefinitions } from "../blueprints/blueprint-fields.js";
 import { createBlueprintRequestSchema } from "../blueprints/blueprints.schema.js";
-import { createCollectionRequestSchema } from "../collections/collections.schema.js";
+import {
+  createCollectionRequestSchema,
+  defaultAllowedChildren,
+} from "../collections/collections.schema.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
 import { createGlobalSetRequestSchema } from "../globals/globals.schema.js";
 import { InvalidFieldsError } from "../http/http-errors.js";
@@ -133,6 +136,10 @@ function contentTypeUnit(definition: Extract<Definition, { kind: "contentType" }
       blueprintHandle: checked.data.handle,
       structure: collection.structure,
       routePattern: collection.route,
+      allowedAtRoot: collection.allowedAtRoot,
+      allowedChildren: collection.allowedChildren,
+      childrenAsCollection: collection.childrenAsCollection,
+      listColumns: collection.listColumns,
     });
     if (!parsed.success) {
       problems.push(...issueMessages(parsed.error).map((message) => `collection: ${message}`));
@@ -144,6 +151,10 @@ function contentTypeUnit(definition: Extract<Definition, { kind: "contentType" }
       name,
       structure,
       routePattern: routePattern === undefined ? defaultRoutePattern(handle) : routePattern,
+      allowedAtRoot: parsed.data.allowedAtRoot ?? true,
+      allowedChildren: parsed.data.allowedChildren ?? defaultAllowedChildren(handle, structure),
+      childrenAsCollection: parsed.data.childrenAsCollection ?? false,
+      listColumns: parsed.data.listColumns ?? [],
     });
   }
   if (problems.length > 0) {

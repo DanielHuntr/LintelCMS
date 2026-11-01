@@ -202,6 +202,32 @@ export async function deleteEntryRow(
   await database.delete(entriesTable).where(eq(entriesTable.id, entryId));
 }
 
+/**
+ * The ids above an entry, nearest first: its parent, its parent's parent and so on, across
+ * collections, starting with the entry itself. Trees are shallow, so one query per level is
+ * cheap; it stops at a loop in hand-edited data rather than running forever.
+ */
+export async function findAncestorIds(
+  database: DatabaseOrTransaction,
+  entryId: string,
+): Promise<string[]> {
+  const path: string[] = [];
+  let current: string | null = entryId;
+  while (current !== null && !path.includes(current)) {
+    const [row] = await database
+      .select({ parentId: entriesTable.parentId })
+      .from(entriesTable)
+      .where(eq(entriesTable.id, current))
+      .limit(1);
+    if (!row) {
+      break;
+    }
+    path.push(current);
+    current = row.parentId;
+  }
+  return path;
+}
+
 /** Gives the children of `entryId` a new parent, so deleting a page doesn't orphan them. */
 export async function moveChildrenToParent(
   database: DatabaseOrTransaction,
@@ -255,6 +281,16 @@ export async function findSlugsStartingWith(
   return rows.filter((row) => row.id !== scope.exceptEntryId).map((row) => row.slug);
 }
 
+/**
+ * Siblings: the top level of one collection, or everything under one parent. Children of
+ * one parent can come from several collections (see src/content-tree), so they share one order.
+ */
+function siblingsOf(collectionId: string, parentId: string | null): SQL | undefined {
+  return parentId === null
+    ? and(eq(entriesTable.collectionId, collectionId), sql`${entriesTable.parentId} is null`)
+    : eq(entriesTable.parentId, parentId);
+}
+
 /** One more than the highest `sortOrder` among these siblings, so a new entry goes last. */
 export async function findNextSortOrder(
   database: DatabaseOrTransaction,
@@ -264,14 +300,7 @@ export async function findNextSortOrder(
   const [row] = await database
     .select({ highest: sql<number | null>`max(${entriesTable.sortOrder})`.mapWith(Number) })
     .from(entriesTable)
-    .where(
-      and(
-        eq(entriesTable.collectionId, collectionId),
-        parentId === null
-          ? sql`${entriesTable.parentId} is null`
-          : eq(entriesTable.parentId, parentId),
-      ),
-    );
+    .where(siblingsOf(collectionId, parentId));
   return row?.highest === null || row?.highest === undefined ? 0 : row.highest + 1;
 }
 
@@ -285,15 +314,7 @@ export async function makeRoomAfter(
   await database
     .update(entriesTable)
     .set({ sortOrder: sql`${entriesTable.sortOrder} + 1` })
-    .where(
-      and(
-        eq(entriesTable.collectionId, collectionId),
-        parentId === null
-          ? sql`${entriesTable.parentId} is null`
-          : eq(entriesTable.parentId, parentId),
-        sql`${entriesTable.sortOrder} > ${sortOrder}`,
-      ),
-    );
+    .where(and(siblingsOf(collectionId, parentId), sql`${entriesTable.sortOrder} > ${sortOrder}`));
 }
 
 export async function updateEntryPosition(

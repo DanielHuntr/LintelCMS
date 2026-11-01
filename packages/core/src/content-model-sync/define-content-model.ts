@@ -28,6 +28,17 @@ export interface CollectionDefinition {
    * Defaults to `/<handle>/{slug}`.
    */
   route?: string | null;
+  /** Whether entries can sit at the top of the collection's section in the content tree. Defaults to true. */
+  allowedAtRoot?: boolean;
+  /**
+   * Handles of the collections whose entries may be created under one of these entries, in
+   * the content tree. Defaults to the collection itself for a tree, and nothing otherwise.
+   */
+  allowedChildren?: string[];
+  /** Shows an entry's children as a list in its workspace rather than in the tree. Defaults to false. */
+  childrenAsCollection?: boolean;
+  /** Field handles shown as columns when entries are listed in the workspace. Defaults to none. */
+  listColumns?: string[];
 }
 
 export interface ContentTypeInput {

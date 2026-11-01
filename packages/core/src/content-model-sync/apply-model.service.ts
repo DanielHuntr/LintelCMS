@@ -150,6 +150,12 @@ class ModelApplier {
     for (const contentType of this.targetUnits("contentType")) {
       for (const collection of contentType.collections) {
         const { handle, name, structure, routePattern } = collection;
+        const placement = {
+          allowedAtRoot: collection.allowedAtRoot,
+          allowedChildren: collection.allowedChildren,
+          childrenAsCollection: collection.childrenAsCollection,
+          listColumns: collection.listColumns,
+        };
         const found = existing.get(handle);
         if (!found) {
           await createCollection(this.database, {
@@ -157,6 +163,7 @@ class ModelApplier {
             name,
             structure,
             routePattern,
+            ...placement,
             blueprintHandle: contentType.handle,
           });
         } else if (
@@ -167,6 +174,7 @@ class ModelApplier {
             name,
             structure,
             routePattern,
+            ...placement,
             blueprintHandle: contentType.handle,
           });
         }

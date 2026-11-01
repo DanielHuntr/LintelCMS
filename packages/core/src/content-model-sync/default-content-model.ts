@@ -1,4 +1,5 @@
 import { checkBlueprintFields, checkFieldDefinitions } from "../blueprints/blueprint-fields.js";
+import { defaultAllowedChildren } from "../collections/collections.schema.js";
 import type { CollectionDefaults } from "../collections/collections.service.js";
 import { blogPostsCollection, pagesCollection } from "../collections/default-collections.js";
 import { siteSettingsGlobalSet } from "../globals/default-globals.js";
@@ -23,6 +24,10 @@ export function defaultContentModel(): ContentModel {
         name: defaults.name,
         structure: defaults.structure,
         routePattern: defaults.routePattern,
+        allowedAtRoot: true,
+        allowedChildren: defaultAllowedChildren(defaults.handle, defaults.structure),
+        childrenAsCollection: false,
+        listColumns: [],
       },
     ],
   });

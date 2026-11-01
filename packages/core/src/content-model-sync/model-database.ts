@@ -29,11 +29,15 @@ export async function readModelFromDatabase(
       fields: blueprint.fields,
       collections: collections
         .filter((collection) => collection.blueprintId === blueprint.id)
-        .map(({ handle, name, structure, routePattern }) => ({
-          handle,
-          name,
-          structure,
-          routePattern,
+        .map((collection) => ({
+          handle: collection.handle,
+          name: collection.name,
+          structure: collection.structure,
+          routePattern: collection.routePattern,
+          allowedAtRoot: collection.allowedAtRoot,
+          allowedChildren: collection.allowedChildren,
+          childrenAsCollection: collection.childrenAsCollection,
+          listColumns: collection.listColumns,
         })),
     })),
     ...taxonomies.map(({ handle, name }): ModelUnit => ({ kind: "taxonomy", handle, name })),

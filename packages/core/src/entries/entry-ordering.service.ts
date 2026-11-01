@@ -1,13 +1,22 @@
-import { findCollectionOrFail } from "../collections/collections.service.js";
+import {
+  findCollectionByIdOrFail,
+  findCollectionOrFail,
+} from "../collections/collections.service.js";
 import type { Collection } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { hasParentLoop } from "./entry-tree.js";
 import {
   EntryNotInCollectionError,
   InvalidParentError,
+  PlacementNotAllowedError,
   ReorderNotAllowedError,
 } from "./entries.errors.js";
-import { findEntryById, listEntryPositions, updateEntryPosition } from "./entries.repository.js";
+import {
+  findAncestorIds,
+  findEntryById,
+  listEntryPositions,
+  updateEntryPosition,
+} from "./entries.repository.js";
 import type { ReorderEntriesRequest } from "./entries.schema.js";
 
 /**
@@ -17,9 +26,12 @@ import type { ReorderEntriesRequest } from "./entries.schema.js";
 
 /**
  * Checks that `parentId` can be the parent of `entryId` (or of a new entry, when
- * `entryId` is left out): the collection is a tree, the parent is in it (and in the same
- * language, when `locale` is given), and the move doesn't put an entry under itself or one
- * of its own children.
+ * `entryId` is left out). At the top level, the collection has to allow that. Under a
+ * parent, the collection has to be a tree, the parent's collection has to allow this kind
+ * of child (pages allow pages, unless their content type says otherwise), the parent has to
+ * be in the same language (when `locale` is given), and the move mustn't put an entry
+ * under itself or one of its own children. Parents can be in another collection: a landing
+ * page can sit under a page when Pages allows landing pages.
  */
 export async function checkParent(
   database: DatabaseOrTransaction,
@@ -29,6 +41,11 @@ export async function checkParent(
   locale?: string,
 ): Promise<void> {
   if (parentId === null) {
+    if (!collection.allowedAtRoot) {
+      throw new PlacementNotAllowedError(
+        `${collection.name} can't go at the top level. Put it under another page instead.`,
+      );
+    }
     return;
   }
   if (collection.structure !== "tree") {
@@ -40,8 +57,17 @@ export async function checkParent(
     throw new InvalidParentError("An entry can't be its own parent.");
   }
   const parent = await findEntryById(database, parentId);
-  if (!parent || parent.collectionId !== collection.id) {
+  if (!parent) {
     throw new InvalidParentError(`The parent has to be another entry in ${collection.name}.`);
+  }
+  const parentCollection =
+    parent.collectionId === collection.id
+      ? collection
+      : await findCollectionByIdOrFail(database, parent.collectionId);
+  if (!parentCollection.allowedChildren.includes(collection.handle)) {
+    throw new PlacementNotAllowedError(
+      `${collection.name} can't go under an entry in ${parentCollection.name}.`,
+    );
   }
   if (locale !== undefined && parent.locale !== locale) {
     throw new InvalidParentError("The parent has to be written in the same language.");
@@ -49,11 +75,8 @@ export async function checkParent(
   if (entryId === undefined) {
     return;
   }
-
-  const positions = await listEntryPositions(database, collection.id);
-  const parentOf = new Map(positions.map((position) => [position.id, position.parentId]));
-  parentOf.set(entryId, parentId);
-  if (hasParentLoop(entryId, parentOf)) {
+  const ancestors = await findAncestorIds(database, parentId);
+  if (ancestors.includes(entryId)) {
     throw new InvalidParentError("An entry can't be moved under one of its own children.");
   }
 }

@@ -34,6 +34,10 @@ export async function listCollectionModelRows(database: DatabaseOrTransaction, t
       blueprintId: collectionsTable.blueprintId,
       structure: collectionsTable.structure,
       routePattern: collectionsTable.routePattern,
+      allowedAtRoot: collectionsTable.allowedAtRoot,
+      allowedChildren: collectionsTable.allowedChildren,
+      childrenAsCollection: collectionsTable.childrenAsCollection,
+      listColumns: collectionsTable.listColumns,
     })
     .from(collectionsTable)
     .where(eq(collectionsTable.tenantId, tenantId))

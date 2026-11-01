@@ -19,6 +19,16 @@ export class InvalidParentError extends HttpError {
   }
 }
 
+/**
+ * The content type doesn't allow this place: a kind of child its parent's content type
+ * doesn't list, or the top level for one that has to go under something.
+ */
+export class PlacementNotAllowedError extends HttpError {
+  constructor(reason: string) {
+    super(400, "PLACEMENT_NOT_ALLOWED", reason);
+  }
+}
+
 export class ReorderNotAllowedError extends HttpError {
   constructor(collectionName: string) {
     super(

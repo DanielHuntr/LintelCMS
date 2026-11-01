@@ -73,6 +73,8 @@ export const entriesTable = pgTable(
       table.slug,
     ),
     index("entries_origin_idx").on(table.originId),
+    // The content tree reads children by parent, in their order.
+    index("entries_parent_sort_idx").on(table.parentId, table.sortOrder),
     // The scheduler looks for scheduled entries that are due, every minute.
     index("entries_status_scheduled_for_idx").on(table.status, table.scheduledFor),
   ],

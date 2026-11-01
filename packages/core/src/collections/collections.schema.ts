@@ -82,6 +82,31 @@ export const RESERVED_COLLECTION_HANDLES = [
   "shop",
 ];
 
+/**
+ * Where entries of a collection may go in the content tree. `allowedChildren` names the
+ * collections whose entries may be created under one of these; left out, a tree allows its
+ * own kind (pages under pages) and other structures allow nothing.
+ */
+export const collectionPlacementSchema = z.object({
+  allowedAtRoot: z.boolean({ error: "Allowed at the top should be true or false" }),
+  allowedChildren: z
+    .array(z.string().trim().min(1), { error: "Allowed children should be a list of handles" })
+    .max(50, { error: "A content type can allow at most 50 kinds of children" })
+    .transform((handles) => [...new Set(handles)]),
+  childrenAsCollection: z.boolean({ error: "Show children as a list should be true or false" }),
+  listColumns: z
+    .array(z.string().trim().min(1), { error: "List columns should be a list of field handles" })
+    .max(8, { error: "The list can show at most 8 columns" })
+    .transform((handles) => [...new Set(handles)]),
+});
+
+export type CollectionPlacement = z.infer<typeof collectionPlacementSchema>;
+
+/** A tree allows its own kind under each entry; anything else allows nothing until told. */
+export function defaultAllowedChildren(handle: string, structure: CollectionStructure): string[] {
+  return structure === "tree" ? [handle] : [];
+}
+
 /** `POST /collections`. Without a route pattern, entries live at /<handle>/{slug}. */
 export const createCollectionRequestSchema = z.object({
   handle: handleSchema("Please give the collection a handle").refine(
@@ -93,6 +118,7 @@ export const createCollectionRequestSchema = z.object({
   structure: structureSchema,
   routePattern: routePatternSchema.optional(),
   previewUrlPattern: previewUrlPatternSchema.optional(),
+  ...collectionPlacementSchema.partial().shape,
 });
 
 /** `PUT /collections/:handle`. Anything left out stays as it is; the handle can't change. */
@@ -102,6 +128,7 @@ export const updateCollectionRequestSchema = z.object({
   structure: structureSchema.optional(),
   routePattern: routePatternSchema.optional(),
   previewUrlPattern: previewUrlPatternSchema.optional(),
+  ...collectionPlacementSchema.partial().shape,
 });
 
 export const collectionHandleParamsSchema = z.object({ handle: z.string() });
@@ -115,6 +142,10 @@ export const collectionSchema = z.object({
   structure: structureSchema,
   routePattern: z.string().nullable(),
   previewUrlPattern: z.string().nullable(),
+  allowedAtRoot: z.boolean(),
+  allowedChildren: z.array(z.string()),
+  childrenAsCollection: z.boolean(),
+  listColumns: z.array(z.string()),
   entryCount: z.number().int(),
   updatedAt: z.iso.datetime(),
 });

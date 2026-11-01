@@ -107,7 +107,18 @@ export async function updateCollectionRow(
   database: DatabaseOrTransaction,
   collectionId: string,
   changes: Partial<
-    Pick<Collection, "name" | "blueprintId" | "structure" | "routePattern" | "previewUrlPattern">
+    Pick<
+      Collection,
+      | "name"
+      | "blueprintId"
+      | "structure"
+      | "routePattern"
+      | "previewUrlPattern"
+      | "allowedAtRoot"
+      | "allowedChildren"
+      | "childrenAsCollection"
+      | "listColumns"
+    >
   >,
 ): Promise<void> {
   await database

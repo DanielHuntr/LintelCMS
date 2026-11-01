@@ -38,3 +38,4 @@ export {
   formSubmissionNotesTable,
 } from "../forms/forms.table.js";
 export * from "../commerce/commerce.tables.js";
+export { recycleBinItemsTable } from "../recycle-bin/recycle-bin.table.js";
