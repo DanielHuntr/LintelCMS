@@ -50,6 +50,97 @@ const english = {
   "signIn.submit": "Sign in",
   "signIn.submitting": "Signing in…",
   "signIn.unreachable": "Lintel couldn't reach the server. Check your connection and try again.",
+  "media.title": "Media",
+  "media.count.one": "1 file",
+  "media.count.other": "{count} files",
+  "media.upload": "Upload",
+  "media.search.label": "Search",
+  "media.search.placeholder": "Name or description",
+  "media.filter.label": "Show",
+  "media.filter.all": "All",
+  "media.filter.images": "Images",
+  "media.filter.documents": "Documents",
+  "media.grid.label": "Media files",
+  "media.loading": "Loading media…",
+  "media.showMore": "Show more",
+  "media.retry": "Try again",
+  "media.loadError.title": "The media library couldn’t load",
+  "media.empty.title": "Your media library is empty",
+  "media.empty.description":
+    "Upload photos, logos and documents to use them on your pages. You can also drag files anywhere onto this page.",
+  "media.empty.action": "Upload files",
+  "media.noResults.title": "No matches",
+  "media.noResults.description": "Nothing matches “{search}”. Try another word, or show all files.",
+  "media.noImages.title": "No images yet",
+  "media.noDocuments.title": "No documents yet",
+  "media.noKind.description": "Upload one, or choose All to see everything.",
+  "media.drop.title": "Drop to upload",
+  "media.drop.description": "Images and documents up to 25 MB",
+  "media.uploads.label": "Uploads",
+  "media.uploads.uploading.one": "Uploading 1 file",
+  "media.uploads.uploading.other": "Uploading {count} files",
+  "media.uploads.finished": "Uploads finished",
+  "media.uploads.done": "Uploaded",
+  "media.uploads.dismiss": "Dismiss {name}",
+  "media.uploads.close": "Close uploads",
+  "media.upload.tooLarge": "“{name}” is larger than 25 MB. Try a smaller or compressed version.",
+  "media.upload.typeNotAllowed":
+    "“{name}” isn’t a kind of file Lintel accepts. Use an image (JPEG, PNG, WebP, AVIF, GIF or SVG) or a document (PDF, Word, Excel, PowerPoint, text or CSV).",
+  "media.upload.empty": "“{name}” is empty, so there’s nothing to upload.",
+  "media.upload.unreachable":
+    "Lintel couldn’t reach the server. Check your connection and try again.",
+  "media.detail.close": "Close",
+  "media.detail.previous": "Previous file",
+  "media.detail.next": "Next file",
+  "media.detail.focalPoint.label": "Focal point",
+  "media.detail.focalPoint.help":
+    "Click or drag on the image to mark the subject; crops keep it in view. With the keyboard, use the arrow keys, and hold Shift to move further.",
+  "media.detail.focalPoint.value": "{x}% across, {y}% down",
+  "media.detail.focalPoint.centre": "Centre",
+  "media.detail.crops.title": "How crops look",
+  "media.detail.crops.square": "Square",
+  "media.detail.crops.wide": "Wide",
+  "media.detail.crops.portrait": "Portrait",
+  "media.detail.alt.label": "Alt text",
+  "media.detail.alt.hint":
+    "Describe the image for people who can’t see it. Say what matters, as you would on the phone: “Two chefs plating desserts”, not “image”.",
+  "media.detail.alt.missing": "No alt text yet",
+  "media.detail.filename.label": "Filename",
+  "media.detail.details": "Details",
+  "media.detail.size": "Size",
+  "media.detail.dimensions": "Dimensions",
+  "media.detail.dimensionsValue": "{width} × {height}",
+  "media.detail.type": "Type",
+  "media.detail.uploadedBy": "Uploaded by",
+  "media.detail.uploadedAt": "Uploaded",
+  "media.detail.formerUser": "A former user",
+  "media.detail.copyUrl": "Copy URL",
+  "media.detail.copied": "Copied",
+  "media.detail.download": "Download",
+  "media.detail.saving": "Saving…",
+  "media.detail.saved": "Saved",
+  "media.detail.saveFailed": "Couldn’t save. {message}",
+  "media.delete.button": "Delete",
+  "media.delete.confirmTitle": "Delete “{name}”?",
+  "media.delete.confirmDescription":
+    "It will be removed from the library, and its address will stop working on your site. This can’t be undone.",
+  "media.delete.confirm": "Delete file",
+  "media.delete.deleting": "Deleting…",
+  "media.delete.cancel": "Cancel",
+  "media.delete.inUseTitle": "This file is still in use",
+  "media.delete.inUseDescription": "Remove it from these entries first, then delete it.",
+  "media.delete.usedIn": "Used in",
+  "media.picker.choose": "Choose image",
+  "media.picker.replace": "Replace",
+  "media.picker.remove": "Remove",
+  "media.picker.dialogTitle": "Choose an image",
+  "media.picker.upload": "Upload new",
+  "media.picker.gridLabel": "Images",
+  "media.picker.empty.title": "No images yet",
+  "media.picker.empty.description": "Upload one here, or drag it into this window.",
+  "media.picker.current": "Current image",
+  "media.picker.missing": "This image was deleted from the media library. Choose another.",
+  "media.picker.noAlt": "No alt text yet. Add it in Media.",
   "designReview.title": "Design system",
   "designReview.intro":
     "Every base component, side by side in light and dark. Only built in development.",
@@ -108,6 +199,16 @@ const english = {
 
 export type StringKey = keyof typeof english;
 
-export function t(key: StringKey): string {
-  return english[key];
+/**
+ * The text for `key`. Placeholders such as `{name}` are filled from `values`, so a
+ * translation can put them wherever its grammar needs.
+ */
+export function t(key: StringKey, values?: Readonly<Record<string, string | number>>): string {
+  const text: string = english[key];
+  if (!values) {
+    return text;
+  }
+  return text.replace(/\{(\w+)\}/g, (placeholder, name: string) =>
+    name in values ? String(values[name]) : placeholder,
+  );
 }
