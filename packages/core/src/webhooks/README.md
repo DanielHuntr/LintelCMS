@@ -5,11 +5,12 @@ when a page is published. Admins add them in Settings → Webhooks.
 
 ## Events
 
-`entry.published`, `entry.unpublished`, `entry.deleted`, `asset.uploaded` and
-`asset.deleted` (the list is in `webhook-events.ts`). Webhooks subscribe to the event bus
-(`src/events`) in `webhook-event-listener.ts`; a scheduled entry going live is an
-`entry.published` like any other. Automations can also call any address, signed the same
-way (see `src/workflows`).
+`entry.published`, `entry.unpublished`, `entry.deleted`, `asset.uploaded`,
+`asset.deleted` and `form.submitted` (the list is in `webhook-events.ts`). Webhooks subscribe
+to the event bus (`src/events`) in `webhook-event-listener.ts`; a scheduled entry going live
+is an `entry.published` like any other. `form.submitted` is published by `src/forms`, and its
+payload also has a top-level `text` summary, which Slack's incoming webhooks show as the
+message. Automations can also call any address, signed the same way (see `src/workflows`).
 
 ## What is sent
 

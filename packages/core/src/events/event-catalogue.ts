@@ -31,10 +31,19 @@ export interface LintelEvents {
   "entry.moved": { entry: EntryEventData; previousUrl: string };
   "asset.uploaded": { asset: AssetEventData };
   "asset.deleted": { asset: AssetEventData };
-  /** Declared now so automations can use it; the forms feature publishes it. */
+  /** Someone sent a form on the website (published by src/forms). */
   "form.submitted": {
     form: { id: string; handle: string; name: string };
-    submission: { id: string; fields: Record<string, unknown> };
+    submission: {
+      id: string;
+      /** The answers, keyed by field handle. */
+      fields: Record<string, unknown>;
+      createdAt?: string;
+      /** The first email address answered, if any. */
+      submitterEmail?: string | null;
+      /** The submission in the admin's inbox. */
+      url?: string;
+    };
   };
   /** Declared now so automations can use it; the users feature publishes it. */
   "user.invited": {

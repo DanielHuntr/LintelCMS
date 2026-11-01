@@ -21,6 +21,8 @@ import { entriesRoutes } from "./entries/entries.routes.js";
 import { findEntriesUsingAsset } from "./entries/entries.service.js";
 import { revisionsRoutes } from "./entries/revisions.routes.js";
 import { fieldtypesRoutes } from "./fieldtypes/fieldtypes.routes.js";
+import { registerForms } from "./forms/register-forms.js";
+import type { TurnstileVerifier } from "./forms/spam-protection.js";
 import { graphqlRoutes } from "./graphql/graphql.routes.js";
 import type { AssetExists, AssetLookup } from "./fieldtypes/image-assets.js";
 import { healthRoutes } from "./health/health.routes.js";
@@ -191,6 +193,8 @@ export interface ServerOptions {
   contentModel?: ContentModelOptions;
   /** How automations run and send email. Every part has a default. */
   workflows?: WorkflowOptions;
+  /** Forms' Cloudflare Turnstile check. Defaults to asking Cloudflare; tests pass their own. */
+  formsTurnstileVerifier?: TurnstileVerifier;
 }
 
 export interface WebhookOptions {
@@ -295,6 +299,16 @@ export function buildServer(options: ServerOptions) {
     ...options.workflows,
     runScheduledJobs: options.runScheduledJobs ?? true,
     adminOrigin: options.adminOrigin,
+  });
+  // What the Forms plugin's routes need, and its retention job; its routes are the plugin's.
+  registerForms(server, {
+    storage,
+    cacheFolder: options.media?.transformCacheFolder ?? DEFAULT_TRANSFORM_CACHE_FOLDER,
+    usageFinder: options.media?.usageFinder ?? {
+      findEntriesUsingAsset: (assetId) => findEntriesUsingAsset(server.database, assetId),
+    },
+    runScheduledJobs: options.runScheduledJobs ?? true,
+    verifyTurnstile: options.formsTurnstileVerifier,
   });
   server.register(async (api) => registerApiRoutes(api, options, storage), { prefix: apiPrefix });
 

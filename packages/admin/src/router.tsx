@@ -20,6 +20,7 @@ import { ContentTypesPage } from "./content-types/ContentTypesPage.js";
 import { NewContentTypePage } from "./content-types/NewContentTypePage.js";
 import { pageDesignRoutes } from "./page-design/pageDesignRoutes.js";
 import { DashboardPage } from "./dashboard/DashboardPage.js";
+import { formsRoutes } from "./forms/formsRoutes.js";
 import { PluginScreenRoute } from "./plugins/PluginScreenRoute.js";
 import { SectionTabs } from "./plugins/SectionTabs.js";
 import { HelpPage } from "./help/HelpPage.js";
@@ -439,6 +440,7 @@ export const routeTree = rootRoute.addChildren([
       featuresRoute,
       ...peopleRoutes(() => adminRoute),
       ...workflowsRoutes(() => adminRoute),
+      ...formsRoutes(() => adminRoute),
       ...placeholderRoutes,
       pluginScreensRoute,
     ]),

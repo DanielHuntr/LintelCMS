@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import type { AnyPublishedEvent } from "../events/event-bus.js";
 import { queueWebhookEvent } from "./webhook-deliveries.service.js";
+import type { WebhookEventName } from "./webhook-events.js";
 
 /**
  * Webhooks hear about events through the event bus (src/events): every event a webhook
@@ -18,6 +19,7 @@ export function subscribeWebhooksToEvents(server: FastifyInstance): void {
       data.name,
       data.payload,
       new Date(event.occurredAt),
+      data.text,
     );
     if (queued > 0) {
       server.webhooks.deliverSoon();
@@ -25,8 +27,13 @@ export function subscribeWebhooksToEvents(server: FastifyInstance): void {
   });
 }
 
-/** What a webhook is sent for an event, or undefined for events webhooks don't offer. */
-function webhookDataFor(event: AnyPublishedEvent) {
+/**
+ * What a webhook is sent for an event, or undefined for events webhooks don't offer.
+ * `text` is a one-line summary that Slack's incoming webhooks show as the message.
+ */
+function webhookDataFor(
+  event: AnyPublishedEvent,
+): { name: WebhookEventName; payload: Record<string, unknown>; text?: string } | undefined {
   switch (event.name) {
     case "entry.published":
     case "entry.unpublished":
@@ -35,6 +42,24 @@ function webhookDataFor(event: AnyPublishedEvent) {
     case "asset.uploaded":
     case "asset.deleted":
       return { name: event.name, payload: { asset: event.data.asset } };
+    case "form.submitted": {
+      const { form, submission } = event.data;
+      const who = submission.submitterEmail ? ` from ${submission.submitterEmail}` : "";
+      return {
+        name: event.name,
+        payload: {
+          form,
+          submission: {
+            id: submission.id,
+            createdAt: submission.createdAt,
+            values: submission.fields,
+            submitterEmail: submission.submitterEmail ?? null,
+            url: submission.url,
+          },
+        },
+        text: `New ${form.name} submission${who}${submission.url ? `: ${submission.url}` : ""}`,
+      };
+    }
     default:
       return undefined;
   }

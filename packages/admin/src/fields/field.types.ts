@@ -21,7 +21,8 @@ export type FieldType =
   | "entries"
   | "terms"
   | "blocks"
-  | "page";
+  | "page"
+  | "form";
 
 export interface SelectChoice {
   value: string;

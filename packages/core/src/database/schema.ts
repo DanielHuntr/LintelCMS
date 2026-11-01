@@ -32,3 +32,8 @@ export {
   workflowApprovalsTable,
   userNotificationsTable,
 } from "../workflows/workflows.table.js";
+export {
+  formsTable,
+  formSubmissionsTable,
+  formSubmissionNotesTable,
+} from "../forms/forms.table.js";

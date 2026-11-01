@@ -11,6 +11,7 @@ import {
   Link2,
   List,
   ListChecks,
+  MessageSquareText,
   Palette,
   Pilcrow,
   SquareCode,
@@ -41,6 +42,7 @@ export const fieldtypeIcons: Record<FieldType, LucideIcon> = {
   terms: Tags,
   blocks: LayoutTemplate,
   page: PanelsTopLeft,
+  form: MessageSquareText,
 };
 
 interface FieldtypeIconProps {

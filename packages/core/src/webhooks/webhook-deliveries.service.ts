@@ -29,12 +29,17 @@ import type { WebhookDeliveryRow, WebhookRow } from "./webhooks.table.js";
 const ATTEMPT_LEASE_MILLISECONDS = 2 * 60_000;
 const DELIVERIES_PER_RUN = 25;
 
-/** Writes the event down for each switched-on webhook that asked for it. Returns how many. */
+/**
+ * Writes the event down for each switched-on webhook that asked for it. Returns how many.
+ * `text` is an optional one-line summary sent as the payload's `text`, which is what Slack
+ * (and similar chat apps' incoming webhooks) show as the message.
+ */
 export async function queueWebhookEvent(
   database: DatabaseOrTransaction,
   event: WebhookEventName,
   data: Record<string, unknown>,
   now = new Date(),
+  text?: string,
 ): Promise<number> {
   const webhooks = await listWebhooksForEvent(database, DEFAULT_TENANT_ID, event);
   const deliveries = webhooks.map((webhook) => {
@@ -44,7 +49,7 @@ export async function queueWebhookEvent(
       tenantId: DEFAULT_TENANT_ID,
       webhookId: webhook.id,
       event,
-      payload: { id, event, occurredAt: now.toISOString(), data },
+      payload: { id, event, occurredAt: now.toISOString(), ...(text ? { text } : {}), data },
       nextAttemptAt: now,
     };
   });

@@ -166,6 +166,10 @@ server.register(mediaRoutes, {
 where `createEntryAssetUsageFinder(server)` returns `{ findEntriesUsingAsset(assetId) }`
 resolving to `[{ entryId, title }]`.
 
+Forms store the files visitors send through `uploadAsset(context, file, null)` (no uploader)
+and remove them with `deleteAsset`, after checking the kind of file with `detectFileType`.
+All three are exported from `index.ts` for that (see `src/forms/submission-files.ts`).
+
 ## Files
 
 | File                      | What it does                                                |

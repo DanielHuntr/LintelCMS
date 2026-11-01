@@ -1,4 +1,5 @@
 import { blocksFieldtype } from "./blocks-fieldtype.js";
+import { formFieldtype } from "../forms/form-fieldtype.js";
 import type { Fieldtype } from "./fieldtype.js";
 import {
   colourFieldtype,
@@ -36,6 +37,7 @@ export const fieldtypeRegistry: readonly Fieldtype[] = [
   termsFieldtype,
   blocksFieldtype,
   pageFieldtype,
+  formFieldtype,
 ];
 
 /**

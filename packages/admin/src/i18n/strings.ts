@@ -1,5 +1,6 @@
 import { workflowStrings } from "../workflows/workflowStrings.js";
 import { motionEditorStrings } from "@lintel/motion-editor";
+import { formsStrings } from "../forms/formsStrings.js";
 import { contentModelStrings } from "./contentModelStrings.js";
 import { dashboardStrings } from "./dashboardStrings.js";
 import { pluginStrings } from "./pluginStrings.js";
@@ -22,6 +23,7 @@ const english = {
   ...contentModelSyncStrings,
   ...workflowStrings,
   ...motionEditorStrings,
+  ...formsStrings,
   "app.name": "Lintel",
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",
@@ -858,6 +860,7 @@ const english = {
   "webhooks.event.entryDeleted": "An entry is deleted",
   "webhooks.event.assetUploaded": "A file is uploaded",
   "webhooks.event.assetDeleted": "A file is deleted",
+  "webhooks.event.formSubmitted": "A form is sent",
   "webhooks.eventCount.one": "{count} event",
   "webhooks.eventCount.other": "{count} events",
   "webhooks.off": "Off",

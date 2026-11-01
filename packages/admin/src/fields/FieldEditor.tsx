@@ -6,6 +6,7 @@ import { BlocksFieldEditor } from "./blocks/BlocksFieldEditor.js";
 import { DateFieldEditor } from "./DateFieldEditor.js";
 import { EmailFieldEditor } from "./EmailFieldEditor.js";
 import { EntriesFieldEditor } from "./EntriesFieldEditor.js";
+import { FormPickerFieldEditor } from "../forms/FormPickerFieldEditor.js";
 import { ListFieldEditor } from "./ListFieldEditor.js";
 import { MarkdownFieldEditor } from "./MarkdownFieldEditor.js";
 import { TermsFieldEditor } from "./TermsFieldEditor.js";
@@ -62,6 +63,7 @@ export const fieldEditors: Record<FieldType, FieldEditorRegistration> = {
   },
   blocks: { Editor: BlocksFieldEditor, labelling: () => "group" },
   page: { Editor: PageFieldEditor, labelling: () => "group" },
+  form: { Editor: FormPickerFieldEditor, labelling: labelAbove },
 };
 
 /** A plugin's field editor, labelled above the control unless the plugin says otherwise. */
