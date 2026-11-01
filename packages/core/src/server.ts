@@ -3,6 +3,8 @@ import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import Fastify from "fastify";
 import { apiTokensRoutes } from "./api-tokens/api-tokens.routes.js";
+import { AppRequestLimiter, limitAppRequests } from "./apps/app-rate-limit.js";
+import { appsRoutes } from "./apps/apps.routes.js";
 import { authRoutes } from "./auth/auth.routes.js";
 import { blueprintsRoutes } from "./blueprints/blueprints.routes.js";
 import { collectionsRoutes } from "./collections/collections.routes.js";
@@ -119,6 +121,8 @@ export interface ServerOptions {
    * lintel.config.ts; tests pass the ones they test. Defaults to none.
    */
   plugins?: readonly LintelPlugin[];
+  /** How many API requests each installed app may make a minute. Defaults to 240. */
+  appRequestsPerMinute?: number;
 }
 
 export interface WebhookOptions {
@@ -164,6 +168,7 @@ export function buildServer(options: ServerOptions) {
   server.decorate("webhooks", webhooks);
   const plugins = new PluginCatalogue(pluginRegistry, options.plugins);
   server.decorate("plugins", plugins);
+  server.decorate("appRequestLimiter", new AppRequestLimiter(options.appRequestsPerMinute));
   // Plugins' own tables are brought up to date before the server takes requests.
   server.addHook("onReady", () => activeDatabase.applyPluginMigrations(plugins.migrations));
   server.addHook("onClose", () => webhooks.finishSending());
@@ -175,6 +180,8 @@ export function buildServer(options: ServerOptions) {
   server.register(cookie);
   // Off by default; routes that need a limit (like sign-in) set their own.
   server.register(rateLimit, { global: false });
+  // Installed apps share one limit across every route they call (see src/apps).
+  server.addHook("onRequest", limitAppRequests);
 
   server.register(healthRoutes);
   server.register(authRoutes);
@@ -196,6 +203,7 @@ export function buildServer(options: ServerOptions) {
   server.register(deliveryAccessRoutes);
   server.register(apiTokensRoutes);
   server.register(webhooksRoutes);
+  server.register(appsRoutes, { adminOrigin: options.adminOrigin });
   server.register(graphqlRoutes, { graphiql: options.graphiql ?? false });
   server.register(openApiRoutes);
   server.register(dashboardRoutes);

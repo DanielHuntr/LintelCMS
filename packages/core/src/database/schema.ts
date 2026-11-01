@@ -20,3 +20,4 @@ export { apiTokensTable } from "../api-tokens/api-tokens.table.js";
 export { webhooksTable, webhookDeliveriesTable } from "../webhooks/webhooks.table.js";
 export { entrySeoTable, redirectsTable } from "../seo/seo.table.js";
 export { dashboardLayoutsTable } from "../dashboard/dashboard.table.js";
+export { appsTable } from "../apps/apps.table.js";

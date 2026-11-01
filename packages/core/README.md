@@ -38,6 +38,7 @@ its routes and its tests.
 | `src/openapi`        | The OpenAPI document for the REST API                  |
 | `src/api-tokens`     | Bearer tokens for websites, apps and scripts           |
 | `src/webhooks`       | Signed requests to other services when content changes |
+| `src/apps`           | External apps: manifests, scoped credentials, frames   |
 | `src/content-events` | Publish, delete and upload events, and who hears them  |
 | `src/seo`            | The SEO plugin: page SEO, sitemap, robots, redirects   |
 
@@ -73,6 +74,7 @@ Set `API_PUBLIC_URL` when browsers reach the API at another address than
 
 `WEBHOOKS_ALLOW_PRIVATE_ADDRESSES=true` lets webhooks go to localhost and private network
 addresses, for testing a receiver on your own machine; leave it off on a real server.
+It also lets an app's `lintel-app.json` be read from such an address while you build one.
 GraphiQL is served at `/graphql` when `NODE_ENV=development`.
 
 Every setting has a default, so no `.env` is needed. If the root `.env` exists it is

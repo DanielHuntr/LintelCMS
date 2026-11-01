@@ -3,6 +3,10 @@
 Addresses Lintel tells when something happens, such as a static site builder that rebuilds
 when a page is published. Admins add them in Settings → Webhooks.
 
+Installed apps (`src/apps`) subscribe to events too. Their webhooks have `app_id` set, are
+signed with the app's client secret, and aren't listed, changed or deleted here: they are
+shown with the app and go when it is uninstalled.
+
 ## Events
 
 `entry.published`, `entry.unpublished`, `entry.deleted`, `asset.uploaded` and

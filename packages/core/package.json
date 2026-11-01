@@ -34,6 +34,16 @@
       "types": "./dist/plugins/plugin-testing.d.ts",
       "development": "./src/plugins/plugin-testing.ts",
       "default": "./dist/plugins/plugin-testing.js"
+    },
+    "./app-session-tokens": {
+      "types": "./dist/apps/app-session-tokens.d.ts",
+      "development": "./src/apps/app-session-tokens.ts",
+      "default": "./dist/apps/app-session-tokens.js"
+    },
+    "./webhook-signatures": {
+      "types": "./dist/webhooks/webhook-signatures.d.ts",
+      "development": "./src/webhooks/webhook-signatures.ts",
+      "default": "./dist/webhooks/webhook-signatures.js"
     }
   },
   "scripts": {

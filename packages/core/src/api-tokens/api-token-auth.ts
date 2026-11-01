@@ -1,4 +1,6 @@
 import type { FastifyRequest } from "fastify";
+import { isClientSecret } from "../apps/app-credentials.js";
+import { authenticateApp } from "../apps/apps.service.js";
 import { readBearerToken } from "./api-token-secrets.js";
 import { InvalidApiTokenError } from "./api-tokens.errors.js";
 import { type AuthenticatedApiToken, authenticateApiToken } from "./api-tokens.service.js";
@@ -28,6 +30,18 @@ async function checkApiToken(request: FastifyRequest): Promise<AuthenticatedApiT
   const secret = readBearerToken(request.headers.authorization);
   if (secret === undefined) {
     return undefined;
+  }
+  // An installed app's client secret works like a token, with the app's approved scopes.
+  if (isClientSecret(secret)) {
+    const app = await authenticateApp(request.server.database, secret);
+    if (!app) {
+      throw new InvalidApiTokenError();
+    }
+    request.log.info(
+      { appId: app.app.id, method: request.method, url: request.url },
+      "Request from an app",
+    );
+    return app;
   }
   const token = await authenticateApiToken(request.server.database, secret);
   if (!token) {

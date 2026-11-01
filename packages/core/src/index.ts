@@ -40,6 +40,15 @@ export type {
 } from "./navigation/navigation.schema.js";
 export type { EntryPreview, PreviewedEntry } from "./preview/preview.schema.js";
 export type { SearchResults } from "./search/search.schema.js";
+export type {
+  AppExtensions,
+  AppPreview,
+  AppResponse,
+  AppSessionToken,
+  InstalledApp,
+} from "./apps/apps.schema.js";
+export type { AppManifest } from "./apps/app-manifest.schema.js";
+export type { AppScope } from "./apps/app-scopes.js";
 export {
   createAssetLookup,
   noAssetUsage,

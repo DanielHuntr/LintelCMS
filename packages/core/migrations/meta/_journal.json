@@ -64,6 +64,13 @@
       "when": 1793500923688,
       "tag": "0008_add_dashboard_layouts",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793532855103,
+      "tag": "0009_add_external_apps",
+      "breakpoints": true
     }
   ]
 }
