@@ -345,6 +345,11 @@ const english = {
   "media.picker.current": "Current image",
   "media.picker.missing": "This image was deleted from the media library. Choose another.",
   "media.picker.noAlt": "No alt text yet. Add it in Media.",
+  "media.noResizing.title": "Images are shown at full size",
+  "media.noResizing.description":
+    "This server can't run sharp, the program Lintel uses to resize images, so every image is sent at the size it was uploaded. Pages may load slowly; upload images no wider than 2000 pixels until it is fixed.",
+  "media.noResizing.fix":
+    "To fix it, whoever looks after the server can run Run NPM Install again, or ask the host to allow Node.js native modules. The server said:",
   "designReview.title": "Design system",
   "designReview.intro":
     "Every base component, side by side in light and dark. Only built in development.",

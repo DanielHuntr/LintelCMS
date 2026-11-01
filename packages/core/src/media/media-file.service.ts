@@ -10,6 +10,7 @@ import {
   transformMimeType,
   wantsTransform,
 } from "./image-transforms.js";
+import { loadImageLibrary } from "./image-library.js";
 import { AssetNotFoundError } from "./media.errors.js";
 import { findAssetById } from "./media.repository.js";
 import type { FileTransformQuery } from "./media.schema.js";
@@ -55,7 +56,9 @@ export async function findAssetFile(
   };
 
   // Documents have nothing to resize, so a width or format on one is ignored rather than refused.
-  if (!isImage || !wantsTransform(query)) {
+  // Without sharp (see image-library.ts) every image is sent as it was uploaded.
+  const canResize = isImage && wantsTransform(query) && (await loadImageLibrary()).available;
+  if (!canResize) {
     const { storage } = media;
     const makeSignedUrl = storage.signedUrl?.bind(storage);
     return {

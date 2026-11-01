@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
-import sharp, { type Sharp } from "sharp";
+import type { Sharp } from "sharp";
 import { cropAroundFocalPoint } from "./focal-crop.js";
+import { loadImageLibrary } from "./image-library.js";
 import { UnreadableImageError } from "./media.errors.js";
 import type { FileTransformQuery, TransformFormat } from "./media.schema.js";
 import type { AssetRow } from "./media.table.js";
@@ -35,11 +36,15 @@ const mimeTypeByFormat: Record<TransformFormat, string> = {
 
 /**
  * The size people see, after the camera's rotation is applied. Undefined when sharp can't
- * read the image at all; for animations, the height of one frame.
+ * read the image at all (or isn't available on this server); for animations, the height
+ * of one frame.
  */
 export async function readImageSize(
   contents: Buffer,
 ): Promise<{ width: number; height: number } | undefined> {
+  const library = await loadImageLibrary();
+  if (!library.available) return undefined;
+  const sharp = library.sharp;
   try {
     // Only the header is read here, so even a huge image is cheap to measure.
     const metadata = await sharp(contents, { limitInputPixels: false }).metadata();
@@ -90,6 +95,9 @@ export async function renderTransform(
   asset: TransformableAsset,
   transform: ImageTransform,
 ): Promise<Buffer> {
+  const library = await loadImageLibrary();
+  if (!library.available) return original;
+  const sharp = library.sharp;
   // autoOrient applies the camera's rotation first, so crops use the same corners editors see.
   const image = sharp(original, { autoOrient: true, limitInputPixels: MAX_IMAGE_PIXELS });
 

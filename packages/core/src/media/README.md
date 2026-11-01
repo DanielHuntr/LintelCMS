@@ -15,7 +15,10 @@ subject is (the focal point) so every crop keeps it in view.
    embedded HTML and XML entities. Refusing is safer than cleaning: a cleaner that misses one
    trick lets the file through.
 4. `sharp` reads the width and height (after the camera's rotation, so they match what people
-   see). A file that claims to be an image but can't be opened is refused.
+   see). A file that claims to be an image but can't be opened is refused. sharp is
+   loaded on first use (`image-library.ts`); on a server where it can't load, images are
+   kept with an unknown size and always served as uploaded, and
+   `GET /media/image-resizing` says why, for the admin's notice.
 5. The SHA-256 of the bytes is checked against the library. The same file uploaded again
    gives back the existing asset with `200` instead of making a duplicate (`201` when new).
 6. The bytes go to storage as `<tenant>/<asset id>.<extension>`, and the row to `assets`.
@@ -26,14 +29,15 @@ PowerPoint (`.pptx`), plain text and CSV documents.
 
 ## Endpoints
 
-| Method and path       | Permission     | Success                                                        |
-| --------------------- | -------------- | -------------------------------------------------------------- |
-| `POST /media`         | `media:upload` | 201 `Asset` (200 when the same file was already uploaded)      |
-| `GET /media`          | `media:read`   | 200 `{ assets, total }`, newest first                          |
-| `GET /media/:id`      | `media:read`   | 200 `Asset`                                                    |
-| `PATCH /media/:id`    | `media:update` | 200 `Asset`; body `{ alt?, focalPoint?: { x, y }, filename? }` |
-| `DELETE /media/:id`   | `media:delete` | 204, or 409 `ASSET_IN_USE` with `usedBy: [{ entryId, title }]` |
-| `GET /media/:id/file` | public         | The original, or a resized image                               |
+| Method and path             | Permission     | Success                                                        |
+| --------------------------- | -------------- | -------------------------------------------------------------- |
+| `POST /media`               | `media:upload` | 201 `Asset` (200 when the same file was already uploaded)      |
+| `GET /media`                | `media:read`   | 200 `{ assets, total }`, newest first                          |
+| `GET /media/image-resizing` | `media:read`   | 200 `{ available, problem }`: whether sharp works here         |
+| `GET /media/:id`            | `media:read`   | 200 `Asset`                                                    |
+| `PATCH /media/:id`          | `media:update` | 200 `Asset`; body `{ alt?, focalPoint?: { x, y }, filename? }` |
+| `DELETE /media/:id`         | `media:delete` | 204, or 409 `ASSET_IN_USE` with `usedBy: [{ entryId, title }]` |
+| `GET /media/:id/file`       | public         | The original, or a resized image                               |
 
 `GET /media` takes `search` (filename or alt text), `type` (`image` or `document`), `page`
 and `perPage` (25 by default, 100 at most). The `Asset` shape is in `media.schema.ts`.

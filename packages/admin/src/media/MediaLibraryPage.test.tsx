@@ -27,7 +27,9 @@ describe("MediaLibraryPage", () => {
 
     expect(await screen.findByRole("button", { name: /menu\.pdf/ })).toBeInTheDocument();
     expect(screen.getByText("2 files")).toBeInTheDocument();
-    expect(requested).toEqual(["/media?page=1&perPage=60"]);
+    expect(requested.filter((path) => path.startsWith("/media?"))).toEqual([
+      "/media?page=1&perPage=60",
+    ]);
 
     await userEvent.type(screen.getByRole("searchbox", { name: "Search" }), "  beach ");
     await waitFor(() => expect(requested).toContain("/media?page=1&perPage=60&search=beach"));
@@ -44,6 +46,30 @@ describe("MediaLibraryPage", () => {
     await waitFor(() =>
       expect(requested).toContain("/media?page=1&perPage=60&search=beach&type=document"),
     );
+  });
+
+  it("explains when the server can't resize images", async () => {
+    mockApi((path) =>
+      path === "/media/image-resizing"
+        ? { available: false, problem: "Could not load the sharp module" }
+        : { assets: [beach], total: 1 },
+    );
+    renderWithQueries(<MediaLibraryPage permissions={["*"]} />);
+
+    const notice = await screen.findByRole("status", { name: "Images are shown at full size" });
+    expect(within(notice).getByText("Could not load the sharp module")).toBeInTheDocument();
+  });
+
+  it("says nothing about resizing when the server can resize images", async () => {
+    mockApi((path) =>
+      path === "/media/image-resizing"
+        ? { available: true, problem: null }
+        : { assets: [beach], total: 1 },
+    );
+    renderWithQueries(<MediaLibraryPage permissions={["*"]} />);
+
+    expect(await screen.findByRole("button", { name: /beach\.jpg/ })).toBeInTheDocument();
+    expect(screen.queryByText("Images are shown at full size")).not.toBeInTheDocument();
   });
 
   it("guides people when the library is empty, and hides upload without permission", async () => {
