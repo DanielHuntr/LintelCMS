@@ -6,8 +6,13 @@ import type { AssetUsageFinder } from "./asset-lookup.js";
 import { toAssetResponse } from "./asset-response.js";
 import { decodeAsText, detectFileType, findAllowedFileType } from "./file-types.js";
 import { sanitiseFilename } from "./filenames.js";
-import { readImageSize } from "./image-transforms.js";
-import { AssetInUseError, AssetNotFoundError, UnreadableImageError } from "./media.errors.js";
+import { MAX_IMAGE_PIXELS, readImageSize } from "./image-transforms.js";
+import {
+  AssetInUseError,
+  AssetNotFoundError,
+  ImageTooLargeError,
+  UnreadableImageError,
+} from "./media.errors.js";
 import {
   type AssetChanges,
   deleteAssetRow,
@@ -57,6 +62,9 @@ export async function uploadAsset(
   const size = fileType.kind === "image" ? await readImageSize(file.contents) : undefined;
   if (fileType.kind === "image" && !size) {
     throw new UnreadableImageError(filename);
+  }
+  if (size && size.width * size.height > MAX_IMAGE_PIXELS) {
+    throw new ImageTooLargeError(filename, size.width, size.height, MAX_IMAGE_PIXELS / 1_000_000);
   }
 
   const contentHash = createHash("sha256").update(file.contents).digest("hex");

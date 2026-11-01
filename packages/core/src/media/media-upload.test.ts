@@ -122,6 +122,18 @@ describe("uploading media", () => {
     expect(served.headers["x-content-type-options"]).toBe("nosniff");
   });
 
+  it("refuses a small file that claims to be an enormous image", async () => {
+    // A few bytes on disk, but 1.6 gigabytes of memory once decoded for resizing.
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="20000" height="20000"><rect width="1" height="1"/></svg>';
+
+    const response = await media.upload("bomb.svg", Buffer.from(svg));
+
+    expect(response.statusCode).toBe(413);
+    expect(response.json()).toMatchObject({ code: "IMAGE_TOO_LARGE" });
+    expect(response.json().message).toContain("20000 × 20000 pixels");
+  });
+
   it("refuses files over 25 MB, and requests without a file", async () => {
     const tooLarge = await media.upload("huge.png", Buffer.alloc(25 * 1024 * 1024 + 1));
     const wrongField = await media.server.inject({

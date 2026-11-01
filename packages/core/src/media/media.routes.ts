@@ -48,6 +48,21 @@ const FILE_SECURITY_POLICY =
   "default-src 'none'; img-src data:; style-src 'unsafe-inline'; sandbox";
 
 /**
+ * Uploads are checked and hashed in memory, so they are limited per address. Thirty a
+ * minute is far more than a person dragging files in, and keeps a script from tying the
+ * server up.
+ */
+const UPLOADS_PER_MINUTE = 30;
+
+/**
+ * Resized images are public, and each new size takes real work (and disk space for the
+ * cache). Requests for a size are limited per visitor address: generous for any page, even
+ * one with dozens of responsive images, but not for a script asking for every size there is.
+ * Plain originals aren't counted.
+ */
+const RESIZED_IMAGES_PER_MINUTE = 300;
+
+/**
  * HTTP only:
  *
  *   POST   /media           (media:upload)  multipart "file" -> 201 Asset (200 if already uploaded)
@@ -73,7 +88,10 @@ export async function mediaRoutes(server: FastifyInstance, options: MediaRoutesO
 
   server.post(
     "/media",
-    { preHandler: requirePermission("media:upload") },
+    {
+      preHandler: requirePermission("media:upload"),
+      config: { rateLimit: { max: UPLOADS_PER_MINUTE, timeWindow: "1 minute" } },
+    },
     async (request, reply) => {
       const file = await readUploadedFile(request);
       const { asset, created } = await uploadAsset(context(), file, getSignedIn(request).user.id);
@@ -117,7 +135,17 @@ export async function mediaRoutes(server: FastifyInstance, options: MediaRoutesO
   );
 
   // Public on purpose: these URLs go into the website's <img> tags. See the README.
-  server.get("/media/:id/file", async (request, reply) => {
+  const resizeLimit = {
+    config: {
+      rateLimit: {
+        max: RESIZED_IMAGES_PER_MINUTE,
+        timeWindow: "1 minute",
+        allowList: (request: FastifyRequest) => !asksForResize(request.query),
+      },
+    },
+  };
+
+  server.get("/media/:id/file", resizeLimit, async (request, reply) => {
     const query = parseRequest(fileTransformQuerySchema, request.query);
     const file = await findAssetFile(context(), parseAssetId(request.params), query);
 
@@ -191,4 +219,11 @@ function sendAssetInUse(reply: FastifyReply, error: AssetInUseError) {
     message: error.message,
     usedBy: error.usedBy,
   });
+}
+
+function asksForResize(query: unknown): boolean {
+  if (typeof query !== "object" || query === null) {
+    return false;
+  }
+  return ["w", "h", "format"].some((name) => name in query);
 }

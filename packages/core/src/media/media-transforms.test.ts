@@ -137,3 +137,23 @@ describe("image transforms", () => {
     expect(malformed.statusCode).toBe(404);
   });
 });
+
+describe("limits on resizing", () => {
+  const testDatabase = useTestDatabase();
+  const media = useMediaTestServer(testDatabase);
+
+  it("limits how many sizes one address can ask for in a minute, but not originals", async () => {
+    const assetId = crypto.randomUUID();
+    const statuses = new Set<number>();
+    for (let width = 1; width <= 300; width++) {
+      const response = await media.server.inject({ url: `/media/${assetId}/file?w=${width}` });
+      statuses.add(response.statusCode);
+    }
+    const overLimit = await media.server.inject({ url: `/media/${assetId}/file?w=301` });
+    const original = await media.server.inject({ url: `/media/${assetId}/file` });
+
+    expect([...statuses]).toEqual([404]);
+    expect(overLimit.statusCode).toBe(429);
+    expect(original.statusCode).toBe(404);
+  }, 60_000);
+});

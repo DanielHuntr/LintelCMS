@@ -46,6 +46,16 @@ export class UnsafeSvgError extends HttpError {
   }
 }
 
+export class ImageTooLargeError extends HttpError {
+  constructor(filename: string, width: number, height: number, maxMegapixels: number) {
+    super(
+      413,
+      "IMAGE_TOO_LARGE",
+      `"${filename}" is ${width} × ${height} pixels, more than the ${maxMegapixels} megapixels Lintel accepts. Make it smaller in a photo editor and upload it again.`,
+    );
+  }
+}
+
 export class UnreadableImageError extends HttpError {
   constructor(filename: string) {
     super(

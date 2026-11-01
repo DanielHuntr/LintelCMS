@@ -18,6 +18,14 @@ type TransformableAsset = Pick<
   "filename" | "mimeType" | "width" | "height" | "focalX" | "focalY" | "contentHash"
 >;
 
+/**
+ * The most pixels an image may have: 100 megapixels, more than any phone or most cameras
+ * take. Decoding needs about 4 bytes a pixel, so a small file that claims to be enormous
+ * (a "decompression bomb") would otherwise take gigabytes of memory to resize. Uploads
+ * above it are refused, and sharp refuses to decode anything above it all the same.
+ */
+export const MAX_IMAGE_PIXELS = 100_000_000;
+
 const mimeTypeByFormat: Record<TransformFormat, string> = {
   webp: "image/webp",
   avif: "image/avif",
@@ -33,7 +41,8 @@ export async function readImageSize(
   contents: Buffer,
 ): Promise<{ width: number; height: number } | undefined> {
   try {
-    const metadata = await sharp(contents).metadata();
+    // Only the header is read here, so even a huge image is cheap to measure.
+    const metadata = await sharp(contents, { limitInputPixels: false }).metadata();
     // Animations report the height of every frame stacked; one frame is what people see.
     const isAnimated = (metadata.pages ?? 1) > 1 && metadata.pageHeight !== undefined;
     return {
@@ -82,7 +91,7 @@ export async function renderTransform(
   transform: ImageTransform,
 ): Promise<Buffer> {
   // autoOrient applies the camera's rotation first, so crops use the same corners editors see.
-  const image = sharp(original, { autoOrient: true });
+  const image = sharp(original, { autoOrient: true, limitInputPixels: MAX_IMAGE_PIXELS });
 
   if (isFocalCrop(transform) && asset.width && asset.height) {
     const crop = cropAroundFocalPoint(asset.width, asset.height, transform.w / transform.h, {
