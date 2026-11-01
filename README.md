@@ -167,6 +167,12 @@ pnpm --filter starter-nextjs dev       # the starter site, on http://localhost:3
 
 The starter's [README](starters/nextjs/README.md) walks through it step by step.
 
+## Security
+
+How to report a vulnerability is in [SECURITY.md](SECURITY.md). What Lintel protects and
+how is in [docs/security/threat-model.md](docs/security/threat-model.md), and features in
+progress are checked against [docs/security/checklist.md](docs/security/checklist.md).
+
 ## Everyday commands
 
 ```bash
