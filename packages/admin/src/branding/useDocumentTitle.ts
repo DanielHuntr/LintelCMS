@@ -7,6 +7,9 @@ export function useDocumentTitle(pageTitle: string | undefined): void {
   useEffect(() => {
     if (pageTitle === undefined) return;
     document.title =
-      pageTitle && pageTitle !== productName ? `${pageTitle} · ${productName}` : productName;
+      // "Welcome to Acme Studio" already names it.
+      pageTitle && !pageTitle.includes(productName)
+        ? `${pageTitle} · ${productName}`
+        : pageTitle || productName;
   }, [pageTitle, productName]);
 }

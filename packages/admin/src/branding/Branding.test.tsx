@@ -12,6 +12,7 @@ import type { Branding, BrandingSettings, PublicBranding } from "./branding.api.
 import { BrandingPage } from "./BrandingPage.js";
 import { currentBranding, showBranding } from "./brandingStore.js";
 import { lintelPublicBranding } from "./lintelBranding.js";
+import { useDocumentTitle } from "./useDocumentTitle.js";
 
 const lintelBranding: Branding = {
   productName: lintelPublicBranding.productName,
@@ -145,6 +146,16 @@ describe("branding across the admin", () => {
     serveBrandingQuietly();
     renderScreen(<BrandingPage />);
     await waitFor(() => expect(document.title).toBe("Branding · Acme Studio"));
+  });
+
+  it("doesn't repeat the product name when the page title already has it", async () => {
+    showBranding(branded({ productName: "Acme Studio" }));
+    function WelcomeTitle() {
+      useDocumentTitle("Welcome to Acme Studio");
+      return null;
+    }
+    renderScreen(<WelcomeTitle />);
+    await waitFor(() => expect(document.title).toBe("Welcome to Acme Studio"));
   });
 
   it("writes accent tokens for both colour schemes", () => {

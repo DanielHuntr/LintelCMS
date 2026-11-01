@@ -16,15 +16,16 @@ export function BrandLogo({ size = "small", showsName = true }: BrandLogoProps) 
 
   if (logo) {
     return (
-      <picture className="flex min-w-0">
+      <picture className="flex min-w-0 shrink-0">
         {logoDark && <source srcSet={logoDark} media="(prefers-color-scheme: dark)" />}
         <img
           src={logo}
           alt={productName}
+          // An SVG with only a viewBox has no width of its own, so the height sets it.
           className={
             size === "large"
-              ? "max-h-12 max-w-64 object-contain"
-              : "max-h-8 max-w-48 object-contain"
+              ? "h-12 w-auto max-w-64 object-contain"
+              : "h-8 w-auto max-w-48 object-contain"
           }
         />
       </picture>
