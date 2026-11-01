@@ -9,7 +9,7 @@ export { pluginRegistry, type PluginId } from "./plugins/plugins.registry.js";
 export { setupStatusSchema, type SetupStatus } from "./setup/setup.schema.js";
 export { hasPermission, type Permission } from "./roles/permissions.js";
 export { requirePermission, requireSignedIn, getSignedIn } from "./auth/require-permission.js";
-export { SESSION_COOKIE_NAME } from "./auth/session-cookie.js";
+export { DEVELOPMENT_SESSION_COOKIE_NAME, SESSION_COOKIE_NAME } from "./auth/session-cookie.js";
 export { signInRequestSchema, signedInSchema, type SignedIn } from "./auth/auth.schema.js";
 export { HttpError, InvalidFieldsError, type FieldMessages } from "./http/http-errors.js";
 export type { AssetExists, AssetLookup, DeliveredAsset } from "./fieldtypes/image-assets.js";

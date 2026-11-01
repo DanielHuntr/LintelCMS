@@ -5,7 +5,7 @@ A session is one signed-in browser. Signing in starts one; signing out ends it.
 ## How it works
 
 1. On sign-in, `startSession` makes a random 256-bit token. The browser gets the token
-   in the `lintel_session` cookie; the database gets only its SHA-256 hash.
+   in the `__Host-lintel_session` cookie (`lintel_session` in development); the database gets only its SHA-256 hash.
 2. On each request that needs a signed-in user, `findActiveSession` hashes the cookie
    and looks it up. Expired sessions are deleted when found.
 3. Sessions last 30 days from their last use. To avoid a database write on every

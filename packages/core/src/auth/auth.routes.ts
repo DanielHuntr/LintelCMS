@@ -39,6 +39,12 @@ export async function authRoutes(server: FastifyInstance) {
         signInRequest,
         request.headers["user-agent"],
       );
+      // Signing in always starts a new session. One the browser already had (perhaps
+      // someone else's, left on a shared computer) is ended rather than carried on.
+      const previousToken = readSessionToken(request);
+      if (previousToken) {
+        await signOut(server.database, previousToken);
+      }
 
       setSessionCookie(reply, session.token, session.expiresAt);
       return signedIn;

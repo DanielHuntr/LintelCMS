@@ -24,8 +24,18 @@ a minute per IP address.
 
 ## The session cookie
 
-`lintel_session`: httpOnly, SameSite=Lax, Path=/, Secure except when
-`NODE_ENV=development`, expires with the session (30 days, extended on use).
+`__Host-lintel_session`: httpOnly, SameSite=Lax, Path=/, Secure, expires with the session
+(30 days, extended on use). The `__Host-` prefix means browsers only accept it from the
+API's own host, so a page on a sibling subdomain can't plant a session of its own. With
+`NODE_ENV=development` (plain HTTP) it is called `lintel_session` and isn't Secure, because
+browsers refuse the prefix without HTTPS.
+
+Signing in always starts a new session and ends the one the browser already had.
+
+Requests that change something (POST, PUT, PATCH, DELETE) must come from the admin's
+address or the API's own, checked with the `Origin` header, unless they carry an API token.
+That stops other websites, including ones on the same domain, from forging requests with an
+editor's cookie. See `src/http/cross-site-requests.ts`.
 Browsers must send it, so the admin calls the API with `credentials: "include"`.
 How sessions are stored and extended: `src/sessions/README.md`.
 

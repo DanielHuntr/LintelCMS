@@ -2,10 +2,12 @@
 
 Small pieces every feature's routes share.
 
-| File               | What it does                                                                        |
-| ------------------ | ----------------------------------------------------------------------------------- |
-| `http-errors.ts`   | `HttpError`, `InvalidFieldsError`, `parseRequest` and the error handler for details |
-| `handle.schema.ts` | The rule for handles (`blog_post`, `hero_image`) used by blueprints and fields      |
+| File                     | What it does                                                                        |
+| ------------------------ | ----------------------------------------------------------------------------------- |
+| `http-errors.ts`         | `HttpError`, `InvalidFieldsError`, `parseRequest` and the error handler for details |
+| `handle.schema.ts`       | The rule for handles (`blog_post`, `hero_image`) used by blueprints and fields      |
+| `cross-origin.ts`        | CORS: the admin may call everything, listed websites the public content APIs        |
+| `cross-site-requests.ts` | Refuses changes sent from pages other than the admin's (forged requests)            |
 
 ## Error responses
 

@@ -64,7 +64,7 @@ export function buildOpenApiDocument(
           scheme: "bearer",
           description: "An API token from Settings → API access.",
         },
-        session: { type: "apiKey", in: "cookie", name: "lintel_session" },
+        session: { type: "apiKey", in: "cookie", name: "__Host-lintel_session" },
       },
       schemas: { Error: errorSchema },
     },

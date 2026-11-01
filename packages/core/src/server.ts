@@ -19,6 +19,7 @@ import { graphqlRoutes } from "./graphql/graphql.routes.js";
 import type { AssetExists, AssetLookup } from "./fieldtypes/image-assets.js";
 import { healthRoutes } from "./health/health.routes.js";
 import { crossOriginOptions } from "./http/cross-origin.js";
+import { refuseCrossSiteRequests } from "./http/cross-site-requests.js";
 import { sendHttpErrorDetails } from "./http/http-errors.js";
 import { type AssetUsageFinder, createAssetLookup } from "./media/asset-lookup.js";
 import { LocalDiskStorage } from "./media/local-disk-storage.js";
@@ -158,6 +159,11 @@ export function buildServer(options: ServerOptions) {
   // The admin may call everything; websites listed in Settings may call the content APIs.
   server.register(cors, { delegator: crossOriginOptions(options.adminOrigin) });
   server.register(cookie);
+  // Runs after cookies are read and before any route: see src/http/cross-site-requests.ts.
+  server.addHook(
+    "preValidation",
+    refuseCrossSiteRequests([options.adminOrigin, server.publicApiUrl]),
+  );
   // Off by default; routes that need a limit (like sign-in) set their own.
   server.register(rateLimit, { global: false });
 
