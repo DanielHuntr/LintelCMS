@@ -101,7 +101,10 @@ describe("an entry's workspace", () => {
     const { router } = renderWorkspace();
 
     await userEvent.type(await screen.findByRole("textbox", { name: "Title" }), "!");
-    void router.navigate({ to: "/content/posts/p2" });
+    void router.navigate({
+      to: "/content/$collection/$entryId",
+      params: { collection: "posts", entryId: "p2" },
+    });
 
     const dialog = await screen.findByRole("alertdialog", { name: "Leave without saving?" });
     await userEvent.click(within(dialog).getByRole("button", { name: "Keep editing" }));
