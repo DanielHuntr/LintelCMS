@@ -3,7 +3,7 @@ import { Button } from "../design/Button.js";
 import { classNames } from "../design/classNames.js";
 import { Dialog } from "../design/Dialog.js";
 import { SearchField } from "../design/SearchField.js";
-import { t } from "../i18n/strings.js";
+import { t, tCount } from "../i18n/strings.js";
 import { useDebouncedValue } from "../media/useDebouncedValue.js";
 import { useContentTree } from "./ContentTreeContext.js";
 import type { TreeNode } from "./contentTree.types.js";
@@ -35,7 +35,10 @@ export function MoveDialog({ nodes, onMove, onClose }: MoveDialogProps) {
   const title =
     nodes.length === 1 && first
       ? t("tree.move.title", { title: first.title || t("tree.untitled") })
-      : t("collectionView.bulkMoveTitle", { count: nodes.length });
+      : tCount(
+          { one: "collectionView.bulkMoveTitleOne", other: "collectionView.bulkMoveTitle" },
+          nodes.length,
+        );
 
   async function confirm() {
     if (choice === undefined) return;

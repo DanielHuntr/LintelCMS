@@ -169,9 +169,11 @@ export const contentTreeStrings = {
   "collectionView.bulkMove": "Move…",
   "collectionView.bulkDelete": "Delete…",
   "collectionView.bulkDeleteTitle": "Delete {count} items?",
+  "collectionView.bulkDeleteTitleOne": "Delete 1 item?",
   "collectionView.bulkDeleteMessage":
     "They come off your site straight away and go to the recycle bin, where you can restore them.",
   "collectionView.bulkMoveTitle": "Move {count} items",
+  "collectionView.bulkMoveTitleOne": "Move 1 item",
   "collectionView.create": "Create",
   "collectionView.empty": "Nothing here yet",
   "collectionView.emptyDescription": "Create the first one, and it shows up here.",

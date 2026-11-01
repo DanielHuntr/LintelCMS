@@ -66,4 +66,22 @@ describe("where the admin sends people", () => {
 
     expect(await landingPathFor("/content")).toBe("/sign-in");
   });
+
+  it("opens content in the workspace beside the tree, keeping the tab in the address", async () => {
+    fakeApi(setupStatus({ needsSetup: false, siteSetupCompleted: true }), true);
+    const { routeTree } = await import("./router.js");
+    const router = createRouter({
+      routeTree,
+      history: createMemoryHistory({ initialEntries: ["/content/pages/e1?tab=info"] }),
+    });
+    await router.load();
+
+    expect(router.state.location.pathname).toBe("/content/pages/e1");
+    expect(router.state.location.search).toMatchObject({ tab: "info" });
+    expect(router.state.matches.some((match) => match.routeId.endsWith("content-section"))).toBe(
+      true,
+    );
+    expect(await landingPathFor("/content/recycle-bin")).toBe("/content/recycle-bin");
+    expect(await landingPathFor("/content/globals")).toBe("/content/globals");
+  });
 });

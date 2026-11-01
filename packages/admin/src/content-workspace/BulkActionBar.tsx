@@ -7,7 +7,7 @@ import { useRefreshContent } from "../content-tree/contentTree.queries.js";
 import { MoveDialog } from "../content-tree/MoveDialog.js";
 import { Button } from "../design/Button.js";
 import { ConfirmDialog } from "../design/ConfirmDialog.js";
-import { t } from "../i18n/strings.js";
+import { t, tCount } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 
 interface BulkActionBarProps {
@@ -135,7 +135,10 @@ export function BulkActionBar({ nodes, onDone }: BulkActionBarProps) {
       )}
       <ConfirmDialog
         open={asking === "delete"}
-        title={t("collectionView.bulkDeleteTitle", { count: nodes.length })}
+        title={tCount(
+          { one: "collectionView.bulkDeleteTitleOne", other: "collectionView.bulkDeleteTitle" },
+          nodes.length,
+        )}
         message={t("collectionView.bulkDeleteMessage")}
         confirmLabel={t("tree.delete.confirm")}
         cancelLabel={t("common.cancel")}

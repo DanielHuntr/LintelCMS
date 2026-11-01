@@ -14,6 +14,14 @@ export interface Collection {
   routePattern: string;
   /** Where the website shows drafts for live preview; null until a site is connected. */
   previewUrlPattern: string | null;
+  /** Whether entries can sit at the top of its section in the content tree. */
+  allowedAtRoot: boolean;
+  /** Handles of the collections whose entries may go under one of these. */
+  allowedChildren: string[];
+  /** Children are listed in the workspace rather than shown in the tree. */
+  childrenAsCollection: boolean;
+  /** Field handles shown as columns in that list. */
+  listColumns: string[];
   entryCount: number;
   updatedAt: string;
 }
