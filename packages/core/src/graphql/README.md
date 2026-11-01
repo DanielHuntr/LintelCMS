@@ -62,8 +62,11 @@ fit, format)`); rich text `RichText { html json }`; links `Link { url label }`.
 `graphql-limits.ts` checks every query before it runs: at most 10 levels deep, and a cost
 of at most 5000, where each value costs 1, each object 2, and everything under a list
 counts once per item it could return (`perPage`, or 100 when it comes from a variable).
-`perPage` itself is 1 to 100. Introspection is left out of both, so GraphiQL and code
-generators work. GraphiQL is served at `/graphql` in development only.
+`perPage` itself is 1 to 100; `__typename` counts like any value. Queries are cut off at
+5000 tokens and request bodies at 100 KB. Introspection (`__schema`, `__type`) is left out
+of the cost, and is open only in development and to requests with a session or an API
+token: code generators should send a token. GraphiQL is served at `/graphql` in
+development only. Batched requests (an array of queries) are not accepted.
 
 ## Files
 

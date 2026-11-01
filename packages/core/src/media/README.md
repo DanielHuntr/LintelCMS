@@ -65,6 +65,11 @@ with its real content type. Images take:
 
 Options on a document are ignored and the original is sent.
 
+- **Limits:** uploads are 25 MB at most, images 100 megapixels at most (refused on upload
+  with `413 IMAGE_TOO_LARGE`, and sharp won't decode more), and one address may upload 30
+  files and ask for 300 resized images a minute (`429`; plain originals aren't counted).
+  Put a CDN in front of `/media` on a busy site.
+
 - **Focal crop:** the largest rectangle of the wanted shape, centred on the focal point and
   slid back inside the image at the edges (`focal-crop.ts`). The admin's crop previews use
   the same file, through `@lintel/core/media-crop`, so they show exactly what the API makes.
