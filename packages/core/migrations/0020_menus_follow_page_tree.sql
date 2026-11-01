@@ -1,0 +1,2 @@
+ALTER TABLE "navigations" ADD COLUMN "source" text DEFAULT 'items' NOT NULL;--> statement-breakpoint
+ALTER TABLE "navigations" ADD COLUMN "page_tree" jsonb DEFAULT '{"includeHome":true,"hiddenEntryIds":[],"labels":{}}'::jsonb NOT NULL;

@@ -7,8 +7,11 @@ import { deliverNavigation } from "./navigation-delivery.service.js";
 import {
   createNavigationRequestSchema,
   navigationParamsSchema,
+  pageInMenuParamsSchema,
+  pageInMenuRequestSchema,
   updateNavigationRequestSchema,
 } from "./navigation.schema.js";
+import { findPageInMenu, setPageInMenu } from "./navigation-pages.service.js";
 import {
   createNavigation,
   deleteNavigation,
@@ -24,7 +27,9 @@ import { requireDeliveryAccess } from "../delivery/require-delivery-access.js";
  *   GET    /navigation                  (navigation:read)    -> { navigations: [Summary] }
  *   POST   /navigation                  (navigation:update)  { handle, name, maxDepth? } -> 201
  *   GET    /navigation/:handle          (navigation:read)    -> Navigation
- *   PUT    /navigation/:handle          (navigation:update)  { name?, maxDepth?, items? }
+ *   PUT    /navigation/:handle          (navigation:update)  { name?, maxDepth?, items?, source?, pageTree? }
+ *   GET    /navigation/:handle/pages/:entryId (navigation:read)   -> { menu, inMenu, label }
+ *   PUT    /navigation/:handle/pages/:entryId (navigation:update) { inMenu, label? } -> the same
  *   DELETE /navigation/:handle          (navigation:update)  -> 204
  *   GET    /delivery/navigation/:handle (public)             ?locale -> the menu, ready to print
  *
@@ -55,6 +60,18 @@ export async function navigationRoutes(server: FastifyInstance) {
     const { handle } = parseRequest(navigationParamsSchema, request.params);
     const changes = parseRequest(updateNavigationRequestSchema, request.body);
     return updateNavigation(server.database, handle, changes, await resolveEditingSite(request));
+  });
+
+  server.get("/navigation/:handle/pages/:entryId", canRead, async (request) => {
+    const { handle, entryId } = parseRequest(pageInMenuParamsSchema, request.params);
+    return findPageInMenu(server.database, handle, entryId, await resolveEditingSite(request));
+  });
+
+  server.put("/navigation/:handle/pages/:entryId", canUpdate, async (request) => {
+    const { handle, entryId } = parseRequest(pageInMenuParamsSchema, request.params);
+    const change = parseRequest(pageInMenuRequestSchema, request.body);
+    const site = await resolveEditingSite(request);
+    return setPageInMenu(server.database, handle, entryId, change, site);
   });
 
   server.delete("/navigation/:handle", canUpdate, async (request, reply) => {
