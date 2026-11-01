@@ -13,7 +13,11 @@ The control panel: a React app that talks to `@lintel/core`.
 | `src/plugins`       | The plugin system's admin half: `defineAdminPlugin` and its hosts  |
 | `src/features`      | Settings → Features: switching plugins on and off                  |
 | `src/forms`         | The Forms plugin's sidebar item and screen                         |
-| `src/sign-in`       | The sign-in screen                                                 |
+| `src/sign-in`       | Sign-in (with two-factor and passkeys), forgotten passwords        |
+| `src/people`        | Users, roles and accepting an invitation                           |
+| `src/account`       | Your account: profile, password, two-factor, passkeys, devices     |
+| `src/security-log`  | Settings → Security log                                            |
+| `src/email-outbox`  | Settings → Email outbox, while no mail service is set up           |
 | `src/content`       | Collections, entry lists and the entry editor                      |
 | `src/content-types` | The blueprint builder under Settings                               |
 | `src/fields`        | One editor per fieldtype, used by the entry editor                 |

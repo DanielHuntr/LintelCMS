@@ -24,11 +24,11 @@ render your site; you build it with any framework that can make an HTTP request.
 
 ## What exists today
 
-| Area                                          | Status                                                            |
-| --------------------------------------------- | ----------------------------------------------------------------- |
-| Setup, accounts                               | Setup screens, sign-in, Super admin, scripts for more admins      |
-| Content                                       | Content types, entries, drafts, publishing, scheduling, history   |
-| Media                                         | Uploads, alt text, focal points, resized and cropped images       |
-| Delivery API                                  | `GET /delivery/:collection` and `GET /delivery/:collection/:slug` |
-| Plugins                                       | Switching features on and off (Blog creates Blog posts)           |
-| Visual builder, commerce, forms, users screen | On the roadmap                                                    |
+| Area                            | Status                                                            |
+| ------------------------------- | ----------------------------------------------------------------- |
+| Setup, accounts                 | Setup screens, sign-in, people, roles, account security           |
+| Content                         | Content types, entries, drafts, publishing, scheduling, history   |
+| Media                           | Uploads, alt text, focal points, resized and cropped images       |
+| Delivery API                    | `GET /delivery/:collection` and `GET /delivery/:collection/:slug` |
+| Plugins                         | Switching features on and off (Blog creates Blog posts)           |
+| Visual builder, commerce, forms | On the roadmap                                                    |

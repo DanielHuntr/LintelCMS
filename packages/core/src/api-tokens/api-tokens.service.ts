@@ -59,10 +59,12 @@ export async function createApiToken(
 export async function deleteApiToken(
   database: DatabaseOrTransaction,
   tokenId: string,
-): Promise<void> {
-  if (!(await deleteApiTokenRow(database, DEFAULT_TENANT_ID, tokenId))) {
+): Promise<{ id: string; name: string }> {
+  const deleted = await deleteApiTokenRow(database, DEFAULT_TENANT_ID, tokenId);
+  if (!deleted) {
     throw new ApiTokenNotFoundError();
   }
+  return deleted;
 }
 
 export interface AuthenticatedApiToken {
@@ -83,7 +85,8 @@ export async function authenticateApiToken(
     return undefined;
   }
   const creator = await findUserById(database, token.createdBy);
-  if (!creator) {
+  // A deactivated admin's tokens stop working with their account.
+  if (!creator || creator.status !== "active") {
     return undefined;
   }
 

@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { requirePermission, requireSignedIn } from "../auth/require-permission.js";
+import { requireEntryPermission } from "../entries/entry-access.js";
 import { requireDeliveryAccess } from "../delivery/require-delivery-access.js";
 import { EntryNotFoundError } from "../entries/entries.errors.js";
 import { deliveryEntryQuerySchema } from "../delivery/delivery.schema.js";
@@ -74,7 +75,9 @@ export async function seoRoutes(server: FastifyInstance) {
     findEntrySeo(server.database, readEntryId(request.params)),
   );
 
-  server.put("/seo/entries/:id", can("entries:update"), async (request) => {
+  // An Author may change the search settings of their own entries.
+  const canUpdateThisEntry = { preHandler: requireEntryPermission("update") };
+  server.put("/seo/entries/:id", canUpdateThisEntry, async (request) => {
     const seo = parseRequest(entrySeoRequestSchema, request.body);
     return saveEntrySeo(server.database, readEntryId(request.params), seo, server.assetExists);
   });

@@ -4,21 +4,34 @@ Signing in to the admin, signing out, and checking what the signed-in person may
 
 ## Endpoints
 
-| Method and path       | Body                  | Success                                    | Failure                                  |
-| --------------------- | --------------------- | ------------------------------------------ | ---------------------------------------- |
-| `POST /auth/sign-in`  | `{ email, password }` | 200 signed-in details (below), sets cookie | 400 bad body, 401 no match, 429 too many |
-| `POST /auth/sign-out` | none                  | 204, clears cookie (fine if signed out)    |                                          |
-| `GET /auth/me`        | none                  | 200 signed-in details (below)              | 401 signed out or session expired        |
+| Method and path                 | Body                                                             | Success                                    | Failure                                                   |
+| ------------------------------- | ---------------------------------------------------------------- | ------------------------------------------ | --------------------------------------------------------- |
+| `POST /auth/sign-in`            | `{ email, password }`                                            | 200 signed-in details (below), sets cookie | 400 bad body, 401 no match, 403 deactivated, 429 too many |
+| `POST /auth/sign-out`           | none                                                             | 204, clears cookie (fine if signed out)    |                                                           |
+| `GET /auth/me`                  | none                                                             | 200 signed-in details (below)              | 401 signed out or session expired                         |
+| `POST /auth/sign-in/two-factor` | `{ challengeToken, code }` or `{ challengeToken, recoveryCode }` | 200 as above, sets cookie                  | 401 wrong code or `SIGN_IN_EXPIRED`, 429                  |
 
 `user` is `{ id, email, name }`. `permissions` is every permission from all the user's
 roles, without duplicates, sorted. `enabledPlugins` lists the ids of the plugins that are
 switched on (see `src/plugins`), so the admin knows which sections to show. The signed-in
-details are `{ user, permissions, enabledPlugins, siteName }`; `siteName` is the site's name
-from setup (null before then), for the browser tab and the sidebar.
+details are `{ user, permissions, enabledPlugins, siteAddress, siteName }`, plus
+`mustSetUpTwoFactor: true` when one of the person's roles requires two-factor and they haven't
+turned it on. `siteAddress` is the website's address for "View page" ("" until one is
+connected); `siteName` is the site's name from setup (null before then), for the browser tab
+and the sidebar.
+
+Every way of signing in (password, two-factor code, passkey, accepting an invitation) gives
+the browser its new session through `replaceBrowserSession` (`browser-session.ts`), which ends
+any session the browser already had rather than carrying it on.
 
 The first admin is created by `POST /setup/finish` (see `src/setup`), which starts a session the
 same way, through `startSignedInSession`. Errors look like
 `{ statusCode, code, error, message }` (see `src/http/README.md`).
+
+With two-factor authentication on (see `src/two-factor`), a correct password answers
+`{ twoFactorRequired: true, challengeToken }` without a cookie. The challenge lasts ten
+minutes and allows five wrong codes. Passkey sign-in is in `src/passkeys`, and forgotten
+passwords in `src/password-reset`. Every sign-in and failure goes to the security log.
 
 Wrong email and wrong password give the same 401 and take about the same time, so
 sign-in can't be used to find out who has an account. Sign-in is limited to 10 attempts
@@ -56,6 +69,12 @@ server.post(
 
 - `requirePermission(permission)` gives 401 when signed out, 403 when not allowed.
 - `requireSignedIn` only checks that someone is signed in.
+- `requireAccountSession` is for a person's own account: it needs the browser session, so
+  an API token can't change the password of the admin who made it.
+- Someone whose role requires two-factor and who hasn't turned it on (`mustSetUpTwoFactor`
+  in the session) gets 403 `TWO_FACTOR_SETUP_REQUIRED` from every `requirePermission` route.
+- Changing one entry uses `requireEntryPermission` (see `src/entries/entry-access.ts`), which
+  also accepts the "-own" permissions for entries the person created.
 - Both set `request.signedIn` to `{ user, permissions }`; `getSignedIn(request)` reads it.
 
 ## Files

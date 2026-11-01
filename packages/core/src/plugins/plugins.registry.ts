@@ -4,13 +4,30 @@ import { seoPlugin } from "../seo/seo.plugin.js";
 import { definePlugin } from "./plugin-definition.js";
 
 /**
- * The online shop. For now only a name to switch on and off (the admin shows a Commerce
- * section saying what is coming); its routes and tables will be added to this definition.
+ * The online shop. For now its name and permissions (the admin shows a Commerce section
+ * saying what is coming); its routes and tables will be added to this definition.
  */
 const commercePlugin = definePlugin({
   id: "commerce",
   name: "Online shop",
   description: "Products, orders and payments.",
+  permissions: [
+    {
+      permission: "commerce:read",
+      name: "See the shop",
+      description: "Products, orders and customers.",
+    },
+    {
+      permission: "commerce:update",
+      name: "Run the shop",
+      description: "Change products and prices, and handle orders.",
+    },
+    {
+      permission: "commerce:refund",
+      name: "Refund orders",
+      description: "Give money back to customers.",
+    },
+  ],
 });
 
 /**

@@ -1,5 +1,6 @@
 import { getTableName } from "drizzle-orm";
 import { registerPluginFieldtypes } from "../fieldtypes/fieldtypes.registry.js";
+import { registerPluginPermissions } from "../roles/permission-catalog.js";
 import type { LintelPlugin } from "./plugin-definition.js";
 import { InvalidPluginError } from "./plugins.errors.js";
 
@@ -43,6 +44,7 @@ export class PluginCatalogue {
       seen.add(plugin.id);
       checkPlugin(plugin);
       registerPluginFieldtypes(plugin.id, plugin.fieldtypes ?? []);
+      registerPluginPermissions(plugin);
     }
   }
 

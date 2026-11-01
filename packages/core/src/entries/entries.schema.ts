@@ -127,6 +127,8 @@ export const entrySchema = entrySummarySchema.extend({
       status: z.enum(entryStatuses),
     }),
   ),
+  /** Who created it, for "their own content" permissions such as an Author's. */
+  createdById: z.uuid().nullable(),
 });
 
 export const entryListSchema = z.object({

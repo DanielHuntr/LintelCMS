@@ -55,7 +55,7 @@ In a Postgres URL, write `#`, `@` and `/` in the password as `%23`, `%40` and `%
 Stop Lintel first: the built-in database serves one program at a time.
 
 ```bash
-pnpm create-admin --email you@example.com --name "Your Name"   # another Super admin
+pnpm create-admin --email you@example.com --name "Your Name"   # another Owner
 pnpm reset-password --email you@example.com                    # a new password; signs out everywhere
 pnpm db:migrate                                                # update the tables now
 ```

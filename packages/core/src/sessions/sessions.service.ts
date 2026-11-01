@@ -1,11 +1,14 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { Database, DatabaseOrTransaction } from "../database/client.js";
 import {
+  deleteOtherSessionsOfUser,
   deleteSessionById,
+  deleteSessionOfUser,
   deleteSessionByTokenHash,
   deleteSessionsForUser,
   findSessionByTokenHash,
   insertSession,
+  listSessionsForUser,
   updateSessionExpiry,
 } from "./sessions.repository.js";
 import type { Session } from "./sessions.table.js";
@@ -110,4 +113,25 @@ export function endAllSessionsForUser(
   userId: string,
 ): Promise<number> {
   return deleteSessionsForUser(database, userId);
+}
+
+export function listUserSessions(database: DatabaseOrTransaction, userId: string) {
+  return listSessionsForUser(database, userId);
+}
+
+export function endUserSession(
+  database: DatabaseOrTransaction,
+  userId: string,
+  sessionId: string,
+): Promise<boolean> {
+  return deleteSessionOfUser(database, userId, sessionId);
+}
+
+/** "Sign out other devices": every session but the one making the request. */
+export function endOtherSessions(
+  database: DatabaseOrTransaction,
+  userId: string,
+  currentToken: string,
+): Promise<number> {
+  return deleteOtherSessionsOfUser(database, userId, hashSessionToken(currentToken));
 }

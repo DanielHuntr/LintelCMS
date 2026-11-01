@@ -44,7 +44,7 @@ signing in, which is what lets a brand-new install be set up in the browser.
 `finishSetup` (setup.service.ts) checks the password's strength, then switches to the chosen
 database (testing it, creating it when `createIfMissing` is set, migrating it, saving the
 choice in `.lintel/config.json`, readable only by its owner), then saves the owner's account
-(Super admin), the site's name and kind, its features and a Pages collection (plus Blog posts
+(Owner), the site's name and kind, its features and a Pages collection (plus Blog posts
 for a blog) in **one transaction**. A problem at any point leaves the rest unsaved, and
 finishing again is safe.
 

@@ -3,7 +3,9 @@ import { checkPasswordStrength, personalDetailsFrom } from "../auth/password-str
 import { hashPassword } from "../auth/passwords.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
-import { assignRoleToUser, findRoleByHandle, insertRole } from "../roles/roles.repository.js";
+import { OWNER_ROLE_HANDLE } from "../roles/built-in-roles.js";
+import { assignRoleToUser, findRoleByHandle } from "../roles/roles.repository.js";
+import { ensureBuiltInRoles } from "../roles/roles.service.js";
 import { endAllSessionsForUser } from "../sessions/sessions.service.js";
 import { findClosestEmail } from "./closest-email.js";
 import {
@@ -13,9 +15,6 @@ import {
   updatePasswordHash,
 } from "./users.repository.js";
 import type { PublicUser } from "./users.schema.js";
-
-/** The role every first admin gets. It can do everything. */
-export const SUPER_ADMIN_ROLE = { handle: "super-admin", name: "Super admin", permissions: ["*"] };
 
 export class EmailAlreadyUsedError extends Error {
   constructor(email: string) {
@@ -60,7 +59,7 @@ export function requireStrongPassword(password: string, name: string, email: str
 }
 
 /**
- * Creates a user with the Super admin role, creating that role first if this is a fresh
+ * Creates a user with the Owner role, creating the built-in roles first if this is a fresh
  * install. Used by first-run setup and by `pnpm create-admin`. Expects the email and
  * password to have been checked with users.schema.ts already; refuses an easily guessed
  * password with WeakPasswordError.
@@ -81,9 +80,11 @@ export async function createAdmin(
       throw new EmailAlreadyUsedError(admin.email);
     }
 
-    const role =
-      (await findRoleByHandle(transaction, DEFAULT_TENANT_ID, SUPER_ADMIN_ROLE.handle)) ??
-      (await insertRole(transaction, SUPER_ADMIN_ROLE));
+    await ensureBuiltInRoles(transaction);
+    const role = await findRoleByHandle(transaction, DEFAULT_TENANT_ID, OWNER_ROLE_HANDLE);
+    if (!role) {
+      throw new Error("The Owner role could not be created.");
+    }
     const user = await insertUser(transaction, {
       email: admin.email,
       name: admin.name,

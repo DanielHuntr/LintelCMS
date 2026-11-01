@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { LogOut, UserRound } from "lucide-react";
+import { Avatar } from "../design/Avatar.js";
 import { t } from "../i18n/strings.js";
 
 export interface SignedInUser {
@@ -34,17 +35,18 @@ export function SidebarAccount({ signedInUser, onSignOut }: SidebarAccountProps)
   }
 
   return (
-    <div className="flex items-center gap-3 px-2.5 py-2">
-      <span
-        aria-hidden="true"
-        className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-fill text-footnote font-semibold text-on-accent"
+    <div className="flex items-center gap-1 px-1 py-1">
+      <Link
+        to="/account"
+        aria-label={t("account.openAccount", { name: signedInUser.name })}
+        className="flex min-w-0 flex-1 items-center gap-3 rounded-control px-1.5 py-1 transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring"
       >
-        {initialsOf(signedInUser.name)}
-      </span>
-      <span className="flex min-w-0 flex-col">
-        <span className="truncate text-body font-medium text-label">{signedInUser.name}</span>
-        <span className="truncate text-footnote text-label-secondary">{signedInUser.email}</span>
-      </span>
+        <Avatar name={signedInUser.name} />
+        <span className="flex min-w-0 flex-col">
+          <span className="truncate text-body font-medium text-label">{signedInUser.name}</span>
+          <span className="truncate text-footnote text-label-secondary">{signedInUser.email}</span>
+        </span>
+      </Link>
       {onSignOut && (
         <button
           type="button"
@@ -58,12 +60,4 @@ export function SidebarAccount({ signedInUser, onSignOut }: SidebarAccountProps)
       )}
     </div>
   );
-}
-
-/** "Ada Lovelace" becomes "AL"; a single name gives one letter. */
-function initialsOf(name: string): string {
-  const words = name.trim().split(/\s+/);
-  const first = words[0]?.charAt(0) ?? "";
-  const last = words.length > 1 ? (words[words.length - 1]?.charAt(0) ?? "") : "";
-  return (first + last).toUpperCase();
 }

@@ -42,7 +42,7 @@ export async function findSetupStatus(
  * 1. Checks what can be checked without changing anything (the password's strength).
  * 2. Switches to the chosen database and brings its tables up to date, unless DATABASE_URL
  *    already decided. A database that can't be used stops here, with nothing else saved.
- * 3. In one transaction on that database: the owner's account (Super admin), the site's
+ * 3. In one transaction on that database: the owner's account (Owner), the site's
  *    name and kind, and its features. Either all of it is saved or none of it.
  *
  * Problems are labelled with the step they belong to (see `duringStep`). Finishing again

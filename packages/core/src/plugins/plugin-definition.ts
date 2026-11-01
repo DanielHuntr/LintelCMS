@@ -16,6 +16,11 @@ import type { Fieldtype } from "../fieldtypes/fieldtype.js";
 /** A permission the plugin adds, such as "bookings:read", with what it lets people do. */
 export interface PluginPermission {
   permission: `${string}:${string}`;
+  /**
+   * A short name for the role editor, such as "Refund orders". Without one, the role editor
+   * uses `description` as the name.
+   */
+  name?: string;
   /** One plain sentence, for the roles screen: "See bookings". */
   description: string;
 }

@@ -22,6 +22,7 @@ import { DashboardPage } from "./dashboard/DashboardPage.js";
 import { PluginScreenRoute } from "./plugins/PluginScreenRoute.js";
 import { SectionTabs } from "./plugins/SectionTabs.js";
 import { HelpPage } from "./help/HelpPage.js";
+import { peopleRoutes, signedOutAccountRoutes } from "./people/peopleRoutes.js";
 import { AdminLayout } from "./layout/AdminLayout.js";
 import { MediaLibraryPage } from "./media/MediaLibraryPage.js";
 import { ComingSoonPage } from "./sections/ComingSoonPage.js";
@@ -108,6 +109,10 @@ const adminRoute = createRoute({
 
     if (!session) {
       throw redirect({ to: "/sign-in", search: { redirect: location.href } });
+    }
+    // Their role requires two-factor authentication: the account page is where to turn it on.
+    if (session.mustSetUpTwoFactor && location.pathname !== "/account") {
+      throw redirect({ to: "/account" });
     }
 
     return { session };
@@ -334,7 +339,6 @@ const contentRoutes = [
 const sectionRoutes = [
   { path: "/design", title: "nav.design" },
   { path: "/commerce", title: "nav.commerce" },
-  { path: "/users", title: "nav.users" },
 ] as const;
 
 /** Help: the "Using Lintel" docs, bundled with the admin. The open topic is in the address. */
@@ -413,6 +417,7 @@ export const routeTree = rootRoute.addChildren([
   setupGateRoute.addChildren([
     setupRoute,
     signInRoute,
+    ...signedOutAccountRoutes(() => setupGateRoute),
     adminRoute.addChildren([
       dashboardRoute,
       mediaRoute,
@@ -420,6 +425,7 @@ export const routeTree = rootRoute.addChildren([
       ...contentRoutes,
       ...integrationRoutes,
       featuresRoute,
+      ...peopleRoutes(() => adminRoute),
       ...placeholderRoutes,
       pluginScreensRoute,
     ]),

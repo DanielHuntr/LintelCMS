@@ -11,10 +11,53 @@ export interface Session {
   siteAddress: string;
   /** The site's name, for the browser tab and the sidebar. Null until setup names the site. */
   siteName: string | null;
+  /** Their role requires two-factor authentication and it isn't on yet: only /account works. */
+  mustSetUpTwoFactor?: true;
 }
 
-export function signIn(email: string, password: string): Promise<Session> {
-  return apiRequest<Session>("/auth/sign-in", { method: "POST", body: { email, password } });
+/** A correct password for someone with two-factor on: a code from their app comes next. */
+export interface TwoFactorChallenge {
+  twoFactorRequired: true;
+  challengeToken: string;
+}
+
+export function signIn(email: string, password: string): Promise<Session | TwoFactorChallenge> {
+  return apiRequest<Session | TwoFactorChallenge>("/auth/sign-in", {
+    method: "POST",
+    body: { email, password },
+  });
+}
+
+export function isTwoFactorChallenge(
+  result: Session | TwoFactorChallenge,
+): result is TwoFactorChallenge {
+  return "twoFactorRequired" in result;
+}
+
+export function completeTwoFactorSignIn(
+  challengeToken: string,
+  answer: { code: string } | { recoveryCode: string },
+): Promise<Session> {
+  return apiRequest<Session>("/auth/sign-in/two-factor", {
+    method: "POST",
+    body: { challengeToken, ...answer },
+  });
+}
+
+export function requestPasswordReset(email: string): Promise<{ message: string }> {
+  return apiRequest("/auth/forgot-password", { method: "POST", body: { email } });
+}
+
+export function checkResetLink(token: string): Promise<{ usable: boolean }> {
+  return apiRequest("/auth/reset-password/check", { method: "POST", body: { token } });
+}
+
+export function resetPassword(token: string, newPassword: string): Promise<void> {
+  return apiRequest("/auth/reset-password", { method: "POST", body: { token, newPassword } });
+}
+
+export function acceptInvitation(token: string, name: string, password: string): Promise<Session> {
+  return apiRequest("/invitations/accept", { method: "POST", body: { token, name, password } });
 }
 
 export function signOut(): Promise<void> {

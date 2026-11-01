@@ -4,6 +4,7 @@ import { announceContentEvent } from "../content-events/content-events.js";
 import { describeEntryForEvent } from "../content-events/entry-event-data.js";
 import { parseRequest } from "../http/http-errors.js";
 import { EntryNotFoundError } from "./entries.errors.js";
+import { requireEntryPermission } from "./entry-access.js";
 import { duplicateEntry } from "./entry-duplication.service.js";
 import { listEntries } from "./entry-listing.service.js";
 import { reorderEntries } from "./entry-ordering.service.js";
@@ -37,10 +38,16 @@ import {
  *   POST   /entries/:id/unpublish                (entries:publish)
  *   POST   /entries/:id/schedule                 (entries:publish)  { publishAt }
  *   DELETE /entries/:id                          (entries:delete)   -> 204
+ *
+ * Changing, publishing and deleting one entry also accept the "-own" permission
+ * (`entries:update-own` and so on) for entries the person created; see entry-access.ts.
  *   POST   /entries/:id/duplicate                (entries:create)   -> 201, a draft copy
  */
 export async function entriesRoutes(server: FastifyInstance) {
   const can = (permission: `entries:${string}`) => ({ preHandler: requirePermission(permission) });
+  const canOnThisEntry = (action: "update" | "publish" | "delete") => ({
+    preHandler: requireEntryPermission(action),
+  });
 
   server.get("/collections/:handle/entries", can("entries:read"), async (request) => {
     const { handle } = parseRequest(collectionEntriesParamsSchema, request.params);
@@ -71,7 +78,7 @@ export async function entriesRoutes(server: FastifyInstance) {
     return findEntry(server.database, id);
   });
 
-  server.patch("/entries/:id", can("entries:update"), async (request) => {
+  server.patch("/entries/:id", canOnThisEntry("update"), async (request) => {
     const id = readEntryId(request.params);
     const changes = parseRequest(updateEntryRequestSchema, request.body);
     // Only a new slug or parent can move an entry, so only then is its old address needed.
@@ -91,7 +98,7 @@ export async function entriesRoutes(server: FastifyInstance) {
     return saved;
   });
 
-  server.post("/entries/:id/publish", can("entries:publish"), async (request) => {
+  server.post("/entries/:id/publish", canOnThisEntry("publish"), async (request) => {
     const id = readEntryId(request.params);
     const published = await publishEntry(server.database, id, changeContext(request));
     const entry = await describeEntryForEvent(server.database, id);
@@ -99,7 +106,7 @@ export async function entriesRoutes(server: FastifyInstance) {
     return published;
   });
 
-  server.post("/entries/:id/unpublish", can("entries:publish"), async (request) => {
+  server.post("/entries/:id/unpublish", canOnThisEntry("publish"), async (request) => {
     const id = readEntryId(request.params);
     const unpublished = await unpublishEntry(server.database, id, getSignedIn(request).user.id);
     const entry = await describeEntryForEvent(server.database, id);
@@ -107,7 +114,7 @@ export async function entriesRoutes(server: FastifyInstance) {
     return unpublished;
   });
 
-  server.post("/entries/:id/schedule", can("entries:publish"), async (request) => {
+  server.post("/entries/:id/schedule", canOnThisEntry("publish"), async (request) => {
     const id = readEntryId(request.params);
     const { publishAt } = parseRequest(scheduleEntryRequestSchema, request.body);
     return scheduleEntry(server.database, id, publishAt, changeContext(request));
@@ -119,7 +126,7 @@ export async function entriesRoutes(server: FastifyInstance) {
     return reply.code(201).send(copy);
   });
 
-  server.delete("/entries/:id", can("entries:delete"), async (request, reply) => {
+  server.delete("/entries/:id", canOnThisEntry("delete"), async (request, reply) => {
     const id = readEntryId(request.params);
     const entry = await describeEntryForEvent(server.database, id);
     await deleteEntry(server.database, id);

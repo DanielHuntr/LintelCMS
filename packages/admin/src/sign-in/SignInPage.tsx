@@ -1,6 +1,8 @@
-import { useLocation, useNavigate, useRouter, useSearch } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate, useRouter, useSearch } from "@tanstack/react-router";
 import { DisplayTitle } from "../design/DisplayTitle.js";
 import { t } from "../i18n/strings.js";
+import { browserSupportsWebAuthn, startAuthentication } from "@simplewebauthn/browser";
+import { passkeySignInOptions, signInWithPasskeyResponse } from "../account/account.api.js";
 import { signIn } from "../session/session.api.js";
 import { FullScreenLayout } from "../layout/FullScreenLayout.js";
 import { SignInForm } from "./SignInForm.js";
@@ -30,11 +32,26 @@ export function SignInPage() {
           <p className="mt-3 text-headline font-normal text-label-secondary">
             {setupAlreadyDone ? t("signIn.alreadySetUp") : t("signIn.subtitle")}
           </p>
-          <SignInForm signIn={signIn} onSignedIn={handleSignedIn} />
+          <SignInForm
+            signIn={signIn}
+            onSignedIn={handleSignedIn}
+            signInWithPasskey={browserSupportsWebAuthn() ? signInWithPasskey : undefined}
+          />
+          <Link
+            to="/forgot-password"
+            className="mt-2 inline-block rounded-control text-body text-accent hover:underline focus-visible:focus-ring"
+          >
+            {t("signIn.forgotPassword")}
+          </Link>
         </div>
       </div>
     </FullScreenLayout>
   );
+}
+
+async function signInWithPasskey() {
+  const optionsJSON = await passkeySignInOptions();
+  return signInWithPasskeyResponse(await startAuthentication({ optionsJSON }));
 }
 
 /**

@@ -1,5 +1,6 @@
-import { and, eq } from "drizzle-orm";
+import { and, asc, count, eq, inArray } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
+import { usersTable } from "../users/users.table.js";
 import { type NewRole, type Role, rolesTable, userRolesTable } from "./roles.table.js";
 
 /** Database reads and writes for roles and role assignments, nothing else. */
@@ -17,6 +18,19 @@ export async function findRoleByHandle(
   return role;
 }
 
+export async function findRoleById(
+  database: DatabaseOrTransaction,
+  tenantId: string,
+  roleId: string,
+): Promise<Role | undefined> {
+  const [role] = await database
+    .select()
+    .from(rolesTable)
+    .where(and(eq(rolesTable.tenantId, tenantId), eq(rolesTable.id, roleId)))
+    .limit(1);
+  return role;
+}
+
 export async function insertRole(database: DatabaseOrTransaction, role: NewRole): Promise<Role> {
   const [inserted] = await database.insert(rolesTable).values(role).returning();
   if (!inserted) {
@@ -25,12 +39,92 @@ export async function insertRole(database: DatabaseOrTransaction, role: NewRole)
   return inserted;
 }
 
+/** Adds a role, or brings an existing one with the same handle in line with it. */
+export async function upsertRoleByHandle(
+  database: DatabaseOrTransaction,
+  role: NewRole & { tenantId: string; handle: string },
+): Promise<void> {
+  await database
+    .insert(rolesTable)
+    .values(role)
+    .onConflictDoUpdate({
+      target: [rolesTable.tenantId, rolesTable.handle],
+      set: {
+        name: role.name,
+        description: role.description,
+        permissions: role.permissions,
+        isBuiltIn: role.isBuiltIn,
+      },
+    });
+}
+
+export async function updateRoleRow(
+  database: DatabaseOrTransaction,
+  roleId: string,
+  changes: Partial<Pick<Role, "name" | "description" | "permissions" | "requiresTwoFactor">>,
+): Promise<Role | undefined> {
+  const [updated] = await database
+    .update(rolesTable)
+    .set(changes)
+    .where(eq(rolesTable.id, roleId))
+    .returning();
+  return updated;
+}
+
+export async function deleteRoleRow(database: DatabaseOrTransaction, roleId: string) {
+  await database.delete(rolesTable).where(eq(rolesTable.id, roleId));
+}
+
+export async function listRoleRows(
+  database: DatabaseOrTransaction,
+  tenantId: string,
+): Promise<Array<Role & { memberCount: number }>> {
+  const roles = await database
+    .select()
+    .from(rolesTable)
+    .where(eq(rolesTable.tenantId, tenantId))
+    .orderBy(asc(rolesTable.createdAt), asc(rolesTable.name));
+  const counts = await database
+    .select({ roleId: userRolesTable.roleId, members: count() })
+    .from(userRolesTable)
+    .groupBy(userRolesTable.roleId);
+  const countByRole = new Map(counts.map((row) => [row.roleId, row.members]));
+  return roles.map((role) => ({ ...role, memberCount: countByRole.get(role.id) ?? 0 }));
+}
+
 export async function assignRoleToUser(
   database: DatabaseOrTransaction,
   userId: string,
   roleId: string,
 ): Promise<void> {
   await database.insert(userRolesTable).values({ userId, roleId }).onConflictDoNothing();
+}
+
+/** Gives the user exactly this one role, replacing any others. */
+export async function replaceRolesOfUser(
+  database: DatabaseOrTransaction,
+  userId: string,
+  roleId: string,
+): Promise<void> {
+  await database.delete(userRolesTable).where(eq(userRolesTable.userId, userId));
+  await database.insert(userRolesTable).values({ userId, roleId });
+}
+
+/** The roles of each of these users. */
+export async function findRolesForUsers(
+  database: DatabaseOrTransaction,
+  userIds: readonly string[],
+): Promise<Array<Role & { userId: string }>> {
+  if (userIds.length === 0) {
+    return [];
+  }
+  const rows = await database
+    .select({ role: rolesTable, userId: userRolesTable.userId })
+    .from(userRolesTable)
+    .innerJoin(rolesTable, eq(rolesTable.id, userRolesTable.roleId))
+    .where(inArray(userRolesTable.userId, [...userIds]))
+    .orderBy(asc(rolesTable.createdAt));
+  return rows.map((row) => ({ ...row.role, userId: row.userId }));
 }
 
 /** The permission lists of every role the user has, one list per role. */
@@ -44,4 +138,25 @@ export async function findPermissionListsForUser(
     .innerJoin(rolesTable, eq(rolesTable.id, userRolesTable.roleId))
     .where(eq(userRolesTable.userId, userId));
   return rows.map((row) => row.permissions);
+}
+
+/** Active users who have the role with this handle. */
+export async function findActiveUserIdsWithRole(
+  database: DatabaseOrTransaction,
+  tenantId: string,
+  handle: string,
+): Promise<string[]> {
+  const rows = await database
+    .select({ userId: userRolesTable.userId })
+    .from(userRolesTable)
+    .innerJoin(rolesTable, eq(rolesTable.id, userRolesTable.roleId))
+    .innerJoin(usersTable, eq(usersTable.id, userRolesTable.userId))
+    .where(
+      and(
+        eq(rolesTable.tenantId, tenantId),
+        eq(rolesTable.handle, handle),
+        eq(usersTable.status, "active"),
+      ),
+    );
+  return rows.map((row) => row.userId);
 }

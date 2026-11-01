@@ -48,6 +48,17 @@ import { navigationRoutes } from "./navigation/navigation.routes.js";
 import { translationsRoutes } from "./entries/translations.routes.js";
 import { WebhookDispatcher } from "./webhooks/webhook-dispatcher.js";
 import { webhooksRoutes } from "./webhooks/webhooks.routes.js";
+import { accountRoutes } from "./account/account.routes.js";
+import type { EmailSender } from "./email/email.js";
+import { emailRoutes } from "./email/email.routes.js";
+import { OutboxEmailSender } from "./email/outbox-email-sender.js";
+import { invitationsRoutes } from "./invitations/invitations.routes.js";
+import { passkeysRoutes } from "./passkeys/passkeys.routes.js";
+import { passwordResetRoutes } from "./password-reset/password-reset.routes.js";
+import { rolesRoutes } from "./roles/roles.routes.js";
+import { securityLogRoutes } from "./security-log/security-log.routes.js";
+import { twoFactorRoutes } from "./two-factor/two-factor.routes.js";
+import { usersRoutes } from "./users/users.routes.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -74,6 +85,12 @@ declare module "fastify" {
     webhooks: WebhookDispatcher;
     /** The built-in plugins and the installed ones (see src/plugins). */
     plugins: PluginCatalogue;
+    /** The admin app's address, for links in emails and as the passkeys' site. */
+    adminOrigin: string;
+    /** Sends email (see src/email). */
+    email: EmailSender;
+    /** The in-memory outbox when no real sender is set, for Settings → Email outbox. */
+    emailOutbox: OutboxEmailSender | null;
   }
 }
 
@@ -130,6 +147,8 @@ export interface ServerOptions {
    * lintel.config.ts; tests pass the ones they test. Defaults to none.
    */
   plugins?: readonly LintelPlugin[];
+  /** How email is sent. Defaults to an in-memory outbox (see src/email). */
+  email?: EmailSender;
 }
 
 export interface WebhookOptions {
@@ -181,6 +200,10 @@ export function buildServer(options: ServerOptions) {
   server.decorate("plugins", plugins);
   // Plugins' own tables are brought up to date before the server takes requests.
   server.addHook("onReady", () => activeDatabase.applyPluginMigrations(plugins.migrations));
+  server.decorate("adminOrigin", options.adminOrigin.replace(/\/+$/, ""));
+  const outbox = options.email ? null : new OutboxEmailSender();
+  server.decorate("email", options.email ?? (outbox as OutboxEmailSender));
+  server.decorate("emailOutbox", outbox);
   server.addHook("onClose", () => webhooks.finishSending());
   server.decorateRequest("signedIn", null);
   server.setErrorHandler(sendHttpErrorDetails);
@@ -223,6 +246,16 @@ export function buildServer(options: ServerOptions) {
   server.register(dashboardRoutes);
   // Every plugin's routes, built in (SEO) and installed, each guarded for being switched on.
   registerPluginRoutes(server, plugins);
+  // People and account security.
+  server.register(usersRoutes);
+  server.register(rolesRoutes);
+  server.register(invitationsRoutes);
+  server.register(accountRoutes);
+  server.register(twoFactorRoutes);
+  server.register(passkeysRoutes);
+  server.register(passwordResetRoutes);
+  server.register(securityLogRoutes);
+  server.register(emailRoutes);
 
   if (options.runScheduledJobs ?? true) {
     registerScheduledJobs(server);

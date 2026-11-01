@@ -1,4 +1,14 @@
-import { Blocks, Globe, KeyRound, Languages, Shapes, Sparkles, Webhook } from "lucide-react";
+import {
+  Blocks,
+  Globe,
+  Inbox,
+  KeyRound,
+  Languages,
+  Shapes,
+  ShieldCheck,
+  Sparkles,
+  Webhook,
+} from "lucide-react";
 import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
@@ -14,6 +24,7 @@ import { useCan } from "../session/SessionContext.js";
 export function SettingsPage() {
   const canSeeContentTypes = useCan("blueprints:read");
   const canSeeSiteSettings = useCan("settings:read");
+  const canSeeSecurityLog = useCan("security:read");
 
   return (
     <Page width="readable">
@@ -44,6 +55,28 @@ export function SettingsPage() {
               description={t("settings.webhooksDescription")}
               to="/settings/webhooks"
             />
+          </GroupedList>
+        )}
+        {(canSeeSecurityLog || canSeeSiteSettings) && (
+          <GroupedList header={t("settings.securityHeader")}>
+            {canSeeSecurityLog && (
+              <GroupedListRow
+                icon={ShieldCheck}
+                iconTone="success"
+                label={t("securityLog.title")}
+                description={t("settings.securityLogDescription")}
+                to="/settings/security-log"
+              />
+            )}
+            {canSeeSiteSettings && (
+              <GroupedListRow
+                icon={Inbox}
+                iconTone="neutral"
+                label={t("emailOutbox.title")}
+                description={t("settings.emailOutboxDescription")}
+                to="/settings/email-outbox"
+              />
+            )}
           </GroupedList>
         )}
         <PluginSettingsRows />
