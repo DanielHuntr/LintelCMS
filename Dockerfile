@@ -35,7 +35,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
 RUN cp -r packages/core/dist packages/core/migrations /out/ \
  && cp -r packages/admin/dist /out/admin
 
-# ---- Run: Node and the built files, as an ordinary user ----
+# ---- Run: Node and the built files; Lintel runs as the ordinary `node` user ----
 FROM node:${NODE_VERSION}-bookworm-slim AS runtime
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
@@ -45,9 +45,9 @@ ENV NODE_ENV=production \
 WORKDIR /app
 
 COPY --from=build --chown=node:node /out /app
-# Made here so new volumes mounted over them start out owned by the node user.
+COPY --chown=node:node deploy/docker-start.mjs /app/docker-start.mjs
+# Made here so new Docker volumes mounted over them start out owned by the node user.
 RUN mkdir -p /data/uploads && chown -R node:node /data
-USER node
 VOLUME ["/data"]
 EXPOSE 4000
 
@@ -57,4 +57,6 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
 
 # Lintel finishes requests in progress on SIGTERM, then exits (SHUTDOWN_TIMEOUT_SECONDS).
 STOPSIGNAL SIGTERM
-CMD ["node", "dist/main.js"]
+# Starts as root only to hand a platform's root-owned volume to `node`, then becomes `node`
+# before Lintel loads (see deploy/docker-start.mjs).
+CMD ["node", "docker-start.mjs"]

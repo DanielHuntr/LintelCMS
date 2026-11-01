@@ -13,7 +13,7 @@ export interface ShutdownOptions {
   /** How long requests in progress get to finish before the process gives up on them. */
   timeoutSeconds: number;
   /** Replaced in tests. */
-  signals?: Pick<NodeJS.Process, "once">;
+  signals?: { once(signal: "SIGTERM" | "SIGINT", listener: () => void): unknown };
   exit?: (code: number) => void;
 }
 

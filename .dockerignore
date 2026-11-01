@@ -13,6 +13,3 @@
 deploy/.env
 *.log
 .DS_Store
-CLAUDE.md
-AGENTS.md
-skills-lock.json

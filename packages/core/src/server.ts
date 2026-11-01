@@ -2,7 +2,7 @@ import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import compress from "@fastify/compress";
-import Fastify, { type FastifyInstance, type FastifyServerOptions } from "fastify";
+import Fastify, { type FastifyInstance, type FastifyServerOptions, LogController } from "fastify";
 import { apiTokensRoutes } from "./api-tokens/api-tokens.routes.js";
 import { authRoutes } from "./auth/auth.routes.js";
 import { blueprintsRoutes } from "./blueprints/blueprints.routes.js";
@@ -154,7 +154,11 @@ export function buildServer(options: ServerOptions) {
     logger: options.logger ?? false,
     trustProxy: options.trustProxy ?? false,
     genReqId: requestIdFor,
-    requestIdLogLabel: "requestId",
+    logController: new LogController({
+      requestIdLogLabel: "requestId",
+      // Docker and uptime checks call it every few seconds; logging each would bury the rest.
+      disableRequestLogging: (request) => request.url === "/health",
+    }),
   });
   const activeDatabase = options.database;
   const apiPrefix = options.apiPrefix ?? "";
