@@ -25,6 +25,11 @@
         "SITE_PUBLIC_URL",
         "SITE_ENABLED"
       ]
+    },
+    "@lintel/admin#dev": {
+      "dependsOn": ["@lintel/builder#build"],
+      "cache": false,
+      "persistent": true
     }
   }
 }
