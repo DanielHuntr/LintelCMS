@@ -1,6 +1,7 @@
 import {
   type AnyComponentDefinition,
   type BackgroundVideo,
+  type BoundPicture,
   type Breakpoint,
   findPath,
   type FreeLayout,
@@ -13,11 +14,16 @@ import {
   type StackingMove,
   type StylePropertyName,
   type StyleTarget,
+  type CustomBlock,
+  customBlockType,
 } from "@lintel/builder-model";
 import type { MotionSpec } from "@lintel/motion";
 import type { Translate as MotionText } from "@lintel/motion-editor";
 import { useMemo, useState } from "react";
 import { AnimatePanel } from "../animate-panel/AnimatePanel.js";
+import { BlockInstancePanel } from "../blocks/BlockInstancePanel.js";
+import { BlockTools } from "../blocks/BlockTools.js";
+import { useBlockMaster, useBuilderBlocks } from "../blocks/blocks-context.js";
 import { CodePanel } from "../developer/CodePanel.js";
 import { useBuilderText } from "../i18n/builder-text.js";
 import type { ComponentRegistry } from "../render/component-registry.js";
@@ -62,6 +68,10 @@ interface SelectedElementPanelProps {
     setBackgroundVideo: (nodeId: string, video: BackgroundVideo | null) => void;
     changePageFonts: (fonts: PageFont[], label: string) => void;
     restack: (nodeId: string, move: StackingMove) => void;
+    replaceWithBlock: (nodeId: string, block: CustomBlock) => void;
+    detachBlock: (nodeId: string, pictures?: Readonly<Record<string, BoundPicture>>) => void;
+    changeBlockValues: (nodeId: string, values: Record<string, unknown>, blockName: string) => void;
+    replaceDesign: (nodeId: string, design: PageNode) => void;
     markText: (
       selection: { nodeId: string; prop: string; from: number; to: number; text: string },
       styles: MarkChange | null,
@@ -113,6 +123,37 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
       ? [{ value: "code" as const, label: text("pageBuilder.panels.code") }]
       : []),
   ];
+
+  const blocks = useBuilderBlocks();
+  const master = useBlockMaster();
+  const blockTools = (
+    <BlockTools
+      document={document}
+      node={node}
+      nodeName={props.nodeName}
+      catalogue={props.registry.catalogue}
+      onMadeBlock={actions.replaceWithBlock}
+      onReplaceDesign={actions.replaceDesign}
+    />
+  );
+
+  // An instance of one of the site's blocks: its design is the block's, so only its details
+  // can be changed here.
+  if (node?.type === customBlockType && !master) {
+    return (
+      <aside
+        aria-label={text("pageBuilder.panels.rightLabel")}
+        className="flex w-80 shrink-0 flex-col overflow-auto border-s border-separator bg-surface"
+      >
+        <BlockInstancePanel
+          node={node}
+          isLocked={props.isLocked}
+          onChange={(values, blockName) => actions.changeBlockValues(node.id, values, blockName)}
+          onDetach={() => actions.detachBlock(node.id, blocks.pictures)}
+        />
+      </aside>
+    );
+  }
 
   return (
     <aside
@@ -201,6 +242,7 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
           />
         )}
       </div>
+      {blockTools}
     </aside>
   );
 }

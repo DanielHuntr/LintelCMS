@@ -19,6 +19,13 @@ import {
   useMemo,
   useState,
 } from "react";
+import {
+  type BlockMaster,
+  BlocksProvider,
+  type BuilderBlocks,
+  blocksByHandle,
+  noBlocks,
+} from "./blocks/blocks-context.js";
 import { Canvas, type MotionPreview } from "./canvas/Canvas.js";
 import type { CanvasScriptAddresses, CanvasSite } from "./canvas/canvas-frame-script.js";
 import type {
@@ -109,6 +116,13 @@ export interface PageBuilderProps {
   dataSources?: BuilderDataSources;
   /** The plugins switched on: the shop's and forms' elements are only offered with theirs. */
   enabledPlugins?: readonly string[];
+  /**
+   * The site's own blocks: offered in Insert, drawn on the canvas, made from a selection
+   * ("Make into a block") and filled in from the right-hand panel.
+   */
+  blocks?: BuilderBlocks;
+  /** Set while editing a block's design: elements are bound to its properties. */
+  blockMaster?: BlockMaster;
 }
 
 /** The site's default theme, until the app passes the site's own. */
@@ -133,6 +147,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   const { text, canEditCode, onSaveNow } = props;
   const registry = props.registry ?? standardRegistry;
   const createId = props.createId ?? createRandomNodeId;
+  const blocks = props.blocks ?? noBlocks;
   const { state, selectedId, selectedNode, actions, announcement, announce } = useBuilder({
     initialDocument: props.initialDocument,
     registry,
@@ -140,6 +155,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     canEditCode,
     text,
     onChange: props.onChange,
+    blocks: blocks.library,
   });
   const [breakpoint, setBreakpoint] = useState<Breakpoint>("base");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -164,13 +180,17 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   const catalogue = registry.catalogue;
 
   const dataSources = props.dataSources ?? noDataSources;
+  const blockData = useMemo(
+    () => ({ blocks: blocksByHandle(blocks.library), pictures: blocks.pictures }),
+    [blocks.library, blocks.pictures],
+  );
   const rendered = useMemo(
     () =>
       renderPage(state.document, registry, {
         mode: "canvas",
-        data: canvasPageData(state.document, dataSources),
+        data: { ...canvasPageData(state.document, dataSources), ...blockData },
       }),
-    [state.document, registry, dataSources],
+    [state.document, registry, dataSources, blockData],
   );
   const site = props.site;
   const canvasCss = useMemo(
@@ -358,157 +378,160 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
 
   return (
     <PreferenceStoreContext.Provider value={preferences}>
-      <DataSourcesContext.Provider value={dataSources}>
-        <div className="flex h-dvh flex-col bg-background text-label" onKeyDown={handleKeyDown}>
-          <Toolbar
-            title={props.title}
-            start={props.toolbarStart}
-            end={props.toolbarEnd}
-            breakpoint={breakpoint}
-            onBreakpointChange={setBreakpoint}
-            undoLabel={state.past.at(-1)?.label}
-            redoLabel={state.future.at(-1)?.label}
-            onUndo={actions.undo}
-            onRedo={actions.redo}
-            history={[
-              ...state.past.map((step) => step.label),
-              ...state.future.map((step) => step.label).reverse(),
-            ]}
-            historyPosition={state.past.length}
-            onGoToStep={actions.goToStep}
-            canEditCode={canEditCode}
-            skillLevel={skillLevel}
-            onSkillLevelChange={changeSkillLevel}
-            onReplayTour={() => {
-              setStartedBlank(true);
-              setIsTouring(true);
-            }}
-            onShowTips={tips.showAgain}
-          />
-          <div className="flex min-h-0 flex-1">
-            <aside
-              aria-label={text("pageBuilder.panels.leftLabel")}
-              className="flex w-72 shrink-0 flex-col border-e border-separator bg-surface"
-            >
-              <Tabs<LeftTab>
-                label={text("pageBuilder.panels.leftLabel")}
-                idPrefix="lintel-left"
-                value={leftTab}
-                onChange={setLeftTab}
-                tabs={[
-                  { value: "layers", label: text("pageBuilder.panels.layers") },
-                  { value: "insert", label: text("pageBuilder.panels.insert") },
-                ]}
-              />
-              <div
-                id="lintel-left-panel"
-                role="tabpanel"
-                aria-labelledby={`lintel-left-tab-${leftTab}`}
-                className="min-h-0 flex-1 overflow-auto"
+      <BlocksProvider blocks={blocks} master={props.blockMaster ?? null}>
+        <DataSourcesContext.Provider value={dataSources}>
+          <div className="flex h-dvh flex-col bg-background text-label" onKeyDown={handleKeyDown}>
+            <Toolbar
+              title={props.title}
+              start={props.toolbarStart}
+              end={props.toolbarEnd}
+              breakpoint={breakpoint}
+              onBreakpointChange={setBreakpoint}
+              undoLabel={state.past.at(-1)?.label}
+              redoLabel={state.future.at(-1)?.label}
+              onUndo={actions.undo}
+              onRedo={actions.redo}
+              history={[
+                ...state.past.map((step) => step.label),
+                ...state.future.map((step) => step.label).reverse(),
+              ]}
+              historyPosition={state.past.length}
+              onGoToStep={actions.goToStep}
+              canEditCode={canEditCode}
+              skillLevel={skillLevel}
+              onSkillLevelChange={changeSkillLevel}
+              onReplayTour={() => {
+                setStartedBlank(true);
+                setIsTouring(true);
+              }}
+              onShowTips={tips.showAgain}
+            />
+            <div className="flex min-h-0 flex-1">
+              <aside
+                aria-label={text("pageBuilder.panels.leftLabel")}
+                className="flex w-72 shrink-0 flex-col border-e border-separator bg-surface"
               >
-                {leftTab === "layers" ? (
-                  <LayersPanel
-                    root={root}
-                    catalogue={catalogue}
-                    selectedId={selectedId}
-                    onSelect={selectFromPanel}
-                    onHover={setHoveredId}
-                    onToggleHidden={actions.toggleHidden}
-                    onToggleLocked={actions.toggleLocked}
-                    onRename={actions.rename}
-                    onMove={actions.moveTo}
-                    onInsertAt={(key, parentId, index) =>
-                      actions.insert(key as `component:${string}`, { parentId, index })
-                    }
-                  />
-                ) : (
-                  <InsertPanel
-                    catalogue={catalogue}
-                    templates={sectionTemplates}
-                    canEditCode={tools.codeTools}
-                    enabledPlugins={props.enabledPlugins}
-                    onInsert={(key) => actions.insert(key)}
+                <Tabs<LeftTab>
+                  label={text("pageBuilder.panels.leftLabel")}
+                  idPrefix="lintel-left"
+                  value={leftTab}
+                  onChange={setLeftTab}
+                  tabs={[
+                    { value: "layers", label: text("pageBuilder.panels.layers") },
+                    { value: "insert", label: text("pageBuilder.panels.insert") },
+                  ]}
+                />
+                <div
+                  id="lintel-left-panel"
+                  role="tabpanel"
+                  aria-labelledby={`lintel-left-tab-${leftTab}`}
+                  className="min-h-0 flex-1 overflow-auto"
+                >
+                  {leftTab === "layers" ? (
+                    <LayersPanel
+                      root={root}
+                      catalogue={catalogue}
+                      selectedId={selectedId}
+                      onSelect={selectFromPanel}
+                      onHover={setHoveredId}
+                      onToggleHidden={actions.toggleHidden}
+                      onToggleLocked={actions.toggleLocked}
+                      onRename={actions.rename}
+                      onMove={actions.moveTo}
+                      onInsertAt={(key, parentId, index) =>
+                        actions.insert(key as `component:${string}`, { parentId, index })
+                      }
+                    />
+                  ) : (
+                    <InsertPanel
+                      catalogue={catalogue}
+                      templates={sectionTemplates}
+                      canEditCode={tools.codeTools}
+                      enabledPlugins={props.enabledPlugins}
+                      blocks={props.blockMaster ? undefined : blocks.library}
+                      onInsert={(key) => actions.insert(key)}
+                    />
+                  )}
+                </div>
+              </aside>
+              <main
+                className="flex min-w-0 flex-1 flex-col"
+                aria-label={text("pageBuilder.canvas.regionLabel")}
+              >
+                <Breadcrumbs
+                  root={root}
+                  catalogue={catalogue}
+                  selectedId={selectedId}
+                  onSelect={selectFromPanel}
+                />
+                {!showsStart && textSelection && (
+                  <SelectedWordsBar
+                    document={state.document}
+                    selection={textSelection}
+                    onApply={(styles, label) => actions.markText(textSelection, styles, label)}
                   />
                 )}
-              </div>
-            </aside>
-            <main
-              className="flex min-w-0 flex-1 flex-col"
-              aria-label={text("pageBuilder.canvas.regionLabel")}
-            >
-              <Breadcrumbs
-                root={root}
-                catalogue={catalogue}
-                selectedId={selectedId}
-                onSelect={selectFromPanel}
+                {showsStart ? (
+                  <EmptyPageStart
+                    templates={sectionTemplates}
+                    starterSites={props.starterSites ?? allStarterSites}
+                    onChooseTemplate={(templateId) => actions.insert(`template:${templateId}`)}
+                    onChooseStarterPage={actions.useStarterPage}
+                    onStartBlank={() => {
+                      setStartedBlank(true);
+                      setLeftTab("insert");
+                    }}
+                  />
+                ) : (
+                  <Canvas
+                    html={rendered.html}
+                    css={canvasCss}
+                    breakpoint={breakpoint}
+                    selectedId={selectedId}
+                    hoveredId={hoveredId}
+                    labels={labels}
+                    revealId={revealId}
+                    canTransform={selectedNode !== undefined && !selectedIsLocked}
+                    site={site}
+                    scripts={props.frameScripts}
+                    motionPreview={motionPreview}
+                    onMessage={handleFrameMessage}
+                  />
+                )}
+              </main>
+              <SelectedElementPanel
+                document={state.document}
+                node={selectedNode ?? null}
+                nodeName={labels.selected ?? ""}
+                definition={definition}
+                isLocked={selectedIsLocked}
+                breakpoint={breakpoint}
+                registry={registry}
+                tools={tools}
+                tips={tips}
+                pickImage={props.pickImage}
+                uploadFile={props.uploadFile}
+                motionText={props.motionText}
+                showCode={skillLevel === "developer"}
+                actions={{
+                  ...actions,
+                  animate: (nodeId, animation) => {
+                    actions.animate(nodeId, animation);
+                    if (!animation) setMotionPreview(null);
+                  },
+                }}
+                onPreviewMotion={previewMotion}
               />
-              {!showsStart && textSelection && (
-                <SelectedWordsBar
-                  document={state.document}
-                  selection={textSelection}
-                  onApply={(styles, label) => actions.markText(textSelection, styles, label)}
-                />
-              )}
-              {showsStart ? (
-                <EmptyPageStart
-                  templates={sectionTemplates}
-                  starterSites={props.starterSites ?? allStarterSites}
-                  onChooseTemplate={(templateId) => actions.insert(`template:${templateId}`)}
-                  onChooseStarterPage={actions.useStarterPage}
-                  onStartBlank={() => {
-                    setStartedBlank(true);
-                    setLeftTab("insert");
-                  }}
-                />
-              ) : (
-                <Canvas
-                  html={rendered.html}
-                  css={canvasCss}
-                  breakpoint={breakpoint}
-                  selectedId={selectedId}
-                  hoveredId={hoveredId}
-                  labels={labels}
-                  revealId={revealId}
-                  canTransform={selectedNode !== undefined && !selectedIsLocked}
-                  site={site}
-                  scripts={props.frameScripts}
-                  motionPreview={motionPreview}
-                  onMessage={handleFrameMessage}
-                />
-              )}
-            </main>
-            <SelectedElementPanel
-              document={state.document}
-              node={selectedNode ?? null}
-              nodeName={labels.selected ?? ""}
-              definition={definition}
-              isLocked={selectedIsLocked}
-              breakpoint={breakpoint}
-              registry={registry}
-              tools={tools}
-              tips={tips}
-              pickImage={props.pickImage}
-              uploadFile={props.uploadFile}
-              motionText={props.motionText}
-              showCode={skillLevel === "developer"}
-              actions={{
-                ...actions,
-                animate: (nodeId, animation) => {
-                  actions.animate(nodeId, animation);
-                  if (!animation) setMotionPreview(null);
-                },
-              }}
-              onPreviewMotion={previewMotion}
-            />
+            </div>
+            {showsTour && <GuidedTour onClose={closeTour} />}
+            {/* The same sentence twice in a row is still read out: the space changes the text. */}
+            <div role="status" aria-live="polite" className="sr-only">
+              {announcement.message}
+              {announcement.count % 2 === 1 ? "\u00a0" : ""}
+            </div>
           </div>
-          {showsTour && <GuidedTour onClose={closeTour} />}
-          {/* The same sentence twice in a row is still read out: the space changes the text. */}
-          <div role="status" aria-live="polite" className="sr-only">
-            {announcement.message}
-            {announcement.count % 2 === 1 ? "\u00a0" : ""}
-          </div>
-        </div>
-      </DataSourcesContext.Provider>
+        </DataSourcesContext.Provider>
+      </BlocksProvider>
     </PreferenceStoreContext.Provider>
   );
 }

@@ -534,6 +534,7 @@ const canvasStyles = `
 .lintel-outline--hover .lintel-outline__label { opacity: 0.9; }
 [data-lintel-placeholder="image"] { min-height: 12rem; background: repeating-linear-gradient(135deg, #ececf1 0 12px, #f5f5f7 12px 24px); border-radius: 12px; }
 [data-lintel-placeholder="unknown"] { min-height: 3rem; background: #fff4e5; }
+[data-lintel-placeholder="block"] { min-height: 4rem; background: repeating-linear-gradient(135deg, #f3edff 0 12px, #faf7ff 12px 24px); border-radius: 12px; }
 [data-lintel-node]:empty:not(img, hr, br, [data-lintel-placeholder]) { min-height: 4rem; outline: 1px dashed #c7c7cc; outline-offset: -1px; }
 [contenteditable] { outline: 2px solid #7539fd; outline-offset: 2px; cursor: text; }
 .lintel-rotate-handle { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border: 2px solid #7539fd; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 0.3); pointer-events: auto; cursor: grab; }

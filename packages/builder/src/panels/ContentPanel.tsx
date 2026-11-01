@@ -8,6 +8,8 @@ import {
   type PageNode,
 } from "@lintel/builder-model";
 import { useMemo } from "react";
+import { blockBindableFields } from "../blocks/block-commands.js";
+import { useBlockMaster } from "../blocks/blocks-context.js";
 import { readMarks } from "../editor/design-commands.js";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { MarkableTextField } from "../inline-text/MarkableTextField.js";
@@ -59,9 +61,22 @@ export function ContentPanel({
 }: ContentPanelProps) {
   const text = useBuilderText();
   const sources = useDataSources();
-  const scope = useMemo(
-    () => (document ? findBindingScope(document, node.id, sources) : null),
-    [document, node.id, sources],
+  const master = useBlockMaster();
+  // In a block's design, elements show the block's properties rather than an entry's fields.
+  const scope = useMemo<BindingScope | null>(
+    () =>
+      master
+        ? master.isReadOnly
+          ? null
+          : {
+              kind: "block",
+              fields: blockBindableFields(master.block.properties),
+              name: text("pageBuilder.content.bind.blockScope"),
+            }
+        : document
+          ? findBindingScope(document, node.id, sources)
+          : null,
+    [master, document, node.id, sources, text],
   );
   const fields = definition?.editableFields ?? [];
   const isCode = node.type === "codeBlock";

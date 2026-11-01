@@ -29,3 +29,8 @@ forms), `item-list-field.tsx` lists of items with fields of their own (slides, p
 and the **Shows** picker that binds a prop to a field of the current entry. `data-sources.ts`
 holds what the app says the site has (`BuilderDataSources`) and finds the list or item page
 an element is in; `canvas-data.ts` turns it into sample data for the canvas.
+
+## The site's blocks
+
+Insert lists the site's own blocks first under "Your site's blocks", and a selected instance
+shows its property form instead of these tabs. See `../blocks/README.md`.

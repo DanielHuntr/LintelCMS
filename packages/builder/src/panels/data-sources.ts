@@ -65,6 +65,7 @@ export function sourceChoices(
 /** The list or item page an element's bound fields come from, if it is inside one. */
 export type BindingScope =
   | { kind: "collection"; fields: readonly BindableField[]; name: string }
+  | { kind: "block"; fields: readonly BindableField[]; name: string }
   | { kind: "product"; fields: readonly BindableField[]; name: string };
 
 /**
