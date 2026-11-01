@@ -45,8 +45,10 @@ follows the device's setting, which would stop the review page showing both sche
 
 The accent is Lintel violet, split in two. `accent-fill` (`#7539fd`, the brand colour) sits
 behind white text on buttons (5.6:1). `accent` is used for text: a shade deeper in light mode
-(`#6a2cf0`, 6:1 on the grey background) and lighter in dark mode (`#a68aff`, 5.1:1 even on
-raised panels), so links pass WCAG AA everywhere. The mark (`AppMark`) is the bird from
+(`#6429e2`) and lighter in dark mode (`#aa90ff`), so links and accent badges pass WCAG AA
+everywhere. Every text colour, including `label-tertiary` and the success and danger tones,
+reaches 4.5:1 on the surfaces and tinted fills it is used on; the browser tests in
+`packages/e2e` run axe on every screen in both schemes to keep it that way. The mark (`AppMark`) is the bird from
 `brand/` at the repository root.
 
 ## Rebranding for a client

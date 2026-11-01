@@ -303,7 +303,7 @@ function PaletteOption({
             <span
               className={classNames(
                 "truncate text-footnote",
-                isActive ? "text-on-accent/85" : "text-label-secondary",
+                isActive ? "text-on-accent" : "text-label-secondary",
               )}
             >
               {item.detail}

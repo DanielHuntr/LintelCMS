@@ -67,14 +67,14 @@
   --color-knob: #ffffff;
   --color-separator: #d1d1d6;
   --color-label: #1d1d1f;
-  --color-label-secondary: #6e6e73;
-  --color-label-tertiary: #8e8e93;
-  --color-accent: #6a2cf0;
+  --color-label-secondary: #5c5c61;
+  --color-label-tertiary: #636368;
+  --color-accent: #6429e2;
   --color-accent-fill: #7539fd;
   --color-on-accent: #ffffff;
-  --color-success: #248a3d;
+  --color-success: #1f7835;
   --color-warning: #b25000;
-  --color-danger: #d70015;
+  --color-danger: #bf0013;
   --color-scrim: rgb(0 0 0 / 0.25);
 }
 
@@ -108,18 +108,20 @@
     --color-knob: #ffffff;
     --color-separator: rgb(60 60 67 / 0.18);
     --color-label: #1d1d1f;
-    --color-label-secondary: #6e6e73;
-    --color-label-tertiary: #8e8e93;
+    --color-label-secondary: #5c5c61;
+    --color-label-tertiary: #636368;
     /*
+     * Every colour used for text reaches 4.5:1 (WCAG AA) on the surfaces and tinted fills
+     * it sits on, in both schemes; the browser tests check this with axe on every screen.
      * Lintel violet (#7539FD) fills buttons; white on it is 5.6:1. Accent text is a shade
-     * deeper so links pass WCAG AA on the light grey background too (6:1).
+     * deeper so links pass on the light grey background and on accent-tinted badges.
      */
-    --color-accent: #6a2cf0;
+    --color-accent: #6429e2;
     --color-accent-fill: #7539fd;
     --color-on-accent: #ffffff;
-    --color-success: #248a3d;
+    --color-success: #1f7835;
     --color-warning: #b25000;
-    --color-danger: #d70015;
+    --color-danger: #bf0013;
     /* The dimmed layer behind dialogs and sheets. */
     --color-scrim: rgb(0 0 0 / 0.25);
 
@@ -135,15 +137,15 @@
       --color-knob: #ffffff;
       --color-separator: rgb(84 84 88 / 0.6);
       --color-label: #f5f5f7;
-      --color-label-secondary: #98989d;
-      --color-label-tertiary: #6e6e73;
-      /* Lighter violet for text on dark surfaces: 5.1:1 even on raised panels. */
-      --color-accent: #a68aff;
+      --color-label-secondary: #aeaeb2;
+      --color-label-tertiary: #a5a5aa;
+      /* Lighter violet for text on dark surfaces: 4.6:1 even on accent-tinted fills. */
+      --color-accent: #aa90ff;
       --color-accent-fill: #7539fd;
       --color-on-accent: #ffffff;
       --color-success: #30d158;
       --color-warning: #ff9f0a;
-      --color-danger: #ff453a;
+      --color-danger: #ff564c;
       --color-scrim: rgb(0 0 0 / 0.55);
     }
   }
