@@ -14,30 +14,31 @@ export function registerScheduledJobs(server: FastifyInstance): void {
   const jobs: RepeatingJob[] = [];
 
   server.addHook("onReady", async () => {
-    jobs.push(
-      startRepeatingJob({
-        everyMilliseconds: ONE_MINUTE,
-        run: async () => {
-          const published = await publishDueEntries(server.database);
-          if (published.length > 0) {
-            server.log.info({ entryIds: published }, "Published scheduled entries");
-          }
-          for (const entryId of published) {
-            const entry = await describeEntryForEvent(server.database, entryId);
-            await announceContentEvent(server, { name: "entry.published", entry });
-          }
-        },
-        onError: (error) => server.log.error(error, "Publishing scheduled entries failed"),
-      }),
-      // Retries, and anything queued while no server was sending (see src/webhooks).
-      startRepeatingJob({
-        everyMilliseconds: ONE_MINUTE,
-        run: async () => {
-          await server.webhooks.deliverDue();
-        },
-        onError: (error) => server.log.error(error, "Sending webhooks failed"),
-      }),
-    );
+    const publishing = startRepeatingJob({
+      everyMilliseconds: ONE_MINUTE,
+      run: async () => {
+        const published = await publishDueEntries(server.database);
+        if (published.length > 0) {
+          server.log.info({ entryIds: published }, "Published scheduled entries");
+        }
+        for (const entryId of published) {
+          const entry = await describeEntryForEvent(server.database, entryId);
+          await announceContentEvent(server, { name: "entry.published", entry });
+        }
+      },
+      onError: (error) => server.log.error(error, "Publishing scheduled entries failed"),
+    });
+    // Retries, and anything queued while no server was sending (see src/webhooks).
+    const webhooks = startRepeatingJob({
+      everyMilliseconds: ONE_MINUTE,
+      run: async () => {
+        await server.webhooks.deliverDue();
+      },
+      onError: (error) => server.log.error(error, "Sending webhooks failed"),
+    });
+    jobs.push(publishing, webhooks);
+    server.scheduledJobs.add("scheduled-publishing", publishing);
+    server.scheduledJobs.add("webhook-deliveries", webhooks);
   });
 
   server.addHook("onClose", async () => {

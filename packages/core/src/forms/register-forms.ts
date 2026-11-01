@@ -65,6 +65,7 @@ export function registerForms(server: FastifyInstance, options: FormsOptions): v
       },
       onError: (error) => server.log.error(error, "Deleting old form submissions failed"),
     });
+    server.scheduledJobs.add("form-retention", job);
   });
   server.addHook("onClose", async () => job?.stop());
 }

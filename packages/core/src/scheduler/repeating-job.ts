@@ -5,6 +5,11 @@
  * later without touching the tasks themselves.
  */
 export interface RepeatingJob {
+  /**
+   * Runs the task now, outside its timer (the cron endpoint does this on hosts that pause
+   * idle apps). If a run is already going, waits for that one instead of starting another.
+   */
+  runNow(): Promise<void>;
   /** Stops the timer and waits for a run in progress to finish. */
   stop(): Promise<void>;
 }
@@ -23,7 +28,7 @@ export function startRepeatingJob(options: RepeatingJobOptions): RepeatingJob {
   const runOnce = () => {
     // A slow run (a big batch, a busy database) is left to finish rather than doubled up.
     if (running || stopped) {
-      return;
+      return running;
     }
     running = options
       .run()
@@ -31,6 +36,7 @@ export function startRepeatingJob(options: RepeatingJobOptions): RepeatingJob {
       .finally(() => {
         running = undefined;
       });
+    return running;
   };
 
   const timer = setInterval(runOnce, options.everyMilliseconds);
@@ -39,6 +45,9 @@ export function startRepeatingJob(options: RepeatingJobOptions): RepeatingJob {
   runOnce();
 
   return {
+    async runNow() {
+      await runOnce();
+    },
     async stop() {
       stopped = true;
       clearInterval(timer);
