@@ -4,16 +4,14 @@ Where editors write: the collections overview, each collection's entries, and th
 
 ## Screens
 
-| Route                                | File                      | What it is                                 |
-| ------------------------------------ | ------------------------- | ------------------------------------------ |
-| `/content`                           | `ContentOverviewPage.tsx` | A card per collection, with counts         |
-| `/content/:collection`               | `EntriesListPage.tsx`     | Search, status filter, reorder, pagination |
-| `/content/:collection/new`           | `EntryEditorPage.tsx`     | A new entry (`newEntryId` is `"new"`)      |
-| `/content/:collection/:entryId`      | `EntryEditorPage.tsx`     | The entry editor                           |
-| `/content/:collection/:entryId/view` | `PublishedPageView.tsx`   | Simple preview of the published version    |
+The Content section is now the content tree and its workspace (`src/content-tree` and
+`src/content-workspace`). This folder keeps the entry editor's building blocks, which the
+workspace uses, and two screens:
 
-The routes are registered in `src/router.tsx`. The list keeps its filter in the URL
-(`?status=draft&search=hello&page=2`), so a filtered list survives a reload.
+| Route                                | File                    | What it is                              |
+| ------------------------------------ | ----------------------- | --------------------------------------- |
+| `/content/:collection/new`           | `EntryEditorPage.tsx`   | A new entry, for links from elsewhere   |
+| `/content/:collection/:entryId/view` | `PublishedPageView.tsx` | Simple preview of the published version |
 
 ## The entry editor
 
@@ -70,12 +68,5 @@ The API checks every permission again; hiding buttons is about clarity, not secu
 
 ## Reordering
 
-Tree and flat collections can be reordered by dragging (pointer) or with each row's up and
-down buttons (keyboard and screen readers, with a spoken confirmation). Pages move with the
-pages nested under them.
-
-In the Pages tree, dragging a page right puts it under the page above, and dragging it left
-moves it out, one level per 20px; the row shows the depth it will land at while dragging
-(`projectTreeDrop`). Keyboard users get two more buttons on each page: "Put … under …" (the
-sibling above) and "Move … out of …" (its parent). A page can also change parent in the
-editor. `treeOrder.ts` holds these rules. Reordering is off while a search or filter is applied.
+Pages are moved and sorted in the content tree (dragging, "Move…" and "Sort children…").
+`treeOrder.ts` still holds the rules the parent picker uses.

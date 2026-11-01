@@ -83,7 +83,13 @@ last among their siblings. Trees list depth first: each page, then its children.
 `reorder` counts each entry's place among the listed entries with the same parent, so
 send the whole tree (or all the children of one parent); entries left out keep their
 place. It refuses entries from elsewhere, parents in a flat collection, and loops.
-Deleting a page moves its children up to its parent.
+Deleting a page moves its children up to its parent. A parent can be in another collection when
+its content type allows that kind of child (`allowedChildren`, see `src/collections`), and a
+collection that isn't `allowedAtRoot` can't be created or moved to the top level; both
+give 400 `PLACEMENT_NOT_ALLOWED`. Only a change of parent is checked, so an entry placed
+before its content type's rules changed still saves. Children of one parent share one
+order across collections. The content tree's `move` and `sort` (`src/content-tree`) work
+across collections; `reorder` here still only knows parents in the same collection.
 
 ## Duplicating
 

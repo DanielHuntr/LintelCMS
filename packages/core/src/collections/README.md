@@ -16,6 +16,20 @@ Its `previewUrlPattern` is where its website shows drafts for live preview, such
 `https://example.com/api/preview?path={url}&token={token}`. It is null until a site is
 connected, and the admin then uses its built-in preview. See `src/preview`.
 
+## Where entries go in the content tree
+
+- `allowedAtRoot` (default true): entries can sit at the top of the collection's own
+  section. Off for a kind that only lives under another page.
+- `allowedChildren`: handles of the collections whose entries may be created under one of
+  these. A new tree allows its own kind (`["pages"]`); other structures allow nothing.
+  Only tree collections can be children.
+- `childrenAsCollection` (default false): children are listed in the workspace rather than
+  shown in the tree, for long runs of products or posts. Dated and flat collections are
+  always shown that way at their top level.
+- `listColumns`: the fields shown as columns in that list, by handle (up to 8).
+
+The content tree (`src/content-tree`) and `checkParent` in `src/entries` enforce them.
+
 ## Endpoints
 
 | Method and path               | Permission           | Body                                                                              | Success                             |
@@ -26,7 +40,10 @@ connected, and the admin then uses its built-in preview. See `src/preview`.
 | `PUT /collections/:handle`    | `collections:update` | any of `{ name, blueprintHandle, structure, routePattern, previewUrlPattern }`    | 200 `Collection`                    |
 | `DELETE /collections/:handle` | `collections:update` | none                                                                              | 204                                 |
 
-`Collection = { id, handle, name, blueprintHandle, structure, routePattern, previewUrlPattern, entryCount, updatedAt }`
+`Collection = { id, handle, name, blueprintHandle, structure, routePattern, previewUrlPattern, allowedAtRoot, allowedChildren, childrenAsCollection, listColumns, entryCount, updatedAt }`
+
+`POST` and `PUT` also take `allowedAtRoot`, `allowedChildren`, `childrenAsCollection` and
+`listColumns`.
 
 `PUT` changes only what is sent. Changing a `tree` to another structure keeps the entries
 in their order but removes their parents. A collection can only be deleted once it has no
