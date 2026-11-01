@@ -1,6 +1,7 @@
 import { customScriptRules } from "@lintel/builder-model";
 import { z } from "zod";
 import { formsSpamSettingsSchema } from "../forms/forms-settings.schema.js";
+import { brandingOverridesSchema } from "../branding/branding.schema.js";
 import { defaultSeoDefaults, seoDefaultsSchema } from "../seo/seo-defaults.schema.js";
 import { defaultWebsiteSettings, websiteSettingsSchema } from "../website/website.schema.js";
 
@@ -60,6 +61,10 @@ export const settingSchemas = {
   formsSpamProtection: formsSpamSettingsSchema,
   /** Signs the "when was this form opened" token (see src/forms/spam-protection.ts). */
   formsSigningSecret: z.string().min(32).nullable(),
+  /** Branding changed in Settings, on top of the deployment's (see src/branding). */
+  brandingOverrides: brandingOverridesSchema,
+  /** The admin's language for anyone who hasn't picked their own (see src/interface-languages). */
+  defaultInterfaceLanguage: z.string().nullable(),
 };
 
 export type SettingKey = keyof typeof settingSchemas;
@@ -80,4 +85,6 @@ export const settingDefaults: { [Key in SettingKey]: SettingValue<Key> } = {
   contentModelSyncBase: {},
   formsSpamProtection: { turnstileSiteKey: null, turnstileSecretKey: null },
   formsSigningSecret: null,
+  brandingOverrides: {},
+  defaultInterfaceLanguage: null,
 };

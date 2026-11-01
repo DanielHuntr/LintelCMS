@@ -4,7 +4,7 @@ import { EmptyState } from "../../design/EmptyState.js";
 import { LinkButton } from "../../design/LinkButton.js";
 import { LoadingRegion } from "../../design/LoadingRegion.js";
 import { Skeleton } from "../../design/Skeleton.js";
-import { t, tCount } from "../../i18n/strings.js";
+import { t } from "../../i18n/strings.js";
 import { useMediaUsage } from "../dashboard.queries.js";
 
 /** "1.2 GB": the largest unit that keeps the number at least 1. */
@@ -58,10 +58,7 @@ export function MediaUsageWidget() {
     <div className="flex flex-col gap-4">
       <p>
         <span className="block text-title text-label">
-          {tCount(
-            { one: "dashboard.media.files.one", other: "dashboard.media.files.other" },
-            fileCount,
-          )}
+          {t("dashboard.media.files", { count: fileCount })}
         </span>
         <span className="text-footnote text-label-secondary">
           {t("dashboard.media.size", { size: formatFileSize(totalBytes) })}
@@ -76,10 +73,7 @@ export function MediaUsageWidget() {
           />
         )}
         {imagesWithoutAltText > 0
-          ? tCount(
-              { one: "dashboard.media.missingAlt.one", other: "dashboard.media.missingAlt.other" },
-              imagesWithoutAltText,
-            )
+          ? t("dashboard.media.missingAlt", { count: imagesWithoutAltText })
           : t("dashboard.media.allDescribed")}
       </p>
       <LinkButton to="/media" variant="tinted" size="small">

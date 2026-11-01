@@ -34,7 +34,7 @@ describe("the email outbox in Settings", () => {
       expect(outbox.headers["cache-control"]).toBe("no-store");
       expect(outbox.json()).toMatchObject({
         enabled: true,
-        messages: [{ to: "olive@example.com", subject: "Reset your Lintel password" }],
+        messages: [{ to: "olive@example.com", subject: "Reset your password · Lintel" }],
       });
     });
   });

@@ -7,7 +7,7 @@ import { Badge } from "../design/Badge.js";
 import { Button } from "../design/Button.js";
 import { Dialog } from "../design/Dialog.js";
 import { PasswordField } from "../design/PasswordField.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { startTwoFactorSetup, type TwoFactorSetup } from "./account.api.js";
 import {
   accountKeys,
@@ -99,13 +99,7 @@ export function TwoFactorSection() {
               </p>
               {data.enabled && (
                 <p className="text-footnote text-label-secondary">
-                  {tCount(
-                    {
-                      one: "account.twoFactor.codesLeftOne",
-                      other: "account.twoFactor.codesLeftOther",
-                    },
-                    data.recoveryCodesLeft,
-                  )}
+                  {t("account.twoFactor.codesLeft", { count: data.recoveryCodesLeft })}
                 </p>
               )}
             </div>

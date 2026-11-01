@@ -165,7 +165,7 @@ function FormFieldRow({
         {...attributes}
         {...listeners}
         aria-label={t("forms.builder.dragHandle", { label })}
-        className="flex cursor-grab touch-none items-center self-stretch rounded-control pr-1 pl-2 text-label-tertiary hover:text-label-secondary focus-visible:focus-ring-inset active:cursor-grabbing"
+        className="flex cursor-grab touch-none items-center self-stretch rounded-control pe-1 ps-2 text-label-tertiary hover:text-label-secondary focus-visible:focus-ring-inset active:cursor-grabbing"
       >
         <GripVertical aria-hidden="true" strokeWidth={1.75} className="size-4" />
       </button>
@@ -174,7 +174,7 @@ function FormFieldRow({
         type="button"
         onClick={onOpen}
         aria-label={t("forms.builder.editField", { label })}
-        className="flex min-w-0 flex-1 items-center gap-3 py-3 pr-3 pl-1 text-left transition-colors duration-150 ease-standard hover:bg-fill/50 focus-visible:focus-ring-inset"
+        className="flex min-w-0 flex-1 items-center gap-3 py-3 pe-3 ps-1 text-start transition-colors duration-150 ease-standard hover:bg-fill/50 focus-visible:focus-ring-inset"
       >
         <span className="flex size-8 shrink-0 items-center justify-center rounded-control bg-fill text-label-secondary">
           <Icon aria-hidden="true" className="size-4" />
@@ -200,7 +200,7 @@ function FormFieldRow({
         {field.required && <Badge tone="neutral">{t("forms.builder.required")}</Badge>}
       </button>
 
-      <div className="flex shrink-0 items-center gap-0.5 pr-2">
+      <div className="flex shrink-0 items-center gap-0.5 pe-2">
         <button
           type="button"
           disabled={!canMoveUp}

@@ -34,7 +34,7 @@ export function SelectField({
           value={value}
           aria-describedby={hint ? hintId : undefined}
           onChange={(event) => onValueChange(event.target.value)}
-          className={classNames("h-10 appearance-none pr-9", controlClasses())}
+          className={classNames("h-10 appearance-none pe-9", controlClasses())}
           {...selectProps}
         >
           {options.map((option) => (
@@ -46,7 +46,7 @@ export function SelectField({
         <ChevronsUpDown
           aria-hidden="true"
           strokeWidth={2}
-          className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-label-secondary"
+          className="pointer-events-none absolute top-1/2 inset-e-3 size-4 -translate-y-1/2 text-label-secondary"
         />
       </div>
       {hint && (

@@ -5,6 +5,7 @@ import {
   LintelUnreachableError,
   listAllEntries,
   listEntries,
+  showsBuiltWithLintel,
 } from "./lintel";
 
 const post = {
@@ -115,5 +116,21 @@ describe("listAllEntries", () => {
     expect(entries).toHaveLength(101);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(lastRequest().url).toContain("page=2&perPage=100");
+  });
+});
+
+describe("showsBuiltWithLintel", () => {
+  it("follows the branding setting", async () => {
+    fetchMock.mockResolvedValueOnce(Response.json({ hideBuiltWithLintel: true }));
+    expect(await showsBuiltWithLintel()).toBe(false);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe("https://cms.example.com/branding");
+
+    fetchMock.mockResolvedValueOnce(Response.json({ hideBuiltWithLintel: false }));
+    expect(await showsBuiltWithLintel()).toBe(true);
+  });
+
+  it("shows the credit when Lintel can't be reached", async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError("fetch failed"));
+    expect(await showsBuiltWithLintel()).toBe(true);
   });
 });

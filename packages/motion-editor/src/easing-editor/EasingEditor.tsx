@@ -146,7 +146,7 @@ function EasingChoice({
       aria-pressed={selected}
       onClick={onSelect}
       className={classNames(
-        "flex items-center gap-2 rounded-control p-1.5 text-left text-caption focus-visible:focus-ring",
+        "flex items-center gap-2 rounded-control p-1.5 text-start text-caption focus-visible:focus-ring",
         selected ? "bg-accent/12 text-accent" : "text-label hover:bg-fill",
       )}
     >

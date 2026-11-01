@@ -1,3 +1,4 @@
+import { formatDateTime, formattingLocale } from "../i18n/formatting.js";
 import { t } from "../i18n/strings.js";
 import { type Asset, isImage } from "./media.api.js";
 
@@ -9,7 +10,7 @@ export function formatFileSize(bytes: number): string {
       : bytes >= 1_000
         ? (["kilobyte", bytes / 1_000] as const)
         : (["byte", bytes] as const);
-  return new Intl.NumberFormat(undefined, {
+  return new Intl.NumberFormat(formattingLocale(), {
     style: "unit",
     unit,
     unitDisplay: "short",
@@ -18,9 +19,7 @@ export function formatFileSize(bytes: number): string {
 }
 
 export function formatUploadDate(isoDate: string): string {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(
-    new Date(isoDate),
-  );
+  return formatDateTime(isoDate);
 }
 
 export function formatDimensions(asset: Pick<Asset, "width" | "height">): string | undefined {

@@ -46,7 +46,7 @@ export function FormFieldSettingsSheet({
       description={t(formFieldTypeInfo[field.type].name)}
       footer={
         <>
-          <Button variant="destructive" className="mr-auto" onClick={onRemove}>
+          <Button variant="destructive" className="me-auto" onClick={onRemove}>
             {t("forms.builder.removeField")}
           </Button>
           <Button onClick={onClose}>{t("forms.builder.done")}</Button>

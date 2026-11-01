@@ -23,10 +23,10 @@ export function PersonRow({ person, isYou, now, onSelect }: PersonRowProps) {
       <button
         type="button"
         onClick={onSelect}
-        className="flex w-full items-center gap-3 pl-4 text-left transition-colors duration-150 ease-standard hover:bg-fill/60 focus-visible:focus-ring-inset active:bg-fill"
+        className="flex w-full items-center gap-3 ps-4 text-start transition-colors duration-150 ease-standard hover:bg-fill/60 focus-visible:focus-ring-inset active:bg-fill"
       >
         <Avatar name={person.name} imageUrl={person.avatarUrl} />
-        <span className="flex min-h-14 min-w-0 flex-1 items-center gap-3 py-2.5 pr-4 [li+li>*>&]:hairline-top">
+        <span className="flex min-h-14 min-w-0 flex-1 items-center gap-3 py-2.5 pe-4 [li+li>*>&]:hairline-top">
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="flex items-center gap-2">
               <span className="truncate text-body text-label">
@@ -58,7 +58,7 @@ export function PersonRow({ person, isYou, now, onSelect }: PersonRowProps) {
           <ChevronRight
             aria-hidden="true"
             strokeWidth={2}
-            className="-mr-1 size-4 shrink-0 text-label-tertiary"
+            className="-me-1 size-4 shrink-0 text-label-tertiary"
           />
         </span>
       </button>

@@ -11,7 +11,7 @@ import { LoadingRegion } from "../design/LoadingRegion.js";
 import { SearchField } from "../design/SearchField.js";
 import { SegmentedControl } from "../design/SegmentedControl.js";
 import { Skeleton } from "../design/Skeleton.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { useDebouncedValue } from "../media/useDebouncedValue.js";
 import { formatMoney } from "./money.js";
 import type { OrderFilter } from "./orders.api.js";
@@ -76,12 +76,7 @@ export function OrdersPage() {
       )}
       {orders.data && orders.data.total > 0 && (
         <div className="max-w-3xl">
-          <GroupedList
-            footer={tCount(
-              { one: "shop.orders.count.one", other: "shop.orders.count.other" },
-              orders.data.total,
-            )}
-          >
+          <GroupedList footer={t("shop.orders.count", { count: orders.data.total })}>
             {orders.data.items.map((order) => (
               <GroupedListRow
                 key={order.id}
@@ -90,10 +85,7 @@ export function OrdersPage() {
                   order.fulfilmentStatus === "fulfilled" || order.cancelled ? "neutral" : "success"
                 }
                 label={`${order.name} · ${order.customerName}`}
-                description={`${formatOrderDate(order.createdAt)} · ${formatMoney(order.total)} · ${tCount(
-                  { one: "shop.orders.items.one", other: "shop.orders.items.other" },
-                  order.itemCount,
-                )}`}
+                description={`${formatOrderDate(order.createdAt)} · ${formatMoney(order.total)} · ${t("shop.orders.items", { count: order.itemCount })}`}
                 accessory={<OrderStatusBadge status={order.status} />}
                 to={`/commerce/orders/${encodeURIComponent(order.id)}`}
               />

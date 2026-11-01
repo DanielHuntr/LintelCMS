@@ -77,7 +77,7 @@ export function EntryPickerDialog({
                 id={selectId}
                 value={collectionHandle ?? ""}
                 onChange={(event) => setPickedHandle(event.target.value)}
-                className={classNames("h-9 appearance-none pr-9", controlClasses())}
+                className={classNames("h-9 appearance-none pe-9", controlClasses())}
               >
                 {offered.map((collection) => (
                   <option key={collection.handle} value={collection.handle}>
@@ -88,7 +88,7 @@ export function EntryPickerDialog({
               <ChevronsUpDown
                 aria-hidden="true"
                 strokeWidth={2}
-                className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-label-secondary"
+                className="pointer-events-none absolute top-1/2 inset-e-3 size-4 -translate-y-1/2 text-label-secondary"
               />
             </div>
           </div>
@@ -134,7 +134,7 @@ export function EntryPickerDialog({
                     type="button"
                     disabled={isChosen}
                     onClick={() => onChoose({ ...entry, collectionHandle })}
-                    className="flex w-full items-center gap-3 rounded-control px-2 py-2.5 text-left transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring disabled:cursor-default disabled:hover:bg-transparent"
+                    className="flex w-full items-center gap-3 rounded-control px-2 py-2.5 text-start transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring disabled:cursor-default disabled:hover:bg-transparent"
                   >
                     <span className="min-w-0 flex-1 truncate text-body text-label">
                       {entry.title || t("entries.untitled")}

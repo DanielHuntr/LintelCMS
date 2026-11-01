@@ -62,7 +62,7 @@ function SingleTerm({
         aria-required={field.required || undefined}
         aria-invalid={hasError || undefined}
         aria-describedby={describedBy}
-        className={classNames("h-10 appearance-none pr-9", controlClasses({ hasError }))}
+        className={classNames("h-10 appearance-none pe-9", controlClasses({ hasError }))}
       >
         <option value="" disabled={field.required}>
           {field.required ? t("fields.select.choose") : t("fields.select.none")}
@@ -76,7 +76,7 @@ function SingleTerm({
       <ChevronsUpDown
         aria-hidden="true"
         strokeWidth={2}
-        className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-label-secondary"
+        className="pointer-events-none absolute top-1/2 inset-e-3 size-4 -translate-y-1/2 text-label-secondary"
       />
     </div>
   );

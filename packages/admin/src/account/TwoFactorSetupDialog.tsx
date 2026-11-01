@@ -79,7 +79,7 @@ export function TwoFactorSetupDialog({ setup, onClose, onDone }: TwoFactorSetupD
         onSubmit={(event) => void submit(event)}
         className="flex flex-col gap-5"
       >
-        <ol className="flex list-decimal flex-col gap-4 pl-5 text-body text-label marker:text-label-secondary">
+        <ol className="flex list-decimal flex-col gap-4 ps-5 text-body text-label marker:text-label-secondary">
           <li>
             <p>{t("account.twoFactor.stepScan")}</p>
             {/* The QR code is white with black squares in both schemes, as scanners expect. */}
@@ -91,7 +91,7 @@ export function TwoFactorSetupDialog({ setup, onClose, onDone }: TwoFactorSetupD
             <p className="mt-3 text-footnote text-label-secondary">
               {t("account.twoFactor.manualKey")}
             </p>
-            <div className="mt-1 flex items-center gap-2 rounded-control bg-fill p-2 pl-3">
+            <div className="mt-1 flex items-center gap-2 rounded-control bg-fill p-2 ps-3">
               <code className="min-w-0 flex-1 font-mono text-footnote tracking-wider break-all text-label select-all">
                 {setup.secret.match(/.{1,4}/g)?.join(" ")}
               </code>

@@ -23,6 +23,14 @@ never throws; a failure is logged. That keeps answers such as "if that address h
 account, we've sent a link" the same whether or not an email went out. Automations' "Send
 an email" step awaits `server.email.send` instead, so a failed send shows in the run.
 
+## Branded emails
+
+The admin's own emails (invitations, password resets, email changes, security notices) go
+through `sendBrandedEmail(server, to, { subject, heading, paragraphs, action? })`
+(`send-branded-email.ts`). It renders them in the site's branding (`src/branding`): the
+agency's name after the subject and in the sign-off, its logo, accent colour and support
+address, so a client never sees Lintel's name unless that is the branding.
+
 ## The outbox
 
 Until `EMAIL_DRIVER` names a real service, emails are kept in the outbox instead of being
@@ -68,5 +76,6 @@ Adding a driver: one class implementing `EmailDriver` (`send(email)`), a case in
 | `email.errors.ts`          | Named errors                                         |
 | `index.ts`                 | What other features may import                       |
 | `send-email.ts`            | `sendEmail`: send without waiting, log failures      |
+| `send-branded-email.ts`    | `sendBrandedEmail`: the admin's emails, branded      |
 | `outbox.service.ts`        | Describing the outbox for Settings → Email outbox    |
 | `email.routes.ts`          | `GET /email/outbox`                                  |

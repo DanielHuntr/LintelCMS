@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { hashPassword } from "../auth/passwords.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
-import { sendEmail } from "../email/index.js";
+import { sendBrandedEmail } from "../email/index.js";
 import { assetFileUrl } from "../media/asset-response.js";
 import { isImageMimeType } from "../media/file-types.js";
 import { findAssetById } from "../media/media.repository.js";
@@ -135,29 +135,25 @@ export async function requestEmailChange(
     },
     now,
   );
-  sendEmail(server, {
-    to: request.newEmail,
-    subject: "Confirm your new email for Lintel",
-    text: [
-      `Hello ${user.name},`,
-      "",
-      "To start using this address for your Lintel account, open this link within 24 hours:",
-      "",
-      `${server.adminOrigin}/confirm-email#token=${token}`,
-      "",
+  sendBrandedEmail(server, request.newEmail, {
+    subject: "Confirm your new email",
+    heading: `Hello ${user.name},`,
+    paragraphs: [
+      "To start using this address for your account, confirm it within 24 hours.",
       "If you didn't ask for this, you can ignore this email.",
-    ].join("\n"),
+    ],
+    action: {
+      label: "Confirm this email",
+      url: `${server.adminOrigin}/confirm-email#token=${token}`,
+    },
   });
-  sendEmail(server, {
-    to: user.email,
-    subject: "Your Lintel email is changing",
-    text: [
-      `Hello ${user.name},`,
-      "",
-      `Someone asked to change the email for your Lintel account to ${request.newEmail}. It changes once that address is confirmed.`,
-      "",
+  sendBrandedEmail(server, user.email, {
+    subject: "Your email is changing",
+    heading: `Hello ${user.name},`,
+    paragraphs: [
+      `Someone asked to change the email for your account to ${request.newEmail}. It changes once that address is confirmed.`,
       "If it wasn't you, change your password and tell an admin.",
-    ].join("\n"),
+    ],
   });
 }
 

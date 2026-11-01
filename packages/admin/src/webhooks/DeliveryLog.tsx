@@ -6,7 +6,7 @@ import { Button } from "../design/Button.js";
 import { EmptyState } from "../design/EmptyState.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { DeliveryStatusBadge } from "./DeliveryStatusBadge.js";
 import { webhookEventLabels, type WebhookDelivery } from "./webhooks.api.js";
 import { useResendDelivery, useWebhookDeliveries } from "./webhooks.queries.js";
@@ -121,10 +121,7 @@ function DeliveryRow({ delivery, now, canResend, isResending, onResend }: Delive
 }
 
 function describeOutcome(delivery: WebhookDelivery, now: number): string {
-  const attempts = tCount(
-    { one: "webhooks.attempts.one", other: "webhooks.attempts.other" },
-    delivery.attemptCount,
-  );
+  const attempts = t("webhooks.attempts", { count: delivery.attemptCount });
   if (delivery.status === "delivered") {
     return t("webhooks.outcome.delivered", { status: delivery.responseStatus ?? "", attempts });
   }

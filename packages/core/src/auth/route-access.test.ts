@@ -40,6 +40,9 @@ const PUBLIC_ROUTES: Record<string, string> = {
   "POST /invitations/preview": "needs the emailed invitation's token",
   "POST /invitations/accept": "needs the emailed invitation's token",
   "POST /account/email/confirm": "needs the link emailed to the new address",
+  "GET /branding": "the sign-in screen is shown in the site's branding",
+  "GET /branding/images/:field": "the logo and background the sign-in screen shows",
+  "GET /interface-language": "the language the sign-in screen is shown in",
   "POST /shop/stripe/webhook": "Stripe's payment events, checked by their signature",
   "POST /shop/paypal/webhook": "PayPal's payment events, checked with PayPal",
   "POST /shop/mollie/webhook": "Mollie's payment events, looked up with Mollie",
@@ -75,6 +78,8 @@ const SIGNED_IN_ROUTES = new Set([
   "GET /notifications",
   "POST /notifications/read-all",
   "POST /notifications/:notificationId/read",
+  // Each person's own admin language.
+  "PUT /interface-language",
   // The sites someone may work on, for the admin's site switcher.
   "GET /sites",
   // Each person's own dashboard layout.

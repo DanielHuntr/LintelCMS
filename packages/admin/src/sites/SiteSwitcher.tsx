@@ -36,13 +36,13 @@ export function SiteSwitcher() {
         <Globe
           aria-hidden="true"
           strokeWidth={1.75}
-          className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-accent"
+          className="pointer-events-none absolute top-1/2 inset-s-2.5 size-4 -translate-y-1/2 text-accent"
         />
         <select
           id={selectId}
           value={current.site.handle}
           onChange={(event) => void switchTo(event.target.value)}
-          className="h-9 w-full appearance-none truncate rounded-control bg-fill/70 pr-8 pl-8 text-body font-medium text-label transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring"
+          className="h-9 w-full appearance-none truncate rounded-control bg-fill/70 pe-8 ps-8 text-body font-medium text-label transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring"
         >
           {current.sites.map((site) => (
             <option key={site.handle} value={site.handle}>
@@ -53,7 +53,7 @@ export function SiteSwitcher() {
         <ChevronsUpDown
           aria-hidden="true"
           strokeWidth={2}
-          className="pointer-events-none absolute top-1/2 right-2.5 size-4 -translate-y-1/2 text-label-secondary"
+          className="pointer-events-none absolute top-1/2 inset-e-2.5 size-4 -translate-y-1/2 text-label-secondary"
         />
       </div>
     </div>

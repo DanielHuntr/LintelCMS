@@ -61,7 +61,7 @@ export function CountryPicker({ legend, hint, value, onChange, error }: CountryP
     <fieldset className="flex flex-col gap-2" aria-describedby={hint ? hintId : undefined}>
       <legend className="mb-1.5 text-footnote font-medium text-label">
         {legend}
-        <span className="ml-2 font-normal text-label-secondary">
+        <span className="ms-2 font-normal text-label-secondary">
           {t("shop.countries.chosen", { count: value.length })}
         </span>
       </legend>

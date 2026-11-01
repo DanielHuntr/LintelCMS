@@ -34,7 +34,7 @@ export function SearchField({
       <Search
         aria-hidden="true"
         strokeWidth={2}
-        className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-label-tertiary"
+        className="pointer-events-none absolute top-1/2 inset-s-2.5 size-4 -translate-y-1/2 text-label-tertiary"
       />
       <input
         id={inputId}
@@ -42,7 +42,7 @@ export function SearchField({
         value={value}
         placeholder={label}
         onChange={(event) => onValueChange(event.target.value)}
-        className={classNames("h-9 pl-8", controlClasses())}
+        className={classNames("h-9 ps-8", controlClasses())}
         {...inputProps}
       />
     </div>

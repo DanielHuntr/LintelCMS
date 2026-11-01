@@ -184,7 +184,7 @@ export function EffectsSection() {
               }
               className="flex-1 accent-[var(--color-accent-fill)]"
             />
-            <span className="w-9 text-right text-caption text-label-secondary">{percent}%</span>
+            <span className="w-9 text-end text-caption text-label-secondary">{percent}%</span>
           </div>
         )}
       </Labelled>

@@ -25,19 +25,19 @@ export function ImportReportView({
 
   return (
     <div className="flex flex-col gap-5">
-      <table className="w-full text-left text-body">
+      <table className="w-full text-start text-body">
         <thead>
           <tr className="text-footnote text-label-secondary">
             <th scope="col" className="pb-2 font-medium">
               <span className="sr-only">{t("shop.import.report.what")}</span>
             </th>
-            <th scope="col" className="pb-2 text-right font-medium">
+            <th scope="col" className="pb-2 text-end font-medium">
               {wouldHappen ? t("shop.import.report.wouldCreate") : t("shop.import.report.created")}
             </th>
-            <th scope="col" className="pb-2 text-right font-medium">
+            <th scope="col" className="pb-2 text-end font-medium">
               {t("shop.import.report.skipped")}
             </th>
-            <th scope="col" className="pb-2 text-right font-medium">
+            <th scope="col" className="pb-2 text-end font-medium">
               {t("shop.import.report.failed")}
             </th>
           </tr>
@@ -48,12 +48,12 @@ export function ImportReportView({
               <th scope="row" className="py-1.5 font-normal text-label">
                 {row.label}
               </th>
-              <td className="py-1.5 text-right tabular-nums text-label">{row.counts.created}</td>
-              <td className="py-1.5 text-right tabular-nums text-label-secondary">
+              <td className="py-1.5 text-end tabular-nums text-label">{row.counts.created}</td>
+              <td className="py-1.5 text-end tabular-nums text-label-secondary">
                 {row.counts.skipped}
               </td>
               <td
-                className={`py-1.5 text-right tabular-nums ${row.counts.failed > 0 ? "text-danger" : "text-label-secondary"}`}
+                className={`py-1.5 text-end tabular-nums ${row.counts.failed > 0 ? "text-danger" : "text-label-secondary"}`}
               >
                 {row.counts.failed}
               </td>

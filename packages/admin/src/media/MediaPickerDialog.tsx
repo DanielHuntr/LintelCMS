@@ -64,7 +64,7 @@ export function MediaPickerDialog({
             type="button"
             aria-label={t("media.detail.close")}
             onClick={onClose}
-            className="-mr-2 flex size-8 items-center justify-center rounded-full text-label-secondary transition-colors duration-150 hover:bg-fill hover:text-label focus-visible:focus-ring"
+            className="-me-2 flex size-8 items-center justify-center rounded-full text-label-secondary transition-colors duration-150 hover:bg-fill hover:text-label focus-visible:focus-ring"
           >
             <X aria-hidden="true" className="size-[18px]" />
           </button>
@@ -79,11 +79,11 @@ export function MediaPickerDialog({
               placeholder={t("media.search.placeholder")}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              className="[&_input]:pl-9"
+              className="[&_input]:ps-9"
             />
             <Search
               aria-hidden="true"
-              className="pointer-events-none absolute bottom-3 left-3 size-4 text-label-tertiary"
+              className="pointer-events-none absolute bottom-3 inset-s-3 size-4 text-label-tertiary"
             />
           </div>
           <Button

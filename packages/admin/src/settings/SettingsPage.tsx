@@ -5,9 +5,11 @@ import {
   KeyRound,
   Languages,
   MonitorSmartphone,
+  Palette,
   Shapes,
   ShieldCheck,
   Sparkles,
+  Type,
   Webhook,
 } from "lucide-react";
 import { GroupedList } from "../design/GroupedList.js";
@@ -26,6 +28,7 @@ export function SettingsPage() {
   const canSeeContentTypes = useCan("blueprints:read");
   const canSeeSiteSettings = useCan("settings:read");
   const canSeeSecurityLog = useCan("security:read");
+  const canBrand = useCan("branding:update");
 
   return (
     <Page width="readable">
@@ -80,6 +83,23 @@ export function SettingsPage() {
             )}
           </GroupedList>
         )}
+        <GroupedList header={t("settings.yourAdminHeader")}>
+          <GroupedListRow
+            icon={Type}
+            iconTone="neutral"
+            label={t("interfaceLanguage.title")}
+            description={t("settings.interfaceLanguageDescription")}
+            to="/settings/interface-language"
+          />
+          {canBrand && (
+            <GroupedListRow
+              icon={Palette}
+              label={t("branding.title")}
+              description={t("settings.brandingDescription")}
+              to="/settings/branding"
+            />
+          )}
+        </GroupedList>
         <PluginSettingsRows />
         <GroupedList header={t("settings.siteHeader")} footer={t("settings.moreSoon")}>
           {canSeeSiteSettings && (

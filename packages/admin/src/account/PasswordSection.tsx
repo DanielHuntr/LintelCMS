@@ -3,7 +3,7 @@ import { describeFormError } from "../api/describeError.js";
 import { Button } from "../design/Button.js";
 import { Dialog } from "../design/Dialog.js";
 import { PasswordField } from "../design/PasswordField.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { useSession } from "../session/SessionContext.js";
 import { passwordIsLongEnough } from "../setup/accountDetails.js";
 import { useChangePassword } from "./account.queries.js";
@@ -32,12 +32,7 @@ export function PasswordSection() {
       { currentPassword, newPassword },
       {
         onSuccess: ({ endedSessions }) => {
-          setResult(
-            tCount(
-              { one: "account.password.changedOne", other: "account.password.changedOther" },
-              endedSessions,
-            ),
-          );
+          setResult(t("account.password.changed", { count: endedSessions }));
           close();
         },
       },

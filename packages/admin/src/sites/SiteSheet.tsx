@@ -133,7 +133,7 @@ export function SiteSheet({ site, onSave, onClose }: SiteSheetProps) {
               id={languageId}
               value={draft.defaultLocale}
               onChange={(event) => change({ defaultLocale: event.target.value })}
-              className={classNames("h-10 appearance-none pr-9", controlClasses())}
+              className={classNames("h-10 appearance-none pe-9", controlClasses())}
             >
               {languages.map((language) => (
                 <option key={language.code} value={language.code}>
@@ -144,7 +144,7 @@ export function SiteSheet({ site, onSave, onClose }: SiteSheetProps) {
             <ChevronsUpDown
               aria-hidden="true"
               strokeWidth={2}
-              className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-label-secondary"
+              className="pointer-events-none absolute top-1/2 inset-e-3 size-4 -translate-y-1/2 text-label-secondary"
             />
           </div>
           {!isNew && (

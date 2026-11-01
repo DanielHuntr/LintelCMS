@@ -53,7 +53,7 @@ export function SidebarAccount({ signedInUser, onSignOut }: SidebarAccountProps)
           onClick={onSignOut}
           aria-label={t("account.signOut")}
           title={t("account.signOut")}
-          className="ml-auto flex size-8 shrink-0 items-center justify-center rounded-control text-label-secondary transition-colors duration-150 ease-standard hover:bg-fill hover:text-label focus-visible:focus-ring"
+          className="ms-auto flex size-8 shrink-0 items-center justify-center rounded-control text-label-secondary transition-colors duration-150 ease-standard hover:bg-fill hover:text-label focus-visible:focus-ring"
         >
           <LogOut aria-hidden="true" strokeWidth={1.75} className="size-[18px]" />
         </button>

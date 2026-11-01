@@ -82,7 +82,7 @@ export function ChoiceCardGroup<Value extends string>({
             onClick={() => onChange(option.value)}
             onKeyDown={(event) => handleKeyDown(event, index)}
             className={classNames(
-              "relative flex items-center gap-4 rounded-panel p-4 text-left",
+              "relative flex items-center gap-4 rounded-panel p-4 text-start",
               "sm:min-h-[184px] sm:flex-col sm:items-start sm:justify-start sm:gap-5 sm:p-5",
               "transition duration-200 ease-standard focus-visible:focus-ring",
               "motion-safe:active:scale-[0.98]",
@@ -102,7 +102,7 @@ export function ChoiceCardGroup<Value extends string>({
               <Icon aria-hidden="true" strokeWidth={1.75} className="size-7" />
             </span>
 
-            <span className="flex min-w-0 flex-1 flex-col gap-1 pr-7 sm:flex-none sm:pr-0">
+            <span className="flex min-w-0 flex-1 flex-col gap-1 pe-7 sm:flex-none sm:pe-0">
               <span className="flex flex-wrap items-center gap-2">
                 <span id={titleId} className="text-headline text-label">
                   {option.title}
@@ -128,7 +128,7 @@ function SelectedMark({ isSelected }: { isSelected: boolean }) {
     <span
       aria-hidden="true"
       className={classNames(
-        "absolute top-1/2 right-4 flex size-6 -translate-y-1/2 items-center justify-center rounded-full",
+        "absolute top-1/2 inset-e-4 flex size-6 -translate-y-1/2 items-center justify-center rounded-full",
         "sm:top-4 sm:translate-y-0",
         "transition duration-200 ease-standard",
         isSelected ? "bg-accent-fill text-on-accent" : "border-[1.5px] border-separator",

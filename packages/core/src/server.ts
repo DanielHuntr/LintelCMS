@@ -6,6 +6,9 @@ import Fastify, { type FastifyInstance, type FastifyServerOptions, LogController
 import { apiTokensRoutes } from "./api-tokens/api-tokens.routes.js";
 import { authRoutes } from "./auth/auth.routes.js";
 import { blueprintsRoutes } from "./blueprints/blueprints.routes.js";
+import { brandingRoutes } from "./branding/branding.routes.js";
+import type { DeploymentBranding } from "./branding/deployment-branding.js";
+import { lintelBranding } from "./branding/branding.schema.js";
 import { collectionsRoutes } from "./collections/collections.routes.js";
 import type { CommerceOptions } from "./commerce/commerce.context.js";
 import { registerCommerce } from "./commerce/register-commerce.js";
@@ -30,6 +33,8 @@ import type { AssetExists, AssetLookup } from "./fieldtypes/image-assets.js";
 import { healthRoutes } from "./health/health.routes.js";
 import { DEFAULT_EMAIL_FROM } from "./email/email.config.js";
 import { type EmailSender, OutboxEmailDriver, createEmailSender } from "./email/index.js";
+import { interfaceLanguagesRoutes } from "./interface-languages/interface-languages.routes.js";
+import { SOURCE_INTERFACE_LANGUAGE } from "./interface-languages/interface-languages.schema.js";
 import { crossOriginOptions } from "./http/cross-origin.js";
 import { refuseCrossSiteRequests } from "./http/cross-site-requests.js";
 import { requestIdFor } from "./http/request-ids.js";
@@ -119,6 +124,10 @@ declare module "fastify" {
     website: WebsiteRuntime;
     /** What happened, for features to react to (see src/events). */
     events: EventBus;
+    /** The branding this server was deployed with (see src/branding). */
+    deploymentBranding: DeploymentBranding;
+    /** The admin's language this server was deployed with (see src/interface-languages). */
+    defaultInterfaceLanguage: string;
   }
 }
 
@@ -200,6 +209,10 @@ export interface ServerOptions {
   formsTurnstileVerifier?: TurnstileVerifier;
   /** How the online shop reaches payment services. Every part has a default. */
   commerce?: CommerceOptions;
+  /** Branding from lintel.config.json and LINTEL_BRAND_*. Defaults to Lintel's own. */
+  branding?: DeploymentBranding;
+  /** The admin's language when the site hasn't chosen one. Defaults to English. */
+  defaultInterfaceLanguage?: string;
 }
 
 export interface WebhookOptions {
@@ -266,6 +279,14 @@ export function buildServer(options: ServerOptions) {
   server.decorate("emailOutbox", email.outbox);
   server.decorate("website", createWebsiteRuntime(options.website));
   clearRenderedPagesAfterChanges(server);
+  server.decorate(
+    "deploymentBranding",
+    options.branding ?? { branding: lintelBranding, isCustomised: false },
+  );
+  server.decorate(
+    "defaultInterfaceLanguage",
+    options.defaultInterfaceLanguage ?? SOURCE_INTERFACE_LANGUAGE,
+  );
   server.addHook("onClose", () => webhooks.finishSending());
   server.decorate(
     "events",
@@ -386,6 +407,8 @@ function registerApiRoutes(
   server.register(passwordResetRoutes);
   server.register(securityLogRoutes);
   server.register(emailRoutes);
+  server.register(brandingRoutes);
+  server.register(interfaceLanguagesRoutes);
   server.register(websiteRoutes);
   server.register(pagesRoutes);
   registerContentModelSyncRoutes(server);

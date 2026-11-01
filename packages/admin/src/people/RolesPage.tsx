@@ -7,7 +7,7 @@ import { LargeTitle } from "../design/LargeTitle.js";
 import { LinkButton } from "../design/LinkButton.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import type { Role } from "./people.api.js";
 import { useRoles } from "./people.queries.js";
@@ -20,7 +20,7 @@ export function RolesPage() {
   const describe = (role: Role) =>
     [
       role.description,
-      tCount({ one: "roles.memberCount.one", other: "roles.memberCount.other" }, role.memberCount),
+      t("roles.memberCount", { count: role.memberCount }),
       role.requiresTwoFactor ? t("roles.requiresTwoFactorShort") : undefined,
     ]
       .filter(Boolean)

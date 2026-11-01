@@ -40,6 +40,8 @@ export const builtInRoles: readonly BuiltInRole[] = [
       "users:*",
       "roles:*",
       "settings:*",
+      // Owners have everything already; Admins brand the admin for the client too.
+      "branding:update",
       "security:read",
       "commerce:*",
       "orders:*",

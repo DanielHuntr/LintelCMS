@@ -39,7 +39,7 @@ export function FormPickerFieldEditor({
           aria-required={field.required || undefined}
           aria-invalid={hasError || undefined}
           aria-describedby={describedBy}
-          className={classNames("h-10 appearance-none pr-9", controlClasses({ hasError }))}
+          className={classNames("h-10 appearance-none pe-9", controlClasses({ hasError }))}
         >
           <option value="">
             {forms.isPending ? t("forms.picker.loading") : t("forms.picker.choose")}
@@ -56,7 +56,7 @@ export function FormPickerFieldEditor({
         <ChevronsUpDown
           aria-hidden="true"
           strokeWidth={2}
-          className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-label-secondary"
+          className="pointer-events-none absolute top-1/2 inset-e-3 size-4 -translate-y-1/2 text-label-secondary"
         />
       </div>
       {forms.data?.length === 0 && (

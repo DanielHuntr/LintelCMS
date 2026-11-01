@@ -2,7 +2,7 @@ import { Link, useParams } from "@tanstack/react-router";
 import { PanelsTopLeft } from "lucide-react";
 import type { FieldEditorProps } from "../fields/fieldEditorProps.js";
 import { newEntryId } from "../content/newEntryId.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 
 /**
  * A page design field in the entry editor: how much the page has, and the way into the
@@ -24,10 +24,7 @@ export function PageFieldEditor({ field, value, controlId, describedBy }: FieldE
           ? t("pageDesign.field.saveFirst")
           : sections === 0
             ? t("pageDesign.field.empty")
-            : tCount(
-                { one: "pageDesign.field.summary.one", other: "pageDesign.field.summary.other" },
-                sections,
-              )}
+            : t("pageDesign.field.summary", { count: sections })}
       </p>
       {entryId !== newEntryId && (
         <Link

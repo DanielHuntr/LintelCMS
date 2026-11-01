@@ -29,13 +29,13 @@ export function LocalePicker({ value, onChange }: LocalePickerProps) {
       <Languages
         aria-hidden="true"
         strokeWidth={1.75}
-        className="pointer-events-none absolute left-3 size-4 text-label-secondary"
+        className="pointer-events-none absolute inset-s-3 size-4 text-label-secondary"
       />
       <select
         id={selectId}
         value={value ?? locales.data.defaultLocale}
         onChange={(event) => onChange(event.target.value)}
-        className={classNames("h-9 w-auto appearance-none pr-9 pl-9", controlClasses())}
+        className={classNames("h-9 w-auto appearance-none pe-9 ps-9", controlClasses())}
       >
         {siteLocales.map((locale) => (
           <option key={locale.code} value={locale.code}>
@@ -46,7 +46,7 @@ export function LocalePicker({ value, onChange }: LocalePickerProps) {
       <ChevronsUpDown
         aria-hidden="true"
         strokeWidth={2}
-        className="pointer-events-none absolute right-3 size-4 text-label-secondary"
+        className="pointer-events-none absolute inset-e-3 size-4 text-label-secondary"
       />
     </div>
   );

@@ -12,7 +12,7 @@ import { SearchField } from "../design/SearchField.js";
 import { SegmentedControl } from "../design/SegmentedControl.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { useDebouncedValue } from "../media/useDebouncedValue.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import { formatMoney } from "./money.js";
 import { priceRangeText, type ProductStatus } from "./products.api.js";
@@ -95,21 +95,13 @@ export function ProductsPage() {
       )}
       {products.data && products.data.total > 0 && (
         <div className="max-w-3xl">
-          <GroupedList
-            footer={tCount(
-              { one: "shop.products.count.one", other: "shop.products.count.other" },
-              products.data.total,
-            )}
-          >
+          <GroupedList footer={t("shop.products.count", { count: products.data.total })}>
             {products.data.items.map((product) => {
               const price = priceRangeText(product.priceRange, formatMoney);
               const stock =
                 product.available === null
                   ? t("shop.products.notTracked")
-                  : tCount(
-                      { one: "shop.products.inStock.one", other: "shop.products.inStock.other" },
-                      product.available,
-                    );
+                  : t("shop.products.inStock", { count: product.available });
               return (
                 <GroupedListRow
                   key={product.id}

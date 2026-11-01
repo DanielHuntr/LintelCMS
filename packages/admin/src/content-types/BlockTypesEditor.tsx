@@ -189,7 +189,7 @@ function BlockTypeCard({
                 );
               }
             }}
-            className={classNames("h-8 appearance-none pr-8 text-footnote", controlClasses())}
+            className={classNames("h-8 appearance-none pe-8 text-footnote", controlClasses())}
           >
             <option value="" disabled>
               {t("builder.blocks.addField")}
@@ -203,7 +203,7 @@ function BlockTypeCard({
           <Plus
             aria-hidden="true"
             strokeWidth={2}
-            className="pointer-events-none absolute top-1/2 right-2.5 size-3.5 -translate-y-1/2 text-label-secondary"
+            className="pointer-events-none absolute top-1/2 inset-e-2.5 size-3.5 -translate-y-1/2 text-label-secondary"
           />
         </div>
       </div>
@@ -280,7 +280,7 @@ function InnerFieldRow({
           />
           {t("builder.blocks.fieldRequired")}
         </label>
-        <span className="ml-auto flex items-center">
+        <span className="ms-auto flex items-center">
           <SmallButton
             label={t("builder.blocks.moveUp", { name: fieldName })}
             disabled={isFirst}

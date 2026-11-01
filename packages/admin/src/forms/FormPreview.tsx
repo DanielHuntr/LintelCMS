@@ -76,7 +76,7 @@ function PreviewField({ field }: { field: FormField }) {
     <>
       {field.label}
       {field.required && (
-        <span className="ml-1 text-danger" aria-hidden="true">
+        <span className="ms-1 text-danger" aria-hidden="true">
           *
         </span>
       )}

@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import { getSignedIn, requireAccountSession } from "../auth/require-permission.js";
 import { readSessionToken } from "../auth/session-cookie.js";
 import { NotSignedInError } from "../auth/auth.errors.js";
-import { sendEmail } from "../email/index.js";
+import { sendBrandedEmail } from "../email/index.js";
 import { parseRequest } from "../http/http-errors.js";
 import { recordSecurityEvent, requestOrigin } from "../security-log/security-log.service.js";
 import { SessionNotFoundError } from "./account.errors.js";
@@ -73,10 +73,12 @@ export async function accountRoutes(server: FastifyInstance) {
         origin: requestOrigin(request),
         details: { from: previousEmail, to: user.email },
       });
-      sendEmail(server, {
-        to: previousEmail,
-        subject: "Your Lintel email was changed",
-        text: `The email for your Lintel account is now ${user.email}. If it wasn't you, tell an admin straight away.`,
+      sendBrandedEmail(server, previousEmail, {
+        subject: "Your email was changed",
+        heading: "Your email was changed",
+        paragraphs: [
+          `The email for your account is now ${user.email}. If it wasn't you, tell an admin straight away.`,
+        ],
       });
       return reply.code(204).send();
     },

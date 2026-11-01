@@ -35,7 +35,7 @@ export function PresetCard({ preset, selected, onSelect }: PresetCardProps) {
       onFocus={preview.replay}
       onBlur={preview.reset}
       className={classNames(
-        "group relative flex flex-col overflow-hidden rounded-card bg-surface text-left hairline-ring",
+        "group relative flex flex-col overflow-hidden rounded-card bg-surface text-start hairline-ring",
         "transition duration-150 ease-standard focus-visible:focus-ring",
         selected && "ring-2 ring-accent-fill",
       )}

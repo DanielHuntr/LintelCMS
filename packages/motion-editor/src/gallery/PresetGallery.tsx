@@ -58,13 +58,13 @@ export function PresetGallery({
           value={category}
           onChange={setCategory}
         />
-        <div className="relative ml-auto w-56">
+        <div className="relative ms-auto w-56">
           <label htmlFor={searchId} className="sr-only">
             {t("motionEditor.gallery.search")}
           </label>
           <Search
             aria-hidden="true"
-            className="pointer-events-none absolute top-2 left-2.5 size-4 text-label-tertiary"
+            className="pointer-events-none absolute top-2 inset-s-2.5 size-4 text-label-tertiary"
           />
           <input
             id={searchId}
@@ -72,7 +72,7 @@ export function PresetGallery({
             value={search}
             placeholder={t("motionEditor.gallery.search")}
             onChange={(event) => setSearch(event.target.value)}
-            className={`${controlClasses} pl-8`}
+            className={`${controlClasses} ps-8`}
           />
         </div>
       </div>

@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { loadConfig, loadProjectEnvFile } from "./config.js";
 import { contentModelOptionsFromConfig } from "./content-model-sync/content-model-config.js";
+import { readDeploymentOptions } from "./deployment-options.js";
 import { describeActiveDatabase } from "./database/active-database.js";
 import { createConfiguredEmailSender } from "./email/index.js";
 import { createConfiguredStorage, signedUrlSeconds } from "./media/configured-storage.js";
@@ -57,6 +58,7 @@ await runWithFriendlyErrors(async () => {
       signedUrlSeconds: signedUrlSeconds(config),
     },
     email: createConfiguredEmailSender(config, paths.root),
+    ...readDeploymentOptions(),
     logger: true,
   });
   server.addHook("onClose", () => activeDatabase.close());

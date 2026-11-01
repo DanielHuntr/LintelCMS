@@ -100,8 +100,8 @@ export function Menu({ label, trigger, items }: MenuProps) {
           aria-label={label}
           onKeyDown={handleMenuKeyDown}
           className={classNames(
-            "absolute top-full right-0 z-30 mt-1.5 flex min-w-48 flex-col rounded-card bg-surface-raised p-1.5 shadow-float hairline-ring",
-            "origin-top-right motion-safe:transition-[opacity,scale] motion-safe:duration-150 motion-safe:starting:scale-95 starting:opacity-0",
+            "absolute top-full inset-e-0 z-30 mt-1.5 flex min-w-48 flex-col rounded-card bg-surface-raised p-1.5 shadow-float hairline-ring",
+            "origin-top-right rtl:origin-top-left motion-safe:transition-[opacity,scale] motion-safe:duration-150 motion-safe:starting:scale-95 starting:opacity-0",
           )}
         >
           {items.map((item, index) => (
@@ -120,7 +120,7 @@ export function Menu({ label, trigger, items }: MenuProps) {
                 item.onSelect();
               }}
               className={classNames(
-                "flex h-8 items-center gap-2.5 rounded-[6px] px-2.5 text-left text-body outline-none",
+                "flex h-8 items-center gap-2.5 rounded-[6px] px-2.5 text-start text-body outline-none",
                 "focus:bg-accent-fill focus:text-on-accent hover:bg-fill",
                 item.tone === "danger" ? "text-danger" : "text-label",
               )}

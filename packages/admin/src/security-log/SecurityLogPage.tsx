@@ -73,7 +73,7 @@ export function SecurityLogPage() {
         )}
         {events.data && events.data.events.length > 0 && (
           <div className="overflow-x-auto rounded-card bg-surface">
-            <table className="w-full text-left text-footnote">
+            <table className="w-full text-start text-footnote">
               <caption className="sr-only">{t("securityLog.title")}</caption>
               <thead className="text-label-secondary">
                 <tr>

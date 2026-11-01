@@ -5,7 +5,7 @@ import { EmptyState } from "../../design/EmptyState.js";
 import { GroupedListRow } from "../../design/GroupedListRow.js";
 import { LoadingRegion } from "../../design/LoadingRegion.js";
 import { Skeleton } from "../../design/Skeleton.js";
-import { t, tCount } from "../../i18n/strings.js";
+import { t } from "../../i18n/strings.js";
 import type { DashboardEntry, EntryWidgetList } from "../dashboard.api.js";
 import { useEntryWidgetList } from "../dashboard.queries.js";
 
@@ -63,7 +63,7 @@ export function EntryWidgetRows({
       </ul>
       {more > 0 && (
         <p className="mt-3 text-footnote text-label-secondary">
-          {tCount({ one: "dashboard.more.one", other: "dashboard.more.other" }, more)}
+          {t("dashboard.more", { count: more })}
         </p>
       )}
     </>

@@ -280,7 +280,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
       <div className="flex min-h-0 flex-1">
         <aside
           aria-label={text("pageBuilder.panels.leftLabel")}
-          className="flex w-72 shrink-0 flex-col border-r border-separator bg-surface"
+          className="flex w-72 shrink-0 flex-col border-e border-separator bg-surface"
         >
           <Tabs<LeftTab>
             label={text("pageBuilder.panels.leftLabel")}
@@ -358,7 +358,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
         </main>
         <aside
           aria-label={text("pageBuilder.panels.rightLabel")}
-          className="flex w-80 shrink-0 flex-col border-l border-separator bg-surface"
+          className="flex w-80 shrink-0 flex-col border-s border-separator bg-surface"
         >
           <Tabs<RightTab>
             label={text("pageBuilder.panels.rightLabel")}

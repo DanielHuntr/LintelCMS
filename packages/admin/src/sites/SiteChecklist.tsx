@@ -42,7 +42,7 @@ export function SiteChecklist({ legend, sites, chosen, onChange, disabled }: Sit
         />
         {t("sites.everySite")}
       </label>
-      <div className="flex flex-wrap gap-x-4 gap-y-1.5 pl-6">
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5 ps-6">
         {sites.map((site) => {
           const checked = isEvery || chosen.includes(site.handle);
           return (

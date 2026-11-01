@@ -45,7 +45,7 @@ function FileProblems({ problems }: { problems: string[] }) {
         {t("modelSync.problemsTitle")}
       </h2>
       <p className="mt-1 text-body text-label-secondary">{t("modelSync.problemsDescription")}</p>
-      <ul className="mt-2 list-disc pl-5 font-mono text-footnote">
+      <ul className="mt-2 list-disc ps-5 font-mono text-footnote">
         {problems.map((problem) => (
           <li key={problem}>{problem}</li>
         ))}

@@ -16,7 +16,7 @@ import { LargeTitle } from "../design/LargeTitle.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Menu } from "../design/Menu.js";
 import { Skeleton } from "../design/Skeleton.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import {
   createTerm,
@@ -116,10 +116,7 @@ function LoadedTaxonomyPage({ handle }: { handle: string }) {
       <BackLink to="/content/taxonomies">{t("taxonomies.title")}</BackLink>
       <LargeTitle
         title={name}
-        subtitle={tCount(
-          { one: "taxonomies.termCount.one", other: "taxonomies.termCount.other" },
-          termCount,
-        )}
+        subtitle={t("taxonomies.termCount", { count: termCount })}
         actions={
           <>
             {termCount > 0 && addButton("tinted")}
@@ -210,10 +207,7 @@ function LoadedTaxonomyPage({ handle }: { handle: string }) {
       <ConfirmDialog
         open={isDeletingTaxonomy}
         title={t("taxonomies.deleteTitle", { name })}
-        message={tCount(
-          { one: "taxonomies.deleteMessage.one", other: "taxonomies.deleteMessage.other" },
-          termCount,
-        )}
+        message={t("taxonomies.deleteMessage", { count: termCount })}
         confirmLabel={t("taxonomies.delete")}
         cancelLabel={t("common.cancel")}
         isDestructive

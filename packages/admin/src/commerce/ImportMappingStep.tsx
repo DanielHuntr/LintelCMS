@@ -98,7 +98,7 @@ export function ImportMappingStep({ job }: { job: ShopifyImport }) {
 
       <Card title={t("shop.import.mappingHeader")}>
         <p className="mb-3 text-body text-label-secondary">{t("shop.import.mappingBody")}</p>
-        <table className="w-full text-left text-body">
+        <table className="w-full text-start text-body">
           <thead>
             <tr className="text-footnote text-label-secondary">
               <th scope="col" className="pb-2 font-medium">
@@ -115,7 +115,7 @@ export function ImportMappingStep({ job }: { job: ShopifyImport }) {
               const name = FIELD_NAMES[field];
               return (
                 <tr key={key} className="border-t border-separator">
-                  <td className="py-1.5 pr-3 text-label-secondary">{columns.join(", ")}</td>
+                  <td className="py-1.5 pe-3 text-label-secondary">{columns.join(", ")}</td>
                   <td className="py-1.5 text-label">{name ? t(name) : field}</td>
                 </tr>
               );

@@ -25,7 +25,7 @@ export function AssetDetailsList({ asset }: { asset: Asset }) {
             className="flex items-baseline justify-between gap-4 py-2 text-footnote not-first:hairline-top"
           >
             <dt className="text-label-secondary">{label}</dt>
-            <dd className="truncate text-right text-label">{value}</dd>
+            <dd className="truncate text-end text-label">{value}</dd>
           </div>
         ))}
       </dl>

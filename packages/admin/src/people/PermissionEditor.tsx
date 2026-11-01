@@ -40,8 +40,8 @@ export function PermissionEditor({
             const isOn = hasPermission(permissions, entry.permission as Permission);
             return (
               <li key={entry.permission}>
-                <div className="flex items-center gap-3 pl-4">
-                  <span className="flex min-h-11 min-w-0 flex-1 items-center gap-3 py-2.5 pr-4 [li+li>*>&]:hairline-top">
+                <div className="flex items-center gap-3 ps-4">
+                  <span className="flex min-h-11 min-w-0 flex-1 items-center gap-3 py-2.5 pe-4 [li+li>*>&]:hairline-top">
                     <span className="flex min-w-0 flex-1 flex-col">
                       <span className="text-body text-label">{entry.name}</span>
                       {entry.description && (

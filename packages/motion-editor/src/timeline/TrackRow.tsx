@@ -38,11 +38,11 @@ export function TrackLabel({
   const name = usePropertyLabel(track.property);
   const offset = spec.duration > 0 ? playhead / spec.duration : 0;
   return (
-    <div className="flex h-10 items-center gap-1 pr-2 hairline-bottom">
+    <div className="flex h-10 items-center gap-1 pe-2 hairline-bottom">
       <span className="min-w-0 flex-1 truncate text-footnote font-medium text-label" title={name}>
         {name}
         {track.input && (
-          <span className="ml-1 text-caption text-label-tertiary">
+          <span className="ms-1 text-caption text-label-tertiary">
             {t(
               track.input === "x"
                 ? "motionEditor.timeline.followsX"

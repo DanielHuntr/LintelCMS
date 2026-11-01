@@ -38,3 +38,4 @@ export {
   formSubmissionNotesTable,
 } from "../forms/forms.table.js";
 export * from "../commerce/commerce.tables.js";
+export { userInterfaceLanguagesTable } from "../interface-languages/interface-languages.table.js";

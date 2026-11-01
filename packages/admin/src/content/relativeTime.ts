@@ -1,3 +1,8 @@
+import {
+  formatDateTime as formatDateTimeInLanguage,
+  formattingLocale,
+} from "../i18n/formatting.js";
+
 const units: Array<{ unit: Intl.RelativeTimeFormatUnit; seconds: number }> = [
   { unit: "year", seconds: 365 * 24 * 60 * 60 },
   { unit: "month", seconds: 30 * 24 * 60 * 60 },
@@ -7,13 +12,12 @@ const units: Array<{ unit: Intl.RelativeTimeFormatUnit; seconds: number }> = [
   { unit: "minute", seconds: 60 },
 ];
 
-const formatter = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-
 /**
  * "2 hours ago", "yesterday", "in 3 days" for a date compared with now. Anything under a
  * minute is "now", because seconds ticking by on a list is noise.
  */
 export function formatRelativeTime(isoDate: string, now: number): string {
+  const formatter = new Intl.RelativeTimeFormat(formattingLocale(), { numeric: "auto" });
   const elapsedSeconds = (new Date(isoDate).getTime() - now) / 1000;
   const match = units.find(({ seconds }) => Math.abs(elapsedSeconds) >= seconds);
   if (!match) return formatter.format(0, "second");
@@ -22,7 +26,5 @@ export function formatRelativeTime(isoDate: string, now: number): string {
 
 /** The full date and time, for a tooltip or a screen reader next to the relative time. */
 export function formatDateTime(isoDate: string): string {
-  return new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(
-    new Date(isoDate),
-  );
+  return formatDateTimeInLanguage(isoDate);
 }

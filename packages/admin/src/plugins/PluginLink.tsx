@@ -26,7 +26,7 @@ export function PluginLink({ to, className, children, variant, size, icon }: Plu
       to={to as "/"}
       className={looksLikeButton ? buttonClasses(variant, size ?? "medium") : className}
     >
-      {icon && <span className="-ml-0.5 flex [&>svg]:size-[1.1em]">{icon}</span>}
+      {icon && <span className="-ms-0.5 flex [&>svg]:size-[1.1em]">{icon}</span>}
       {children}
     </Link>
   );

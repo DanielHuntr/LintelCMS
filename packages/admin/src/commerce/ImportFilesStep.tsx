@@ -103,7 +103,7 @@ function FilePicker({
           aria-describedby={`${id}-hint`}
           aria-invalid={error ? true : undefined}
           onChange={(event) => onPick(event.target.files?.[0])}
-          className="min-w-0 flex-1 text-body text-label file:mr-3 file:rounded-control file:border-0 file:bg-accent/14 file:px-3 file:py-1.5 file:text-footnote file:font-medium file:text-accent focus-visible:focus-ring"
+          className="min-w-0 flex-1 text-body text-label file:me-3 file:rounded-control file:border-0 file:bg-accent/14 file:px-3 file:py-1.5 file:text-footnote file:font-medium file:text-accent focus-visible:focus-ring"
         />
       </div>
       <p

@@ -71,7 +71,7 @@ export function InviteDialog({ open, onClose, roles, sent, onSent }: InviteDialo
             />
             {t("people.invite.linkHint")}
           </p>
-          <div className="flex items-center gap-2 rounded-control bg-fill p-2 pl-3">
+          <div className="flex items-center gap-2 rounded-control bg-fill p-2 ps-3">
             <code
               aria-label={t("people.invite.linkLabel")}
               className="min-w-0 flex-1 font-mono text-footnote break-all text-label select-all"

@@ -24,7 +24,7 @@ export const shopifyImportStrings = {
   "shop.import.ordersFileHint": "orders_export.csv. Past orders are kept as records to look up.",
   "shop.import.fileChosen": "Chosen: {name}",
   "shop.import.noKeys":
-    "Nothing is changed in your Shopify shop, and you don't need to give Lintel any Shopify passwords or keys.",
+    "Nothing is changed in your Shopify shop, and you don't need to give {product} any Shopify passwords or keys.",
   "shop.import.read": "Read the files",
   "shop.import.reading": "Reading…",
   "shop.import.otherFiles": "Use different files",
@@ -34,11 +34,11 @@ export const shopifyImportStrings = {
     "{products} products with {variants} variants and {images} photos, {customers} customers and {orders} orders.",
   "shop.import.sample": "Variants: {variants} · Photos: {images} · {price} {currency}",
   "shop.import.mappingHeader": "Where everything goes",
-  "shop.import.mappingBody": "Each column in Shopify's files and what it becomes in Lintel.",
+  "shop.import.mappingBody": "Each column in Shopify's files and what it becomes in {product}.",
   "shop.import.mappingShopify": "In Shopify's file",
-  "shop.import.mappingLintel": "In Lintel",
-  "shop.import.notImported": "Not brought over, as Lintel has nowhere to keep them: {columns}.",
-  "shop.import.nothingMapped": "None of the columns in this file are ones Lintel knows.",
+  "shop.import.mappingLintel": "In {product}",
+  "shop.import.notImported": "Not brought over, as {product} has nowhere to keep them: {columns}.",
+  "shop.import.nothingMapped": "None of the columns in this file are ones {product} knows.",
   "shop.import.field.handle": "Product address",
   "shop.import.field.title": "Name",
   "shop.import.field.description": "Description",
@@ -86,7 +86,7 @@ export const shopifyImportStrings = {
   "shop.import.customers": "Bring {count} customers",
   "shop.import.orders": "Bring {count} past orders as records",
   "shop.import.ordersHint":
-    "They show on each customer, for looking things up. They were paid in Shopify, so they can't be refunded from Lintel.",
+    "They show on each customer, for looking things up. They were paid in Shopify, so they can't be refunded from {product}.",
   "shop.import.pathLabel": "Product pages on your new site start with",
   "shop.import.pathHint":
     "Used to suggest redirects from Shopify's addresses (/products/…), so old links and search results keep working.",

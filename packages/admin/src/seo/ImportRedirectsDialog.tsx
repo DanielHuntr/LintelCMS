@@ -98,7 +98,7 @@ export function ImportRedirectsDialog({ onClose }: { onClose: () => void }) {
             type="file"
             accept=".csv,text/csv,text/plain"
             onChange={(event) => void readFile(event)}
-            className="text-footnote text-label file:mr-3 file:rounded-control file:border-0 file:bg-accent/12 file:px-3 file:py-1.5 file:font-medium file:text-accent"
+            className="text-footnote text-label file:me-3 file:rounded-control file:border-0 file:bg-accent/12 file:px-3 file:py-1.5 file:font-medium file:text-accent"
             data-autofocus
           />
         </div>

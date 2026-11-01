@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { hashPassword } from "../auth/passwords.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
-import { sendEmail } from "../email/index.js";
+import { sendBrandedEmail } from "../email/index.js";
 import {
   cancelOneTimeTokens,
   countOneTimeTokensSince,
@@ -54,18 +54,14 @@ export async function requestPasswordReset(
   );
   // The token goes after "#", which browsers never send to a server or in a Referer.
   const link = `${server.adminOrigin}/reset-password#token=${token}`;
-  sendEmail(server, {
-    to: user.email,
-    subject: "Reset your Lintel password",
-    text: [
-      `Hello ${user.name},`,
-      "",
-      "Someone asked to reset the password for your Lintel account. To choose a new one, open this link within 30 minutes:",
-      "",
-      link,
-      "",
+  sendBrandedEmail(server, user.email, {
+    subject: "Reset your password",
+    heading: `Hello ${user.name},`,
+    paragraphs: [
+      "Someone asked to reset the password for your account. To choose a new one, use this link within 30 minutes.",
       "If it wasn't you, you can ignore this email. Your password hasn't changed.",
-    ].join("\n"),
+    ],
+    action: { label: "Choose a new password", url: link },
   });
   await recordSecurityEvent(
     database,
@@ -130,15 +126,12 @@ export async function resetPasswordWithLink(
     { kind: "password-reset", actor: { id: user.id, email: user.email }, origin },
     now,
   );
-  sendEmail(server, {
-    to: user.email,
-    subject: "Your Lintel password was changed",
-    text: [
-      `Hello ${user.name},`,
-      "",
-      "The password for your Lintel account was just reset, and you were signed out everywhere.",
-      "",
+  sendBrandedEmail(server, user.email, {
+    subject: "Your password was changed",
+    heading: `Hello ${user.name},`,
+    paragraphs: [
+      "The password for your account was just reset, and you were signed out everywhere.",
       "If it wasn't you, ask an admin to deactivate your account straight away.",
-    ].join("\n"),
+    ],
   });
 }

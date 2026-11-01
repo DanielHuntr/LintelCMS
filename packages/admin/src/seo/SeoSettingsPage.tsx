@@ -15,7 +15,7 @@ import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { TextField } from "../design/TextField.js";
 import { Toggle } from "../design/Toggle.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { MediaPicker } from "../media/MediaPicker.js";
 import { PluginLink } from "../plugins/PluginLink.js";
 import { useCan } from "../session/SessionContext.js";
@@ -153,15 +153,7 @@ function SeoDefaultsForm({ initial }: { initial: SeoDefaults }) {
           description={t("redirects.rowDescription")}
           accessory={
             suggestions > 0 && (
-              <Badge tone="warning">
-                {tCount(
-                  {
-                    one: "redirects.suggestionCount.one",
-                    other: "redirects.suggestionCount.other",
-                  },
-                  suggestions,
-                )}
-              </Badge>
+              <Badge tone="warning">{t("redirects.suggestionCount", { count: suggestions })}</Badge>
             )
           }
           to="/settings/seo/redirects"

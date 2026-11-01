@@ -54,7 +54,7 @@ export function TermSheet({ term, taxonomyName, onSave, onDelete, onClose }: Ter
       footer={
         <>
           {onDelete && (
-            <Button variant="destructive" className="mr-auto" onClick={onDelete}>
+            <Button variant="destructive" className="me-auto" onClick={onDelete}>
               {t("terms.delete")}
             </Button>
           )}

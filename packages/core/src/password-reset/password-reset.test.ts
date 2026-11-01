@@ -60,7 +60,7 @@ describe("forgotten passwords", () => {
     const signIn = await post("/auth/sign-in", { email: "ed@example.com", password: NEW_PASSWORD });
     expect(signIn.statusCode).toBe(200);
     expect(server.emailOutbox!.latestTo("ed@example.com")!.subject).toBe(
-      "Your Lintel password was changed",
+      "Your password was changed · Lintel",
     );
 
     const again = await post("/auth/reset-password", {

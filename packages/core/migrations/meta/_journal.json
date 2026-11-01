@@ -120,6 +120,13 @@
       "when": 1793545475797,
       "tag": "0016_add_multisite",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793553232312,
+      "tag": "0017_add_interface_languages",
+      "breakpoints": true
     }
   ]
 }

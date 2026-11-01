@@ -7,7 +7,7 @@ export const siteStrings = {
   "settings.sitesDescription": "Your websites, their domains and who works on each",
   "sites.title": "Sites",
   "sites.subtitle":
-    "Each site is one website, with its own pages, menus and languages. Run several brands or countries from one Lintel.",
+    "Each site is one website, with its own pages, menus and languages. Run several brands or countries from one {product}.",
   "sites.loading": "Loading sites…",
   "sites.add": "Add a site",
   "sites.addTitle": "Add a site",
@@ -26,7 +26,7 @@ export const siteStrings = {
     "Switch between sites at the top of the sidebar. Lists and editors show the site you’re working on.",
   "sites.oneSiteTitle": "You have one site",
   "sites.oneSiteDescription":
-    "Add another to run a second brand, country or language from this Lintel. Your current site carries on exactly as it is.",
+    "Add another to run a second brand, country or language from this {product}. Your current site carries on exactly as it is.",
   "sites.name": "Name",
   "sites.nameHint": "What editors see, such as “Acme France”.",
   "sites.handle": "Handle",

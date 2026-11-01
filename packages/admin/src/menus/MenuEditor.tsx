@@ -16,7 +16,7 @@ import { EmptyState } from "../design/EmptyState.js";
 import { useContentModelEditable } from "../content-model-sync/contentModelSync.queries.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { Menu as ActionsMenu } from "../design/Menu.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import { MenuItemRow, menuItemLabel } from "./MenuItemRow.js";
 import { MenuItemSheet } from "./MenuItemSheet.js";
@@ -139,10 +139,7 @@ export function MenuEditor({ menu }: { menu: Menu }) {
       <BackLink to="/content/navigation">{t("menus.title")}</BackLink>
       <LargeTitle
         title={settings.name}
-        subtitle={tCount(
-          { one: "menus.levels.one", other: "menus.levels.other" },
-          settings.maxDepth,
-        )}
+        subtitle={t("menus.levels", { count: settings.maxDepth })}
         actions={
           canEdit && (
             <>

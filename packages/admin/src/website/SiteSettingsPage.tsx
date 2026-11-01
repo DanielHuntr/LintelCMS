@@ -247,7 +247,7 @@ function SiteAddressCard({ website }: { website: Website }) {
           rel="noreferrer"
           className={buttonClasses("filled", "medium")}
         >
-          <span className="-ml-0.5 flex [&>svg]:size-[1.1em]">
+          <span className="-ms-0.5 flex [&>svg]:size-[1.1em]">
             <ExternalLink aria-hidden="true" />
           </span>
           {t("website.open")}

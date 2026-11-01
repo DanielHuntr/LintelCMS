@@ -1,6 +1,7 @@
 import { Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useContentModelEvents } from "../content-model-sync/useContentModelEvents.js";
+import { useBranding } from "../branding/brandingStore.js";
 import { HelpLauncher } from "../help/HelpLauncher.js";
 import { t } from "../i18n/strings.js";
 import { documentTitleFor } from "../navigation/documentTitle.js";
@@ -42,11 +43,13 @@ export function AdminLayout({
 
   // Screens showing content types reload when a developer changes the content model files.
   useContentModelEvents();
+  // The "?" button opens Lintel's own help pages, so it goes when an agency hides them.
+  const { hideLintelHelp } = useBranding();
   return (
     <div className="min-h-screen bg-background text-label">
       <a
         href="#main"
-        className="fixed top-3 left-3 z-20 -translate-y-16 rounded-control bg-surface px-3 py-2 text-body font-medium text-accent shadow-float focus:translate-y-0 focus:focus-ring"
+        className="fixed top-3 inset-s-3 z-20 -translate-y-16 rounded-control bg-surface px-3 py-2 text-body font-medium text-accent shadow-float focus:translate-y-0 focus:focus-ring"
       >
         {t("nav.skipToContent")}
       </a>
@@ -59,7 +62,7 @@ export function AdminLayout({
         onOpenSearch={palette.open}
       />
       <CommandPalette open={palette.isOpen} onClose={palette.close} />
-      <HelpLauncher />
+      {!hideLintelHelp && <HelpLauncher />}
       {enabledPlugins.includes("automations") && <NotificationsButton />}
       {/*
         Leaves room for the 240px sidebar and its 12px margin. The gutters grow with the
@@ -68,8 +71,8 @@ export function AdminLayout({
         button in the corner. A size container, so screens can measure the page area with cqw
         and container queries; sticky toolbars use --page-gutter to reach the edges.
       */}
-      <main id="main" tabIndex={-1} className="@container pl-[264px] outline-none">
-        <div className="pt-14 pr-16 pb-20 pl-(--page-gutter) [--page-gutter:clamp(1.5rem,3.5cqw,4rem)]">
+      <main id="main" tabIndex={-1} className="@container ps-[264px] outline-none">
+        <div className="pt-14 pe-16 pb-20 pl-(--page-gutter) [--page-gutter:clamp(1.5rem,3.5cqw,4rem)]">
           <Outlet />
         </div>
       </main>

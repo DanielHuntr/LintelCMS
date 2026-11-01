@@ -1,3 +1,4 @@
+import { readDeploymentOptions } from "../deployment-options.js";
 import type { FastifyInstance } from "fastify";
 import type { Config } from "../config.js";
 import { describeActiveDatabase } from "../database/active-database.js";
@@ -58,6 +59,7 @@ export async function startProductionServer(config: Config, publicSite?: PublicS
     adminBuildFolder: config.ADMIN_BUILD_FOLDER ?? DEFAULT_ADMIN_BUILD_FOLDER,
     adminApiUrl: config.API_PUBLIC_URL ?? API_PREFIX,
     publicSite: publicSite ?? (config.SITE_ENABLED ? builtInPublicSite : placeholderPublicSite),
+    ...readDeploymentOptions(),
   });
   server.addHook("onClose", () => activeDatabase.close());
 

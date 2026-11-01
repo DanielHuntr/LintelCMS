@@ -13,7 +13,7 @@ import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import { CollectionSitesSection } from "./CollectionSitesSection.js";
 import { RoleSitesSection } from "./RoleSitesSection.js";
@@ -170,9 +170,6 @@ function describeSiteRow(site: Site): string {
     site.hostnames.length > 0 ? `${site.hostnames[0]}${site.pathPrefix}` : t("sites.noDomain");
   const language =
     site.locales.find((locale) => locale.code === site.defaultLocale)?.name ?? site.defaultLocale;
-  const entries = tCount(
-    { one: "entries.count.one", other: "entries.count.other" },
-    site.entryCount,
-  );
+  const entries = t("entries.count", { count: site.entryCount });
   return `${address} · ${language} · ${entries}`;
 }

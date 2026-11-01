@@ -66,7 +66,7 @@ export function CopyToSiteDialog({ entryId, sites, onCopied, onClose }: CopyToSi
             value={handle}
             data-autofocus
             onChange={(event) => setHandle(event.target.value)}
-            className={classNames("h-10 appearance-none pr-9", controlClasses())}
+            className={classNames("h-10 appearance-none pe-9", controlClasses())}
           >
             {sites.map((site) => (
               <option key={site.handle} value={site.handle}>
@@ -77,7 +77,7 @@ export function CopyToSiteDialog({ entryId, sites, onCopied, onClose }: CopyToSi
           <ChevronsUpDown
             aria-hidden="true"
             strokeWidth={2}
-            className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-label-secondary"
+            className="pointer-events-none absolute top-1/2 inset-e-3 size-4 -translate-y-1/2 text-label-secondary"
           />
         </div>
         {problem && (

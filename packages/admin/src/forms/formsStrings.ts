@@ -14,8 +14,7 @@ export const formsStrings = {
   "forms.list.footer": "Add a form to a page with the Form section, or embed it on any website.",
   "forms.list.unread": "{count} new",
   "forms.list.closed": "Closed",
-  "forms.list.submissionCount.one": "{count} submission",
-  "forms.list.submissionCount.other": "{count} submissions",
+  "forms.list.submissionCount": "{count, plural, one {# submission} other {# submissions}}",
   "forms.list.lastSubmitted": "{count}, the last {when}",
 
   "forms.new.title": "New form",
@@ -194,7 +193,7 @@ export const formsStrings = {
     "Use {form} for the form's name, or a field's handle in braces, like {name}.",
   "forms.settings.confirmationEmail": "Send a confirmation to the person",
   "forms.settings.needsEmailField":
-    "Add an Email field so Lintel knows where to send the confirmation.",
+    "Add an Email field so {product} knows where to send the confirmation.",
   "forms.settings.confirmationSubject": "Confirmation subject",
   "forms.settings.confirmationMessage": "Confirmation message",
   "forms.settings.keepTitle": "Keep submissions",
@@ -283,15 +282,15 @@ export const formsStrings = {
   "forms.privacy.email": "Their email address",
   "forms.privacy.find": "Find",
   "forms.privacy.nothing": "No submissions from {email}.",
-  "forms.privacy.found.one": "{count} submission found, across all forms.",
-  "forms.privacy.found.other": "{count} submissions found, across all forms.",
+  "forms.privacy.found":
+    "{count, plural, one {# submission found, across all forms.} other {# submissions found, across all forms.}}",
   "forms.privacy.download": "Download their data",
   "forms.privacy.erase": "Delete everything",
   "forms.privacy.eraseTitle": "Delete everything from {email}?",
   "forms.privacy.eraseMessage":
     "Every submission they sent, with its notes and files, is deleted for good. This can't be undone.",
-  "forms.privacy.erased.one": "{count} submission deleted.",
-  "forms.privacy.erased.other": "{count} submissions deleted.",
+  "forms.privacy.erased":
+    "{count, plural, one {# submission deleted.} other {# submissions deleted.}}",
   "forms.privacy.footer": "Only submissions with an Email field can be found this way.",
 
   "forms.picker.choose": "Choose a form",

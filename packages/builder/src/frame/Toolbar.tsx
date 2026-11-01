@@ -118,7 +118,7 @@ function HistoryMenu({
           onKeyDown={(event) => {
             if (event.key === "Escape") setIsOpen(false);
           }}
-          className="absolute top-10 right-0 z-30 w-72 rounded-panel bg-surface-raised p-2 shadow-float hairline-ring"
+          className="absolute top-10 inset-e-0 z-30 w-72 rounded-panel bg-surface-raised p-2 shadow-float hairline-ring"
         >
           <h2 className="px-2 py-1 text-footnote font-semibold text-label">
             {text("pageBuilder.history.title")}
@@ -171,7 +171,7 @@ function HistoryStepButton({
       aria-current={isCurrent ? "step" : undefined}
       onClick={onClick}
       className={classNames(
-        "w-full truncate rounded-control px-2 py-1.5 text-left text-footnote focus-visible:focus-ring",
+        "w-full truncate rounded-control px-2 py-1.5 text-start text-footnote focus-visible:focus-ring",
         isCurrent ? "bg-accent-fill text-on-accent" : "hover:bg-fill",
         isUndone && !isCurrent && "text-label-tertiary",
       )}

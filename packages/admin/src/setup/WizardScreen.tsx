@@ -186,7 +186,7 @@ function ActionBar({ onBack, isBusy, width, note, children }: ActionBarProps) {
           width === "wide" ? "max-w-[808px]" : "max-w-[588px]",
         )}
       >
-        {note && <div className="w-full text-right">{note}</div>}
+        {note && <div className="w-full text-end">{note}</div>}
         {onBack && (
           <Button
             variant="plain"
@@ -194,7 +194,7 @@ function ActionBar({ onBack, isBusy, width, note, children }: ActionBarProps) {
             onClick={onBack}
             disabled={isBusy}
             icon={<ChevronLeft aria-hidden="true" strokeWidth={2} />}
-            className="-ml-3"
+            className="-ms-3"
           >
             {t("setup.back")}
           </Button>

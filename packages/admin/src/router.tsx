@@ -26,6 +26,9 @@ import { PluginScreenRoute } from "./plugins/PluginScreenRoute.js";
 import { SectionTabs } from "./plugins/SectionTabs.js";
 import { HelpPage } from "./help/HelpPage.js";
 import { peopleRoutes, signedOutAccountRoutes } from "./people/peopleRoutes.js";
+import { BrandingPage } from "./branding/BrandingPage.js";
+import { InterfaceLanguagePage } from "./interface-language/InterfaceLanguagePage.js";
+import { loadInterfaceLanguage } from "./interface-language/loadInterfaceLanguage.js";
 import { AdminLayout } from "./layout/AdminLayout.js";
 import { MediaLibraryPage } from "./media/MediaLibraryPage.js";
 import { ComingSoonPage } from "./sections/ComingSoonPage.js";
@@ -138,6 +141,8 @@ function SignedInAdmin() {
   async function handleSignOut() {
     await signOut();
     adminQueryClient.clear();
+    // The next person may have chosen another language; until then, the site's.
+    await loadInterfaceLanguage();
     await navigate({ to: "/sign-in", search: { redirect: undefined } });
   }
 
@@ -322,6 +327,18 @@ const featuresRoute = createRoute({
   component: FeaturesSettingsPage,
 });
 
+const brandingRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/settings/branding",
+  component: BrandingPage,
+});
+
+const interfaceLanguageRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/settings/interface-language",
+  component: InterfaceLanguagePage,
+});
+
 /** API access, webhooks and the website. (The SEO plugin's settings are plugin screens.) */
 const integrationRoutes = [
   siteSettingsRoute,
@@ -352,6 +369,8 @@ const contentRoutes = [
   contentTypesRoute,
   newContentTypeRoute,
   blueprintRoute,
+  brandingRoute,
+  interfaceLanguageRoute,
 ];
 
 // One placeholder route per section. Each is replaced by real screens as its phase is built.

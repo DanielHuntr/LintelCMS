@@ -9,7 +9,7 @@ import { LargeTitle } from "../design/LargeTitle.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { SearchField } from "../design/SearchField.js";
 import { Skeleton } from "../design/Skeleton.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { useDebouncedValue } from "../media/useDebouncedValue.js";
 import { formatMoney } from "./money.js";
 import { useCustomers } from "./shop.queries.js";
@@ -60,10 +60,7 @@ export function CustomersPage() {
                 label={customer.name || customer.email}
                 description={[
                   customer.email,
-                  tCount(
-                    { one: "shop.customers.orders.one", other: "shop.customers.orders.other" },
-                    customer.orderCount,
-                  ),
+                  t("shop.customers.orders", { count: customer.orderCount }),
                   ...customer.totalSpent.map(formatMoney),
                 ].join(" · ")}
                 to={`/commerce/customers/${encodeURIComponent(customer.id)}`}

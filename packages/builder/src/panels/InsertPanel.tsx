@@ -66,7 +66,7 @@ export function InsertPanel({ catalogue, templates, canEditCode, onInsert }: Ins
                   startDrag(event, `template:${template.id}`, template.blueprint.type)
                 }
                 onClick={() => onInsert(`template:${template.id}`)}
-                className="flex w-full flex-col gap-1.5 rounded-card p-2 text-left transition-colors duration-150 hover:bg-fill focus-visible:focus-ring"
+                className="flex w-full flex-col gap-1.5 rounded-card p-2 text-start transition-colors duration-150 hover:bg-fill focus-visible:focus-ring"
               >
                 <BlueprintSketch blueprint={template.blueprint} />
                 <span className="text-footnote font-medium text-label">{template.label}</span>
@@ -122,7 +122,7 @@ function ComponentButton({
       draggable
       onDragStart={(event) => onDragStart(event, key, definition.type)}
       onClick={() => onInsert(key)}
-      className="flex w-full items-start gap-3 rounded-control px-2 py-2 text-left transition-colors duration-150 hover:bg-fill focus-visible:focus-ring"
+      className="flex w-full items-start gap-3 rounded-control px-2 py-2 text-start transition-colors duration-150 hover:bg-fill focus-visible:focus-ring"
     >
       <span className="flex size-8 shrink-0 items-center justify-center rounded-control bg-fill text-label-secondary">
         <ComponentIcon name={definition.icon} className="size-4" />

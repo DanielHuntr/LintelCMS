@@ -13,7 +13,7 @@ import { LargeTitle } from "../design/LargeTitle.js";
 import { LinkButton } from "../design/LinkButton.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import {
   type DiscountDraft,
@@ -185,10 +185,7 @@ function DiscountForm({
             </p>
             {discount && (
               <p className="mt-2 text-footnote text-label-secondary">
-                {tCount(
-                  { one: "shop.discounts.usedCount.one", other: "shop.discounts.usedCount.other" },
-                  discount.usageCount,
-                )}
+                {t("shop.discounts.usedCount", { count: discount.usageCount })}
               </p>
             )}
           </Card>

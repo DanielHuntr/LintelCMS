@@ -34,7 +34,7 @@ export function NotificationsButton() {
   return (
     <div
       ref={container}
-      className="fixed top-4 right-16 z-20"
+      className="fixed top-4 inset-e-16 z-20"
       onKeyDown={(event) => {
         if (event.key === "Escape") setIsOpen(false);
       }}
@@ -54,7 +54,7 @@ export function NotificationsButton() {
         {unread > 0 && (
           <span
             aria-hidden="true"
-            className="absolute -top-0.5 -right-0.5 flex min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] leading-4 font-semibold text-on-accent"
+            className="absolute -top-0.5 -inset-e-0.5 flex min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] leading-4 font-semibold text-on-accent"
           >
             {unread > 9 ? "9+" : unread}
           </span>
@@ -64,7 +64,7 @@ export function NotificationsButton() {
         <section
           id={panelId}
           aria-label={t("notifications.title")}
-          className="absolute top-full right-0 mt-2 flex w-80 flex-col rounded-panel bg-surface-raised shadow-float hairline-ring"
+          className="absolute top-full inset-e-0 mt-2 flex w-80 flex-col rounded-panel bg-surface-raised shadow-float hairline-ring"
         >
           <header className="flex items-center justify-between gap-2 px-4 pt-3 pb-2">
             <h2 className="text-headline text-label">{t("notifications.title")}</h2>
@@ -89,7 +89,7 @@ export function NotificationsButton() {
                     setIsOpen(false);
                     if (notification.link) void navigate({ to: notification.link });
                   }}
-                  className="flex w-full gap-2.5 px-4 py-2 text-left hover:bg-fill focus-visible:focus-ring-inset"
+                  className="flex w-full gap-2.5 px-4 py-2 text-start hover:bg-fill focus-visible:focus-ring-inset"
                 >
                   <span
                     aria-hidden="true"

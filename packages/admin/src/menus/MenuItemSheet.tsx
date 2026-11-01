@@ -76,7 +76,7 @@ export function MenuItemSheet({
       footer={
         <>
           {onRemove && (
-            <Button variant="destructive" className="mr-auto" onClick={onRemove}>
+            <Button variant="destructive" className="me-auto" onClick={onRemove}>
               {t("menus.item.remove")}
             </Button>
           )}

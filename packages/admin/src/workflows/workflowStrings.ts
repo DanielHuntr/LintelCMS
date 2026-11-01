@@ -7,7 +7,7 @@ export const workflowStrings = {
   "nav.automations": "Automations",
   "automations.title": "Automations",
   "automations.subtitle":
-    "Let Lintel do routine work for you: tell people, ask for approval, or call another service.",
+    "Let {product} do routine work for you: tell people, ask for approval, or call another service.",
   "automations.loading": "Loading automations",
   "automations.emptyTitle": "Nothing automated yet",
   "automations.emptyDescription":
@@ -27,8 +27,8 @@ export const workflowStrings = {
   "templates.formNotify.name": "Notify me when a form is submitted",
   "templates.formNotify.description":
     "Get an email with the answers each time someone fills in a form.",
-  "templates.formNotify.subject": "New answer to {{form.name}}",
-  "templates.formNotify.body": "Someone filled in “{{form.name}}”:\n\n{{submission.fields}}",
+  "templates.formNotify.subject": "New answer to '{{form.name}}'",
+  "templates.formNotify.body": "Someone filled in “'{{form.name}}'”:\n\n'{{submission.fields}}'",
   "templates.slack.name": "Post new blog posts to Slack",
   "templates.slack.description": "Share each post in a Slack channel the moment it is published.",
   "templates.approval.name": "Require approval for pages",
@@ -36,7 +36,7 @@ export const workflowStrings = {
     "Authors submit pages for review; a reviewer approves them before they go live.",
   "templates.callServer.name": "Call my server when content changes",
   "templates.callServer.description":
-    "Send every change to your own code, signed so you know it came from Lintel.",
+    "Send every change to your own code, signed so you know it came from {product}.",
   "templates.use": "Use this",
 
   "builder.newTitle": "New automation",
@@ -62,7 +62,7 @@ export const workflowStrings = {
   "builder.summaryLabel": "In short",
   "builder.saveFirst": "Save the automation to try it.",
   "builder.managedNotice":
-    "Lintel keeps this automation for content approval. Change who reviews on the Content approval screen.",
+    "{product} keeps this automation for content approval. Change who reviews on the Content approval screen.",
   "builder.secretTitle": "For developers",
   "builder.secretDescription":
     "Requests are signed with this secret in the Lintel-Signature header, like webhooks.",
@@ -70,7 +70,6 @@ export const workflowStrings = {
   "builder.unsaved": "Unsaved changes",
 
   "trigger.title": "When",
-  "trigger.edit": "Change when it starts",
   "trigger.dialogTitle": "When should this run?",
   "trigger.kindLabel": "Starts",
   "trigger.kind.event": "When something happens",
@@ -106,28 +105,23 @@ export const workflowStrings = {
   "event.form.submitted": "a form is submitted",
   "event.user.invited": "someone is invited",
 
-  "steps.add": "Add a step",
   "steps.addHere": "Add a step here",
   "steps.edit": "Edit",
   "steps.remove": "Remove",
   "steps.moveUp": "Move up",
   "steps.moveDown": "Move down",
   "steps.emptyBranch": "Nothing happens",
-  "steps.then": "Then",
   "steps.branch.yes": "If yes",
   "steps.branch.no": "If not",
   "steps.branch.approved": "If approved",
   "steps.branch.rejected": "If changes are requested",
-  "steps.endOfFlow": "Done",
-  "steps.group.actions": "Do something",
-  "steps.group.flow": "Decide or wait",
 
   "step.send_email": "Send an email",
   "step.http_request": "Call a web address",
   "step.update_entry_field": "Change a field",
   "step.publish_entry": "Publish the entry",
   "step.unpublish_entry": "Unpublish the entry",
-  "step.notify_users": "Notify people in Lintel",
+  "step.notify_users": "Notify people in {product}",
   "step.wait": "Wait",
   "step.run_workflow": "Run another automation",
   "step.condition": "Only continue if…",
@@ -170,11 +164,11 @@ export const workflowStrings = {
   "stepEditor.roleLabel": "Role",
   "stepEditor.addressesLabel": "Email addresses",
   "stepEditor.addressesHint":
-    "Separate them with commas. You can use values like {{submission.fields.email}}.",
+    "Separate them with commas. You can use values like '{{submission.fields.email}}'.",
   "stepEditor.subjectLabel": "Subject",
   "stepEditor.bodyLabel": "Message",
   "stepEditor.templateHint":
-    "Use {{entry.title}}, {{entry.url}}, {{actor.name}} and more to fill in details.",
+    "Use '{{entry.title}}', '{{entry.url}}', '{{actor.name}}' and more to fill in details.",
   "stepEditor.urlLabel": "Address",
   "stepEditor.urlHint": "Your server, in any language. Private and local addresses aren’t allowed.",
   "stepEditor.methodLabel": "Method",
@@ -185,10 +179,10 @@ export const workflowStrings = {
   "stepEditor.removeHeader": "Remove header {name}",
   "stepEditor.jsonBodyLabel": "Body (JSON)",
   "stepEditor.jsonBodyHint":
-    'Leave empty to send everything this run knows. A value like "{{entry}}" keeps its type.',
+    "Leave empty to send everything this run knows. A value like “'{{entry}}'” keeps its type.",
   "stepEditor.signLabel": "Sign the request",
   "stepEditor.signHint":
-    "Adds the Lintel-Signature header, so your server can check it came from Lintel.",
+    "Adds the Lintel-Signature header, so your server can check it came from {product}.",
   "stepEditor.timeoutLabel": "Give up after (seconds)",
   "stepEditor.fieldLabel": "Field",
   "stepEditor.fieldHint": "The field’s handle, such as title or summary.",
@@ -292,13 +286,11 @@ export const workflowStrings = {
   "review.history.changes_requested": "{name} asked for changes",
   "review.history.expired": "Nobody answered in time",
   "review.someone": "Someone",
-  "review.saveFirst": "Save the entry to submit it for review.",
 
   "notifications.open": "Notifications",
   "notifications.openWithCount": "Notifications, {count} unread",
   "notifications.title": "Notifications",
   "notifications.empty": "Nothing new. Review requests and messages from automations appear here.",
   "notifications.markAllRead": "Mark all as read",
-  "notifications.close": "Close notifications",
   "notifications.unread": "Unread",
 } as const;

@@ -119,7 +119,7 @@ function Studio({
           value={view}
           onChange={setView}
         />
-        <div className="ml-auto flex gap-1">
+        <div className="ms-auto flex gap-1">
           <Button
             variant="plain"
             icon={<Undo2 aria-hidden="true" />}

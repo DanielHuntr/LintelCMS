@@ -56,7 +56,7 @@ export function StudioPreview({ spec, sample, replayRef, seekRef }: StudioPrevie
           />
         )}
         {preview.reduced && (
-          <p role="status" className="ml-auto text-caption text-label-secondary">
+          <p role="status" className="ms-auto text-caption text-label-secondary">
             {t("motionEditor.preview.showingReduced")}
           </p>
         )}

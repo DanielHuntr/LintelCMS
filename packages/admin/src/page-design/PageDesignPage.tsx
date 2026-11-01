@@ -131,7 +131,7 @@ function PageDesigner({
           </Link>
         }
         toolbarEnd={
-          <div className="ml-2 flex items-center gap-3">
+          <div className="ms-2 flex items-center gap-3">
             <SaveIndicator
               status={saving.status}
               hasUnsavedChanges={saving.hasUnsavedChanges}

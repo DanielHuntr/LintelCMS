@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useDocumentTitle } from "../branding/useDocumentTitle.js";
 
 interface LargeTitleProps {
   title: string;
@@ -15,6 +16,8 @@ interface LargeTitleProps {
 /** The header at the top of every admin page: a large title, an optional subtitle and actions. */
 export function LargeTitle({ title, subtitle, actions, headingLevel = 1 }: LargeTitleProps) {
   const Heading = headingLevel === 1 ? "h1" : "h2";
+  // The page's h1 names the page in the browser tab too.
+  useDocumentTitle(headingLevel === 1 ? title : undefined);
 
   return (
     <header className="mb-8 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">

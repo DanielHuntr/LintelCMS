@@ -23,7 +23,7 @@ export function LinkButton({
 }: LinkButtonProps) {
   return (
     <Link {...linkProps} className={classNames(buttonClasses(variant, size))}>
-      {icon && <span className="-ml-0.5 flex [&>svg]:size-[1.1em]">{icon}</span>}
+      {icon && <span className="-ms-0.5 flex [&>svg]:size-[1.1em]">{icon}</span>}
       {children}
     </Link>
   );

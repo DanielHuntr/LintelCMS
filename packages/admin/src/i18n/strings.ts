@@ -12,10 +12,13 @@ import { peopleStrings } from "./peopleStrings.js";
 import { pageDesignStrings } from "./pageDesignStrings.js";
 import { contentModelSyncStrings } from "./contentModelSyncStrings.js";
 import { siteStrings } from "./siteStrings.js";
+import { brandingStrings } from "./brandingStrings.js";
+import { translate } from "./translate.js";
 
 /**
- * Every word the admin shows lives here, so the admin can be translated and
- * agencies can rename things in their client's language ("Collections" → "Your content").
+ * Every word the admin shows lives here, in English: the source every translation in
+ * catalogues/ is made from. Messages are ICU MessageFormat ("{count, plural, one {# file}
+ * other {# files}}"); `{product}` is the admin's name, which agencies can change.
  *
  * Components never hard-code text: they call `t("key")`.
  */
@@ -34,7 +37,8 @@ const english = {
   ...paymentProviderStrings,
   ...shopifyImportStrings,
   ...siteStrings,
-  "app.name": "Lintel",
+  ...brandingStrings,
+  "app.name": "{product}",
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",
   "documentTitle.page": "{page} · {site}",
@@ -53,7 +57,7 @@ const english = {
   "search.open": "Search",
   "search.shortcutMac": "⌘K",
   "search.shortcutOther": "Ctrl K",
-  "search.label": "Search Lintel",
+  "search.label": "Search {product}",
   "search.placeholder": "Search pages, posts, media and settings",
   "search.close": "Close search",
   "search.group.pages": "Go to",
@@ -62,43 +66,29 @@ const english = {
   "search.hint": "Type to search. Use the arrow keys to choose, then press Enter.",
   "search.searching": "Searching…",
   "search.noResults": "Nothing matches “{query}”.",
-  "search.noResultsHint": "Try fewer words, or different ones.",
-  "search.resultCount.one": "{count} result",
-  "search.resultCount.other": "{count} results",
+  "search.resultCount": "{count, plural, one {# result} other {# results}}",
   "search.entryDetail": "{collection} · {status}",
   "search.collectionDetail": "All {name}",
   "search.failed": "Search isn’t working right now. Check your connection and try again.",
   "badge.new": "New",
-  "badge.inProgress": "In progress",
-  "badge.planned": "Planned",
   "section.comingSoonTitle": "On the roadmap",
   "section.comingSoon": "This section arrives in a later phase of the roadmap.",
-  "signIn.title": "Sign in to Lintel",
+  "signIn.title": "Sign in to {product}",
   "signIn.subtitle": "Welcome back. Enter your details to continue.",
   "signIn.email": "Email address",
   "signIn.password": "Password",
   "editor.fillRequiredToPublish":
     "Fill in the required fields to publish. Your changes are saved as a draft.",
-  "siteSettings.title": "Site",
-  "siteSettings.subtitle": "The website your content appears on.",
-  "siteSettings.loading": "Loading site settings",
-  "siteSettings.address": "Your website’s address",
-  "siteSettings.addressHint":
-    "Like https://brightsidebakery.com. Lintel uses it for View page, links to published pages and the sitemap. Leave empty until your site is live.",
-  "siteSettings.save": "Save",
-  "siteSettings.saving": "Saving…",
-  "siteSettings.saved": "Saved",
-  "settings.siteDescription": "Your website’s address",
   "editor.viewPage": "View page",
   "entries.viewPage": "View {title} on the site",
-  "viewPage.notConnected": "Lintel isn’t connected to a website yet. This is a simple preview.",
+  "viewPage.notConnected": "{product} isn’t connected to a website yet. This is a simple preview.",
   "viewPage.connect": "Connect your site in Settings → Your website.",
   "viewPage.starterGuide": "How to build a site with the Next.js starter",
   "viewPage.loading": "Loading the published page",
   "signIn.submit": "Sign in",
   "signIn.submitting": "Signing in…",
-  "signIn.unreachable": "Lintel couldn't reach the server. Check your connection and try again.",
-  "signIn.alreadySetUp": "Lintel is already set up, so you can sign in here.",
+  "signIn.unreachable": "{product} couldn't reach the server. Check your connection and try again.",
+  "signIn.alreadySetUp": "{product} is already set up, so you can sign in here.",
   "steps.label": "Setup steps",
   "steps.position": "Step {number} of {total}",
   "steps.completed": "done",
@@ -111,24 +101,24 @@ const english = {
   "setup.continue": "Continue",
   "setup.back": "Back",
   "setup.unreachable":
-    "Lintel couldn't reach its server. If you're running Lintel yourself, check that pnpm dev is still running in your terminal, then try again.",
-  "welcome.title": "Welcome to Lintel",
+    "{product} couldn't reach its server. If you're running {product} yourself, check that pnpm dev is still running in your terminal, then try again.",
+  "welcome.title": "Welcome to {product}",
   "welcome.subtitle": "Let’s get your site ready. It takes about a minute.",
   "welcome.start": "Get started",
   "setupCode.title": "Enter your setup code",
-  "setupCode.subtitle": "Enter the setup code shown in the terminal where Lintel is running.",
+  "setupCode.subtitle": "Enter the setup code shown in the terminal where {product} is running.",
   "setupCode.label": "Setup code",
   "setupCode.incomplete": "Enter all {length} digits of the code.",
-  "database.title": "Where should Lintel keep your content?",
+  "database.title": "Where should {product} keep your content?",
   "database.builtInTitle": "Built-in",
   "database.builtInDescription":
-    "Nothing to install. Great for trying Lintel and for small sites. Stored in a folder on this computer.",
+    "Nothing to install. Great for trying {product} and for small sites. Stored in a folder on this computer.",
   "database.recommended": "Recommended",
   "database.postgresTitle": "Your own PostgreSQL",
   "database.postgresDescription":
     "For live sites and teams. Connect to a Postgres server you already run.",
   "postgres.title": "Connect to your PostgreSQL",
-  "postgres.subtitle": "Lintel will keep your content in this database.",
+  "postgres.subtitle": "{product} will keep your content in this database.",
   "database.connectionDetails": "Connection details",
   "database.host": "Server address",
   "database.hostHint": "Usually localhost if Postgres is on this computer.",
@@ -139,11 +129,11 @@ const english = {
   "database.ssl": "Use a secure connection (SSL)",
   "database.sslDescription": "Needed by most hosted Postgres services.",
   "database.createIfMissing": "Create the database if it doesn’t exist",
-  "database.createIfMissingDescription": "Lintel sets up an empty database for you.",
+  "database.createIfMissingDescription": "{product} sets up an empty database for you.",
   "database.test": "Test connection",
   "database.testing": "Testing…",
-  "database.testPassed": "Connected. Lintel can use this database.",
-  "database.testPassedWillCreate": "Connected. Lintel will create this database for you.",
+  "database.testPassed": "Connected. {product} can use this database.",
+  "database.testPassedWillCreate": "Connected. {product} will create this database for you.",
   "database.hostMissing": "Enter the server address.",
   "database.portInvalid": "Enter a port number, like 5432.",
   "database.nameMissing": "Enter the name of the database.",
@@ -194,15 +184,13 @@ const english = {
   "review.edit": "Edit",
   "review.editLabel": "Edit {section}",
   "review.builtIn": "Built-in database",
-  "review.builtInDetail": "Kept with Lintel. Nothing to set up.",
+  "review.builtInDetail": "Kept with {product}. Nothing to set up.",
   "review.postgres": "Your own PostgreSQL",
-  "review.server": "Server",
   "review.databaseName": "Database",
   "review.user": "Username",
   "review.databasePassword": "Password",
   "review.noPassword": "None",
-  "review.createDatabase": "Lintel will create the database if it isn’t there yet.",
-  "review.databaseFromEnvironment": "Set by DATABASE_URL on the server",
+  "review.createDatabase": "{product} will create the database if it isn’t there yet.",
   "review.name": "Name",
   "review.email": "Email",
   "review.password": "Password",
@@ -218,16 +206,15 @@ const english = {
   "review.finishing": "Setting up your site…",
   "review.finishingDetail":
     "Preparing your database, creating your account and saving your site. This can take a few seconds.",
-  "review.goBackToFix": "Something needs fixing on this step before setup can finish.",
   "done.title": "You’re all set, {name}",
   "done.summary": "{database} · {features}",
   "done.builtIn": "Built-in database",
   "done.postgres": "PostgreSQL database",
   "done.noFeatures": "No extra features",
   "done.goToDashboard": "Go to your dashboard",
-  "serverUnreachable.title": "Lintel can’t reach its server",
+  "serverUnreachable.title": "{product} can’t reach its server",
   "serverUnreachable.body":
-    "If you're running Lintel yourself, check that pnpm dev is running in your terminal. Then try again.",
+    "If you're running {product} yourself, check that pnpm dev is running in your terminal. Then try again.",
   "serverUnreachable.retry": "Try again",
   "emailField.suggestion": "Did you mean {email}?",
   "emailField.use": "Use",
@@ -257,8 +244,7 @@ const english = {
   "passwordSuggestion.saveIt":
     "Save it in your password manager, so you never need to remember it.",
   "media.title": "Media",
-  "media.count.one": "1 file",
-  "media.count.other": "{count} files",
+  "media.count": "{count, plural, one {1 file} other {# files}}",
   "media.upload": "Upload",
   "media.search.label": "Search",
   "media.search.placeholder": "Name or description",
@@ -283,18 +269,17 @@ const english = {
   "media.drop.title": "Drop to upload",
   "media.drop.description": "Images and documents up to 25 MB",
   "media.uploads.label": "Uploads",
-  "media.uploads.uploading.one": "Uploading 1 file",
-  "media.uploads.uploading.other": "Uploading {count} files",
+  "media.uploads.uploading": "{count, plural, one {Uploading 1 file} other {Uploading # files}}",
   "media.uploads.finished": "Uploads finished",
   "media.uploads.done": "Uploaded",
   "media.uploads.dismiss": "Dismiss {name}",
   "media.uploads.close": "Close uploads",
   "media.upload.tooLarge": "“{name}” is larger than 25 MB. Try a smaller or compressed version.",
   "media.upload.typeNotAllowed":
-    "“{name}” isn’t a kind of file Lintel accepts. Use an image (JPEG, PNG, WebP, AVIF, GIF or SVG) or a document (PDF, Word, Excel, PowerPoint, text or CSV).",
+    "“{name}” isn’t a kind of file {product} accepts. Use an image (JPEG, PNG, WebP, AVIF, GIF or SVG) or a document (PDF, Word, Excel, PowerPoint, text or CSV).",
   "media.upload.empty": "“{name}” is empty, so there’s nothing to upload.",
   "media.upload.unreachable":
-    "Lintel couldn’t reach the server. Check your connection and try again.",
+    "{product} couldn’t reach the server. Check your connection and try again.",
   "media.detail.close": "Close",
   "media.detail.previous": "Previous file",
   "media.detail.next": "Next file",
@@ -302,7 +287,6 @@ const english = {
   "media.detail.focalPoint.help":
     "Click or drag on the image to mark the subject; crops keep it in view. With the keyboard, use the arrow keys, and hold Shift to move further.",
   "media.detail.focalPoint.value": "{x}% across, {y}% down",
-  "media.detail.focalPoint.centre": "Centre",
   "media.detail.crops.title": "How crops look",
   "media.detail.crops.square": "Square",
   "media.detail.crops.wide": "Wide",
@@ -310,7 +294,6 @@ const english = {
   "media.detail.alt.label": "Alt text",
   "media.detail.alt.hint":
     "Describe the image for people who can’t see it. Say what matters, as you would on the phone: “Two chefs plating desserts”, not “image”.",
-  "media.detail.alt.missing": "No alt text yet",
   "media.detail.filename.label": "Filename",
   "media.detail.details": "Details",
   "media.detail.size": "Size",
@@ -344,7 +327,6 @@ const english = {
   "media.picker.gridLabel": "Images",
   "media.picker.empty.title": "No images yet",
   "media.picker.empty.description": "Upload one here, or drag it into this window.",
-  "media.picker.current": "Current image",
   "media.picker.missing": "This image was deleted from the media library. Choose another.",
   "media.picker.noAlt": "No alt text yet. Add it in Media.",
   "designReview.title": "Design system",
@@ -426,8 +408,6 @@ const english = {
     "The animation you are editing, playing on this element with its real trigger.",
   "designReview.motion.replayOnPage": "Play again",
   "designReview.motion.sendEvent": "Send the event",
-  "designReview.motion.sampleTitle": "Built with care, shipped with joy",
-  "designReview.motion.sampleBody": "Every animation here comes from the preset library.",
   "designReview.motion.showcase": "Presets on real elements",
   "designReview.motion.showcaseIntro": "Scroll down: each element uses the preset named on it.",
   "designReview.motion.spec": "Spec",
@@ -437,7 +417,8 @@ const english = {
   "dialog.close": "Close",
   "error.loadTitle": "This didn’t load",
   "error.retry": "Try again",
-  "error.unreachable": "Lintel couldn’t reach the server. Check your connection, then try again.",
+  "error.unreachable":
+    "{product} couldn’t reach the server. Check your connection, then try again.",
   "error.signedOut": "You’ve been signed out. Sign in again to carry on.",
   "error.permissionDenied":
     "You don’t have permission to do this. Ask an administrator if you need it.",
@@ -460,8 +441,7 @@ const english = {
   "entry.status.draft": "Draft",
   "entry.status.published": "Published",
   "entry.status.scheduled": "Scheduled",
-  "entries.count.one": "{count} entry",
-  "entries.count.other": "{count} entries",
+  "entries.count": "{count, plural, one {# entry} other {# entries}}",
   "entries.new": "New entry",
   "entries.loading": "Loading entries",
   "entries.search": "Search {name}",
@@ -550,18 +530,17 @@ const english = {
     "Give it a title. As soon as it’s saved as a draft, the preview appears here.",
   "preview.noSiteTitle": "No website connected yet",
   "preview.noSiteDescription":
-    "This is Lintel’s simple preview of your content. When your site is ready, add its preview address in the content type’s settings.",
+    "This is {product}’s simple preview of your content. When your site is ready, add its preview address in the content type’s settings.",
   "preview.noSiteLink": "Set up a preview address",
   "preview.frameTitle": "Preview of {title}",
   "preview.loading": "Loading the preview",
-  "preview.failed": "The preview couldn’t be loaded.",
   "preview.untitled": "Untitled",
   "preview.settings.title": "Live preview",
   "preview.settings.description":
     "Show editors their changes on your real website before they publish. Your site needs a page that reads the preview token; your developer can set it up.",
   "preview.settings.address": "Preview address for {name}",
   "preview.settings.addressHint":
-    "Such as https://example.com/api/preview?path={url}&token={token}. Leave it empty to use Lintel’s simple preview.",
+    "Such as https://example.com/api/preview?path={url}&token={token}. Leave it empty to use {product}’s simple preview.",
   "preview.settings.save": "Save address",
   "preview.settings.saving": "Saving…",
   "preview.settings.saved": "Saved.",
@@ -627,8 +606,6 @@ const english = {
   "fields.blocks.unknownType":
     "This kind of block has been removed from the content type, so it can’t be edited. It’s left out the next time this is saved.",
   "fields.blocks.unknownName": "Removed block type",
-  "media.picker.comingSoon": "Choosing images arrives with the media library.",
-  "media.picker.chosen": "An image is chosen.",
   "settings.title": "Settings",
   "settings.subtitle": "How your site and its content are set up.",
   "settings.contentHeader": "Content",
@@ -647,7 +624,7 @@ const english = {
   "features.switchOffTitle": "Switch off {name}?",
   "features.switchOff": "Switch off",
   "features.keepOn": "Keep it on",
-  "features.builtInHeader": "Built into Lintel",
+  "features.builtInHeader": "Built into {product}",
   "features.installedHeader": "Added by your developer",
   "features.installedFooter":
     "These come from packages listed in lintel.config.ts. They run with full access to your site, so only add ones you trust.",
@@ -694,8 +671,7 @@ const english = {
   "builder.nameHint": "Shown under Content and at the top of each list.",
   "builder.fields": "Fields",
   "builder.fieldsHint": "What editors fill in, in the order they see it.",
-  "builder.fieldCount.one": "{count} field",
-  "builder.fieldCount.other": "{count} fields",
+  "builder.fieldCount": "{count, plural, one {# field} other {# fields}}",
   "builder.addField": "Add field",
   "builder.addField.title": "Add a field",
   "builder.addField.description": "Choose the kind of information this field holds.",
@@ -827,7 +803,7 @@ const english = {
   "apiAccess.tokenLabel": "Your new token",
   "apiAccess.copyToken": "Copy the token",
   "apiAccess.shownOnce":
-    "Copy it now and keep it somewhere safe. For your security, Lintel won’t show it again.",
+    "Copy it now and keep it somewhere safe. For your security, {product} won’t show it again.",
   "apiAccess.lastUsed": "Last used {when}",
   "apiAccess.neverUsed": "Not used yet",
   "apiAccess.deleteToken": "Delete “{name}”",
@@ -853,12 +829,12 @@ const english = {
   "webhooks.emptyTitle": "No webhooks yet",
   "webhooks.emptyDescription":
     "Add the address your site builder or automation tool gave you, and choose what to tell it about.",
-  "webhooks.footer": "Each request is signed, so the receiver can check it came from Lintel.",
+  "webhooks.footer": "Each request is signed, so the receiver can check it came from {product}.",
   "webhooks.add": "Add webhook",
   "webhooks.addTitle": "Add a webhook",
   "webhooks.editTitle": "Change webhook",
   "webhooks.formDescription":
-    "Lintel sends a short message to this address each time one of these things happens.",
+    "{product} sends a short message to this address each time one of these things happens.",
   "webhooks.urlLabel": "Address",
   "webhooks.urlHint": "It must be on the internet; private and local addresses aren’t allowed.",
   "webhooks.nameLabel": "Name",
@@ -871,15 +847,14 @@ const english = {
   "webhooks.event.assetUploaded": "A file is uploaded",
   "webhooks.event.assetDeleted": "A file is deleted",
   "webhooks.event.formSubmitted": "A form is sent",
-  "webhooks.eventCount.one": "{count} event",
-  "webhooks.eventCount.other": "{count} events",
+  "webhooks.eventCount": "{count, plural, one {# event} other {# events}}",
   "webhooks.off": "Off",
   "webhooks.save": "Save",
   "webhooks.saving": "Saving…",
   "webhooks.edit": "Edit",
   "webhooks.delete": "Delete webhook",
   "webhooks.deleteTitle": "Delete “{name}”?",
-  "webhooks.deleteMessage": "Lintel will stop sending to it, and its delivery log goes too.",
+  "webhooks.deleteMessage": "{product} will stop sending to it, and its delivery log goes too.",
   "webhooks.settingsHeader": "Sending",
   "webhooks.sendEvents": "Send events",
   "webhooks.secretHeader": "Signing secret",
@@ -894,8 +869,7 @@ const english = {
   "webhooks.status.delivered": "Delivered",
   "webhooks.status.pending": "Retrying",
   "webhooks.status.failed": "Failed",
-  "webhooks.attempts.one": "{count} try",
-  "webhooks.attempts.other": "{count} tries",
+  "webhooks.attempts": "{count, plural, one {# try} other {# tries}}",
   "webhooks.outcome.delivered": "Delivered with status {status} ({attempts}).",
   "webhooks.outcome.failed": "Gave up after {attempts}. Check the receiver, then resend.",
   "webhooks.outcome.waiting": "Waiting to be sent.",
@@ -925,7 +899,7 @@ const english = {
   "seo.saved": "Saved",
   "seo.moreHeader": "Addresses",
   "seo.filesFooter":
-    "Serve these from your website’s own address by passing /sitemap.xml and /robots.txt to Lintel.",
+    "Serve these from your website’s own address by passing /sitemap.xml and /robots.txt to {product}.",
   "seo.panelTitle": "Search engines",
   "seo.saveFirst": "Give this entry a title first; its search settings appear once it’s saved.",
   "seo.titleLabel": "Title in search results",
@@ -957,8 +931,7 @@ const english = {
   "redirects.suggestedFooter":
     "These pages moved after they were published. Accept a suggestion so links to the old address keep working.",
   "redirects.suggestedDescription": "This page’s address changed",
-  "redirects.suggestionCount.one": "{count} suggestion",
-  "redirects.suggestionCount.other": "{count} suggestions",
+  "redirects.suggestionCount": "{count, plural, one {# suggestion} other {# suggestions}}",
   "redirects.accept": "Accept",
   "redirects.acceptLabel": "Accept the redirect from {path}",
   "redirects.dismiss": "Dismiss",
@@ -1005,12 +978,11 @@ const english = {
   "website.loading": "Loading your website’s settings",
   "website.settingsDescription": "Template, colours, fonts, logo and address",
   "website.liveAt": "Your website is live",
-  "website.notServed": "Lintel isn’t serving a website here",
+  "website.notServed": "{product} isn’t serving a website here",
   "website.notServedHint":
     "Your site is built separately and reads its content through the API. Ask whoever set it up for its address.",
   "website.open": "Open website",
   "website.opensInNewTab": "(opens in a new tab)",
-  "website.viewPage": "View page",
   "website.templateHeading": "Template",
   "website.themeHeading": "Colours and fonts",
   "website.brandColour": "Brand colour",
@@ -1036,7 +1008,7 @@ const english = {
   "website.logoHint": "Shown in the header instead of your site’s name. A wide image works best.",
   "website.siteAddress": "Website address",
   "website.siteAddressHint":
-    "Leave empty to use the address Lintel serves your site at. Set it once your site has its own domain.",
+    "Leave empty to use the address {product} serves your site at. Set it once your site has its own domain.",
   "website.save": "Save changes",
   "website.saving": "Saving…",
   "website.saved": "Saved. Your website shows the changes now.",
@@ -1044,29 +1016,21 @@ const english = {
   "help.missingDescription": "Choose a topic from the list instead.",
   "help.pageTitle": "Help",
   "help.pageSubtitle":
-    "How to use Lintel. It’s built in, so it works without an internet connection.",
+    "How to use {product}. It’s built in, so it works without an internet connection.",
 } as const;
 
 export type StringKey = keyof typeof english;
 
-/** Values for the `{placeholders}` in a string, e.g. `t("entries.new", { name: "post" })`. */
-export type StringValues = Readonly<Record<string, string | number>>;
-
-export function t(key: StringKey, values?: StringValues): string {
-  const text: string = english[key];
-  if (!values) return text;
-  return text.replace(/\{(\w+)\}/g, (placeholder, name: string) =>
-    name in values ? String(values[name]) : placeholder,
-  );
-}
-
-const pluralRules = new Intl.PluralRules("en");
+/** Values for the placeholders in a message, e.g. `t("entries.count", { count: 3 })`. */
+export type StringValues = Readonly<Record<string, string | number | Date>>;
 
 /**
- * Picks the singular or plural string for a count, then fills in `{count}`.
- * Uses Intl.PluralRules so a translation with more plural forms can extend it.
+ * The text for `key` in the admin's current language. Messages are ICU MessageFormat, so
+ * plurals are part of the message: `t("entries.count", { count })`. See src/i18n/README.md.
  */
-export function tCount(keys: { one: StringKey; other: StringKey }, count: number): string {
-  const key = pluralRules.select(count) === "one" ? keys.one : keys.other;
-  return t(key, { count: count.toLocaleString("en") });
+export function t(key: StringKey, values?: StringValues): string {
+  return translate(key, english[key], values);
 }
+
+/** The English source, for the translation tools in scripts/ and the tests. */
+export const englishMessages: Readonly<Record<StringKey, string>> = english;

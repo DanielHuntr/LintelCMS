@@ -17,7 +17,7 @@ export const dashboardStrings = {
   "dashboard.reset": "Reset to default",
   "dashboard.resetTitle": "Reset your dashboard?",
   "dashboard.resetDescription":
-    "Your dashboard goes back to the one your admin set up for your role, or Lintel’s own.",
+    "Your dashboard goes back to the one your admin set up for your role, or {product}’s own.",
   "dashboard.resetConfirm": "Reset",
   "dashboard.resetDone": "Your dashboard is back to the default.",
   "dashboard.empty.title": "Your dashboard is empty",
@@ -50,7 +50,7 @@ export const dashboardStrings = {
   "dashboard.roleDefault.hasOne": "Has a default",
   "dashboard.roleDefault.remove": "Remove the default for {role}",
   "dashboard.roleDefault.removeShort": "Remove",
-  "dashboard.roleDefault.removed": "{role} now starts from Lintel’s default.",
+  "dashboard.roleDefault.removed": "{role} now starts from {product}’s default.",
   "dashboard.roleDefault.noRoles": "There are no roles yet.",
   "dashboard.roleDefault.loading": "Loading roles…",
 
@@ -87,16 +87,14 @@ export const dashboardStrings = {
   "dashboard.attention.draft": "Draft",
   "dashboard.attention.changes": "Unpublished changes",
   "dashboard.attention.detail": "{collection} · last changed {time}",
-  "dashboard.more.one": "And {count} more",
-  "dashboard.more.other": "And {count} more",
+  "dashboard.more": "{count, plural, one {And # more} other {And # more}}",
 
   "dashboard.media.title": "Media usage",
   "dashboard.media.description": "How many files there are, and what they take up.",
-  "dashboard.media.files.one": "{count} file",
-  "dashboard.media.files.other": "{count} files",
+  "dashboard.media.files": "{count, plural, one {# file} other {# files}}",
   "dashboard.media.size": "{size} in all",
-  "dashboard.media.missingAlt.one": "{count} image has no description for screen readers",
-  "dashboard.media.missingAlt.other": "{count} images have no description for screen readers",
+  "dashboard.media.missingAlt":
+    "{count, plural, one {# image has no description for screen readers} other {# images have no description for screen readers}}",
   "dashboard.media.allDescribed": "Every image has a description for screen readers.",
   "dashboard.media.open": "Open the media library",
   "dashboard.media.emptyTitle": "No files yet",

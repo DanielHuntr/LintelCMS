@@ -1,4 +1,5 @@
 import type { Ref } from "react";
+import { useDocumentTitle } from "../branding/useDocumentTitle.js";
 
 interface DisplayTitleProps {
   id?: string;
@@ -13,6 +14,7 @@ interface DisplayTitleProps {
  * question or statement. Admin pages use LargeTitle instead.
  */
 export function DisplayTitle({ id, ref, tabIndex, children }: DisplayTitleProps) {
+  useDocumentTitle(children);
   return (
     <h1
       id={id}

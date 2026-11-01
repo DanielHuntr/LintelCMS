@@ -240,17 +240,17 @@ function PaymentSummary({ order }: { order: Order }) {
         {rows.map((row) => (
           <div key={row.label} className="contents">
             <dt className="text-label-secondary">{row.label}</dt>
-            <dd className="text-right text-label tabular-nums">{row.value}</dd>
+            <dd className="text-end text-label tabular-nums">{row.value}</dd>
           </div>
         ))}
         <dt className="pt-2 font-semibold text-label">{t("shop.orders.total")}</dt>
-        <dd className="pt-2 text-right font-semibold text-label tabular-nums">
+        <dd className="pt-2 text-end font-semibold text-label tabular-nums">
           {formatMoney(order.total)}
         </dd>
         {order.refunded.amount > 0 && (
           <>
             <dt className="text-label-secondary">{t("shop.orders.refunded")}</dt>
-            <dd className="text-right text-label tabular-nums">−{formatMoney(order.refunded)}</dd>
+            <dd className="text-end text-label tabular-nums">−{formatMoney(order.refunded)}</dd>
           </>
         )}
       </dl>

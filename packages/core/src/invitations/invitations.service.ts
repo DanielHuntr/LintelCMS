@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { type SignInResult, startSignedInSession } from "../auth/auth.service.js";
 import { hashPassword } from "../auth/passwords.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
-import { sendEmail } from "../email/index.js";
+import { sendBrandedEmail } from "../email/index.js";
 import { generateOneTimeTokenSecret } from "../one-time-tokens/one-time-tokens.service.js";
 import { assignRoleToUser } from "../roles/roles.repository.js";
 import { checkRoleCanBeGranted, findRoleOrFail } from "../roles/roles.service.js";
@@ -177,18 +177,14 @@ function emailInvitation(server: FastifyInstance, row: InvitationWithNames, toke
   // After "#", so the token never reaches a server log or a Referer header.
   const link = `${server.adminOrigin}/accept-invitation#token=${token}`;
   const from = row.inviterName ? `${row.inviterName} has` : "You've been";
-  sendEmail(server, {
-    to: row.email,
-    subject: "You're invited to Lintel",
-    text: [
-      `${from} invited you to help run a website with Lintel, as ${articleFor(row.roleName)} ${row.roleName}.`,
-      "",
-      "To accept, open this link and choose your name and password. It works for 7 days:",
-      "",
-      link,
-      "",
+  sendBrandedEmail(server, row.email, {
+    subject: "You're invited",
+    heading: `${from} invited you to help run a website`,
+    paragraphs: [
+      `You'll join as ${articleFor(row.roleName)} ${row.roleName}. To accept, use this link and choose your name and password. It works for 7 days.`,
       "If you weren't expecting this, you can ignore it.",
-    ].join("\n"),
+    ],
+    action: { label: "Accept the invitation", url: link },
   });
   return link;
 }

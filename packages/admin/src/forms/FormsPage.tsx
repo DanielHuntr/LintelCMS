@@ -13,7 +13,7 @@ import { LargeTitle } from "../design/LargeTitle.js";
 import { LinkButton } from "../design/LinkButton.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import { useCreateForm, useForms } from "./forms.queries.js";
 import type { Form } from "./forms.types.js";
@@ -118,10 +118,7 @@ export function FormsPage() {
 }
 
 function describeForm(form: Form, now: number): string {
-  const count = tCount(
-    { one: "forms.list.submissionCount.one", other: "forms.list.submissionCount.other" },
-    form.submissionCount,
-  );
+  const count = t("forms.list.submissionCount", { count: form.submissionCount });
   return form.lastSubmittedAt
     ? t("forms.list.lastSubmitted", { count, when: formatRelativeTime(form.lastSubmittedAt, now) })
     : count;

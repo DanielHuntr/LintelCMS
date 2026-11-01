@@ -181,7 +181,7 @@ export function Labelled({
               <button
                 type="button"
                 onClick={onReset}
-                className="ml-auto rounded px-1 text-caption text-accent hover:underline focus-visible:focus-ring"
+                className="ms-auto rounded px-1 text-caption text-accent hover:underline focus-visible:focus-ring"
               >
                 {resetLabel}
               </button>

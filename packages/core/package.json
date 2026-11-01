@@ -49,6 +49,11 @@
       "types": "./dist/plugins/plugin-testing.d.ts",
       "development": "./src/plugins/plugin-testing.ts",
       "default": "./dist/plugins/plugin-testing.js"
+    },
+    "./accent-colours": {
+      "types": "./dist/branding/accent-colours.d.ts",
+      "development": "./src/branding/accent-colours.ts",
+      "default": "./dist/branding/accent-colours.js"
     }
   },
   "scripts": {

@@ -19,6 +19,7 @@ export const usingPages = [
   "using/moving-from-shopify",
   "using/users",
   "using/automations",
+  "using/interface-languages",
   "using/troubleshooting",
 ] as const;
 
@@ -42,6 +43,8 @@ export const buildingPages = [
   "building/plugin-api",
   "building/dashboards",
   "building/workflows",
+  "building/branding",
+  "building/translating",
   "building/contributing",
 ] as const;
 

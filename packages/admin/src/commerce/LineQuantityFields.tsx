@@ -53,7 +53,7 @@ export function LineQuantityFields({
                     : 0;
                   onChange({ ...quantities, [line.id]: quantity });
                 }}
-                className={`${controlClasses()} h-9 w-20 text-right`}
+                className={`${controlClasses()} h-9 w-20 text-end`}
               />
               <span className="text-footnote text-label-secondary">
                 {t("shop.orders.ofMaximum", { maximum })}

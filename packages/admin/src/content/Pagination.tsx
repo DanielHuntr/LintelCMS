@@ -33,7 +33,7 @@ export function Pagination({ page, pageCount, onPageChange }: PaginationProps) {
         onClick={() => onPageChange(page + 1)}
       >
         {t("pagination.next")}
-        <ChevronRight aria-hidden="true" className="-mr-1 size-[1.1em]" />
+        <ChevronRight aria-hidden="true" className="-me-1 size-[1.1em]" />
       </Button>
     </nav>
   );

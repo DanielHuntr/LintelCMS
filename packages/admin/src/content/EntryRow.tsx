@@ -87,7 +87,7 @@ export function EntryRow({
         <span
           aria-hidden="true"
           {...listeners}
-          className="flex h-full cursor-grab touch-none items-center self-stretch pl-2 text-label-tertiary opacity-0 transition-opacity duration-150 group-hover:opacity-100 active:cursor-grabbing"
+          className="flex h-full cursor-grab touch-none items-center self-stretch ps-2 text-label-tertiary opacity-0 transition-opacity duration-150 group-hover:opacity-100 active:cursor-grabbing"
         >
           <GripVertical strokeWidth={1.75} className="size-4" />
         </span>
@@ -99,13 +99,13 @@ export function EntryRow({
         style={{
           paddingLeft: `calc(${reorder ? "0.5rem" : "1.25rem"} + ${depth * INDENT_PIXELS}px)`,
         }}
-        className="flex min-w-0 flex-1 items-center gap-3 py-3 pr-3 transition-colors duration-150 ease-standard hover:bg-fill/50 focus-visible:focus-ring-inset"
+        className="flex min-w-0 flex-1 items-center gap-3 py-3 pe-3 transition-colors duration-150 ease-standard hover:bg-fill/50 focus-visible:focus-ring-inset"
       >
         {depth > 0 && (
           <CornerDownRight
             aria-hidden="true"
             strokeWidth={1.75}
-            className="-ml-1 size-4 shrink-0 self-start mt-0.5 text-label-tertiary"
+            className="-ms-1 size-4 shrink-0 self-start mt-0.5 text-label-tertiary"
           />
         )}
         <span className="flex min-w-0 flex-1 flex-col">
@@ -124,17 +124,17 @@ export function EntryRow({
         <ViewPageLink
           target={viewPage}
           label={t("entries.viewPage", { title })}
-          className="mr-2 flex size-8 shrink-0 items-center justify-center rounded-control text-label-secondary transition-colors duration-150 ease-standard hover:bg-fill hover:text-accent focus-visible:focus-ring"
+          className="me-2 flex size-8 shrink-0 items-center justify-center rounded-control text-label-secondary transition-colors duration-150 ease-standard hover:bg-fill hover:text-accent focus-visible:focus-ring"
         >
           <SquareArrowOutUpRight aria-hidden="true" strokeWidth={1.75} className="size-4" />
         </ViewPageLink>
       ) : (
         // The same space on every row, so the status badges line up.
-        <span aria-hidden="true" className="mr-2 size-8 shrink-0" />
+        <span aria-hidden="true" className="me-2 size-8 shrink-0" />
       )}
 
       {reorder && (
-        <span className="flex shrink-0 items-center gap-0.5 pr-3 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
+        <span className="flex shrink-0 items-center gap-0.5 pe-3 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
           {reorder.unnest && <ParentButton move={reorder.unnest} icon={ListIndentDecrease} />}
           {reorder.nest && <ParentButton move={reorder.nest} icon={ListIndentIncrease} />}
           <MoveButton

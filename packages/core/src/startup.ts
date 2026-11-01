@@ -15,6 +15,7 @@ import {
 import { PluginPackageError } from "./plugins/installed-plugins.js";
 import { InvalidPluginError } from "./plugins/plugins.errors.js";
 import { StorageUnreachableError } from "./media/storage-driver.js";
+import { ConfigFileError } from "./lintel-config-file.js";
 
 /**
  * What the server and the command-line scripts share when they start: opening the
@@ -81,6 +82,7 @@ export async function runWithFriendlyErrors(task: () => Promise<void>): Promise<
 function isExplained(error: unknown): error is Error {
   return (
     error instanceof ConfigError ||
+    error instanceof ConfigFileError ||
     error instanceof DatabaseConnectionError ||
     error instanceof DataFolderInUseError ||
     error instanceof SavedConfigUnreadableError ||

@@ -25,3 +25,6 @@ Current settings:
   gets it with the session (`siteName` in `/auth/me`) for the browser tab and the sidebar.
   This is the one place it is stored for now.
 - `website`: the built-in website's template, theme, logo and address (see `src/website`).
+- `brandingOverrides`: branding changed in Settings → Branding (see `src/branding`).
+- `defaultInterfaceLanguage`: the admin's language for people who haven't chosen one
+  (see `src/interface-languages`). Null means the deployment's default, or English.

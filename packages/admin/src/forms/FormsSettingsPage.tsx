@@ -9,7 +9,7 @@ import { LargeTitle } from "../design/LargeTitle.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { TextField } from "../design/TextField.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import { erasePersonalData, exportPersonalData, saveFile } from "./forms.api.js";
 import { useFormsSettings, useUpdateFormsSettings } from "./forms.queries.js";
@@ -149,9 +149,7 @@ function PrivacyRequests() {
     setIsWorking(true);
     try {
       const { deleted } = await erasePersonalData(found.email);
-      setStatus(
-        tCount({ one: "forms.privacy.erased.one", other: "forms.privacy.erased.other" }, deleted),
-      );
+      setStatus(t("forms.privacy.erased", { count: deleted }));
       setFound(null);
     } catch (caught) {
       setError(describeError(caught));
@@ -199,10 +197,7 @@ function PrivacyRequests() {
               <p className="text-body text-label">
                 {found.submissions.length === 0
                   ? t("forms.privacy.nothing", { email: found.email })
-                  : tCount(
-                      { one: "forms.privacy.found.one", other: "forms.privacy.found.other" },
-                      found.submissions.length,
-                    )}
+                  : t("forms.privacy.found", { count: found.submissions.length })}
               </p>
               {found.submissions.length > 0 && (
                 <div className="flex flex-wrap gap-2">

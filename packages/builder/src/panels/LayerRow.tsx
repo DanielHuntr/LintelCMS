@@ -67,7 +67,7 @@ export const LayerRow = memo(function LayerRow(props: LayerRowProps) {
       onDragEnd={props.onDragEnd}
       style={{ paddingLeft: `${depth * 14 + 6}px` }}
       className={classNames(
-        "group relative flex h-8 cursor-default items-center gap-1 rounded-control pr-1 text-footnote outline-none select-none focus-visible:focus-ring-inset",
+        "group relative flex h-8 cursor-default items-center gap-1 rounded-control pe-1 text-footnote outline-none select-none focus-visible:focus-ring-inset",
         isSelected ? "bg-accent-fill text-on-accent" : "text-label hover:bg-fill",
         node.hidden && !isSelected && "text-label-tertiary",
         dropIndicator === "inside" && "ring-2 ring-accent-fill ring-inset",

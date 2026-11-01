@@ -49,7 +49,7 @@ export function MediaPicker({ value, onChange, label, hideLabel = false }: Media
           <span className="text-body font-medium">{t("media.picker.choose")}</span>
         </button>
       ) : (
-        <div className="flex items-center gap-4 rounded-card bg-fill/60 p-2.5 pr-4">
+        <div className="flex items-center gap-4 rounded-card bg-fill/60 p-2.5 pe-4">
           <div className="size-20 shrink-0 overflow-hidden rounded-control bg-fill">
             {asset.data?.thumbnailUrl ? (
               <img

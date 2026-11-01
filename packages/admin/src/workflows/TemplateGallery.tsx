@@ -17,7 +17,7 @@ export function TemplateGallery({ onUse }: TemplateGalleryProps) {
             <button
               type="button"
               onClick={() => onUse(template)}
-              className="flex h-full w-full items-start gap-3 rounded-card bg-surface p-4 text-left transition-colors duration-150 ease-standard hover:bg-surface-raised focus-visible:focus-ring motion-safe:active:scale-[0.99]"
+              className="flex h-full w-full items-start gap-3 rounded-card bg-surface p-4 text-start transition-colors duration-150 ease-standard hover:bg-surface-raised focus-visible:focus-ring motion-safe:active:scale-[0.99]"
             >
               <span className="flex size-9 shrink-0 items-center justify-center rounded-control bg-accent/12 text-accent">
                 <Icon aria-hidden="true" className="size-5" />

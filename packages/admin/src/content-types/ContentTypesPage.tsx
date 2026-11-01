@@ -11,7 +11,7 @@ import { LargeTitle } from "../design/LargeTitle.js";
 import { LinkButton } from "../design/LinkButton.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { useBlueprints } from "./blueprints.queries.js";
 import { Page } from "../design/Page.js";
 
@@ -70,10 +70,7 @@ export function ContentTypesPage() {
               key={blueprint.id}
               icon={Shapes}
               label={blueprint.name}
-              description={tCount(
-                { one: "builder.fieldCount.one", other: "builder.fieldCount.other" },
-                blueprint.fields.length,
-              )}
+              description={t("builder.fieldCount", { count: blueprint.fields.length })}
               to={`/settings/content-types/${encodeURIComponent(blueprint.handle)}`}
             />
           ))}

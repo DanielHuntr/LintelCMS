@@ -123,7 +123,7 @@ export function TimelineEditor({ spec, onChange, onCommit, onSeek }: TimelineEdi
           <span className="text-footnote text-label-secondary tabular-nums" aria-live="off">
             {formatSeconds(shownPlayhead)} / {formatSeconds(spec.duration)}
           </span>
-          <div className="ml-auto w-40">
+          <div className="ms-auto w-40">
             <Slider
               label={t("motionEditor.timeline.zoom")}
               min={0.5}
@@ -168,7 +168,7 @@ export function TimelineEditor({ spec, onChange, onCommit, onSeek }: TimelineEdi
             ))}
           </div>
           <div
-            className="relative min-w-0 flex-1 overflow-x-auto pr-4 pb-2 pl-2"
+            className="relative min-w-0 flex-1 overflow-x-auto pe-4 pb-2 ps-2"
             onWheel={zoomWithWheel}
           >
             <TimeRuler

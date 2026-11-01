@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { FileStack, List, Newspaper, type LucideIcon } from "lucide-react";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import type { Collection, CollectionStructure } from "./content.types.js";
 import { formatDateTime, formatRelativeTime } from "./relativeTime.js";
 
@@ -28,10 +28,7 @@ export function CollectionCard({ collection, now }: { collection: Collection; no
         <span className="flex flex-col gap-0.5">
           <span className="text-headline text-label">{collection.name}</span>
           <span className="text-footnote text-label-secondary">
-            {tCount(
-              { one: "entries.count.one", other: "entries.count.other" },
-              collection.entryCount,
-            )}
+            {t("entries.count", { count: collection.entryCount })}
           </span>
         </span>
         <span className="mt-auto text-caption text-label-tertiary">

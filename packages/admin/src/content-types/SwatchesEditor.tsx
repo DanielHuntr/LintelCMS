@@ -15,7 +15,7 @@ export function SwatchesEditor({ swatches, onChange }: SwatchesEditorProps) {
       {swatches.length > 0 && (
         <ul className="flex flex-wrap gap-2">
           {swatches.map((swatch, index) => (
-            <li key={index} className="flex items-center gap-1 rounded-full bg-fill py-1 pr-1 pl-1">
+            <li key={index} className="flex items-center gap-1 rounded-full bg-fill py-1 pe-1 ps-1">
               <input
                 type="color"
                 value={swatch}

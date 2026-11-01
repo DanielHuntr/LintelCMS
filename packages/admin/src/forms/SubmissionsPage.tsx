@@ -14,7 +14,7 @@ import { LoadingRegion } from "../design/LoadingRegion.js";
 import { SearchField } from "../design/SearchField.js";
 import { SegmentedControl } from "../design/SegmentedControl.js";
 import { Skeleton } from "../design/Skeleton.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { useDebouncedValue } from "../media/useDebouncedValue.js";
 import { useCan } from "../session/SessionContext.js";
 import { downloadSubmissionsCsv, saveFile, SUBMISSIONS_PER_PAGE } from "./forms.api.js";
@@ -96,10 +96,7 @@ function SubmissionsInbox({ form, view, onViewChange }: SubmissionsPageProps & {
       </BackLink>
       <LargeTitle
         title={t("forms.inbox.title")}
-        subtitle={tCount(
-          { one: "forms.list.submissionCount.one", other: "forms.list.submissionCount.other" },
-          form.submissionCount,
-        )}
+        subtitle={t("forms.list.submissionCount", { count: form.submissionCount })}
         actions={
           form.submissionCount > 0 && (
             <Button
@@ -246,7 +243,7 @@ function SubmissionRow({
         onClick={onOpen}
         aria-current={isOpen ? "true" : undefined}
         className={classNames(
-          "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors duration-150 ease-standard focus-visible:focus-ring-inset",
+          "flex w-full items-start gap-3 px-4 py-3 text-start transition-colors duration-150 ease-standard focus-visible:focus-ring-inset",
           isOpen ? "bg-accent/12" : "hover:bg-fill/50",
         )}
       >

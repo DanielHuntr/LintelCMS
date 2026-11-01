@@ -14,7 +14,7 @@ import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import { AddLanguageSheet } from "./AddLanguageSheet.js";
 import { addLocale, removeLocale, renameLocale } from "./locales.api.js";
@@ -95,10 +95,7 @@ export function LanguagesPage() {
                 icon={Languages}
                 iconTone={locale.isDefault ? "accent" : "neutral"}
                 label={locale.name}
-                description={`${locale.code} · ${tCount(
-                  { one: "entries.count.one", other: "entries.count.other" },
-                  locale.entryCount,
-                )}`}
+                description={`${locale.code} · ${t("entries.count", { count: locale.entryCount })}`}
                 accessory={
                   <span className="flex items-center gap-1">
                     {locale.isDefault && <Badge tone="accent">{t("languages.main")}</Badge>}

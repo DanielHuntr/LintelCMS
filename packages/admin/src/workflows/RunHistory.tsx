@@ -57,7 +57,7 @@ export function RunHistory({ workflowId, openRunId, onOpenRun, canChange }: RunH
               aria-expanded={isOpen}
               aria-label={t("history.showRun", { when: formatDateTime(run.createdAt) })}
               onClick={() => onOpenRun(isOpen ? undefined : run.id)}
-              className="flex w-full items-center gap-3 rounded-card px-4 py-3 text-left hover:bg-fill/50 focus-visible:focus-ring-inset"
+              className="flex w-full items-center gap-3 rounded-card px-4 py-3 text-start hover:bg-fill/50 focus-visible:focus-ring-inset"
             >
               <RunStatusBadge status={run.status} />
               {run.isTest && <Badge tone="accent">{t("history.test")}</Badge>}

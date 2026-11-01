@@ -29,8 +29,8 @@ export const discountStrings = {
   "shop.discounts.needsMarketDescription":
     "Discounts are in your shop's currency, so choose where you sell first.",
   "shop.discounts.summaryHeader": "Summary",
-  "shop.discounts.usedCount.one": "Used in {count} order so far.",
-  "shop.discounts.usedCount.other": "Used in {count} orders so far.",
+  "shop.discounts.usedCount":
+    "{count, plural, one {Used in # order so far.} other {Used in # orders so far.}}",
 
   "shop.discounts.howHeader": "How shoppers get it",
   "shop.discounts.method.code": "With a code",

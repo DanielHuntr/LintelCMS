@@ -46,12 +46,12 @@ function BoxModel() {
       aria-label={text("pageBuilder.style.boxModel")}
     >
       <div className="relative rounded-control border border-dashed border-separator p-1.5">
-        <span className="absolute top-1 left-2 text-[10px] font-medium uppercase tracking-wide text-label-tertiary">
+        <span className="absolute top-1 inset-s-2 text-[10px] font-medium uppercase tracking-wide text-label-tertiary">
           {text("pageBuilder.style.margin")}
         </span>
         <SideInputs kind="margin">
           <div className="relative rounded-control bg-fill p-1.5">
-            <span className="absolute top-1 left-2 text-[10px] font-medium uppercase tracking-wide text-label-tertiary">
+            <span className="absolute top-1 inset-s-2 text-[10px] font-medium uppercase tracking-wide text-label-tertiary">
               {text("pageBuilder.style.padding")}
             </span>
             <SideInputs kind="padding">

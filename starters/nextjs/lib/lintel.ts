@@ -88,3 +88,21 @@ export async function listAllEntries<Collection extends CollectionHandle>(
     if (list.items.length < perPage || entries.length >= list.total) return entries;
   }
 }
+
+/**
+ * Whether to show the "Built with Lintel" credit. Agencies can turn it off in Lintel
+ * (Settings, then Branding). If Lintel can't be reached, the credit shows, as before.
+ */
+export async function showsBuiltWithLintel(): Promise<boolean> {
+  try {
+    const response = await fetch(`${lintelApiUrl()}/branding`, {
+      headers: { accept: "application/json" },
+      next: { revalidate: REVALIDATE_SECONDS, tags: [ALL_CONTENT_TAG] },
+    });
+    if (!response.ok) return true;
+    const branding = (await response.json()) as { hideBuiltWithLintel?: boolean };
+    return branding.hideBuiltWithLintel !== true;
+  } catch {
+    return true;
+  }
+}

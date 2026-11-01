@@ -35,7 +35,7 @@ export function EntrySlugInput({
   return (
     <div data-field-handle="slug" className="flex flex-col gap-1">
       <p className="flex min-w-0 items-center text-footnote text-label-secondary">
-        <label htmlFor={inputId} className="mr-1.5 shrink-0 font-medium text-label-secondary">
+        <label htmlFor={inputId} className="me-1.5 shrink-0 font-medium text-label-secondary">
           {t("editor.url")}
         </label>
         <span aria-hidden="true" className="shrink-0">
@@ -63,7 +63,7 @@ export function EntrySlugInput({
           <ViewPageLink
             target={viewPage}
             label={t("editor.viewPage")}
-            className="ml-1 flex size-6 shrink-0 items-center justify-center rounded-[5px] text-accent transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring"
+            className="ms-1 flex size-6 shrink-0 items-center justify-center rounded-[5px] text-accent transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring"
           >
             <SquareArrowOutUpRight aria-hidden="true" strokeWidth={2} className="size-3.5" />
           </ViewPageLink>

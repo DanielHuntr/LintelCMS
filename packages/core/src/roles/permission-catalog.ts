@@ -168,6 +168,11 @@ export const corePermissionGroups: readonly PermissionGroup[] = [
         description: "Including API tokens, webhooks and plugins.",
       },
       {
+        permission: "branding:update",
+        name: "Change the branding",
+        description: "The admin's name, logo, colour and the help people see.",
+      },
+      {
         permission: "security:read",
         name: "See the security log",
         description: "Sign-ins, failures and account changes.",

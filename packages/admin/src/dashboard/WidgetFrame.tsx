@@ -68,7 +68,7 @@ export function WidgetFrame({
               ref={setActivatorNodeRef}
               aria-hidden="true"
               {...listeners}
-              className="-ml-1.5 flex h-8 w-6 shrink-0 cursor-grab touch-none items-center justify-center text-label-tertiary active:cursor-grabbing"
+              className="-ms-1.5 flex h-8 w-6 shrink-0 cursor-grab touch-none items-center justify-center text-label-tertiary active:cursor-grabbing"
             >
               <GripVertical strokeWidth={1.75} className="size-4" />
             </span>

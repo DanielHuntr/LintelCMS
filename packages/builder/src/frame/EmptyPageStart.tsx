@@ -33,7 +33,7 @@ export function EmptyPageStart({ templates, onChooseTemplate, onStartBlank }: Em
               <button
                 type="button"
                 onClick={() => onChooseTemplate(template.id)}
-                className="flex h-full w-full flex-col gap-2 rounded-card bg-surface p-3 text-left shadow-float transition-transform duration-150 ease-standard hover:-translate-y-0.5 focus-visible:focus-ring motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+                className="flex h-full w-full flex-col gap-2 rounded-card bg-surface p-3 text-start shadow-float transition-transform duration-150 ease-standard hover:-translate-y-0.5 focus-visible:focus-ring motion-reduce:transition-none motion-reduce:hover:translate-y-0"
               >
                 <BlueprintSketch blueprint={template.blueprint} />
                 <span className="text-footnote font-semibold text-label">{template.label}</span>

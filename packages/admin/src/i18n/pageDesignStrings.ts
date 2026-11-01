@@ -7,8 +7,8 @@ import { builderStrings } from "@lintel/builder/strings";
 export const pageDesignStrings = {
   ...builderStrings,
   "pageDesign.field.empty": "Not designed yet. Start from a ready-made section, or from scratch.",
-  "pageDesign.field.summary.one": "{count} section on this page",
-  "pageDesign.field.summary.other": "{count} sections on this page",
+  "pageDesign.field.summary":
+    "{count, plural, one {# section on this page} other {# sections on this page}}",
   "pageDesign.field.edit": "Edit design",
   "pageDesign.field.saveFirst":
     "Give the entry a title first. Once it’s saved as a draft, you can design it.",
@@ -19,6 +19,4 @@ export const pageDesignStrings = {
   "pageDesign.unreadable": "This page design can’t be opened: {problem}",
   "pageDesign.publish": "Publish",
   "pageDesign.publishing": "Publishing…",
-  "pageDesign.published": "Published",
-  "pageDesign.pickImage": "Choose a picture for {label}",
 } as const;

@@ -4,7 +4,7 @@ import { EmptyState } from "../design/EmptyState.js";
 import { LinkButton } from "../design/LinkButton.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
-import { t, tCount } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { formatMoney } from "./money.js";
 import { useSalesSummary } from "./shop.queries.js";
 
@@ -50,10 +50,7 @@ export function SalesWidget() {
           <p className="text-large-title text-label tabular-nums">{formatMoney(primary.sales)}</p>
         </div>
         <p className="text-body text-label-secondary">
-          {tCount(
-            { one: "shop.orders.count.one", other: "shop.orders.count.other" },
-            primary.orderCount,
-          )}
+          {t("shop.orders.count", { count: primary.orderCount })}
           {" · "}
           {t("shop.sales.average", { amount: formatMoney(primary.averageOrder) })}
         </p>
@@ -72,10 +69,7 @@ export function SalesWidget() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         {sales.data.ordersToFulfil > 0 ? (
           <p className="text-body text-warning">
-            {tCount(
-              { one: "shop.sales.toSend.one", other: "shop.sales.toSend.other" },
-              sales.data.ordersToFulfil,
-            )}
+            {t("shop.sales.toSend", { count: sales.data.ordersToFulfil })}
           </p>
         ) : (
           <span />

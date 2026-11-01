@@ -13,3 +13,4 @@ export type { EmailMessage, OutgoingEmail } from "./email.schema.js";
 export { createEmailSender, type EmailSender } from "./email.service.js";
 export { OutboxEmailDriver, type OutboxEmail } from "./outbox-email-driver.js";
 export { sendEmail } from "./send-email.js";
+export { composeBrandedEmail, sendBrandedEmail } from "./send-branded-email.js";
