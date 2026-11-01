@@ -1,0 +1,11 @@
+{
+  // Used by `pnpm dev` (tsx). In development, workspace packages resolve to their
+  // TypeScript sources (the "development" export condition), so tsx compiles them
+  // too. tsx only applies a tsconfig to the files it includes, so list them here
+  // and use the automatic JSX runtime for the builder's .tsx files.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx"
+  },
+  "include": ["src", "../*/src"]
+}

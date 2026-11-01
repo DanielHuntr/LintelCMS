@@ -62,7 +62,7 @@
     }
   },
   "scripts": {
-    "dev": "tsx watch --conditions=development --env-file=development.env src/main.ts",
+    "dev": "tsx watch --tsconfig tsconfig.dev.json --conditions=development --env-file=development.env src/main.ts",
     "start": "node dist/main.js",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
