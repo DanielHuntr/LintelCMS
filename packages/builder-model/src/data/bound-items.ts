@@ -145,6 +145,8 @@ export interface DataMenuLink {
   label: string;
   url: string | null;
   current: boolean;
+  /** "button" draws it as a button ("Book now"); left out, it is a plain link. */
+  style?: "link" | "button";
   children: readonly DataMenuLink[];
 }
 
@@ -154,6 +156,8 @@ export interface DataSite {
   homeUrl: string;
   logo: BoundPicture | null;
   menu: readonly DataMenuLink[];
+  /** Other menus elements chose ("Which menu"), by handle. The main menu is `menu`. */
+  menus?: Readonly<Record<string, readonly DataMenuLink[]>>;
   socialLinks: readonly string[];
   footerText: string;
   languages: readonly { code: string; name: string; url: string; current: boolean }[];

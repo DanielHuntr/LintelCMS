@@ -5,6 +5,7 @@ import {
   type PageDocument,
   type ProductListData,
 } from "@lintel/builder-model";
+import { sampleSite } from "../render/elements/navigation.js";
 import type { BuilderDataSources } from "./data-sources.js";
 
 /**
@@ -44,8 +45,17 @@ export function canvasPageData(document: PageDocument, sources: BuilderDataSourc
     }
   }
   const itemFor = String(document.root.props.itemDesignFor ?? "");
+  const menus = sources.menus;
+  const site = menus
+    ? {
+        ...sampleSite,
+        menu: menus.find((menu) => menu.handle === "main")?.links ?? [],
+        menus: Object.fromEntries(menus.map((menu) => [menu.handle, menu.links])),
+      }
+    : undefined;
   const product = itemFor === "shop:products" ? sources.sampleProducts?.[0] : undefined;
   return {
+    site,
     lists,
     productLists,
     item: itemFor && !product ? samplesOf(itemFor)[0] : undefined,

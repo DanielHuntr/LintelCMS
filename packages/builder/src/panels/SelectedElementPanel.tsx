@@ -16,7 +16,7 @@ import {
 } from "@lintel/builder-model";
 import type { MotionSpec } from "@lintel/motion";
 import type { Translate as MotionText } from "@lintel/motion-editor";
-import { useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { AnimatePanel } from "../animate-panel/AnimatePanel.js";
 import { CodePanel } from "../developer/CodePanel.js";
 import { useBuilderText } from "../i18n/builder-text.js";
@@ -29,6 +29,7 @@ import { Tip } from "../tour/Tip.js";
 import { Tabs } from "../ui/controls.js";
 import type { ImagePicker } from "./content-fields.js";
 import { ContentPanel } from "./ContentPanel.js";
+import { MenuEditingContext } from "../menus/menu-editing.js";
 
 type RightTab = "style" | "content" | "animate" | "code";
 
@@ -86,6 +87,13 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
   if (wantsCode !== lastShowCode) {
     setLastShowCode(wantsCode);
     if (wantsCode) setTab("code");
+  }
+  // "Add pages to your menu" on the canvas opens the menu editor, which is in Content.
+  const { editingFor: editingMenuFor } = useContext(MenuEditingContext);
+  const [lastEditingMenuFor, setLastEditingMenuFor] = useState(editingMenuFor);
+  if (editingMenuFor !== lastEditingMenuFor) {
+    setLastEditingMenuFor(editingMenuFor);
+    if (editingMenuFor !== null) setTab("content");
   }
   const tab = chosenTab === "code" && !tools.codeTools ? "style" : chosenTab;
   const { document, pickImage, uploadFile } = props;

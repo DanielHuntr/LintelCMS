@@ -46,15 +46,21 @@ const newMenuItem: MegaMenuItem = {
   featuredHref: "",
 };
 
-const menuSourceField = {
+export const menuSourceField = {
   kind: "choice",
   prop: "menuSource",
   label: "Links",
   choices: [
-    { value: "site", label: "The site’s main menu" },
+    { value: "site", label: "A menu from Content → Menus" },
     { value: "custom", label: "Links I choose here" },
   ],
 } as const;
+
+/** Which of the site's menus (Content → Menus) an element shows: "main" unless chosen. */
+export const menuHandleSchema = z
+  .string({ error: "The menu should be named by its handle" })
+  .max(64, { error: "A menu's handle is at most 64 characters" })
+  .default("main");
 
 export const siteHeaderComponent = defineComponent({
   type: "siteHeader",
@@ -65,6 +71,7 @@ export const siteHeaderComponent = defineComponent({
   category: "navigation",
   propsSchema: z.object({
     menuSource: oneOf(["site", "custom"], "Where the menu comes from"),
+    menuHandle: menuHandleSchema,
     items: itemsOf(menuItemSchema, 12, "menu items").default([]),
     logo: pictureSchema.default(emptyPicture),
     showSiteName: z.boolean().default(true),
@@ -74,6 +81,7 @@ export const siteHeaderComponent = defineComponent({
   }),
   defaultProps: {
     menuSource: "site",
+    menuHandle: "main",
     items: [],
     logo: emptyPicture,
     showSiteName: true,
@@ -122,6 +130,7 @@ export const mobileMenuComponent = defineComponent({
   category: "navigation",
   propsSchema: z.object({
     menuSource: oneOf(["site", "custom"], "Where the menu comes from"),
+    menuHandle: menuHandleSchema,
     links: itemsOf(linkSchema, 40, "links").default([]),
     buttonLabel: plainText(60, "Menu"),
     side: oneOf(["right", "left"], "The side it opens from"),
@@ -129,6 +138,7 @@ export const mobileMenuComponent = defineComponent({
   }),
   defaultProps: {
     menuSource: "site",
+    menuHandle: "main",
     links: [],
     buttonLabel: "Menu",
     side: "right",

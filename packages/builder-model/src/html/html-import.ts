@@ -259,6 +259,8 @@ function mapNavigation(element: HtmlElement): ImportedBlueprint | null {
   return {
     type: "navigation",
     props: {
+      // Imported links stay as they were written, rather than becoming the site's menu.
+      menuSource: "custom",
       label: attributeOf(element, "aria-label") ?? "Main",
       links: links.map((link) => {
         const href = attributeOf(link, "href") ?? "";

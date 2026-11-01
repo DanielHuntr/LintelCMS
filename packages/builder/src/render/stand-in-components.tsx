@@ -22,6 +22,7 @@ import {
 import { type ComponentRender, createComponentRegistry, drawsProps } from "./component-registry.js";
 import { MarkedText, withLineBreaks } from "./marked-text.js";
 import { elementRenders } from "./elements/index.js";
+import { EmptyMenuButton, menuOf, useSite } from "./elements/navigation.js";
 import { siteBlockRenders } from "./site-blocks.js";
 
 /**
@@ -140,17 +141,38 @@ const Link = drawsProps(linkComponent, ({ props, attributes, editableText }) => 
   </a>
 ));
 
-const Navigation = drawsProps(navigationComponent, ({ props, attributes }) => (
-  <nav {...attributes} aria-label={props.label || undefined}>
-    <ul>
-      {props.links.map((link, index) => (
-        <li key={index}>
-          <a href={link.href || undefined}>{link.label}</a>
-        </li>
-      ))}
-    </ul>
-  </nav>
-));
+/** A row of links: its own, or one of the site's menus (top level only). */
+const Navigation = drawsProps(navigationComponent, ({ props, attributes, node, mode }) => {
+  const site = useSite();
+  const links =
+    props.menuSource === "site"
+      ? menuOf(site, props.menuHandle).map((link) => ({
+          label: link.label,
+          href: link.url ?? "",
+          isButton: link.style === "button",
+        }))
+      : props.links.map((link) => ({ ...link, isButton: false }));
+  return (
+    <nav {...attributes} aria-label={props.label || undefined}>
+      {links.length === 0 && props.menuSource === "site" && mode === "canvas" ? (
+        <EmptyMenuButton nodeId={node.id} />
+      ) : (
+        <ul>
+          {links.map((link, index) => (
+            <li key={index}>
+              <a
+                href={link.href || undefined}
+                className={link.isButton ? "lintel-button" : undefined}
+              >
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </nav>
+  );
+});
 
 /**
  * The block's own HTML with the marked parts filled in. On the canvas scripts are always

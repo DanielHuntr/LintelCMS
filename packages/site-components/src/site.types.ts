@@ -36,6 +36,8 @@ export interface MenuItem {
   /** Null for a heading that only opens its sub-menu. */
   url: string | null;
   newTab: boolean;
+  /** "button" draws it as a button ("Book now"); left out, it is a plain link. */
+  style?: "link" | "button";
   /** Whether this item is the page being shown, for `aria-current`. */
   current: boolean;
   children: MenuItem[];

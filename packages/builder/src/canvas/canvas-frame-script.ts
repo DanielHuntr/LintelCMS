@@ -333,6 +333,10 @@ export function runCanvasFrame(snap: typeof snapBox): void {
     if (editing && editing.contains(event.target as Node)) return;
     finishEditing(true);
     send({ type: "select", nodeId: nodeIdAt(event.target) });
+    const openMenu =
+      event.target instanceof Element ? event.target.closest("[data-lintel-open-menu]") : null;
+    if (openMenu)
+      send({ type: "openMenu", nodeId: openMenu.getAttribute("data-lintel-open-menu") });
   });
 
   document.addEventListener("dblclick", (event) => {
