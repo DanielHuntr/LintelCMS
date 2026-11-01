@@ -84,9 +84,14 @@ export function updateMethodFor(
     case "source":
       return { installType, oneClick: false, commands: ["pnpm lintel update --to {version}"] };
     case "passenger":
-      // The hosting package's layout comes with shared hosting support; until then this is
-      // done by hand, as the hosting guide describes.
-      return { installType, oneClick: false, commands: ["touch tmp/restart.txt"] };
+      // No supervisor under Passenger: upload the new hosting package (`pnpm build:hosting`
+      // makes lintel-hosting-<version>.zip), then Passenger restarts on tmp/restart.txt.
+      // Installing the package into versions/ from the button comes with shared hosting.
+      return {
+        installType,
+        oneClick: false,
+        commands: ["unzip -o lintel-hosting-{version}.zip", "touch tmp/restart.txt"],
+      };
     case "forge":
       return {
         installType,
