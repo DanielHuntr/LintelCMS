@@ -55,6 +55,7 @@ describe("rendering a page", () => {
       css: "",
       usesBehaviours: false,
       animations: [],
+      effects: [],
       fontPreloads: [],
       script: "",
     });
