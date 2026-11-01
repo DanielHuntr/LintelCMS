@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { backupScheduleSchema, defaultBackupSchedule } from "../backups/backups.schema.js";
 import { defaultSeoDefaults, seoDefaultsSchema } from "../seo/seo-defaults.schema.js";
 
 /**
@@ -28,6 +29,8 @@ export const settingSchemas = {
   deliveryAllowedOrigins: z.array(z.string()),
   /** Search engine defaults from the SEO plugin (see src/seo). */
   seoDefaults: seoDefaultsSchema,
+  /** How often Lintel backs itself up, and how many of those it keeps (see src/backups). */
+  backupSchedule: backupScheduleSchema,
 };
 
 export type SettingKey = keyof typeof settingSchemas;
@@ -41,4 +44,5 @@ export const settingDefaults: { [Key in SettingKey]: SettingValue<Key> } = {
   deliveryRequiresToken: false,
   deliveryAllowedOrigins: [],
   seoDefaults: defaultSeoDefaults,
+  backupSchedule: defaultBackupSchedule,
 };

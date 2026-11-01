@@ -19,3 +19,8 @@ export { navigationsTable } from "../navigation/navigation.table.js";
 export { apiTokensTable } from "../api-tokens/api-tokens.table.js";
 export { webhooksTable, webhookDeliveriesTable } from "../webhooks/webhooks.table.js";
 export { entrySeoTable, redirectsTable } from "../seo/seo.table.js";
+export { backupsTable } from "../backups/backups.table.js";
+export {
+  wordpressImportsTable,
+  wordpressImportItemsTable,
+} from "../wordpress-import/wordpress-import.table.js";

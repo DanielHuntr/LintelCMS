@@ -4,6 +4,9 @@ import rateLimit from "@fastify/rate-limit";
 import Fastify from "fastify";
 import { apiTokensRoutes } from "./api-tokens/api-tokens.routes.js";
 import { authRoutes } from "./auth/auth.routes.js";
+import { backupsRoutes } from "./backups/backups.routes.js";
+import { DEFAULT_BACKUPS_FOLDER, DEFAULT_IMPORTS_FOLDER } from "./backups/data-tools-folders.js";
+import { contentTransferRoutes } from "./content-transfer/content-transfer.routes.js";
 import { blueprintsRoutes } from "./blueprints/blueprints.routes.js";
 import { collectionsRoutes } from "./collections/collections.routes.js";
 import type { ActiveDatabase } from "./database/active-database.js";
@@ -28,6 +31,7 @@ import { DEFAULT_TRANSFORM_CACHE_FOLDER } from "./media/transform-cache.js";
 import { openApiRoutes } from "./openapi/openapi.routes.js";
 import { pluginsRoutes } from "./plugins/plugins.routes.js";
 import { previewRoutes } from "./preview/preview.routes.js";
+import { BackgroundTasks } from "./scheduler/background-tasks.js";
 import { registerScheduledJobs } from "./scheduler/scheduled-jobs.js";
 import { searchRoutes } from "./search/search.routes.js";
 import { seoRoutes } from "./seo/seo.routes.js";
@@ -40,6 +44,7 @@ import { navigationRoutes } from "./navigation/navigation.routes.js";
 import { translationsRoutes } from "./entries/translations.routes.js";
 import { WebhookDispatcher } from "./webhooks/webhook-dispatcher.js";
 import { webhooksRoutes } from "./webhooks/webhooks.routes.js";
+import { wordpressImportRoutes } from "./wordpress-import/wordpress-import.routes.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -64,6 +69,8 @@ declare module "fastify" {
     publicApiUrl: string;
     /** Sends queued webhook deliveries (see src/webhooks). */
     webhooks: WebhookDispatcher;
+    /** Where backups and imports keep their files, and the work they run in the background. */
+    dataTools: DataTools;
   }
 }
 
@@ -75,6 +82,22 @@ export interface MediaOptions {
   transformCacheFolder?: string;
   /** Which entries use an asset, checked before it is deleted. */
   usageFinder?: AssetUsageFinder;
+}
+
+/** Folders for backups and imports. Both default to folders in `.lintel`; tests pass temporary ones. */
+export interface DataToolsOptions {
+  backupsFolder?: string;
+  importsFolder?: string;
+  /** Let the WordPress importer download from private addresses. Defaults to the webhooks setting. */
+  allowPrivateDownloads?: boolean;
+}
+
+export interface DataTools {
+  storage: StorageDriver;
+  backupsFolder: string;
+  importsFolder: string;
+  allowPrivateDownloads: boolean;
+  tasks: BackgroundTasks;
 }
 
 export interface ServerOptions {
@@ -108,6 +131,7 @@ export interface ServerOptions {
   graphiql?: boolean;
   /** How webhooks are sent. Every part has a default. */
   webhooks?: WebhookOptions;
+  dataTools?: DataToolsOptions;
 }
 
 export interface WebhookOptions {
@@ -152,6 +176,17 @@ export function buildServer(options: ServerOptions) {
   });
   server.decorate("webhooks", webhooks);
   server.addHook("onClose", () => webhooks.finishSending());
+  const storage = options.media?.storage ?? new LocalDiskStorage();
+  const dataTools: DataTools = {
+    storage,
+    backupsFolder: options.dataTools?.backupsFolder ?? DEFAULT_BACKUPS_FOLDER,
+    importsFolder: options.dataTools?.importsFolder ?? DEFAULT_IMPORTS_FOLDER,
+    allowPrivateDownloads:
+      options.dataTools?.allowPrivateDownloads ?? options.webhooks?.allowPrivateAddresses ?? false,
+    tasks: new BackgroundTasks((error) => server.log.error(error, "Background work failed")),
+  };
+  server.decorate("dataTools", dataTools);
+  server.addHook("onClose", () => dataTools.tasks.finishAll());
   server.decorateRequest("signedIn", null);
   server.setErrorHandler(sendHttpErrorDetails);
 
@@ -184,12 +219,15 @@ export function buildServer(options: ServerOptions) {
   server.register(graphqlRoutes, { graphiql: options.graphiql ?? false });
   server.register(openApiRoutes);
   server.register(seoRoutes);
+  server.register(backupsRoutes);
+  server.register(contentTransferRoutes);
+  server.register(wordpressImportRoutes);
 
   if (options.runScheduledJobs ?? true) {
     registerScheduledJobs(server);
   }
   server.register(mediaRoutes, {
-    storage: options.media?.storage ?? new LocalDiskStorage(),
+    storage,
     cacheFolder: options.media?.transformCacheFolder ?? DEFAULT_TRANSFORM_CACHE_FOLDER,
     // An asset still used by an entry can't be deleted.
     usageFinder: options.media?.usageFinder ?? {
