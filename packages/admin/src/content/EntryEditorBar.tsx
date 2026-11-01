@@ -1,0 +1,77 @@
+import { Link } from "@tanstack/react-router";
+import { ChevronLeft, Ellipsis, PanelRight, Trash2 } from "lucide-react";
+import type { ReactNode } from "react";
+import { classNames } from "../design/classNames.js";
+import { Menu, type MenuItem } from "../design/Menu.js";
+import { t } from "../i18n/strings.js";
+
+interface EntryEditorBarProps {
+  collectionHandle: string;
+  collectionName: string;
+  saveIndicator: ReactNode;
+  /** The main action: Publish, or Save for people who can't publish. */
+  primaryAction: ReactNode;
+  isPanelOpen: boolean;
+  panelId: string;
+  onTogglePanel: () => void;
+  /** Undefined hides the "More" menu (nothing to delete yet, or not allowed). */
+  onDelete: (() => void) | undefined;
+}
+
+/**
+ * The editor's toolbar. It stays at the top while you scroll, so saving state and
+ * Publish are always in reach, and it blurs the page beneath it like a macOS title bar.
+ */
+export function EntryEditorBar({
+  collectionHandle,
+  collectionName,
+  saveIndicator,
+  primaryAction,
+  isPanelOpen,
+  panelId,
+  onTogglePanel,
+  onDelete,
+}: EntryEditorBarProps) {
+  const moreItems: MenuItem[] = onDelete
+    ? [{ label: t("editor.delete"), icon: Trash2, tone: "danger", onSelect: onDelete }]
+    : [];
+
+  return (
+    <div className="sticky top-0 z-20 -mx-10 -mt-14 mb-8 flex h-16 items-center gap-3 bg-background/80 px-10 pt-2 backdrop-blur-xl backdrop-saturate-150">
+      <Link
+        to="/content/$collection"
+        params={{ collection: collectionHandle }}
+        className="-ml-2 flex h-8 min-w-0 items-center gap-0.5 rounded-control pr-2.5 pl-1 text-body text-accent transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring"
+      >
+        <ChevronLeft aria-hidden="true" strokeWidth={2.25} className="size-5 shrink-0" />
+        <span className="truncate">{collectionName}</span>
+      </Link>
+
+      <div className="ml-auto flex items-center gap-1.5">
+        <div className="mr-2">{saveIndicator}</div>
+        <button
+          type="button"
+          onClick={onTogglePanel}
+          aria-expanded={isPanelOpen}
+          aria-controls={panelId}
+          aria-label={t("editor.togglePanel")}
+          title={t("editor.togglePanel")}
+          className={classNames(
+            "flex size-9 items-center justify-center rounded-control transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring",
+            isPanelOpen ? "text-accent" : "text-label-secondary",
+          )}
+        >
+          <PanelRight aria-hidden="true" strokeWidth={1.75} className="size-[18px]" />
+        </button>
+        {moreItems.length > 0 && (
+          <Menu
+            label={t("editor.more")}
+            trigger={<Ellipsis aria-hidden="true" strokeWidth={2} className="size-[18px]" />}
+            items={moreItems}
+          />
+        )}
+        <div className="ml-1.5">{primaryAction}</div>
+      </div>
+    </div>
+  );
+}

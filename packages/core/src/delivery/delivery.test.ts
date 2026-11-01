@@ -4,7 +4,11 @@ import {
   ensureBlogPostsCollection,
   ensurePagesCollection,
 } from "../collections/default-collections.js";
-import type { AssetLookup, DeliveredAsset } from "../fieldtypes/image-assets.js";
+import {
+  acceptAnyAsset,
+  type AssetLookup,
+  type DeliveredAsset,
+} from "../fieldtypes/image-assets.js";
 import { useTestDatabase } from "../testing/test-database.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
@@ -58,7 +62,11 @@ describe("the public delivery API", () => {
         return new Map(ids.includes(heroImage.id) ? [[heroImage.id, heroImage]] : []);
       },
     };
-    server = await startTestServer(testDatabase.activeDatabase, { assetLookup });
+    // Entries here use made-up image ids, so accept any id and expand them with the fake lookup.
+    server = await startTestServer(testDatabase.activeDatabase, {
+      assetLookup,
+      assetExists: acceptAnyAsset,
+    });
     await ensurePagesCollection(testDatabase.database);
     await ensureBlogPostsCollection(testDatabase.database);
     await createTestUser(testDatabase.database, "ana@example.com", [["*"]]);

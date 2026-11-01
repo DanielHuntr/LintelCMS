@@ -6,6 +6,9 @@
 /** Exported for the few requests `apiRequest` can't make, such as uploads that report progress. */
 export const apiUrl = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
 
+/** Per-field messages from a validation error, keyed by field handle. */
+export type FieldMessages = Readonly<Record<string, string>>;
+
 /** The error shape every API route uses: branch on `code`, show `message` to the person. */
 export class ApiError extends Error {
   constructor(
@@ -18,10 +21,16 @@ export class ApiError extends Error {
     super(message);
     this.name = "ApiError";
   }
+
+  /** Per-field messages on a validation error about entry or blueprint fields. */
+  get fields(): FieldMessages | undefined {
+    const fields = this.details.fields;
+    return typeof fields === "object" && fields !== null ? (fields as FieldMessages) : undefined;
+  }
 }
 
 interface RequestOptions {
-  method?: "GET" | "POST" | "PATCH" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   /** Sent as JSON. Leave out for requests without a body. */
   body?: unknown;
   /** Extra headers, such as the setup code a first-run request has to carry. */

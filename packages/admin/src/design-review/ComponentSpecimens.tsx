@@ -1,4 +1,4 @@
-import { Eye, Globe, Inbox, Languages, Plus, Wrench } from "lucide-react";
+import { Ellipsis, Eye, Globe, Inbox, Languages, Plus, Wrench } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "../design/Badge.js";
 import { Button } from "../design/Button.js";
@@ -9,8 +9,12 @@ import { EmptyState } from "../design/EmptyState.js";
 import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
+import { LoadingRegion } from "../design/LoadingRegion.js";
+import { Menu } from "../design/Menu.js";
 import { PasswordField } from "../design/PasswordField.js";
+import { SearchField } from "../design/SearchField.js";
 import { SegmentedControl } from "../design/SegmentedControl.js";
+import { Skeleton } from "../design/Skeleton.js";
 import { TextField } from "../design/TextField.js";
 import { Toggle } from "../design/Toggle.js";
 import { t } from "../i18n/strings.js";
@@ -107,6 +111,10 @@ export function ComponentSpecimens() {
         </Card>
       </SpecimenGroup>
 
+      <SpecimenGroup title={t("designReview.searchAndLoading")}>
+        <SearchAndLoadingSpecimen />
+      </SpecimenGroup>
+
       <SpecimenGroup title={t("designReview.largeTitle")}>
         <LargeTitle
           headingLevel={2}
@@ -121,6 +129,35 @@ export function ComponentSpecimens() {
   );
 }
 
+function SearchAndLoadingSpecimen() {
+  const [search, setSearch] = useState("");
+  return (
+    <div className="flex flex-col gap-4 rounded-card bg-surface p-5">
+      <div className="flex items-center justify-between gap-3">
+        <SearchField
+          label={t("designReview.sample.search")}
+          value={search}
+          onValueChange={setSearch}
+          className="w-56"
+        />
+        <Menu
+          label={t("designReview.sample.more")}
+          trigger={<Ellipsis aria-hidden="true" className="size-[18px]" />}
+          items={[
+            { label: t("designReview.sample.delete"), tone: "danger", onSelect: () => undefined },
+          ]}
+        />
+      </div>
+      <LoadingRegion label={t("designReview.sample.loading")}>
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-3 w-1/3" />
+        </div>
+      </LoadingRegion>
+    </div>
+  );
+}
+
 function ButtonSpecimens() {
   return (
     <div className="flex flex-col gap-4">
@@ -130,6 +167,7 @@ function ButtonSpecimens() {
           {t("designReview.sample.preview")}
         </Button>
         <Button variant="plain">{t("designReview.sample.cancel")}</Button>
+        <Button variant="destructive">{t("designReview.sample.delete")}</Button>
         <Button disabled>{t("designReview.sample.save")}</Button>
       </div>
       <div className="flex flex-wrap items-center gap-3">
