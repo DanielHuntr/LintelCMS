@@ -38,7 +38,11 @@ export const restoreCommand: Command = {
     const storage = defaultStorage();
 
     return withDatabase(async (activeDatabase) => {
-      const context = { database: activeDatabase.database, databaseKind: activeDatabase.kind, storage };
+      const context = {
+        database: activeDatabase.database,
+        databaseKind: activeDatabase.kind,
+        storage,
+      };
       terminal.say("Checking the backup…");
       const summary = await inspectBackupArchive(context, path);
       printSummary(terminal, summary);
@@ -77,7 +81,9 @@ function printSummary(terminal: Terminal, summary: RestoreSummary) {
   for (const line of formatTable([["Table", "Here now", "In the backup"], ...rows])) {
     terminal.say(`  ${line}`);
   }
-  terminal.say(`  and puts back ${plural(summary.mediaFiles, "media file")} and the site's settings.`);
+  terminal.say(
+    `  and puts back ${plural(summary.mediaFiles, "media file")} and the site's settings.`,
+  );
 }
 
 async function confirmRestore(terminal: Terminal): Promise<boolean> {

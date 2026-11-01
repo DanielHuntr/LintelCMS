@@ -82,7 +82,10 @@ export function printPlan(terminal: Terminal, plan: ImportPlan, dryRun: boolean)
   if (rows.length === 0) {
     terminal.say("The export is empty: there was nothing to import.");
   } else {
-    for (const line of formatTable([["", `${verb} add`, `${verb} update`, "Already here"], ...rows])) {
+    for (const line of formatTable([
+      ["", `${verb} add`, `${verb} update`, "Already here"],
+      ...rows,
+    ])) {
       terminal.say(`  ${line}`);
     }
   }

@@ -59,7 +59,11 @@ export type SettingsProbe = { ok: true } | { ok: false; message: string };
 export function checkSettings(settings: SettingsProbe): CheckResult {
   const title = "Settings";
   if (settings.ok) {
-    return { title, status: "ok", detail: "The environment settings (and .env, if any) are readable." };
+    return {
+      title,
+      status: "ok",
+      detail: "The environment settings (and .env, if any) are readable.",
+    };
   }
   return {
     title,
@@ -82,7 +86,8 @@ export function checkDatabase(database: DatabaseProbe): CheckResult {
     return {
       title,
       status: "warning",
-      detail: "The built-in database is open in a running Lintel, so it couldn't be checked from here.",
+      detail:
+        "The built-in database is open in a running Lintel, so it couldn't be checked from here.",
       fix: "That's fine while Lintel is running. Stop it (Ctrl+C) and run doctor again to check the database too.",
     };
   }
@@ -94,7 +99,10 @@ export function checkDatabase(database: DatabaseProbe): CheckResult {
   };
 }
 
-export function checkMigrations(database: DatabaseProbe, knownMigrations: number): CheckResult | null {
+export function checkMigrations(
+  database: DatabaseProbe,
+  knownMigrations: number,
+): CheckResult | null {
   if (!database.reachable) {
     return null;
   }
@@ -136,7 +144,12 @@ export function checkFolder(title: string, folder: string, problem: string | nul
 
 export type PortProbe = "free" | "lintel" | "taken";
 
-export function checkPort(what: string, port: number, probe: PortProbe, setting: string): CheckResult {
+export function checkPort(
+  what: string,
+  port: number,
+  probe: PortProbe,
+  setting: string,
+): CheckResult {
   const title = `Port ${port} (${what})`;
   if (probe === "free") {
     return { title, status: "ok", detail: "Free for Lintel to use." };

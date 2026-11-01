@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { createAdmin, EmailAlreadyUsedError, emailSchema, readNewPassword } from "@lintel/core/data-tools";
+import {
+  createAdmin,
+  EmailAlreadyUsedError,
+  emailSchema,
+  readNewPassword,
+} from "@lintel/core/data-tools";
 import { type Command, readArguments, withDatabase } from "../command.js";
 import { CommandError } from "../terminal.js";
 

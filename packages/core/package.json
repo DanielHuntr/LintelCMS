@@ -28,6 +28,11 @@
       "types": "./dist/seo/seo-titles.d.ts",
       "development": "./src/seo/seo-titles.ts",
       "default": "./dist/seo/seo-titles.js"
+    },
+    "./content-model-commands": {
+      "types": "./dist/content-model-sync/model-commands.d.ts",
+      "development": "./src/content-model-sync/model-commands.ts",
+      "default": "./dist/content-model-sync/model-commands.js"
     }
   },
   "scripts": {

@@ -53,8 +53,16 @@ export const doctorCommand: Command = {
       checkSettings(settings),
       checkDatabase(database),
       checkMigrations(database, listKnownMigrations().length),
-      checkFolder("Media folder", DEFAULT_UPLOADS_FOLDER, await probeWritableFolder(DEFAULT_UPLOADS_FOLDER)),
-      checkFolder("Backups folder", DEFAULT_BACKUPS_FOLDER, await probeWritableFolder(DEFAULT_BACKUPS_FOLDER)),
+      checkFolder(
+        "Media folder",
+        DEFAULT_UPLOADS_FOLDER,
+        await probeWritableFolder(DEFAULT_UPLOADS_FOLDER),
+      ),
+      checkFolder(
+        "Backups folder",
+        DEFAULT_BACKUPS_FOLDER,
+        await probeWritableFolder(DEFAULT_BACKUPS_FOLDER),
+      ),
       ...(await checkPorts(config?.API_PORT ?? 4000, config?.ADMIN_ORIGIN)),
     ].filter((result): result is CheckResult => result !== null);
 
@@ -84,7 +92,9 @@ export function printResults(terminal: Terminal, results: readonly CheckResult[]
   const problems = results.filter((result) => result.status === "problem").length;
   const warnings = results.filter((result) => result.status === "warning").length;
   if (problems > 0) {
-    terminal.say(`${problems} ${problems === 1 ? "problem needs" : "problems need"} fixing before Lintel can run.`);
+    terminal.say(
+      `${problems} ${problems === 1 ? "problem needs" : "problems need"} fixing before Lintel can run.`,
+    );
   } else if (warnings > 0) {
     terminal.say("Lintel can run here. Have a look at the notes marked ! above.");
   } else {

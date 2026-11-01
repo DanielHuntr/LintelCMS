@@ -19,11 +19,19 @@ export const backupCommand: Command = {
   summary: "Back up the database, settings and media into one .zip",
   usage,
   async run(argumentList, terminal) {
-    const { values } = readArguments(argumentList, { output: { type: "string", short: "o" } }, usage);
+    const { values } = readArguments(
+      argumentList,
+      { output: { type: "string", short: "o" } },
+      usage,
+    );
     const storage = defaultStorage();
 
     return withDatabase(async (activeDatabase) => {
-      const context = { database: activeDatabase.database, databaseKind: activeDatabase.kind, storage };
+      const context = {
+        database: activeDatabase.database,
+        databaseKind: activeDatabase.kind,
+        storage,
+      };
       let path: string;
       let contents;
       let size;

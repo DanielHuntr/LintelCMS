@@ -28,6 +28,7 @@ describe("the lintel command", () => {
       "export",
       "import",
       "migrate",
+      "model",
       "create-admin",
     ]) {
       expect(help).toContain(`  ${name} `);
