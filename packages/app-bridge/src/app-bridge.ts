@@ -202,8 +202,14 @@ export function createAppBridge(options: AppBridgeOptions = {}): AppBridge {
     },
 
     autoResize(element) {
-      const target = element ?? document.documentElement;
-      const report = () => bridge.resize(target.scrollHeight);
+      // The body's own height, not the document's: the document is at least as tall as the
+      // frame, so measuring it would let the frame grow but never shrink.
+      const target = element ?? document.body;
+      const report = () => {
+        const style = getComputedStyle(target);
+        const margins = parseFloat(style.marginTop) + parseFloat(style.marginBottom);
+        bridge.resize(target.getBoundingClientRect().height + (margins || 0));
+      };
       report();
       const observer = new ResizeObserver(report);
       observer.observe(target);
