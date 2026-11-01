@@ -6,7 +6,9 @@ import { findDeliveredEntry } from "../delivery/delivery.service.js";
 import type { AssetLookup } from "../fieldtypes/image-assets.js";
 import { listDeliveredRedirects } from "../seo/redirects.service.js";
 import { buildRobots, buildSitemap } from "../seo/sitemap.service.js";
-import type { RenderedPagesCache, SiteResponse } from "./rendered-pages-cache.js";
+import { addPathPrefix } from "../sites/site-addresses.js";
+import type { Site } from "../sites/sites.table.js";
+import type { PageCache, SiteResponse } from "./rendered-pages-cache.js";
 import { loadSiteChrome, localiseUrl } from "./site-chrome.service.js";
 import { loadSiteContext, type SiteContext } from "./site-context.service.js";
 import { redirectResponse, renderPage, textResponse } from "./site-documents.js";
@@ -34,7 +36,10 @@ export interface SiteDependencies {
   assetLookup: AssetLookup;
   templates: readonly SiteTemplate[];
   builtInSiteUrl: string | null;
-  cache: RenderedPagesCache;
+  /** The site this visit is to, found from the address (see site.routes.ts). */
+  site: Site;
+  /** The rendered pages cache, for this site's pages. */
+  cache: PageCache;
   now?: () => Date;
 }
 
@@ -46,7 +51,7 @@ export interface PageRequest {
   locale: string;
   /** The address without a language prefix, which routing reads. */
   localPath: string;
-  /** The address as visited, with any language prefix. */
+  /** The address as visited, with any site and language prefix. */
   path: string;
 }
 
@@ -62,7 +67,13 @@ export async function readSiteChrome(
   locale: string,
 ): Promise<SiteChrome> {
   return dependencies.cache.shareValue(`chrome:${locale}`, () =>
-    loadSiteChrome(dependencies.database, context, locale, dependencies.assetLookup),
+    loadSiteChrome(
+      dependencies.database,
+      context,
+      locale,
+      dependencies.assetLookup,
+      dependencies.site,
+    ),
   );
 }
 
@@ -75,7 +86,7 @@ export async function respondToSitePath(
   const path = tidyPath(rawPath);
   // "/about/" and "//about" are the same page as "/about": send visitors to the one address.
   if (path !== null && encodeURI(path) !== rawPath) {
-    return redirectResponse(encodeURI(path), 301);
+    return redirectResponse(onSite(dependencies, encodeURI(path)), 301);
   }
   if (previewToken) {
     return renderPreview(dependencies, path ?? "/", previewToken);
@@ -88,6 +99,14 @@ export async function respondToSitePath(
   const response = await resolveSitePath(dependencies, path);
   dependencies.cache.store(key, response);
   return response;
+}
+
+/**
+ * An address on this site as visitors see it: with the site's path prefix ("/fr/about" for
+ * "/about" on a site served under /fr). Entry addresses from delivery already have it.
+ */
+function onSite(dependencies: SiteDependencies, path: string): string {
+  return addPathPrefix(dependencies.site.pathPrefix, path) ?? path;
 }
 
 async function resolveSitePath(
@@ -111,7 +130,10 @@ async function resolveSitePath(
     context.locales.map(({ code }) => code),
   );
   if (localPath === `/${HOME_SLUG}`) {
-    return redirectResponse(localisedPath("/", locale, context.defaultLocale), 301);
+    return redirectResponse(
+      onSite(dependencies, localisedPath("/", locale, context.defaultLocale)),
+      301,
+    );
   }
   const chrome = await readSiteChrome(dependencies, context, locale);
   const request: PageRequest = {
@@ -120,7 +142,7 @@ async function resolveSitePath(
     chrome,
     locale,
     localPath,
-    path: path ?? "/",
+    path: onSite(dependencies, path ?? "/"),
   };
   if (path !== null) {
     for (const route of matchSiteRoute(localPath, context.collections)) {
@@ -199,6 +221,8 @@ async function findPublished(
       slug,
       request.locale,
       request.dependencies.assetLookup,
+      undefined,
+      request.dependencies.site,
     );
   } catch (error) {
     if (error instanceof PublishedEntryNotFoundError) {
@@ -297,6 +321,7 @@ async function renderWithHead(
     chrome.siteName,
     subject,
     dependencies.assetLookup,
+    dependencies.site,
   );
   const now = dependencies.now?.() ?? new Date();
   return renderPage(context, chrome, { view, head, path: request.path, ...options }, now);
@@ -318,10 +343,11 @@ async function searchEngineFile(
   if (path === "/robots.txt") {
     return textResponse(
       "text/plain; charset=utf-8",
-      await buildRobots(dependencies.database, { fallbackSiteUrl }),
+      await buildRobots(dependencies.database, { site: dependencies.site, fallbackSiteUrl }),
     );
   }
   const xml = await buildSitemap(dependencies.database, {
+    site: dependencies.site,
     fallbackSiteUrl,
     pathFor: (row, entryPath) => localiseUrl(entryPath, row.locale, context.defaultLocale),
   });

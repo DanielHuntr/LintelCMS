@@ -104,7 +104,8 @@ function unitFromDefinition(definition: Definition): UnitResult {
   if (definition.kind === "taxonomy") {
     const checked = createTaxonomyRequestSchema.safeParse(definition);
     return checked.success
-      ? { unit: { kind: "taxonomy", ...checked.data } }
+      ? // Which site owns a taxonomy is chosen in the admin, not in content model files.
+        { unit: { kind: "taxonomy", handle: checked.data.handle, name: checked.data.name } }
       : { problems: issueMessages(checked.error) };
   }
   const checked = createNavigationRequestSchema.safeParse(definition);

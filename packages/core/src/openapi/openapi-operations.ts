@@ -25,6 +25,7 @@ import {
   revisionSchema,
   revisionSummarySchema,
   scheduleEntryRequestSchema,
+  copyEntryToSiteRequestSchema,
   translateEntryRequestSchema,
   updateEntryRequestSchema,
 } from "../entries/entries.schema.js";
@@ -33,6 +34,7 @@ import { deliveredGlobalSetSchema, globalSetParamsSchema } from "../globals/glob
 import { navigationParamsSchema } from "../navigation/navigation.schema.js";
 import { entryPreviewSchema } from "../preview/preview.schema.js";
 import { localeQuerySchema } from "../sites/locales.schema.js";
+import { deliveredSiteSchema, matchSiteQuerySchema } from "../sites/sites.schema.js";
 import {
   taxonomyHandleParamsSchema,
   termSlugParamsSchema,
@@ -120,6 +122,51 @@ export const openApiOperations: Operation[] = [
     summary: "List the site's languages",
     access: "delivery",
     responses: { 200: { description: "The main language and every language the site has." } },
+  },
+  {
+    method: "get",
+    path: "/delivery/sites",
+    tag: "Delivery",
+    summary: "List every site",
+    description:
+      "For routing and language or country switchers on websites that serve several sites.",
+    access: "public",
+    responses: {
+      200: {
+        description: "Every site, the main one first.",
+        schema: z.object({ sites: z.array(deliveredSiteSchema) }),
+      },
+    },
+  },
+  {
+    method: "get",
+    path: "/delivery/site",
+    tag: "Delivery",
+    summary: "Get the site this request is for",
+    description:
+      "Chosen by `?site=<handle>`, the `Lintel-Site` header, or the domain the request came to, else the main site.",
+    access: "public",
+    responses: {
+      200: { description: "The site.", schema: deliveredSiteSchema },
+      404: { description: "There is no site with the handle asked for." },
+    },
+  },
+  {
+    method: "get",
+    path: "/delivery/sites/match",
+    tag: "Delivery",
+    summary: "Find the site for a page address",
+    description:
+      "When sites share a domain, the longest path prefix that fits wins. `path` is the address within the site.",
+    access: "public",
+    query: matchSiteQuerySchema,
+    responses: {
+      200: {
+        description: "The site and the path within it.",
+        schema: z.object({ site: deliveredSiteSchema, path: z.string() }),
+      },
+      404: { description: "No site answers on this address." },
+    },
   },
   {
     method: "get",
@@ -366,6 +413,24 @@ export const openApiOperations: Operation[] = [
     access: "entries:create",
     params: entryIdParamsSchema,
     responses: { 201: { description: "The copy, a draft.", schema: entrySchema } },
+  },
+  {
+    method: "post",
+    path: "/entries/{id}/copy-to-site",
+    tag: "Entries",
+    summary: "Copy an entry to another site as a new draft",
+    description:
+      "The copy isn't linked to the original. Entries of shared collections can't be copied.",
+    access: "entries:create",
+    params: entryIdParamsSchema,
+    body: copyEntryToSiteRequestSchema,
+    responses: {
+      201: { description: "The copy, a draft on the other site.", schema: entrySchema },
+      403: { description: "You can't work on that site." },
+      404: {
+        description: "There is no such entry or site, or the site doesn't use the collection.",
+      },
+    },
   },
   {
     method: "post",

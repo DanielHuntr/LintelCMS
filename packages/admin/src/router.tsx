@@ -38,6 +38,9 @@ import {
   mustFinishSetupFirst,
 } from "./setup/setupRouting.js";
 import { SessionProvider } from "./session/SessionContext.js";
+import { loadSitesForAdmin } from "./sites/loadSitesForAdmin.js";
+import { CurrentSiteProvider } from "./sites/SiteContext.js";
+import { SitesPage } from "./sites/SitesPage.js";
 import { SettingsPage } from "./settings/SettingsPage.js";
 import { PublishedPageView } from "./content/PublishedPageView.js";
 import { FeaturesSettingsPage } from "./features/FeaturesSettingsPage.js";
@@ -120,14 +123,16 @@ const adminRoute = createRoute({
       throw redirect({ to: "/account" });
     }
 
-    return { session };
+    // Settles which site requests are for before any screen asks for content.
+    const sites = await loadSitesForAdmin(adminQueryClient);
+    return { session, sites };
   },
   errorComponent: ServerUnreachablePage,
   component: SignedInAdmin,
 });
 
 function SignedInAdmin() {
-  const { session } = adminRoute.useRouteContext();
+  const { session, sites } = adminRoute.useRouteContext();
   const navigate = useNavigate();
 
   async function handleSignOut() {
@@ -138,13 +143,15 @@ function SignedInAdmin() {
 
   return (
     <SessionProvider session={session}>
-      <AdminLayout
-        permissions={session.permissions}
-        enabledPlugins={session.enabledPlugins}
-        siteName={session.siteName}
-        signedInUser={session.user}
-        onSignOut={handleSignOut}
-      />
+      <CurrentSiteProvider initialSites={sites}>
+        <AdminLayout
+          permissions={session.permissions}
+          enabledPlugins={session.enabledPlugins}
+          siteName={session.siteName}
+          signedInUser={session.user}
+          onSignOut={handleSignOut}
+        />
+      </CurrentSiteProvider>
     </SessionProvider>
   );
 }
@@ -248,6 +255,12 @@ const settingsRoute = createRoute({
   component: SettingsPage,
 });
 
+const sitesRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/settings/sites",
+  component: SitesPage,
+});
+
 const contentTypesRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: "/settings/content-types",
@@ -335,6 +348,7 @@ const contentRoutes = [
   entryEditorRoute,
   publishedPageRoute,
   settingsRoute,
+  sitesRoute,
   contentTypesRoute,
   newContentTypeRoute,
   blueprintRoute,

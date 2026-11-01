@@ -1,5 +1,7 @@
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { readSetting, writeSetting } from "../settings/settings.service.js";
+import { isDefaultSite } from "./sites.service.js";
+import type { Site } from "./sites.table.js";
 
 /**
  * The website's public address as typed in Settings → Your website, such as
@@ -8,6 +10,18 @@ import { readSetting, writeSetting } from "../settings/settings.service.js";
  */
 export function readSiteAddress(database: DatabaseOrTransaction): Promise<string> {
   return readSetting(database, "siteAddress");
+}
+
+/**
+ * One site's public address: its own (Settings → Sites), or for the default site the one
+ * typed in Settings → Your website. "" when neither is known.
+ */
+export async function readAddressForSite(
+  database: DatabaseOrTransaction,
+  site: Site | undefined,
+): Promise<string> {
+  if (site?.siteUrl) return site.siteUrl;
+  return site === undefined || isDefaultSite(site) ? readSiteAddress(database) : "";
 }
 
 /**

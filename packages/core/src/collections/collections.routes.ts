@@ -1,8 +1,10 @@
 import type { FastifyInstance } from "fastify";
 import { requirePermission } from "../auth/require-permission.js";
 import { parseRequest } from "../http/http-errors.js";
+import { resolveEditingSite } from "../sites/request-site.js";
 import {
   collectionHandleParamsSchema,
+  collectionListQuerySchema,
   createCollectionRequestSchema,
   updateCollectionRequestSchema,
 } from "./collections.schema.js";
@@ -22,12 +24,21 @@ import {
  *   POST   /collections          (collections:update)  -> 201 Collection
  *   PUT    /collections/:handle  (collections:update)  -> Collection
  *   DELETE /collections/:handle  (collections:update)  -> 204, or 409 COLLECTION_NOT_EMPTY
+ *
+ * The list holds the collections the admin's current site has; `?site=all` lists every one,
+ * for Settings, where a collection's sites are chosen.
  */
 export async function collectionsRoutes(server: FastifyInstance) {
   const canRead = { preHandler: requirePermission("collections:read") };
   const canUpdate = { preHandler: requirePermission("collections:update") };
 
-  server.get("/collections", canRead, async () => listCollections(server.database));
+  server.get("/collections", canRead, async (request) => {
+    const { site } = parseRequest(collectionListQuerySchema, request.query);
+    if (site === "all") {
+      return listCollections(server.database);
+    }
+    return listCollections(server.database, await resolveEditingSite(request));
+  });
 
   server.get("/collections/:handle", canRead, async (request) => {
     const { handle } = parseRequest(collectionHandleParamsSchema, request.params);

@@ -77,6 +77,9 @@ export interface LinkField extends CommonFieldOptions {
 export interface EmailField extends CommonFieldOptions {
   type: "email";
 }
+export interface FormField extends CommonFieldOptions {
+  type: "form";
+}
 export interface UrlField extends CommonFieldOptions {
   type: "url";
 }
@@ -133,7 +136,8 @@ export type InnerField =
   | MarkdownField
   | ListField
   | EntriesField
-  | TermsField;
+  | TermsField
+  | FormField;
 
 /** A kind of block editors can add to a blocks field, such as a Hero or a Call to action. */
 export interface BlockTypeDefinition {
@@ -207,6 +211,11 @@ export function image(options: CommonFieldOptions = {}): ImageField {
 /** A link to a web page, an email address or a page on this site. */
 export function link(options: CommonFieldOptions = {}): LinkField {
   return { type: "link", ...options };
+}
+
+/** One of the site's forms, such as a contact form, by its handle (the Forms plugin). */
+export function form(options: CommonFieldOptions = {}): FormField {
+  return { type: "form", ...options };
 }
 
 /** An email address. */

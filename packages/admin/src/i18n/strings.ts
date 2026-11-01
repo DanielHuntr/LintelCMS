@@ -11,6 +11,7 @@ import { pluginStrings } from "./pluginStrings.js";
 import { peopleStrings } from "./peopleStrings.js";
 import { pageDesignStrings } from "./pageDesignStrings.js";
 import { contentModelSyncStrings } from "./contentModelSyncStrings.js";
+import { siteStrings } from "./siteStrings.js";
 
 /**
  * Every word the admin shows lives here, so the admin can be translated and
@@ -32,6 +33,7 @@ const english = {
   ...discountStrings,
   ...paymentProviderStrings,
   ...shopifyImportStrings,
+  ...siteStrings,
   "app.name": "Lintel",
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",
@@ -660,7 +662,7 @@ const english = {
     "Your products and orders are kept; the Commerce section just hides. Switch it back on any time.",
   "features.keptContent.forms":
     "Your forms and their submissions are kept; the Forms section just hides. Switch it back on any time.",
-  "settings.moreSoonTitle": "Site details, domains and languages",
+  "settings.moreSoonTitle": "More site settings",
   "settings.moreSoon": "More settings arrive in later phases of the roadmap.",
   "contentTypes.title": "Content types",
   "contentTypes.subtitle": "Each kind of content and the fields it has.",

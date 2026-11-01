@@ -1,5 +1,6 @@
 import { findBlueprintByIdOrFail } from "../blueprints/blueprints.service.js";
 import {
+  entrySiteFor,
   findCollectionByIdOrFail,
   findCollectionOrFail,
 } from "../collections/collections.service.js";
@@ -8,6 +9,9 @@ import type { DatabaseOrTransaction } from "../database/client.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
 import type { AssetLookup } from "../fieldtypes/image-assets.js";
 import { resolveLocale } from "../sites/locales.service.js";
+import { addPathPrefix } from "../sites/site-addresses.js";
+import { findSiteByIdOrFail, siteOrDefault } from "../sites/sites.service.js";
+import type { Site } from "../sites/sites.table.js";
 import { findTaxonomyOrFail } from "../taxonomies/taxonomies.service.js";
 import { TermNotFoundError } from "../taxonomies/taxonomies.errors.js";
 import { findTermBySlug } from "../taxonomies/terms.repository.js";
@@ -35,6 +39,9 @@ import { buildEntryUrl } from "./entry-urls.js";
  * Published content for websites and apps. Everything served here is the version kept
  * when the entry was last published, never the working copy editors are changing, unless
  * the request carries a preview token for that entry (see src/preview).
+ *
+ * Each request is for one site (the default when none is given): its own entries, or for a
+ * shared collection the ones every site shows. Addresses carry the site's path prefix.
  */
 
 /** What delivering needs from a row: published values, or a draft's for preview. */
@@ -53,14 +60,18 @@ export async function listDeliveredEntries(
   collectionHandle: string,
   query: DeliveryListQuery,
   assetLookup: AssetLookup,
+  forSite?: Site,
 ): Promise<DeliveredList> {
-  const collection = await findCollectionOrFail(database, collectionHandle);
+  const site = await siteOrDefault(database, forSite);
+  const collection = await findCollectionOrFail(database, collectionHandle, site);
   const blueprint = await findBlueprintByIdOrFail(database, collection.blueprintId);
-  const { locale } = await resolveLocale(database, query.locale);
+  const entrySite = await entrySiteFor(database, collection, site);
+  const { locale } = await resolveLocale(database, query.locale, entrySite);
   const filter: PublishedEntryFilter = {
     collectionId: collection.id,
+    siteId: entrySite.id,
     locale,
-    withTerm: await findTermFilter(database, blueprint.fields, query),
+    withTerm: await findTermFilter(database, blueprint.fields, query, site),
   };
   const page = { limit: query.perPage, offset: (query.page - 1) * query.perPage };
   const rows = await listPublishedEntries(database, filter, collection.structure === "dated", page);
@@ -71,6 +82,7 @@ export async function listDeliveredEntries(
       blueprint.fields,
       rows.map((row) => ({ ...row, values: row.publishedData })),
       assetLookup,
+      site,
     ),
     total: await countPublishedEntries(database, filter),
   };
@@ -85,11 +97,12 @@ async function findTermFilter(
   database: DatabaseOrTransaction,
   fields: readonly FieldDefinition[],
   query: Pick<DeliveryListQuery, "taxonomy" | "term">,
+  site: Site,
 ): Promise<PublishedEntryFilter["withTerm"]> {
   if (query.taxonomy === undefined && query.term === undefined) {
     return undefined;
   }
-  const taxonomy = await findTaxonomyOrFail(database, query.taxonomy ?? "");
+  const taxonomy = await findTaxonomyOrFail(database, query.taxonomy ?? "", site);
   const term = await findTermBySlug(database, taxonomy.id, query.term ?? "");
   if (!term) {
     throw new TermNotFoundError();
@@ -113,12 +126,16 @@ export async function findDeliveredEntry(
   requestedLocale: string | undefined,
   assetLookup: AssetLookup,
   previewEntryId?: string,
+  forSite?: Site,
 ): Promise<DeliveredEntryWithTranslations> {
-  const collection = await findCollectionOrFail(database, collectionHandle);
+  const site = await siteOrDefault(database, forSite);
+  const collection = await findCollectionOrFail(database, collectionHandle, site);
   const blueprint = await findBlueprintByIdOrFail(database, collection.blueprintId);
-  const { locale } = await resolveLocale(database, requestedLocale);
+  const entrySite = await entrySiteFor(database, collection, site);
+  const { locale } = await resolveLocale(database, requestedLocale, entrySite);
+  const where = { collectionId: collection.id, siteId: entrySite.id, locale };
   if (previewEntryId) {
-    const draft = await findDraftEntry(database, { collectionId: collection.id, locale, slug });
+    const draft = await findDraftEntry(database, { ...where, slug });
     if (draft?.id === previewEntryId) {
       return deliverWithTranslations(
         database,
@@ -126,14 +143,11 @@ export async function findDeliveredEntry(
         blueprint.fields,
         draftToDeliver(draft),
         assetLookup,
+        site,
       );
     }
   }
-  const row = await findPublishedEntryBySlug(
-    database,
-    { collectionId: collection.id, locale },
-    slug,
-  );
+  const row = await findPublishedEntryBySlug(database, where, slug);
   if (!row) {
     throw new PublishedEntryNotFoundError(slug);
   }
@@ -143,6 +157,7 @@ export async function findDeliveredEntry(
     blueprint.fields,
     { ...row, values: row.publishedData },
     assetLookup,
+    site,
   );
 }
 
@@ -151,21 +166,26 @@ export async function findDeliveredDraft(
   database: DatabaseOrTransaction,
   entryId: string,
   assetLookup: AssetLookup,
-): Promise<{ collectionHandle: string; entry: DeliveredEntryWithTranslations } | undefined> {
+): Promise<
+  | { collectionHandle: string; siteHandle: string; entry: DeliveredEntryWithTranslations }
+  | undefined
+> {
   const draft = await findDraftEntry(database, { entryId });
   if (!draft) {
     return undefined;
   }
   const collection = await findCollectionByIdOrFail(database, draft.collectionId);
   const blueprint = await findBlueprintByIdOrFail(database, collection.blueprintId);
+  const site = await findSiteByIdOrFail(database, draft.siteId);
   const entry = await deliverWithTranslations(
     database,
     collection,
     blueprint.fields,
     draftToDeliver(draft),
     assetLookup,
+    site,
   );
-  return { collectionHandle: collection.handle, entry };
+  return { collectionHandle: collection.handle, siteHandle: site.handle, entry };
 }
 
 function draftToDeliver(draft: DraftEntryRow): EntryToDeliver {
@@ -178,8 +198,16 @@ async function deliverWithTranslations(
   fields: readonly FieldDefinition[],
   entry: EntryToDeliver,
   assetLookup: AssetLookup,
+  site: Site,
 ): Promise<DeliveredEntryWithTranslations> {
-  const [delivered] = await deliverEntries(database, collection, fields, [entry], assetLookup);
+  const [delivered] = await deliverEntries(
+    database,
+    collection,
+    fields,
+    [entry],
+    assetLookup,
+    site,
+  );
   if (!delivered) {
     throw new PublishedEntryNotFoundError(entry.slug);
   }
@@ -191,7 +219,7 @@ async function deliverWithTranslations(
       .map((member) => ({
         locale: member.locale,
         slug: member.slug,
-        url: buildEntryUrl(collection.routePattern, member),
+        url: addPathPrefix(site.pathPrefix, buildEntryUrl(collection.routePattern, member)),
       })),
   };
 }
@@ -203,6 +231,7 @@ async function deliverEntries(
   fields: readonly FieldDefinition[],
   entries: readonly EntryToDeliver[],
   assetLookup: AssetLookup,
+  site: Site,
 ): Promise<DeliveredEntry[]> {
   const dataList = entries.map((entry) => entry.values);
   const imageIds = collectImageIds(fields, dataList);
@@ -213,10 +242,13 @@ async function deliverEntries(
     id: entry.id,
     slug: entry.slug,
     // A draft that has never been published gets today's date in its address, as it would.
-    url: buildEntryUrl(collection.routePattern, {
-      slug: entry.slug,
-      publishedAt: entry.publishedAt ?? new Date(),
-    }),
+    url: addPathPrefix(
+      site.pathPrefix,
+      buildEntryUrl(collection.routePattern, {
+        slug: entry.slug,
+        publishedAt: entry.publishedAt ?? new Date(),
+      }),
+    ),
     locale: entry.locale,
     publishedAt: entry.publishedAt?.toISOString() ?? null,
     data: deliverValues(fields, entry.values, assets, references),

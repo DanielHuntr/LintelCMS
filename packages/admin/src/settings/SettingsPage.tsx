@@ -1,5 +1,6 @@
 import {
   Blocks,
+  Globe,
   Inbox,
   KeyRound,
   Languages,
@@ -97,6 +98,15 @@ export function SettingsPage() {
               label={t("features.title")}
               description={t("settings.featuresDescription")}
               to="/settings/features"
+            />
+          )}
+          {canSeeSiteSettings && (
+            <GroupedListRow
+              icon={Globe}
+              iconTone="accent"
+              label={t("sites.title")}
+              description={t("settings.sitesDescription")}
+              to="/settings/sites"
             />
           )}
           {canSeeSiteSettings && (

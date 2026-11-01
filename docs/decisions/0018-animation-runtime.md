@@ -1,4 +1,4 @@
-# 11. Animations as JSON specs, played by our own small runtime on the Web Animations API
+# 18. Animations as JSON specs, played by our own small runtime on the Web Animations API
 
 Date: 2026-11-01
 

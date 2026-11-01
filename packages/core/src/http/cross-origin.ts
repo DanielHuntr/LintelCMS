@@ -49,7 +49,7 @@ export function crossOriginOptions(adminOrigin: string, apiPrefix = "") {
         origin,
         credentials: false,
         methods: request.url.startsWith("/delivery/shop/") ? SHOP_METHODS : PUBLIC_METHODS,
-        allowedHeaders: ["authorization", "content-type"],
+        allowedHeaders: ["authorization", "content-type", "lintel-site"],
         maxAge: 600,
       };
     }

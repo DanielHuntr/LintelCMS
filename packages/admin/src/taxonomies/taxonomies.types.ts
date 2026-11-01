@@ -3,6 +3,8 @@ export interface Taxonomy {
   id: string;
   handle: string;
   name: string;
+  /** The site it belongs to; null when every site shares it. */
+  siteId?: string | null;
   termCount: number;
   updatedAt: string;
 }

@@ -12,7 +12,10 @@ import { assetFileUrl } from "../media/asset-response.js";
 import { listAssetRows } from "../media/media.repository.js";
 import type { AssetKind } from "../media/media.schema.js";
 import { isSeoPluginEnabled } from "../seo/seo-enabled.js";
+import { entrySiteFor } from "../collections/collections.service.js";
 import { resolveLocale } from "../sites/locales.service.js";
+import { addPathPrefix } from "../sites/site-addresses.js";
+import type { Site } from "../sites/sites.table.js";
 import {
   type CollectionWithBlueprint,
   findWorkingCopyBySlug,
@@ -35,6 +38,8 @@ export interface GraphqlContext {
   previewEntryId?: string;
   /** The whole media library may be listed: any API token or an admin session. */
   canListMedia: boolean;
+  /** The site the request is for (`?site=`, the `Lintel-Site` header or the domain). */
+  site?: Site;
 }
 
 /** The collections and blueprints the schema is built from. */
@@ -91,10 +96,12 @@ export async function listCollectionEntries(
   checkPageArguments(args);
   if (args.preview) {
     requirePreview(context);
-    const { locale } = await resolveLocale(context.database, args.locale ?? undefined);
+    const entrySite = await entrySiteFor(context.database, collection, context.site);
+    const { locale } = await resolveLocale(context.database, args.locale ?? undefined, entrySite);
     const { rows, total } = await listWorkingCopies(
       context.database,
       collection.id,
+      entrySite.id,
       locale,
       collection.structure === "dated",
       { limit: args.perPage, offset: (args.page - 1) * args.perPage },
@@ -107,6 +114,7 @@ export async function listCollectionEntries(
     collection.handle,
     { page: args.page, perPage: args.perPage, locale: args.locale ?? undefined },
     context.assetLookup,
+    context.site,
   );
   return {
     items: list.items.map((item) => ({ ...item, status: "published", title: titleOf(item.data) })),
@@ -123,8 +131,19 @@ export async function findCollectionEntry(
   requestedLocale?: string | null,
 ): Promise<GraphqlEntry | null> {
   if (preview) {
-    const { locale } = await resolveLocale(context.database, requestedLocale ?? undefined);
-    const row = await findWorkingCopyBySlug(context.database, collection.id, locale, slug);
+    const entrySite = await entrySiteFor(context.database, collection, context.site);
+    const { locale } = await resolveLocale(
+      context.database,
+      requestedLocale ?? undefined,
+      entrySite,
+    );
+    const row = await findWorkingCopyBySlug(
+      context.database,
+      collection.id,
+      entrySite.id,
+      locale,
+      slug,
+    );
     // A preview link opens exactly one draft; anything wider needs a token or a session.
     if (!(row && row.id === context.previewEntryId)) {
       requirePreview(context);
@@ -139,6 +158,8 @@ export async function findCollectionEntry(
       slug,
       requestedLocale ?? undefined,
       context.assetLookup,
+      undefined,
+      context.site,
     );
     return { ...entry, status: "published", title: titleOf(entry.data) };
   } catch (error) {
@@ -211,7 +232,7 @@ async function expandWorkingCopies(
   return rows.map((row) => ({
     id: row.id,
     slug: row.slug,
-    url: buildEntryUrl(collection.routePattern, row),
+    url: addPathPrefix(context.site?.pathPrefix ?? "", buildEntryUrl(collection.routePattern, row)),
     status: row.status,
     publishedAt: row.publishedAt?.toISOString() ?? null,
     title: titleOf(row.data),

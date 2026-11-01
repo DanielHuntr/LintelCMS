@@ -1,5 +1,6 @@
 import type { MenuItem, SiteChrome } from "@lintel/site-components";
 import type { DatabaseOrTransaction } from "../database/client.js";
+import type { Site } from "../sites/sites.table.js";
 import type { AssetLookup } from "../fieldtypes/image-assets.js";
 import { deliverAllGlobalSets } from "../globals/globals-delivery.service.js";
 import { mainMenu } from "../navigation/default-navigation.js";
@@ -32,10 +33,11 @@ export async function loadSiteChrome(
   context: SiteContext,
   locale: string,
   assetLookup: AssetLookup,
+  site?: Site,
 ): Promise<SiteChrome> {
   const [{ globals }, menuItems] = await Promise.all([
-    deliverAllGlobalSets(database, locale, assetLookup),
-    loadMainMenu(database, locale),
+    deliverAllGlobalSets(database, locale, assetLookup, site),
+    loadMainMenu(database, locale, site),
   ]);
   const settings = globals.site_settings ?? {};
   const socialLinks = Array.isArray(settings.social_links)
@@ -61,9 +63,10 @@ export async function loadSiteChrome(
 async function loadMainMenu(
   database: DatabaseOrTransaction,
   locale: string,
+  site?: Site,
 ): Promise<DeliveredNavigationItem[]> {
   try {
-    return (await deliverNavigation(database, mainMenu.handle, locale)).items;
+    return (await deliverNavigation(database, mainMenu.handle, locale, site)).items;
   } catch (error) {
     if (error instanceof NavigationNotFoundError) {
       return [];

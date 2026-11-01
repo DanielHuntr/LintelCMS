@@ -7,14 +7,21 @@ const taxonomyNameSchema = z
   .min(1, { error: "Please give the taxonomy a name" })
   .max(100, { error: "Names can be at most 100 characters" });
 
-/** `POST /taxonomies` */
+/** Which site a taxonomy belongs to, by handle; null for one every site shares. */
+const taxonomySiteSchema = z.string({ error: "The site should be a site's handle" }).nullable();
+
+/** `POST /taxonomies`. Without a site, every site shares it. */
 export const createTaxonomyRequestSchema = z.object({
   handle: handleSchema("Please give the taxonomy a handle"),
   name: taxonomyNameSchema,
+  siteHandle: taxonomySiteSchema.default(null),
 });
 
 /** `PUT /taxonomies/:handle`. The handle can't change: fields refer to it. */
-export const updateTaxonomyRequestSchema = z.object({ name: taxonomyNameSchema });
+export const updateTaxonomyRequestSchema = z.object({
+  name: taxonomyNameSchema,
+  siteHandle: taxonomySiteSchema.optional(),
+});
 
 export const taxonomyHandleParamsSchema = z.object({ handle: z.string() });
 
@@ -56,6 +63,8 @@ export const taxonomySchema = z.object({
   id: z.uuid(),
   handle: z.string(),
   name: z.string(),
+  /** The site it belongs to; null when every site shares it. */
+  siteId: z.uuid().nullable(),
   termCount: z.number().int(),
   updatedAt: z.iso.datetime(),
 });

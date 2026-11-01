@@ -1,5 +1,6 @@
 import { findBlueprintByIdOrFail } from "../blueprints/blueprints.service.js";
 import {
+  entrySiteFor,
   findCollectionByIdOrFail,
   findCollectionOrFail,
 } from "../collections/collections.service.js";
@@ -12,6 +13,7 @@ import type { AssetExists } from "../fieldtypes/image-assets.js";
 import { InvalidFieldsError } from "../http/http-errors.js";
 import { findPageCodeContext } from "../pages/page-code.service.js";
 import { resolveLocale } from "../sites/locales.service.js";
+import type { Site } from "../sites/sites.table.js";
 import { checkParent } from "./entry-ordering.service.js";
 import { createContentReferences, removeReferencesFromEntries } from "./entry-references.js";
 import { describeEntry } from "./entry-responses.js";
@@ -90,20 +92,26 @@ export async function findEntryOrFail(
   return entry;
 }
 
-/** A new draft at the end of its siblings, with a slug made from the title if none was sent. */
+/**
+ * A new draft at the end of its siblings, with a slug made from the title if none was sent.
+ * It belongs to the site given (the default when left out), or for a shared collection to
+ * the default site, where shared entries are kept.
+ */
 export async function createEntry(
   database: DatabaseOrTransaction,
   collectionHandle: string,
   request: CreateEntryRequest,
   context: EntryChangeContext,
+  forSite?: Site,
 ): Promise<EntryResponse> {
-  const collection = await findCollectionOrFail(database, collectionHandle);
+  const collection = await findCollectionOrFail(database, collectionHandle, forSite);
   const data = await validateForCollection(database, collection, request.data, context, "saving", {
     previousData: {},
   });
   const parentId = request.parentId ?? null;
-  const { site, locale } = await resolveLocale(database, request.locale);
-  await checkParent(database, collection, parentId, undefined, locale);
+  const entrySite = await entrySiteFor(database, collection, forSite);
+  const { site, locale } = await resolveLocale(database, request.locale, entrySite);
+  await checkParent(database, collection, parentId, undefined, locale, site.id);
   const scope = { collectionId: collection.id, siteId: site.id, locale };
   const slug = await chooseSlug(database, scope, request.slug, data, collection.name);
 
@@ -154,7 +162,7 @@ export async function saveEntry(
     { previousData: entry.data },
   );
   if (request.parentId !== undefined) {
-    await checkParent(database, collection, request.parentId, entry.id, entry.locale);
+    await checkParent(database, collection, request.parentId, entry.id, entry.locale, entry.siteId);
   }
   const slug =
     request.slug === undefined

@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { parseRequest } from "../http/http-errors.js";
 import { PREVIEW_CACHE_CONTROL } from "../preview/preview.routes.js";
 import { readPreviewToken } from "../preview/preview.service.js";
+import { resolveDeliverySite } from "../sites/request-site.js";
 import {
   deliveryEntryParamsSchema,
   deliveryEntryQuerySchema,
@@ -27,6 +28,9 @@ const CACHE_CONTROL = "public, max-age=60";
  *
  * With a preview token (`?preview=` or the `Lintel-Preview` header) for the entry at that
  * slug, its draft is served instead, never cached. A bad or expired token is a 401.
+ *
+ * Both answer for one site: `?site=<handle>`, the `Lintel-Site` header, or the domain the
+ * request came to (see src/sites/request-site.ts).
  */
 export async function deliveryRoutes(server: FastifyInstance) {
   const access = { preHandler: requireDeliveryAccess };
@@ -34,7 +38,14 @@ export async function deliveryRoutes(server: FastifyInstance) {
   server.get("/delivery/:collection", access, async (request, reply) => {
     const { collection } = parseRequest(deliveryListParamsSchema, request.params);
     const query = parseRequest(deliveryListQuerySchema, request.query);
-    const list = await listDeliveredEntries(server.database, collection, query, server.assetLookup);
+    const site = await resolveDeliverySite(request, reply);
+    const list = await listDeliveredEntries(
+      server.database,
+      collection,
+      query,
+      server.assetLookup,
+      site,
+    );
     return reply.header("cache-control", CACHE_CONTROL).send(list);
   });
 
@@ -44,6 +55,7 @@ export async function deliveryRoutes(server: FastifyInstance) {
     const header = request.headers["lintel-preview"];
     const token = query.preview ?? (typeof header === "string" && header !== "" ? header : null);
     const previewEntryId = token ? await readPreviewToken(server.database, token) : undefined;
+    const site = await resolveDeliverySite(request, reply);
 
     const entry = await findDeliveredEntry(
       server.database,
@@ -52,6 +64,7 @@ export async function deliveryRoutes(server: FastifyInstance) {
       query.locale,
       server.assetLookup,
       previewEntryId,
+      site,
     );
     // A preview request must not be cached even when it fell back to the published entry,
     // or the next visitor without a token could be served the same response.

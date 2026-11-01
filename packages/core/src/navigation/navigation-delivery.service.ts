@@ -4,6 +4,7 @@ import {
   findDeliveredEntryLinks,
 } from "../delivery/delivered-references.js";
 import { resolveLocale } from "../sites/locales.service.js";
+import type { Site } from "../sites/sites.table.js";
 import { linkedEntryIds } from "./navigation-items.js";
 import type { DeliveredNavigationItem, NavigationItem } from "./navigation.schema.js";
 import { findNavigationOrFail } from "./navigation.service.js";
@@ -17,9 +18,10 @@ export async function deliverNavigation(
   database: DatabaseOrTransaction,
   handle: string,
   requestedLocale: string | undefined,
+  forSite?: Site,
 ): Promise<{ handle: string; name: string; locale: string; items: DeliveredNavigationItem[] }> {
-  const navigation = await findNavigationOrFail(database, handle);
-  const { locale } = await resolveLocale(database, requestedLocale);
+  const { site, locale } = await resolveLocale(database, requestedLocale, forSite);
+  const navigation = await findNavigationOrFail(database, handle, site);
   const links = await findDeliveredEntryLinks(database, linkedEntryIds(navigation.items), locale);
   return {
     handle: navigation.handle,

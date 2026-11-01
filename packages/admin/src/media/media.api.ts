@@ -1,5 +1,6 @@
 import type { FocalPoint } from "@lintel/core/media-crop";
 import { apiErrorFromBody, apiRequest, apiUrl } from "../api/client.js";
+import { siteHeaders } from "../sites/currentSite.js";
 
 /** An uploaded file, as the API describes it (see packages/core/src/media/media.schema.ts). */
 export interface Asset {
@@ -17,6 +18,8 @@ export interface Asset {
   thumbnailUrl: string | null;
   createdAt: string;
   uploadedBy: { id: string; name: string } | null;
+  /** The site whose folder it is in; null for the shared library. */
+  siteId?: string | null;
 }
 
 export type AssetKind = "image" | "document";
@@ -27,6 +30,8 @@ export interface AssetListQuery {
   type: AssetKind | undefined;
   page: number;
   perPage: number;
+  /** "shared" or a site's handle for one folder; undefined for every file. */
+  folder?: string;
 }
 
 export interface AssetChanges {
@@ -64,6 +69,7 @@ export function listAssets(query: AssetListQuery) {
   });
   if (query.search.trim()) parameters.set("search", query.search.trim());
   if (query.type) parameters.set("type", query.type);
+  if (query.folder) parameters.set("folder", query.folder);
   return apiRequest<{ assets: Asset[]; total: number }>(`/media?${parameters}`);
 }
 
@@ -91,11 +97,17 @@ export function uploadAsset(
   file: File,
   onProgress: (fraction: number) => void,
   signal?: AbortSignal,
+  /** A site's handle to upload into its folder; left out, the shared library. */
+  folder?: string,
 ): Promise<Asset> {
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
-    request.open("POST", `${apiUrl}/media`);
+    const query = folder ? `?folder=${encodeURIComponent(folder)}` : "";
+    request.open("POST", `${apiUrl}/media${query}`);
     request.withCredentials = true;
+    for (const [name, value] of Object.entries(siteHeaders())) {
+      request.setRequestHeader(name, value);
+    }
     request.responseType = "json";
 
     request.upload.addEventListener("progress", (event) => {

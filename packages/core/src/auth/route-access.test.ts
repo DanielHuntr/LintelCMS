@@ -40,6 +40,9 @@ const PUBLIC_ROUTES: Record<string, string> = {
   "POST /invitations/preview": "needs the emailed invitation's token",
   "POST /invitations/accept": "needs the emailed invitation's token",
   "POST /account/email/confirm": "needs the link emailed to the new address",
+  "POST /shop/stripe/webhook": "Stripe's payment events, checked by their signature",
+  "POST /shop/paypal/webhook": "PayPal's payment events, checked with PayPal",
+  "POST /shop/mollie/webhook": "Mollie's payment events, looked up with Mollie",
 };
 
 const SIGNED_IN_ROUTES = new Set([
@@ -72,10 +75,22 @@ const SIGNED_IN_ROUTES = new Set([
   "GET /notifications",
   "POST /notifications/read-all",
   "POST /notifications/:notificationId/read",
+  // The sites someone may work on, for the admin's site switcher.
+  "GET /sites",
   // Each person's own dashboard layout.
   "GET /dashboard/layout",
   "PUT /dashboard/layout",
   "DELETE /dashboard/layout",
+]);
+
+/**
+ * Delivery routes that stay open even when delivery needs a token: a form on a public
+ * website can't keep a token secret (see src/forms).
+ */
+const ALWAYS_OPEN_DELIVERY_ROUTES = new Set([
+  "GET /delivery/forms.js",
+  "GET /delivery/forms/:handle",
+  "POST /delivery/forms/:handle/submissions",
 ]);
 
 /** Published content: open by default, a token or session once delivery requires one. */
@@ -191,6 +206,7 @@ describe("access to every route", () => {
       await writeSetting(testDatabase.database, "deliveryRequiresToken", true);
       const open: string[] = [];
       for (const route of routes.filter(isDeliveryRoute)) {
+        if (ALWAYS_OPEN_DELIVERY_ROUTES.has(route)) continue;
         const response = await send(route);
         if (response.statusCode !== 401) {
           open.push(`${route} answered ${response.statusCode} without a token`);

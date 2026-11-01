@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { requirePermission } from "../auth/require-permission.js";
+import { requireEntrySiteAccess, resolveEditingSite } from "../sites/request-site.js";
 import { readEntryId } from "../entries/entries.routes.js";
 import { parseRequest } from "../http/http-errors.js";
 import { previewQuerySchema } from "./preview.schema.js";
@@ -23,13 +24,14 @@ export const PREVIEW_CACHE_CONTROL = "private, no-store";
 export async function previewRoutes(server: FastifyInstance) {
   server.post(
     "/entries/:id/preview",
-    { preHandler: requirePermission("entries:read") },
+    { preHandler: [requirePermission("entries:read"), requireEntrySiteAccess] },
     async (request) =>
       createEntryPreview(
         server.database,
         readEntryId(request.params),
         new Date(),
         server.website.builtInSiteUrl,
+        await resolveEditingSite(request),
       ),
   );
 

@@ -1,4 +1,4 @@
-import { and, asc, eq, isNotNull } from "drizzle-orm";
+import { and, asc, eq, isNotNull, or } from "drizzle-orm";
 import { collectionsTable } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { entriesTable } from "../entries/entries.table.js";
@@ -44,10 +44,15 @@ export interface SitemapEntryRow {
 }
 
 /** Every published entry in a collection that has pages, with its noindex setting. */
+/**
+ * The published entries one site shows: its own in per-site collections, and those of
+ * shared collections, kept with the default site. Without sites given, every entry.
+ */
 export async function listSitemapEntryRows(
   database: DatabaseOrTransaction,
   tenantId: string,
   limit: number,
+  sites?: { siteId: string; defaultSiteId: string },
 ): Promise<SitemapEntryRow[]> {
   const rows = await database
     .select({
@@ -66,6 +71,18 @@ export async function listSitemapEntryRows(
         eq(entriesTable.tenantId, tenantId),
         isNotNull(entriesTable.publishedData),
         isNotNull(collectionsTable.routePattern),
+        sites
+          ? or(
+              and(
+                eq(collectionsTable.siteScope, "per-site"),
+                eq(entriesTable.siteId, sites.siteId),
+              ),
+              and(
+                eq(collectionsTable.siteScope, "shared"),
+                eq(entriesTable.siteId, sites.defaultSiteId),
+              ),
+            )
+          : undefined,
       ),
     )
     .orderBy(asc(collectionsTable.handle), asc(entriesTable.sortOrder), asc(entriesTable.createdAt))

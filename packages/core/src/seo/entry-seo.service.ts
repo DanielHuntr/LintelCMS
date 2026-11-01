@@ -4,7 +4,8 @@ import { findDeliveredEntry } from "../delivery/delivery.service.js";
 import { findEntryOrFail } from "../entries/entries.service.js";
 import type { AssetExists, AssetLookup } from "../fieldtypes/image-assets.js";
 import { InvalidFieldsError } from "../http/http-errors.js";
-import { readSiteAddress } from "../sites/site-address.service.js";
+import { readAddressForSite } from "../sites/site-address.service.js";
+import type { Site } from "../sites/sites.table.js";
 import { readSeoDefaults } from "./seo-defaults.service.js";
 import { applyTitleTemplate } from "./seo-titles.js";
 import { findEntrySeoRow, upsertEntrySeoRow } from "./seo.repository.js";
@@ -57,10 +58,19 @@ export async function deliverEntrySeo(
   slug: string,
   locale: string | undefined,
   assetLookup: AssetLookup,
+  site?: Site,
 ): Promise<DeliveredEntrySeo> {
-  const entry = await findDeliveredEntry(database, collectionHandle, slug, locale, assetLookup);
+  const entry = await findDeliveredEntry(
+    database,
+    collectionHandle,
+    slug,
+    locale,
+    assetLookup,
+    undefined,
+    site,
+  );
   const title = typeof entry.data.title === "string" ? entry.data.title : "";
-  return resolveEntrySeo(database, { id: entry.id, url: entry.url, title }, assetLookup);
+  return resolveEntrySeo(database, { id: entry.id, url: entry.url, title }, assetLookup, site);
 }
 
 /** The finished SEO for an entry the caller has already found (delivery and GraphQL). */
@@ -68,10 +78,11 @@ export async function resolveEntrySeo(
   database: DatabaseOrTransaction,
   entry: { id: string; url: string | null; title: string },
   assetLookup: AssetLookup,
+  site?: Site,
 ): Promise<DeliveredEntrySeo> {
   const own = await findEntrySeo(database, entry.id);
   const defaults = await readSeoDefaults(database);
-  const siteUrl = await readSiteAddress(database);
+  const siteUrl = await readAddressForSite(database, site);
 
   const imageId = own.socialImageId ?? defaults.defaultSocialImageId;
   const image = imageId ? (await assetLookup.findAssetsByIds([imageId])).get(imageId) : undefined;

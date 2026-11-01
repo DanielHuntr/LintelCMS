@@ -1,6 +1,7 @@
 import { findBlueprintByIdOrFail } from "../blueprints/blueprints.service.js";
 import { findCollectionByIdOrFail } from "../collections/collections.service.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
+import { findSiteByIdOrFail } from "../sites/sites.service.js";
 import {
   createEntry,
   type EntryChangeContext,
@@ -36,6 +37,7 @@ export async function duplicateEntry(
       parentId: original.parentId,
     },
     context,
+    await findSiteByIdOrFail(database, original.siteId),
   );
 
   if (collection.structure !== "dated") {

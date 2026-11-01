@@ -9,7 +9,9 @@ import type { AssetLookup, DeliveredAsset } from "../fieldtypes/image-assets.js"
 import { isSeoPluginEnabled } from "../seo/seo-enabled.js";
 import type { SeoDefaults } from "../seo/seo-defaults.schema.js";
 import { readSeoDefaults } from "../seo/seo-defaults.service.js";
-import { readEffectiveSiteAddress } from "../sites/site-address.service.js";
+import { isCollectionOnSite } from "../collections/collections.service.js";
+import { readAddressForSite } from "../sites/site-address.service.js";
+import type { Site } from "../sites/sites.table.js";
 import { listLocales } from "../sites/locales.service.js";
 import type { RoutedCollection } from "./site-routing.js";
 import { readWebsiteLook, type WebsiteLook } from "./website.service.js";
@@ -41,15 +43,17 @@ export async function loadSiteContext(
     templates: readonly SiteTemplate[];
     assetLookup: AssetLookup;
     builtInSiteUrl: string | null;
+    site: Site;
   },
 ): Promise<SiteContext> {
+  const { site } = options;
   const [locales, collections, look, seoEnabled, seoDefaults, siteAddress] = await Promise.all([
-    listLocales(database),
-    listRoutedCollections(database),
+    listLocales(database, site),
+    listRoutedCollections(database, site),
     readWebsiteLook(database, options.templates),
     isSeoPluginEnabled(database),
     readSeoDefaults(database),
-    readEffectiveSiteAddress(database, options.builtInSiteUrl),
+    readAddressForSite(database, site).then((address) => address || options.builtInSiteUrl),
   ]);
   const logo = look.logoAssetId
     ? ((await options.assetLookup.findAssetsByIds([look.logoAssetId])).get(look.logoAssetId) ??
@@ -71,9 +75,14 @@ export async function loadSiteContext(
 }
 
 /** Collections whose entries have pages, with the taxonomies their posts are filed under. */
-async function listRoutedCollections(database: DatabaseOrTransaction): Promise<RoutedCollection[]> {
+async function listRoutedCollections(
+  database: DatabaseOrTransaction,
+  site: Site,
+): Promise<RoutedCollection[]> {
   const collections = await listCollectionsWithDetails(database, DEFAULT_TENANT_ID);
-  const routed = collections.filter((collection) => collection.routePattern !== null);
+  const routed = collections.filter(
+    (collection) => collection.routePattern !== null && isCollectionOnSite(collection, site),
+  );
   return Promise.all(
     routed.map(async (collection) => {
       const blueprint = await findBlueprintByIdOrFail(database, collection.blueprintId);

@@ -27,7 +27,14 @@ export interface RenderedPagesCacheOptions {
   now?: () => number;
 }
 
-export class RenderedPagesCache {
+/** The part of the cache one site's pages use (see `RenderedPagesCache.forSite`). */
+export interface PageCache {
+  find(key: string): SiteResponse | undefined;
+  store(key: string, response: SiteResponse): void;
+  shareValue<Value>(key: string, load: () => Promise<Value>): Promise<Value>;
+}
+
+export class RenderedPagesCache implements PageCache {
   private readonly pages = new Map<string, CachedResponse>();
   private readonly shared = new Map<string, { value: Promise<unknown>; storedAt: number }>();
   private readonly maxPages: number;
@@ -77,6 +84,19 @@ export class RenderedPagesCache {
     // A failure isn't kept, so the next visit tries again.
     loading.catch(() => this.shared.delete(key));
     return loading;
+  }
+
+  /**
+   * The same cache for one site's pages: several sites share one server, and the same
+   * address ("/about") is a different page on each. Emptying the cache empties every site's.
+   */
+  forSite(siteId: string): PageCache {
+    const keyFor = (key: string) => `${siteId}:${key}`;
+    return {
+      find: (key) => this.find(keyFor(key)),
+      store: (key, response) => this.store(keyFor(key), response),
+      shareValue: (key, load) => this.shareValue(keyFor(key), load),
+    };
   }
 
   get size(): number {

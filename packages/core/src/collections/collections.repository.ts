@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, ne, sql } from "drizzle-orm";
 import { blueprintsTable } from "../blueprints/blueprints.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { entriesTable } from "../entries/entries.table.js";
@@ -107,7 +107,16 @@ export async function updateCollectionRow(
   database: DatabaseOrTransaction,
   collectionId: string,
   changes: Partial<
-    Pick<Collection, "name" | "blueprintId" | "structure" | "routePattern" | "previewUrlPattern">
+    Pick<
+      Collection,
+      | "name"
+      | "blueprintId"
+      | "structure"
+      | "routePattern"
+      | "previewUrlPattern"
+      | "siteScope"
+      | "siteIds"
+    >
   >,
 ): Promise<void> {
   await database
@@ -133,4 +142,28 @@ export async function listCollectionNamesUsingBlueprint(
     .where(eq(collectionsTable.blueprintId, blueprintId))
     .orderBy(asc(collectionsTable.name));
   return rows.map((row) => row.name);
+}
+
+/** Takes a deleted site out of every collection limited to some sites. */
+export async function removeSiteFromCollections(
+  database: DatabaseOrTransaction,
+  siteId: string,
+): Promise<void> {
+  await database
+    .update(collectionsTable)
+    .set({ siteIds: sql`array_remove(${collectionsTable.siteIds}, ${siteId}::uuid)` })
+    .where(sql`${siteId}::uuid = any(${collectionsTable.siteIds})`);
+}
+
+/** How many of the collection's entries belong to sites other than this one. */
+export async function countEntriesOutsideSite(
+  database: DatabaseOrTransaction,
+  collectionId: string,
+  siteId: string,
+): Promise<number> {
+  const [row] = await database
+    .select({ count: sql<number>`count(*)`.mapWith(Number) })
+    .from(entriesTable)
+    .where(and(eq(entriesTable.collectionId, collectionId), ne(entriesTable.siteId, siteId)));
+  return row?.count ?? 0;
 }

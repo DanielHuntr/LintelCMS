@@ -29,12 +29,15 @@ export const builtInPublicSite: PublicSite = async (server, options) => {
   });
 
   await server.register(siteRoutes, {
-    dependencies: () => ({
+    database: () => server.database,
+    // Each site has its own pages, so each reads and caches its own (see site-for-address.ts).
+    dependencies: (site) => ({
       database: server.database,
       assetLookup: server.assetLookup,
       templates: server.website.templates,
       builtInSiteUrl: server.website.builtInSiteUrl,
-      cache: server.website.renderedPages,
+      site,
+      cache: server.website.renderedPages.forSite(site.id),
     }),
   });
 };

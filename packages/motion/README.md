@@ -5,7 +5,7 @@ Framework-free, about 8 kB gzipped, safe to import during server rendering. Buil
 Web Animations API, with scroll-driven animations and `IntersectionObserver` where the
 browser has them. The full reference is the docs page "Animation spec reference"
 (`packages/docs/src/content/docs/building/animation-spec.md`); the reasoning is in
-`docs/decisions/0011-animation-runtime.md`.
+`docs/decisions/0018-animation-runtime.md`.
 
 ```ts
 import { mountMotion } from "@lintel/motion";

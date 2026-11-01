@@ -1,5 +1,6 @@
 import type { PageHead } from "@lintel/site-components";
 import type { DatabaseOrTransaction } from "../database/client.js";
+import type { Site } from "../sites/sites.table.js";
 import type { AssetLookup } from "../fieldtypes/image-assets.js";
 import { findEntrySeo, resolveEntrySeo } from "../seo/entry-seo.service.js";
 import { applyTitleTemplate } from "../seo/seo-titles.js";
@@ -36,6 +37,7 @@ export async function buildPageHead(
   siteName: string,
   subject: HeadSubject,
   assetLookup: AssetLookup,
+  site?: Site,
 ): Promise<PageHead> {
   const defaults = context.seoDefaults;
   const plain: PageHead = {
@@ -71,6 +73,7 @@ export async function buildPageHead(
       database,
       { id: subject.entryId, url: subject.path, title: subject.title },
       assetLookup,
+      site,
     ),
     findEntrySeo(database, subject.entryId),
   ]);

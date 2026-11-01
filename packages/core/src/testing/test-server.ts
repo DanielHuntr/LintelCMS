@@ -28,8 +28,15 @@ export type SendRequest = (
   payload?: InjectOptions["payload"],
 ) => Promise<LightMyRequestResponse>;
 
-/** Sends requests as one signed-in user: `api("POST", "/entries/1/publish")`. */
-export function requestsAs(server: FastifyInstance, cookies: Record<string, string>): SendRequest {
+/**
+ * Sends requests as one signed-in user: `api("POST", "/entries/1/publish")`. `headers` go
+ * with every request, such as `{ "lintel-site": "france" }` to work on another site.
+ */
+export function requestsAs(
+  server: FastifyInstance,
+  cookies: Record<string, string>,
+  headers: Record<string, string> = {},
+): SendRequest {
   return (method, url, payload) =>
-    server.inject({ method, url, cookies, ...(payload === undefined ? {} : { payload }) });
+    server.inject({ method, url, cookies, headers, ...(payload === undefined ? {} : { payload }) });
 }

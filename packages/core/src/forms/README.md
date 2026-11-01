@@ -1,19 +1,10 @@
 # Forms
 
-<<<<<<< HEAD
-The "Forms" plugin (`forms`). Today it adds the Forms section to the admin, which says
-what is on the way (see `packages/admin/src/forms`); it has no routes or tables yet.
-When forms are built, their tables, routes and fieldtypes are added to `forms.plugin.ts`.
-
-| File                                                                                          | What it does                    |
-| --------------------------------------------------------------------------------------------- | ------------------------------- |
-| `forms.plugin.ts`                                                                             | The plugin's `definePlugin({})` |
-| =======                                                                                       |
-| The Forms plugin: forms people fill in on the website (contact, newsletter, quote request,    |
-| event booking...), the inbox of what they send, emails about it, and spam protection.         |
-| Its routes are the plugin's (`forms.plugin.ts`), so every address answers 404                 |
-| `PLUGIN_NOT_ENABLED` while the plugin is off; `registerForms` (called from `server.ts`) gives |
-| them what they need and starts the retention job. Switching it off deletes nothing.           |
+The Forms plugin: forms people fill in on the website (contact, newsletter, quote request,
+event booking...), the inbox of what they send, emails about it, and spam protection.
+Its routes are the plugin's (`forms.plugin.ts`), so every address answers 404
+`PLUGIN_NOT_ENABLED` while the plugin is off; `registerForms` (called from `server.ts`) gives
+them what they need and starts the retention job. Switching it off deletes nothing.
 
 ## How a submission flows
 
@@ -124,5 +115,3 @@ with `=`, `+`, `-` or `@`, so a submission can't become a spreadsheet formula.
 | `form-fieldtype.ts`, `form-block.ts`          | The Form section on pages                            |
 | `forms-embed-script.ts`, `plain-page.ts`      | What browsers are sent                               |
 | `*.repository.ts`                             | Database reads and writes                            |
-
-> > > > > > > phase-3/forms

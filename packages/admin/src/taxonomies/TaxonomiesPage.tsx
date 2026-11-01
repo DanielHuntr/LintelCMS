@@ -15,6 +15,7 @@ import { LargeTitle } from "../design/LargeTitle.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { t, tCount } from "../i18n/strings.js";
+import { SiteOwnershipChoice } from "../sites/SiteOwnershipChoice.js";
 import { createTaxonomy } from "./taxonomies.api.js";
 import { taxonomyKeys, useTaxonomies } from "./taxonomies.queries.js";
 import { Page } from "../design/Page.js";
@@ -24,11 +25,12 @@ export function TaxonomiesPage() {
   const taxonomies = useTaxonomies();
   const canCreate = useCanChangeContentModel("taxonomies:update");
   const [isCreating, setIsCreating] = useState(false);
+  const [siteHandle, setSiteHandle] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   async function create(name: string, handle: string) {
-    const taxonomy = await createTaxonomy({ name, handle });
+    const taxonomy = await createTaxonomy({ name, handle, siteHandle });
     await queryClient.invalidateQueries({ queryKey: taxonomyKeys.taxonomies() });
     setIsCreating(false);
     await navigate({ to: "/content/taxonomies/$taxonomy", params: { taxonomy: taxonomy.handle } });
@@ -89,6 +91,7 @@ export function TaxonomiesPage() {
                 { one: "taxonomies.termCount.one", other: "taxonomies.termCount.other" },
                 taxonomy.termCount,
               )}
+              detail={taxonomy.siteId ? t("sites.thisSiteOnly") : undefined}
               to={`/content/taxonomies/${encodeURIComponent(taxonomy.handle)}`}
             />
           ))}
@@ -104,7 +107,13 @@ export function TaxonomiesPage() {
         showsHandle
         onSubmit={create}
         onClose={() => setIsCreating(false)}
-      />
+      >
+        <SiteOwnershipChoice
+          label={t("sites.taxonomyOwner")}
+          ownedBySite={siteHandle !== null}
+          onChange={setSiteHandle}
+        />
+      </NameSheet>
     </Page>
   );
 }

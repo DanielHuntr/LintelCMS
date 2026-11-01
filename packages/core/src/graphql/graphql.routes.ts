@@ -9,6 +9,7 @@ import { hasPermission } from "../roles/permissions.js";
 import { queryLimitRules } from "./graphql-limits.js";
 import { buildGraphqlSchema } from "./graphql-schema.js";
 import { readPreviewToken } from "../preview/preview.service.js";
+import { resolveDeliverySite } from "../sites/request-site.js";
 import { type GraphqlContext, loadContentModel } from "./graphql.service.js";
 
 /**
@@ -119,6 +120,7 @@ async function describeAccess(
     assetLookup: request.server.assetLookup,
     publicApiUrl: request.server.publicApiUrl,
     previewEntryId: await readPreviewHeader(request),
+    site: await resolveDeliverySite(request, reply),
   };
   const token = await findRequestApiToken(request);
   if (token) {

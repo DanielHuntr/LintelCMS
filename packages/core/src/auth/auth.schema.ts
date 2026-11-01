@@ -35,6 +35,11 @@ export const signedInSchema = z.object({
   /** The site's name for the browser tab and the sidebar. Null until setup names it. */
   siteName: z.string().nullable(),
   /**
+   * The ids of the sites they may work on, when their roles are limited to some sites.
+   * Null (or left out) means every site.
+   */
+  siteIds: z.array(z.string()).nullable().optional(),
+  /**
    * Present when one of the person's roles requires two-factor authentication and they
    * haven't turned it on. Until they do, only their own account can be used.
    */

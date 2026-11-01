@@ -19,6 +19,7 @@ import {
   assetIdParamsSchema,
   fileTransformQuerySchema,
   listAssetsQuerySchema,
+  uploadAssetQuerySchema,
   updateAssetRequestSchema,
 } from "./media.schema.js";
 import {
@@ -71,10 +72,10 @@ const RESIZED_IMAGES_PER_MINUTE = 300;
 /**
  * HTTP only:
  *
- *   POST   /media           (media:upload)  multipart "file" -> 201 Asset (200 if already uploaded)
- *   GET    /media           (media:read)    ?search=&type=image|document&page=&perPage=
+ *   POST   /media           (media:upload)  multipart "file", ?folder= -> 201 Asset (200 if already uploaded)
+ *   GET    /media           (media:read)    ?search=&type=image|document&page=&perPage=&folder=
  *   GET    /media/:id       (media:read)    -> Asset
- *   PATCH  /media/:id       (media:update)  { alt?, focalPoint?, filename? } -> Asset
+ *   PATCH  /media/:id       (media:update)  { alt?, focalPoint?, filename?, folder? } -> Asset
  *   DELETE /media/:id       (media:delete)  -> 204, or 409 ASSET_IN_USE with usedBy
  *   GET    /media/:id/file  (public)        ?w=&h=&fit=cover|contain&format=webp|avif|jpeg|png
  */
@@ -99,8 +100,14 @@ export async function mediaRoutes(server: FastifyInstance, options: MediaRoutesO
       config: { rateLimit: { max: UPLOADS_PER_MINUTE, timeWindow: "1 minute" } },
     },
     async (request, reply) => {
+      const { folder } = parseRequest(uploadAssetQuerySchema, request.query);
       const file = await readUploadedFile(request);
-      const { asset, created } = await uploadAsset(context(), file, getSignedIn(request).user.id);
+      const { asset, created } = await uploadAsset(
+        context(),
+        file,
+        getSignedIn(request).user.id,
+        folder ?? null,
+      );
       if (created) {
         await announceContentEvent(
           server,

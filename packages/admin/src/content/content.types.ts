@@ -14,6 +14,10 @@ export interface Collection {
   routePattern: string;
   /** Where the website shows drafts for live preview; null until a site is connected. */
   previewUrlPattern: string | null;
+  /** With several sites: whether each has its own entries, or all share them. */
+  siteScope?: "per-site" | "shared";
+  /** The sites a per-site collection is on; null for every site. */
+  siteIds?: string[] | null;
   entryCount: number;
   updatedAt: string;
 }

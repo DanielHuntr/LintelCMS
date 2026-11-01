@@ -23,6 +23,7 @@ import {
   findPermissionListsForUser,
   findRoleById,
   findRolesForUsers,
+  findSiteListsForUser,
   insertRole,
   listRoleRows,
   updateRoleRow,
@@ -259,4 +260,19 @@ export function describeRole(role: Role, memberCount: number): RoleResponse {
     permissions: role.permissions,
     memberCount,
   };
+}
+
+/**
+ * The sites a user may work on: null for every site, which is what anyone has unless all
+ * of their roles are limited to some sites. With several roles, any site one allows counts.
+ */
+export async function findSiteIdsForUser(
+  database: DatabaseOrTransaction,
+  userId: string,
+): Promise<string[] | null> {
+  const siteLists = await findSiteListsForUser(database, userId);
+  if (siteLists.length === 0 || siteLists.some((siteIds) => siteIds === null)) {
+    return null;
+  }
+  return [...new Set(siteLists.flatMap((siteIds) => siteIds ?? []))].sort();
 }

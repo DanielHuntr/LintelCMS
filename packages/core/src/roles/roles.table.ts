@@ -9,6 +9,8 @@ import { usersTable } from "../users/users.table.js";
  * - `isBuiltIn` marks Owner, Admin, Editor, Author and Viewer (see built-in-roles.ts): their
  *   permissions are fixed and they can't be deleted.
  * - `requiresTwoFactor` makes everyone with the role turn on two-factor authentication.
+ * - `siteIds` limits the role to some sites: null means every site, which is how every role
+ *   starts. Someone with several roles may work on every site any of them allows.
  */
 export const rolesTable = pgTable(
   "roles",
@@ -21,6 +23,7 @@ export const rolesTable = pgTable(
     isBuiltIn: boolean("is_built_in").notNull().default(false),
     requiresTwoFactor: boolean("requires_two_factor").notNull().default(false),
     permissions: text("permissions").array().notNull().default([]),
+    siteIds: uuid("site_ids").array(),
     ...timestamps(),
   },
   (table) => [uniqueIndex("roles_tenant_handle_unique").on(table.tenantId, table.handle)],

@@ -78,6 +78,7 @@ describe("first-run setup", () => {
       permissions: ["*"],
       enabledPlugins: ["blog", "forms", "seo"],
       siteName: "Brightside Bakery",
+      siteIds: null,
     });
 
     const sessionCookie = response.cookies.find((cookie) => cookie.name === SESSION_COOKIE_NAME);

@@ -6,7 +6,11 @@ import {
   spendOneTimeToken,
 } from "../one-time-tokens/one-time-tokens.service.js";
 import { findEnabledPluginIds } from "../plugins/plugins.service.js";
-import { findPermissionsForUser, roleRequiresTwoFactor } from "../roles/roles.service.js";
+import {
+  findPermissionsForUser,
+  findSiteIdsForUser,
+  roleRequiresTwoFactor,
+} from "../roles/roles.service.js";
 import {
   countRecentEventsBy,
   recordSecurityEvent,
@@ -248,6 +252,7 @@ export async function describeSignedIn(
     permissions: await findPermissionsForUser(database, user.id),
     enabledPlugins: await findEnabledPluginIds(database),
     siteName: await readSetting(database, "siteName"),
+    siteIds: await findSiteIdsForUser(database, user.id),
     ...(mustSetUpTwoFactor ? { mustSetUpTwoFactor: true as const } : {}),
   };
 }

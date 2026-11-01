@@ -2,7 +2,7 @@ import type { SignedIn } from "../auth/auth.schema.js";
 import type { Database, DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import { findEnabledPluginIds } from "../plugins/plugins.service.js";
-import { findPermissionsForUser } from "../roles/roles.service.js";
+import { findPermissionsForUser, findSiteIdsForUser } from "../roles/roles.service.js";
 import { readSetting } from "../settings/settings.service.js";
 import { findUserById } from "../users/users.repository.js";
 import { permissionsForApiToken } from "./api-token-access.js";
@@ -103,6 +103,7 @@ export async function authenticateApiToken(
       permissions: permissionsForApiToken(token.access, creatorPermissions),
       enabledPlugins: await findEnabledPluginIds(database),
       siteName: await readSetting(database, "siteName"),
+      siteIds: await findSiteIdsForUser(database, creator.id),
     },
   };
 }

@@ -1,7 +1,8 @@
-import { findCollectionOrFail } from "../collections/collections.service.js";
+import { entrySiteFor, findCollectionOrFail } from "../collections/collections.service.js";
 import type { Collection } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { resolveLocale } from "../sites/locales.service.js";
+import type { Site } from "../sites/sites.table.js";
 import { orderAsTree } from "./entry-tree.js";
 import { describeEntrySummary } from "./entry-responses.js";
 import {
@@ -16,16 +17,22 @@ import type { EntryListResponse, ListEntriesQuery } from "./entries.schema.js";
  * Lists a collection's entries, a page at a time, in the order its structure calls for:
  * newest first for "dated", the hand-set order for "flat", and for a "tree" each page
  * followed by its children, so the admin can indent them as they come.
+ *
+ * Only the site's own entries are listed, or for a shared collection the ones every site
+ * shares. Without a site, the default site's.
  */
 export async function listEntries(
   database: DatabaseOrTransaction,
   collectionHandle: string,
   query: ListEntriesQuery,
+  site?: Site,
 ): Promise<EntryListResponse> {
-  const collection = await findCollectionOrFail(database, collectionHandle);
-  const { locale } = await resolveLocale(database, query.locale);
+  const collection = await findCollectionOrFail(database, collectionHandle, site);
+  const entrySite = await entrySiteFor(database, collection, site);
+  const { locale } = await resolveLocale(database, query.locale, entrySite);
   const filters: EntryFilters = {
     collectionId: collection.id,
+    siteId: entrySite.id,
     status: query.status,
     search: query.search,
     parentId: query.parentId,

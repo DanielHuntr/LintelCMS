@@ -1,6 +1,7 @@
-import { findCollectionOrFail } from "../collections/collections.service.js";
+import { entrySiteFor, findCollectionOrFail } from "../collections/collections.service.js";
 import type { Collection } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
+import type { Site } from "../sites/sites.table.js";
 import { hasParentLoop } from "./entry-tree.js";
 import {
   EntryNotInCollectionError,
@@ -27,6 +28,7 @@ export async function checkParent(
   parentId: string | null,
   entryId?: string,
   locale?: string,
+  siteId?: string,
 ): Promise<void> {
   if (parentId === null) {
     return;
@@ -42,6 +44,9 @@ export async function checkParent(
   const parent = await findEntryById(database, parentId);
   if (!parent || parent.collectionId !== collection.id) {
     throw new InvalidParentError(`The parent has to be another entry in ${collection.name}.`);
+  }
+  if (siteId !== undefined && parent.siteId !== siteId) {
+    throw new InvalidParentError("The parent has to be on the same site.");
   }
   if (locale !== undefined && parent.locale !== locale) {
     throw new InvalidParentError("The parent has to be written in the same language.");
@@ -62,18 +67,21 @@ export async function checkParent(
  * Puts the listed entries in the order given, with the parents given. Each entry's place
  * is counted among the listed entries with the same parent, so sending a whole tree (or
  * all the children of one parent) gives exactly that order. Entries left out keep theirs.
+ * Only the site's own entries can be listed (the default site's when none is given).
  */
 export async function reorderEntries(
   database: DatabaseOrTransaction,
   collectionHandle: string,
   request: ReorderEntriesRequest,
+  site?: Site,
 ): Promise<void> {
-  const collection = await findCollectionOrFail(database, collectionHandle);
+  const collection = await findCollectionOrFail(database, collectionHandle, site);
   if (collection.structure === "dated") {
     throw new ReorderNotAllowedError(collection.name);
   }
 
-  const positions = await listEntryPositions(database, collection.id);
+  const entrySite = await entrySiteFor(database, collection, site);
+  const positions = await listEntryPositions(database, collection.id, entrySite.id);
   const parentOf = new Map(positions.map((position) => [position.id, position.parentId]));
   const listed = new Set<string>();
   for (const { id, parentId } of request.order) {

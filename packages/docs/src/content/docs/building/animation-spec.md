@@ -16,7 +16,7 @@ them without a framework. Three packages are involved:
 | `@lintel/motion/presets` | The preset library: 42 specs with names, descriptions and preview samples       |
 | `@lintel/motion-editor`  | The React studio the builder embeds                                             |
 
-Why it works the way it does is in decision record 11 (`docs/decisions/0011-animation-runtime.md`).
+Why it works the way it does is in decision record 11 (`docs/decisions/0018-animation-runtime.md`).
 
 ## Playing an animation
 

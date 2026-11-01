@@ -180,6 +180,7 @@ function valueWords(type: string): string {
     entries: "links to other entries",
     terms: "chosen terms",
     blocks: "page sections",
+    form: "chosen forms",
   };
   return words[type] ?? "values";
 }

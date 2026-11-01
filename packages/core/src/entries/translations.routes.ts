@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { getSignedIn, requirePermission } from "../auth/require-permission.js";
+import { requireEntrySiteAccess } from "../sites/request-site.js";
 import { parseRequest } from "../http/http-errors.js";
 import { readEntryId } from "./entries.routes.js";
 import { translateEntryRequestSchema } from "./entries.schema.js";
@@ -16,7 +17,7 @@ import { translateEntry } from "./entry-translations.service.js";
 export async function translationsRoutes(server: FastifyInstance) {
   server.post(
     "/entries/:id/translations",
-    { preHandler: requirePermission("entries:create") },
+    { preHandler: [requirePermission("entries:create"), requireEntrySiteAccess] },
     async (request, reply) => {
       const id = readEntryId(request.params);
       const { locale } = parseRequest(translateEntryRequestSchema, request.body);

@@ -4,6 +4,7 @@ import {
   Copy,
   Ellipsis,
   Eye,
+  Globe,
   PanelRight,
   SquareArrowOutUpRight,
   Trash2,
@@ -28,6 +29,8 @@ interface EntryEditorBarProps {
   onDelete: (() => void) | undefined;
   /** Undefined leaves "Duplicate entry" out (nothing saved yet, or not allowed). */
   onDuplicate: (() => void) | undefined;
+  /** Undefined leaves "Copy to site" out (one site only, a shared collection, or not allowed). */
+  onCopyToSite?: () => void;
   isPreviewOpen: boolean;
   previewId: string;
   onTogglePreview: () => void;
@@ -49,6 +52,7 @@ export function EntryEditorBar({
   onTogglePanel,
   onDelete,
   onDuplicate,
+  onCopyToSite,
   isPreviewOpen,
   previewId,
   onTogglePreview,
@@ -61,6 +65,9 @@ export function EntryEditorBar({
       onSelect: onTogglePreview,
     },
     ...(onDuplicate ? [{ label: t("editor.duplicate"), icon: Copy, onSelect: onDuplicate }] : []),
+    ...(onCopyToSite
+      ? [{ label: t("sites.copy.action"), icon: Globe, onSelect: onCopyToSite }]
+      : []),
     ...(onDelete
       ? [{ label: t("editor.delete"), icon: Trash2, tone: "danger" as const, onSelect: onDelete }]
       : []),

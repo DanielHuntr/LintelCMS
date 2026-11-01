@@ -185,7 +185,7 @@ function buildEntryType(
     fields.seo = {
       type: new GraphQLNonNull(entrySeoType),
       resolve: (entry, _args, context) =>
-        resolveEntrySeo(context.database, entry, context.assetLookup),
+        resolveEntrySeo(context.database, entry, context.assetLookup, context.site),
     };
   }
   return new GraphQLObjectType({ name: collectionTypeNames(collection.handle).entry, fields });

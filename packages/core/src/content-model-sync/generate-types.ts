@@ -101,6 +101,9 @@ class TypesWriter {
         return `${this.writeBlocks(field, ownerName)}[]`;
       case "page":
         return "DeliveredPageDesign";
+      case "form":
+        // The form's handle, for /delivery/forms/<handle> or the embed script's data-form.
+        return "string";
       default:
         return "unknown";
     }

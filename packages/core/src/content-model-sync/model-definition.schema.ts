@@ -69,6 +69,7 @@ const innerFieldSchemas = [
     taxonomy: z.string().describe("The handle of the taxonomy the terms come from."),
     maxItems,
   }),
+  fieldSchema("form", "One of the site's forms, by its handle (the Forms plugin).", {}),
 ] as const;
 
 const innerFieldSchema = z.discriminatedUnion("type", innerFieldSchemas);

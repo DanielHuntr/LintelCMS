@@ -5,6 +5,9 @@ import { buildEntryUrl } from "../delivery/entry-urls.js";
 import { findEntryOrFail } from "../entries/entries.service.js";
 import type { AssetLookup } from "../fieldtypes/image-assets.js";
 import { readOrCreateSetting } from "../settings/settings.service.js";
+import { addPathPrefix } from "../sites/site-addresses.js";
+import { findSiteByIdOrFail } from "../sites/sites.service.js";
+import type { Site } from "../sites/sites.table.js";
 import { PreviewTokenExpiredError, PreviewTokenInvalidError } from "./preview.errors.js";
 import type { EntryPreview, PreviewedEntry } from "./preview.schema.js";
 import {
@@ -27,17 +30,25 @@ function findSigningSecret(database: DatabaseOrTransaction): Promise<string> {
 
 /**
  * A new token for the entry, and where its website shows it (null when none is connected).
+ * The address is the entry's site's: its path prefix and, for `{siteUrl}`, its address. An
+ * entry of a shared collection is previewed on `site`, the one the editor is working on.
  * A collection without a preview address of its own, whose entries have pages, is shown on
- * the built-in website when there is one (`builtInSiteUrl`, see src/website).
+ * the built-in website when there is one (`builtInSiteUrl`, see src/website): at the site's
+ * own address if it has one, else at the built-in website's.
  */
 export async function createEntryPreview(
   database: DatabaseOrTransaction,
   entryId: string,
   now: Date = new Date(),
   builtInSiteUrl: string | null = null,
+  site?: Site,
 ): Promise<EntryPreview> {
   const entry = await findEntryOrFail(database, entryId);
   const collection = await findCollectionByIdOrFail(database, entry.collectionId);
+  const previewSite =
+    collection.siteScope === "shared" && site !== undefined
+      ? site
+      : await findSiteByIdOrFail(database, entry.siteId);
   const expiresAt = now.getTime() + PREVIEW_TOKEN_LIFETIME_MS;
   const token = signPreviewToken(
     { entryId: entry.id, expiresAt },
@@ -47,21 +58,33 @@ export async function createEntryPreview(
   return {
     token,
     expiresAt: new Date(expiresAt).toISOString(),
-    previewUrl: buildPreviewUrl(
-      collection.previewUrlPattern ??
-        (builtInSiteUrl && collection.routePattern ? `${builtInSiteUrl}{url}` : null),
-      {
-        url: buildEntryUrl(collection.routePattern, {
+    previewUrl: buildPreviewUrl(builtInPreviewPattern(collection, previewSite, builtInSiteUrl), {
+      url: addPathPrefix(
+        previewSite.pathPrefix,
+        buildEntryUrl(collection.routePattern, {
           slug: entry.slug,
           publishedAt: entry.publishedAt ?? now,
         }),
-        slug: entry.slug,
-        token,
-        collection: collection.handle,
-        id: entry.id,
-      },
-    ),
+      ),
+      slug: entry.slug,
+      token,
+      collection: collection.handle,
+      id: entry.id,
+      site: previewSite.handle,
+      siteUrl: previewSite.siteUrl,
+    }),
   };
+}
+
+/** The collection's own preview address, or the built-in website's for entries with pages. */
+function builtInPreviewPattern(
+  collection: { previewUrlPattern: string | null; routePattern: string | null },
+  site: Site,
+  builtInSiteUrl: string | null,
+): string | null {
+  if (collection.previewUrlPattern) return collection.previewUrlPattern;
+  const address = site.siteUrl || builtInSiteUrl;
+  return address && collection.routePattern ? `${address.replace(/\/+$/, "")}{url}` : null;
 }
 
 /** The id of the entry a token is for, or a 401 that says whether it expired. */
@@ -91,5 +114,5 @@ export async function findPreviewedEntry(
   if (!draft) {
     throw new PreviewTokenInvalidError();
   }
-  return { collection: draft.collectionHandle, entry: draft.entry };
+  return { collection: draft.collectionHandle, site: draft.siteHandle, entry: draft.entry };
 }

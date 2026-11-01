@@ -25,12 +25,15 @@ export function buildSiteServer(options: { api: FastifyInstance; logger?: boolea
   });
 
   server.register(siteRoutes, {
-    dependencies: () => ({
+    database: () => api.database,
+    // Each site has its own pages, so each reads and caches its own (see site-for-address.ts).
+    dependencies: (site) => ({
       database: api.database,
       assetLookup: api.assetLookup,
       templates: api.website.templates,
       builtInSiteUrl: api.website.builtInSiteUrl,
-      cache: api.website.renderedPages,
+      site,
+      cache: api.website.renderedPages.forSite(site.id),
     }),
   });
 

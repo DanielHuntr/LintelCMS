@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { requirePermission } from "../auth/require-permission.js";
 import { parseRequest } from "../http/http-errors.js";
+import { resolveDeliverySite, resolveEditingSite } from "../sites/request-site.js";
 import { deliverTaxonomy, deliverTermBySlug } from "./taxonomies-delivery.service.js";
 import { TermNotFoundError } from "./taxonomies.errors.js";
 import {
@@ -36,6 +37,8 @@ import { requireDeliveryAccess } from "../delivery/require-delivery-access.js";
  *   DELETE /terms/:id                 (terms:update)       -> 204
  *   GET    /delivery/taxonomies/:handle        (public)  -> { handle, name, items: [Term] }
  *   GET    /delivery/taxonomies/:handle/:slug  (public)  -> Term, or 404
+ *
+ * Lists and lookups see the taxonomies every site shares and the current site's own.
  */
 export async function taxonomiesRoutes(server: FastifyInstance) {
   // Published content, open to websites unless delivery needs a token (Settings → API access).
@@ -44,11 +47,13 @@ export async function taxonomiesRoutes(server: FastifyInstance) {
   const canUpdate = { preHandler: requirePermission("taxonomies:update") };
   const canUpdateTerms = { preHandler: requirePermission("terms:update") };
 
-  server.get("/taxonomies", canRead, async () => listTaxonomies(server.database));
+  server.get("/taxonomies", canRead, async (request) =>
+    listTaxonomies(server.database, await resolveEditingSite(request)),
+  );
 
   server.get("/taxonomies/:handle", canRead, async (request) => {
     const { handle } = parseRequest(taxonomyHandleParamsSchema, request.params);
-    return findTaxonomy(server.database, handle);
+    return findTaxonomy(server.database, handle, await resolveEditingSite(request));
   });
 
   server.post("/taxonomies", canUpdate, async (request, reply) => {
@@ -59,12 +64,12 @@ export async function taxonomiesRoutes(server: FastifyInstance) {
   server.put("/taxonomies/:handle", canUpdate, async (request) => {
     const { handle } = parseRequest(taxonomyHandleParamsSchema, request.params);
     const changes = parseRequest(updateTaxonomyRequestSchema, request.body);
-    return updateTaxonomy(server.database, handle, changes);
+    return updateTaxonomy(server.database, handle, changes, await resolveEditingSite(request));
   });
 
   server.delete("/taxonomies/:handle", canUpdate, async (request, reply) => {
     const { handle } = parseRequest(taxonomyHandleParamsSchema, request.params);
-    await deleteTaxonomy(server.database, handle);
+    await deleteTaxonomy(server.database, handle, await resolveEditingSite(request));
     return reply.code(204).send();
   });
 
@@ -93,13 +98,15 @@ export async function taxonomiesRoutes(server: FastifyInstance) {
 
   server.get("/delivery/taxonomies/:handle", publicContent, async (request, reply) => {
     const { handle } = parseRequest(taxonomyHandleParamsSchema, request.params);
-    const taxonomy = await deliverTaxonomy(server.database, handle);
+    const site = await resolveDeliverySite(request, reply);
+    const taxonomy = await deliverTaxonomy(server.database, handle, site);
     return reply.header("cache-control", DELIVERY_CACHE_CONTROL).send(taxonomy);
   });
 
   server.get("/delivery/taxonomies/:handle/:slug", publicContent, async (request, reply) => {
     const { handle, slug } = parseRequest(termSlugParamsSchema, request.params);
-    const term = await deliverTermBySlug(server.database, handle, slug);
+    const site = await resolveDeliverySite(request, reply);
+    const term = await deliverTermBySlug(server.database, handle, slug, site);
     return reply.header("cache-control", DELIVERY_CACHE_CONTROL).send(term);
   });
 }

@@ -8,6 +8,7 @@ import {
 } from "./locales.schema.js";
 import { addLocale, listLocales, removeLocale, renameLocale } from "./locales.service.js";
 import { requireDeliveryAccess } from "../delivery/require-delivery-access.js";
+import { resolveDeliverySite, resolveEditingSite } from "./request-site.js";
 
 /**
  * HTTP only:
@@ -19,33 +20,38 @@ import { requireDeliveryAccess } from "../delivery/require-delivery-access.js";
  *   GET    /delivery/locales  (public)           -> { defaultLocale, locales: [{ code, name }] }
  *
  * Anyone signed in can list the languages: editors need them to write translations.
+ * Each site has its own; these are the current site's (see request-site.ts).
  */
 export async function localesRoutes(server: FastifyInstance) {
   // Published content, open to websites unless delivery needs a token (Settings → API access).
   const publicContent = { preHandler: requireDeliveryAccess };
   const canUpdate = { preHandler: requirePermission("settings:update") };
 
-  server.get("/locales", { preHandler: requireSignedIn }, async () => listLocales(server.database));
+  server.get("/locales", { preHandler: requireSignedIn }, async (request) =>
+    listLocales(server.database, await resolveEditingSite(request)),
+  );
 
   server.post("/locales", canUpdate, async (request, reply) => {
     const locale = parseRequest(addLocaleRequestSchema, request.body);
-    return reply.code(201).send(await addLocale(server.database, locale));
+    const site = await resolveEditingSite(request);
+    return reply.code(201).send(await addLocale(server.database, locale, site));
   });
 
   server.patch("/locales/:code", canUpdate, async (request) => {
     const { code } = parseRequest(localeParamsSchema, request.params);
     const changes = parseRequest(renameLocaleRequestSchema, request.body);
-    return renameLocale(server.database, code, changes);
+    return renameLocale(server.database, code, changes, await resolveEditingSite(request));
   });
 
   server.delete("/locales/:code", canUpdate, async (request, reply) => {
     const { code } = parseRequest(localeParamsSchema, request.params);
-    await removeLocale(server.database, code);
+    await removeLocale(server.database, code, await resolveEditingSite(request));
     return reply.code(204).send();
   });
 
-  server.get("/delivery/locales", publicContent, async (_request, reply) => {
-    const { defaultLocale, locales } = await listLocales(server.database);
+  server.get("/delivery/locales", publicContent, async (request, reply) => {
+    const site = await resolveDeliverySite(request, reply);
+    const { defaultLocale, locales } = await listLocales(server.database, site);
     return reply.header("cache-control", "public, max-age=60").send({
       defaultLocale,
       locales: locales.map(({ code, name }) => ({ code, name })),

@@ -43,6 +43,7 @@ export async function findListView(
       term: route.kind === "archive" ? route.term : undefined,
     },
     dependencies.assetLookup,
+    dependencies.site,
   );
   const totalPages = Math.max(1, Math.ceil(list.total / POSTS_PER_PAGE));
   if (route.page > totalPages || (isHome && list.total === 0)) {
@@ -81,7 +82,12 @@ async function findTerm(
   route: Extract<ListRoute, { kind: "archive" }>,
 ): Promise<{ title: string; description: string } | undefined> {
   try {
-    const term = await deliverTermBySlug(request.dependencies.database, route.taxonomy, route.term);
+    const term = await deliverTermBySlug(
+      request.dependencies.database,
+      route.taxonomy,
+      route.term,
+      request.dependencies.site,
+    );
     return { title: term.title, description: term.description };
   } catch (error) {
     if (error instanceof TermNotFoundError || error instanceof TaxonomyNotFoundError) {

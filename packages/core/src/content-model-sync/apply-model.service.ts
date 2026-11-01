@@ -96,7 +96,12 @@ class ModelApplier {
     for (const taxonomy of this.targetUnits("taxonomy")) {
       const before = this.before(taxonomy);
       if (!before) {
-        await createTaxonomy(this.database, { handle: taxonomy.handle, name: taxonomy.name });
+        // Content model files don't say which site owns a taxonomy: new ones are shared.
+        await createTaxonomy(this.database, {
+          handle: taxonomy.handle,
+          name: taxonomy.name,
+          siteHandle: null,
+        });
       } else if (before.name !== taxonomy.name) {
         await updateTaxonomy(this.database, taxonomy.handle, { name: taxonomy.name });
       }
@@ -158,6 +163,9 @@ class ModelApplier {
             structure,
             routePattern,
             blueprintHandle: contentType.handle,
+            // Content model files don't describe sites: new collections are on every site.
+            siteScope: "per-site",
+            siteHandles: null,
           });
         } else if (
           found.owner !== contentType.handle ||

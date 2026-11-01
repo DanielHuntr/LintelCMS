@@ -19,6 +19,8 @@ export const previewQuerySchema = z.object({
 /** `GET /preview`: the draft as the delivery API would serve it once published. */
 export const previewedEntrySchema = z.object({
   collection: z.string(),
+  /** The handle of the site the draft is on, for websites serving several. */
+  site: z.string(),
   entry: deliveredEntrySchema,
 });
 

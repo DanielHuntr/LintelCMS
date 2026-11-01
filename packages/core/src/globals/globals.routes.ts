@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { getSignedIn, requirePermission } from "../auth/require-permission.js";
 import { parseRequest } from "../http/http-errors.js";
 import { localeQuerySchema } from "../sites/locales.schema.js";
+import { resolveDeliverySite, resolveEditingSite } from "../sites/request-site.js";
 import { deliverAllGlobalSets, deliverGlobalSet } from "./globals-delivery.service.js";
 import {
   createGlobalSetRequestSchema,
@@ -30,6 +31,9 @@ import { requireDeliveryAccess } from "../delivery/require-delivery-access.js";
  *   DELETE /globals/:handle                (blueprints:update)  -> 204
  *   GET    /delivery/globals               (public)             ?locale -> { locale, globals }
  *   GET    /delivery/globals/:handle       (public)             ?locale -> DeliveredGlobalSet
+ *
+ * Every site has the same sets and fields, and its own values: the admin's current site's,
+ * or for websites the site asked for (see src/sites/request-site.ts).
  */
 export async function globalsRoutes(server: FastifyInstance) {
   // Published content, open to websites unless delivery needs a token (Settings → API access).
@@ -48,7 +52,7 @@ export async function globalsRoutes(server: FastifyInstance) {
   server.get("/globals/:handle", canRead, async (request) => {
     const { handle } = parseRequest(globalSetParamsSchema, request.params);
     const { locale } = parseRequest(localeQuerySchema, request.query);
-    return findGlobalSet(server.database, handle, locale);
+    return findGlobalSet(server.database, handle, locale, await resolveEditingSite(request));
   });
 
   server.put("/globals/:handle", canChangeFields, async (request) => {
@@ -61,10 +65,15 @@ export async function globalsRoutes(server: FastifyInstance) {
     const { handle } = parseRequest(globalSetParamsSchema, request.params);
     const { locale } = parseRequest(localeQuerySchema, request.query);
     const values = parseRequest(saveGlobalValuesRequestSchema, request.body);
-    return saveGlobalValues(server.database, handle, locale, values, {
-      authorId: getSignedIn(request).user.id,
-      assetExists: server.assetExists,
-    });
+    const site = await resolveEditingSite(request);
+    return saveGlobalValues(
+      server.database,
+      handle,
+      locale,
+      values,
+      { authorId: getSignedIn(request).user.id, assetExists: server.assetExists },
+      site,
+    );
   });
 
   server.delete("/globals/:handle", canChangeFields, async (request, reply) => {
@@ -75,14 +84,22 @@ export async function globalsRoutes(server: FastifyInstance) {
 
   server.get("/delivery/globals", publicContent, async (request, reply) => {
     const { locale } = parseRequest(localeQuerySchema, request.query);
-    const globals = await deliverAllGlobalSets(server.database, locale, server.assetLookup);
+    const site = await resolveDeliverySite(request, reply);
+    const globals = await deliverAllGlobalSets(server.database, locale, server.assetLookup, site);
     return reply.header("cache-control", "public, max-age=60").send(globals);
   });
 
   server.get("/delivery/globals/:handle", publicContent, async (request, reply) => {
     const { handle } = parseRequest(globalSetParamsSchema, request.params);
     const { locale } = parseRequest(localeQuerySchema, request.query);
-    const globalSet = await deliverGlobalSet(server.database, handle, locale, server.assetLookup);
+    const site = await resolveDeliverySite(request, reply);
+    const globalSet = await deliverGlobalSet(
+      server.database,
+      handle,
+      locale,
+      server.assetLookup,
+      site,
+    );
     return reply.header("cache-control", "public, max-age=60").send(globalSet);
   });
 }

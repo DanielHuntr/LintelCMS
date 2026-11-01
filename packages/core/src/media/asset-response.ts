@@ -52,5 +52,6 @@ export function toAssetResponse(
       asset.uploadedBy && asset.uploaderName
         ? { id: asset.uploadedBy, name: asset.uploaderName }
         : null,
+    siteId: asset.siteId,
   };
 }

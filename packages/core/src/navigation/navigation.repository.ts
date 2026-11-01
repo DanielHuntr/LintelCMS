@@ -6,31 +6,40 @@ import { type Navigation, navigationsTable, type NewNavigation } from "./navigat
 
 /** Database reads and writes for menus, nothing else. */
 
+/** One site's menus. */
 export async function listNavigationRows(
   database: DatabaseOrTransaction,
   tenantId: string,
+  siteId: string,
 ): Promise<Navigation[]> {
   return database
     .select()
     .from(navigationsTable)
-    .where(eq(navigationsTable.tenantId, tenantId))
+    .where(and(eq(navigationsTable.tenantId, tenantId), eq(navigationsTable.siteId, siteId)))
     .orderBy(asc(navigationsTable.name));
 }
 
 export async function findNavigationByHandle(
   database: DatabaseOrTransaction,
   tenantId: string,
+  siteId: string,
   handle: string,
 ): Promise<Navigation | undefined> {
   const [navigation] = await database
     .select()
     .from(navigationsTable)
-    .where(and(eq(navigationsTable.tenantId, tenantId), eq(navigationsTable.handle, handle)))
+    .where(
+      and(
+        eq(navigationsTable.tenantId, tenantId),
+        eq(navigationsTable.siteId, siteId),
+        eq(navigationsTable.handle, handle),
+      ),
+    )
     .limit(1);
   return navigation;
 }
 
-/** Inserts the menu unless one with its handle exists; returns undefined if it did. */
+/** Inserts the menu unless its site has one with its handle; returns undefined if it did. */
 export async function insertNavigationIfMissing(
   database: DatabaseOrTransaction,
   navigation: NewNavigation,
@@ -38,7 +47,9 @@ export async function insertNavigationIfMissing(
   const [inserted] = await database
     .insert(navigationsTable)
     .values(navigation)
-    .onConflictDoNothing({ target: [navigationsTable.tenantId, navigationsTable.handle] })
+    .onConflictDoNothing({
+      target: [navigationsTable.tenantId, navigationsTable.siteId, navigationsTable.handle],
+    })
     .returning();
   return inserted;
 }

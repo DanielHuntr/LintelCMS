@@ -33,6 +33,22 @@ Your website. Left empty, it is the built-in site's own (`SITE_PUBLIC_URL`, or
 `http://localhost:<SITE_PORT>`). The sitemap, robots.txt, canonical addresses and "View page"
 all use the same answer (`readEffectiveSiteAddress`).
 
+## Several sites
+
+Each visit is for one site (`site-for-address.ts`): the site whose domains, and path prefix
+when it has one, match the address (`X-Forwarded-Host` behind a proxy, else `Host`), else
+the default site. That site's pages, posts, menus, global values (so its name, footer and
+contact details), languages, taxonomies it owns, sitemap and canonical addresses are used,
+and its pages are cached apart from other sites' (`RenderedPagesCache.forSite`). A site's
+address is its own (Settings → Sites), or for the default site the one in Settings → Your
+website.
+
+What every site shares: the template, theme and logo (the `website` setting), the SEO
+plugin's defaults and redirects, shared collections and taxonomies, the media library, and
+the plugins switched on. A site served under a path prefix on a shared domain answers at
+`/<prefix>/...`; links from content and menus carry the prefix, but the website's own
+links (home, pagination, the language switcher) don't yet.
+
 ## Caching
 
 Finished responses are kept in memory (`rendered-pages-cache.ts`) with an `ETag`, so most
@@ -74,6 +90,7 @@ There is no repository: everything is kept in settings and read through other fe
 | `site-server.ts`          | The website's own Fastify server, reading through the API |
 | `site.routes.ts`          | Its routes: the stylesheet, and every page                |
 | `site-pages.service.ts`   | What to answer for an address; the cache in front of it   |
+| `site-for-address.ts`     | Which site a visit is for                                 |
 | `site-routing.ts`         | Which content an address could mean (pure)                |
 | `site-lists.service.ts`   | Blog indexes and archives, with pagination                |
 | `site-preview.service.ts` | Drafts with a preview token                               |
