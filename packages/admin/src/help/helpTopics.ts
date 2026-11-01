@@ -10,6 +10,7 @@ const helpTopics: ReadonlyArray<{ path: RegExp; slug: string }> = [
   { path: /^\/settings\/security-log(\/|$)/, slug: "using/users" },
   { path: /^\/forms(\/|$)/, slug: "using/forms" },
   { path: /^\/settings\/backups(\/|$)/, slug: "using/backups" },
+  { path: /^\/settings\/(updates|about)(\/|$)/, slug: "using/updating" },
   { path: /^\/settings\/import\/wordpress(\/|$)/, slug: "using/wordpress" },
   { path: /^\/settings\/import(\/|$)/, slug: "using/backups" },
   { path: /^\/settings(\/|$)/, slug: "using/content-types" },

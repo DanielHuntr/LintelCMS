@@ -1,8 +1,10 @@
 import {
   Archive,
+  ArrowUpCircle,
   Blocks,
   FileInput,
   Inbox,
+  Info,
   KeyRound,
   Languages,
   MonitorSmartphone,
@@ -18,6 +20,7 @@ import { t } from "../i18n/strings.js";
 import { Page } from "../design/Page.js";
 import { PluginSettingsRows } from "../plugins/PluginSettingsRows.js";
 import { useCan } from "../session/SessionContext.js";
+import { UpdatesCountBadge } from "../updates/UpdatesCountBadge.js";
 
 /**
  * /settings: one row per area of settings, like iOS Settings. Rows appear as their screens
@@ -29,6 +32,7 @@ export function SettingsPage() {
   const canSeeSecurityLog = useCan("security:read");
   const canSeeBackups = useCan("backups:read");
   const canTransferContent = useCan("content:transfer");
+  const canSeeUpdates = useCan("updates:read");
 
   return (
     <Page width="readable">
@@ -105,6 +109,25 @@ export function SettingsPage() {
             )}
           </GroupedList>
         )}
+        <GroupedList header={t("settings.systemHeader")}>
+          {canSeeUpdates && (
+            <GroupedListRow
+              icon={ArrowUpCircle}
+              iconTone="success"
+              label={t("updates.title")}
+              description={t("settings.updatesDescription")}
+              accessory={<UpdatesCountBadge />}
+              to="/settings/updates"
+            />
+          )}
+          <GroupedListRow
+            icon={Info}
+            iconTone="neutral"
+            label={t("about.title")}
+            description={t("settings.aboutDescription")}
+            to="/settings/about"
+          />
+        </GroupedList>
         <GroupedList header={t("settings.siteHeader")} footer={t("settings.moreSoon")}>
           {canSeeSiteSettings && (
             <GroupedListRow

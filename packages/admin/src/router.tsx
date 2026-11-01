@@ -17,6 +17,7 @@ import type { EntriesFilter } from "./content/entriesQuery.js";
 import { BlueprintEditorPage } from "./content-types/BlueprintEditorPage.js";
 import { contentModelRoutes } from "./content-model/contentModelRoutes.js";
 import { dataToolsRoutes } from "./data-tools/dataToolsRoutes.js";
+import { updatesRoutes } from "./updates/updatesRoutes.js";
 import { ContentTypesPage } from "./content-types/ContentTypesPage.js";
 import { NewContentTypePage } from "./content-types/NewContentTypePage.js";
 import { pageDesignRoutes } from "./page-design/pageDesignRoutes.js";
@@ -443,6 +444,7 @@ export const routeTree = rootRoute.addChildren([
       ...workflowsRoutes(() => adminRoute),
       ...formsRoutes(() => adminRoute),
       ...dataToolsRoutes(() => adminRoute),
+      ...updatesRoutes(() => adminRoute),
       ...placeholderRoutes,
       pluginScreensRoute,
     ]),

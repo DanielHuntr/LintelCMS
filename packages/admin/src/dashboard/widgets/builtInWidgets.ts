@@ -1,4 +1,5 @@
-import { CalendarClock, HardDrive, ListTodo, PenLine, Sparkles } from "lucide-react";
+import { ArrowUpCircle, CalendarClock, HardDrive, ListTodo, PenLine, Sparkles } from "lucide-react";
+import { UpdatesWidget } from "../../updates/UpdatesWidget.js";
 import { t } from "../../i18n/strings.js";
 import type { DashboardWidget } from "../../plugins/adminPlugin.js";
 import { MediaUsageWidget } from "./MediaUsageWidget.js";
@@ -59,6 +60,16 @@ export const builtInWidgets: readonly DashboardWidget[] = [
     component: MediaUsageWidget,
     defaultSize: "medium",
     permission: "media:read",
+    onDefaultDashboard: true,
+  },
+  {
+    id: "updates",
+    title: t("dashboard.updates.title"),
+    description: t("dashboard.updates.description"),
+    icon: ArrowUpCircle,
+    component: UpdatesWidget,
+    defaultSize: "small",
+    permission: "updates:read",
     onDefaultDashboard: true,
   },
 ];

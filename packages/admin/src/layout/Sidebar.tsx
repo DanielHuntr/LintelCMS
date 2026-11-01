@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Search } from "lucide-react";
+import type { ReactNode } from "react";
 import { AppMark } from "../design/AppMark.js";
 import { t } from "../i18n/strings.js";
 import { visibleSections } from "../navigation/sections.js";
@@ -15,6 +16,8 @@ interface SidebarProps {
   onSignOut?: () => void;
   /** Opens the command palette. Without it, the Search button is left out. */
   onOpenSearch?: () => void;
+  /** Shown above the account, such as the updates link. */
+  notice?: ReactNode;
 }
 
 /**
@@ -28,6 +31,7 @@ export function Sidebar({
   signedInUser,
   onSignOut,
   onOpenSearch,
+  notice,
 }: SidebarProps) {
   return (
     <aside className="fixed inset-y-3 left-3 z-10 flex w-60 flex-col rounded-panel bg-sidebar shadow-float hairline-ring backdrop-blur-2xl backdrop-saturate-150">
@@ -82,6 +86,7 @@ export function Sidebar({
         </ul>
       </nav>
 
+      {notice}
       <div className="hairline-top mx-2.5 py-2.5">
         <SidebarAccount signedInUser={signedInUser} onSignOut={onSignOut} />
       </div>

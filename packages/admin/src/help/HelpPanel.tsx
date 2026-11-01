@@ -5,6 +5,7 @@ import { t } from "../i18n/strings.js";
 import { fullDocsUrl } from "./docsLinks.js";
 import { HelpArticle } from "./HelpArticle.js";
 import { HelpTopicList } from "./HelpTopicList.js";
+import { LintelVersion } from "../updates/LintelVersion.js";
 
 interface HelpPanelProps {
   id: string;
@@ -122,7 +123,7 @@ export function HelpPanel({ id, slug, onClose }: HelpPanelProps) {
 
       <footer className="flex shrink-0 items-center justify-between gap-3 px-4 py-3 hairline-top">
         {view.kind === "topics" ? (
-          <span />
+          <LintelVersion className="px-1 text-footnote text-label-tertiary" />
         ) : (
           <button
             type="button"
