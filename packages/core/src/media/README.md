@@ -80,24 +80,51 @@ Options on a document are ignored and the original is sent.
 
 ## Storage
 
-`storage-driver.ts` is the whole contract: `put`, `get` (a stream), `delete` and `exists`.
-`LocalDiskStorage` keeps files in `.lintel/uploads` (gitignored). `buildServer` takes another
-driver in `media.storage`.
+`storage-driver.ts` is the whole contract: `put`, `get` (a stream), `delete` and `exists`,
+plus two optional methods: `checkReachable()` (used by `GET /ready` and at start) and
+`signedUrl()`. `buildServer` takes a driver in `media.storage`; `configured-storage.ts`
+picks one from the settings (`storage.config.ts`).
 
-### Adding S3 or R2 later
+- **`LocalDiskStorage`** (`STORAGE_DRIVER=local`, the default) keeps files in
+  `<LINTEL_FOLDER>/uploads`, `.lintel/uploads` unless set.
+- **`S3Storage`** (`STORAGE_DRIVER=s3`) keeps them in an S3-compatible bucket with the AWS
+  SDK: AWS S3, Cloudflare R2, Backblaze B2 or MinIO. Set `S3_BUCKET`, `S3_REGION`, and for
+  anything but AWS `S3_ENDPOINT`; the keys go in `S3_ACCESS_KEY_ID` and
+  `S3_SECRET_ACCESS_KEY` (leave both out to use the server's AWS role). Path-style
+  addresses are used whenever an endpoint is set. `S3_KEY_PREFIX` keeps Lintel's files in
+  one folder of a shared bucket. The SDK's newer default checksums are switched off,
+  because B2, R2 and older MinIO refuse them.
 
-Write a class implementing `StorageDriver` with `@aws-sdk/client-s3` (R2 speaks the same API;
-point `endpoint` at `https://<account>.r2.cloudflarestorage.com`):
+Keep the bucket private. Files are served through `GET /media/:id/file`, with the checks
+and headers above. With `S3_SIGNED_URLS=true`, originals are sent as a `302` to a signed
+link lasting `S3_SIGNED_URL_SECONDS` (3600) instead, which takes the bytes off the server;
+the redirect is `private, max-age` half that. Resized images are always made by Lintel and
+cached on its disk. A CDN in front of the API caches either well, thanks to the versioned
+URLs.
 
-- `put`: `PutObjectCommand` with `Body: contents` and `ContentType: mimeType`.
-- `get`: `GetObjectCommand`; its `Body` is a stream. Throw `StoredFileMissingError` on `NoSuchKey`.
-- `delete`: `DeleteObjectCommand` (S3 doesn't mind missing keys).
-- `exists`: `HeadObjectCommand`, false on a 404.
+### Moving files from disk to a bucket
 
-Then pass it in `main.ts` (`media: { storage: new S3Storage(...) }`), reading the bucket and
-keys from new settings in `config.ts`. Keep the bucket private: files are still served
-through `GET /media/:id/file`, which applies the checks and headers above. A CDN in front of
-the API caches those responses well, thanks to the versioned URLs.
+```bash
+pnpm media:move-to-s3 --dry-run   # what would be copied
+pnpm media:move-to-s3             # copy, then set STORAGE_DRIVER=s3 and restart
+```
+
+`storage-move.service.ts` copies every asset's file by its `storageKey`, skips files the
+bucket already has (so it can be run again after an interruption) and lists any the disk
+has lost. It deletes nothing.
+
+### Testing against a bucket
+
+`s3-storage.test.ts` and `s3-media.test.ts` run the real AWS SDK against
+`src/testing/fake-s3-server.ts`, which speaks the part of the S3 API Lintel uses and checks
+which key signed each request. To try a real MinIO:
+
+```bash
+docker run -p 9000:9000 -e MINIO_ROOT_USER=lintel -e MINIO_ROOT_PASSWORD=lintel-secret minio/minio server /data
+# create a bucket "lintel" in the console, then:
+STORAGE_DRIVER=s3 S3_BUCKET=lintel S3_ENDPOINT=http://localhost:9000 \
+  S3_ACCESS_KEY_ID=lintel S3_SECRET_ACCESS_KEY=lintel-secret pnpm dev
+```
 
 ## Using media from another feature
 
@@ -136,24 +163,28 @@ resolving to `[{ entryId, title }]`.
 
 ## Files
 
-| File                     | What it does                                                |
-| ------------------------ | ----------------------------------------------------------- |
-| `media.table.ts`         | The `assets` table                                          |
-| `media.schema.ts`        | Zod schemas: the `Asset` shape, queries and the update body |
-| `media.routes.ts`        | The endpoints and the file response headers                 |
-| `media.service.ts`       | Uploading, listing, updating and deleting                   |
-| `media-file.service.ts`  | Serving originals and resized images                        |
-| `media.repository.ts`    | Database reads and writes                                   |
-| `media.errors.ts`        | Named errors with the messages people see                   |
-| `file-types.ts`          | The allowed types and telling what a file really is         |
-| `svg-safety.ts`          | Refusing SVGs with active content                           |
-| `filenames.ts`           | Cleaning filenames                                          |
-| `image-transforms.ts`    | Reading sizes and resizing with sharp                       |
-| `focal-crop.ts`          | Crop geometry, shared with the admin                        |
-| `transform-cache.ts`     | The disk cache for resized images                           |
-| `asset-response.ts`      | Rows to `Asset`s, with versioned URLs                       |
-| `content-disposition.ts` | Download headers that survive any filename                  |
-| `storage-driver.ts`      | The storage interface                                       |
-| `local-disk-storage.ts`  | Storage in `.lintel/uploads`                                |
-| `asset-lookup.ts`        | `AssetLookup`, `AssetExists` and `AssetUsageFinder`         |
-| `index.ts`               | What other features may import                              |
+| File                      | What it does                                                |
+| ------------------------- | ----------------------------------------------------------- |
+| `media.table.ts`          | The `assets` table                                          |
+| `media.schema.ts`         | Zod schemas: the `Asset` shape, queries and the update body |
+| `media.routes.ts`         | The endpoints and the file response headers                 |
+| `media.service.ts`        | Uploading, listing, updating and deleting                   |
+| `media-file.service.ts`   | Serving originals and resized images                        |
+| `media.repository.ts`     | Database reads and writes                                   |
+| `media.errors.ts`         | Named errors with the messages people see                   |
+| `file-types.ts`           | The allowed types and telling what a file really is         |
+| `svg-safety.ts`           | Refusing SVGs with active content                           |
+| `filenames.ts`            | Cleaning filenames                                          |
+| `image-transforms.ts`     | Reading sizes and resizing with sharp                       |
+| `focal-crop.ts`           | Crop geometry, shared with the admin                        |
+| `transform-cache.ts`      | The disk cache for resized images                           |
+| `asset-response.ts`       | Rows to `Asset`s, with versioned URLs                       |
+| `content-disposition.ts`  | Download headers that survive any filename                  |
+| `storage-driver.ts`       | The storage interface                                       |
+| `local-disk-storage.ts`   | Storage in `.lintel/uploads`                                |
+| `s3-storage.ts`           | Storage in an S3-compatible bucket                          |
+| `storage.config.ts`       | The storage settings and their rules                        |
+| `configured-storage.ts`   | The driver the settings ask for                             |
+| `storage-move.service.ts` | Copying every file from one storage to another              |
+| `asset-lookup.ts`         | `AssetLookup`, `AssetExists` and `AssetUsageFinder`         |
+| `index.ts`                | What other features may import                              |

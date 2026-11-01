@@ -1,9 +1,14 @@
 import { createReadStream } from "node:fs";
+import { constants } from "node:fs";
 import { access, mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve, sep } from "node:path";
 import type { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
-import { type StorageDriver, StoredFileMissingError } from "./storage-driver.js";
+import {
+  type StorageDriver,
+  StoredFileMissingError,
+  StorageUnreachableError,
+} from "./storage-driver.js";
 
 /** `.lintel/uploads` at the repository root (already gitignored); the same from `src` and `dist`. */
 export const DEFAULT_UPLOADS_FOLDER = fileURLToPath(
@@ -45,6 +50,19 @@ export class LocalDiskStorage implements StorageDriver {
       return true;
     } catch {
       return false;
+    }
+  }
+
+  /** The folder must exist (it is made if not) and this program must be able to write to it. */
+  async checkReachable(): Promise<void> {
+    try {
+      await mkdir(this.rootFolder, { recursive: true });
+      await access(this.rootFolder, constants.W_OK);
+    } catch {
+      throw new StorageUnreachableError(
+        `Lintel can't write to the uploads folder ${this.rootFolder}. Check that it exists ` +
+          "and that the user Lintel runs as owns it.",
+      );
     }
   }
 

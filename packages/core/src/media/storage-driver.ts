@@ -15,6 +15,30 @@ export interface StorageDriver {
   /** Removes the file. Deleting something that isn't there is not an error. */
   delete(key: string): Promise<void>;
   exists(key: string): Promise<boolean>;
+  /**
+   * Throws a StorageUnreachableError, in plain words, if files can't be stored right now.
+   * Used by `GET /ready`. Optional: a driver without it is taken to be always reachable.
+   */
+  checkReachable?(): Promise<void>;
+  /**
+   * A short-lived link straight to the file, for drivers whose store can serve it (S3).
+   * Optional: without it, every file goes through `GET /media/:id/file`.
+   */
+  signedUrl?(key: string, options: SignedUrlOptions): Promise<string>;
+}
+
+export interface SignedUrlOptions {
+  expiresInSeconds: number;
+  /** Sent back by the store, so the browser treats the file as Lintel would. */
+  contentType: string;
+  contentDisposition: string;
+}
+
+export class StorageUnreachableError extends Error {
+  constructor(reason: string) {
+    super(`Uploaded files can't be stored right now: ${reason}`);
+    this.name = "StorageUnreachableError";
+  }
 }
 
 export class StoredFileMissingError extends Error {

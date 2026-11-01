@@ -34,6 +34,11 @@ export interface MediaRoutesOptions {
   storage: StorageDriver;
   cacheFolder: string;
   usageFinder: AssetUsageFinder;
+  /**
+   * Send originals as a redirect to a signed storage link lasting this long, rather than
+   * through Lintel. Leave out to serve everything through Lintel (the default).
+   */
+  signedUrlSeconds?: number | undefined;
 }
 
 const MAX_UPLOAD_BYTES = MAX_UPLOAD_MEGABYTES * 1024 * 1024;
@@ -138,6 +143,14 @@ export async function mediaRoutes(server: FastifyInstance, options: MediaRoutesO
       return reply.code(304).send();
     }
 
+    if (options.signedUrlSeconds && file.signedUrl) {
+      return sendToSignedUrl(
+        reply,
+        await file.signedUrl(options.signedUrlSeconds),
+        options.signedUrlSeconds,
+      );
+    }
+
     const { body, size, cache } = await file.read();
     if (cache !== "none") {
       reply.header("lintel-transform-cache", cache);
@@ -148,6 +161,15 @@ export async function mediaRoutes(server: FastifyInstance, options: MediaRoutesO
       .header("content-disposition", contentDisposition(file.disposition, file.filename))
       .send(body);
   });
+}
+
+/**
+ * The link expires, so the redirect is kept for a fraction of its life and only by the
+ * browser: a shared cache must never hand out a link that has stopped working.
+ */
+function sendToSignedUrl(reply: FastifyReply, url: string, expiresInSeconds: number) {
+  const keepFor = Math.floor(expiresInSeconds / 2);
+  return reply.header("cache-control", `private, max-age=${keepFor}`).redirect(url, 302);
 }
 
 /** Turns multipart's own errors into ones an editor can act on. */

@@ -157,3 +157,15 @@ function listConditions(filter: AssetListFilter): SQL[] {
 function escapeLikePattern(text: string): string {
   return text.replace(/[\\%_]/g, (character) => `\\${character}`);
 }
+
+/** Every stored file's key, oldest first, for moving files from one storage to another. */
+export async function listAllStorageKeys(
+  database: DatabaseOrTransaction,
+  tenantId: string,
+): Promise<{ storageKey: string; mimeType: string }[]> {
+  return database
+    .select({ storageKey: assetsTable.storageKey, mimeType: assetsTable.mimeType })
+    .from(assetsTable)
+    .where(eq(assetsTable.tenantId, tenantId))
+    .orderBy(assetsTable.createdAt);
+}
