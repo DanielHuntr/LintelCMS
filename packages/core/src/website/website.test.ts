@@ -2,8 +2,9 @@ import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   ensureBlogPostsCollection,
-  ensurePagesCollection,
+  pagesWithSimpleSectionsCollection,
 } from "../collections/default-collections.js";
+import { ensureCollection } from "../collections/collections.service.js";
 import {
   acceptAnyAsset,
   type AssetLookup,
@@ -52,7 +53,8 @@ describe("the built-in website", () => {
     });
     site = buildSiteServer({ api });
     await site.ready();
-    await ensurePagesCollection(testDatabase.database);
+    // A site from before page designs: its pages have Page sections.
+    await ensureCollection(testDatabase.database, pagesWithSimpleSectionsCollection);
     await ensureSiteSettings(testDatabase.database);
     await ensureMainMenu(testDatabase.database);
     await createTestUser(testDatabase.database, "owner@example.com", [["*"]]);

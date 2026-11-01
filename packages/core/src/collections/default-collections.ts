@@ -25,10 +25,12 @@ function field(
 const titleField = field("title", "Title", "text", { required: true });
 
 /**
- * The page builder every new site's pages start with: the sections most small-business
- * pages are made of. Agencies can add, change or remove block types in Content types.
+ * "Page sections": the form-based sections sites had before pages were designed visually.
+ * New sites don't get it (their pages start with Design), but sites made before keep it in
+ * their Page blueprint, so their pages keep working and are still delivered with them.
+ * Agencies can add it to any content type in Content types.
  */
-const pageSectionsField = field("sections", "Page sections", "blocks", {
+export const simpleSectionsField = field("sections", "Page sections", "blocks", {
   helpText: "Build the page from sections. Drag them, or use the arrows, to change the order.",
   options: {
     blockTypes: [
@@ -99,12 +101,21 @@ export const pagesCollection: CollectionDefaults = {
       }),
       field("hero_image", "Hero image", "image", { helpText: "Shown at the top of the page" }),
       field("body", "Body", "richText"),
-      pageSectionsField,
       field("design", "Design", "page", {
-        helpText:
-          "Lay the page out visually, with Edit design. Leave it empty to use the sections above.",
+        helpText: "How the page looks: lay it out visually with Edit design.",
       }),
     ],
+  },
+};
+
+/** Pages as sites made before page designs have them: with Page sections before Design. */
+export const pagesWithSimpleSectionsCollection: CollectionDefaults = {
+  ...pagesCollection,
+  blueprint: {
+    ...pagesCollection.blueprint,
+    fields: pagesCollection.blueprint.fields.flatMap((pageField) =>
+      pageField.handle === "design" ? [simpleSectionsField, pageField] : [pageField],
+    ),
   },
 };
 

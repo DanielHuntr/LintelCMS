@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   ensureBlogPostsCollection,
-  ensurePagesCollection,
+  pagesWithSimpleSectionsCollection,
 } from "../collections/default-collections.js";
+import { ensureCollection } from "../collections/collections.service.js";
 import { useTestDatabase } from "../testing/test-database.js";
 import { makeTestPng, useMediaTestServer } from "../testing/test-media.js";
 import { requestsAs } from "../testing/test-server.js";
@@ -33,7 +34,8 @@ describe("GET /search", () => {
   });
 
   async function setUp() {
-    await ensurePagesCollection(testDatabase.database);
+    // A site from before page designs: its pages have Page sections.
+    await ensureCollection(testDatabase.database, pagesWithSimpleSectionsCollection);
     await ensureBlogPostsCollection(testDatabase.database);
     const api = requestsAs(media.server, media.adminCookies);
     await api("POST", "/collections/pages/entries", {
