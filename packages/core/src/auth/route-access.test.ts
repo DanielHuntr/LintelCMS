@@ -1,0 +1,176 @@
+import { randomUUID } from "node:crypto";
+import type { FastifyInstance, HTTPMethods } from "fastify";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { setEnabledPlugins } from "../plugins/plugins.service.js";
+import { buildServer } from "../server.js";
+import { writeSetting } from "../settings/settings.service.js";
+import { useTestDatabase } from "../testing/test-database.js";
+import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
+
+/**
+ * Every route the server registers must be one of:
+ *
+ *   - public by design, listed below with the reason;
+ *   - published content, open unless Settings → API access asks for a token;
+ *   - for anyone signed in, listed below;
+ *   - guarded by a permission (everything else).
+ *
+ * The test finds the routes itself, so a new route that forgets its guard fails here
+ * instead of quietly being open to the internet.
+ */
+const PUBLIC_ROUTES: Record<string, string> = {
+  "GET /health": "load balancers check it",
+  "POST /auth/sign-in": "how people get a session",
+  "POST /auth/sign-out": "ends whatever session the browser has, if any",
+  "GET /setup/status": "the admin asks it before anyone has an account",
+  "POST /setup/database/test": "first run only, needs the setup code from another computer",
+  "POST /setup/database": "first run only, needs the setup code from another computer",
+  "POST /setup": "first run only, needs the setup code from another computer",
+  "GET /preview": "needs a signed preview token",
+  "GET /media/:id/file": "image URLs go straight into websites' <img> tags",
+  "GET /openapi.json": "describes the public API",
+  "GET /sitemap.xml": "for search engines",
+  "GET /robots.txt": "for search engines",
+};
+
+const SIGNED_IN_ROUTES = new Set([
+  "GET /auth/me",
+  "GET /search",
+  "GET /locales",
+  "GET /seo/defaults",
+]);
+
+/** Published content: open by default, a token or session once delivery requires one. */
+function isDeliveryRoute(route: string): boolean {
+  const [, path = ""] = route.split(" ");
+  return path === "/graphql" || path.startsWith("/delivery/");
+}
+
+/** Placeholder values for path parameters, so the request reaches the route's guard. */
+function fillPath(path: string): string {
+  return path.replace(/:([A-Za-z]+)/g, (_match, name: string) =>
+    name.toLowerCase().endsWith("id") ? randomUUID() : "test_value",
+  );
+}
+
+// Each test sends a request to every route, which takes a while.
+const SLOW_TEST_TIMEOUT = 60_000;
+
+describe("access to every route", () => {
+  const testDatabase = useTestDatabase();
+  let server: FastifyInstance;
+  const routes: string[] = [];
+  let withoutPermissions: Record<string, string>;
+
+  beforeAll(async () => {
+    server = buildServer({
+      adminOrigin: "http://localhost:5173",
+      database: testDatabase.activeDatabase,
+      runScheduledJobs: false,
+    });
+    server.addHook("onRoute", (route) => {
+      const methods = ([] as HTTPMethods[]).concat(route.method);
+      for (const method of methods) {
+        // HEAD copies of GET routes and CORS preflights have no handler of their own.
+        if (method !== "HEAD" && method !== "OPTIONS") {
+          routes.push(`${method} ${route.url}`);
+        }
+      }
+    });
+    await server.ready();
+  });
+
+  afterAll(() => server.close());
+
+  // useTestDatabase empties the database before each test, so each test sets up its own.
+  async function prepare() {
+    await setEnabledPlugins(testDatabase.database, ["seo"]);
+    await createTestUser(testDatabase.database, "nobody@example.com", [[]]);
+    withoutPermissions = await signInAndGetCookies(server, "nobody@example.com");
+  }
+
+  function send(route: string, cookies?: Record<string, string>) {
+    const [method, path = ""] = route.split(" ") as [HTTPMethods, string];
+    return server.inject({
+      method,
+      url: fillPath(path),
+      ...(cookies ? { cookies } : {}),
+      ...(method === "GET" || method === "DELETE" ? {} : { payload: {} }),
+    });
+  }
+
+  it("finds the routes", () => {
+    expect(routes.length).toBeGreaterThan(80);
+    for (const route of [...Object.keys(PUBLIC_ROUTES), ...SIGNED_IN_ROUTES]) {
+      expect(routes, `${route} is listed here but no longer exists`).toContain(route);
+    }
+  });
+
+  it(
+    "asks for a session (or token) on every route that isn't public",
+    async () => {
+      await prepare();
+      const open: string[] = [];
+      for (const route of routes) {
+        if (route in PUBLIC_ROUTES || isDeliveryRoute(route)) {
+          continue;
+        }
+        const response = await send(route);
+        if (response.statusCode !== 401) {
+          open.push(`${route} answered ${response.statusCode} without a session`);
+        }
+      }
+      expect(open).toEqual([]);
+    },
+    SLOW_TEST_TIMEOUT,
+  );
+
+  it(
+    "asks for a permission on every route that isn't for anyone signed in",
+    async () => {
+      await prepare();
+      const unguarded: string[] = [];
+      for (const route of routes) {
+        if (route in PUBLIC_ROUTES || isDeliveryRoute(route)) {
+          continue;
+        }
+        const response = await send(route, withoutPermissions);
+        const refused = response.statusCode === 403;
+        if (SIGNED_IN_ROUTES.has(route) ? refused || response.statusCode === 401 : !refused) {
+          unguarded.push(`${route} answered ${response.statusCode} to someone with no permissions`);
+        }
+      }
+      expect(unguarded).toEqual([]);
+    },
+    SLOW_TEST_TIMEOUT,
+  );
+
+  it(
+    "keeps all published content behind a token once delivery requires one",
+    async () => {
+      await prepare();
+      await writeSetting(testDatabase.database, "deliveryRequiresToken", true);
+      const open: string[] = [];
+      for (const route of routes.filter(isDeliveryRoute)) {
+        const response = await send(route);
+        if (response.statusCode !== 401) {
+          open.push(`${route} answered ${response.statusCode} without a token`);
+        }
+      }
+      expect(open).toEqual([]);
+    },
+    SLOW_TEST_TIMEOUT,
+  );
+
+  it(
+    "closes the first-run endpoints once someone has an account",
+    async () => {
+      await prepare();
+      for (const route of ["POST /setup", "POST /setup/database", "POST /setup/database/test"]) {
+        const response = await send(route);
+        expect(response.statusCode, route).toBe(409);
+      }
+    },
+    SLOW_TEST_TIMEOUT,
+  );
+});

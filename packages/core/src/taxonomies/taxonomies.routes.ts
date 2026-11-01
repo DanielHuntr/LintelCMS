@@ -20,6 +20,7 @@ import {
   updateTaxonomy,
 } from "./taxonomies.service.js";
 import { createTerm, deleteTerm, listTerms, updateTerm } from "./terms.service.js";
+import { requireDeliveryAccess } from "../delivery/require-delivery-access.js";
 
 /**
  * HTTP only:
@@ -37,6 +38,8 @@ import { createTerm, deleteTerm, listTerms, updateTerm } from "./terms.service.j
  *   GET    /delivery/taxonomies/:handle/:slug  (public)  -> Term, or 404
  */
 export async function taxonomiesRoutes(server: FastifyInstance) {
+  // Published content, open to websites unless delivery needs a token (Settings → API access).
+  const publicContent = { preHandler: requireDeliveryAccess };
   const canRead = { preHandler: requirePermission("taxonomies:read") };
   const canUpdate = { preHandler: requirePermission("taxonomies:update") };
   const canUpdateTerms = { preHandler: requirePermission("terms:update") };
@@ -88,13 +91,13 @@ export async function taxonomiesRoutes(server: FastifyInstance) {
     return reply.code(204).send();
   });
 
-  server.get("/delivery/taxonomies/:handle", async (request, reply) => {
+  server.get("/delivery/taxonomies/:handle", publicContent, async (request, reply) => {
     const { handle } = parseRequest(taxonomyHandleParamsSchema, request.params);
     const taxonomy = await deliverTaxonomy(server.database, handle);
     return reply.header("cache-control", DELIVERY_CACHE_CONTROL).send(taxonomy);
   });
 
-  server.get("/delivery/taxonomies/:handle/:slug", async (request, reply) => {
+  server.get("/delivery/taxonomies/:handle/:slug", publicContent, async (request, reply) => {
     const { handle, slug } = parseRequest(termSlugParamsSchema, request.params);
     const term = await deliverTermBySlug(server.database, handle, slug);
     return reply.header("cache-control", DELIVERY_CACHE_CONTROL).send(term);

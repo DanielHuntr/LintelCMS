@@ -7,6 +7,7 @@ import {
   renameLocaleRequestSchema,
 } from "./locales.schema.js";
 import { addLocale, listLocales, removeLocale, renameLocale } from "./locales.service.js";
+import { requireDeliveryAccess } from "../delivery/require-delivery-access.js";
 
 /**
  * HTTP only:
@@ -20,6 +21,8 @@ import { addLocale, listLocales, removeLocale, renameLocale } from "./locales.se
  * Anyone signed in can list the languages: editors need them to write translations.
  */
 export async function localesRoutes(server: FastifyInstance) {
+  // Published content, open to websites unless delivery needs a token (Settings → API access).
+  const publicContent = { preHandler: requireDeliveryAccess };
   const canUpdate = { preHandler: requirePermission("settings:update") };
 
   server.get("/locales", { preHandler: requireSignedIn }, async () => listLocales(server.database));
@@ -41,7 +44,7 @@ export async function localesRoutes(server: FastifyInstance) {
     return reply.code(204).send();
   });
 
-  server.get("/delivery/locales", async (_request, reply) => {
+  server.get("/delivery/locales", publicContent, async (_request, reply) => {
     const { defaultLocale, locales } = await listLocales(server.database);
     return reply.header("cache-control", "public, max-age=60").send({
       defaultLocale,

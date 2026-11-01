@@ -17,6 +17,7 @@ import {
   saveGlobalValues,
   updateGlobalSet,
 } from "./globals.service.js";
+import { requireDeliveryAccess } from "../delivery/require-delivery-access.js";
 
 /**
  * HTTP only. Changing a set's fields needs the same permission as changing a content type.
@@ -31,6 +32,8 @@ import {
  *   GET    /delivery/globals/:handle       (public)             ?locale -> DeliveredGlobalSet
  */
 export async function globalsRoutes(server: FastifyInstance) {
+  // Published content, open to websites unless delivery needs a token (Settings → API access).
+  const publicContent = { preHandler: requireDeliveryAccess };
   const canRead = { preHandler: requirePermission("globals:read") };
   const canUpdateValues = { preHandler: requirePermission("globals:update") };
   const canChangeFields = { preHandler: requirePermission("blueprints:update") };
@@ -70,13 +73,13 @@ export async function globalsRoutes(server: FastifyInstance) {
     return reply.code(204).send();
   });
 
-  server.get("/delivery/globals", async (request, reply) => {
+  server.get("/delivery/globals", publicContent, async (request, reply) => {
     const { locale } = parseRequest(localeQuerySchema, request.query);
     const globals = await deliverAllGlobalSets(server.database, locale, server.assetLookup);
     return reply.header("cache-control", "public, max-age=60").send(globals);
   });
 
-  server.get("/delivery/globals/:handle", async (request, reply) => {
+  server.get("/delivery/globals/:handle", publicContent, async (request, reply) => {
     const { handle } = parseRequest(globalSetParamsSchema, request.params);
     const { locale } = parseRequest(localeQuerySchema, request.query);
     const globalSet = await deliverGlobalSet(server.database, handle, locale, server.assetLookup);

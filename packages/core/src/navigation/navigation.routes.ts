@@ -15,6 +15,7 @@ import {
   listNavigations,
   updateNavigation,
 } from "./navigation.service.js";
+import { requireDeliveryAccess } from "../delivery/require-delivery-access.js";
 
 /**
  * HTTP only:
@@ -27,6 +28,8 @@ import {
  *   GET    /delivery/navigation/:handle (public)             ?locale -> the menu, ready to print
  */
 export async function navigationRoutes(server: FastifyInstance) {
+  // Published content, open to websites unless delivery needs a token (Settings → API access).
+  const publicContent = { preHandler: requireDeliveryAccess };
   const canRead = { preHandler: requirePermission("navigation:read") };
   const canUpdate = { preHandler: requirePermission("navigation:update") };
 
@@ -54,7 +57,7 @@ export async function navigationRoutes(server: FastifyInstance) {
     return reply.code(204).send();
   });
 
-  server.get("/delivery/navigation/:handle", async (request, reply) => {
+  server.get("/delivery/navigation/:handle", publicContent, async (request, reply) => {
     const { handle } = parseRequest(navigationParamsSchema, request.params);
     const { locale } = parseRequest(localeQuerySchema, request.query);
     const navigation = await deliverNavigation(server.database, handle, locale);
