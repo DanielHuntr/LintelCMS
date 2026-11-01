@@ -12,6 +12,7 @@ sidebar:
 pnpm lintel <command> [options]
 pnpm lintel help              # lists the commands
 pnpm lintel <command> --help  # one command's options
+pnpm lintel --version         # which version of Lintel this is
 ```
 
 Commands use the same database as the server: `DATABASE_URL` if it is set, then the
@@ -20,6 +21,34 @@ in one program at a time, so stop `pnpm dev` before running a command that opens
 
 Paths you type are relative to the folder you ran the command from. Every command exits
 with 0 when all went well and 1 when it didn't, so they can be used in scripts.
+
+## start
+
+```bash
+pnpm lintel start [--home <folder>]
+node current/lintel.mjs start          # in a release folder
+```
+
+Runs Lintel on a server under a small supervisor, which starts it again if it stops and
+installs updates from Settings → Updates: it keeps each version in `versions/`, points
+`current` at the one running, and goes back by itself if a new version doesn't start. The
+home folder (`--home`, `LINTEL_HOME`, or the folder it's run from) holds `.env`,
+`lintel.config.ts` and `.lintel` (unless `LINTEL_FOLDER` says otherwise), shared by every
+version. Stop it with Ctrl+C or SIGTERM; it stops Lintel first. See
+[Updating Lintel](/using/updating/).
+
+## update
+
+```bash
+pnpm lintel update [--to <version>] [--branch <name>]
+```
+
+Updates a copy of Lintel run from a git clone. It refuses to start while tracked files
+have changes, so your work is never touched. Then it fetches, picks the newest release tag
+(or `--to 1.2.0`; without release tags, the latest commit of the branch checked out or
+`--branch`), backs up the site, checks the new version out, runs `pnpm install` and the
+migrations, and tells you to start `pnpm dev` again. Stop Lintel first: the built-in
+database can only be open in one program.
 
 ## doctor
 

@@ -7,8 +7,24 @@ sidebar:
 ---
 
 Updates bring fixes, including security fixes, so install them regularly: once a month
-is a good habit. Lintel updates its own database tables when it starts, so updating is
-the same few steps every time.
+is a good habit. Lintel looks for new versions every day and shows them in Settings →
+Updates, with what each one changes and how your server is updated; owners are emailed
+about security updates. Lintel updates its own database tables when it starts, so updating
+is the same few steps every time.
+
+## One click, with lintel start
+
+Start Lintel with `pnpm lintel start` (or `node current/lintel.mjs start` from a release)
+instead of `pnpm start`, and owners can update from Settings → Updates: Lintel backs up,
+downloads and checks the release, restarts, and goes back by itself if the new version
+doesn't start. See [Updating Lintel](/using/updating/). For systemd:
+
+```ini
+[Service]
+WorkingDirectory=/srv/lintel
+ExecStart=/usr/bin/node /srv/lintel/current/lintel.mjs start
+Restart=always
+```
 
 ## Before you update
 
@@ -24,6 +40,11 @@ cd /opt/lintel
 git pull
 docker compose -f deploy/docker-compose.yml --profile https up -d --build
 ```
+
+To check out a release rather than the newest commit, use `git fetch --tags && git checkout
+v1.2.0` instead of `git pull`; Settings → Updates shows these commands with the version
+filled in. With the opt-in lintel-updater service (`--profile updater`, see
+[Updating Lintel](/using/updating/)), the Update button runs them for you.
 
 Docker builds the new version while the old one keeps running, then swaps them. Watch it
 start with `docker compose -f deploy/docker-compose.yml logs -f lintel`, and check that
@@ -54,5 +75,6 @@ database, restore the backup you made first: older versions don't know the newer
 
 ## Staying informed
 
-On GitHub, choose **Watch → Custom → Releases** on the Lintel repository to get an email
-for each new version.
+Settings → Updates and the dashboard show new versions, and owners get an email about
+each security update. On GitHub, **Watch → Custom → Releases** on the Lintel repository
+emails you about every version.
