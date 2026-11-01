@@ -4,14 +4,25 @@ import { t } from "../i18n/strings.js";
 import { classNames } from "./classNames.js";
 import { TextField } from "./TextField.js";
 
-type PasswordFieldProps = Omit<ComponentProps<typeof TextField>, "type" | "trailingAccessory">;
+type PasswordFieldProps = Omit<ComponentProps<typeof TextField>, "type" | "trailingAccessory"> & {
+  /** Pass with `onVisibleChange` to show or hide the password from outside, e.g. after a suggestion. */
+  isVisible?: boolean;
+  onVisibleChange?: (isVisible: boolean) => void;
+};
 
-/**
- * A password field with a "Show password" button. Seeing what you typed is kinder than
- * typing it twice, so screens use this instead of a "Confirm password" field.
- */
-export function PasswordField(fieldProps: PasswordFieldProps) {
-  const [isVisible, setIsVisible] = useState(false);
+/** A password field with a "Show password" button, so people can check what they typed. */
+export function PasswordField({
+  isVisible: controlledIsVisible,
+  onVisibleChange,
+  ...fieldProps
+}: PasswordFieldProps) {
+  const [ownIsVisible, setOwnIsVisible] = useState(false);
+  const isVisible = controlledIsVisible ?? ownIsVisible;
+
+  function setIsVisible(visible: boolean) {
+    setOwnIsVisible(visible);
+    onVisibleChange?.(visible);
+  }
   const Icon = isVisible ? EyeOff : Eye;
   const isLarge = fieldProps.fieldSize === "large";
 

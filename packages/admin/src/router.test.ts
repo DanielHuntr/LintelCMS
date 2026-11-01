@@ -7,6 +7,7 @@ const signedIn = {
   user: { id: "user-1", email: "daniel@gmail.com", name: "Daniel" },
   permissions: ["*"],
   enabledPlugins: ["blog", "seo"],
+  siteName: "Brightside Bakery",
 };
 
 /** Answers the admin's requests the way the API would for this setup state. */
@@ -14,7 +15,6 @@ function fakeApi(status: SetupStatus, isSignedIn: boolean) {
   vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
     const path = new URL(String(input)).pathname;
     if (path === "/setup/status") return Response.json(status);
-    if (path === "/plugins") return Response.json({ plugins: [] });
     if (path === "/auth/me") {
       return isSignedIn
         ? Response.json(signedIn)
@@ -59,21 +59,6 @@ describe("where the admin sends people", () => {
     fakeApi(setupStatus({ needsSetup: false, siteSetupCompleted: true }), true);
 
     expect(await landingPathFor("/setup")).toBe("/");
-    expect(await landingPathFor("/setup/site")).toBe("/");
-  });
-
-  it("brings someone signed in back to /setup/site until they've chosen their site", async () => {
-    fakeApi(setupStatus({ needsSetup: false, siteSetupCompleted: false }), true);
-
-    expect(await landingPathFor("/")).toBe("/setup/site");
-    expect(await landingPathFor("/settings")).toBe("/setup/site");
-    expect(await landingPathFor("/setup")).toBe("/setup/site");
-  });
-
-  it("asks people to sign in before they choose their site", async () => {
-    fakeApi(setupStatus({ needsSetup: false, siteSetupCompleted: false }), false);
-
-    expect(await landingPathFor("/setup/site")).toBe("/sign-in");
   });
 
   it("keeps the usual sign-in redirect once setup is complete", async () => {

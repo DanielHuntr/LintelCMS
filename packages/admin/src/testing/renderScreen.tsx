@@ -17,6 +17,8 @@ interface RenderScreenOptions {
   enabledPlugins?: string[];
   /** The connected website's address. Defaults to none. */
   siteAddress?: string;
+  /** The site's name. Defaults to "Brightside Bakery". */
+  siteName?: string | null;
 }
 
 /**
@@ -26,7 +28,12 @@ interface RenderScreenOptions {
  */
 export function renderScreen(
   screen: ReactNode,
-  { permissions = ["*"], enabledPlugins = ["blog"], siteAddress = "" }: RenderScreenOptions = {},
+  {
+    permissions = ["*"],
+    enabledPlugins = ["blog"],
+    siteAddress = "",
+    siteName = "Brightside Bakery",
+  }: RenderScreenOptions = {},
 ) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -36,6 +43,7 @@ export function renderScreen(
     permissions,
     enabledPlugins,
     siteAddress,
+    siteName,
   };
 
   const rootRoute = createRootRoute({

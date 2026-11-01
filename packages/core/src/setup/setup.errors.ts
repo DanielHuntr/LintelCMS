@@ -1,5 +1,6 @@
 import type { DatabaseProblem } from "../database/database-errors.js";
-import { HttpError } from "../http/http-errors.js";
+import { type FieldMessages, HttpError } from "../http/http-errors.js";
+import type { SetupStep } from "./setup.schema.js";
 
 export class SetupAlreadyDoneError extends HttpError {
   constructor() {
@@ -56,5 +57,43 @@ const problemCodes: Record<DatabaseProblem, string> = {
 export class DatabaseCheckFailedError extends HttpError {
   constructor(problem: DatabaseProblem, message: string) {
     super(422, problemCodes[problem], message);
+  }
+}
+
+/**
+ * A problem with one step's answers when finishing setup: the original error's status, code
+ * and message, plus `step` ("database", "account" or "site") so the admin can take the person
+ * back to that step, and `fields` when the problem is about particular fields.
+ */
+export class SetupStepError extends HttpError {
+  readonly step: SetupStep;
+
+  constructor(step: SetupStep, cause: HttpError, fields?: FieldMessages) {
+    const causeFields = cause.details?.fields;
+    super(cause.statusCode, cause.code, cause.message, {
+      ...cause.details,
+      ...((fields ?? causeFields) ? { fields: fields ?? causeFields } : {}),
+      step,
+    });
+    this.step = step;
+  }
+}
+
+/**
+ * Runs one step of finishing setup. A problem that belongs to the step (bad details, a
+ * database that can't be used, a weak password) is labelled with it; "already set up" and
+ * unexpected errors are thrown on unchanged.
+ */
+export async function duringStep<Result>(
+  step: SetupStep,
+  work: () => Result | Promise<Result>,
+): Promise<Result> {
+  try {
+    return await work();
+  } catch (error) {
+    if (error instanceof HttpError && !(error instanceof SetupAlreadyDoneError)) {
+      throw new SetupStepError(step, error);
+    }
+    throw error;
   }
 }

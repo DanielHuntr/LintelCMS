@@ -8,6 +8,7 @@
   `src/api-access`.
 - **Webhooks** (`/settings/webhooks`) lives in `src/webhooks`.
 - **Site** (`/settings/site`) lives in `src/site`: the website's address, used by View page.
+- **Features** (`/settings/features`) lives in `src/features`.
 - **Search engines** (`/settings/seo` and `/settings/seo/redirects`) lives in `src/seo`, and
   only shows while the SEO plugin is on.
 

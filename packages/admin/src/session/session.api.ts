@@ -9,6 +9,8 @@ export interface Session {
   enabledPlugins: string[];
   /** The website's address for "View page", or "" when none is connected (Settings → Site). */
   siteAddress: string;
+  /** The site's name, for the browser tab and the sidebar. Null until setup names the site. */
+  siteName: string | null;
 }
 
 export function signIn(email: string, password: string): Promise<Session> {

@@ -41,20 +41,19 @@ const siteChoices: readonly ChoiceCard<SiteType>[] = [
 interface SiteTypeScreenProps {
   siteType: SiteType;
   onSiteTypeChange: (siteType: SiteType) => void;
-  /** Picking a tile is the whole question, so a click moves straight on. */
-  onChosen: (siteType: SiteType) => void;
   onContinue: () => void;
+  onBack: () => void;
 }
 
 /**
- * "What are you building?" There is no Back: the account already exists, and the
- * features screen that follows can always come back here.
+ * "What are you building?" Picking a tile only selects it; Continue moves on. The kind of site
+ * decides the features, which can be changed later in Settings.
  */
 export function SiteTypeScreen({
   siteType,
   onSiteTypeChange,
-  onChosen,
   onContinue,
+  onBack,
 }: SiteTypeScreenProps) {
   const titleId = useId();
 
@@ -64,6 +63,7 @@ export function SiteTypeScreen({
       subtitle={t("site.subtitle")}
       width="wide"
       onContinue={onContinue}
+      onBack={onBack}
     >
       <span id={titleId} className="sr-only">
         {t("site.title")}
@@ -73,9 +73,14 @@ export function SiteTypeScreen({
         options={siteChoices}
         value={siteType}
         onChange={onSiteTypeChange}
-        onActivate={onChosen}
         columns={3}
       />
+      <p className="mt-6 text-center text-footnote text-label-secondary">{t("site.changeLater")}</p>
     </WizardScreen>
   );
+}
+
+/** "Online shop" for "shop", as on the tile. */
+export function siteTypeTitle(siteType: SiteType): string {
+  return siteChoices.find((choice) => choice.value === siteType)?.title ?? siteType;
 }

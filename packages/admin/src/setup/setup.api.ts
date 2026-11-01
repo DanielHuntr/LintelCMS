@@ -14,7 +14,7 @@ export interface SetupStatus {
   };
   /** True when setup is happening from another computer and must prove it with a code. */
   requiresSetupCode: boolean;
-  /** False until "What are you building?" has been answered (or skipped). */
+  /** True once setup has finished (it saves the site's name and kind with the account). */
   siteSetupCompleted: boolean;
 }
 
@@ -57,26 +57,6 @@ export async function testDatabaseConnection(
   });
 }
 
-export async function chooseDatabase(choice: DatabaseChoice, setupCode: SetupCode): Promise<void> {
-  await apiRequest<unknown>("/setup/database", {
-    method: "POST",
-    body: choice,
-    headers: setupCodeHeader(setupCode),
-  });
-}
-
-/** Creates the first admin account. The API signs the new person in, as sign-in does. */
-export function createFirstAccount(
-  details: FirstAccountDetails,
-  setupCode: SetupCode,
-): Promise<Session> {
-  return apiRequest<Session>("/setup", {
-    method: "POST",
-    body: details,
-    headers: setupCodeHeader(setupCode),
-  });
-}
-
 export type SiteType = "business" | "blog" | "shop" | "portfolio" | "blank";
 
 /** A feature that can be switched on. Matches an entry of `GET /plugins`. */
@@ -87,20 +67,23 @@ export interface Plugin {
   enabled: boolean;
 }
 
-export async function fetchPlugins(): Promise<Plugin[]> {
-  const { plugins } = await apiRequest<{ plugins: Plugin[] }>("/plugins");
-  return plugins;
+/** Every answer from the setup screens, as `POST /setup/finish` takes them. */
+export interface SetupAnswersToSend {
+  /** Left out when DATABASE_URL already chose the database. */
+  database?: DatabaseChoice;
+  account: FirstAccountDetails;
+  site: { siteName: string; siteType: SiteType };
 }
 
-/** Saves what the site is for and which plugins to switch on. */
-export async function saveSiteSetup(
-  siteType: SiteType,
-  plugins: string[],
-  setupCode: SetupCode,
-): Promise<void> {
-  await apiRequest<unknown>("/setup/site", {
+/**
+ * Applies every setup answer at once: the database, the owner's account, the site's name and
+ * features. The API signs the new owner in, as sign-in does. A problem with one step's
+ * answers comes back as an ApiError whose `details.step` names that step.
+ */
+export function finishSetup(answers: SetupAnswersToSend, setupCode: SetupCode): Promise<Session> {
+  return apiRequest<Session>("/setup/finish", {
     method: "POST",
-    body: { siteType, plugins },
+    body: answers,
     headers: setupCodeHeader(setupCode),
   });
 }
@@ -112,8 +95,6 @@ function setupCodeHeader(setupCode: SetupCode): Record<string, string> | undefin
 /** The calls the setup screens make, gathered so tests can hand in fakes. */
 export const setupApi = {
   testDatabaseConnection,
-  chooseDatabase,
-  createFirstAccount,
-  saveSiteSetup,
+  finishSetup,
 };
 export type SetupApi = typeof setupApi;

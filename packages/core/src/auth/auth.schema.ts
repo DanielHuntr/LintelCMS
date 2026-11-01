@@ -15,7 +15,7 @@ export const signInRequestSchema = z.object({
     .max(1000, { error: "Passwords can be at most 1000 characters" }),
 });
 
-/** What `POST /auth/sign-in`, `POST /setup` and `GET /auth/me` return. */
+/** What `POST /auth/sign-in`, `POST /setup/finish` and `GET /auth/me` return. */
 export const signedInSchema = z.object({
   user: publicUserSchema,
   permissions: z.array(z.string()),
@@ -23,6 +23,8 @@ export const signedInSchema = z.object({
   enabledPlugins: z.array(z.string()),
   /** The website's address for "View page", or "" when none is connected (Settings → Site). */
   siteAddress: z.string(),
+  /** The site's name for the browser tab and the sidebar. Null until setup names it. */
+  siteName: z.string().nullable(),
 });
 
 export type SignInRequest = z.infer<typeof signInRequestSchema>;

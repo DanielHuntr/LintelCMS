@@ -9,6 +9,8 @@ import { SidebarAccount, type SignedInUser } from "./SidebarAccount.js";
 interface SidebarProps {
   permissions: readonly string[];
   enabledPlugins: readonly string[];
+  /** Shown under the app's name, so people know which site they're editing. */
+  siteName: string | null;
   signedInUser: SignedInUser | undefined;
   onSignOut?: () => void;
   /** Opens the command palette. Without it, the Search button is left out. */
@@ -22,6 +24,7 @@ interface SidebarProps {
 export function Sidebar({
   permissions,
   enabledPlugins,
+  siteName,
   signedInUser,
   onSignOut,
   onOpenSearch,
@@ -30,7 +33,14 @@ export function Sidebar({
     <aside className="fixed inset-y-3 left-3 z-10 flex w-60 flex-col rounded-panel bg-sidebar shadow-float hairline-ring backdrop-blur-2xl backdrop-saturate-150">
       <div className="flex items-center gap-2.5 px-4 pt-5 pb-6">
         <AppMark />
-        <span className="text-headline text-label">{t("app.name")}</span>
+        <span className="flex min-w-0 flex-col">
+          <span className="text-headline text-label">{t("app.name")}</span>
+          {siteName && (
+            <span className="truncate text-footnote text-label-secondary" title={siteName}>
+              {siteName}
+            </span>
+          )}
+        </span>
       </div>
 
       {onOpenSearch && (

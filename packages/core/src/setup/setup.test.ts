@@ -6,7 +6,7 @@ import { testDatabaseUrl, useTestDatabase } from "../testing/test-database.js";
 import { usersTable } from "../users/users.table.js";
 import { SETUP_CODE_HEADER } from "./setup-code.js";
 import { SetupAlreadyDoneError } from "./setup.errors.js";
-import { completeSetup } from "./setup.service.js";
+import { finishSetup } from "./setup.service.js";
 
 const SETUP_CODE = "4821-0937";
 const FIRST_ADMIN = {
@@ -14,6 +14,7 @@ const FIRST_ADMIN = {
   name: "Ana Lopez",
   password: "a long and memorable password",
 };
+const SITE = { siteName: "Brightside Bakery", siteType: "blog" };
 // An address from the range set aside for examples: "another computer".
 const REMOTE_ADDRESS = "203.0.113.7";
 
@@ -41,14 +42,15 @@ describe("first-run setup", () => {
     });
   }
 
+  /** Finishes setup with these account details and the usual site answers. */
   function postSetup(
-    payload: object,
-    options: { remoteAddress?: string; setupCode?: string } = {},
+    account: object,
+    options: { remoteAddress?: string; setupCode?: string; site?: object } = {},
   ) {
     return server.inject({
       method: "POST",
-      url: "/setup",
-      payload,
+      url: "/setup/finish",
+      payload: { account, site: options.site ?? SITE },
       ...(options.remoteAddress ? { remoteAddress: options.remoteAddress } : {}),
       ...(options.setupCode ? { headers: { [SETUP_CODE_HEADER]: options.setupCode } } : {}),
     });
@@ -66,7 +68,7 @@ describe("first-run setup", () => {
     });
   });
 
-  it("creates the first admin with every permission and signs them in", async () => {
+  it("creates the owner with every permission, saves the site and signs them in", async () => {
     const response = await postSetup(FIRST_ADMIN);
 
     expect(response.statusCode).toBe(201);
@@ -74,7 +76,9 @@ describe("first-run setup", () => {
     expect(body).toEqual({
       user: { id: expect.any(String), email: "ana@example.com", name: "Ana Lopez" },
       permissions: ["*"],
-      enabledPlugins: [],
+      enabledPlugins: ["blog", "forms", "seo"],
+      siteAddress: "",
+      siteName: "Brightside Bakery",
     });
 
     const sessionCookie = response.cookies.find((cookie) => cookie.name === SESSION_COOKIE_NAME);
@@ -91,6 +95,7 @@ describe("first-run setup", () => {
     expect((await getStatus()).json()).toMatchObject({
       needsSetup: false,
       requiresSetupCode: false,
+      siteSetupCompleted: true,
     });
   });
 
@@ -123,14 +128,22 @@ describe("first-run setup", () => {
   it("relies on a database lock, not only on this server, to allow one first admin", async () => {
     // Straight to the service, as two server processes sharing one database would.
     const results = await Promise.allSettled([
-      completeSetup(
+      finishSetup(
         testDatabase.activeDatabase,
-        { ...FIRST_ADMIN, email: "ana@example.com" },
+        server.lintelFolder,
+        {
+          account: { ...FIRST_ADMIN, email: "ana@example.com" },
+          site: { ...SITE, siteType: "blog" },
+        },
         undefined,
       ),
-      completeSetup(
+      finishSetup(
         testDatabase.activeDatabase,
-        { ...FIRST_ADMIN, email: "ben@example.com" },
+        server.lintelFolder,
+        {
+          account: { ...FIRST_ADMIN, email: "ben@example.com" },
+          site: { ...SITE, siteType: "blog" },
+        },
         undefined,
       ),
     ]);
@@ -145,12 +158,61 @@ describe("first-run setup", () => {
     const response = await postSetup({ email: "not an email", name: " ", password: "short" });
 
     expect(response.statusCode).toBe(400);
-    expect(response.json()).toMatchObject({ code: "INVALID_REQUEST" });
+    expect(response.json()).toMatchObject({
+      code: "INVALID_REQUEST",
+      step: "account",
+      fields: {
+        email: "That doesn't look like an email address",
+        name: "Please enter your name",
+        password: "Passwords need at least 12 characters",
+      },
+    });
     const message: string = response.json().message;
     expect(message).toContain("That doesn't look like an email address");
     expect(message).toContain("Please enter your name");
     expect(message).toContain("Passwords need at least 12 characters");
     expect((await getStatus()).json()).toMatchObject({ needsSetup: true });
+  });
+
+  it("refuses a password that is long enough but easy to guess, saying how to fix it", async () => {
+    const response = await postSetup({ ...FIRST_ADMIN, password: "ana lopez 2024" });
+
+    expect(response.statusCode).toBe(400);
+    const body = response.json();
+    expect(body).toMatchObject({
+      code: "INVALID_REQUEST",
+      step: "account",
+      message: "That password would be too easy to guess. Leave out your name and email.",
+      fields: {
+        password: "That password would be too easy to guess. Leave out your name and email.",
+      },
+    });
+    expect((await getStatus()).json()).toMatchObject({ needsSetup: true });
+  });
+
+  it("points at the site step when the site's answers are wrong, and saves nothing", async () => {
+    const response = await postSetup(FIRST_ADMIN, { site: { siteName: "", siteType: "casino" } });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({
+      step: "site",
+      fields: {
+        siteName: "Please give your site a name",
+        siteType: expect.stringContaining("The site type should be one of"),
+      },
+    });
+    expect(await testDatabase.database.select().from(usersTable)).toEqual([]);
+  });
+
+  it("points at the database step first when several steps have problems", async () => {
+    const response = await server.inject({
+      method: "POST",
+      url: "/setup/finish",
+      payload: { database: { kind: "floppy" }, account: { email: "x" }, site: SITE },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().step).toBe("database");
   });
 
   describe("from another computer", () => {
@@ -185,8 +247,8 @@ describe("first-run setup", () => {
     it("treats a request forwarded by a proxy on this computer as remote", async () => {
       const response = await server.inject({
         method: "POST",
-        url: "/setup",
-        payload: FIRST_ADMIN,
+        url: "/setup/finish",
+        payload: { account: FIRST_ADMIN, site: SITE },
         headers: { "x-forwarded-for": REMOTE_ADDRESS },
       });
 
@@ -198,8 +260,8 @@ describe("first-run setup", () => {
       // DNS rebinding: the browser connects to 127.0.0.1, but the Host is the website's.
       const response = await server.inject({
         method: "POST",
-        url: "/setup",
-        payload: FIRST_ADMIN,
+        url: "/setup/finish",
+        payload: { account: FIRST_ADMIN, site: SITE },
         headers: { host: "rebind.attacker.example:4000" },
       });
 
@@ -227,13 +289,13 @@ describe("first-run setup", () => {
     expect(response.json()).toMatchObject({ code: "TOO_MANY_SETUP_ATTEMPTS" });
   });
 
-  it("closes the database step once setup is done", async () => {
+  it("closes every first-run endpoint once setup is done", async () => {
     await postSetup(FIRST_ADMIN);
 
     const choose = await server.inject({
       method: "POST",
-      url: "/setup/database",
-      payload: { kind: "built-in" },
+      url: "/setup/finish",
+      payload: { database: { kind: "built-in" }, account: FIRST_ADMIN, site: SITE },
     });
     const test = await server.inject({
       method: "POST",

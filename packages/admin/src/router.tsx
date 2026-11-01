@@ -25,20 +25,18 @@ import { MediaLibraryPage } from "./media/MediaLibraryPage.js";
 import { ComingSoonPage } from "./sections/ComingSoonPage.js";
 import { fetchCurrentSession, signOut } from "./session/session.api.js";
 import { ServerUnreachablePage } from "./setup/ServerUnreachablePage.js";
-import { fetchPlugins } from "./setup/setup.api.js";
 import { SetupPage } from "./setup/SetupPage.js";
 import {
   checkSetupStatus,
   destinationOnceSetUp,
-  mustChooseSiteFirst,
   mustFinishSetupFirst,
 } from "./setup/setupRouting.js";
-import { SiteSetupPage } from "./setup/SiteSetupPage.js";
 import { SessionProvider } from "./session/SessionContext.js";
 import { RedirectsPage } from "./seo/RedirectsPage.js";
 import { SeoSettingsPage } from "./seo/SeoSettingsPage.js";
 import { SettingsPage } from "./settings/SettingsPage.js";
 import { PublishedPageView } from "./content/PublishedPageView.js";
+import { FeaturesSettingsPage } from "./features/FeaturesSettingsPage.js";
 import { SignInPage } from "./sign-in/SignInPage.js";
 import { SiteSettingsPage } from "./site/SiteSettingsPage.js";
 import { WebhookDetailPage } from "./webhooks/WebhookDetailPage.js";
@@ -75,10 +73,7 @@ const setupRoute = createRoute({
     if (context.setupStatus.needsSetup) return;
 
     const session = await fetchCurrentSession();
-    const destination = destinationOnceSetUp(
-      session !== null,
-      context.setupStatus.siteSetupCompleted,
-    );
+    const destination = destinationOnceSetUp(session !== null);
 
     throw destination === "/sign-in"
       ? redirect({ to: "/sign-in", search: { redirect: undefined } })
@@ -88,31 +83,6 @@ const setupRoute = createRoute({
   component: function SetupScreen() {
     const { setupStatus } = setupRoute.useRouteContext();
     return <SetupPage status={setupStatus} />;
-  },
-});
-
-/** "What are you building?": the last step, for someone signed in who hasn't answered it. */
-const siteSetupRoute = createRoute({
-  getParentRoute: () => setupGateRoute,
-  path: "/setup/site",
-  beforeLoad: async ({ context, location }) => {
-    const session = await fetchCurrentSession();
-
-    if (!session) {
-      throw redirect({ to: "/sign-in", search: { redirect: location.href } });
-    }
-    if (context.setupStatus.siteSetupCompleted) {
-      throw redirect({ to: "/" });
-    }
-
-    return { session };
-  },
-  loader: async () => ({ plugins: await fetchPlugins() }),
-  errorComponent: ServerUnreachablePage,
-  component: function SiteSetupScreen() {
-    const { setupStatus, session } = siteSetupRoute.useRouteContext();
-    const { plugins } = siteSetupRoute.useLoaderData();
-    return <SiteSetupPage status={setupStatus} session={session} plugins={plugins} />;
   },
 });
 
@@ -128,20 +98,16 @@ const signInRoute = createRoute({
 
 /**
  * Every admin screen sits under this route. Before any of them loads, it asks the API
- * who is signed in; nobody signed in means a trip to the sign-in screen. Someone signed in
- * who hasn't finished "What are you building?" goes back to it first.
+ * who is signed in; nobody signed in means a trip to the sign-in screen.
  */
 const adminRoute = createRoute({
   getParentRoute: () => setupGateRoute,
   id: "admin",
-  beforeLoad: async ({ context, location }) => {
+  beforeLoad: async ({ location }) => {
     const session = await fetchCurrentSession();
 
     if (!session) {
       throw redirect({ to: "/sign-in", search: { redirect: location.href } });
-    }
-    if (mustChooseSiteFirst(context.setupStatus)) {
-      throw redirect({ to: "/setup/site" });
     }
 
     return { session };
@@ -165,6 +131,7 @@ function SignedInAdmin() {
       <AdminLayout
         permissions={session.permissions}
         enabledPlugins={session.enabledPlugins}
+        siteName={session.siteName}
         signedInUser={session.user}
         onSignOut={handleSignOut}
       />
@@ -262,6 +229,12 @@ const settingsRoute = createRoute({
   component: SettingsPage,
 });
 
+const featuresSettingsRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/settings/features",
+  component: FeaturesSettingsPage,
+});
+
 const contentTypesRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: "/settings/content-types",
@@ -346,6 +319,7 @@ const contentRoutes = [
   entryEditorRoute,
   publishedPageRoute,
   settingsRoute,
+  featuresSettingsRoute,
   contentTypesRoute,
   newContentTypeRoute,
   blueprintRoute,
@@ -434,7 +408,6 @@ const designReviewRoutes = showsDesignReview
 export const routeTree = rootRoute.addChildren([
   setupGateRoute.addChildren([
     setupRoute,
-    siteSetupRoute,
     signInRoute,
     adminRoute.addChildren([
       dashboardRoute,

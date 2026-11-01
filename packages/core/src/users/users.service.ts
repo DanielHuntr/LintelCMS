@@ -1,3 +1,5 @@
+import { WeakPasswordError } from "../auth/auth.errors.js";
+import { checkPasswordStrength, personalDetailsFrom } from "../auth/password-strength.js";
 import { hashPassword } from "../auth/passwords.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
@@ -46,9 +48,22 @@ export interface PasswordReset {
 }
 
 /**
+ * Every new password must be hard to guess, not only long (see auth/password-strength.ts).
+ * Called wherever a password is set, so the setup screen, `pnpm create-admin` and
+ * `pnpm reset-password` all follow the same rule.
+ */
+export function requireStrongPassword(password: string, name: string, email: string): void {
+  const strength = checkPasswordStrength(password, personalDetailsFrom(name, email));
+  if (!strength.isStrongEnough) {
+    throw new WeakPasswordError(strength.tip);
+  }
+}
+
+/**
  * Creates a user with the Super admin role, creating that role first if this is a fresh
  * install. Used by first-run setup and by `pnpm create-admin`. Expects the email and
- * password to have been checked with users.schema.ts already.
+ * password to have been checked with users.schema.ts already; refuses an easily guessed
+ * password with WeakPasswordError.
  *
  * Accepts a transaction too, so setup can check "no users yet" and create the first one
  * as a single step.
@@ -57,6 +72,7 @@ export async function createAdmin(
   database: DatabaseOrTransaction,
   admin: NewAdmin,
 ): Promise<PublicUser> {
+  requireStrongPassword(admin.password, admin.name, admin.email);
   const passwordHash = await hashPassword(admin.password);
 
   return database.transaction(async (transaction) => {
@@ -81,7 +97,8 @@ export async function createAdmin(
 
 /**
  * Gives a user a new password and signs them out everywhere, for an admin who is locked
- * out (`pnpm reset-password`). Expects the password to have been checked already.
+ * out (`pnpm reset-password`). Expects the password's length to have been checked already;
+ * refuses an easily guessed one with WeakPasswordError.
  */
 export async function resetPassword(
   database: DatabaseOrTransaction,
@@ -94,6 +111,7 @@ export async function resetPassword(
     throw new UserNotFoundError(email, findClosestEmail(email, emails));
   }
 
+  requireStrongPassword(newPassword, user.name, user.email);
   const passwordHash = await hashPassword(newPassword);
   const endedSessions = await database.transaction(async (transaction) => {
     await updatePasswordHash(transaction, user.id, passwordHash);

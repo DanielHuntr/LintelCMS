@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { useTestDatabase } from "../testing/test-database.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
+import { saveSiteChoices } from "../setup/site-setup.service.js";
 import { ensureBlogPostsCollection, ensurePagesCollection } from "./default-collections.js";
 
 const titleField = { handle: "title", label: "Title", type: "text", required: true };
@@ -166,9 +167,8 @@ describe("default collections", () => {
   }
 
   it("makes Pages when setup finishes, and Blog posts when the blog is picked", async () => {
-    const setup = await api("POST", "/setup/site", { siteType: "blog", plugins: ["blog"] });
+    await saveSiteChoices(testDatabase.database, { siteName: "Brightside", siteType: "blog" });
 
-    expect(setup.statusCode).toBe(200);
     expect(await collectionHandles()).toEqual(["posts", "pages"]);
     expect((await api("GET", "/collections/pages")).json()).toMatchObject({
       name: "Pages",
@@ -214,7 +214,7 @@ describe("default collections", () => {
   });
 
   it("adds Blog posts when the blog is switched on later, and keeps them when it is switched off", async () => {
-    await api("POST", "/setup/site", { siteType: "business", plugins: [] });
+    await saveSiteChoices(testDatabase.database, { siteName: "Brightside", siteType: "business" });
     expect(await collectionHandles()).toEqual(["pages"]);
 
     await api("PUT", "/plugins", { enabled: ["blog"] });
@@ -236,7 +236,7 @@ describe("default collections", () => {
     await ensurePagesCollection(testDatabase.database);
     await ensureBlogPostsCollection(testDatabase.database);
     await ensureBlogPostsCollection(testDatabase.database);
-    await api("POST", "/setup/site", { siteType: "blog", plugins: ["blog"] });
+    await saveSiteChoices(testDatabase.database, { siteName: "Brightside", siteType: "blog" });
 
     expect(await collectionHandles()).toEqual(["posts", "pages"]);
     const page = await api("GET", "/blueprints/page");

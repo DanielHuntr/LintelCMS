@@ -41,7 +41,7 @@ handle that is in use is 409 `COLLECTION_HANDLE_TAKEN`; an unknown handle is 404
   and "Page sections", a blocks field with Hero, Text, Image, Call to action and FAQ blocks.
   Sites set up before the page builder keep their page blueprint as it was; the field can be
   added under Content types.
-  Made by `POST /setup/site` (see `src/setup`).
+  Made when setup finishes (`POST /setup/finish`, see `src/setup`).
 - **Blog posts** (`posts`, dated, `/blog/{slug}`), blueprint `post`: title, excerpt,
   featured image, body, category (News, Guides, Updates). Made when the `blog` plugin is
   switched on, at setup or later with `PUT /plugins` (see `src/plugins`).

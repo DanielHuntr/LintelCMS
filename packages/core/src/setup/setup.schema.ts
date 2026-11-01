@@ -1,11 +1,10 @@
 import { z } from "zod";
 import { postgresConnectionDetailsSchema } from "../database/database-choice.js";
-import { pluginIdListSchema, pluginSummarySchema } from "../plugins/plugins.schema.js";
-import { siteTypeSchema } from "../settings/settings.schema.js";
+import { siteNameSchema, siteTypeSchema } from "../settings/settings.schema.js";
 import { emailSchema, newPasswordSchema } from "../users/users.schema.js";
 
-/** `POST /setup`: the first admin's account. Same rules as everywhere else. */
-export const completeSetupRequestSchema = z.object({
+/** The owner's account, as the "Your account" step collects it. Same rules as everywhere else. */
+export const ownerAccountSchema = z.object({
   email: emailSchema,
   name: z
     .string({ error: "Please enter your name" })
@@ -18,8 +17,8 @@ export const completeSetupRequestSchema = z.object({
 /** `POST /setup/database/test` */
 export const testDatabaseRequestSchema = postgresConnectionDetailsSchema;
 
-/** `POST /setup/database` */
-export const chooseDatabaseRequestSchema = z.discriminatedUnion(
+/** The "Database" step's answer: built-in, or a Postgres server (created if missing, when asked). */
+export const databaseChoiceRequestSchema = z.discriminatedUnion(
   "kind",
   [
     z.object({ kind: z.literal("built-in") }),
@@ -34,11 +33,25 @@ export const chooseDatabaseRequestSchema = z.discriminatedUnion(
   { error: 'Please choose "built-in" or "postgres" as the kind of database' },
 );
 
-/** `POST /setup/site`: the "What are you building?" step. */
-export const siteSetupRequestSchema = z.object({
+/** The "Site name" and "What you're building" steps. */
+export const siteChoicesSchema = z.object({
+  siteName: siteNameSchema,
   siteType: siteTypeSchema,
-  plugins: pluginIdListSchema,
 });
+
+/**
+ * `POST /setup/finish`: every answer from the setup screens at once. `database` is left out
+ * when DATABASE_URL already decided it.
+ */
+export const finishSetupRequestSchema = z.object({
+  database: databaseChoiceRequestSchema.optional(),
+  account: ownerAccountSchema,
+  site: siteChoicesSchema,
+});
+
+/** The setup step an answer belongs to, so the admin can take the person back to it. */
+export const setupSteps = ["database", "account", "site"] as const;
+export type SetupStep = (typeof setupSteps)[number];
 
 export const databaseStatusSchema = z.object({
   kind: z.enum(["built-in", "postgres"]),
@@ -53,15 +66,10 @@ export const setupStatusSchema = z.object({
   siteSetupCompleted: z.boolean(),
 });
 
-export const siteSetupResponseSchema = z.object({
-  siteType: siteTypeSchema,
-  plugins: z.array(pluginSummarySchema),
-});
-
-export type CompleteSetupRequest = z.infer<typeof completeSetupRequestSchema>;
+export type OwnerAccount = z.infer<typeof ownerAccountSchema>;
 export type TestDatabaseRequest = z.infer<typeof testDatabaseRequestSchema>;
-export type ChooseDatabaseRequest = z.infer<typeof chooseDatabaseRequestSchema>;
-export type SiteSetupRequest = z.infer<typeof siteSetupRequestSchema>;
+export type ChooseDatabaseRequest = z.infer<typeof databaseChoiceRequestSchema>;
+export type SiteChoices = z.infer<typeof siteChoicesSchema>;
+export type FinishSetupRequest = z.infer<typeof finishSetupRequestSchema>;
 export type DatabaseStatus = z.infer<typeof databaseStatusSchema>;
 export type SetupStatus = z.infer<typeof setupStatusSchema>;
-export type SiteSetupResponse = z.infer<typeof siteSetupResponseSchema>;

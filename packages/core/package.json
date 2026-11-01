@@ -14,6 +14,16 @@
       "development": "./src/roles/permissions.ts",
       "default": "./dist/roles/permissions.js"
     },
+    "./password-strength": {
+      "types": "./dist/auth/password-strength.d.ts",
+      "development": "./src/auth/password-strength.ts",
+      "default": "./dist/auth/password-strength.js"
+    },
+    "./site-presets": {
+      "types": "./dist/setup/site-presets.d.ts",
+      "development": "./src/setup/site-presets.ts",
+      "default": "./dist/setup/site-presets.js"
+    },
     "./media-crop": {
       "types": "./dist/media/focal-crop.d.ts",
       "development": "./src/media/focal-crop.ts",
@@ -46,6 +56,9 @@
     "@tiptap/html": "^3.32.2",
     "@tiptap/pm": "^3.32.2",
     "@tiptap/starter-kit": "^3.32.2",
+    "@zxcvbn-ts/core": "^4.2.0",
+    "@zxcvbn-ts/language-common": "^4.1.3",
+    "@zxcvbn-ts/language-en": "^4.1.1",
     "drizzle-orm": "^0.45.4",
     "fastify": "^5.12.7",
     "file-type": "^22.3.0",

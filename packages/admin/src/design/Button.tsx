@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, ReactNode, Ref } from "react";
 import { classNames } from "./classNames.js";
 
 export type ButtonVariant = "filled" | "tinted" | "plain" | "destructive";
@@ -16,6 +16,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   fullWidth?: boolean;
   /** An icon shown before the text, e.g. `<Plus aria-hidden />` from lucide-react. */
   icon?: ReactNode;
+  ref?: Ref<HTMLButtonElement>;
 }
 
 const variantClasses: Record<ButtonVariant, string> = {

@@ -6,45 +6,47 @@ while typing.
 
 ## The flow
 
-A full-screen wizard with one question per screen, in the spirit of setting up a new phone:
+A full-screen wizard in the spirit of setting up a new phone. After the welcome (and the
+setup code, from another computer only) come five steps, shown along the top:
 
 ```text
-/setup        Welcome → (Setup code) → Database → (PostgreSQL) → Name → Email → Password
-/setup/site   What are you building? → Choose your features → Done → dashboard
+Database → Your account → Site name → What you're building → Review → You're all set
 ```
 
-- **Welcome**: "Welcome to Lintel" and Get started.
+- **Step indicator** (`StepIndicator.tsx`): a `nav` with an ordered list. Each step is a button
+  named "Step 2 of 5: Your account"; the current one has `aria-current="step"`, finished ones
+  are ticked, and steps not reached yet are shown but disabled. Any visited step can be opened
+  again, backwards or forwards. Back and Continue work as before. On phones only the current
+  step keeps its label.
 - **Setup code** (`SetupCodeScreen`, `SetupCodeInput`): only when `GET /setup/status` says
-  `requiresSetupCode`, meaning someone is setting up from another computer. The terminal shows
-  8 digits like `4821-0937`; the input draws two groups of four boxes over one real input, and
-  sends the digits alone. The code is kept in memory only (`setupCode.ts`) and sent as the
-  `x-lintel-setup-code` header on every setup request. If the API turns it down, the wizard
-  returns to this screen with the API's message.
-- **Database**: built-in (recommended) or the person's own PostgreSQL, as tiles. Picking a
-  tile moves on by itself; the arrow keys only change the choice. Skipped with the next screen
-  when `database.chosenBy` is `"environment"` (DATABASE_URL decided). A `409` from the
-  database endpoints means the same thing, so the wizard simply moves on.
-- **PostgreSQL** (`PostgresScreen`, `PostgresFields`): only if chosen. Test connection is
-  optional reassurance: Continue saves with `POST /setup/database`, which tests it again.
-  Errors appear on the field they are about (`placeDatabaseProblem`).
-- **Name, Email, Password**: one field each. The email screen offers a one-click fix for domain
-  typos (`design/EmailField.tsx`); the password screen repeats the email and creates the
-  account (`POST /setup`, which signs the person in). An API problem with an earlier answer
-  takes the person back to that screen with the message shown there.
-- **What are you building?** and **Choose your features** (`SiteWizard`): each kind of site
-  switches on a set of plugins (`sitePresets.ts`), shown with the API's own names as toggles.
-  Finish setup or Skip for now (a blank site, no plugins) saves with `POST /setup/site`.
-- **Done**: "You're all set, Daniel", what was set up, and Go to your dashboard.
+  `requiresSetupCode`. Kept in memory only (`setupCode.ts`) and sent as `x-lintel-setup-code`.
+- **Database**: built-in (recommended) or the person's own PostgreSQL, as tiles. Picking a tile
+  only selects it; Continue moves on. PostgreSQL adds the connection screen to the same step,
+  with an optional "Test connection" (`POST /setup/database/test`). Left out entirely when
+  `database.chosenBy` is `"environment"` (DATABASE_URL decided).
+- **Your account** (`CreateAccountScreen`): name, email (with "Did you mean gmail.com?"),
+  password with the strength meter, show/hide and "Suggest a password" (see
+  `src/password-strength`), and Confirm password, which says "Passwords match" or "These don't
+  match yet" once it's been typed in. Continue explains beside itself why it isn't ready while
+  the password is too short or too weak; pressing it checks every field, shows each message and
+  focuses the first problem (`accountDetails.ts`).
+- **Site name** (`SiteNameScreen`): required, trimmed, at most 80 characters (`siteName.ts`).
+- **What you're building** (`SiteTypeScreen`): five tiles. The kind of site decides the features
+  (forms and SEO tools for every site, plus its extras: core's `setup/site-presets.ts`); they
+  can be changed later in Settings → Features.
+- **Review** (`ReviewScreen`): every answer, grouped by step, each with Edit. Passwords show as
+  dots (the account's can be shown). "I've checked these details" must be ticked before Finish
+  setup goes ahead; until then the button says why.
+- **Finish setup** sends everything once, to `POST /setup/finish`, which applies it all on the
+  server. A problem names its step (`details.step`), and `finishProblems.ts` takes the person
+  back to that step with the message on the right field.
+- **You're all set**: "You're all set, Daniel", what was set up, and Go to your dashboard.
 
-`SetupWizard` (the /setup screens) and `SiteWizard` (the /setup/site screens) own all the
-answers, so Back never loses anything. Each screen in `screens/` is presentational and built on
-`WizardScreen`: one big question, a sentence, the content, and Back and Continue pinned to the
-bottom. Every screen is a form, so Enter continues; each screen focuses its field, or its
-question when it has none. Screens change through `useWizardScreens`, which uses the View
-Transitions API to slide the new screen in (styles.css; a crossfade under reduced motion).
-
-Refreshing mid-way starts that half again from its first screen: the server's state already
-decides between /setup and /setup/site.
+Nothing is saved on the server before Finish. All answers live in `SetupWizard` (shapes in
+`setupAnswers.ts`) and are kept in `sessionStorage` for the tab, so refreshing loses nothing,
+except passwords, which stay in memory only: after a reload the account step asks for the
+password again with a short note. Screens change through `useWizardScreens` (View Transitions,
+a crossfade under reduced motion); `useSetupNavigation` tracks visited and finished steps.
 
 ## How the router decides
 
@@ -54,11 +56,9 @@ end to end with the real routes, in `src/router.test.ts`.
 1. A gate route around sign-in, setup and the admin asks `GET /setup/status` on every
    navigation (until setup is complete, after which the answer is remembered).
 2. While `needsSetup` is true, every address except `/setup` redirects to `/setup`.
-3. Once the account exists, `/setup` sends people to `/sign-in`, or to `/setup/site` or the
-   dashboard if they are signed in.
-4. Someone signed in whose `siteSetupCompleted` is false is sent from any admin screen to
-   `/setup/site`, so closing the tab after creating the account doesn't skip the last step.
-5. Otherwise the usual rules apply: not signed in means `/sign-in?redirect=...`.
+3. Once setup has finished, `/setup` sends people to `/sign-in`, or to the dashboard if they
+   are signed in.
+4. Otherwise the usual rules apply: not signed in means `/sign-in?redirect=...`.
 
 If the status can't be fetched at all, `ServerUnreachablePage` explains that the API may not be
 running (`pnpm dev`) and offers "Try again".

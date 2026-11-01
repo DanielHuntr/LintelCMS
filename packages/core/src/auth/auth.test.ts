@@ -45,6 +45,7 @@ describe("signing in and out", () => {
       permissions: ["assets:upload", "entries:publish", "entries:read"],
       enabledPlugins: [],
       siteAddress: "",
+      siteName: null,
     });
 
     const sessionCookie = response.cookies.find((cookie) => cookie.name === SESSION_COOKIE_NAME);
@@ -115,6 +116,7 @@ describe("signing in and out", () => {
       permissions: ["entries:read"],
       enabledPlugins: [],
       siteAddress: "",
+      siteName: null,
     });
     expect(signedOut.statusCode).toBe(401);
     expect(signedOut.json()).toMatchObject({ code: "NOT_SIGNED_IN" });

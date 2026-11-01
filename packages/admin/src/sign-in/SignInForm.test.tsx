@@ -10,6 +10,7 @@ const session: Session = {
   permissions: ["entries:*"],
   enabledPlugins: [],
   siteAddress: "",
+  siteName: null,
 };
 
 async function fillInAndSubmit() {

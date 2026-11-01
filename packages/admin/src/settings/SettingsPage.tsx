@@ -1,4 +1,13 @@
-import { Globe, KeyRound, Languages, Search, Shapes, Sparkles, Webhook } from "lucide-react";
+import {
+  Globe,
+  KeyRound,
+  Languages,
+  Puzzle,
+  Search,
+  Shapes,
+  Sparkles,
+  Webhook,
+} from "lucide-react";
 import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
@@ -8,7 +17,7 @@ import { Page } from "../design/Page.js";
 
 /**
  * /settings: one row per area of settings, like iOS Settings. Rows appear as their screens
- * are built; for now that's content types.
+ * are built: content types and features so far.
  */
 export function SettingsPage() {
   const canSeeContentTypes = useCan("blueprints:read");
@@ -64,6 +73,14 @@ export function SettingsPage() {
               label={t("siteSettings.title")}
               description={t("settings.siteDescription")}
               to="/settings/site"
+            />
+          )}
+          {canSeeSiteSettings && (
+            <GroupedListRow
+              icon={Puzzle}
+              label={t("features.title")}
+              description={t("settings.featuresDescription")}
+              to="/settings/features"
             />
           )}
           {canSeeSiteSettings && (

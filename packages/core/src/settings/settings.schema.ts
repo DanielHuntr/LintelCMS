@@ -13,6 +13,17 @@ export const siteTypeSchema = z.enum(siteTypes, {
 
 export type SiteType = z.infer<typeof siteTypeSchema>;
 
+export const maximumSiteNameLength = 80;
+
+/** The site's name, as people see it in browser tabs and across the site. */
+export const siteNameSchema = z
+  .string({ error: "Please give your site a name" })
+  .trim()
+  .min(1, { error: "Please give your site a name" })
+  .max(maximumSiteNameLength, {
+    error: `Site names can be at most ${maximumSiteNameLength} characters`,
+  });
+
 export const settingSchemas = {
   /** The ids of the plugins that are switched on, in registry order. */
   enabledPlugins: z.array(z.string()),
@@ -33,6 +44,8 @@ export const settingSchemas = {
    * admin and full addresses in the sitemap. Empty until someone connects a site.
    */
   siteAddress: z.string(),
+  /** The site's name, from the "What's your site called?" setup step. Null until then. */
+  siteName: siteNameSchema.nullable(),
 };
 
 export type SettingKey = keyof typeof settingSchemas;
@@ -47,4 +60,5 @@ export const settingDefaults: { [Key in SettingKey]: SettingValue<Key> } = {
   deliveryAllowedOrigins: [],
   seoDefaults: defaultSeoDefaults,
   siteAddress: "",
+  siteName: null,
 };

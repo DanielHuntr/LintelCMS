@@ -14,7 +14,8 @@ Most people never need `create-admin`: the setup screen creates the first admin.
 
 Passwords are asked for without echoing them (twice, to catch typos), or read from
 `LINTEL_ADMIN_PASSWORD` / `LINTEL_NEW_PASSWORD` for automated setups. They must be at
-least 12 characters. If `reset-password` doesn't know the email, it suggests the closest
+least 12 characters and not easy to guess (the same check as the setup screen, see
+`src/auth/password-strength.ts`); a weak one is refused with a tip and nothing changes. If `reset-password` doesn't know the email, it suggests the closest
 one it does.
 
 Scripts use the same database as the server (`DATABASE_URL`, then the setup screen's

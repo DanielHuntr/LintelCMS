@@ -24,8 +24,7 @@ const PUBLIC_ROUTES: Record<string, string> = {
   "POST /auth/sign-out": "ends whatever session the browser has, if any",
   "GET /setup/status": "the admin asks it before anyone has an account",
   "POST /setup/database/test": "first run only, needs the setup code from another computer",
-  "POST /setup/database": "first run only, needs the setup code from another computer",
-  "POST /setup": "first run only, needs the setup code from another computer",
+  "POST /setup/finish": "first run only, needs the setup code from another computer",
   "GET /preview": "needs a signed preview token",
   "GET /media/:id/file": "image URLs go straight into websites' <img> tags",
   "GET /openapi.json": "describes the public API",
@@ -166,7 +165,7 @@ describe("access to every route", () => {
     "closes the first-run endpoints once someone has an account",
     async () => {
       await prepare();
-      for (const route of ["POST /setup", "POST /setup/database", "POST /setup/database/test"]) {
+      for (const route of ["POST /setup/finish", "POST /setup/database/test"]) {
         const response = await send(route);
         expect(response.statusCode, route).toBe(409);
       }

@@ -21,3 +21,6 @@ Current settings:
 - `deliveryRequiresToken` and `deliveryAllowedOrigins`: who may read published content
   (see `src/delivery`).
 - `seoDefaults`: the SEO plugin's site-wide defaults (see `src/seo`).
+- `siteName`: the site's name, from the "What's your site called?" setup step. The admin
+  gets it with the session (`siteName` in `/auth/me`) for the browser tab and the sidebar.
+  This is the one place it is stored for now.

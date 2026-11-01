@@ -4,6 +4,7 @@ import type { Database, DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import { findEnabledPluginIds } from "../plugins/plugins.service.js";
 import { findPermissionsForUser } from "../roles/roles.service.js";
+import { readSetting } from "../settings/settings.service.js";
 import { findUserById } from "../users/users.repository.js";
 import { permissionsForApiToken } from "./api-token-access.js";
 import { generateApiTokenSecret, hashApiTokenSecret, visibleStartOf } from "./api-token-secrets.js";
@@ -100,6 +101,7 @@ export async function authenticateApiToken(
       permissions: permissionsForApiToken(token.access, creatorPermissions),
       enabledPlugins: await findEnabledPluginIds(database),
       siteAddress: await readSiteAddress(database),
+      siteName: await readSetting(database, "siteName"),
     },
   };
 }
