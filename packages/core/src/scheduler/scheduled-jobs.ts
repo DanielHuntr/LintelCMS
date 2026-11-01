@@ -19,8 +19,14 @@ export function registerScheduledJobs(server: FastifyInstance): void {
 
   server.addHook("onReady", async () => {
     // Work cut off by the last stop: backups are marked failed, imports paused to resume.
-    await markInterruptedBackups(server.database);
-    await pauseInterruptedImports(server.database);
+    // A database that can't be reached yet mustn't stop the server starting: /health has
+    // to be able to say so.
+    try {
+      await markInterruptedBackups(server.database);
+      await pauseInterruptedImports(server.database);
+    } catch (error) {
+      server.log.error(error, "Tidying up interrupted backups and imports failed");
+    }
     jobs.push(
       startRepeatingJob({
         everyMilliseconds: ONE_MINUTE,
