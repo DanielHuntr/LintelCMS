@@ -153,7 +153,7 @@ function hintFor(
  * The code can sit on the error itself, on its `cause` (Drizzle wraps failed queries), or
  * inside an AggregateError (Node tries IPv6 and IPv4 for "localhost" and reports both).
  */
-function findErrorCode(error: unknown, depth = 0): string | undefined {
+export function findErrorCode(error: unknown, depth = 0): string | undefined {
   if (!(error instanceof Error) || depth > 5) {
     return undefined;
   }

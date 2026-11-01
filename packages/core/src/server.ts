@@ -7,6 +7,11 @@ import type { ActiveDatabase } from "./database/active-database.js";
 import type { Database } from "./database/client.js";
 import { DEFAULT_LINTEL_FOLDER, type LintelFolder } from "./database/database-choice.js";
 import { healthRoutes } from "./health/health.routes.js";
+import { type AssetUsageFinder, noAssetUsage } from "./media/asset-lookup.js";
+import { LocalDiskStorage } from "./media/local-disk-storage.js";
+import { mediaRoutes } from "./media/media.routes.js";
+import type { StorageDriver } from "./media/storage-driver.js";
+import { DEFAULT_TRANSFORM_CACHE_FOLDER } from "./media/transform-cache.js";
 import { pluginsRoutes } from "./plugins/plugins.routes.js";
 import { generateSetupCode } from "./setup/setup-code.js";
 import { setupRoutes } from "./setup/setup.routes.js";
@@ -26,7 +31,19 @@ declare module "fastify" {
     setupCode: string;
     /** Whether cookies are marked Secure (HTTPS only). Off only in development. */
     secureCookies: boolean;
+    /** The API's address as browsers reach it, for absolute URLs such as an asset's `url`. */
+    publicApiUrl: string;
   }
+}
+
+/** Where uploaded files go and how media learns what uses them. Every part has a default. */
+export interface MediaOptions {
+  /** Defaults to local disk at `.lintel/uploads`. Tests pass a temporary folder. */
+  storage?: StorageDriver;
+  /** Resized images. Defaults to `.lintel/cache/media`. */
+  transformCacheFolder?: string;
+  /** Which entries use an asset, checked before it is deleted. */
+  usageFinder?: AssetUsageFinder;
 }
 
 export interface ServerOptions {
@@ -45,6 +62,9 @@ export interface ServerOptions {
   secureCookies?: boolean;
   /** Turn request logging off in tests to keep output readable. */
   logger?: boolean;
+  /** The API's address as browsers reach it. Defaults to http://localhost:4000. */
+  publicApiUrl?: string;
+  media?: MediaOptions;
 }
 
 /**
@@ -62,6 +82,7 @@ export function buildServer(options: ServerOptions) {
   server.decorate("lintelFolder", options.lintelFolder ?? DEFAULT_LINTEL_FOLDER);
   server.decorate("setupCode", options.setupCode ?? generateSetupCode());
   server.decorate("secureCookies", options.secureCookies ?? true);
+  server.decorate("publicApiUrl", options.publicApiUrl ?? "http://localhost:4000");
   server.decorateRequest("signedIn", null);
 
   server.register(cors, {
@@ -78,6 +99,12 @@ export function buildServer(options: ServerOptions) {
   server.register(authRoutes);
   server.register(setupRoutes);
   server.register(pluginsRoutes);
+  server.register(mediaRoutes, {
+    storage: options.media?.storage ?? new LocalDiskStorage(),
+    cacheFolder: options.media?.transformCacheFolder ?? DEFAULT_TRANSFORM_CACHE_FOLDER,
+    // Replaced by the entries feature's finder once entries can hold images.
+    usageFinder: options.media?.usageFinder ?? noAssetUsage,
+  });
 
   return server;
 }

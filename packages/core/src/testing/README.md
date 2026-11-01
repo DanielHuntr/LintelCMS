@@ -36,3 +36,5 @@ describe("signing in", () => {
 | `test-database.ts` | `useTestDatabase`, `openTestDatabase`, `emptyAllTables`               |
 | `test-users.ts`    | `createTestUser` with given permissions, `signInAndGetCookies`        |
 | `global-setup.ts`  | Migrates the test databases once before all tests (see vitest.config) |
+| `test-media.ts`    | `useMediaTestServer` (uploads in a temporary folder), `makeTestPng`   |
+| `multipart.ts`     | `multipartFile`: a file upload body for `server.inject`               |
