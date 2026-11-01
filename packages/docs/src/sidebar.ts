@@ -9,10 +9,13 @@ export const usingPages = [
   "using/writing",
   "using/publishing",
   "using/website",
+  "using/templates",
   "using/history",
   "using/media",
   "using/content-types",
   "using/animating",
+  "using/animating-in-the-builder",
+  "using/builder-skill-levels",
   "using/users",
   "using/troubleshooting",
 ] as const;

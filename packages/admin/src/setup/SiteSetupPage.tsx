@@ -25,6 +25,7 @@ export function SiteSetupPage({ status, session, plugins }: SiteSetupPageProps) 
       api={setupApi}
       setupCode={rememberedSetupCode()}
       onGoToDashboard={() => void navigate({ to: "/" })}
+      onStartFromTemplate={() => void navigate({ to: "/design" })}
     />
   );
 }

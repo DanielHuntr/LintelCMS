@@ -1,6 +1,7 @@
 import { motionEditorStrings } from "@lintel/motion-editor";
 import { contentModelStrings } from "./contentModelStrings.js";
 import { pageDesignStrings } from "./pageDesignStrings.js";
+import { starterSiteStrings } from "./starterSiteStrings.js";
 
 /**
  * Every word the admin shows lives here, so the admin can be translated and
@@ -12,6 +13,7 @@ const english = {
   ...contentModelStrings,
   ...pageDesignStrings,
   ...motionEditorStrings,
+  ...starterSiteStrings,
   "app.name": "Lintel",
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",

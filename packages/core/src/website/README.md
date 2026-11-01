@@ -12,15 +12,17 @@ untouched; set `SITE_ENABLED=false` when the site is built separately.
 
 ## What an address shows
 
-| Address                       | Shows                                                   |
-| ----------------------------- | ------------------------------------------------------- |
-| `/`                           | The page with the slug `home`, else the newest posts    |
-| `/<slug>`, `/blog/<slug>`     | An entry, through its collection's route pattern        |
-| `/blog`, `/blog/page/2`       | A dated collection's posts, ten a page, newest first    |
-| `/blog/<taxonomy>/<term>`     | The posts filed under a term (`/blog/categories/bread`) |
-| `/fr-FR/...`                  | The same in another of the site's languages             |
-| `/sitemap.xml`, `/robots.txt` | From the SEO plugin, with the site's own addresses      |
-| anything else                 | A friendly 404                                          |
+| Address                        | Shows                                                   |
+| ------------------------------ | ------------------------------------------------------- |
+| `/`                            | The page with the slug `home`, else the newest posts    |
+| `/<slug>`, `/blog/<slug>`      | An entry, through its collection's route pattern        |
+| `/blog`, `/blog/page/2`        | A dated collection's posts, ten a page, newest first    |
+| `/blog/<taxonomy>/<term>`      | The posts filed under a term (`/blog/categories/bread`) |
+| `/fr-FR/...`                   | The same in another of the site's languages             |
+| `/sitemap.xml`, `/robots.txt`  | From the SEO plugin, with the site's own addresses      |
+| `/_lintel/motion-<hash>.js`    | The motion runtime, loaded only by pages that animate   |
+| `/_lintel/illustrations/*.svg` | The starter sites' illustrations                        |
+| anything else                  | A friendly 404                                          |
 
 `/home` and addresses with a trailing slash redirect (301) to their one true address, as
 does a post's address with an old date in it. With the SEO plugin on, its active redirects
@@ -31,6 +33,20 @@ translations. Without the plugin, titles are "Page | Site name".
 The site's address is the SEO defaults' `siteUrl`, typed in Settings → Your website (or
 Search engines). Left empty, it is the built-in site's own (`SITE_PUBLIC_URL`, or
 `http://localhost:<SITE_PORT>`).
+
+## Pages designed in the builder
+
+A page whose **Design** field (a `page` field) has anything on it shows its design instead
+of its sections (`designed-pages.ts`): the builder's own renderer (`@lintel/builder/render`)
+draws it inside `<div class="lintel-design">`, its stylesheet goes in the page's `<head>`, and
+the site stylesheet carries the builder's element defaults (`designBaseStylesheet`). The
+builder's canvas draws with exactly that stylesheet, header and footer
+(`GET /website/canvas`, `canvas.service.ts`), so what people design is what visitors see.
+
+Animated elements get `data-node-id` (and `data-motion-cloak` on entrances); the page lists
+its animations in `<script type="application/json" id="lintel-motion">` and loads the motion
+runtime (`site-assets.ts`). Pages without animations load no script. Reduced motion is
+followed by the runtime.
 
 ## Caching
 
@@ -63,6 +79,7 @@ of its own with `buildServer({ website: { templates } })`.
 | `GET /website`         | `settings:read`   | 200 `Website`                                   |
 | `PUT /website`         | `settings:update` | 200 `Website`, from any of its settings         |
 | `GET /website/address` | signed in         | 200 `{ siteAddress, defaultLocale }`, View page |
+| `GET /website/canvas`  | `entries:read`    | 200 the stylesheet, header, footer, runtime     |
 
 There is no repository: everything is kept in settings and read through other features.
 
@@ -82,6 +99,9 @@ There is no repository: everything is kept in settings and read through other fe
 | `site-views.ts`           | Which layout an entry gets                                |
 | `site-documents.ts`       | Views to HTML responses, with headers                     |
 | `delivered-to-site.ts`    | Delivered values to component props, read carefully       |
+| `designed-pages.ts`       | A page design drawn by the builder's renderer             |
+| `canvas.service.ts`       | What the builder's canvas draws around a page             |
+| `site-assets.ts`          | The motion runtime and the illustrations                  |
 | `rendered-pages-cache.ts` | The in-memory cache                                       |
 | `website-runtime.ts`      | `server.website`, and emptying the cache after writes     |
 | `website.routes.ts`       | Settings, Your website's endpoints                        |

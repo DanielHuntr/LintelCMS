@@ -12,7 +12,8 @@ bar that fills as the reader moves down the page. You don't need to know any cod
 every animation already works for people who prefer less motion.
 
 You'll find the studio in the page builder: select something on the page, then open
-**Animation**.
+**Animate**. [Animating in the builder](/using/animating-in-the-builder/) shows how it
+fits into building a page.
 
 ## Start from a preset
 

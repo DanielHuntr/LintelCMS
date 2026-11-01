@@ -59,16 +59,16 @@ export function AnimatePanel({
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-col gap-1">
         <h2 className="min-w-0 truncate text-footnote font-semibold text-label">
           {text("pageBuilder.animate.heading", { name })}
         </h2>
         {animation && (
-          <div className="flex gap-1">
+          <div className="-ml-2 flex flex-wrap gap-1">
             <button
               type="button"
               onClick={() => onPreview(animation.spec)}
-              className="flex h-8 items-center gap-1.5 rounded-control px-2 text-footnote font-medium text-accent hover:bg-fill focus-visible:focus-ring"
+              className="flex h-8 items-center gap-1.5 rounded-control px-2 text-footnote font-medium whitespace-nowrap text-accent hover:bg-fill focus-visible:focus-ring"
             >
               <Play aria-hidden="true" className="size-4" />
               {text("pageBuilder.animate.playOnPage")}
@@ -76,7 +76,7 @@ export function AnimatePanel({
             <button
               type="button"
               onClick={() => onChange(null)}
-              className="flex h-8 items-center gap-1.5 rounded-control px-2 text-footnote font-medium text-danger hover:bg-fill focus-visible:focus-ring"
+              className="flex h-8 items-center gap-1.5 rounded-control px-2 text-footnote font-medium whitespace-nowrap text-danger hover:bg-fill focus-visible:focus-ring"
             >
               <Trash2 aria-hidden="true" className="size-4" />
               {text("pageBuilder.animate.remove")}

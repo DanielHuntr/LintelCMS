@@ -139,4 +139,18 @@ describe("the animation studio", () => {
     });
     expect(screen.getByRole("img", { name: /starts at 50% down the screen/ })).toBeInTheDocument();
   });
+
+  it("offers only the views the host allows", () => {
+    render(
+      <MotionStudio
+        initialSpec={findPreset("fade-up")!.spec}
+        initialPresetId="fade-up"
+        initialView="advanced"
+        views={["gallery", "simple"]}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("radio", { name: "Simple" })).toBeChecked();
+    expect(screen.queryByRole("radio", { name: "Advanced" })).not.toBeInTheDocument();
+  });
 });

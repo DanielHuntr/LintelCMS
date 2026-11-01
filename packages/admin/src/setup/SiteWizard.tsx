@@ -19,6 +19,8 @@ interface SiteWizardProps {
   api: Pick<SetupApi, "saveSiteSetup">;
   setupCode: SetupCode;
   onGoToDashboard: () => void;
+  /** The finish screen's other way in: the template library. */
+  onStartFromTemplate?: () => void;
 }
 
 /**
@@ -32,6 +34,7 @@ export function SiteWizard({
   api,
   setupCode,
   onGoToDashboard,
+  onStartFromTemplate,
 }: SiteWizardProps) {
   const { screen, goTo } = useWizardScreens<SiteScreen>("site-type");
   const [siteType, setSiteType] = useState<SiteType>("business");
@@ -116,6 +119,7 @@ export function SiteWizard({
             name={firstNameOf(session.user.name)}
             summary={summaryOf(status, plugins, savedPlugins)}
             onContinue={onGoToDashboard}
+            onStartFromTemplate={onStartFromTemplate}
           />
         );
     }

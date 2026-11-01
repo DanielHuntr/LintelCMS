@@ -1,4 +1,4 @@
-import { PageBuilder, type PickedImage } from "@lintel/builder";
+import { type CanvasSite, PageBuilder, type PickedImage } from "@lintel/builder";
 import {
   createEmptyPage,
   type PageDocument,
@@ -8,6 +8,7 @@ import {
 import { defaultTheme, themeStylesheet } from "@lintel/site-components";
 // The site's component styles, so the canvas shows blocks exactly as the site does.
 import siteStylesheet from "@lintel/site-components/styles.css?raw";
+import type { MotionEditorStringKey } from "@lintel/motion-editor";
 import { Link } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -23,6 +24,7 @@ import { type StringKey, t } from "../i18n/strings.js";
 import { getAsset } from "../media/media.api.js";
 import { MediaPickerDialog } from "../media/MediaPickerDialog.js";
 import { useCan } from "../session/SessionContext.js";
+import { useCanvasSite } from "../website/website.queries.js";
 import { usePageDesignSaving } from "./usePageDesignSaving.js";
 
 interface PageDesignPageProps {
@@ -34,8 +36,11 @@ interface PageDesignPageProps {
 /** "Edit design": the visual builder, full screen, for one page field of one entry. */
 export function PageDesignPage({ collectionHandle, entryId, fieldHandle }: PageDesignPageProps) {
   const entry = useEntry(entryId);
+  // The canvas waits for the website's look, so the page never jumps from one look to another.
+  // If it can't be had, the canvas uses the default theme instead.
+  const canvasSite = useCanvasSite();
   if (entry.isError) return <LoadError error={entry.error} onRetry={() => void entry.refetch()} />;
-  if (!entry.data) {
+  if (!entry.data || canvasSite.isPending) {
     return (
       <LoadingRegion label={t("pageDesign.loading")}>
         <div className="flex h-dvh flex-col gap-3 p-3">
@@ -51,6 +56,7 @@ export function PageDesignPage({ collectionHandle, entryId, fieldHandle }: PageD
       entry={entry.data}
       collectionHandle={collectionHandle}
       fieldHandle={fieldHandle}
+      site={canvasSite.data}
     />
   );
 }
@@ -59,10 +65,12 @@ function PageDesigner({
   entry: loadedEntry,
   collectionHandle,
   fieldHandle,
+  site,
 }: {
   entry: Entry;
   collectionHandle: string;
   fieldHandle: string;
+  site: CanvasSite | undefined;
 }) {
   const field = loadedEntry.blueprint.fields.find(
     (candidate) => candidate.handle === fieldHandle && candidate.type === "page",
@@ -80,6 +88,11 @@ function PageDesigner({
   const text = useCallback(
     (key: string, values?: Readonly<Record<string, string | number>>) =>
       t(key as StringKey, values),
+    [],
+  );
+  const motionText = useCallback(
+    (key: MotionEditorStringKey, values?: Readonly<Record<string, string | number>>) =>
+      t(key, values),
     [],
   );
 
@@ -103,9 +116,11 @@ function PageDesigner({
         onChange={saving.change}
         title={title}
         canEditCode={canEditCode}
+        site={site}
         themeStylesheet={themeStylesheet(defaultTheme)}
         baseStylesheet={siteStylesheet}
         text={text}
+        motionText={motionText}
         pickImage={imagePicker.pick}
         onSaveNow={saving.saveNow}
         toolbarStart={
@@ -130,6 +145,7 @@ function PageDesigner({
             {canPublish && (
               <button
                 type="button"
+                data-tour="publish"
                 onClick={() => void saving.publish()}
                 disabled={saving.isPublishing}
                 className="h-8 rounded-control bg-accent-fill px-3 text-footnote font-semibold text-on-accent focus-visible:focus-ring disabled:opacity-50"

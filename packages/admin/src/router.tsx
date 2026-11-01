@@ -342,7 +342,6 @@ const contentRoutes = [
 
 // One placeholder route per section. Each is replaced by real screens as its phase is built.
 const sectionRoutes = [
-  { path: "/design", title: "nav.design" },
   { path: "/commerce", title: "nav.commerce" },
   { path: "/forms", title: "nav.forms" },
   { path: "/users", title: "nav.users" },
@@ -394,6 +393,16 @@ const mediaRoute = createRoute({
   },
 });
 
+/** Design: the template library, loaded when it is opened (it draws page sketches). */
+const designRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/design",
+  component: lazyRouteComponent(
+    () => import("./starter-sites/TemplateLibraryPage.js"),
+    "TemplateLibraryPage",
+  ),
+});
+
 const placeholderRoutes = sectionRoutes.map(({ path, title }) =>
   createRoute({
     getParentRoute: () => adminRoute,
@@ -440,6 +449,7 @@ export const routeTree = rootRoute.addChildren([
       helpRoute,
       ...contentRoutes,
       ...integrationRoutes,
+      designRoute,
       ...placeholderRoutes,
     ]),
   ]),

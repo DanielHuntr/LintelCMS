@@ -28,5 +28,9 @@ revision of the entry, so the entry's History can restore an older design. Publi
 `entries:publish`) saves first, then publishes the entry. A design the API refuses shows its
 message at the bottom of the screen.
 
-The builder's design tokens come from the stand-in theme for now; once
-`@lintel/site-components` lands, pass its `themeStylesheet` and base styles to `PageBuilder`.
+- **The website's look**: `GET /website/canvas` gives the site's whole stylesheet, body
+  class, header, footer and the motion runtime, passed to `PageBuilder` as `site`, so the
+  canvas shows the page exactly as the website will and can preview animations on it. The
+  screen waits for it; if it can't be had, the canvas uses the default theme.
+- **Animation words**: `motionText`, the admin's `t()` for the animation studio.
+- **The tour**: the Publish button carries `data-tour="publish"`, so the tour can point at it.
