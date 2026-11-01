@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { LoadError } from "../api/LoadError.js";
 import { classNames } from "../design/classNames.js";
 import { Dialog } from "../design/Dialog.js";
@@ -102,7 +102,13 @@ function FieldtypePicker({
 }) {
   const baseId = useId();
   const gridElement = useRef<HTMLUListElement>(null);
+  const searchBox = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState("");
+
+  // The list may arrive after the dialog opened, too late for the dialog's own autofocus.
+  useEffect(() => {
+    searchBox.current?.querySelector("input")?.focus();
+  }, []);
   const recent = useMemo(
     () =>
       readRecentFieldtypes().flatMap((type) => {
@@ -158,7 +164,7 @@ function FieldtypePicker({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="px-6 pb-4">
+      <div ref={searchBox} className="px-6 pb-4">
         <SearchField
           label={t("fieldPicker.search")}
           value={query}

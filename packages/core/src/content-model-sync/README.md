@@ -1,7 +1,7 @@
 # Content model sync
 
 Content model as code: content types (a blueprint with its collections), taxonomies,
-global sets and menus kept as files in `content-model/` at the repository root, one file
+global sets, fieldsets and menus kept as files in `content-model/` at the repository root, one file
 each, and kept in step with the database. The developer guide is
 `packages/docs/src/content/docs/building/content-model-as-code.md`; the reasoning is in
 `docs/decisions/0016-content-model-as-code.md`.
@@ -28,6 +28,12 @@ export default defineContentType({
   },
 });
 ```
+
+Fields keep their layout and rules in files too: `width`, `conditions`, `validation`,
+`placeholder`, `default` and the rest (see src/fieldtypes/README.md), groups and repeaters
+with their own `fields`, and `fieldset({ fieldset: "seo" })` for a fieldset defined in
+`fieldsets/seo.ts`. Fieldset files are read first, and each Fieldset field gets a copy of the
+fieldset's fields, as the admin stores it; the copy is never written back to a file.
 
 ## How it fits together
 

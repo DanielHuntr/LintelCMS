@@ -183,15 +183,16 @@ flowchart LR
   Core -- "signed webhooks" --> External[Other services]
 ```
 
-| Package                    | What it is                                                             | Status         |
-| -------------------------- | ---------------------------------------------------------------------- | -------------- |
-| `packages/core`            | The API server: content, media, users, permissions, delivery, webhooks | Available      |
-| `packages/admin`           | The admin app: React 19, TanStack Router and Query, Tailwind 4         | Available      |
-| `packages/docs`            | The documentation site (Astro Starlight), also bundled as in-app help  | Available      |
-| `starters/nextjs`          | A Next.js website that reads the delivery API                          | Available      |
-| `packages/builder-model`   | The visual builder's page model, styles and HTML import, with no UI    | In development |
-| `packages/site-components` | The React components a Lintel-rendered website is made of              | In development |
-| Commerce in `core`         | Products, markets, inventory, checkouts and Stripe                     | In development |
+| Package                     | What it is                                                             | Status         |
+| --------------------------- | ---------------------------------------------------------------------- | -------------- |
+| `packages/core`             | The API server: content, media, users, permissions, delivery, webhooks | Available      |
+| `packages/admin`            | The admin app: React 19, TanStack Router and Query, Tailwind 4         | Available      |
+| `packages/docs`             | The documentation site (Astro Starlight), also bundled as in-app help  | Available      |
+| `starters/nextjs`           | A Next.js website that reads the delivery API                          | Available      |
+| `packages/builder-model`    | The visual builder's page model, styles and HTML import, with no UI    | In development |
+| `packages/field-conditions` | Show/hide rules for fields, shared by the admin and the server         | In development |
+| `packages/site-components`  | The React components a Lintel-rendered website is made of              | In development |
+| Commerce in `core`          | Products, markets, inventory, checkouts and Stripe                     | In development |
 
 ### How the packages depend on each other
 

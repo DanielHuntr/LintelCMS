@@ -100,10 +100,67 @@ The other kinds:
 export default defineTaxonomy({ handle: "cuisines", name: "Cuisines" });
 export default defineGlobalSet({ handle: "opening_hours", name: "Opening hours", fields: { ... } });
 export default defineMenu({ handle: "footer", name: "Footer links", maxDepth: 1 });
+export default defineFieldset({ handle: "seo", name: "SEO", fields: { ... } });
 ```
 
 A file without a default export is a helper, so shared fields can live in their own file
 and be spread in (`fields: { title: text(), ...seoFields }`).
+
+### Layout, conditions and validation
+
+Every field takes the same settings as in the admin's field settings, all optional:
+
+```ts
+fields: {
+  title: text(),
+  format: select({
+    width: 50,
+    choices: [
+      { value: "online", label: "Online" },
+      { value: "venue", label: "At a venue" },
+    ],
+  }),
+  stream_url: url({
+    width: 50,
+    placeholder: "https://",
+    // Shown only when Format is Online; cleared on save while hidden.
+    conditions: { rules: [{ field: "format", operator: "is", value: "online" }] },
+  }),
+  details: tab({ label: "Details" }), // the fields after this are on a "Details" tab
+  venue: group({ fields: { town: text({ width: 50, default: "Leeds" }) } }),
+  speakers: repeater({
+    addLabel: "Add a speaker",
+    fields: {
+      name: text({ validation: { minLength: 2 } }),
+      bio: textarea({ conditions: { rules: [{ field: "$root.format", operator: "is", value: "venue" }] } }),
+    },
+  }),
+  search: fieldset({ fieldset: "seo" }), // the fields of content-model/fieldsets/seo.ts
+}
+```
+
+- `width`: 25, 33, 50, 66, 75 or 100. Fields sit side by side when they fit.
+- `conditions`: `action` (`show` or `hide`), `match` (`all` or `any`), `rules` and
+  `keepHiddenValues`. Operators: `is`, `isNot`, `contains`, `doesNotContain`, `isEmpty`,
+  `isNotEmpty`, `greaterThan`, `lessThan`, `includesAny`. A rule names a field beside it,
+  `$parent.handle` one level out, or `$root.handle` one of the entry's own fields. Rules on a
+  field that doesn't exist are refused when the file is read.
+- `validation`: `minLength`, `maxLength`, `min`, `max`, `pattern`, `unique` and `message`.
+- `placeholder`, `default`, `helpTextPosition`, `readOnly`, `hidden` and `showInList`.
+- Layout-only helpers: `tab()`, `section()` (its label is the heading, its help text the
+  sentence under it), `spacer()` and `revealer()` (a Show more button other fields' conditions
+  can look at).
+
+Fieldsets are files of their own, read before the content types that use them:
+
+```ts
+// content-model/fieldsets/seo.ts
+export default defineFieldset({
+  handle: "seo",
+  name: "SEO",
+  fields: { meta_title: text({ validation: { maxLength: 60 } }), meta_description: textarea() },
+});
+```
 
 ### YAML instead
 
