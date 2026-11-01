@@ -19,6 +19,7 @@ import { contentModelRoutes } from "./content-model/contentModelRoutes.js";
 import { ContentTypesPage } from "./content-types/ContentTypesPage.js";
 import { NewContentTypePage } from "./content-types/NewContentTypePage.js";
 import { DashboardPage } from "./dashboard/DashboardPage.js";
+import { formsRoutes } from "./forms/formsRoutes.js";
 import { HelpPage } from "./help/HelpPage.js";
 import { AdminLayout } from "./layout/AdminLayout.js";
 import { MediaLibraryPage } from "./media/MediaLibraryPage.js";
@@ -335,7 +336,6 @@ const contentRoutes = [
 const sectionRoutes = [
   { path: "/design", title: "nav.design" },
   { path: "/commerce", title: "nav.commerce" },
-  { path: "/forms", title: "nav.forms" },
   { path: "/users", title: "nav.users" },
 ] as const;
 
@@ -422,6 +422,7 @@ export const routeTree = rootRoute.addChildren([
       helpRoute,
       ...contentRoutes,
       ...integrationRoutes,
+      ...formsRoutes(() => adminRoute),
       ...placeholderRoutes,
     ]),
   ]),

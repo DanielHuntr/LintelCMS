@@ -9,6 +9,7 @@ export const webhookEvents = [
   "entry.deleted",
   "asset.uploaded",
   "asset.deleted",
+  "form.submitted",
 ] as const;
 
 export type WebhookEvent = (typeof webhookEvents)[number];
@@ -20,6 +21,7 @@ export const webhookEventLabels: Record<WebhookEvent, StringKey> = {
   "entry.deleted": "webhooks.event.entryDeleted",
   "asset.uploaded": "webhooks.event.assetUploaded",
   "asset.deleted": "webhooks.event.assetDeleted",
+  "form.submitted": "webhooks.event.formSubmitted",
 };
 
 export type DeliveryStatus = "pending" | "delivered" | "failed";

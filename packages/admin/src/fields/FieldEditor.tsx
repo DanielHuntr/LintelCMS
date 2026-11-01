@@ -6,6 +6,7 @@ import { BlocksFieldEditor } from "./blocks/BlocksFieldEditor.js";
 import { DateFieldEditor } from "./DateFieldEditor.js";
 import { EmailFieldEditor } from "./EmailFieldEditor.js";
 import { EntriesFieldEditor } from "./EntriesFieldEditor.js";
+import { FormPickerFieldEditor } from "../forms/FormPickerFieldEditor.js";
 import { ListFieldEditor } from "./ListFieldEditor.js";
 import { MarkdownFieldEditor } from "./MarkdownFieldEditor.js";
 import { TermsFieldEditor } from "./TermsFieldEditor.js";
@@ -57,6 +58,7 @@ export const fieldEditors: Record<FieldType, FieldEditorRegistration> = {
     labelling: (field) => (field.options.maxItems === 1 ? "label" : "group"),
   },
   blocks: { Editor: BlocksFieldEditor, labelling: () => "group" },
+  form: { Editor: FormPickerFieldEditor, labelling: labelAbove },
 };
 
 const noErrors: FieldMessages = {};

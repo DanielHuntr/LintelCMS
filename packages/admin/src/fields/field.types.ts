@@ -20,7 +20,8 @@ export type FieldType =
   | "list"
   | "entries"
   | "terms"
-  | "blocks";
+  | "blocks"
+  | "form";
 
 export interface SelectChoice {
   value: string;

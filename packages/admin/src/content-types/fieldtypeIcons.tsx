@@ -10,6 +10,7 @@ import {
   Link2,
   List,
   ListChecks,
+  MessageSquareText,
   Palette,
   Pilcrow,
   SquareCode,
@@ -39,6 +40,7 @@ export const fieldtypeIcons: Record<FieldType, LucideIcon> = {
   entries: FileStack,
   terms: Tags,
   blocks: LayoutTemplate,
+  form: MessageSquareText,
 };
 
 interface FieldtypeIconProps {

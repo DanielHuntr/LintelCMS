@@ -32,6 +32,9 @@ One editor per fieldtype, used by the entry editor to draw a blueprint's fields.
 | `terms`    | `TermsFieldEditor.tsx`         | term ids, or `null`                          |
 | `blocks`   | `blocks/BlocksFieldEditor.tsx` | `[{ id, type, data }]`, or `null` when empty |
 
+The `form` fieldtype (a form's handle, for the Form section on pages) is edited by
+`FormPickerFieldEditor.tsx` in `src/forms`, which the Forms plugin owns.
+
 Rich text uses TipTap's StarterKit, trimmed to headings (two levels), bold, italic, links,
 lists and quotes (`richTextExtensions.ts`). Its toolbar is one tab stop with arrow keys
 between buttons; links are added in a small form under the toolbar, not a browser prompt.
