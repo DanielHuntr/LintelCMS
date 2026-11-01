@@ -66,16 +66,7 @@ If a save fails (for example, your connection drops), you'll see **Couldn't save
 
 Saving never changes your live site. Only [publishing](/using/publishing/) does.
 
-## History
-
-The **History** panel shows what happened to the entry, grouped by day: **Edited**,
-**Published**, **Scheduled**, **Restored from…** and so on, with who did it and when (point
-at a time to see the exact date). Your typing doesn't fill it up: everything you change in
-one sitting appears as one **Edited** line, and the newest one reads **Current draft**.
-
-Pressing <kbd>Cmd</kbd>+<kbd>S</kbd> (<kbd>Ctrl</kbd>+<kbd>S</kbd> on Windows) keeps what
-you have as a version of its own, so you can come back to exactly that point. To go back to
-an older version, choose the restore button next to it.
+See [History](/using/history/) for going back to an earlier version.
 
 ## Pages inside pages
 
