@@ -1,5 +1,6 @@
 import { findNode, type PageDocument, readPageFonts } from "@lintel/builder-model";
 import type { TextSelectionMessage } from "../canvas/canvas-messages.js";
+import { isLocked } from "../editor/commands.js";
 import { readMarks } from "../editor/design-commands.js";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { type MarkChange, TextStyleBar } from "./TextStyleBar.js";
@@ -36,7 +37,7 @@ export function SelectedWordsBar({
         to={to}
         marks={readMarks(node)}
         pageFonts={readPageFonts(document.root.props)}
-        disabled={node.locked}
+        disabled={isLocked(document, node.id)}
         onApply={onApply}
       />
     </div>

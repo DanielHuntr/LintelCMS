@@ -10,6 +10,8 @@ export const usingPages = [
   "using/publishing",
   "using/website",
   "using/designing-pages",
+  "using/advanced-styling",
+  "using/free-layout",
   "using/templates",
   "using/history",
   "using/media",
