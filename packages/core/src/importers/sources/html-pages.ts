@@ -72,8 +72,8 @@ export async function readHtmlPages(
       if (element.tag === "title" && !title) title = textContent(element).trim();
     });
     const address = addressOf(path);
-    if (address === "/" && !siteTitle) siteTitle = title;
     const name = title.split(/\s[|–—-]\s/)[0]?.trim() || posix.basename(address) || "Home";
+    if (address === "/" && !siteTitle) siteTitle = name;
     pages.push({
       path,
       address,

@@ -274,10 +274,10 @@ function ContentTypeCard({
           </caption>
           <thead className="text-footnote text-label-secondary">
             <tr>
-              <th scope="col" className="pb-2 font-medium">
+              <th scope="col" className="pb-2 text-start font-medium">
                 {t("siteImport.column.oldField")}
               </th>
-              <th scope="col" className="pb-2 font-medium">
+              <th scope="col" className="pb-2 text-start font-medium">
                 {t("siteImport.column.newField")}
               </th>
             </tr>
@@ -285,7 +285,7 @@ function ContentTypeCard({
           <tbody>
             {type.fields.map((field) => (
               <tr key={field.key} className="hairline-top">
-                <th scope="row" className="py-2 pe-3 align-middle font-normal">
+                <th scope="row" className="py-2 pe-3 text-start align-middle font-normal">
                   {field.label}
                   <span className="block text-footnote text-label-secondary">
                     {t(`siteImport.kind.${field.kind}` as StringKey)}

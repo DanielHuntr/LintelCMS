@@ -23,7 +23,7 @@ export function SiteImportReportView({ report }: { report: SiteImportReport }) {
       <table className="w-full text-start text-body text-label">
         <thead className="text-footnote text-label-secondary">
           <tr>
-            <th scope="col" className="pb-2 font-medium">
+            <th scope="col" className="pb-2 text-start font-medium">
               {t("wordpress.column.what")}
             </th>
             <th scope="col" className="pb-2 text-end font-medium">
@@ -40,7 +40,7 @@ export function SiteImportReportView({ report }: { report: SiteImportReport }) {
         <tbody>
           {rows.map((kind) => (
             <tr key={kind} className="hairline-top">
-              <th scope="row" className="py-2 font-normal">
+              <th scope="row" className="py-2 text-start font-normal">
                 {t(`siteImport.count.${kind}` as StringKey)}
               </th>
               <td className="py-2 text-end tabular-nums">{report.counts[kind].done}</td>

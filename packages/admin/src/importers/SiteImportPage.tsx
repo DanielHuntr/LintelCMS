@@ -48,7 +48,7 @@ export function SiteImportPage({
       )}
       {data && (
         <div className="flex max-w-2xl flex-col gap-6">
-          <FoundCard found={data.found} />
+          <FoundCard found={data.found} showNotes={data.status !== "complete"} />
           {data.status === "ready" && (
             <SiteMappingStep
               importId={importId}
@@ -112,11 +112,12 @@ export function describeFound(found: SiteImportFound): string {
   return parts.length > 0 ? parts.join(", ") : t("siteImport.found.nothing");
 }
 
-function FoundCard({ found }: { found: SiteImportFound }) {
+/** What the files hold; once the import is done the report repeats the notes, so they go. */
+function FoundCard({ found, showNotes }: { found: SiteImportFound; showNotes: boolean }) {
   return (
     <Card title={t("siteImport.foundTitle")}>
       <p className="text-body text-label">{describeFound(found)}</p>
-      {found.notes.length > 0 && (
+      {showNotes && found.notes.length > 0 && (
         <div className="mt-4 flex flex-col gap-1.5">
           <h3 className="text-headline text-label">{t("siteImport.notesTitle")}</h3>
           <ul className="flex list-disc flex-col gap-1 ps-5 text-footnote text-label-secondary">
