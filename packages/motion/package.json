@@ -1,0 +1,43 @@
+{
+  "name": "@lintel/motion",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Lintel's animation runtime: plays JSON animation specs with the Web Animations API.",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./schema": {
+      "types": "./dist/spec/motion.schema.d.ts",
+      "development": "./src/spec/motion.schema.ts",
+      "default": "./dist/spec/motion.schema.js"
+    },
+    "./presets": {
+      "types": "./dist/presets/index.d.ts",
+      "development": "./src/presets/index.ts",
+      "default": "./dist/presets/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run && vitest run --config vitest.browser.config.ts",
+    "test:unit": "vitest run",
+    "test:browser": "vitest run --config vitest.browser.config.ts"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "esbuild": "^0.28.2",
+    "jsdom": "^30.1.3",
+    "playwright": "1.63.0",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.5"
+  }
+}
