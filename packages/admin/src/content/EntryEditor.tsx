@@ -33,13 +33,21 @@ interface EntryEditorProps {
   /** Undefined for a new entry. */
   initialEntry: Entry | undefined;
   onCreated: (entry: Entry) => void;
+  /** The language a new entry is written in. Undefined is the site's main language. */
+  locale?: string;
 }
 
 /**
  * The entry editor: a calm document with the title at the top and the blueprint's fields
  * below, autosaving as a draft, with publishing and history in a side panel.
  */
-export function EntryEditor({ collection, blueprint, initialEntry, onCreated }: EntryEditorProps) {
+export function EntryEditor({
+  collection,
+  blueprint,
+  initialEntry,
+  onCreated,
+  locale,
+}: EntryEditorProps) {
   const [state, dispatch] = useReducer(entryDraftReducer, initialEntry, initialDraftState);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
@@ -52,6 +60,7 @@ export function EntryEditor({ collection, blueprint, initialEntry, onCreated }: 
     initialEntry,
     dispatch,
     onCreated,
+    locale,
   });
   const { entry } = actions;
   const canPublish = useCan("entries:publish");
@@ -227,6 +236,7 @@ export function EntryEditor({ collection, blueprint, initialEntry, onCreated }: 
             id={panelId}
             collection={collection}
             entry={entry}
+            locale={entry?.locale ?? locale}
             parentId={state.current.parentId}
             onParentChange={(parentId) => dispatch({ type: "parentChanged", parentId })}
             canPublish={canPublish}

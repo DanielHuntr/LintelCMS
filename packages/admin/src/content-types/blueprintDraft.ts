@@ -43,12 +43,18 @@ export type BlueprintDraftAction =
   | { type: "fieldMovedBy"; key: string; direction: -1 | 1 }
   | { type: "fieldMovedTo"; key: string; targetKey: string }
   | { type: "fieldRemoved"; key: string }
-  | { type: "loaded"; blueprint: Blueprint };
+  | { type: "loaded"; blueprint: Blueprint }
+  | { type: "reset"; draft: BlueprintDraftState };
 
 export function draftFromBlueprint(blueprint: Blueprint): BlueprintDraftState {
+  return draftFromFields(blueprint.name, blueprint.fields);
+}
+
+/** The builder's state for any named list of fields, such as a global set's. */
+export function draftFromFields(name: string, fields: readonly Field[]): BlueprintDraftState {
   return {
-    name: blueprint.name,
-    fields: blueprint.fields.map((field) => ({
+    name,
+    fields: fields.map((field) => ({
       ...field,
       options: field.options ?? {},
       key: `saved:${field.handle}`,
@@ -131,6 +137,9 @@ export function blueprintDraftReducer(
 
     case "loaded":
       return draftFromBlueprint(action.blueprint);
+
+    case "reset":
+      return action.draft;
   }
 }
 
@@ -169,7 +178,16 @@ function handlesOf(fields: readonly DraftField[]): string[] {
 }
 
 function defaultOptionsFor(fieldType: FieldType): FieldOptions {
-  return fieldType === "select" ? { choices: [], multiple: false } : {};
+  switch (fieldType) {
+    case "select":
+      return { choices: [], multiple: false };
+    case "colour":
+      return { swatches: [] };
+    case "entries":
+      return { collections: [] };
+    default:
+      return {};
+  }
 }
 
 /** Keeps only the options that apply to the field's type, so the API gets a clean blueprint. */
@@ -189,6 +207,16 @@ export function optionsForType(fieldType: FieldType, options: FieldOptions): Fie
       return { choices: options.choices ?? [], multiple: options.multiple === true };
     case "date":
       return { includeTime: options.includeTime === true };
+    case "markdown":
+      return pick(["maxLength"]);
+    case "list":
+      return pick(["maxItems"]);
+    case "colour":
+      return { swatches: options.swatches ?? [] };
+    case "entries":
+      return { collections: options.collections ?? [], ...pick(["maxItems"]) };
+    case "terms":
+      return { taxonomy: options.taxonomy ?? "", ...pick(["maxItems"]) };
     default:
       return {};
   }
@@ -227,6 +255,8 @@ export function blueprintProblems(state: BlueprintDraftState): FieldMessages {
       problems[field.key] = t("builder.problem.duplicate");
     else if (field.type === "select" && (field.options.choices ?? []).length === 0) {
       problems[field.key] = t("builder.problem.choices");
+    } else if (field.type === "terms" && !field.options.taxonomy) {
+      problems[field.key] = t("builder.problem.taxonomy");
     }
   }
   return problems;

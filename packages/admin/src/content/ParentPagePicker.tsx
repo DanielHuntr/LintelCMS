@@ -13,6 +13,8 @@ interface ParentPagePickerProps {
   collectionHandle: string;
   /** Undefined for a new page. */
   entryId: string | undefined;
+  /** Parents have to be in the same language. */
+  locale: string | undefined;
   parentId: string | null;
   onChange: (parentId: string | null) => void;
 }
@@ -23,13 +25,15 @@ const pagesToOffer = { page: 1, perPage: 100 };
 export function ParentPagePicker({
   collectionHandle,
   entryId,
+  locale,
   parentId,
   onChange,
 }: ParentPagePickerProps) {
   const selectId = useId();
+  const filter = { ...pagesToOffer, locale };
   const { data } = useQuery({
-    queryKey: contentKeys.entries(collectionHandle, pagesToOffer),
-    queryFn: () => listEntries(collectionHandle, pagesToOffer),
+    queryKey: contentKeys.entries(collectionHandle, filter),
+    queryFn: () => listEntries(collectionHandle, filter),
   });
 
   const pages = data?.entries ?? [];

@@ -21,6 +21,8 @@ interface EntryActionsOptions {
   dispatch: Dispatch<EntryDraftAction>;
   /** Called once, when a new entry is first saved and gets an id. */
   onCreated: (entry: Entry) => void;
+  /** The language a new entry is written in. Undefined is the site's main language. */
+  locale?: string;
 }
 
 /**
@@ -33,6 +35,7 @@ export function useEntryActions({
   initialEntry,
   dispatch,
   onCreated,
+  locale,
 }: EntryActionsOptions) {
   const queryClient = useQueryClient();
   const [entry, setEntry] = useState(initialEntry);
@@ -55,7 +58,7 @@ export function useEntryActions({
       const isNew = entryId.current === undefined;
       const saved = entryId.current
         ? await updateEntry(entryId.current, draft)
-        : await createEntry(collectionHandle, draft);
+        : await createEntry(collectionHandle, draft, locale);
       dispatch({ type: "saveSucceeded", sent: draft, entry: saved });
       remember(saved);
       if (isNew) onCreated(saved);

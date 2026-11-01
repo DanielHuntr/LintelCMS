@@ -73,3 +73,20 @@ export function richTextValue(value: unknown): RichTextDocument {
   }
   return emptyRichTextDocument;
 }
+
+/** A list of text or of ids, without anything that isn't a string. */
+export function stringListValue(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+/** A list is stored as empty once nothing is left in it. */
+export function stringListFromItems(items: readonly string[]): string[] | null {
+  return items.length === 0 ? null : [...items];
+}
+
+/** "#1A2B3C" style colours, as the colour input and the API both expect. */
+export function isHexColour(text: string): boolean {
+  return /^#[0-9a-f]{6}$/i.test(text.trim());
+}

@@ -42,7 +42,11 @@ export interface EntryChanges {
   parentId: string | null;
 }
 
-export function createEntry(collectionHandle: string, changes: EntryChanges): Promise<Entry> {
+export function createEntry(
+  collectionHandle: string,
+  changes: EntryChanges,
+  locale?: string,
+): Promise<Entry> {
   return apiRequest<Entry>(`/collections/${encodeURIComponent(collectionHandle)}/entries`, {
     method: "POST",
     // The API generates a slug from the title when none is given, and takes no null parent.
@@ -50,7 +54,16 @@ export function createEntry(collectionHandle: string, changes: EntryChanges): Pr
       data: changes.data,
       slug: slugForSaving(changes.slug),
       parentId: changes.parentId ?? undefined,
+      locale,
     },
+  });
+}
+
+/** Starts a draft translation of an entry into another of the site's languages. */
+export function translateEntry(entryId: string, locale: string): Promise<Entry> {
+  return apiRequest<Entry>(`/entries/${entryId}/translations`, {
+    method: "POST",
+    body: { locale },
   });
 }
 

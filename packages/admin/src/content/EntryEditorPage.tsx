@@ -13,13 +13,15 @@ import { newEntryId } from "./newEntryId.js";
 interface EntryEditorPageProps {
   collectionHandle: string;
   entryId: string;
+  /** For a new entry: the language to write it in. Undefined is the site's main language. */
+  locale?: string;
 }
 
 /**
  * Loads what the editor needs (the collection, and the entry or, for a new one, its
  * blueprint), then hands over to `EntryEditor`.
  */
-export function EntryEditorPage({ collectionHandle, entryId }: EntryEditorPageProps) {
+export function EntryEditorPage({ collectionHandle, entryId, locale }: EntryEditorPageProps) {
   const navigate = useNavigate();
   const isNew = entryId === newEntryId;
   const collection = useCollection(collectionHandle);
@@ -55,6 +57,7 @@ export function EntryEditorPage({ collectionHandle, entryId }: EntryEditorPagePr
       blueprint={loadedBlueprint}
       initialEntry={entry.data}
       onCreated={handleCreated}
+      locale={isNew ? locale : undefined}
     />
   );
 }

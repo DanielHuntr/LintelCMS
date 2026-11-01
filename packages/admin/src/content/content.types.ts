@@ -30,6 +30,10 @@ export interface EntrySummary {
   slug: string;
   status: EntryStatus;
   parentId: string | null;
+  /** The language it's written in, such as "en-GB". */
+  locale: string;
+  /** The entry this one is a translation of, or null for an original. */
+  originId: string | null;
   updatedAt: string;
   publishedAt: string | null;
   scheduledFor: string | null;
@@ -43,6 +47,15 @@ export interface Entry extends EntrySummary {
   blueprint: Blueprint;
   /** Saved since it was last published: the site still shows the published version. */
   hasUnpublishedChanges: boolean;
+  /** The same entry in the site's other languages. */
+  translations: EntryTranslation[];
+}
+
+export interface EntryTranslation {
+  id: string;
+  locale: string;
+  title: string;
+  status: EntryStatus;
 }
 
 export interface EntryPage {

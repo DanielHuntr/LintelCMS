@@ -9,6 +9,7 @@ import { LinkButton } from "../design/LinkButton.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { t, tCount } from "../i18n/strings.js";
+import { LocalePicker } from "../locales/LocalePicker.js";
 import { useCan } from "../session/SessionContext.js";
 import { reorderEntries } from "./content.api.js";
 import { contentKeys, useCollection, useEntries } from "./content.queries.js";
@@ -59,15 +60,22 @@ export function EntriesListPage({
             : undefined
         }
         actions={
-          canCreate && (
-            <LinkButton
-              to="/content/$collection/$entryId"
-              params={{ collection: collectionHandle, entryId: newEntryId }}
-              icon={<FilePlus2 aria-hidden="true" />}
-            >
-              {t("entries.new")}
-            </LinkButton>
-          )
+          <>
+            <LocalePicker
+              value={filter.locale}
+              onChange={(locale) => onFilterChange({ ...filter, locale, page: 1 })}
+            />
+            {canCreate && (
+              <LinkButton
+                to="/content/$collection/$entryId"
+                params={{ collection: collectionHandle, entryId: newEntryId }}
+                search={{ locale: filter.locale }}
+                icon={<FilePlus2 aria-hidden="true" />}
+              >
+                {t("entries.new")}
+              </LinkButton>
+            )}
+          </>
         }
       />
 
@@ -163,6 +171,7 @@ function EntriesResults({
               <LinkButton
                 to="/content/$collection/$entryId"
                 params={{ collection: collection.handle, entryId: newEntryId }}
+                search={{ locale: filter.locale }}
                 variant="tinted"
               >
                 {t("entries.new")}

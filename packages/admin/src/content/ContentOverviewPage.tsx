@@ -1,5 +1,6 @@
 import { Plus, Shapes } from "lucide-react";
 import { LoadError } from "../api/LoadError.js";
+import { SiteWideContent } from "../content-model/SiteWideContent.js";
 import { EmptyState } from "../design/EmptyState.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { LinkButton } from "../design/LinkButton.js";
@@ -82,6 +83,8 @@ export function ContentOverviewPage() {
           ))}
         </ul>
       )}
+
+      <SiteWideContent />
     </>
   );
 }

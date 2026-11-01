@@ -44,7 +44,8 @@ export function FieldShell({
 }: FieldShellProps) {
   const { maxLength } = field.options;
   const showsCount =
-    maxLength !== undefined && (field.type === "text" || field.type === "textarea");
+    maxLength !== undefined &&
+    (field.type === "text" || field.type === "textarea" || field.type === "markdown");
   const labelText = (
     <>
       {field.label}

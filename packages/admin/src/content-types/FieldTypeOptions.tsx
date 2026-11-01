@@ -5,6 +5,8 @@ import { numberFromInput } from "../fields/fieldValues.js";
 import { t } from "../i18n/strings.js";
 import type { DraftField } from "./blueprintDraft.js";
 import { ChoicesEditor } from "./ChoicesEditor.js";
+import { EntriesOptions, TermsOptions } from "./RelationOptions.js";
+import { SwatchesEditor } from "./SwatchesEditor.js";
 
 interface FieldTypeOptionsProps {
   field: DraftField;
@@ -21,6 +23,7 @@ export function FieldTypeOptions({ field, onChange }: FieldTypeOptionsProps) {
   switch (field.type) {
     case "text":
     case "textarea":
+    case "markdown":
       return (
         <TextField
           label={t("builder.maxLength")}
@@ -79,6 +82,34 @@ export function FieldTypeOptions({ field, onChange }: FieldTypeOptionsProps) {
           onCheckedChange={(includeTime) => set({ includeTime })}
         />
       );
+
+    case "list":
+      return (
+        <TextField
+          label={t("builder.maxItems")}
+          hint={t("builder.maxItemsHint")}
+          type="number"
+          min={1}
+          inputMode="numeric"
+          value={numberText(options.maxItems)}
+          onChange={(event) => set({ maxItems: numberOption(event.target.value) })}
+          className="max-w-48"
+        />
+      );
+
+    case "colour":
+      return (
+        <SwatchesEditor
+          swatches={options.swatches ?? []}
+          onChange={(swatches) => set({ swatches })}
+        />
+      );
+
+    case "terms":
+      return <TermsOptions options={options} onChange={set} />;
+
+    case "entries":
+      return <EntriesOptions options={options} onChange={set} />;
 
     default:
       return null;

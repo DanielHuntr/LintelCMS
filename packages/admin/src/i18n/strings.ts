@@ -1,3 +1,5 @@
+import { contentModelStrings } from "./contentModelStrings.js";
+
 /**
  * Every word the admin shows lives here, so the admin can be translated and
  * agencies can rename things in their client's language ("Collections" → "Your content").
@@ -5,6 +7,7 @@
  * Components never hard-code text: they call `t("key")`.
  */
 const english = {
+  ...contentModelStrings,
   "app.name": "Lintel",
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",

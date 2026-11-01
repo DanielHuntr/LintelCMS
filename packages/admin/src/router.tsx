@@ -13,6 +13,7 @@ import type { EntryStatus } from "./content/content.types.js";
 import { EntriesListPage } from "./content/EntriesListPage.js";
 import type { EntriesFilter } from "./content/entriesQuery.js";
 import { BlueprintEditorPage } from "./content-types/BlueprintEditorPage.js";
+import { contentModelRoutes } from "./content-model/contentModelRoutes.js";
 import { ContentTypesPage } from "./content-types/ContentTypesPage.js";
 import { NewContentTypePage } from "./content-types/NewContentTypePage.js";
 import { DashboardPage } from "./dashboard/DashboardPage.js";
@@ -193,6 +194,7 @@ const entriesRoute = createRoute({
       : undefined,
     search: typeof search.search === "string" && search.search !== "" ? search.search : undefined,
     page: typeof search.page === "number" && search.page > 1 ? Math.floor(search.page) : undefined,
+    locale: typeof search.locale === "string" && search.locale !== "" ? search.locale : undefined,
   }),
   component: EntriesListRoute,
 });
@@ -224,9 +226,14 @@ const EntryEditorPage = lazy(async () => ({
 const entryEditorRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: "/content/$collection/$entryId",
+  // A new entry can be started in another language: /content/pages/new?locale=fr-FR.
+  validateSearch: (search: Record<string, unknown>): { locale?: string } => ({
+    locale: typeof search.locale === "string" && search.locale !== "" ? search.locale : undefined,
+  }),
   component: function EntryEditorRoute() {
     const { collection, entryId } = entryEditorRoute.useParams();
-    return <EntryEditorPage collectionHandle={collection} entryId={entryId} />;
+    const { locale } = entryEditorRoute.useSearch();
+    return <EntryEditorPage collectionHandle={collection} entryId={entryId} locale={locale} />;
   },
 });
 
@@ -259,6 +266,7 @@ const blueprintRoute = createRoute({
 
 const contentRoutes = [
   contentRoute,
+  ...contentModelRoutes(() => adminRoute),
   entriesRoute,
   entryEditorRoute,
   settingsRoute,

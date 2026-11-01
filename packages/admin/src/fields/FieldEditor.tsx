@@ -1,6 +1,13 @@
 import { useId, type ComponentType } from "react";
 import { t } from "../i18n/strings.js";
+import { ColourFieldEditor } from "./ColourFieldEditor.js";
 import { DateFieldEditor } from "./DateFieldEditor.js";
+import { EmailFieldEditor } from "./EmailFieldEditor.js";
+import { EntriesFieldEditor } from "./EntriesFieldEditor.js";
+import { ListFieldEditor } from "./ListFieldEditor.js";
+import { MarkdownFieldEditor } from "./MarkdownFieldEditor.js";
+import { TermsFieldEditor } from "./TermsFieldEditor.js";
+import { UrlFieldEditor } from "./UrlFieldEditor.js";
 import type { Field, FieldType, FieldValue } from "./field.types.js";
 import type { FieldEditorProps } from "./fieldEditorProps.js";
 import { describedByIds, FieldShell, type FieldLabelling } from "./FieldShell.js";
@@ -37,6 +44,16 @@ export const fieldEditors: Record<FieldType, FieldEditorRegistration> = {
   date: { Editor: DateFieldEditor, labelling: labelAbove },
   image: { Editor: ImageFieldEditor, labelling: () => "group" },
   link: { Editor: LinkFieldEditor, labelling: () => "group" },
+  email: { Editor: EmailFieldEditor, labelling: labelAbove },
+  url: { Editor: UrlFieldEditor, labelling: labelAbove },
+  colour: { Editor: ColourFieldEditor, labelling: labelAbove },
+  markdown: { Editor: MarkdownFieldEditor, labelling: labelAbove },
+  list: { Editor: ListFieldEditor, labelling: () => "group" },
+  entries: { Editor: EntriesFieldEditor, labelling: () => "group" },
+  terms: {
+    Editor: TermsFieldEditor,
+    labelling: (field) => (field.options.maxItems === 1 ? "label" : "group"),
+  },
 };
 
 interface FieldEditorComponentProps {

@@ -41,6 +41,8 @@ export function samplePost(overrides: Partial<Entry> = {}): Entry {
     slug: "hello-world",
     status: "draft",
     parentId: null,
+    locale: "en-GB",
+    originId: null,
     updatedAt: "2026-10-01T09:00:00.000Z",
     publishedAt: null,
     scheduledFor: null,
@@ -49,6 +51,7 @@ export function samplePost(overrides: Partial<Entry> = {}): Entry {
     data: { title: "Hello world", excerpt: "", category: null },
     blueprint: postBlueprint,
     hasUnpublishedChanges: false,
+    translations: [],
     ...overrides,
   };
 }

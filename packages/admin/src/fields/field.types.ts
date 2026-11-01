@@ -4,7 +4,22 @@
  */
 
 export type FieldType =
-  "text" | "textarea" | "richText" | "number" | "toggle" | "select" | "date" | "image" | "link";
+  | "text"
+  | "textarea"
+  | "richText"
+  | "number"
+  | "toggle"
+  | "select"
+  | "date"
+  | "image"
+  | "link"
+  | "email"
+  | "url"
+  | "colour"
+  | "markdown"
+  | "list"
+  | "entries"
+  | "terms";
 
 export interface SelectChoice {
   value: string;
@@ -24,6 +39,14 @@ export interface FieldOptions {
   multiple?: boolean;
   /** date */
   includeTime?: boolean;
+  /** colour: colours to offer as one-click choices */
+  swatches?: string[];
+  /** list, entries, terms: the most that can be added or chosen */
+  maxItems?: number;
+  /** terms: the handle of the taxonomy to choose from */
+  taxonomy?: string;
+  /** entries: collection handles to choose from; empty means any */
+  collections?: string[];
 }
 
 export interface Field {
@@ -59,6 +82,7 @@ export interface LinkValue {
  * sends it when someone clears an optional field, so the value is removed on save.
  */
 export type FieldValue = string | string[] | number | boolean | RichTextDocument | LinkValue | null;
+// Entries and terms fields store a list of ids (string[]); list fields a list of text.
 
 /** An entry's data: field handle to value. Values arrive from the API untyped. */
 export type EntryData = Record<string, unknown>;

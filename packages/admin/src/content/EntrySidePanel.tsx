@@ -2,11 +2,14 @@ import type { Collection, Entry } from "./content.types.js";
 import { ParentPagePicker } from "./ParentPagePicker.js";
 import { PublishingSection } from "./PublishingSection.js";
 import { RevisionHistory } from "./RevisionHistory.js";
+import { TranslationsSection } from "./TranslationsSection.js";
 
 interface EntrySidePanelProps {
   id: string;
   collection: Collection;
   entry: Entry | undefined;
+  /** The language the entry is written in. Undefined is the site's main language. */
+  locale: string | undefined;
   parentId: string | null;
   onParentChange: (parentId: string | null) => void;
   canPublish: boolean;
@@ -21,6 +24,7 @@ export function EntrySidePanel({
   id,
   collection,
   entry,
+  locale,
   parentId,
   onParentChange,
   canPublish,
@@ -42,9 +46,11 @@ export function EntrySidePanel({
         onUnpublish={onUnpublish}
         onSchedule={onSchedule}
       />
+      <TranslationsSection collectionHandle={collection.handle} entry={entry} locale={locale} />
       {collection.structure === "tree" && (
         <ParentPagePicker
           collectionHandle={collection.handle}
+          locale={locale}
           entryId={entry?.id}
           parentId={parentId}
           onChange={onParentChange}

@@ -1,11 +1,18 @@
 import {
   AlignLeft,
+  AtSign,
   Calendar,
+  FileStack,
+  Globe,
   Hash,
   ImageIcon,
   Link2,
+  List,
   ListChecks,
+  Palette,
   Pilcrow,
+  SquareCode,
+  Tags,
   ToggleRight,
   Type,
   type LucideIcon,
@@ -23,6 +30,13 @@ export const fieldtypeIcons: Record<FieldType, LucideIcon> = {
   date: Calendar,
   image: ImageIcon,
   link: Link2,
+  email: AtSign,
+  url: Globe,
+  colour: Palette,
+  markdown: SquareCode,
+  list: List,
+  entries: FileStack,
+  terms: Tags,
 };
 
 interface FieldtypeIconProps {

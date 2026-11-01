@@ -1,4 +1,4 @@
-import { Globe, Shapes } from "lucide-react";
+import { Globe, Languages, Shapes } from "lucide-react";
 import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
@@ -11,6 +11,7 @@ import { useCan } from "../session/SessionContext.js";
  */
 export function SettingsPage() {
   const canSeeContentTypes = useCan("blueprints:read");
+  const canSeeLanguages = useCan("settings:read");
 
   return (
     <>
@@ -27,6 +28,14 @@ export function SettingsPage() {
           </GroupedList>
         )}
         <GroupedList header={t("settings.siteHeader")} footer={t("settings.moreSoon")}>
+          {canSeeLanguages && (
+            <GroupedListRow
+              icon={Languages}
+              label={t("languages.title")}
+              description={t("settings.languagesDescription")}
+              to="/settings/languages"
+            />
+          )}
           <GroupedListRow
             icon={Globe}
             iconTone="neutral"

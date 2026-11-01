@@ -8,6 +8,8 @@ export interface EntriesFilter {
   page?: number;
   /** Defaults to `entriesPerPage`. The parent page picker asks for more. */
   perPage?: number;
+  /** Which language's entries. Undefined is the site's main language. */
+  locale?: string;
 }
 
 export const entriesPerPage = 25;
@@ -23,5 +25,6 @@ export function entriesListPath(collectionHandle: string, filter: EntriesFilter)
   if (search) query.set("search", search);
   query.set("page", String(filter.page ?? 1));
   query.set("perPage", String(filter.perPage ?? entriesPerPage));
+  if (filter.locale) query.set("locale", filter.locale);
   return `/collections/${encodeURIComponent(collectionHandle)}/entries?${query.toString()}`;
 }
