@@ -1,4 +1,4 @@
-import { pluginRegistry, type PluginId } from "../plugins/plugins.registry.js";
+import type { PluginId } from "../plugins/plugins.registry.js";
 import type { SiteType } from "../settings/settings.schema.js";
 
 /**
@@ -6,8 +6,19 @@ import type { SiteType } from "../settings/settings.schema.js";
  * they are always on; the kind of site adds its own extras, so a blog never shows an empty
  * shop. Everything can be switched on or off later in Settings → Features.
  *
- * The admin imports this file (`@lintel/core/site-presets`) to show the same choice.
+ * The admin imports this file (`@lintel/core/site-presets`) to show the same choice, so it
+ * must not import server code: the registry's plugin definitions bring in routes and Node
+ * modules. It keeps its own list of the built-in features instead, and a test checks that
+ * list matches the registry.
  */
+
+/** The built-in features, in registry order, with the names Settings → Features shows. */
+export const builtInFeatures: readonly { id: PluginId; name: string }[] = [
+  { id: "blog", name: "Blog" },
+  { id: "commerce", name: "Online shop" },
+  { id: "forms", name: "Forms" },
+  { id: "seo", name: "SEO tools" },
+];
 export const pluginsForEverySite: readonly PluginId[] = ["forms", "seo"];
 
 const extrasBySiteType: Record<SiteType, readonly PluginId[]> = {
@@ -21,13 +32,13 @@ const extrasBySiteType: Record<SiteType, readonly PluginId[]> = {
 /** In registry order, so the same choice is always listed the same way. */
 export function pluginsForSiteType(siteType: SiteType): PluginId[] {
   const chosen = new Set<PluginId>([...pluginsForEverySite, ...extrasBySiteType[siteType]]);
-  return pluginRegistry.map((plugin) => plugin.id).filter((id) => chosen.has(id));
+  return builtInFeatures.map((feature) => feature.id).filter((id) => chosen.has(id));
 }
 
 /** The same set with each feature's name, for showing before anything is saved. */
 export function featuresForSiteType(siteType: SiteType): { id: PluginId; name: string }[] {
   const chosen = pluginsForSiteType(siteType);
-  return pluginRegistry
-    .filter((plugin) => chosen.includes(plugin.id))
-    .map((plugin) => ({ id: plugin.id, name: plugin.name }));
+  return builtInFeatures
+    .filter((feature) => chosen.includes(feature.id))
+    .map((feature) => ({ id: feature.id, name: feature.name }));
 }
