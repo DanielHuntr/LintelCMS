@@ -8,6 +8,8 @@ import { buildDenyAllHtaccess } from "../static-site/host-settings.js";
  */
 
 export const BRIDGE_FILE = "lintel-bridge.php";
+/** The oldest PHP the companion runs on; `LINTEL_BRIDGE_MINIMUM_PHP` in the PHP says the same. */
+export const BRIDGE_MINIMUM_PHP_VERSION = "7.4";
 export const BRIDGE_CONFIG_FILE = "config.php";
 export const BRIDGE_FORMS_FILE = "forms.json";
 export const BRIDGE_CATALOGUE_FILE = "catalogue.json";

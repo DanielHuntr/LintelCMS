@@ -23,6 +23,8 @@
 declare(strict_types=1);
 
 const LINTEL_BRIDGE_VERSION = 1;
+/** The oldest PHP this file is written for: no PHP 8 syntax or functions are used. */
+const LINTEL_BRIDGE_MINIMUM_PHP = '7.4.0';
 /** Where the private folder may be, relative to this file: outside the website first. */
 const LINTEL_PRIVATE_FOLDERS = ['../lintel-private', 'lintel-private'];
 const LINTEL_FASTEST_HUMAN_SECONDS = 3;
@@ -36,7 +38,11 @@ const LINTEL_ZERO_DECIMAL_CURRENCIES = ['BIF', 'CLP', 'DJF', 'GNF', 'ISK', 'JPY'
 
 ini_set('display_errors', '0');
 
-if (!defined('LINTEL_BRIDGE_LIBRARY')) {
+if (version_compare(PHP_VERSION, LINTEL_BRIDGE_MINIMUM_PHP, '<')) {
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=utf-8');
+    echo 'This website needs PHP ' . LINTEL_BRIDGE_MINIMUM_PHP . ' or newer for its forms and shop. Choose a newer PHP in your hosting control panel.';
+} elseif (!defined('LINTEL_BRIDGE_LIBRARY')) {
     lintel_handle_request();
 }
 
@@ -381,6 +387,7 @@ function lintel_status(): array
     return [
         'bridgeVersion' => LINTEL_BRIDGE_VERSION,
         'phpVersion' => PHP_VERSION,
+        'minimumPhpVersion' => LINTEL_BRIDGE_MINIMUM_PHP,
         'canEmail' => function_exists('mail'),
         'hasCurl' => function_exists('curl_init'),
         'privateFolderOutsideWebsite' => strpos(realpath(lintel_private_folder()) ?: '', realpath(__DIR__) ?: '') !== 0,

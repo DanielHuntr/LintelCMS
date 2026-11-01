@@ -96,7 +96,7 @@ pnpm lintel export --out ./site          # just write the files into a folder
 ## How forms work
 
 Your forms are ordinary forms on your pages. They send answers to `lintel-bridge.php`, a
-small PHP file Lintel uploads with your site (any PHP 7.4 or newer works, as on every cPanel
+small PHP file Lintel uploads with your site (it needs PHP 7.4 or newer, as on every cPanel
 host). It:
 
 - turns away spam (a hidden field bots fill in, and a check that the form wasn't sent

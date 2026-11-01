@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildBridgeConfig, phpString } from "./bridge-files.js";
+import {
+  BRIDGE_MINIMUM_PHP_VERSION,
+  buildBridgeConfig,
+  phpString,
+  readBridgeScript,
+} from "./bridge-files.js";
 import { hmacHex, openEnvelope, signedRequestHeaders, signEnvelope } from "./bridge-signing.js";
 
 describe("signing for the PHP companion", () => {
@@ -21,6 +26,12 @@ describe("signing for the PHP companion", () => {
     expect(first["x-lintel-nonce"]).not.toBe(second["x-lintel-nonce"]);
     expect(first["x-lintel-signature"]).toBe(
       hmacHex(secret, `1793534400\n${first["x-lintel-nonce"]}\nack\n{"orders":[]}`),
+    );
+  });
+
+  it("states the same oldest PHP in the companion as here", () => {
+    expect(readBridgeScript()).toContain(
+      `const LINTEL_BRIDGE_MINIMUM_PHP = '${BRIDGE_MINIMUM_PHP_VERSION}.0';`,
     );
   });
 
