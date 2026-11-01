@@ -315,7 +315,7 @@ try {
   const uses = await page.locator("[data-block-uses] li").allTextContents();
   assert.deepEqual([...uses].sort(), ["About us", "Meet us", "Our team"]);
   await shoot(page, "7-block-settings");
-  console.log("Custom blocks journey passed.");
+  process.stdout.write("Custom blocks journey passed.\n");
 } finally {
   await browser.close();
 }
