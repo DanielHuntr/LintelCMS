@@ -5,6 +5,7 @@ import {
   validatePageDocument,
 } from "@lintel/builder-model";
 import { z } from "zod";
+import { checkBlockInstances } from "../blocks/block-instances.js";
 import { pageComponentCatalogue } from "../pages/page-components.js";
 import { defineFieldtype } from "./fieldtype.js";
 
@@ -12,7 +13,8 @@ import { defineFieldtype } from "./fieldtype.js";
  * A page designed in the visual builder: a tree of elements with their styles, stored as the
  * page document described in `@lintel/builder-model`. Saving checks the whole tree, refuses
  * new code from people without `builder:code`, and applies the site's rule for scripts
- * (see src/pages/README.md).
+ * (see src/pages/README.md). Instances of the site's own blocks are checked against their
+ * block's properties (see src/blocks).
  */
 export const pageFieldtype = defineFieldtype({
   type: "page",
@@ -39,6 +41,10 @@ export const pageFieldtype = defineFieldtype({
     }),
 
   isEmpty: (value) => isPage(value) && value.root.children.length === 0,
+
+  // The site's blocks on the page: each instance's values against its block's properties.
+  checkNestedValues: (value, _options, label, checkFieldValues, context) =>
+    checkBlockInstances(value as PageDocument, label, checkFieldValues, context.blockLibrary),
 
   checkChange: (value, previousValue, label, context) => {
     const rules = context.pageCode;

@@ -24,10 +24,26 @@ export interface FieldCheckContext {
   /** Who is saving and the site's rules for page code; see src/pages. */
   pageCode?: PageCodeContext;
   /**
+   * The site's own blocks, for checking the values of instances in page designs (see
+   * src/blocks). Without it, instances are kept as they are, as in unit tests.
+   */
+  blockLibrary?: BlockCheckLibrary;
+  /**
    * For fields marked unique: whether no other entry in the collection has this value.
    * Without it (global sets, unit tests) every value counts as unique.
    */
   isValueUnique?: (handle: string, value: unknown) => Promise<boolean>;
+}
+
+/** The site's blocks as checking needs them: their names and properties, by handle. */
+export interface BlockCheckLibrary {
+  find(handle: string):
+    | {
+        name: string;
+        properties: readonly FieldDefinition[];
+        renamedProperties: Readonly<Record<string, string>>;
+      }
+    | undefined;
 }
 
 /** What the page fieldtype needs to know about the person saving and the site. */
@@ -143,6 +159,7 @@ export interface FieldtypeDefinition<OptionsSchema extends z.ZodType> {
     options: z.output<OptionsSchema>,
     label: string,
     checkFieldValues: CheckFieldValues,
+    context: FieldCheckContext,
   ): Promise<NestedCheckResult>;
   /**
    * The last check, for rules about who changed what: compares the value with the one stored
@@ -187,6 +204,7 @@ export interface Fieldtype {
     options: unknown,
     label: string,
     checkFieldValues: CheckFieldValues,
+    context: FieldCheckContext,
   ): Promise<NestedCheckResult>;
   checkChange?(
     value: unknown,
@@ -218,8 +236,14 @@ export function defineFieldtype<OptionsSchema extends z.ZodType>(
           checkInnerFields(definition.optionsSchema.parse(options), checkFieldList)
       : undefined,
     checkNestedValues: checkNestedValues
-      ? (value, options, label, checkFieldValues) =>
-          checkNestedValues(value, definition.optionsSchema.parse(options), label, checkFieldValues)
+      ? (value, options, label, checkFieldValues, context) =>
+          checkNestedValues(
+            value,
+            definition.optionsSchema.parse(options),
+            label,
+            checkFieldValues,
+            context,
+          )
       : undefined,
   };
 }

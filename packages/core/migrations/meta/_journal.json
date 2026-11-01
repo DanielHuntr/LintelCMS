@@ -134,6 +134,13 @@
       "when": 1793561579345,
       "tag": "0018_add_fieldsets",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793564164180,
+      "tag": "0019_add_custom_blocks",
+      "breakpoints": true
     }
   ]
 }

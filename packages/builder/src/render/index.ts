@@ -11,6 +11,7 @@ export {
   type RenderProps,
 } from "./component-registry.js";
 export { renderPage, type RenderedPage, type RenderOptions } from "./render-page.js";
+export { type BlockComponent, renderBlockComponent } from "./server-blocks.js";
 export { standardRegistry, standardRenders, standInRenders } from "./stand-in-components.js";
 export { paragraphsHtml, siteBlockRenders } from "./site-blocks.js";
 export { standInBaseStylesheet } from "./base-stylesheet.js";

@@ -2,6 +2,7 @@ import { listCollectionNamesUsingBlueprint } from "../collections/collections.re
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import { isUniqueViolation } from "../database/database-errors.js";
+import { fillSiteBlockTypes } from "../blocks/site-block-types.js";
 import { fillFieldsetImports } from "../fieldsets/fieldsets.service.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
 import { checkBlueprintFields } from "./blueprint-fields.js";
@@ -75,7 +76,9 @@ export async function createBlueprint(
   database: DatabaseOrTransaction,
   request: CreateBlueprintRequest,
 ): Promise<BlueprintResponse> {
-  const fields = checkBlueprintFields(await fillFieldsetImports(database, request.fields));
+  const fields = checkBlueprintFields(
+    await fillSiteBlockTypes(database, await fillFieldsetImports(database, request.fields)),
+  );
   if (await findBlueprintByHandle(database, DEFAULT_TENANT_ID, request.handle)) {
     throw new BlueprintHandleTakenError(request.handle);
   }
@@ -107,7 +110,9 @@ export async function updateBlueprint(
   request: UpdateBlueprintRequest,
 ): Promise<BlueprintResponse> {
   const blueprint = await findBlueprintOrFail(database, handle);
-  const fields = checkBlueprintFields(await fillFieldsetImports(database, request.fields));
+  const fields = checkBlueprintFields(
+    await fillSiteBlockTypes(database, await fillFieldsetImports(database, request.fields)),
+  );
   const updated = await updateBlueprintFields(database, blueprint.id, {
     name: request.name,
     fields,

@@ -164,21 +164,26 @@ async function checkOneValue(
     return { message: problem };
   }
 
+  let checkedValue: unknown = parsed.data;
   if (fieldtype.checkNestedValues) {
     const nested = await fieldtype.checkNestedValues(
       parsed.data,
       field.options,
       field.label,
       checkInnerValues,
+      context,
     );
-    return { value: nested.value, innerMessages: nested.messages };
+    if (!fieldtype.checkChange || Object.keys(nested.messages).length > 0) {
+      return { value: nested.value, innerMessages: nested.messages };
+    }
+    checkedValue = nested.value;
   }
   const change = fieldtype.checkChange?.(
-    parsed.data,
+    checkedValue,
     context.previousData?.[field.handle],
     field.label,
     context,
-  ) ?? { value: parsed.data };
+  ) ?? { value: checkedValue };
   if ("problem" in change) {
     return { message: change.problem };
   }

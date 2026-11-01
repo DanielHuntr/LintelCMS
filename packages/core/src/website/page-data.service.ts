@@ -11,6 +11,7 @@ import {
   type ShopProduct,
 } from "@lintel/builder-model";
 import type { MenuItem } from "@lintel/site-components";
+import { loadBlockPageData } from "../blocks/block-rendering.js";
 import { listDeliveredEntries } from "../delivery/delivery.service.js";
 import { TaxonomyNotFoundError, TermNotFoundError } from "../taxonomies/taxonomies.errors.js";
 import type { DeliveredEntry } from "../delivery/delivery.schema.js";
@@ -23,7 +24,8 @@ import { noSources } from "./site-sources.js";
 /**
  * Loads what a designed page's dynamic elements show, only for the elements it has: each
  * collection list's entries, each product grid's products, the products and forms chosen
- * by handle, and the site's name, menu and languages for headers and footers.
+ * by handle, the site's name, menu and languages for headers and footers, and the site's own
+ * blocks its instances are of.
  *
  * `?page=` pages through the first list on the page that links to more pages, and `?sort=`
  * orders its product grids.
@@ -72,6 +74,12 @@ export async function loadPageData(
     productLists,
     products: await loadChosenProducts(request, document),
     forms: await loadForms(request, document),
+    // The site's own blocks the page uses, their pictures, and those the server draws.
+    ...(await loadBlockPageData(
+      request.dependencies.database,
+      document.root,
+      request.dependencies.assetLookup,
+    )),
   };
 }
 
