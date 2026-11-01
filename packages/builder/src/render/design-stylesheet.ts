@@ -36,7 +36,8 @@ export const designBaseStylesheet = `:where(.lintel-design) :where(h1, h2, h3, h
   padding: 0;
   list-style: none;
 }
-:where(.lintel-design) :where(nav a) { color: inherit; text-decoration: none; }
+/* As specific as the site's own "a" rule and after it, so menus take their colour from the menu. */
+:where(.lintel-design nav) a { color: inherit; text-decoration: none; }
 :where(.lintel-design) :where(hr) { margin: 0; border: 0; }
 :where(.lintel-design) .lintel-video-background {
   position: absolute;

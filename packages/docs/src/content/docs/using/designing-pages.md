@@ -58,8 +58,10 @@ after whatever is selected, or drag it into **Layers** to put it exactly where y
 
 ### Style
 
-**Style** is in groups: **Layout**, **Spacing**, **Size**, **Text**, **Background**,
-**Corners and borders**, **Position** and **Effects** (some only in **Advanced**). Each group
+**Style** is in groups: **Arrange**, **Layout**, **Spacing**, **Size**, **Text**,
+**Background**, **Corners and borders**, **Move and turn**, **Shape and mask**, **Position**,
+**Effects** and **Blend and filters** (some only in **Advanced**; see
+[Advanced styling](/using/advanced-styling/) and [Free layout](/using/free-layout/)). Each group
 opens and closes with its heading. A closed group says what's set inside it, such as
 "Row · gap M", so you can see the whole element at a glance.
 
