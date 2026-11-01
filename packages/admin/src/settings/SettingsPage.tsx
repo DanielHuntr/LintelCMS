@@ -1,9 +1,9 @@
-import { Globe, Shapes } from "lucide-react";
+import { Globe, KeyRound, Search, Shapes, Webhook } from "lucide-react";
 import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { t } from "../i18n/strings.js";
-import { useCan } from "../session/SessionContext.js";
+import { useCan, useSession } from "../session/SessionContext.js";
 
 /**
  * /settings: one row per area of settings, like iOS Settings. Rows appear as their screens
@@ -11,6 +11,8 @@ import { useCan } from "../session/SessionContext.js";
  */
 export function SettingsPage() {
   const canSeeContentTypes = useCan("blueprints:read");
+  const canSeeSiteSettings = useCan("settings:read");
+  const { enabledPlugins } = useSession();
 
   return (
     <>
@@ -23,6 +25,34 @@ export function SettingsPage() {
               label={t("contentTypes.title")}
               description={t("settings.contentTypesDescription")}
               to="/settings/content-types"
+            />
+          </GroupedList>
+        )}
+        {canSeeSiteSettings && (
+          <GroupedList header={t("settings.developersHeader")}>
+            <GroupedListRow
+              icon={KeyRound}
+              iconTone="warning"
+              label={t("apiAccess.title")}
+              description={t("settings.apiAccessDescription")}
+              to="/settings/api"
+            />
+            <GroupedListRow
+              icon={Webhook}
+              label={t("webhooks.title")}
+              description={t("settings.webhooksDescription")}
+              to="/settings/webhooks"
+            />
+          </GroupedList>
+        )}
+        {canSeeSiteSettings && enabledPlugins.includes("seo") && (
+          <GroupedList header={t("settings.searchHeader")}>
+            <GroupedListRow
+              icon={Search}
+              iconTone="success"
+              label={t("seo.settingsTitle")}
+              description={t("settings.seoDescription")}
+              to="/settings/seo"
             />
           </GroupedList>
         )}

@@ -7,6 +7,8 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { lazy, useCallback } from "react";
+import { ApiAccessPage } from "./api-access/ApiAccessPage.js";
+import { ApiReferencePage } from "./api-access/ApiReferencePage.js";
 import { adminQueryClient } from "./api/queryClient.js";
 import { ContentOverviewPage } from "./content/ContentOverviewPage.js";
 import type { EntryStatus } from "./content/content.types.js";
@@ -31,8 +33,12 @@ import {
 } from "./setup/setupRouting.js";
 import { SiteSetupPage } from "./setup/SiteSetupPage.js";
 import { SessionProvider } from "./session/SessionContext.js";
+import { RedirectsPage } from "./seo/RedirectsPage.js";
+import { SeoSettingsPage } from "./seo/SeoSettingsPage.js";
 import { SettingsPage } from "./settings/SettingsPage.js";
 import { SignInPage } from "./sign-in/SignInPage.js";
+import { WebhookDetailPage } from "./webhooks/WebhookDetailPage.js";
+import { WebhooksPage } from "./webhooks/WebhooksPage.js";
 import "./setup/historyState.js";
 
 const rootRoute = createRootRoute();
@@ -257,6 +263,55 @@ const blueprintRoute = createRoute({
   },
 });
 
+const apiAccessRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/settings/api",
+  component: ApiAccessPage,
+});
+
+const apiReferenceRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/settings/api/reference",
+  component: ApiReferencePage,
+});
+
+const webhooksRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/settings/webhooks",
+  component: WebhooksPage,
+});
+
+const webhookRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/settings/webhooks/$webhookId",
+  component: function WebhookRoute() {
+    const { webhookId } = webhookRoute.useParams();
+    return <WebhookDetailPage webhookId={webhookId} />;
+  },
+});
+
+const seoSettingsRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/settings/seo",
+  component: SeoSettingsPage,
+});
+
+const redirectsRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/settings/seo/redirects",
+  component: RedirectsPage,
+});
+
+/** API access, webhooks and the SEO plugin's settings. */
+const integrationRoutes = [
+  apiAccessRoute,
+  apiReferenceRoute,
+  webhooksRoute,
+  webhookRoute,
+  seoSettingsRoute,
+  redirectsRoute,
+];
+
 const contentRoutes = [
   contentRoute,
   entriesRoute,
@@ -316,7 +371,13 @@ export const routeTree = rootRoute.addChildren([
     setupRoute,
     siteSetupRoute,
     signInRoute,
-    adminRoute.addChildren([dashboardRoute, mediaRoute, ...contentRoutes, ...placeholderRoutes]),
+    adminRoute.addChildren([
+      dashboardRoute,
+      mediaRoute,
+      ...contentRoutes,
+      ...integrationRoutes,
+      ...placeholderRoutes,
+    ]),
   ]),
   ...designReviewRoutes,
 ]);

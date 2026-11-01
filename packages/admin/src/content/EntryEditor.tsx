@@ -8,6 +8,7 @@ import type { Blueprint } from "../content-types/blueprints.types.js";
 import { titleFieldHandle } from "../fields/field.types.js";
 import { textValue } from "../fields/fieldValues.js";
 import { t } from "../i18n/strings.js";
+import { EntrySeoPanel } from "../seo/EntrySeoPanel.js";
 import { useCan } from "../session/SessionContext.js";
 import type { Collection, Entry } from "./content.types.js";
 import { entryDraftReducer, hasUnsavedChanges, initialDraftState } from "./entryDraft.js";
@@ -238,7 +239,14 @@ export function EntryEditor({ collection, blueprint, initialEntry, onCreated }: 
             onRestore={async (revisionId) => {
               await actions.restore(revisionId);
             }}
-          />
+          >
+            <EntrySeoPanel
+              entryId={entry?.id}
+              entryTitle={title}
+              slug={state.current.slug}
+              routePattern={collection.routePattern}
+            />
+          </EntrySidePanel>
         )}
       </div>
 

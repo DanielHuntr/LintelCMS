@@ -98,6 +98,7 @@ also changes the text mark (`AppMark`), which shows the first letter of the app 
 | `EmailField.tsx`       | A TextField that offers a one-click fix for domain typos such as "gmai.com"            |
 | `ChoiceCardGroup.tsx`  | Large tiles with an icon and a line each; a radio group like SegmentedControl          |
 | `DisplayTitle.tsx`     | The big h1 of full-screen screens such as setup and sign-in                            |
+| `CopyButton.tsx`       | Copies text and says "Copied" (announced to screen readers too)                        |
 
 Helpers: `suggestEmailCorrection.ts` (the typo check behind EmailField: popular domains and
 edit distance, never blocking) and `radioGroupKeys.ts` (the arrow-key rules every radio group
