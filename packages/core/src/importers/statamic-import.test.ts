@@ -105,8 +105,11 @@ describe("importing from Statamic", { timeout: 60_000 }, () => {
     expect(menu.items[0]?.children).toHaveLength(1);
     expect(menu.items[1]?.url).toBe("https://council.example/allotments");
 
-    // Statamic's addresses carry over: the page tree and /news/ are the same here.
-    expect(await testDatabase.database.select().from(redirectsTable)).toEqual([]);
+    // The page tree's addresses carry over; news loses the year from its addresses.
+    const redirects = await testDatabase.database.select().from(redirectsTable);
+    expect(
+      redirects.map((redirect) => [redirect.fromPath, redirect.toPath, redirect.status]),
+    ).toEqual([["/news/2024/seed-swap", "/news/seed-swap", "suggested"]]);
   });
 
   it("refuses a zip without a Statamic content folder, or with too many files", async () => {
