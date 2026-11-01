@@ -1,0 +1,85 @@
+/* Layout primitives: Section, Container, Stack and Columns. */
+.lintel-container {
+  width: 100%;
+  max-width: 68rem;
+  margin-inline: auto;
+  padding-inline: var(--lintel-space-5);
+}
+
+.lintel-container--narrow {
+  max-width: 44rem;
+}
+
+.lintel-container--wide {
+  max-width: 80rem;
+}
+
+.lintel-section {
+  padding-block: clamp(var(--lintel-space-7), 7vw, var(--lintel-space-9));
+}
+
+/* Two plain sections in a row read as one flow, so the second needs no extra room above. */
+.lintel-section:not(.lintel-section--muted, .lintel-section--brand)
+  + .lintel-section:not(.lintel-section--muted, .lintel-section--brand) {
+  padding-top: 0;
+}
+
+.lintel-section--muted {
+  background: var(--lintel-color-surface);
+}
+
+.lintel-section--brand {
+  background: var(--lintel-color-brand);
+  color: var(--lintel-color-on-brand);
+}
+
+.lintel-section--spacing-small {
+  padding-block: var(--lintel-space-6);
+}
+
+.lintel-section--spacing-none {
+  padding-block: 0;
+}
+
+.lintel-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lintel-space-5);
+}
+
+.lintel-stack--gap-small {
+  gap: var(--lintel-space-3);
+}
+
+.lintel-stack--gap-large {
+  gap: var(--lintel-space-7);
+}
+
+.lintel-stack--centred {
+  align-items: center;
+  text-align: center;
+}
+
+.lintel-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--lintel-space-7) var(--lintel-space-6);
+}
+
+@media (min-width: 40rem) {
+  .lintel-columns--2,
+  .lintel-columns--3,
+  .lintel-columns--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 64rem) {
+  .lintel-columns--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .lintel-columns--4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

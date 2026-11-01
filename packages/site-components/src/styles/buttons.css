@@ -1,0 +1,33 @@
+/* Buttons: links that look like buttons. */
+.lintel-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.75rem 1.375rem;
+  border: 1px solid transparent;
+  border-radius: var(--lintel-radius-button);
+  font-family: var(--lintel-font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+}
+
+.lintel-button--primary {
+  background: var(--lintel-color-brand);
+  color: var(--lintel-color-on-brand);
+}
+
+.lintel-button--primary:hover {
+  background: color-mix(in srgb, var(--lintel-color-brand) 88%, black);
+}
+
+.lintel-button--secondary {
+  border-color: currentColor;
+  color: var(--lintel-color-link);
+}
+
+.lintel-button--secondary:hover {
+  background: var(--lintel-color-surface);
+}

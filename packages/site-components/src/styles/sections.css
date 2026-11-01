@@ -1,0 +1,82 @@
+/* Text, Image and Call to action sections, and page headers. */
+.lintel-text-section__heading {
+  margin-bottom: var(--lintel-space-5);
+  font-size: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem);
+}
+
+.lintel-figure {
+  margin: 0;
+}
+
+.lintel-figure__image {
+  width: 100%;
+  border-radius: var(--lintel-radius-large);
+  background: var(--lintel-color-surface);
+}
+
+.lintel-figure__caption {
+  margin-top: var(--lintel-space-3);
+  color: var(--lintel-color-text-secondary);
+  font-size: 0.9375rem;
+  text-align: center;
+}
+
+.lintel-call-to-action__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--lintel-space-4);
+  text-align: center;
+}
+
+.lintel-call-to-action__heading {
+  font-size: clamp(1.75rem, 1.4rem + 1.6vw, 2.75rem);
+}
+
+.lintel-call-to-action__text {
+  max-width: 36rem;
+  color: var(--lintel-color-text-secondary);
+  font-size: 1.1875rem;
+  margin-bottom: var(--lintel-space-2);
+}
+
+.lintel-page-header {
+  text-align: center;
+}
+
+.lintel-page-header__title {
+  font-size: clamp(2.25rem, 1.6rem + 2.8vw, 3.75rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.lintel-page-header__summary {
+  margin-top: var(--lintel-space-4);
+  color: var(--lintel-color-text-secondary);
+  font-size: clamp(1.125rem, 1rem + 0.5vw, 1.375rem);
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.lintel-page-header__media {
+  margin-top: var(--lintel-space-7);
+}
+
+.lintel-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--lintel-space-4);
+  padding-block: var(--lintel-space-9);
+  text-align: center;
+}
+
+.lintel-message__title {
+  font-size: clamp(2rem, 1.5rem + 2vw, 3rem);
+}
+
+.lintel-message__text {
+  max-width: 32rem;
+  color: var(--lintel-color-text-secondary);
+  font-size: 1.125rem;
+}
