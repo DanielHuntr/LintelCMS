@@ -137,6 +137,9 @@ export interface ProductionAddresses {
 
 export const API_PREFIX = "/api";
 
+/** `pnpm dev` serves the built-in website on its own port; production never does. */
+export const DEFAULT_SITE_PORT = 3000;
+
 export function productionAddresses(settings: {
   PORT?: number | undefined;
   API_PORT: number;

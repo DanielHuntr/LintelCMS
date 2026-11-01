@@ -37,6 +37,17 @@ Bring the new version into your copy of the repository (on GitHub, **Sync fork**
 and Render deploy it by themselves; on Fly.io, run `fly deploy`. Each waits for `/ready`
 before sending visitors to the new version, so a broken start never replaces a working one.
 
+## cPanel and other control panels
+
+Upload and extract the new hosting package over the old one, click **Run NPM Install**,
+then **Restart**. Your content is in `lintel/.lintel`, which the package never contains.
+See [Updating Lintel on cPanel](/hosting/cpanel/#updating-lintel).
+
+## The one-command installer
+
+Run the installer again: it downloads the new version and restarts Lintel, keeping your
+settings. See [Running it again](/hosting/one-command/#running-it-again).
+
 ## Without Docker
 
 ```bash

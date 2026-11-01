@@ -9,6 +9,8 @@ sidebar:
 A VPS (virtual private server) is a small computer you rent by the month, from Hetzner,
 DigitalOcean, Linode, Vultr or similar. This guide sets up Lintel, its Postgres database
 and Caddy, which gets a free HTTPS certificate for you. It takes about twenty minutes.
+To have all of this done for you, use [the one-command installer](/hosting/one-command/)
+instead; this guide explains each step.
 
 ## What you need
 

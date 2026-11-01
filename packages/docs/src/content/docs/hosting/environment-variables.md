@@ -50,6 +50,13 @@ In a Postgres address, write `#`, `@` and `/` in the password as `%23`, `%40` an
 | `LINTEL_FOLDER`      | `.lintel` (in Docker, `/data`)                  | The built-in database, uploads, resized images and the email outbox |
 | `ADMIN_BUILD_FOLDER` | `packages/admin/dist` (in Docker, `/app/admin`) | Where the built admin is                                            |
 
+## Scheduled jobs and shared hosting
+
+| Variable        | Default                            | What it does                                                                                                                                 |
+| --------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CRON_SECRET`   | made for you, in `cron-secret.txt` | The secret a cron job sends to `POST /api/system/run-scheduled-jobs`. At least 24 characters. `pnpm lintel cron --print-line` shows the line |
+| `LINTEL_LISTEN` | worked out                         | Only for the hosting package's `app.js`: `false` exports a request handler without listening, `true` always listens on `PORT`                |
+
 ## Uploaded files
 
 By default, uploads are kept in `<LINTEL_FOLDER>/uploads` on the server's disk. To keep
@@ -120,6 +127,7 @@ Check your settings with `pnpm send-test-email --to you@example.com` (in Docker:
 | ---------------------------------- | ----------------------- | ------------------------------------------------------------------------------- |
 | `LOG_LEVEL`                        | `info`                  | `error`, `warn`, `info`, `debug`, `trace` or `silent`                           |
 | `WEBHOOKS_ALLOW_PRIVATE_ADDRESSES` | `false`                 | Lets webhooks go to private network addresses. For testing on your own computer |
+| `SITE_PORT`                        | `3000`                  | Development only: the built-in website's own port with `pnpm dev`               |
 | `API_PORT`                         | `4000`                  | The port when `PORT` isn't set                                                  |
 | `ADMIN_ORIGIN`                     | `http://localhost:5173` | Development only: where Vite serves the admin                                   |
 
@@ -127,4 +135,5 @@ Check your settings with `pnpm send-test-email --to you@example.com` (in Docker:
 
 `deploy/docker-compose.yml` also reads `LINTEL_DOMAIN` (the domain Caddy gets a
 certificate for), `POSTGRES_PASSWORD` (the database's password, which it puts into
-`DATABASE_URL` for you) and `LINTEL_PORT` (the port on the server itself, `4000`).
+`DATABASE_URL` for you), `LINTEL_PORT` (the port on the server itself, `4000`) and
+`LINTEL_CADDYFILE` (which Caddyfile to use; `deploy/install.sh` writes its own).

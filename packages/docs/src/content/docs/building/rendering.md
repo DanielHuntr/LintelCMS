@@ -4,8 +4,10 @@ description: The built-in website, its components, themes and caching, and writi
 since: "0.1"
 ---
 
-Lintel serves a website from the same process as the API: a second small server on port
-3000 (`SITE_PORT`), started by `pnpm dev` and in production. It renders published pages and
+Lintel serves a website from the same process as the API. With `pnpm dev` it is a second
+small server on port 3000 (`SITE_PORT`); in production (`pnpm start`, Docker, shared
+hosting) it shares Lintel's one port with the admin and the API, at every address they
+don't use (see [Running Lintel on a server](/hosting/)). It renders published pages and
 posts on the server with React and sends plain HTML and one stylesheet; it ships no
 JavaScript. The decision is recorded in `docs/decisions/0014-built-in-website.md`, and the
 code is in `packages/core/src/website` and `packages/site-components`.
@@ -16,14 +18,15 @@ Headless use is unchanged: the [delivery API](/building/delivery-api/), GraphQL 
 
 ## Settings
 
-| Variable          | Default                      | What it does                           |
-| ----------------- | ---------------------------- | -------------------------------------- |
-| `SITE_PORT`       | `3000`                       | The port the website listens on        |
-| `SITE_PUBLIC_URL` | `http://localhost:SITE_PORT` | Its address as visitors reach it       |
-| `SITE_ENABLED`    | `true`                       | `false` turns the built-in website off |
+| Variable          | Default                      | What it does                            |
+| ----------------- | ---------------------------- | --------------------------------------- |
+| `SITE_PORT`       | `3000`                       | The website's port with `pnpm dev` only |
+| `SITE_PUBLIC_URL` | `http://localhost:SITE_PORT` | Its address in development              |
+| `SITE_ENABLED`    | `true`                       | `false` turns the built-in website off  |
 
-In production, put both behind one domain with a reverse proxy: the site at `/`, the API
-where the admin expects it.
+In production there is nothing to set: the website is at `PUBLIC_URL`, the admin at
+`/admin` and the API at `/api`, all on one port, so a single proxy rule (or a control
+panel's one Node.js app) serves all three.
 
 ## From an address to a page
 

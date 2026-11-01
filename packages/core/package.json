@@ -63,7 +63,10 @@
     "reset-password": "tsx src/scripts/reset-password.ts",
     "model": "tsx src/scripts/model.ts",
     "media:move-to-s3": "tsx src/scripts/move-media-to-s3.ts",
-    "send-test-email": "tsx src/scripts/send-test-email.ts"
+    "send-test-email": "tsx src/scripts/send-test-email.ts",
+    "lintel": "tsx src/cli/lintel.ts",
+    "build:hosting": "tsx src/hosting/build-hosting-package.ts",
+    "test:hosting": "LINTEL_HOSTING_E2E=1 vitest run src/hosting/hosting-package.e2e.test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1161.0",
