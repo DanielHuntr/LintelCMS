@@ -1,4 +1,13 @@
-import { Globe, KeyRound, Languages, Search, Shapes, Webhook } from "lucide-react";
+import {
+  Globe,
+  Inbox,
+  KeyRound,
+  Languages,
+  Search,
+  Shapes,
+  ShieldCheck,
+  Webhook,
+} from "lucide-react";
 import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
@@ -12,6 +21,7 @@ import { useCan, useSession } from "../session/SessionContext.js";
 export function SettingsPage() {
   const canSeeContentTypes = useCan("blueprints:read");
   const canSeeSiteSettings = useCan("settings:read");
+  const canSeeSecurityLog = useCan("security:read");
   const { enabledPlugins } = useSession();
 
   return (
@@ -43,6 +53,28 @@ export function SettingsPage() {
               description={t("settings.webhooksDescription")}
               to="/settings/webhooks"
             />
+          </GroupedList>
+        )}
+        {(canSeeSecurityLog || canSeeSiteSettings) && (
+          <GroupedList header={t("settings.securityHeader")}>
+            {canSeeSecurityLog && (
+              <GroupedListRow
+                icon={ShieldCheck}
+                iconTone="success"
+                label={t("securityLog.title")}
+                description={t("settings.securityLogDescription")}
+                to="/settings/security-log"
+              />
+            )}
+            {canSeeSiteSettings && (
+              <GroupedListRow
+                icon={Inbox}
+                iconTone="neutral"
+                label={t("emailOutbox.title")}
+                description={t("settings.emailOutboxDescription")}
+                to="/settings/email-outbox"
+              />
+            )}
           </GroupedList>
         )}
         {canSeeSiteSettings && enabledPlugins.includes("seo") && (

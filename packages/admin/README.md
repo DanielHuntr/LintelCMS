@@ -10,7 +10,11 @@ The control panel: a React app that talks to `@lintel/core`.
 | `src/layout`        | The frames around screens: the admin's sidebar, and full screen    |
 | `src/navigation`    | The main sections and who can see them                             |
 | `src/dashboard`     | The home screen                                                    |
-| `src/sign-in`       | The sign-in screen                                                 |
+| `src/sign-in`       | Sign-in (with two-factor and passkeys), forgotten passwords        |
+| `src/people`        | Users, roles and accepting an invitation                           |
+| `src/account`       | Your account: profile, password, two-factor, passkeys, devices     |
+| `src/security-log`  | Settings → Security log                                            |
+| `src/email-outbox`  | Settings → Email outbox, while no mail service is set up           |
 | `src/content`       | Collections, entry lists and the entry editor                      |
 | `src/content-types` | The blueprint builder under Settings                               |
 | `src/fields`        | One editor per fieldtype, used by the entry editor                 |

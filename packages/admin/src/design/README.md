@@ -100,6 +100,8 @@ also changes the text mark (`AppMark`), which shows the first letter of the app 
 | `ChoiceCardGroup.tsx`  | Large tiles with an icon and a line each; a radio group like SegmentedControl          |
 | `DisplayTitle.tsx`     | The big h1 of full-screen screens such as setup and sign-in                            |
 | `CopyButton.tsx`       | Copies text and says "Copied" (announced to screen readers too)                        |
+| `SelectField.tsx`      | A labelled native select with an optional hint                                         |
+| `Avatar.tsx`           | A person's picture, or their initials on the accent colour                             |
 
 Helpers: `suggestEmailCorrection.ts` (the typo check behind EmailField: popular domains and
 edit distance, never blocking) and `radioGroupKeys.ts` (the arrow-key rules every radio group

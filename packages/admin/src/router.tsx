@@ -20,6 +20,7 @@ import { ContentTypesPage } from "./content-types/ContentTypesPage.js";
 import { NewContentTypePage } from "./content-types/NewContentTypePage.js";
 import { DashboardPage } from "./dashboard/DashboardPage.js";
 import { HelpPage } from "./help/HelpPage.js";
+import { peopleRoutes, signedOutAccountRoutes } from "./people/peopleRoutes.js";
 import { AdminLayout } from "./layout/AdminLayout.js";
 import { MediaLibraryPage } from "./media/MediaLibraryPage.js";
 import { ComingSoonPage } from "./sections/ComingSoonPage.js";
@@ -140,6 +141,10 @@ const adminRoute = createRoute({
     }
     if (mustChooseSiteFirst(context.setupStatus)) {
       throw redirect({ to: "/setup/site" });
+    }
+    // Their role requires two-factor authentication: the account page is where to turn it on.
+    if (session.mustSetUpTwoFactor && location.pathname !== "/account") {
+      throw redirect({ to: "/account" });
     }
 
     return { session };
@@ -336,7 +341,6 @@ const sectionRoutes = [
   { path: "/design", title: "nav.design" },
   { path: "/commerce", title: "nav.commerce" },
   { path: "/forms", title: "nav.forms" },
-  { path: "/users", title: "nav.users" },
 ] as const;
 
 /** Help: the "Using Lintel" docs, bundled with the admin. The open topic is in the address. */
@@ -416,12 +420,14 @@ export const routeTree = rootRoute.addChildren([
     setupRoute,
     siteSetupRoute,
     signInRoute,
+    ...signedOutAccountRoutes(() => setupGateRoute),
     adminRoute.addChildren([
       dashboardRoute,
       mediaRoute,
       helpRoute,
       ...contentRoutes,
       ...integrationRoutes,
+      ...peopleRoutes(() => adminRoute),
       ...placeholderRoutes,
     ]),
   ]),

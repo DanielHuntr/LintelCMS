@@ -2,7 +2,11 @@
 
 Who is signed in, and the calls that change it.
 
-- `session.api.ts`: `signIn`, `signOut` and `fetchCurrentSession`, calling the API's `/auth` routes.
+- `session.api.ts`: `signIn`, `signOut` and `fetchCurrentSession`, calling the API's `/auth` routes,
+  plus the two-factor step, forgotten passwords and accepting an invitation. `signIn` returns
+  either a session or `{ twoFactorRequired, challengeToken }` (check with `isTwoFactorChallenge`).
+- `mustSetUpTwoFactor` in the session means their role requires two-factor and it isn't on;
+  the router sends them to `/account` until it is.
 - The router (`src/router.tsx`) asks for the current session before showing any admin screen.
   If nobody is signed in, it sends them to `/sign-in?redirect=<where they were going>`.
   Before that, a brand new Lintel sends everyone to `/setup` (see `src/setup/README.md`).

@@ -79,4 +79,56 @@ describe("SignInForm", () => {
     expect(toggle).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByLabelText("Password")).toHaveAttribute("type", "text");
   });
+
+  it("asks for the code from the app after a correct password, when two-factor is on", async () => {
+    const signIn = vi
+      .fn()
+      .mockResolvedValue({ twoFactorRequired: true, challengeToken: "challenge-1" });
+    const completeTwoFactor = vi.fn().mockResolvedValue(session);
+    const onSignedIn = vi.fn();
+    render(
+      <SignInForm signIn={signIn} onSignedIn={onSignedIn} completeTwoFactor={completeTwoFactor} />,
+    );
+
+    await fillInAndSubmit();
+    await userEvent.type(
+      await screen.findByLabelText("Code from your authenticator app"),
+      "123456",
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+    expect(completeTwoFactor).toHaveBeenCalledWith("challenge-1", { code: "123456" });
+    expect(onSignedIn).toHaveBeenCalledWith(session);
+  });
+
+  it("takes a recovery code instead", async () => {
+    const signIn = vi
+      .fn()
+      .mockResolvedValue({ twoFactorRequired: true, challengeToken: "challenge-1" });
+    const completeTwoFactor = vi.fn().mockResolvedValue(session);
+    render(
+      <SignInForm signIn={signIn} onSignedIn={vi.fn()} completeTwoFactor={completeTwoFactor} />,
+    );
+
+    await fillInAndSubmit();
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Use a recovery code instead" }),
+    );
+    await userEvent.type(screen.getByLabelText("Recovery code"), "abcd-efgh");
+    await userEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+    expect(completeTwoFactor).toHaveBeenCalledWith("challenge-1", { recoveryCode: "abcd-efgh" });
+  });
+
+  it("offers to sign in with a passkey", async () => {
+    const signInWithPasskey = vi.fn().mockResolvedValue(session);
+    const onSignedIn = vi.fn();
+    render(
+      <SignInForm signIn={vi.fn()} onSignedIn={onSignedIn} signInWithPasskey={signInWithPasskey} />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Sign in with a passkey" }));
+
+    expect(onSignedIn).toHaveBeenCalledWith(session);
+  });
 });

@@ -16,3 +16,20 @@ export function describeError(error: unknown): string {
   if (error.status >= 500) return t("error.server");
   return error.message || t("error.generic");
 }
+
+/**
+ * For forms whose failures the API explains best, such as "That isn't your current
+ * password" or "This is the only active owner". Falls back to `describeError` for
+ * signed-out, server and network problems.
+ */
+export function describeFormError(error: unknown): string {
+  const explainsItself =
+    error instanceof ApiError &&
+    error.status >= 400 &&
+    error.status < 500 &&
+    error.code !== "NOT_SIGNED_IN" &&
+    error.code !== "NOT_FOUND" &&
+    error.code !== "PERMISSION_DENIED" &&
+    error.message !== "";
+  return explainsItself ? error.message : describeError(error);
+}
