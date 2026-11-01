@@ -8,7 +8,7 @@ WordPress. The rules all live in core (`src/backups`, `src/content-transfer`,
 | -------------------------------- | ----------------------------------------------------------------- |
 | `/settings/backups`              | `BackupsPage` (`BackupList`, `BackupScheduleCard`)                |
 | `/settings/backups/:id/restore`  | `RestorePage`                                                     |
-| `/settings/import`               | `ImportPage` (`LintelImportCard`, export)                         |
+| `/settings/import`               | `ImportPage` (`MoveYourSiteList`, `LintelImportCard`, export)     |
 | `/settings/import/wordpress`     | `WordPressImportsPage`                                            |
 | `/settings/import/wordpress/:id` | `WordPressImportPage` (`WordPressMappingStep`, `WordPressReport`) |
 
@@ -31,3 +31,6 @@ Things worth knowing:
 
 Text is in `src/i18n/dataToolsStrings.ts`, spread into `strings.ts`. Tests:
 `DataTools.test.tsx`.
+
+The other importers (Webflow, Framer, Statamic, Umbraco) are in `src/importers` and reuse
+`ChoiceSelect`, `ProgressBar`, `ReportSection` and `FilePicker` from here.

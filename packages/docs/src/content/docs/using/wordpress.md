@@ -1,13 +1,14 @@
 ---
-title: Importing from WordPress
-description: Bringing a WordPress site's posts, pages, categories, tags, images and authors into Lintel.
+title: Moving from WordPress
+description: Bringing a WordPress site's posts, pages, menus, custom fields, images, authors and WooCommerce products into Lintel.
 since: "0.1"
 sidebar:
-  label: Importing from WordPress
+  label: Moving from WordPress
 ---
 
 Lintel can bring in a WordPress site's posts, pages (with their parent pages), categories,
-tags, images and authors. The WordPress site isn't changed, and you can check everything
+tags, images, authors, menus, custom fields (such as those made with Advanced Custom
+Fields) and, if you run a shop, WooCommerce products. The WordPress site isn't changed, and you can check everything
 with a dry run before anything is imported.
 
 ## 1. Export from WordPress
@@ -21,9 +22,10 @@ images from there instead of downloading them.
 
 ## 2. Upload the export
 
-In Lintel, go to **Settings → Import → Import from WordPress**. Choose the `.xml` file,
+In Lintel, go to **Settings → Import** and choose **WordPress** under **Move your site to
+Lintel**. Choose the `.xml` file,
 and the zip if you have one, then press **Read the file**. Lintel counts what is in the
-export and lists anything it doesn't bring in, such as a shop's products.
+export and lists anything it doesn't bring in, such as comments.
 
 ## 3. Choose where things go
 
@@ -39,11 +41,30 @@ Lintel suggests a place for everything, so for most sites you can keep its choic
 - **Authors**: add them as people in Lintel, or not. People are added without a
   password; WordPress passwords are never copied. Each sets their own before signing in.
 - **Drafts**: bring drafts in as drafts, or leave them behind.
+- **Shop products (WooCommerce)**: bring them into the shop, or leave them behind. The shop
+  has to be switched on (Settings → Features) and have a market, because prices need a
+  currency. Simple and variable products come in with their options (from attributes),
+  variations, SKUs, prices (a sale price becomes the price, the regular price the "compare
+  at" price), weights and stock. Grouped and external products are listed as left out.
+- **Bring in the menus**: each WordPress menu becomes a menu here, with the same links,
+  order and nesting. Links to pages and posts follow them to their new addresses. Links to
+  category archives are left out.
 - **Suggest redirects from the old addresses**: each published post and page gets a
   suggested redirect from its WordPress address to its new one, so old links keep working.
 
 Under the choices, Lintel shows which field each part of a post or page goes into (the
 content, excerpt, featured image, categories and tags), based on the content type.
+
+### Custom fields
+
+If your posts or pages have custom fields, from Advanced Custom Fields or another plugin,
+they're listed with an example of each, and those made with Advanced Custom Fields are
+marked. Choose the field of the content type each one goes into, or leave it out. Lintel
+suggests the field with the same name, so add fields to the content type first (in
+**Content types**) if you'd like them all to come across. Values are read the way the
+field needs: dates, numbers, on/off switches, images (by the attachment they point at)
+and lists. A value the field can't take is left out and listed in the report; the rest of
+the post still comes in.
 
 ## 4. Check with a dry run
 
@@ -88,4 +109,9 @@ text are brought into the media library and kept in place as HTML blocks.
   brought in are left as they are, and images, people, categories and tags already here
   are reused. New posts since the last import are added.
 - Removing an import from the list doesn't remove what it imported.
-- Comments, menus, widgets, plugins' settings and themes aren't imported.
+- Comments, widgets, plugins' settings and themes aren't imported. Category hierarchies
+  come in flat, as taxonomies in Lintel have no parent terms.
+- Imported authors join with the **Author** role and no password; they choose one with
+  **Forgot your password?** on the sign-in screen.
+- From the terminal: `pnpm lintel import wordpress export.xml [wp-content.zip] [--dry-run]`
+  does the same with the suggested choices.

@@ -123,6 +123,22 @@ slug. Running the same import twice changes nothing the second time.
 
 - `--strategy skip` (the default) keeps what this site already has.
 - `--strategy overwrite` updates it to match the file.
+
+### Moving a site from another system
+
+```bash
+pnpm lintel import <wordpress|webflow|framer|statamic|umbraco> <file|url>... [--dry-run] [--as <email>]
+```
+
+Runs the same importer as **Settings → Import**, in the foreground, with the choices it
+suggests (see the "Moving from" pages). Give the files the importer reads: a WordPress
+`.xml` export and optionally a `wp-content` zip; Webflow or Framer CSV files and a zip;
+a Statamic or uSync zip; or an Umbraco Delivery API `.json`. An `https://` address is
+downloaded first (never from this server's own network, up to 64 MB). `--dry-run` prints
+what would come in and changes nothing; `--as` records the import as that person (the
+first person here otherwise). It prints how many of each thing came in, problems, what
+can't be moved, and how many redirects are waiting to be accepted.
+
 - `--dry-run` prints the table and changes nothing.
 
 ## migrate
