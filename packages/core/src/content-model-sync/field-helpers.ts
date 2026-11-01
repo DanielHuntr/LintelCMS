@@ -47,6 +47,9 @@ export interface NumberField extends NumberOptions {
 export interface ToggleField extends CommonFieldOptions {
   type: "toggle";
 }
+export interface FormField extends CommonFieldOptions {
+  type: "form";
+}
 /** One choice of a select field: `value` is stored, `label` is what editors see. */
 export interface SelectChoice {
   value: string;
@@ -133,7 +136,8 @@ export type InnerField =
   | MarkdownField
   | ListField
   | EntriesField
-  | TermsField;
+  | TermsField
+  | FormField;
 
 /** A kind of block editors can add to a blocks field, such as a Hero or a Call to action. */
 export interface BlockTypeDefinition {
@@ -187,6 +191,11 @@ export function number(options: NumberOptions = {}): NumberField {
 /** An on or off switch, such as "Show in the menu". */
 export function toggle(options: CommonFieldOptions = {}): ToggleField {
   return { type: "toggle", ...options };
+}
+
+/** One of the site's forms, such as a contact form (needs the Forms feature). */
+export function form(options: CommonFieldOptions = {}): FormField {
+  return { type: "form", ...options };
 }
 
 /** A choice from a list you set up, such as a category. Can allow several. */

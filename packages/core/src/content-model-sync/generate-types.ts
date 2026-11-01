@@ -71,6 +71,7 @@ class TypesWriter {
       case "email":
       case "url":
       case "colour":
+      case "form":
         return "string";
       case "date":
         return "string";

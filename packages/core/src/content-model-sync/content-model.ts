@@ -17,6 +17,7 @@ export {
   date,
   email,
   entries,
+  form,
   image,
   link,
   list,

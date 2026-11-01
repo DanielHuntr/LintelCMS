@@ -43,6 +43,7 @@ const innerFieldSchemas = [
     step: z.number().positive().optional(),
   }),
   fieldSchema("toggle", "An on or off switch.", {}),
+  fieldSchema("form", "One of the site's forms, by handle.", {}),
   fieldSchema("select", "A choice from a list.", {
     choices: z
       .array(z.strictObject({ value: z.string(), label: z.string() }))
