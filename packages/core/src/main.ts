@@ -23,6 +23,7 @@ await runWithFriendlyErrors(async () => {
     publicApiUrl: config.API_PUBLIC_URL ?? `http://localhost:${config.API_PORT}`,
     graphiql: config.NODE_ENV === "development",
     webhooks: { allowPrivateAddresses: config.WEBHOOKS_ALLOW_PRIVATE_ADDRESSES },
+    trustProxy: config.TRUST_PROXY,
     logger: true,
   });
   server.addHook("onClose", () => activeDatabase.close());

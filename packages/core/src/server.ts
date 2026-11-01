@@ -1,7 +1,7 @@
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
-import Fastify from "fastify";
+import Fastify, { type FastifyServerOptions } from "fastify";
 import { apiTokensRoutes } from "./api-tokens/api-tokens.routes.js";
 import { authRoutes } from "./auth/auth.routes.js";
 import { blueprintsRoutes } from "./blueprints/blueprints.routes.js";
@@ -21,6 +21,8 @@ import { healthRoutes } from "./health/health.routes.js";
 import { crossOriginOptions } from "./http/cross-origin.js";
 import { refuseCrossSiteRequests } from "./http/cross-site-requests.js";
 import { sendHttpErrorDetails } from "./http/http-errors.js";
+import { describeRequestForLog } from "./http/request-logging.js";
+import { addSecurityHeaders } from "./http/security-headers.js";
 import { type AssetUsageFinder, createAssetLookup } from "./media/asset-lookup.js";
 import { LocalDiskStorage } from "./media/local-disk-storage.js";
 import { mediaRoutes } from "./media/media.routes.js";
@@ -95,6 +97,13 @@ export interface ServerOptions {
   /** Turn request logging off in tests to keep output readable. */
   logger?: boolean;
   /**
+   * Which proxies in front of the API to believe about the visitor's address (Fastify's
+   * `trustProxy`): true for any, a number of hops, or a list of addresses. Off by default.
+   * Behind nginx or Caddy, turn it on, or every visitor shares the proxy's address and one
+   * person's failed sign-ins count against everyone's limit.
+   */
+  trustProxy?: boolean | number | string;
+  /**
    * Run timed jobs, such as publishing scheduled entries, from startup until the server
    * closes. On by default; tests that drive the jobs themselves turn it off.
    */
@@ -128,7 +137,11 @@ export interface WebhookOptions {
  * Every feature registers its routes here, in one visible list (no auto-discovery).
  */
 export function buildServer(options: ServerOptions) {
-  const server = Fastify({ logger: options.logger ?? false });
+  const fastifyOptions: FastifyServerOptions = {
+    logger: options.logger ? { serializers: { req: describeRequestForLog } } : false,
+    trustProxy: proxiesToTrust(options.trustProxy ?? false),
+  };
+  const server = Fastify(fastifyOptions);
   const activeDatabase = options.database;
 
   server.decorate("database", { getter: () => activeDatabase.database });
@@ -155,6 +168,7 @@ export function buildServer(options: ServerOptions) {
   server.addHook("onClose", () => webhooks.finishSending());
   server.decorateRequest("signedIn", null);
   server.setErrorHandler(sendHttpErrorDetails);
+  server.addHook("onSend", addSecurityHeaders(server.publicApiUrl));
 
   // The admin may call everything; websites listed in Settings may call the content APIs.
   server.register(cors, { delegator: crossOriginOptions(options.adminOrigin) });
@@ -204,4 +218,12 @@ export function buildServer(options: ServerOptions) {
   });
 
   return server;
+}
+
+/** Fastify counts hops itself, but its types only take a function for that. */
+function proxiesToTrust(trustProxy: boolean | number | string): FastifyServerOptions["trustProxy"] {
+  if (typeof trustProxy === "number") {
+    return (_address: string, hop: number) => hop < trustProxy;
+  }
+  return trustProxy;
 }

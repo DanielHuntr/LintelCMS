@@ -38,13 +38,14 @@ pnpm --filter starter-nextjs dev     # the starter site, on http://localhost:300
 Every setting has a default, so no `.env` is needed. To change one, copy `.env.example` to
 `.env` at the repository root, or set it in the environment (which wins).
 
-| Variable         | Default                       | What it does                                               |
-| ---------------- | ----------------------------- | ---------------------------------------------------------- |
-| `DATABASE_URL`   | none (built-in database)      | A Postgres URL. Always wins over the setup screen's choice |
-| `API_PORT`       | `4000`                        | The API's port                                             |
-| `ADMIN_ORIGIN`   | `http://localhost:5173`       | The admin's address, allowed to call the API from browsers |
-| `API_PUBLIC_URL` | `http://localhost:<API_PORT>` | The API's address as browsers reach it, used in file URLs  |
-| `NODE_ENV`       | `production`                  | `pnpm dev` sets `development` so cookies work over HTTP    |
+| Variable         | Default                       | What it does                                                                                                                      |
+| ---------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`   | none (built-in database)      | A Postgres URL. Always wins over the setup screen's choice                                                                        |
+| `API_PORT`       | `4000`                        | The API's port                                                                                                                    |
+| `ADMIN_ORIGIN`   | `http://localhost:5173`       | The admin's address, allowed to call the API from browsers                                                                        |
+| `API_PUBLIC_URL` | `http://localhost:<API_PORT>` | The API's address as browsers reach it, used in file URLs                                                                         |
+| `NODE_ENV`       | `production`                  | `pnpm dev` sets `development` so cookies work over HTTP                                                                           |
+| `TRUST_PROXY`    | none                          | Behind nginx, Caddy or a load balancer: `true`, a number of hops, or the proxies' addresses, so limits see each visitor's address |
 
 In a Postgres URL, write `#`, `@` and `/` in the password as `%23`, `%40` and `%2F`.
 `pnpm db:up` starts a Postgres in Docker that matches `.env.example`.

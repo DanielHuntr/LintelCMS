@@ -78,9 +78,12 @@ export function parseRequest<Schema extends z.ZodType>(
  */
 export async function sendHttpErrorDetails(
   error: FastifyError,
-  _request: FastifyRequest,
+  request: FastifyRequest,
   reply: FastifyReply,
 ) {
+  if (!(error instanceof HttpError) && (error.statusCode ?? 500) >= 500) {
+    return sendUnexpectedError(error, request, reply);
+  }
   if (!(error instanceof HttpError) || !error.details) {
     throw error;
   }
@@ -91,5 +94,22 @@ export async function sendHttpErrorDetails(
     code: error.code,
     error: STATUS_CODES[error.statusCode] ?? "Error",
     message: error.message,
+  });
+}
+
+/**
+ * A bug or an outage, rather than a problem with the request. Its message can carry
+ * internals (SQL, file paths, a connection string), so it goes to the server's log and the
+ * response gets a plain sentence instead.
+ */
+function sendUnexpectedError(error: FastifyError, request: FastifyRequest, reply: FastifyReply) {
+  request.log.error({ err: error }, "Request failed unexpectedly");
+  const statusCode = error.statusCode ?? 500;
+  return reply.code(statusCode).send({
+    statusCode,
+    code: "INTERNAL",
+    error: STATUS_CODES[statusCode] ?? "Error",
+    message:
+      "Something went wrong on the server. Please try again; if it keeps happening, the server's log says why.",
   });
 }

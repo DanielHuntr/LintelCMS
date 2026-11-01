@@ -38,6 +38,19 @@ const configSchema = z.object({
     .enum(["true", "false", ""])
     .default("false")
     .transform((value) => value === "true"),
+  // Set when the API sits behind a proxy (nginx, Caddy, a load balancer), so rate limits and
+  // logs see each visitor's own address: "true" trusts any proxy, a number trusts that many
+  // hops, or list the proxies' addresses ("10.0.0.1,10.0.0.2"). Leave empty without a proxy:
+  // trusting one that isn't there lets anyone pretend to be any address.
+  TRUST_PROXY: z
+    .string()
+    .default("")
+    .transform((value): boolean | number | string => {
+      const trimmed = value.trim();
+      if (trimmed === "" || trimmed === "false") return false;
+      if (trimmed === "true") return true;
+      return /^\d+$/.test(trimmed) ? Number(trimmed) : trimmed;
+    }),
 });
 
 export type Config = z.infer<typeof configSchema>;
