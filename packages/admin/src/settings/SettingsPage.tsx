@@ -1,9 +1,10 @@
-import { Globe, KeyRound, Languages, Search, Shapes, Webhook } from "lucide-react";
+import { Blocks, Globe, KeyRound, Languages, Shapes, Webhook } from "lucide-react";
 import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { t } from "../i18n/strings.js";
-import { useCan, useSession } from "../session/SessionContext.js";
+import { PluginSettingsRows } from "../plugins/PluginSettingsRows.js";
+import { useCan } from "../session/SessionContext.js";
 
 /**
  * /settings: one row per area of settings, like iOS Settings. Rows appear as their screens
@@ -12,7 +13,6 @@ import { useCan, useSession } from "../session/SessionContext.js";
 export function SettingsPage() {
   const canSeeContentTypes = useCan("blueprints:read");
   const canSeeSiteSettings = useCan("settings:read");
-  const { enabledPlugins } = useSession();
 
   return (
     <>
@@ -45,18 +45,17 @@ export function SettingsPage() {
             />
           </GroupedList>
         )}
-        {canSeeSiteSettings && enabledPlugins.includes("seo") && (
-          <GroupedList header={t("settings.searchHeader")}>
-            <GroupedListRow
-              icon={Search}
-              iconTone="success"
-              label={t("seo.settingsTitle")}
-              description={t("settings.seoDescription")}
-              to="/settings/seo"
-            />
-          </GroupedList>
-        )}
+        <PluginSettingsRows />
         <GroupedList header={t("settings.siteHeader")} footer={t("settings.moreSoon")}>
+          {canSeeSiteSettings && (
+            <GroupedListRow
+              icon={Blocks}
+              iconTone="accent"
+              label={t("featureSettings.settingsTitle")}
+              description={t("featureSettings.settingsDescription")}
+              to="/settings/features"
+            />
+          )}
           {canSeeSiteSettings && (
             <GroupedListRow
               icon={Languages}

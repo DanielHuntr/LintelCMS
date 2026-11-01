@@ -1,6 +1,7 @@
 # SEO
 
-The admin side of the SEO plugin. Nothing here shows while the plugin is off.
+The admin side of the SEO plugin, defined in `seo.adminPlugin.tsx` with
+`defineAdminPlugin` (see `src/plugins`). Nothing here shows while the plugin is off.
 
 - **The editor's Search engines panel** (`EntrySeoPanel`, in the entry side panel): a
   search result preview that follows the title and slug as they're typed, the title and
@@ -21,6 +22,7 @@ preview matches what websites get. The preview takes its colours from the design
 
 | File                           | What it does                                  |
 | ------------------------------ | --------------------------------------------- |
+| `seo.adminPlugin.tsx`          | What the plugin adds, and where               |
 | `EntrySeoPanel.tsx`            | The editor panel                              |
 | `SearchPreview.tsx`            | The search result preview                     |
 | `LengthGuidance.tsx`           | Length advice under the title and description |

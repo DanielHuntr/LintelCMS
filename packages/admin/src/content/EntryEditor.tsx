@@ -9,7 +9,7 @@ import { titleFieldHandle } from "../fields/field.types.js";
 import { textValue } from "../fields/fieldValues.js";
 import { t } from "../i18n/strings.js";
 import { EntryPreviewPane } from "../preview/EntryPreviewPane.js";
-import { EntrySeoPanel } from "../seo/EntrySeoPanel.js";
+import { PluginEditorPanels } from "../plugins/PluginEditorPanels.js";
 import { useCan } from "../session/SessionContext.js";
 import type { Collection, Entry } from "./content.types.js";
 import { entryDraftReducer, hasUnsavedChanges, initialDraftState } from "./entryDraft.js";
@@ -297,11 +297,11 @@ export function EntryEditor({
               await actions.restore(revisionId);
             }}
           >
-            <EntrySeoPanel
+            <PluginEditorPanels
               entryId={entry?.id}
               entryTitle={title}
               slug={state.current.slug}
-              routePattern={collection.routePattern}
+              collection={{ handle: collection.handle, routePattern: collection.routePattern }}
             />
           </EntrySidePanel>
         )}

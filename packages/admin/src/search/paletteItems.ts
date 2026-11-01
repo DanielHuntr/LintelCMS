@@ -67,7 +67,7 @@ export function matchingPages(
     (section) => ({
       id: `page:${section.path}`,
       group: "pages",
-      label: t(section.label),
+      label: section.label,
       icon: section.icon,
       target: { kind: "page", path: section.path },
     }),

@@ -13,20 +13,12 @@ import { controlClasses } from "../design/controlStyles.js";
 import { Toggle } from "../design/Toggle.js";
 import { t } from "../i18n/strings.js";
 import { MediaPicker } from "../media/MediaPicker.js";
-import { useCan, useSession } from "../session/SessionContext.js";
+import type { EditorPanelProps } from "../plugins/adminPlugin.js";
+import { useCan } from "../session/SessionContext.js";
 import type { EntrySeo } from "./seo.api.js";
 import { useEntrySeo, useSaveEntrySeo, useSeoDefaults } from "./seo.queries.js";
 import { LengthGuidance } from "./LengthGuidance.js";
 import { SearchPreview } from "./SearchPreview.js";
-
-interface EntrySeoPanelProps {
-  /** Undefined until the entry has been saved for the first time. */
-  entryId: string | undefined;
-  /** The title and slug as they are on screen, so the preview follows typing. */
-  entryTitle: string;
-  slug: string;
-  routePattern: string | null;
-}
 
 const SAVE_DELAY_MILLISECONDS = 800;
 
@@ -35,9 +27,7 @@ const SAVE_DELAY_MILLISECONDS = 800;
  * result, the title and description with advice on their length, the picture for social
  * networks, and a switch to keep the page out of search results. Saves as you type.
  */
-export function EntrySeoPanel({ entryId, entryTitle, slug, routePattern }: EntrySeoPanelProps) {
-  const { enabledPlugins } = useSession();
-  if (!enabledPlugins.includes("seo")) return null;
+export function EntrySeoPanel({ entryId, entryTitle, slug, collection }: EditorPanelProps) {
   return (
     <PanelSection title={t("seo.panelTitle")}>
       {entryId === undefined ? (
@@ -47,14 +37,21 @@ export function EntrySeoPanel({ entryId, entryTitle, slug, routePattern }: Entry
           entryId={entryId}
           entryTitle={entryTitle}
           slug={slug}
-          routePattern={routePattern}
+          routePattern={collection.routePattern}
         />
       )}
     </PanelSection>
   );
 }
 
-function EntrySeoForm({ entryId, ...rest }: EntrySeoPanelProps & { entryId: string }) {
+interface EntrySeoFormProps {
+  entryId: string;
+  entryTitle: string;
+  slug: string;
+  routePattern: string | null;
+}
+
+function EntrySeoForm({ entryId, ...rest }: EntrySeoFormProps) {
   const stored = useEntrySeo(entryId);
   if (stored.isError) {
     return <p className="text-footnote text-danger">{describeError(stored.error)}</p>;
@@ -65,8 +62,7 @@ function EntrySeoForm({ entryId, ...rest }: EntrySeoPanelProps & { entryId: stri
   return <EntrySeoFields key={entryId} entryId={entryId} initial={stored.data} {...rest} />;
 }
 
-interface EntrySeoFieldsProps extends Omit<EntrySeoPanelProps, "entryId"> {
-  entryId: string;
+interface EntrySeoFieldsProps extends EntrySeoFormProps {
   initial: EntrySeo;
 }
 

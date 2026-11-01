@@ -7,8 +7,9 @@
 - **API access** (`/settings/api`, and the reference at `/settings/api/reference`) lives in
   `src/api-access`.
 - **Webhooks** (`/settings/webhooks`) lives in `src/webhooks`.
-- **Search engines** (`/settings/seo` and `/settings/seo/redirects`) lives in `src/seo`, and
-  only shows while the SEO plugin is on.
+- **Features** (`/settings/features`) lives in `src/features`.
+- Plugins add their own rows and groups (SEO's **Search engines**, say) through
+  `settingsRows`; `PluginSettingsRows` draws them, only while the plugin is on.
 
 Add a row here when a new settings screen is built, and hide it with `useCan` when the
 signed-in person can't use it.

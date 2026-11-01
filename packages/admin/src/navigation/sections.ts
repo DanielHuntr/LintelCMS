@@ -4,14 +4,16 @@ import {
   FileText,
   Image,
   LayoutGrid,
-  ListChecks,
   Palette,
   Settings,
   ShoppingBag,
   Users,
   type LucideIcon,
 } from "lucide-react";
-import type { StringKey } from "../i18n/strings.js";
+import { t, type StringKey } from "../i18n/strings.js";
+import type { AdminPluginDefinition } from "../plugins/adminPlugin.js";
+import { adminPlugins } from "../plugins/adminPlugins.js";
+import { visibleContributions } from "../plugins/pluginContributions.js";
 
 /**
  * The admin's main sections, in the order people use them most.
@@ -41,29 +43,44 @@ export const sections: readonly Section[] = [
     icon: ShoppingBag,
   },
   { path: "/media", label: "nav.media", permission: "media:read", icon: Image },
-  {
-    path: "/forms",
-    label: "nav.forms",
-    permission: "forms:read",
-    plugin: "forms",
-    icon: ListChecks,
-  },
   { path: "/users", label: "nav.users", permission: "users:read", icon: Users },
   { path: "/settings", label: "nav.settings", permission: "settings:read", icon: Settings },
   { path: "/help", label: "nav.help", icon: CircleHelp },
 ];
 
+/** A link in the sidebar, with its label in words: Lintel's own sections and plugins' items. */
+export interface NavigationItem {
+  path: string;
+  label: string;
+  icon: LucideIcon;
+}
+
+/** Plugins' sidebar items go after this section, among the places people do their work. */
+const PLUGIN_ITEMS_AFTER = "/media";
+
 /**
- * The sections a person with these permissions may see, leaving out sections whose plugin
- * isn't switched on: a blog has no use for an empty Commerce section.
+ * The sidebar a person with these permissions sees, leaving out sections whose plugin isn't
+ * switched on (a blog has no use for an empty Commerce section), with the sidebar items of
+ * switched-on plugins after Media.
  */
 export function visibleSections(
   granted: readonly string[],
   enabledPlugins: readonly string[],
-): Section[] {
-  return sections.filter(
-    (section) =>
-      (section.permission === undefined || hasPermission(granted, section.permission)) &&
-      (section.plugin === undefined || enabledPlugins.includes(section.plugin)),
-  );
+  plugins: readonly AdminPluginDefinition[] = adminPlugins,
+): NavigationItem[] {
+  const own = sections
+    .filter(
+      (section) =>
+        (section.permission === undefined || hasPermission(granted, section.permission)) &&
+        (section.plugin === undefined || enabledPlugins.includes(section.plugin)),
+    )
+    .map((section) => ({ path: section.path, label: t(section.label), icon: section.icon }));
+  const fromPlugins = visibleContributions(plugins, "sidebarItems", {
+    permissions: granted,
+    enabledPlugins,
+  }).map(({ path, label, icon }) => ({ path, label, icon }));
+
+  const insertAt = own.findIndex((section) => section.path === PLUGIN_ITEMS_AFTER) + 1;
+  const position = insertAt > 0 ? insertAt : own.length;
+  return [...own.slice(0, position), ...fromPlugins, ...own.slice(position)];
 }

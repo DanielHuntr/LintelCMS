@@ -15,6 +15,8 @@ interface RenderScreenOptions {
   permissions?: string[];
   /** The plugins switched on. Defaults to the blog. */
   enabledPlugins?: string[];
+  /** The address the screen starts at. Defaults to "/". */
+  initialPath?: string;
 }
 
 /**
@@ -24,7 +26,7 @@ interface RenderScreenOptions {
  */
 export function renderScreen(
   screen: ReactNode,
-  { permissions = ["*"], enabledPlugins = ["blog"] }: RenderScreenOptions = {},
+  { permissions = ["*"], enabledPlugins = ["blog"], initialPath = "/" }: RenderScreenOptions = {},
 ) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -45,7 +47,7 @@ export function renderScreen(
   });
   const router = createRouter({
     routeTree: rootRoute.addChildren([anyPath]),
-    history: createMemoryHistory({ initialEntries: ["/"] }),
+    history: createMemoryHistory({ initialEntries: [initialPath] }),
   });
 
   render(
