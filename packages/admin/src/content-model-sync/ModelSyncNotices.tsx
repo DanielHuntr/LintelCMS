@@ -71,10 +71,12 @@ function PendingChanges() {
         {pending.map((change) => (
           <li key={`${change.summary}${change.impact ?? ""}`} className="text-body">
             <span className={change.destructive ? "font-semibold" : undefined}>
-              {change.summary}
+              <WithHandles text={change.summary} />
             </span>
             {change.impact && (
-              <span className="block text-footnote text-label-secondary">{change.impact}</span>
+              <span className="block text-footnote text-label-secondary">
+                <WithHandles text={change.impact} />
+              </span>
             )}
           </li>
         ))}
@@ -121,5 +123,18 @@ function Notice({ id, message }: { id: string; message: string }) {
         <X aria-hidden="true" className="size-4" />
       </button>
     </div>
+  );
+}
+
+/** The API writes handles in backticks (`excerpt`); they're shown as code. */
+function WithHandles({ text }: { text: string }) {
+  return text.split("`").map((part, index) =>
+    index % 2 === 1 ? (
+      <code key={index} className="font-mono text-[0.92em]">
+        {part}
+      </code>
+    ) : (
+      part
+    ),
   );
 }
