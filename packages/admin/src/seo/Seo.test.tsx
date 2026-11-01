@@ -52,7 +52,7 @@ describe("the editor's search engines panel", () => {
         entryId="e1"
         entryTitle="About us"
         slug="about"
-        collection={{ handle: "pages", routePattern: "/{slug}" }}
+        collection={{ handle: "pages", name: "Pages", routePattern: "/{slug}" }}
       />,
       { enabledPlugins: ["seo"] },
     );
@@ -90,7 +90,7 @@ describe("the editor's search engines panel", () => {
         entryId="e1"
         entryTitle="Our complete guide to sourdough, rye, spelt and everything in between"
         slug="guide"
-        collection={{ handle: "pages", routePattern: "/{slug}" }}
+        collection={{ handle: "pages", name: "Pages", routePattern: "/{slug}" }}
       />,
       { enabledPlugins: ["seo"] },
     );
@@ -104,7 +104,7 @@ describe("the editor's search engines panel", () => {
       entryId: "e1",
       entryTitle: "Hi",
       slug: "hi",
-      collection: { handle: "pages", routePattern: null },
+      collection: { handle: "pages", name: "Settings", routePattern: null },
     };
     renderScreen(<PluginEditorPanels {...entry} />, { enabledPlugins: [] });
     expect(screen.queryByText("Search engines")).not.toBeInTheDocument();

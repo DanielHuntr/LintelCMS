@@ -11,6 +11,7 @@ const keptContentMessages: Partial<Record<string, StringKey>> = {
   blog: "features.keptContent.blog",
   commerce: "features.keptContent.commerce",
   forms: "features.keptContent.forms",
+  automations: "features.keptContent.automations",
 };
 
 export function keptContentMessageFor(

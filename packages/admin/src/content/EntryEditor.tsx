@@ -285,7 +285,11 @@ export function EntryEditor({
               entryId={entry?.id}
               entryTitle={title}
               slug={state.current.slug}
-              collection={{ handle: collection.handle, routePattern: collection.routePattern }}
+              collection={{
+                handle: collection.handle,
+                name: collection.name,
+                routePattern: collection.routePattern,
+              }}
             />
           </EntrySidePanel>
         )}

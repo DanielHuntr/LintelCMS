@@ -1,6 +1,7 @@
 import { blogPlugin } from "../blog/blog.plugin.js";
 import { formsPlugin } from "../forms/forms.plugin.js";
 import { seoPlugin } from "../seo/seo.plugin.js";
+import { automationsPlugin } from "../workflows/automations.plugin.js";
 import { definePlugin } from "./plugin-definition.js";
 
 /**
@@ -36,6 +37,12 @@ const commercePlugin = definePlugin({
  * own feature folder. Plugins from packages are added after these, from lintel.config.ts
  * at the repository root (see installed-plugins.ts).
  */
-export const pluginRegistry = [blogPlugin, commercePlugin, formsPlugin, seoPlugin] as const;
+export const pluginRegistry = [
+  blogPlugin,
+  commercePlugin,
+  formsPlugin,
+  automationsPlugin,
+  seoPlugin,
+] as const;
 
 export type PluginId = (typeof pluginRegistry)[number]["id"];

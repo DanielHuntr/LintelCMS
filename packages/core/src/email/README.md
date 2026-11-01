@@ -19,6 +19,9 @@ of delivering them. Admins read them under **Settings → Email outbox**, which 
 in invitations and password resets are followed on a computer with no mail server.
 A delivering sender (SMTP or an email service) plugs in here.
 
+Automations' "Send an email" step uses the same sender (`server.email`), one message per
+recipient, so it shows in the outbox like everything else.
+
 ## Endpoints
 
 | Method and path     | Permission      | Success                                                          |

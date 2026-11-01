@@ -2,6 +2,7 @@ import multipart from "@fastify/multipart";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { getSignedIn, requirePermission } from "../auth/require-permission.js";
 import { announceContentEvent } from "../content-events/content-events.js";
+import { actorOf } from "../events/event-actor.js";
 import { parseRequest } from "../http/http-errors.js";
 import type { AssetUsageFinder } from "./asset-lookup.js";
 import { contentDisposition } from "./content-disposition.js";
@@ -96,7 +97,11 @@ export async function mediaRoutes(server: FastifyInstance, options: MediaRoutesO
       const file = await readUploadedFile(request);
       const { asset, created } = await uploadAsset(context(), file, getSignedIn(request).user.id);
       if (created) {
-        await announceContentEvent(server, { name: "asset.uploaded", asset: eventDataFor(asset) });
+        await announceContentEvent(
+          server,
+          { name: "asset.uploaded", asset: eventDataFor(asset) },
+          actorOf(request),
+        );
       }
       return reply.code(created ? 201 : 200).send(asset);
     },
@@ -129,7 +134,11 @@ export async function mediaRoutes(server: FastifyInstance, options: MediaRoutesO
         }
         throw error;
       }
-      await announceContentEvent(server, { name: "asset.deleted", asset: eventDataFor(asset) });
+      await announceContentEvent(
+        server,
+        { name: "asset.deleted", asset: eventDataFor(asset) },
+        actorOf(request),
+      );
       return reply.code(204).send();
     },
   );

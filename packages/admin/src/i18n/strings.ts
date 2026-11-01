@@ -1,3 +1,4 @@
+import { workflowStrings } from "../workflows/workflowStrings.js";
 import { contentModelStrings } from "./contentModelStrings.js";
 import { dashboardStrings } from "./dashboardStrings.js";
 import { pluginStrings } from "./pluginStrings.js";
@@ -18,6 +19,7 @@ const english = {
   ...peopleStrings,
   ...pageDesignStrings,
   ...contentModelSyncStrings,
+  ...workflowStrings,
   "app.name": "Lintel",
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",
@@ -620,6 +622,8 @@ const english = {
   "features.installedFooter":
     "These come from packages listed in lintel.config.ts. They run with full access to your site, so only add ones you trust.",
   "features.version": "Version {version}",
+  "features.keptContent.automations":
+    "Your automations are kept but stop running, and content approval stops being asked for. Switch it back on any time.",
   "features.keptContent.installed":
     "Anything it saved is kept; its screens just hide. Switch it back on any time.",
   "features.keptContent.blog":

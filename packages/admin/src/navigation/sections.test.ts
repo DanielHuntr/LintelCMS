@@ -3,7 +3,7 @@ import { CalendarDays } from "lucide-react";
 import { defineAdminPlugin } from "../plugins/adminPlugin.js";
 import { sections, visibleSections } from "./sections.js";
 
-const allPlugins = ["blog", "commerce", "forms", "seo"];
+const allPlugins = ["blog", "commerce", "forms", "automations", "seo"];
 
 function labelsFor(permissions: string[], enabledPlugins: string[]) {
   return visibleSections(permissions, enabledPlugins).map((section) => section.label);

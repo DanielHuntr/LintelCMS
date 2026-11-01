@@ -25,3 +25,10 @@ export { securityEventsTable } from "../security-log/security-events.table.js";
 export { invitationsTable } from "../invitations/invitations.table.js";
 export { twoFactorTable, recoveryCodesTable } from "../two-factor/two-factor.table.js";
 export { passkeysTable } from "../passkeys/passkeys.table.js";
+export {
+  workflowsTable,
+  workflowRunsTable,
+  workflowStepLogsTable,
+  workflowApprovalsTable,
+  userNotificationsTable,
+} from "../workflows/workflows.table.js";

@@ -69,6 +69,9 @@ import {
   type WebsiteRuntime,
 } from "./website/website-runtime.js";
 import { websiteRoutes } from "./website/website.routes.js";
+import { EventBus } from "./events/event-bus.js";
+import { subscribeEventListeners } from "./events/event-listeners.js";
+import { registerWorkflows, type WorkflowOptions } from "./workflows/register-workflows.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -103,6 +106,8 @@ declare module "fastify" {
     emailOutbox: OutboxEmailSender | null;
     /** The built-in website's templates, address and rendered pages (see src/website). */
     website: WebsiteRuntime;
+    /** What happened, for features to react to (see src/events). */
+    events: EventBus;
   }
 }
 
@@ -165,6 +170,8 @@ export interface ServerOptions {
   website?: WebsiteOptions;
   /** Content model as code (see src/content-model-sync). Off when left out, as in tests. */
   contentModel?: ContentModelOptions;
+  /** How automations run and send email. Every part has a default. */
+  workflows?: WorkflowOptions;
 }
 
 export interface WebhookOptions {
@@ -223,6 +230,14 @@ export function buildServer(options: ServerOptions) {
   server.decorate("website", createWebsiteRuntime(options.website));
   clearRenderedPagesAfterChanges(server);
   server.addHook("onClose", () => webhooks.finishSending());
+  server.decorate(
+    "events",
+    new EventBus({
+      onListenerError: (error, listenerName, event) =>
+        server.log.error(error, `Telling ${listenerName} about ${event.name} failed`),
+    }),
+  );
+  subscribeEventListeners(server);
   server.decorateRequest("signedIn", null);
   server.setErrorHandler(sendHttpErrorDetails);
   server.addHook("onSend", addSecurityHeaders(server.publicApiUrl));
@@ -277,6 +292,11 @@ export function buildServer(options: ServerOptions) {
   server.register(websiteRoutes);
   server.register(pagesRoutes);
   registerContentModelSync(server, options.contentModel);
+  registerWorkflows(server, {
+    ...options.workflows,
+    runScheduledJobs: options.runScheduledJobs ?? true,
+    adminOrigin: options.adminOrigin,
+  });
 
   if (options.runScheduledJobs ?? true) {
     registerScheduledJobs(server);

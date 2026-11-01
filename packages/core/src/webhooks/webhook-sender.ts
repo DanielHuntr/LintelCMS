@@ -12,8 +12,12 @@ import { bareHostname, isLocalHostName, isPrivateAddress } from "./address-safet
  */
 export interface WebhookRequest {
   url: string;
+  /** POST unless given; workflows' HTTP steps choose. A GET or DELETE may send "". */
+  method?: string;
   body: string;
   headers: Record<string, string>;
+  /** How much of the answer to keep. Defaults to 500 characters, enough for a log. */
+  keptResponseCharacters?: number;
 }
 
 export interface WebhookResponseSummary {
@@ -57,8 +61,9 @@ export async function sendWebhookRequest(
   const url = new URL(webhook.url);
   checkWebhookAddress(url, options);
 
+  const kept = webhook.keptResponseCharacters ?? KEPT_RESPONSE_CHARACTERS;
   const requestOptions: RequestOptions = {
-    method: "POST",
+    method: webhook.method ?? "POST",
     headers: { ...webhook.headers, "content-length": String(Buffer.byteLength(webhook.body)) },
     timeout: options.timeoutMilliseconds ?? DEFAULT_TIMEOUT_MILLISECONDS,
     lookup: options.allowPrivateAddresses ? undefined : publicOnlyLookup,
@@ -70,14 +75,14 @@ export async function sendWebhookRequest(
       let bodyStart = "";
       response.setEncoding("utf8");
       response.on("data", (chunk: string) => {
-        if (bodyStart.length < KEPT_RESPONSE_CHARACTERS) {
+        if (bodyStart.length < kept) {
           bodyStart += chunk;
         }
       });
       response.on("end", () =>
         resolve({
           status: response.statusCode ?? 0,
-          bodyStart: bodyStart.slice(0, KEPT_RESPONSE_CHARACTERS),
+          bodyStart: bodyStart.slice(0, kept),
         }),
       );
       response.on("error", (error) => reject(new WebhookSendError(error.message)));

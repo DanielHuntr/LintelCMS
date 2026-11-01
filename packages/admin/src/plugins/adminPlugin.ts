@@ -89,7 +89,7 @@ export interface EditorPanelProps {
   /** As they are on screen, so a panel can follow typing. */
   entryTitle: string;
   slug: string;
-  collection: { handle: string; routePattern: string | null };
+  collection: { handle: string; name: string; routePattern: string | null };
 }
 
 /** A section in the entry editor's side panel, above the history. */

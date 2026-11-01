@@ -6,6 +6,7 @@ import { t } from "../i18n/strings.js";
 import { documentTitleFor } from "../navigation/documentTitle.js";
 import { CommandPalette } from "../search/CommandPalette.js";
 import { useCommandPalette } from "../search/useCommandPalette.js";
+import { NotificationsButton } from "../workflows/NotificationsButton.js";
 import { Sidebar } from "./Sidebar.js";
 import type { SignedInUser } from "./SidebarAccount.js";
 
@@ -59,6 +60,7 @@ export function AdminLayout({
       />
       <CommandPalette open={palette.isOpen} onClose={palette.close} />
       <HelpLauncher />
+      {enabledPlugins.includes("automations") && <NotificationsButton />}
       {/*
         Leaves room for the 240px sidebar and its 12px margin. The gutters grow with the
         window; how wide each screen goes is its own choice (design/Page.tsx). The right

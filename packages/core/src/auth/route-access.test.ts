@@ -65,6 +65,12 @@ const SIGNED_IN_ROUTES = new Set([
   "POST /account/passkeys/options",
   "POST /account/passkeys",
   "DELETE /account/passkeys/:id",
+  // Each person's own approvals to answer (only reviewers in the step's role may) and notifications.
+  "GET /workflow-approvals",
+  "POST /workflow-approvals/:approvalId/decision",
+  "GET /notifications",
+  "POST /notifications/read-all",
+  "POST /notifications/:notificationId/read",
   // Each person's own dashboard layout.
   "GET /dashboard/layout",
   "PUT /dashboard/layout",
@@ -115,7 +121,8 @@ describe("access to every route", () => {
 
   // useTestDatabase empties the database before each test, so each test sets up its own.
   async function prepare() {
-    await setEnabledPlugins(testDatabase.database, server.plugins, ["seo"]);
+    // Every plugin on, so their routes reach their own guards.
+    await setEnabledPlugins(testDatabase.database, server.plugins, server.plugins.ids);
     await createTestUser(testDatabase.database, "nobody@example.com", [[]]);
     withoutPermissions = await signInAndGetCookies(server, "nobody@example.com");
   }

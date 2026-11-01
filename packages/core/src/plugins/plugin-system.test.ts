@@ -78,10 +78,11 @@ describe("the plugin system", () => {
       "blog",
       "commerce",
       "forms",
+      "automations",
       "seo",
       "greetings",
     ]);
-    expect(plugins[4]).toEqual({
+    expect(plugins[5]).toEqual({
       id: "greetings",
       name: "Greetings",
       description: "Says hello to visitors.",

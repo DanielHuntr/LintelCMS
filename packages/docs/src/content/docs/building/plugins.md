@@ -13,15 +13,16 @@ the [plugin API reference](/building/plugin-api/).
 
 ## The plugins built into Lintel
 
-| id         | Name        | What it adds                                                                    |
-| ---------- | ----------- | ------------------------------------------------------------------------------- |
-| `blog`     | Blog        | Makes the **Blog posts** collection, with Categories and Tags, when switched on |
-| `commerce` | Online shop | Shows the Commerce section (screens on the roadmap)                             |
-| `forms`    | Forms       | The Forms section, for people with `forms:read` (screens on the roadmap)        |
-| `seo`      | SEO tools   | Search engine settings, redirects, the sitemap and the editor's SEO panel       |
+| id            | Name        | What it adds                                                                    |
+| ------------- | ----------- | ------------------------------------------------------------------------------- |
+| `blog`        | Blog        | Makes the **Blog posts** collection, with Categories and Tags, when switched on |
+| `commerce`    | Online shop | Shows the Commerce section (screens on the roadmap)                             |
+| `forms`       | Forms       | The Forms section, for people with `forms:read` (screens on the roadmap)        |
+| `automations` | Automations | Workflows, content approval and notifications ([details](/building/workflows/)) |
+| `seo`         | SEO tools   | Search engine settings, redirects, the sitemap and the editor's SEO panel       |
 
 Each is a `definePlugin` in its own feature folder (`packages/core/src/blog`, `…/forms`,
-`…/seo`), listed in `packages/core/src/plugins/plugins.registry.ts`. Their admin halves
+`…/workflows`, `…/seo`), listed in `packages/core/src/plugins/plugins.registry.ts`. Their admin halves
 are listed in `packages/admin/src/plugins/adminPlugins.ts`.
 
 ## Plugins from packages
