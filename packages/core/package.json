@@ -13,6 +13,11 @@
       "types": "./dist/roles/permissions.d.ts",
       "development": "./src/roles/permissions.ts",
       "default": "./dist/roles/permissions.js"
+    },
+    "./media-crop": {
+      "types": "./dist/media/focal-crop.d.ts",
+      "development": "./src/media/focal-crop.ts",
+      "default": "./dist/media/focal-crop.js"
     }
   },
   "scripts": {
@@ -30,10 +35,17 @@
     "@electric-sql/pglite": "^0.5.14",
     "@fastify/cookie": "^11.1.5",
     "@fastify/cors": "^11.3.1",
+    "@fastify/multipart": "^10.1.6",
     "@fastify/rate-limit": "^11.2.1",
+    "@tiptap/core": "^3.32.2",
+    "@tiptap/html": "^3.32.2",
+    "@tiptap/pm": "^3.32.2",
+    "@tiptap/starter-kit": "^3.32.2",
     "drizzle-orm": "^0.45.4",
     "fastify": "^5.12.7",
+    "file-type": "^22.3.0",
     "postgres": "^4.0.0",
+    "sharp": "^0.35.5",
     "zod": "^4.6.7"
   },
   "devDependencies": {

@@ -1,0 +1,133 @@
+import { z } from "zod";
+import { blueprintSchema } from "../blueprints/blueprints.schema.js";
+import { entryStatuses, revisionActions } from "./entries.table.js";
+
+/** Values sent for an entry's fields, keyed by field handle. Checked against the blueprint. */
+const entryDataSchema = z.record(z.string(), z.unknown(), {
+  error: "Please send the field values as an object, keyed by field handle",
+});
+
+const slugInputSchema = z
+  .string({ error: "The slug should be text" })
+  .max(200, { error: "Slugs can be at most 200 characters" });
+
+const parentIdSchema = z.uuid({ error: "The parent should be an entry id" }).nullable();
+
+/** An empty query value (`?search=`) means the filter isn't used. */
+function optionalQueryValue<Schema extends z.ZodType>(schema: Schema) {
+  return z.preprocess((value) => (value === "" ? undefined : value), schema.optional());
+}
+
+/** `GET /collections/:handle/entries` */
+export const listEntriesQuerySchema = z.object({
+  status: optionalQueryValue(
+    z.enum(entryStatuses, { error: 'The status should be "draft", "published" or "scheduled"' }),
+  ),
+  search: optionalQueryValue(z.string().trim().max(200)),
+  page: z.coerce.number({ error: "The page should be a number" }).int().min(1).default(1),
+  perPage: z.coerce
+    .number({ error: "perPage should be a number" })
+    .int()
+    .min(1, { error: "perPage should be at least 1" })
+    .max(100, { error: "perPage can be at most 100" })
+    .default(25),
+  parentId: optionalQueryValue(z.uuid({ error: "parentId should be an entry id" })),
+});
+
+/** `POST /collections/:handle/entries`. Without a slug, one is made from the title. */
+export const createEntryRequestSchema = z.object({
+  data: entryDataSchema,
+  slug: slugInputSchema.optional(),
+  parentId: parentIdSchema.optional(),
+});
+
+/**
+ * `PATCH /entries/:id`. `data` is merged over the saved values, so sending one field
+ * changes only that field; send null to clear one.
+ */
+export const updateEntryRequestSchema = z.object({
+  data: entryDataSchema.optional(),
+  slug: slugInputSchema.optional(),
+  parentId: parentIdSchema.optional(),
+});
+
+/** `POST /entries/:id/schedule` */
+export const scheduleEntryRequestSchema = z.object({
+  publishAt: z.iso
+    .datetime({
+      offset: true,
+      error: "publishAt should be a date and time, like 2026-11-01T09:00:00Z",
+    })
+    .transform((value) => new Date(value)),
+});
+
+/** `POST /collections/:handle/entries/reorder`: entries in their new order, with parents. */
+export const reorderEntriesRequestSchema = z.object({
+  order: z.array(
+    z.object({
+      id: z.uuid({ error: "Each item needs the id of an entry" }),
+      parentId: parentIdSchema.default(null),
+    }),
+    { error: "Please send the new order as a list of { id, parentId }" },
+  ),
+});
+
+/** Route params. An id that isn't a uuid can't belong to anything, so routes answer 404. */
+export const entryIdParamsSchema = z.object({ id: z.uuid() });
+
+export const collectionEntriesParamsSchema = z.object({ handle: z.string() });
+
+export const revisionParamsSchema = z.object({ id: z.uuid(), revisionId: z.uuid() });
+
+const personSchema = z.object({ id: z.uuid(), name: z.string() }).nullable();
+
+/** An entry in a list. */
+export const entrySummarySchema = z.object({
+  id: z.uuid(),
+  title: z.string(),
+  slug: z.string(),
+  status: z.enum(entryStatuses),
+  parentId: z.uuid().nullable(),
+  updatedAt: z.iso.datetime(),
+  publishedAt: z.iso.datetime().nullable(),
+  scheduledFor: z.iso.datetime().nullable(),
+  updatedBy: personSchema,
+});
+
+/** One entry with everything the editor needs to show it. */
+export const entrySchema = entrySummarySchema.extend({
+  collectionHandle: z.string(),
+  data: z.record(z.string(), z.unknown()),
+  blueprint: blueprintSchema,
+  /** True when the saved values differ from the published ones still being served. */
+  hasUnpublishedChanges: z.boolean(),
+});
+
+export const entryListSchema = z.object({
+  entries: z.array(entrySummarySchema),
+  total: z.number().int(),
+  page: z.number().int(),
+  perPage: z.number().int(),
+});
+
+export const revisionSummarySchema = z.object({
+  id: z.uuid(),
+  action: z.enum(revisionActions),
+  createdAt: z.iso.datetime(),
+  author: personSchema,
+});
+
+export const revisionSchema = revisionSummarySchema.extend({
+  data: z.record(z.string(), z.unknown()),
+});
+
+export type ListEntriesQuery = z.infer<typeof listEntriesQuerySchema>;
+export type CreateEntryRequest = z.infer<typeof createEntryRequestSchema>;
+export type UpdateEntryRequest = z.infer<typeof updateEntryRequestSchema>;
+export type ReorderEntriesRequest = z.infer<typeof reorderEntriesRequestSchema>;
+export type EntrySummaryResponse = z.infer<typeof entrySummarySchema>;
+export type EntryResponse = z.infer<typeof entrySchema>;
+export type EntryListResponse = z.infer<typeof entryListSchema>;
+export type Person = z.infer<typeof personSchema>;
+export type RevisionSummaryResponse = z.infer<typeof revisionSummarySchema>;
+export type RevisionResponse = z.infer<typeof revisionSchema>;

@@ -1,0 +1,87 @@
+import { HttpError } from "../http/http-errors.js";
+
+/** The upload limit, in megabytes; the routes and the messages below share it. */
+export const MAX_UPLOAD_MEGABYTES = 25;
+
+export class NoFileUploadedError extends HttpError {
+  constructor() {
+    super(400, "INVALID_REQUEST", 'Choose a file to upload (send it in the "file" field).');
+  }
+}
+
+export class FileTooLargeError extends HttpError {
+  constructor() {
+    super(
+      413,
+      "FILE_TOO_LARGE",
+      `That file is bigger than ${MAX_UPLOAD_MEGABYTES} MB. Try a smaller or compressed version.`,
+    );
+  }
+}
+
+export class FileTypeNotAllowedError extends HttpError {
+  /** `detectedExtension` is what the bytes turned out to be, when that is known. */
+  constructor(filename: string, detectedExtension?: string) {
+    const whatItIs = detectedExtension
+      ? ` It looks like a .${detectedExtension} file, whatever its name says.`
+      : "";
+    super(
+      415,
+      "FILE_TYPE_NOT_ALLOWED",
+      `"${filename}" isn't a kind of file Lintel accepts.${whatItIs} ` +
+        "Upload an image (JPEG, PNG, WebP, AVIF, GIF or SVG) or a document " +
+        "(PDF, Word, Excel, PowerPoint, text or CSV).",
+    );
+  }
+}
+
+export class UnsafeSvgError extends HttpError {
+  constructor(filename: string, reason: string) {
+    super(
+      422,
+      "UNSAFE_SVG",
+      `"${filename}" contains ${reason}, which could run code in visitors' browsers. ` +
+        "Export the SVG again without scripts or interactivity, or upload it as a PNG.",
+    );
+  }
+}
+
+export class UnreadableImageError extends HttpError {
+  constructor(filename: string) {
+    super(
+      422,
+      "UNREADABLE_IMAGE",
+      `"${filename}" looks like an image but can't be opened. It may be damaged; try exporting it again.`,
+    );
+  }
+}
+
+export class AssetNotFoundError extends HttpError {
+  constructor() {
+    super(404, "NOT_FOUND", "That file isn't in the media library. It may have been deleted.");
+  }
+}
+
+export interface AssetUsage {
+  entryId: string;
+  title: string;
+}
+
+/**
+ * Carries the entries that use the asset, so editors can see what to change first.
+ * The routes add `usedBy` to the response body (Fastify's error format has no room for it).
+ */
+export class AssetInUseError extends HttpError {
+  readonly usedBy: AssetUsage[];
+
+  constructor(usedBy: AssetUsage[]) {
+    const count = usedBy.length;
+    super(
+      409,
+      "ASSET_IN_USE",
+      `This file is used in ${count} ${count === 1 ? "entry" : "entries"}. ` +
+        "Remove it from there first, then delete it.",
+    );
+    this.usedBy = usedBy;
+  }
+}

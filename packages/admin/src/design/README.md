@@ -21,6 +21,7 @@ All tokens live in `src/styles.css`. Components only use tokens, never fixed col
 | `accent`                                     | Links, tinted buttons, the selected sidebar item                     |
 | `accent-fill`, `on-accent`                   | Filled buttons, the toggle's on track, and the text on them          |
 | `success`, `warning`, `danger`               | Status colours for badges, list icons and errors                     |
+| `scrim`                                      | The dimmed layer behind dialogs and sheets                           |
 
 Non-colour tokens: the type scale (`text-display` for full-screen questions, `text-large-title`, `text-title`, `text-headline`,
 `text-body`, `text-footnote`, `text-caption`, each with its own line height and tracking),
@@ -72,23 +73,31 @@ also changes the text mark (`AppMark`), which shows the first letter of the app 
 
 ## Components
 
-| File                   | What it is                                                                          |
-| ---------------------- | ----------------------------------------------------------------------------------- |
-| `Button.tsx`           | `filled` (the main action), `tinted`, `plain`; `small` to `extra-large`             |
-| `TextField.tsx`        | A labelled input with an optional hint or error; `fieldSize="large"` for setup      |
-| `Card.tsx`             | A rounded surface with an optional title and accessory                              |
-| `GroupedList.tsx`      | An iOS Settings-style inset group of rows, with header and footer                   |
-| `GroupedListRow.tsx`   | A row: icon, label, description, detail, accessory, and a chevron when it navigates |
-| `Toggle.tsx`           | An on/off switch (`role="switch"`)                                                  |
-| `SegmentedControl.tsx` | A pill of exclusive choices (a radio group; arrow keys move the choice)             |
-| `Badge.tsx`            | A short coloured status label                                                       |
-| `LargeTitle.tsx`       | The page header: the page's `h1`, subtitle and actions                              |
-| `EmptyState.tsx`       | What to show when there is nothing yet                                              |
-| `AppMark.tsx`          | The app's text mark                                                                 |
-| `PasswordField.tsx`    | A TextField with a "Show password" toggle button (`aria-pressed`)                   |
-| `EmailField.tsx`       | A TextField that offers a one-click fix for domain typos such as "gmai.com"         |
-| `ChoiceCardGroup.tsx`  | Large tiles with an icon and a line each; a radio group like SegmentedControl       |
-| `DisplayTitle.tsx`     | The big h1 of full-screen screens such as setup and sign-in                         |
+| File                   | What it is                                                                             |
+| ---------------------- | -------------------------------------------------------------------------------------- |
+| `Button.tsx`           | `filled` (the main action), `tinted`, `plain`, `destructive`; `small` to `extra-large` |
+| `LinkButton.tsx`       | A link that looks like a Button, for actions that go to another screen                 |
+| `BackLink.tsx`         | "‹ Settings" above a page title                                                        |
+| `TextField.tsx`        | A labelled input with an optional hint or error; `fieldSize="large"` for setup         |
+| `Card.tsx`             | A rounded surface with an optional title and accessory                                 |
+| `GroupedList.tsx`      | An iOS Settings-style inset group of rows, with header and footer                      |
+| `GroupedListRow.tsx`   | A row: icon, label, description, detail, accessory, and a chevron when it navigates    |
+| `Toggle.tsx`           | An on/off switch (`role="switch"`)                                                     |
+| `SegmentedControl.tsx` | A pill of exclusive choices (a radio group; arrow keys move the choice)                |
+| `Badge.tsx`            | A short coloured status label                                                          |
+| `LargeTitle.tsx`       | The page header: the page's `h1`, subtitle and actions                                 |
+| `EmptyState.tsx`       | What to show when there is nothing yet                                                 |
+| `SearchField.tsx`      | A search box with a magnifying glass                                                   |
+| `Skeleton.tsx`         | A grey shape standing in for content that's loading; wrap in `LoadingRegion`           |
+| `Dialog.tsx`           | A modal on the native `<dialog>`: `alert` for questions, `sheet` for tasks             |
+| `ConfirmDialog.tsx`    | "Are you sure?" before deleting or restoring, instead of the browser's `confirm()`     |
+| `Menu.tsx`             | A button that opens a short list of actions (the ARIA menu button pattern)             |
+| `controlStyles.ts`     | The shared look of inputs, text areas and selects                                      |
+| `AppMark.tsx`          | The app's text mark                                                                    |
+| `PasswordField.tsx`    | A TextField with a "Show password" toggle button (`aria-pressed`)                      |
+| `EmailField.tsx`       | A TextField that offers a one-click fix for domain typos such as "gmai.com"            |
+| `ChoiceCardGroup.tsx`  | Large tiles with an icon and a line each; a radio group like SegmentedControl          |
+| `DisplayTitle.tsx`     | The big h1 of full-screen screens such as setup and sign-in                            |
 
 Helpers: `suggestEmailCorrection.ts` (the typo check behind EmailField: popular domains and
 edit distance, never blocking) and `radioGroupKeys.ts` (the arrow-key rules every radio group

@@ -153,7 +153,7 @@ function hintFor(
  * The code can sit on the error itself, on its `cause` (Drizzle wraps failed queries), or
  * inside an AggregateError (Node tries IPv6 and IPv4 for "localhost" and reports both).
  */
-function findErrorCode(error: unknown, depth = 0): string | undefined {
+export function findErrorCode(error: unknown, depth = 0): string | undefined {
   if (!(error instanceof Error) || depth > 5) {
     return undefined;
   }
@@ -187,4 +187,27 @@ function unreachable(message: string): DescribedDatabaseError {
 
 function invalid(message: string): DescribedDatabaseError {
   return { problem: "invalid", message };
+}
+
+/**
+ * True when a write broke a unique index, optionally a particular one. Services use it to
+ * turn a lost race ("someone took that handle a moment ago") into a plain message.
+ */
+export function isUniqueViolation(error: unknown, indexName?: string): boolean {
+  if (findErrorCode(error) !== "23505") {
+    return false;
+  }
+  return indexName === undefined || mentionsConstraint(error, indexName);
+}
+
+function mentionsConstraint(error: unknown, indexName: string, depth = 0): boolean {
+  if (!(error instanceof Error) || depth > 5) {
+    return false;
+  }
+  const constraint = "constraint" in error ? error.constraint : undefined;
+  const constraintName = "constraint_name" in error ? error.constraint_name : undefined;
+  if (constraint === indexName || constraintName === indexName) {
+    return true;
+  }
+  return error.message.includes(indexName) || mentionsConstraint(error.cause, indexName, depth + 1);
 }

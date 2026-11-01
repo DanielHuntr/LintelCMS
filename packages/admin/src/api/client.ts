@@ -3,7 +3,11 @@
  * and every failure becomes an `ApiError` carrying the API's plain-language message.
  */
 
-const apiUrl = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
+/** Exported for the few requests `apiRequest` can't make, such as uploads that report progress. */
+export const apiUrl = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
+
+/** Per-field messages from a validation error, keyed by field handle. */
+export type FieldMessages = Readonly<Record<string, string>>;
 
 /** The error shape every API route uses: branch on `code`, show `message` to the person. */
 export class ApiError extends Error {
@@ -11,14 +15,22 @@ export class ApiError extends Error {
     readonly status: number,
     readonly code: string,
     message: string,
+    /** Anything else in the error body, such as `usedBy` on a 409 ASSET_IN_USE. */
+    readonly details: Readonly<Record<string, unknown>> = {},
   ) {
     super(message);
     this.name = "ApiError";
   }
+
+  /** Per-field messages on a validation error about entry or blueprint fields. */
+  get fields(): FieldMessages | undefined {
+    const fields = this.details.fields;
+    return typeof fields === "object" && fields !== null ? (fields as FieldMessages) : undefined;
+  }
 }
 
 interface RequestOptions {
-  method?: "GET" | "POST" | "PATCH" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   /** Sent as JSON. Leave out for requests without a body. */
   body?: unknown;
   /** Extra headers, such as the setup code a first-run request has to carry. */
@@ -53,14 +65,29 @@ function requestHeaders(hasBody: boolean, extraHeaders: Record<string, string> =
 }
 
 async function toApiError(response: Response): Promise<ApiError> {
+  let body: unknown;
   try {
-    const details = (await response.json()) as { code?: string; message?: string };
-    return new ApiError(
-      response.status,
-      details.code ?? "UNKNOWN",
-      details.message ?? response.statusText,
-    );
+    body = await response.json();
   } catch {
-    return new ApiError(response.status, "UNKNOWN", response.statusText);
+    body = undefined;
   }
+  return apiErrorFromBody(response.status, response.statusText, body);
+}
+
+/** Builds an ApiError from a parsed error body, which may be missing or not what we expect. */
+export function apiErrorFromBody(status: number, statusText: string, body: unknown): ApiError {
+  if (typeof body !== "object" || body === null) {
+    return new ApiError(status, "UNKNOWN", statusText);
+  }
+  const { code, message, ...rest } = body as Record<string, unknown>;
+  // statusCode and error repeat what the response already says; keep only the extras.
+  const details = Object.fromEntries(
+    Object.entries(rest).filter(([key]) => key !== "statusCode" && key !== "error"),
+  );
+  return new ApiError(
+    status,
+    typeof code === "string" ? code : "UNKNOWN",
+    typeof message === "string" ? message : statusText,
+    details,
+  );
 }

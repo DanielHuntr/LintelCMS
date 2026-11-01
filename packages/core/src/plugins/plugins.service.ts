@@ -1,7 +1,18 @@
+import { ensureBlogPostsCollection } from "../collections/default-collections.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { readSetting, writeSetting } from "../settings/settings.service.js";
 import { isPluginId, type PluginId, pluginRegistry } from "./plugins.registry.js";
 import type { PluginList } from "./plugins.schema.js";
+
+/**
+ * Content a plugin needs, made when the plugin is switched on. Switching it off again
+ * leaves the content alone: nobody loses their posts by toggling a setting.
+ */
+const contentForPlugins: Partial<
+  Record<PluginId, (database: DatabaseOrTransaction) => Promise<void>>
+> = {
+  blog: ensureBlogPostsCollection,
+};
 
 /**
  * Which plugins are switched on. Ids no longer in the registry (a plugin that was
@@ -27,7 +38,8 @@ export async function listPlugins(database: DatabaseOrTransaction): Promise<Plug
 
 /**
  * Switches on exactly the given plugins and switches off the rest. Stored in registry
- * order without duplicates, so the same choice always looks the same.
+ * order without duplicates, so the same choice always looks the same. Plugins that have
+ * just been switched on get their content (see `contentForPlugins`).
  */
 export async function setEnabledPlugins(
   database: DatabaseOrTransaction,
@@ -39,7 +51,12 @@ export async function setEnabledPlugins(
     throw new Error(`Unknown plugin ids: ${unknown.join(", ")}`);
   }
 
+  const wasEnabled = await findEnabledPluginIds(database);
   const enabled = pluginRegistry.map((plugin) => plugin.id).filter((id) => pluginIds.includes(id));
   await writeSetting(database, "enabledPlugins", enabled);
+
+  for (const pluginId of enabled.filter((id) => !wasEnabled.includes(id))) {
+    await contentForPlugins[pluginId]?.(database);
+  }
   return listPlugins(database);
 }

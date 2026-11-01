@@ -3,11 +3,26 @@ import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import Fastify from "fastify";
 import { authRoutes } from "./auth/auth.routes.js";
+import { blueprintsRoutes } from "./blueprints/blueprints.routes.js";
+import { collectionsRoutes } from "./collections/collections.routes.js";
 import type { ActiveDatabase } from "./database/active-database.js";
 import type { Database } from "./database/client.js";
 import { DEFAULT_LINTEL_FOLDER, type LintelFolder } from "./database/database-choice.js";
+import { deliveryRoutes } from "./delivery/delivery.routes.js";
+import { entriesRoutes } from "./entries/entries.routes.js";
+import { findEntriesUsingAsset } from "./entries/entries.service.js";
+import { revisionsRoutes } from "./entries/revisions.routes.js";
+import { fieldtypesRoutes } from "./fieldtypes/fieldtypes.routes.js";
+import type { AssetExists, AssetLookup } from "./fieldtypes/image-assets.js";
 import { healthRoutes } from "./health/health.routes.js";
+import { sendHttpErrorDetails } from "./http/http-errors.js";
+import { type AssetUsageFinder, createAssetLookup } from "./media/asset-lookup.js";
+import { LocalDiskStorage } from "./media/local-disk-storage.js";
+import { mediaRoutes } from "./media/media.routes.js";
+import type { StorageDriver } from "./media/storage-driver.js";
+import { DEFAULT_TRANSFORM_CACHE_FOLDER } from "./media/transform-cache.js";
 import { pluginsRoutes } from "./plugins/plugins.routes.js";
+import { registerScheduledJobs } from "./scheduler/scheduled-jobs.js";
 import { generateSetupCode } from "./setup/setup-code.js";
 import { setupRoutes } from "./setup/setup.routes.js";
 
@@ -26,7 +41,23 @@ declare module "fastify" {
     setupCode: string;
     /** Whether cookies are marked Secure (HTTPS only). Off only in development. */
     secureCookies: boolean;
+    /** Checks that an image picked for an entry is in the media library. */
+    assetExists: AssetExists;
+    /** Expands image ids into images for the delivery API. */
+    assetLookup: AssetLookup;
+    /** The API's address as browsers reach it, for absolute URLs such as an asset's `url`. */
+    publicApiUrl: string;
   }
+}
+
+/** Where uploaded files go and how media learns what uses them. Every part has a default. */
+export interface MediaOptions {
+  /** Defaults to local disk at `.lintel/uploads`. Tests pass a temporary folder. */
+  storage?: StorageDriver;
+  /** Resized images. Defaults to `.lintel/cache/media`. */
+  transformCacheFolder?: string;
+  /** Which entries use an asset, checked before it is deleted. */
+  usageFinder?: AssetUsageFinder;
 }
 
 export interface ServerOptions {
@@ -45,6 +76,17 @@ export interface ServerOptions {
   secureCookies?: boolean;
   /** Turn request logging off in tests to keep output readable. */
   logger?: boolean;
+  /**
+   * Run timed jobs, such as publishing scheduled entries, from startup until the server
+   * closes. On by default; tests that drive the jobs themselves turn it off.
+   */
+  runScheduledJobs?: boolean;
+  /** How images are checked and expanded. Defaults to the media library. */
+  assetExists?: AssetExists;
+  assetLookup?: AssetLookup;
+  /** The API's address as browsers reach it. Defaults to http://localhost:4000. */
+  publicApiUrl?: string;
+  media?: MediaOptions;
 }
 
 /**
@@ -62,7 +104,17 @@ export function buildServer(options: ServerOptions) {
   server.decorate("lintelFolder", options.lintelFolder ?? DEFAULT_LINTEL_FOLDER);
   server.decorate("setupCode", options.setupCode ?? generateSetupCode());
   server.decorate("secureCookies", options.secureCookies ?? true);
+  server.decorate("publicApiUrl", options.publicApiUrl ?? "http://localhost:4000");
+  // Image fields check and expand assets through the media library. The lookup reads
+  // server.database on every call, so it follows setup switching databases.
+  const mediaLibrary = createAssetLookup(server);
+  server.decorate(
+    "assetExists",
+    options.assetExists ?? ((assetId) => mediaLibrary.assetExists(assetId)),
+  );
+  server.decorate("assetLookup", options.assetLookup ?? mediaLibrary);
   server.decorateRequest("signedIn", null);
+  server.setErrorHandler(sendHttpErrorDetails);
 
   server.register(cors, {
     origin: options.adminOrigin,
@@ -78,6 +130,24 @@ export function buildServer(options: ServerOptions) {
   server.register(authRoutes);
   server.register(setupRoutes);
   server.register(pluginsRoutes);
+  server.register(fieldtypesRoutes);
+  server.register(blueprintsRoutes);
+  server.register(collectionsRoutes);
+  server.register(entriesRoutes);
+  server.register(revisionsRoutes);
+  server.register(deliveryRoutes);
+
+  if (options.runScheduledJobs ?? true) {
+    registerScheduledJobs(server);
+  }
+  server.register(mediaRoutes, {
+    storage: options.media?.storage ?? new LocalDiskStorage(),
+    cacheFolder: options.media?.transformCacheFolder ?? DEFAULT_TRANSFORM_CACHE_FOLDER,
+    // An asset still used by an entry can't be deleted.
+    usageFinder: options.media?.usageFinder ?? {
+      findEntriesUsingAsset: (assetId) => findEntriesUsingAsset(server.database, assetId),
+    },
+  });
 
   return server;
 }

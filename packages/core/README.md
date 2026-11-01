@@ -17,9 +17,13 @@ its routes and its tests.
 | `src/plugins`     | Which features (blog, shop...) are switched on       |
 | `src/settings`    | Small site-wide settings stored as JSON              |
 | `src/sessions`    | Server-side sessions behind the sign-in cookie       |
-| `src/blueprints`  | Field definitions for content                        |
-| `src/collections` | Groups of entries (Pages, Blog...)                   |
-| `src/entries`     | Entries and their revisions                          |
+| `src/fieldtypes`  | Kinds of field, and checking entries against them    |
+| `src/blueprints`  | Content types: the fields a kind of content has      |
+| `src/collections` | Groups of entries (Pages, Blog...) and the defaults  |
+| `src/entries`     | Entries, publishing, ordering and revisions          |
+| `src/delivery`    | The public API sites read published content from     |
+| `src/scheduler`   | Timed jobs, such as publishing scheduled entries     |
+| `src/media`       | Uploads, image resizing and the storage driver       |
 | `src/health`      | `GET /health` for uptime checks                      |
 | `src/database`    | Built-in or Postgres, choosing one, friendly errors  |
 | `src/http`        | Error responses and request parsing shared by routes |
@@ -51,6 +55,10 @@ pnpm db:migrate     # apply migrations now (the server also does this on every s
 pnpm create-admin --email <email> --name "<name>"   # create a Super admin
 pnpm reset-password --email <email>                 # new password, signs the user out everywhere
 ```
+
+Uploaded files go to `.lintel/uploads` and resized images to `.lintel/cache/media`.
+Set `API_PUBLIC_URL` when browsers reach the API at another address than
+`http://localhost:<API_PORT>`; it is used in the URLs of uploaded files.
 
 Every setting has a default, so no `.env` is needed. If the root `.env` exists it is
 read; real environment variables win over it. Without `DATABASE_URL` the API uses the

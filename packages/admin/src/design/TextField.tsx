@@ -2,7 +2,7 @@ import { Check } from "lucide-react";
 import { useId, type InputHTMLAttributes, type ReactNode, type Ref } from "react";
 import { classNames } from "./classNames.js";
 
-interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "id"> {
+interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   /** Always visible above the field. */
   label: string;
   /** Extra guidance under the field, e.g. "At least 12 characters". */
@@ -33,10 +33,13 @@ export function TextField({
   trailingAccessory,
   fieldSize = "regular",
   className,
+  id,
   ...inputProps
 }: TextFieldProps) {
   const isLarge = fieldSize === "large";
-  const inputId = useId();
+  const generatedId = useId();
+  // An id can be passed in when something else needs to find the input, e.g. to focus it.
+  const inputId = id ?? generatedId;
   const messageId = useId();
   const message = error ?? hint;
   const isSuccess = !error && hintTone === "success";
