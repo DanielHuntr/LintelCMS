@@ -1,0 +1,69 @@
+# @lintel/builder-model
+
+The page builder's document model, in plain TypeScript (its only dependency is Zod). The
+server uses it to check pages before saving them, the editor (`@lintel/builder`) to change
+them, and the website to draw them. Nothing here touches React or the DOM.
+
+docs/decisions/0011-page-documents.md explains why the model looks the way it does.
+
+## A page
+
+```json
+{
+  "version": 1,
+  "root": {
+    "id": "page",
+    "type": "page",
+    "name": "",
+    "props": {},
+    "styles": { "base": {} },
+    "hidden": false,
+    "locked": false,
+    "children": [
+      {
+        "id": "k3j9x2m4pq",
+        "type": "heading",
+        "name": "Hero title",
+        "props": { "text": "Welcome", "level": 1 },
+        "styles": { "base": { "fontSize": "3rem" }, "phone": { "fontSize": "2rem" }, "hover": {} },
+        "children": [],
+        "hidden": false,
+        "locked": false
+      }
+    ]
+  }
+}
+```
+
+- `props` are what a node shows; each component's Zod schema checks them.
+- `styles` are how it looks: `base` (desktop and up), `tablet` and `phone` cascade down,
+  `hover` and `focus` are states. Only properties in `styles/style-properties.ts` are allowed,
+  and values can't break out of their declaration.
+
+## Folders
+
+| Folder        | What it holds                                                                            |
+| ------------- | ---------------------------------------------------------------------------------------- |
+| `document/`   | The schema, `createEmptyPage`, `migrateDocument` and `validatePageDocument`              |
+| `components/` | `ComponentDefinition`, the standard components and `createComponentCatalogue`            |
+| `styles/`     | Allowed properties, the breakpoint cascade, class names and `compileStylesheet`          |
+| `tokens/`     | The site's design tokens (`--lintel-color-brand`...) as the style panel offers them      |
+| `tree/`       | Reading (`findPath`, `listVisibleRows`) and changing (`moveNode`, `duplicateNode`) trees |
+| `html/`       | A small HTML parser and writer, `formatHtml` for the code view, and `importHtml`         |
+| `code/`       | Code block markers (`data-lintel-field`), script removal and the code permission rule    |
+| `templates/`  | The ready-made sections offered on an empty page and in the Insert panel                 |
+
+Tree changes never modify a tree: they return a new one that shares every untouched node,
+so undo can keep whole trees and the editor can skip redrawing unchanged layers.
+
+## Adding a component
+
+Define it with `defineComponent` (type, label, description, icon, category, `propsSchema`,
+`defaultProps`, `allowedChildren`, `editableFields`) and pass it, with `standardComponents`,
+to `createComponentCatalogue`. Give its drawing to `@lintel/builder` as well, and add it to
+the server's list in `packages/core/src/pages/page-components.ts` so saved pages can use it.
+
+## Changing the document shape
+
+Raise `pageDocumentVersion` and add a migration to `documentMigrations` in
+`document/migrations.ts`. Stored pages are migrated when read; there's no database script.

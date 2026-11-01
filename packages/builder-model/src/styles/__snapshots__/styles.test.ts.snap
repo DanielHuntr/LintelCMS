@@ -1,0 +1,48 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`the stylesheet > prints rules, states and breakpoints in a fixed order, leaving hidden nodes out 1`] = `
+".hero {
+  padding-top: var(--lintel-space-8);
+  padding-right: var(--lintel-space-5);
+  padding-bottom: var(--lintel-space-8);
+  padding-left: var(--lintel-space-5);
+}
+
+.hero-title {
+  font-size: 3rem;
+  color: var(--lintel-color-brand);
+}
+
+.button {
+  display: inline-block;
+  align-self: flex-start;
+  padding-top: var(--lintel-space-3);
+  padding-right: var(--lintel-space-5);
+  padding-bottom: var(--lintel-space-3);
+  padding-left: var(--lintel-space-5);
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--lintel-color-on-brand);
+  background-color: var(--lintel-color-brand);
+  border-radius: var(--lintel-radius-button);
+}
+
+.button:hover {
+  opacity: 0.88;
+}
+
+@media (max-width: 767px) {
+  .hero {
+    padding-top: var(--lintel-space-7);
+    padding-bottom: var(--lintel-space-7);
+  }
+
+  .hero-title {
+    font-size: 2rem;
+  }
+}
+
+/* Code: .code */
+.custom { gap: 1rem; }
+"
+`;
