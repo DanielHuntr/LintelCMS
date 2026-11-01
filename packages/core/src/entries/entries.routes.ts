@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import { getSignedIn, requirePermission } from "../auth/require-permission.js";
 import { announceContentEvent } from "../content-events/content-events.js";
 import { describeEntryForEvent } from "../content-events/entry-event-data.js";
+import { actorOf } from "../events/event-actor.js";
 import { parseRequest } from "../http/http-errors.js";
 import { EntryNotFoundError } from "./entries.errors.js";
 import { duplicateEntry } from "./entry-duplication.service.js";
@@ -22,6 +23,7 @@ import {
   deleteEntry,
   type EntryChangeContext,
   findEntry,
+  findEntryOrFail,
   saveEntry,
 } from "./entries.service.js";
 
@@ -52,6 +54,12 @@ export async function entriesRoutes(server: FastifyInstance) {
     const { handle } = parseRequest(collectionEntriesParamsSchema, request.params);
     const entry = parseRequest(createEntryRequestSchema, request.body);
     const created = await createEntry(server.database, handle, entry, changeContext(request));
+    const createdEntry = await describeEntryForEvent(server.database, created.id);
+    await announceContentEvent(
+      server,
+      { name: "entry.created", entry: createdEntry },
+      actorOf(request),
+    );
     return reply.code(201).send(created);
   });
 
@@ -74,28 +82,35 @@ export async function entriesRoutes(server: FastifyInstance) {
   server.patch("/entries/:id", can("entries:update"), async (request) => {
     const id = readEntryId(request.params);
     const changes = parseRequest(updateEntryRequestSchema, request.body);
-    // Only a new slug or parent can move an entry, so only then is its old address needed.
-    const mayMove = changes.slug !== undefined || changes.parentId !== undefined;
-    const before = mayMove ? await describeEntryForEvent(server.database, id) : undefined;
+    const before = await describeEntryForEvent(server.database, id);
+    const beforeValues = await findEntryOrFail(server.database, id);
     const saved = await saveEntry(server.database, id, changes, changeContext(request));
-    if (before?.url && before.publishedAt !== null) {
-      const after = await describeEntryForEvent(server.database, id);
-      if (after.url && after.url !== before.url) {
-        await announceContentEvent(server, {
-          name: "entry.moved",
-          entry: after,
-          previousUrl: before.url,
-        });
-      }
+    const after = await describeEntryForEvent(server.database, id);
+    const changedFields = listChangedFields(beforeValues, saved);
+    if (changedFields.length > 0) {
+      await announceContentEvent(
+        server,
+        { name: "entry.updated", entry: after, changedFields },
+        actorOf(request),
+      );
+    }
+    // Only a live entry has an old address worth redirecting from.
+    if (before.url && before.publishedAt !== null && after.url && after.url !== before.url) {
+      await announceContentEvent(
+        server,
+        { name: "entry.moved", entry: after, previousUrl: before.url },
+        actorOf(request),
+      );
     }
     return saved;
   });
 
   server.post("/entries/:id/publish", can("entries:publish"), async (request) => {
     const id = readEntryId(request.params);
+    await checkMayPublish(request, id);
     const published = await publishEntry(server.database, id, changeContext(request));
     const entry = await describeEntryForEvent(server.database, id);
-    await announceContentEvent(server, { name: "entry.published", entry });
+    await announceContentEvent(server, { name: "entry.published", entry }, actorOf(request));
     return published;
   });
 
@@ -103,13 +118,14 @@ export async function entriesRoutes(server: FastifyInstance) {
     const id = readEntryId(request.params);
     const unpublished = await unpublishEntry(server.database, id, getSignedIn(request).user.id);
     const entry = await describeEntryForEvent(server.database, id);
-    await announceContentEvent(server, { name: "entry.unpublished", entry });
+    await announceContentEvent(server, { name: "entry.unpublished", entry }, actorOf(request));
     return unpublished;
   });
 
   server.post("/entries/:id/schedule", can("entries:publish"), async (request) => {
     const id = readEntryId(request.params);
     const { publishAt } = parseRequest(scheduleEntryRequestSchema, request.body);
+    await checkMayPublish(request, id);
     return scheduleEntry(server.database, id, publishAt, changeContext(request));
   });
 
@@ -123,9 +139,36 @@ export async function entriesRoutes(server: FastifyInstance) {
     const id = readEntryId(request.params);
     const entry = await describeEntryForEvent(server.database, id);
     await deleteEntry(server.database, id);
-    await announceContentEvent(server, { name: "entry.deleted", entry });
+    await announceContentEvent(server, { name: "entry.deleted", entry }, actorOf(request));
     return reply.code(204).send();
   });
+}
+
+/**
+ * Asks the features that may refuse a publish (such as content approval in
+ * src/workflows) before an entry goes live or is scheduled to.
+ */
+async function checkMayPublish(request: FastifyRequest, entryId: string): Promise<void> {
+  const entry = await describeEntryForEvent(request.server.database, entryId);
+  await request.server.events.runChecks("entry.publishing", {
+    entry,
+    actor: actorOf(request),
+    permissions: getSignedIn(request).permissions,
+  });
+}
+
+/** The fields whose saved values differ, plus "slug" and "parent" when those moved. */
+function listChangedFields(
+  before: { data: Record<string, unknown>; slug: string; parentId: string | null },
+  after: { data: Record<string, unknown>; slug: string; parentId: string | null },
+): string[] {
+  const handles = new Set([...Object.keys(before.data), ...Object.keys(after.data)]);
+  const changed = [...handles].filter(
+    (handle) => JSON.stringify(before.data[handle]) !== JSON.stringify(after.data[handle]),
+  );
+  if (before.slug !== after.slug) changed.push("slug");
+  if (before.parentId !== after.parentId) changed.push("parent");
+  return changed;
 }
 
 /** The entry id from the path; one that isn't a uuid is simply not found. */

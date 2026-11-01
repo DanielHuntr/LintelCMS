@@ -1,3 +1,4 @@
+import { workflowStrings } from "../workflows/workflowStrings.js";
 import { contentModelStrings } from "./contentModelStrings.js";
 
 /**
@@ -8,6 +9,7 @@ import { contentModelStrings } from "./contentModelStrings.js";
  */
 const english = {
   ...contentModelStrings,
+  ...workflowStrings,
   "app.name": "Lintel",
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",

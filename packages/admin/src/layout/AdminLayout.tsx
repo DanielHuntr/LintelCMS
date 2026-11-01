@@ -3,6 +3,7 @@ import { HelpLauncher } from "../help/HelpLauncher.js";
 import { t } from "../i18n/strings.js";
 import { CommandPalette } from "../search/CommandPalette.js";
 import { useCommandPalette } from "../search/useCommandPalette.js";
+import { NotificationsButton } from "../workflows/NotificationsButton.js";
 import { Sidebar } from "./Sidebar.js";
 import type { SignedInUser } from "./SidebarAccount.js";
 
@@ -44,6 +45,7 @@ export function AdminLayout({
       />
       <CommandPalette open={palette.isOpen} onClose={palette.close} />
       <HelpLauncher />
+      {enabledPlugins.includes("automations") && <NotificationsButton />}
       {/*
         Leaves room for the 240px sidebar and its 12px margin. A size container, so screens
         that need the full width (the editor's split view) can measure it with cqw.

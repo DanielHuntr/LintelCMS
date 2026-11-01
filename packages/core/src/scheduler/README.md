@@ -7,7 +7,10 @@ Jobs the server runs on a timer, each on startup and then every minute:
 - sending webhook deliveries that are due: retries, and anything queued while no server
   was sending (`server.webhooks.deliverDue`, in `src/webhooks`).
 
-`scheduled-jobs.ts` is the one visible list of jobs. `buildServer` registers it unless
+Automations add one more job of their own in `registerWorkflows` (src/workflows): starting
+scheduled workflows and carrying on waits, retries and new runs.
+
+`scheduled-jobs.ts` is the one visible list of core's jobs. `buildServer` registers it unless
 `runScheduledJobs: false` is passed (tests do, so they decide when jobs run). Jobs start
 when the server is ready and stop when it closes; closing waits for a run in progress.
 

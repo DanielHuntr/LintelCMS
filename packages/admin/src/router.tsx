@@ -41,6 +41,7 @@ import { SettingsPage } from "./settings/SettingsPage.js";
 import { SignInPage } from "./sign-in/SignInPage.js";
 import { WebhookDetailPage } from "./webhooks/WebhookDetailPage.js";
 import { WebhooksPage } from "./webhooks/WebhooksPage.js";
+import { workflowsRoutes } from "./workflows/workflowsRoutes.js";
 import "./setup/historyState.js";
 
 const rootRoute = createRootRoute();
@@ -422,6 +423,7 @@ export const routeTree = rootRoute.addChildren([
       helpRoute,
       ...contentRoutes,
       ...integrationRoutes,
+      ...workflowsRoutes(() => adminRoute),
       ...placeholderRoutes,
     ]),
   ]),

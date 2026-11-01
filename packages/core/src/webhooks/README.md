@@ -6,8 +6,10 @@ when a page is published. Admins add them in Settings → Webhooks.
 ## Events
 
 `entry.published`, `entry.unpublished`, `entry.deleted`, `asset.uploaded` and
-`asset.deleted` (the list is in `webhook-events.ts`). They come from `src/content-events`;
-a scheduled entry going live is an `entry.published` like any other.
+`asset.deleted` (the list is in `webhook-events.ts`). Webhooks subscribe to the event bus
+(`src/events`) in `webhook-event-listener.ts`; a scheduled entry going live is an
+`entry.published` like any other. Automations can also call any address, signed the same
+way (see `src/workflows`).
 
 ## What is sent
 
@@ -106,3 +108,4 @@ All need `settings:read` to look and `settings:update` to change.
 | `webhook-signatures.ts`                                      | Secrets, signing and checking                  |
 | `webhook-retries.ts`                                         | When to try again                              |
 | `webhook-events.ts`                                          | The list of events                             |
+| `webhook-event-listener.ts`                                  | Hearing about events from the event bus        |

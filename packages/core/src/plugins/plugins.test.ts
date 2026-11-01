@@ -45,6 +45,12 @@ describe("plugins", () => {
           enabled: false,
         },
         {
+          id: "automations",
+          name: "Automations",
+          description: "Approvals, notifications and connections to other services.",
+          enabled: false,
+        },
+        {
           id: "seo",
           name: "SEO tools",
           description: "Page titles, sitemaps and redirects.",
@@ -70,7 +76,7 @@ describe("plugins", () => {
     const disabled = await updatePlugins(["seo"]);
     expect(
       disabled.json().plugins.map((plugin: { id: string; enabled: boolean }) => plugin.enabled),
-    ).toEqual([false, false, false, true]);
+    ).toEqual([false, false, false, false, true]);
     const signIn = await server.inject({
       method: "POST",
       url: "/auth/sign-in",

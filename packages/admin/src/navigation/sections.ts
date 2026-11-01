@@ -9,6 +9,7 @@ import {
   Settings,
   ShoppingBag,
   Users,
+  Workflow,
   type LucideIcon,
 } from "lucide-react";
 import type { StringKey } from "../i18n/strings.js";
@@ -49,6 +50,13 @@ export const sections: readonly Section[] = [
     icon: ListChecks,
   },
   { path: "/users", label: "nav.users", permission: "users:read", icon: Users },
+  {
+    path: "/automations",
+    label: "nav.automations",
+    permission: "workflows:read",
+    plugin: "automations",
+    icon: Workflow,
+  },
   { path: "/settings", label: "nav.settings", permission: "settings:read", icon: Settings },
   { path: "/help", label: "nav.help", icon: CircleHelp },
 ];

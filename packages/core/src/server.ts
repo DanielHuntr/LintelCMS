@@ -40,6 +40,9 @@ import { navigationRoutes } from "./navigation/navigation.routes.js";
 import { translationsRoutes } from "./entries/translations.routes.js";
 import { WebhookDispatcher } from "./webhooks/webhook-dispatcher.js";
 import { webhooksRoutes } from "./webhooks/webhooks.routes.js";
+import { EventBus } from "./events/event-bus.js";
+import { subscribeEventListeners } from "./events/event-listeners.js";
+import { registerWorkflows, type WorkflowOptions } from "./workflows/register-workflows.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -64,6 +67,8 @@ declare module "fastify" {
     publicApiUrl: string;
     /** Sends queued webhook deliveries (see src/webhooks). */
     webhooks: WebhookDispatcher;
+    /** What happened, for features to react to (see src/events). */
+    events: EventBus;
   }
 }
 
@@ -108,6 +113,8 @@ export interface ServerOptions {
   graphiql?: boolean;
   /** How webhooks are sent. Every part has a default. */
   webhooks?: WebhookOptions;
+  /** How automations run and send email. Every part has a default. */
+  workflows?: WorkflowOptions;
 }
 
 export interface WebhookOptions {
@@ -152,6 +159,14 @@ export function buildServer(options: ServerOptions) {
   });
   server.decorate("webhooks", webhooks);
   server.addHook("onClose", () => webhooks.finishSending());
+  server.decorate(
+    "events",
+    new EventBus({
+      onListenerError: (error, listenerName, event) =>
+        server.log.error(error, `Telling ${listenerName} about ${event.name} failed`),
+    }),
+  );
+  subscribeEventListeners(server);
   server.decorateRequest("signedIn", null);
   server.setErrorHandler(sendHttpErrorDetails);
 
@@ -184,6 +199,11 @@ export function buildServer(options: ServerOptions) {
   server.register(graphqlRoutes, { graphiql: options.graphiql ?? false });
   server.register(openApiRoutes);
   server.register(seoRoutes);
+  registerWorkflows(server, {
+    ...options.workflows,
+    runScheduledJobs: options.runScheduledJobs ?? true,
+    adminOrigin: options.adminOrigin,
+  });
 
   if (options.runScheduledJobs ?? true) {
     registerScheduledJobs(server);

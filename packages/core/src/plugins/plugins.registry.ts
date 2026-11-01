@@ -34,6 +34,12 @@ export const pluginRegistry = [
     adminSections: ["/forms"],
   },
   {
+    id: "automations",
+    name: "Automations",
+    description: "Approvals, notifications and connections to other services.",
+    adminSections: ["/automations"],
+  },
+  {
     id: "seo",
     name: "SEO tools",
     description: "Page titles, sitemaps and redirects.",

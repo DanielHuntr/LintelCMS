@@ -1,41 +1,36 @@
 import type { FastifyInstance } from "fastify";
-import { suggestRedirectForMovedEntry } from "../seo/redirect-suggestions.service.js";
-import { queueWebhookEvent } from "../webhooks/webhook-deliveries.service.js";
-import type { AssetEventData, EntryEventData } from "./entry-event-data.js";
+import type { EventActor, LintelEvents } from "../events/event-catalogue.js";
 
 /**
- * Things that happen to content which other features react to. Routes (and the scheduler)
- * announce them after the change is saved; this file is the one visible list of who
- * listens:
- *
- *   - webhooks: every event except "entry.moved" is offered to webhooks (src/webhooks);
- *   - SEO: "entry.moved" suggests a redirect from the old address (src/seo).
+ * Things that happen to content, announced by routes (and the scheduler) after the
+ * change is saved. They go out on the event bus (src/events), where webhooks, SEO and
+ * automations listen; src/events/event-listeners.ts is the list of who listens.
  */
-export type ContentEvent =
-  | { name: "entry.published" | "entry.unpublished" | "entry.deleted"; entry: EntryEventData }
-  | { name: "asset.uploaded" | "asset.deleted"; asset: AssetEventData }
-  /** A live entry's address changed, because its slug or parent changed. */
-  | { name: "entry.moved"; entry: EntryEventData; previousUrl: string };
+export type ContentEvent = {
+  [Name in ContentEventName]: { name: Name } & LintelEvents[Name];
+}[ContentEventName];
+
+type ContentEventName =
+  | "entry.created"
+  | "entry.updated"
+  | "entry.published"
+  | "entry.unpublished"
+  | "entry.deleted"
+  | "entry.moved"
+  | "asset.uploaded"
+  | "asset.deleted";
 
 /**
  * Tells every listener. The change has already been saved, so a listener failing is
- * logged rather than turned into an error for the person who made the change.
+ * logged by the bus rather than turned into an error for the person who made the change.
+ * `actor` is who made the change; leave it out for the scheduler.
  */
 export async function announceContentEvent(
   server: FastifyInstance,
   event: ContentEvent,
+  actor: EventActor | null = null,
 ): Promise<void> {
-  try {
-    if (event.name === "entry.moved") {
-      await suggestRedirectForMovedEntry(server.database, event.previousUrl, event.entry);
-      return;
-    }
-    const data = "entry" in event ? { entry: event.entry } : { asset: event.asset };
-    const queued = await queueWebhookEvent(server.database, event.name, data);
-    if (queued > 0) {
-      server.webhooks.deliverSoon();
-    }
-  } catch (error) {
-    server.log.error(error, `Telling other features about ${event.name} failed`);
-  }
+  const { name, ...data } = event;
+  // Each member of ContentEvent is its name plus exactly that event's data.
+  await server.events.publish(name, data as LintelEvents[typeof name], { actor });
 }

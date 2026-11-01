@@ -9,12 +9,13 @@ Optional features are plugins, so a new site only shows what it needs. The setup
 
 ## The plugins today
 
-| id         | Name        | What switching it on does                           |
-| ---------- | ----------- | --------------------------------------------------- |
-| `blog`     | Blog        | Creates the **Blog posts** collection (`posts`)     |
-| `commerce` | Online shop | Shows the Commerce section (screens on the roadmap) |
-| `forms`    | Forms       | Shows the Forms section (screens on the roadmap)    |
-| `seo`      | SEO tools   | Reserved for page titles, sitemaps and redirects    |
+| id            | Name        | What switching it on does                                                                       |
+| ------------- | ----------- | ----------------------------------------------------------------------------------------------- |
+| `blog`        | Blog        | Creates the **Blog posts** collection (`posts`)                                                 |
+| `commerce`    | Online shop | Shows the Commerce section (screens on the roadmap)                                             |
+| `forms`       | Forms       | Shows the Forms section (screens on the roadmap)                                                |
+| `automations` | Automations | Shows Automations: workflows, content approval, notifications ([details](/building/workflows/)) |
+| `seo`         | SEO tools   | Reserved for page titles, sitemaps and redirects                                                |
 
 Switching a plugin off hides it but deletes nothing.
 

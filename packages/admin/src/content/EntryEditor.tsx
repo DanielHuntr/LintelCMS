@@ -10,6 +10,7 @@ import { textValue } from "../fields/fieldValues.js";
 import { t } from "../i18n/strings.js";
 import { EntryPreviewPane } from "../preview/EntryPreviewPane.js";
 import { EntrySeoPanel } from "../seo/EntrySeoPanel.js";
+import { EntryReviewSection } from "../workflows/EntryReviewSection.js";
 import { useCan } from "../session/SessionContext.js";
 import type { Collection, Entry } from "./content.types.js";
 import { entryDraftReducer, hasUnsavedChanges, initialDraftState } from "./entryDraft.js";
@@ -297,6 +298,7 @@ export function EntryEditor({
               await actions.restore(revisionId);
             }}
           >
+            <EntryReviewSection entryId={entry?.id} collectionName={collection.name} />
             <EntrySeoPanel
               entryId={entry?.id}
               entryTitle={title}
