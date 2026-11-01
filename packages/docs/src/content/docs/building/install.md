@@ -47,6 +47,8 @@ Every setting has a default, so no `.env` is needed. To change one, copy `.env.e
 | `NODE_ENV`       | `production`                  | `pnpm dev` sets `development` so cookies work over HTTP    |
 
 In a Postgres URL, write `#`, `@` and `/` in the password as `%23`, `%40` and `%2F`.
+Settings for running on a server (storage, email, HTTPS) are in the
+[environment variables reference](/hosting/environment-variables/).
 `pnpm db:up` starts a Postgres in Docker that matches `.env.example`.
 
 ## More commands

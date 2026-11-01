@@ -27,7 +27,19 @@ export const buildingPages = [
   "building/contributing",
 ] as const;
 
+export const hostingPages = [
+  "hosting",
+  "hosting/vps-docker",
+  "hosting/railway",
+  "hosting/render",
+  "hosting/fly",
+  "hosting/updating",
+  "hosting/environment-variables",
+  "hosting/checklist",
+] as const;
+
 export const sidebar = [
   { label: "Using Lintel", items: usingPages.map((slug) => ({ slug })) },
   { label: "Building with Lintel", items: buildingPages.map((slug) => ({ slug })) },
+  { label: "Running Lintel", items: hostingPages.map((slug) => ({ slug })) },
 ];

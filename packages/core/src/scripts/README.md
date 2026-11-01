@@ -3,11 +3,13 @@
 Command-line tasks. Each script only reads its input and calls a service, so the rules
 stay in the feature folders. Run them from the repository root:
 
-| Script              | Command                                             | What it does                                       |
-| ------------------- | --------------------------------------------------- | -------------------------------------------------- |
-| `create-admin.ts`   | `pnpm create-admin --email <email> --name "<name>"` | Creates a Super admin (role `["*"]`)               |
-| `reset-password.ts` | `pnpm reset-password --email <email>`               | New password for a user; signs them out everywhere |
-| `migrate.ts`        | `pnpm db:migrate`                                   | Creates or updates the tables now                  |
+| Script                | Command                                             | What it does                                       |
+| --------------------- | --------------------------------------------------- | -------------------------------------------------- |
+| `create-admin.ts`     | `pnpm create-admin --email <email> --name "<name>"` | Creates a Super admin (role `["*"]`)               |
+| `reset-password.ts`   | `pnpm reset-password --email <email>`               | New password for a user; signs them out everywhere |
+| `migrate.ts`          | `pnpm db:migrate`                                   | Creates or updates the tables now                  |
+| `move-media-to-s3.ts` | `pnpm media:move-to-s3 [--dry-run]`                 | Copies uploads from disk to the S3 bucket          |
+| `send-test-email.ts`  | `pnpm send-test-email --to <email>`                 | Sends one email with the current settings          |
 
 Most people never need `create-admin`: the setup screen creates the first admin. Nor
 `db:migrate`: the server migrates on every start.
@@ -27,3 +29,6 @@ create-admin --email ...`). The long form `pnpm --filter @lintel/core create-adm
 works too.
 
 `read-new-password.ts` and `prompt-password.ts` are the shared password prompts.
+
+In the Docker image there is no `pnpm`; run the built scripts instead, such as
+`node dist/scripts/reset-password.js --email <email>`.

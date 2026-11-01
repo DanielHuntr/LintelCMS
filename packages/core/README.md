@@ -26,7 +26,9 @@ its routes and its tests.
 | `src/search`         | One search across entries and media                    |
 | `src/scheduler`      | Timed jobs, such as publishing scheduled entries       |
 | `src/media`          | Uploads, image resizing and the storage driver         |
-| `src/health`         | `GET /health` for uptime checks                        |
+| `src/health`         | `GET /health` and `GET /ready` for hosting platforms   |
+| `src/production`     | One server for API, admin and website (`pnpm start`)   |
+| `src/email`          | Sending email: SMTP, Resend, Postmark or the outbox    |
 | `src/database`       | Built-in or Postgres, choosing one, friendly errors    |
 | `src/http`           | Error responses and request parsing shared by routes   |
 | `src/scripts`        | `create-admin`, `reset-password`, `db:migrate`         |

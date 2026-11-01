@@ -3,7 +3,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { readFrontmatter, slugFromPath } from "./help/help-page.js";
-import { buildingPages, usingPages } from "./sidebar.js";
+import { buildingPages, hostingPages, usingPages } from "./sidebar.js";
 
 /**
  * Checks on the docs themselves, so a broken link, a missing screenshot or a page left out
@@ -64,7 +64,7 @@ describe("the docs pages", () => {
   });
 
   it("are all in the sidebar, and the sidebar lists only pages that exist", () => {
-    const listed = [...usingPages, ...buildingPages];
+    const listed = [...usingPages, ...buildingPages, ...hostingPages];
     expect([...listed].sort()).toEqual(sectionPages.map((file) => file.slug).sort());
   });
 });
