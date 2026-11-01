@@ -42,11 +42,12 @@ export interface UploadedFile {
 /**
  * Checks and stores an upload. The same bytes uploaded twice give back the first asset
  * (`created: false`) rather than a duplicate the editor would then have to tidy up.
+ * `uploadedBy` is null for files sent by website visitors, such as through a form.
  */
 export async function uploadAsset(
   media: MediaContext,
   file: UploadedFile,
-  uploadedBy: string,
+  uploadedBy: string | null,
 ): Promise<{ asset: Asset; created: boolean }> {
   const fileType = await detectFileType(file.contents, file.filename);
   const filename = sanitiseFilename(file.filename, fileType.extension);
