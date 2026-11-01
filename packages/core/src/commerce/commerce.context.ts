@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { Database } from "../database/client.js";
+import type { AssetLookup } from "../fieldtypes/image-assets.js";
 import type { DiscountProvider } from "./discounts/discount-provider.js";
 import { noDiscounts } from "./discounts/discount-provider.js";
 import type { EmailProvider } from "./emails/email-provider.js";
@@ -32,6 +33,8 @@ export interface CommerceOptions {
 /** What shop services need besides the database, made once when the routes register. */
 export interface ShopContext {
   readonly database: Database;
+  /** Expands product photos for the storefront, as the delivery API does. */
+  readonly assetLookup: AssetLookup;
   readonly emails: EmailProvider;
   readonly discounts: DiscountProvider;
   readonly environment: Environment;
@@ -55,6 +58,9 @@ export function createShopContext(server: FastifyInstance, options: CommerceOpti
     get database() {
       // Read on every use: setup can switch the server to another database.
       return server.database;
+    },
+    get assetLookup() {
+      return server.assetLookup;
     },
     emails: options.emailProvider ?? new OutboxEmailProvider(() => server.database),
     discounts: options.discountProvider ?? noDiscounts,

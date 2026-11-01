@@ -15,6 +15,8 @@ import { isAllowedSiteOrigin } from "../delivery/delivery-access.service.js";
 const ADMIN_METHODS = ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE"];
 // POST is for GraphQL queries; everything public is read-only.
 const PUBLIC_METHODS = ["GET", "HEAD", "POST"];
+// Except the shop's carts, which storefronts change and empty (see src/commerce/carts).
+const SHOP_METHODS = ["GET", "HEAD", "POST", "PATCH", "DELETE"];
 
 export function isPublicContentPath(url: string): boolean {
   const path = url.split("?")[0] ?? "";
@@ -43,7 +45,7 @@ export function crossOriginOptions(adminOrigin: string) {
       return {
         origin,
         credentials: false,
-        methods: PUBLIC_METHODS,
+        methods: request.url.startsWith("/delivery/shop/") ? SHOP_METHODS : PUBLIC_METHODS,
         allowedHeaders: ["authorization", "content-type"],
         maxAge: 600,
       };

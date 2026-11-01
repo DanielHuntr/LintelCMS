@@ -138,3 +138,28 @@ export function createStripeTaxTransaction(
     `lintel-tax-${calculationId}`,
   );
 }
+
+const couponSchema = z.object({ id: z.string() });
+
+/**
+ * A one-off amount off, for a hosted checkout with discounts: Stripe's payment page only
+ * takes discounts as coupons. Used once and never again.
+ */
+export function createStripeCoupon(
+  stripe: StripeClient,
+  parameters: { amount: number; currency: string; name: string },
+  idempotencyKey: string,
+) {
+  return stripe.post(
+    "/v1/coupons",
+    {
+      amount_off: parameters.amount,
+      currency: parameters.currency.toLowerCase(),
+      duration: "once",
+      max_redemptions: 1,
+      name: parameters.name.slice(0, 40),
+    },
+    couponSchema,
+    idempotencyKey,
+  );
+}
