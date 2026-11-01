@@ -33,9 +33,14 @@ describe("loadConfig", () => {
   });
 
   it("reads which proxies to trust", () => {
-    expect(loadConfig({}).TRUST_PROXY).toBe(false);
+    // By default, proxies on this computer and private networks, never the open internet.
+    expect(loadConfig({}).TRUST_PROXY).toEqual(["loopback", "linklocal", "uniquelocal"]);
+    expect(loadConfig({ TRUST_PROXY: "false" }).TRUST_PROXY).toBe(false);
     expect(loadConfig({ TRUST_PROXY: "true" }).TRUST_PROXY).toBe(true);
     expect(loadConfig({ TRUST_PROXY: "1" }).TRUST_PROXY).toBe(1);
-    expect(loadConfig({ TRUST_PROXY: "10.0.0.1,10.0.0.2" }).TRUST_PROXY).toBe("10.0.0.1,10.0.0.2");
+    expect(loadConfig({ TRUST_PROXY: "10.0.0.1,10.0.0.2" }).TRUST_PROXY).toEqual([
+      "10.0.0.1",
+      "10.0.0.2",
+    ]);
   });
 });
