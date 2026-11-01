@@ -15,11 +15,11 @@ exports[`the stylesheet > prints rules, states and breakpoints in a fixed order,
 
 .button {
   display: inline-block;
-  align-self: flex-start;
   padding-top: var(--lintel-space-3);
   padding-right: var(--lintel-space-5);
   padding-bottom: var(--lintel-space-3);
   padding-left: var(--lintel-space-5);
+  width: fit-content;
   font-weight: 600;
   text-decoration: none;
   color: var(--lintel-color-on-brand);

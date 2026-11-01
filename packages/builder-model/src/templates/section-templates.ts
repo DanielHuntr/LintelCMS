@@ -225,7 +225,7 @@ export const sectionTemplates: readonly SectionTemplate[] = [
                   borderRadius: "var(--lintel-radius-button)",
                   fontWeight: "600",
                   textDecoration: "none",
-                  alignSelf: "center",
+                  width: "fit-content",
                 },
                 hover: { opacity: "0.88" },
               },

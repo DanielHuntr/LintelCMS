@@ -114,7 +114,7 @@ export const buttonComponent = defineComponent({
       borderRadius: "var(--lintel-radius-button)",
       fontWeight: "600",
       textDecoration: "none",
-      alignSelf: "flex-start",
+      width: "fit-content",
     },
     hover: { opacity: "0.88" },
   },

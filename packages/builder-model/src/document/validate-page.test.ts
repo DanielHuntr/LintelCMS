@@ -77,7 +77,7 @@ describe("checking a page", () => {
   });
 
   it("refuses unknown and unsafe styles", () => {
-    const unknown = { ...heading(), styles: { base: { float: "left" } } };
+    const unknown = { ...heading(), styles: { base: { float: "left" } as Record<string, string> } };
     const unsafe = {
       ...heading(),
       styles: { base: {}, phone: { color: "red; background: url(x)" } },

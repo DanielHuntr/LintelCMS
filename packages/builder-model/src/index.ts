@@ -26,7 +26,8 @@ export {
   maxCodeLength,
   type CodeBlockProps,
 } from "./components/code-block-component.js";
-export { boxElements, sectionElements } from "./components/layout-components.js";
+export * from "./components/layout-components.js";
+export * from "./components/content-components.js";
 
 export * from "./styles/style-properties.js";
 export * from "./styles/style-cascade.js";

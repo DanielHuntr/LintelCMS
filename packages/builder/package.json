@@ -1,0 +1,49 @@
+{
+  "name": "@lintel/builder",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The visual page builder the admin uses, and the renderer that turns a page design into HTML and CSS.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./render": {
+      "types": "./dist/render/index.d.ts",
+      "development": "./src/render/index.ts",
+      "default": "./dist/render/index.js"
+    },
+    "./strings": {
+      "types": "./dist/i18n/builder-strings.d.ts",
+      "development": "./src/i18n/builder-strings.ts",
+      "default": "./dist/i18n/builder-strings.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lintel/builder-model": "workspace:*",
+    "lucide-react": "^1.66.0"
+  },
+  "peerDependencies": {
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "jsdom": "^30.1.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.5"
+  }
+}
