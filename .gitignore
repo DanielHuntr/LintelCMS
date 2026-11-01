@@ -25,3 +25,6 @@ storage/
 
 # The built-in database and the database chosen during setup (which can hold a password)
 .lintel/
+
+# Builds made by scripts/release, attached to GitHub releases by hand
+release-files/

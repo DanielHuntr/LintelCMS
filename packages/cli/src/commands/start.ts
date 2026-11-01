@@ -1,5 +1,6 @@
 import { resolve } from "node:path";
-import { lintelVersion, REPOSITORY_ROOT, runSupervisor } from "@lintel/core/updates";
+import { fileURLToPath } from "node:url";
+import { lintelVersion, runSupervisor } from "@lintel/core/updates";
 import { type Command, readArguments } from "../command.js";
 
 /**
@@ -8,6 +9,9 @@ import { type Command, readArguments } from "../command.js";
  * The install's home folder is LINTEL_HOME, or the folder this is run from.
  */
 const usage = "Usage: pnpm lintel start [--home <folder>]";
+
+/** The repository or release folder this command is in: packages/cli/{src,dist}/commands → root. */
+const INSTALL_FOLDER = fileURLToPath(new URL("../../../../", import.meta.url));
 
 export const startCommand: Command = {
   name: "start",
@@ -21,7 +25,7 @@ export const startCommand: Command = {
     );
     await runSupervisor({
       home,
-      installFolder: REPOSITORY_ROOT,
+      installFolder: INSTALL_FOLDER,
       installVersion: lintelVersion(),
       log: (message) => terminal.say(`[lintel] ${message}`),
     });

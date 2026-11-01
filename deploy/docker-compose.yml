@@ -6,6 +6,10 @@
 #
 # Leave out `--profile https` if something else (a load balancer, another proxy) already
 # handles HTTPS; Lintel is then on port 4000 of this machine only.
+#
+# Add `--profile updater` to let Settings → Updates install updates by itself, through the
+# lintel-updater service below. It needs the Docker socket (as powerful as root on this
+# machine), so it is off unless you ask for it; see "Updating Lintel" in the docs.
 name: lintel
 
 services:
@@ -43,6 +47,22 @@ services:
       test: ["CMD-SHELL", "pg_isready -U lintel"]
       interval: 5s
       retries: 10
+
+  # Opt-in: `--profile updater`, with LINTEL_UPDATER_URL, LINTEL_UPDATER_TOKEN and
+  # LINTEL_REPO_PATH set in deploy/.env. Its port is only on the compose network.
+  lintel-updater:
+    build: ./updater
+    profiles: ["updater"]
+    restart: unless-stopped
+    environment:
+      LINTEL_UPDATER_TOKEN: ${LINTEL_UPDATER_TOKEN:-}
+      LINTEL_REPO_PATH: ${LINTEL_REPO_PATH:-}
+      COMPOSE_PROJECT_NAME: lintel
+    working_dir: ${LINTEL_REPO_PATH:-/repo}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # The same path inside as outside, so compose's relative paths mean the same thing.
+      - ${LINTEL_REPO_PATH:-/repo}:${LINTEL_REPO_PATH:-/repo}
 
   caddy:
     image: caddy:2
