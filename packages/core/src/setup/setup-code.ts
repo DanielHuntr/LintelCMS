@@ -28,6 +28,11 @@ export function setupCodeMatches(expected: string, given: string): boolean {
  * True only for a request made on this computer itself. A request that passed through a
  * proxy (nginx, Caddy...) also arrives from 127.0.0.1, so any forwarding header means it
  * came from somewhere else.
+ *
+ * The address it was sent to must be this computer's too. Otherwise a website you visit
+ * during setup could point its own domain name at 127.0.0.1 ("DNS rebinding") and have
+ * your browser create the first admin for it: the request would come from this computer,
+ * but with that website's name in the Host header.
  */
 export function isLocalRequest(request: FastifyRequest): boolean {
   const forwarded =
@@ -37,7 +42,21 @@ export function isLocalRequest(request: FastifyRequest): boolean {
   }
 
   const address = request.socket.remoteAddress ?? "";
-  return address === "::1" || address.startsWith("127.") || address.startsWith("::ffff:127.");
+  const fromThisComputer =
+    address === "::1" || address.startsWith("127.") || address.startsWith("::ffff:127.");
+  return fromThisComputer && isLocalHostHeader(request.headers.host);
+}
+
+/** "localhost:4000", "127.0.0.1:4000" or "[::1]:4000", with or without the port. */
+export function isLocalHostHeader(host: string | undefined): boolean {
+  if (host === undefined) {
+    return false;
+  }
+  const name = host
+    .toLowerCase()
+    .replace(/:\d+$/, "")
+    .replace(/^\[(.*)\]$/, "$1");
+  return name === "localhost" || name === "::1" || /^127(\.\d{1,3}){3}$/.test(name);
 }
 
 function digest(code: string): Buffer {

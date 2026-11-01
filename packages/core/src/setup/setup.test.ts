@@ -193,6 +193,20 @@ describe("first-run setup", () => {
       expect(response.statusCode).toBe(403);
       expect(response.json()).toMatchObject({ code: "SETUP_CODE_REQUIRED" });
     });
+
+    it("asks for the code when a website's own name points at this computer", async () => {
+      // DNS rebinding: the browser connects to 127.0.0.1, but the Host is the website's.
+      const response = await server.inject({
+        method: "POST",
+        url: "/setup",
+        payload: FIRST_ADMIN,
+        headers: { host: "rebind.attacker.example:4000" },
+      });
+
+      expect(response.statusCode).toBe(403);
+      expect(response.json()).toMatchObject({ code: "SETUP_CODE_REQUIRED" });
+      expect(await testDatabase.database.select().from(usersTable)).toEqual([]);
+    });
   });
 
   it("slows down repeated setup attempts from the same address", async () => {

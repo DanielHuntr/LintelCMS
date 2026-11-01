@@ -43,7 +43,9 @@ request that doesn't come from the computer Lintel runs on needs the one-time se
 printed in the terminal, sent in the `x-lintel-setup-code` header. It's compared in
 constant time, and spaces and dashes don't matter. A request that came through a proxy
 (any `X-Forwarded-For`, `Forwarded` or `X-Real-IP` header) counts as remote, even though
-it arrives from 127.0.0.1. `requiresSetupCode` in the status says whether the current
+it arrives from 127.0.0.1. So does a request whose `Host` isn't `localhost`, `127.x.x.x`
+or `[::1]`: that is how a website you visit during setup could otherwise reach the API on
+your computer by pointing its own name at 127.0.0.1 (DNS rebinding). `requiresSetupCode` in the status says whether the current
 request needs it.
 
 ## Safe against two people at once
