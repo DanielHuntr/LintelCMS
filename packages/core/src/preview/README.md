@@ -32,6 +32,10 @@ Settings, Content types, Live preview (`PUT /collections/:handle`). It must be a
 https://example.com/api/preview?path={url}&token={token}
 ```
 
+A collection without one, whose entries have pages, is previewed on the built-in website
+(`src/website`) when Lintel serves one: `http://localhost:3000/about?preview=<token>`, the
+real page drawn from the draft.
+
 ## Endpoints
 
 | Method and path             | Permission       | Success                                     |

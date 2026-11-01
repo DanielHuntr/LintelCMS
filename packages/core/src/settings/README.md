@@ -21,3 +21,4 @@ Current settings:
 - `deliveryRequiresToken` and `deliveryAllowedOrigins`: who may read published content
   (see `src/delivery`).
 - `seoDefaults`: the SEO plugin's site-wide defaults (see `src/seo`).
+- `website`: the built-in website's template, theme, logo and address (see `src/website`).

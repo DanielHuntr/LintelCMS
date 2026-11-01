@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { defaultSeoDefaults, seoDefaultsSchema } from "../seo/seo-defaults.schema.js";
+import { defaultWebsiteSettings, websiteSettingsSchema } from "../website/website.schema.js";
 
 /**
  * Every setting, with the shape its value must have. Reading a key that has never been
@@ -28,6 +29,8 @@ export const settingSchemas = {
   deliveryAllowedOrigins: z.array(z.string()),
   /** Search engine defaults from the SEO plugin (see src/seo). */
   seoDefaults: seoDefaultsSchema,
+  /** The built-in website's template, theme, logo and address (see src/website). */
+  website: websiteSettingsSchema,
 };
 
 export type SettingKey = keyof typeof settingSchemas;
@@ -41,4 +44,5 @@ export const settingDefaults: { [Key in SettingKey]: SettingValue<Key> } = {
   deliveryRequiresToken: false,
   deliveryAllowedOrigins: [],
   seoDefaults: defaultSeoDefaults,
+  website: defaultWebsiteSettings,
 };

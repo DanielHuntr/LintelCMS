@@ -16,7 +16,6 @@
     "./styles.css": "./dist/styles/site.css"
   },
   "scripts": {
-    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
     "build": "tsc -p tsconfig.build.json && node scripts/copy-styles.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"

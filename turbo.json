@@ -15,7 +15,15 @@
     "dev": {
       "cache": false,
       "persistent": true,
-      "passThroughEnv": ["DATABASE_URL", "API_PORT", "ADMIN_ORIGIN", "NODE_ENV"]
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "API_PORT",
+        "ADMIN_ORIGIN",
+        "NODE_ENV",
+        "SITE_PORT",
+        "SITE_PUBLIC_URL",
+        "SITE_ENABLED"
+      ]
     }
   }
 }

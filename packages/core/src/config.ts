@@ -28,6 +28,18 @@ const configSchema = z.object({
     (value) => (value === "" ? undefined : value),
     z.string().url().optional(),
   ),
+  // The built-in website (see src/website): its port, its address as visitors reach it
+  // (defaults to http://localhost:<SITE_PORT>), and whether to serve it at all. Turn it off
+  // when the site is built separately, for example with the Next.js starter.
+  SITE_PORT: z.coerce.number().int().positive().default(3000),
+  SITE_PUBLIC_URL: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().url().optional(),
+  ),
+  SITE_ENABLED: z
+    .enum(["true", "false", ""])
+    .default("true")
+    .transform((value) => value !== "false"),
   // Defaults to production so a server started without it gets the safe settings
   // (for example, session cookies that only travel over HTTPS). `pnpm dev` sets it
   // to development (see packages/core/development.env).
