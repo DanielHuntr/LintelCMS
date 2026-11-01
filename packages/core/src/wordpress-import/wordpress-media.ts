@@ -152,11 +152,28 @@ function requestFile(address: string, options: DownloadOptions): Promise<FileRes
     );
     outgoing.on("error", (error) =>
       reject(
-        error instanceof MediaNotAllowedError ? error : new MediaNotAllowedError(error.message),
+        error instanceof MediaNotAllowedError
+          ? error
+          : new MediaNotAllowedError(describeConnectionError(error, host)),
       ),
     );
     outgoing.end();
   });
+}
+
+/** Network errors in words, rather than "getaddrinfo ENOTFOUND". */
+export function describeConnectionError(error: Error, host: string): string {
+  const code = "code" in error ? String(error.code) : "";
+  if (code === "ENOTFOUND" || code === "EAI_AGAIN") {
+    return `${host} couldn't be found. Is the old site still online? If not, upload its wp-content folder as a zip instead`;
+  }
+  if (code === "ECONNREFUSED" || code === "ECONNRESET" || code === "EHOSTUNREACH") {
+    return `${host} didn't answer. Is the old site still online?`;
+  }
+  if (code.startsWith("CERT_") || code.includes("SELF_SIGNED") || code.startsWith("ERR_TLS")) {
+    return `${host}'s security certificate isn't valid, so its files weren't downloaded`;
+  }
+  return error.message;
 }
 
 async function readResponse(response: IncomingMessage): Promise<FileResponse> {

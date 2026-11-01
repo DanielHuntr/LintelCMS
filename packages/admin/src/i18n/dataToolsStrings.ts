@@ -157,7 +157,7 @@ export const dataToolsStrings = {
   "wordpress.mediaHostsHint":
     "Images on the old site’s own address are always brought in. Add any other, such as a CDN, separated by commas. Images anywhere else are listed in the report instead.",
   "wordpress.authors": "Authors",
-  "wordpress.authors.invite": "Add them as people (they set their own password)",
+  "wordpress.authors.invite": "Add them as people",
   "wordpress.authors.skip": "Don’t add them",
   "wordpress.drafts": "Drafts",
   "wordpress.drafts.import": "Import them as drafts",

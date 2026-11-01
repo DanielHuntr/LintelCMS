@@ -1,7 +1,11 @@
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { allowedMediaHosts, downloadingMediaSource } from "./wordpress-media.js";
+import {
+  allowedMediaHosts,
+  describeConnectionError,
+  downloadingMediaSource,
+} from "./wordpress-media.js";
 import { wordpressImportMappingSchema } from "./wordpress-import.schema.js";
 
 describe("downloading images from the old site", () => {
@@ -67,6 +71,15 @@ describe("downloading images from the old site", () => {
     expect(mapping.mediaHosts).toEqual(["cdn.example.com", "i0.wp.com"]);
     expect(wordpressImportMappingSchema.safeParse({ mediaHosts: ["not a host!"] }).success).toBe(
       false,
+    );
+  });
+
+  it("explains a site that can't be reached in words", () => {
+    const notFound = Object.assign(new Error("getaddrinfo ENOTFOUND old.example"), {
+      code: "ENOTFOUND",
+    });
+    expect(describeConnectionError(notFound, "old.example")).toBe(
+      "old.example couldn't be found. Is the old site still online? If not, upload its wp-content folder as a zip instead",
     );
   });
 });
