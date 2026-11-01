@@ -75,6 +75,7 @@ describe("first-run setup", () => {
       user: { id: expect.any(String), email: "ana@example.com", name: "Ana Lopez" },
       permissions: ["*"],
       enabledPlugins: [],
+      siteIds: null,
     });
 
     const sessionCookie = response.cookies.find((cookie) => cookie.name === SESSION_COOKIE_NAME);
