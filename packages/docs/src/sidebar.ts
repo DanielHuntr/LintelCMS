@@ -12,6 +12,7 @@ export const usingPages = [
   "using/media",
   "using/content-types",
   "using/users",
+  "using/apps",
   "using/troubleshooting",
 ] as const;
 
@@ -27,6 +28,7 @@ export const buildingPages = [
   "building/writing-a-plugin",
   "building/plugin-api",
   "building/dashboards",
+  "building/building-an-app",
   "building/contributing",
 ] as const;
 
