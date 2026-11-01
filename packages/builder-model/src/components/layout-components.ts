@@ -9,10 +9,26 @@ export const pageComponent = defineComponent({
   description: "The whole page.",
   icon: "file",
   category: "layout",
-  propsSchema: z.object({}),
-  defaultProps: {},
+  propsSchema: z.object({
+    /**
+     * A collection's handle when this page is the design every entry of that collection is
+     * shown with (a blog post design); its elements show the entry's fields.
+     */
+    itemDesignFor: z
+      .string()
+      .regex(/^([a-z0-9][a-z0-9_:-]{0,63})?$/, { error: "Choose a collection by its handle" })
+      .default(""),
+  }),
+  defaultProps: { itemDesignFor: "" },
   allowedChildren: "any",
-  editableFields: [],
+  editableFields: [
+    {
+      kind: "source",
+      source: "collections",
+      prop: "itemDesignFor",
+      label: "Use this page as the design of every entry in",
+    },
+  ],
   hiddenFromInsert: true,
 });
 

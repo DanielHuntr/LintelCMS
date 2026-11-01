@@ -1,5 +1,7 @@
 import Fastify, { type FastifyInstance } from "fastify";
+import { siteApiRoutes } from "./site-api.routes.js";
 import { siteRoutes } from "./site.routes.js";
+import { storefrontSources } from "./site-sources.js";
 
 /**
  * The built-in website, as its own small server on its own port (3000 unless SITE_PORT
@@ -24,8 +26,11 @@ export function buildSiteServer(options: { api: FastifyInstance; logger?: boolea
       );
   });
 
+  const sources = storefrontSources(api);
+  server.register(siteApiRoutes, { api });
   server.register(siteRoutes, {
     dependencies: () => ({
+      sources,
       database: api.database,
       assetLookup: api.assetLookup,
       templates: api.website.templates,

@@ -13,14 +13,18 @@ export function scriptSafeJson(value: unknown): string {
 
 /**
  * The `<head>` additions of a page designed in the builder: its own stylesheet and, only
- * when something on it moves, the list of animations and the motion runtime that plays them.
+ * when something on it moves, the list of animations and the motion runtime that plays them,
+ * and, when it has sliders, tabs, forms or the shop, the elements script.
  */
 export function DesignHead({
   design,
   motionScriptUrl,
+  elementsScriptUrl,
 }: {
   design: PageDesign;
   motionScriptUrl: string | undefined;
+  /** The elements script, loaded only when the design has elements that need it. */
+  elementsScriptUrl?: string;
 }) {
   const animates = design.animations.length > 0 && motionScriptUrl !== undefined;
   const css = animates ? `${motionCloakCss}\n${design.css}` : design.css;
@@ -37,6 +41,7 @@ export function DesignHead({
           <script src={motionScriptUrl} defer />
         </>
       )}
+      {design.usesBehaviours && elementsScriptUrl && <script src={elementsScriptUrl} defer />}
     </>
   );
 }

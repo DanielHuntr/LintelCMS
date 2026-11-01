@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { designBaseStylesheet } from "@lintel/builder/render";
+import { findEnabledPluginIds } from "../plugins/plugins.service.js";
 import type { SiteTemplate } from "@lintel/site-components";
 import { siteStylesheet } from "@lintel/site-components/server";
 import { findBlueprintByIdOrFail } from "../blueprints/blueprints.service.js";
@@ -26,6 +27,8 @@ export interface SiteContext {
   look: WebsiteLook;
   logo: DeliveredAsset | null;
   seoEnabled: boolean;
+  /** The Online shop plugin is on, so the website has shop pages. */
+  shopEnabled: boolean;
   seoDefaults: SeoDefaults;
   /** The site's public address, for canonical links and the sitemap. Null when unknown. */
   siteAddress: string | null;
@@ -43,12 +46,13 @@ export async function loadSiteContext(
     builtInSiteUrl: string | null;
   },
 ): Promise<SiteContext> {
-  const [locales, collections, look, seoEnabled, seoDefaults] = await Promise.all([
+  const [locales, collections, look, seoEnabled, seoDefaults, plugins] = await Promise.all([
     listLocales(database),
     listRoutedCollections(database),
     readWebsiteLook(database, options.templates),
     isSeoPluginEnabled(database),
     readSeoDefaults(database),
+    findEnabledPluginIds(database),
   ]);
   const logo = look.logoAssetId
     ? ((await options.assetLookup.findAssetsByIds([look.logoAssetId])).get(look.logoAssetId) ??
@@ -64,6 +68,7 @@ export async function loadSiteContext(
     look,
     logo,
     seoEnabled,
+    shopEnabled: plugins.includes("commerce"),
     seoDefaults,
     siteAddress: seoDefaults.siteUrl || options.builtInSiteUrl,
     stylesheet: { css, path: `${STYLESHEET_FOLDER}/site-${fingerprint}.css` },

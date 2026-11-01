@@ -15,6 +15,8 @@ export interface PageDesign {
   html: string;
   css: string;
   animations: ReadonlyArray<{ nodeId: string; spec: Readonly<Record<string, unknown>> }>;
+  /** It has sliders, tabs, pop-ups, forms or the shop, so it loads the elements script. */
+  usesBehaviours?: boolean;
 }
 
 /** A page from a collection like Pages: a title, an optional body and its sections. */

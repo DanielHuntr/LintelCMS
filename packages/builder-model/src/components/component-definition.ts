@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import type { NodeAnimation, NodeStyles } from "../document/page-document.schema.js";
+import type { NodeAnimation, NodeBindings, NodeStyles } from "../document/page-document.schema.js";
 
 /**
  * What the builder knows about one kind of element, apart from how it draws: its name and
@@ -37,7 +37,12 @@ export interface ComponentDefinition<
   hiddenFromInsert?: boolean;
   /** Only people with the code permission can add or change it (code blocks). */
   requiresCodePermission?: boolean;
+  /** Only offered while this plugin is switched on (the shop's elements, forms). */
+  requiresPlugin?: ComponentPlugin;
 }
+
+/** The plugins some elements belong to. */
+export type ComponentPlugin = "commerce" | "forms";
 
 export const componentCategories = [
   "blocks",
@@ -45,6 +50,9 @@ export const componentCategories = [
   "text",
   "media",
   "navigation",
+  "collections",
+  "forms",
+  "shop",
   "code",
 ] as const;
 export type ComponentCategory = (typeof componentCategories)[number];
@@ -57,26 +65,71 @@ export interface NodeBlueprint {
   styles?: NodeStyles;
   children?: readonly NodeBlueprint[];
   animation?: NodeAnimation;
+  bindings?: NodeBindings;
 }
 
 /**
  * One control in the Content panel. `prop` is the prop it edits; `label` is plain English.
  * The kinds are deliberately few, so every component's panel looks familiar.
  */
-export type EditableField =
-  | { kind: "text"; prop: string; label: string; placeholder?: string }
-  | { kind: "multilineText"; prop: string; label: string; placeholder?: string }
-  | {
-      kind: "choice";
-      prop: string;
-      label: string;
-      choices: readonly { value: string; label: string }[];
-    }
-  | { kind: "toggle"; prop: string; label: string }
-  | { kind: "link"; prop: string; label: string }
-  | { kind: "image"; prop: string; label: string }
-  | { kind: "textList"; prop: string; label: string; itemLabel: string }
-  | { kind: "linkList"; prop: string; label: string };
+export type EditableField = SimpleField | ListOfItemsField | SourceField;
+
+/** What every field has. `advanced` fields are folded away under "More options". */
+interface FieldBase {
+  prop: string;
+  label: string;
+  advanced?: boolean;
+}
+
+/** The fields an item of a list (a slide, a plan, a person) can have too. */
+export type SimpleField = FieldBase &
+  (
+    | { kind: "text"; placeholder?: string }
+    | { kind: "multilineText"; placeholder?: string }
+    | { kind: "choice"; choices: readonly { value: string; label: string }[] }
+    | { kind: "toggle" }
+    | { kind: "link" }
+    | { kind: "image" }
+    | { kind: "textList"; itemLabel: string }
+    | { kind: "linkList" }
+    | { kind: "number"; min?: number; max?: number; step?: number; unit?: string }
+    | { kind: "dateTime" }
+    | { kind: "icon" }
+  );
+
+/**
+ * A list of items that each have a few fields of their own: a gallery's pictures, a pricing
+ * table's plans. `titleField` is the item field that names each item in the panel.
+ */
+export type ListOfItemsField = FieldBase & {
+  kind: "itemList";
+  itemLabel: string;
+  fields: readonly SimpleField[];
+  titleField: string;
+  /** What a new item starts as. */
+  newItem: Readonly<Record<string, unknown>>;
+  maxItems?: number;
+};
+
+/**
+ * A choice of something the site has, which the app lists: one of its collections, a
+ * category to filter by, a form, a product. With nothing to list it is a text box.
+ */
+export type SourceField = FieldBase & {
+  kind: "source";
+  source: DataSourceKind;
+  /** Collections' terms are listed for the collection named in this prop. */
+  dependsOn?: string;
+};
+
+export const dataSourceKinds = [
+  "collections",
+  "terms",
+  "forms",
+  "products",
+  "productCollections",
+] as const;
+export type DataSourceKind = (typeof dataSourceKinds)[number];
 
 export type EditableFieldKind = EditableField["kind"];
 

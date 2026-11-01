@@ -16,3 +16,15 @@ export { paragraphsHtml, siteBlockRenders } from "./site-blocks.js";
 export { standInBaseStylesheet } from "./base-stylesheet.js";
 export { collectAnimations, type PageAnimation } from "./page-animations.js";
 export { designBaseStylesheet, designClassName } from "./design-stylesheet.js";
+export {
+  elementRenders,
+  elementStylesheet,
+  findSiteIcon,
+  markdownToHtml,
+  placeholderItem,
+  sampleProduct,
+  siteIconNames,
+  siteIcons,
+  usesBehaviours,
+} from "./elements/index.js";
+export { ForItem, PageDataProvider, useCurrentItem, usePageData } from "./data-context.js";

@@ -1,10 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getCanvasSite, getSiteAddress, getWebsite, updateWebsite } from "./website.api.js";
+import {
+  getBuilderData,
+  getCanvasSite,
+  getSiteAddress,
+  getWebsite,
+  updateWebsite,
+} from "./website.api.js";
 
 export const websiteKeys = {
   settings: () => ["website", "settings"] as const,
   address: () => ["website", "address"] as const,
   canvas: () => ["website", "canvas"] as const,
+  builderData: () => ["website", "builder-data"] as const,
 };
 
 export function useWebsite() {
@@ -28,6 +35,11 @@ export function useSiteAddress() {
 }
 
 /** The website's look for the page builder's canvas. Changes to the look refresh it. */
+/** What the builder's collection lists and shop elements can show; refreshed on each visit. */
+export function useBuilderData() {
+  return useQuery({ queryKey: websiteKeys.builderData(), queryFn: getBuilderData, retry: false });
+}
+
 export function useCanvasSite() {
   return useQuery({ queryKey: websiteKeys.canvas(), queryFn: getCanvasSite, retry: false });
 }

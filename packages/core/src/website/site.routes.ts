@@ -1,7 +1,12 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { SiteResponse } from "./rendered-pages-cache.js";
-import { ILLUSTRATIONS_FOLDER, readIllustration, readMotionRuntime } from "./site-assets.js";
+import {
+  ILLUSTRATIONS_FOLDER,
+  readElementsScript,
+  readIllustration,
+  readMotionRuntime,
+} from "./site-assets.js";
 import { STYLESHEET_FOLDER } from "./site-context.service.js";
 import { readSiteContext, respondToSitePath, type SiteDependencies } from "./site-pages.service.js";
 
@@ -10,13 +15,25 @@ import { readSiteContext, respondToSitePath, type SiteDependencies } from "./sit
  *
  *   GET /_lintel/site-<fingerprint>.css   the theme and component styles, cached for a year
  *   GET /_lintel/motion-<fingerprint>.js  the motion runtime, for pages with animations
+ *   GET /_lintel/elements-<fingerprint>.js the elements script, for sliders, forms, the shop
+ *   ALL /_lintel/api/shop/*, /_lintel/api/forms/*  the storefront and forms APIs (site-api.routes.ts)
  *   GET /_lintel/illustrations/<name>.svg the starter sites' illustrations
  *   GET /*                                 a page, a redirect, sitemap.xml, robots.txt or 404
  *
  * `?preview=<token>` on any page shows a draft (see site-preview.service.ts).
  */
 
-const pageQuerySchema = z.object({ preview: z.string().min(1).optional() }).catch({});
+const pageQuerySchema = z
+  .object({
+    preview: z.string().min(1).optional(),
+    page: z.coerce.number().int().min(1).max(1000).optional().catch(undefined),
+    sort: z
+      .string()
+      .regex(/^[A-Za-z]{1,40}$/)
+      .optional()
+      .catch(undefined),
+  })
+  .catch({});
 
 export async function siteRoutes(
   server: FastifyInstance,
@@ -36,12 +53,15 @@ export async function siteRoutes(
   });
 
   server.get(`${STYLESHEET_FOLDER}/:file`, async (request, reply) => {
-    const motion = readMotionRuntime();
-    if (motion && request.url.split("?")[0] === motion.path) {
+    const path = request.url.split("?")[0];
+    const script = [readMotionRuntime(), readElementsScript()].find(
+      (candidate) => candidate?.path === path,
+    );
+    if (script) {
       return reply
         .type("text/javascript; charset=utf-8")
         .header("cache-control", "public, max-age=31536000, immutable")
-        .send(motion.code);
+        .send(script.code);
     }
     const context = await readSiteContext(options.dependencies());
     // An older fingerprint still gets today's styles, but only the current one is kept long.
@@ -54,8 +74,11 @@ export async function siteRoutes(
 
   server.get("/*", async (request, reply) => {
     const pathname = request.url.split("?")[0] ?? "/";
-    const { preview } = pageQuerySchema.parse(request.query);
-    const response = await respondToSitePath(options.dependencies(), pathname, preview);
+    const { preview, page, sort } = pageQuerySchema.parse(request.query);
+    const response = await respondToSitePath(options.dependencies(), pathname, preview, {
+      page: page ?? 1,
+      sort,
+    });
     return send(request, reply, response);
   });
 }

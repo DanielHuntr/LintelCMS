@@ -42,6 +42,7 @@ interface SelectedElementPanelProps {
   actions: {
     changeStyles: (nodeId: string, target: StyleTarget, values: StyleValues, label: string) => void;
     changeProps: (nodeId: string, props: Record<string, unknown>, label: string) => void;
+    changeBinding: (nodeId: string, prop: string, fieldPath: string | null, label: string) => void;
     animate: (nodeId: string, animation: NodeAnimation | null) => void;
     applyHtml: (nodeId: string, html: string) => void;
     convertToCode: (nodeId: string) => void;
@@ -153,6 +154,10 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
             isLocked={props.isLocked}
             pickImage={props.pickImage}
             onChange={(changed, label) => actions.changeProps(node.id, changed, label)}
+            document={props.document}
+            onBind={(prop, fieldPath, label) =>
+              actions.changeBinding(node.id, prop, fieldPath, label)
+            }
           />
         )}
       </div>

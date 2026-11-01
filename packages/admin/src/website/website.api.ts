@@ -1,3 +1,4 @@
+import type { BuilderDataSources } from "@lintel/builder";
 import { apiRequest } from "../api/client.js";
 
 /** Calls to the built-in website's settings (see packages/core/src/website). */
@@ -69,4 +70,12 @@ export interface CanvasSite {
 
 export function getCanvasSite() {
   return apiRequest<CanvasSite>("/website/canvas");
+}
+
+/**
+ * The site's collections, forms and products, for the builder's collection lists and shop
+ * elements (`BuilderDataSources` from `@lintel/builder`).
+ */
+export function getBuilderData() {
+  return apiRequest<BuilderDataSources>("/website/builder-data");
 }

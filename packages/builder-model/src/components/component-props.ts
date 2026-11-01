@@ -58,3 +58,60 @@ export const codeImageSchema = z.object({
 });
 
 export type CodeImage = z.output<typeof codeImageSchema>;
+
+/** A picture chosen in a list's item: where it is, what it shows, and its media library id. */
+export const pictureSchema = z.object({
+  src: imageAddressSchema.default(""),
+  alt: plainText(500),
+  assetId: z.string().max(100).nullable().default(null),
+});
+
+export type PictureProp = z.output<typeof pictureSchema>;
+
+export const emptyPicture: PictureProp = { src: "", alt: "", assetId: null };
+
+/** An icon's name in the bundled set ("star", "arrow-right"); empty for none. */
+export const iconNameSchema = z
+  .string({ error: "An icon should be named" })
+  .regex(/^[a-z0-9-]{0,48}$/, { error: "An icon’s name should be like “arrow-right”" })
+  .default("");
+
+/** A whole number between `min` and `max`. */
+export function wholeNumber(min: number, max: number, fallback: number) {
+  const message = `This should be a whole number from ${min} to ${max}`;
+  return z
+    .number({ error: message })
+    .int({ error: message })
+    .min(min, { error: message })
+    .max(max, { error: message })
+    .default(fallback);
+}
+
+/** A list of items, each checked by `item`, with a plain message when there are too many. */
+export function itemsOf<Item extends z.ZodType>(item: Item, maxItems: number, what: string) {
+  return z
+    .array(item, { error: `The ${what} should be a list` })
+    .max(maxItems, { error: `There can be at most ${maxItems} ${what}` });
+}
+
+/** One of a few words, with the first as the default. */
+export function oneOf<const Values extends readonly [string, ...string[]]>(
+  values: Values,
+  what: string,
+) {
+  return z
+    .enum(values, { error: `${what} should be one of: ${values.join(", ")}` })
+    .default(values[0]);
+}
+
+/**
+ * An address an iframe may show: only https, and only from a host on `hosts` (or one of
+ * their subdomains). Empty means "not chosen yet".
+ */
+export function isAllowedEmbedAddress(address: string, hosts: readonly string[]): boolean {
+  const trimmed = address.trim();
+  if (trimmed === "") return true;
+  const hostname = /^https:\/\/([a-z0-9.-]+)(:\d+)?([/?#]\S*)?$/i.exec(trimmed)?.[1]?.toLowerCase();
+  if (!hostname) return false;
+  return hosts.some((host) => hostname === host || hostname.endsWith(`.${host}`));
+}

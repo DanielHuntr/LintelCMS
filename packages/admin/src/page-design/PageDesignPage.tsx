@@ -23,8 +23,8 @@ import { Skeleton } from "../design/Skeleton.js";
 import { type StringKey, t } from "../i18n/strings.js";
 import { getAsset } from "../media/media.api.js";
 import { MediaPickerDialog } from "../media/MediaPickerDialog.js";
-import { useCan } from "../session/SessionContext.js";
-import { useCanvasSite } from "../website/website.queries.js";
+import { useCan, useSession } from "../session/SessionContext.js";
+import { useBuilderData, useCanvasSite } from "../website/website.queries.js";
 import { usePageDesignSaving } from "./usePageDesignSaving.js";
 
 interface PageDesignPageProps {
@@ -81,6 +81,9 @@ function PageDesigner({
   );
   const saving = usePageDesignSaving(loadedEntry, fieldHandle);
   const leave = useLeaveWarning(saving.hasUnsavedChanges);
+  const session = useSession();
+  // Collection lists and shop elements show real entries on the canvas once this arrives.
+  const builderData = useBuilderData();
   const canEditCode = useCan("builder:code");
   const canPublish = useCan("entries:publish");
   const imagePicker = useImagePicker();
@@ -117,6 +120,8 @@ function PageDesigner({
         title={title}
         canEditCode={canEditCode}
         site={site}
+        dataSources={builderData.data}
+        enabledPlugins={session.enabledPlugins}
         themeStylesheet={themeStylesheet(defaultTheme)}
         baseStylesheet={siteStylesheet}
         text={text}

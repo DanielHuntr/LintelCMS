@@ -244,6 +244,8 @@ export function useBuilder({
       },
       changeProps: (nodeId: string, props: Record<string, unknown>, label: string) =>
         run(commands.changeProps(context(), nodeId, props, label), ""),
+      changeBinding: (nodeId: string, prop: string, fieldPath: string | null, label: string) =>
+        run(commands.changeBinding(context(), nodeId, prop, fieldPath, label), ""),
       changeStyles: (nodeId: string, target: StyleTarget, values: StyleValues, label: string) =>
         run(commands.changeStyles(context(), nodeId, target, values, label), ""),
       editText: (nodeId: string, prop: string, value: string) => {

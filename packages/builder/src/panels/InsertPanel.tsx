@@ -34,6 +34,8 @@ interface InsertPanelProps {
   catalogue: ComponentCatalogue;
   templates: readonly SectionTemplate[];
   canEditCode: boolean;
+  /** Elements that belong to a plugin are only offered while it is on. All, when left out. */
+  enabledPlugins?: readonly string[];
   onInsert: (key: InsertKey) => void;
 }
 
@@ -50,7 +52,13 @@ const kindTitles = {
  * item to add it after the selected element (or inside it, when it holds elements), or drag
  * it into Layers to put it exactly where you want.
  */
-export function InsertPanel({ catalogue, templates, canEditCode, onInsert }: InsertPanelProps) {
+export function InsertPanel({
+  catalogue,
+  templates,
+  canEditCode,
+  enabledPlugins,
+  onInsert,
+}: InsertPanelProps) {
   const text = useBuilderText();
   const store = usePreferenceStore();
   const searchId = useId();
@@ -67,10 +75,14 @@ export function InsertPanel({ catalogue, templates, canEditCode, onInsert }: Ins
         templates,
         catalogue.definitions.filter(
           (definition) =>
-            !definition.hiddenFromInsert && (canEditCode || !definition.requiresCodePermission),
+            !definition.hiddenFromInsert &&
+            (canEditCode || !definition.requiresCodePermission) &&
+            (!definition.requiresPlugin ||
+              !enabledPlugins ||
+              enabledPlugins.includes(definition.requiresPlugin)),
         ),
       ),
-    [templates, catalogue, canEditCode],
+    [templates, catalogue, canEditCode, enabledPlugins],
   );
   const sectionGroups = useMemo(() => groupInsertItems(items, "sections"), [items]);
   const elementGroups = useMemo(() => groupInsertItems(items, "elements"), [items]);

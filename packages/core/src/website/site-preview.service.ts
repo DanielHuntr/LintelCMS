@@ -37,6 +37,7 @@ export async function renderPreview(
     locale,
     localPath,
     path,
+    query: { page: 1 },
   });
 
   let entryId: string;

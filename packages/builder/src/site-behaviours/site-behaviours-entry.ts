@@ -1,0 +1,56 @@
+import { setUpAccordions, setUpDialogs, setUpTabs } from "./layout-behaviours.js";
+import { setUpForms } from "./form-behaviours.js";
+import {
+  setUpBackToTop,
+  setUpCounters,
+  setUpCountdowns,
+  setUpHeaders,
+  setUpMenus,
+} from "./info-behaviours.js";
+import {
+  setUpBeforeAfter,
+  setUpCarousels,
+  setUpConsentFrames,
+  setUpLightboxes,
+  setUpProductGalleries,
+  setUpQuietVideos,
+} from "./media-behaviours.js";
+import {
+  setUpAddToCart,
+  setUpCart,
+  setUpOrderConfirmation,
+  setUpVariantPickers,
+} from "./shop-behaviours.js";
+
+/**
+ * The elements script: published pages with sliders, tabs, pop-ups, forms or the shop load
+ * it (deferred). Every behaviour enhances HTML that already works on its own as far as it
+ * can, and each finds its elements by `data-behaviour`.
+ */
+function setUpElements(root: ParentNode): void {
+  setUpTabs(root);
+  setUpAccordions(root);
+  setUpDialogs(root);
+  setUpCarousels(root);
+  setUpProductGalleries(root);
+  setUpLightboxes(root);
+  setUpConsentFrames(root);
+  setUpBeforeAfter(root);
+  setUpQuietVideos(root);
+  setUpCounters(root);
+  setUpCountdowns(root);
+  setUpHeaders(root);
+  setUpBackToTop(root);
+  setUpMenus(root);
+  setUpForms(root);
+  setUpVariantPickers(root);
+  setUpAddToCart(root);
+  setUpOrderConfirmation(root);
+  void setUpCart(root);
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => setUpElements(document));
+} else {
+  setUpElements(document);
+}

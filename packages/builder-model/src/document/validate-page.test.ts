@@ -63,7 +63,7 @@ describe("checking a page", () => {
       pageWith(
         first,
         { ...first, id: "x1", children: [inner] },
-        { ...first, id: "x2", type: "carousel" },
+        { ...first, id: "x2", type: "hologram" },
       ),
       standardCatalogue,
     );
@@ -72,7 +72,7 @@ describe("checking a page", () => {
     expect(result.problems.map((problem) => problem.message)).toEqual([
       `Heading 3: two elements have the id “${first.id}”`,
       "Heading 3 can’t go inside Heading",
-      "carousel 1: there is no “carousel” element",
+      "hologram 1: there is no “hologram” element",
     ]);
   });
 

@@ -8,7 +8,7 @@ import type { Translate } from "../i18n/builder-text.js";
  * few fields show them all at once.
  */
 
-export type ContentGroupId = "words" | "link" | "picture" | "options";
+export type ContentGroupId = "source" | "words" | "link" | "picture" | "options" | "more";
 
 export interface ContentGroup {
   id: ContentGroupId;
@@ -28,9 +28,16 @@ const groupOfKind: Record<EditableFieldKind, ContentGroupId> = {
   image: "picture",
   choice: "options",
   toggle: "options",
+  number: "options",
+  dateTime: "options",
+  icon: "picture",
+  itemList: "words",
+  source: "source",
 };
 
 const groupTitles: Record<ContentGroupId, BuilderStringKey> = {
+  source: "pageBuilder.content.group.source",
+  more: "pageBuilder.content.group.more",
   words: "pageBuilder.content.group.words",
   link: "pageBuilder.content.group.link",
   picture: "pageBuilder.content.group.picture",
@@ -42,12 +49,16 @@ export function groupContentFields(fields: readonly EditableField[]): ContentGro
   const groups = new Map<ContentGroupId, ContentGroup>();
   for (const field of fields) {
     // A picture's description belongs with the picture, not with the words on the page.
-    const id = field.prop === "alt" ? "picture" : groupOfKind[field.kind];
+    // Advanced options are folded away together, after everything else.
+    const id = field.advanced ? "more" : field.prop === "alt" ? "picture" : groupOfKind[field.kind];
     const group = groups.get(id) ?? { id, title: groupTitles[id], fields: [] };
     group.fields.push(field);
     groups.set(id, group);
   }
-  return [...groups.values()];
+  // Groups keep the order their first field appears in, except that "What it shows" comes
+  // first and "More options" last (the sort is stable).
+  const rank = (group: ContentGroup) => (group.id === "source" ? -1 : group.id === "more" ? 1 : 0);
+  return [...groups.values()].sort((first, second) => rank(first) - rank(second));
 }
 
 function shortened(words: string, length = 40): string {
@@ -64,6 +75,7 @@ function fieldSummary(field: EditableField, node: PageNode, text: Translate): st
       return typeof value === "string" && value.trim() !== "" ? shortened(value) : undefined;
     case "textList":
     case "linkList":
+    case "itemList":
       return Array.isArray(value) && value.length > 0
         ? text("pageBuilder.content.summary.items", { count: value.length })
         : undefined;
@@ -78,6 +90,12 @@ function fieldSummary(field: EditableField, node: PageNode, text: Translate): st
       return value === true
         ? text("pageBuilder.content.summary.on", { name: field.label })
         : undefined;
+    case "number":
+      return typeof value === "number" ? `${field.label}: ${value}` : undefined;
+    case "dateTime":
+    case "icon":
+    case "source":
+      return typeof value === "string" && value !== "" ? shortened(value) : undefined;
   }
 }
 
