@@ -49,6 +49,7 @@ export const builderStrings = {
   "pageBuilder.insert.hint":
     "Press something to add it after what’s selected, or drag it into Layers to put it exactly where you want.",
   "pageBuilder.insert.sections": "Ready-made sections",
+  "pageBuilder.insert.category.blocks": "Your site’s blocks",
   "pageBuilder.insert.category.layout": "Layout",
   "pageBuilder.insert.category.text": "Text",
   "pageBuilder.insert.category.media": "Pictures",

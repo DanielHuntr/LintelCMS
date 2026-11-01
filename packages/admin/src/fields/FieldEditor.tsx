@@ -16,6 +16,7 @@ import { describedByIds, FieldShell, type FieldLabelling } from "./FieldShell.js
 import { ImageFieldEditor } from "./ImageFieldEditor.js";
 import { LinkFieldEditor } from "./LinkFieldEditor.js";
 import { NumberFieldEditor } from "./NumberFieldEditor.js";
+import { PageFieldEditor } from "../page-design/PageFieldEditor.js";
 import { RichTextFieldEditor } from "./RichTextFieldEditor.js";
 import { SelectFieldEditor } from "./SelectFieldEditor.js";
 import { TextareaFieldEditor } from "./TextareaFieldEditor.js";
@@ -57,6 +58,7 @@ export const fieldEditors: Record<FieldType, FieldEditorRegistration> = {
     labelling: (field) => (field.options.maxItems === 1 ? "label" : "group"),
   },
   blocks: { Editor: BlocksFieldEditor, labelling: () => "group" },
+  page: { Editor: PageFieldEditor, labelling: () => "group" },
 };
 
 const noErrors: FieldMessages = {};

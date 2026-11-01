@@ -1,8 +1,8 @@
+import { defaultTheme, themeStylesheet } from "@lintel/site-components";
 import {
   type Breakpoint,
   type CreateNodeId,
   createRandomNodeId,
-  fallbackTokenStylesheet,
   findNode,
   type PageDocument,
   sectionTemplates,
@@ -46,9 +46,12 @@ export interface PageBuilderProps {
   /** Has the `builder:code` permission: Developer mode and code blocks are available. */
   canEditCode: boolean;
   registry?: ComponentRegistry;
-  /** The site's theme tokens; defaults to the tokens' fallback values. */
+  /** The site's theme tokens (`themeStylesheet` from site-components); defaults to the default theme. */
   themeStylesheet?: string;
-  /** The site's base styles; defaults to the stand-in components'. */
+  /**
+   * The site's component styles (`@lintel/site-components/styles.css`), drawn after the
+   * builder's own element defaults. Without them, the site's blocks are unstyled.
+   */
   baseStylesheet?: string;
   pickImage?: ImagePicker;
   /** The admin's `t()`, so the builder's words can be translated with the admin's. */
@@ -59,6 +62,9 @@ export interface PageBuilderProps {
   onSaveNow?: () => void;
   createId?: CreateNodeId;
 }
+
+/** The site's default theme, until the app passes the site's own. */
+const defaultThemeStylesheet = themeStylesheet(defaultTheme);
 
 type LeftTab = "layers" | "insert";
 type RightTab = "style" | "content" | "code";
@@ -107,7 +113,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   );
   const canvasCss = useMemo(
     () =>
-      `${props.themeStylesheet ?? fallbackTokenStylesheet()}\n${props.baseStylesheet ?? standInBaseStylesheet}\n${rendered.css}`,
+      `${props.themeStylesheet ?? defaultThemeStylesheet}\n${standInBaseStylesheet}\n${props.baseStylesheet ?? ""}\n${rendered.css}`,
     [props.themeStylesheet, props.baseStylesheet, rendered.css],
   );
 

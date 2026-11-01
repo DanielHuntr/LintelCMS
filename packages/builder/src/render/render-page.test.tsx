@@ -103,4 +103,29 @@ describe("rendering a page", () => {
     expect(html).toBe('<h1 class="hero-title">Good things, made well</h1>');
     expect(css).toBe("");
   });
+
+  it("draws the site’s blocks with @lintel/site-components, inside the element’s own class", () => {
+    const createId = createCountingNodeIds();
+    const hero = createNode(
+      { type: "heroBlock", props: { heading: "Fresh bread", buttonHref: "/order" } },
+      standardCatalogue,
+      createId,
+    );
+    const text = createNode(
+      { type: "textBlock", props: { heading: "", text: "One <b>\n\nTwo" } },
+      standardCatalogue,
+      createId,
+    );
+    const { html } = renderPage(pageOf(hero, text), standardRegistry);
+    expect(html).toContain(
+      '<div class="hero"><section class="lintel-section lintel-hero" aria-labelledby="hero-n1" data-lintel-component="hero">',
+    );
+    expect(html).toContain(
+      '<h1 id="hero-n1" class="lintel-hero__heading" data-lintel-field="heading">Fresh bread</h1>',
+    );
+    expect(html).toContain(
+      '<a class="lintel-button lintel-button--primary" href="/order" data-lintel-field="button">Get in touch</a>',
+    );
+    expect(html).toContain("<p>One &lt;b&gt;</p><p>Two</p>");
+  });
 });

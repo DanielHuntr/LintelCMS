@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@lintel/builder-model": "workspace:*",
+    "@lintel/site-components": "workspace:*",
     "lucide-react": "^1.66.0"
   },
   "peerDependencies": {

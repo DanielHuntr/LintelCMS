@@ -21,6 +21,7 @@ import {
 } from "@lintel/builder-model";
 import { Fragment, type ReactNode } from "react";
 import { type ComponentRender, createComponentRegistry, drawsProps } from "./component-registry.js";
+import { siteBlockRenders } from "./site-blocks.js";
 
 /**
  * Simple drawings for the standard components, until `@lintel/site-components` provides the
@@ -197,5 +198,14 @@ export const standInRenders: Readonly<Record<string, ComponentRender>> = {
   codeBlock: CodeBlock,
 };
 
-/** The standard components with the stand-in drawings: what the builder uses by default. */
-export const standardRegistry = createComponentRegistry(standardComponents, standInRenders);
+/**
+ * Every standard component's drawing: the site's ready-made blocks from
+ * `@lintel/site-components`, and the builder's own elements above.
+ */
+export const standardRenders: Readonly<Record<string, ComponentRender>> = {
+  ...standInRenders,
+  ...siteBlockRenders,
+};
+
+/** The standard components with their drawings: what the builder uses by default. */
+export const standardRegistry = createComponentRegistry(standardComponents, standardRenders);

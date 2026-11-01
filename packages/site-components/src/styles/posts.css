@@ -1,0 +1,201 @@
+/* Blog posts, lists of posts, terms and pagination. */
+.lintel-list-header {
+  margin-bottom: var(--lintel-space-7);
+}
+
+.lintel-post-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--lintel-space-4);
+  border-radius: var(--lintel-radius-medium);
+}
+
+.lintel-post-card:focus-within {
+  outline: 3px solid var(--lintel-color-link);
+  outline-offset: 6px;
+}
+
+.lintel-post-card__image {
+  width: 100%;
+  border-radius: var(--lintel-radius-medium);
+  background: var(--lintel-color-surface);
+}
+
+.lintel-post-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lintel-space-2);
+}
+
+.lintel-post-card__title {
+  font-size: 1.375rem;
+  line-height: 1.2;
+}
+
+.lintel-post-card__link {
+  color: var(--lintel-color-text);
+  text-decoration: none;
+}
+
+.lintel-post-card__link:focus-visible {
+  outline: none;
+}
+
+/* The title's link covers the whole card, so the card is one stop and one click target. */
+.lintel-post-card__link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.lintel-post-card:hover .lintel-post-card__link {
+  color: var(--lintel-color-link);
+}
+
+.lintel-post-card__excerpt {
+  color: var(--lintel-color-text-secondary);
+}
+
+.lintel-post-card--row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6rem;
+  align-items: start;
+  gap: var(--lintel-space-5);
+  padding-block: var(--lintel-space-6);
+  border-bottom: 1px solid var(--lintel-color-border);
+  border-radius: 0;
+}
+
+.lintel-post-card--row .lintel-post-card__media {
+  order: 2;
+}
+
+.lintel-post-card--row .lintel-post-card__body {
+  order: 1;
+}
+
+.lintel-post-card--row .lintel-post-card__title {
+  font-size: clamp(1.375rem, 1.2rem + 0.8vw, 1.75rem);
+}
+
+@media (min-width: 40rem) {
+  .lintel-post-card--row {
+    grid-template-columns: minmax(0, 1fr) 11rem;
+  }
+}
+
+.lintel-post-list--rows {
+  border-top: 1px solid var(--lintel-color-border);
+}
+
+.lintel-post__header {
+  text-align: center;
+}
+
+.lintel-post__title {
+  margin-top: var(--lintel-space-3);
+  font-size: clamp(2.25rem, 1.6rem + 2.6vw, 3.5rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.lintel-post__excerpt {
+  margin-top: var(--lintel-space-4);
+  color: var(--lintel-color-text-secondary);
+  font-size: clamp(1.125rem, 1rem + 0.5vw, 1.375rem);
+  line-height: 1.45;
+}
+
+.lintel-post__media {
+  margin-top: var(--lintel-space-7);
+}
+
+.lintel-post__image {
+  width: 100%;
+  border-radius: var(--lintel-radius-large);
+  background: var(--lintel-color-surface);
+}
+
+.lintel-post__footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lintel-space-5);
+  margin-top: var(--lintel-space-8);
+  padding-top: var(--lintel-space-6);
+  border-top: 1px solid var(--lintel-color-border);
+}
+
+.lintel-post__back {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.lintel-terms {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--lintel-space-3);
+}
+
+.lintel-terms__label {
+  color: var(--lintel-color-text-secondary);
+  font-family: var(--lintel-font-body);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.lintel-terms__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lintel-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lintel-terms__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding-inline: var(--lintel-space-3);
+  border: 1px solid var(--lintel-color-border);
+  border-radius: 999px;
+  color: var(--lintel-color-text);
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.lintel-terms__link:hover {
+  border-color: var(--lintel-color-link);
+  color: var(--lintel-color-link);
+}
+
+.lintel-pagination {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--lintel-space-4);
+  margin-top: var(--lintel-space-8);
+  padding-top: var(--lintel-space-6);
+  border-top: 1px solid var(--lintel-color-border);
+}
+
+.lintel-pagination__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.lintel-pagination__link[rel="next"] {
+  justify-self: end;
+}
+
+.lintel-pagination__status {
+  color: var(--lintel-color-text-secondary);
+  font-size: 0.9375rem;
+}

@@ -1,3 +1,10 @@
+import {
+  callToActionBlockComponent,
+  heroBlockComponent,
+  imageBlockComponent,
+  questionBlockComponent,
+  textBlockComponent,
+} from "./block-components.js";
 import { codeBlockComponent } from "./code-block-component.js";
 import type { AnyComponentDefinition, ComponentDefinition } from "./component-definition.js";
 import {
@@ -38,6 +45,11 @@ export const standardComponents: readonly AnyComponentDefinition[] = [
   eraseProps(buttonComponent),
   eraseProps(linkComponent),
   eraseProps(navigationComponent),
+  eraseProps(heroBlockComponent),
+  eraseProps(textBlockComponent),
+  eraseProps(imageBlockComponent),
+  eraseProps(callToActionBlockComponent),
+  eraseProps(questionBlockComponent),
   eraseProps(codeBlockComponent),
 ];
 

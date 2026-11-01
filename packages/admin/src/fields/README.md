@@ -12,25 +12,26 @@ One editor per fieldtype, used by the entry editor to draw a blueprint's fields.
   version of a blueprint) and turn input back into stored values. Cleared optional fields are
   stored as `null`.
 
-| Type       | Editor                         | Stores                                       |
-| ---------- | ------------------------------ | -------------------------------------------- |
-| `text`     | `TextFieldEditor.tsx`          | string                                       |
-| `textarea` | `TextareaFieldEditor.tsx`      | string                                       |
-| `richText` | `RichTextFieldEditor.tsx`      | TipTap JSON document                         |
-| `number`   | `NumberFieldEditor.tsx`        | number, or `null` when cleared               |
-| `toggle`   | `ToggleFieldEditor.tsx`        | boolean                                      |
-| `select`   | `SelectFieldEditor.tsx`        | string, or string[] when `multiple`          |
-| `date`     | `DateFieldEditor.tsx`          | `YYYY-MM-DD`, or an ISO datetime with time   |
-| `link`     | `LinkFieldEditor.tsx`          | `{ url, label? }`, or `null`                 |
-| `image`    | `ImageFieldEditor.tsx`         | asset id, or `null`                          |
-| `email`    | `EmailFieldEditor.tsx`         | string                                       |
-| `url`      | `UrlFieldEditor.tsx`           | string, with a button to open it             |
-| `colour`   | `ColourFieldEditor.tsx`        | `#rrggbb`; picker, typed code and swatches   |
-| `markdown` | `MarkdownFieldEditor.tsx`      | string; Write and Preview                    |
-| `list`     | `ListFieldEditor.tsx`          | string[] without blank items, or `null`      |
-| `entries`  | `EntriesFieldEditor.tsx`       | entry ids, in order, or `null`               |
-| `terms`    | `TermsFieldEditor.tsx`         | term ids, or `null`                          |
-| `blocks`   | `blocks/BlocksFieldEditor.tsx` | `[{ id, type, data }]`, or `null` when empty |
+| Type       | Editor                               | Stores                                       |
+| ---------- | ------------------------------------ | -------------------------------------------- |
+| `text`     | `TextFieldEditor.tsx`                | string                                       |
+| `textarea` | `TextareaFieldEditor.tsx`            | string                                       |
+| `richText` | `RichTextFieldEditor.tsx`            | TipTap JSON document                         |
+| `number`   | `NumberFieldEditor.tsx`              | number, or `null` when cleared               |
+| `toggle`   | `ToggleFieldEditor.tsx`              | boolean                                      |
+| `select`   | `SelectFieldEditor.tsx`              | string, or string[] when `multiple`          |
+| `date`     | `DateFieldEditor.tsx`                | `YYYY-MM-DD`, or an ISO datetime with time   |
+| `link`     | `LinkFieldEditor.tsx`                | `{ url, label? }`, or `null`                 |
+| `image`    | `ImageFieldEditor.tsx`               | asset id, or `null`                          |
+| `email`    | `EmailFieldEditor.tsx`               | string                                       |
+| `url`      | `UrlFieldEditor.tsx`                 | string, with a button to open it             |
+| `colour`   | `ColourFieldEditor.tsx`              | `#rrggbb`; picker, typed code and swatches   |
+| `markdown` | `MarkdownFieldEditor.tsx`            | string; Write and Preview                    |
+| `list`     | `ListFieldEditor.tsx`                | string[] without blank items, or `null`      |
+| `entries`  | `EntriesFieldEditor.tsx`             | entry ids, in order, or `null`               |
+| `terms`    | `TermsFieldEditor.tsx`               | term ids, or `null`                          |
+| `blocks`   | `blocks/BlocksFieldEditor.tsx`       | `[{ id, type, data }]`, or `null` when empty |
+| `page`     | `../page-design/PageFieldEditor.tsx` | a page design; edited in the visual builder  |
 
 Rich text uses TipTap's StarterKit, trimmed to headings (two levels), bold, italic, links,
 lists and quotes (`richTextExtensions.ts`). Its toolbar is one tab stop with arrow keys

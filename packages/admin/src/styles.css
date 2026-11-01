@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* The page builder's screens live in their own package and use these same tokens. */
+@source "../../builder/src";
+
 /*
  * Lintel's design tokens. src/design/README.md explains each one and how agencies rebrand them.
  *

@@ -18,6 +18,7 @@ import { BlueprintEditorPage } from "./content-types/BlueprintEditorPage.js";
 import { contentModelRoutes } from "./content-model/contentModelRoutes.js";
 import { ContentTypesPage } from "./content-types/ContentTypesPage.js";
 import { NewContentTypePage } from "./content-types/NewContentTypePage.js";
+import { pageDesignRoutes } from "./page-design/pageDesignRoutes.js";
 import { DashboardPage } from "./dashboard/DashboardPage.js";
 import { HelpPage } from "./help/HelpPage.js";
 import { AdminLayout } from "./layout/AdminLayout.js";
@@ -416,6 +417,7 @@ export const routeTree = rootRoute.addChildren([
     setupRoute,
     siteSetupRoute,
     signInRoute,
+    ...pageDesignRoutes(() => setupGateRoute),
     adminRoute.addChildren([
       dashboardRoute,
       mediaRoute,

@@ -1,0 +1,31 @@
+/*
+ * What each template changes. Everything above is shared; a template only adjusts it here,
+ * under its own body class (`lintel-template-<id>`).
+ */
+
+/* Journal: a reading-first blog. Left-aligned, a narrow column, quieter headings. */
+.lintel-template-journal .lintel-page-header,
+.lintel-template-journal .lintel-post__header,
+.lintel-template-journal .lintel-list-header {
+  text-align: left;
+}
+
+.lintel-template-journal .lintel-hero__heading,
+.lintel-template-journal .lintel-page-header__title,
+.lintel-template-journal .lintel-post__title {
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.lintel-template-journal .lintel-prose {
+  font-size: 1.1875rem;
+  line-height: 1.75;
+}
+
+.lintel-template-journal .lintel-footer {
+  background: var(--lintel-color-background);
+}
+
+.lintel-template-journal .lintel-list-header .lintel-page-header__title {
+  font-size: clamp(2rem, 1.5rem + 2vw, 3rem);
+}

@@ -1,0 +1,52 @@
+/* FAQ: questions that open to show their answers. */
+.lintel-faq {
+  border-top: 1px solid var(--lintel-color-border);
+}
+
+.lintel-faq__item {
+  border-bottom: 1px solid var(--lintel-color-border);
+}
+
+.lintel-faq__question {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lintel-space-4);
+  padding-block: var(--lintel-space-5);
+  font-family: var(--lintel-font-heading);
+  font-size: 1.1875rem;
+  font-weight: 600;
+  line-height: 1.35;
+  list-style: none;
+  cursor: pointer;
+}
+
+.lintel-faq__question::-webkit-details-marker {
+  display: none;
+}
+
+/* A plus that turns into a cross while the answer is open. */
+.lintel-faq__question::after {
+  content: "+";
+  flex: none;
+  color: var(--lintel-color-link);
+  font-family: var(--lintel-font-body);
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.lintel-faq__item[open] > .lintel-faq__question::after {
+  transform: rotate(45deg);
+}
+
+.lintel-faq__answer {
+  padding-bottom: var(--lintel-space-5);
+  font-size: 1.0625rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lintel-faq__question::after {
+    transition: transform 200ms ease;
+  }
+}

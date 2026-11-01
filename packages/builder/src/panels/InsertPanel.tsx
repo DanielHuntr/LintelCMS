@@ -23,6 +23,7 @@ interface InsertPanelProps {
 }
 
 const categoryTitles: Record<ComponentCategory, BuilderStringKey> = {
+  blocks: "pageBuilder.insert.category.blocks",
   layout: "pageBuilder.insert.category.layout",
   text: "pageBuilder.insert.category.text",
   media: "pageBuilder.insert.category.media",

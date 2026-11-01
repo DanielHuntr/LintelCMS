@@ -39,7 +39,14 @@ export interface ComponentDefinition<
   requiresCodePermission?: boolean;
 }
 
-export const componentCategories = ["layout", "text", "media", "navigation", "code"] as const;
+export const componentCategories = [
+  "blocks",
+  "layout",
+  "text",
+  "media",
+  "navigation",
+  "code",
+] as const;
 export type ComponentCategory = (typeof componentCategories)[number];
 
 /** A new node before it has an id: what templates and default children are written as. */
