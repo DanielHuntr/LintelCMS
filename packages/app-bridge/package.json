@@ -14,7 +14,8 @@
       "types": "./dist/protocol.d.ts",
       "development": "./src/protocol.ts",
       "default": "./dist/protocol.js"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist"

@@ -44,6 +44,11 @@
       "types": "./dist/webhooks/webhook-signatures.d.ts",
       "development": "./src/webhooks/webhook-signatures.ts",
       "default": "./dist/webhooks/webhook-signatures.js"
+    },
+    "./app-manifest": {
+      "types": "./dist/apps/app-manifest.schema.d.ts",
+      "development": "./src/apps/app-manifest.schema.ts",
+      "default": "./dist/apps/app-manifest.schema.js"
     }
   },
   "scripts": {
