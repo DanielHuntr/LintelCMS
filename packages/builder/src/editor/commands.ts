@@ -10,6 +10,7 @@ import {
   insertNode,
   moveNode,
   type NodeAnimation,
+  type NodeEffect,
   type NodeBlueprint,
   type NodeStyles,
   type PageDocument,
@@ -431,6 +432,24 @@ export function changeAnimation(
     ),
     ({ animation: _previous, ...rest }) => (animation ? { ...rest, animation } : rest),
     animation ? { coalesceKey: `animation:${nodeId}` } : {},
+  );
+}
+
+/** Sets an element's effects from the Effects library; an empty list takes them all away. */
+export function changeEffects(
+  context: CommandContext,
+  nodeId: string,
+  effects: NodeEffect[],
+): CommandResult {
+  const node = findNode(context.document.root, nodeId);
+  if (!node) return { refused: context.text("pageBuilder.refused.nothingSelected") };
+  const name = layerName(node, context.catalogue);
+  return changeNode(
+    context,
+    nodeId,
+    context.text("pageBuilder.history.changedEffects", { name }),
+    ({ effects: _previous, ...rest }) => (effects.length > 0 ? { ...rest, effects } : rest),
+    { coalesceKey: `effects:${nodeId}` },
   );
 }
 

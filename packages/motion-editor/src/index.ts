@@ -17,3 +17,8 @@ export { TranslateProvider } from "./strings/translate.js";
 export type { Translate } from "./strings/translate.js";
 export { motionEditorStrings } from "./strings/motionEditorStrings.js";
 export type { MotionEditorStringKey } from "./strings/motionEditorStrings.js";
+export { EffectsPanel } from "./effects/EffectsPanel.js";
+export type { EffectsPanelProps } from "./effects/EffectsPanel.js";
+export { EffectsGallery } from "./effects/EffectsGallery.js";
+export { PageWeightMeter, formatKilobytes } from "./effects/PageWeightMeter.js";
+export { SiteMotionSettings } from "./effects/SiteMotionSettings.js";

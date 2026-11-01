@@ -2,6 +2,7 @@ import type { Breakpoint } from "@lintel/builder-model";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import type { MotionSpec } from "@lintel/motion";
+import type { EffectBinding } from "@lintel/motion/effects";
 import {
   type CanvasScriptAddresses,
   type CanvasSite,
@@ -14,12 +15,18 @@ import {
   readFrameMessage,
 } from "./canvas-messages.js";
 
-/** An animation to play on the canvas; a new `playId` plays it again. */
-export interface MotionPreview {
-  nodeId: string;
-  spec: MotionSpec;
-  playId: number;
-}
+/**
+ * An animation to play on the canvas, or an effect to run there until the preview stops;
+ * a new `playId` plays it again.
+ */
+export type MotionPreview =
+  | { nodeId: string; spec: MotionSpec; playId: number }
+  | {
+      nodeId: string;
+      effect: Pick<EffectBinding, "module" | "behaviour" | "params">;
+      modules: Readonly<Record<string, string>>;
+      playId: number;
+    };
 
 /** How wide the canvas is at each screen size; desktop fills the space there is. */
 export const canvasWidths: Record<Breakpoint, string> = {
@@ -118,9 +125,16 @@ export function Canvas({
     const handle = requestAnimationFrame(() =>
       requestAnimationFrame(() =>
         post(
-          motionPreview
-            ? { type: "previewMotion", nodeId: motionPreview.nodeId, spec: motionPreview.spec }
-            : { type: "stopMotion" },
+          !motionPreview
+            ? { type: "stopMotion" }
+            : "spec" in motionPreview
+              ? { type: "previewMotion", nodeId: motionPreview.nodeId, spec: motionPreview.spec }
+              : {
+                  type: "previewEffect",
+                  nodeId: motionPreview.nodeId,
+                  binding: motionPreview.effect,
+                  modules: motionPreview.modules,
+                },
         ),
       ),
     );

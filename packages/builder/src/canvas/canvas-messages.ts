@@ -1,3 +1,4 @@
+import type { EffectBinding } from "@lintel/motion/effects";
 import type { MotionSpec } from "@lintel/motion";
 
 /**
@@ -25,6 +26,16 @@ export type MessageToFrame =
   | { type: "reveal"; nodeId: string }
   /** Plays an animation once on an element, as a preview; the page itself doesn't change. */
   | { type: "previewMotion"; nodeId: string; spec: MotionSpec }
+  /**
+   * Runs an effect on an element until stopped, as a preview. `modules` says where each
+   * effect module is served, since the canvas imports them on demand.
+   */
+  | {
+      type: "previewEffect";
+      nodeId: string;
+      binding: Pick<EffectBinding, "module" | "behaviour" | "params">;
+      modules: Readonly<Record<string, string>>;
+    }
   | { type: "stopMotion" };
 
 export interface ForwardedKey {

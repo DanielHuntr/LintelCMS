@@ -16,6 +16,11 @@ export const builderStudioStrings = {
     "Want to fine-tune every moment? Switch to Designer to open the timeline.",
   "pageBuilder.history.animated": "Animated {name}",
   "pageBuilder.history.removedAnimation": "Removed the animation from {name}",
+  "pageBuilder.history.changedEffects": "Changed the effects on {name}",
+  "pageBuilder.animate.tabs": "Animation or effects",
+  "pageBuilder.animate.tab.animation": "Animation",
+  "pageBuilder.animate.tab.effects": "Effects",
+  "pageBuilder.animate.effectsHeading": "Effects for {name}",
 
   "pageBuilder.skill.label": "Tools to show",
   "pageBuilder.skill.button": "Tools: {level}",

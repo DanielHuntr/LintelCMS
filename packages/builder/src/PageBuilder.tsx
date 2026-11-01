@@ -10,7 +10,10 @@ import {
   type StarterSite,
 } from "@lintel/builder-model";
 import type { MotionSpec } from "@lintel/motion";
-import type { Translate as MotionText } from "@lintel/motion-editor";
+import { SiteMotionSettings, type Translate as MotionText } from "@lintel/motion-editor";
+import { effectRegistry, measurePageWeight, type SiteEffectSettings } from "@lintel/motion/effects";
+import type { EffectPreview } from "./animate-panel/AnimatePanel.js";
+import { collectNodeEffects } from "./render/page-effects.js";
 import {
   type KeyboardEvent,
   type ReactNode,
@@ -101,6 +104,13 @@ export interface PageBuilderProps {
   frameScripts?: CanvasScriptAddresses;
   /** The app's words for the animation studio (`motionEditorStrings`); English when left out. */
   motionText?: MotionText;
+  /**
+   * Where each effect module (`@lintel/motion/effect-modules`) is served, so effects can be
+   * tried on the canvas and in the gallery. Without it, effects are still added, not previewed.
+   */
+  effectModules?: Readonly<Record<string, string>>;
+  /** The site-wide motion settings (page transitions, cursor, intro), and how to save them. */
+  siteEffects?: { value: SiteEffectSettings; onChange: (value: SiteEffectSettings) => void };
   /** Whole pages an empty page can start from. The template library's by default. */
   starterSites?: readonly StarterSite[];
   /** Where skill level, the tour and closed tips are remembered. The browser's by default. */
@@ -186,6 +196,22 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
       setMotionPreview((current) => ({ nodeId, spec, playId: (current?.playId ?? 0) + 1 })),
     [],
   );
+  const effectModules = props.effectModules;
+  const previewEffect = useCallback(
+    (nodeId: string, effect: EffectPreview | null) =>
+      setMotionPreview((current) =>
+        effect && effectModules
+          ? { nodeId, effect, modules: effectModules, playId: (current?.playId ?? 0) + 1 }
+          : null,
+      ),
+    [effectModules],
+  );
+  const pageWeight = useMemo(() => {
+    const used = collectNodeEffects(root).flatMap(({ effects }) =>
+      effects.flatMap((saved) => effectRegistry.find(saved.effect) ?? []),
+    );
+    return measurePageWeight(used, props.siteEffects?.value);
+  }, [root, props.siteEffects?.value]);
 
   const changeSkillLevel = useCallback(
     (level: SkillLevel) => {
@@ -499,6 +525,18 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                 },
               }}
               onPreviewMotion={previewMotion}
+              onPreviewEffect={previewEffect}
+              effectModules={props.effectModules}
+              pageWeight={pageWeight}
+              siteMotion={
+                props.siteEffects && (
+                  <SiteMotionSettings
+                    value={props.siteEffects.value}
+                    onChange={props.siteEffects.onChange}
+                    translate={props.motionText}
+                  />
+                )
+              }
             />
           </div>
           {showsTour && <GuidedTour onClose={closeTour} />}

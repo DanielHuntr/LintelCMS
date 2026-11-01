@@ -8,6 +8,7 @@ import {
   type PageFont,
   type StackingMove,
   type NodeAnimation,
+  type NodeEffect,
   createNode,
   findNode,
   findPath,
@@ -358,6 +359,8 @@ export function useBuilder({
         ),
       animate: (nodeId: string, animation: NodeAnimation | null) =>
         run(commands.changeAnimation(context(), nodeId, animation), animation ? "" : undefined),
+      setEffects: (nodeId: string, effects: NodeEffect[]) =>
+        run(commands.changeEffects(context(), nodeId, effects), ""),
       useStarterPage: (page: StarterPage, name: string) =>
         run(
           commands.replacePageContent(

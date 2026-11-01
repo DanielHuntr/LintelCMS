@@ -17,7 +17,6 @@ import { snapBox } from "../free-layout/snapping.js";
  */
 export function runCanvasFrame(snap: typeof snapBox): void {
   interface Preview {
-    restart(): void;
     destroy(): void;
   }
   interface Runtime {
@@ -25,7 +24,9 @@ export function runCanvasFrame(snap: typeof snapBox): void {
       element: HTMLElement,
       spec: unknown,
       options: { mode: "manual"; nodeAttribute: string },
-    ): Preview;
+    ): Preview & { restart(): void };
+    mountEffect?(element: HTMLElement, binding: unknown): Promise<() => void>;
+    setEffectModuleAddresses?(addresses: Record<string, string>): void;
   }
   const builder = window.parent;
   const send = (message: Record<string, unknown>) => builder.postMessage(message, "*");
@@ -298,6 +299,8 @@ export function runCanvasFrame(snap: typeof snapBox): void {
       css?: string;
       nodeId?: string;
       spec?: unknown;
+      binding?: unknown;
+      modules?: Record<string, string>;
     };
     if (message.type === "render" && typeof message.html === "string") {
       if (editing) {
@@ -317,11 +320,32 @@ export function runCanvasFrame(snap: typeof snapBox): void {
       if (!runtime || !element) return;
       element.scrollIntoView({ block: "nearest" });
       // Manual: the preview plays now, whatever would start it on the site.
-      preview = runtime.mountMotion(element, message.spec, {
+      const motion = runtime.mountMotion(element, message.spec, {
         mode: "manual",
         nodeAttribute: "data-lintel-node",
       });
-      preview.restart();
+      preview = motion;
+      motion.restart();
+    } else if (message.type === "previewEffect" && message.nodeId) {
+      stopPreview();
+      const runtime = (window as unknown as { lintelMotion?: Runtime }).lintelMotion;
+      const element = nodeElement(message.nodeId);
+      if (!runtime?.mountEffect || !element) return;
+      runtime.setEffectModuleAddresses?.(message.modules ?? {});
+      element.scrollIntoView({ block: "nearest" });
+      // The module may still be loading when the preview is stopped: undo it as it arrives.
+      let undo: (() => void) | null = null;
+      let stopped = false;
+      preview = {
+        destroy: () => {
+          stopped = true;
+          undo?.();
+        },
+      };
+      void runtime.mountEffect(element, message.binding).then((cleanup) => {
+        if (stopped) cleanup();
+        else undo = cleanup;
+      });
     } else if (message.type === "stopMotion") {
       stopPreview();
     }
