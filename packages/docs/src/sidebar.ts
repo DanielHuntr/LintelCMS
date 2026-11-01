@@ -24,6 +24,9 @@ export const buildingPages = [
   "building/images",
   "building/nextjs-starter",
   "building/plugins",
+  "building/writing-a-plugin",
+  "building/plugin-api",
+  "building/dashboards",
   "building/contributing",
 ] as const;
 
