@@ -1,16 +1,16 @@
 # Scripts
 
 Command-line tasks. Each script only reads its input and calls a service, so the rules
-stay in the feature folders. Run them from the repository root:
+stay in the feature folders. Run them from the repository root. Creating an admin, backups,
+exports and imports are in the `lintel` command instead (`packages/cli`); `pnpm
+create-admin` still works as a shortcut to `pnpm lintel create-admin`.
 
-| Script              | Command                                             | What it does                                       |
-| ------------------- | --------------------------------------------------- | -------------------------------------------------- |
-| `create-admin.ts`   | `pnpm create-admin --email <email> --name "<name>"` | Creates a Super admin (role `["*"]`)               |
-| `reset-password.ts` | `pnpm reset-password --email <email>`               | New password for a user; signs them out everywhere |
-| `migrate.ts`        | `pnpm db:migrate`                                   | Creates or updates the tables now                  |
+| Script              | Command                               | What it does                                       |
+| ------------------- | ------------------------------------- | -------------------------------------------------- |
+| `reset-password.ts` | `pnpm reset-password --email <email>` | New password for a user; signs them out everywhere |
+| `migrate.ts`        | `pnpm db:migrate`                     | Creates or updates the tables now                  |
 
-Most people never need `create-admin`: the setup screen creates the first admin. Nor
-`db:migrate`: the server migrates on every start.
+Most people never need `db:migrate`: the server migrates on every start.
 
 Passwords are asked for without echoing them (twice, to catch typos), or read from
 `LINTEL_ADMIN_PASSWORD` / `LINTEL_NEW_PASSWORD` for automated setups. They must be at

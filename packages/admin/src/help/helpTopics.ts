@@ -7,6 +7,9 @@ const helpTopics: ReadonlyArray<{ path: RegExp; slug: string }> = [
   { path: /^\/$/, slug: "using/getting-around" },
   { path: /^\/content(\/|$)/, slug: "using/writing" },
   { path: /^\/media(\/|$)/, slug: "using/media" },
+  { path: /^\/settings\/backups(\/|$)/, slug: "using/backups" },
+  { path: /^\/settings\/import\/wordpress(\/|$)/, slug: "using/wordpress" },
+  { path: /^\/settings\/import(\/|$)/, slug: "using/backups" },
   { path: /^\/settings(\/|$)/, slug: "using/content-types" },
   { path: /^\/users(\/|$)/, slug: "using/users" },
 ];

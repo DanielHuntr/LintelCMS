@@ -151,6 +151,7 @@ scripted setups, set `LINTEL_ADMIN_PASSWORD` or `LINTEL_NEW_PASSWORD` instead.
 | `packages/core`   | The API server: content model, entries, users, permissions |
 | `packages/admin`  | The control panel (React)                                  |
 | `packages/docs`   | The documentation site, also the admin's built-in help     |
+| `packages/cli`    | The `lintel` command: backups, exports, imports, doctor    |
 | `starters/nextjs` | A Next.js website that reads Lintel's delivery API         |
 | `docs/decisions`  | Why the big choices were made                              |
 | `CONTRIBUTING.md` | How code is written here. Read this first                  |

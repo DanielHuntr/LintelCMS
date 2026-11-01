@@ -12,12 +12,15 @@ export const usingPages = [
   "using/media",
   "using/content-types",
   "using/users",
+  "using/backups",
+  "using/wordpress",
   "using/troubleshooting",
 ] as const;
 
 export const buildingPages = [
   "building",
   "building/install",
+  "building/command-line",
   "building/architecture",
   "building/feature-folders",
   "building/delivery-api",
