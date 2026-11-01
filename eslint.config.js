@@ -16,6 +16,9 @@ export default tseslint.config(
       "**/.next/**",
       "**/.astro/**",
       "**/next-env.d.ts",
+      "packages/e2e/.admin-build/**",
+      "packages/e2e/playwright-report/**",
+      "packages/e2e/test-results/**",
     ],
   },
   js.configs.recommended,
@@ -30,6 +33,12 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
       "no-console": ["warn", { allow: ["warn", "error"] }],
     },
+  },
+  {
+    // Playwright reads a fixture's dependencies from its first parameter, which has to be
+    // an object pattern even when it needs none: `async ({}, use) => ...`.
+    files: ["packages/e2e/**/*.ts"],
+    rules: { "no-empty-pattern": "off" },
   },
   {
     files: ["packages/admin/**/*.{ts,tsx}", "starters/**/*.{ts,tsx}"],

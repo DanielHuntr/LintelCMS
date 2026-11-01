@@ -1,0 +1,21 @@
+{
+  "name": "@lintel/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Lintel's browser tests: journeys, accessibility, screenshots and performance budgets.",
+  "type": "module",
+  "scripts": {
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:update-snapshots": "playwright test --project=visual --update-snapshots",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@lintel/core": "workspace:*",
+    "@playwright/test": "1.63.0",
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3"
+  }
+}

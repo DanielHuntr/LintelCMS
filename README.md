@@ -151,6 +151,7 @@ scripted setups, set `LINTEL_ADMIN_PASSWORD` or `LINTEL_NEW_PASSWORD` instead.
 | `packages/core`   | The API server: content model, entries, users, permissions |
 | `packages/admin`  | The control panel (React)                                  |
 | `packages/docs`   | The documentation site, also the admin's built-in help     |
+| `packages/e2e`    | Browser tests: journeys, accessibility, screenshots, speed |
 | `starters/nextjs` | A Next.js website that reads Lintel's delivery API         |
 | `docs/decisions`  | Why the big choices were made                              |
 | `CONTRIBUTING.md` | How code is written here. Read this first                  |
@@ -175,6 +176,7 @@ pnpm typecheck    # TypeScript in every package
 pnpm lint         # ESLint
 pnpm format       # Prettier
 pnpm build        # production builds
+pnpm e2e          # browser tests in Chromium (see packages/e2e/README.md)
 ```
 
 A pre-commit hook runs ESLint and Prettier on the files you change.

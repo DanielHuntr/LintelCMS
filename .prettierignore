@@ -6,3 +6,7 @@ packages/core/migrations
 .next
 .astro
 next-env.d.ts
+packages/e2e/.admin-build
+packages/e2e/playwright-report
+packages/e2e/test-results
+packages/e2e/blob-report
