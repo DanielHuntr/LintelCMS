@@ -6,6 +6,7 @@ import {
   textBlockComponent,
 } from "./block-components.js";
 import { codeBlockComponent } from "./code-block-component.js";
+import { customBlockComponent } from "../custom-blocks/custom-block.js";
 import type { AnyComponentDefinition, ComponentDefinition } from "./component-definition.js";
 import {
   buttonComponent,
@@ -110,6 +111,7 @@ export const standardComponents: readonly AnyComponentDefinition[] = [
   eraseProps(callToActionBlockComponent),
   eraseProps(questionBlockComponent),
   eraseProps(codeBlockComponent),
+  eraseProps(customBlockComponent),
 ];
 
 function eraseProps<Props extends Record<string, unknown>>(

@@ -54,6 +54,7 @@ docs/decisions/0015-page-documents.md explains why the model looks the way it do
 | ---------------- | ------------------------------------------------------------------------------------------- |
 | `document/`      | The schema, `createEmptyPage`, `migrateDocument` and `validatePageDocument`                 |
 | `components/`    | `ComponentDefinition`, the standard components and `createComponentCatalogue`               |
+| `custom-blocks/` | The site's own blocks: instances, drawing them as their design, making one                  |
 | `styles/`        | Allowed properties, the breakpoint cascade, class names and `compileStylesheet`             |
 | `tokens/`        | The site's design tokens (`--lintel-color-brand`...) as the style panel offers them         |
 | `free-layout/`   | Free layout: the styles it implies, places as percentages, bring forward and send back      |

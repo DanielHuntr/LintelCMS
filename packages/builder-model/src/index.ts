@@ -37,6 +37,11 @@ export * from "./components/form-components.js";
 export * from "./components/collection-components.js";
 export * from "./components/shop-components.js";
 export * from "./data/bound-items.js";
+export * from "./custom-blocks/custom-block.js";
+export * from "./custom-blocks/block-bindings.js";
+export * from "./custom-blocks/expand-blocks.js";
+export * from "./custom-blocks/block-template.js";
+export * from "./custom-blocks/make-block.js";
 
 export * from "./styles/style-properties.js";
 export * from "./styles/style-cascade.js";
