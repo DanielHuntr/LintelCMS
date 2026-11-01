@@ -10,13 +10,16 @@ import { defaultTheme, themeStylesheet } from "@lintel/site-components";
 import siteStylesheet from "@lintel/site-components/styles.css?raw";
 import type { MotionEditorStringKey } from "@lintel/motion-editor";
 import { Link } from "@tanstack/react-router";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, SquareArrowOutUpRight } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { LoadError } from "../api/LoadError.js";
-import { useEntry } from "../content/content.queries.js";
+import { useCollection, useEntry } from "../content/content.queries.js";
 import type { Entry } from "../content/content.types.js";
 import { SaveIndicator } from "../content/SaveIndicator.js";
 import { useLeaveWarning } from "../content/useLeaveWarning.js";
+import { useEntryInfo } from "../content-tree/contentTree.queries.js";
+import { viewPageTarget } from "../content/viewPage.js";
+import { ViewPageLink } from "../content/ViewPageLink.js";
 import { ConfirmDialog } from "../design/ConfirmDialog.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
@@ -25,7 +28,7 @@ import { getAsset, uploadAsset } from "../media/media.api.js";
 import { MediaPickerDialog } from "../media/MediaPickerDialog.js";
 import { useCan, useSession } from "../session/SessionContext.js";
 import { runtimeSettings } from "../runtime-settings.js";
-import { useBuilderData, useCanvasSite } from "../website/website.queries.js";
+import { useBuilderData, useCanvasSite, useViewPageSite } from "../website/website.queries.js";
 import { usePageDesignSaving } from "./usePageDesignSaving.js";
 
 /**
@@ -101,6 +104,13 @@ function PageDesigner({
   const builderData = useBuilderData();
   const canEditCode = useCan("builder:code");
   const canPublish = useCan("entries:publish");
+  const collection = useCollection(collectionHandle);
+  const viewPageSite = useViewPageSite();
+  // The server's address knows the page's place in the tree ("/about/team").
+  const entryInfo = useEntryInfo(saving.entry.id);
+  const viewPage = collection.data
+    ? viewPageTarget(viewPageSite, collection.data, saving.entry, entryInfo.data?.url)
+    : undefined;
   const imagePicker = useImagePicker();
   const title = String(saving.entry.data.title ?? "") || t("pageDesign.untitled");
   const text = useCallback(
@@ -157,17 +167,25 @@ function PageDesigner({
           </Link>
         }
         toolbarEnd={
-          <div className="ms-2 flex items-center gap-3">
+          <div className="ms-2 flex items-center gap-3" data-tour="publish">
             <SaveIndicator
               status={saving.status}
               hasUnsavedChanges={saving.hasUnsavedChanges}
               errorMessage={saving.errorMessage}
               onRetry={saving.saveNow}
             />
+            {viewPage && (
+              <ViewPageLink
+                target={viewPage}
+                className="flex h-8 items-center gap-1.5 rounded-control px-2 text-footnote font-medium text-accent hover:bg-fill focus-visible:focus-ring"
+              >
+                <SquareArrowOutUpRight aria-hidden="true" className="size-3.5" />
+                {t("editor.viewPage")}
+              </ViewPageLink>
+            )}
             {canPublish && (
               <button
                 type="button"
-                data-tour="publish"
                 onClick={() => void saving.publish()}
                 disabled={saving.isPublishing}
                 className="h-8 rounded-control bg-accent-fill px-3 text-footnote font-semibold text-on-accent focus-visible:focus-ring disabled:opacity-50"

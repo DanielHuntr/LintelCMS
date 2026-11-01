@@ -30,7 +30,8 @@ export interface Point {
   text: string;
 }
 
-function intro(copy: SectionIntro, centred = false): NodeBlueprint {
+/** A section's small label, heading and line of text. */
+export function sectionIntro(copy: SectionIntro, centred = false): NodeBlueprint {
   return stack(
     "Introduction",
     [
@@ -63,7 +64,7 @@ export function featureCards(
     "Features",
     [
       container([
-        intro(copy),
+        sectionIntro(copy),
         grid(
           Math.min(copy.points.length, 3),
           copy.points.map((point) =>
@@ -83,7 +84,7 @@ export function featureCards(
 export function steps(copy: SectionIntro & { points: Point[] }): NodeBlueprint {
   return section("Steps", [
     container([
-      intro(copy, true),
+      sectionIntro(copy, true),
       grid(
         Math.min(copy.points.length, 4),
         copy.points.map((point, index) =>
@@ -134,7 +135,7 @@ export function gallery(
 ): NodeBlueprint {
   return section("Gallery", [
     container([
-      intro(copy),
+      sectionIntro(copy),
       grid(
         Math.min(copy.items.length, 3),
         copy.items.map((item) =>

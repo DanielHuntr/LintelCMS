@@ -30,7 +30,7 @@ import { isLocked, layerName } from "./editor/commands.js";
 import { isTypingTarget, shortcutFor } from "./editor/shortcuts.js";
 import { useBuilder } from "./editor/useBuilder.js";
 import { Breadcrumbs } from "./frame/Breadcrumbs.js";
-import { EmptyPageStart } from "./frame/EmptyPageStart.js";
+import { EmptyPage } from "./frame/EmptyPage.js";
 import { Toolbar } from "./frame/Toolbar.js";
 import { englishText, type Translate, BuilderTextProvider } from "./i18n/builder-text.js";
 import {
@@ -46,7 +46,7 @@ import {
   DataSourcesContext,
   noDataSources,
 } from "./panels/data-sources.js";
-import { InsertPanel } from "./panels/InsertPanel.js";
+import { type InsertFocusRequest, InsertPanel } from "./panels/InsertPanel.js";
 import { LayersPanel } from "./panels/LayersPanel.js";
 import { SelectedElementPanel } from "./panels/SelectedElementPanel.js";
 import type { ComponentRegistry } from "./render/component-registry.js";
@@ -145,7 +145,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [revealId, setRevealId] = useState<string | null>(null);
   const [leftTab, setLeftTab] = useState<LeftTab>("layers");
-  const [startedBlank, setStartedBlank] = useState(false);
+  const [insertFocusRequest, setInsertFocusRequest] = useState<InsertFocusRequest>();
   const [motionPreview, setMotionPreview] = useState<MotionPreview | null>(null);
   const [textSelection, setTextSelection] = useState<TextSelectionMessage | null>(null);
   const preferences = props.preferences ?? browserPreferenceStore;
@@ -341,7 +341,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
 
   const definition = selectedNode ? catalogue.find(selectedNode.type) : undefined;
   const selectedIsLocked = selectedNode ? isLocked(state.document, selectedNode.id) : false;
-  const showsStart = root.children.length === 0 && !startedBlank;
+  const showsStart = root.children.length === 0;
   const labels = useMemo(() => {
     const nameOf = (nodeId: string | null) => {
       const node = nodeId ? findNode(state.document.root, nodeId) : undefined;
@@ -350,10 +350,15 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     return { selected: nameOf(selectedId), hovered: nameOf(hoveredId) };
   }, [state.document, selectedId, hoveredId, catalogue]);
 
-  const showsTour = isTouring || (tourSeen === "no" && !showsStart);
+  const showsTour = isTouring || tourSeen === "no";
   const closeTour = () => {
     setIsTouring(false);
     setTourSeen("yes");
+  };
+  // The empty page's buttons: Insert, on the right segment, ready to search.
+  const openInsert = (kind: InsertFocusRequest["kind"]) => {
+    setLeftTab("insert");
+    setInsertFocusRequest((current) => ({ kind, count: (current?.count ?? 0) + 1 }));
   };
 
   return (
@@ -379,10 +384,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
             canEditCode={canEditCode}
             skillLevel={skillLevel}
             onSkillLevelChange={changeSkillLevel}
-            onReplayTour={() => {
-              setStartedBlank(true);
-              setIsTouring(true);
-            }}
+            onReplayTour={() => setIsTouring(true)}
             onShowTips={tips.showAgain}
           />
           <div className="flex min-h-0 flex-1">
@@ -428,6 +430,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                     canEditCode={tools.codeTools}
                     enabledPlugins={props.enabledPlugins}
                     onInsert={(key) => actions.insert(key)}
+                    focusRequest={insertFocusRequest}
                   />
                 )}
               </div>
@@ -450,15 +453,12 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                 />
               )}
               {showsStart ? (
-                <EmptyPageStart
-                  templates={sectionTemplates}
+                <EmptyPage
                   starterSites={props.starterSites ?? allStarterSites}
-                  onChooseTemplate={(templateId) => actions.insert(`template:${templateId}`)}
+                  onAddSection={() => openInsert("sections")}
+                  onAddElements={() => openInsert("elements")}
                   onChooseStarterPage={actions.useStarterPage}
-                  onStartBlank={() => {
-                    setStartedBlank(true);
-                    setLeftTab("insert");
-                  }}
+                  takesFocus={!showsTour}
                 />
               ) : (
                 <Canvas
@@ -501,7 +501,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
               onPreviewMotion={previewMotion}
             />
           </div>
-          {showsTour && <GuidedTour onClose={closeTour} />}
+          {showsTour && <GuidedTour skillLevel={skillLevel} onClose={closeTour} />}
           {/* The same sentence twice in a row is still read out: the space changes the text. */}
           <div role="status" aria-live="polite" className="sr-only">
             {announcement.message}

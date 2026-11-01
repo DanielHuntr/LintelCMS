@@ -1,5 +1,6 @@
 import {
   type AnyComponentDefinition,
+  type ComponentCatalogue,
   componentCategories,
   type ComponentCategory,
   type NodeBlueprint,
@@ -29,20 +30,23 @@ export interface InsertItem {
   groupTitle: BuilderStringKey;
   /** The element type it adds, for dropping into Layers. */
   type: string;
+  /** More words the search looks through, such as "bakery" for Opening times. */
+  keywords: readonly string[];
   /** Sections are drawn as a sketch; elements as their icon. */
   blueprint?: NodeBlueprint;
   icon?: string;
 }
 
 export const sectionGroupTitles: Record<SectionCategory, BuilderStringKey> = {
-  hero: "pageBuilder.insert.sectionCategory.hero",
+  intro: "pageBuilder.insert.sectionCategory.intro",
   features: "pageBuilder.insert.sectionCategory.features",
-  story: "pageBuilder.insert.sectionCategory.story",
-  testimonials: "pageBuilder.insert.sectionCategory.testimonials",
+  about: "pageBuilder.insert.sectionCategory.about",
+  pictures: "pageBuilder.insert.sectionCategory.pictures",
+  proof: "pageBuilder.insert.sectionCategory.proof",
   pricing: "pageBuilder.insert.sectionCategory.pricing",
   questions: "pageBuilder.insert.sectionCategory.questions",
-  callToAction: "pageBuilder.insert.sectionCategory.callToAction",
   contact: "pageBuilder.insert.sectionCategory.contact",
+  shop: "pageBuilder.insert.sectionCategory.shop",
   footer: "pageBuilder.insert.sectionCategory.footer",
 };
 
@@ -58,6 +62,22 @@ export const elementGroupTitles: Record<ComponentCategory, BuilderStringKey> = {
   code: "pageBuilder.insert.category.code",
 };
 
+/**
+ * Whether every element in a section can be used: a section with a product grid needs the
+ * shop, one with a form needs Forms. Without `enabledPlugins`, everything is available.
+ */
+export function isTemplateAvailable(
+  blueprint: NodeBlueprint,
+  catalogue: ComponentCatalogue,
+  enabledPlugins: readonly string[] | undefined,
+): boolean {
+  const plugin = catalogue.find(blueprint.type)?.requiresPlugin;
+  if (plugin && enabledPlugins && !enabledPlugins.includes(plugin)) return false;
+  return (blueprint.children ?? []).every((child) =>
+    isTemplateAvailable(child, catalogue, enabledPlugins),
+  );
+}
+
 export function insertItems(
   templates: readonly SectionTemplate[],
   definitions: readonly AnyComponentDefinition[],
@@ -70,6 +90,7 @@ export function insertItems(
         kind: "sections",
         label: template.label,
         description: template.description,
+        keywords: template.keywords ?? [],
         group: category,
         groupTitle: sectionGroupTitles[category],
         type: template.blueprint.type,
@@ -84,6 +105,7 @@ export function insertItems(
         kind: "elements",
         label: definition.label,
         description: definition.description,
+        keywords: [],
         group: category,
         groupTitle: elementGroupTitles[category],
         type: definition.type,
@@ -112,7 +134,7 @@ export function groupInsertItems(items: readonly InsertItem[], kind: InsertKind)
 }
 
 /**
- * Items whose name, description or group has every word typed: names that start with the
+ * Items whose name, description, keywords or group has every word typed: names that start with the
  * search first, then names that have it, then the rest. `groupTitle`
  * turns a group's string key into its words, so "pictures" finds everything in Pictures.
  */
@@ -125,7 +147,7 @@ export function searchInsertItems(
   if (words.length === 0) return [];
   const matches = items.filter((item) => {
     const haystack =
-      `${item.label} ${item.description} ${groupTitle(item.groupTitle)}`.toLowerCase();
+      `${item.label} ${item.description} ${item.keywords.join(" ")} ${groupTitle(item.groupTitle)}`.toLowerCase();
     return words.every((word) => haystack.includes(word));
   });
   const phrase = words.join(" ");

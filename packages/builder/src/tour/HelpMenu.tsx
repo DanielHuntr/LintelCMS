@@ -15,6 +15,8 @@ export function HelpMenu({ onReplayTour, onShowTips }: HelpMenuProps) {
   const wrapper = useRef<HTMLDivElement>(null);
   const choose = (action: () => void) => {
     setIsOpen(false);
+    // Back on the Help button first, so whatever opens next returns focus there.
+    wrapper.current?.querySelector("button")?.focus();
     action();
   };
   const itemClassName =

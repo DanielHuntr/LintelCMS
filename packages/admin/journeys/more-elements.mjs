@@ -24,14 +24,19 @@ async function shoot(page, name) {
 async function setUpSite(page) {
   await page.goto(adminUrl);
   await page.getByRole("button", { name: "Get started" }).click();
-  await page.getByRole("radio", { name: /Built-in/ }).click();
+  // The built-in database is chosen to begin with.
+  await page.getByRole("radio", { name: /Built-in/ }).check();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByLabel("Your name").fill("Robin Baker");
-  await page.getByRole("button", { name: "Continue" }).click();
   await page.getByLabel("Email address").fill("robin@example.com");
-  await page.getByRole("button", { name: "Continue" }).click();
   await page.getByLabel("Password", { exact: true }).fill("a long and memorable password");
-  await page.getByRole("button", { name: "Create account" }).click();
-  await page.getByRole("radio", { name: /Business/ }).click();
+  await page.getByLabel("Confirm password").fill("a long and memorable password");
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByLabel("Site name", { exact: true }).fill("Robin's Bakery");
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByRole("radio", { name: /Business/ }).check();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByLabel("I’ve checked these details").check();
   await page.getByRole("button", { name: "Finish setup" }).click();
   await page.getByRole("heading", { name: /You’re all set/ }).waitFor();
 }
@@ -39,7 +44,8 @@ async function setUpSite(page) {
 /** The blog and the shop are switched on, and two posts published, through the API. */
 async function addPostsAndTheShop(page) {
   const api = page.context().request;
-  const headers = { origin: adminUrl };
+  // An Origin header is only the scheme, host and port, even when the admin has a path.
+  const headers = { origin: new URL(adminUrl).origin };
   const current = await (await api.get(`${apiUrl}/plugins`, { headers })).json();
   const enabled = current.plugins.filter((plugin) => plugin.enabled).map((plugin) => plugin.id);
   const plugins = await api.put(`${apiUrl}/plugins`, {
@@ -76,13 +82,14 @@ async function designThePage(page) {
   await page.getByRole("button", { name: "Start designing" }).waitFor();
   await page.getByRole("textbox", { name: "Title" }).fill("Highlights");
   await page.keyboard.press("Enter");
-  await page.getByRole("heading", { name: "Start your page" }).waitFor();
-  await page.getByRole("button", { name: /Start with an empty page/ }).click();
-  const tour = page.getByRole("dialog", { name: "Welcome to your page builder" });
+  await page.getByRole("heading", { name: "This page is empty" }).waitFor();
+  const tour = page.getByRole("dialog", { name: "Add sections and elements" });
   if (await tour.isVisible().catch(() => false)) await page.keyboard.press("Escape");
-
-  await page.getByRole("tab", { name: "Insert" }).click();
-  await page.getByRole("radio", { name: "Elements" }).click();
+  await page.getByRole("button", { name: "Add elements" }).click();
+  check(
+    await page.getByRole("radio", { name: "Elements" }).isChecked(),
+    "Add elements should open Insert on Elements",
+  );
   await page.getByRole("heading", { name: "Collections" }).first().waitFor();
   await page.waitForTimeout(500);
   await shoot(page, "01-insert-elements");

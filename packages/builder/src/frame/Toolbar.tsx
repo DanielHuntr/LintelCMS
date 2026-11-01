@@ -39,7 +39,7 @@ export function Toolbar(props: ToolbarProps) {
         {props.start}
         <h1 className="truncate text-headline text-label">{props.title}</h1>
       </div>
-      <div className="w-64">
+      <div className="w-64" data-tour="screen-size">
         <ChoiceGroup<Breakpoint>
           label={text("pageBuilder.toolbar.screenSize")}
           hideLabel
@@ -106,7 +106,7 @@ function HistoryMenu({
   const [isOpen, setIsOpen] = useState(false);
   const listId = useId();
   return (
-    <div className="relative">
+    <div className="relative" data-tour="history">
       <IconButton
         icon={History}
         label={text("pageBuilder.history.title")}

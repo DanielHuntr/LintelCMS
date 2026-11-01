@@ -23,14 +23,19 @@ async function shoot(page, name) {
 async function setUpSite(page) {
   await page.goto(adminUrl);
   await page.getByRole("button", { name: "Get started" }).click();
-  await page.getByRole("radio", { name: /Built-in/ }).click();
+  // The built-in database is chosen to begin with.
+  await page.getByRole("radio", { name: /Built-in/ }).check();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByLabel("Your name").fill("Robin Baker");
-  await page.getByRole("button", { name: "Continue" }).click();
   await page.getByLabel("Email address").fill("robin@example.com");
-  await page.getByRole("button", { name: "Continue" }).click();
   await page.getByLabel("Password", { exact: true }).fill("a long and memorable password");
-  await page.getByRole("button", { name: "Create account" }).click();
-  await page.getByRole("radio", { name: /Business/ }).click();
+  await page.getByLabel("Confirm password").fill("a long and memorable password");
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByLabel("Site name", { exact: true }).fill("Robin's Bakery");
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByRole("radio", { name: /Business/ }).check();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByLabel("I’ve checked these details").check();
   await page.getByRole("button", { name: "Finish setup" }).click();
   await page.getByRole("heading", { name: /You’re all set/ }).waitFor();
   await shoot(page, "01-setup-done");
@@ -50,11 +55,12 @@ async function startFromBakery(page) {
 }
 
 async function editAndAnimate(page) {
-  const tour = page.getByRole("dialog", { name: "Welcome to your page builder" });
+  const tour = page.getByRole("dialog", { name: "Add sections and elements" });
   await tour.waitFor();
   await shoot(page, "04-builder-tour");
   await page.getByRole("button", { name: "Next" }).click();
-  await shoot(page, "05-tour-select");
+  await page.getByRole("dialog", { name: "Everything on the page, in order" }).waitFor();
+  await shoot(page, "05-tour-layers");
   await page.keyboard.press("Escape");
 
   const canvas = page.frameLocator('iframe[title="Your page"]');
@@ -83,6 +89,12 @@ async function editAndAnimate(page) {
     await page.getByRole("radio", { name: "Sections" }).isChecked(),
     "Insert should open on Sections",
   );
+  const intro = page.getByRole("button", { name: /^Intro and banners/ });
+  check(
+    (await intro.getAttribute("aria-expanded")) === "false",
+    "Section groups should start closed",
+  );
+  await intro.click();
   await page.getByRole("button", { name: "Hero with picture", exact: true }).hover();
   await page.waitForTimeout(700);
   await shoot(page, "08-section-library");
@@ -118,8 +130,8 @@ async function editAndAnimate(page) {
 
 async function designANewPage(page) {
   await page.getByRole("link", { name: "Back to Home" }).click();
-  const homeDesign = page.getByRole("region", { name: "Design" });
-  await homeDesign.getByRole("link", { name: "Edit design" }).waitFor();
+  // The page's workspace: its Design card offers the builder.
+  await page.getByRole("link", { name: "Edit design" }).waitFor();
   check(
     (await page.getByText("Simple sections (no design)").count()) === 0,
     "A designed page shouldn't offer simple sections",
@@ -132,11 +144,18 @@ async function designANewPage(page) {
   await shoot(page, "11-new-page");
   await page.getByRole("textbox", { name: "Title" }).fill("Opening hours");
   await page.keyboard.press("Enter");
-  await page.getByRole("heading", { name: "Start your page" }).waitFor();
+  await page.getByRole("heading", { name: "This page is empty" }).waitFor();
   await shoot(page, "12-new-page-start");
+  await page.getByRole("button", { name: "Add a section" }).click();
+  const search = page.getByRole("searchbox", { name: "Search sections and elements" });
+  check(
+    await search.evaluate((element) => element === document.activeElement),
+    "Add a section should put the cursor in the search",
+  );
+  await search.fill("call to action");
   await page
-    .getByRole("button", { name: /^Call to action/ })
-    .first()
+    .getByRole("region", { name: "Sections" })
+    .getByRole("button", { name: "Call to action", exact: true })
     .click();
   await page.getByText("Saved").first().waitFor({ timeout: 15000 });
   await page.getByRole("link", { name: "Back to Opening hours" }).click();

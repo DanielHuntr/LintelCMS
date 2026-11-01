@@ -1,71 +1,103 @@
 import type { BuilderStringKey } from "../i18n/builder-strings.js";
+import type { SkillLevel } from "../skill-level/skill-levels.js";
 
 /**
- * The first-time tour: the six things people do most, in the order they'll do them. Each
- * step points at the part of the screen it's about (a CSS selector); a step whose target
- * isn't on screen (no Publish button without permission) sits in the middle instead.
+ * The first-time tour: six stops, in the order people meet them. Each step points at the
+ * part of the screen it's about (CSS selectors; with more than one, the spotlight covers them
+ * all). A step whose target isn't on screen (no Publish button without permission) sits in
+ * the middle instead. Some steps say a little more, or less, for each skill level.
  */
 export interface TourStep {
   id: string;
-  target: string | null;
+  targets: readonly string[];
   title: BuilderStringKey;
   text: BuilderStringKey;
 }
 
-export const tourSteps: readonly TourStep[] = [
-  {
-    id: "welcome",
-    target: null,
-    title: "pageBuilder.tour.welcome.title",
-    text: "pageBuilder.tour.welcome.text",
-  },
-  {
-    id: "select",
-    target: '[data-tour="canvas"]',
-    title: "pageBuilder.tour.select.title",
-    text: "pageBuilder.tour.select.text",
-  },
-  {
-    id: "editText",
-    target: '[data-tour="canvas"]',
-    title: "pageBuilder.tour.editText.title",
-    text: "pageBuilder.tour.editText.text",
-  },
-  {
-    id: "style",
-    target: "#lintel-right-tab-style",
-    title: "pageBuilder.tour.style.title",
-    text: "pageBuilder.tour.style.text",
-  },
+interface TourStepDefinition {
+  id: string;
+  targets: readonly string[];
+  title: BuilderStringKey;
+  text: BuilderStringKey | Record<SkillLevel, BuilderStringKey>;
+}
+
+const tourStepDefinitions: readonly TourStepDefinition[] = [
   {
     id: "insert",
-    target: "#lintel-left-tab-insert",
+    targets: ["#lintel-left-tab-insert"],
     title: "pageBuilder.tour.insert.title",
     text: "pageBuilder.tour.insert.text",
   },
   {
-    id: "animate",
-    target: "#lintel-right-tab-animate",
-    title: "pageBuilder.tour.animate.title",
-    text: "pageBuilder.tour.animate.text",
+    id: "layers",
+    targets: ["#lintel-left-tab-layers"],
+    title: "pageBuilder.tour.layers.title",
+    text: "pageBuilder.tour.layers.text",
   },
   {
-    id: "skill",
-    target: '[data-tour="skill-level"]',
-    title: "pageBuilder.tour.skill.title",
-    text: "pageBuilder.tour.skill.text",
+    id: "canvas",
+    targets: ['[data-tour="canvas"]'],
+    title: "pageBuilder.tour.canvas.title",
+    text: "pageBuilder.tour.canvas.text",
+  },
+  {
+    id: "panel",
+    targets: ['[data-tour="selected-element"]'],
+    title: "pageBuilder.tour.panel.title",
+    text: {
+      beginner: "pageBuilder.tour.panel.beginnerText",
+      designer: "pageBuilder.tour.panel.designerText",
+      developer: "pageBuilder.tour.panel.developerText",
+    },
+  },
+  {
+    id: "screens",
+    targets: ['[data-tour="screen-size"]', '[data-tour="history"]'],
+    title: "pageBuilder.tour.screens.title",
+    text: {
+      beginner: "pageBuilder.tour.screens.beginnerText",
+      designer: "pageBuilder.tour.screens.text",
+      developer: "pageBuilder.tour.screens.text",
+    },
   },
   {
     id: "publish",
-    target: '[data-tour="publish"]',
+    targets: ['[data-tour="publish"]'],
     title: "pageBuilder.tour.publish.title",
     text: "pageBuilder.tour.publish.text",
   },
 ];
 
+/** The tour as someone at this skill level sees it. */
+export function tourStepsFor(level: SkillLevel): TourStep[] {
+  return tourStepDefinitions.map((step) => ({
+    id: step.id,
+    targets: step.targets,
+    title: step.title,
+    text: typeof step.text === "string" ? step.text : step.text[level],
+  }));
+}
+
+export interface Box {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+
+/** The smallest box around all of the boxes, or null when there are none. */
+export function boxAround(boxes: readonly Box[]): Box | null {
+  if (boxes.length === 0) return null;
+  const top = Math.min(...boxes.map((box) => box.top));
+  const left = Math.min(...boxes.map((box) => box.left));
+  const bottom = Math.max(...boxes.map((box) => box.top + box.height));
+  const right = Math.max(...boxes.map((box) => box.left + box.width));
+  return { top, left, width: right - left, height: bottom - top };
+}
+
 /** Where the card goes for a target's box: beside it if there's room, otherwise under it. */
 export function placeCard(
-  target: { top: number; left: number; width: number; height: number } | null,
+  target: Box | null,
   screen: { width: number; height: number },
   card: { width: number; height: number },
 ): { top: number; left: number } {

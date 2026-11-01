@@ -3,7 +3,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Entry } from "../content/content.types.js";
-import { samplePost } from "../content/testEntries.js";
+import { postsCollection, samplePost } from "../content/testEntries.js";
 import { apiErrorResponse, mockApi } from "../testing/mockApi.js";
 import { renderScreen } from "../testing/renderScreen.js";
 import { PageDesignPage } from "./PageDesignPage.js";
@@ -24,6 +24,19 @@ function samplePage(design: unknown = null): Entry {
 }
 
 afterEach(() => vi.restoreAllMocks());
+
+/** Past the first-time tour, then a section from Insert, as an empty page offers. */
+async function addSection(user: ReturnType<typeof userEvent.setup>, search: string, name: string) {
+  await screen.findByRole("heading", { name: "This page is empty" });
+  if (screen.queryByRole("dialog", { name: "Add sections and elements" })) {
+    await user.keyboard("{Escape}");
+  }
+  await user.click(screen.getByRole("button", { name: "Add a section" }));
+  await user.keyboard(search);
+  await user.click(
+    within(screen.getByRole("region", { name: "Sections" })).getByRole("button", { name }),
+  );
+}
 
 describe("a page design field", () => {
   const props = {
@@ -51,7 +64,7 @@ describe("a page design field", () => {
 });
 
 describe("the page design screen", () => {
-  it("opens an empty page at the start screen and saves what is added", async () => {
+  it("opens an empty page with a way to start, and saves what is added", async () => {
     const user = userEvent.setup();
     const { calls } = mockApi(({ method, url, body }) => {
       if (method === "GET" && url.pathname === "/entries/p1") return samplePage();
@@ -61,7 +74,7 @@ describe("the page design screen", () => {
       throw apiErrorResponse(404, "NOT_FOUND", "Not found");
     });
     renderScreen(<PageDesignPage collectionHandle="pages" entryId="p1" fieldHandle="design" />);
-    await user.click(await screen.findByRole("button", { name: /Call to action/ }));
+    await addSection(user, "call to action", "Call to action");
     await waitFor(() => expect(calls.some((call) => call.method === "PATCH")).toBe(true), {
       timeout: 4000,
     });
@@ -85,7 +98,7 @@ describe("the page design screen", () => {
     renderScreen(<PageDesignPage collectionHandle="pages" entryId="p1" fieldHandle="design" />, {
       permissions: ["entries:*"],
     });
-    await user.click(await screen.findByRole("button", { name: /^Hero\s?A big welcome/ }));
+    await addSection(user, "hero", "Hero");
     expect(await screen.findByRole("alert", {}, { timeout: 4000 })).toHaveTextContent(
       "only people allowed to edit code",
     );
@@ -111,14 +124,35 @@ describe("the page design screen", () => {
       throw apiErrorResponse(404, "NOT_FOUND", "Not found");
     });
     renderScreen(<PageDesignPage collectionHandle="pages" entryId="p1" fieldHandle="design" />);
-    await userEvent
-      .setup()
-      .click(await screen.findByRole("button", { name: /^Hero\s?A big welcome/ }));
+    await addSection(userEvent.setup(), "hero", "Hero");
     const canvas = await screen.findByTitle("Your page");
     const source = canvas.getAttribute("srcdoc") ?? "";
     expect(source).toContain('<base href="http://localhost:3000">');
     expect(source).toContain('<body class="lintel-site lintel-template-clean">');
     expect(source).toContain("Corner Bakery");
     expect(source).toContain('<div id="lintel-page" class="lintel-design">');
+  });
+
+  it("offers View page beside Publish once the page is live, for the tour to point at", async () => {
+    mockApi(({ method, url }) => {
+      if (method === "GET" && url.pathname === "/entries/p1") {
+        return { ...samplePage(), slug: "about", status: "published", locale: "en-GB" };
+      }
+      if (method === "GET" && url.pathname === "/collections/pages") {
+        return { ...postsCollection, handle: "pages", routePattern: "/{slug}" };
+      }
+      if (method === "GET" && url.pathname === "/website/address") {
+        return { siteAddress: "https://bakery.example", defaultLocale: "en-GB" };
+      }
+      throw apiErrorResponse(404, "NOT_FOUND", "Not found");
+    });
+    renderScreen(<PageDesignPage collectionHandle="pages" entryId="p1" fieldHandle="design" />, {
+      permissions: ["entries:*"],
+    });
+    const viewPage = await screen.findByRole("link", { name: "View page" });
+    expect(viewPage).toHaveAttribute("href", "https://bakery.example/about");
+    expect(viewPage.closest("[data-tour='publish']")).toContainElement(
+      within(screen.getByRole("banner")).getByRole("button", { name: "Publish" }),
+    );
   });
 });

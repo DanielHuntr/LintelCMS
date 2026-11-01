@@ -6,10 +6,14 @@ Content, Animate and Code on the right (`SelectedElementPanel`).
 ## Insert
 
 `InsertPanel` is a library with a search at the top and two segments, **Sections**
-(ready-made sections drawn as sketches, the default) and **Elements** (single pieces as a
-two-column grid of icon tiles). Each segment is grouped by kind, with only the first group
-open at first; what's left open, the segment and the recently used items are remembered
-(see `preferences/`). The search looks through both at once.
+(ready-made sections as compact rows with a small sketch, the default) and **Elements**
+(single pieces as rows of icon tiles). Sections are grouped by purpose (Intro and banners,
+Features and steps, ... Footer-style), every group closed at first with its count; elements
+by kind, with the first group open. What's left open, the segment and the recently used items
+are remembered (see `preferences/`). The search looks through both at once, including each
+section's keywords, so "bakery" finds Opening times. Sections that need a plugin (the shop's,
+a form's) are only offered while it's on. `focusRequest` opens a segment with the search
+focused: the empty page's **Add a section** and **Add elements** use it.
 
 `InsertTile` is one item: press it to insert, drag it into Layers to place it. Its
 description isn't in the list: it's the tile's accessible description, a hover card (also

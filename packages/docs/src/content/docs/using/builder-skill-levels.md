@@ -40,10 +40,18 @@ and CSS, and **Insert** offers code blocks. See the building guide for what deve
 
 ## The guided tour
 
-The first time you open the builder, a short tour shows you around: selecting something,
-changing its words, changing how it looks, adding a section, animating it and publishing.
+The first time you open the builder, a short tour of six steps shows you around: **Insert**
+(sections and elements), **Layers**, the page itself (click to select, double-click text to
+type), the panel on the right (**Style**, **Content** and **Animate**), the screen sizes and
+**History**, and **Publish** with **View page**. Each step dims the rest of the screen so the
+part it's about stands out. What the tour says follows your tools: Beginners hear where
+**Tools** is; Designers and Developers also hear about **Style for** and, with permission,
+**Code**.
+
 Press **Next** to go on, **Back** to look again, or **Skip the tour** (or Escape) to start
-straight away. Focus moves to each step, so it works with the keyboard and screen readers.
+straight away. Focus stays in the tour's card while it's open, so it works with the keyboard
+and screen readers, and it doesn't move about if your device asks for less motion. The tour
+shows once; your browser remembers that you've seen it.
 
 To see it again, press **Help and tips** (the question mark at the top) and choose **Replay
 the tour**.

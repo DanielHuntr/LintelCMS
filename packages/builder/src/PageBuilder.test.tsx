@@ -41,14 +41,45 @@ function renderBuilder(
 }
 
 describe("the page builder", () => {
-  it("starts an empty page from a ready-made section", async () => {
+  it("starts an empty page with a calm prompt and no gallery of sections", () => {
+    renderBuilder(createEmptyPage());
+    expect(screen.getByRole("heading", { name: "This page is empty" })).toHaveFocus();
+    expect(
+      screen.getByText("Start building by adding a section, or design your own with elements."),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Three features/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Start your page/)).not.toBeInTheDocument();
+  });
+
+  it("opens Insert on Sections with the search focused, then adds a section", async () => {
     const user = userEvent.setup();
-    const { latest } = renderBuilder(createEmptyPage());
-    expect(screen.getByRole("heading", { name: "Start your page" })).toHaveFocus();
-    await user.click(screen.getByRole("button", { name: /Three features/ }));
+    const { latest } = renderBuilder(createEmptyPage(), {
+      preferences: { tourSeen: "yes", "insert.kind": "elements" },
+    });
+    await user.click(screen.getByRole("button", { name: "Add a section" }));
+    expect(screen.getByRole("tab", { name: "Insert", selected: true })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Sections" })).toBeChecked();
+    expect(screen.getByRole("searchbox", { name: "Search sections and elements" })).toHaveFocus();
+    await user.keyboard("three features");
+    await user.click(screen.getByRole("button", { name: "Three features" }));
     expect(latest().root.children[0]?.name).toBe("Features");
-    expect(screen.getByRole("tree", { name: "Layers" })).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("Added Features");
+    const announcements = screen.getAllByRole("status").map((status) => status.textContent);
+    expect(announcements.join(" ")).toContain("Added Features");
+    expect(screen.queryByRole("heading", { name: "This page is empty" })).not.toBeInTheDocument();
+  });
+
+  it("opens Insert on Elements with the search focused", async () => {
+    const user = userEvent.setup();
+    renderBuilder(createEmptyPage());
+    await user.click(screen.getByRole("button", { name: "Add elements" }));
+    expect(screen.getByRole("radio", { name: "Elements" })).toBeChecked();
+    const search = screen.getByRole("searchbox", { name: "Search sections and elements" });
+    expect(search).toHaveFocus();
+    // Asking again, after moving away, focuses the search again.
+    await user.click(screen.getByRole("radio", { name: "Sections" }));
+    await user.click(screen.getByRole("button", { name: "Add elements" }));
+    expect(screen.getByRole("radio", { name: "Elements" })).toBeChecked();
+    expect(search).toHaveFocus();
   });
 
   it("moves through layers with the keyboard and nudges with Alt and the arrows", async () => {

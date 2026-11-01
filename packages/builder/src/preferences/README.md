@@ -3,7 +3,7 @@
 What the builder remembers about the person using it, on their device: `skillLevel`,
 `tourSeen`, `dismissedTips`, and how they left the panels: which Insert segment they use
 (`insert.kind`), what they inserted recently (`insert.recent`), and which collapsible groups
-are open (`insert.sections.open`, `insert.elements.open`, `style.simple.open`,
+are open (`insert.sectionGroups.open`, `insert.elements.open`, `style.simple.open`,
 `style.advanced.lastUsed`, `content.open`, `animate.open`).
 
 `browserPreferenceStore` keeps them in local storage (prefixed `lintel.builder.`);

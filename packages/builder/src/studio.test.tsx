@@ -35,7 +35,7 @@ function renderBuilder(
   canEditCode = false,
 ) {
   const onChange = vi.fn<(document: PageDocument) => void>();
-  render(
+  const view = render(
     <PageBuilder
       initialDocument={document}
       onChange={onChange}
@@ -51,7 +51,7 @@ function renderBuilder(
     />,
   );
   const latest = () => onChange.mock.lastCall?.[0] as PageDocument;
-  return { latest };
+  return { latest, unmount: view.unmount };
 }
 
 async function selectTitle(user: ReturnType<typeof userEvent.setup>) {
@@ -141,38 +141,95 @@ describe("the guided tour", () => {
     const user = userEvent.setup();
     const preferences = createMemoryPreferenceStore();
     renderBuilder(headingPage(), preferences);
-    const tour = screen.getByRole("dialog", { name: "Welcome to your page builder" });
-    expect(
-      within(tour).getByRole("heading", { name: "Welcome to your page builder" }),
-    ).toHaveFocus();
-    expect(tour).toHaveTextContent("Step 1 of 8");
+    const tour = screen.getByRole("dialog", { name: "Add sections and elements" });
+    expect(tour).toHaveAttribute("aria-modal", "true");
+    expect(within(tour).getByRole("heading", { name: "Add sections and elements" })).toHaveFocus();
+    expect(tour).toHaveTextContent("Step 1 of 6");
     await user.click(within(tour).getByRole("button", { name: "Next" }));
-    expect(screen.getByRole("dialog", { name: "Select something" })).toHaveTextContent(
-      "Step 2 of 8",
-    );
-    await user.click(screen.getByRole("button", { name: "Back" }));
     expect(
-      screen.getByRole("dialog", { name: "Welcome to your page builder" }),
-    ).toBeInTheDocument();
+      screen.getByRole("dialog", { name: "Everything on the page, in order" }),
+    ).toHaveTextContent("Step 2 of 6");
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    expect(screen.getByRole("dialog", { name: "Add sections and elements" })).toBeInTheDocument();
     await user.keyboard("{Escape}");
-    expect(screen.queryByRole("dialog", { name: /Welcome/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(preferences.read("tourSeen")).toBe("yes");
+  });
+
+  it("keeps focus inside the card while it's open", async () => {
+    const user = userEvent.setup();
+    renderBuilder(headingPage(), createMemoryPreferenceStore());
+    const tour = screen.getByRole("dialog", { name: "Add sections and elements" });
+    for (let press = 0; press < 6; press += 1) {
+      await user.tab();
+      expect(tour).toContainElement(document.activeElement as HTMLElement);
+    }
+    await user.tab({ shift: true });
+    expect(tour).toContainElement(document.activeElement as HTMLElement);
+  });
+
+  it("is skipped with Skip, and doesn't come back next time", async () => {
+    const user = userEvent.setup();
+    const preferences = createMemoryPreferenceStore();
+    const first = renderBuilder(headingPage(), preferences);
+    await user.click(screen.getAllByRole("button", { name: "Skip the tour" }).at(-1)!);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    first.unmount();
+    renderBuilder(headingPage(), preferences);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("shows on an empty page too, then leaves the empty page's buttons to use", async () => {
+    const user = userEvent.setup();
+    renderBuilder(createEmptyPage(), createMemoryPreferenceStore());
+    expect(screen.getByRole("dialog", { name: "Add sections and elements" })).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    expect(screen.getByRole("button", { name: "Add a section" })).toBeInTheDocument();
+  });
+
+  it("says more about the right panel for Designers than for Beginners", async () => {
+    const user = userEvent.setup();
+    renderBuilder(headingPage(), createMemoryPreferenceStore({ skillLevel: "beginner" }));
+    for (let step = 1; step < 4; step += 1) {
+      await user.click(screen.getByRole("button", { name: "Next" }));
+    }
+    const beginner = screen.getByRole("dialog", { name: "Change what you’ve selected" });
+    expect(beginner).not.toHaveTextContent("Style for");
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    expect(screen.getByRole("dialog")).toHaveTextContent("Tools, beside them");
+    await user.keyboard("{Escape}");
+
+    await user.click(screen.getByRole("button", { name: "Tools: Beginner" }));
+    await user.click(screen.getByRole("radio", { name: /Designer/ }));
+    await user.click(screen.getByRole("button", { name: "Help and tips" }));
+    await user.click(screen.getByRole("button", { name: "Replay the tour" }));
+    for (let step = 1; step < 4; step += 1) {
+      await user.click(screen.getByRole("button", { name: "Next" }));
+    }
+    expect(screen.getByRole("dialog", { name: "Change what you’ve selected" })).toHaveTextContent(
+      "Style for",
+    );
   });
 
   it("walks through to Publish and can be replayed from Help and tips", async () => {
     const user = userEvent.setup();
-    renderBuilder(headingPage(), createMemoryPreferenceStore());
-    for (let step = 1; step < 8; step += 1) {
+    const preferences = createMemoryPreferenceStore();
+    renderBuilder(headingPage(), preferences);
+    for (let step = 1; step < 6; step += 1) {
       await user.click(screen.getByRole("button", { name: "Next" }));
     }
-    expect(screen.getByRole("dialog", { name: "Publish it" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Publish and view your page" })).toHaveTextContent(
+      "Step 6 of 6",
+    );
     await user.click(screen.getByRole("button", { name: "Start building" }));
-    expect(screen.queryByRole("dialog", { name: "Publish it" })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Help and tips" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(preferences.read("tourSeen")).toBe("yes");
+    const help = screen.getByRole("button", { name: "Help and tips" });
+    await user.click(help);
     await user.click(screen.getByRole("button", { name: "Replay the tour" }));
-    expect(
-      screen.getByRole("dialog", { name: "Welcome to your page builder" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Add sections and elements" })).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    expect(help).toHaveFocus();
   });
 
   it("brings closed tips back", async () => {
@@ -188,13 +245,38 @@ describe("the guided tour", () => {
 });
 
 describe("starting from a template page", () => {
-  it("fills an empty page with a whole page from the template library", async () => {
+  it("fills an empty page with a whole page, chosen from a short list", async () => {
     const user = userEvent.setup();
     const { latest } = renderBuilder(createEmptyPage());
+    const link = screen.getByRole("button", { name: "Start from a template" });
+    await user.click(link);
+    const dialog = screen.getByRole("dialog", { name: "Start from a template" });
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(link).toHaveFocus();
+
+    await user.click(link);
     await user.click(screen.getByRole("button", { name: /^Bakery and café: Home/ }));
     const sections = latest().root.children;
     expect(sections.length).toBeGreaterThanOrEqual(3);
     expect(sections[0]?.name).toBe("Hero");
     expect(screen.getByRole("status")).toHaveTextContent("Started from Bakery and café: Home");
+  });
+
+  it("has no template link when there are no template pages", () => {
+    const onChange = vi.fn<(document: PageDocument) => void>();
+    render(
+      <PageBuilder
+        initialDocument={createEmptyPage()}
+        onChange={onChange}
+        title="Home"
+        canEditCode={false}
+        starterSites={[]}
+        preferences={createMemoryPreferenceStore({ tourSeen: "yes" })}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Add a section" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Start from a template" })).not.toBeInTheDocument();
   });
 });

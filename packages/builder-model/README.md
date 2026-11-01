@@ -63,7 +63,7 @@ docs/decisions/0015-page-documents.md explains why the model looks the way it do
 | `tree/`          | Reading (`findPath`, `listVisibleRows`) and changing (`moveNode`, `duplicateNode`) trees    |
 | `html/`          | A small HTML parser and writer, `formatHtml` for the code view, and `importHtml`            |
 | `code/`          | Code block markers (`data-lintel-field`), script removal and the code permission rule       |
-| `templates/`     | The section library: ready-made sections by category, for Insert and the empty page         |
+| `templates/`     | The section library: ready-made sections grouped by purpose, for Insert                     |
 | `sections/`      | The builders sections are made from (heroes, features, prices...), with `animate()`         |
 | `starter-sites/` | Six whole starter sites for "Start from a template", and their SVG illustrations            |
 

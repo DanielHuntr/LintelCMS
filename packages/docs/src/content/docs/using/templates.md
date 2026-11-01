@@ -60,31 +60,36 @@ builder, open **Content** and press **Choose a picture**.
 ## Start one page from a template
 
 A new page opens in the page builder as soon as it has a title (see
-[Designing pages](/using/designing-pages/)). An empty page offers ready-made sections and,
-under **Or start from a template page**, every page of every template. Pick one and its
-sections fill the page. Press **Undo** if you change your mind. A saved page that hasn't been
-designed yet has **Start from a template or section** on its **Design** card, which opens the
-same choice.
+[Designing pages](/using/designing-pages/)). An empty page shows **Add a section**, **Add
+elements** and a small **Start from a template** link. The link lists every page of every
+template, one row each. Pick one and its sections fill the page. Press **Undo** if you change
+your mind. A saved page that hasn't been designed yet has **Start from a template or
+section** on its **Design** card, which opens the same empty page.
 
 ## Ready-made sections
 
 In the page builder, **Insert** opens on **Sections**: a library of sections you can add to
-any page, grouped by what they're for. Only the first group is open at first; open the others
-with their headings, or search for what you need.
+any page, grouped by what they're for. Every group starts closed and says how many sections
+it holds; open the ones you need with their headings, or search.
 
-| Group                    | Sections                                          |
-| ------------------------ | ------------------------------------------------- |
-| **Heroes**               | Hero, Hero with picture, Bold banner              |
-| **Features**             | Three features, Numbered steps, Facts and figures |
-| **Stories and pictures** | Text beside a picture, Gallery                    |
-| **Testimonials**         | Customer quote, Three quotes                      |
-| **Prices**               | Prices (up to three plans side by side)           |
-| **Questions**            | Questions and answers                             |
-| **Calls to action**      | Call to action, Quiet call to action              |
-| **Contact**              | Contact details, with buttons to call and email   |
-| **Footers**              | Simple footer, Footer with columns                |
+| Group                      | Sections                                                              |
+| -------------------------- | --------------------------------------------------------------------- |
+| **Intro and banners**      | Hero, Hero with picture, Bold banner, Page title, two calls to action |
+| **Features and steps**     | Three features, Numbered steps                                        |
+| **About and story**        | Text beside a picture, Story with key points                          |
+| **Pictures and galleries** | Gallery, Pictures with prices                                         |
+| **Reviews and proof**      | Customer quote, Three quotes, Facts and figures                       |
+| **Pricing**                | Prices (up to three plans side by side)                               |
+| **Questions**              | Questions and answers                                                 |
+| **Contact and booking**    | Contact details, Opening times, Booking, Contact form (with Forms on) |
+| **Shop**                   | Featured products, All products (with the shop on)                    |
+| **Footer-style**           | Simple footer, Footer with columns                                    |
 
-Each has a small sketch so you can see its shape before you add it. Rest the pointer on one,
+Sections are named for what they do, not for a kind of business: a bakery's opening hours are
+**Opening times**, a consultant's booking steps are **Booking**. Search still finds them by
+the business words, so "bakery" or "appointment" brings them up.
+
+Each row has a small sketch so you can see its shape before you add it. Rest the pointer on one,
 or press its ⓘ button, to see what it's for. Press one to add it after whatever is selected,
 or drag it into **Layers** to put it exactly where you want. The ones you use most often wait
 under **Recently used**.

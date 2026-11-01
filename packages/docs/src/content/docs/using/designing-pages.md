@@ -16,8 +16,11 @@ by clicking on it.
 2. Give the page a title.
 3. Press **Return**, or **Start designing**. Lintel saves the page as a draft and opens it in
    the page builder.
-4. Choose how to start: a whole page from a template, one of the ready-made sections, or a
-   blank page. Everything you choose can be changed afterwards.
+4. The empty page says **Start building by adding a section, or design your own with
+   elements**. **Add a section** opens **Insert** on **Sections**, and **Add elements** on
+   **Elements**, with the search ready for you to type. **Start from a template**, under
+   them, fills the page with a whole page from a template. Everything can be changed
+   afterwards.
 
 ## A page you already have
 
@@ -43,12 +46,14 @@ your pages) are below the card, and in the panel on the right.
 **Insert** has a search at the top and two kinds of things to add:
 
 - **Sections**: ready-made parts of a page, such as a hero, three features, prices or
-  questions and answers, each drawn as a small sketch. This is where Insert starts.
+  opening times, in groups by what they're for, each with a small sketch. This is where
+  Insert starts.
 - **Elements**: single pieces, such as a heading, a paragraph, a picture or a button, as
   small tiles grouped by kind.
 
-Groups open and close with their headings; only the first is open to begin with, and Lintel
-remembers which you leave open. The search looks through sections and elements at once:
+Groups open and close with their headings and say how many things they hold. Section groups
+all start closed; among elements only the first is open. Lintel remembers which you leave
+open. The search looks through sections and elements at once:
 type a word and press the down arrow to move to the results. **Recently used** keeps what you
 added last within easy reach.
 
