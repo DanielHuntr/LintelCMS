@@ -31,6 +31,13 @@ admin can show the right sections without an extra request.
 
 Which ones are on is stored per tenant in the `enabledPlugins` setting (see `src/settings`).
 
+## Content that comes with a plugin
+
+When a plugin is switched on, `setEnabledPlugins` makes sure its content exists, from the
+`contentForPlugins` list in `plugins.service.ts`. Today that is the blog's **Blog posts**
+collection (see `src/collections/default-collections.ts`). It only creates what is missing,
+and switching the plugin off deletes nothing, so posts survive being toggled.
+
 ## Files
 
 | File                  | What it does                                         |

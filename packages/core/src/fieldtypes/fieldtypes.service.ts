@@ -1,0 +1,16 @@
+import { fieldtypeRegistry } from "./fieldtypes.registry.js";
+import type { FieldtypeList } from "./fieldtypes.schema.js";
+
+/**
+ * Fieldtypes are code, not data, so there is no repository: the list comes straight
+ * from the registry.
+ */
+export function listFieldtypes(): FieldtypeList {
+  return {
+    fieldtypes: fieldtypeRegistry.map((fieldtype) => ({
+      type: fieldtype.type,
+      name: fieldtype.name,
+      description: fieldtype.description,
+    })),
+  };
+}

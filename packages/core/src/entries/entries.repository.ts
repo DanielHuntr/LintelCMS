@@ -1,0 +1,290 @@
+import { and, asc, desc, eq, ilike, or, type SQL, sql } from "drizzle-orm";
+import { type Blueprint, blueprintsTable } from "../blueprints/blueprints.table.js";
+import { collectionsTable } from "../collections/collections.table.js";
+import type { DatabaseOrTransaction } from "../database/client.js";
+import { usersTable } from "../users/users.table.js";
+import type { TreePosition } from "./entry-tree.js";
+import { type Entry, entriesTable, type EntryStatus, type NewEntry } from "./entries.table.js";
+
+/** Database reads and writes for entries, nothing else. */
+
+export interface EntryFilters {
+  collectionId: string;
+  status?: EntryStatus;
+  search?: string;
+  parentId?: string;
+}
+
+/** "dated" is newest first; "manual" is the order editors set (`sortOrder`). */
+export type EntryOrder = "dated" | "manual";
+
+/** What a list of entries shows, without the (possibly large) field values. */
+export interface EntrySummaryRow {
+  id: string;
+  title: string | null;
+  slug: string;
+  status: EntryStatus;
+  parentId: string | null;
+  updatedAt: Date;
+  publishedAt: Date | null;
+  scheduledFor: Date | null;
+  updatedById: string | null;
+  updatedByName: string | null;
+}
+
+export interface EntryWithDetails {
+  entry: Entry;
+  collectionHandle: string;
+  blueprint: Blueprint;
+  updatedByName: string | null;
+}
+
+const titleColumn = sql<string | null>`${entriesTable.data}->>'title'`;
+
+const summaryColumns = {
+  id: entriesTable.id,
+  title: titleColumn,
+  slug: entriesTable.slug,
+  status: entriesTable.status,
+  parentId: entriesTable.parentId,
+  updatedAt: entriesTable.updatedAt,
+  publishedAt: entriesTable.publishedAt,
+  scheduledFor: entriesTable.scheduledFor,
+  updatedById: usersTable.id,
+  updatedByName: usersTable.name,
+};
+
+function matching(filters: EntryFilters): SQL | undefined {
+  return and(
+    eq(entriesTable.collectionId, filters.collectionId),
+    filters.status ? eq(entriesTable.status, filters.status) : undefined,
+    filters.search ? ilike(titleColumn, `%${escapeLikePattern(filters.search)}%`) : undefined,
+    filters.parentId ? eq(entriesTable.parentId, filters.parentId) : undefined,
+  );
+}
+
+/** So a search for "100%" looks for those characters rather than treating % as "anything". */
+function escapeLikePattern(text: string): string {
+  return text.replace(/[\\%_]/g, (character) => `\\${character}`);
+}
+
+const orderings: Record<EntryOrder, SQL[]> = {
+  // Drafts have no publish date yet; they sort by when they are due, or were started.
+  dated: [
+    desc(
+      sql`coalesce(${entriesTable.publishedAt}, ${entriesTable.scheduledFor}, ${entriesTable.createdAt})`,
+    ),
+    desc(entriesTable.createdAt),
+  ],
+  manual: [asc(entriesTable.sortOrder), asc(entriesTable.createdAt)],
+};
+
+export async function listEntrySummaries(
+  database: DatabaseOrTransaction,
+  filters: EntryFilters,
+  order: EntryOrder,
+  page?: { limit: number; offset: number },
+): Promise<EntrySummaryRow[]> {
+  const query = database
+    .select(summaryColumns)
+    .from(entriesTable)
+    .leftJoin(usersTable, eq(usersTable.id, entriesTable.updatedBy))
+    .where(matching(filters))
+    .orderBy(...orderings[order]);
+  return page ? query.limit(page.limit).offset(page.offset) : query;
+}
+
+export async function countEntries(
+  database: DatabaseOrTransaction,
+  filters: EntryFilters,
+): Promise<number> {
+  const [row] = await database
+    .select({ count: sql<number>`count(*)`.mapWith(Number) })
+    .from(entriesTable)
+    .where(matching(filters));
+  return row?.count ?? 0;
+}
+
+/** Where every entry of a collection sits, for putting a tree in order. */
+export async function listEntryPositions(
+  database: DatabaseOrTransaction,
+  collectionId: string,
+): Promise<TreePosition[]> {
+  return database
+    .select({
+      id: entriesTable.id,
+      parentId: entriesTable.parentId,
+      sortOrder: entriesTable.sortOrder,
+      createdAt: entriesTable.createdAt,
+    })
+    .from(entriesTable)
+    .where(eq(entriesTable.collectionId, collectionId));
+}
+
+export async function findEntryById(
+  database: DatabaseOrTransaction,
+  entryId: string,
+): Promise<Entry | undefined> {
+  const [entry] = await database
+    .select()
+    .from(entriesTable)
+    .where(eq(entriesTable.id, entryId))
+    .limit(1);
+  return entry;
+}
+
+/** The entry with its collection's handle and blueprint, and who last saved it. */
+export async function findEntryWithDetails(
+  database: DatabaseOrTransaction,
+  entryId: string,
+): Promise<EntryWithDetails | undefined> {
+  const [row] = await database
+    .select({
+      entry: entriesTable,
+      collectionHandle: collectionsTable.handle,
+      blueprint: blueprintsTable,
+      updatedByName: usersTable.name,
+    })
+    .from(entriesTable)
+    .innerJoin(collectionsTable, eq(collectionsTable.id, entriesTable.collectionId))
+    .innerJoin(blueprintsTable, eq(blueprintsTable.id, collectionsTable.blueprintId))
+    .leftJoin(usersTable, eq(usersTable.id, entriesTable.updatedBy))
+    .where(eq(entriesTable.id, entryId))
+    .limit(1);
+  return row;
+}
+
+export async function insertEntry(
+  database: DatabaseOrTransaction,
+  entry: NewEntry,
+): Promise<Entry> {
+  const [inserted] = await database.insert(entriesTable).values(entry).returning();
+  if (!inserted) {
+    throw new Error("The database did not return the new entry.");
+  }
+  return inserted;
+}
+
+export async function updateEntryRow(
+  database: DatabaseOrTransaction,
+  entryId: string,
+  changes: Partial<Omit<NewEntry, "id" | "tenantId" | "collectionId" | "siteId">>,
+): Promise<Entry> {
+  const [updated] = await database
+    .update(entriesTable)
+    .set(changes)
+    .where(eq(entriesTable.id, entryId))
+    .returning();
+  if (!updated) {
+    throw new Error("The database did not return the updated entry.");
+  }
+  return updated;
+}
+
+export async function deleteEntryRow(
+  database: DatabaseOrTransaction,
+  entryId: string,
+): Promise<void> {
+  await database.delete(entriesTable).where(eq(entriesTable.id, entryId));
+}
+
+/** Gives the children of `entryId` a new parent, so deleting a page doesn't orphan them. */
+export async function moveChildrenToParent(
+  database: DatabaseOrTransaction,
+  entryId: string,
+  newParentId: string | null,
+): Promise<void> {
+  await database
+    .update(entriesTable)
+    .set({ parentId: newParentId })
+    .where(eq(entriesTable.parentId, entryId));
+}
+
+/** Translations of a deleted entry stay, but stop pointing at it. */
+export async function clearOriginReferences(
+  database: DatabaseOrTransaction,
+  entryId: string,
+): Promise<void> {
+  await database
+    .update(entriesTable)
+    .set({ originId: null })
+    .where(eq(entriesTable.originId, entryId));
+}
+
+export async function clearParentsInCollection(
+  database: DatabaseOrTransaction,
+  collectionId: string,
+): Promise<void> {
+  await database
+    .update(entriesTable)
+    .set({ parentId: null })
+    .where(eq(entriesTable.collectionId, collectionId));
+}
+
+/** Slugs in the collection and site that are `base` or `base-<something>`. */
+export async function findSlugsStartingWith(
+  database: DatabaseOrTransaction,
+  scope: { collectionId: string; siteId: string; exceptEntryId?: string },
+  base: string,
+): Promise<string[]> {
+  const rows = await database
+    .select({ id: entriesTable.id, slug: entriesTable.slug })
+    .from(entriesTable)
+    .where(
+      and(
+        eq(entriesTable.collectionId, scope.collectionId),
+        eq(entriesTable.siteId, scope.siteId),
+        or(eq(entriesTable.slug, base), sql`${entriesTable.slug} like ${`${base}-%`}`),
+      ),
+    );
+  return rows.filter((row) => row.id !== scope.exceptEntryId).map((row) => row.slug);
+}
+
+/** One more than the highest `sortOrder` among these siblings, so a new entry goes last. */
+export async function findNextSortOrder(
+  database: DatabaseOrTransaction,
+  collectionId: string,
+  parentId: string | null,
+): Promise<number> {
+  const [row] = await database
+    .select({ highest: sql<number | null>`max(${entriesTable.sortOrder})`.mapWith(Number) })
+    .from(entriesTable)
+    .where(
+      and(
+        eq(entriesTable.collectionId, collectionId),
+        parentId === null
+          ? sql`${entriesTable.parentId} is null`
+          : eq(entriesTable.parentId, parentId),
+      ),
+    );
+  return row?.highest === null || row?.highest === undefined ? 0 : row.highest + 1;
+}
+
+export async function updateEntryPosition(
+  database: DatabaseOrTransaction,
+  entryId: string,
+  position: { parentId: string | null; sortOrder: number },
+): Promise<void> {
+  await database.update(entriesTable).set(position).where(eq(entriesTable.id, entryId));
+}
+
+/**
+ * Entries whose saved or published values mention this id anywhere. Ids are random
+ * uuids, so a match in the JSON text is a real reference (an image field today, an image
+ * inside rich text later).
+ */
+export async function findEntriesMentioning(
+  database: DatabaseOrTransaction,
+  id: string,
+): Promise<{ entryId: string; title: string | null }[]> {
+  const quoted = `%"${id}"%`;
+  return database
+    .select({ entryId: entriesTable.id, title: titleColumn })
+    .from(entriesTable)
+    .where(
+      or(
+        sql`${entriesTable.data}::text like ${quoted}`,
+        sql`${entriesTable.publishedData}::text like ${quoted}`,
+      ),
+    );
+}
