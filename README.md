@@ -146,15 +146,17 @@ scripted setups, set `LINTEL_ADMIN_PASSWORD` or `LINTEL_NEW_PASSWORD` instead.
 
 ## What's in here
 
-| Path                               | What it is                                                 |
-| ---------------------------------- | ---------------------------------------------------------- |
-| `packages/core`                    | The API server: content model, entries, users, permissions |
-| `packages/admin`                   | The control panel (React)                                  |
-| `packages/docs`                    | The documentation site, also the admin's built-in help     |
-| `packages/plugin-example-bookings` | An example plugin, the reference for writing one           |
-| `starters/nextjs`                  | A Next.js website that reads Lintel's delivery API         |
-| `docs/decisions`                   | Why the big choices were made                              |
-| `CONTRIBUTING.md`                  | How code is written here. Read this first                  |
+| Path                               | What it is                                                  |
+| ---------------------------------- | ----------------------------------------------------------- |
+| `packages/core`                    | The API server: content model, entries, users, permissions  |
+| `packages/admin`                   | The control panel (React)                                   |
+| `packages/docs`                    | The documentation site, also the admin's built-in help      |
+| `packages/plugin-example-bookings` | An example plugin, the reference for writing one            |
+| `packages/app-bridge`              | `@lintel/app-bridge`, for external apps' pages in the admin |
+| `examples/app-node`                | An example external app in plain Node, the reference        |
+| `starters/nextjs`                  | A Next.js website that reads Lintel's delivery API          |
+| `docs/decisions`                   | Why the big choices were made                               |
+| `CONTRIBUTING.md`                  | How code is written here. Read this first                   |
 
 ## Documentation and the Next.js starter
 
