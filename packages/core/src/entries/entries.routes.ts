@@ -93,7 +93,7 @@ export async function entriesRoutes(server: FastifyInstance) {
 
   server.post("/entries/:id/publish", can("entries:publish"), async (request) => {
     const id = readEntryId(request.params);
-    const published = await publishEntry(server.database, id, getSignedIn(request).user.id);
+    const published = await publishEntry(server.database, id, changeContext(request));
     const entry = await describeEntryForEvent(server.database, id);
     await announceContentEvent(server, { name: "entry.published", entry });
     return published;
@@ -110,7 +110,7 @@ export async function entriesRoutes(server: FastifyInstance) {
   server.post("/entries/:id/schedule", can("entries:publish"), async (request) => {
     const id = readEntryId(request.params);
     const { publishAt } = parseRequest(scheduleEntryRequestSchema, request.body);
-    return scheduleEntry(server.database, id, publishAt);
+    return scheduleEntry(server.database, id, publishAt, changeContext(request));
   });
 
   server.post("/entries/:id/duplicate", can("entries:create"), async (request, reply) => {

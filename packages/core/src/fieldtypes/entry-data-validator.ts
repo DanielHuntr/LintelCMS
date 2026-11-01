@@ -10,7 +10,7 @@ import { findFieldtype } from "./fieldtypes.registry.js";
  *
  * For each field, in order:
  *   1. an empty value (missing, null, blank, an empty list...) is fine unless the field is
- *      required, and is stored as null;
+ *      required (and the context enforces required fields), and is stored as null;
  *   2. otherwise the value must have the fieldtype's shape and respect its options;
  *   3. then any outside check runs, such as "this image is still in the media library";
  *   4. a field with fields inside (blocks) checks each block's values the same way.
@@ -67,7 +67,7 @@ function buildFieldValuesCheck(fields: readonly FieldDefinition[], context: Fiel
       const value = data[field.handle];
 
       if (fieldtype.isEmpty(value)) {
-        if (field.required) {
+        if (field.required && isEnforced(field.handle, context)) {
           messages[field.handle] = `${field.label} is required`;
         }
         values[field.handle] = null;
@@ -109,4 +109,8 @@ function buildFieldValuesCheck(fields: readonly FieldDefinition[], context: Fiel
 
     return { values, messages };
   };
+}
+
+function isEnforced(handle: string, context: FieldCheckContext): boolean {
+  return context.requiredFields !== "allowEmpty" || (context.alwaysRequired ?? []).includes(handle);
 }

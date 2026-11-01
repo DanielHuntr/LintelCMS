@@ -41,6 +41,8 @@ export type EntryDraftAction =
   | { type: "saveStarted" }
   | { type: "saveSucceeded"; sent: EntryDraft; entry: Entry }
   | { type: "saveFailed"; fieldErrors: FieldMessages; message: string }
+  /** Publishing or scheduling was refused because fields need filling in; the draft is saved. */
+  | { type: "publishBlocked"; fieldErrors: FieldMessages }
   | { type: "entryReplaced"; entry: Entry };
 
 export function draftFromEntry(entry: Entry): EntryDraft {
@@ -130,6 +132,9 @@ export function entryDraftReducer(
         fieldErrors: action.fieldErrors,
         saveError: action.message,
       };
+
+    case "publishBlocked":
+      return { ...state, fieldErrors: action.fieldErrors };
 
     case "entryReplaced": {
       const draft = draftFromEntry(action.entry);

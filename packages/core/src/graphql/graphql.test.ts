@@ -114,7 +114,7 @@ describe("the GraphQL delivery API", () => {
       `{ pagesEntry(slug: "secret-plans", preview: true) { slug } }`,
     );
     expect(anonymousPreview.json().errors[0]).toMatchObject({
-      message: expect.stringContaining("Previewing drafts needs a read-write API token"),
+      message: expect.stringContaining("Previewing drafts needs a preview link"),
       extensions: { code: "PREVIEW_NOT_ALLOWED" },
     });
 
@@ -136,6 +136,30 @@ describe("the GraphQL delivery API", () => {
       status: "draft",
       data: { title: "Secret plans" },
     });
+  });
+
+  it("lets a live-preview link's token read that one draft, and no other", async () => {
+    const secretId = await createPage({ title: "Secret plans" }, false);
+    await createPage({ title: "Other plans" }, false);
+    const { token } = (await api("POST", `/entries/${secretId}/preview`)).json();
+    const headers = { "lintel-preview": token };
+
+    const own = await query(
+      `{ pagesEntry(slug: "secret-plans", preview: true) { status data { title } } }`,
+      headers,
+    );
+    const other = await query(
+      `{ pagesEntry(slug: "other-plans", preview: true) { slug } }`,
+      headers,
+    );
+    const list = await query(`{ pages(preview: true) { total } }`, headers);
+
+    expect(own.json().data.pagesEntry).toEqual({
+      status: "draft",
+      data: { title: "Secret plans" },
+    });
+    expect(other.json().errors[0].extensions.code).toBe("PREVIEW_NOT_ALLOWED");
+    expect(list.json().errors[0].extensions.code).toBe("PREVIEW_NOT_ALLOWED");
   });
 
   it("refuses queries that cost too much, but lets ordinary ones and introspection through", async () => {

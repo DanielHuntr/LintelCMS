@@ -265,15 +265,29 @@ describe("page sections on the default Pages collection", () => {
     ]);
   });
 
-  it("answers a save with a message per block field", async () => {
-    const response = await api("POST", "/collections/pages/entries", {
+  it("saves a block with a required field still empty, and asks for it before publishing", async () => {
+    const saved = await api("POST", "/collections/pages/entries", {
       data: { title: "Home", sections: [{ id: HERO_ID, type: "faq", data: { question: "Why?" } }] },
+    });
+    const published = await api("POST", `/entries/${saved.json().id}/publish`);
+
+    expect(saved.statusCode).toBe(201);
+    expect(published.statusCode).toBe(400);
+    expect(published.json()).toMatchObject({
+      code: "NOT_READY_TO_PUBLISH",
+      fields: {
+        sections: "FAQ (block 1): Answer is required",
+        [`sections.${HERO_ID}.answer`]: "Answer is required",
+      },
+    });
+  });
+
+  it("answers a save with a message per block field that isn't right", async () => {
+    const response = await api("POST", "/collections/pages/entries", {
+      data: { title: "Home", sections: [{ id: HERO_ID, type: "faq", data: { question: 42 } }] },
     });
 
     expect(response.statusCode).toBe(400);
-    expect(response.json().fields).toEqual({
-      sections: "FAQ (block 1): Answer is required",
-      [`sections.${HERO_ID}.answer`]: "Answer is required",
-    });
+    expect(response.json().fields[`sections.${HERO_ID}.question`]).toBeDefined();
   });
 });

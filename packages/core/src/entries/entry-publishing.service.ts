@@ -1,9 +1,16 @@
+import { findCollectionByIdOrFail } from "../collections/collections.service.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { ScheduleInPastError } from "./entries.errors.js";
+import { InvalidFieldsError } from "../http/http-errors.js";
+import { NotReadyToPublishError, ScheduleInPastError } from "./entries.errors.js";
 import { updateEntryRow } from "./entries.repository.js";
 import { findDueScheduledEntryIds, publishIfStillDue } from "./entry-publishing.repository.js";
 import type { EntryResponse } from "./entries.schema.js";
-import { findEntry, findEntryOrFail } from "./entries.service.js";
+import {
+  type EntryChangeContext,
+  findEntry,
+  findEntryOrFail,
+  validateForCollection,
+} from "./entries.service.js";
 import { insertRevision } from "./revisions.repository.js";
 
 /**
@@ -16,10 +23,12 @@ import { insertRevision } from "./revisions.repository.js";
 export async function publishEntry(
   database: DatabaseOrTransaction,
   entryId: string,
-  authorId: string | null,
+  context: EntryChangeContext,
   now = new Date(),
 ): Promise<EntryResponse> {
+  const authorId = context.authorId;
   const entry = await findEntryOrFail(database, entryId);
+  await checkReadyToPublish(database, entry, context);
   await database.transaction(async (transaction) => {
     await updateEntryRow(transaction, entry.id, {
       status: "published",
@@ -69,12 +78,14 @@ export async function scheduleEntry(
   database: DatabaseOrTransaction,
   entryId: string,
   publishAt: Date,
+  context: Pick<EntryChangeContext, "assetExists">,
   now = new Date(),
 ): Promise<EntryResponse> {
   if (publishAt.getTime() <= now.getTime()) {
     throw new ScheduleInPastError();
   }
   const entry = await findEntryOrFail(database, entryId);
+  await checkReadyToPublish(database, entry, context);
   await updateEntryRow(database, entry.id, { status: "scheduled", scheduledFor: publishAt });
   return findEntry(database, entry.id);
 }
@@ -111,4 +122,24 @@ export async function publishDueEntries(
     }
   }
   return published;
+}
+
+/**
+ * Saved drafts may leave required fields empty. Before anything goes live (or is set to)
+ * the saved values are checked again with every rule, required fields included.
+ */
+async function checkReadyToPublish(
+  database: DatabaseOrTransaction,
+  entry: { collectionId: string; data: Record<string, unknown> },
+  context: Pick<EntryChangeContext, "assetExists">,
+): Promise<void> {
+  const collection = await findCollectionByIdOrFail(database, entry.collectionId);
+  try {
+    await validateForCollection(database, collection, entry.data, context, "publishing");
+  } catch (error) {
+    if (error instanceof InvalidFieldsError) {
+      throw new NotReadyToPublishError(error.fields);
+    }
+    throw error;
+  }
 }

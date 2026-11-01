@@ -9,6 +9,13 @@ export interface FieldCheckContext {
   assetExists: AssetExists;
   /** For entries and terms fields. Without it every id is accepted, as in unit tests. */
   references?: ContentReferences;
+  /**
+   * "allowEmpty" lets required fields be empty, for saving a draft that isn't finished;
+   * required fields are then checked when it is published. Defaults to "enforce".
+   */
+  requiredFields?: "enforce" | "allowEmpty";
+  /** Handles that stay required even when `requiredFields` is "allowEmpty", such as title. */
+  alwaysRequired?: readonly string[];
 }
 
 /**

@@ -69,6 +69,8 @@ const english = {
   "signIn.subtitle": "Welcome back. Enter your details to continue.",
   "signIn.email": "Email address",
   "signIn.password": "Password",
+  "editor.fillRequiredToPublish":
+    "Fill in the required fields to publish. Your changes are saved as a draft.",
   "signIn.submit": "Sign in",
   "signIn.submitting": "Signing in…",
   "signIn.unreachable": "Lintel couldn't reach the server. Check your connection and try again.",

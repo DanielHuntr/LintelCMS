@@ -28,7 +28,9 @@ check an entry's values against any blueprint.
 
 Empty values (missing, null, blank text, empty lists, a rich text document with only empty
 paragraphs, a link without an address) are stored as null, and are an error only when the
-field is `required`. Link addresses must start with `https://`, `http://`, `mailto:`,
+field is `required` and the caller enforces required fields. Entries enforce them when
+publishing and scheduling; saving a draft enforces only the title (`requiredFields` and
+`alwaysRequired` in `FieldCheckContext`). Link addresses must start with `https://`, `http://`, `mailto:`,
 `tel:`, `/` or `#`, so a `javascript:` link can't be saved.
 
 ## Blocks (the page builder)

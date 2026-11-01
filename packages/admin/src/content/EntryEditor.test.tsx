@@ -88,6 +88,34 @@ describe("EntryEditor", () => {
     expect(writes).toEqual(["PATCH /entries/p1", "POST /entries/p1/publish"]);
   });
 
+  it("keeps the draft saved and points at required fields when publishing is refused", async () => {
+    mockApi(({ method, url }) => {
+      if (method === "PATCH") return samplePost({ data: { title: "Hello world!" } });
+      if (url.pathname.endsWith("/publish")) {
+        throw apiErrorResponse(
+          400,
+          "NOT_READY_TO_PUBLISH",
+          "Fill in the required fields to publish.",
+          { excerpt: "Excerpt is required" },
+        );
+      }
+      return { revisions: [] };
+    });
+    await renderEditor();
+
+    await userEvent.type(screen.getByRole("textbox", { name: "Title" }), "!");
+    await userEvent.click(screen.getByRole("button", { name: "Publish" }));
+
+    const excerpt = await screen.findByRole("textbox", { name: "Excerpt Required" });
+    await waitFor(() => expect(excerpt).toHaveFocus());
+    expect(excerpt).toHaveAccessibleDescription("Excerpt is required");
+    expect(
+      screen.getByText(
+        "Fill in the required fields to publish. Your changes are saved as a draft.",
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("duplicates from the More menu and opens the copy", async () => {
     const api = mockApi(({ method, url }) => {
       if (method === "POST" && url.pathname === "/entries/p1/duplicate") {

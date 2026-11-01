@@ -1,4 +1,4 @@
-import { HttpError } from "../http/http-errors.js";
+import { type FieldMessages, HttpError } from "../http/http-errors.js";
 
 export class EntryNotFoundError extends HttpError {
   constructor() {
@@ -52,5 +52,18 @@ export class TranslationExistsError extends HttpError {
 export class SameLocaleTranslationError extends HttpError {
   constructor(localeName: string) {
     super(400, "INVALID_REQUEST", `This entry is already written in ${localeName}.`);
+  }
+}
+
+/**
+ * Drafts may leave required fields empty; publishing and scheduling may not. Carries one
+ * message per field, like a validation error, so the editor can point at each one.
+ */
+export class NotReadyToPublishError extends HttpError {
+  readonly fields: FieldMessages;
+
+  constructor(fields: FieldMessages) {
+    super(400, "NOT_READY_TO_PUBLISH", "Fill in the required fields to publish.", { fields });
+    this.fields = fields;
   }
 }

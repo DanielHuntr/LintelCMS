@@ -26,8 +26,9 @@ Open one to see its entries. You can:
 
 1. Press **New entry**.
 2. Type a **title**. As soon as there's a title, Lintel saves the entry as a draft.
-3. Fill in the other fields. Fields marked **Required** must be filled in before you can
-   publish.
+3. Fill in the other fields. Lintel keeps saving as you go, even if some are still empty.
+   Fields marked **Required** must be filled in before you can publish; if one is missing,
+   Lintel points you to it.
 
 ![The editor: the title at the top, fields below, and the details panel on the right](../../../assets/screens/entry-editor.png)
 

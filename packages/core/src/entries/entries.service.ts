@@ -210,17 +210,25 @@ export async function findEntriesUsingAsset(
   return entries.map((entry) => ({ entryId: entry.entryId, title: entry.title ?? "" }));
 }
 
-/** Checks values against the collection's blueprint; see entry-data-validator.ts. */
+/**
+ * Checks values against the collection's blueprint; see entry-data-validator.ts. Saving
+ * a draft lets required fields other than the title stay empty, so work in progress is
+ * never lost; publishing and scheduling check them all (see `checkReadyToPublish`).
+ */
 export async function validateForCollection(
   database: DatabaseOrTransaction,
   collection: Collection,
   data: EntryData,
   context: Pick<EntryChangeContext, "assetExists">,
+  when: "saving" | "publishing" = "saving",
 ): Promise<EntryData> {
   const blueprint = await findBlueprintByIdOrFail(database, collection.blueprintId);
   const validate = buildEntryDataValidator(blueprint.fields, {
     assetExists: context.assetExists,
     references: createContentReferences(database),
+    requiredFields: when === "saving" ? "allowEmpty" : "enforce",
+    // The title names the entry in lists and makes its slug, so even a draft needs one.
+    alwaysRequired: ["title"],
   });
   return validate(data);
 }

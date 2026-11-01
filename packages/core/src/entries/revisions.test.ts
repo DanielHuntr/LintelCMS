@@ -69,7 +69,7 @@ describe("revisions", () => {
     expect(latest).toMatchObject({ action: "restored", author: { id: userId } });
   });
 
-  it("checks restored values against the blueprint as it is now", async () => {
+  it("restores values that miss a newly required field, and asks for it before publishing", async () => {
     const created = await api("POST", "/collections/pages/entries", { data: { title: "About" } });
     const id = created.json().id;
     const [saved] = (await api("GET", `/entries/${id}/revisions`)).json().revisions;
@@ -79,10 +79,16 @@ describe("revisions", () => {
       fields: [...page.fields, { handle: "owner", label: "Owner", type: "text", required: true }],
     });
 
-    const response = await api("POST", `/entries/${id}/revisions/${saved.id}/restore`);
+    const restored = await api("POST", `/entries/${id}/revisions/${saved.id}/restore`);
+    const published = await api("POST", `/entries/${id}/publish`);
 
-    expect(response.statusCode).toBe(400);
-    expect(response.json().fields).toEqual({ owner: "Owner is required" });
+    expect(restored.statusCode).toBe(200);
+    expect(published.statusCode).toBe(400);
+    expect(published.json()).toMatchObject({
+      code: "NOT_READY_TO_PUBLISH",
+      message: "Fill in the required fields to publish.",
+      fields: { owner: "Owner is required" },
+    });
   });
 
   it("answers 404 for a revision of another entry or one that doesn't exist", async () => {

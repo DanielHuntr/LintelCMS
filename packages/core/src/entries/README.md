@@ -6,22 +6,22 @@ publish, unpublish and restore is kept as a revision.
 
 ## Endpoints
 
-| Method and path                                   | Permission        | Body                            | Success                                  |
-| ------------------------------------------------- | ----------------- | ------------------------------- | ---------------------------------------- |
-| `GET /collections/:handle/entries`                | `entries:read`    | query below                     | 200 `{ entries, total, page, perPage }`  |
-| `POST /collections/:handle/entries`               | `entries:create`  | `{ data, slug?, parentId? }`    | 201 `Entry`                              |
-| `POST /collections/:handle/entries/reorder`       | `entries:update`  | `{ order: [{ id, parentId }] }` | 204                                      |
-| `GET /entries/:id`                                | `entries:read`    | none                            | 200 `Entry`                              |
-| `PATCH /entries/:id`                              | `entries:update`  | `{ data?, slug?, parentId? }`   | 200 `Entry`                              |
-| `POST /entries/:id/publish`                       | `entries:publish` | none                            | 200 `Entry`                              |
-| `POST /entries/:id/unpublish`                     | `entries:publish` | none                            | 200 `Entry`                              |
-| `POST /entries/:id/schedule`                      | `entries:publish` | `{ publishAt }` (in the future) | 200 `Entry`                              |
-| `DELETE /entries/:id`                             | `entries:delete`  | none                            | 204                                      |
-| `POST /entries/:id/duplicate`                     | `entries:create`  | none                            | 201 `Entry`, a draft copy                |
-| `GET /entries/:id/revisions`                      | `entries:read`    | none                            | 200 `{ revisions }`, newest first        |
-| `GET /entries/:id/revisions/:revisionId`          | `entries:read`    | none                            | 200, with its `data`                     |
-| `POST /entries/:id/revisions/:revisionId/restore` | `entries:update`  | none                            | 200 `Entry`                              |
-| `POST /entries/:id/translations`                  | `entries:create`  | `{ locale }`                    | 201 `Entry`, or 409 `TRANSLATION_EXISTS` |
+| Method and path                                   | Permission        | Body                            | Success                                    |
+| ------------------------------------------------- | ----------------- | ------------------------------- | ------------------------------------------ |
+| `GET /collections/:handle/entries`                | `entries:read`    | query below                     | 200 `{ entries, total, page, perPage }`    |
+| `POST /collections/:handle/entries`               | `entries:create`  | `{ data, slug?, parentId? }`    | 201 `Entry`                                |
+| `POST /collections/:handle/entries/reorder`       | `entries:update`  | `{ order: [{ id, parentId }] }` | 204                                        |
+| `GET /entries/:id`                                | `entries:read`    | none                            | 200 `Entry`                                |
+| `PATCH /entries/:id`                              | `entries:update`  | `{ data?, slug?, parentId? }`   | 200 `Entry`                                |
+| `POST /entries/:id/publish`                       | `entries:publish` | none                            | 200 `Entry`, or 400 `NOT_READY_TO_PUBLISH` |
+| `POST /entries/:id/unpublish`                     | `entries:publish` | none                            | 200 `Entry`                                |
+| `POST /entries/:id/schedule`                      | `entries:publish` | `{ publishAt }` (in the future) | 200 `Entry`                                |
+| `DELETE /entries/:id`                             | `entries:delete`  | none                            | 204                                        |
+| `POST /entries/:id/duplicate`                     | `entries:create`  | none                            | 201 `Entry`, a draft copy                  |
+| `GET /entries/:id/revisions`                      | `entries:read`    | none                            | 200 `{ revisions }`, newest first          |
+| `GET /entries/:id/revisions/:revisionId`          | `entries:read`    | none                            | 200, with its `data`                       |
+| `POST /entries/:id/revisions/:revisionId/restore` | `entries:update`  | none                            | 200 `Entry`                                |
+| `POST /entries/:id/translations`                  | `entries:create`  | `{ locale }`                    | 201 `Entry`, or 409 `TRANSLATION_EXISTS`   |
 
 The list takes `status` (`draft`, `published`, `scheduled`), `search` (in titles, any
 case), `page`, `perPage` (up to 100, default 25), `parentId` (direct children only) and
@@ -120,3 +120,10 @@ whose saved or published values use an asset, as `[{ entryId, title }]`, for
 | `entries.errors.ts`                        | Named errors with the messages people see            |
 | `entries.routes.ts`, `revisions.routes.ts` | The endpoints                                        |
 | `translations.routes.ts`                   | `POST /entries/:id/translations`                     |
+
+## Drafts and required fields
+
+Saving never loses work: a draft may leave required fields empty (only the title is
+needed, since it names the entry and makes its slug). Publishing and scheduling check the
+saved values with every rule and answer 400 `NOT_READY_TO_PUBLISH`, with one message per
+field in `fields`, when something is missing. The admin shows those under each field.

@@ -83,6 +83,7 @@ export function EntryEditor({
     dispatch,
     onCreated,
     locale,
+    onPublishBlocked: (error) => focusFirstFieldError(error),
   });
   const { entry } = actions;
   const canPublish = useCan("entries:publish");

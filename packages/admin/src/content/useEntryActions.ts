@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useRef, useState, type Dispatch } from "react";
 import { describeError } from "../api/describeError.js";
+import { t } from "../i18n/strings.js";
 import {
   createEntry,
   deleteEntry,
@@ -24,6 +25,8 @@ interface EntryActionsOptions {
   onCreated: (entry: Entry) => void;
   /** The language a new entry is written in. Undefined is the site's main language. */
   locale?: string;
+  /** Called when publishing or scheduling is refused because fields need filling in. */
+  onPublishBlocked?: (error: unknown) => void;
 }
 
 /**
@@ -37,6 +40,7 @@ export function useEntryActions({
   dispatch,
   onCreated,
   locale,
+  onPublishBlocked,
 }: EntryActionsOptions) {
   const queryClient = useQueryClient();
   const [entry, setEntry] = useState(initialEntry);
@@ -85,7 +89,15 @@ export function useEntryActions({
       if (updated) remember(updated);
       return true;
     } catch (error) {
-      setActionError(describeError(error));
+      const fieldErrors = fieldErrorsFrom(error);
+      if (Object.keys(fieldErrors).length > 0) {
+        // Drafts may leave required fields empty; publishing asks for them, field by field.
+        dispatch({ type: "publishBlocked", fieldErrors });
+        setActionError(t("editor.fillRequiredToPublish"));
+        onPublishBlocked?.(error);
+      } else {
+        setActionError(describeError(error));
+      }
       return false;
     } finally {
       setIsWorking(false);

@@ -136,4 +136,15 @@ describe("field errors", () => {
 
     expect(fixing.fieldErrors).toEqual({ category: "Choose a category." });
   });
+
+  it("are shown when publishing is refused, without marking the saved draft as failed", () => {
+    const saved = initialDraftState(samplePost());
+    const blocked = apply(saved, {
+      type: "publishBlocked",
+      fieldErrors: { excerpt: "Excerpt is required" },
+    });
+
+    expect(blocked.fieldErrors).toEqual({ excerpt: "Excerpt is required" });
+    expect(blocked.saveStatus).toBe(saved.saveStatus);
+  });
 });
