@@ -98,7 +98,7 @@ export function PriceText({ product, showSaving }: { product: ShopProduct; showS
         hidden={!compareAt || saving === 0 || undefined}
       >
         <span className="lintel-visually-hidden">Was </span>
-        {compareAt ? formatMoney(compareAt) : ""}
+        <span data-price="was-amount">{compareAt ? formatMoney(compareAt) : ""}</span>
       </s>
       {showSaving && (
         <span

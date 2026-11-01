@@ -19,10 +19,13 @@ function inline(text: string): string {
   return escape(text)
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/(^|[^*])\*(?!\s)(.+?)\*/g, "$1<em>$2</em>")
-    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_match, label: string, address: string) => {
-      const href = address.replace(/&amp;/g, "&");
-      return isSafeLinkAddress(href) ? `<a href="${escape(href)}">${label}</a>` : label;
-    })
+    .replace(
+      /\[([^\]]+)\]\(([^\s()]+(?:\([^\s()]*\))?)\)/g,
+      (_match, label: string, address: string) => {
+        const href = address.replace(/&amp;/g, "&");
+        return isSafeLinkAddress(href) ? `<a href="${escape(href)}">${label}</a>` : label;
+      },
+    )
     .replace(/\n/g, "<br>");
 }
 
