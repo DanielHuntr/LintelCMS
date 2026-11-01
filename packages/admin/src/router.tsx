@@ -224,6 +224,7 @@ const entriesRoute = createRoute({
     direction:
       search.direction === "desc" ? "desc" : search.direction === "asc" ? "asc" : undefined,
     page: typeof search.page === "number" && search.page > 1 ? Math.floor(search.page) : undefined,
+    type: typeof search.type === "string" && search.type !== "" ? search.type : undefined,
   }),
   component: function CollectionRoute() {
     const { collection } = entriesRoute.useParams();

@@ -18,6 +18,7 @@ import { TreeBranch } from "./TreeBranch.js";
 import { type DropPosition, rootKey, type TreeKey } from "./treeState.js";
 import { iconForContent } from "./typeIcons.js";
 import { TreeRow } from "./TreeRow.js";
+import { TreeSelectionBar } from "./TreeSelectionBar.js";
 import { useActionItems } from "./useActionItems.js";
 
 /**
@@ -95,7 +96,12 @@ export function ContentTree() {
                   onCreate={() => tree.runAction("create", { kind: "top", isHome: true })}
                 />
               )}
-            <ul role="tree" aria-label={t("tree.label")} className="flex flex-col">
+            <ul
+              role="tree"
+              aria-label={t("tree.label")}
+              aria-multiselectable="true"
+              className="flex flex-col"
+            >
               {roots.data.roots.map((root) => (
                 <RootItem
                   key={root.handle}
@@ -124,6 +130,8 @@ export function ContentTree() {
           onClose={() => setTopMenuAt(null)}
         />
       )}
+
+      <TreeSelectionBar />
 
       <div className="hairline-top px-2.5 py-2">
         <Link

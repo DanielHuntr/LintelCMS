@@ -3,6 +3,7 @@ import type { Entry } from "../content/content.types.js";
 import type {
   AllowedType,
   BatchResult,
+  BulkSummary,
   CollectionItems,
   CollectionQuery,
   AddressChange,
@@ -19,7 +20,7 @@ import type {
 
 /** Calls to the content tree and recycle bin routes. One function per route. */
 
-function query(values: Record<string, string | number | undefined>): string {
+function query(values: Record<string, string | number | boolean | undefined>): string {
   const parameters = new URLSearchParams();
   for (const [key, value] of Object.entries(values)) {
     if (value !== undefined && value !== "") parameters.set(key, String(value));
@@ -161,6 +162,11 @@ export function runBulkAction(
     method: "POST",
     body: { action, entryIds, parentId },
   });
+}
+
+/** How many pages sit under the picked ones, for a bulk delete's question. */
+export function summarizeBulk(entryIds: readonly string[]): Promise<BulkSummary> {
+  return apiRequest("/content-tree/bulk/summary", { method: "POST", body: { entryIds } });
 }
 
 export function listRecycleBin(): Promise<{ items: RecycleBinItem[] }> {

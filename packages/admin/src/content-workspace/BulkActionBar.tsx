@@ -1,52 +1,59 @@
 import { useState } from "react";
 import { describeError } from "../api/describeError.js";
-import { describeResult } from "../content-tree/BranchActionDialog.js";
-import { runBulkAction } from "../content-tree/contentTree.api.js";
-import type { BatchResult, TreeNode } from "../content-tree/contentTree.types.js";
-import { useRefreshContent } from "../content-tree/contentTree.queries.js";
+import { BulkDeleteDialog } from "../content-tree/BulkDeleteDialog.js";
+import type { TreeNode } from "../content-tree/contentTree.types.js";
 import { MoveDialog } from "../content-tree/MoveDialog.js";
+import {
+  type BulkAction,
+  type BulkOutcome,
+  useBulkActions,
+} from "../content-tree/useBulkActions.js";
 import { Button } from "../design/Button.js";
-import { ConfirmDialog } from "../design/ConfirmDialog.js";
 import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 
 interface BulkActionBarProps {
   nodes: readonly TreeNode[];
+  /** The entry the workspace shows, so deleting it goes back to Content. */
+  selectedKey?: string;
   /** Called after an action, to clear the selection. */
   onDone: () => void;
 }
 
 /**
  * What can be done to the selected rows of the collection view at once, and what the last
- * action did (it stays after the selection is cleared).
+ * action did (it stays after the selection is cleared), with Undo after a delete.
  */
-export function BulkActionBar({ nodes, onDone }: BulkActionBarProps) {
-  const refresh = useRefreshContent();
+export function BulkActionBar({ nodes, selectedKey, onDone }: BulkActionBarProps) {
+  const run = useBulkActions(selectedKey);
   const canPublish = useCan("entries:publish");
   const canUpdate = useCan("entries:update");
   const canDelete = useCan("entries:delete");
   const [asking, setAsking] = useState<"move" | "delete" | null>(null);
   const [isWorking, setIsWorking] = useState(false);
-  const [outcome, setOutcome] = useState<{ text: string; skipped: BatchResult["skipped"] } | null>(
-    null,
-  );
+  const [outcome, setOutcome] = useState<BulkOutcome | null>(null);
   const ids = nodes.map((node) => node.id);
 
-  async function run(
-    action: "publish" | "unpublish" | "move" | "recycle",
-    parentId?: string | null,
-  ) {
+  async function act(action: BulkAction, parentId?: string | null) {
     setIsWorking(true);
     try {
-      const result = await runBulkAction(action, ids, parentId);
-      await refresh(result.changed);
-      setOutcome({ text: describeResult(result), skipped: result.skipped });
+      setOutcome(await run(action, ids, parentId));
       setAsking(null);
       onDone();
     } catch (error) {
-      setOutcome({ text: describeError(error), skipped: [] });
+      setOutcome({ message: describeError(error), skipped: [] });
     } finally {
       setIsWorking(false);
+    }
+  }
+
+  async function undo() {
+    const undoing = outcome?.undo;
+    if (!undoing) return;
+    try {
+      setOutcome({ message: await undoing.run(), skipped: [] });
+    } catch (error) {
+      setOutcome({ message: describeError(error), skipped: [] });
     }
   }
 
@@ -68,7 +75,7 @@ export function BulkActionBar({ nodes, onDone }: BulkActionBarProps) {
                 size="small"
                 variant="tinted"
                 disabled={isWorking}
-                onClick={() => void run("publish")}
+                onClick={() => void act("publish")}
               >
                 {t("collectionView.bulkPublish")}
               </Button>
@@ -76,7 +83,7 @@ export function BulkActionBar({ nodes, onDone }: BulkActionBarProps) {
                 size="small"
                 variant="tinted"
                 disabled={isWorking}
-                onClick={() => void run("unpublish")}
+                onClick={() => void act("unpublish")}
               >
                 {t("collectionView.bulkUnpublish")}
               </Button>
@@ -110,7 +117,14 @@ export function BulkActionBar({ nodes, onDone }: BulkActionBarProps) {
       <div role="status" className="text-footnote text-label-secondary empty:hidden">
         {outcome && (
           <>
-            <p>{outcome.text}</p>
+            <p className="flex flex-wrap items-center gap-2">
+              {outcome.message}
+              {outcome.undo && (
+                <Button size="small" variant="plain" onClick={() => void undo()}>
+                  {outcome.undo.label}
+                </Button>
+              )}
+            </p>
             {outcome.skipped.length > 0 && (
               <ul className="mt-1 list-disc ps-5">
                 {outcome.skipped.map((skipped) => (
@@ -129,21 +143,17 @@ export function BulkActionBar({ nodes, onDone }: BulkActionBarProps) {
       {asking === "move" && (
         <MoveDialog
           nodes={nodes}
-          onMove={(parentId) => run("move", parentId)}
+          onMove={(parentId) => act("move", parentId)}
           onClose={() => setAsking(null)}
         />
       )}
-      <ConfirmDialog
-        open={asking === "delete"}
-        title={t("collectionView.bulkDeleteTitle", { count: nodes.length })}
-        message={t("collectionView.bulkDeleteMessage")}
-        confirmLabel={t("tree.delete.confirm")}
-        cancelLabel={t("common.cancel")}
-        isDestructive
-        isWorking={isWorking}
-        onCancel={() => setAsking(null)}
-        onConfirm={() => void run("recycle")}
-      />
+      {asking === "delete" && (
+        <BulkDeleteDialog
+          nodes={nodes}
+          onConfirm={() => act("recycle")}
+          onClose={() => setAsking(null)}
+        />
+      )}
     </div>
   );
 }

@@ -32,7 +32,7 @@ const appearance: Record<TreeAction, { label: StringKey; icon: LucideIcon }> = {
   history: { label: "tree.action.history", icon: History },
   info: { label: "tree.action.info", icon: Info },
   delete: { label: "tree.action.delete", icon: Trash2 },
-  openList: { label: "tree.action.openList", icon: List },
+  openList: { label: "folderView.showList", icon: List },
   hostnames: { label: "tree.action.hostnames", icon: Globe },
 };
 
