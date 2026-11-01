@@ -1,3 +1,4 @@
+import { appStrings } from "./appStrings.js";
 import { contentModelStrings } from "./contentModelStrings.js";
 import { dashboardStrings } from "./dashboardStrings.js";
 import { pluginStrings } from "./pluginStrings.js";
@@ -12,6 +13,7 @@ const english = {
   ...contentModelStrings,
   ...dashboardStrings,
   ...pluginStrings,
+  ...appStrings,
   "app.name": "Lintel",
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",

@@ -1,5 +1,5 @@
 import type { AdminPluginDefinition, DashboardWidget } from "../plugins/adminPlugin.js";
-import { mayUse, type Viewer, visibleContributions } from "../plugins/pluginContributions.js";
+import { mayUse, type Viewer, visibleExtensions } from "../plugins/pluginContributions.js";
 import type { PlaceableWidget } from "./dashboardLayout.js";
 import { builtInWidgets } from "./widgets/builtInWidgets.js";
 
@@ -8,16 +8,18 @@ export type AvailableWidget = DashboardWidget & PlaceableWidget & { pluginId: st
 
 /**
  * Every widget this person may use: Lintel's own (those they have the permission for),
- * then those of switched-on plugins. A widget that isn't here is hidden from them.
+ * then those of switched-on plugins and installed apps. A widget that isn't here is hidden
+ * from them.
  */
 export function availableWidgets(
   plugins: readonly AdminPluginDefinition[],
   viewer: Viewer,
+  apps: readonly AdminPluginDefinition[] = [],
 ): AvailableWidget[] {
   const own = builtInWidgets
     .filter((widget) => mayUse(viewer.permissions, widget.permission))
     .map((widget) => ({ ...widget, pluginId: "core" }));
-  const fromPlugins = visibleContributions(plugins, "dashboardWidgets", viewer);
+  const fromPlugins = visibleExtensions(plugins, apps, "dashboardWidgets", viewer);
   return [...own, ...fromPlugins].map((widget) => ({
     ...widget,
     fullId: `${widget.pluginId}:${widget.id}`,

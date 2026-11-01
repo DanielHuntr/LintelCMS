@@ -9,6 +9,9 @@ import {
 import { lazy, useCallback } from "react";
 import { ApiAccessPage } from "./api-access/ApiAccessPage.js";
 import { ApiReferencePage } from "./api-access/ApiReferencePage.js";
+import { AppDetailPage } from "./apps/AppDetailPage.js";
+import { AppsPage } from "./apps/AppsPage.js";
+import { InstalledAppsProvider } from "./apps/InstalledAppsContext.js";
 import { adminQueryClient } from "./api/queryClient.js";
 import { ContentOverviewPage } from "./content/ContentOverviewPage.js";
 import type { EntryStatus } from "./content/content.types.js";
@@ -161,12 +164,14 @@ function SignedInAdmin() {
 
   return (
     <SessionProvider session={session}>
-      <AdminLayout
-        permissions={session.permissions}
-        enabledPlugins={session.enabledPlugins}
-        signedInUser={session.user}
-        onSignOut={handleSignOut}
-      />
+      <InstalledAppsProvider>
+        <AdminLayout
+          permissions={session.permissions}
+          enabledPlugins={session.enabledPlugins}
+          signedInUser={session.user}
+          onSignOut={handleSignOut}
+        />
+      </InstalledAppsProvider>
     </SessionProvider>
   );
 }
@@ -308,6 +313,22 @@ const webhookRoute = createRoute({
   },
 });
 
+/** Settings → Apps: installing and removing external apps. */
+const appsRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/settings/apps",
+  component: AppsPage,
+});
+
+const appRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/settings/apps/$appId",
+  component: function AppRoute() {
+    const { appId } = appRoute.useParams();
+    return <AppDetailPage appId={appId} />;
+  },
+});
+
 /** Settings → Features: switching plugins on and off. */
 const featuresRoute = createRoute({
   getParentRoute: () => adminRoute,
@@ -316,7 +337,14 @@ const featuresRoute = createRoute({
 });
 
 /** API access and webhooks. (The SEO plugin's settings are plugin screens.) */
-const integrationRoutes = [apiAccessRoute, apiReferenceRoute, webhooksRoute, webhookRoute];
+const integrationRoutes = [
+  apiAccessRoute,
+  apiReferenceRoute,
+  webhooksRoute,
+  webhookRoute,
+  appsRoute,
+  appRoute,
+];
 
 /**
  * Any other address: a plugin's screen, or "page not found" (see PluginScreenRoute). Kept

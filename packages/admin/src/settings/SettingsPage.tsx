@@ -1,4 +1,4 @@
-import { Blocks, Globe, KeyRound, Languages, Shapes, Webhook } from "lucide-react";
+import { AppWindow, Blocks, Globe, KeyRound, Languages, Shapes, Webhook } from "lucide-react";
 import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
@@ -42,6 +42,13 @@ export function SettingsPage() {
               label={t("webhooks.title")}
               description={t("settings.webhooksDescription")}
               to="/settings/webhooks"
+            />
+            <GroupedListRow
+              icon={AppWindow}
+              iconTone="success"
+              label={t("apps.title")}
+              description={t("settings.appsDescription")}
+              to="/settings/apps"
             />
           </GroupedList>
         )}

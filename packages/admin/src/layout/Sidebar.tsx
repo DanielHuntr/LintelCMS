@@ -1,8 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { Search } from "lucide-react";
+import { useInstalledApps } from "../apps/InstalledAppsContext.js";
 import { AppMark } from "../design/AppMark.js";
 import { t } from "../i18n/strings.js";
 import { visibleSections } from "../navigation/sections.js";
+import { adminPlugins } from "../plugins/adminPlugins.js";
 import { isMacPlatform } from "../search/useCommandPalette.js";
 import { SidebarAccount, type SignedInUser } from "./SidebarAccount.js";
 
@@ -26,6 +28,7 @@ export function Sidebar({
   onSignOut,
   onOpenSearch,
 }: SidebarProps) {
+  const apps = useInstalledApps();
   return (
     <aside className="fixed inset-y-3 left-3 z-10 flex w-60 flex-col rounded-panel bg-sidebar shadow-float hairline-ring backdrop-blur-2xl backdrop-saturate-150">
       <div className="flex items-center gap-2.5 px-4 pt-5 pb-6">
@@ -52,7 +55,7 @@ export function Sidebar({
 
       <nav aria-label={t("nav.label")} className="flex-1 overflow-y-auto px-2.5">
         <ul className="flex flex-col gap-0.5">
-          {visibleSections(permissions, enabledPlugins).map((section) => (
+          {visibleSections(permissions, enabledPlugins, adminPlugins, apps).map((section) => (
             <li key={section.path}>
               {/* TanStack Router marks the current page's link with data-status="active". */}
               <Link

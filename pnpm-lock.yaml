@@ -60,6 +60,9 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.3.1)
+      '@lintel/app-bridge':
+        specifier: workspace:*
+        version: link:../app-bridge
       '@lintel/core':
         specifier: workspace:*
         version: link:../core
