@@ -95,7 +95,7 @@ export function MenuSection({ node, isLocked, onChange }: MenuSectionProps) {
           type="button"
           disabled={isLocked}
           onClick={() => setEditingFor(node.id)}
-          className="flex h-8 items-center justify-center gap-1.5 rounded-control bg-accent-fill px-3 text-footnote font-medium text-white hover:brightness-110 focus-visible:focus-ring disabled:opacity-40"
+          className="flex h-8 items-center justify-center gap-1.5 rounded-control bg-accent-fill px-3 text-footnote font-medium text-on-accent hover:bg-accent-fill-hover focus-visible:focus-ring disabled:opacity-40"
         >
           <ListTree aria-hidden="true" className="size-4" strokeWidth={1.75} />
           {text("pageBuilder.menu.edit")}

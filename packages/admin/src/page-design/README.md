@@ -57,3 +57,10 @@ message at the bottom of the screen.
   screen waits for it; if it can't be had, the canvas uses the default theme.
 - **Animation words**: `motionText`, the admin's `t()` for the animation studio.
 - **The tour**: the Publish button carries `data-tour="publish"`, so the tour can point at it.
+
+## Menus in the builder
+
+The builder gets the site's menus with their links (`useBuilderMenus` in `src/menus`), so a
+Header, Menu or Menu drawer on the canvas shows the real menu, and its Content tab offers
+"Which menu" and "Edit menu". Edit menu opens `InlineMenuEditor` in the panel: the same
+editing as the Menus screen (add pages, rename, reorder, nest), saved to the same menu.

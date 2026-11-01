@@ -27,6 +27,8 @@ import { useCan, useSession } from "../session/SessionContext.js";
 import { runtimeSettings } from "../runtime-settings.js";
 import { useBuilderData, useCanvasSite } from "../website/website.queries.js";
 import { usePageDesignSaving } from "./usePageDesignSaving.js";
+import { useBuilderMenus } from "../menus/builderMenus.js";
+import { InlineMenuEditor } from "../menus/InlineMenuEditor.js";
 
 /**
  * The canvas frame's scripts, served beside the admin (see vite.config.ts), because the
@@ -99,6 +101,16 @@ function PageDesigner({
   const session = useSession();
   // Collection lists and shop elements show real entries on the canvas once this arrives.
   const builderData = useBuilderData();
+  // Headers and menus on the canvas show the site's real menus, and edit them in place.
+  const builderMenus = useBuilderMenus();
+  const dataSources = useMemo(() => {
+    const menus = builderMenus.data;
+    if (!builderData.data && !menus) return undefined;
+    return {
+      ...(builderData.data ?? { collections: [], forms: [], products: [], productCollections: [] }),
+      menus,
+    };
+  }, [builderData.data, builderMenus.data]);
   const canEditCode = useCan("builder:code");
   const canPublish = useCan("entries:publish");
   const imagePicker = useImagePicker();
@@ -135,7 +147,8 @@ function PageDesigner({
         title={title}
         canEditCode={canEditCode}
         site={site}
-        dataSources={builderData.data}
+        dataSources={dataSources}
+        menuEditor={renderMenuEditor}
         enabledPlugins={session.enabledPlugins}
         themeStylesheet={themeStylesheet(defaultTheme)}
         baseStylesheet={siteStylesheet}
@@ -251,4 +264,9 @@ function useImagePicker() {
   ) : null;
 
   return { pick, dialog };
+}
+
+/** The menu editor the builder shows in its Content tab for a Header, Menu or Menu drawer. */
+function renderMenuEditor({ menuHandle, onClose }: { menuHandle: string; onClose: () => void }) {
+  return <InlineMenuEditor handle={menuHandle} onClose={onClose} />;
 }
