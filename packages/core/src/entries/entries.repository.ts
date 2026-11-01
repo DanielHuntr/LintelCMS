@@ -65,8 +65,6 @@ const summaryColumns = {
   scheduledFor: entriesTable.scheduledFor,
   updatedById: usersTable.id,
   updatedByName: usersTable.name,
-  // For fields shown as columns in the list of entries.
-  data: entriesTable.data,
 };
 
 function matching(filters: EntryFilters): SQL | undefined {
@@ -108,6 +106,30 @@ export async function listEntrySummaries(
     .where(matching(filters))
     .orderBy(...orderings[order]);
   return page ? query.limit(page.limit).offset(page.offset) : query;
+}
+
+/**
+ * The values of a few fields for a page of entries, for fields shown as columns in the list.
+ * Only asked for when a blueprint has such fields, so lists stay light otherwise.
+ */
+export async function findEntryFieldValues(
+  database: DatabaseOrTransaction,
+  entryIds: readonly string[],
+  handles: readonly string[],
+): Promise<Map<string, Record<string, unknown>>> {
+  if (entryIds.length === 0 || handles.length === 0) {
+    return new Map();
+  }
+  const rows = await database
+    .select({ id: entriesTable.id, data: entriesTable.data })
+    .from(entriesTable)
+    .where(inArray(entriesTable.id, [...entryIds]));
+  return new Map(
+    rows.map((row) => [
+      row.id,
+      Object.fromEntries(handles.map((handle) => [handle, row.data[handle] ?? null])),
+    ]),
+  );
 }
 
 export async function countEntries(

@@ -8,6 +8,7 @@ import { describeEntrySummary } from "./entry-responses.js";
 import {
   countEntries,
   type EntryFilters,
+  findEntryFieldValues,
   listEntryPositions,
   listEntrySummaries,
 } from "./entries.repository.js";
@@ -49,8 +50,13 @@ export async function listEntries(
 
   const blueprint = await findBlueprintByIdOrFail(database, collection.blueprintId);
   const listColumns = blueprint.fields.filter((field) => field.showInList);
+  const values = await findEntryFieldValues(
+    database,
+    rows.map((row) => row.id),
+    listColumns.map((field) => field.handle),
+  );
   return {
-    entries: rows.map((row) => describeEntrySummary(row, listColumns)),
+    entries: rows.map((row) => describeEntrySummary(row, listColumns, values.get(row.id))),
     total,
     page: query.page,
     perPage: query.perPage,

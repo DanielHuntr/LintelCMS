@@ -16,14 +16,15 @@ import type {
  * column in lists"); their values come along, with choices given by their labels.
  */
 export function describeEntrySummary(
-  row: Omit<EntrySummaryRow, "data"> & { data?: EntrySummaryRow["data"] },
+  row: EntrySummaryRow,
   listColumns: readonly FieldDefinition[] = [],
+  values: Readonly<Record<string, unknown>> = {},
 ): EntrySummaryResponse {
   return {
     columns: listColumns.map((field) => ({
       handle: field.handle,
       label: field.label,
-      value: columnValue(field, row.data?.[field.handle] ?? null),
+      value: columnValue(field, values[field.handle] ?? null),
     })),
     id: row.id,
     title: row.title ?? "",
