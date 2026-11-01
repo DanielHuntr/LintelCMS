@@ -407,6 +407,14 @@ const designReviewRoutes = showsDesignReview
           "DesignReviewPage",
         ),
       }),
+      createRoute({
+        getParentRoute: () => rootRoute,
+        path: "/design-system/motion",
+        component: lazyRouteComponent(
+          () => import("./design-review/motion/MotionReviewPage.js"),
+          "MotionReviewPage",
+        ),
+      }),
     ]
   : [];
 

@@ -1,3 +1,4 @@
+import { motionEditorStrings } from "@lintel/motion-editor";
 import { contentModelStrings } from "./contentModelStrings.js";
 
 /**
@@ -8,6 +9,7 @@ import { contentModelStrings } from "./contentModelStrings.js";
  */
 const english = {
   ...contentModelStrings,
+  ...motionEditorStrings,
   "app.name": "Lintel",
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",
@@ -325,6 +327,22 @@ const english = {
   "designReview.sample.emptyAction": "Create a form",
   "designReview.sample.pageTitle": "Products",
   "designReview.sample.pageSubtitle": "128 products in 6 collections",
+  "designReview.motionLink": "Animation studio",
+  "designReview.motion.title": "Animation studio",
+  "designReview.motion.intro":
+    "The studio the page builder embeds, and presets playing on real elements as you scroll. Only built in development.",
+  "designReview.motion.backToDesignSystem": "Design system",
+  "designReview.motion.studio": "Studio",
+  "designReview.motion.onAPage": "On a page",
+  "designReview.motion.onAPageIntro":
+    "The animation you are editing, playing on this element with its real trigger.",
+  "designReview.motion.replayOnPage": "Play again",
+  "designReview.motion.sendEvent": "Send the event",
+  "designReview.motion.sampleTitle": "Built with care, shipped with joy",
+  "designReview.motion.sampleBody": "Every animation here comes from the preset library.",
+  "designReview.motion.showcase": "Presets on real elements",
+  "designReview.motion.showcaseIntro": "Scroll down: each element uses the preset named on it.",
+  "designReview.motion.spec": "Spec",
   "common.cancel": "Cancel",
   "common.done": "Done",
   "common.dismiss": "Dismiss",

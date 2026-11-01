@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* The animation studio is its own package; its components use these tokens too. */
+@source "../../motion-editor/src";
+
 /*
  * Lintel's design tokens. src/design/README.md explains each one and how agencies rebrand them.
  *
