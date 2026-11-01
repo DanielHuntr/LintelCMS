@@ -133,7 +133,15 @@ export function FieldCard({
             </span>
           </span>
         </button>
-        <span className="hidden shrink-0 items-center gap-1 @[26rem]/card:flex">
+        <span
+          className={classNames(
+            "hidden shrink-0 items-center gap-1 @[26rem]/card:flex",
+            // The move and remove buttons take this place on hover, so the badges make way.
+            canEdit &&
+              !isLocked &&
+              "transition-opacity duration-150 group-hover/card:opacity-0 group-focus-within/card:opacity-0",
+          )}
+        >
           {field.required && <Badge>{t("fields.required")}</Badge>}
           {field.conditions && <Badge tone="accent">{t("builder.badge.conditional")}</Badge>}
           {field.hidden && (

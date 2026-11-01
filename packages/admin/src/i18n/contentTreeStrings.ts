@@ -100,7 +100,8 @@ export const contentTreeStrings = {
   "tree.duplicate.title": "Duplicate “{title}”?",
   "tree.duplicate.message":
     "The copy is a draft called “{title} (copy)”, placed straight after the original.",
-  "tree.duplicate.withChildren": "Also copy the {count} items under it",
+  "tree.duplicate.withChildren":
+    "{count, plural, one {Also copy the page under it} other {Also copy the # items under it}}",
   "tree.duplicate.confirm": "Duplicate",
 
   "tree.move.title": "Move “{title}”",
@@ -122,12 +123,14 @@ export const contentTreeStrings = {
 
   "tree.publish.title": "Publish “{title}”?",
   "tree.publish.message": "It goes live on your site straight away.",
-  "tree.publish.withChildren": "Also publish the {count} items under it",
+  "tree.publish.withChildren":
+    "{count, plural, one {Also publish the page under it} other {Also publish the # items under it}}",
   "tree.publish.confirm": "Publish",
   "tree.unpublish.title": "Unpublish “{title}”?",
   "tree.unpublish.message":
     "It comes off your site and goes back to being a draft. Nothing is deleted.",
-  "tree.unpublish.withChildren": "Also unpublish the {count} items under it",
+  "tree.unpublish.withChildren":
+    "{count, plural, one {Also unpublish the page under it} other {Also unpublish the # items under it}}",
   "tree.unpublish.confirm": "Unpublish",
   "tree.result.changed": "Done: {count} changed.",
   "tree.result.changedOne": "Done: 1 changed.",
@@ -139,7 +142,7 @@ export const contentTreeStrings = {
   "tree.delete.message":
     "It comes off your site straight away and goes to the recycle bin, where you can restore it.",
   "tree.delete.messageWithChildren":
-    "It comes off your site straight away and goes to the recycle bin with the {count} items under it. You can restore them from there.",
+    "{count, plural, one {It comes off your site straight away and goes to the recycle bin with the item under it. You can restore them from there.} other {It comes off your site straight away and goes to the recycle bin with the # items under it. You can restore them from there.}}",
   "tree.delete.confirm": "Move to recycle bin",
   "tree.delete.done": "“{title}” is in the recycle bin.",
 
@@ -174,6 +177,8 @@ export const contentTreeStrings = {
   "info.noAddress": "This content type has no pages of its own.",
   "info.contentType": "Content type",
   "info.layout": "Layout",
+  "info.layoutFollowsTree":
+    "Addresses follow the content tree: a page under About is at /about/its-name",
   "info.layoutValue": "Pages use the address pattern {pattern}",
   "info.created": "Created",
   "info.updated": "Last changed",
@@ -235,7 +240,8 @@ export const contentTreeStrings = {
   "recycleBin.loading": "Loading the recycle bin…",
   "recycleBin.detail": "{collection} · deleted {time} by {person}",
   "recycleBin.detailNobody": "{collection} · deleted {time}",
-  "recycleBin.withChildren": "with {count} items under it",
+  "recycleBin.withChildren":
+    "{count, plural, one {with # item under it} other {with # items under it}}",
   "recycleBin.restore": "Restore",
   "recycleBin.restoreLabel": "Restore {title}",
   "recycleBin.restored": "Restored “{title}” as a draft.",

@@ -65,7 +65,9 @@ export function InfoTab({ entry, collection, info }: InfoTabProps) {
         <Detail label={t("info.contentType")}>{collection.name}</Detail>
         {collection.routePattern && (
           <Detail label={t("info.layout")}>
-            {t("info.layoutValue", { pattern: collection.routePattern })}
+            {collection.routePattern.includes("{path}")
+              ? t("info.layoutFollowsTree")
+              : t("info.layoutValue", { pattern: collection.routePattern })}
           </Detail>
         )}
         <Detail label={t("info.created")}>{when(details.createdAt, details.createdBy)}</Detail>
