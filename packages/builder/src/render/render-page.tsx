@@ -16,6 +16,8 @@ import { PageDataProvider, useCurrentItem, useIsRepeatedCopy } from "./data-cont
 import { usesBehaviours } from "./elements/behaviour-types.js";
 import { renderToStaticMarkup } from "react-dom/server";
 import { collectAnimations, type PageAnimation } from "./page-animations.js";
+import { collectEffects } from "./page-effects.js";
+import type { EffectBinding } from "@lintel/motion/effects";
 import type { ComponentRegistry, ElementAttributes, RenderMode } from "./component-registry.js";
 
 /**
@@ -28,6 +30,8 @@ import type { ComponentRegistry, ElementAttributes, RenderMode } from "./compone
  * `data-lintel-node` (and `data-lintel-text` on editable text) for selecting and editing. On
  * the published page (`withMotion`), animated elements also get `data-node-id`, so the motion
  * runtime can find them; `animations` lists what to play, and is empty when nothing moves.
+ * Elements with effects are marked the same way, and `effects` lists them for the effects
+ * runtime; an effect's static CSS (a fallback colour, a flip card's layout) joins the CSS.
  * The CSS uses the theme's tokens (`var(--lintel-color-brand)`); put the theme's stylesheet
  * before it. The output only depends on the page, so the same page always gives the same text.
  *
@@ -55,6 +59,8 @@ export interface RenderedPage {
   html: string;
   css: string;
   animations: PageAnimation[];
+  /** Effects from the Effects library the page runs; empty when it has none. */
+  effects: EffectBinding[];
   fontPreloads: string[];
   script: string;
   /** The page has sliders, tabs, pop-ups or the like, so it needs the elements script. */
@@ -73,14 +79,18 @@ export function renderPage(
       html: "",
       css: "",
       animations: [],
+      effects: [],
       fontPreloads: [],
       script: "",
       usesBehaviours: false,
     };
   }
   const animations = collectAnimations(start);
+  const effects = collectEffects(start, { canvas: mode === "canvas" });
   const marked =
-    mode === "site" && withMotion ? motionMarks(animations) : new Map<string, ElementAttributes>();
+    mode === "site" && withMotion
+      ? motionMarks(animations, effects.bindings)
+      : new Map<string, ElementAttributes>();
   const html = renderToStaticMarkup(
     <PageDataProvider data={data}>
       <NodeView
@@ -95,8 +105,9 @@ export function renderPage(
   const isWholePage = start.id === document.root.id;
   return {
     html,
-    css: compileStylesheet(start, classNames),
+    css: [compileStylesheet(start, classNames), effects.css].filter(Boolean).join("\n"),
     animations,
+    effects: effects.bindings,
     fontPreloads: isWholePage ? fontPreloads(readPageFonts(document.root.props)) : [],
     script: mode === "site" && hasBackgroundVideo(start) ? backgroundVideoScript : "",
     usesBehaviours: usesBehaviours(start),
@@ -137,7 +148,10 @@ function boundProps(
  * The attributes the motion runtime needs on the published page: `data-node-id` on every
  * animated element and every element an animation points at, and the cloak on entrances.
  */
-function motionMarks(animations: readonly PageAnimation[]): Map<string, ElementAttributes> {
+function motionMarks(
+  animations: readonly PageAnimation[],
+  effects: readonly EffectBinding[],
+): Map<string, ElementAttributes> {
   const marks = new Map<string, ElementAttributes>();
   const mark = (nodeId: string, cloak: boolean) => {
     const current = marks.get(nodeId);
@@ -152,6 +166,7 @@ function motionMarks(animations: readonly PageAnimation[]): Map<string, ElementA
     if (spec.targets.type === "nodes")
       spec.targets.nodeIds.forEach((target) => mark(target, false));
   }
+  effects.forEach(({ nodeId }) => mark(nodeId, false));
   return marks;
 }
 

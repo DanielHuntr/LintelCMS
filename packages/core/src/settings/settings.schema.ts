@@ -1,4 +1,5 @@
 import { customScriptRules } from "@lintel/builder-model";
+import { defaultSiteEffectSettings, siteEffectSettingsSchema } from "@lintel/motion/effects";
 import { z } from "zod";
 import { formsSpamSettingsSchema } from "../forms/forms-settings.schema.js";
 import { brandingOverridesSchema } from "../branding/branding.schema.js";
@@ -65,6 +66,8 @@ export const settingSchemas = {
   brandingOverrides: brandingOverridesSchema,
   /** The admin's language for anyone who hasn't picked their own (see src/interface-languages). */
   defaultInterfaceLanguage: z.string().nullable(),
+  /** Page transitions, cursor and intro across the website (see src/site-effects). */
+  siteEffects: siteEffectSettingsSchema,
 };
 
 export type SettingKey = keyof typeof settingSchemas;
@@ -87,4 +90,5 @@ export const settingDefaults: { [Key in SettingKey]: SettingValue<Key> } = {
   formsSigningSecret: null,
   brandingOverrides: {},
   defaultInterfaceLanguage: null,
+  siteEffects: defaultSiteEffectSettings,
 };

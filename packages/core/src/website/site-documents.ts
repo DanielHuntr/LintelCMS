@@ -8,7 +8,7 @@ import {
 } from "@lintel/site-components";
 import { renderSiteDocument } from "@lintel/site-components/server";
 import type { SiteResponse } from "./rendered-pages-cache.js";
-import { readElementsScript, readMotionRuntime } from "./site-assets.js";
+import { readEffectModules, readElementsScript, readMotionRuntime } from "./site-assets.js";
 import type { SiteContext } from "./site-context.service.js";
 import { localiseUrl, markCurrent } from "./site-chrome.service.js";
 
@@ -52,6 +52,8 @@ export function renderPage(
     year: now.getUTCFullYear(),
     motionScriptUrl: readMotionRuntime()?.path,
     elementsScriptUrl: readElementsScript()?.path,
+    siteEffects: context.effects,
+    effectModuleUrls: readEffectModules()?.urls,
   });
   return {
     statusCode: page.statusCode ?? 200,

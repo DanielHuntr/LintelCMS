@@ -26,12 +26,12 @@ export function checkPageDesign(value: unknown): PageDocument | null {
 
 /** Draws a checked design with what its dynamic elements show (see page-data.service.ts). */
 export function drawPageDesign(document: PageDocument, data: PageData = {}): PageDesign {
-  const { html, css, animations, fontPreloads, script, usesBehaviours } = renderPage(
+  const { html, css, animations, effects, fontPreloads, script, usesBehaviours } = renderPage(
     document,
     standardRegistry,
     { withMotion: true, data },
   );
-  return { html, css, animations, fontPreloads, script, usesBehaviours };
+  return { html, css, animations, effects, fontPreloads, script, usesBehaviours };
 }
 
 /** A design drawn without data: what a page's view starts with before its lists are loaded. */

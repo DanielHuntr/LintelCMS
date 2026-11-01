@@ -21,6 +21,33 @@ export interface PageDesign {
   script?: string;
   /** It has sliders, tabs, pop-ups, forms or the shop, so it loads the elements script. */
   usesBehaviours?: boolean;
+  /** Effects from the Effects library, by element id, for the effects runtime. */
+  effects?: ReadonlyArray<EffectOnPage>;
+}
+
+/** One effect on one element, as the builder's renderer lists it. */
+export interface EffectOnPage {
+  nodeId: string;
+  /** The lazily loaded module that runs it: "pointer", "text"... */
+  module: string;
+  behaviour: string;
+  params: Readonly<Record<string, number | string | boolean>>;
+}
+
+/**
+ * Motion across the whole site (page transitions, cursor, intro), prepared by the server:
+ * CSS for the head, markup for the start of the body, and what the runtime reads.
+ */
+export interface SiteEffectsHead {
+  css: string;
+  /** The intro's markup, or empty. */
+  bodyStartHtml: string;
+  /** A tiny inline script for the head, or empty. */
+  headScript: string;
+  /** The settings the runtime reads (see SiteEffectSettings in @lintel/motion). */
+  settings: Readonly<Record<string, unknown>>;
+  /** The modules the site-wide effects need. */
+  modules: readonly string[];
 }
 
 /** A page from a collection like Pages: a title, an optional body and its sections. */

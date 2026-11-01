@@ -1,3 +1,4 @@
+import { nodeEffectsSchema, type NodeEffect } from "@lintel/motion/effects";
 import { motionSpecSchema, type MotionSpec } from "@lintel/motion/schema";
 import { z } from "zod";
 import { type BackgroundVideo, backgroundVideoSchema } from "../backgrounds/background-video.js";
@@ -50,6 +51,8 @@ export interface NodeAnimation {
   presetId?: string;
 }
 
+export type { NodeEffect };
+
 export interface PageNode {
   /** Made when the node is added and never changed, so selection and history follow it. */
   id: string;
@@ -66,6 +69,11 @@ export interface PageNode {
   locked: boolean;
   /** Left out when the element doesn't move. */
   animation?: NodeAnimation;
+  /**
+   * Effects from the Effects library (`@lintel/motion/effects`): magnetic pull, tilt,
+   * scramble... Several can be on one element, alongside its animation. Left out for none.
+   */
+  effects?: NodeEffect[];
   /** Its children are placed anywhere in it (see free-layout/). Left out for normal flow. */
   freeLayout?: FreeLayout;
   /** A muted, looping video behind its content (see backgrounds/). */
@@ -155,6 +163,7 @@ export const pageNodeSchema: z.ZodType<PageNode> = z.lazy(() =>
     hidden: z.boolean({ error: "hidden should be true or false" }).default(false),
     locked: z.boolean({ error: "locked should be true or false" }).default(false),
     animation: nodeAnimationSchema.optional(),
+    effects: nodeEffectsSchema.optional(),
     freeLayout: freeLayoutSchema.optional(),
     backgroundVideo: backgroundVideoSchema.optional(),
     bindings: nodeBindingsSchema.optional(),

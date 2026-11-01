@@ -23,6 +23,7 @@ export function effectSelector(nodeId: string): string {
 export function resolveNodeEffects(
   list: ReadonlyArray<{ nodeId: string; effects: readonly NodeEffect[] }>,
   registry: EffectRegistry,
+  selectorFor: (nodeId: string) => string = effectSelector,
 ): ResolvedEffects {
   const resolved: ResolvedEffects = { bindings: [], css: "", used: [] };
   const css: string[] = [];
@@ -32,8 +33,7 @@ export function resolveNodeEffects(
       if (!definition || definition.kind === "animation") continue;
       const props = cleanProps(definition, saved.params);
       resolved.used.push(definition);
-      if (definition.staticCss)
-        css.push(definition.staticCss(effectSelector(nodeId), props as never));
+      if (definition.staticCss) css.push(definition.staticCss(selectorFor(nodeId), props as never));
       if (definition.kind === "behaviour") {
         resolved.bindings.push({
           nodeId,

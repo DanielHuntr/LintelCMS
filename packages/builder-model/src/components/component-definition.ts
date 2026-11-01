@@ -1,6 +1,11 @@
 import type { z } from "zod";
 import type { BackgroundVideo } from "../backgrounds/background-video.js";
-import type { NodeAnimation, NodeBindings, NodeStyles } from "../document/page-document.schema.js";
+import type {
+  NodeAnimation,
+  NodeBindings,
+  NodeEffect,
+  NodeStyles,
+} from "../document/page-document.schema.js";
 import type { FreeLayout } from "../free-layout/free-layout.js";
 
 /**
@@ -67,6 +72,7 @@ export interface NodeBlueprint {
   styles?: NodeStyles;
   children?: readonly NodeBlueprint[];
   animation?: NodeAnimation;
+  effects?: readonly NodeEffect[];
   freeLayout?: FreeLayout;
   backgroundVideo?: BackgroundVideo;
   bindings?: NodeBindings;
