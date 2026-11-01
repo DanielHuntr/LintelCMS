@@ -16,9 +16,9 @@
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "lint": "eslint packages starters eslint.config.js",
-    "format": "prettier --write packages starters docs brand .github \"*.{js,json,md,yml,yaml}\"",
-    "format:check": "prettier --check packages starters docs brand .github \"*.{js,json,md,yml,yaml}\"",
+    "lint": "eslint packages starters examples eslint.config.js",
+    "format": "prettier --write packages starters examples docs brand .github \"*.{js,json,md,yml,yaml}\"",
+    "format:check": "prettier --check packages starters examples docs brand .github \"*.{js,json,md,yml,yaml}\"",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "prepare": "husky"
