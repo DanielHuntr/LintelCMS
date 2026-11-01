@@ -10,6 +10,8 @@ export interface BuilderBlocks {
   library: readonly CustomBlock[];
   /** Pictures image properties point at, by asset id, so the canvas can show them. */
   pictures?: Readonly<Record<string, BoundPicture>>;
+  /** HTML the server drew for blocks that are React components in code, by instance id. */
+  renderedBlocks?: Readonly<Record<string, string>>;
   /** Has `builder:blocks`: may make blocks and open their designs. Everyone may use them. */
   canManage: boolean;
   /** Saves a new block; resolves with it, or a sentence saying why it couldn't. */

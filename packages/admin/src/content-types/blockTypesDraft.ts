@@ -28,6 +28,24 @@ export function withDraftKeys(blockTypes: readonly BlockType[]): BlockType[] {
   }));
 }
 
+/** Adds one of the site's own blocks; its fields come from the block when it is saved. */
+export function addSiteBlockType(
+  blockTypes: readonly BlockType[],
+  block: { handle: string; name: string; description: string; properties: Field[] },
+): BlockType[] {
+  return [
+    ...blockTypes,
+    {
+      handle: block.handle,
+      name: block.name,
+      description: block.description,
+      block: block.handle,
+      fields: block.properties,
+      draft: { key: `site-block:${block.handle}`, handleFollows: false },
+    },
+  ];
+}
+
 export function addBlockType(blockTypes: readonly BlockType[], key: string): BlockType[] {
   return [
     ...blockTypes,
@@ -157,6 +175,7 @@ export function blockTypesProblem(blockTypes: readonly BlockType[]): string | nu
       return t("builder.blocks.problem.handle", { name: blockType.name });
     }
     handles.add(blockType.handle);
+    if (blockType.block !== undefined) continue;
     const fieldHandles = new Set<string>();
     for (const field of blockType.fields) {
       if (field.label.trim() === "") {
@@ -187,12 +206,17 @@ export function blockTypesForSaving(
   blockTypes: readonly BlockType[],
   cleanField: (field: Field) => Field,
 ): BlockType[] {
-  return blockTypes.map((blockType) => ({
-    handle: blockType.handle,
-    name: blockType.name.trim(),
-    ...(blockType.description?.trim() ? { description: blockType.description.trim() } : {}),
-    fields: blockType.fields.map(cleanField),
-  }));
+  return blockTypes.map((blockType) =>
+    // The API fills in a site block's name, description and fields from the block itself.
+    blockType.block !== undefined
+      ? { handle: blockType.block, name: blockType.name, block: blockType.block, fields: [] }
+      : {
+          handle: blockType.handle,
+          name: blockType.name.trim(),
+          ...(blockType.description?.trim() ? { description: blockType.description.trim() } : {}),
+          fields: blockType.fields.map(cleanField),
+        },
+  );
 }
 
 function moveByKey<Item>(

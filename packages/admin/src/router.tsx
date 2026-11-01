@@ -18,6 +18,7 @@ import { BlueprintEditorPage } from "./content-types/BlueprintEditorPage.js";
 import { commerceRoutes } from "./commerce/commerceRoutes.js";
 import { contentModelRoutes } from "./content-model/contentModelRoutes.js";
 import { fieldsetRoutes } from "./fieldsets/fieldsetRoutes.js";
+import { blockDesignRoutes, blockRoutes } from "./blocks/blockRoutes.js";
 import { ContentTypesPage } from "./content-types/ContentTypesPage.js";
 import { NewContentTypePage } from "./content-types/NewContentTypePage.js";
 import { pageDesignRoutes } from "./page-design/pageDesignRoutes.js";
@@ -362,6 +363,7 @@ const contentRoutes = [
   contentRoute,
   ...contentModelRoutes(() => adminRoute),
   ...fieldsetRoutes(() => adminRoute),
+  ...blockRoutes(() => adminRoute),
   entriesRoute,
   entryEditorRoute,
   publishedPageRoute,
@@ -462,6 +464,7 @@ export const routeTree = rootRoute.addChildren([
     signInRoute,
     ...signedOutAccountRoutes(() => setupGateRoute),
     ...pageDesignRoutes(() => setupGateRoute),
+    ...blockDesignRoutes(() => setupGateRoute),
     adminRoute.addChildren([
       dashboardRoute,
       mediaRoute,

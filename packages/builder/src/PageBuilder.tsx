@@ -181,8 +181,12 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
 
   const dataSources = props.dataSources ?? noDataSources;
   const blockData = useMemo(
-    () => ({ blocks: blocksByHandle(blocks.library), pictures: blocks.pictures }),
-    [blocks.library, blocks.pictures],
+    () => ({
+      blocks: blocksByHandle(blocks.library),
+      pictures: blocks.pictures,
+      renderedBlocks: blocks.renderedBlocks,
+    }),
+    [blocks.library, blocks.pictures, blocks.renderedBlocks],
   );
   const rendered = useMemo(
     () =>
