@@ -16,6 +16,7 @@ Each change has a test that fails without it, and was checked in Chromium at 144
 | Builder: Form      | `2ac44f8`            | The chosen form is drawn on the canvas, as the website shows it                                 |
 | Builder: phone     | `a8ffe95`            | "The designer needs a bigger screen", with View page and Back (LINTEL-UX-013)                   |
 | Builder: Insert    | `32de990`            | Sections are cards with a bigger sketch and what each is for, shown in the list                 |
+| Builder: Style     | `5d2c33e`, latest    | The panel shows the element's real size, weight and alignment; pixel sizes for designers only   |
 
 ## Page editor's bar
 
@@ -75,3 +76,17 @@ The QA leftovers merged into release: the builder's Link box (refuses `javascrip
 **After:** each section is a card with a full-width sketch, its name and a two-line description; elements keep their compact rows and hover cards (`ten-builder-insert-dl.png`).
 
 **Test:** `panels.test.tsx`, "opens on ready-made sections…".
+
+## Builder: the style panel shows the real look
+
+**Before:** the panel read only what was set on the element, so a heading the template made giant, bold and centred read "Normal" (or no size at all, for a size that grows with the screen), "Regular" and "Left". Beginners also saw "Grow with the screen" with pixel boxes.
+
+**After:**
+
+- The canvas measures the selected element (alignment, size, weight, colour) and sends it to the builder (`look` in `canvas-messages.ts`, checked like every other message).
+- While nothing is set, or a set size matches no chip, the Text choices show the chip nearest the measured look (`style-panel/canvas-look.ts`): the Hero title reads Giant, Bold, Centre (`ten-builder-style-dl.png`, `-dd.png`).
+- "Grow with the screen" is in Advanced only; the chosen colour's name shows beside the swatches.
+
+**Tests:** `canvas-look.test.ts`, `advanced-styling.test.tsx` (beginners don't get pixel sizes; Advanced does).
+
+**Still to polish:** in dark mode the darkest text swatch is hard to see against the panel.
