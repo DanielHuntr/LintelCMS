@@ -9,6 +9,7 @@ import { BulkDeleteDialog } from "./BulkDeleteDialog.js";
 import { useContentTree } from "./ContentTreeContext.js";
 import { MoveDialog } from "./MoveDialog.js";
 import { type BulkAction, type BulkOutcome, useBulkActions } from "./useBulkActions.js";
+import { useUnpublishedParentQuestion } from "./useUnpublishedParentQuestion.js";
 
 /**
  * Along the bottom of the tree while pages are picked: how many, and what can be done to
@@ -18,6 +19,7 @@ import { type BulkAction, type BulkOutcome, useBulkActions } from "./useBulkActi
 export function TreeSelectionBar() {
   const tree = useContentTree();
   const run = useBulkActions(tree.selectedKey);
+  const parentQuestion = useUnpublishedParentQuestion();
   const canPublish = useCan("entries:publish");
   const canUpdate = useCan("entries:update");
   const canDelete = useCan("entries:delete");
@@ -30,11 +32,10 @@ export function TreeSelectionBar() {
   async function act(action: BulkAction, parentId?: string | null) {
     setIsWorking(true);
     try {
-      const outcome = await run(
-        action,
-        nodes.map((node) => node.id),
-        parentId,
-      );
+      // Under pages that aren't live, ask first, as the editor does (LINTEL-LEFT-005).
+      const above = action === "publish" ? await parentQuestion.ask(nodes) : [];
+      if (above === null) return;
+      const outcome = await run(action, [...above, ...nodes.map((node) => node.id)], parentId);
       tree.clearSelection();
       setAsking(null);
       if (outcome.skipped.length > 0) setSkipped(outcome.skipped);
@@ -149,6 +150,7 @@ export function TreeSelectionBar() {
           onClose={() => setAsking(null)}
         />
       )}
+      {parentQuestion.dialog}
       {skipped.length > 0 && (
         <Dialog
           open

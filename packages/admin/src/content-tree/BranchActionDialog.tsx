@@ -8,11 +8,13 @@ import {
   duplicateBranch,
   moveToRecycleBin,
   publishBranch,
+  runBulkAction,
   unpublishBranch,
 } from "./contentTree.api.js";
 import type { BatchResult, TreeNode } from "./contentTree.types.js";
 import { useRefreshContent } from "./contentTree.queries.js";
 import type { TreeNotice } from "./TreeToast.js";
+import { useUnpublishedParentQuestion } from "./useUnpublishedParentQuestion.js";
 
 export type BranchAction = "publish" | "unpublish" | "duplicate" | "delete";
 
@@ -68,6 +70,7 @@ export function BranchActionDialog({
   const navigate = useNavigate();
   const refresh = useRefreshContent();
   const checkboxId = useId();
+  const parentQuestion = useUnpublishedParentQuestion();
   const [includeChildren, setIncludeChildren] = useState(false);
   const [isWorking, setIsWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,10 +89,21 @@ export function BranchActionDialog({
     const withChildren = offersChildren && includeChildren;
     try {
       if (action === "publish" || action === "unpublish") {
-        const done = await (action === "publish" ? publishBranch : unpublishBranch)(
+        // Under a page that isn't live, ask first, as the editor does (LINTEL-LEFT-005).
+        const above = action === "publish" ? await parentQuestion.ask([node]) : [];
+        if (above === null) {
+          onClose();
+          return;
+        }
+        const first = above.length > 0 ? await runBulkAction("publish", above) : null;
+        const branch = await (action === "publish" ? publishBranch : unpublishBranch)(
           node.id,
           withChildren,
         );
+        const done: BatchResult = {
+          changed: [...(first?.changed ?? []), ...branch.changed],
+          skipped: [...(first?.skipped ?? []), ...branch.skipped],
+        };
         await refresh(done.changed);
         if (done.skipped.length > 0) {
           setResult(done);
@@ -144,6 +158,8 @@ export function BranchActionDialog({
       </Dialog>
     );
   }
+
+  if (parentQuestion.dialog) return parentQuestion.dialog;
 
   return (
     <Dialog

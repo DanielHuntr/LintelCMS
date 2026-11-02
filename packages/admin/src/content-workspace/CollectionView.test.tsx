@@ -63,6 +63,8 @@ describe("the collection view", () => {
   it("publishes the selected entries at once and says what happened", async () => {
     const api = mockApi(({ method, url }) => {
       if (url.pathname.endsWith("/content-tree/items")) return items;
+      // Publishing first checks for pages above that aren't published (LINTEL-LEFT-005).
+      if (url.pathname.endsWith("/info")) return { unpublishedAncestors: [] };
       if (method === "POST" && url.pathname.endsWith("/content-tree/bulk")) {
         return { changed: ["a1"], skipped: [{ id: "a2", title: "Rye", reason: "Add a price." }] };
       }

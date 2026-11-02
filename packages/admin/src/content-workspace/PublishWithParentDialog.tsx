@@ -8,6 +8,8 @@ interface PublishWithParentDialogProps {
   title: string;
   /** The pages above it that aren't published, from the top down. */
   ancestors: ReadonlyArray<{ id: string; title: string }>;
+  /** How many pages are being published under them (several from a bulk Publish). */
+  pageCount?: number;
   isWorking: boolean;
   error: string | null;
   onPublishWithParent: () => void;
@@ -24,6 +26,7 @@ export function PublishWithParentDialog({
   open,
   title,
   ancestors,
+  pageCount = 1,
   isWorking,
   error,
   onPublishWithParent,
@@ -37,16 +40,28 @@ export function PublishWithParentDialog({
       open={open}
       onClose={onCancel}
       size="alert"
-      title={t("workspace.parentUnpublished.title", { count })}
-      description={t("workspace.parentUnpublished.message", { count, title, parent })}
+      title={
+        pageCount > 1
+          ? t("workspace.parentUnpublished.manyTitle", { above: count })
+          : t("workspace.parentUnpublished.title", { count })
+      }
+      description={
+        pageCount > 1
+          ? t("workspace.parentUnpublished.manyMessage", { count: pageCount, above: count, parent })
+          : t("workspace.parentUnpublished.message", { count, title, parent })
+      }
       footer={
         // Three answers don't fit side by side in an alert, so they stack, the main one first.
         <div className="flex flex-col gap-2">
           <Button onClick={onPublishWithParent} disabled={isWorking} data-autofocus>
-            {t("workspace.parentUnpublished.withParent", { count })}
+            {pageCount > 1
+              ? t("workspace.parentUnpublished.manyWithParent", { above: count })
+              : t("workspace.parentUnpublished.withParent", { count })}
           </Button>
           <Button variant="tinted" onClick={onPublishAlone} disabled={isWorking}>
-            {t("workspace.parentUnpublished.alone")}
+            {pageCount > 1
+              ? t("workspace.parentUnpublished.manyAlone")
+              : t("workspace.parentUnpublished.alone")}
           </Button>
           <Button variant="plain" onClick={onCancel} disabled={isWorking}>
             {t("common.cancel")}
