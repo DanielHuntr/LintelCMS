@@ -68,6 +68,6 @@ describe("the admin's frame on a phone", () => {
 
     expect(link).toHaveAttribute("href", "https://brightside.example");
     expect(link).toHaveAttribute("target", "_blank");
-    expect(link).toHaveAccessibleName(/^View website ?(opens in a new tab)$/);
+    expect(link).toHaveAccessibleName(/^View website ?\(opens in a new tab\)$/);
   });
 });
