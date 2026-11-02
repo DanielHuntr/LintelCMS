@@ -8,14 +8,17 @@ import {
   Receipt,
   Settings,
   Tag,
+  TriangleAlert,
   Truck,
   Users,
 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { Badge } from "../design/Badge.js";
 import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { t } from "../i18n/strings.js";
+import { usePaymentProviders } from "./paymentProviders.queries.js";
 import { useProducts } from "./shop.queries.js";
 import { useMarkets, usePaymentSettings, useShippingZones } from "./shopSettings.queries.js";
 
@@ -28,6 +31,7 @@ export function ShopHomePage() {
   const zones = useShippingZones();
   const payments = usePaymentSettings();
   const products = useProducts({});
+  const providers = usePaymentProviders();
 
   const steps = [
     {
@@ -61,11 +65,35 @@ export function ShopHomePage() {
   ];
   const isLoaded = markets.data && zones.data && payments.data && products.data;
   const remaining = steps.filter((step) => !step.done).length;
+  // Checkout uses each market's own payment provider; one that isn't connected can't take orders.
+  const connected = {
+    stripe: payments.data?.connected ?? false,
+    paypal: providers.data?.paypal.connected ?? false,
+    mollie: providers.data?.mollie.connected ?? false,
+  };
+  const marketsWithoutPayments = (providers.data?.markets ?? markets.data ?? []).filter(
+    (market) => !connected["paymentProvider" in market ? market.paymentProvider : "stripe"],
+  );
+  const showsNotTakingOrders = Boolean(isLoaded && marketsWithoutPayments.length > 0);
 
   return (
     <>
       <LargeTitle title={t("shop.title")} subtitle={t("shop.subtitle")} />
       <div className="flex max-w-2xl flex-col gap-8">
+        {showsNotTakingOrders && (
+          <p className="flex items-start gap-2 rounded-control bg-warning/12 px-3 py-2 text-footnote text-label">
+            <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-warning" />
+            <span>
+              {t("shop.notTakingOrders")}{" "}
+              <Link
+                to="/commerce/settings/payments"
+                className="font-medium text-accent hover:underline focus-visible:focus-ring"
+              >
+                {t("shop.notTakingOrdersAction")}
+              </Link>
+            </span>
+          </p>
+        )}
         {isLoaded && remaining > 0 && (
           <GroupedList
             header={t("shop.setup.header")}

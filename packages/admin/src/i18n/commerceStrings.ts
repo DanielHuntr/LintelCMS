@@ -11,6 +11,9 @@ export const commerceStrings = {
   "shop.saving": "Saving…",
   "shop.saved": "Saved",
 
+  "shop.notTakingOrders":
+    "Your shop isn’t taking orders yet because payments aren’t connected. Shoppers who try to check out are told “This shop isn’t taking orders yet.”",
+  "shop.notTakingOrdersAction": "Connect payments",
   "shop.setup.header": "Get ready to sell",
   "shop.setup.footer": "{count} left to do. You can come back to these at any time.",
   "shop.setup.done": "Done",

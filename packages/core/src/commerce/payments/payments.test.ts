@@ -103,7 +103,12 @@ describe("payments", () => {
         CHECKOUT_PAGES,
       );
       expect(started.statusCode).toBe(409);
-      expect(started.json()).toMatchObject({ code: "SHOP_NOT_READY" });
+      // Shoppers get a plain sentence, not the owner's set-up instructions (LINTEL-LEFT-002).
+      expect(started.json()).toMatchObject({
+        code: "SHOP_NOT_READY",
+        message: "This shop isn't taking orders yet.",
+      });
+      expect(started.body).not.toMatch(/Stripe|Settings/);
     },
     SLOW_TEST,
   );
