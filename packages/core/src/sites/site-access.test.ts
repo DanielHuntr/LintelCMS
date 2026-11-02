@@ -132,4 +132,70 @@ describe("limiting a role to some sites", () => {
 
     expect(response.statusCode).toBe(403);
   });
+
+  // The content tree and recycle bin used to check only the permission, not the site.
+  it("keeps someone to their sites in the content tree", async () => {
+    await admin("PUT", "/plugins", { enabled: ["seo"] });
+    const ukPage = (
+      await admin("POST", "/collections/pages/entries", { data: { title: "About us" } })
+    ).json();
+    await admin("PUT", "/sites/access/pierre@example.com-role-0", { siteHandles: ["france"] });
+    const pierre = await signInAsPierre("france");
+    const frPage = (
+      await pierre("POST", "/collections/pages/entries", { data: { title: "Accueil" } })
+    ).json();
+    const sites = (await admin("GET", "/sites")).json().sites as Array<{
+      id: string;
+      handle: string;
+    }>;
+    const siteId = (handle: string) => sites.find((site) => site.handle === handle)?.id;
+
+    expect((await pierre("GET", `/content-tree?siteId=${siteId("france")}`)).statusCode).toBe(200);
+    const refused = [
+      await pierre(
+        "GET",
+        `/content-tree?siteId=${sites.find((site) => site.handle !== "france")?.id}`,
+      ),
+      await pierre("GET", `/content-tree/children?parentId=${ukPage.id}`),
+      await pierre("GET", `/content-tree/entries/${ukPage.id}/info`),
+      await pierre("POST", `/content-tree/entries/${ukPage.id}/unpublish`, {}),
+      await pierre("POST", `/content-tree/entries/${ukPage.id}/duplicate`, {}),
+      await pierre("POST", `/content-tree/entries/${ukPage.id}/recycle`),
+      await pierre("POST", "/content-tree/move", {
+        entryId: frPage.id,
+        parentId: ukPage.id,
+        index: 0,
+      }),
+      await pierre("POST", "/content-tree/bulk", { action: "recycle", entryIds: [ukPage.id] }),
+      await pierre("POST", "/content-tree/bulk/summary", { entryIds: [ukPage.id] }),
+      await pierre("GET", `/seo/entries/${ukPage.id}`),
+      await pierre("PUT", `/seo/entries/${ukPage.id}`, { title: "Hacked" }),
+    ];
+    expect(refused.map((response) => response.statusCode)).toEqual(refused.map(() => 403));
+    expect((await admin("GET", `/entries/${ukPage.id}`)).statusCode).toBe(200);
+  });
+
+  it("keeps someone to their sites in the recycle bin", async () => {
+    const ukPage = (
+      await admin("POST", "/collections/pages/entries", { data: { title: "About us" } })
+    ).json();
+    await admin("PUT", "/sites/access/pierre@example.com-role-0", { siteHandles: ["france"] });
+    const pierre = await signInAsPierre("france");
+    const frPage = (
+      await pierre("POST", "/collections/pages/entries", { data: { title: "Accueil" } })
+    ).json();
+    const ukItem = (await admin("POST", `/content-tree/entries/${ukPage.id}/recycle`)).json();
+    expect((await pierre("POST", `/content-tree/entries/${frPage.id}/recycle`)).statusCode).toBe(
+      201,
+    );
+
+    const listed = (await pierre("GET", "/recycle-bin")).json().items as Array<{ title: string }>;
+    expect(listed.map((item) => item.title)).toEqual(["Accueil"]);
+    expect((await pierre("POST", `/recycle-bin/${ukItem.itemId}/restore`)).statusCode).toBe(404);
+    expect((await pierre("DELETE", `/recycle-bin/${ukItem.itemId}`)).statusCode).toBe(404);
+    expect((await pierre("DELETE", "/recycle-bin")).json()).toEqual({ deleted: 1 });
+
+    const left = (await admin("GET", "/recycle-bin")).json().items as Array<{ title: string }>;
+    expect(left.map((item) => item.title)).toEqual(["About us"]);
+  });
 });

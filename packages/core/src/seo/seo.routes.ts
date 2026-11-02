@@ -5,7 +5,7 @@ import { requireDeliveryAccess } from "../delivery/require-delivery-access.js";
 import { EntryNotFoundError } from "../entries/entries.errors.js";
 import { deliveryEntryQuerySchema } from "../delivery/delivery.schema.js";
 import { parseRequest } from "../http/http-errors.js";
-import { resolveDeliverySite } from "../sites/request-site.js";
+import { requireEntrySiteAccess, resolveDeliverySite } from "../sites/request-site.js";
 import { deliverEntrySeo, findEntrySeo, saveEntrySeo } from "./entry-seo.service.js";
 import {
   createRedirectRequestSchema,
@@ -75,12 +75,17 @@ export async function seoRoutes(server: FastifyInstance) {
     return updateSeoDefaults(server.database, changes);
   });
 
-  server.get("/seo/entries/:id", can("entries:read"), async (request) =>
+  const canReadThisEntry = {
+    preHandler: [requirePermission("entries:read"), requireEntrySiteAccess],
+  };
+  server.get("/seo/entries/:id", canReadThisEntry, async (request) =>
     findEntrySeo(server.database, readEntryId(request.params)),
   );
 
   // An Author may change the search settings of their own entries.
-  const canUpdateThisEntry = { preHandler: requireEntryPermission("update") };
+  const canUpdateThisEntry = {
+    preHandler: [requireEntryPermission("update"), requireEntrySiteAccess],
+  };
   server.put("/seo/entries/:id", canUpdateThisEntry, async (request) => {
     const seo = parseRequest(entrySeoRequestSchema, request.body);
     return saveEntrySeo(server.database, readEntryId(request.params), seo, server.assetExists);

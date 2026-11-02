@@ -1,7 +1,8 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { SignedIn } from "../auth/auth.schema.js";
-import { findEntryById } from "../entries/entries.repository.js";
+import { findEntryById, listEntrySiteIds } from "../entries/entries.repository.js";
 import { matchSiteForAddress } from "./site-addresses.js";
+import { findSiteById } from "./sites.repository.js";
 import { SiteAccessDeniedError } from "./sites.errors.js";
 import {
   findOrCreateDefaultSite,
@@ -106,4 +107,48 @@ export async function requireEntrySiteAccess(request: FastifyRequest): Promise<v
       (await findSiteByIdOrFail(request.server.database, entry.siteId)).name,
     );
   }
+}
+
+/**
+ * For routes that name entries in the body or query (moves, sorting, bulk actions): someone
+ * limited to some sites can't reach another site's entries that way either. Unknown ids are
+ * left for the service to answer.
+ */
+export async function checkEntriesSiteAccess(
+  request: FastifyRequest,
+  entryIds: ReadonlyArray<string | null | undefined>,
+): Promise<void> {
+  const signedIn = request.signedIn;
+  if (!signedIn || signedIn.siteIds === null || signedIn.siteIds === undefined) {
+    return;
+  }
+  const named = [...new Set(entryIds.filter((entryId) => typeof entryId === "string"))];
+  const database = request.server.database;
+  const otherSiteId = (await listEntrySiteIds(database, named)).find(
+    (siteId) => !canWorkOnSite(signedIn, siteId),
+  );
+  if (otherSiteId !== undefined) {
+    throw new SiteAccessDeniedError((await findSiteByIdOrFail(database, otherSiteId)).name);
+  }
+}
+
+/**
+ * For routes that take a `siteId` (the content tree): the site asked for, or the default
+ * site when none is, must be one the signed-in person may work on.
+ */
+export async function checkSiteIdAccess(
+  request: FastifyRequest,
+  siteId: string | undefined,
+): Promise<void> {
+  const signedIn = request.signedIn;
+  if (!signedIn || signedIn.siteIds === null || signedIn.siteIds === undefined) {
+    return;
+  }
+  const database = request.server.database;
+  const site =
+    siteId === undefined
+      ? await findOrCreateDefaultSite(database)
+      : await findSiteById(database, siteId);
+  // An unknown site is left for the route to answer with its own 404.
+  if (site) checkSiteAccess(signedIn, site);
 }

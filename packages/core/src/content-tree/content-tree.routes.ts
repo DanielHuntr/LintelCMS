@@ -12,6 +12,11 @@ import type { Permission } from "../roles/permissions.js";
 import { hasPermission } from "../roles/permissions.js";
 import { moveToRecycleBin } from "../recycle-bin/recycle-bin.service.js";
 import {
+  checkEntriesSiteAccess,
+  checkSiteIdAccess,
+  requireEntrySiteAccess,
+} from "../sites/request-site.js";
+import {
   duplicateBranch,
   listBranchIds,
   publishEntries,
@@ -63,63 +68,94 @@ import { listCollectionItems } from "./collection-view.service.js";
  *   POST /content-tree/entries/:id/recycle        (entries:delete)  -> 201 { itemId, entryIds }
  *   POST /content-tree/bulk                       (depends on the action)
  *   POST /content-tree/bulk/summary               (entries:read)    { entryIds } -> { items, totalCount }
+ *
+ * Someone whose roles are limited to some sites can only see and change those sites' trees:
+ * every entry, parent and site a request names is checked (see sites/request-site.ts).
  */
 export async function contentTreeRoutes(server: FastifyInstance) {
   const can = (permission: Permission) => ({ preHandler: requirePermission(permission) });
+  const canOnEntry = (permission: Permission) => ({
+    preHandler: [requirePermission(permission), requireEntrySiteAccess],
+  });
 
-  server.get("/content-tree", can("entries:read"), async (request) =>
-    listTreeRoots(server.database, parseRequest(treeRootsQuerySchema, request.query)),
-  );
+  server.get("/content-tree", can("entries:read"), async (request) => {
+    const query = parseRequest(treeRootsQuerySchema, request.query);
+    await checkSiteIdAccess(request, query.siteId);
+    return listTreeRoots(server.database, query);
+  });
 
-  server.get("/content-tree/children", can("entries:read"), async (request) =>
-    listTreeChildren(server.database, parseRequest(treeChildrenQuerySchema, request.query)),
-  );
+  server.get("/content-tree/children", can("entries:read"), async (request) => {
+    const query = parseRequest(treeChildrenQuerySchema, request.query);
+    await checkSiteIdAccess(request, query.siteId);
+    await checkEntriesSiteAccess(request, [query.parentId]);
+    return listTreeChildren(server.database, query);
+  });
 
-  server.get("/content-tree/search", can("entries:read"), async (request) =>
-    searchTree(server.database, parseRequest(treeSearchQuerySchema, request.query)),
-  );
+  server.get("/content-tree/search", can("entries:read"), async (request) => {
+    const query = parseRequest(treeSearchQuerySchema, request.query);
+    await checkSiteIdAccess(request, query.siteId);
+    return searchTree(server.database, query);
+  });
 
-  server.get("/content-tree/items", can("entries:read"), async (request) =>
-    listCollectionItems(server.database, parseRequest(collectionItemsQuerySchema, request.query)),
-  );
+  server.get("/content-tree/items", can("entries:read"), async (request) => {
+    const query = parseRequest(collectionItemsQuerySchema, request.query);
+    await checkSiteIdAccess(request, query.siteId);
+    await checkEntriesSiteAccess(request, [query.parentId]);
+    return listCollectionItems(server.database, query);
+  });
 
-  server.get("/content-tree/allowed-types", can("entries:read"), async (request) =>
-    listAllowedTypes(server.database, parseRequest(allowedTypesQuerySchema, request.query)),
-  );
+  server.get("/content-tree/allowed-types", can("entries:read"), async (request) => {
+    const query = parseRequest(allowedTypesQuerySchema, request.query);
+    await checkEntriesSiteAccess(request, [query.parentId]);
+    return listAllowedTypes(server.database, query);
+  });
 
-  server.get("/content-tree/entries/:id/path", can("entries:read"), async (request) =>
+  server.get("/content-tree/entries/:id/path", canOnEntry("entries:read"), async (request) =>
     findEntryPath(server.database, readId(request.params)),
   );
 
-  server.get("/content-tree/entries/:id/info", can("entries:read"), async (request) =>
+  server.get("/content-tree/entries/:id/info", canOnEntry("entries:read"), async (request) =>
     findEntryInfo(server.database, readId(request.params)),
   );
 
-  server.post("/content-tree/move", can("entries:update"), async (request) =>
-    moveAndAnnounce(request, parseRequest(moveEntryRequestSchema, request.body)),
-  );
-
-  server.post("/content-tree/sort", can("entries:update"), async (request) =>
-    sortChildren(server.database, parseRequest(sortChildrenRequestSchema, request.body)),
-  );
-
-  server.post("/content-tree/entries/:id/publish", can("entries:publish"), async (request) => {
-    const { includeDescendants } = parseRequest(withDescendantsRequestSchema, request.body ?? {});
-    const id = readId(request.params);
-    const ids = includeDescendants ? await listBranchIds(server.database, id) : [id];
-    return publishAndAnnounce(request, ids);
+  server.post("/content-tree/move", can("entries:update"), async (request) => {
+    const move = parseRequest(moveEntryRequestSchema, request.body);
+    await checkEntriesSiteAccess(request, [move.entryId, move.parentId]);
+    return moveAndAnnounce(request, move);
   });
 
-  server.post("/content-tree/entries/:id/unpublish", can("entries:publish"), async (request) => {
-    const { includeDescendants } = parseRequest(withDescendantsRequestSchema, request.body ?? {});
-    const id = readId(request.params);
-    const ids = includeDescendants ? await listBranchIds(server.database, id) : [id];
-    return unpublishAndAnnounce(request, ids);
+  server.post("/content-tree/sort", can("entries:update"), async (request) => {
+    const sort = parseRequest(sortChildrenRequestSchema, request.body);
+    await checkSiteIdAccess(request, sort.siteId);
+    await checkEntriesSiteAccess(request, [sort.parentId, ...sort.order]);
+    return sortChildren(server.database, sort);
   });
 
   server.post(
+    "/content-tree/entries/:id/publish",
+    canOnEntry("entries:publish"),
+    async (request) => {
+      const { includeDescendants } = parseRequest(withDescendantsRequestSchema, request.body ?? {});
+      const id = readId(request.params);
+      const ids = includeDescendants ? await listBranchIds(server.database, id) : [id];
+      return publishAndAnnounce(request, ids);
+    },
+  );
+
+  server.post(
+    "/content-tree/entries/:id/unpublish",
+    canOnEntry("entries:publish"),
+    async (request) => {
+      const { includeDescendants } = parseRequest(withDescendantsRequestSchema, request.body ?? {});
+      const id = readId(request.params);
+      const ids = includeDescendants ? await listBranchIds(server.database, id) : [id];
+      return unpublishAndAnnounce(request, ids);
+    },
+  );
+
+  server.post(
     "/content-tree/entries/:id/duplicate",
-    can("entries:create"),
+    canOnEntry("entries:create"),
     async (request, reply) => {
       const { includeDescendants } = parseRequest(withDescendantsRequestSchema, request.body ?? {});
       const result = await duplicateBranch(
@@ -134,13 +170,14 @@ export async function contentTreeRoutes(server: FastifyInstance) {
 
   server.post(
     "/content-tree/entries/:id/recycle",
-    { preHandler: requireEntryPermission("delete") },
+    { preHandler: [requireEntryPermission("delete"), requireEntrySiteAccess] },
     async (request, reply) =>
       reply.code(201).send(await recycleAndAnnounce(request, readId(request.params))),
   );
 
   server.post("/content-tree/bulk", can("entries:read"), async (request) => {
     const { action, entryIds, parentId } = parseRequest(bulkActionRequestSchema, request.body);
+    await checkEntriesSiteAccess(request, [...entryIds, parentId]);
     if (action === "publish") {
       requireToo(request, "entries:publish");
       return publishAndAnnounce(request, entryIds);
@@ -159,6 +196,7 @@ export async function contentTreeRoutes(server: FastifyInstance) {
 
   server.post("/content-tree/bulk/summary", can("entries:read"), async (request) => {
     const { entryIds } = parseRequest(bulkSummaryRequestSchema, request.body);
+    await checkEntriesSiteAccess(request, entryIds);
     return summarizeBranches(server.database, entryIds);
   });
 }
