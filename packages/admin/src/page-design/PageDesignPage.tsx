@@ -187,6 +187,18 @@ function PageDesigner({
               errorMessage={saving.errorMessage}
               onRetry={saving.saveNow}
             />
+            {canPublish && !saving.justPublished && saving.liveness !== "live" && (
+              <span className="hidden text-footnote text-label-secondary sm:inline">
+                {t(
+                  saving.liveness === "notLiveYet"
+                    ? "pageDesign.notLiveYet"
+                    : "pageDesign.changesNotLive",
+                )}
+              </span>
+            )}
+            <span role="status" className="sr-only">
+              {saving.justPublished ? t("pageDesign.publishedAnnouncement") : ""}
+            </span>
             {viewPage && (
               <ViewPageLink
                 target={viewPage}
@@ -203,7 +215,11 @@ function PageDesigner({
                 disabled={saving.isPublishing}
                 className="h-8 rounded-control bg-accent-fill px-3 text-footnote font-semibold text-on-accent focus-visible:focus-ring disabled:opacity-50"
               >
-                {saving.isPublishing ? t("pageDesign.publishing") : t("pageDesign.publish")}
+                {saving.isPublishing
+                  ? t("pageDesign.publishing")
+                  : saving.justPublished
+                    ? t("pageDesign.published")
+                    : t("pageDesign.publish")}
               </button>
             )}
           </div>

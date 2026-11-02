@@ -19,6 +19,10 @@ export const pageDesignStrings = {
   "pageDesign.unreadable": "This page design can’t be opened: {problem}",
   "pageDesign.publish": "Publish",
   "pageDesign.publishing": "Publishing…",
+  "pageDesign.published": "Published",
+  "pageDesign.publishedAnnouncement": "Published. Your changes are on your site.",
+  "pageDesign.notLiveYet": "Not on your site yet",
+  "pageDesign.changesNotLive": "Changes not live yet",
   "pageDesign.card.emptyTitle": "This page has no design yet",
   "pageDesign.card.emptyDescription":
     "Start from a template, a ready-made section or a blank page. You can change everything afterwards.",
