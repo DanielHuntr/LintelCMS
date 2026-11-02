@@ -9,6 +9,7 @@ import {
   blueprintProblems,
   draftFromFields,
   fieldsForSaving,
+  handleRenames,
   problemsByKey,
 } from "../content-types/blueprintDraft.js";
 import { blueprintKeys } from "../content-types/blueprints.queries.js";
@@ -77,6 +78,7 @@ function FieldsetEditor({ fieldset }: { fieldset: Fieldset }) {
       const updated = await updateFieldset(fieldset.handle, {
         name: state.name.trim(),
         fields: fieldsForSaving(state.fields),
+        renames: handleRenames(state.fields),
       });
       queryClient.setQueryData(fieldsetKeys.fieldset(updated.handle), updated);
       void queryClient.invalidateQueries({ queryKey: fieldsetKeys.fieldsets() });

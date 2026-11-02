@@ -1,5 +1,6 @@
 import { checkBlueprintFields, checkFieldDefinitions } from "../blueprints/blueprint-fields.js";
 import { listBlueprintRows, updateBlueprintFields } from "../blueprints/blueprints.repository.js";
+import { type FieldRename, moveRenamedFieldValues } from "../entries/field-renames.service.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
@@ -81,8 +82,33 @@ export async function updateFieldset(
   await database.transaction(async (transaction) => {
     await updateFieldsetRow(transaction, fieldset.id, { name: request.name, fields });
     await refreshFieldsetUsers(transaction, handle);
+    await moveRenamedFieldsetValues(transaction, handle, request.renames ?? [], {
+      before: new Set(fieldset.fields.map((field) => field.handle)),
+      after: new Set(fields.map((field) => field.handle)),
+    });
   });
   return findFieldset(database, handle);
+}
+
+/**
+ * A fieldset's values sit in a group named by the Fieldset field that imports it (`cta`), so
+ * a renamed handle moves inside that group, in every content type that imports the fieldset
+ * at its top level. Fieldsets inside groups or blocks, and in global sets, aren't moved yet.
+ */
+async function moveRenamedFieldsetValues(
+  database: DatabaseOrTransaction,
+  fieldsetHandle: string,
+  renames: readonly FieldRename[],
+  handles: { before: ReadonlySet<string>; after: ReadonlySet<string> },
+): Promise<void> {
+  if (renames.length === 0) return;
+  for (const blueprint of await listBlueprintRows(database, DEFAULT_TENANT_ID)) {
+    for (const field of blueprint.fields) {
+      if (field.type !== "fieldset" || field.options.fieldset !== fieldsetHandle) continue;
+      const within = renames.map((rename) => ({ ...rename, within: field.handle }));
+      await moveRenamedFieldValues(database, blueprint.id, within, handles);
+    }
+  }
 }
 
 /** Refuses while a content type or global set uses it: their entries would lose the fields. */
