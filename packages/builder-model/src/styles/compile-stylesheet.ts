@@ -4,6 +4,7 @@ import type {
   PageNode,
   StyleDeclarations,
 } from "../document/page-document.schema.js";
+import { makeCssSafeToEmbed } from "../code/sanitise-code.js";
 import { compileFontFaces, readPageFonts } from "../fonts/page-fonts.js";
 import { impliedFreeLayoutStyles } from "../free-layout/free-layout.js";
 import { planMarkDrawings, type TextMark } from "../text-marks/text-marks.js";
@@ -73,7 +74,9 @@ export function compileStylesheet(root: PageNode, classNames: ReadonlyMap<string
   for (const { node } of visible) {
     const css = node.type === "codeBlock" ? node.props.css : undefined;
     if (typeof css === "string" && css.trim() !== "") {
-      sections.push(`/* Code: .${classNames.get(node.id) ?? node.id} */\n${css.trim()}`);
+      // Code CSS is typed by hand, so it mustn't be able to end the page's <style> early.
+      const safeCss = makeCssSafeToEmbed(css.trim());
+      sections.push(`/* Code: .${classNames.get(node.id) ?? node.id} */\n${safeCss}`);
     }
   }
   return sections.length === 0 ? "" : `${sections.join("\n\n")}\n`;

@@ -16,6 +16,11 @@ function scriptSafeCode(code: string): string {
   return code.replace(/<\/(script)/gi, "<\\/$1");
 }
 
+/** The same for a stylesheet, which ends at the first "</style" (code blocks' CSS is typed). */
+function styleSafeCss(css: string): string {
+  return css.replace(/<\/(style)/gi, "<\\/$1");
+}
+
 /**
  * The `<head>` additions of a page designed in the builder: preloads for its fonts, its own
  * stylesheet, the script its background videos need and, only when something on it moves,
@@ -39,7 +44,7 @@ export function DesignHead({
       {(design.fontPreloads ?? []).map((href) => (
         <link key={href} rel="preload" href={href} as="font" type="font/woff2" crossOrigin="" />
       ))}
-      {css && <style dangerouslySetInnerHTML={{ __html: css }} />}
+      {css && <style dangerouslySetInnerHTML={{ __html: styleSafeCss(css) }} />}
       {design.script && (
         <script dangerouslySetInnerHTML={{ __html: scriptSafeCode(design.script) }} />
       )}
