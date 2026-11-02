@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
 import { LoadError } from "../api/LoadError.js";
 import { useCollection, useEntry } from "../content/content.queries.js";
 import { newEntryId } from "../content/newEntryId.js";
@@ -33,13 +33,26 @@ interface EntryWorkspacePageProps {
 export function EntryWorkspacePage(props: EntryWorkspacePageProps) {
   const { collectionHandle, entryId, locale } = props;
   const isNew = entryId === newEntryId;
+  // An entry first saved from /new stays in the editor it was written in: swapping to the
+  // workspace mid-sentence would lose the focus, and the words typed while it saved.
+  const [createdHereId, setCreatedHereId] = useState<string | null>(null);
+  const isCreatedHere = entryId === createdHereId;
+  if (createdHereId !== null && !isNew && !isCreatedHere) {
+    // Adjusting state during render when a prop changes, as the React docs recommend.
+    setCreatedHereId(null);
+  }
   const collection = useCollection(collectionHandle);
-  const entry = useEntry(isNew ? undefined : entryId);
+  const entry = useEntry(isNew || isCreatedHere ? undefined : entryId);
 
-  if (isNew) {
+  if (isNew || isCreatedHere) {
     return (
       <Suspense fallback={<WorkspaceSkeleton />}>
-        <EntryEditorPage collectionHandle={collectionHandle} entryId={entryId} locale={locale} />
+        <EntryEditorPage
+          collectionHandle={collectionHandle}
+          entryId={entryId}
+          locale={locale}
+          onCreated={setCreatedHereId}
+        />
       </Suspense>
     );
   }

@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, type SQL, sql } from "drizzle-orm";
 import { collectionsTable } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import {
@@ -40,11 +40,23 @@ export interface RecycleBinRow {
   deletedByName: string | null;
 }
 
+/**
+ * The site an item's entries were on. A branch never spans sites, so the first entry's site
+ * is everyone's.
+ */
+const itemSiteId = sql<string>`${recycleBinItemsTable.branch}->'entries'->0->>'siteId'`;
+
+/** Items on these sites only, or every item when `siteIds` is null. */
+function onSites(siteIds: readonly string[] | null): SQL | undefined {
+  return siteIds === null ? undefined : inArray(itemSiteId, [...siteIds]);
+}
+
 /** Newest first, without the stored branches (they can be large). */
 export async function listRecycleBinRows(
   database: DatabaseOrTransaction,
   tenantId: string,
   limit: number,
+  siteIds: readonly string[] | null,
 ): Promise<RecycleBinRow[]> {
   return database
     .select({
@@ -66,7 +78,7 @@ export async function listRecycleBinRows(
     .from(recycleBinItemsTable)
     .innerJoin(collectionsTable, eq(collectionsTable.id, recycleBinItemsTable.collectionId))
     .leftJoin(usersTable, eq(usersTable.id, recycleBinItemsTable.deletedBy))
-    .where(eq(recycleBinItemsTable.tenantId, tenantId))
+    .where(and(eq(recycleBinItemsTable.tenantId, tenantId), onSites(siteIds)))
     .orderBy(desc(recycleBinItemsTable.deletedAt))
     .limit(limit);
 }
@@ -102,14 +114,15 @@ export async function deleteRecycleBinItem(
   await database.delete(recycleBinItemsTable).where(eq(recycleBinItemsTable.id, itemId));
 }
 
-/** Empties the bin; answers how many items went. */
+/** Empties the bin (of these sites' items, unless null); answers how many items went. */
 export async function deleteAllRecycleBinItems(
   database: DatabaseOrTransaction,
   tenantId: string,
+  siteIds: readonly string[] | null,
 ): Promise<number> {
   const deleted = await database
     .delete(recycleBinItemsTable)
-    .where(eq(recycleBinItemsTable.tenantId, tenantId))
+    .where(and(eq(recycleBinItemsTable.tenantId, tenantId), onSites(siteIds)))
     .returning({ id: recycleBinItemsTable.id });
   return deleted.length;
 }

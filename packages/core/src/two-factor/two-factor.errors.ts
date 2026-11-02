@@ -16,6 +16,20 @@ export class TwoFactorNotStartedError extends HttpError {
   }
 }
 
+/**
+ * Setting up again while it is on would swap the authenticator without the password, which
+ * anyone at an open laptop could do. Turning it off asks for the password first.
+ */
+export class TwoFactorAlreadyOnError extends HttpError {
+  constructor() {
+    super(
+      409,
+      "TWO_FACTOR_ALREADY_ON",
+      "Two-factor authentication is already on. To use a new phone, turn it off with your password, then set it up again.",
+    );
+  }
+}
+
 export class TwoFactorNotEnabledError extends HttpError {
   constructor() {
     super(409, "TWO_FACTOR_NOT_ENABLED", "Two-factor authentication isn't turned on.");

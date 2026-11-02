@@ -213,4 +213,24 @@ describe("the canvas in a real browser", () => {
     });
     await page.close();
   });
+
+  // Escape used to throw the edit away without a word, while clicking away kept it.
+  it("keeps the words typed into a text when editing ends with Escape", async () => {
+    const { design, wordId } = stage();
+    const page = await openCanvas(design, wordId);
+    const heading = page.locator(`[data-lintel-node="${wordId}"]`);
+
+    await heading.dblclick();
+    await page.keyboard.press("End");
+    await page.keyboard.type("s and pictures");
+    await page.keyboard.press("Escape");
+
+    expect(await lastMessage(page, "editText")).toEqual({
+      type: "editText",
+      nodeId: wordId,
+      prop: "text",
+      text: "Words and pictures",
+    });
+    await page.close();
+  });
 });

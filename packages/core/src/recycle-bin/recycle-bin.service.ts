@@ -34,7 +34,7 @@ import {
   listRootAddressRows,
   listSeoRows,
 } from "./recycle-bin.repository.js";
-import type { BinnedBranch, BinnedEntry } from "./recycle-bin.table.js";
+import type { BinnedBranch, BinnedEntry, RecycleBinItem } from "./recycle-bin.table.js";
 
 /**
  * The recycle bin. Deleting from the content tree keeps a copy of the entry and everything
@@ -44,6 +44,12 @@ import type { BinnedBranch, BinnedEntry } from "./recycle-bin.table.js";
  */
 
 const LIST_LIMIT = 200;
+
+/**
+ * The sites someone may work on (`SignedIn.siteIds`), or null for every site. Items from
+ * other sites are left out of the list and answer "not found", so their titles never show.
+ */
+export type SiteLimit = readonly string[] | null;
 
 export interface RecycleBinListItem {
   id: string;
@@ -57,8 +63,9 @@ export interface RecycleBinListItem {
 
 export async function listRecycleBin(
   database: DatabaseOrTransaction,
+  siteLimit: SiteLimit,
 ): Promise<{ items: RecycleBinListItem[] }> {
-  const rows = await listRecycleBinRows(database, DEFAULT_TENANT_ID, LIST_LIMIT);
+  const rows = await listRecycleBinRows(database, DEFAULT_TENANT_ID, LIST_LIMIT, siteLimit);
   return {
     items: rows.map(({ item, collectionHandle, collectionName, deletedByName }) => ({
       id: item.id,
@@ -165,9 +172,10 @@ export async function moveToRecycleBin(
 export async function restoreFromRecycleBin(
   database: DatabaseOrTransaction,
   itemId: string,
+  siteLimit: SiteLimit,
 ): Promise<{ entryId: string; parentId: string | null; restoredCount: number }> {
   const item = await findRecycleBinItem(database, DEFAULT_TENANT_ID, itemId);
-  if (!item) {
+  if (!item || !isOnSites(item, siteLimit)) {
     throw new RecycleBinItemNotFoundError();
   }
   const { entries, revisions, seo } = item.branch;
@@ -269,17 +277,24 @@ export async function restoreFromRecycleBin(
 export async function deleteFromRecycleBin(
   database: DatabaseOrTransaction,
   itemId: string,
+  siteLimit: SiteLimit,
 ): Promise<void> {
   const item = await findRecycleBinItem(database, DEFAULT_TENANT_ID, itemId);
-  if (!item) {
+  if (!item || !isOnSites(item, siteLimit)) {
     throw new RecycleBinItemNotFoundError();
   }
   await deleteRecycleBinItem(database, item.id);
 }
 
-/** Empties the bin for good. */
+/** Empties the bin for good: every item on the sites someone may work on. */
 export async function emptyRecycleBin(
   database: DatabaseOrTransaction,
+  siteLimit: SiteLimit,
 ): Promise<{ deleted: number }> {
-  return { deleted: await deleteAllRecycleBinItems(database, DEFAULT_TENANT_ID) };
+  return { deleted: await deleteAllRecycleBinItems(database, DEFAULT_TENANT_ID, siteLimit) };
+}
+
+function isOnSites(item: RecycleBinItem, siteLimit: SiteLimit): boolean {
+  const siteId = item.branch.entries[0]?.siteId;
+  return siteLimit === null || (siteId !== undefined && siteLimit.includes(siteId));
 }

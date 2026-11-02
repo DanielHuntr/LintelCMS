@@ -58,6 +58,13 @@ describe("a page designed in the builder", () => {
     expect(page).not.toContain("lintel-page-header");
   });
 
+  it("keeps a stylesheet saved before its code was checked inside its style element", () => {
+    const page = render(pageWith({ ...still, css: ".x{}</style><script>alert(1)</script>" }));
+
+    expect(page).toContain("<style>.x{}<\\/style><script>alert(1)</script></style>");
+    expect(page).not.toContain(".x{}</style>");
+  });
+
   it("loads the motion runtime only when something moves, with the list kept safe", () => {
     const moving: PageDesign = {
       ...still,

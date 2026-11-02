@@ -155,4 +155,27 @@ describe("the page design screen", () => {
       within(screen.getByRole("banner")).getByRole("button", { name: "Publish" }),
     );
   });
+
+  // Publishing used to give no sign at all, and nothing said the saved page wasn't live.
+  it("says the page isn't on the site yet, and confirms when Publish has worked", async () => {
+    const user = userEvent.setup();
+    mockApi(({ method, url }) => {
+      if (method === "GET" && url.pathname === "/entries/p1") return samplePage();
+      if (method === "POST" && url.pathname === "/entries/p1/publish") {
+        return { ...samplePage(), status: "published", hasUnpublishedChanges: false };
+      }
+      throw apiErrorResponse(404, "NOT_FOUND", "Not found");
+    });
+    renderScreen(<PageDesignPage collectionHandle="pages" entryId="p1" fieldHandle="design" />);
+    const banner = await screen.findByRole("banner");
+    expect(await within(banner).findByText("Not on your site yet")).toBeInTheDocument();
+
+    await user.click(within(banner).getByRole("button", { name: "Publish" }));
+
+    expect(await within(banner).findByRole("button", { name: "Published" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Published. Your changes are on your site.", { selector: "[role=status]" }),
+    ).toBeInTheDocument();
+    expect(within(banner).queryByText("Not on your site yet")).not.toBeInTheDocument();
+  });
 });

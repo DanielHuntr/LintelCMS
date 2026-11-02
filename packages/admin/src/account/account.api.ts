@@ -91,9 +91,10 @@ export const createRecoveryCodes = (password: string) =>
 export const listPasskeys = async () =>
   (await apiRequest<{ passkeys: Passkey[] }>("/account/passkeys")).passkeys;
 
-export const passkeyCreationOptions = () =>
+export const passkeyCreationOptions = (password: string) =>
   apiRequest<PublicKeyCredentialCreationOptionsJSON>("/account/passkeys/options", {
     method: "POST",
+    body: { password },
   });
 
 export const savePasskey = (name: string, response: RegistrationResponseJSON) =>

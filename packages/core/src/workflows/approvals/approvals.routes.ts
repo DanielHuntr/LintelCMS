@@ -1,5 +1,9 @@
 import type { FastifyInstance } from "fastify";
-import { getSignedIn, requirePermission, requireSignedIn } from "../../auth/require-permission.js";
+import {
+  getSignedIn,
+  requirePermission,
+  requirePersonInBrowser,
+} from "../../auth/require-permission.js";
 import { readEntryId } from "../../entries/entries.routes.js";
 import { parseRequest } from "../../http/http-errors.js";
 import { ApprovalNotFoundError } from "../workflows.errors.js";
@@ -22,14 +26,15 @@ import {
  * HTTP only:
  *
  *   GET  /workflow-approvals                        (signed in)          requests this person can answer
- *   POST /workflow-approvals/:approvalId/decision   (signed in, the role) { decision, comment? }
+ *   POST /workflow-approvals/:approvalId/decision   (signed in in a browser, the role) { decision, comment? }
  *   GET  /content-approval                          (automations:read)     each collection's setting
  *   PUT  /content-approval/:handle                  (automations:update)   { required, reviewerRole?, publishWhenApproved? }
  *   GET  /entry-reviews/:id                        (entries:read)       where the entry's review stands
  *   POST /entry-reviews/:id                        (entries:update)     { note? } submit for review
  */
 export async function approvalsRoutes(server: FastifyInstance) {
-  const signedIn = { preHandler: requireSignedIn };
+  // Answering for a person: never an API token (see requirePersonInBrowser).
+  const signedIn = { preHandler: requirePersonInBrowser };
 
   server.get("/workflow-approvals", signedIn, async (request) =>
     listApprovalsForPerson(server.database, getSignedIn(request)),

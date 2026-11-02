@@ -82,13 +82,18 @@ export async function inviteSomeone(
   };
 }
 
-/** A new link and a new week to use it; the old link stops working. */
+/**
+ * A new link and a new week to use it; the old link stops working. The link comes back to
+ * whoever resends it, so they must be allowed to give the invitation's role themselves.
+ */
 export async function resendInvitation(
   server: FastifyInstance,
+  actor: Actor,
   invitationId: string,
   now = new Date(),
 ): Promise<SentInvitation> {
   const row = await findInvitationOrFail(server, invitationId);
+  checkRoleCanBeGranted(await findRoleOrFail(server.database, row.roleId), actor.permissions);
   const token = generateOneTimeTokenSecret();
   const expiresAt = new Date(now.getTime() + INVITATION_LIFETIME_MILLISECONDS);
   await updateInvitationToken(server.database, row.id, hashSessionToken(token), expiresAt);
@@ -99,11 +104,14 @@ export async function resendInvitation(
   };
 }
 
+/** Only someone who could have sent the invitation may cancel it. */
 export async function revokeInvitation(
   server: FastifyInstance,
+  actor: Actor,
   invitationId: string,
 ): Promise<InvitationWithNames> {
   const row = await findInvitationOrFail(server, invitationId);
+  checkRoleCanBeGranted(await findRoleOrFail(server.database, row.roleId), actor.permissions);
   await deleteInvitationRow(server.database, row.id);
   return row;
 }

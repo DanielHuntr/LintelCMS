@@ -67,7 +67,12 @@ async function detectKind(file: IncomingFile): Promise<"images" | "documents" | 
   }
 }
 
-/** Stores checked files in the media library and gives back the answers that point at them. */
+/**
+ * Stores checked files in the media library and gives back the answers that point at them.
+ * `assetIds` are only the files this submission added: the library keeps one copy of any
+ * file, so a visitor sending the bytes of an existing image (a product photo, say) gets that
+ * image, and deleting their submission mustn't delete it.
+ */
 export async function storeSubmittedFiles(
   media: MediaContext,
   fields: readonly FormField[],
@@ -79,14 +84,14 @@ export async function storeSubmittedFiles(
     if (field.type !== "file") continue;
     const stored: SubmittedFile[] = [];
     for (const file of files.filter((candidate) => candidate.fieldHandle === field.handle)) {
-      const { asset } = await uploadAsset(media, file, null);
+      const { asset, created } = await uploadAsset(media, file, null);
       stored.push({
         assetId: asset.id,
         filename: asset.filename,
         mimeType: asset.mimeType,
         size: asset.size,
       });
-      assetIds.push(asset.id);
+      if (created) assetIds.push(asset.id);
     }
     if (stored.length > 0) values[field.handle] = stored;
   }

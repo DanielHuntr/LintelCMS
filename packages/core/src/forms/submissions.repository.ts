@@ -220,7 +220,10 @@ export async function listSubmissionRowsByEmail(
   }));
 }
 
-/** Which of these files another submission still holds (the same file sent twice). */
+/**
+ * Which of these files another submission still holds: one it added, or one it sent that
+ * was already in the library (the same file sent twice), which only its answers mention.
+ */
 export async function findAssetIdsStillUsed(
   database: DatabaseOrTransaction,
   tenantId: string,
@@ -234,7 +237,10 @@ export async function findAssetIdsStillUsed(
       .where(
         and(
           eq(formSubmissionsTable.tenantId, tenantId),
-          sql`${formSubmissionsTable.assetIds} @> ${JSON.stringify([assetId])}::jsonb`,
+          or(
+            sql`${formSubmissionsTable.assetIds} @> ${JSON.stringify([assetId])}::jsonb`,
+            sql`position(${assetId} in ${formSubmissionsTable.values}::text) > 0`,
+          ),
         ),
       )
       .limit(1);

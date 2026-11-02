@@ -141,6 +141,24 @@ describe("invitations", () => {
     expect(owner.statusCode).toBe(403);
   });
 
+  it("won't resend or cancel an invitation to a role the person can't give", async () => {
+    await createPersonWithRole(testDatabase.database, "ada@example.com", "admin");
+    const asAdmin = requestsAs(server, await signInAndGetCookies(server, "ada@example.com"));
+    const invitation = (
+      await asOwner("POST", "/invitations", { email: "nia@example.com", roleId: roleIds.owner })
+    ).json().invitation;
+    const ownersToken = tokenFromLatestEmail(server, "nia@example.com");
+
+    // Resending used to hand the admin a fresh owner link to accept themselves.
+    const resent = await asAdmin("POST", `/invitations/${invitation.id}/resend`);
+    const cancelled = await asAdmin("DELETE", `/invitations/${invitation.id}`);
+
+    expect(resent.statusCode).toBe(403);
+    expect(resent.body).not.toContain("accept-invitation");
+    expect(cancelled.statusCode).toBe(403);
+    expect((await post("/invitations/preview", { token: ownersToken })).statusCode).toBe(200);
+  });
+
   it("asks for a name and a long enough password", async () => {
     await asOwner("POST", "/invitations", { email: "nia@example.com", roleId: roleIds.viewer });
     const token = tokenFromLatestEmail(server, "nia@example.com");

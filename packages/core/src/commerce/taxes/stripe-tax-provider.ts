@@ -1,6 +1,7 @@
 import { createStripeTaxCalculation } from "../payments/stripe-api.js";
 import type { StripeClient } from "../payments/stripe-client.js";
 import type { TaxProvider, TaxRequest, TaxResult } from "./tax-provider.js";
+import { fromStripeAmount, toStripeAmount } from "../money/stripe-amounts.js";
 
 /**
  * Tax from Stripe Tax (POST /v1/tax/calculations). Stripe needs Stripe Tax switched on for
@@ -30,26 +31,30 @@ export class StripeTaxProvider implements TaxProvider {
           },
         },
         line_items: request.lines.map((line) => ({
-          amount: line.amount,
+          amount: toStripeAmount(line.amount, request.currency),
           quantity: line.quantity,
           reference: line.reference,
           tax_behavior: taxBehavior,
         })),
-        shipping_cost: { amount: request.shippingAmount, tax_behavior: taxBehavior },
+        shipping_cost: {
+          amount: toStripeAmount(request.shippingAmount, request.currency),
+          tax_behavior: taxBehavior,
+        },
         expand: ["line_items"],
       },
       request.idempotencyKey,
     );
 
+    const ours = (amount: number) => fromStripeAmount(amount, request.currency);
     const lineTaxes = new Map<string, number>(
       (calculation.line_items?.data ?? []).flatMap((line) =>
-        line.reference ? [[line.reference, line.amount_tax] as const] : [],
+        line.reference ? [[line.reference, ours(line.amount_tax)] as const] : [],
       ),
     );
     return {
       lineTaxes,
-      shippingTax: calculation.shipping_cost?.amount_tax ?? 0,
-      totalTax: calculation.tax_amount_exclusive + calculation.tax_amount_inclusive,
+      shippingTax: ours(calculation.shipping_cost?.amount_tax ?? 0),
+      totalTax: ours(calculation.tax_amount_exclusive + calculation.tax_amount_inclusive),
       calculation: "stripe",
       reference: calculation.id ?? null,
     };

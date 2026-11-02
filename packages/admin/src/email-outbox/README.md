@@ -5,7 +5,11 @@ keeps the emails it would have sent in memory (see `packages/core/src/email`), a
 shows them with their links clickable. That is how invitations and password resets are
 followed on a development computer.
 
-| File                  | What it does |
-| --------------------- | ------------ |
-| `EmailOutboxPage.tsx` | The page     |
-| `emailOutbox.api.ts`  | The API call |
+Only owners see it (Settings and Shop settings hide the row from everyone else), and secret
+links in emails to other people arrive already hidden by the API.
+
+| File                     | What it does                                                                          |
+| ------------------------ | ------------------------------------------------------------------------------------- |
+| `EmailOutboxPage.tsx`    | The page                                                                              |
+| `emailOutbox.api.ts`     | The API calls                                                                         |
+| `emailStatus.queries.ts` | `useEmailStatus`: whether emails really go out, for screens that warn when they won't |

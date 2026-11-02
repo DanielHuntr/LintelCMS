@@ -26,6 +26,7 @@ export const commerceStrings = {
   "shop.status.draft": "Draft",
   "shop.status.active": "On sale",
   "shop.status.archived": "Archived",
+  "shop.status.soldOut": "Sold out",
 
   "shop.orderStatus.paid": "Paid",
   "shop.orderStatus.partially_fulfilled": "Partly sent",

@@ -17,6 +17,7 @@ import {
   blueprintProblems,
   draftFromBlueprint,
   fieldsForSaving,
+  handleRenames,
   problemsByKey,
 } from "./blueprintDraft.js";
 import { FieldsBuilder } from "./FieldsBuilder.js";
@@ -54,6 +55,7 @@ export function BlueprintEditor({ blueprint }: { blueprint: Blueprint }) {
       const updated = await updateBlueprint(blueprint.handle, {
         name: state.name.trim(),
         fields: fieldsForSaving(state.fields),
+        renames: handleRenames(state.fields),
       });
       queryClient.setQueryData(blueprintKeys.blueprint(updated.handle), updated);
       void queryClient.invalidateQueries({ queryKey: blueprintKeys.blueprints() });

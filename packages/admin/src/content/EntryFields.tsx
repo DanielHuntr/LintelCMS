@@ -14,6 +14,7 @@ import {
 } from "../fields/field.types.js";
 import type { InnerFieldProps } from "../fields/fieldEditorProps.js";
 import { t } from "../i18n/strings.js";
+import { fieldsReplacedByDesign } from "./designReplacedFields.js";
 
 interface EntryFieldsProps {
   fields: readonly Field[];
@@ -33,6 +34,13 @@ export function EntryFields({ fields, data, errors, onChange }: EntryFieldsProps
   const [chosenTab, setChosenTab] = useState(0);
   const tabButtons = useRef<Array<HTMLButtonElement | null>>([]);
   const current = Math.min(chosenTab, tabs.length - 1);
+  // Fields the page's design takes the place of on the website wait behind a note, so nobody
+  // writes into a Body that isn't shown (LINTEL-UX-006).
+  const replaced = fieldsReplacedByDesign(fields, data);
+  const [showsReplaced, setShowsReplaced] = useState(false);
+  const replacedHasProblem = Object.keys(errors).some((key) =>
+    replaced.has(key.split(".")[0] ?? key),
+  );
 
   function renderField({ field, value, onChange: change, error }: InnerFieldProps) {
     return (
@@ -47,15 +55,44 @@ export function EntryFields({ fields, data, errors, onChange }: EntryFieldsProps
     );
   }
 
-  const grid = (tabFields: readonly Field[]) => (
+  const fieldGrid = (gridFields: readonly Field[]) => (
     <FieldGrid
-      fields={tabFields}
+      fields={gridFields}
       data={data}
       errors={errors}
       onChange={onChange}
       renderField={renderField}
     />
   );
+
+  function grid(tabFields: readonly Field[]) {
+    const waiting = tabFields.filter((field) => replaced.has(field.handle));
+    if (waiting.length === 0) return fieldGrid(tabFields);
+    const isOpen = showsReplaced || replacedHasProblem;
+    return (
+      <div className="flex flex-col gap-6">
+        {fieldGrid(tabFields.filter((field) => !replaced.has(field.handle)))}
+        <div className="flex flex-col gap-3 rounded-card bg-fill/60 p-4">
+          <p className="text-footnote text-label-secondary">
+            {t("editor.replacedByDesign", {
+              fields: waiting.map((field) => field.label).join(", "),
+            })}
+          </p>
+          {!replacedHasProblem && (
+            <button
+              type="button"
+              aria-expanded={isOpen}
+              onClick={() => setShowsReplaced(!isOpen)}
+              className="w-fit rounded-control text-footnote font-medium text-accent focus-visible:focus-ring"
+            >
+              {isOpen ? t("editor.hideReplacedFields") : t("editor.showReplacedFields")}
+            </button>
+          )}
+          {isOpen && fieldGrid(waiting)}
+        </div>
+      </div>
+    );
+  }
 
   if (tabs.length <= 1) return grid(tabs[0]?.fields ?? []);
 

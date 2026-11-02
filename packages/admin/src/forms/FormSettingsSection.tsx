@@ -1,5 +1,6 @@
 import { useId, type ReactNode } from "react";
 import { SegmentedControl } from "../design/SegmentedControl.js";
+import { useEmailStatus } from "../email-outbox/emailStatus.queries.js";
 import { TextField } from "../design/TextField.js";
 import { Toggle } from "../design/Toggle.js";
 import { t } from "../i18n/strings.js";
@@ -23,6 +24,8 @@ interface FormSettingsSectionProps {
 /** After sending, who's told, and how long answers are kept. */
 export function FormSettingsSection({ draft, hasEmailField, onChange }: FormSettingsSectionProps) {
   const { confirmation, notifications } = draft;
+  const emailStatus = useEmailStatus();
+  const sendsEmail = notifications.notifyOwner || notifications.confirmationEmail.enabled;
   const setNotifications = (changes: Partial<FormNotifications>) =>
     onChange({ notifications: { ...notifications, ...changes } });
   const setConfirmationEmail = (changes: Partial<FormNotifications["confirmationEmail"]>) =>
@@ -89,6 +92,14 @@ export function FormSettingsSection({ draft, hasEmailField, onChange }: FormSett
       </SettingsGroup>
 
       <SettingsGroup title={t("forms.settings.emailsTitle")}>
+        {sendsEmail && emailStatus.data?.delivers === false && (
+          <p
+            role="note"
+            className="rounded-control bg-warning/12 px-3 py-2 text-footnote text-label"
+          >
+            {t("forms.settings.emailNotSetUp")}
+          </p>
+        )}
         <Toggle
           label={t("forms.settings.notifyOwner")}
           checked={notifications.notifyOwner}

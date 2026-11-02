@@ -21,7 +21,9 @@ describe("content approval", () => {
     await setEnabledPlugins(database, server.plugins, ["automations"]);
     await createTestUser(database, "admin@example.com", [["*"]]);
     await createTestUser(database, "author@example.com", [["entries:*"]]);
-    const reviewerUser = await createTestUser(database, "reviewer@example.com", [["entries:*"]]);
+    const reviewerUser = await createTestUser(database, "reviewer@example.com", [
+      ["entries:*", "settings:read", "settings:update"],
+    ]);
     const editors = await insertRole(database, {
       handle: "editor",
       name: "Editor",
@@ -162,5 +164,28 @@ describe("content approval", () => {
       expect.objectContaining({ entryId, role: "editor", canAnswer: true }),
     ]);
     expect((await author("GET", "/workflow-approvals")).json().approvals).toEqual([]);
+  });
+
+  // Any API token, even a read-only one in a website's code, used to answer for its maker.
+  it("can't be answered with an API token", async () => {
+    await requireApproval();
+    const entryId = await writePage("About");
+    await author("POST", `/entry-reviews/${entryId}`, {});
+    await server.workflows.runDue();
+    const [approval] = (await reviewer("GET", "/workflow-approvals")).json().approvals;
+    const { secret } = (
+      await reviewer("POST", "/api-tokens", { name: "Website", access: "read" })
+    ).json<{ secret: string }>();
+
+    const answered = await server.inject({
+      method: "POST",
+      url: `/workflow-approvals/${approval.id}/decision`,
+      headers: { authorization: `Bearer ${secret}` },
+      payload: { decision: "approve" },
+    });
+
+    expect(answered.statusCode).toBe(401);
+    const still = (await reviewer("GET", "/workflow-approvals")).json().approvals;
+    expect(still).toEqual([expect.objectContaining({ id: approval.id, canAnswer: true })]);
   });
 });

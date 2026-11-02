@@ -81,6 +81,7 @@ export function EntryEditor({
     collectionHandle: collection.handle,
     initialEntry,
     dispatch,
+    saved: state.saved,
     onCreated: (created) => {
       createdEntryId.current = created.id;
       onCreated(created);

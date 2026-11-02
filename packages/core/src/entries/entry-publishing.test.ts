@@ -129,6 +129,25 @@ describe("publishing entries", () => {
     const updated = await server.inject({ method: "GET", url: "/delivery/posts/version-one" });
     expect(updated.json().data.title).toBe("Version two");
   });
+
+  // Edits saved after scheduling used to go live at the due time, unchecked and unapproved.
+  it("publishes what was scheduled, keeping later edits as unpublished changes", async () => {
+    const id = await createPost("Approved title");
+    await api("POST", `/entries/${id}/schedule`, {
+      publishAt: new Date(Date.now() + HOUR).toISOString(),
+    });
+    await api("PATCH", `/entries/${id}`, { data: { title: "Half-written rewrite" } });
+
+    await publishDueEntries(testDatabase.database, new Date(Date.now() + 2 * HOUR));
+
+    const live = await server.inject({ method: "GET", url: "/delivery/posts/approved-title" });
+    expect(live.json().data.title).toBe("Approved title");
+    expect((await api("GET", `/entries/${id}`)).json()).toMatchObject({
+      status: "published",
+      title: "Half-written rewrite",
+      hasUnpublishedChanges: true,
+    });
+  });
 });
 
 describe("the scheduled publishing job", () => {

@@ -34,9 +34,13 @@ address, so a client never sees Lintel's name unless that is the branding.
 ## The outbox
 
 Until `EMAIL_DRIVER` names a real service, emails are kept in the outbox instead of being
-sent: in `<LINTEL_FOLDER>/outbox` when Lintel runs, and in memory in tests. Admins read the
-newest under **Settings → Email outbox** (`GET /email/outbox`, `settings:read`), which is how
-links in invitations and password resets are followed on a computer with no mail server.
+sent: in `<LINTEL_FOLDER>/outbox` when Lintel runs, and in memory in tests. Owners read the
+newest under **Settings → Email outbox** (`GET /email/outbox`), which is how links in
+invitations and password resets are followed on a computer with no mail server.
+
+The outbox holds sign-in links, so only an owner signed in with a browser can read it (not an
+API token), and links with a token in emails to anyone else are replaced with a note. Reading
+the outbox never lets one person act as another (LINTEL-SEC-001).
 `server.emailOutbox` is the outbox driver, or null with a real one; tests use its
 `latestTo(address)`.
 

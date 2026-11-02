@@ -421,6 +421,21 @@ export async function hasEntryWithValue(
   return rows.length > 0;
 }
 
+/** The sites these entries belong to, each once. Unknown ids are left out. */
+export async function listEntrySiteIds(
+  database: DatabaseOrTransaction,
+  entryIds: readonly string[],
+): Promise<string[]> {
+  if (entryIds.length === 0) {
+    return [];
+  }
+  const rows = await database
+    .selectDistinct({ siteId: entriesTable.siteId })
+    .from(entriesTable)
+    .where(inArray(entriesTable.id, [...entryIds]));
+  return rows.map((row) => row.siteId);
+}
+
 /** Which of these ids are entries, in one of these collections when any are named. */
 export async function findExistingEntryIds(
   database: DatabaseOrTransaction,

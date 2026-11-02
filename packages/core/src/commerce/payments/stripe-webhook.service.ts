@@ -15,6 +15,7 @@ import {
   stripeEventSchema,
   stripePaymentIntentObjectSchema,
 } from "./stripe-webhook-events.js";
+import { fromStripeAmount } from "../money/stripe-amounts.js";
 
 /**
  * Stripe's webhook: the only way an order becomes paid. Every request must carry a valid
@@ -88,7 +89,10 @@ async function handleEvent(
         checkoutId,
         {
           paymentIntentId: session.payment_intent ?? null,
-          amount: session.amount_total ?? -1,
+          amount:
+            session.amount_total == null
+              ? -1
+              : fromStripeAmount(session.amount_total, session.currency ?? ""),
           currency: session.currency ?? "",
         },
         shop.now(),
@@ -105,7 +109,10 @@ async function handleEvent(
         checkoutId,
         {
           paymentIntentId: intent.id,
-          amount: intent.amount_received ?? -1,
+          amount:
+            intent.amount_received == null
+              ? -1
+              : fromStripeAmount(intent.amount_received, intent.currency ?? ""),
           currency: intent.currency ?? "",
         },
         shop.now(),

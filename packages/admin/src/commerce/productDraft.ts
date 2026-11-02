@@ -54,7 +54,8 @@ export function emptyVariant(optionValues: string[] = []): VariantDraft {
     sku: "",
     barcode: "",
     weightGrams: "",
-    inventoryTracked: true,
+    // Off until the owner asks: counting from 0 showed every new product as sold out.
+    inventoryTracked: false,
     stock: {},
     otherPrices: [],
   };

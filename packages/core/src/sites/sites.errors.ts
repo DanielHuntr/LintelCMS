@@ -60,6 +60,17 @@ export class SiteLocaleMissingError extends HttpError {
   }
 }
 
+/** Someone limited to some sites can't open a role to every site, theirs included. */
+export class EverySiteDeniedError extends HttpError {
+  constructor() {
+    super(
+      403,
+      "SITE_NOT_ALLOWED",
+      "Only someone who works on every site can let a role work on every site.",
+    );
+  }
+}
+
 export class SiteAccessDeniedError extends HttpError {
   constructor(siteName: string) {
     super(

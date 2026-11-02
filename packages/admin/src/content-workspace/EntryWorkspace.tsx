@@ -71,6 +71,7 @@ export function EntryWorkspace({
     collectionHandle: collection.handle,
     initialEntry,
     dispatch,
+    saved: state.saved,
     onCreated: () => undefined,
     onPublishBlocked: (error) => focusFirstFieldError(error),
   });

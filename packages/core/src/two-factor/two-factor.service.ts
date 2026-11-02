@@ -7,6 +7,7 @@ import { generateRecoveryCodes, hashRecoveryCode } from "./recovery-codes.js";
 import { generateTotpSecret, totpSetupUrl, verifyTotpCode } from "./totp.js";
 import {
   InvalidTwoFactorCodeError,
+  TwoFactorAlreadyOnError,
   TwoFactorNotEnabledError,
   TwoFactorNotStartedError,
   TwoFactorRequiredByRoleError,
@@ -76,6 +77,9 @@ export async function startTwoFactorSetup(
   database: DatabaseOrTransaction,
   user: { id: string; email: string },
 ): Promise<TwoFactorSetup> {
+  if ((await findTwoFactorRow(database, user.id))?.enabledAt) {
+    throw new TwoFactorAlreadyOnError();
+  }
   const secret = generateTotpSecret();
   await savePendingSecret(database, user.id, secret);
   const otpauthUrl = totpSetupUrl(ISSUER, user.email, secret);
@@ -91,6 +95,9 @@ export async function confirmTwoFactorSetup(
   now = new Date(),
 ): Promise<{ recoveryCodes: string[] }> {
   const row = await findTwoFactorRow(database, userId);
+  if (row?.enabledAt) {
+    throw new TwoFactorAlreadyOnError();
+  }
   if (!row?.pendingSecret) {
     throw new TwoFactorNotStartedError();
   }

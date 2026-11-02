@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useRef, useState, type Dispatch } from "react";
+import { useLayoutEffect, useRef, useState, type Dispatch } from "react";
 import { describeError } from "../api/describeError.js";
 import { t } from "../i18n/strings.js";
 import {
@@ -14,7 +14,7 @@ import {
 } from "./content.api.js";
 import { contentKeys } from "./content.queries.js";
 import type { Entry } from "./content.types.js";
-import type { EntryDraft, EntryDraftAction } from "./entryDraft.js";
+import { changesSince, type EntryDraft, type EntryDraftAction } from "./entryDraft.js";
 import { fieldErrorsFrom } from "./fieldErrors.js";
 
 interface EntryActionsOptions {
@@ -27,6 +27,8 @@ interface EntryActionsOptions {
   locale?: string;
   /** Called when publishing or scheduling is refused because fields need filling in. */
   onPublishBlocked?: (error: unknown) => void;
+  /** What the editor last saved, so a save sends only what changed since (`changesSince`). */
+  saved: EntryDraft;
 }
 
 /**
@@ -41,7 +43,13 @@ export function useEntryActions({
   onCreated,
   locale,
   onPublishBlocked,
+  saved,
 }: EntryActionsOptions) {
+  // Read when a save starts, which can be after the render that set it.
+  const savedDraft = useRef(saved);
+  useLayoutEffect(() => {
+    savedDraft.current = saved;
+  }, [saved]);
   const queryClient = useQueryClient();
   const [entry, setEntry] = useState(initialEntry);
   const [isWorking, setIsWorking] = useState(false);
@@ -65,7 +73,7 @@ export function useEntryActions({
     try {
       const isNew = entryId.current === undefined;
       const saved = entryId.current
-        ? await updateEntry(entryId.current, draft, saveVersion)
+        ? await updateEntry(entryId.current, changesSince(savedDraft.current, draft), saveVersion)
         : await createEntry(collectionHandle, draft, locale);
       dispatch({ type: "saveSucceeded", sent: draft, entry: saved });
       remember(saved);

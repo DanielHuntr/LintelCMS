@@ -86,14 +86,14 @@ The fixes from the first round removed the three discovery P0s (FIX-LOG-shop.md,
 
 ## Criteria (batch 2)
 
-| Item | Status |
-| --- | --- |
+| Item                                 | Status                                                                                                                                                                                                                      |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Critical workflows tested in batch 2 | Permissions ✔ (one hole); CSRF ✔; sessions ✔; tokens ✔; uploads ✔; webhooks ✔; XSS ✔; multisite isolation (search ✘); content model evolution ✘; two editors ✘; negative cases (mostly ✔); keyboard checkout ✘ (focus loss) |
-| Passed / Failed / Blocked | 15 / 14 / 5 sub-steps (TEST-RESULTS.md, batch 2) |
-| Open P0 | 1: LINTEL-SEC-001 |
-| Open P1 | 2: LINTEL-DATA-003, LINTEL-DATA-004 |
-| Open P2 / P3 (batch 2) | 8 / 15 |
-| Discovery P0/P1s | Fixed per the fix logs; one P0 (FUNC-002) verified only up to the payment hand-off (no Stripe without internet) |
+| Passed / Failed / Blocked            | 15 / 14 / 5 sub-steps (TEST-RESULTS.md, batch 2)                                                                                                                                                                            |
+| Open P0                              | 1: LINTEL-SEC-001                                                                                                                                                                                                           |
+| Open P1                              | 2: LINTEL-DATA-003, LINTEL-DATA-004                                                                                                                                                                                         |
+| Open P2 / P3 (batch 2)               | 8 / 15                                                                                                                                                                                                                      |
+| Discovery P0/P1s                     | Fixed per the fix logs; one P0 (FUNC-002) verified only up to the payment hand-off (no Stripe without internet)                                                                                                             |
 
 ## Risks
 

@@ -154,6 +154,38 @@ describe("an entry's workspace", () => {
     expect(screen.getByRole("menuitem", { name: "Unpublish" })).toBeTruthy();
   });
 
+  // Saving used to send the parent the editor opened with, so a page moved in the tree
+  // meanwhile was quietly moved back on the next autosave.
+  it("saves without saying where the page sits, so a move made in the tree stays", async () => {
+    const api = answerWorkspace();
+    renderWorkspace();
+
+    await userEvent.type(await screen.findByRole("textbox", { name: "Title" }), "!");
+    await userEvent.keyboard("{Control>}s{/Control}");
+
+    await waitFor(() => expect(api.calls.some((call) => call.method === "PATCH")).toBe(true));
+    const saved = api.calls.find((call) => call.method === "PATCH");
+    expect(saved?.body).toMatchObject({ data: { title: "Hello world!" } });
+    expect(saved?.body).not.toHaveProperty("parentId");
+  });
+
+  // LINTEL-DATA-004: every save sent every field, so a second editor's save put back the
+  // values they had opened, over the first editor's saved changes.
+  it("saves only the fields changed here, so someone else's changes to the rest are kept", async () => {
+    const api = answerWorkspace();
+    renderWorkspace();
+
+    await userEvent.type(await screen.findByRole("textbox", { name: "Title" }), "!");
+    await userEvent.keyboard("{Control>}s{/Control}");
+
+    await waitFor(() => expect(api.calls.some((call) => call.method === "PATCH")).toBe(true));
+    const saved = api.calls.find((call) => call.method === "PATCH")?.body as {
+      data: Record<string, unknown>;
+    };
+    expect(Object.keys(saved.data)).toEqual(["title"]);
+    expect(saved).not.toHaveProperty("slug");
+  });
+
   describe("publishing a page whose parent isn't published", () => {
     function answerPublishing() {
       return mockApi(({ method, url }) => {

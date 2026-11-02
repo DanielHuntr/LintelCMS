@@ -1,8 +1,11 @@
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
+import type { SignedIn } from "../auth/auth.schema.js";
 import { findRoleByHandle, listRoleRows, updateRoleSiteIds } from "../roles/roles.repository.js";
-import { RoleNotFoundError } from "./sites.errors.js";
-import { findSiteOrFail, listAllSites } from "./sites.service.js";
+import { checkRoleCanBeGranted } from "../roles/roles.service.js";
+import { checkSiteAccess } from "./request-site.js";
+import { EverySiteDeniedError, RoleNotFoundError } from "./sites.errors.js";
+import { findSiteByIdOrFail, findSiteOrFail, listAllSites } from "./sites.service.js";
 
 /**
  * Which sites each role may work on. Every role starts open to every site; limiting one
@@ -37,8 +40,14 @@ export async function listRoleSiteAccess(
   };
 }
 
+/**
+ * Which sites a role may work on. Only for a role the actor could give out themselves (so
+ * not the Owner role, unless they are an owner), and someone limited to some sites can only
+ * move the role among those: never lift their own limit, nor take another site from it.
+ */
 export async function setRoleSiteAccess(
   database: DatabaseOrTransaction,
+  actor: SignedIn,
   roleHandle: string,
   siteHandles: readonly string[] | null,
 ): Promise<RoleSiteAccess> {
@@ -46,12 +55,23 @@ export async function setRoleSiteAccess(
   if (!role) {
     throw new RoleNotFoundError(roleHandle);
   }
+  checkRoleCanBeGranted(role, actor.permissions);
+  const actorIsLimited = actor.siteIds !== null && actor.siteIds !== undefined;
+  if (actorIsLimited && (siteHandles === null || role.siteIds === null)) {
+    throw new EverySiteDeniedError();
+  }
+  for (const siteId of role.siteIds ?? []) {
+    checkSiteAccess(actor, await findSiteByIdOrFail(database, siteId));
+  }
   const sites =
     siteHandles === null
       ? null
       : await Promise.all(
           [...new Set(siteHandles)].map((handle) => findSiteOrFail(database, handle)),
         );
+  for (const site of sites ?? []) {
+    checkSiteAccess(actor, site);
+  }
   await updateRoleSiteIds(database, role.id, sites === null ? null : sites.map((site) => site.id));
   return {
     handle: role.handle,

@@ -22,6 +22,11 @@ export const createFieldsetRequestSchema = z.object({
 export const updateFieldsetRequestSchema = z.object({
   name: fieldsetNameSchema,
   fields: fieldListSchema,
+  /** Handles changed in this save; entries' values move to the new handles. */
+  renames: z
+    .array(z.object({ from: z.string(), to: z.string() }))
+    .max(200)
+    .optional(),
 });
 
 export const fieldsetParamsSchema = z.object({ handle: z.string() });

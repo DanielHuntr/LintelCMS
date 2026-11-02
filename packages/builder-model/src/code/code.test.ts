@@ -5,6 +5,8 @@ import { createNode } from "../tree/create-node.js";
 import { duplicateNode } from "../tree/tree-changes.js";
 import { applyScriptRule, findChangedCode } from "./code-changes.js";
 import { fillCodeMarkers, findCodeMarkers } from "./code-markers.js";
+import { assignClassNames } from "../styles/class-names.js";
+import { compileStylesheet } from "../styles/compile-stylesheet.js";
 import { makeCssSafeToEmbed, removeScriptsFromHtml } from "./sanitise-code.js";
 
 const html =
@@ -91,6 +93,18 @@ describe("code changes", () => {
     };
     expect(findChangedCode(page, changed, standardCatalogue)).toEqual([block.id]);
     expect(findChangedCode(null, page, standardCatalogue)).toEqual([block.id]);
+  });
+
+  // A code block's CSS used to reach the page's <style> as typed, so "remove scripts" could
+  // be got round with `</style><script>`.
+  it("keeps a code block's CSS inside the page's stylesheet", () => {
+    const sneaky = { ...block, props: { ...block.props, css: ".x{}</style><script>alert(1)" } };
+    const root = { ...page.root, children: [sneaky] };
+
+    const css = compileStylesheet(root, assignClassNames(root, standardCatalogue));
+
+    expect(css).toContain(".x{}<\\/style><script>alert(1)");
+    expect(css).not.toMatch(/<\/style/i);
   });
 
   it("removes scripts under the default rule only", () => {

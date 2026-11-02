@@ -58,6 +58,48 @@ describe("fieldsets, and conditions when entries are saved", () => {
     expect(refused.json().code).toBe("FIELDSET_IN_USE");
   });
 
+  // LINTEL-DATA-003: renaming cta_label to cta_text in the fieldset emptied every entry's label.
+  it("moves entries' values when a field in a fieldset is renamed", async () => {
+    const link = { handle: "cta_url", label: "Link", type: "text" };
+    await api("POST", "/fieldsets", {
+      handle: "cta",
+      name: "Call to action",
+      fields: [{ handle: "cta_label", label: "Label", type: "text" }, link],
+    });
+    await api("POST", "/blueprints", {
+      handle: "service",
+      name: "Service",
+      fields: [
+        title,
+        { handle: "button", label: "Button", type: "fieldset", options: { fieldset: "cta" } },
+      ],
+    });
+    await api("POST", "/collections", {
+      handle: "services",
+      name: "Services",
+      blueprintHandle: "service",
+      structure: "flat",
+    });
+    const entry = (
+      await api("POST", "/collections/services/entries", {
+        data: { title: "Baking", button: { cta_label: "Book a class", cta_url: "/contact" } },
+      })
+    ).json();
+
+    const renamed = await api("PUT", "/fieldsets/cta", {
+      name: "Call to action",
+      fields: [{ handle: "cta_text", label: "Label", type: "text" }, link],
+      renames: [{ from: "cta_label", to: "cta_text" }],
+    });
+    expect(renamed.statusCode).toBe(200);
+    await api("PATCH", `/entries/${entry.id}`, { data: { title: "Baking classes" } });
+
+    expect((await api("GET", `/entries/${entry.id}`)).json().data.button).toEqual({
+      cta_text: "Book a class",
+      cta_url: "/contact",
+    });
+  });
+
   it("refuses a fieldset that doesn't exist, or one inside another", async () => {
     const missing = await api("POST", "/blueprints", {
       handle: "page_two",

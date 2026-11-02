@@ -2,6 +2,7 @@ import { listCollectionNamesUsingBlueprint } from "../collections/collections.re
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import { isUniqueViolation } from "../database/database-errors.js";
+import { moveRenamedFieldValues } from "../entries/field-renames.service.js";
 import { fillFieldsetImports } from "../fieldsets/fieldsets.service.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
 import { checkBlueprintFields } from "./blueprint-fields.js";
@@ -108,9 +109,16 @@ export async function updateBlueprint(
 ): Promise<BlueprintResponse> {
   const blueprint = await findBlueprintOrFail(database, handle);
   const fields = checkBlueprintFields(await fillFieldsetImports(database, request.fields));
-  const updated = await updateBlueprintFields(database, blueprint.id, {
-    name: request.name,
-    fields,
+  const updated = await database.transaction(async (transaction) => {
+    const saved = await updateBlueprintFields(transaction, blueprint.id, {
+      name: request.name,
+      fields,
+    });
+    await moveRenamedFieldValues(transaction, blueprint.id, request.renames ?? [], {
+      before: new Set(blueprint.fields.map((field) => field.handle)),
+      after: new Set(fields.map((field) => field.handle)),
+    });
+    return saved;
   });
   return describeBlueprint(updated);
 }

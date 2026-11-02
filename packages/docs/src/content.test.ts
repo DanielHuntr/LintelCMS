@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { readFrontmatter, slugFromPath } from "./help/help-page.js";
@@ -29,7 +29,12 @@ function listMarkdownFiles(folder: string): string[] {
 
 const docsFiles: DocsFile[] = listMarkdownFiles(docsFolder).map((path) => {
   const { fields, body } = readFrontmatter(readFileSync(path, "utf8"));
-  return { path, slug: slugFromPath(`content/docs/${relative(docsFolder, path)}`), fields, body };
+  return {
+    path,
+    slug: slugFromPath(`content/docs/${relative(docsFolder, path).split(sep).join("/")}`),
+    fields,
+    body,
+  };
 });
 
 const docsBySlug = new Map(docsFiles.map((file) => [file.slug, file]));

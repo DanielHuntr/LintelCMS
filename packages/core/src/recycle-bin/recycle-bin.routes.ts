@@ -1,6 +1,6 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { requirePermission } from "../auth/require-permission.js";
+import { getSignedIn, requirePermission } from "../auth/require-permission.js";
 import { parseRequest } from "../http/http-errors.js";
 import { RecycleBinItemNotFoundError } from "./recycle-bin.errors.js";
 import {
@@ -8,6 +8,7 @@ import {
   emptyRecycleBin,
   listRecycleBin,
   restoreFromRecycleBin,
+  type SiteLimit,
 } from "./recycle-bin.service.js";
 
 /**
@@ -17,30 +18,40 @@ import {
  *   POST   /recycle-bin/:itemId/restore     (entries:create)  -> { entryId, parentId, restoredCount }
  *   DELETE /recycle-bin/:itemId             (entries:delete)  -> 204
  *   DELETE /recycle-bin                     (entries:delete)  -> { deleted }
+ *
+ * Someone whose roles are limited to some sites only sees, restores and deletes those
+ * sites' items; emptying the bin leaves other sites' items alone.
  */
 export async function recycleBinRoutes(server: FastifyInstance) {
-  server.get("/recycle-bin", { preHandler: requirePermission("entries:read") }, async () =>
-    listRecycleBin(server.database),
+  server.get("/recycle-bin", { preHandler: requirePermission("entries:read") }, async (request) =>
+    listRecycleBin(server.database, siteLimitOf(request)),
   );
 
   server.post(
     "/recycle-bin/:itemId/restore",
     { preHandler: requirePermission("entries:create") },
-    async (request) => restoreFromRecycleBin(server.database, readItemId(request.params)),
+    async (request) =>
+      restoreFromRecycleBin(server.database, readItemId(request.params), siteLimitOf(request)),
   );
 
   server.delete(
     "/recycle-bin/:itemId",
     { preHandler: requirePermission("entries:delete") },
     async (request, reply) => {
-      await deleteFromRecycleBin(server.database, readItemId(request.params));
+      await deleteFromRecycleBin(server.database, readItemId(request.params), siteLimitOf(request));
       return reply.code(204).send();
     },
   );
 
-  server.delete("/recycle-bin", { preHandler: requirePermission("entries:delete") }, async () =>
-    emptyRecycleBin(server.database),
+  server.delete(
+    "/recycle-bin",
+    { preHandler: requirePermission("entries:delete") },
+    async (request) => emptyRecycleBin(server.database, siteLimitOf(request)),
   );
+}
+
+function siteLimitOf(request: FastifyRequest): SiteLimit {
+  return getSignedIn(request).siteIds ?? null;
 }
 
 const itemParamsSchema = z.object({ itemId: z.uuid() });

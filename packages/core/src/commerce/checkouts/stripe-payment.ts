@@ -6,6 +6,7 @@ import {
 import type { StripeClient } from "../payments/stripe-client.js";
 import type { CheckoutRow } from "./checkouts.table.js";
 import { describeLine } from "./line-names.js";
+import { toStripeAmount } from "../money/stripe-amounts.js";
 
 /**
  * Asks Stripe to take the payment for a checkout. Lintel never sees card details:
@@ -41,7 +42,7 @@ export async function startHostedPayment(
     quantity: line.quantity,
     price_data: {
       currency,
-      unit_amount: line.unitAmount,
+      unit_amount: toStripeAmount(line.unitAmount, currency),
       product_data: {
         name: describeLine(line.productTitle, line.variantTitle),
       },
@@ -50,7 +51,11 @@ export async function startHostedPayment(
   if (!checkout.taxesIncluded && checkout.taxAmount > 0) {
     lineItems.push({
       quantity: 1,
-      price_data: { currency, unit_amount: checkout.taxAmount, product_data: { name: "Tax" } },
+      price_data: {
+        currency,
+        unit_amount: toStripeAmount(checkout.taxAmount, currency),
+        product_data: { name: "Tax" },
+      },
     });
   }
   const coupon =
@@ -58,7 +63,7 @@ export async function startHostedPayment(
       ? await createStripeCoupon(
           stripe,
           {
-            amount: checkout.discountAmount,
+            amount: toStripeAmount(checkout.discountAmount, currency),
             currency,
             name: checkout.discounts.map((discount) => discount.title).join(", ") || "Discount",
           },
@@ -83,7 +88,10 @@ export async function startHostedPayment(
           shipping_rate_data: {
             type: "fixed_amount",
             display_name: checkout.shippingLine.name,
-            fixed_amount: { amount: checkout.shippingLine.amount, currency },
+            fixed_amount: {
+              amount: toStripeAmount(checkout.shippingLine.amount, currency),
+              currency,
+            },
           },
         },
       ],
@@ -106,7 +114,7 @@ export async function startEmbeddedPayment(
   const intent = await createStripePaymentIntent(
     stripe,
     {
-      amount: checkout.totalAmount,
+      amount: toStripeAmount(checkout.totalAmount, checkout.currency),
       currency: checkout.currency.toLowerCase(),
       automatic_payment_methods: { enabled: true },
       receipt_email: checkout.email,

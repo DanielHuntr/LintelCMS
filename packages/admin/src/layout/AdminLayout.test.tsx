@@ -14,6 +14,9 @@ describe("the admin's frame on a phone", () => {
     mockApi(({ url }) => {
       if (url.pathname === "/updates/status") return { updating: false, version: null };
       if (url.pathname === "/sites") return { sites: [] };
+      if (url.pathname === "/website/address") {
+        return { siteAddress: "https://brightside.example", defaultLocale: "en-GB" };
+      }
       return {};
     });
     return renderScreen(
@@ -55,5 +58,16 @@ describe("the admin's frame on a phone", () => {
     expect(sidebar).toHaveClass("max-md:hidden");
     expect(document.getElementById("main")).not.toHaveAttribute("inert");
     expect(menu).toHaveFocus();
+  });
+
+  // The admin had no way to the website it makes, short of Settings → Your website.
+  it("links to the website from under the site's name, in a new tab", async () => {
+    renderLayout();
+
+    const link = await screen.findByRole("link", { name: /View website/ });
+
+    expect(link).toHaveAttribute("href", "https://brightside.example");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAccessibleName(/^View website ?\(opens in a new tab\)$/);
   });
 });

@@ -7,6 +7,7 @@ import { t } from "../i18n/strings.js";
 import { visibleSections } from "../navigation/sections.js";
 import { isMacPlatform } from "../search/useCommandPalette.js";
 import { SiteSwitcher } from "../sites/SiteSwitcher.js";
+import { ViewWebsiteLink } from "../website/ViewWebsiteLink.js";
 import { SidebarAccount, type SignedInUser } from "./SidebarAccount.js";
 
 interface SidebarProps {
@@ -43,9 +44,11 @@ export function Sidebar({
   onCloseOnNarrowScreens,
 }: SidebarProps) {
   const sidebar = useRef<HTMLElement>(null);
-  // Opening it on a phone takes focus into it, so the keyboard carries on from there.
+  const closeButton = useRef<HTMLButtonElement>(null);
+  // Opening it on a phone takes focus to its close button, so the keyboard carries on there.
   useEffect(() => {
-    if (isOpenOnNarrowScreens) sidebar.current?.querySelector<HTMLElement>("a, button")?.focus();
+    if (!isOpenOnNarrowScreens) return;
+    (closeButton.current ?? sidebar.current?.querySelector<HTMLElement>("a, button"))?.focus();
   }, [isOpenOnNarrowScreens]);
 
   return (
@@ -65,9 +68,11 @@ export function Sidebar({
               {siteName}
             </span>
           )}
+          <ViewWebsiteLink />
         </span>
         {onCloseOnNarrowScreens && (
           <button
+            ref={closeButton}
             type="button"
             onClick={onCloseOnNarrowScreens}
             aria-label={t("nav.closeMenu")}

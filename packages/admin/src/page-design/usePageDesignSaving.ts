@@ -1,6 +1,6 @@
 import type { PageDocument } from "@lintel/builder-model";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { describeError } from "../api/describeError.js";
 import { publishEntry, updateEntry } from "../content/content.api.js";
 import { contentKeys } from "../content/content.queries.js";
@@ -22,7 +22,15 @@ export function usePageDesignSaving(entry: Entry, fieldHandle: string) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [latestEntry, setLatestEntry] = useState(entry);
   const [isPublishing, setIsPublishing] = useState(false);
+  // True for a few seconds after Publish worked, so the button can say so.
+  const [justPublished, setJustPublished] = useState(false);
   const entryRef = useRef(entry);
+
+  useEffect(() => {
+    if (!justPublished) return;
+    const timer = window.setTimeout(() => setJustPublished(false), PUBLISHED_NOTE_MS);
+    return () => window.clearTimeout(timer);
+  }, [justPublished]);
 
   const hasUnsavedChanges = design !== null && design !== saved;
 
@@ -32,11 +40,8 @@ export function usePageDesignSaving(entry: Entry, fieldHandle: string) {
       setStatus("saving");
       try {
         const current = entryRef.current;
-        const updated = await updateEntry(current.id, {
-          data: { [fieldHandle]: next },
-          slug: current.slug,
-          parentId: current.parentId,
-        });
+        // Only the design is sent; the rest of the entry is the entry editor's.
+        const updated = await updateEntry(current.id, { data: { [fieldHandle]: next } });
         entryRef.current = updated;
         setLatestEntry(updated);
         setSaved(next);
@@ -63,6 +68,7 @@ export function usePageDesignSaving(entry: Entry, fieldHandle: string) {
       setLatestEntry(published);
       queryClient.setQueryData(contentKeys.entry(published.id), published);
       void queryClient.invalidateQueries({ queryKey: ["collections"] });
+      setJustPublished(true);
     } catch (error) {
       setStatus("failed");
       setErrorMessage(describeError(error));
@@ -80,7 +86,19 @@ export function usePageDesignSaving(entry: Entry, fieldHandle: string) {
     saveNow: () => saveNow().catch(() => undefined),
     publish,
     isPublishing,
+    justPublished,
+    /** What the website shows lags behind what's saved: never published, or changed since. */
+    liveness: describeLiveness(latestEntry, hasUnsavedChanges),
   };
+}
+
+const PUBLISHED_NOTE_MS = 4000;
+
+export type Liveness = "live" | "notLiveYet" | "changesNotLive";
+
+function describeLiveness(entry: Entry, hasUnsavedChanges: boolean): Liveness {
+  if (entry.status !== "published") return "notLiveYet";
+  return entry.hasUnpublishedChanges || hasUnsavedChanges ? "changesNotLive" : "live";
 }
 
 /** The API's message for the page field, when it refused the design. */

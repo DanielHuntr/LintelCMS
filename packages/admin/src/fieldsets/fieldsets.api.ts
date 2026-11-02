@@ -31,7 +31,7 @@ export function createFieldset(fieldset: { handle: string; name: string }): Prom
 
 export function updateFieldset(
   handle: string,
-  changes: { name: string; fields: Field[] },
+  changes: { name: string; fields: Field[]; renames?: Array<{ from: string; to: string }> },
 ): Promise<Fieldset> {
   return apiRequest<Fieldset>(fieldsetPath(handle), { method: "PUT", body: changes });
 }

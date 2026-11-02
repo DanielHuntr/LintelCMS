@@ -4,6 +4,8 @@ import { signInRateLimit } from "../auth/auth.routes.js";
 import { getSignedIn, requireAccountSession } from "../auth/require-permission.js";
 import { replaceBrowserSession } from "../auth/browser-session.js";
 import { parseRequest } from "../http/http-errors.js";
+import { passwordConfirmationSchema } from "../two-factor/two-factor.schema.js";
+import { checkPassword } from "../two-factor/two-factor.service.js";
 import { recordSecurityEvent, requestOrigin } from "../security-log/security-log.service.js";
 import { PasskeyNotFoundError } from "./passkeys.errors.js";
 import {
@@ -25,7 +27,7 @@ import {
  * HTTP only:
  *
  *   GET    /account/passkeys          (signed in)  -> { passkeys: [{ id, name, createdAt, lastUsedAt }] }
- *   POST   /account/passkeys/options  (signed in)  -> WebAuthn creation options
+ *   POST   /account/passkeys/options  (signed in)  { password } -> WebAuthn creation options
  *   POST   /account/passkeys          (signed in)  { name, response } -> 201 Passkey
  *   DELETE /account/passkeys/:id      (signed in)  -> 204
  *   POST   /auth/passkey/options                   -> WebAuthn request options
@@ -39,8 +41,17 @@ export async function passkeysRoutes(server: FastifyInstance) {
     passkeys: await listPasskeys(server.database, getSignedIn(request).user.id),
   }));
 
-  server.post("/account/passkeys/options", signedIn, async (request) =>
-    startPasskeyRegistration(server.database, relyingParty(), getSignedIn(request).user),
+  // A passkey signs in without the password or two-factor, so adding one asks for the
+  // password, as turning two-factor off does: a laptop left open isn't enough.
+  server.post(
+    "/account/passkeys/options",
+    { preHandler: requireAccountSession, config: signInRateLimit },
+    async (request) => {
+      const { password } = parseRequest(passwordConfirmationSchema, request.body ?? {});
+      const user = getSignedIn(request).user;
+      await checkPassword(server.database, user.id, password);
+      return startPasskeyRegistration(server.database, relyingParty(), user);
+    },
   );
 
   server.post("/account/passkeys", signedIn, async (request, reply) => {

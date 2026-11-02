@@ -18,8 +18,9 @@ API side is in core's `src/website`.
 - Live preview needs nothing here: for collections with pages, the API's preview address
   is the real site with a preview token (see `src/preview`).
 
-| File                 | What it does                               |
-| -------------------- | ------------------------------------------ |
-| `website.api.ts`     | Calls to `/website` and `/website/address` |
-| `website.queries.ts` | TanStack Query hooks for them              |
-| `pageAddress.ts`     | An entry's full address on the website     |
+| File                  | What it does                                        |
+| --------------------- | --------------------------------------------------- |
+| `website.api.ts`      | Calls to `/website` and `/website/address`          |
+| `website.queries.ts`  | TanStack Query hooks for them                       |
+| `pageAddress.ts`      | An entry's full address on the website              |
+| `ViewWebsiteLink.tsx` | "View website" under the site's name in the sidebar |

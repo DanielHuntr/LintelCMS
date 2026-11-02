@@ -46,13 +46,20 @@ export function findChangedCode(
     .map(([nodeId]) => nodeId);
 }
 
-/** The page as it will be saved under the site's rule for scripts. */
-export function applyScriptRule(document: PageDocument, rule: CustomScriptRule): PageDocument {
+/**
+ * The page as it will be saved under the site's rule for scripts. The server passes its own
+ * `removeScripts`, which parses HTML exactly as a browser does (see core's code-html-cleaner).
+ */
+export function applyScriptRule(
+  document: PageDocument,
+  rule: CustomScriptRule,
+  removeScripts: (html: string) => string = removeScriptsFromHtml,
+): PageDocument {
   if (rule === "allowScripts") return document;
   const clean = (node: PageNode): PageNode => {
     const children = node.children.map(clean);
     if (node.type !== "codeBlock") return { ...node, children };
-    const html = typeof node.props.html === "string" ? removeScriptsFromHtml(node.props.html) : "";
+    const html = typeof node.props.html === "string" ? removeScripts(node.props.html) : "";
     return { ...node, props: { ...node.props, html, js: "" }, children };
   };
   return { ...document, root: clean(document.root) };
