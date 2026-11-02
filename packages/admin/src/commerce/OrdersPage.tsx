@@ -2,6 +2,7 @@ import { Archive, Receipt } from "lucide-react";
 import { useState } from "react";
 import { LoadError } from "../api/LoadError.js";
 import { BackLink } from "../design/BackLink.js";
+import { Button } from "../design/Button.js";
 import { EmptyState } from "../design/EmptyState.js";
 import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
@@ -101,10 +102,25 @@ export function OrdersPage() {
           <Skeleton className="h-40 max-w-3xl rounded-card" />
         </LoadingRegion>
       )}
-      {!showingImported && orders.data?.total === 0 && (
+      {!showingImported && orders.data?.total === 0 && !imported.isPending && (
         <div className="max-w-3xl rounded-card bg-surface">
           {isFiltered ? (
             <EmptyState icon={Receipt} title={t("shop.orders.noMatches")} />
+          ) : hasImported ? (
+            // Only orders brought over from Shopify: point to them rather than "No orders yet".
+            <EmptyState
+              size="page"
+              icon={Archive}
+              title={t("shop.orders.onlyImportedTitle")}
+              description={t("shop.orders.onlyImportedDescription", {
+                count: imported.data?.total ?? 0,
+              })}
+              action={
+                <Button variant="tinted" onClick={() => setView("imported")}>
+                  {t("shop.orders.showImported")}
+                </Button>
+              }
+            />
           ) : (
             <EmptyState
               size="page"

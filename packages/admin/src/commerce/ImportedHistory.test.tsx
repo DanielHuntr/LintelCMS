@@ -110,3 +110,36 @@ describe("the Orders list after a move from Shopify", () => {
     expect(screen.queryByRole("radio", { name: "Imported" })).not.toBeInTheDocument();
   });
 });
+
+describe("the Orders list with only imported orders (LINTEL-LEFT-003)", () => {
+  it("points to Imported instead of saying 'No orders yet'", async () => {
+    mockApi(({ url }) => {
+      if (url.pathname === "/shop/orders") return { items: [], total: 0 };
+      if (url.pathname === "/shop/archived-orders") {
+        return { items: [gracesOldOrder, adasOldOrder], total: 2 };
+      }
+      return undefined;
+    });
+    renderScreen(<OrdersPage />, withShop);
+
+    expect(await screen.findByText("No orders placed in this shop yet")).toBeInTheDocument();
+    expect(
+      screen.getByText("The 2 orders you brought over from Shopify are under Imported."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("No orders yet")).not.toBeInTheDocument();
+
+    await userEvent.setup().click(screen.getByRole("button", { name: "Show imported orders" }));
+    expect(await screen.findByText("#1002 · grace@example.com")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Imported" })).toBeChecked();
+  });
+
+  it("still says 'No orders yet' when nothing was imported", async () => {
+    mockApi(({ url }) => {
+      if (url.pathname === "/shop/orders") return { items: [], total: 0 };
+      if (url.pathname === "/shop/archived-orders") return { items: [], total: 0 };
+      return undefined;
+    });
+    renderScreen(<OrdersPage />, withShop);
+    expect(await screen.findByText("No orders yet")).toBeInTheDocument();
+  });
+});
