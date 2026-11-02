@@ -57,6 +57,7 @@ const english = {
   "nav.skipToContent": "Skip to content",
   "nav.openMenu": "Open the menu",
   "nav.closeMenu": "Close the menu",
+  "nav.viewWebsite": "View website",
   "documentTitle.page": "{page} · {site}",
   "nav.dashboard": "Dashboard",
   "nav.content": "Content",
