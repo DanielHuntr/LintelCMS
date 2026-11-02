@@ -13,6 +13,9 @@ Each change has a test that fails without it, and was checked in Chromium at 144
 | Settings           | `fc9b28f`            | A search box; one-row groups ("Search engines") folded into the website's own group             |
 | Products           | `67a087e`            | A wide list: photo, name and variants, status, price, stock; folds on a phone                   |
 | Content            | `f7b597c`            | The page tree folds away ("Hide pages" / "Show pages"), remembered, folded by default on phones |
+| Builder: Form      | `2ac44f8`            | The chosen form is drawn on the canvas, as the website shows it                                 |
+| Builder: phone     | `a8ffe95`            | "The designer needs a bigger screen", with View page and Back (LINTEL-UX-013)                   |
+| Builder: Insert    | `32de990`            | Sections are cards with a bigger sketch and what each is for, shown in the list                 |
 
 ## Page editor's bar
 
@@ -48,3 +51,27 @@ Each change has a test that fails without it, and was checked in Chromium at 144
 ## Also checked in the browser
 
 The QA leftovers merged into release: the builder's Link box (refuses `javascript:` with a plain message, `ten-builder-link-box-dl.png`), and the sidebar's Search contrast.
+
+## Builder: the chosen form on the canvas
+
+**Before:** a Form element with a form chosen still said "Choose a form in the Content panel." on the canvas: the builder only knew forms' names.
+
+**After:** `/website/builder-data` gives `sampleForms`, each form read the way the website reads it (`readForm`, without step dividers), and the canvas draws the chosen one (`ten-builder-form-dl.png`).
+
+**Tests:** `public-forms.test.ts` ("gives the page builder every form…"), `element-panels.test.tsx`.
+
+## Builder on a phone
+
+**Before:** at 390px the builder spilled about 640px past the screen and the tour still ran.
+
+**After:** below 768px the page says "The designer needs a bigger screen" and offers View page and a way back to the page editor, where words and pictures can still be changed (`ten-builder-narrow-ml.png`).
+
+**Test:** `PageDesignPage.test.tsx`, "says the designer needs a bigger screen on a phone…".
+
+## Builder: Insert
+
+**Before:** sections were tiny abstract thumbnails; what each was for only showed on hover.
+
+**After:** each section is a card with a full-width sketch, its name and a two-line description; elements keep their compact rows and hover cards (`ten-builder-insert-dl.png`).
+
+**Test:** `panels.test.tsx`, "opens on ready-made sections…".
