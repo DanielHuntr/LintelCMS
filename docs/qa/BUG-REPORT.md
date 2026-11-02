@@ -445,3 +445,261 @@ Viewport is 1440x900 unless stated.
 - **Severity:** P3.
 - **Proposed fix:** render the existing neutral placeholder (as on the product page) when `image` is null.
 - **Status:** Open.
+
+---
+
+# Batch 2 (2 Nov 2026, `release/1.0.0-rc` at `73e47a2`, branch `qa/batch-2`)
+
+**Status of the discovery defects above:** 15 were fixed on `release/1.0.0-rc` (see FIX-LOG-shop.md and FIX-LOG-site.md). Batch 2 did not re-verify them, except where a test below touched the same path (noted in TEST-RESULTS.md). Their entries above are kept unchanged as history.
+
+**Environment for batch 2:**
+
+- Linux, 8 GB, shared with one fix agent;
+- dev servers: API :4770, site :3770, admin :5770; data folder `/tmp/qa2-data`; built-in database;
+- set up through `POST /setup/finish` as "QA Two" with the shop;
+- default email settings (no `EMAIL_DRIVER`, so the outbox);
+- users: Owner, Admin, Editor, Viewer, a custom "Writer QA" role (`entries:read/create/update`, `media:read/upload`, `collections:read`, `blueprints:read`) and a custom "Settings reader" role (`settings:read` only);
+- Chromium 1243 headless (Playwright from `packages/admin`), one worker; axe-core 4.14.0.
+
+Logs referred to below are in `screenshots/batch-2/logs/`. Throwaway reset and invitation tokens in them are redacted.
+
+## Batch 2 summary
+
+| ID              | Priority | Summary                                                                                                                    |
+| --------------- | -------- | -------------------------------------------------------------------------------------------------------------------------- |
+| LINTEL-SEC-001  | P0       | Anyone with `settings:read` (every Admin, or a "See settings" custom role) can read reset links in the email outbox and take over the Owner account |
+| LINTEL-DATA-003 | P1       | Renaming a field's handle (in a content type or a fieldset) hides its values at once on the live site, and the next save of each entry deletes them |
+| LINTEL-DATA-004 | P1       | Two editors on one entry: the second Save silently reverts the first editor's saved changes, including to fields the second editor never touched |
+| LINTEL-DATA-005 | P2       | Adding a condition to a field that already holds values clears those values on the next save of each entry where the condition is false |
+| LINTEL-FUNC-008 | P2       | Changing a field's type, or removing a select choice that entries use, is accepted; the affected entries then can't be saved at all |
+| LINTEL-FUNC-009 | P2       | Deeply nested rich text is accepted on save; the entry then answers 500 on open and publish (stack overflow)                |
+| LINTEL-SEC-002  | P2       | Global search (Ctrl K) lists titles, drafts included, from sites the person's role can't access                              |
+| LINTEL-A11Y-001 | P2       | Website basket drawer: closing it with Escape leaves focus on the page body, not on the button that opened it                |
+| LINTEL-A11Y-002 | P2       | Website checkout: after "Choose delivery" focus is lost; the next Tab starts again at "Skip to content"                       |
+| LINTEL-A11Y-003 | P2       | At 320 CSS px (400% zoom) the entry editor and content type editor scroll sideways; the entry's "…" menu is pushed off-screen |
+| LINTEL-UX-004   | P3       | Titles have no length limit (10,000 characters accepted); a long unbroken title makes Content scroll sideways below 768px     |
+| LINTEL-SEC-003  | P3       | Code saved while "allow scripts" was on keeps its scripts after the site is switched back to "remove scripts"                 |
+| LINTEL-FUNC-010 | P3       | `PATCH /shop/settings` with nothing to change answers 500                                                                    |
+| LINTEL-FUNC-011 | P3       | A damaged content export (bytes changed inside the zip) answers 500 instead of "this file is damaged"                        |
+| LINTEL-FUNC-012 | P3       | A delivery rate with no price is accepted, and its zone then can't deliver anywhere                                          |
+| LINTEL-UX-005   | P3       | Upload messages: an empty .png is refused as "looks like a .png file" (which is allowed); a safe-but-linked SVG is called "damaged" |
+| LINTEL-DATA-006 | P3       | Duplicate form submissions (same form token, same answers, milliseconds apart) are both stored                               |
+| LINTEL-A11Y-004 | P3       | Accessible names don't contain the visible text (WCAG 2.5.3) on tree items with counts, the account link and field settings buttons |
+| LINTEL-A11Y-005 | P3       | Contrast below 4.5:1 in the field picker's footer text (3.15:1) and the builder's breakpoint switch (4.41:1)                 |
+| LINTEL-A11Y-006 | P3       | On the website's basket page the sticky header covers most of a field that the browser scrolls to for a validation message   |
+| LINTEL-A11Y-007 | P3       | At 390px the entry editor's "Actions" (…) button is 20px wide and an inline text input 18px tall, under the 24px target size |
+| LINTEL-VIS-002  | P3       | The entry header shows two status badges at once: "Published" and "Published, with changes not yet published"              |
+| LINTEL-FUNC-013 | P3       | A collection list bound to a select field shows the stored value ("web"), not its label ("Web")                              |
+| LINTEL-SPEC-003 | P3       | Slugs must be unique across a whole tree collection, even under different parents, although addresses follow the tree       |
+| LINTEL-SPEC-004 | P2       | No conflict handling is specified for two people editing one entry (Scenario E); see DATA-004                                |
+| LINTEL-SPEC-005 | P3       | The guide's role examples ("design pages", "manage updates") have no matching permission; Admin carries `orders:*` and `automations:*`, which aren't in the catalogue |
+
+**Counts (batch 2):** P0 1, P1 2, P2 8, P3 15 (26 in all; SPEC-004 is counted as P2).
+
+**Not filed, by instruction:** the other agent's leftovers were seen again and not re-filed: B/I/Link and Ctrl+B in rich text (Ctrl+B in the Body field made no `<strong>`), sidebar Search and Ctrl K contrast (4.45:1 and 2.86:1 on every admin screen in axe), the shopper-facing payments message, and the others in the brief.
+
+---
+
+## LINTEL-SEC-001: The email outbox lets `settings:read` take over the Owner account
+
+- **Location:** Settings → Email outbox; `GET /email/outbox` (`packages/core/src/email/email.routes.ts`, guarded by `settings:read`); `POST /auth/forgot-password`; `POST /auth/reset-password`.
+- **Environment:** batch 2 common. `EMAIL_DRIVER` not set, which is the default ("Until EMAIL_DRIVER is set, emails go to the outbox"). The production server only logs a warning in that case.
+- **Severity:** P0. Privilege escalation to Owner (backups, restore, updates, owner management) from a permission the catalogue describes as "See settings".
+
+**Reproduction steps:**
+
+1. As Owner, make a role with only `settings:read` ("See settings"), and invite a user to it.
+2. Signed out, `POST /auth/forgot-password {"email":"owner@qa2.test"}` → 202.
+3. As the settings reader (or any Admin), `GET /email/outbox`. The answer holds "Reset your password · Lintel" to the Owner, with the link `…/reset-password#token=…`.
+4. `POST /auth/reset-password {"token":"<token>","newPassword":"…"}` → 204.
+5. Sign in as the Owner with the new password.
+
+**Expected:** only the Owner can use a link sent to the Owner. Sign-in links and tokens aren't shown to other people, or the outbox is limited to Owners and hides tokens.
+
+**Actual:**
+
+- The Admin read the token and reset the Owner's password: 204. Sign-in as the Owner gave `permissions ["*"]`. In that session `POST /backups` (Owner only) answered 202.
+- The "Settings reader" (permissions exactly `["settings:read"]`) got 200 from the outbox, with 11 messages, including reset and invitation links.
+- Invitation links are there too, so the same people can accept pending invitations meant for others, under any role the Owner invited.
+
+**Evidence:** `screenshots/batch-2/logs/sec-escalation.log` (tokens redacted). The Owner's password was restored the same way afterwards.
+
+**Root cause (confirmed by code):** `GET /email/outbox` needs only `settings:read` and returns the full text of every message. The comment there says "The messages hold sign-in links", so the risk is known, but only caching is addressed.
+
+**Proposed fix (smallest):**
+
+- Require Owner (`requireOwner`) for the outbox.
+- Mask one-time links (reset, invitation, email change, sign-in) in the outbox answer, except for messages addressed to the person reading it.
+- Add a test: a non-Owner with `settings:read` gets 403, or sees no tokens.
+
+**Visual/UX impact:** none. The screen would show masked links to non-Owners.
+
+**Confidence:** High. **Status:** Open.
+
+## LINTEL-DATA-003: Renaming a field's handle orphans its values
+
+- **Location:** Settings → Content types → field → Basics → Handle; `PUT /blueprints/:handle`; `PUT /fieldsets/:handle`; entry save (`PATCH /entries/:id`).
+- **Severity:** P1. Silent data loss on published content. Some old values can be recovered from History, one entry at a time.
+
+**Reproduction steps:**
+
+1. Make the content type "Service" (Title, Tagline, Price, Category, Details, Featured, Badge, and the fieldset "cta" with `cta_label` and `cta_url`), and the collection `services`.
+2. Publish three entries with all fields filled in. Publish the page "Our services", whose collection list shows `data.tagline`, `data.badge`, `data.price` and `data.category`.
+3. Change the Tagline field's handle from `tagline` to `strapline`, and save the content type (200, no warning).
+4. Look at `/our-services` and `GET /delivery/services/service-2`.
+5. Change only the title of Service 2 and save it (200).
+6. In the fieldset "cta", change `cta_label` to `cta_text`, then save Service 1.
+
+**Expected:** a warning that the handle holds data in N entries and that designs use it, with the values moved to the new handle (or the change refused).
+
+**Actual:**
+
+- After step 3, with nothing published, the live listing shows the design's placeholder ("y") instead of "Tagline 1/2/3". Delivery answers `"strapline": null`.
+- After step 5, Service 2's stored data no longer has `tagline` at all (`… "strapline": null`). The value is gone from the entry. An older revision still contains it.
+- Entries not re-saved keep the old key, so renaming back restores them. Re-saved ones stay lost.
+- After step 6, Service 1's `cta` became `{"cta_url":"/contact","cta_text":null}`. "Go 1" was deleted.
+- The page design's `data.tagline` binding isn't updated, so the published page is broken without anyone publishing it.
+
+**Evidence:** `screenshots/batch-2/logs/scenD.log` (steps A, A+save, F, F+save); `screenshots/batch-2/scenD-site-listing.png`.
+
+**Root cause (hypothesis, high confidence):** the save path keeps only keys that are in the current blueprint (unknown keys are dropped, which TC-NEG "unknown field" confirms). The blueprint update doesn't migrate keys or look for references.
+
+**Proposed fix:** when a handle changes, move the values in the same transaction (`data->old` to `data->new`) for entries and their open revisions, and update `data.<old>` bindings in page designs. Alternatively, refuse the change while entries hold values, as the fieldset delete already does (409 FIELDSET_IN_USE).
+
+**Confidence:** High. **Status:** Open.
+
+## LINTEL-DATA-004: A second editor's Save silently reverts the first editor's changes
+
+- **Location:** entry editor Save and autosave; `PATCH /entries/:id`.
+- **Severity:** P1. A common two-person situation loses saved work without any message.
+
+**Reproduction steps:**
+
+1. Open "Shared page" as Editor (A) and as Owner (B) in two browsers.
+2. A changes Summary to "Summary by A (UI)" and presses Save ("Saved").
+3. B, without reloading, changes the Title and presses Save ("Saved").
+4. Reload both.
+
+**Expected:** not specified (see SPEC-004). At minimum, B's save shouldn't change fields B didn't edit, or B is told the entry changed since it was opened.
+
+**Actual:**
+
+- B's request body sends every field: `{"data":{"body":null,"title":"Title by B (UI)","design":null,"summary":"B2","hero_image":null}}`. A's summary is reverted to the value B loaded ("B2"), and both reloads show "B2".
+- Neither editor is told. B sees "Saved". A, without reloading, keeps seeing their own text.
+- There's no presence indicator, `ETag` or version check (`If-Match` is ignored). In the API, different-field saves are merged correctly, because PATCH merges per field; only the admin's whole-form save loses data.
+- History keeps every save, so A's text can be restored by hand.
+
+**Evidence:** `screenshots/batch-2/scenE-b-after-save.png`, `scenE-a-stale-after-b.png`; `logs/scenE.log`.
+
+**Proposed fix (smallest):** send only changed fields from the editor. Then add an `updatedAt` precondition, and show "Changed by A since you opened it: Reload or Keep mine" on conflict.
+
+**Confidence:** High. **Status:** Open.
+
+## LINTEL-DATA-005: A new condition clears existing values on the next save
+
+- **Location:** field Conditions tab; `keepHiddenValues` defaults to `false` (`packages/field-conditions/src/conditions.schema.ts:84`).
+- **Severity:** P2. The setting is documented ("choose whether hidden values are kept or cleared"), but applying it to existing published content without a warning loses data silently.
+
+**Steps:**
+
+1. On Service, give Tagline the condition "Show when Featured is on" (keepHiddenValues left at its default).
+2. Change only the title of Service 3 (Featured off, Tagline "Tagline 3"), then save and publish.
+
+**Actual:** Service 3's `tagline` became `null`, also in delivery. Nothing warned when the condition was added, or when the entry was saved.
+
+**Evidence:** `logs/scenD.log` (E2, E2+save).
+
+**Proposed fix:** when conditions are added to a field that has values, warn with the count of entries that would lose them, and default to keeping them for existing fields.
+
+**Confidence:** High. **Status:** Open.
+
+## LINTEL-FUNC-008: Type changes and removed choices make existing entries unsaveable
+
+- **Severity:** P2.
+- **Steps:**
+  1. Change Price from Number to Text.
+  2. Separately, remove the choice "print", which Service 2 uses, from Category. Both content type saves answer 200 without a warning.
+  3. Change only the title of Service 2 and save.
+- **Actual:** 400 `{"price":"Price should be text","category":"Category should be one of: Web"}`. The editor can't save any change, including an unrelated one, until they fix fields they didn't touch. Publishing also fails. The live entry keeps the old values.
+- **Evidence:** `logs/scenD.log` (B, C).
+- **Proposed fix:** on the content type save, list the entries whose values no longer fit, and offer a conversion (number → text is lossless) or refuse.
+- **Status:** Open.
+
+## LINTEL-FUNC-009: Deeply nested rich text breaks the entry
+
+- **Severity:** P2 (any author can create it, and it affects only that entry).
+- **Steps:** `POST /collections/pages/entries` with a Body of 2,000 nested blockquotes → 201. Then `GET /entries/:id` → 500, and `POST /entries/:id/publish` → 500.
+- **Log:** `RangeError: Maximum call stack size exceeded … innerDeepEqual`. Lists, search, the dashboard and content export still work. Delete works (204).
+- **Proposed fix:** cap nesting depth in the rich-text value schema (for example at 50) on save.
+- **Status:** Open.
+
+## LINTEL-SEC-002: Global search leaks other sites' titles
+
+- **Location:** `GET /search` (Ctrl K), guarded by sign-in only.
+- **Severity:** P2. Titles and status only; opening the entry is refused (403 SITE_NOT_ALLOWED).
+- **Steps:**
+  1. Add site `ie`. Create "Irish secret draft" there.
+  2. Restrict Editor to `default` (`PUT /sites/access/editor {"siteHandles":["default"]}`).
+  3. As Editor, `GET /search?q=Irish`.
+- **Actual:** both "Irish home" and "Irish secret draft" (`status: draft`) are returned. Every other route that was tried refused: list, get, patch, publish, revisions, duplicate, copy-to-site, delete, create with `?site=ie` and with `Lintel-Site: ie`. `/content-tree/search` returned nothing.
+- **Evidence:** `logs/sec-multisite.log`.
+- **Proposed fix:** filter `/search` by the person's allowed sites, as the tree search does.
+- **Status:** Open.
+
+## LINTEL-A11Y-001: Basket drawer doesn't return focus
+
+- **Location:** website, `dialog.lintel-cart`.
+- **Severity:** P2 (WCAG 2.4.3).
+- **Steps:**
+  1. Open `/products/linen-shirt`.
+  2. Tab to "Add to basket" and press Enter. The drawer opens with focus inside it.
+  3. Press Escape.
+- **Actual:** the drawer closes, and `document.activeElement` is `body`. The next Tab starts at "Skip to content".
+- **Expected:** focus returns to "Add to basket", or to the Basket button.
+- **Evidence:** `logs/a11y-5.log`.
+- **Status:** Open.
+
+## LINTEL-A11Y-002: Checkout loses focus after "Choose delivery"
+
+- **Severity:** P2 (WCAG 2.4.3; keyboard and screen-reader users lose their place in checkout).
+- **Steps:** on `/cart`, fill in the delivery details by keyboard, focus "Choose delivery" and press Enter.
+- **Actual:** the Delivery radio list appears, and focus is on `body`. The next Tab goes to "Skip to content". The same happens after "Pay now". There's no live-region text announcing the rates.
+- **Evidence:** `logs/a11y-5.log`; `screenshots/batch-2/a11y-checkout-keyboard.png`.
+- **Proposed fix:** move focus to the Delivery fieldset's legend (or the first rate), and announce "N delivery options" in the existing status region.
+- **Status:** Open.
+
+## LINTEL-A11Y-003: No reflow at 320 CSS px in the editors
+
+- **Severity:** P2 (WCAG 1.4.10).
+- **Steps:** use a 320x256 viewport (equal to 400% zoom at 1280) and open an entry and `/settings/content-types/service`.
+- **Actual:**
+  - Entry: `scrollWidth` 402. The "Published, with changes…" badge is `white-space: nowrap`, and it pushes the "Actions" (…) button to x=366–402.
+  - Content type editor: 389, from the "Save address" row.
+  - At 720px (200%) both fit. The website pages (listing, product, basket) fit at 320.
+- **Evidence:** `logs/a11y-2.log`; `screenshots/batch-2/a11y-reflow-400-content.png` (the entry editor, full page at 320px) and `a11y-reflow-400-settings.png` (the content type editor).
+- **Proposed fix:** let the header's badges wrap onto their own line below about 400px, and let the address row wrap.
+- **Status:** Open.
+
+## Batch 2 P3 defects (compact)
+
+- **LINTEL-UX-004:** titles accept 10,000 characters (`POST` 201); the slug is cut to 80. At 720px and below, the Content landing's "Your recent edits" list becomes 95,998px wide (`scrollWidth`), because its title span doesn't truncate there. Desktop truncates correctly. **Fix:** a title maximum (such as 300) and `min-w-0`/truncate on the list row. Evidence: `logs/a11y-2.log`, `a11y-reflow-200-content.png`.
+- **LINTEL-SEC-003:** with `customScripts` set to `allowScripts`, the Owner saved a Code element with `<script>` and `js`. After switching to `removeScripts`, `/owner-code` still serves `<script>alert(1)</script>`. New saves are cleaned. The guide says "Scripts are removed unless the site allows them". **Fix:** apply the rule when rendering too, or warn when switching. Evidence: `logs/sec-xss.log`.
+- **LINTEL-FUNC-010:** `PATCH /shop/settings {}` as Admin → 500 (`Error: No values to set` in `shop-settings.repository.ts:36`). **Fix:** return the current settings when there's nothing to update.
+- **LINTEL-FUNC-011:** uploading a content export with 60 bytes flipped → 500 (`Z_DATA_ERROR`). Truncated and empty files get friendly 400s, and nothing is imported in any case. **Fix:** map zlib errors to `UNREADABLE_ARCHIVE`. Evidence: `logs/imports.log`.
+- **LINTEL-FUNC-012:** `POST /shop/shipping/zones/:id/rates {name, type:"flat", amount:495, currency:"GBP"}` → 201 with `amounts: {}`. Checkout then says "We can't deliver to that address yet." (The admin form wasn't tried; the API should refuse a rate with no price.)
+- **LINTEL-UX-005:**
+  - A 0-byte `empty.png` gets 415: "isn't a kind of file Lintel accepts. It looks like a .png file, whatever its name says", although PNG is accepted. It should say "This file is empty".
+  - An SVG whose only problem is `<use href="https://…">` gets "looks like an image but can't be opened. It may be damaged". It should name the external reference.
+- **LINTEL-DATA-006:** two JSON submissions of the contact form with the same `_token` and identical answers, 16ms apart, are both stored (2 submissions). It's unknown whether the embed script disables the button (not checked in a browser). **Fix:** accept a token once, or de-duplicate identical submissions within a few seconds.
+- **LINTEL-A11Y-004:** axe `label-content-name-mismatch` (WCAG 2.5.3, serious) on:
+  - tree items such as `li[aria-label="Services"]`, whose visible text includes the count "3";
+  - `a[aria-label="Your account: Olive Owner"]`, which also shows the email;
+  - field "… settings" buttons in the content type editor (9 nodes).
+- **LINTEL-A11Y-005:** axe `color-contrast`: the field picker's footer text `.mt-auto` is #8e8e93 on #fbfbfc, 3.15:1; the builder's breakpoint radio label is 4.41:1. These are separate from the sidebar contrast leftover.
+- **LINTEL-A11Y-006:** when "Choose delivery" fails browser validation, the browser scrolls the field to the top, and the sticky site header covers its label and most of the input (WCAG 2.4.11 is met only partly). Seen in the first keyboard run (the test script typed the address into the email field by mistake, so browser validation failed and scrolled to it); that screenshot was replaced by the later run, so the evidence is the description here plus `logs/a11y-5.log`. Re-capture when re-testing. **Fix:** `scroll-padding-top` equal to the header height.
+- **LINTEL-A11Y-007:** at 390x844 with touch, the entry editor has `button "Actions"` 20x36 and an `input` 59x18 (WCAG 2.5.8 asks for 24x24 or enough spacing; spacing wasn't measured). The other screens tried had none (`logs/a11y-5.log`).
+- **LINTEL-VIS-002:** a published entry with unsaved-to-live changes shows both "Published" and "Published, with changes not yet published" badges (`scenD-service2-after-rename.png`). One badge is enough.
+- **LINTEL-FUNC-013:** a collection list text bound to `data.category` (Select) renders `web`/`print`, not the labels `Web`/`Print` (`logs/scenD.log`, baseline).
+- **LINTEL-SPEC-003:** "kid" under About us and "kid" at the top level are refused ("Another entry in Pages already uses this slug"), although addresses follow the tree (`/about/its-name`). Decide whether that is intended.
+- **LINTEL-SPEC-004:** there's no conflict or presence requirement in the guide. Decide the expected behaviour (last write wins per field, warn, or lock). DATA-004 is the concrete loss.
+- **LINTEL-SPEC-005:** guide §13 says custom roles can tick "design pages" and "manage updates". The catalogue has neither: designing follows editing ("Anyone who can edit a page can design it"), and installing updates is Owner only. The built-in Admin role lists `orders:*` and `automations:*`, which `GET /permissions` doesn't offer while Automations is off.

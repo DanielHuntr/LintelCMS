@@ -71,3 +71,55 @@ Separately, coverage is still too thin to support a READY decision even after th
 4. Run Scenarios A–D end to end (TEST-CASES.md).
 5. Run the core test suite, lint and typecheck.
 6. Reassess. CONDITIONALLY READY is possible only once the P1s are fixed or explicitly accepted by the owner.
+
+---
+
+# Batch 2 reassessment (2 Nov 2026, `73e47a2`, after 15 fixes)
+
+## Decision: **NOT READY**
+
+The fixes from the first round removed the three discovery P0s (FIX-LOG-shop.md, FIX-LOG-site.md; not re-verified here beyond the incidental checks in TEST-RESULTS.md). Batch 2 found a new release blocker and two P1 data-loss defects:
+
+- **LINTEL-SEC-001 (P0):** on any install without `EMAIL_DRIVER` (the default), anyone with "See settings", including every Admin, can read the Owner's password-reset link in the email outbox and become Owner. This was reproduced end to end.
+- **LINTEL-DATA-003 (P1):** renaming a field handle breaks published pages at once, and deletes values as entries are saved.
+- **LINTEL-DATA-004 (P1):** two people editing one entry silently lose each other's saved changes.
+
+## Criteria (batch 2)
+
+| Item | Status |
+| --- | --- |
+| Critical workflows tested in batch 2 | Permissions ✔ (one hole); CSRF ✔; sessions ✔; tokens ✔; uploads ✔; webhooks ✔; XSS ✔; multisite isolation (search ✘); content model evolution ✘; two editors ✘; negative cases (mostly ✔); keyboard checkout ✘ (focus loss) |
+| Passed / Failed / Blocked | 15 / 14 / 5 sub-steps (TEST-RESULTS.md, batch 2) |
+| Open P0 | 1: LINTEL-SEC-001 |
+| Open P1 | 2: LINTEL-DATA-003, LINTEL-DATA-004 |
+| Open P2 / P3 (batch 2) | 8 / 15 |
+| Discovery P0/P1s | Fixed per the fix logs; one P0 (FUNC-002) verified only up to the payment hand-off (no Stripe without internet) |
+
+## Risks
+
+- **Security:**
+  - SEC-001 (account takeover).
+  - SEC-002 (other sites' titles in search).
+  - SEC-003 (old scripts survive the switch to "remove scripts").
+  - Everything else tried held: the role matrix, owner-only gates, CSRF, session invalidation, rate limits, token scopes, the SSRF guard, signatures, upload checks, XSS escaping and site isolation on routes.
+  - Not tested: DNS-based SSRF at send time, two-factor, passkeys, time-based expiry.
+- **Data integrity:**
+  - DATA-003, DATA-004, DATA-005 and FUNC-008 together mean content-model changes and concurrent editing are unsafe on a live site.
+  - Some values are recoverable from History, entry by entry.
+- **Accessibility:**
+  - Focus is lost in the website's basket drawer and checkout.
+  - The admin editors don't reflow at 320px.
+  - Name/label mismatches.
+  - Remaining contrast issues outside the sidebar.
+  - Reduced motion and most touch targets passed.
+- **Visual:** double status badges, and long titles overflowing narrow layouts.
+- **Performance:** not measured. A 5,000-paragraph page rendered in about 0.7 s.
+- **Regression:** see REGRESSION.md, batch 2.
+
+## What would change the decision
+
+1. Fix SEC-001 (Owner-only outbox, or masked tokens) and add its guard.
+2. Fix DATA-003 and DATA-004, or accept them explicitly with a documented workaround ("don't rename handles on live sites"; "one editor per entry").
+3. Rerun TC-SEC-001b, TC-MODEL-001/002 and TC-E2E-E.
+4. Run the `admin/e2e` journeys and a production build.
+5. Then **CONDITIONALLY READY** is reasonable if the P2s are accepted.
