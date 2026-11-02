@@ -23,7 +23,7 @@ export function createBlueprint(blueprint: {
 
 export function updateBlueprint(
   handle: string,
-  changes: { name: string; fields: Field[] },
+  changes: { name: string; fields: Field[]; renames?: Array<{ from: string; to: string }> },
 ): Promise<Blueprint> {
   return apiRequest<Blueprint>(`/blueprints/${encodeURIComponent(handle)}`, {
     method: "PUT",

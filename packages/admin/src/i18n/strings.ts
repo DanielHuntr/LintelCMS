@@ -676,7 +676,7 @@ const english = {
   "builder.handle": "Handle",
   "builder.handleHint": "Used by templates and the API. Made from the label until you change it.",
   "builder.handleSavedHint":
-    "Entries store their content under this handle. Changing it disconnects what’s already saved.",
+    "Entries store their content under this handle. Changing it moves what’s already saved with it; page designs and code that use the old handle need updating.",
   "builder.handleLocked": "The title’s handle is always “title”.",
   "builder.helpText": "Help text",
   "builder.helpTextHint": "Shown under the field to guide editors. Optional.",

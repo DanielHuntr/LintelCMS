@@ -22,9 +22,14 @@ export const createBlueprintRequestSchema = z.object({
 });
 
 /** `PUT /blueprints/:handle`. The handle can't change: collections and code refer to it. */
+/** A field whose handle the admin changed, so its values move with it. */
+export const fieldRenameSchema = z.object({ from: z.string(), to: z.string() });
+
 export const updateBlueprintRequestSchema = z.object({
   name: blueprintNameSchema,
   fields: fieldListSchema,
+  /** Handles changed in this save; entries' values move to the new handles. */
+  renames: z.array(fieldRenameSchema).max(200).optional(),
 });
 
 export const blueprintHandleParamsSchema = z.object({ handle: z.string() });

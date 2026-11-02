@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { revisionsTable } from "../entries/entries.table.js";
 import { useTestDatabase } from "../testing/test-database.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
@@ -173,6 +174,49 @@ describe("blueprints", () => {
     expect(
       (await api("PUT", "/blueprints/event", { name: "Events", fields: [] })).json().fields,
     ).toHaveProperty("title");
+  });
+
+  // LINTEL-DATA-003: a renamed handle left the values under the old one, so the website lost
+  // them at once and the next save of each entry dropped them for good.
+  it("moves entries' values to a field's new handle, live and in History", async () => {
+    const tagline = { handle: "tagline", label: "Tagline", type: "text" };
+    await api("POST", "/blueprints", {
+      handle: "service",
+      name: "Service",
+      fields: [titleField, tagline],
+    });
+    await api("POST", "/collections", {
+      handle: "services",
+      name: "Services",
+      blueprintHandle: "service",
+      structure: "flat",
+    });
+    const entry = (
+      await api("POST", "/collections/services/entries", {
+        data: { title: "Baking", tagline: "Fresh every morning" },
+      })
+    ).json();
+    await api("POST", `/entries/${entry.id}/publish`);
+
+    const renamed = await api("PUT", "/blueprints/service", {
+      name: "Service",
+      fields: [titleField, { ...tagline, handle: "strapline" }],
+      renames: [{ from: "tagline", to: "strapline" }],
+    });
+    expect(renamed.statusCode).toBe(200);
+
+    const live = await server.inject({ method: "GET", url: `/delivery/services/${entry.slug}` });
+    expect(live.json(), live.body).toHaveProperty("data.strapline", "Fresh every morning");
+    await api("PATCH", `/entries/${entry.id}`, { data: { title: "Baking classes" } });
+    const saved = (await api("GET", `/entries/${entry.id}`)).json();
+    expect(saved.data).toMatchObject({ title: "Baking classes", strapline: "Fresh every morning" });
+    expect(saved.data).not.toHaveProperty("tagline");
+    const history = await testDatabase.database.select().from(revisionsTable);
+    expect(history.length).toBeGreaterThan(0);
+    for (const revision of history) {
+      expect(revision.data).toMatchObject({ strapline: "Fresh every morning" });
+      expect(revision.data).not.toHaveProperty("tagline");
+    }
   });
 
   it("deletes an unused blueprint, and refuses one a collection uses", async () => {

@@ -288,6 +288,17 @@ export function optionsForType(fieldType: FieldType, options: FieldOptions): Fie
 }
 
 /** The fields as the API takes them. */
+/**
+ * The saved fields whose handle was changed, as `{ from, to }`: the API moves entries'
+ * content to the new handle. A saved field's key is `saved:` and the handle it was saved with.
+ */
+export function handleRenames(fields: readonly DraftField[]): Array<{ from: string; to: string }> {
+  return fields.flatMap((field) => {
+    const from = field.isSaved && field.key.startsWith("saved:") ? field.key.slice(6) : null;
+    return from !== null && from !== field.handle ? [{ from, to: field.handle }] : [];
+  });
+}
+
 export function fieldsForSaving(fields: readonly DraftField[]): Field[] {
   return fields.map((field) => ({
     ...fieldForSaving(field),

@@ -5,6 +5,7 @@ import {
   blueprintProblems,
   draftFromBlueprint,
   fieldsForSaving,
+  handleRenames,
   problemsByKey,
   renameChoice,
   type BlueprintDraftAction,
@@ -196,5 +197,25 @@ describe("renameChoice", () => {
       value: "latest_news",
     });
     expect(renameChoice({ label: "News", value: "n" }, "Latest news").value).toBe("n");
+  });
+});
+
+describe("renamed handles", () => {
+  it("names the saved fields whose handle changed, so their content moves with them", () => {
+    const state = apply(
+      { type: "handleEdited", key: "saved:summary", handle: "excerpt" },
+      { type: "fieldAdded", key: "new-1", fieldType: "text", label: "Price" },
+    );
+
+    expect(handleRenames(state.fields)).toEqual([{ from: "summary", to: "excerpt" }]);
+  });
+
+  it("names nothing when a handle is changed back", () => {
+    const state = apply(
+      { type: "handleEdited", key: "saved:summary", handle: "excerpt" },
+      { type: "handleEdited", key: "saved:summary", handle: "summary" },
+    );
+
+    expect(handleRenames(state.fields)).toEqual([]);
   });
 });
