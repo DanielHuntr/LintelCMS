@@ -1,3 +1,4 @@
+import { LayoutTemplate } from "lucide-react";
 import { useId, useRef, useState, type KeyboardEvent } from "react";
 import type { FieldMessages } from "../api/client.js";
 import { classNames } from "../design/classNames.js";
@@ -72,10 +73,12 @@ export function EntryFields({ fields, data, errors, onChange }: EntryFieldsProps
     return (
       <div className="flex flex-col gap-6">
         {fieldGrid(tabFields.filter((field) => !replaced.has(field.handle)))}
-        <div className="flex flex-col gap-3 rounded-card bg-fill/60 p-4">
-          <p className="text-footnote text-label-secondary">
+        <div className="flex flex-col gap-3 rounded-card bg-accent/10 p-4">
+          <p className="flex items-start gap-2.5 text-body text-label">
+            <LayoutTemplate aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-accent" />
             {t("editor.replacedByDesign", {
               fields: waiting.map((field) => field.label).join(", "),
+              count: waiting.length,
             })}
           </p>
           {!replacedHasProblem && (

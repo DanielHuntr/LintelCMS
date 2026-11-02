@@ -32,7 +32,7 @@ function renderFields(design: unknown, errors: Record<string, string> = {}) {
   );
 }
 
-const note = /This page has a design, so your website shows the design instead of: Body/;
+const note = /Body isn’t shown on your website, because this page has a design/;
 
 describe("an entry's fields on a page with a design", () => {
   // LINTEL-UX-006: Body text vanished from the website once the page had a design, while
