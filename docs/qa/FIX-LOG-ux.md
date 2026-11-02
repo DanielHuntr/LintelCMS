@@ -113,3 +113,34 @@ The QA leftovers merged into release: the builder's Link box (refuses `javascrip
 **Test:** `ShopScreens.test.tsx`, "says a link to a deleted page will go, and takes it out so the menu saves".
 
 **Still open:** the menu editor itself shows the same error with the id when this happens; it should name the link and offer to remove it.
+
+## LINTEL-UX-015: Settings grouped by what each setting is for
+
+**Before:** "Your website" (template, colours, fonts, logo) and "Branding" (name, logo and colour) sat in different groups, so a client could open the wrong one. Content types and Features, set up once by whoever built the site, were second and third. The group names didn't match each other ("Site", "How the admin looks", "Your site's data", "Websites and apps"), icon colours meant nothing, and descriptions were cut off on a phone (`settings-before-dl.png`).
+
+**After** (`settings-after-*.png`):
+
+- **Your website:** Look and address, Languages, Search engines.
+- **Security and email:** Security log, Email outbox.
+- **Backups and moving:** Backups, Import and export.
+- **Set up by whoever built your site:** Content types, Features, Websites and domains (was Sites), Admin branding (was Branding: "The name, logo and colour your clients see in the admin"). A note under it says to check with whoever built the site first.
+- For developers, then Lintel itself.
+- One icon colour per group; descriptions wrap.
+- Interface language moved to Account, since it's your own choice; its page goes back to Account.
+
+**Tests:** `SettingsPage.test.tsx` ("groups settings by what they're for…"), `AccountPage.test.tsx`.
+
+**Still to do (Phase C):** one "Look and feel" place for template, colours, fonts and logo, bringing Design and Your website together.
+
+## LINTEL-UX-016: Account titled "Create your account"
+
+**Found while checking UX-015.** Strings files are spread into one list, so a key defined in two files took whichever came last:
+
+- Account showed the setup screen's "Create your account" and its subtitle (`account-before-dl.png`).
+- An entry's automation review section was titled "Check your details".
+- The automation builder's loading text said "Loading the content type".
+- The automation gallery's button read "Use this template".
+
+**Fix:** setup and automation strings have their own keys (`createAccount.*`, `workflowBuilder.loading`, `workflowReview.title`, `workflowTemplates.use`); duplicate "Save"/"Saving…" keys removed (`account-after-dl.png`, `-md.png`).
+
+**Tests:** `i18n/stringKeys.test.ts` fails if any two strings files share a key; `AccountPage.test.tsx` checks the title.
