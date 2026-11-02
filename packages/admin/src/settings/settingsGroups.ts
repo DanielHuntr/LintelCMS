@@ -15,6 +15,8 @@ export interface SettingsEntry {
 
 export interface SettingsGroup {
   header: string;
+  /** A sentence under the group, when its rows need a word of warning. */
+  footer?: string;
   entries: SettingsEntry[];
 }
 

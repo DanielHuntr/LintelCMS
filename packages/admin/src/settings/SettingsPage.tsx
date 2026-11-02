@@ -13,7 +13,6 @@ import {
   Search,
   Shapes,
   ShieldCheck,
-  Type,
   Webhook,
 } from "lucide-react";
 import { useState } from "react";
@@ -36,8 +35,9 @@ import {
 
 /**
  * /settings: one row per area of settings, like iOS Settings, with a search box. The
- * website's own settings come first, as what most owners come here for; developer and system
- * settings come last. Rows people may not use aren't shown.
+ * website's own settings come first, as what most owners come here for; the ones set up when
+ * the site was built, then developer and system settings, come last. Rows people may not use
+ * aren't shown. Your own language for the admin is on Account.
  */
 export function SettingsPage() {
   const groups = useSettingsGroups();
@@ -50,9 +50,9 @@ export function SettingsPage() {
       <div className="flex flex-col gap-8">
         <SearchField label={t("settings.search")} value={search} onValueChange={setSearch} />
         {shown.map((group) => (
-          <GroupedList key={group.header} header={group.header}>
+          <GroupedList key={group.header} header={group.header} footer={group.footer}>
             {group.entries.map(({ key, ...entry }) => (
-              <GroupedListRow key={key} {...entry} />
+              <GroupedListRow key={key} wrapsText {...entry} />
             ))}
           </GroupedList>
         ))}
@@ -83,87 +83,28 @@ function useSettingsGroups(): SettingsGroup[] {
   const pluginRows = useVisibleContributions("settingsRows");
 
   const when = (condition: boolean, entry: SettingsEntry) => (condition ? [entry] : []);
-  const site: SettingsEntry[] = [
-    ...when(canSeeSiteSettings, {
-      key: "site",
-      icon: MonitorSmartphone,
-      iconTone: "success",
-      label: t("website.title"),
-      description: t("website.settingsDescription"),
-      to: "/settings/site",
-    }),
-    ...when(canSeeContentTypes, {
-      key: "content-types",
-      icon: Shapes,
-      label: t("contentTypes.title"),
-      description: t("settings.contentTypesDescription"),
-      to: "/settings/content-types",
-    }),
-    ...when(canSeeSiteSettings, {
-      key: "features",
-      icon: Blocks,
-      iconTone: "accent",
-      label: t("features.title"),
-      description: t("settings.featuresDescription"),
-      to: "/settings/features",
-    }),
-    ...when(canSeeSiteSettings, {
-      key: "sites",
-      icon: Globe,
-      iconTone: "accent",
-      label: t("sites.title"),
-      description: t("settings.sitesDescription"),
-      to: "/settings/sites",
-    }),
-    ...when(canSeeSiteSettings, {
-      key: "languages",
-      icon: Languages,
-      label: t("languages.title"),
-      description: t("settings.languagesDescription"),
-      to: "/settings/languages",
-    }),
-  ];
 
+  // Each group has one icon colour, so the colour says which kind of setting a row is.
   return arrangeSettings(
     [
-      { header: t("settings.siteHeader"), entries: site },
       {
-        header: t("settings.yourAdminHeader"),
+        header: t("settings.siteHeader"),
         entries: [
-          {
-            key: "interface-language",
-            icon: Type,
-            iconTone: "neutral",
-            label: t("interfaceLanguage.title"),
-            description: t("settings.interfaceLanguageDescription"),
-            to: "/settings/interface-language",
-          },
-          ...when(canBrand, {
-            key: "branding",
-            icon: Palette,
-            label: t("branding.title"),
-            description: t("settings.brandingDescription"),
-            to: "/settings/branding",
+          ...when(canSeeSiteSettings, {
+            key: "site",
+            icon: MonitorSmartphone,
+            iconTone: "accent",
+            label: t("settings.websiteRow"),
+            description: t("website.settingsDescription"),
+            to: "/settings/site",
           }),
-        ],
-      },
-      {
-        header: t("settings.dataHeader"),
-        entries: [
-          ...when(canSeeBackups, {
-            key: "backups",
-            icon: Archive,
-            iconTone: "success",
-            label: t("backups.title"),
-            description: t("settings.backupsDescription"),
-            to: "/settings/backups",
-          }),
-          ...when(canTransferContent, {
-            key: "import",
-            icon: FileInput,
-            label: t("import.title"),
-            description: t("settings.importDescription"),
-            to: "/settings/import",
+          ...when(canSeeSiteSettings, {
+            key: "languages",
+            icon: Languages,
+            iconTone: "accent",
+            label: t("languages.title"),
+            description: t("settings.languagesDescription"),
+            to: "/settings/languages",
           }),
         ],
       },
@@ -181,10 +122,70 @@ function useSettingsGroups(): SettingsGroup[] {
           ...when(canReadOutbox, {
             key: "email-outbox",
             icon: Inbox,
-            iconTone: "neutral",
+            iconTone: "success",
             label: t("emailOutbox.title"),
             description: t("settings.emailOutboxDescription"),
             to: "/settings/email-outbox",
+          }),
+        ],
+      },
+      {
+        header: t("settings.dataHeader"),
+        entries: [
+          ...when(canSeeBackups, {
+            key: "backups",
+            icon: Archive,
+            iconTone: "warning",
+            label: t("backups.title"),
+            description: t("settings.backupsDescription"),
+            to: "/settings/backups",
+          }),
+          ...when(canTransferContent, {
+            key: "import",
+            icon: FileInput,
+            iconTone: "warning",
+            label: t("import.title"),
+            description: t("settings.importDescription"),
+            to: "/settings/import",
+          }),
+        ],
+      },
+      {
+        // Set up once when the site is built; changing them can change how the whole site works.
+        header: t("settings.buildHeader"),
+        footer: t("settings.buildFooter"),
+        entries: [
+          ...when(canSeeContentTypes, {
+            key: "content-types",
+            icon: Shapes,
+            iconTone: "neutral",
+            label: t("contentTypes.title"),
+            description: t("settings.contentTypesDescription"),
+            to: "/settings/content-types",
+          }),
+          ...when(canSeeSiteSettings, {
+            key: "features",
+            icon: Blocks,
+            iconTone: "neutral",
+            label: t("features.title"),
+            description: t("settings.featuresDescription"),
+            to: "/settings/features",
+          }),
+          ...when(canSeeSiteSettings, {
+            key: "sites",
+            icon: Globe,
+            iconTone: "neutral",
+            label: t("sites.title"),
+            description: t("settings.sitesDescription"),
+            to: "/settings/sites",
+          }),
+          ...when(canBrand, {
+            key: "branding",
+            icon: Palette,
+            iconTone: "neutral",
+            label: t("branding.title"),
+            description: t("settings.brandingDescription"),
+            to: "/settings/branding",
           }),
         ],
       },
@@ -194,7 +195,7 @@ function useSettingsGroups(): SettingsGroup[] {
           ...when(canSeeSiteSettings, {
             key: "api",
             icon: KeyRound,
-            iconTone: "warning",
+            iconTone: "neutral",
             label: t("apiAccess.title"),
             description: t("settings.apiAccessDescription"),
             to: "/settings/api",
@@ -202,6 +203,7 @@ function useSettingsGroups(): SettingsGroup[] {
           ...when(canSeeSiteSettings, {
             key: "webhooks",
             icon: Webhook,
+            iconTone: "neutral",
             label: t("webhooks.title"),
             description: t("settings.webhooksDescription"),
             to: "/settings/webhooks",
@@ -214,7 +216,7 @@ function useSettingsGroups(): SettingsGroup[] {
           ...when(canSeeUpdates, {
             key: "updates",
             icon: ArrowUpCircle,
-            iconTone: "success",
+            iconTone: "neutral",
             label: t("updates.title"),
             description: t("settings.updatesDescription"),
             accessory: <UpdatesCountBadge />,
@@ -235,7 +237,7 @@ function useSettingsGroups(): SettingsGroup[] {
       key: `${row.pluginId}:${row.to}`,
       group: row.group,
       icon: row.icon,
-      iconTone: "success",
+      iconTone: "accent",
       label: row.label,
       description: row.description,
       to: row.to,

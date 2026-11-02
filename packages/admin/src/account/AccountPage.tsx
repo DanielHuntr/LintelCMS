@@ -1,5 +1,7 @@
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert, Type } from "lucide-react";
 import { LoadError } from "../api/LoadError.js";
+import { GroupedList } from "../design/GroupedList.js";
+import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
@@ -51,6 +53,15 @@ export function AccountPage() {
           <>
             <ProfileSection key={account.data.name} account={account.data} />
             <EmailSection account={account.data} />
+            <GroupedList>
+              <GroupedListRow
+                icon={Type}
+                iconTone="neutral"
+                label={t("interfaceLanguage.title")}
+                description={t("settings.interfaceLanguageDescription")}
+                to="/settings/interface-language"
+              />
+            </GroupedList>
             <PasswordSection />
             {!session.mustSetUpTwoFactor && <TwoFactorSection />}
             <PasskeysSection />

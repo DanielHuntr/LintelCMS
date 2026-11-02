@@ -7,11 +7,10 @@
  * so they are the one place {product} isn't used.
  */
 export const brandingStrings = {
-  "settings.yourAdminHeader": "How the admin looks",
   "settings.interfaceLanguageDescription": "The language of menus, buttons and messages",
-  "settings.brandingDescription": "Your name, logo and colour, for your clients",
+  "settings.brandingDescription": "The name, logo and colour your clients see in the admin",
 
-  "branding.title": "Branding",
+  "branding.title": "Admin branding",
   "branding.subtitle":
     "Show your own name, logo and colour instead of Lintel’s, so your clients see your brand.",
   "branding.loading": "Loading branding",

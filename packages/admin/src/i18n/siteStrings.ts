@@ -5,7 +5,7 @@
  */
 export const siteStrings = {
   "settings.sitesDescription": "Your websites, their domains and who works on each",
-  "sites.title": "Sites",
+  "sites.title": "Websites and domains",
   "sites.subtitle":
     "Each site is one website, with its own pages, menus and languages. Run several brands or countries from one {product}.",
   "sites.loading": "Loading sites…",

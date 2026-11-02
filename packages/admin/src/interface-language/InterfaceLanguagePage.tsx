@@ -25,13 +25,16 @@ import {
  */
 let justChanged: "personal" | "site" | null = null;
 
-/** /settings/interface-language: your own language for the admin, and the site's default. */
+/**
+ * /settings/interface-language: your own language for the admin, and the site's default.
+ * Reached from Account, since the first choice is personal.
+ */
 export function InterfaceLanguagePage() {
   const choice = useInterfaceLanguageChoice();
 
   return (
     <>
-      <BackLink to="/settings">{t("nav.settings")}</BackLink>
+      <BackLink to="/account">{t("account.title")}</BackLink>
       <LargeTitle title={t("interfaceLanguage.title")} subtitle={t("interfaceLanguage.subtitle")} />
       {choice.isError && <LoadError error={choice.error} onRetry={() => void choice.refetch()} />}
       {choice.isPending && (

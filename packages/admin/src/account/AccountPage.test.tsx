@@ -71,6 +71,17 @@ function serveAccount(
 afterEach(() => vi.restoreAllMocks());
 
 describe("your account", () => {
+  // The admin's language is your own choice, so it lives with your account, not site settings.
+  it("links to the language of the admin", async () => {
+    serveAccount();
+    renderScreen(<AccountPage />);
+
+    expect(await screen.findByRole("link", { name: /Interface language/ })).toHaveAttribute(
+      "href",
+      "/settings/interface-language",
+    );
+  });
+
   it("shows where you're signed in, and signs the other devices out", async () => {
     const { calls } = serveAccount();
     renderScreen(<AccountPage />);

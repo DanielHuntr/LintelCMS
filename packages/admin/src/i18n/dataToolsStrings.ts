@@ -4,7 +4,7 @@
  * used through `t()` like every other string.
  */
 export const dataToolsStrings = {
-  "settings.dataHeader": "Your site’s data",
+  "settings.dataHeader": "Backups and moving",
   "settings.backupsDescription": "Copies of everything, made by you or on a schedule",
   "settings.importDescription": "Bring content in from another {product} or from WordPress",
 

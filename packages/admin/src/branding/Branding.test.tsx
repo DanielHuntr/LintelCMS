@@ -147,7 +147,7 @@ describe("branding across the admin", () => {
     showBranding(branded({ productName: "Acme Studio" }));
     serveBrandingQuietly();
     renderScreen(<BrandingPage />);
-    await waitFor(() => expect(document.title).toBe("Branding · Acme Studio"));
+    await waitFor(() => expect(document.title).toBe("Admin branding · Acme Studio"));
   });
 
   it("doesn't repeat the product name when the page title already has it", async () => {

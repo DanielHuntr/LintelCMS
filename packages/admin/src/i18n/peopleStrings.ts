@@ -235,7 +235,7 @@ export const peopleStrings = {
   "confirmEmail.failedTitle": "That didn’t work",
   "confirmEmail.invalid": "This link is incomplete. Open it from the email again.",
   "confirmEmail.toAccount": "Go to your account",
-  "settings.securityHeader": "Security",
+  "settings.securityHeader": "Security and email",
   "settings.securityLogDescription": "Sign-ins, failed attempts and changes to people",
   "settings.emailOutboxDescription": "Emails {product} would send, while no mail service is set up",
   "securityLog.title": "Security log",
