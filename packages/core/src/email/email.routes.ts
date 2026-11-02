@@ -3,12 +3,14 @@ import {
   getSignedIn,
   requireAccountSession,
   requirePermission,
+  requireSignedIn,
 } from "../auth/require-permission.js";
 import { describeOutboxFor } from "./outbox.service.js";
 
 /**
  * HTTP only:
  *
+ *   GET /email/status  (signed in)  -> { delivers }
  *   GET /email/outbox  (owners, signed in with a browser)
  *     -> { enabled, messages: [{ id, to, subject, text, sentAt }] }
  *
@@ -16,6 +18,12 @@ import { describeOutboxFor } from "./outbox.service.js";
  * other people are hidden (see outbox.service.ts).
  */
 export async function emailRoutes(server: FastifyInstance) {
+  // Whether emails really go out, so screens that send email can warn when they won't
+  // (form notifications, say). Says nothing about the service or its settings.
+  server.get("/email/status", { preHandler: requireSignedIn }, async () => ({
+    delivers: server.emailOutbox === null,
+  }));
+
   server.get(
     "/email/outbox",
     { preHandler: [requireAccountSession, requirePermission("settings:read")] },

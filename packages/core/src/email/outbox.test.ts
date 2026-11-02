@@ -90,6 +90,14 @@ describe("the email outbox in Settings", () => {
 
       expect(outbox.statusCode).toBe(401);
     });
+
+    it("tells anyone signed in that emails don't go out yet, for screens to warn", async () => {
+      await createPersonWithRole(testDatabase.database, "ed@example.com", "editor");
+      const asEditor = requestsAs(server, await signInAndGetCookies(server, "ed@example.com"));
+
+      expect((await asEditor("GET", "/email/status")).json()).toEqual({ delivers: false });
+      expect((await server.inject({ method: "GET", url: "/email/status" })).statusCode).toBe(401);
+    });
   });
 
   it("hands messages to the driver it is given, and has no outbox then", async () => {
@@ -118,6 +126,7 @@ describe("the email outbox in Settings", () => {
       enabled: false,
       messages: [],
     });
+    expect((await asOwner("GET", "/email/status")).json()).toEqual({ delivers: true });
     await server.close();
   });
 });

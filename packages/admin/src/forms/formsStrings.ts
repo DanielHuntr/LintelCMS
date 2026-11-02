@@ -192,6 +192,8 @@ export const formsStrings = {
   "forms.settings.subjectHint":
     "Use {form} for the form's name, or a field's handle in braces, like {name}.",
   "forms.settings.confirmationEmail": "Send a confirmation to the person",
+  "forms.settings.emailNotSetUp":
+    "Email isn’t set up on this website yet, so these emails won’t be sent. New messages still arrive in Submissions.",
   "forms.settings.needsEmailField":
     "Add an Email field so {product} knows where to send the confirmation.",
   "forms.settings.confirmationSubject": "Confirmation subject",

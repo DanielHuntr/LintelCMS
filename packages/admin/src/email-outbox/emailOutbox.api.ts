@@ -10,5 +10,8 @@ export interface OutboxEmail {
   sentAt: string;
 }
 
+/** Whether a mail service delivers emails; false while they only reach the outbox. */
+export const getEmailStatus = () => apiRequest<{ delivers: boolean }>("/email/status");
+
 export const getOutbox = () =>
   apiRequest<{ enabled: boolean; messages: OutboxEmail[] }>("/email/outbox");

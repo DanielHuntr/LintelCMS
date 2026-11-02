@@ -8,7 +8,8 @@ followed on a development computer.
 Only owners see it (Settings and Shop settings hide the row from everyone else), and secret
 links in emails to other people arrive already hidden by the API.
 
-| File                  | What it does |
-| --------------------- | ------------ |
-| `EmailOutboxPage.tsx` | The page     |
-| `emailOutbox.api.ts`  | The API call |
+| File                     | What it does                                                                          |
+| ------------------------ | ------------------------------------------------------------------------------------- |
+| `EmailOutboxPage.tsx`    | The page                                                                              |
+| `emailOutbox.api.ts`     | The API calls                                                                         |
+| `emailStatus.queries.ts` | `useEmailStatus`: whether emails really go out, for screens that warn when they won't |
