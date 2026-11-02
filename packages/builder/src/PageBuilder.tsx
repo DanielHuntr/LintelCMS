@@ -57,7 +57,8 @@ import { renderPage } from "./render/render-page.js";
 import { standInBaseStylesheet } from "./render/base-stylesheet.js";
 import { standardRegistry } from "./render/stand-in-components.js";
 import { readSkillLevel, type SkillLevel, toolsFor } from "./skill-level/skill-levels.js";
-import { SelectedWordsBar } from "./inline-text/SelectedWordsBar.js";
+import { selectedWords, SelectedWordsBar } from "./inline-text/SelectedWordsBar.js";
+import { toggleChange } from "./inline-text/markToggles.js";
 import type { FileUploader } from "./style-panel/design-tools.js";
 import { GuidedTour } from "./tour/GuidedTour.js";
 import { useTips } from "./tour/useTips.js";
@@ -156,6 +157,8 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   const [insertFocusRequest, setInsertFocusRequest] = useState<InsertFocusRequest>();
   const [motionPreview, setMotionPreview] = useState<MotionPreview | null>(null);
   const [textSelection, setTextSelection] = useState<TextSelectionMessage | null>(null);
+  // Mod+K asks the selected words' bar for a link; the bar watches this go up.
+  const [linkRequest, setLinkRequest] = useState(0);
   const preferences = props.preferences ?? browserPreferenceStore;
   const [skillLevel, setSkillLevel] = usePreference<SkillLevel>(
     preferences,
@@ -259,6 +262,22 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
         case "save":
           onSaveNow?.();
           break;
+        case "bold":
+        case "italic":
+        case "link": {
+          const words = selectedWords(state.document, textSelection);
+          if (!words) return false;
+          if (command === "link") {
+            setLinkRequest((count) => count + 1);
+          } else {
+            actions.markText(
+              words.selection,
+              toggleChange(words.marks, words.from, words.to, command),
+              text(`pageBuilder.inlineText.${command}`),
+            );
+          }
+          break;
+        }
         case "selectParent":
           actions.selectParent();
           break;
@@ -303,7 +322,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
       }
       return true;
     },
-    [actions, state.selectedId, onSaveNow],
+    [actions, state.selectedId, state.document, textSelection, text, onSaveNow],
   );
 
   const handleFrameMessage = useCallback(
@@ -483,6 +502,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                     document={state.document}
                     selection={textSelection}
                     onApply={(styles, label) => actions.markText(textSelection, styles, label)}
+                    linkRequest={linkRequest}
                   />
                 )}
                 {showsStart ? (

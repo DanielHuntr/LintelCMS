@@ -63,6 +63,25 @@ describe("drawing advanced styles", () => {
     expect(css).toContain(".title-mark-1 {\n  font-weight: 300;\n}");
   });
 
+  it("draws linked words as a link on the website, and not one to follow on the canvas", () => {
+    const page = pageOf({
+      type: "text",
+      name: "Intro",
+      props: {
+        text: "See our menu today",
+        marks: [
+          { from: 8, to: 12, styles: {}, href: "/menu" },
+          { from: 13, to: 18, styles: { fontStyle: "italic" }, href: "/menu#today" },
+        ],
+      },
+    });
+
+    expect(renderPage(page, standardRegistry).html).toContain(
+      'See our <a href="/menu">menu</a> <a href="/menu#today"><em>today</em></a>',
+    );
+    expect(renderPage(page, standardRegistry, { mode: "canvas" }).html).not.toContain("href=");
+  });
+
   it("draws a background video that never autoplays, is hidden from screen readers and can be paused", () => {
     const { html, script } = renderPage(
       pageOf({

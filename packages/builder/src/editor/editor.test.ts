@@ -226,6 +226,13 @@ describe("shortcuts", () => {
     expect(shortcutFor(key("d", { ctrlKey: true }), false)).toBe("duplicate");
   });
 
+  it("style selected words: Mod+B bold, Mod+I italic, Mod+K link", () => {
+    expect(shortcutFor(key("b", { metaKey: true }), true)).toBe("bold");
+    expect(shortcutFor(key("i", { ctrlKey: true }), false)).toBe("italic");
+    expect(shortcutFor(key("k", { ctrlKey: true }), false)).toBe("link");
+    expect(shortcutFor(key("b"), false)).toBeNull();
+  });
+
   it("nudge with Alt and the arrows", () => {
     expect(shortcutFor(key("ArrowUp", { altKey: true }), true)).toBe("moveUp");
     expect(shortcutFor(key("ArrowRight", { altKey: true }), true)).toBe("moveIn");
