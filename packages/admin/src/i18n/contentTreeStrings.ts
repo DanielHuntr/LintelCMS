@@ -4,6 +4,8 @@
  */
 export const contentTreeStrings = {
   "tree.label": "Content tree",
+  "tree.show": "Show pages",
+  "tree.hide": "Hide pages",
   "tree.loading": "Loading the content tree…",
   "tree.resize": "Resize the content tree",
   "tree.filter": "Filter the tree",

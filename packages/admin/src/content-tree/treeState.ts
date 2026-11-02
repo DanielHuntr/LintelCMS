@@ -95,6 +95,26 @@ export function useTreeWidth() {
   return { width, setWidth: (next: number) => setWidth(clampTreeWidth(next)) };
 }
 
+/**
+ * Whether the pane is open, remembered in this browser. On a phone it starts folded, so the
+ * page comes first; on wider screens it starts open.
+ */
+export function useTreeShown() {
+  const storageKey = "lintel.contentTree.shown";
+  const [isShown, setIsShown] = useState(() => {
+    const stored = readStorage(storageKey);
+    if (stored === "yes" || stored === "no") return stored === "yes";
+    return (
+      typeof window.matchMedia !== "function" || window.matchMedia("(min-width: 768px)").matches
+    );
+  });
+  const choose = (shown: boolean) => {
+    setIsShown(shown);
+    writeStorage(storageKey, shown ? "yes" : "no");
+  };
+  return { isShown, choose };
+}
+
 export type DropPosition = "before" | "inside" | "after";
 
 /**

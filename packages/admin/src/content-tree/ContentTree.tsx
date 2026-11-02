@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { House, Plus, Trash2 } from "lucide-react";
 import { useState, type DragEvent, type MouseEvent } from "react";
@@ -27,7 +28,7 @@ import { useActionItems } from "./useActionItems.js";
  * recycle bin at the bottom. Pages are created at the top with the "+" beside Content, or a
  * right-click on empty space; until there is one, the tree offers to create the home page.
  */
-export function ContentTree() {
+export function ContentTree({ beside }: { beside?: ReactNode } = {}) {
   const tree = useContentTree();
   const roots = useTreeRoots(tree.siteId);
   const topActions = useActionItems({ kind: "top" });
@@ -41,8 +42,9 @@ export function ContentTree() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex flex-col gap-2 px-2.5 pt-4 pb-2">
+      <div className="flex items-center gap-1.5 px-2.5 pt-4 pb-2">
         <SearchField
+          className="min-w-0 flex-1"
           label={t("tree.filterPlaceholder")}
           aria-label={t("tree.filter")}
           value={filter}
@@ -56,6 +58,7 @@ export function ContentTree() {
               ?.focus();
           }}
         />
+        {beside}
       </div>
 
       <div

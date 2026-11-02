@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockApi } from "../testing/mockApi.js";
@@ -108,6 +108,24 @@ describe("the content tree", () => {
     ).toBeNull();
     expect(screen.getByText("240")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Recycle bin, 2 items" })).toBeTruthy();
+  });
+
+  // The tree always took a column beside the page, and the top of every Content screen on a
+  // phone; now it folds away and stays folded.
+  it("folds away to give the page room, and remembers it", async () => {
+    answerTree();
+    renderScreen(<ContentSection />, editor);
+
+    await screen.findByRole("tree", { name: "Content tree" });
+    await userEvent.click(screen.getByRole("button", { name: "Hide pages" }));
+    expect(screen.queryByRole("tree", { name: "Content tree" })).toBeNull();
+    cleanup();
+
+    renderScreen(<ContentSection />, editor);
+    const show = await screen.findByRole("button", { name: "Show pages" });
+    expect(screen.queryByRole("tree", { name: "Content tree" })).toBeNull();
+    await userEvent.click(show);
+    expect(await screen.findByRole("tree", { name: "Content tree" })).toBeTruthy();
   });
 
   it("opens branches with the arrow keys and remembers them", async () => {

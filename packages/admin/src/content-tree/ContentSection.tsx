@@ -13,7 +13,14 @@ import { useEntryPath, useRefreshContent } from "./contentTree.queries.js";
 import { selectedTreeKey } from "./selectedTreeKey.js";
 import { TreeDialogs, type PendingAction } from "./TreeDialogs.js";
 import type { TreeAction, TreeTarget } from "./treeActions.js";
-import { TREE_WIDTH, rootKey, useExpandedBranches, useTreeWidth } from "./treeState.js";
+import {
+  TREE_WIDTH,
+  rootKey,
+  useExpandedBranches,
+  useTreeShown,
+  useTreeWidth,
+} from "./treeState.js";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { TreeToast, type TreeNotice } from "./TreeToast.js";
 import { useTreeSelection } from "./treeSelection.js";
 import { rememberFolderView } from "../content-workspace/folderView.js";
@@ -34,6 +41,8 @@ export function ContentSection() {
   const siteId = current?.site.id;
   const branches = useExpandedBranches(siteId ?? "main");
   const { width, setWidth } = useTreeWidth();
+  // The tree can be folded away, giving the page the room (LINTEL-UX-013's phones included).
+  const tree = useTreeShown();
   const [dragged, setDragged] = useState<TreeNode | undefined>();
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [notice, setNotice] = useState<TreeNotice | null>(null);
@@ -152,9 +161,23 @@ export function ContentSection() {
       {/* On a phone the tree sits above the workspace, the full width, instead of beside it. */}
       <div
         style={{ "--tree-width": `${width}px` } as CSSProperties}
-        className="md:pl-(--tree-width)"
+        className={tree.isShown ? "md:pl-(--tree-width)" : undefined}
       >
+        {!tree.isShown && (
+          <button
+            type="button"
+            aria-expanded={false}
+            aria-controls="content-tree"
+            onClick={() => tree.choose(true)}
+            className="mb-4 flex h-8 items-center gap-1.5 rounded-control bg-fill/70 px-2.5 text-footnote font-medium text-label hover:bg-fill focus-visible:focus-ring"
+          >
+            <PanelLeftOpen aria-hidden="true" className="size-4" />
+            {t("tree.show")}
+          </button>
+        )}
         <nav
+          id="content-tree"
+          hidden={!tree.isShown}
           ref={treeElement}
           aria-label={t("tree.label")}
           data-content-tree=""
@@ -166,7 +189,21 @@ export function ContentSection() {
           }}
           className="relative mb-6 flex h-[min(60dvh,28rem)] flex-col rounded-panel bg-sidebar shadow-float hairline-ring backdrop-blur-2xl backdrop-saturate-150 md:fixed md:inset-y-3 md:inset-s-[264px] md:z-10 md:mb-0 md:h-auto md:w-(--tree-width)"
         >
-          <ContentTree />
+          <ContentTree
+            beside={
+              <button
+                type="button"
+                aria-expanded={true}
+                aria-controls="content-tree"
+                aria-label={t("tree.hide")}
+                title={t("tree.hide")}
+                onClick={() => tree.choose(false)}
+                className="flex size-8 shrink-0 items-center justify-center rounded-control text-label-secondary hover:bg-fill hover:text-label focus-visible:focus-ring"
+              >
+                <PanelLeftClose aria-hidden="true" className="size-4" />
+              </button>
+            }
+          />
           <TreeToast notice={notice} onDismiss={() => setNotice(null)} />
           <ResizeHandle width={width} onResize={setWidth} />
         </nav>
