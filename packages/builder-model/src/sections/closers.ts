@@ -183,11 +183,13 @@ export function simpleFooter(copy: {
   );
 }
 
+/** A footer column: links written into the template, or one of the site's menus. */
+type FooterColumn =
+  | { heading: string; links: Array<{ label: string; href: string }> }
+  | { heading: string; menuHandle: string };
+
 /** A closing band in columns: about, links and contact. */
-export function columnsFooter(copy: {
-  about: string;
-  columns: Array<{ heading: string; links: Array<{ label: string; href: string }> }>;
-}): NodeBlueprint {
+export function columnsFooter(copy: { about: string; columns: FooterColumn[] }): NodeBlueprint {
   return section(
     "Footer",
     [
@@ -219,7 +221,9 @@ export function columnsFooter(copy: {
                 column.heading,
                 [
                   heading(column.heading, 3),
-                  ...column.links.map((item) => link(item.label, item.href)),
+                  ...("menuHandle" in column
+                    ? [siteMenu(column.heading, column.menuHandle)]
+                    : column.links.map((item) => link(item.label, item.href))),
                 ],
                 2,
               ),
@@ -230,4 +234,9 @@ export function columnsFooter(copy: {
     ],
     { tone: "dark", padding: 7, element: "footer" },
   );
+}
+
+/** The Menu element showing one of the site's menus (Content → Menus), so it stays current. */
+function siteMenu(label: string, menuHandle: string): NodeBlueprint {
+  return { type: "navigation", props: { menuSource: "site", menuHandle, label, links: [] } };
 }
