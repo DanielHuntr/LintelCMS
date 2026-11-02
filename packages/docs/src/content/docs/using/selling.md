@@ -6,7 +6,7 @@ sidebar:
   label: Selling
 ---
 
-Lintel has a built-in online shop. It appears as **Commerce** in the sidebar once **Online
+Lintel has a built-in online shop. It appears as **Shop** in the sidebar once **Online
 shop** is switched on, either in the setup wizard or later under **Settings → Plugins**.
 
 ## Getting ready to sell
@@ -63,6 +63,11 @@ A discount can be for **everything**, **some products** or **some collections**,
 need a **minimum spend** or a **minimum number of items** (counting only the items it's
 for). You can give it **start and end dates**, a **total number of uses**, and limit it to
 **once per customer** (by email address).
+
+Make collections in **Shop → Collections**: give one a title and tick its products, or tick
+a product's collections at the bottom of its editor. Collections that pick products by rules
+(the Shopify import makes these from tags) keep their rules; you can change their title and
+description.
 
 At the top of the editor, a one-line summary says what you've set up, in plain words, such
 as "20% off Summer Edit, orders of £50 or more, until 31 Aug". Check it before you save.

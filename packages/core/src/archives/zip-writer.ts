@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { createWriteStream } from "node:fs";
 import { mkdir, rename, rm, stat } from "node:fs/promises";
 import { dirname } from "node:path";
-import { PassThrough, type Readable } from "node:stream";
+import { type Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { ZipFile } from "yazl";
 
@@ -54,10 +54,15 @@ export class ZipArchiveWriter {
     await this.pendingEntry;
     const hash = createHash("sha256");
     let size = 0;
-    const counter = new PassThrough();
-    counter.on("data", (chunk: Buffer) => {
-      hash.update(chunk);
-      size += chunk.length;
+    // Counting in a Transform rather than with a 'data' listener keeps the stream paused
+    // until yazl reads it. A listener would switch it to flowing mode, so every chunk was
+    // hashed and dropped before yazl started reading, and the entry was written empty.
+    const counter = new Transform({
+      transform(chunk: Buffer, _encoding, callback) {
+        hash.update(chunk);
+        size += chunk.length;
+        callback(null, chunk);
+      },
     });
     const finished = new Promise<void>((resolve, reject) => {
       counter.on("end", resolve);

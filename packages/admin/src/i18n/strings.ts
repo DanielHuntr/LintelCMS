@@ -61,7 +61,7 @@ const english = {
   "nav.dashboard": "Dashboard",
   "nav.content": "Content",
   "nav.design": "Design",
-  "nav.commerce": "Commerce",
+  "nav.commerce": "Shop",
   "nav.media": "Media",
   "nav.forms": "Forms",
   "nav.users": "Users",
@@ -618,7 +618,7 @@ const english = {
   "features.keptContent.blog":
     "Your posts are kept; the Blog section just hides. Switch it back on any time.",
   "features.keptContent.commerce":
-    "Your products and orders are kept; the Commerce section just hides. Switch it back on any time.",
+    "Your products and orders are kept; the Shop section just hides. Switch it back on any time.",
   "features.keptContent.forms":
     "Your forms and their submissions are kept; the Forms section just hides. Switch it back on any time.",
   "settings.moreSoonTitle": "More site settings",

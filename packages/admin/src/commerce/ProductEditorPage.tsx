@@ -20,6 +20,8 @@ import {
   type ProductDraft,
   productInputFromDraft,
 } from "./productDraft.js";
+import { useManualCollections, useSetProductCollections } from "./collections.queries.js";
+import { ProductCollectionsCard } from "./ProductCollectionsCard.js";
 import { ProductDetailsSection } from "./ProductDetailsSection.js";
 import { ProductOrganisationSection } from "./ProductOrganisationSection.js";
 import { ProductVariantsSection } from "./ProductVariantsSection.js";
@@ -96,6 +98,15 @@ function ProductForm({ product, currency, locations }: ProductFormProps) {
   const remove = useDeleteProduct();
   const navigate = useNavigate();
   const canChange = useCan("commerce:update");
+  const collections = useManualCollections();
+  const setCollections = useSetProductCollections();
+  // The hand-picked collections it's in, unless ticked differently here; saved with the product.
+  const [chosenCollections, setChosenCollections] = useState<string[] | null>(null);
+  const collectionIds =
+    chosenCollections ??
+    (collections ?? [])
+      .filter((collection) => product && collection.productIds.includes(product.id))
+      .map((collection) => collection.id);
   const apiFields = save.error instanceof ApiError ? (save.error.fields ?? {}) : {};
   const fieldErrors = { ...apiFields, ...localProblems };
 
@@ -115,16 +126,29 @@ function ProductForm({ product, currency, locations }: ProductFormProps) {
     if (input.title === "") messages.title = t("shop.products.titleRequired");
     setLocalProblems(messages);
     if (Object.keys(messages).length > 0) return;
-    save.mutate(input, {
-      onSuccess: (saved) => {
+    // Chained with mutateAsync rather than onSuccess callbacks: saving an existing product
+    // redraws this form (it's keyed by updatedAt), and a redrawn form's callbacks never run.
+    void save
+      .mutateAsync(input)
+      .then(async (saved) => {
+        if (collections && chosenCollections) {
+          await setCollections.mutateAsync({
+            productId: saved.id,
+            chosenIds: chosenCollections,
+            collections,
+          });
+        }
         if (!product)
           void navigate({ to: "/commerce/products/$productId", params: { productId: saved.id } });
-      },
-    });
+      })
+      .catch(() => {
+        // Shown from save.error or setCollections.error.
+      });
   }
 
+  const failure = save.error ?? setCollections.error;
   const generalError =
-    save.error && Object.keys(apiFields).length === 0 ? describeError(save.error) : null;
+    failure && Object.keys(apiFields).length === 0 ? describeError(failure) : null;
 
   return (
     <form
@@ -177,6 +201,11 @@ function ProductForm({ product, currency, locations }: ProductFormProps) {
           errors={fieldErrors}
         />
         <ProductOrganisationSection draft={draft} onChange={change} errors={fieldErrors} />
+        <ProductCollectionsCard
+          collections={collections}
+          chosen={collectionIds}
+          onChange={setChosenCollections}
+        />
       </div>
       {product && (
         <ConfirmDialog

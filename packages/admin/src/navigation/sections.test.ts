@@ -21,7 +21,7 @@ describe("visibleSections", () => {
     expect(visibleSections(["*"], allPlugins)).toHaveLength(sections.length + 1);
   });
 
-  it("hides Commerce and Forms on a blog", () => {
+  it("hides Shop and Forms on a blog", () => {
     expect(labelsFor(["*"], ["blog", "seo"])).toEqual([
       "Dashboard",
       "Content",
@@ -34,13 +34,13 @@ describe("visibleSections", () => {
   });
 
   it("shows each plugin's section only once it is switched on", () => {
-    expect(labelsFor(["*"], ["commerce"])).toContain("Commerce");
+    expect(labelsFor(["*"], ["commerce"])).toContain("Shop");
     expect(labelsFor(["*"], ["commerce"])).not.toContain("Forms");
     expect(labelsFor(["*"], ["forms"])).toContain("Forms");
   });
 
   it("still needs permission for a plugin's section", () => {
-    expect(labelsFor(["entries:*"], allPlugins)).not.toContain("Commerce");
+    expect(labelsFor(["entries:*"], allPlugins)).not.toContain("Shop");
   });
 });
 

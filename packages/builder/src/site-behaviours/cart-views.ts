@@ -1,9 +1,14 @@
 import {
   type Cart,
   type CartLine,
+  cartTotalRows,
   changeLine,
+  countryName,
+  describeShippingRate,
   formatMoney,
+  listDeliveryCountries,
   listShippingRates,
+  shopperMessage,
   startCheckout,
   updateCart,
 } from "./shop-api.js";
@@ -33,12 +38,24 @@ const problems: Record<string, string> = {
   not_enough_stock: "Not enough left.",
 };
 
+/** The line's picture, or the same neutral "no picture" tile the product page shows. */
+function linePicture(line: CartLine): HTMLElement {
+  if (line.image?.url) {
+    const picture = document.createElement("img");
+    picture.src = line.image.url;
+    picture.alt = "";
+    return picture;
+  }
+  const tile = element("span", "lintel-cart__line-picture");
+  tile.setAttribute("aria-hidden", "true");
+  const icon = document.querySelector<HTMLTemplateElement>("template.lintel-cart__no-picture");
+  if (icon) tile.append(icon.content.cloneNode(true));
+  return tile;
+}
+
 function lineItem(line: CartLine, onChange: (cart: Cart) => void): HTMLLIElement {
   const item = element("li", "lintel-cart__line");
-  const picture = document.createElement("img");
-  picture.src = line.image?.url ?? "";
-  picture.alt = "";
-  item.append(picture);
+  item.append(linePicture(line));
   const words = element("div", "lintel-cart__line-words");
   words.append(element("p", "lintel-cart__line-name", line.productTitle));
   if (line.variantTitle && line.variantTitle !== "Default")
@@ -69,15 +86,45 @@ function lineItem(line: CartLine, onChange: (cart: Cart) => void): HTMLLIElement
 
 function totals(cart: Cart): HTMLDListElement {
   const list = element("dl", "lintel-cart__totals");
-  const row = (name: string, value: string) =>
-    list.append(element("dt", "", name), element("dd", "", value));
-  row("Subtotal", formatMoney(cart.subtotal));
-  if (cart.shipping) row("Delivery", formatMoney(cart.shipping));
-  row("Total", formatMoney(cart.total));
+  for (const { label, amount } of cartTotalRows(cart)) {
+    let value = "Free";
+    if (amount && amount.amount < 0)
+      value = `−${formatMoney({ ...amount, amount: -amount.amount })}`;
+    else if (amount) value = formatMoney(amount);
+    list.append(element("dt", "", label), element("dd", "", value));
+  }
   return list;
 }
 
+/** The codes in the cart, each with a Remove button, and why any of them don't apply yet. */
+function showDiscountCodes(box: HTMLElement, cart: Cart, onChange: (cart: Cart) => void): void {
+  const codes = box.querySelector<HTMLElement>(".lintel-cart__codes");
+  const problems = box.querySelector<HTMLElement>(".lintel-cart__discount-problems");
+  codes?.replaceChildren(
+    ...cart.discountCodes.map((code) => {
+      const item = element("li", "lintel-cart__code", code);
+      const remove = element("button", "lintel-cart__remove", "Remove");
+      remove.type = "button";
+      remove.setAttribute("aria-label", `Remove the code ${code}`);
+      remove.addEventListener("click", async () => {
+        const left = cart.discountCodes.filter((each) => each !== code);
+        try {
+          onChange(await updateCart({ discountCodes: left }));
+        } catch (error) {
+          if (problems) problems.textContent = shopperMessage(error, "Please try again.");
+        }
+      });
+      item.append(" ", remove);
+      return item;
+    }),
+  );
+  if (problems) problems.textContent = cart.discountProblems.map((each) => each.message).join(" ");
+}
+
+let latestCart: Cart | null = null;
+
 export function renderCartViews(cart: Cart | null, onChange: (cart: Cart) => void): void {
+  latestCart = cart;
   document.querySelectorAll<HTMLElement>('[data-behaviour~="cart"]').forEach((view) => {
     const lines = view.querySelector(".lintel-cart__lines");
     const sums = view.querySelector(".lintel-cart__totals");
@@ -89,11 +136,60 @@ export function renderCartViews(cart: Cart | null, onChange: (cart: Cart) => voi
     view
       .querySelector<HTMLElement>(".lintel-cart__checkout-area")
       ?.toggleAttribute("hidden", !hasLines);
+    const discountBox = view.querySelector<HTMLElement>(".lintel-cart__discount");
+    discountBox?.toggleAttribute("hidden", !hasLines);
     if (!cart || !hasLines) return;
     const list = element("ul", "lintel-cart__lines");
     list.setAttribute("aria-label", "In your basket");
     cart.lines.forEach((line) => list.append(lineItem(line, onChange)));
-    view.prepend(list, totals(cart));
+    // The code box stays the same element, so typing in it isn't lost; it moves below the sums.
+    view.prepend(list, totals(cart), ...(discountBox ? [discountBox] : []));
+    if (discountBox) showDiscountCodes(discountBox, cart, onChange);
+  });
+}
+
+/** The discount code box on the basket page, below the sums. */
+export function setUpDiscountCode(onChange: (cart: Cart) => void): void {
+  const page = document.querySelector<HTMLElement>(
+    '[data-behaviour~="cart"][data-cart-view="page"]',
+  );
+  if (!page || page.querySelector(".lintel-cart__discount")) return;
+  const box = element("form", "lintel-cart__discount");
+  box.hidden = true;
+  const field = element("label", "", "Discount code");
+  const input = document.createElement("input");
+  input.name = "discountCode";
+  input.autocomplete = "off";
+  input.maxLength = 50;
+  field.append(input);
+  const apply = element("button", "lintel-button lintel-button--secondary", "Apply");
+  apply.type = "submit";
+  const problems = element("p", "lintel-cart__discount-problems");
+  problems.setAttribute("role", "status");
+  const codes = element("ul", "lintel-cart__codes");
+  codes.setAttribute("aria-label", "Codes in your basket");
+  box.append(field, apply, problems, codes);
+  page.prepend(box);
+
+  box.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const code = input.value.trim();
+    if (!code) return;
+    const current = latestCart?.discountCodes ?? [];
+    const already = current.some((each) => each.toUpperCase() === code.toUpperCase());
+    problems.textContent = "";
+    apply.disabled = true;
+    try {
+      onChange(await updateCart({ discountCodes: already ? current : [...current, code] }));
+      input.value = "";
+    } catch (error) {
+      problems.textContent = shopperMessage(
+        error,
+        "That code couldn’t be added. Please try again.",
+      );
+    } finally {
+      apply.disabled = false;
+    }
   });
 }
 
@@ -104,8 +200,35 @@ const addressFields = [
   ["line2", "Address line 2 (optional)", "address-line2", "lintel-cart__wide"],
   ["city", "Town or city", "address-level2", ""],
   ["postalCode", "Postcode", "postal-code", ""],
-  ["country", "Country code (like GB)", "country", ""],
+  ["country", "Country", "country", ""],
 ] as const;
+
+/**
+ * The country list holds only the countries the shop delivers to, by name. Until they load,
+ * or if they can't, it offers the page language's country, as the free-text box used to.
+ */
+function countryPicker(): HTMLSelectElement {
+  const picker = document.createElement("select");
+  const addOptions = (codes: readonly string[]) =>
+    picker.replaceChildren(
+      ...codes
+        .map((code) => new Option(countryName(code), code))
+        .sort((first, second) => first.text.localeCompare(second.text)),
+    );
+  const pageCountry = (document.documentElement.lang.split("-")[1] ?? "GB").toUpperCase();
+  addOptions([pageCountry]);
+  listDeliveryCountries()
+    .then((codes) => {
+      if (codes.length === 0) return;
+      const wanted = latestCart?.country ?? picker.value;
+      addOptions(codes);
+      picker.value = codes.includes(wanted) ? wanted : (picker.options[0]?.value ?? "");
+    })
+    .catch(() => {
+      // The page language's country stays; Choose delivery says if there's no delivery there.
+    });
+  return picker;
+}
 
 /** The details form on the basket page: email and address, then delivery, then pay. */
 export function setUpCheckoutDetails(onChange: (cart: Cart) => void): void {
@@ -122,15 +245,11 @@ export function setUpCheckoutDetails(onChange: (cart: Cart) => void): void {
   const form = element("form", "lintel-cart__checkout-form");
   for (const [name, label, autocomplete, wide] of addressFields) {
     const field = element("label", wide, label);
-    const input = document.createElement("input");
+    const input = name === "country" ? countryPicker() : document.createElement("input");
     input.name = name;
     input.autocomplete = autocomplete;
     input.required = name !== "line2";
-    if (name === "email") input.type = "email";
-    if (name === "country") {
-      input.maxLength = 2;
-      input.value = (document.documentElement.lang.split("-")[1] ?? "GB").toUpperCase();
-    }
+    if (name === "email" && input instanceof HTMLInputElement) input.type = "email";
     field.append(input);
     form.append(field);
   }
@@ -163,9 +282,9 @@ export function setUpCheckoutDetails(onChange: (cart: Cart) => void): void {
           const radio = document.createElement("input");
           radio.type = "radio";
           radio.name = "shippingRateId";
-          radio.value = rate.id;
+          radio.value = rate.rateId;
           radio.checked = index === 0;
-          option.append(radio, `${rate.name}, ${formatMoney(rate.price)}`);
+          option.append(radio, describeShippingRate(rate));
           rates.append(option);
         });
         rates.hidden = offered.length === 0;
@@ -183,8 +302,7 @@ export function setUpCheckoutDetails(onChange: (cart: Cart) => void): void {
         message.textContent =
           "Payment for this shop is set up to happen on a page of its own. Please contact the shop.";
     } catch (error) {
-      message.textContent =
-        error instanceof Error ? error.message : "Something went wrong. Please try again.";
+      message.textContent = shopperMessage(error, "Something went wrong. Please try again.");
     } finally {
       next.disabled = false;
     }

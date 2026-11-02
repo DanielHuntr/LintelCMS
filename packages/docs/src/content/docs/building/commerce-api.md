@@ -30,6 +30,10 @@ Prices depend on where the shopper is. Pass `?country=GB` (an ISO country code) 
 catalogue request to get that country's market, currency and prices; without it you get the
 primary market.
 
+Each market lists its `countries` and its `deliveryCountries`: the ones a shipping zone with
+at least one rate covers. Offer `deliveryCountries` in a checkout's country picker, so
+shoppers can only choose somewhere you deliver.
+
 ## Catalogue
 
 | Request                                  | Query                                      | Response                                   |

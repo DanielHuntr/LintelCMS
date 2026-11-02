@@ -12,6 +12,7 @@ import {
   listProductCollections,
 } from "../product-collections/product-collections.service.js";
 import { findProductRowByHandle, listProductRows } from "../products/products.repository.js";
+import { listRateRows, listZoneRows } from "../shipping/shipping.repository.js";
 import { loadProductDetails, type ProductDetails } from "../products/products.service.js";
 import type { ProductRow } from "../products/products.table.js";
 import type {
@@ -91,15 +92,30 @@ export async function listStorefrontMarkets(
   shop: ShopContext,
 ): Promise<{ markets: StorefrontMarket[] }> {
   const rows = await listMarketRows(shop.database, DEFAULT_TENANT_ID);
+  const delivered = await listCountriesWithDelivery(shop);
   return {
     markets: rows.map((row) => ({
       handle: row.handle,
       name: row.name,
       currency: row.currency,
       countries: row.countries,
+      deliveryCountries: row.countries.filter((country) => delivered.has(country)),
       pricesIncludeTax: row.pricesIncludeTax,
     })),
   };
+}
+
+/** Countries in a shipping zone that has at least one rate, so an address there gets one. */
+async function listCountriesWithDelivery(shop: ShopContext): Promise<Set<string>> {
+  const zones = await listZoneRows(shop.database, DEFAULT_TENANT_ID);
+  const rates = await listRateRows(
+    shop.database,
+    zones.map((zone) => zone.id),
+  );
+  const zonesWithRates = new Set(rates.map((rate) => rate.zoneId));
+  return new Set(
+    zones.filter((zone) => zonesWithRates.has(zone.id)).flatMap((zone) => zone.countries),
+  );
 }
 
 async function listCollectionProducts(

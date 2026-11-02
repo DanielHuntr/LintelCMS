@@ -424,12 +424,14 @@ ${phone} { :where(.lintel-product-gallery--side) { grid-template-columns: 1fr; }
 :where(.lintel-cart-button__open) { position: relative; display: inline-flex; align-items: center; justify-content: center; inline-size: 2.75rem; block-size: 2.75rem; border: 0; border-radius: 999px; background: transparent; color: inherit; cursor: pointer; }
 :where(.lintel-cart-button__count) { position: absolute; inset-block-start: 0; inset-inline-end: 0; min-inline-size: 1.25rem; block-size: 1.25rem; padding: 0 0.3rem; border-radius: 999px; background: var(--lintel-color-brand); color: var(--lintel-color-on-brand); font-size: 0.75rem; font-weight: 700; line-height: 1.25rem; }
 :where(.lintel-cart-button__count[data-empty]) { display: none; }
-:where(.lintel-cart) { display: flex; flex-direction: column; gap: var(--lintel-space-4); }
+:where(.lintel-cart:not(dialog), .lintel-cart[open]) { display: flex; flex-direction: column; gap: var(--lintel-space-4); }
 :where(.lintel-cart__title) { font-size: 1.5rem; }
 :where(.lintel-cart__contents) { flex: 1; overflow-y: auto; }
 :where(.lintel-cart__lines) { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 :where(.lintel-cart__line) { display: grid; grid-template-columns: 4.5rem 1fr auto; gap: var(--lintel-space-3); align-items: start; padding: var(--lintel-space-3) 0; border-bottom: 1px solid var(--lintel-color-border); }
-:where(.lintel-cart__line img) { inline-size: 4.5rem; aspect-ratio: 1; object-fit: cover; border-radius: var(--lintel-radius-small, 0.375rem); background: var(--lintel-color-surface); }
+:where(.lintel-cart__line img, .lintel-cart__line-picture) { inline-size: 4.5rem; aspect-ratio: 1; object-fit: cover; border-radius: var(--lintel-radius-small, 0.375rem); background: var(--lintel-color-surface); }
+:where(.lintel-cart__line-picture) { display: grid; place-items: center; color: var(--lintel-color-text-secondary); }
+:where(.lintel-cart__line-picture svg) { inline-size: 1.5rem; block-size: 1.5rem; opacity: 0.4; }
 :where(.lintel-cart__line-name) { font-weight: 600; }
 :where(.lintel-cart__line-detail, .lintel-cart__problem) { font-size: 0.875rem; color: var(--lintel-color-text-secondary); }
 :where(.lintel-cart__problem) { color: #c0392b; }
@@ -439,8 +441,18 @@ ${phone} { :where(.lintel-product-gallery--side) { grid-template-columns: 1fr; }
 :where(.lintel-cart__totals) { display: grid; grid-template-columns: 1fr auto; gap: var(--lintel-space-1) var(--lintel-space-4); }
 :where(.lintel-cart__totals dt) { color: var(--lintel-color-text-secondary); }
 :where(.lintel-cart__totals dd) { margin: 0; text-align: end; font-weight: 600; }
+:where(.lintel-cart__discount:not([hidden])) { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--lintel-space-3); }
+:where(.lintel-cart__discount label) { display: flex; flex: 1; flex-direction: column; gap: var(--lintel-space-1); min-inline-size: 12rem; font-weight: 600; font-size: 0.875rem; }
+:where(.lintel-cart__discount-problems, .lintel-cart__codes) { inline-size: 100%; margin: 0; font-size: 0.875rem; }
+:where(.lintel-cart__discount-problems) { color: var(--lintel-color-text-secondary); }
+:where(.lintel-cart__codes) { display: flex; flex-wrap: wrap; gap: var(--lintel-space-3); padding: 0; list-style: none; }
+:where(.lintel-cart__discount-problems:empty, .lintel-cart__codes:empty) { display: none; }
+:where(.lintel-cart__code) { display: inline-flex; align-items: center; gap: var(--lintel-space-2); font-weight: 600; }
 :where(.lintel-cart__checkout-form) { display: grid; gap: var(--lintel-space-3); grid-template-columns: repeat(2, minmax(0, 1fr)); }
-:where(.lintel-cart__checkout-form label) { display: flex; flex-direction: column; gap: var(--lintel-space-1); font-weight: 600; font-size: 0.875rem; }
+:where(.lintel-cart__checkout-form label:not(.lintel-form__choice), .lintel-cart__rates legend) { display: flex; flex-direction: column; gap: var(--lintel-space-1); font-weight: 600; font-size: 0.875rem; }
+:where(.lintel-cart__rates) { margin: 0; padding: 0; border: 0; }
+:where(.lintel-cart__rates:not([hidden])) { display: grid; gap: var(--lintel-space-1); }
+:where(.lintel-cart__rates legend) { margin-bottom: var(--lintel-space-1); padding: 0; }
 :where(.lintel-cart__checkout-form .lintel-cart__wide) { grid-column: 1 / -1; }
 ${phone} { :where(.lintel-cart__checkout-form) { grid-template-columns: 1fr; } }
 :where(.lintel-cart__message) { padding: var(--lintel-space-3); border-radius: var(--lintel-radius-medium); background: var(--lintel-color-surface); }

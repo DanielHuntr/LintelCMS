@@ -311,6 +311,24 @@ describe("importing from Shopify", () => {
       // Archived orders never become orders Lintel could refund.
       expect((await shop.admin("GET", "/shop/orders")).json().total).toBe(0);
 
+      // But they are the customers' history: counted, added up and dated from the old shop.
+      // Grace's only order was cancelled, so it dates her but doesn't count.
+      const summary = (customer: Record<string, unknown> | undefined) => [
+        customer?.orderCount,
+        customer?.totalSpent,
+        customer?.customerSince,
+      ];
+      const ada2 = (await shop.admin("GET", `/shop/customers/${ada.id}`)).json();
+      expect(summary(ada2)).toEqual([
+        1,
+        [{ amount: 8695, currency: "GBP" }],
+        "2026-03-01T10:14:02.000Z",
+      ]);
+      const graceCustomer = customers.items.find(
+        (item: { email: string }) => item.email === "grace@example.com",
+      );
+      expect(summary(graceCustomer)).toEqual([0, [], "2026-04-12T20:40:00.000Z"]);
+
       // The redirects wait in the SEO plugin's list as suggestions.
       const redirects = (await shop.admin("GET", "/seo/redirects")).json();
       expect(redirects.redirects).toEqual(

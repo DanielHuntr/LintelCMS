@@ -1,10 +1,11 @@
 import { eachBehaviour } from "./behaviour-helpers.js";
-import { renderCartViews, setUpCheckoutDetails } from "./cart-views.js";
+import { renderCartViews, setUpCheckoutDetails, setUpDiscountCode } from "./cart-views.js";
 import {
   addToCart,
   type Cart,
   loadCart,
   shopRequest,
+  shopperMessage,
   startedCheckoutId,
   forgetCart,
 } from "./shop-api.js";
@@ -130,8 +131,7 @@ export function setUpAddToCart(root: ParentNode): void {
           if (drawer && !drawer.open) drawer.showModal();
         }
       } catch (error) {
-        if (status)
-          status.textContent = error instanceof Error ? error.message : "That couldn’t be added.";
+        if (status) status.textContent = shopperMessage(error, "That couldn’t be added.");
       } finally {
         if (button) button.disabled = false;
       }
@@ -144,6 +144,7 @@ export async function setUpCart(root: ParentNode): Promise<void> {
     '[data-behaviour~="cart"], [data-cart-count], [data-behaviour~="add-to-cart"]',
   );
   if (!hasShop) return;
+  setUpDiscountCode(showCart);
   setUpCheckoutDetails(showCart);
   showCart(await loadCart());
 }

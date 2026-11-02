@@ -41,7 +41,7 @@ const collectionSummarySchema = z.object({
 });
 const cartLineParamsSchema = cartTokenParamsSchema.extend({ lineId: z.uuid() });
 const checkoutParamsSchema = z.object({ id: z.uuid() });
-const shippingRateOptionSchema = z.object({
+export const shippingRateOptionSchema = z.object({
   rateId: z.uuid(),
   name: z.string(),
   deliveryEstimate: z.string(),

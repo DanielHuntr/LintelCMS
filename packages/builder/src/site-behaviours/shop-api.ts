@@ -22,17 +22,70 @@ export interface CartLine {
   quantityAvailable: number | null;
 }
 
+/** What one discount takes off. `code` is "" for automatic discounts. */
+export interface CartDiscount {
+  code: string;
+  title: string;
+  /** For free delivery: what the chosen delivery would have cost, already off `shipping`. */
+  amount: Money;
+  freeShipping: boolean;
+}
+
 export interface Cart {
   email: string | null;
   country: string | null;
   shippingAddress: Record<string, string> | null;
   shippingRateId: string | null;
+  discountCodes: string[];
   lines: CartLine[];
   itemCount: number;
   subtotal: Money;
+  discounts: CartDiscount[];
+  /** Codes in the cart that don't apply yet, with a message for the shopper. */
+  discountProblems: Array<{ code: string; message: string }>;
   shipping: Money | null;
   total: Money;
   readyForCheckout: boolean;
+}
+
+/** One line of the basket's sums. `amount` is signed (discounts are negative). */
+export interface CartTotalRow {
+  label: string;
+  /** Null for free delivery before a delivery is chosen: nothing to add up yet. */
+  amount: Money | null;
+}
+
+function discountLabel(discount: CartDiscount): string {
+  if (discount.freeShipping)
+    return discount.code ? `Free delivery (${discount.code})` : discount.title;
+  return discount.code ? `Discount (${discount.code})` : discount.title;
+}
+
+/**
+ * The basket's sums, one row per discount, so they add up to the total the API works out:
+ * subtotal, minus each discount, plus delivery. A free-delivery discount is already taken
+ * off `shipping`, so delivery is shown at its full price with the discount below it.
+ */
+export function cartTotalRows(cart: Cart): CartTotalRow[] {
+  const currency = cart.total.currency;
+  const minus = (money: Money): Money => ({ amount: -money.amount, currency: money.currency });
+  const rows: CartTotalRow[] = [{ label: "Subtotal", amount: cart.subtotal }];
+  for (const discount of cart.discounts.filter((each) => !each.freeShipping)) {
+    rows.push({ label: discountLabel(discount), amount: minus(discount.amount) });
+  }
+  const freeDelivery = cart.discounts.filter((each) => each.freeShipping);
+  if (cart.shipping) {
+    const saved = freeDelivery.reduce((sum, discount) => sum + discount.amount.amount, 0);
+    rows.push({ label: "Delivery", amount: { amount: cart.shipping.amount + saved, currency } });
+    for (const discount of freeDelivery) {
+      rows.push({ label: discountLabel(discount), amount: minus(discount.amount) });
+    }
+  } else {
+    for (const discount of freeDelivery)
+      rows.push({ label: discountLabel(discount), amount: null });
+  }
+  rows.push({ label: "Total", amount: cart.total });
+  return rows;
 }
 
 export class ShopRequestError extends Error {
@@ -149,10 +202,31 @@ export async function updateCart(changes: Record<string, unknown>): Promise<Cart
   });
 }
 
+/**
+ * One way to deliver the cart, exactly as `GET /delivery/shop/carts/:token/shipping-rates`
+ * answers (`ShippingQuote` in core). A contract test in core feeds the real answer through
+ * `describeShippingRate`, so the two can't drift apart again.
+ */
 export interface ShippingRate {
-  id: string;
+  rateId: string;
   name: string;
-  price: Money;
+  deliveryEstimate: string;
+  amount: Money;
+}
+
+/** How a delivery choice reads to the shopper: "Standard, £4.95 (2 to 3 working days)". */
+export function describeShippingRate(rate: ShippingRate): string {
+  const price = `${rate.name}, ${formatMoney(rate.amount)}`;
+  return rate.deliveryEstimate ? `${price} (${rate.deliveryEstimate})` : price;
+}
+
+/**
+ * What to tell the shopper when something fails. The shop's own answers are written for
+ * shoppers; anything else (a bug, a dropped connection) gets a plain sentence instead of
+ * the browser's technical message.
+ */
+export function shopperMessage(error: unknown, fallback: string): string {
+  return error instanceof ShopRequestError ? error.message : fallback;
 }
 
 export async function listShippingRates(): Promise<ShippingRate[]> {
@@ -161,6 +235,35 @@ export async function listShippingRates(): Promise<ShippingRate[]> {
     `/carts/${encodeURIComponent(token)}/shipping-rates`,
   );
   return answer.rates ?? answer.items ?? [];
+}
+
+/** A market as `GET /delivery/shop/markets` answers it (the fields the website uses). */
+export interface StorefrontMarket {
+  handle: string;
+  countries: string[];
+  /** The market's countries a shipping zone with a rate covers. */
+  deliveryCountries: string[];
+}
+
+/** Every country the shop delivers to, once each, from the markets answer. */
+export function deliveryCountriesOf(answer: { markets: StorefrontMarket[] }): string[] {
+  return [...new Set(answer.markets.flatMap((market) => market.deliveryCountries))];
+}
+
+export async function listDeliveryCountries(): Promise<string[]> {
+  return deliveryCountriesOf(await shopRequest<{ markets: StorefrontMarket[] }>("/markets"));
+}
+
+/** "United Kingdom" for "GB", in the page's language; the code itself if that fails. */
+export function countryName(code: string): string {
+  try {
+    const names = new Intl.DisplayNames([document.documentElement.lang || "en"], {
+      type: "region",
+    });
+    return names.of(code) ?? code;
+  } catch {
+    return code;
+  }
 }
 
 /** Starts paying: the shop's payment provider takes over from the address it answers with. */

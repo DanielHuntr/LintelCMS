@@ -82,6 +82,8 @@ export interface ArchivedOrder {
   id: string;
   name: string;
   email: string;
+  /** The customer the import made or found for the order's email, if any. */
+  customerId: string | null;
   total: { amount: number; currency: string };
   paymentStatus: string;
   fulfilmentStatus: string;
@@ -114,6 +116,11 @@ export function dryRunShopifyImport(importId: string) {
 
 export function runShopifyImportBatch(importId: string) {
   return apiRequest<ShopifyImport>(`/shop/imports/${importId}/run`, { method: "POST", body: {} });
+}
+
+/** Every order from before the move, newest first: the Orders list's "Imported" view. */
+export function listImportedOrders(): Promise<{ items: ArchivedOrder[]; total: number }> {
+  return apiRequest(`/shop/archived-orders?${new URLSearchParams({ perPage: "100" })}`);
 }
 
 export async function listArchivedOrders(customerId: string): Promise<ArchivedOrder[]> {

@@ -438,6 +438,15 @@ const AddToCart = drawsProps(addToCartComponent, ({ props, attributes, node, mod
   );
 });
 
+/** The product page's "no picture" icon, for the basket script to copy into lines without one. */
+function NoPictureIcon() {
+  return (
+    <template className="lintel-cart__no-picture">
+      <SiteIcon name="shopping-bag" />
+    </template>
+  );
+}
+
 function cartAttributes(apiBase: string) {
   return { "data-api": apiBase };
 }
@@ -481,6 +490,7 @@ const CartDrawer = drawsProps(cartDrawerComponent, ({ props, attributes, node, m
             {...cartAttributes(site.apiBase)}
           >
             <p className="lintel-cart__empty">{props.emptyText}</p>
+            <NoPictureIcon />
           </div>
           <a className="lintel-button lintel-cart__checkout" href="/cart">
             {props.checkoutLabel}
@@ -503,6 +513,7 @@ const CartContents = drawsProps(cartContentsComponent, ({ props, attributes, mod
       {...cartAttributes(site.apiBase)}
     >
       <p className="lintel-cart__empty">{props.emptyText}</p>
+      <NoPictureIcon />
       <noscript>
         <p>Your basket needs JavaScript switched on.</p>
       </noscript>
