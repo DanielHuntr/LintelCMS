@@ -5,6 +5,7 @@ import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { t } from "../i18n/strings.js";
+import { useCan } from "../session/SessionContext.js";
 import { useMarkets, usePaymentSettings, useTaxSettings } from "./shopSettings.queries.js";
 
 /** /commerce/settings: one row per area, like iOS Settings, each saying how it's set now. */
@@ -12,6 +13,8 @@ export function ShopSettingsPage() {
   const markets = useMarkets();
   const payments = usePaymentSettings();
   const taxes = useTaxSettings();
+  // Shop emails are read in the outbox, which holds sign-in links: owners only.
+  const canReadOutbox = useCan("*");
 
   return (
     <>
@@ -65,13 +68,15 @@ export function ShopSettingsPage() {
             }
             to="/commerce/settings/payments"
           />
-          <GroupedListRow
-            icon={Mail}
-            iconTone="neutral"
-            label={t("shop.emails.title")}
-            description={t("shop.emails.rowDescription")}
-            to="/settings/email-outbox"
-          />
+          {canReadOutbox && (
+            <GroupedListRow
+              icon={Mail}
+              iconTone="neutral"
+              label={t("shop.emails.title")}
+              description={t("shop.emails.rowDescription")}
+              to="/settings/email-outbox"
+            />
+          )}
         </GroupedList>
       </div>
     </>

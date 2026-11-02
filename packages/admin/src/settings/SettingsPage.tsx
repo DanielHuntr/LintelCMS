@@ -37,6 +37,8 @@ export function SettingsPage() {
   const canSeeBackups = useCan("backups:read");
   const canTransferContent = useCan("content:transfer");
   const canSeeUpdates = useCan("updates:read");
+  // The outbox holds other people's sign-in links, so only owners can read it.
+  const canReadOutbox = useCan("*");
 
   return (
     <Page width="readable">
@@ -69,7 +71,7 @@ export function SettingsPage() {
             />
           </GroupedList>
         )}
-        {(canSeeSecurityLog || canSeeSiteSettings) && (
+        {(canSeeSecurityLog || canReadOutbox) && (
           <GroupedList header={t("settings.securityHeader")}>
             {canSeeSecurityLog && (
               <GroupedListRow
@@ -80,7 +82,7 @@ export function SettingsPage() {
                 to="/settings/security-log"
               />
             )}
-            {canSeeSiteSettings && (
+            {canReadOutbox && (
               <GroupedListRow
                 icon={Inbox}
                 iconTone="neutral"
