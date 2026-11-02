@@ -178,4 +178,25 @@ describe("the page design screen", () => {
     ).toBeInTheDocument();
     expect(within(banner).queryByText("Not on your site yet")).not.toBeInTheDocument();
   });
+
+  // On a phone the builder spilled 640px past the screen and the tour still ran.
+  it("says the designer needs a bigger screen on a phone, with ways on", async () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query.includes("max-width"),
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }));
+    mockApi(({ method, url }) => {
+      if (method === "GET" && url.pathname === "/entries/p1") return samplePage();
+      throw apiErrorResponse(404, "NOT_FOUND", "Not found");
+    });
+    renderScreen(<PageDesignPage collectionHandle="pages" entryId="p1" fieldHandle="design" />);
+
+    expect(
+      await screen.findByRole("heading", { name: "The designer needs a bigger screen" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Back to Home" })).toBeInTheDocument();
+    expect(screen.queryByTitle("Your page")).not.toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
 });

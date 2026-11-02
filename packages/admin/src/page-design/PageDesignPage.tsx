@@ -10,7 +10,7 @@ import { defaultTheme, themeStylesheet } from "@lintel/site-components";
 import siteStylesheet from "@lintel/site-components/styles.css?raw";
 import type { MotionEditorStringKey } from "@lintel/motion-editor";
 import { Link } from "@tanstack/react-router";
-import { ChevronLeft, SquareArrowOutUpRight } from "lucide-react";
+import { ChevronLeft, MonitorSmartphone, SquareArrowOutUpRight } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { LoadError } from "../api/LoadError.js";
 import { useCollection, useEntry } from "../content/content.queries.js";
@@ -21,6 +21,8 @@ import { useEntryInfo } from "../content-tree/contentTree.queries.js";
 import { viewPageTarget } from "../content/viewPage.js";
 import { ViewPageLink } from "../content/ViewPageLink.js";
 import { ConfirmDialog } from "../design/ConfirmDialog.js";
+import { buttonClasses } from "../design/Button.js";
+import { useIsNarrowScreen } from "../design/useIsNarrowScreen.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { type StringKey, t } from "../i18n/strings.js";
@@ -124,6 +126,7 @@ function PageDesigner({
     ? viewPageTarget(viewPageSite, collection.data, saving.entry, entryInfo.data?.url)
     : undefined;
   const imagePicker = useImagePicker();
+  const isNarrowScreen = useIsNarrowScreen();
   const title = String(saving.entry.data.title ?? "") || t("pageDesign.untitled");
   const text = useCallback(
     (key: string, values?: Readonly<Record<string, string | number>>) =>
@@ -147,6 +150,36 @@ function PageDesigner({
       <p className="p-8 text-body text-label">
         {t("pageDesign.unreadable", { problem: opened.problem })}
       </p>
+    );
+  // The canvas, panels and toolbar need a laptop's width; on a phone it spilled off the
+  // screen, so say so and offer what works there (LINTEL-UX-013).
+  if (isNarrowScreen)
+    return (
+      <main className="flex min-h-dvh flex-col items-center justify-center gap-3 p-6 text-center">
+        <span className="mb-1 flex size-16 items-center justify-center rounded-full bg-fill text-label-secondary">
+          <MonitorSmartphone aria-hidden="true" strokeWidth={1.5} className="size-7" />
+        </span>
+        <h1 className="text-title text-label">{t("pageDesign.narrow.title")}</h1>
+        <p className="max-w-md text-body text-balance text-label-secondary">
+          {t("pageDesign.narrow.description")}
+        </p>
+        <div className="mt-2 flex flex-wrap justify-center gap-2">
+          {viewPage && (
+            <ViewPageLink target={viewPage} className={buttonClasses("filled", "medium")}>
+              <SquareArrowOutUpRight aria-hidden="true" className="size-4" />
+              {t("editor.viewPage")}
+            </ViewPageLink>
+          )}
+          <Link
+            to="/content/$collection/$entryId"
+            params={{ collection: collectionHandle, entryId: saving.entry.id }}
+            search={{ locale: undefined }}
+            className={buttonClasses("tinted", "medium")}
+          >
+            {t("pageDesign.back", { title })}
+          </Link>
+        </div>
+      </main>
     );
 
   return (

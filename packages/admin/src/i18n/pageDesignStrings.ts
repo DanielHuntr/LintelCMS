@@ -18,6 +18,9 @@ export const pageDesignStrings = {
   "pageDesign.notAPageField": "This entry has no page design called “{field}”.",
   "pageDesign.unreadable": "This page design can’t be opened: {problem}",
   "pageDesign.publish": "Publish",
+  "pageDesign.narrow.title": "The designer needs a bigger screen",
+  "pageDesign.narrow.description":
+    "Laying out a page takes a laptop or a tablet held sideways. On this screen you can look at the page, and change its words and pictures in the page editor.",
   "pageDesign.publishing": "Publishing…",
   "pageDesign.published": "Published",
   "pageDesign.publishedAnnouncement": "Published. Your changes are on your site.",
