@@ -34,7 +34,7 @@ function overview(changes: Partial<UpdatesOverview> = {}): UpdatesOverview {
     releases: [securityRelease],
     recommendedVersion: "1.2.0",
     plugins: [],
-    summary: { count: 1, securityCount: 1 },
+    summary: { count: 1, securityCount: 1, checkFailed: false },
     canInstall: true,
     installedVersions: [],
     progress: null,
@@ -148,7 +148,7 @@ describe("Settings → Updates", () => {
         ? overview({
             releases: [],
             recommendedVersion: null,
-            summary: { count: 0, securityCount: 0 },
+            summary: { count: 0, securityCount: 0, checkFailed: false },
           })
         : undefined,
     );
@@ -250,6 +250,37 @@ describe("the update's progress", () => {
       await screen.findByRole("heading", { name: "The update didn’t work" }),
     ).toBeInTheDocument();
     expect(screen.getByText(/running the version it had before/)).toBeInTheDocument();
+  });
+});
+
+describe("when the last look for updates didn't work", () => {
+  it("says it couldn't check, not that this is the newest version", async () => {
+    mockApi(({ url }) =>
+      url.pathname === "/updates"
+        ? overview({
+            releases: [],
+            recommendedVersion: null,
+            problem: "Lintel couldn't reach the update feed (The update feed answered 403).",
+            summary: { count: 0, securityCount: 0, checkFailed: true },
+          })
+        : undefined,
+    );
+    renderScreen(<UpdatesPage />, { permissions: ["*"] });
+    expect(await screen.findByText("Couldn’t check for updates")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("couldn't reach the update feed");
+    expect(screen.queryByText("You’re up to date")).not.toBeInTheDocument();
+  });
+
+  it("says so on the dashboard too", async () => {
+    mockApi(({ url }) => {
+      if (url.pathname === "/updates/summary")
+        return { count: 0, securityCount: 0, checkFailed: true };
+      if (url.pathname === "/about") return { version: "1.1.0" };
+      return undefined;
+    });
+    renderScreen(<UpdatesWidget />);
+    expect(await screen.findByText("Couldn’t check for updates")).toBeInTheDocument();
+    expect(screen.queryByText(/is up to date/)).not.toBeInTheDocument();
   });
 });
 

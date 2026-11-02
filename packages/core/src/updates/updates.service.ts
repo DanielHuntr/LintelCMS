@@ -106,7 +106,7 @@ export async function checkForUpdatesNow(server: FastifyInstance) {
   if (!server.updates.checksEnabled) {
     return readSetting(server.database, "updateCheck");
   }
-  return checkForUpdates(updateChecksContextFor(server));
+  return checkForUpdates(updateChecksContextFor(server), new Date(), { manual: true });
 }
 
 export async function saveUpdatePreferences(

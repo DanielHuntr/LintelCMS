@@ -34,9 +34,14 @@ export interface UpdateChecksContext {
 
 export const DAILY = 24 * 60 * 60 * 1000;
 
+/**
+ * `manual` is a check someone asked for with "Check now": its problem doesn't promise
+ * another look tomorrow, because they are looking at the answer and can press it again.
+ */
 export async function checkForUpdates(
   context: UpdateChecksContext,
   now = new Date(),
+  { manual = false }: { manual?: boolean } = {},
 ): Promise<UpdateCheck> {
   const previous = await readSetting(context.database, "updateCheck");
   let releases = previous.releases;
@@ -46,7 +51,7 @@ export async function checkForUpdates(
       isNewerVersion(release.version, context.currentVersion),
     );
   } catch (error) {
-    problem = describeCheckProblem(error);
+    problem = describeCheckProblem(error, manual);
     context.log.warn({ error: problem }, "Looking for Lintel updates didn't work");
   }
   const plugins = await findPluginUpdates(context.fetch, context.installFolder).catch(
@@ -89,12 +94,13 @@ async function fetchReleases(context: UpdateChecksContext): Promise<AvailableRel
   return parseReleaseFeed(await response.json());
 }
 
-function describeCheckProblem(error: unknown): string {
+function describeCheckProblem(error: unknown, manual: boolean): string {
   if (error instanceof UpdateFeedFormatError) {
     return error.message;
   }
   const reason = error instanceof Error ? error.message : String(error);
-  return `Lintel couldn't reach the update feed (${reason}). It will try again tomorrow.`;
+  const unreachable = `Lintel couldn't reach the update feed (${reason}).`;
+  return manual ? unreachable : `${unreachable} It will try again tomorrow.`;
 }
 
 /**
@@ -132,6 +138,8 @@ export interface UpdateSummary {
   /** Lintel versions and plugin updates together, as the badge counts them. */
   count: number;
   securityCount: number;
+  /** The last look for updates didn't work, so a count of 0 doesn't mean up to date. */
+  checkFailed: boolean;
 }
 
 export function summariseUpdates(
@@ -143,6 +151,7 @@ export function summariseUpdates(
   return {
     count: releases.length + check.plugins.length,
     securityCount: releases.filter((release) => release.security).length,
+    checkFailed: check.problem !== null,
   };
 }
 
