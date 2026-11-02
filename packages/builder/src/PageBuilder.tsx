@@ -52,6 +52,7 @@ import {
 import { type InsertFocusRequest, InsertPanel } from "./panels/InsertPanel.js";
 import { LayersPanel } from "./panels/LayersPanel.js";
 import { SelectedElementPanel } from "./panels/SelectedElementPanel.js";
+import { type CanvasLook, CanvasLookContext } from "./style-panel/canvas-look.js";
 import type { ComponentRegistry } from "./render/component-registry.js";
 import { designBaseStylesheet } from "./render/design-stylesheet.js";
 import { renderPage } from "./render/render-page.js";
@@ -158,6 +159,8 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   const [insertFocusRequest, setInsertFocusRequest] = useState<InsertFocusRequest>();
   const [motionPreview, setMotionPreview] = useState<MotionPreview | null>(null);
   const [textSelection, setTextSelection] = useState<TextSelectionMessage | null>(null);
+  // How the selected element looks on the canvas, for the style panel's "as it is now".
+  const [canvasLook, setCanvasLook] = useState<CanvasLook | null>(null);
   // Mod+K asks the selected words' bar for a link; the bar watches this go up.
   const [linkRequest, setLinkRequest] = useState(0);
   const preferences = props.preferences ?? browserPreferenceStore;
@@ -332,6 +335,15 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
       if (message.type === "hover") setHoveredId(message.nodeId);
       if (message.type === "editText") actions.editText(message.nodeId, message.prop, message.text);
       if (message.type === "key") runShortcut(message.key);
+      if (message.type === "look") {
+        setCanvasLook({
+          nodeId: message.nodeId,
+          textAlign: message.textAlign,
+          fontSize: message.fontSize,
+          fontWeight: message.fontWeight,
+          color: message.color,
+        });
+      }
       if (message.type === "paste") actions.paste(message);
       if (message.type === "textSelection") {
         setTextSelection(message.nodeId === null ? null : message);
@@ -551,29 +563,31 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                   />
                 )}
               </main>
-              <SelectedElementPanel
-                document={state.document}
-                node={selectedNode ?? null}
-                nodeName={labels.selected ?? ""}
-                definition={definition}
-                isLocked={selectedIsLocked}
-                breakpoint={breakpoint}
-                registry={registry}
-                tools={tools}
-                tips={tips}
-                pickImage={props.pickImage}
-                uploadFile={props.uploadFile}
-                motionText={props.motionText}
-                showCode={skillLevel === "developer"}
-                actions={{
-                  ...actions,
-                  animate: (nodeId, animation) => {
-                    actions.animate(nodeId, animation);
-                    if (!animation) setMotionPreview(null);
-                  },
-                }}
-                onPreviewMotion={previewMotion}
-              />
+              <CanvasLookContext value={canvasLook}>
+                <SelectedElementPanel
+                  document={state.document}
+                  node={selectedNode ?? null}
+                  nodeName={labels.selected ?? ""}
+                  definition={definition}
+                  isLocked={selectedIsLocked}
+                  breakpoint={breakpoint}
+                  registry={registry}
+                  tools={tools}
+                  tips={tips}
+                  pickImage={props.pickImage}
+                  uploadFile={props.uploadFile}
+                  motionText={props.motionText}
+                  showCode={skillLevel === "developer"}
+                  actions={{
+                    ...actions,
+                    animate: (nodeId, animation) => {
+                      actions.animate(nodeId, animation);
+                      if (!animation) setMotionPreview(null);
+                    },
+                  }}
+                  onPreviewMotion={previewMotion}
+                />
+              </CanvasLookContext>
             </div>
             {showsTour && <GuidedTour skillLevel={skillLevel} onClose={closeTour} />}
             {/* The same sentence twice in a row is still read out: the space changes the text. */}

@@ -214,6 +214,23 @@ export function runCanvasFrame(snap: typeof snapBox): void {
     return getComputedStyle(element).position === "absolute" ? { element, container } : null;
   }
 
+  // How the selected element looks, so the style panel can show the real size and alignment
+  // when nothing is set on the element itself.
+  function sendLook() {
+    const nodeId = outline.selectedId;
+    const element = nodeId ? nodeElement(nodeId) : null;
+    if (!nodeId || !element) return;
+    const style = getComputedStyle(element);
+    send({
+      type: "look",
+      nodeId,
+      textAlign: style.textAlign,
+      fontSize: Number.parseFloat(style.fontSize) || 16,
+      fontWeight: style.fontWeight,
+      color: style.color,
+    });
+  }
+
   function sendPlace(nodeId: string, container: HTMLElement, left: number, top: number) {
     const width = container.clientWidth;
     const height = container.clientHeight;
@@ -305,9 +322,12 @@ export function runCanvasFrame(snap: typeof snapBox): void {
         return;
       }
       drawPage(message.html, message.css ?? "");
+      sendLook();
     } else if (message.type === "outline") {
+      const previous = outline.selectedId;
       outline = event.data as typeof outline;
       drawOutlines();
+      if (outline.selectedId !== previous) sendLook();
     } else if (message.type === "reveal" && message.nodeId) {
       nodeElement(message.nodeId)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
     } else if (message.type === "previewMotion" && message.nodeId) {

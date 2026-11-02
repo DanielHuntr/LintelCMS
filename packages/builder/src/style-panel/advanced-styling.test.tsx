@@ -180,13 +180,23 @@ describe("advanced styling in the Style panel", () => {
     expect(node("Big word")?.styles.base.fontFamily).toBe(
       "'Bebas Neue', Impact, 'Arial Narrow', sans-serif",
     );
-    await person.click(within(group).getByRole("checkbox", { name: "Grow with the screen" }));
-    expect(node("Big word")?.styles.base.fontSize).toBe("clamp(2rem, 1.26rem + 3.05vw, 4rem)");
+    // Sizes in pixels that grow with the screen are for designers, not beginners.
+    expect(within(group).queryByRole("checkbox", { name: "Grow with the screen" })).toBeNull();
     await person.click(within(group).getByRole("button", { name: "Thick" }));
     expect(node("Big word")?.styles.base).toMatchObject({
       textStroke: "2px currentColor",
       textFillColor: "transparent",
     });
+  });
+
+  it("sizes text with the screen, in Advanced", async () => {
+    const person = userEvent.setup();
+    const { node } = renderBuilder("designer");
+    await select(person, "Big word");
+    await person.click(screen.getByRole("radio", { name: "Advanced" }));
+    const group = await open(person, "Text");
+    await person.click(within(group).getByRole("checkbox", { name: "Grow with the screen" }));
+    expect(node("Big word")?.styles.base.fontSize).toBe("clamp(2rem, 1.26rem + 3.05vw, 4rem)");
   });
 
   it("switches a section to a free layout and stacks its children", async () => {

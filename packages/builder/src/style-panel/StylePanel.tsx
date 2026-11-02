@@ -7,6 +7,7 @@ import type {
   StyleTarget,
 } from "@lintel/builder-model";
 import { type ReactNode, useId, useMemo } from "react";
+import { CanvasLookContext, useCanvasLook } from "./canvas-look.js";
 import type { BuilderStringKey } from "../i18n/builder-strings.js";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { usePreferenceStore } from "../preferences/builder-preferences.js";
@@ -108,6 +109,8 @@ export function StylePanel({
     [sections, isLocked],
   );
   const holdsElements = definition?.allowedChildren !== "none";
+  // Only this element's measured look goes on to the sections, never another's.
+  const look = useCanvasLook(node.id);
   const showsText = advanced || textTypes.has(node.type) || holdsElements;
 
   return (
@@ -137,27 +140,29 @@ export function StylePanel({
           <p className="text-caption text-warning">{text("pageBuilder.style.lockedNote")}</p>
         )}
       </div>
-      <fieldset className="m-0 min-w-0 border-0 p-0">
-        <legend className="sr-only">{text("pageBuilder.style.legend")}</legend>
-        <OpenSectionsContext.Provider value={openSections}>
-          <StyleEditingContext.Provider value={editing}>
-            <DesignToolsContext.Provider value={design}>
-              <ArrangeSection advanced={advanced} />
-              {holdsElements && <LayoutSection advanced={advanced} />}
-              <SpacingSection advanced={advanced} />
-              {advanced && <SizeSection />}
-              {showsText && <TypographySection advanced={advanced} />}
-              <BackgroundSection advanced={advanced} />
-              <BordersSection advanced={advanced} />
-              <TransformSection advanced={advanced} />
-              <ShapeSection advanced={advanced} />
-              {advanced && <PositionSection />}
-              {advanced && <EffectsSection />}
-              <FiltersSection advanced={advanced} />
-            </DesignToolsContext.Provider>
-          </StyleEditingContext.Provider>
-        </OpenSectionsContext.Provider>
-      </fieldset>
+      <CanvasLookContext value={look}>
+        <fieldset className="m-0 min-w-0 border-0 p-0">
+          <legend className="sr-only">{text("pageBuilder.style.legend")}</legend>
+          <OpenSectionsContext.Provider value={openSections}>
+            <StyleEditingContext.Provider value={editing}>
+              <DesignToolsContext.Provider value={design}>
+                <ArrangeSection advanced={advanced} />
+                {holdsElements && <LayoutSection advanced={advanced} />}
+                <SpacingSection advanced={advanced} />
+                {advanced && <SizeSection />}
+                {showsText && <TypographySection advanced={advanced} />}
+                <BackgroundSection advanced={advanced} />
+                <BordersSection advanced={advanced} />
+                <TransformSection advanced={advanced} />
+                <ShapeSection advanced={advanced} />
+                {advanced && <PositionSection />}
+                {advanced && <EffectsSection />}
+                <FiltersSection advanced={advanced} />
+              </DesignToolsContext.Provider>
+            </StyleEditingContext.Provider>
+          </OpenSectionsContext.Provider>
+        </fieldset>
+      </CanvasLookContext>
     </div>
   );
 }

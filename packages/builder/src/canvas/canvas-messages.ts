@@ -48,6 +48,15 @@ export type MessageFromFrame =
   | { type: "place"; nodeId: string; left: number; top: number }
   /** "Add pages to your menu" was pressed in place of an empty menu. */
   | { type: "openMenu"; nodeId: string }
+  /** How the selected element looks, measured on the canvas, for the style panel. */
+  | {
+      type: "look";
+      nodeId: string;
+      textAlign: string;
+      fontSize: number;
+      fontWeight: string;
+      color: string;
+    }
   /** Part of a text is selected (or, with nodeId null, nothing is). */
   | { type: "textSelection"; nodeId: null }
   | TextSelectionMessage;

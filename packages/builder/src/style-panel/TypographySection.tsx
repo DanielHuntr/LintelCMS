@@ -2,6 +2,7 @@ import { colourTokens } from "@lintel/builder-model";
 import { AlignCenter, AlignJustify, AlignLeft, AlignRight } from "lucide-react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { ChoiceGroup, PanelSection } from "../ui/controls.js";
+import { lookAlign, nearestSizeChip, useSelectedLook } from "./canvas-look.js";
 import { useStyleField, useStyleReader } from "./style-field.js";
 import { textSummary } from "./style-summaries.js";
 import { FontPicker } from "./FontPicker.js";
@@ -16,6 +17,10 @@ export function TypographySection({ advanced }: { advanced: boolean }) {
   const text = useBuilderText();
   const read = useStyleReader();
   const align = useStyleField("textAlign", text("pageBuilder.style.textAlign"));
+  // While nothing is set, the choices show how the text really looks on the canvas.
+  const look = useSelectedLook();
+  const sizes = [undefined, "0.875rem", "1.25rem", "2rem", "3.5rem"];
+  const weights = ["400", "500", "700"];
   return (
     <PanelSection
       title={text("pageBuilder.style.text")}
@@ -33,6 +38,7 @@ export function TypographySection({ advanced }: { advanced: boolean }) {
           { value: "2rem", label: text("pageBuilder.style.sizeHuge") },
           { value: "3.5rem", label: text("pageBuilder.style.sizeGiant") },
         ]}
+        lookValue={nearestSizeChip(look, sizes)}
       />
       <StyleChips
         properties={["fontWeight"]}
@@ -42,10 +48,11 @@ export function TypographySection({ advanced }: { advanced: boolean }) {
           { value: "500", label: text("pageBuilder.style.weightMedium") },
           { value: "700", label: text("pageBuilder.style.weightBold") },
         ]}
+        lookValue={look && weights.includes(look.fontWeight) ? look.fontWeight : null}
       />
       <ChoiceGroup
         label={text("pageBuilder.style.textAlign")}
-        value={align.value ?? "left"}
+        value={align.value ?? lookAlign(look) ?? "left"}
         onChange={(value) => align.set(value)}
         iconsOnly
         choices={[
@@ -55,7 +62,7 @@ export function TypographySection({ advanced }: { advanced: boolean }) {
           { value: "justify", label: text("pageBuilder.style.alignJustify"), icon: AlignJustify },
         ]}
       />
-      <FluidSizeControl />
+      {advanced && <FluidSizeControl />}
       <ColourPicker
         property="color"
         label={text("pageBuilder.style.textColour")}

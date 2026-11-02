@@ -140,10 +140,16 @@ export function StyleChips({
   properties,
   label,
   choices,
+  lookValue = null,
 }: {
   properties: readonly StylePropertyName[];
   label: string;
   choices: readonly ChipChoice[];
+  /**
+   * The choice that matches how the element looks on the canvas, shown pressed while nothing
+   * is set on it. Null when the look isn't known or matches no choice.
+   */
+  lookValue?: string | undefined | null;
 }) {
   const text = useBuilderText();
   const { change } = useStyleEditing();
@@ -164,7 +170,8 @@ export function StyleChips({
             {label}
           </span>
           {choices.map((choice) => {
-            const isCurrent = choice.value === first.value;
+            const shown = first.value !== undefined || lookValue === null ? first.value : lookValue;
+            const isCurrent = choice.value === shown;
             return (
               <button
                 key={choice.label}
@@ -258,6 +265,12 @@ export function ColourPicker({
             />
             {text("pageBuilder.style.customColour")}
           </label>
+          {current && (
+            // The swatches' names are only in tooltips, so the chosen one is named here too.
+            <span aria-hidden="true" className="basis-full text-caption text-label-secondary">
+              {current.label}
+            </span>
+          )}
         </div>
       )}
     </Labelled>
