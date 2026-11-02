@@ -99,6 +99,30 @@ describe("the built-in website with several sites", () => {
     expect(home.headers.location).toBe("/fr");
   });
 
+  it("serves a site with only a path prefix on the default site's domain", async () => {
+    // As set up out of the box: the default site lists no domain; "/fr" has none of its own.
+    await uk("PATCH", "/sites/default", { hostnames: [] });
+    const moved = await uk("PATCH", "/sites/france", { hostnames: [], pathPrefix: "/fr" });
+    expect(moved.statusCode, moved.body).toBe(200);
+    await publish(uk, "About us");
+    await publish(france, "À propos");
+    await france("POST", `/entries/${franceHome}/publish`);
+
+    const home = await visit("/fr", "localhost:3999");
+    expect(home.statusCode).toBe(200);
+    expect(home.body).toContain("Acme France");
+    const french = await visit("/fr/a-propos", "localhost:3999");
+    expect(french.statusCode).toBe(200);
+    expect(french.body).toContain("À propos");
+    // The default site keeps everything else.
+    const english = await visit("/about-us", "localhost:3999");
+    expect(english.statusCode).toBe(200);
+    expect(english.body).toContain("Acme UK");
+    // The delivery API agrees.
+    const matched = await uk("GET", "/delivery/sites/match?url=http://localhost:3999/fr/a-propos");
+    expect(matched.json()).toMatchObject({ site: { handle: "france" }, path: "/a-propos" });
+  });
+
   it("puts pages under their site start and the site's prefix, following the tree", async () => {
     await uk("PATCH", "/sites/france", { hostnames: ["acme.co.uk"], pathPrefix: "/fr" });
     const about = (

@@ -17,7 +17,11 @@ export async function findSiteForAddress(
   const sites = await listAllSites(database);
   const matched =
     sites.length > 1 && address.host
-      ? matchSiteForAddress(sites, { host: address.host, path: address.path })
+      ? matchSiteForAddress(
+          sites,
+          { host: address.host, path: address.path },
+          sites.find(isDefaultSite),
+        )
       : undefined;
   // A page at the top of a tree may have a domain of its own ("Hostnames"); its site answers there.
   const startSiteId =

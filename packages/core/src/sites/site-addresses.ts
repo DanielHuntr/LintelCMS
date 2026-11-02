@@ -67,10 +67,15 @@ export function isUnderPrefix(path: string, prefix: string): boolean {
 /**
  * The site for a domain and, when known, a path. Without a path, a site with no prefix is
  * preferred, then the first in the list. Undefined when no site lists the domain.
+ *
+ * A site with a path prefix and no domains of its own ("/ie") answers on the default
+ * site's domain: the default site's own domains, or, when it lists none, any domain no
+ * site lists. So `defaultSite` is needed for those sites to be found.
  */
 export function matchSiteForAddress<Site extends AddressedSite>(
   sites: readonly Site[],
   address: { host: string; path?: string },
+  defaultSite?: AddressedSite,
 ): Site | undefined {
   const host = normalizeHostname(address.host);
   if (host === null) {
@@ -82,8 +87,16 @@ export function matchSiteForAddress<Site extends AddressedSite>(
   if (address.path === undefined) {
     return onHost.find((site) => site.pathPrefix === "") ?? onHost[0];
   }
+  const isDefaultDomain =
+    defaultSite !== undefined &&
+    (defaultSite.hostnames.length === 0
+      ? onHost.length === 0
+      : defaultSite.hostnames.some((hostname) => hostnameMatches(hostname, host)));
+  const pathOnly = isDefaultDomain
+    ? sites.filter((site) => site.hostnames.length === 0 && site.pathPrefix !== "")
+    : [];
   const path = address.path.toLowerCase();
-  return onHost
+  return [...onHost, ...pathOnly]
     .filter((site) => isUnderPrefix(path, site.pathPrefix))
     .sort((first, second) => second.pathPrefix.length - first.pathPrefix.length)[0];
 }

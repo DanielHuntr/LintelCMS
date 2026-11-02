@@ -5,8 +5,11 @@ import { Writable } from "node:stream";
 import { gunzipSync } from "node:zlib";
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { ensurePagesCollection } from "../collections/default-collections.js";
 import { LocalDiskStorage } from "../media/local-disk-storage.js";
 import { useTestDatabase } from "../testing/test-database.js";
+import { SESSION_COOKIE_NAME } from "../auth/session-cookie.js";
+import { createTestUser, TEST_PASSWORD } from "../testing/test-users.js";
 import { builtInPublicSite } from "../website/built-in-public-site.js";
 import { productionLoggerOptions } from "./logging.js";
 import { buildProductionServer, type ProductionServerOptions } from "./production-server.js";
@@ -65,6 +68,42 @@ describe("the production server", () => {
     const missingApi = await app.inject({ method: "GET", url: "/api/no-such-route" });
     expect(missingApi.statusCode).toBe(404);
     expect(missingApi.headers["content-type"]).toContain("application/json");
+  });
+
+  it("serves a site with only a path prefix (/ie) on the same domain", async () => {
+    const app = await start({
+      publicSite: builtInPublicSite,
+      website: { builtInSiteUrl: "https://example.com" },
+    });
+    await ensurePagesCollection(testDatabase.database);
+    await createTestUser(testDatabase.database, "owner@example.com", [["*"]]);
+    const signIn = await app.inject({
+      method: "POST",
+      url: "/api/auth/sign-in",
+      payload: { email: "owner@example.com", password: TEST_PASSWORD },
+    });
+    const session = signIn.cookies.find((cookie) => cookie.name === SESSION_COOKIE_NAME);
+    const cookies = { [SESSION_COOKIE_NAME]: session?.value ?? "" };
+    const api = (method: "GET" | "POST", url: string, payload?: object) =>
+      app.inject({ method, url: `/api${url}`, cookies, ...(payload ? { payload } : {}) });
+    const created = await api("POST", "/sites", {
+      handle: "ie",
+      name: "Ireland",
+      pathPrefix: "/ie",
+      defaultLocale: "en-IE",
+    });
+    expect(created.statusCode, created.body).toBe(201);
+    const page = await api("POST", "/collections/pages/entries?site=ie", {
+      data: { title: "Irish home" },
+    });
+    expect(page.statusCode, page.body).toBe(201);
+    await api("POST", `/entries/${page.json().id}/publish?site=ie`);
+
+    const home = await app.inject({ method: "GET", url: "/ie", headers: { host: "example.com" } });
+    expect(home.statusCode).toBe(200);
+    expect(home.body).toContain("Irish home");
+    const other = await app.inject({ method: "GET", url: "/", headers: { host: "example.com" } });
+    expect(other.body).not.toContain("Irish home");
   });
 
   it("serves the API under /api, with health checks at the root", async () => {
