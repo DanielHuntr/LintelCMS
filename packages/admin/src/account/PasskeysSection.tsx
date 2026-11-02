@@ -10,6 +10,7 @@ import { ConfirmDialog } from "../design/ConfirmDialog.js";
 import { Dialog } from "../design/Dialog.js";
 import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
+import { PasswordField } from "../design/PasswordField.js";
 import { TextField } from "../design/TextField.js";
 import { t } from "../i18n/strings.js";
 import { type Passkey, passkeyCreationOptions, savePasskey } from "./account.api.js";
@@ -27,6 +28,7 @@ export function PasskeysSection() {
   const now = useNow();
   const [isNaming, setIsNaming] = useState(false);
   const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState<string>();
   const [removing, setRemoving] = useState<Passkey | null>(null);
@@ -37,12 +39,13 @@ export function PasskeysSection() {
     setIsAdding(true);
     setError(undefined);
     try {
-      const optionsJSON = await passkeyCreationOptions();
+      const optionsJSON = await passkeyCreationOptions(password);
       const response = await startRegistration({ optionsJSON });
       await savePasskey(name.trim() || t("account.passkeys.defaultName"), response);
       await queryClient.invalidateQueries({ queryKey: accountKeys.passkeys() });
       setIsNaming(false);
       setName("");
+      setPassword("");
     } catch (failure) {
       // Cancelling the browser's own passkey prompt lands here too; say so plainly.
       setError(
@@ -107,6 +110,7 @@ export function PasskeysSection() {
         onClose={() => {
           setIsNaming(false);
           setError(undefined);
+          setPassword("");
         }}
         title={t("account.passkeys.addTitle")}
         description={t("account.passkeys.addDescription")}
@@ -121,15 +125,26 @@ export function PasskeysSection() {
           </>
         }
       >
-        <form id="passkey-form" onSubmit={(event) => void add(event)}>
+        <form
+          id="passkey-form"
+          className="flex flex-col gap-4"
+          onSubmit={(event) => void add(event)}
+        >
           <TextField
             label={t("account.passkeys.name")}
             hint={t("account.passkeys.nameHint")}
             value={name}
             onChange={(event) => setName(event.target.value)}
             maxLength={60}
-            error={error}
             data-autofocus
+          />
+          <PasswordField
+            label={t("account.currentPassword")}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            autoComplete="current-password"
+            error={error}
+            required
           />
         </form>
       </Dialog>

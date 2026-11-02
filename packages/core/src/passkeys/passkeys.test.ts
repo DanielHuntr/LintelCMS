@@ -5,7 +5,7 @@ import { useTestDatabase } from "../testing/test-database.js";
 import { TestPasskey } from "../testing/test-passkey.js";
 import { createPersonWithRole } from "../testing/test-people.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
-import { signInAndGetCookies } from "../testing/test-users.js";
+import { signInAndGetCookies, TEST_PASSWORD } from "../testing/test-users.js";
 
 const ADMIN_ORIGIN = "http://localhost:5173";
 
@@ -24,8 +24,21 @@ describe("passkeys", () => {
 
   afterEach(() => server.close());
 
+  // A passkey signs in without the password, and used to be addable from any open session.
+  it("asks for the password before adding a passkey", async () => {
+    const without = await asEd("POST", "/account/passkeys/options", {});
+    const wrong = await asEd("POST", "/account/passkeys/options", { password: "not it at all" });
+
+    expect(without.statusCode).toBe(400);
+    expect(wrong.statusCode).toBe(401);
+    expect(wrong.json()).toMatchObject({ code: "WRONG_PASSWORD" });
+    expect(wrong.body).not.toContain("challenge");
+  });
+
   async function addPasskey(name = "My laptop") {
-    const options = (await asEd("POST", "/account/passkeys/options")).json();
+    const options = (
+      await asEd("POST", "/account/passkeys/options", { password: TEST_PASSWORD })
+    ).json();
     return asEd("POST", "/account/passkeys", { name, response: passkey.register(options) });
   }
 
@@ -39,7 +52,9 @@ describe("passkeys", () => {
   }
 
   it("asks for a passkey that belongs to this site, kept on the device", async () => {
-    const options = (await asEd("POST", "/account/passkeys/options")).json();
+    const options = (
+      await asEd("POST", "/account/passkeys/options", { password: TEST_PASSWORD })
+    ).json();
 
     expect(options.rp).toEqual({ id: "localhost", name: "Lintel" });
     expect(options.user.name).toBe("ed@example.com");
@@ -66,7 +81,9 @@ describe("passkeys", () => {
   });
 
   it("won't reuse a challenge", async () => {
-    const options = (await asEd("POST", "/account/passkeys/options")).json();
+    const options = (
+      await asEd("POST", "/account/passkeys/options", { password: TEST_PASSWORD })
+    ).json();
     const response = passkey.register(options);
     expect((await asEd("POST", "/account/passkeys", { name: "One", response })).statusCode).toBe(
       201,
@@ -79,7 +96,9 @@ describe("passkeys", () => {
 
   it("refuses a passkey made for another site", async () => {
     const elsewhere = new TestPasskey("https://evil.example.com");
-    const options = (await asEd("POST", "/account/passkeys/options")).json();
+    const options = (
+      await asEd("POST", "/account/passkeys/options", { password: TEST_PASSWORD })
+    ).json();
 
     const response = await asEd("POST", "/account/passkeys", {
       name: "Phishing",
