@@ -49,6 +49,21 @@ export async function requireAccountSession(
   await loadSignedIn(request, reply);
 }
 
+/**
+ * For decisions a person makes themselves, such as answering an approval: a browser session
+ * (a website's API token mustn't approve anything) with two-factor set up if their role
+ * requires it, as every `requirePermission` route asks.
+ */
+export async function requirePersonInBrowser(
+  request: FastifyRequest,
+  reply: FastifyReply,
+): Promise<void> {
+  await requireAccountSession(request, reply);
+  if (getSignedIn(request).mustSetUpTwoFactor) {
+    throw new TwoFactorSetupRequiredError();
+  }
+}
+
 export function requirePermission(permission: Permission) {
   return async function checkPermission(request: FastifyRequest, reply: FastifyReply) {
     const signedIn = await loadSignedIn(request, reply);

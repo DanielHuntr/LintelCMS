@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { getSignedIn, requireSignedIn } from "../../auth/require-permission.js";
+import { getSignedIn, requireAccountSession } from "../../auth/require-permission.js";
 import { parseRequest } from "../../http/http-errors.js";
 import { notificationIdParamsSchema } from "../workflows.schema.js";
 import { listNotifications, markRead } from "./notifications.service.js";
@@ -12,7 +12,8 @@ import { listNotifications, markRead } from "./notifications.service.js";
  *   POST /notifications/:notificationId/read   -> 204
  */
 export async function notificationsRoutes(server: FastifyInstance) {
-  const signedIn = { preHandler: requireSignedIn };
+  // A person's own notifications, read in the admin; an API token has none.
+  const signedIn = { preHandler: requireAccountSession };
 
   server.get("/notifications", signedIn, async (request) =>
     listNotifications(server.database, getSignedIn(request).user.id),
