@@ -262,4 +262,46 @@ describe("selling a product from start to finish", () => {
     },
     JOURNEY_TIMEOUT,
   );
+
+  // A refund whose answer was lost used to be marked failed, so the money came back to be
+  // refunded again, though Stripe had made the first refund.
+  it(
+    "keeps a refund pending when Stripe's answer is lost, so it can't be made twice",
+    async () => {
+      const { variantId, rateId } = await stockTheShop(shop);
+      const { token } = await fillCart(shop, variantId, rateId, 1);
+      const checkout = (
+        await shop.storefront("POST", `/delivery/shop/carts/${token}/checkout`, CHECKOUT_PAGES)
+      ).json();
+      await shop.sendWebhook({
+        id: "evt_paid_lost",
+        type: "checkout.session.completed",
+        data: {
+          object: {
+            id: "cs_test_lost",
+            payment_status: "paid",
+            amount_total: checkout.total.amount,
+            currency: "gbp",
+            payment_intent: "pi_test_lost",
+            client_reference_id: checkout.checkoutId,
+            metadata: { lintel_checkout_id: checkout.checkoutId },
+          },
+        },
+      });
+      const orderId: string = (await shop.admin("GET", "/shop/orders")).json().items[0].id;
+      const total: number = checkout.total.amount;
+
+      shop.stripe.failNext = { path: "/v1/refunds", status: 503, message: "Try again later." };
+      const lost = await shop.admin("POST", `/shop/orders/${orderId}/refunds`, { amount: total });
+
+      expect(lost.statusCode).toBe(502);
+      expect(lost.json().message).toContain("Don't refund it again");
+      const order = (await shop.admin("GET", `/shop/orders/${orderId}`)).json();
+      expect(order.refunds).toEqual([expect.objectContaining({ status: "pending" })]);
+      expect(order.refundable.amount).toBe(0);
+      const again = await shop.admin("POST", `/shop/orders/${orderId}/refunds`, { amount: total });
+      expect(again.statusCode).not.toBe(201);
+    },
+    JOURNEY_TIMEOUT,
+  );
 });

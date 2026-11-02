@@ -66,13 +66,19 @@ export async function refundOrder(
   try {
     made = await paymentProviderFor(shop, order.paymentProvider).refundPayment(order, pending);
   } catch (error) {
+    const providerName = PAYMENT_PROVIDER_NAMES[order.paymentProvider];
+    if (mayHaveBeenMade(error)) {
+      // No answer, or a broken one: the provider may have made the refund all the same. It
+      // stays pending, so its amount can't be refunded twice, until the webhook says.
+      throw new PaymentProviderError(
+        `${providerName} didn't answer clearly, so the refund shows as pending until ${providerName} confirms it. Don't refund it again.`,
+      );
+    }
     await shop.database.transaction((transaction) =>
       changeRefundStatus(transaction, pending, "failed"),
     );
     if (error instanceof ProviderRequestError) {
-      throw new PaymentProviderError(
-        `${PAYMENT_PROVIDER_NAMES[order.paymentProvider]} couldn't make the refund: ${error.message}`,
-      );
+      throw new PaymentProviderError(`${providerName} couldn't make the refund: ${error.message}`);
     }
     throw error;
   }
@@ -90,6 +96,15 @@ export async function refundOrder(
   });
   await announceIfRefunded(shop, outcome);
   return outcome.refund;
+}
+
+/**
+ * Whether a failed refund request may still have been carried out: the provider couldn't be
+ * reached (status 0), had trouble of its own (5xx), or answered in a shape we didn't expect
+ * (reported as 502). A 4xx is a clear "no".
+ */
+function mayHaveBeenMade(error: unknown): boolean {
+  return error instanceof ProviderRequestError && (error.status === 0 || error.status >= 500);
 }
 
 /**
