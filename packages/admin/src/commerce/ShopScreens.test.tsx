@@ -100,6 +100,36 @@ describe("the Shop screens", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Products" })).toBeInTheDocument();
   });
 
+  // The list said "On sale" beside "0 in stock", while the website said "Sold out".
+  it("says a product on sale with none left is sold out, as shoppers see it", async () => {
+    const product = {
+      handle: "loaf",
+      imageId: null,
+      variantCount: 1,
+      priceRange: { currency: "GBP", min: 450, max: 450 },
+      updatedAt: "2026-11-01T10:00:00Z",
+    };
+    mockApi(({ url }) => {
+      if (url.pathname === "/shop/products") {
+        return {
+          items: [
+            { ...product, id: "p1", title: "Sourdough", status: "active", available: 0 },
+            { ...product, id: "p2", title: "Rye", status: "active", available: null },
+          ],
+          total: 2,
+        };
+      }
+      return [];
+    });
+    renderScreen(<ProductsPage />, withShop);
+
+    const sourdough = await screen.findByRole("link", { name: /Sourdough/ });
+    expect(within(sourdough).getByText("Sold out")).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("link", { name: /Rye/ })).getByText("On sale"),
+    ).toBeInTheDocument();
+  });
+
   it("connects Stripe step by step, saving the keys typed in", async () => {
     const { calls } = mockApi(({ url, method, body }) => {
       if (url.pathname !== "/shop/settings/payments") return undefined;

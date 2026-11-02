@@ -109,7 +109,9 @@ export function ProductsPage() {
                   iconTone={product.status === "active" ? "accent" : "neutral"}
                   label={product.title}
                   description={[price ?? t("shop.products.noPrice"), stock].join(" · ")}
-                  accessory={<ProductStatusBadge status={product.status} />}
+                  accessory={
+                    <ProductStatusBadge status={product.status} available={product.available} />
+                  }
                   to={`/commerce/products/${encodeURIComponent(product.id)}`}
                 />
               );

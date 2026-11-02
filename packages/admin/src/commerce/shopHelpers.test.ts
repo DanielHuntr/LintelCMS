@@ -35,6 +35,11 @@ describe("turning the product form into what the API needs", () => {
     ]);
   });
 
+  // Counting stock from 0 showed every new product as sold out on the website.
+  it("starts a new product without counting stock, until the owner asks", () => {
+    expect(emptyProductDraft().variants[0]?.inventoryTracked).toBe(false);
+  });
+
   it("names the boxes that don't hold a number yet", () => {
     const draft = emptyProductDraft();
     const [variant] = draft.variants;
