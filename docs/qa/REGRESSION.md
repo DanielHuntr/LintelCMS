@@ -47,3 +47,30 @@ Each item should become an automated test when its defect is fixed. Do not mark 
 - Editor 403s;
 - branding;
 - dashboard layout persistence.
+
+---
+
+## Batch 2 (2 Nov 2026, `73e47a2`)
+
+### Suites
+
+SUITES_TABLE_PLACEHOLDER
+
+### Regression checks to add with the batch 2 fixes
+
+| Defect | Guard to add | Where |
+| --- | --- | --- |
+| SEC-001 | Someone with `settings:read` but not Owner gets 403 from `GET /email/outbox`, or sees no `#token=` in any message not addressed to them | `core/src/email` |
+| DATA-003 | Rename a field handle on a type with entries: values move to the new handle (entries and the open revision), and `data.<old>` bindings in page designs are updated; or the change is refused with a count | `core/src/blueprints`, `core/src/fieldsets` |
+| DATA-004 | The entry editor's save sends only changed fields; a stale save gets 409 with the other person's name | `admin` entry editor, `core/src/entries` |
+| DATA-005 | Adding conditions to a field with values: the response warns, or the default keeps the values for existing entries | `core/src/blueprints`, `field-conditions` |
+| FUNC-008 | A type change or removed choice reports the affected entries before it is saved | `core/src/blueprints` |
+| FUNC-009 | Rich text nested deeper than the limit is refused with a field message; GET never 500s on stored content | `core/src/fieldtypes/rich-text.ts` |
+| SEC-002 | `/search` honours site access (mirror the `content-tree/search` test) | `core/src/search` |
+| A11Y-001/002 | Browser test: closing the basket drawer returns focus to its opener; after Choose delivery, focus is on the Delivery group | `builder` browser tests |
+| A11Y-003 | Playwright: `scrollWidth <= 320` at 320px on an entry and a content type (extend `e2e/narrow-screens.e2e.mjs`) | `admin/e2e` |
+
+### Batch 2 re-checks of earlier guards
+
+- The batch 2 security matrix (`screenshots/batch-2/logs/matrix.md`) should be rerun after any change to `requirePermission` or roles. It is a quick API script; consider turning it into a core integration test that walks every registered route.
+- **Still green:** the discovery-pass items "Editor 403s" and "forms spam protection" (batch 2 TC-SEC-001, TC-FORMS-001).
