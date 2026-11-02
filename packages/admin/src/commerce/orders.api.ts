@@ -89,8 +89,11 @@ export interface Customer {
   note: string;
   addresses: Address[];
   orderCount: number;
+  /** Includes orders from before the move from Shopify. */
   totalSpent: Money[];
   createdAt: string;
+  /** The earlier of `createdAt` and their first order from before the move. */
+  customerSince: string;
 }
 
 export interface SalesSummary {

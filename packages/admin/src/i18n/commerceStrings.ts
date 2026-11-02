@@ -136,6 +136,8 @@ export const commerceStrings = {
   "shop.orders.filterToSend": "To send",
   "shop.orders.filterSent": "Sent",
   "shop.orders.filterRefunded": "Refunded",
+  "shop.orders.filterImported": "Imported",
+  "shop.orders.importedRow": "{name} · {email}",
   "shop.orders.loading": "Loading orders…",
   "shop.orders.loadingOne": "Loading order…",
   "shop.orders.noMatches": "No orders match. Try a different search or show all orders.",

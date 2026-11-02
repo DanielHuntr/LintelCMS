@@ -229,3 +229,51 @@ Screenshots are in [screenshots/fix-shop/](screenshots/fix-shop/). "Before" scre
 - Before: [desktop light](screenshots/fix-shop/ux-002-sidebar-before-desktop-light.png), [desktop dark](screenshots/fix-shop/ux-002-sidebar-before-desktop-dark.png), [390 light](screenshots/fix-shop/ux-002-sidebar-before-390-light.png), [390 dark](screenshots/fix-shop/ux-002-sidebar-before-390-dark.png).
 - After: [desktop light](screenshots/fix-shop/ux-002-sidebar-after-desktop-light.png), [desktop dark](screenshots/fix-shop/ux-002-sidebar-after-desktop-dark.png), [390 light](screenshots/fix-shop/ux-002-sidebar-after-390-light.png), [390 dark](screenshots/fix-shop/ux-002-sidebar-after-390-dark.png).
 - At 390px the admin still overflows sideways (LINTEL-UX-001, the other fix agent's defect). That is visible in these captures and not changed here.
+
+## LINTEL-DATA-002: Shopify-imported history contradicts itself on the customer page
+
+**Status:** Verified (desktop). At 390px the admin is still covered by the uncollapsed sidebar (LINTEL-UX-001, another agent's defect), so there the content was checked by DOM readout, not by eye.
+
+**Root cause (confirmed):**
+
+- `sumCustomerOrders` (`core/src/commerce/customers/customers.repository.ts`) only reads `shop_orders`, so imported customers had `orderCount: 0` and `totalSpent: []`. That gave "Spent: Nothing yet".
+- The customer page showed "No orders yet." whenever there were no live orders, directly above "Orders before the move".
+- "Customer since" was the record's `createdAt`, which is the import date. Shopify's customer export has no "created" column, so the only original date the import has is the customer's first order.
+- `GET /shop/archived-orders` already listed every imported order, but nothing in the admin outside the customer page showed it, so Orders read "0" with no pointer.
+
+**Change:**
+
+- Core:
+  - `customers.repository.ts`: `sumCustomerOrders` adds archived orders to the order count and spend, per currency, net of refunds and without cancelled ones, exactly as for live orders. It also returns the earliest archived `placedAt`, cancelled orders included: a cancelled order still dates the customer.
+  - `customers.service.ts` / `customers.schema.ts`: the customer gains `customerSince`, the earlier of `createdAt` and that first imported order. `createdAt` keeps meaning when the record was made. Nothing is rewritten in the database, so customers imported before this fix show correctly too. Documented in the customers README.
+- Admin:
+  - `CustomerDetailPage.tsx`: the subtitle uses `customerSince`. "No orders yet." shows only when there are neither live nor imported orders.
+  - `OrdersPage.tsx`: when imported orders exist, the filter gains **Imported**. It lists them ("#1001 · ada@example.com", date, total, items, Shopify payment status) using the existing `GroupedList` rows and the existing "Imported from Shopify. Kept as records…" footer, and each row opens the customer's page. The search box filters this view by order number or email.
+  - New strings `shop.orders.filterImported` and `shop.orders.importedRow` through `t()`.
+  - `shopifyImport.api.ts` / `.queries.ts`: `listImportedOrders` and `useImportedOrders`, and `customerId` on the admin's `ArchivedOrder` type (the API already sent it).
+
+**Tests:**
+
+- `core/src/commerce/shopify-import/shopify-import.test.ts`: after importing the fixtures, Ada is `[1 order, £86.95, since 2026-03-01T10:14:02Z]`. Grace, whose only order was cancelled in Shopify, is `[0, [], since 2026-04-12T20:40:00Z]`. On the unfixed code this fails with `[0, [], undefined]`.
+- New `admin/src/commerce/ImportedHistory.test.tsx`:
+  - the customer page shows "Customer since Mar 1, 2026", "Orders before the move" and "£86.95", and no "No orders yet." or "Nothing yet.";
+  - Orders → Imported lists both orders, with links to their customers, and search narrows them;
+  - there is no Imported option when nothing was imported.
+  - Two of the three fail on the unfixed screens.
+- Admin `src/commerce` + `src/navigation` (31 tests) and core shopify-import + commerce e2e tests pass.
+
+**Runtime verification (fixtures imported through `POST /shop/imports/shopify`):**
+
+|           | Before                                                                                               | After                                                                                                                              |
+| --------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Ada, API  | `orderCount: 0`, `totalSpent: []`, created = import date                                             | `orderCount: 1`, `totalSpent: [£86.95]`, `customerSince: 2026-03-01`                                                               |
+| Ada, page | "Customer since Nov 2, 2026", "No orders yet." above "Orders before the move", "Spent: Nothing yet." | "Customer since Mar 1, 2026", "Orders before the move: #1001", "Spent: £86.95"                                                     |
+| Orders    | All orders / To send / Sent / Refunded; "No orders yet"                                              | adds **Imported**: #1002 · grace@example.com ($18.50, refunded) and #1001 · ada@example.com (£86.95, paid); #1001 opens Ada's page |
+
+Shopify's own export says Ada spent 104.00 across 2 orders. The fixture `orders.csv` holds only one of them, so £86.95 over 1 order is what Lintel has records for. Counting what's on record is deliberate.
+
+**Screenshots:**
+
+- Customer before: [desktop light](screenshots/fix-shop/data-002-customer-before-desktop-light.png), [desktop dark](screenshots/fix-shop/data-002-customer-before-desktop-dark.png), [390 light](screenshots/fix-shop/data-002-customer-before-390-light.png), [390 dark](screenshots/fix-shop/data-002-customer-before-390-dark.png).
+- Customer after: [desktop light](screenshots/fix-shop/data-002-customer-after-desktop-light.png), [desktop dark](screenshots/fix-shop/data-002-customer-after-desktop-dark.png), [390 light](screenshots/fix-shop/data-002-customer-after-390-light.png), [390 dark](screenshots/fix-shop/data-002-customer-after-390-dark.png).
+- Orders: [before](screenshots/fix-shop/data-002-orders-before-desktop-light.png), [before dark](screenshots/fix-shop/data-002-orders-before-desktop-dark.png), [after](screenshots/fix-shop/data-002-orders-after-desktop-light.png), [after dark](screenshots/fix-shop/data-002-orders-after-desktop-dark.png); Imported view [light](screenshots/fix-shop/data-002-orders-imported-after-desktop-light.png), [dark](screenshots/fix-shop/data-002-orders-imported-after-desktop-dark.png), [390](screenshots/fix-shop/data-002-orders-imported-after-390-light.png) (sidebar overlap from UX-001).

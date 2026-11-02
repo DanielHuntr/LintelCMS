@@ -1,7 +1,8 @@
-import { and, count, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, isNull, min, or, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../database/client.js";
 import { DEFAULT_TENANT_ID } from "../../database/columns.js";
 import { ordersTable } from "../orders/orders.table.js";
+import { archivedOrdersTable } from "../shopify-import/shopify-import.table.js";
 import { type CustomerRow, customersTable } from "./customers.table.js";
 
 /** Database reads and writes for customers. */
@@ -10,7 +11,14 @@ export interface CustomerWithTotals extends CustomerRow {
   orderCount: number;
   /** By currency, since a customer may have bought in more than one market. */
   totalSpent: Array<{ currency: string; amount: number }>;
+  /** When their earliest order from before the move (Shopify) was placed, if any. */
+  firstArchivedOrderAt: Date | null;
 }
+
+export type CustomerTotals = Pick<
+  CustomerWithTotals,
+  "orderCount" | "totalSpent" | "firstArchivedOrderAt"
+>;
 
 /** The customer with this email, made if they're new. Two orders at once still share one. */
 export async function findOrCreateCustomerRow(
@@ -74,14 +82,19 @@ export async function listCustomerRows(
   return { rows, total: total?.value ?? 0 };
 }
 
-/** Orders and money spent per customer, net of refunds, leaving out cancelled orders. */
+/**
+ * Orders and money spent per customer, net of refunds, leaving out cancelled orders. Orders
+ * from before the move (archived by the Shopify import) count too, so the customer's history
+ * doesn't start again at nothing.
+ */
 export async function sumCustomerOrders(
   database: DatabaseOrTransaction,
   customerIds: readonly string[],
-): Promise<Map<string, Pick<CustomerWithTotals, "orderCount" | "totalSpent">>> {
-  const totals = new Map<string, Pick<CustomerWithTotals, "orderCount" | "totalSpent">>();
+): Promise<Map<string, CustomerTotals>> {
+  const totals = new Map<string, CustomerTotals>();
   if (customerIds.length === 0) return totals;
-  const rows = await database
+  const ids = [...customerIds];
+  const live = await database
     .select({
       customerId: ordersTable.customerId,
       currency: ordersTable.currency,
@@ -89,14 +102,43 @@ export async function sumCustomerOrders(
       amount: sql<number>`coalesce(sum(${ordersTable.totalAmount} - ${ordersTable.refundedAmount}), 0)`,
     })
     .from(ordersTable)
-    .where(and(inArray(ordersTable.customerId, [...customerIds]), isNull(ordersTable.cancelledAt)))
+    .where(and(inArray(ordersTable.customerId, ids), isNull(ordersTable.cancelledAt)))
     .groupBy(ordersTable.customerId, ordersTable.currency);
-  for (const row of rows) {
-    if (!row.customerId) continue;
-    const current = totals.get(row.customerId) ?? { orderCount: 0, totalSpent: [] };
-    current.orderCount += row.orderCount;
-    current.totalSpent.push({ currency: row.currency, amount: Number(row.amount) });
+  // Cancelled orders from before the move don't count or add up, but still date the customer.
+  const notCancelled = sql`${archivedOrdersTable.cancelledAt} is null`;
+  const archived = await database
+    .select({
+      customerId: archivedOrdersTable.customerId,
+      currency: archivedOrdersTable.currency,
+      orderCount: sql<number>`cast(count(*) filter (where ${notCancelled}) as integer)`,
+      amount: sql<number>`coalesce(sum(${archivedOrdersTable.totalAmount} - ${archivedOrdersTable.refundedAmount}) filter (where ${notCancelled}), 0)`,
+      firstAt: min(archivedOrdersTable.placedAt),
+    })
+    .from(archivedOrdersTable)
+    .where(inArray(archivedOrdersTable.customerId, ids))
+    .groupBy(archivedOrdersTable.customerId, archivedOrdersTable.currency);
+  const add = (
+    row: { customerId: string | null; currency: string; orderCount: number; amount: number },
+    firstAt: Date | null,
+  ) => {
+    if (!row.customerId) return;
+    const current = totals.get(row.customerId) ?? {
+      orderCount: 0,
+      totalSpent: [],
+      firstArchivedOrderAt: null,
+    };
+    current.orderCount += Number(row.orderCount);
+    const spent = current.totalSpent.find((each) => each.currency === row.currency);
+    if (spent) spent.amount += Number(row.amount);
+    else if (Number(row.orderCount) > 0) {
+      current.totalSpent.push({ currency: row.currency, amount: Number(row.amount) });
+    }
+    if (firstAt && (!current.firstArchivedOrderAt || firstAt < current.firstArchivedOrderAt)) {
+      current.firstArchivedOrderAt = firstAt;
+    }
     totals.set(row.customerId, current);
-  }
+  };
+  live.forEach((row) => add(row, null));
+  archived.forEach((row) => add(row, row.firstAt ? new Date(row.firstAt) : null));
   return totals;
 }

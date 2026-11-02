@@ -2,6 +2,7 @@ import type { DatabaseOrTransaction } from "../../database/client.js";
 import { ShopRecordNotFoundError } from "../commerce.errors.js";
 import type { Address } from "./address.schema.js";
 import {
+  type CustomerTotals,
   findCustomerRow,
   findOrCreateCustomerRow,
   listCustomerRows,
@@ -68,11 +69,11 @@ export async function updateCustomer(
   return findCustomer(database, customerId);
 }
 
-function describeCustomer(
-  row: CustomerRow,
-  totals:
-    { orderCount: number; totalSpent: Array<{ currency: string; amount: number }> } | undefined,
-): Customer {
+function describeCustomer(row: CustomerRow, totals: CustomerTotals | undefined): Customer {
+  // An imported customer has been one since their first order in the old shop, not since
+  // the day of the import.
+  const firstOrderAt = totals?.firstArchivedOrderAt;
+  const customerSince = firstOrderAt && firstOrderAt < row.createdAt ? firstOrderAt : row.createdAt;
   return {
     id: row.id,
     email: row.email,
@@ -83,6 +84,7 @@ function describeCustomer(
     orderCount: totals?.orderCount ?? 0,
     totalSpent: totals?.totalSpent ?? [],
     createdAt: row.createdAt.toISOString(),
+    customerSince: customerSince.toISOString(),
   };
 }
 

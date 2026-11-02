@@ -20,6 +20,7 @@ import type { Customer } from "./orders.api.js";
 import { formatOrderDate } from "./orderDates.js";
 import { OrderStatusBadge } from "./OrderStatusBadge.js";
 import { useCustomer, useOrders, useUpdateCustomer } from "./shop.queries.js";
+import { useArchivedOrders } from "./shopifyImport.queries.js";
 
 /** /commerce/customers/:id: their orders, addresses and a private note. */
 export function CustomerDetailPage({ customerId }: { customerId: string }) {
@@ -42,6 +43,7 @@ export function CustomerDetailPage({ customerId }: { customerId: string }) {
 
 function CustomerDetail({ customer }: { customer: Customer }) {
   const orders = useOrders({ customerId: customer.id });
+  const archived = useArchivedOrders(customer.id);
   const [note, setNote] = useState(customer.note);
   const update = useUpdateCustomer(customer.id);
   const canWrite = useCan("commerce:update");
@@ -51,13 +53,13 @@ function CustomerDetail({ customer }: { customer: Customer }) {
       <LargeTitle
         title={customer.name || customer.email}
         subtitle={t("shop.customers.since", {
-          date: formatOrderDate(customer.createdAt),
+          date: formatOrderDate(customer.customerSince),
           email: customer.email,
         })}
       />
       <div className="grid max-w-5xl grid-cols-1 gap-6 lg:grid-cols-[3fr_2fr]">
         <div className="flex flex-col gap-6">
-          {orders.data && orders.data.total === 0 && (
+          {orders.data && orders.data.total === 0 && archived.data?.length === 0 && (
             <div className="rounded-card bg-surface">
               <EmptyState icon={Receipt} title={t("shop.customers.noOrders")} />
             </div>

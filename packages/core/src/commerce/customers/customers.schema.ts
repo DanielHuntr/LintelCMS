@@ -24,8 +24,11 @@ export const customerSchema = z.object({
   note: z.string(),
   addresses: z.array(addressSchema),
   orderCount: z.number().int(),
+  /** Includes orders from before the move (Shopify), net of refunds, without cancelled ones. */
   totalSpent: z.array(moneySchema),
   createdAt: z.iso.datetime(),
+  /** The earlier of `createdAt` and their first order from before the move. */
+  customerSince: z.iso.datetime(),
 });
 
 export type ListCustomersQuery = z.infer<typeof listCustomersQuerySchema>;

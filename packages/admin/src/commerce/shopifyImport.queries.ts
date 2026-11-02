@@ -4,6 +4,7 @@ import {
   getShopifyImport,
   type ImportOptions,
   listArchivedOrders,
+  listImportedOrders,
   listShopifyImports,
   runShopifyImportBatch,
   saveImportOptions,
@@ -17,6 +18,7 @@ export const importKeys = {
   all: () => ["shop", "imports"] as const,
   one: (importId: string) => ["shop", "imports", importId] as const,
   archived: (customerId: string) => ["shop", "archived-orders", customerId] as const,
+  allArchived: () => ["shop", "archived-orders"] as const,
 };
 
 export function useShopifyImports() {
@@ -77,4 +79,8 @@ export function useArchivedOrders(customerId: string) {
     queryKey: importKeys.archived(customerId),
     queryFn: () => listArchivedOrders(customerId),
   });
+}
+
+export function useImportedOrders() {
+  return useQuery({ queryKey: importKeys.allArchived(), queryFn: listImportedOrders });
 }
