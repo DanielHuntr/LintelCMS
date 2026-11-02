@@ -109,6 +109,8 @@ export interface EntryInfo {
   usedBy: TreeNode[];
   childCount: number;
   childrenAsCollection: boolean;
+  /** The pages above it that aren't published, from the top down. */
+  unpublishedAncestors: Array<{ id: string; title: string }>;
 }
 
 /** A live page whose address a move changed. */

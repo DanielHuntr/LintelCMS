@@ -115,9 +115,9 @@ export const englishLabels: SiteLabels = {
   notFoundTitle: "We couldn’t find that page",
   notFoundText: "It may have moved, or the address may have a typo in it.",
   backHome: "Go to the home page",
-  emptySiteTitle: "This website is ready for its first page",
+  emptySiteTitle: "This website has no home page yet",
   emptySiteText:
-    "Publish a page in Lintel and it appears here. A page with the address “home” becomes the home page.",
+    "In Lintel, publish the first page at the top of the page tree. It becomes the home page, at this address.",
   socialLinks: "Elsewhere",
   contact: "Contact",
 };

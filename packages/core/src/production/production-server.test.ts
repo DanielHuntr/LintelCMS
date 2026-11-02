@@ -62,7 +62,7 @@ describe("the production server", () => {
     const home = await app.inject({ method: "GET", url: "/" });
     expect(home.statusCode).toBe(200);
     expect(home.headers["content-type"]).toContain("text/html");
-    expect(home.body).toContain("This website is ready for its first page");
+    expect(home.body).toContain("This website has no home page yet");
     const admin = await app.inject({ method: "GET", url: "/admin/" });
     expect(admin.body).toContain('<div id="root">');
     const missingApi = await app.inject({ method: "GET", url: "/api/no-such-route" });

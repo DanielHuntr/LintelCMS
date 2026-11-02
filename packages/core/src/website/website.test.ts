@@ -96,8 +96,27 @@ describe("the built-in website", () => {
   it("welcomes a brand new site until its first page is published", async () => {
     const response = await visit("/");
     expect(response.statusCode).toBe(200);
-    expect(response.body).toContain("This website is ready for its first page");
+    expect(response.body).toContain("This website has no home page yet");
     expect(response.headers["content-type"]).toBe("text/html; charset=utf-8");
+  });
+
+  it("says the home page isn't published when only a page under it is", async () => {
+    const home = await admin("POST", "/collections/pages/entries", {
+      data: { title: "Home" },
+      slug: "home",
+    });
+    const aboutId = await admin("POST", "/collections/pages/entries", {
+      data: { title: "About us" },
+      parentId: home.json().id,
+    }).then((created) => created.json().id as string);
+    await admin("POST", `/entries/${aboutId}/publish`);
+
+    // Publishing a page alone is still allowed; the admin offers to publish its parent too.
+    expect((await visit("/about-us")).statusCode).toBe(200);
+    const front = await visit("/");
+    expect(front.body).toContain("This website has no home page yet");
+    expect(front.body).toContain("publish the first page at the top of the page tree");
+    expect(front.body).not.toContain("ready for its first page");
   });
 
   it("renders a published page with its sections, the header, the footer and the theme", async () => {

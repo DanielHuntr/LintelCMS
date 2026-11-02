@@ -1,5 +1,5 @@
 import { CircleAlert, X } from "lucide-react";
-import { useEffect, useEffectEvent, useId, useReducer, useRef } from "react";
+import { useEffect, useEffectEvent, useId, useReducer, useRef, useState } from "react";
 import type { Collection, Entry } from "../content/content.types.js";
 import { entryDraftReducer, hasUnsavedChanges, initialDraftState } from "../content/entryDraft.js";
 import { EntryFields } from "../content/EntryFields.js";
@@ -16,6 +16,8 @@ import { useAutosave } from "../content/useAutosave.js";
 import { useEntryActions } from "../content/useEntryActions.js";
 import { useLeaveWarning } from "../content/useLeaveWarning.js";
 import { viewPageTarget } from "../content/viewPage.js";
+import { describeError } from "../api/describeError.js";
+import { runBulkAction } from "../content-tree/contentTree.api.js";
 import { useEntryInfo, useRefreshContent } from "../content-tree/contentTree.queries.js";
 import { ConfirmDialog } from "../design/ConfirmDialog.js";
 import { classNames } from "../design/classNames.js";
@@ -29,6 +31,7 @@ import { useCan } from "../session/SessionContext.js";
 import { useViewPageSite } from "../website/website.queries.js";
 import { CollectionView } from "./CollectionView.js";
 import { InfoTab } from "./InfoTab.js";
+import { PublishWithParentDialog } from "./PublishWithParentDialog.js";
 import { WorkspaceFooter } from "./WorkspaceFooter.js";
 import { WorkspaceHeader } from "./WorkspaceHeader.js";
 import { WorkspaceTabList } from "./WorkspaceTabList.js";
@@ -127,6 +130,43 @@ export function EntryWorkspace({
 
   async function afterPublishing(succeeded: boolean) {
     if (succeeded) await refresh([entry.id]);
+  }
+
+  // A page going live under a parent that isn't live is asked about first (LINTEL-SPEC-001).
+  const [parentQuestion, setParentQuestion] = useState<{
+    isWorking: boolean;
+    error: string | null;
+  } | null>(null);
+  const unpublishedAncestors = info.data?.unpublishedAncestors ?? [];
+
+  async function saveAndPublish() {
+    if (await saveExplicitly()) await afterPublishing(await actions.publish());
+  }
+
+  async function publishWithParent() {
+    setParentQuestion({ isWorking: true, error: null });
+    try {
+      const result = await runBulkAction(
+        "publish",
+        unpublishedAncestors.map((ancestor) => ancestor.id),
+      );
+      const [skipped] = result.skipped;
+      if (skipped) {
+        const message = t("workspace.parentUnpublished.failed", {
+          title: skipped.title || t("editor.untitled"),
+          reason: skipped.reason,
+        });
+        setParentQuestion({ isWorking: false, error: message });
+        await refresh(result.changed);
+        return;
+      }
+      await refresh(result.changed);
+    } catch (failure) {
+      setParentQuestion({ isWorking: false, error: describeError(failure) });
+      return;
+    }
+    setParentQuestion(null);
+    await saveAndPublish();
   }
 
   const saveWithShortcut = useEffectEvent((event: KeyboardEvent) => {
@@ -289,12 +329,30 @@ export function EntryWorkspace({
         }}
         onSave={() => void saveExplicitly({ saveVersion: true })}
         onSaveAndPublish={async () => {
-          if (await saveExplicitly()) await afterPublishing(await actions.publish());
+          if (entry.status !== "published" && unpublishedAncestors.length > 0) {
+            setParentQuestion({ isWorking: false, error: null });
+            return;
+          }
+          await saveAndPublish();
         }}
         onSchedule={async (publishAt) => {
           if (await saveExplicitly()) await afterPublishing(await actions.schedule(publishAt));
         }}
         onUnpublish={async () => afterPublishing(await actions.unpublish())}
+      />
+
+      <PublishWithParentDialog
+        open={parentQuestion !== null}
+        title={title || t("editor.untitled")}
+        ancestors={unpublishedAncestors}
+        isWorking={parentQuestion?.isWorking ?? false}
+        error={parentQuestion?.error ?? null}
+        onCancel={() => setParentQuestion(null)}
+        onPublishAlone={() => {
+          setParentQuestion(null);
+          void saveAndPublish();
+        }}
+        onPublishWithParent={() => void publishWithParent()}
       />
 
       <ConfirmDialog

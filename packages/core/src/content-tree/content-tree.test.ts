@@ -343,6 +343,22 @@ describe("the content tree", () => {
     });
   });
 
+  it("names the pages above an entry that aren't published, from the top down", async () => {
+    const home = await create("pages", "Home");
+    const about = await create("pages", "About us", home);
+    const team = await create("pages", "Our team", about);
+    const unpublishedAbove = async (id: string) =>
+      (await api("GET", `/content-tree/entries/${id}/info`)).json().unpublishedAncestors;
+
+    expect(await unpublishedAbove(team)).toEqual([
+      { id: home, title: "Home" },
+      { id: about, title: "About us" },
+    ]);
+    await api("POST", `/entries/${home}/publish`);
+    expect(await unpublishedAbove(team)).toEqual([{ id: about, title: "About us" }]);
+    expect(await unpublishedAbove(home)).toEqual([]);
+  });
+
   it("acts on many entries at once from the collection view", async () => {
     const [first, second] = [await create("posts", "First"), await create("posts", "Second")];
 
