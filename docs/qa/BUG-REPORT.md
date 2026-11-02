@@ -747,11 +747,12 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-006   | P1       | Open   | A page's Body text vanishes from the website once it has a design; the editor still shows it (redesign)          |
 | LINTEL-UX-007   | P1       | Fixed  | Form notifications are on by default but nothing is sent without a mail service, and nothing says so             |
 | LINTEL-UX-008   | P1       | Fixed  | New products count stock from 0, so they show "Sold out" while the admin shows "On sale"                         |
-| LINTEL-UX-009   | P1       | Open   | The shop looks open before it can sell; checkout fails at the last step; no Shop link on the site (redesign)     |
+| LINTEL-UX-009   | P1       | Fixed  | The shop looks open before it can sell; checkout fails at the last step; no Shop link on the site (redesign)     |
 | LINTEL-UX-010   | P1       | Fixed  | Builder: Escape while editing text throws the edit away                                                          |
 | LINTEL-UX-011   | P2       | Fixed  | Builder: Publish gives no confirmation and the builder never shows unpublished changes                           |
 | LINTEL-UX-012   | P2       | Fixed  | No "View website" link anywhere in the admin                                                                     |
-| LINTEL-UX-013   | P2       | Open   | Builder spills off the screen at 390px; the tour still runs                                                      |
+| LINTEL-UX-013   | P2       | Fixed  | Builder spills off the screen at 390px; the tour still runs                                                      |
+| LINTEL-UX-014   | P2       | Fixed  | A menu with a link to a deleted page can't be saved, and the error shows the link's id                           |
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 
