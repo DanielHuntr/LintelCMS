@@ -36,6 +36,10 @@ const layout = `
 :where(.lintel-button--secondary) {
   background: transparent; color: var(--lintel-color-text); border-color: var(--lintel-color-border);
 }
+/* A link styled as a button keeps the button's text colour. As specific as the site's own
+   "a" rule and after it, so it wins over link colours but never over a class the style panel sets. */
+a:where(.lintel-button) { color: var(--lintel-color-on-brand); }
+a:where(.lintel-button--secondary) { color: var(--lintel-color-text); }
 :where(.lintel-design) :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--lintel-color-brand); outline-offset: 2px;
 }
