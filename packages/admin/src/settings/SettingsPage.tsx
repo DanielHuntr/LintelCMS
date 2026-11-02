@@ -12,7 +12,6 @@ import {
   Palette,
   Shapes,
   ShieldCheck,
-  Sparkles,
   Type,
   Webhook,
 } from "lucide-react";
@@ -26,8 +25,8 @@ import { useCan } from "../session/SessionContext.js";
 import { UpdatesCountBadge } from "../updates/UpdatesCountBadge.js";
 
 /**
- * /settings: one row per area of settings, like iOS Settings. Rows appear as their screens
- * are built: content types and features so far.
+ * /settings: one row per area of settings, like iOS Settings. The website's own settings come
+ * first, as what most owners come here for; developer and system settings come last.
  */
 export function SettingsPage() {
   const canSeeContentTypes = useCan("blueprints:read");
@@ -44,6 +43,37 @@ export function SettingsPage() {
     <Page width="readable">
       <LargeTitle title={t("settings.title")} subtitle={t("settings.subtitle")} />
       <div className="flex flex-col gap-8">
+        {canSeeSiteSettings && (
+          <GroupedList header={t("settings.siteHeader")}>
+            <GroupedListRow
+              icon={MonitorSmartphone}
+              iconTone="success"
+              label={t("website.title")}
+              description={t("website.settingsDescription")}
+              to="/settings/site"
+            />
+            <GroupedListRow
+              icon={Blocks}
+              iconTone="accent"
+              label={t("features.title")}
+              description={t("settings.featuresDescription")}
+              to="/settings/features"
+            />
+            <GroupedListRow
+              icon={Globe}
+              iconTone="accent"
+              label={t("sites.title")}
+              description={t("settings.sitesDescription")}
+              to="/settings/sites"
+            />
+            <GroupedListRow
+              icon={Languages}
+              label={t("languages.title")}
+              description={t("settings.languagesDescription")}
+              to="/settings/languages"
+            />
+          </GroupedList>
+        )}
         {canSeeContentTypes && (
           <GroupedList header={t("settings.contentHeader")}>
             <GroupedListRow
@@ -52,45 +82,6 @@ export function SettingsPage() {
               description={t("settings.contentTypesDescription")}
               to="/settings/content-types"
             />
-          </GroupedList>
-        )}
-        {canSeeSiteSettings && (
-          <GroupedList header={t("settings.developersHeader")}>
-            <GroupedListRow
-              icon={KeyRound}
-              iconTone="warning"
-              label={t("apiAccess.title")}
-              description={t("settings.apiAccessDescription")}
-              to="/settings/api"
-            />
-            <GroupedListRow
-              icon={Webhook}
-              label={t("webhooks.title")}
-              description={t("settings.webhooksDescription")}
-              to="/settings/webhooks"
-            />
-          </GroupedList>
-        )}
-        {(canSeeSecurityLog || canReadOutbox) && (
-          <GroupedList header={t("settings.securityHeader")}>
-            {canSeeSecurityLog && (
-              <GroupedListRow
-                icon={ShieldCheck}
-                iconTone="success"
-                label={t("securityLog.title")}
-                description={t("settings.securityLogDescription")}
-                to="/settings/security-log"
-              />
-            )}
-            {canReadOutbox && (
-              <GroupedListRow
-                icon={Inbox}
-                iconTone="neutral"
-                label={t("emailOutbox.title")}
-                description={t("settings.emailOutboxDescription")}
-                to="/settings/email-outbox"
-              />
-            )}
           </GroupedList>
         )}
         <GroupedList header={t("settings.yourAdminHeader")}>
@@ -132,6 +123,45 @@ export function SettingsPage() {
             )}
           </GroupedList>
         )}
+        {(canSeeSecurityLog || canReadOutbox) && (
+          <GroupedList header={t("settings.securityHeader")}>
+            {canSeeSecurityLog && (
+              <GroupedListRow
+                icon={ShieldCheck}
+                iconTone="success"
+                label={t("securityLog.title")}
+                description={t("settings.securityLogDescription")}
+                to="/settings/security-log"
+              />
+            )}
+            {canReadOutbox && (
+              <GroupedListRow
+                icon={Inbox}
+                iconTone="neutral"
+                label={t("emailOutbox.title")}
+                description={t("settings.emailOutboxDescription")}
+                to="/settings/email-outbox"
+              />
+            )}
+          </GroupedList>
+        )}
+        {canSeeSiteSettings && (
+          <GroupedList header={t("settings.developersHeader")}>
+            <GroupedListRow
+              icon={KeyRound}
+              iconTone="warning"
+              label={t("apiAccess.title")}
+              description={t("settings.apiAccessDescription")}
+              to="/settings/api"
+            />
+            <GroupedListRow
+              icon={Webhook}
+              label={t("webhooks.title")}
+              description={t("settings.webhooksDescription")}
+              to="/settings/webhooks"
+            />
+          </GroupedList>
+        )}
         <GroupedList header={t("settings.systemHeader")}>
           {canSeeUpdates && (
             <GroupedListRow
@@ -149,49 +179,6 @@ export function SettingsPage() {
             label={t("about.title")}
             description={t("settings.aboutDescription")}
             to="/settings/about"
-          />
-        </GroupedList>
-        <GroupedList header={t("settings.siteHeader")} footer={t("settings.moreSoon")}>
-          {canSeeSiteSettings && (
-            <GroupedListRow
-              icon={MonitorSmartphone}
-              iconTone="success"
-              label={t("website.title")}
-              description={t("website.settingsDescription")}
-              to="/settings/site"
-            />
-          )}
-          {canSeeSiteSettings && (
-            <GroupedListRow
-              icon={Blocks}
-              iconTone="accent"
-              label={t("features.title")}
-              description={t("settings.featuresDescription")}
-              to="/settings/features"
-            />
-          )}
-          {canSeeSiteSettings && (
-            <GroupedListRow
-              icon={Globe}
-              iconTone="accent"
-              label={t("sites.title")}
-              description={t("settings.sitesDescription")}
-              to="/settings/sites"
-            />
-          )}
-          {canSeeSiteSettings && (
-            <GroupedListRow
-              icon={Languages}
-              label={t("languages.title")}
-              description={t("settings.languagesDescription")}
-              to="/settings/languages"
-            />
-          )}
-          <GroupedListRow
-            icon={Sparkles}
-            iconTone="neutral"
-            label={t("settings.moreSoonTitle")}
-            description={t("section.comingSoon")}
           />
         </GroupedList>
       </div>

@@ -622,8 +622,6 @@ const english = {
     "Your products and orders are kept; the Shop section just hides. Switch it back on any time.",
   "features.keptContent.forms":
     "Your forms and their submissions are kept; the Forms section just hides. Switch it back on any time.",
-  "settings.moreSoonTitle": "More site settings",
-  "settings.moreSoon": "More settings arrive in later phases of the roadmap.",
   "contentTypes.title": "Content types",
   "contentTypes.subtitle": "Each kind of content and the fields it has.",
   "contentTypes.loading": "Loading content types",
