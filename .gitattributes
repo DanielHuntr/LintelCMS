@@ -1,0 +1,11 @@
+# Every text file is stored and checked out with LF line endings, on every system, so
+# formatting, generated files and tests agree on Windows too. Git detects binary files itself.
+* text=auto eol=lf
+
+# Windows scripts keep the line endings Windows expects.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Test fixtures keep their bytes exactly as stored (a Shopify export, for one, uses CRLF).
+**/fixtures/** -text
