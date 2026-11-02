@@ -593,9 +593,11 @@ const english = {
   "fields.blocks.unknownName": "Removed block type",
   "settings.title": "Settings",
   "settings.subtitle": "How your site and its content are set up.",
-  "settings.contentHeader": "Content",
   "settings.contentTypesDescription": "The kinds of content you write, and their fields",
   "settings.siteHeader": "Site",
+  "settings.search": "Search settings",
+  "settings.searchEmptyTitle": "No settings match",
+  "settings.searchEmptyDescription": "Nothing in Settings mentions “{search}”. Try another word.",
   "settings.featuresDescription": "Switch the blog, shop, forms and more on or off",
   "features.title": "Features",
   "features.subtitle":

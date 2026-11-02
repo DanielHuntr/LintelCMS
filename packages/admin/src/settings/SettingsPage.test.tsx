@@ -1,3 +1,4 @@
+import userEvent from "@testing-library/user-event";
 import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { renderScreen } from "../testing/renderScreen.js";
@@ -27,5 +28,21 @@ describe("Settings", () => {
     const firstGroup = document.getElementById(groups[0] ?? "");
     expect(firstGroup).toHaveTextContent("Site");
     expect(screen.queryByText(/roadmap/)).not.toBeInTheDocument();
+  });
+
+  it("finds a setting by what it's for", async () => {
+    renderScreen(<SettingsPage />, { permissions: ["*"] });
+
+    await userEvent.type(
+      await screen.findByRole("searchbox", { name: "Search settings" }),
+      "backup",
+    );
+
+    expect(screen.getAllByRole("link").map((link) => link.textContent)).toEqual([
+      expect.stringContaining("Backups"),
+    ]);
+    await userEvent.clear(screen.getByRole("searchbox", { name: "Search settings" }));
+    await userEvent.type(screen.getByRole("searchbox", { name: "Search settings" }), "zebra");
+    expect(screen.getByText("No settings match")).toBeInTheDocument();
   });
 });
