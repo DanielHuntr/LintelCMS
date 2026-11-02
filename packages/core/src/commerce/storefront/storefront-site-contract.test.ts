@@ -1,8 +1,10 @@
 import {
   type Cart as SiteCart,
   cartTotalRows,
+  deliveryCountriesOf,
   describeShippingRate,
   type ShippingRate,
+  type StorefrontMarket,
 } from "@lintel/builder/site-shop-api";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
@@ -10,12 +12,13 @@ import { useTestDatabase } from "../../testing/test-database.js";
 import { fillCart, startTestShop, stockTheShop, type TestShop } from "../testing/test-shop.js";
 import { cartSchema } from "../carts/carts.schema.js";
 import { shippingRateOptionSchema } from "./storefront.openapi.js";
+import { storefrontMarketSchema } from "./storefront.schema.js";
 
 /**
  * The website's shop script (`@lintel/builder/site-shop-api`) reads the storefront API's
  * answers. These tests feed it the real answers, checked against the storefront's OpenAPI
  * schemas, so a renamed field breaks here (and in typecheck) rather than in a shopper's
- * basket (LINTEL-FUNC-002 and LINTEL-FUNC-003 in docs/qa/BUG-REPORT.md).
+ * basket (LINTEL-FUNC-002, LINTEL-FUNC-003 and LINTEL-UX-003 in docs/qa/BUG-REPORT.md).
  */
 describe("the website's shop script and the storefront API", () => {
   const testDatabase = useTestDatabase();
@@ -94,5 +97,28 @@ describe("the website's shop script and the storefront API", () => {
       "Free delivery (FREESHIP) -495",
       "Total 9000",
     ]);
+  });
+
+  it("offers only the countries a shipping zone delivers to", async () => {
+    await stockTheShop(shop);
+    // Ireland is sold to, but no shipping zone covers it yet.
+    const ireland = await shop.admin("POST", "/shop/markets", {
+      name: "Ireland",
+      currency: "EUR",
+      countries: ["IE"],
+      pricesIncludeTax: true,
+    });
+    expect(ireland.statusCode, ireland.body).toBe(201);
+
+    const answer = await shop.storefront("GET", "/delivery/shop/markets");
+    const { markets } = z.object({ markets: z.array(storefrontMarketSchema) }).parse(answer.json());
+    // Typecheck fails here if the API's market stops fitting the website's.
+    const offered: StorefrontMarket[] = markets;
+
+    expect(offered.map((market) => [market.countries, market.deliveryCountries])).toEqual([
+      [["GB"], ["GB"]],
+      [["IE"], []],
+    ]);
+    expect(deliveryCountriesOf({ markets: offered })).toEqual(["GB"]);
   });
 });

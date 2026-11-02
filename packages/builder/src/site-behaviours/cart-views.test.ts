@@ -260,3 +260,37 @@ describe("discounts in the basket", () => {
     );
   });
 });
+
+describe("the basket page's country", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    document.body.innerHTML = "";
+  });
+
+  it("offers only the countries the shop delivers to, by name", async () => {
+    answerRequests({
+      "GET /api/shop/markets": {
+        body: {
+          markets: [
+            { handle: "uk", countries: ["GB"], deliveryCountries: ["GB"] },
+            { handle: "europe", countries: ["IE", "FR", "DE"], deliveryCountries: ["IE", "FR"] },
+          ],
+        },
+      },
+    });
+    document.body.innerHTML =
+      '<div class="lintel-cart lintel-cart--page" data-behaviour="cart" data-cart-view="page" data-api="/api"></div>';
+    setUpCheckoutDetails(() => {});
+
+    const picker = document.querySelector<HTMLSelectElement>("select[name=country]");
+    expect(picker?.labels?.[0]?.firstChild?.textContent).toBe("Country");
+    await vi.waitFor(() => expect(picker?.options.length).toBe(3));
+    expect([...(picker?.options ?? [])].map((option) => `${option.value} ${option.text}`)).toEqual([
+      "FR France",
+      "IE Ireland",
+      "GB United Kingdom",
+    ]);
+    expect(picker?.value).toBe("GB");
+    expect(document.querySelector("input[name=country]")).toBeNull();
+  });
+});

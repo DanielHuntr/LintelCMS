@@ -3,8 +3,10 @@ import {
   type CartLine,
   cartTotalRows,
   changeLine,
+  countryName,
   describeShippingRate,
   formatMoney,
+  listDeliveryCountries,
   listShippingRates,
   shopperMessage,
   startCheckout,
@@ -186,8 +188,35 @@ const addressFields = [
   ["line2", "Address line 2 (optional)", "address-line2", "lintel-cart__wide"],
   ["city", "Town or city", "address-level2", ""],
   ["postalCode", "Postcode", "postal-code", ""],
-  ["country", "Country code (like GB)", "country", ""],
+  ["country", "Country", "country", ""],
 ] as const;
+
+/**
+ * The country list holds only the countries the shop delivers to, by name. Until they load,
+ * or if they can't, it offers the page language's country, as the free-text box used to.
+ */
+function countryPicker(): HTMLSelectElement {
+  const picker = document.createElement("select");
+  const addOptions = (codes: readonly string[]) =>
+    picker.replaceChildren(
+      ...codes
+        .map((code) => new Option(countryName(code), code))
+        .sort((first, second) => first.text.localeCompare(second.text)),
+    );
+  const pageCountry = (document.documentElement.lang.split("-")[1] ?? "GB").toUpperCase();
+  addOptions([pageCountry]);
+  listDeliveryCountries()
+    .then((codes) => {
+      if (codes.length === 0) return;
+      const wanted = latestCart?.country ?? picker.value;
+      addOptions(codes);
+      picker.value = codes.includes(wanted) ? wanted : (picker.options[0]?.value ?? "");
+    })
+    .catch(() => {
+      // The page language's country stays; Choose delivery says if there's no delivery there.
+    });
+  return picker;
+}
 
 /** The details form on the basket page: email and address, then delivery, then pay. */
 export function setUpCheckoutDetails(onChange: (cart: Cart) => void): void {
@@ -204,15 +233,11 @@ export function setUpCheckoutDetails(onChange: (cart: Cart) => void): void {
   const form = element("form", "lintel-cart__checkout-form");
   for (const [name, label, autocomplete, wide] of addressFields) {
     const field = element("label", wide, label);
-    const input = document.createElement("input");
+    const input = name === "country" ? countryPicker() : document.createElement("input");
     input.name = name;
     input.autocomplete = autocomplete;
     input.required = name !== "line2";
-    if (name === "email") input.type = "email";
-    if (name === "country") {
-      input.maxLength = 2;
-      input.value = (document.documentElement.lang.split("-")[1] ?? "GB").toUpperCase();
-    }
+    if (name === "email" && input instanceof HTMLInputElement) input.type = "email";
     field.append(input);
     form.append(field);
   }

@@ -159,3 +159,29 @@ Screenshots are in [screenshots/fix-shop/](screenshots/fix-shop/). "Before" scre
 - Before: [desktop light](screenshots/fix-shop/func-003-cart-before-desktop-light.png), [desktop dark](screenshots/fix-shop/func-003-cart-before-desktop-dark.png), [390 light](screenshots/fix-shop/func-003-cart-before-390-light.png), [390 dark](screenshots/fix-shop/func-003-cart-before-390-dark.png).
 - After: [desktop light](screenshots/fix-shop/func-003-cart-after-desktop-light.png), [desktop dark](screenshots/fix-shop/func-003-cart-after-desktop-dark.png), [390 light](screenshots/fix-shop/func-003-cart-after-390-light.png), [390 dark](screenshots/fix-shop/func-003-cart-after-390-dark.png).
 - After, with delivery: [SAVE10](screenshots/fix-shop/func-003-cart-delivery-after-desktop-light.png), [FREESHIP](screenshots/fix-shop/func-003-cart-freeship-after-desktop-light.png).
+
+## LINTEL-UX-003: Checkout country is a free-text box
+
+**Status:** Verified.
+
+**Root cause (confirmed):** `cart-views.ts` built the country as a 2-character `<input>` labelled "Country code (like GB)". The storefront API had no list of countries the shop delivers to: markets list where the shop sells, and shipping zones (where it delivers) are admin-only.
+
+**Change:**
+
+- `packages/core/src/commerce/storefront/storefront.service.ts` and `storefront.schema.ts`: each market in `GET /delivery/shop/markets` also lists `deliveryCountries`. These are its countries that a shipping zone with at least one rate covers. The change is additive; nothing existing is renamed. Documented in the storefront README and `packages/docs/…/building/commerce-api.md`.
+- `packages/builder/src/site-behaviours/shop-api.ts`: `StorefrontMarket`, `deliveryCountriesOf`, `listDeliveryCountries`, and `countryName` (the country's name via `Intl.DisplayNames` in the page's language, or the code if that fails).
+- `cart-views.ts`: the field is now a `<select>` labelled "Country", listing the delivery countries by name, sorted. It keeps the cart's country if there is one; otherwise it selects the page language's country when that is in the list. Until the list loads, or if it can't, the select holds the page language's country, which was the old box's default. The existing `.lintel-cart select` style applies.
+
+**Tests:**
+
+- `cart-views.test.ts` (jsdom): with markets UK (GB) and Europe (sells IE, FR, DE; delivers IE, FR), the select is labelled "Country" and offers exactly France, Ireland and United Kingdom, with GB selected. There is no text input.
+- `storefront-site-contract.test.ts` (real API): a UK market with a zone and rate, and an Ireland market with no zone. The answer parses with `storefrontMarketSchema` and fits the site's type. `deliveryCountries` is `["GB"]` and `[]`, and the site offers `["GB"]`.
+- `src/openapi` and storefront tests pass (7).
+
+**Runtime verification:** markets United Kingdom (GB, zone + rate), Ireland (IE, zone + rate added) and Germany (DE, no zone). On `/cart` the Country select offers "Ireland" and "United Kingdom" only, with United Kingdom selected. Choose delivery still lists "Standard, £4.95 (2 to 3 working days)". Checked at desktop and 390px, light and dark.
+
+**Screenshots:**
+
+- Before (text box): [desktop light](screenshots/fix-shop/ux-003-country-before-desktop-light.png), [desktop dark](screenshots/fix-shop/ux-003-country-before-desktop-dark.png), [390 light](screenshots/fix-shop/ux-003-country-before-390-light.png), [390 dark](screenshots/fix-shop/ux-003-country-before-390-dark.png).
+- After (select): [desktop light](screenshots/fix-shop/ux-003-country-after-desktop-light.png), [desktop dark](screenshots/fix-shop/ux-003-country-after-desktop-dark.png), [390 light](screenshots/fix-shop/ux-003-country-after-390-light.png), [390 dark](screenshots/fix-shop/ux-003-country-after-390-dark.png).
+- Headless screenshots can't show an open native dropdown, so the option list is evidenced by the DOM readout above.

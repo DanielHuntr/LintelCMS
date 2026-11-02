@@ -237,6 +237,35 @@ export async function listShippingRates(): Promise<ShippingRate[]> {
   return answer.rates ?? answer.items ?? [];
 }
 
+/** A market as `GET /delivery/shop/markets` answers it (the fields the website uses). */
+export interface StorefrontMarket {
+  handle: string;
+  countries: string[];
+  /** The market's countries a shipping zone with a rate covers. */
+  deliveryCountries: string[];
+}
+
+/** Every country the shop delivers to, once each, from the markets answer. */
+export function deliveryCountriesOf(answer: { markets: StorefrontMarket[] }): string[] {
+  return [...new Set(answer.markets.flatMap((market) => market.deliveryCountries))];
+}
+
+export async function listDeliveryCountries(): Promise<string[]> {
+  return deliveryCountriesOf(await shopRequest<{ markets: StorefrontMarket[] }>("/markets"));
+}
+
+/** "United Kingdom" for "GB", in the page's language; the code itself if that fails. */
+export function countryName(code: string): string {
+  try {
+    const names = new Intl.DisplayNames([document.documentElement.lang || "en"], {
+      type: "region",
+    });
+    return names.of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
 /** Starts paying: the shop's payment provider takes over from the address it answers with. */
 export async function startCheckout(): Promise<{
   checkoutId: string;

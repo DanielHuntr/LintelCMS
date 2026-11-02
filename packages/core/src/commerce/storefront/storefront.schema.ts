@@ -60,6 +60,8 @@ export const storefrontMarketSchema = z.object({
   name: z.string(),
   currency: z.string(),
   countries: z.array(z.string()),
+  /** The market's countries a shipping zone with a rate covers: where checkout can deliver. */
+  deliveryCountries: z.array(z.string()),
   pricesIncludeTax: z.boolean(),
 });
 
