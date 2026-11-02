@@ -479,8 +479,9 @@ export function runCanvasFrame(snap: typeof snapBox): void {
   document.addEventListener("keydown", (event) => {
     if (editing) {
       if (event.key === "Escape") {
+        // Escape ends editing and keeps the words, as clicking away does; Undo takes them back.
         event.preventDefault();
-        finishEditing(false);
+        finishEditing(true);
       } else if (event.key === "Enter" && !event.shiftKey && editing.tagName !== "P") {
         event.preventDefault();
         finishEditing(true);
