@@ -47,6 +47,9 @@ One CLI test (`loads without failing…`) timed out under the full parallel run 
 | LINTEL-UX-007   | Fixed  | `e6e5a2d` | A form's Settings warns when email isn't set up                                                   |
 | LINTEL-UX-012   | Fixed  | `678178e` | "View website" under the site's name in the sidebar                                               |
 | (UX pass)       | Fixed  | `f4cb490` | Settings lists the website's settings first; the roadmap placeholder is gone                      |
+| LINTEL-DATA-004 | Fixed  | `0721cd8` | A save sends only the fields changed in that editor (Daniel chose merge per field)                |
+| LINTEL-DATA-003 | Fixed  | `123881d` | Renaming a content type field moves entries' saved, published and past values to the new handle   |
+| LINTEL-DATA-003 | Fixed  | `575e222` | The same for a field inside a fieldset, in every content type that imports it at the top          |
 
 ---
 
@@ -243,12 +246,37 @@ The same way: a test that fails on the old code first. The screens were also che
 
 **Test:** `SettingsPage.test.tsx`.
 
+### LINTEL-DATA-004: two editors on one entry
+
+Daniel's decision for SPEC-004: merge per field. Different fields edited by two people both survive; the same field edited by both keeps the last save.
+
+**Before:** every save sent every field, so the second editor's save put back the values they had opened.
+
+**After:** `changesSince(saved, current)` in `entryDraft.ts` picks the fields, slug and parent changed since the editor's last save, and only those are sent; the API already keeps whatever isn't sent. The builder's save sends only the design. This also replaces the earlier parent-only rule for LINTEL-DATA-010.
+
+**Tests:** `entryDraft.test.ts` ("what a save sends") and `EntryWorkspace.test.tsx`, "saves only the fields changed here…".
+
+### LINTEL-DATA-003: renaming a field's handle
+
+Daniel's decision: move the values.
+
+**Before:** entries kept values under the old handle; the website lost them at once and the next save of each entry dropped them.
+
+**After:**
+
+- The admin knows which saved fields had their handle changed (each field's key is `saved:<handle as loaded>`), and sends `renames: [{ from, to }]` with `PUT /blueprints/:handle` and `PUT /fieldsets/:handle`.
+- The API checks each is a real rename (old handle there before, new one there now, old one gone) and, in the same transaction, moves the values in entries' saved and published values and every revision (`entries/field-renames.*`). For a fieldset, the values move inside the group each content type imports it as.
+- The handle hint now says the content moves with it, and that page designs and code using the old handle need updating.
+
+**Not covered yet:** fields inside groups, repeaters or blocks; fieldsets inside those or in global sets; collection list bindings in page designs (`data.<old>`), which still need changing by hand.
+
+**Tests:** `blueprints.test.ts`, "moves entries' values to a field's new handle, live and in History"; `fieldsets.test.ts`, "moves entries' values when a field in a fieldset is renamed"; `blueprintDraft.test.ts`, "renamed handles".
+
 ## Still open from batch 3
 
 Highest first:
 
 - **P1:**
   - LINTEL-DATA-011 and LINTEL-FUNC-016 (updates: rollback schema, Windows junctions; hosting is deprioritised);
-  - LINTEL-UX-006 and LINTEL-UX-009 (redesigns, waiting for Daniel);
-  - batch 2's LINTEL-DATA-003 and LINTEL-DATA-004 (DATA-004 waits for a decision on SPEC-004).
-- **P2:** the rest of the batch 3 table.
+  - LINTEL-UX-006 and LINTEL-UX-009, with the other two redesigns (approved by Daniel; next).
+- **P2:** the rest of the batch 3 table, and DATA-003's uncovered cases above.
