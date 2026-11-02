@@ -17,6 +17,7 @@ import { useCan } from "../session/SessionContext.js";
 import { deleteFromRecycleBin, emptyRecycleBin, restoreFromRecycleBin } from "./contentTree.api.js";
 import type { RecycleBinItem } from "./contentTree.types.js";
 import { useRecycleBin, useRefreshContent } from "./contentTree.queries.js";
+import { useContentTree } from "./ContentTreeContext.js";
 import { iconForContent } from "./typeIcons.js";
 
 type Confirming = { kind: "one"; item: RecycleBinItem } | { kind: "all" } | null;
@@ -30,6 +31,7 @@ export function RecycleBinPage() {
   const bin = useRecycleBin();
   const navigate = useNavigate();
   const refresh = useRefreshContent();
+  const tree = useContentTree();
   const now = useNow();
   const canRestore = useCan("entries:create");
   const canDelete = useCan("entries:delete");
@@ -43,7 +45,9 @@ export function RecycleBinPage() {
     try {
       const restored = await restoreFromRecycleBin(item.id);
       await refresh([restored.entryId]);
-      setMessage({ text: t("recycleBin.restored", { title: item.title }), isError: false });
+      // Restoring opens the page, so the note goes at the foot of the tree, where it stays in
+      // sight, and replaces the "moved to the recycle bin" note that led here.
+      tree.notify({ tone: "neutral", message: t("recycleBin.restored", { title: item.title }) });
       await navigate({
         to: "/content/$collection/$entryId",
         params: { collection: item.collection.handle, entryId: restored.entryId },
