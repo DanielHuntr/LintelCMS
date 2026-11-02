@@ -111,3 +111,51 @@ Screenshots are in [screenshots/fix-shop/](screenshots/fix-shop/). "Before" scre
 - Before: [desktop light](screenshots/fix-shop/func-002-delivery-before-desktop-light.png), [desktop dark](screenshots/fix-shop/func-002-delivery-before-desktop-dark.png), [390 light](screenshots/fix-shop/func-002-delivery-before-390-light.png), [390 dark](screenshots/fix-shop/func-002-delivery-before-390-dark.png).
 - After: [desktop light](screenshots/fix-shop/func-002-delivery-after-desktop-light.png), [desktop dark](screenshots/fix-shop/func-002-delivery-after-desktop-dark.png), [390 light](screenshots/fix-shop/func-002-delivery-after-390-light.png), [390 dark](screenshots/fix-shop/func-002-delivery-after-390-dark.png); [Pay now hand-off](screenshots/fix-shop/func-002-paynow-after-desktop-light.png).
 - The full-page captures show the site's sticky header part way down the page. That is how full-page screenshots draw a sticky header, not a defect.
+
+## LINTEL-FUNC-003: Discounts are invisible on the website and the totals don't add up
+
+**Status:** Verified.
+
+**Root cause (confirmed):** the site's `Cart` type had no `discountCodes`, `discounts` or `discountProblems`. The basket drew only Subtotal, Delivery and Total. Nothing on the website set `discountCodes`.
+
+**Change:**
+
+- `packages/builder/src/site-behaviours/shop-api.ts`: `Cart` gains `discountCodes`, `discounts` (`CartDiscount`) and `discountProblems`, as in `cartSchema`. New pure `cartTotalRows(cart)`: Subtotal, then each discount as its own negative row ("Discount (SAVE10)"; an automatic discount uses its title), then Delivery, then Total.
+  - The API has already taken a free-delivery discount off `shipping`. So Delivery is shown at full price with "Free delivery (CODE)" below it, and the rows still add up.
+  - Before a delivery is chosen, free delivery shows as "Free".
+- `cart-views.ts`:
+  - totals come from `cartTotalRows`; deductions show as "−£9.00";
+  - new `setUpDiscountCode` adds a "Discount code" box with an Apply button to the basket page, under the sums, using the existing cart `PATCH { discountCodes }`;
+  - the codes in the basket are listed with a Remove button each;
+  - the API's refusal ("This code isn't valid…", "Only one code can be used per order.") and `discountProblems` messages are shown by the box, in a `role="status"` paragraph;
+  - the box is one element kept across re-renders, so typing isn't lost, and it is hidden while the basket is empty.
+- `shop-behaviours.ts`: sets up the box with the basket.
+- `element-stylesheet.ts`: layout for the box, reusing the add-to-basket row pattern and label style. The Apply button is the theme's existing `lintel-button--secondary`. `display` applies only when the box isn't `hidden`.
+
+**Tests:**
+
+- `packages/builder/src/site-behaviours/cart-views.test.ts` (jsdom), 4 new tests:
+  - the rows for SAVE10 with delivery;
+  - the rows for free delivery;
+  - typing " save10 " sends `PATCH {discountCodes:["save10"]}`, clears the box, shows the discount line and a "Remove the code SAVE10" button;
+  - a refused code shows the API's message by the box.
+- `packages/core/src/commerce/storefront/storefront-site-contract.test.ts`, 2 new tests against the real API: a cart with SAVE10, and one with a free-delivery code, each with delivery chosen. The answer is parsed with `cartSchema`, assigned to the site's `Cart` (typecheck), and run through `cartTotalRows`. The rows must add up to the API's own total: 9000 − 900 + 495 = 8595, and 9000 + 495 − 495 = 9000.
+- These tests can't run on the unfixed code at all: the box, the rows function and the cart fields don't exist there.
+
+**Runtime verification (`/cart`, 2 × Linen shirt M, desktop and 390px, light and dark):**
+
+| State                      | Before                                                                    | After                                                                                                                  |
+| -------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Code box                   | none                                                                      | "Discount code" + Apply                                                                                                |
+| Code `NOPE`                | –                                                                         | "This code isn't valid. Check it's typed correctly." by the box                                                        |
+| `save10` applied           | (applied through the API) Subtotal £90.00, Total £81.00, no discount line | Subtotal £90.00 · Discount (SAVE10) −£9.00 · Total £81.00; "SAVE10 Remove"                                             |
+| + delivery chosen          | –                                                                         | Subtotal £90.00 · Discount (SAVE10) −£9.00 · Delivery £4.95 · Total £85.95                                             |
+| Remove SAVE10              | –                                                                         | Subtotal £90.00 · Delivery £4.95 · Total £94.95                                                                        |
+| `FREESHIP` (free delivery) | –                                                                         | before delivery: Free delivery (FREESHIP) Free; after: Delivery £4.95 · Free delivery (FREESHIP) −£4.95 · Total £90.00 |
+| SAVE10 then FREESHIP       | –                                                                         | "Only one code can be used per order." (the API's rule), SAVE10 kept                                                   |
+
+**Screenshots:**
+
+- Before: [desktop light](screenshots/fix-shop/func-003-cart-before-desktop-light.png), [desktop dark](screenshots/fix-shop/func-003-cart-before-desktop-dark.png), [390 light](screenshots/fix-shop/func-003-cart-before-390-light.png), [390 dark](screenshots/fix-shop/func-003-cart-before-390-dark.png).
+- After: [desktop light](screenshots/fix-shop/func-003-cart-after-desktop-light.png), [desktop dark](screenshots/fix-shop/func-003-cart-after-desktop-dark.png), [390 light](screenshots/fix-shop/func-003-cart-after-390-light.png), [390 dark](screenshots/fix-shop/func-003-cart-after-390-dark.png).
+- After, with delivery: [SAVE10](screenshots/fix-shop/func-003-cart-delivery-after-desktop-light.png), [FREESHIP](screenshots/fix-shop/func-003-cart-freeship-after-desktop-light.png).

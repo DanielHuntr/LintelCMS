@@ -1,5 +1,5 @@
 import { eachBehaviour } from "./behaviour-helpers.js";
-import { renderCartViews, setUpCheckoutDetails } from "./cart-views.js";
+import { renderCartViews, setUpCheckoutDetails, setUpDiscountCode } from "./cart-views.js";
 import {
   addToCart,
   type Cart,
@@ -144,6 +144,7 @@ export async function setUpCart(root: ParentNode): Promise<void> {
     '[data-behaviour~="cart"], [data-cart-count], [data-behaviour~="add-to-cart"]',
   );
   if (!hasShop) return;
+  setUpDiscountCode(showCart);
   setUpCheckoutDetails(showCart);
   showCart(await loadCart());
 }

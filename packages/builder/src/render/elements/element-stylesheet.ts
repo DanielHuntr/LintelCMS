@@ -434,6 +434,13 @@ ${phone} { :where(.lintel-product-gallery--side) { grid-template-columns: 1fr; }
 :where(.lintel-cart__totals) { display: grid; grid-template-columns: 1fr auto; gap: var(--lintel-space-1) var(--lintel-space-4); }
 :where(.lintel-cart__totals dt) { color: var(--lintel-color-text-secondary); }
 :where(.lintel-cart__totals dd) { margin: 0; text-align: end; font-weight: 600; }
+:where(.lintel-cart__discount:not([hidden])) { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--lintel-space-3); }
+:where(.lintel-cart__discount label) { display: flex; flex: 1; flex-direction: column; gap: var(--lintel-space-1); min-inline-size: 12rem; font-weight: 600; font-size: 0.875rem; }
+:where(.lintel-cart__discount-problems, .lintel-cart__codes) { inline-size: 100%; margin: 0; font-size: 0.875rem; }
+:where(.lintel-cart__discount-problems) { color: var(--lintel-color-text-secondary); }
+:where(.lintel-cart__codes) { display: flex; flex-wrap: wrap; gap: var(--lintel-space-3); padding: 0; list-style: none; }
+:where(.lintel-cart__discount-problems:empty, .lintel-cart__codes:empty) { display: none; }
+:where(.lintel-cart__code) { display: inline-flex; align-items: center; gap: var(--lintel-space-2); font-weight: 600; }
 :where(.lintel-cart__checkout-form) { display: grid; gap: var(--lintel-space-3); grid-template-columns: repeat(2, minmax(0, 1fr)); }
 :where(.lintel-cart__checkout-form label:not(.lintel-form__choice), .lintel-cart__rates legend) { display: flex; flex-direction: column; gap: var(--lintel-space-1); font-weight: 600; font-size: 0.875rem; }
 :where(.lintel-cart__rates) { margin: 0; padding: 0; border: 0; }

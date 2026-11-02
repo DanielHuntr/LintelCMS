@@ -22,17 +22,70 @@ export interface CartLine {
   quantityAvailable: number | null;
 }
 
+/** What one discount takes off. `code` is "" for automatic discounts. */
+export interface CartDiscount {
+  code: string;
+  title: string;
+  /** For free delivery: what the chosen delivery would have cost, already off `shipping`. */
+  amount: Money;
+  freeShipping: boolean;
+}
+
 export interface Cart {
   email: string | null;
   country: string | null;
   shippingAddress: Record<string, string> | null;
   shippingRateId: string | null;
+  discountCodes: string[];
   lines: CartLine[];
   itemCount: number;
   subtotal: Money;
+  discounts: CartDiscount[];
+  /** Codes in the cart that don't apply yet, with a message for the shopper. */
+  discountProblems: Array<{ code: string; message: string }>;
   shipping: Money | null;
   total: Money;
   readyForCheckout: boolean;
+}
+
+/** One line of the basket's sums. `amount` is signed (discounts are negative). */
+export interface CartTotalRow {
+  label: string;
+  /** Null for free delivery before a delivery is chosen: nothing to add up yet. */
+  amount: Money | null;
+}
+
+function discountLabel(discount: CartDiscount): string {
+  if (discount.freeShipping)
+    return discount.code ? `Free delivery (${discount.code})` : discount.title;
+  return discount.code ? `Discount (${discount.code})` : discount.title;
+}
+
+/**
+ * The basket's sums, one row per discount, so they add up to the total the API works out:
+ * subtotal, minus each discount, plus delivery. A free-delivery discount is already taken
+ * off `shipping`, so delivery is shown at its full price with the discount below it.
+ */
+export function cartTotalRows(cart: Cart): CartTotalRow[] {
+  const currency = cart.total.currency;
+  const minus = (money: Money): Money => ({ amount: -money.amount, currency: money.currency });
+  const rows: CartTotalRow[] = [{ label: "Subtotal", amount: cart.subtotal }];
+  for (const discount of cart.discounts.filter((each) => !each.freeShipping)) {
+    rows.push({ label: discountLabel(discount), amount: minus(discount.amount) });
+  }
+  const freeDelivery = cart.discounts.filter((each) => each.freeShipping);
+  if (cart.shipping) {
+    const saved = freeDelivery.reduce((sum, discount) => sum + discount.amount.amount, 0);
+    rows.push({ label: "Delivery", amount: { amount: cart.shipping.amount + saved, currency } });
+    for (const discount of freeDelivery) {
+      rows.push({ label: discountLabel(discount), amount: minus(discount.amount) });
+    }
+  } else {
+    for (const discount of freeDelivery)
+      rows.push({ label: discountLabel(discount), amount: null });
+  }
+  rows.push({ label: "Total", amount: cart.total });
+  return rows;
 }
 
 export class ShopRequestError extends Error {

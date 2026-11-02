@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { setUpCheckoutDetails } from "./cart-views.js";
+import { renderCartViews, setUpCheckoutDetails, setUpDiscountCode } from "./cart-views.js";
 import type { Cart } from "./shop-api.js";
 
 /*
@@ -16,9 +16,12 @@ function cartWith(changes: Partial<Cart> = {}): Cart {
     country: "GB",
     shippingAddress: null,
     shippingRateId: null,
+    discountCodes: [],
     lines: [],
     itemCount: 2,
     subtotal: pounds(9000),
+    discounts: [],
+    discountProblems: [],
     shipping: null,
     total: pounds(9000),
     readyForCheckout: false,
@@ -136,5 +139,124 @@ describe("the basket page's delivery details", () => {
     const message = form.querySelector(".lintel-cart__message")?.textContent ?? "";
     expect(message).toBe("Something went wrong. Please try again.");
     expect(message).not.toMatch(/undefined|properties/);
+  });
+});
+
+const shirt = {
+  id: "line-1",
+  productTitle: "Linen shirt",
+  productHandle: "linen-shirt",
+  variantTitle: "M",
+  image: null,
+  quantity: 2,
+  unitPrice: pounds(4500),
+  subtotal: pounds(9000),
+  problem: null,
+  quantityAvailable: 5,
+};
+
+const withSave10 = cartWith({
+  lines: [shirt],
+  discountCodes: ["SAVE10"],
+  discounts: [{ code: "SAVE10", title: "Ten off", amount: pounds(900), freeShipping: false }],
+  shipping: pounds(495),
+  total: pounds(8595),
+});
+
+function totalsShown(): string[] {
+  return [...document.querySelectorAll(".lintel-cart--page .lintel-cart__totals dt")].map(
+    (term) => `${term.textContent} ${term.nextElementSibling?.textContent}`,
+  );
+}
+
+describe("discounts in the basket", () => {
+  const showCart = (cart: Cart) => renderCartViews(cart, showCart);
+
+  beforeEach(() => {
+    window.localStorage.setItem("lintel-cart", "token-1");
+    document.body.innerHTML =
+      '<div class="lintel-cart lintel-cart--page" data-behaviour="cart" data-cart-view="page" data-api="/api"></div>';
+    setUpDiscountCode(showCart);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    window.localStorage.clear();
+    document.body.innerHTML = "";
+  });
+
+  it("shows each discount as its own line, so the sums add up", () => {
+    showCart(withSave10);
+
+    expect(totalsShown()).toEqual([
+      "Subtotal £90.00",
+      "Discount (SAVE10) −£9.00",
+      "Delivery £4.95",
+      "Total £85.95",
+    ]);
+  });
+
+  it("shows free delivery at its full price with the saving below it", () => {
+    showCart(
+      cartWith({
+        lines: [shirt],
+        discountCodes: ["FREESHIP"],
+        discounts: [
+          { code: "FREESHIP", title: "Free delivery", amount: pounds(495), freeShipping: true },
+        ],
+        shipping: pounds(0),
+        total: pounds(9000),
+      }),
+    );
+
+    expect(totalsShown()).toEqual([
+      "Subtotal £90.00",
+      "Delivery £4.95",
+      "Free delivery (FREESHIP) −£4.95",
+      "Total £90.00",
+    ]);
+  });
+
+  it("applies a typed code and lists it with a Remove button", async () => {
+    showCart(cartWith({ lines: [shirt] }));
+    const fetchMock = answerRequests({ "PATCH /api/shop/carts/token-1": { body: withSave10 } });
+
+    const box = document.querySelector<HTMLFormElement>(".lintel-cart__discount");
+    expect(box?.hidden).toBe(false);
+    const input = box?.querySelector<HTMLInputElement>("input[name=discountCode]");
+    if (!box || !input) throw new Error("The discount code box is missing");
+    input.value = " save10 ";
+    box.dispatchEvent(new Event("submit", { cancelable: true }));
+
+    await vi.waitFor(() => expect(totalsShown()).toContain("Discount (SAVE10) −£9.00"));
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({
+      discountCodes: ["save10"],
+    });
+    expect(input.value).toBe("");
+    expect(document.querySelector("[aria-label='Remove the code SAVE10']")?.textContent).toBe(
+      "Remove",
+    );
+  });
+
+  it("says why a code was refused, by the box", async () => {
+    showCart(cartWith({ lines: [shirt] }));
+    answerRequests({
+      "PATCH /api/shop/carts/token-1": {
+        status: 400,
+        body: { message: "This code isn't valid. Check it's typed correctly." },
+      },
+    });
+
+    const box = document.querySelector<HTMLFormElement>(".lintel-cart__discount");
+    const input = box?.querySelector<HTMLInputElement>("input[name=discountCode]");
+    if (!box || !input) throw new Error("The discount code box is missing");
+    input.value = "NOPE";
+    box.dispatchEvent(new Event("submit", { cancelable: true }));
+
+    await vi.waitFor(() =>
+      expect(box.querySelector(".lintel-cart__discount-problems")?.textContent).toBe(
+        "This code isn't valid. Check it's typed correctly.",
+      ),
+    );
   });
 });

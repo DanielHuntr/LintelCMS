@@ -1,6 +1,7 @@
 import {
   type Cart,
   type CartLine,
+  cartTotalRows,
   changeLine,
   describeShippingRate,
   formatMoney,
@@ -71,15 +72,45 @@ function lineItem(line: CartLine, onChange: (cart: Cart) => void): HTMLLIElement
 
 function totals(cart: Cart): HTMLDListElement {
   const list = element("dl", "lintel-cart__totals");
-  const row = (name: string, value: string) =>
-    list.append(element("dt", "", name), element("dd", "", value));
-  row("Subtotal", formatMoney(cart.subtotal));
-  if (cart.shipping) row("Delivery", formatMoney(cart.shipping));
-  row("Total", formatMoney(cart.total));
+  for (const { label, amount } of cartTotalRows(cart)) {
+    let value = "Free";
+    if (amount && amount.amount < 0)
+      value = `−${formatMoney({ ...amount, amount: -amount.amount })}`;
+    else if (amount) value = formatMoney(amount);
+    list.append(element("dt", "", label), element("dd", "", value));
+  }
   return list;
 }
 
+/** The codes in the cart, each with a Remove button, and why any of them don't apply yet. */
+function showDiscountCodes(box: HTMLElement, cart: Cart, onChange: (cart: Cart) => void): void {
+  const codes = box.querySelector<HTMLElement>(".lintel-cart__codes");
+  const problems = box.querySelector<HTMLElement>(".lintel-cart__discount-problems");
+  codes?.replaceChildren(
+    ...cart.discountCodes.map((code) => {
+      const item = element("li", "lintel-cart__code", code);
+      const remove = element("button", "lintel-cart__remove", "Remove");
+      remove.type = "button";
+      remove.setAttribute("aria-label", `Remove the code ${code}`);
+      remove.addEventListener("click", async () => {
+        const left = cart.discountCodes.filter((each) => each !== code);
+        try {
+          onChange(await updateCart({ discountCodes: left }));
+        } catch (error) {
+          if (problems) problems.textContent = shopperMessage(error, "Please try again.");
+        }
+      });
+      item.append(" ", remove);
+      return item;
+    }),
+  );
+  if (problems) problems.textContent = cart.discountProblems.map((each) => each.message).join(" ");
+}
+
+let latestCart: Cart | null = null;
+
 export function renderCartViews(cart: Cart | null, onChange: (cart: Cart) => void): void {
+  latestCart = cart;
   document.querySelectorAll<HTMLElement>('[data-behaviour~="cart"]').forEach((view) => {
     const lines = view.querySelector(".lintel-cart__lines");
     const sums = view.querySelector(".lintel-cart__totals");
@@ -91,11 +122,60 @@ export function renderCartViews(cart: Cart | null, onChange: (cart: Cart) => voi
     view
       .querySelector<HTMLElement>(".lintel-cart__checkout-area")
       ?.toggleAttribute("hidden", !hasLines);
+    const discountBox = view.querySelector<HTMLElement>(".lintel-cart__discount");
+    discountBox?.toggleAttribute("hidden", !hasLines);
     if (!cart || !hasLines) return;
     const list = element("ul", "lintel-cart__lines");
     list.setAttribute("aria-label", "In your basket");
     cart.lines.forEach((line) => list.append(lineItem(line, onChange)));
-    view.prepend(list, totals(cart));
+    // The code box stays the same element, so typing in it isn't lost; it moves below the sums.
+    view.prepend(list, totals(cart), ...(discountBox ? [discountBox] : []));
+    if (discountBox) showDiscountCodes(discountBox, cart, onChange);
+  });
+}
+
+/** The discount code box on the basket page, below the sums. */
+export function setUpDiscountCode(onChange: (cart: Cart) => void): void {
+  const page = document.querySelector<HTMLElement>(
+    '[data-behaviour~="cart"][data-cart-view="page"]',
+  );
+  if (!page || page.querySelector(".lintel-cart__discount")) return;
+  const box = element("form", "lintel-cart__discount");
+  box.hidden = true;
+  const field = element("label", "", "Discount code");
+  const input = document.createElement("input");
+  input.name = "discountCode";
+  input.autocomplete = "off";
+  input.maxLength = 50;
+  field.append(input);
+  const apply = element("button", "lintel-button lintel-button--secondary", "Apply");
+  apply.type = "submit";
+  const problems = element("p", "lintel-cart__discount-problems");
+  problems.setAttribute("role", "status");
+  const codes = element("ul", "lintel-cart__codes");
+  codes.setAttribute("aria-label", "Codes in your basket");
+  box.append(field, apply, problems, codes);
+  page.prepend(box);
+
+  box.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const code = input.value.trim();
+    if (!code) return;
+    const current = latestCart?.discountCodes ?? [];
+    const already = current.some((each) => each.toUpperCase() === code.toUpperCase());
+    problems.textContent = "";
+    apply.disabled = true;
+    try {
+      onChange(await updateCart({ discountCodes: already ? current : [...current, code] }));
+      input.value = "";
+    } catch (error) {
+      problems.textContent = shopperMessage(
+        error,
+        "That code couldn’t be added. Please try again.",
+      );
+    } finally {
+      apply.disabled = false;
+    }
   });
 }
 
