@@ -18,6 +18,8 @@ interface EntryEditorPageProps {
   entryId: string;
   /** For a new entry: the language to write it in. Undefined is the site's main language. */
   locale?: string;
+  /** Called once a new entry is first saved, just before the address changes to its id. */
+  onCreated?: (entryId: string) => void;
 }
 
 /**
@@ -33,7 +35,7 @@ export function EntryEditorPage(props: EntryEditorPageProps) {
   );
 }
 
-function LoadedEntryEditor({ collectionHandle, entryId, locale }: EntryEditorPageProps) {
+function LoadedEntryEditor({ collectionHandle, entryId, locale, onCreated }: EntryEditorPageProps) {
   const navigate = useNavigate();
   const isNew = entryId === newEntryId;
   const collection = useCollection(collectionHandle);
@@ -53,6 +55,7 @@ function LoadedEntryEditor({ collectionHandle, entryId, locale }: EntryEditorPag
 
   function handleCreated(created: Entry) {
     editorKey.adopt(created.id);
+    onCreated?.(created.id);
     // Swap /new for the real address without a new history step or the unsaved-changes check.
     void navigate({
       to: "/content/$collection/$entryId",
