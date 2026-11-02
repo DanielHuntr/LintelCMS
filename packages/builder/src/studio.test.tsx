@@ -86,6 +86,24 @@ describe("animating in the builder", () => {
     await user.click(screen.getByRole("button", { name: "Undo: Animated Title" }));
     expect(findNode(latest().root, "n2")?.animation).toBeUndefined();
   });
+
+  // Ctrl+Z did nothing with focus on a tab, or on the page after clicking empty space.
+  it("undoes and redoes with the keyboard wherever focus is, except in a text box", async () => {
+    const user = userEvent.setup();
+    const { latest } = renderBuilder(headingPage());
+    await selectTitle(user);
+    await user.click(screen.getByRole("tab", { name: "Animate" }));
+    await user.click(screen.getByRole("button", { name: /^Pop in/ }));
+
+    screen.getByRole("tab", { name: "Animate" }).focus();
+    await user.keyboard("{Control>}z{/Control}");
+    expect(findNode(latest().root, "n2")?.animation).toBeUndefined();
+
+    (document.activeElement as HTMLElement | null)?.blur();
+    expect(document.activeElement).toBe(document.body);
+    await user.keyboard("{Control>}{Shift>}z{/Shift}{/Control}");
+    expect(findNode(latest().root, "n2")?.animation?.presetId).toBe("pop-in");
+  });
 });
 
 describe("skill levels", () => {

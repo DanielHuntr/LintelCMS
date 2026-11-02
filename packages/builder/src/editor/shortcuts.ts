@@ -86,6 +86,25 @@ export function shortcutFor(key: ForwardedKey, onMac: boolean = isMac()): Shortc
 }
 
 /** Whether a key press belongs to a text box or other control rather than to the builder. */
+/** Inputs that take typing, where Undo and Redo belong to the text, not the page. */
+const nonTextInputs = new Set([
+  "checkbox",
+  "radio",
+  "range",
+  "color",
+  "button",
+  "submit",
+  "reset",
+  "file",
+]);
+
+/** Somewhere that takes typed text: a text box, a text area or editable text. */
+export function isTextEntry(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable || target instanceof HTMLTextAreaElement) return true;
+  return target instanceof HTMLInputElement && !nonTextInputs.has(target.type);
+}
+
 export function isTypingTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   if (target.isContentEditable) return true;
