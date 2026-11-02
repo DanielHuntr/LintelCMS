@@ -298,8 +298,7 @@ const navigation = `
 :where(.lintel-site-header__brand) { display: inline-flex; align-items: center; gap: var(--lintel-space-2); color: inherit; text-decoration: none; font-family: var(--lintel-font-heading); font-weight: 700; font-size: 1.25rem; }
 :where(.lintel-site-header__logo) { block-size: 2.25rem; inline-size: auto; }
 :where(.lintel-site-header__nav) { margin-inline-start: auto; }
-:where(.lintel-site-header__menu-button) { display: none; margin-inline-start: auto; }
-${tablet} { :where(.lintel-site-header__nav, .lintel-site-header__button) { display: none; } :where(.lintel-site-header__menu-button) { display: inline-flex; } }
+${tablet} { :where(.lintel-site-header__nav, .lintel-site-header__button) { display: none; } }
 :where(.lintel-mega) { display: flex; gap: var(--lintel-space-2); margin: 0; padding: 0; list-style: none; }
 :where(.lintel-mega__link, .lintel-mega__toggle) { display: inline-flex; align-items: center; gap: var(--lintel-space-1); min-block-size: 2.75rem; padding: 0 var(--lintel-space-3); border-radius: var(--lintel-radius-button); color: inherit; text-decoration: none; font-weight: 500; cursor: pointer; list-style: none; }
 :where(.lintel-mega__toggle)::-webkit-details-marker { display: none; }
@@ -320,6 +319,9 @@ ${tablet} { :where(.lintel-site-header__nav, .lintel-site-header__button) { disp
 :where(.lintel-mega__featured) { display: flex; flex-direction: column; gap: var(--lintel-space-2); color: inherit; text-decoration: none; font-weight: 600; }
 :where(.lintel-mega__featured img) { aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--lintel-radius-medium); }
 :where(.lintel-drawer__open) { display: inline-flex; align-items: center; gap: var(--lintel-space-2); min-block-size: 2.75rem; padding: 0 var(--lintel-space-3); border: 1px solid var(--lintel-color-border); border-radius: var(--lintel-radius-button); background: transparent; color: inherit; font: inherit; cursor: pointer; }
+/* After .lintel-drawer__open, which the Header's menu button also has: same weight, so order decides. */
+:where(.lintel-site-header__menu-button) { display: none; margin-inline-start: auto; }
+${tablet} { :where(.lintel-site-header__menu-button) { display: inline-flex; } }
 :where(.lintel-drawer__icon) { inline-size: 1.25rem; block-size: 1.25rem; }
 :where(.lintel-mobile-menu--small-screens) { display: none; }
 ${tablet} { :where(.lintel-mobile-menu--small-screens) { display: block; } }
