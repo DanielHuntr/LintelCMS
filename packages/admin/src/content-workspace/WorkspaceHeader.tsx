@@ -3,7 +3,6 @@ import { ChevronRight, Ellipsis } from "lucide-react";
 import { useState } from "react";
 import type { Collection, Entry } from "../content/content.types.js";
 import { EntrySlugInput } from "../content/EntrySlugInput.js";
-import { EntryStatusBadge } from "../content/EntryStatusBadge.js";
 import { EntryTitleInput } from "../content/EntryTitleInput.js";
 import type { ViewPageTarget } from "../content/viewPage.js";
 import { useEntryPath } from "../content-tree/contentTree.queries.js";
@@ -11,7 +10,6 @@ import type { EntryInfo, TreeNode } from "../content-tree/contentTree.types.js";
 import { TreeActionsMenu } from "../content-tree/TreeActionsMenu.js";
 import { useActionItems } from "../content-tree/useActionItems.js";
 import { entryAddressPattern } from "./entryAddressPattern.js";
-import { Badge } from "../design/Badge.js";
 import { t } from "../i18n/strings.js";
 
 interface WorkspaceHeaderProps {
@@ -66,7 +64,6 @@ export function WorkspaceHeader({
   );
   const [menuAt, setMenuAt] = useState<{ x: number; y: number } | null>(null);
   const address = entryAddressPattern(collection.routePattern, entry.slug, info);
-  const isChanged = entry.status === "published" && entry.hasUnpublishedChanges;
 
   return (
     <header className="mb-4 flex flex-col gap-2">
@@ -100,8 +97,6 @@ export function WorkspaceHeader({
             </li>
           </ol>
         </nav>
-        <EntryStatusBadge status={entry.status} />
-        {isChanged && <Badge tone="warning">{t("tree.status.changed")}</Badge>}
         {actions.length > 0 && (
           <button
             type="button"

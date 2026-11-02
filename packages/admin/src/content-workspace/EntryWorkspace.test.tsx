@@ -165,6 +165,8 @@ describe("an entry's workspace", () => {
 
     const bar = await screen.findByRole("region", { name: "Saving and publishing" });
     expect(within(bar).getByText("Draft, not on your site yet")).toBeTruthy();
+    // Said once, in the bar, not again as a badge by the title (LINTEL-VIS-002).
+    expect(screen.queryByText("Draft", { exact: true })).toBeNull();
     expect(within(bar).queryByRole("button", { name: "Save" })).toBeNull();
     expect(within(bar).getByRole("button", { name: "Save and publish" })).toBeTruthy();
 

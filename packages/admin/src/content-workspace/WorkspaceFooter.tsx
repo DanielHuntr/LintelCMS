@@ -83,7 +83,7 @@ export function WorkspaceFooter(props: WorkspaceFooterProps) {
       aria-label={t("workspace.footer")}
       className="sticky bottom-3 z-10 -mx-2 flex items-center gap-2 rounded-panel bg-sidebar px-3 py-2.5 shadow-float hairline-ring backdrop-blur-2xl backdrop-saturate-150 max-md:flex-wrap max-md:justify-end"
     >
-      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 max-md:basis-full">
         <PageStatus entry={entry} state={state} />
         <SaveIndicator
           status={props.saveStatus}
