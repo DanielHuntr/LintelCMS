@@ -82,6 +82,7 @@ const frameMessageTypes = new Set([
   "place",
   "textSelection",
   "openMenu",
+  "look",
 ]);
 
 /** Reads a message from the frame, or null if it isn't one of ours. */
@@ -117,6 +118,14 @@ export function readFrameMessage(data: unknown): MessageFromFrame | null {
         : null;
     case "place":
       return isText(message.nodeId) && isFiniteNumber(message.left) && isFiniteNumber(message.top)
+        ? (message as MessageFromFrame)
+        : null;
+    case "look":
+      return isText(message.nodeId) &&
+        isText(message.textAlign) &&
+        isFiniteNumber(message.fontSize) &&
+        isText(message.fontWeight) &&
+        isText(message.color)
         ? (message as MessageFromFrame)
         : null;
     case "textSelection":

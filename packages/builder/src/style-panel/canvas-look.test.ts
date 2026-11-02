@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFrameMessage } from "../canvas/canvas-messages.js";
 import { type CanvasLook, lookAlign, nearestSizeChip } from "./canvas-look.js";
 
 const look = (overrides: Partial<CanvasLook>): CanvasLook => ({
@@ -27,5 +28,21 @@ describe("showing how the selected element looks", () => {
     expect(lookAlign(look({ textAlign: "start" }))).toBe("left");
     expect(lookAlign(look({ textAlign: "end" }))).toBe("right");
     expect(lookAlign(null)).toBeUndefined();
+  });
+});
+
+describe("the canvas's look message", () => {
+  // The builder only takes messages it knows, and dropped the canvas's measurements.
+  it("is read when it is well formed, and refused otherwise", () => {
+    const sent = {
+      type: "look",
+      nodeId: "n1",
+      textAlign: "center",
+      fontSize: 56,
+      fontWeight: "700",
+      color: "rgb(0, 0, 0)",
+    };
+    expect(readFrameMessage(sent)).toEqual(sent);
+    expect(readFrameMessage({ ...sent, fontSize: "big" })).toBeNull();
   });
 });

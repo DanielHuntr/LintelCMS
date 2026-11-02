@@ -170,7 +170,13 @@ export function StyleChips({
             {label}
           </span>
           {choices.map((choice) => {
-            const shown = first.value !== undefined || lookValue === null ? first.value : lookValue;
+            // A value no chip matches (a size that grows with the screen, say) shows the chip
+            // nearest how it looks, as nothing set does.
+            const isChipValue = choices.some((each) => each.value === first.value);
+            const shown =
+              (first.value !== undefined && isChipValue) || lookValue === null
+                ? first.value
+                : lookValue;
             const isCurrent = choice.value === shown;
             return (
               <button
