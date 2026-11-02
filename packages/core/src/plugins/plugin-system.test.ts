@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { requirePermission } from "../auth/require-permission.js";
 import { defineFieldtype } from "../fieldtypes/fieldtype.js";
+import { fieldtypeListSchema } from "../fieldtypes/fieldtypes.schema.js";
 import { buildServer } from "../server.js";
 import { useTestDatabase } from "../testing/test-database.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
@@ -156,10 +157,17 @@ describe("the plugin system", () => {
 
   it("offers a plugin's fieldtypes to content types and checks values with them", async () => {
     const fieldtypes = await request("GET", "/fieldtypes");
+    // The answer's documented shape, with the defaults a plugin fieldtype that sets none of
+    // category, keywords, holdsValue or canBeInside gets (see fieldtype.ts).
+    expect(fieldtypeListSchema.safeParse(fieldtypes.json()).success).toBe(true);
     expect(fieldtypes.json().fieldtypes.at(-1)).toEqual({
       type: "greetings.mood",
       name: "Mood",
       description: "How the visitor feels.",
+      category: "advanced",
+      keywords: [],
+      holdsValue: true,
+      canBeInside: true,
       plugin: "greetings",
     });
 
