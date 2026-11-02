@@ -56,4 +56,17 @@ describe("the admin's frame on a phone", () => {
     expect(document.getElementById("main")).not.toHaveAttribute("inert");
     expect(menu).toHaveFocus();
   });
+
+  // The Search button's text was 4.45:1 and its Ctrl K hint 2.86:1 on the sidebar; with the
+  // lighter tint and the secondary label colour both are 4.7:1, above WCAG's 4.5:1.
+  it("keeps the Search button's words readable against the sidebar", async () => {
+    mockApi(() => ({}));
+    renderScreen(
+      <AdminLayout permissions={["entries:read"]} enabledPlugins={[]} siteName="Brightside" />,
+    );
+
+    const search = await screen.findByRole("button", { name: /Search/ });
+    expect(search).toHaveClass("bg-fill/40", "text-label-secondary");
+    expect(search.querySelector("kbd")).toHaveClass("text-label-secondary");
+  });
 });
