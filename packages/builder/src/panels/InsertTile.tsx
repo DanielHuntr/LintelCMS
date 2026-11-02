@@ -32,10 +32,11 @@ interface InsertTileProps {
 }
 
 /**
- * One thing to insert: press it to add it, or drag it into Layers. Its description is in a
- * hover card (also shown when the tile has keyboard focus) and in a details popover opened
- * with the ⓘ button, rather than taking room in the list. Screen readers hear it as the
- * tile's description.
+ * One thing to insert: press it to add it, or drag it into Layers. A section is a card with
+ * a sketch of it and what it's for, shown in the list, since that is what beginners choose
+ * by. An element is a row whose description is in a hover card (also shown when the tile has
+ * keyboard focus). Both have a details popover opened with the ⓘ button, and screen readers
+ * hear the description as the tile's.
  */
 export function InsertTile({
   item,
@@ -79,7 +80,7 @@ export function InsertTile({
         }}
         className={classNames(
           "flex w-full min-w-0 rounded-control text-start transition-colors duration-150 hover:bg-fill focus-visible:focus-ring",
-          look === "section" && "min-h-12 items-center gap-2.5 py-1 pe-7 ps-1",
+          look === "section" && "flex-col items-stretch gap-1.5 p-1.5",
           look === "element" && "min-h-10 items-center gap-2 py-1 pe-7 ps-1.5",
           look === "compact" && "flex-col items-center gap-1 px-1 py-1.5",
         )}
@@ -92,10 +93,16 @@ export function InsertTile({
             look === "compact"
               ? "w-full text-center text-[11px] leading-tight"
               : "text-caption leading-snug",
+            look === "section" && "pe-6",
           )}
         >
           {item.label}
         </span>
+        {look === "section" && (
+          <span aria-hidden="true" className="line-clamp-2 text-caption text-label-secondary">
+            {item.description}
+          </span>
+        )}
       </button>
       <span id={descriptionId} className="sr-only">
         {item.description}
@@ -113,14 +120,14 @@ export function InsertTile({
           }}
           className={classNames(
             "absolute flex size-6 items-center justify-center rounded-full text-label-secondary transition-opacity duration-150 hover:bg-fill-strong hover:text-label focus-visible:opacity-100 focus-visible:focus-ring",
-            look === "section" ? "top-3 inset-e-1" : "top-2 inset-e-1",
+            look === "section" ? "top-2.5 inset-e-2.5 bg-surface/90" : "top-2 inset-e-1",
             isShowingDetails ? "opacity-100" : "opacity-0 group-hover:opacity-100",
           )}
         >
           <Info aria-hidden="true" className="size-3.5" />
         </button>
       )}
-      {hint.isShown && !isShowingDetails && (
+      {hint.isShown && !isShowingDetails && look === "element" && (
         <div
           aria-hidden="true"
           className={classNames(
@@ -141,7 +148,7 @@ export function InsertTile({
 
 function TileArt({ item, look }: { item: InsertItem; look: InsertTileProps["look"] }) {
   if (item.blueprint && look === "section") {
-    return <BlueprintSketch blueprint={item.blueprint} size="thumbnail" />;
+    return <BlueprintSketch blueprint={item.blueprint} />;
   }
   return (
     <span

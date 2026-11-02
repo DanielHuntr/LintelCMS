@@ -102,10 +102,10 @@ describe("the Insert panel", () => {
     await person.click(disclosure("Intro and banners"));
     const hero = screen.getByRole("button", { name: "Hero" });
     expect(hero).toHaveAccessibleDescription(/A big welcome at the top of the page/);
-    // Descriptions are in hover cards and details, not in the list.
-    expect(
-      screen.queryByText(/A big welcome at the top of the page/, { selector: "p" }),
-    ).toBeNull();
+    // A section shows what it's for in the list, under a sketch of it, since beginners choose
+    // sections by purpose; the tile's name stays its own.
+    expect(hero).toHaveTextContent(/A big welcome at the top of the page/);
+    expect(hero).toHaveAccessibleName("Hero");
     expect(preferences.read("insert.sectionGroups.open")).toBe("intro");
   });
 
