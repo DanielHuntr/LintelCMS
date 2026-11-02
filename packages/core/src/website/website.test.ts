@@ -189,6 +189,44 @@ describe("the built-in website", () => {
     expect(response.body).not.toContain("lintel-page-header__title");
   });
 
+  it("leaves out the site's header and footer on a page that has its own", async () => {
+    const ids = (() => {
+      let next = 0;
+      return () => `own${(next += 1)}`;
+    })();
+    const design = createEmptyPage();
+    design.root.children = [
+      createNode({ type: "siteHeader" }, standardCatalogue, ids),
+      createNode(
+        { type: "heading", props: { text: "Our story", level: 1 } },
+        standardCatalogue,
+        ids,
+      ),
+      createNode({ type: "siteFooter" }, standardCatalogue, ids),
+    ];
+    const headerOnly = createEmptyPage();
+    headerOnly.root.children = [createNode({ type: "siteHeader" }, standardCatalogue, ids)];
+    await publishHome();
+    await publish("pages", { title: "Own chrome", design }, "own-chrome");
+    await publish("pages", { title: "Own header", design: headerOnly }, "own-header");
+
+    const own = (await visit("/own-chrome")).body;
+    expect(own).not.toContain('class="lintel-header ');
+    expect(own).not.toContain('class="lintel-footer"');
+    expect(own.match(/<header/g)).toHaveLength(1);
+    expect(own.match(/<footer/g)).toHaveLength(1);
+    // The page's own header shows the site's name.
+    expect(own).toMatch(/lintel-site-header__name">Corner Bakery</);
+    // Only what the page has is replaced.
+    const header = (await visit("/own-header")).body;
+    expect(header).not.toContain('class="lintel-header ');
+    expect(header).toContain('class="lintel-footer"');
+    // Pages without their own keep the site's.
+    const plain = (await visit("/")).body;
+    expect(plain).toContain('class="lintel-header ');
+    expect(plain).toContain('class="lintel-footer"');
+  });
+
   it("answers again from its cache, with 304 for an unchanged page, and refreshes on publish", async () => {
     await publishHome();
     const id = await publish("pages", { title: "About us", summary: "Who we are." });

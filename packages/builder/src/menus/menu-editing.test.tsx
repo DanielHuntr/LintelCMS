@@ -132,3 +132,30 @@ describe("“Edit menu” in the Content tab", () => {
     expect(screen.getByRole("button", { name: "Edit menu" })).toBeInTheDocument();
   });
 });
+
+describe("the site's own name on the canvas", () => {
+  const canvasSite = {
+    stylesheet: "",
+    bodyClassName: "",
+    headerHtml: "",
+    footerHtml: "",
+    baseUrl: null,
+    motionScript: "",
+    siteName: "Corner Bakery",
+    logo: null,
+    socialLinks: [],
+    footerText: "",
+  };
+
+  it("shows it in a Header and a Footer, not a sample name", () => {
+    for (const type of ["siteHeader", "siteFooter"]) {
+      const document = pageWith(type);
+      const html = renderPage(document, standardRegistry, {
+        mode: "canvas",
+        data: canvasPageData(document, noDataSources, canvasSite),
+      }).html;
+      expect(html).toContain("Corner Bakery");
+      expect(html).not.toContain("Your site");
+    }
+  });
+});

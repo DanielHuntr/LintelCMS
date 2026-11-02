@@ -108,6 +108,32 @@ describe("builder commands", () => {
     expect(childIds(nothingSelected.document, "page")).toEqual(["n1", "new1"]);
   });
 
+  it("puts a Header at the top of the page and a Footer at the bottom, whatever is selected", () => {
+    const page = heroPage();
+    const header = apply(
+      createEditorState(page),
+      commands.insertBlueprint(context(page, "n4"), { type: "siteHeader" }),
+    );
+    expect(childIds(header.document, "page")).toEqual(["new1", "n1"]);
+    expect(childIds(header.document, "n2")).toEqual(["n3", "n4", "n5"]);
+    const footer = apply(
+      createEditorState(page),
+      commands.insertBlueprint(context(page, "n3"), { type: "siteFooter" }),
+    );
+    expect(childIds(footer.document, "page")).toEqual(["n1", "new1"]);
+    // The footer templates are sections drawn as the page's footer.
+    const footerSection = apply(
+      createEditorState(header.document),
+      commands.insertBlueprint(context(header.document, "n3"), {
+        type: "section",
+        props: { element: "footer" },
+      }),
+    );
+    const order = footerSection.document.root.children.map((child) => child.type);
+    expect(order).toEqual(["siteHeader", "section", "section"]);
+    expect(footerSection.document.root.children.at(-1)?.props.element).toBe("footer");
+  });
+
   it("moves elements up, down, in and out, and says when it can’t", () => {
     const page = heroPage();
     const down = apply(createEditorState(page), commands.moveSelected(context(page, "n3"), "down"));

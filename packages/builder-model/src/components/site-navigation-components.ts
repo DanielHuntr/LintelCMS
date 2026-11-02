@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { PageNode } from "../document/page-document.schema.js";
 import { defineComponent } from "./component-definition.js";
 import {
   emptyPicture,
@@ -303,3 +304,36 @@ export const backToTopComponent = defineComponent({
     { kind: "toggle", prop: "floats", label: "Float in the corner once visitors scroll down" },
   ],
 });
+
+/**
+ * Where an element belongs on a page when it's added from Insert, whatever is selected:
+ * the Header at the very top; the Footer, and sections drawn as the page's footer (the
+ * footer templates), at the very bottom. Null for everything else.
+ */
+export function pageEdgeFor(element: {
+  type: string;
+  props?: Readonly<Record<string, unknown>>;
+}): "top" | "bottom" | null {
+  if (element.type === "siteHeader") return "top";
+  if (element.type === "siteFooter") return "bottom";
+  if (element.type === "section" && element.props?.element === "footer") return "bottom";
+  return null;
+}
+
+/**
+ * Whether a page brings its own header and footer, so the website (and the canvas) leaves
+ * out the site's own: a visible Header or Footer element anywhere, or a footer section at
+ * the top level of the page.
+ */
+export function ownSiteChrome(root: PageNode): { header: boolean; footer: boolean } {
+  let header = false;
+  let footer = root.children.some((child) => !child.hidden && pageEdgeFor(child) === "bottom");
+  const visit = (node: PageNode) => {
+    if (node.hidden) return;
+    if (node.type === "siteHeader") header = true;
+    if (node.type === "siteFooter") footer = true;
+    node.children.forEach(visit);
+  };
+  visit(root);
+  return { header, footer };
+}

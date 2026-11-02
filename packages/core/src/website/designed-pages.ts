@@ -1,4 +1,9 @@
-import { type PageData, type PageDocument, validatePageDocument } from "@lintel/builder-model";
+import {
+  ownSiteChrome,
+  type PageData,
+  type PageDocument,
+  validatePageDocument,
+} from "@lintel/builder-model";
 import { renderPage, standardRegistry } from "@lintel/builder/render";
 import type { PageDesign } from "@lintel/site-components";
 import { pageComponentCatalogue } from "../pages/page-components.js";
@@ -31,7 +36,18 @@ export function drawPageDesign(document: PageDocument, data: PageData = {}): Pag
     standardRegistry,
     { withMotion: true, data },
   );
-  return { html, css, animations, fontPreloads, script, usesBehaviours };
+  // A page with its own Header or Footer shows it instead of the site's (LINTEL-FUNC-005).
+  const own = ownSiteChrome(document.root);
+  return {
+    html,
+    css,
+    animations,
+    fontPreloads,
+    script,
+    usesBehaviours,
+    ownHeader: own.header,
+    ownFooter: own.footer,
+  };
 }
 
 /** A design drawn without data: what a page's view starts with before its lists are loaded. */

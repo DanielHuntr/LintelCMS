@@ -4,6 +4,7 @@ import {
   type CreateNodeId,
   createRandomNodeId,
   findNode,
+  ownSiteChrome,
   type PageDocument,
   sectionTemplates,
   starterSites as allStarterSites,
@@ -176,9 +177,9 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     () =>
       renderPage(state.document, registry, {
         mode: "canvas",
-        data: canvasPageData(state.document, dataSources),
+        data: canvasPageData(state.document, dataSources, props.site),
       }),
-    [state.document, registry, dataSources],
+    [state.document, registry, dataSources, props.site],
   );
   const menuChoices = useMemo(
     () => (dataSources.menus ?? []).map((menu) => ({ value: menu.handle, label: menu.name })),
@@ -194,12 +195,18 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     [props.menuEditor, menuChoices, editingMenuFor],
   );
   const site = props.site;
+  // A page with its own header or footer shows it instead of the site's, as the website does.
+  const ownChrome = useMemo(() => ownSiteChrome(state.document.root), [state.document.root]);
   const canvasCss = useMemo(
     () =>
-      site
-        ? `${site.stylesheet}\n${rendered.css}`
-        : `${props.themeStylesheet ?? defaultThemeStylesheet}\n${standInBaseStylesheet}\n${props.baseStylesheet ?? ""}\n${designBaseStylesheet}\n${rendered.css}`,
-    [site, props.themeStylesheet, props.baseStylesheet, rendered.css],
+      `${
+        site
+          ? `${site.stylesheet}\n${rendered.css}`
+          : `${props.themeStylesheet ?? defaultThemeStylesheet}\n${standInBaseStylesheet}\n${props.baseStylesheet ?? ""}\n${designBaseStylesheet}\n${rendered.css}`
+      }${ownChrome.header ? '\n[data-lintel-site-chrome="header"]{display:none}' : ""}${
+        ownChrome.footer ? '\n[data-lintel-site-chrome="footer"]{display:none}' : ""
+      }`,
+    [site, props.themeStylesheet, props.baseStylesheet, rendered.css, ownChrome],
   );
 
   const previewMotion = useCallback(
