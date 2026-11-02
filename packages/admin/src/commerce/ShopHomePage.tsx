@@ -3,6 +3,7 @@ import {
   CircleCheck,
   CreditCard,
   Globe,
+  LayoutGrid,
   Package,
   Receipt,
   Settings,
@@ -92,6 +93,12 @@ export function ShopHomePage() {
             label={t("shop.products.title")}
             description={t("shop.products.rowDescription")}
             to="/commerce/products"
+          />
+          <GroupedListRow
+            icon={LayoutGrid}
+            label={t("shop.collections.title")}
+            description={t("shop.collections.rowDescription")}
+            to="/commerce/collections"
           />
           <GroupedListRow
             icon={Receipt}

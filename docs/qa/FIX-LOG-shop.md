@@ -11,6 +11,43 @@ Fixing pass, 2 Nov 2026, branch `fix/qa-shop` from `qa/discovery`. Defect detail
 
 Screenshots are in [screenshots/fix-shop/](screenshots/fix-shop/). "Before" screenshots were taken on the unfixed code in the same environment.
 
+## Summary
+
+| ID              | Priority | Status                                                     | Commit    |
+| --------------- | -------- | ---------------------------------------------------------- | --------- |
+| LINTEL-DATA-001 | P0       | Verified                                                   | `48f2905` |
+| LINTEL-FUNC-001 | P0       | Verified                                                   | `eb24da2` |
+| LINTEL-FUNC-002 | P0       | Fixed, verified up to the payment hand-off; paying Blocked | `0ef5637` |
+| LINTEL-FUNC-003 | P1       | Verified                                                   | `1217015` |
+| LINTEL-UX-003   | P3       | Verified                                                   | `41f98f1` |
+| LINTEL-VIS-001  | P3       | Verified                                                   | `d3ddb9b` |
+| LINTEL-UX-002   | P3       | Verified                                                   | `ae94771` |
+| LINTEL-DATA-002 | P2       | Verified on desktop; 390px by DOM only (UX-001)            | `c92f845` |
+| LINTEL-FUNC-007 | P2       | Verified on desktop; 390px by DOM only (UX-001)            | this one  |
+
+**Checks run on the final code:**
+
+- Prettier (changed files), ESLint (`packages/core`, `packages/builder`, `packages/admin`): clean.
+- `tsc --noEmit` in core, builder and admin: clean.
+- Tests:
+  - builder: 201 passed (jsdom) and 10 passed (browser, one worker);
+  - admin: 569 passed;
+  - core: 937 passed, 5 skipped, 1 failed. The failure is `plugins/plugin-system.test.ts > offers a plugin's fieldtypes…`: the `/fieldtypes` answer now carries `canBeInside`, `category`, `holdsValue` and `keywords`. It fails the same way on `qa/discovery`, and this branch doesn't touch plugins or fieldtypes, so it is pre-existing (see "New issues").
+- The `docs` package changed only in Markdown; `astro check` was not run.
+
+**Not verified, and why:**
+
+- **Paying.** There is no internet, so Stripe can't be connected. The site's checkout reaches `POST /carts/:token/checkout`, which answers 409 SHOP_NOT_READY. The API's path through a faked Stripe is covered by `commerce.e2e.test.ts` (passes).
+- **Admin at 390px.** The sidebar still covers the page (LINTEL-UX-001, the other fix agent's defect). Admin screens at 390px were checked by DOM text, not by eye.
+- **The discount editor's empty-collections link.** Collections already existed in the test data.
+
+**New issues noticed (not fixed):**
+
+1. **Drawer "Check out" text is invisible.** In the website's basket drawer, "Check out" is brand-coloured text on a brand-coloured button. The site stylesheet's `a { color: var(--lintel-color-link) }` outranks `:where(.lintel-button)`, so it can affect any `<a class="lintel-button">` on the website. See [the open drawer](screenshots/fix-shop/vis-001-drawer-after-390-dark.png).
+2. **`plugin-system.test.ts` fails on the release branch**, as described above. Either the test or the `/fieldtypes` answer needs updating.
+3. **Owner-facing message at checkout.** Shoppers see "Payments aren't set up yet. Connect Stripe in Shop → Settings → Payments first." when the shop isn't ready. This is the prior review's lead; it was observed again here.
+4. **Imported orders read as "No orders yet".** On Orders → All orders, a shop with only imported orders still shows "No orders yet. When someone buys from your shop…". The new Imported option is the pointer; the empty text itself was left as it is.
+
 ## LINTEL-DATA-001: Backups store media files as 0 bytes
 
 **Status:** Verified.
@@ -277,3 +314,56 @@ Shopify's own export says Ada spent 104.00 across 2 orders. The fixture `orders.
 - Customer before: [desktop light](screenshots/fix-shop/data-002-customer-before-desktop-light.png), [desktop dark](screenshots/fix-shop/data-002-customer-before-desktop-dark.png), [390 light](screenshots/fix-shop/data-002-customer-before-390-light.png), [390 dark](screenshots/fix-shop/data-002-customer-before-390-dark.png).
 - Customer after: [desktop light](screenshots/fix-shop/data-002-customer-after-desktop-light.png), [desktop dark](screenshots/fix-shop/data-002-customer-after-desktop-dark.png), [390 light](screenshots/fix-shop/data-002-customer-after-390-light.png), [390 dark](screenshots/fix-shop/data-002-customer-after-390-dark.png).
 - Orders: [before](screenshots/fix-shop/data-002-orders-before-desktop-light.png), [before dark](screenshots/fix-shop/data-002-orders-before-desktop-dark.png), [after](screenshots/fix-shop/data-002-orders-after-desktop-light.png), [after dark](screenshots/fix-shop/data-002-orders-after-desktop-dark.png); Imported view [light](screenshots/fix-shop/data-002-orders-imported-after-desktop-light.png), [dark](screenshots/fix-shop/data-002-orders-imported-after-desktop-dark.png), [390](screenshots/fix-shop/data-002-orders-imported-after-390-light.png) (sidebar overlap from UX-001).
+
+## LINTEL-FUNC-007: No admin screen to create product collections
+
+**Status:** Verified (desktop). At 390px the screens render but are covered by the uncollapsed sidebar (LINTEL-UX-001, another agent's defect).
+
+**Root cause (confirmed):** the core API has had list/create/read/update/delete for collections since phase 3 (`GET/POST /shop/collections`, `GET/PUT/DELETE /shop/collections/:id`), but `commerceRoutes.tsx` registered no admin screen. The only way to get a collection was the Shopify import. `/commerce/collections` answered "Page not found", and the product editor had no way to put a product in a collection.
+
+**Change (admin only, existing API and components):**
+
+- New `collections.api.ts` and `collections.queries.ts`:
+  - get, create and save a collection;
+  - `useManualCollections`, the hand-picked collections with their products;
+  - `useSetProductCollections`, which adds a product to or removes it from each hand-picked collection whose membership changed, with a `PUT` of the whole collection and everything else kept;
+  - the list cache is the discount editor's, so both stay in step.
+- New `CollectionsPage.tsx` (`/commerce/collections`): a `GroupedList` of collections ("1 product, picked by hand" / "picked by rules"), an "Add collection" button and an empty state, in the Discounts page's layout.
+- New `CollectionEditorPage.tsx` (`/commerce/collections/:id` and `/new`):
+  - Title (required, with the same inline error style as other editors) and Description;
+  - for hand-picked collections, the products are chosen with the discount editor's existing `ProductPicker` (now exported from `DiscountScopeSection.tsx`);
+  - automatic collections explain that their rules pick the products, and saving keeps `kind`, `rules` and `matchAll` unchanged.
+- New `ProductCollectionsCard.tsx`, at the bottom of the product editor: a checkbox per hand-picked collection, with a "Manage collections" link, saved with the product.
+  - The product form is keyed by `updatedAt` and redraws after a save. So the collection changes are chained after the product save with `mutateAsync` rather than an `onSuccess` callback, which would be dropped by the redraw.
+  - Membership is worked out from the collections each render unless the user has ticked something, so the card shows the saved state after the redraw.
+- `ShopHomePage.tsx`: a Collections row after Products. `commerceRoutes.tsx`: the two routes.
+- `DiscountScopeSection.tsx`: the "There are no collections yet. Make one…" text now has an "Add collection" link to the new screen.
+- Strings `shop.collections.*` through `t()` in `commerceStrings.ts`. `admin/src/commerce/README.md` and `docs/…/using/selling.md` describe the screen. The README also notes the Orders "Imported" view from LINTEL-DATA-002, which was missed in that commit.
+- Deliberately left out to keep this minimal: deleting a collection (the API supports it), editing rules, ordering products, and a collection picker for automatic collections.
+
+**Tests:** new `admin/src/commerce/CollectionsScreens.test.tsx`:
+
+- the list links each collection and says how it picks products;
+- creating requires a title, then posts `{title, description, kind: "manual", rules: [], matchAll: true, productIds: ["p1"]}`;
+- an automatic collection's rename sends its rules back unchanged, and it offers no product checkboxes;
+- in the product editor, ticking "Summer Edit" and saving `PUT`s that collection with `productIds: ["p-other", "p1"]`, and the automatic collection isn't offered.
+
+None of these screens existed before, so the tests can't run on the unfixed code.
+
+**Runtime verification:**
+
+- `/commerce/collections`: before, "Page not found". After, the list shows Summer Edit (imported).
+- Add collection: Save with no title says "Please give the collection a title". "Linen edit" with "Cool cloth for warm days." and Linen shirt ticked saves, goes to the new collection's page with heading "Linen edit", and lists as "1 product, picked by hand". A second one, "Gifts", lands on its own heading too.
+- Product editor (Linen shirt): the Collections card ticks Linen edit and lists Gifts and Summer Edit. Moving the shirt from Linen edit to Summer Edit and back, each followed by Save, is confirmed by `GET /shop/collections/:id` in both directions. The card shows the saved state with and without a reload.
+- Automatic "Summer tag" (rule: tag = summer): the description edited and saved; rules unchanged in the API (`[{"field":"tag","operator":"equals","value":"summer"}]`).
+- Shop home lists Collections. No page errors.
+- Not seen at runtime: the discount editor's empty-collections link. Collections already existed in this data. The copy and link are covered by typecheck only.
+
+**Screenshots:**
+
+- Shop home: [before](screenshots/fix-shop/func-007-shop-home-before-desktop-light.png), [before dark](screenshots/fix-shop/func-007-shop-home-before-desktop-dark.png), [after](screenshots/fix-shop/func-007-shop-home-after-desktop-light.png), [after dark](screenshots/fix-shop/func-007-shop-home-after-desktop-dark.png).
+- `/commerce/collections`:
+  - before: [desktop light](screenshots/fix-shop/func-007-collections-before-desktop-light.png), [desktop dark](screenshots/fix-shop/func-007-collections-before-desktop-dark.png), [390 light](screenshots/fix-shop/func-007-collections-before-390-light.png), [390 dark](screenshots/fix-shop/func-007-collections-before-390-dark.png);
+  - after: [desktop light](screenshots/fix-shop/func-007-collections-after-desktop-light.png), [desktop dark](screenshots/fix-shop/func-007-collections-after-desktop-dark.png), [390 light](screenshots/fix-shop/func-007-collections-after-390-light.png), [390 dark](screenshots/fix-shop/func-007-collections-after-390-dark.png).
+- Editor: [desktop light](screenshots/fix-shop/func-007-editor-after-desktop-light.png), [desktop dark](screenshots/fix-shop/func-007-editor-after-desktop-dark.png), [390 light](screenshots/fix-shop/func-007-editor-after-390-light.png), [390 dark](screenshots/fix-shop/func-007-editor-after-390-dark.png), [automatic](screenshots/fix-shop/func-007-editor-automatic-after-desktop-light.png).
+- Product editor: [before](screenshots/fix-shop/func-007-product-before-desktop-light.png), [after](screenshots/fix-shop/func-007-product-after-desktop-light.png), [after dark](screenshots/fix-shop/func-007-product-after-desktop-dark.png).

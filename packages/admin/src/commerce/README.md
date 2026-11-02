@@ -10,12 +10,17 @@ The Shop section (`/commerce`), shown in the sidebar only while the `commerce` p
 - **Products** lists the catalogue with stock and price ranges. The editor has the name,
   description and photos, options (Size: S, M, L) that make the variants, a price per
   variant in the primary currency (other currencies are worked out unless set), stock per
-  location, status, and search-engine fields.
-- **Orders** lists orders by "To send", "Sent" and "Refunded". An order shows its items,
+  location, status, search-engine fields, and which hand-picked collections it's in (saved
+  with the product, `ProductCollectionsCard.tsx`).
+- **Collections** (`/commerce/collections`) lists product collections and how each picks its
+  products. The editor sets the title, description and, for hand-picked ones, the products;
+  automatic (rule-based) ones, such as those the Shopify import makes, keep their rules.
+- **Orders** lists orders by "To send", "Sent" and "Refunded", and "Imported" (orders from
+  before a move from Shopify, each leading to its customer) when there are any. An order shows its items,
   totals, customer, parcels and timeline, with dialogs to mark items as sent (with
   tracking), refund by items or by amount through Stripe, cancel, and add notes.
-- **Customers** lists everyone who has ordered; a customer shows their orders, spend,
-  addresses and a private note.
+- **Customers** lists everyone who has ordered; a customer shows their orders (including
+  those from before a move from Shopify), spend, addresses and a private note.
 - **Discounts** lists codes and automatic offers, each summed up in a sentence ("20% off
   Summer Edit, orders of £50 or more, until 31 Aug", `discountSummary.ts`). The editor sets
   how shoppers get it, what it gives (percentage, amount per currency, free delivery, buy X

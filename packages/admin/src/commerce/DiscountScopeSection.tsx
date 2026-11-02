@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Card } from "../design/Card.js";
 import { SearchField } from "../design/SearchField.js";
@@ -101,7 +102,8 @@ function toggled(list: string[], id: string): string[] {
   return list.includes(id) ? list.filter((item) => item !== id) : [...list, id];
 }
 
-function ProductPicker({ chosen, onChange, error }: PickerProps) {
+/** Products to tick, with a search; also used by Shop → Collections. */
+export function ProductPicker({ chosen, onChange, error }: PickerProps) {
   const [search, setSearch] = useState("");
   const products = useProducts({ search: search || undefined });
   return (
@@ -140,7 +142,18 @@ function ProductPicker({ chosen, onChange, error }: PickerProps) {
 function CollectionPicker({ chosen, onChange, error }: PickerProps) {
   const collections = useProductCollections();
   if (collections.data?.length === 0) {
-    return <p className="text-body text-label-secondary">{t("shop.discounts.noCollections")}</p>;
+    return (
+      <p className="text-body text-label-secondary">
+        {t("shop.discounts.noCollections")}{" "}
+        <Link
+          to="/commerce/collections/$collectionId"
+          params={{ collectionId: "new" }}
+          className="text-accent"
+        >
+          {t("shop.collections.add")}
+        </Link>
+      </p>
+    );
   }
   return (
     <fieldset

@@ -1,4 +1,6 @@
 import { type AnyRoute, createRoute, useParams } from "@tanstack/react-router";
+import { CollectionEditorPage } from "./CollectionEditorPage.js";
+import { CollectionsPage } from "./CollectionsPage.js";
 import { CustomerDetailPage } from "./CustomerDetailPage.js";
 import { CustomersPage } from "./CustomersPage.js";
 import { DiscountEditorPage } from "./DiscountEditorPage.js";
@@ -32,6 +34,11 @@ export function commerceRoutes<Parent extends AnyRoute>(getParentRoute: () => Pa
     page("/commerce/products/$productId", function ProductRoute() {
       const { productId = "new" } = useParams({ strict: false });
       return <ProductEditorPage key={productId} productId={productId} />;
+    }),
+    page("/commerce/collections", CollectionsPage),
+    page("/commerce/collections/$collectionId", function CollectionRoute() {
+      const { collectionId = "new" } = useParams({ strict: false });
+      return <CollectionEditorPage key={collectionId} collectionId={collectionId} />;
     }),
     page("/commerce/orders", OrdersPage),
     page("/commerce/orders/$orderId", function OrderRoute() {

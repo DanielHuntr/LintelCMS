@@ -127,6 +127,32 @@ export const commerceStrings = {
   "shop.products.seoDescriptionHint":
     "Shown under the title in search results. Aim for under 160 characters.",
 
+  "shop.collections.title": "Collections",
+  "shop.collections.subtitle": "Groups of products, like a summer sale",
+  "shop.collections.rowDescription": "Group products to show or discount together",
+  "shop.collections.add": "Add collection",
+  "shop.collections.loading": "Loading collections…",
+  "shop.collections.loadingOne": "Loading collection…",
+  "shop.collections.emptyTitle": "No collections yet",
+  "shop.collections.emptyDescription":
+    "Group products, such as a summer sale, to show them together or give them a discount.",
+  "shop.collections.manualRow":
+    "{count, plural, one {# product} other {# products}}, picked by hand",
+  "shop.collections.automaticRow":
+    "{count, plural, one {# product} other {# products}}, picked by rules",
+  "shop.collections.newTitle": "New collection",
+  "shop.collections.editorSubtitle": "A group of products, shown and discounted together",
+  "shop.collections.titleLabel": "Title",
+  "shop.collections.titleRequired": "Please give the collection a title",
+  "shop.collections.descriptionLabel": "Description",
+  "shop.collections.descriptionHint": "Optional. Shown on the collection’s page.",
+  "shop.collections.productsHeader": "Products",
+  "shop.collections.automaticNote":
+    "This collection picks its products by its rules, so they aren’t chosen here. It has {count, plural, one {# product} other {# products}} now.",
+  "shop.collections.productCardHint": "Saved with the product.",
+  "shop.collections.productCardEmpty": "There are no collections to choose from yet.",
+  "shop.collections.manage": "Manage collections",
+
   "shop.orders.title": "Orders",
   "shop.orders.subtitle": "What customers have bought",
   "shop.orders.rowDescription": "Send, refund and keep track of orders",
