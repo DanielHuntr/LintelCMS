@@ -55,6 +55,8 @@ const SIGNED_IN_ROUTES = new Set([
   "GET /seo/defaults",
   // The site's address, for "View page" in the editor.
   "GET /website/address",
+  // Whether emails really go out, so screens can warn when they won't (no settings shown).
+  "GET /email/status",
   // Each person's own account and its security.
   "GET /account",
   "PATCH /account",
