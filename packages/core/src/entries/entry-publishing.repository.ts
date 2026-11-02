@@ -1,6 +1,6 @@
 import { and, asc, eq, lte, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { type Entry, entriesTable } from "./entries.table.js";
+import { type Entry, entriesTable, type EntryData } from "./entries.table.js";
 
 /** Database reads and writes for scheduled publishing, nothing else. */
 
@@ -18,19 +18,22 @@ export async function findDueScheduledEntryIds(
 }
 
 /**
- * Publishes the entry only if it is still scheduled and due, in one statement. When two
- * servers run the scheduler at once, only one of them gets the row back.
+ * Publishes `scheduledData` (the values the entry had when it was scheduled) only if the
+ * entry is still scheduled and due, in one statement. When two servers run the scheduler at
+ * once, only one of them gets the row back.
  */
 export async function publishIfStillDue(
   database: DatabaseOrTransaction,
   entryId: string,
   now: Date,
+  scheduledData: EntryData | undefined,
 ): Promise<Entry | undefined> {
   const [published] = await database
     .update(entriesTable)
     .set({
       status: "published",
-      publishedData: sql`${entriesTable.data}`,
+      // An entry scheduled without a revision (by an import, say) goes live as saved.
+      publishedData: scheduledData ?? sql`${entriesTable.data}`,
       publishedAt: sql`${entriesTable.scheduledFor}`,
       scheduledFor: null,
     })

@@ -12,6 +12,7 @@ import {
   validateForCollection,
 } from "./entries.service.js";
 import { recordEvent } from "./revision-log.js";
+import { findLatestRevisionOfKind } from "./revisions.repository.js";
 
 /**
  * Publishing copies the saved values into `publishedData`, which is all the public
@@ -74,6 +75,10 @@ export async function unpublishEntry(
 /**
  * Sets the entry to publish its saved values at `publishAt`. If an earlier version is
  * live, it stays live until then. publishDueEntries does the publishing.
+ *
+ * What goes live is what was checked here, kept in the "scheduled" revision: edits saved
+ * after scheduling wait as unpublished changes, so nothing unchecked or unapproved goes
+ * live by the clock.
  */
 export async function scheduleEntry(
   database: DatabaseOrTransaction,
@@ -114,14 +119,15 @@ export async function publishDueEntries(
   const published: string[] = [];
   for (const entryId of await findDueScheduledEntryIds(database, now)) {
     const wasPublished = await database.transaction(async (transaction) => {
-      const entry = await publishIfStillDue(transaction, entryId, now);
+      const scheduled = await findLatestRevisionOfKind(transaction, entryId, "scheduled");
+      const entry = await publishIfStillDue(transaction, entryId, now, scheduled?.data);
       if (entry) {
         // Nobody pressed a button just now, so the revision has no author.
         await recordEvent(transaction, {
           entryId,
           authorId: null,
           kind: "published",
-          data: entry.data,
+          data: entry.publishedData ?? entry.data,
           now,
         });
       }

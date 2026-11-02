@@ -71,6 +71,21 @@ export async function findLatestRevision(
   return latest;
 }
 
+/** The entry's most recent revision of one kind, such as the last time it was scheduled. */
+export async function findLatestRevisionOfKind(
+  database: DatabaseOrTransaction,
+  entryId: string,
+  kind: Revision["kind"],
+): Promise<Revision | undefined> {
+  const [latest] = await database
+    .select()
+    .from(revisionsTable)
+    .where(and(eq(revisionsTable.entryId, entryId), eq(revisionsTable.kind, kind)))
+    .orderBy(desc(revisionsTable.createdAt))
+    .limit(1);
+  return latest;
+}
+
 export async function updateOpenRevision(
   database: DatabaseOrTransaction,
   revisionId: string,
