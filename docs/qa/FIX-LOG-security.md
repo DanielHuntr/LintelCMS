@@ -38,6 +38,15 @@ One CLI test (`loads without failing…`) timed out under the full parallel run 
 | LINTEL-SEC-010  | Fixed  | `51a59b1` | Two-factor can't be set up again while on                                                         |
 | (tooling)       | Fixed  | `b1d33fb` | `.gitattributes`: LF everywhere, fixtures byte for byte                                           |
 | (tooling)       | Fixed  | `6e4c5fa` | The docs test reads page addresses with forward slashes on Windows                                |
+| LINTEL-FUNC-015 | Fixed  | `57018d8` | A new entry stays in the editor it was written in after its first save                            |
+| LINTEL-FUNC-014 | Fixed  | `e80cda9` | ISK and UGX amounts go to and from Stripe in hundredths                                           |
+| LINTEL-SEC-011  | Fixed  | `c7ab588` | Adding a passkey asks for the password                                                            |
+| LINTEL-UX-010   | Fixed  | `054b631` | Escape ends text editing on the canvas and keeps the words                                        |
+| LINTEL-UX-011   | Fixed  | `4b3a751` | The builder says "Not on your site yet" or "Changes not live yet", and "Published" after Publish  |
+| LINTEL-UX-008   | Fixed  | `322e9b9` | New products don't count stock until asked; the list shows "Sold out"                             |
+| LINTEL-UX-007   | Fixed  | `e6e5a2d` | A form's Settings warns when email isn't set up                                                   |
+| LINTEL-UX-012   | Fixed  | `678178e` | "View website" under the site's name in the sidebar                                               |
+| (UX pass)       | Fixed  | `f4cb490` | Settings lists the website's settings first; the roadmap placeholder is gone                      |
 
 ---
 
@@ -172,15 +181,74 @@ All four survived "remove scripts" with working script.
 
 **Test:** `two-factor.test.ts`, "can't be swapped for another phone while on, without the password".
 
+## Second round
+
+The same way: a test that fails on the old code first. The screens were also checked in Chromium at 1440px and 390px, light and dark, against the UX pass's data folder. The screenshots are in `screenshots/fix-security/`, prefixed `fix-`.
+
+### LINTEL-FUNC-015: a new entry's first save
+
+**Before:** the address changing from `/new` to the entry's id made `EntryWorkspacePage` swap the classic editor for the workspace, so focus and words typed during the save were lost.
+
+**After:** the page remembers the entry it created and keeps the classic editor, whose key `useEditorKey` already keeps.
+
+**Test:** `content-workspace/EntryWorkspacePage.test.tsx`, which types across the save and checks the same input keeps focus and every word.
+
+### LINTEL-FUNC-014: ISK and UGX at Stripe
+
+**Before:** Stripe treats ISK and UGX as two-decimal currencies; Lintel (rightly, for display, PayPal and Mollie) as zero-decimal. ISK 10,000 went to Stripe as ISK 100, and the paid total matched.
+
+**After:** `money/stripe-amounts.ts` converts every amount going to Stripe (line prices, tax line, coupon, delivery, payment intent, refund, Stripe Tax lines) and every amount coming back (paid totals, tax, refunds made in Stripe).
+
+**Test:** `commerce.e2e.test.ts`, "charges the full price in Icelandic krónur…".
+
+### LINTEL-SEC-011: passkeys
+
+**After:** `POST /account/passkeys/options` asks for the current password (rate-limited like sign-in); finishing needs the challenge it issues. The "Add a passkey" dialog has a Current password field (`fix-passkey-*.png`).
+
+**Test:** `passkeys.test.ts`, "asks for the password before adding a passkey".
+
+### LINTEL-UX-010: Escape in the builder
+
+**After:** Escape ends editing and keeps the words, as clicking away does; Undo takes them back.
+
+**Test:** a browser test in `builder/src/browser-tests/canvas-free-layout.test.ts`.
+
+### LINTEL-UX-011: Publish in the builder
+
+**After:** beside "Saved", the top bar says "Not on your site yet" (never published) or "Changes not live yet" from 640px up. After Publish the button reads "Published" for four seconds, and screen readers hear "Published. Your changes are on your site."
+
+**Test:** `PageDesignPage.test.tsx`, "says the page isn't on the site yet, and confirms when Publish has worked".
+
+### LINTEL-UX-008: new products sold out
+
+**After:** a new product in the admin doesn't count stock until the owner switches it on (the API's default is unchanged). A product on sale with tracked stock of 0 shows "Sold out" in the list (`fix-products-*.png`).
+
+**Tests:** `ShopScreens.test.tsx` and `shopHelpers.test.ts`.
+
+### LINTEL-UX-007: form emails with no mail service
+
+**After:** `GET /email/status` (anyone signed in) says only whether emails go out. A form's Settings shows "Email isn't set up on this website yet, so these emails won't be sent. New messages still arrive in Submissions." while either email is on (`fix-form-email-warning-*.png`).
+
+**Tests:** `FormSettingsSection.test.tsx` and `outbox.test.ts`.
+
+### LINTEL-UX-012: View website
+
+**After:** "View website" (new tab) under the site's name in the sidebar, once the website has an address. Opening the phone menu now focuses its close button, as before, rather than the first link (`fix-sidebar-*.png`).
+
+**Test:** `AdminLayout.test.tsx`.
+
+### Settings order (UX pass)
+
+**After:** the Site group (Your website, Features, Sites, Languages) comes first; the "More site settings… later phases of the roadmap" row is gone, which also covers that item on `fix/qa-leftovers` (`fix-settings-order-*.png`).
+
+**Test:** `SettingsPage.test.tsx`.
+
 ## Still open from batch 3
 
 Highest first:
 
 - **P1:**
-  - LINTEL-FUNC-014 (ISK/UGX at Stripe);
-  - LINTEL-FUNC-015 (new entry's first autosave);
   - LINTEL-DATA-011 and LINTEL-FUNC-016 (updates: rollback schema, Windows junctions; hosting is deprioritised);
-  - the UX P1s.
-- **P2:**
-  - LINTEL-SEC-011 (passkeys without the password: needs a password prompt in the admin);
-  - the remaining P2s in the batch 3 table.
+  - LINTEL-UX-006 and LINTEL-UX-009 (redesigns, waiting for Daniel);
+  - batch 2's LINTEL-DATA-003 and LINTEL-DATA-004 (DATA-004 waits for a decision on SPEC-004).
+- **P2:** the rest of the batch 3 table.
