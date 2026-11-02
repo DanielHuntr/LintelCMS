@@ -6,6 +6,7 @@ import {
 } from "@lintel/builder-model";
 import { z } from "zod";
 import { pageComponentCatalogue } from "../pages/page-components.js";
+import { removeScriptsFromCodeHtml } from "./code-html-cleaner.js";
 import { defineFieldtype } from "./fieldtype.js";
 
 /**
@@ -43,7 +44,11 @@ export const pageFieldtype = defineFieldtype({
   checkChange: (value, previousValue, label, context) => {
     const rules = context.pageCode;
     if (!rules) return { value };
-    const page = applyScriptRule(value as PageDocument, rules.scriptRule);
+    const page = applyScriptRule(
+      value as PageDocument,
+      rules.scriptRule,
+      removeScriptsFromCodeHtml,
+    );
     if (!rules.mayEditCode) {
       const previous = validatePageDocument(previousValue, pageComponentCatalogue);
       const changed = findChangedCode(
