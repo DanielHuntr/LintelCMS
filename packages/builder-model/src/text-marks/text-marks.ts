@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { linkAddressSchema } from "../components/component-props.js";
 import type { StyleDeclarations } from "../document/page-document.schema.js";
 import { isSafeValueFor } from "../styles/style-values.js";
 
@@ -13,6 +14,8 @@ import { isSafeValueFor } from "../styles/style-values.js";
  * and drawn as `FR<em class="hero-title-mark-1">EE</em>DOM...`: italic parts are `<em>`,
  * the rest `<span>`, and anything more than italic goes in a class in the page's stylesheet.
  * When the text is edited, the marks move with the words around them (`rebaseMarks`).
+ *
+ * A mark can also make its words a link (`href`), drawn as an `<a>` around them on the site.
  */
 
 /** What a mark can change: the look of letters, never their layout. */
@@ -37,7 +40,12 @@ export interface TextMark {
   from: number;
   to: number;
   styles: MarkStyles;
+  /** Where the words link to, if they are a link. */
+  href?: string;
 }
+
+/** A change to part of a text: styles to set (undefined takes one off), and its link. */
+export type MarkChange = Partial<Record<MarkStyleProperty | "href", string | undefined>>;
 
 const markStylesSchema = z
   .record(z.string(), z.string())
@@ -59,6 +67,9 @@ export const textMarkSchema = z
     from: z.number().int().min(0),
     to: z.number().int().min(1),
     styles: markStylesSchema,
+    href: linkAddressSchema
+      .refine((address) => address !== "", { error: "A link needs an address" })
+      .optional(),
   })
   .refine((mark) => mark.to > mark.from, { error: "A styled part of text can’t be empty" });
 
@@ -80,17 +91,23 @@ export function marksFitText(props: { text: string; marks?: readonly TextMark[] 
 /** Sorted, inside the text, without empty or style-less marks, neighbours with equal styles joined. */
 export function normaliseMarks(marks: readonly TextMark[], textLength: number): TextMark[] {
   const tidy = marks
-    .map((mark) => ({
+    .map((mark): TextMark => ({
       from: Math.max(0, Math.min(mark.from, textLength)),
       to: Math.max(0, Math.min(mark.to, textLength)),
       styles: withoutEmpty(mark.styles),
+      ...(mark.href ? { href: mark.href } : {}),
     }))
-    .filter((mark) => mark.to > mark.from && Object.keys(mark.styles).length > 0)
+    .filter((mark) => mark.to > mark.from && (Object.keys(mark.styles).length > 0 || mark.href))
     .sort((first, second) => first.from - second.from);
   const joined: TextMark[] = [];
   for (const mark of tidy) {
     const previous = joined.at(-1);
-    if (previous && previous.to === mark.from && sameStyles(previous.styles, mark.styles)) {
+    if (
+      previous &&
+      previous.to === mark.from &&
+      sameStyles(previous.styles, mark.styles) &&
+      previous.href === mark.href
+    ) {
       previous.to = mark.to;
     } else if (!previous || mark.from >= previous.to) {
       joined.push({ ...mark });
@@ -102,14 +119,17 @@ export function normaliseMarks(marks: readonly TextMark[], textLength: number): 
 /**
  * Applies styles to `from`–`to`, on top of whatever marks are already there. A style set to
  * undefined is taken off that range, so applying `{ fontStyle: undefined }` un-italicises.
+ * `href` makes the range a link, and `href: undefined` takes the link off.
  */
 export function applyMark(
   marks: readonly TextMark[],
   from: number,
   to: number,
-  styles: Partial<Record<MarkStyleProperty, string | undefined>>,
+  change: MarkChange,
   textLength: number,
 ): TextMark[] {
+  const { href, ...styles } = change;
+  const changesLink = "href" in change;
   if (to <= from) return normaliseMarks(marks, textLength);
   const cuts = new Set([0, from, to, textLength]);
   for (const mark of marks) {
@@ -121,14 +141,21 @@ export function applyMark(
   for (let index = 0; index < points.length - 1; index += 1) {
     const start = points[index] as number;
     const end = points[index + 1] as number;
-    const existing = marks.find((mark) => mark.from <= start && mark.to >= end)?.styles ?? {};
+    const covering = marks.find((mark) => mark.from <= start && mark.to >= end);
+    const existing = covering?.styles ?? {};
     const inside = start >= from && end <= to;
-    pieces.push({ from: start, to: end, styles: inside ? merge(existing, styles) : existing });
+    const link = inside && changesLink ? href : covering?.href;
+    pieces.push({
+      from: start,
+      to: end,
+      styles: inside ? merge(existing, styles) : existing,
+      ...(link ? { href: link } : {}),
+    });
   }
   return normaliseMarks(pieces, textLength);
 }
 
-/** Takes every mark off `from`–`to`. */
+/** Takes every style off `from`–`to`. Links stay: they aren't a style. */
 export function clearMarks(
   marks: readonly TextMark[],
   from: number,
@@ -157,6 +184,25 @@ export function sharedMarkStyles(marks: readonly TextMark[], from: number, to: n
     }
   }
   return shared;
+}
+
+/** The link every letter of `from`–`to` shares, for showing the Link button as on. */
+export function sharedMarkLink(
+  marks: readonly TextMark[],
+  from: number,
+  to: number,
+): string | undefined {
+  if (to <= from) return undefined;
+  let covered = from;
+  let link: string | undefined;
+  for (const mark of marks.filter((each) => each.from < to && each.to > from)) {
+    if (mark.from > covered || !mark.href || (link !== undefined && mark.href !== link)) {
+      return undefined;
+    }
+    link = mark.href;
+    covered = Math.max(covered, mark.to);
+  }
+  return covered >= to ? link : undefined;
 }
 
 /**

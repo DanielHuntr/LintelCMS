@@ -1,19 +1,22 @@
 import {
   fontFamilyValue,
   fontTokens,
-  type MarkStyleProperty,
+  isSafeLinkAddress,
+  type MarkChange,
   type PageFont,
   pageFontFamily,
+  sharedMarkLink,
   sharedMarkStyles,
   type TextMark,
   tokenValue,
 } from "@lintel/builder-model";
-import { Bold, Eraser, Italic, Type } from "lucide-react";
-import { type ReactNode, useId } from "react";
+import { Bold, Eraser, Italic, Link, Type } from "lucide-react";
+import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { classNames } from "../ui/controls.js";
+import { isToggleOn, toggleChange } from "./markToggles.js";
 
-export type MarkChange = Partial<Record<MarkStyleProperty, string | undefined>>;
+export type { MarkChange } from "@lintel/builder-model";
 
 interface TextStyleBarProps {
   /** The selected part, in characters of the text. */
@@ -24,6 +27,8 @@ interface TextStyleBarProps {
   /** Applies styles to the selected part; null takes them all off. `label` names the change. */
   onApply: (styles: MarkChange | null, label: string) => void;
   disabled?: boolean;
+  /** Goes up each time Mod+K asks for a link, which opens the address box. */
+  linkRequest?: number;
 }
 
 const sizes = ["0.75em", "1.25em", "1.5em", "2em"] as const;
@@ -35,24 +40,37 @@ const highlight = "#fff3a3";
  * canvas while words are selected on it, and under the text in the Content panel. Buttons
  * show as pressed when the whole selection already has that style.
  */
-export function TextStyleBar({ from, to, marks, pageFonts, onApply, disabled }: TextStyleBarProps) {
+export function TextStyleBar({
+  from,
+  to,
+  marks,
+  pageFonts,
+  onApply,
+  disabled,
+  linkRequest = 0,
+}: TextStyleBarProps) {
   const text = useBuilderText();
   const colourId = useId();
   const highlightId = useId();
   const fontId = useId();
   const sizeId = useId();
-  const shared = sharedMarkStyles(marks, Math.min(from, to), Math.max(from, to));
-  const toggle = (styles: MarkChange, isOn: boolean, label: string) =>
-    onApply(
-      isOn ? Object.fromEntries(Object.keys(styles).map((name) => [name, undefined])) : styles,
-      label,
-    );
+  const start = Math.min(from, to);
+  const end = Math.max(from, to);
+  const shared = sharedMarkStyles(marks, start, end);
+  const link = sharedMarkLink(marks, start, end);
+  const [isLinking, setIsLinking] = useState(false);
+  const [seenLinkRequest, setSeenLinkRequest] = useState(linkRequest);
+  // Adjusting state during render when a prop changes, as the React docs recommend.
+  if (linkRequest !== seenLinkRequest) {
+    setSeenLinkRequest(linkRequest);
+    if (!disabled) setIsLinking(true);
+  }
   const fonts = [
     ...fontTokens.map((token) => ({ value: tokenValue(token), label: token.label })),
     ...pageFonts.map((font) => ({ value: fontFamilyValue(font), label: pageFontFamily(font) })),
   ];
-  const isItalic = shared.fontStyle === "italic";
-  const isBold = shared.fontWeight === "700";
+  const isItalic = isToggleOn(marks, start, end, "italic");
+  const isBold = isToggleOn(marks, start, end, "bold");
   const isOutlined = shared.textStroke !== undefined;
 
   return (
@@ -67,7 +85,7 @@ export function TextStyleBar({ from, to, marks, pageFonts, onApply, disabled }: 
         pressed={isItalic}
         disabled={disabled}
         onClick={() =>
-          toggle({ fontStyle: "italic" }, isItalic, text("pageBuilder.inlineText.italic"))
+          onApply(toggleChange(marks, start, end, "italic"), text("pageBuilder.inlineText.italic"))
         }
       />
       <ToolbarToggle
@@ -75,7 +93,22 @@ export function TextStyleBar({ from, to, marks, pageFonts, onApply, disabled }: 
         icon={<Bold aria-hidden="true" className="size-4" />}
         pressed={isBold}
         disabled={disabled}
-        onClick={() => toggle({ fontWeight: "700" }, isBold, text("pageBuilder.inlineText.bold"))}
+        onClick={() =>
+          onApply(toggleChange(marks, start, end, "bold"), text("pageBuilder.inlineText.bold"))
+        }
+      />
+      <ToolbarToggle
+        label={
+          link ? text("pageBuilder.inlineText.removeLink") : text("pageBuilder.inlineText.link")
+        }
+        icon={<Link aria-hidden="true" className="size-4" />}
+        pressed={link !== undefined}
+        disabled={disabled}
+        onClick={() =>
+          link
+            ? onApply({ href: undefined }, text("pageBuilder.inlineText.removeLink"))
+            : setIsLinking(!isLinking)
+        }
       />
       <ToolbarToggle
         label={text("pageBuilder.inlineText.outline")}
@@ -83,9 +116,10 @@ export function TextStyleBar({ from, to, marks, pageFonts, onApply, disabled }: 
         pressed={isOutlined}
         disabled={disabled}
         onClick={() =>
-          toggle(
-            { textStroke: "1px currentColor", textFillColor: "transparent" },
-            isOutlined,
+          onApply(
+            isOutlined
+              ? { textStroke: undefined, textFillColor: undefined }
+              : { textStroke: "1px currentColor", textFillColor: "transparent" },
             text("pageBuilder.inlineText.outline"),
           )
         }
@@ -178,7 +212,76 @@ export function TextStyleBar({ from, to, marks, pageFonts, onApply, disabled }: 
         <Eraser aria-hidden="true" className="size-3.5" />
         {text("pageBuilder.inlineText.clear")}
       </button>
+      {isLinking && !link && (
+        <LinkAddressBox
+          onAdd={(address) => {
+            setIsLinking(false);
+            onApply({ href: address }, text("pageBuilder.inlineText.link"));
+          }}
+          onCancel={() => setIsLinking(false)}
+        />
+      )}
     </div>
+  );
+}
+
+/** Where the selected words should link to: a page address, a web address, mail or phone. */
+function LinkAddressBox({
+  onAdd,
+  onCancel,
+}: {
+  onAdd: (address: string) => void;
+  onCancel: () => void;
+}) {
+  const text = useBuilderText();
+  const inputId = useId();
+  const [address, setAddress] = useState("");
+  const [problem, setProblem] = useState<string | null>(null);
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    const trimmed = address.trim();
+    if (trimmed === "" || !isSafeLinkAddress(trimmed)) {
+      setProblem(text("pageBuilder.inlineText.linkProblem"));
+      return;
+    }
+    onAdd(trimmed);
+  }
+
+  return (
+    <form onSubmit={submit} className="flex w-full flex-wrap items-center gap-1.5">
+      <label htmlFor={inputId} className="text-caption text-label-secondary">
+        {text("pageBuilder.inlineText.linkAddress")}
+      </label>
+      <input
+        id={inputId}
+        // Mod+K or the button asked for it, so typing goes straight in.
+        autoFocus
+        value={address}
+        placeholder="/contact"
+        aria-invalid={problem !== null}
+        aria-describedby={problem ? `${inputId}-problem` : undefined}
+        onChange={(event) => {
+          setAddress(event.target.value);
+          setProblem(null);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") onCancel();
+        }}
+        className="h-7 min-w-40 flex-1 rounded-control bg-fill px-2 text-caption text-label focus-visible:focus-ring"
+      />
+      <button
+        type="submit"
+        className="h-7 rounded-control bg-accent-fill px-2.5 text-caption font-semibold text-on-accent focus-visible:focus-ring"
+      >
+        {text("pageBuilder.inlineText.addLink")}
+      </button>
+      {problem && (
+        <p id={`${inputId}-problem`} role="alert" className="w-full text-caption text-danger">
+          {problem}
+        </p>
+      )}
+    </form>
   );
 }
 

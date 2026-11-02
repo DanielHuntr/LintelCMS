@@ -4,7 +4,7 @@ import {
   type CreateNodeId,
   type FreeLayout,
   type FreePlace,
-  type MarkStyleProperty,
+  type MarkChange,
   type PageFont,
   type StackingMove,
   type NodeAnimation,
@@ -288,7 +288,7 @@ export function useBuilder({
        */
       markText: (
         selection: { nodeId: string; prop: string; from: number; to: number; text: string },
-        styles: Partial<Record<MarkStyleProperty, string | undefined>> | null,
+        styles: MarkChange | null,
         label: string,
       ) => {
         const node = nodeById(selection.nodeId);

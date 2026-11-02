@@ -90,6 +90,7 @@ export const fieldStrings = {
   "conditions.sentenceShow": "Shown when {rules}.",
   "conditions.sentenceHide": "Hidden when {rules}.",
   "conditions.always": "Always shown.",
+  "conditions.unfinished": "Choose what {field} should be to finish this rule.",
 
   "validation.minLength": "Fewest characters",
   "validation.maxLength": "Most characters",

@@ -6,7 +6,9 @@ import {
   markedSegments,
   planMarkDrawings,
   rebaseMarks,
+  sharedMarkLink,
   sharedMarkStyles,
+  textMarkSchema,
   type TextMark,
 } from "./text-marks.js";
 
@@ -86,5 +88,29 @@ describe("styling part of a text", () => {
       marks: [{ from: 0, to: 2, styles: { display: "none" } }],
     });
     expect(unsafe.success).toBe(false);
+  });
+
+  it("makes words a link, keeps it when styles are cleared, and takes it off (LINTEL-LEFT-009)", () => {
+    // "Read our story" with "our story" linked, then "story" made bold.
+    let marks = applyMark([], 5, 14, { href: "/about" }, 14);
+    expect(marks).toEqual([{ from: 5, to: 14, styles: {}, href: "/about" }]);
+    marks = applyMark(marks, 9, 14, { fontWeight: "700" }, 14);
+    expect(marks).toEqual([
+      { from: 5, to: 9, styles: {}, href: "/about" },
+      { from: 9, to: 14, styles: { fontWeight: "700" }, href: "/about" },
+    ]);
+    expect(sharedMarkLink(marks, 5, 14)).toBe("/about");
+    expect(sharedMarkLink(marks, 0, 14)).toBeUndefined();
+    expect(clearMarks(marks, 0, 14, 14)).toEqual([{ from: 5, to: 14, styles: {}, href: "/about" }]);
+    expect(applyMark(marks, 5, 14, { href: undefined }, 14)).toEqual([
+      { from: 9, to: 14, styles: { fontWeight: "700" } },
+    ]);
+  });
+
+  it("only accepts safe link addresses", () => {
+    const mark = { from: 0, to: 2, styles: {} };
+    expect(textMarkSchema.safeParse({ ...mark, href: "https://example.com" }).success).toBe(true);
+    expect(textMarkSchema.safeParse({ ...mark, href: "javascript:alert(1)" }).success).toBe(false);
+    expect(textMarkSchema.safeParse({ ...mark, href: "" }).success).toBe(false);
   });
 });

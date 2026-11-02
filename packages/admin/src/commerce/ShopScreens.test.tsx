@@ -7,6 +7,7 @@ import { OrderDetailPage } from "./OrderDetailPage.js";
 import type { Order } from "./orders.api.js";
 import { PaymentsPage } from "./PaymentsPage.js";
 import { ProductsPage } from "./ProductsPage.js";
+import { ShopHomePage } from "./ShopHomePage.js";
 import type { PaymentSettings } from "./shopSettings.api.js";
 
 afterEach(() => vi.restoreAllMocks());
@@ -197,5 +198,54 @@ describe("the Shop screens", () => {
         lines: [],
       }),
     );
+  });
+
+  describe("the Shop home's warning when shoppers can't order (LINTEL-LEFT-002)", () => {
+    const market = { id: "m1", name: "United Kingdom", currency: "GBP" };
+    function shop(stripeConnected: boolean, provider: "stripe" | "paypal" = "stripe") {
+      mockApi(({ url }) => {
+        switch (url.pathname) {
+          case "/shop/markets":
+            return { markets: [{ ...market, countries: ["GB"], isPrimary: true }] };
+          case "/shop/shipping/zones":
+            return { zones: [] };
+          case "/shop/settings/payments":
+            return { ...notConnected, connected: stripeConnected };
+          case "/shop/settings/payment-providers":
+            return {
+              paypal: { connected: false },
+              mollie: { connected: false },
+              markets: [{ ...market, paymentProvider: provider }],
+            };
+          case "/shop/products":
+            return { items: [], total: 0 };
+          default:
+            return [];
+        }
+      });
+    }
+
+    it("warns the owner and links to Payments while payments aren't connected", async () => {
+      shop(false);
+      renderScreen(<ShopHomePage />, withShop);
+      expect(await screen.findByText(/Your shop isn’t taking orders yet/)).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Connect payments" })).toHaveAttribute(
+        "href",
+        "/commerce/settings/payments",
+      );
+    });
+
+    it("says nothing once every market's payment provider is connected", async () => {
+      shop(true);
+      renderScreen(<ShopHomePage />, withShop);
+      expect(await screen.findByText("Get ready to sell")).toBeInTheDocument();
+      expect(screen.queryByText(/isn’t taking orders/)).not.toBeInTheDocument();
+    });
+
+    it("warns when a market pays with a provider that isn't connected", async () => {
+      shop(true, "paypal");
+      renderScreen(<ShopHomePage />, withShop);
+      expect(await screen.findByText(/Your shop isn’t taking orders yet/)).toBeInTheDocument();
+    });
   });
 });

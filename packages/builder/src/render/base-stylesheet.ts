@@ -68,7 +68,8 @@ nav ul {
   list-style: none;
 }
 
-nav a {
+/* As specific as "a" (and after it), so a link styled as a button in a menu keeps its colours. */
+nav :where(a) {
   color: inherit;
   text-decoration: none;
 }

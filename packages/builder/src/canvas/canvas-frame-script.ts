@@ -478,6 +478,16 @@ export function runCanvasFrame(snap: typeof snapBox): void {
 
   document.addEventListener("keydown", (event) => {
     if (editing) {
+      const markKey = (event.metaKey || event.ctrlKey) && !event.shiftKey && !event.altKey;
+      if (markKey && ["b", "i", "k"].includes(event.key.toLowerCase())) {
+        // The browser's own bold isn't kept, so end editing (keeping the words) and let the
+        // builder style the selected words: Mod+B, Mod+I and Mod+K.
+        event.preventDefault();
+        finishEditing(true);
+        const { key, metaKey, ctrlKey, shiftKey, altKey } = event;
+        send({ type: "key", key: { key, metaKey, ctrlKey, shiftKey, altKey } });
+        return;
+      }
       if (event.key === "Escape") {
         // Escape ends editing and keeps the words, as clicking away does; Undo takes them back.
         event.preventDefault();

@@ -11,6 +11,7 @@ import type { ForwardedKey } from "../canvas/canvas-messages.js";
  *   Up / Down (on the canvas) select the previous or next element
  *   Mod+] / Mod+[ bring forward or send back · Shift+Mod+] / Shift+Mod+[ to the front or back
  *   Arrows (on the canvas, in a free layout) nudge the selected element; Shift for 10px
+ *   Mod+B bold · Mod+I italic · Mod+K link, for words selected in a heading or paragraph
  *
  * Pasting is handled by the paste event, so the system clipboard's HTML can be imported.
  */
@@ -34,7 +35,10 @@ export type ShortcutCommand =
   | "bringForward"
   | "sendBackward"
   | "bringToFront"
-  | "sendToBack";
+  | "sendToBack"
+  | "bold"
+  | "italic"
+  | "link";
 
 export function isMac(): boolean {
   return (
@@ -53,6 +57,9 @@ export function shortcutFor(key: ForwardedKey, onMac: boolean = isMac()): Shortc
     if (name === "x" && !key.shiftKey) return "cut";
     if (name === "d" && !key.shiftKey) return "duplicate";
     if (name === "s" && !key.shiftKey) return "save";
+    if (name === "b" && !key.shiftKey) return "bold";
+    if (name === "i" && !key.shiftKey) return "italic";
+    if (name === "k" && !key.shiftKey) return "link";
     if (name === "h" && key.shiftKey) return "toggleHidden";
     if (name === "l" && key.shiftKey) return "toggleLocked";
     // With Shift, "]" and "[" arrive as "}" and "{" on most keyboards.
@@ -79,6 +86,25 @@ export function shortcutFor(key: ForwardedKey, onMac: boolean = isMac()): Shortc
 }
 
 /** Whether a key press belongs to a text box or other control rather than to the builder. */
+/** Inputs that take typing, where Undo and Redo belong to the text, not the page. */
+const nonTextInputs = new Set([
+  "checkbox",
+  "radio",
+  "range",
+  "color",
+  "button",
+  "submit",
+  "reset",
+  "file",
+]);
+
+/** Somewhere that takes typed text: a text box, a text area or editable text. */
+export function isTextEntry(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable || target instanceof HTMLTextAreaElement) return true;
+  return target instanceof HTMLInputElement && !nonTextInputs.has(target.type);
+}
+
 export function isTypingTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   if (target.isContentEditable) return true;

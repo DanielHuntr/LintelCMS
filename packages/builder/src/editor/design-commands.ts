@@ -7,7 +7,7 @@ import {
   type FreePlace,
   freePlaceStyles,
   findPath,
-  type MarkStyleProperty,
+  type MarkChange,
   type PageFont,
   type PageNode,
   rootNodeId,
@@ -148,8 +148,6 @@ export function changePageFonts(
     { evenIfLocked: true },
   );
 }
-
-type MarkChange = Partial<Record<MarkStyleProperty, string | undefined>>;
 
 /**
  * Styles part of a heading's or paragraph's text (`from` to `to`, in characters), or with

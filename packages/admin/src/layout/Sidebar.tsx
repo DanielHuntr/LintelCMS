@@ -91,11 +91,11 @@ export function Sidebar({
             type="button"
             onClick={onOpenSearch}
             aria-keyshortcuts={isMacPlatform() ? "Meta+K" : "Control+K"}
-            className="flex h-9 w-full items-center gap-2.5 rounded-control bg-fill/70 px-2.5 text-body text-label-secondary transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring"
+            className="flex h-9 w-full items-center gap-2.5 rounded-control bg-fill/40 px-2.5 text-body text-label-secondary transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring"
           >
             <Search aria-hidden="true" strokeWidth={1.75} className="size-4 shrink-0" />
             <span className="flex-1 text-start">{t("search.open")}</span>
-            <kbd aria-hidden="true" className="font-sans text-caption text-label-tertiary">
+            <kbd aria-hidden="true" className="font-sans text-caption text-label-secondary">
               {isMacPlatform() ? t("search.shortcutMac") : t("search.shortcutOther")}
             </kbd>
           </button>

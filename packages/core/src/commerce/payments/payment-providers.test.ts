@@ -269,9 +269,11 @@ describe("other payment providers", () => {
         CHECKOUT_PAGES,
       );
       expect(refused.statusCode).toBe(409);
-      expect(refused.json().message).toBe(
-        "Mollie isn't connected yet. Connect it in Shop → Settings → Payments first.",
-      );
+      // Shoppers get plain words; the owner's set-up step is logged and shown on the Shop home.
+      expect(refused.json()).toMatchObject({
+        code: "SHOP_NOT_READY",
+        message: "This shop isn't taking orders yet.",
+      });
       const listed = await shop.admin("GET", "/shop/settings/payment-providers");
       expect(listed.json().markets).toEqual([
         expect.objectContaining({ name: "United Kingdom", paymentProvider: "mollie" }),

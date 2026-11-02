@@ -97,6 +97,8 @@ export const updatesStrings = {
     "This site runs on shared hosting (cPanel or Passenger). Upload the new version’s hosting package, then restart the app from your hosting control panel or with the command below in the app’s folder.",
   "updates.method.forge":
     "This site runs on Laravel Forge. In Forge, press Deploy Now (or run these in the site’s folder), then restart the {product} daemon from Forge’s Daemons page.",
+  "updates.method.noNewerVersion":
+    "The command to run shows here when there’s a newer version to update to.",
   "updates.copyCommand": "Copy the command",
   "updates.commandsLabel": "Commands to run",
 

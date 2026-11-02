@@ -8,6 +8,7 @@ import {
   type BulkOutcome,
   useBulkActions,
 } from "../content-tree/useBulkActions.js";
+import { useUnpublishedParentQuestion } from "../content-tree/useUnpublishedParentQuestion.js";
 import { Button } from "../design/Button.js";
 import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
@@ -26,6 +27,7 @@ interface BulkActionBarProps {
  */
 export function BulkActionBar({ nodes, selectedKey, onDone }: BulkActionBarProps) {
   const run = useBulkActions(selectedKey);
+  const parentQuestion = useUnpublishedParentQuestion();
   const canPublish = useCan("entries:publish");
   const canUpdate = useCan("entries:update");
   const canDelete = useCan("entries:delete");
@@ -37,7 +39,10 @@ export function BulkActionBar({ nodes, selectedKey, onDone }: BulkActionBarProps
   async function act(action: BulkAction, parentId?: string | null) {
     setIsWorking(true);
     try {
-      setOutcome(await run(action, ids, parentId));
+      // Under pages that aren't live, ask first, as the editor does (LINTEL-LEFT-005).
+      const above = action === "publish" ? await parentQuestion.ask(nodes) : [];
+      if (above === null) return;
+      setOutcome(await run(action, [...above, ...ids], parentId));
       setAsking(null);
       onDone();
     } catch (error) {
@@ -154,6 +159,7 @@ export function BulkActionBar({ nodes, selectedKey, onDone }: BulkActionBarProps
           onClose={() => setAsking(null)}
         />
       )}
+      {parentQuestion.dialog}
     </div>
   );
 }

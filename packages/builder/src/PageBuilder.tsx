@@ -13,11 +13,12 @@ import {
 import type { MotionSpec } from "@lintel/motion";
 import type { Translate as MotionText } from "@lintel/motion-editor";
 import {
-  type KeyboardEvent,
   type ReactNode,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { Canvas, type MotionPreview } from "./canvas/Canvas.js";
@@ -28,7 +29,7 @@ import type {
   TextSelectionMessage,
 } from "./canvas/canvas-messages.js";
 import { isLocked, layerName } from "./editor/commands.js";
-import { isTypingTarget, shortcutFor } from "./editor/shortcuts.js";
+import { isTextEntry, isTypingTarget, shortcutFor } from "./editor/shortcuts.js";
 import { useBuilder } from "./editor/useBuilder.js";
 import { Breadcrumbs } from "./frame/Breadcrumbs.js";
 import { EmptyPage } from "./frame/EmptyPage.js";
@@ -57,7 +58,8 @@ import { renderPage } from "./render/render-page.js";
 import { standInBaseStylesheet } from "./render/base-stylesheet.js";
 import { standardRegistry } from "./render/stand-in-components.js";
 import { readSkillLevel, type SkillLevel, toolsFor } from "./skill-level/skill-levels.js";
-import { SelectedWordsBar } from "./inline-text/SelectedWordsBar.js";
+import { selectedWords, SelectedWordsBar } from "./inline-text/SelectedWordsBar.js";
+import { toggleChange } from "./inline-text/markToggles.js";
 import type { FileUploader } from "./style-panel/design-tools.js";
 import { GuidedTour } from "./tour/GuidedTour.js";
 import { useTips } from "./tour/useTips.js";
@@ -156,6 +158,8 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   const [insertFocusRequest, setInsertFocusRequest] = useState<InsertFocusRequest>();
   const [motionPreview, setMotionPreview] = useState<MotionPreview | null>(null);
   const [textSelection, setTextSelection] = useState<TextSelectionMessage | null>(null);
+  // Mod+K asks the selected words' bar for a link; the bar watches this go up.
+  const [linkRequest, setLinkRequest] = useState(0);
   const preferences = props.preferences ?? browserPreferenceStore;
   const [skillLevel, setSkillLevel] = usePreference<SkillLevel>(
     preferences,
@@ -259,6 +263,22 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
         case "save":
           onSaveNow?.();
           break;
+        case "bold":
+        case "italic":
+        case "link": {
+          const words = selectedWords(state.document, textSelection);
+          if (!words) return false;
+          if (command === "link") {
+            setLinkRequest((count) => count + 1);
+          } else {
+            actions.markText(
+              words.selection,
+              toggleChange(words.marks, words.from, words.to, command),
+              text(`pageBuilder.inlineText.${command}`),
+            );
+          }
+          break;
+        }
         case "selectParent":
           actions.selectParent();
           break;
@@ -303,7 +323,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
       }
       return true;
     },
-    [actions, state.selectedId, onSaveNow],
+    [actions, state.selectedId, state.document, textSelection, text, onSaveNow],
   );
 
   const handleFrameMessage = useCallback(
@@ -349,11 +369,31 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     return () => document.removeEventListener("paste", handlePaste);
   }, [actions]);
 
-  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+  const handleKeyDownRef = useRef(handleKeyDown);
+  useLayoutEffect(() => {
+    handleKeyDownRef.current = handleKeyDown;
+  });
+  useEffect(() => {
+    // With focus on the page itself (after clicking empty space), keys never reach the
+    // builder's own element, so Undo and Redo are caught here too.
+    function handleStrayKeyDown(event: globalThis.KeyboardEvent) {
+      if (event.target === document.body || event.target === document.documentElement) {
+        handleKeyDownRef.current(event);
+      }
+    }
+    document.addEventListener("keydown", handleStrayKeyDown);
+    return () => document.removeEventListener("keydown", handleStrayKeyDown);
+  }, []);
+
+  function handleKeyDown(event: BuilderKeyEvent) {
     if (isTypingTarget(event.target)) {
-      const key = event.key.toLowerCase();
-      // Undo inside a text box belongs to the text box, except for the builder's own save.
-      if (!((event.metaKey || event.ctrlKey) && key === "s")) return;
+      const command = shortcutFor(event);
+      // Undo inside a text box belongs to the text box; the builder's own save always works.
+      // Controls that keep their arrow keys (tabs, choices, menus) still pass Undo and Redo on.
+      const passesOn = isTextEntry(event.target)
+        ? command === "save"
+        : command === "save" || command === "undo" || command === "redo";
+      if (!passesOn) return;
     }
     const isArrowSelect = !event.altKey && (event.key === "ArrowUp" || event.key === "ArrowDown");
     // Arrow keys belong to whatever has focus (the Layers tree, a radio group...); the canvas
@@ -483,6 +523,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                     document={state.document}
                     selection={textSelection}
                     onApply={(styles, label) => actions.markText(textSelection, styles, label)}
+                    linkRequest={linkRequest}
                   />
                 )}
                 {showsStart ? (
@@ -545,4 +586,15 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
       </DataSourcesContext.Provider>
     </PreferenceStoreContext.Provider>
   );
+}
+
+/** The parts of a key press the builder reads, from React's event or the browser's own. */
+interface BuilderKeyEvent {
+  key: string;
+  metaKey: boolean;
+  ctrlKey: boolean;
+  shiftKey: boolean;
+  altKey: boolean;
+  target: EventTarget | null;
+  preventDefault: () => void;
 }

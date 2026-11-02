@@ -125,12 +125,27 @@ export function valueWords(rule: ConditionRule, field: Field | undefined): strin
   return words.join(t("conditions.or"));
 }
 
+function findTarget(targets: readonly ConditionTarget[], rule: ConditionRule) {
+  return targets.find((candidate) => candidate.reference === rule.field);
+}
+
 /** The conditions in one plain sentence: "Shown when Layout is Video and Featured is On." */
 export function describeConditions(
   conditions: FieldConditionsInput | undefined,
   targets: readonly ConditionTarget[],
 ): string {
   if (!conditions || conditions.rules.length === 0) return t("conditions.always");
+  // A rule still being made reads as an instruction, not "Shown when Title is ."
+  const unfinished = conditions.rules.find(
+    (rule) =>
+      rule.operator !== "isEmpty" &&
+      rule.operator !== "isNotEmpty" &&
+      valueWords(rule, findTarget(targets, rule)?.field).trim() === "",
+  );
+  if (unfinished) {
+    const field = findTarget(targets, unfinished)?.field.label || unfinished.field;
+    return t("conditions.unfinished", { field });
+  }
   const parts = conditions.rules.map((rule) => {
     const target = targets.find((candidate) => candidate.reference === rule.field);
     const name = target?.field.label || rule.field;

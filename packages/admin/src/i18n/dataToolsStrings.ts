@@ -86,7 +86,7 @@ export const dataToolsStrings = {
   "import.subtitle": "Move content between {product} sites, or bring it in from WordPress.",
   "import.wordpressTitle": "Import from WordPress",
   "import.wordpressDescription": "Posts, pages, categories, tags, images and authors",
-  "import.lintelTitle": "Import a {product} export",
+  "import.lintelTitle": "Import an export from {product}",
   "import.lintelDescription":
     "Upload an export from another {product} site. You’ll see what will be added or updated before anything changes.",
   "import.fileLabel": "{product} export (.zip or .json)",
@@ -141,7 +141,7 @@ export const dataToolsStrings = {
   "wordpress.loading": "Loading the import",
   "wordpress.foundTitle": "In this export",
   "wordpress.found":
-    "{posts} posts, {pages} pages, {attachments} files, {authors} authors, {categories} categories and {tags} tags",
+    "{posts, plural, one {# post} other {# posts}}, {pages, plural, one {# page} other {# pages}}, {attachments, plural, one {# file} other {# files}}, {authors, plural, one {# author} other {# authors}}, {categories, plural, one {# category} other {# categories}} and {tags, plural, one {# tag} other {# tags}}",
   "wordpress.ignored": "Not imported: {list}.",
   "wordpress.mappingTitle": "Where things go",
   "wordpress.postsInto": "Posts go into",
@@ -164,7 +164,7 @@ export const dataToolsStrings = {
   "wordpress.drafts.skip": "Leave them behind",
   "wordpress.redirects": "Suggest redirects from the old addresses",
   "wordpress.redirectsHint":
-    "Each old address gets a suggested redirect to the new one. Accept them in Settings → SEO tools → Redirects.",
+    "Each old address gets a suggested redirect to the new one. Accept them in Settings → Search engines → Redirects.",
   "wordpress.fieldsTitle": "How a {kind} is filled in",
   "wordpress.field.body": "The content goes into {field}",
   "wordpress.field.excerpt": "The excerpt goes into {field}",
@@ -213,7 +213,7 @@ export const dataToolsStrings = {
   "wordpress.renamedTitle": "Addresses that had to change",
   "wordpress.renamed": "{title}: {from} is taken, so it’s {to}",
   "wordpress.redirectsSuggested":
-    "{count} redirects suggested. Review them in Settings → SEO tools → Redirects.",
+    "{count} redirects suggested. Review them in Settings → Search engines → Redirects.",
   "wordpress.problemsTitle": "Problems",
   "wordpress.problem": "{title}: {message}",
 } as const;

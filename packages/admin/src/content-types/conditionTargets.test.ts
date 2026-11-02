@@ -55,6 +55,14 @@ describe("operatorsFor", () => {
 });
 
 describe("describeConditions", () => {
+  // A rule with no value yet read "Shown when Layout is ."
+  it("asks for the value of a rule that isn't finished", () => {
+    const targets = conditionTargets(field("url", "text"), [layout]);
+    expect(
+      describeConditions({ match: "all", rules: [{ field: "layout", operator: "is" }] }, targets),
+    ).toBe("Choose what Layout should be to finish this rule.");
+  });
+
   it("says what the conditions do in one sentence, with choice labels", () => {
     const targets = conditionTargets(field("url", "text"), [layout, field("featured", "toggle")]);
     expect(

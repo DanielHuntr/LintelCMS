@@ -233,20 +233,13 @@ export const closingSections: readonly SectionTemplate[] = [
     id: "footer-columns",
     label: "Footer with columns",
     category: "footer",
-    description: "A dark closing band with a line about you and columns of links.",
-    keywords: ["footer", "links", "sitemap"],
+    description: "A dark closing band with a line about you and your site’s main menu.",
+    keywords: ["footer", "links", "sitemap", "menu"],
+    // No sample pages or copy: the links follow the site's main menu, and the one line of
+    // words says plainly that it is there to be replaced (LINTEL-LEFT-006).
     blueprint: columnsFooter({
-      about: "A sentence about who you are and where you are.",
-      columns: [
-        {
-          heading: "Explore",
-          links: [
-            { label: "About", href: "/about" },
-            { label: "Contact", href: "/contact" },
-          ],
-        },
-        { heading: "Follow", links: [{ label: "Newsletter", href: "/newsletter" }] },
-      ],
+      about: "Replace this with a line about who you are and how to reach you.",
+      columns: [{ heading: "Pages", menuHandle: "main" }],
     }),
   },
 ];

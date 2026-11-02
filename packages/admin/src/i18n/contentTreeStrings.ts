@@ -166,6 +166,13 @@ export const contentTreeStrings = {
     "{count, plural, one {Publish with its parent} other {Publish with the pages above it}}",
   "workspace.parentUnpublished.alone": "Publish this page only",
   "workspace.parentUnpublished.failed": "“{title}” couldn’t be published: {reason}",
+  "workspace.parentUnpublished.manyTitle":
+    "{above, plural, one {A page above them isn’t published} other {Pages above them aren’t published}}",
+  "workspace.parentUnpublished.manyMessage":
+    "{count, plural, one {One of these pages is} other {# of these pages are}} under {above, plural, one {“{parent}”, which isn’t on your website yet} other {# pages that aren’t on your website yet, starting with “{parent}”}}. Published on their own, they go live under a page visitors can’t open.",
+  "workspace.parentUnpublished.manyWithParent":
+    "{above, plural, one {Publish with the page above them} other {Publish with the pages above them}}",
+  "workspace.parentUnpublished.manyAlone": "Publish these pages only",
   "workspace.schedule": "Schedule…",
   "workspace.unpublish": "Unpublish",
   "workspace.preview": "Preview",

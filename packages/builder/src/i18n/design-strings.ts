@@ -213,6 +213,12 @@ export const builderDesignStrings = {
   "pageBuilder.inlineText.selected": "Selected: “{words}”",
   "pageBuilder.inlineText.italic": "Italic",
   "pageBuilder.inlineText.bold": "Bold",
+  "pageBuilder.inlineText.link": "Link",
+  "pageBuilder.inlineText.removeLink": "Remove link",
+  "pageBuilder.inlineText.linkAddress": "Link to",
+  "pageBuilder.inlineText.addLink": "Add link",
+  "pageBuilder.inlineText.linkProblem":
+    "Use a page address like /contact, a web address starting https://, or mailto: or tel:.",
   "pageBuilder.inlineText.outline": "Outlined letters",
   "pageBuilder.inlineText.colour": "Colour",
   "pageBuilder.inlineText.highlight": "Highlight",

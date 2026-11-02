@@ -1,3 +1,4 @@
+import { isKnownCountryCode } from "@lintel/builder-model";
 import { z } from "zod";
 
 /**
@@ -45,7 +46,7 @@ export function minorUnitsPerMajorUnit(currency: string): number {
 const regionNames = new Intl.DisplayNames(["en"], { type: "region", fallback: "none" });
 
 export function isCountryCode(code: string): boolean {
-  return /^[A-Z]{2}$/.test(code) && regionNames.of(code) !== undefined;
+  return isKnownCountryCode(code);
 }
 
 export const countryCodeSchema = z

@@ -52,7 +52,8 @@ export async function checkForUpdates(
     );
   } catch (error) {
     problem = describeCheckProblem(error, manual);
-    context.log.warn({ error: problem }, "Looking for Lintel updates didn't work");
+    const reason = error instanceof Error ? error.message : String(error);
+    context.log.warn({ error: reason }, "Looking for Lintel updates didn't work");
   }
   const plugins = await findPluginUpdates(context.fetch, context.installFolder).catch(
     () => previous.plugins,
@@ -89,18 +90,38 @@ async function fetchReleases(context: UpdateChecksContext): Promise<AvailableRel
     signal: AbortSignal.timeout(20_000),
   });
   if (!response.ok) {
-    throw new Error(`The update feed answered ${response.status}`);
+    throw new UpdateFeedAnswerError(response.status);
   }
   return parseReleaseFeed(await response.json());
 }
 
+/** The feed answered, but not with releases: 403, 404, 500... The status goes to the log. */
+class UpdateFeedAnswerError extends Error {
+  constructor(readonly status: number) {
+    super(`The update feed answered ${status}`);
+  }
+}
+
+/**
+ * The problem shown in Settings → Updates, in plain words. Status codes and network errors
+ * are for the server log, not the screen (LINTEL-LEFT-007).
+ */
 function describeCheckProblem(error: unknown, manual: boolean): string {
   if (error instanceof UpdateFeedFormatError) {
     return error.message;
   }
-  const reason = error instanceof Error ? error.message : String(error);
-  const unreachable = `Lintel couldn't reach the update feed (${reason}).`;
+  const unreachable =
+    error instanceof UpdateFeedAnswerError
+      ? `Lintel couldn't reach the update feed: ${whyTheFeedSaidNo(error.status)}.`
+      : "Lintel couldn't reach the update feed. Check that this server can connect to the internet.";
   return manual ? unreachable : `${unreachable} It will try again tomorrow.`;
+}
+
+function whyTheFeedSaidNo(status: number): string {
+  if (status === 404) return "its address wasn't found";
+  if (status >= 500) return "it isn't working right now";
+  if (status === 401 || status === 403 || status === 429) return "it turned the request away";
+  return "it didn't send a list of versions";
 }
 
 /**

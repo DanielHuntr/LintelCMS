@@ -3,8 +3,10 @@ import { requireDeliveryAccess } from "../../delivery/require-delivery-access.js
 import { parseRequest } from "../../http/http-errors.js";
 import { startCheckoutRequestSchema } from "../checkouts/checkouts.schema.js";
 import { findCheckoutStatus, startCheckout } from "../checkouts/checkouts.service.js";
+import { HttpError } from "../../http/http-errors.js";
 import { readIdParam } from "../commerce-params.js";
 import type { ShopContext } from "../commerce.context.js";
+import { ShopNotReadyError } from "../commerce.errors.js";
 import { CartNotFoundError } from "./carts.errors.js";
 import {
   addCartLineRequestSchema,
@@ -91,7 +93,11 @@ export async function cartsRoutes(server: FastifyInstance, { shop }: { shop: Sho
 
   server.post("/delivery/shop/carts/:token/checkout", access, async (request, reply) => {
     const pages = parseRequest(startCheckoutRequestSchema, request.body ?? {});
-    const started = await startCheckout(shop, readToken(request.params), pages);
+    const started = await startCheckout(shop, readToken(request.params), pages).catch(
+      (error: unknown) => {
+        throw forShoppers(shop, error);
+      },
+    );
     return reply.code(201).header("cache-control", NO_STORE).send(started);
   });
 
@@ -100,6 +106,20 @@ export async function cartsRoutes(server: FastifyInstance, { shop }: { shop: Sho
       .header("cache-control", NO_STORE)
       .send(await findCheckoutStatus(shop, readIdParam(request.params, "checkout"))),
   );
+}
+
+/** What a shopper is told when the shop isn't set up to take orders. */
+export const NOT_TAKING_ORDERS = "This shop isn't taking orders yet.";
+
+/**
+ * The set-up problems behind SHOP_NOT_READY ("Connect Stripe in Shop → Settings…") are
+ * written for the owner, who sees them on the Shop home. Shoppers get a plain sentence;
+ * the owner's version goes to the log.
+ */
+function forShoppers(shop: ShopContext, error: unknown): unknown {
+  if (!(error instanceof HttpError) || error.code !== "SHOP_NOT_READY") return error;
+  shop.log.warn(`A shopper couldn't check out: ${error.message}`);
+  return new ShopNotReadyError(NOT_TAKING_ORDERS);
 }
 
 function readToken(params: unknown): string {

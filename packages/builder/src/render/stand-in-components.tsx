@@ -64,18 +64,28 @@ const Columns = drawsProps(columnsComponent, ({ attributes, children }) => (
 
 const Divider = drawsProps(dividerComponent, ({ attributes }) => <hr {...attributes} />);
 
-const Heading = drawsProps(headingComponent, ({ props, attributes, editableText }) => {
+const Heading = drawsProps(headingComponent, ({ props, attributes, editableText, mode }) => {
   const Element = `h${props.level}` as "h1";
   return (
     <Element {...attributes} {...editableText("text")}>
-      <MarkedText text={props.text} marks={props.marks} className={attributes.className} />
+      <MarkedText
+        text={props.text}
+        marks={props.marks}
+        className={attributes.className}
+        linksWork={mode === "site"}
+      />
     </Element>
   );
 });
 
-const Text = drawsProps(textComponent, ({ props, attributes, editableText }) => (
+const Text = drawsProps(textComponent, ({ props, attributes, editableText, mode }) => (
   <p {...attributes} {...editableText("text")}>
-    <MarkedText text={props.text} marks={props.marks} className={attributes.className} />
+    <MarkedText
+      text={props.text}
+      marks={props.marks}
+      className={attributes.className}
+      linksWork={mode === "site"}
+    />
   </p>
 ));
 

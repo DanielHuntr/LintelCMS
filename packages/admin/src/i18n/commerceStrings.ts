@@ -11,6 +11,9 @@ export const commerceStrings = {
   "shop.saving": "Saving…",
   "shop.saved": "Saved",
 
+  "shop.notTakingOrders":
+    "Your shop isn’t taking orders yet because payments aren’t connected. Shoppers who try to check out are told “This shop isn’t taking orders yet.”",
+  "shop.notTakingOrdersAction": "Connect payments",
   "shop.setup.header": "Get ready to sell",
   "shop.setup.footer": "{count} left to do. You can come back to these at any time.",
   "shop.setup.done": "Done",
@@ -171,6 +174,10 @@ export const commerceStrings = {
   "shop.orders.emptyTitle": "No orders yet",
   "shop.orders.emptyDescription": "When someone buys from your shop, their order shows here.",
   "shop.orders.emptyAction": "Get your shop ready",
+  "shop.orders.onlyImportedTitle": "No orders placed in this shop yet",
+  "shop.orders.onlyImportedDescription":
+    "{count, plural, one {The order you brought over from Shopify is} other {The # orders you brought over from Shopify are}} under Imported.",
+  "shop.orders.showImported": "Show imported orders",
   "shop.orders.count": "{count, plural, one {# order} other {# orders}}",
   "shop.orders.items": "{count, plural, one {# item} other {# items}}",
   "shop.orders.orderTitle": "Order {name}",

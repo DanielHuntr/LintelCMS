@@ -48,6 +48,33 @@ describe("EntryEditor", () => {
     expect(screen.getByText("Couldn’t save", { selector: "[role=status]" })).toBeInTheDocument();
   });
 
+  // A refused save said "Couldn't save · Try again", and trying again failed the same way.
+  it("says how many fields to fix, and goes to the first", async () => {
+    mockApi(({ method, url }) => {
+      if (method === "PATCH") {
+        throw apiErrorResponse(400, "INVALID_REQUEST", "Some fields need attention.", {
+          category: "Choose a category.",
+          excerpt: "Add an excerpt.",
+        });
+      }
+      if (url.pathname.endsWith("/revisions")) return { revisions: [] };
+      throw new Error(`Unexpected ${method} ${url.pathname}`);
+    });
+    await renderEditor();
+
+    await userEvent.type(screen.getByRole("textbox", { name: "Title" }), "!");
+    await userEvent.keyboard("{Control>}s{/Control}");
+    const fix = await screen.findByRole("button", { name: "Fix 2 fields to save" });
+    expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
+
+    screen.getByRole("textbox", { name: "Title" }).focus();
+    await userEvent.click(fix);
+
+    await waitFor(() =>
+      expect(screen.getByRole("textbox", { name: "Excerpt Required" })).toHaveFocus(),
+    );
+  });
+
   it("offers Publish to people who may publish", async () => {
     mockApi(() => ({ revisions: [] }));
     await renderEditor(["*"]);

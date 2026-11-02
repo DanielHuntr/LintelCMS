@@ -466,6 +466,8 @@ const english = {
   "editor.edited": "Edited",
   "editor.saveFailed": "Couldn’t save",
   "editor.saveRetry": "Try again",
+  "editor.fixFieldsToSave":
+    "{count, plural, one {Fix # field to save} other {Fix # fields to save}}",
   "editor.delete": "Delete",
   "editor.deleteTitle": "Delete “{title}”?",
   "editor.deleteMessage": "It’s removed from the site straight away. This can’t be undone.",

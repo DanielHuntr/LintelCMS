@@ -207,7 +207,7 @@ export const formsStrings = {
 
   "forms.share.pageTitle": "On a page",
   "forms.share.pageDescription":
-    "Open a page in Content, add a Form section and pick this form. It appears wherever the section is.",
+    "Open a page in Content, add a Form element and pick this form. It appears wherever the element is.",
   "forms.share.embedTitle": "On any other website",
   "forms.share.embedDescription":
     "Paste this where the form should appear. It works on any website.",

@@ -174,7 +174,10 @@ describe("Settings → Updates", { timeout: 60_000 }, () => {
     feedIsDown = true;
 
     const manual = (await admin("POST", "/updates/check")).json<UpdatesOverview>();
-    expect(manual.problem).toContain("couldn't reach the update feed");
+    // Plain words: no status code or raw error text (LINTEL-LEFT-007).
+    expect(manual.problem).toBe(
+      "Lintel couldn't reach the update feed: it turned the request away.",
+    );
     expect(manual.problem).not.toContain("tomorrow");
     // Nothing is known, so the summary mustn't read as up to date.
     expect((await admin("GET", "/updates/summary")).json()).toEqual({

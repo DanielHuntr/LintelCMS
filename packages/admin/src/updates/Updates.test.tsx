@@ -142,6 +142,29 @@ describe("Settings → Updates", () => {
     expect(screen.getByText(/You’re running from source/)).toBeInTheDocument();
   });
 
+  it("doesn't offer to update to the version already running (LINTEL-LEFT-007)", async () => {
+    mockApi(({ url }) =>
+      url.pathname === "/updates"
+        ? overview({
+            method: {
+              installType: "source",
+              oneClick: false,
+              commands: ["pnpm lintel update --to {version}"],
+            },
+            releases: [],
+            recommendedVersion: null,
+            summary: { count: 0, securityCount: 0, checkFailed: false },
+          })
+        : undefined,
+    );
+    renderScreen(<UpdatesPage />);
+    expect(await screen.findByText("You’re up to date")).toBeInTheDocument();
+    expect(screen.queryByText(/pnpm lintel update/)).not.toBeInTheDocument();
+    expect(
+      screen.getByText("The command to run shows here when there’s a newer version to update to."),
+    ).toBeInTheDocument();
+  });
+
   it("says when everything is up to date", async () => {
     mockApi(({ url }) =>
       url.pathname === "/updates"
@@ -260,7 +283,7 @@ describe("when the last look for updates didn't work", () => {
         ? overview({
             releases: [],
             recommendedVersion: null,
-            problem: "Lintel couldn't reach the update feed (The update feed answered 403).",
+            problem: "Lintel couldn't reach the update feed: it turned the request away.",
             summary: { count: 0, securityCount: 0, checkFailed: true },
           })
         : undefined,
