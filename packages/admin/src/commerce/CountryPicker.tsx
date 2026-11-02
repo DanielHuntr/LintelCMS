@@ -1,24 +1,17 @@
+import { countryCodes } from "@lintel/builder-model";
 import { useId, useMemo, useState } from "react";
 import { SearchField } from "../design/SearchField.js";
 import { t } from "../i18n/strings.js";
 
 /**
- * Every country Intl knows, by two-letter code, with its English name. Made by asking Intl
- * about each pair of letters, leaving out the codes that name groups rather than places.
+ * Every country a shop can sell to (the ISO 3166 list in builder-model's country-codes.ts),
+ * with its English name, once each.
  */
-const groupCodes = new Set(["EU", "EZ", "UN", "QO", "XA", "XB", "XK", "ZZ"]);
-
 function listCountries(): Array<{ code: string; name: string }> {
   const names = new Intl.DisplayNames(["en"], { type: "region", fallback: "none" });
-  const countries: Array<{ code: string; name: string }> = [];
-  for (let first = 65; first <= 90; first++) {
-    for (let second = 65; second <= 90; second++) {
-      const code = String.fromCharCode(first, second);
-      const name = groupCodes.has(code) ? undefined : names.of(code);
-      if (name && name !== code) countries.push({ code, name });
-    }
-  }
-  return countries.sort((a, b) => a.name.localeCompare(b.name));
+  return countryCodes
+    .map((code) => ({ code, name: names.of(code) ?? code }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 let cachedCountries: Array<{ code: string; name: string }> | undefined;

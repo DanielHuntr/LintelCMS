@@ -91,17 +91,13 @@ export function marksFitText(props: { text: string; marks?: readonly TextMark[] 
 /** Sorted, inside the text, without empty or style-less marks, neighbours with equal styles joined. */
 export function normaliseMarks(marks: readonly TextMark[], textLength: number): TextMark[] {
   const tidy = marks
-    .map(
-      (mark): TextMark => ({
-        from: Math.max(0, Math.min(mark.from, textLength)),
-        to: Math.max(0, Math.min(mark.to, textLength)),
-        styles: withoutEmpty(mark.styles),
-        ...(mark.href ? { href: mark.href } : {}),
-      }),
-    )
-    .filter(
-      (mark) => mark.to > mark.from && (Object.keys(mark.styles).length > 0 || mark.href),
-    )
+    .map((mark): TextMark => ({
+      from: Math.max(0, Math.min(mark.from, textLength)),
+      to: Math.max(0, Math.min(mark.to, textLength)),
+      styles: withoutEmpty(mark.styles),
+      ...(mark.href ? { href: mark.href } : {}),
+    }))
+    .filter((mark) => mark.to > mark.from && (Object.keys(mark.styles).length > 0 || mark.href))
     .sort((first, second) => first.from - second.from);
   const joined: TextMark[] = [];
   for (const mark of tidy) {

@@ -101,9 +101,7 @@ describe("styling part of a text", () => {
     ]);
     expect(sharedMarkLink(marks, 5, 14)).toBe("/about");
     expect(sharedMarkLink(marks, 0, 14)).toBeUndefined();
-    expect(clearMarks(marks, 0, 14, 14)).toEqual([
-      { from: 5, to: 14, styles: {}, href: "/about" },
-    ]);
+    expect(clearMarks(marks, 0, 14, 14)).toEqual([{ from: 5, to: 14, styles: {}, href: "/about" }]);
     expect(applyMark(marks, 5, 14, { href: undefined }, 14)).toEqual([
       { from: 9, to: 14, styles: { fontWeight: "700" } },
     ]);
