@@ -35,7 +35,6 @@ export function usePageDesignSaving(entry: Entry, fieldHandle: string) {
         const updated = await updateEntry(current.id, {
           data: { [fieldHandle]: next },
           slug: current.slug,
-          parentId: current.parentId,
         });
         entryRef.current = updated;
         setLatestEntry(updated);

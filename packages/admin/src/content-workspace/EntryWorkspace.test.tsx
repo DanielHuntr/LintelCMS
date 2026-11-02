@@ -154,6 +154,21 @@ describe("an entry's workspace", () => {
     expect(screen.getByRole("menuitem", { name: "Unpublish" })).toBeTruthy();
   });
 
+  // Saving used to send the parent the editor opened with, so a page moved in the tree
+  // meanwhile was quietly moved back on the next autosave.
+  it("saves without saying where the page sits, so a move made in the tree stays", async () => {
+    const api = answerWorkspace();
+    renderWorkspace();
+
+    await userEvent.type(await screen.findByRole("textbox", { name: "Title" }), "!");
+    await userEvent.keyboard("{Control>}s{/Control}");
+
+    await waitFor(() => expect(api.calls.some((call) => call.method === "PATCH")).toBe(true));
+    const saved = api.calls.find((call) => call.method === "PATCH");
+    expect(saved?.body).toMatchObject({ data: { title: "Hello world!" } });
+    expect(saved?.body).not.toHaveProperty("parentId");
+  });
+
   describe("publishing a page whose parent isn't published", () => {
     function answerPublishing() {
       return mockApi(({ method, url }) => {

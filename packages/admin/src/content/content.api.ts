@@ -67,10 +67,17 @@ export function translateEntry(entryId: string, locale: string): Promise<Entry> 
   });
 }
 
+/**
+ * What saving an entry sends. Leave `parentId` out unless the person moved the entry here:
+ * it may have been moved in the tree since the editor opened, and sending the parent the
+ * editor started with would quietly move it back.
+ */
+export type EntryUpdate = Omit<EntryChanges, "parentId"> & { parentId?: string | null };
+
 /** `saveVersion` keeps this save as a revision of its own, rather than joining the open one. */
 export function updateEntry(
   entryId: string,
-  changes: EntryChanges,
+  changes: EntryUpdate,
   saveVersion = false,
 ): Promise<Entry> {
   return apiRequest<Entry>(`/entries/${entryId}`, {

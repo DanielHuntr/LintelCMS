@@ -64,8 +64,18 @@ export function useEntryActions({
     dispatch({ type: "saveStarted" });
     try {
       const isNew = entryId.current === undefined;
+      // Only a parent changed in this editor is sent (see EntryUpdate).
+      const movedHere = draft.parentId !== entry?.parentId;
       const saved = entryId.current
-        ? await updateEntry(entryId.current, draft, saveVersion)
+        ? await updateEntry(
+            entryId.current,
+            {
+              data: draft.data,
+              slug: draft.slug,
+              ...(movedHere ? { parentId: draft.parentId } : {}),
+            },
+            saveVersion,
+          )
         : await createEntry(collectionHandle, draft, locale);
       dispatch({ type: "saveSucceeded", sent: draft, entry: saved });
       remember(saved);
