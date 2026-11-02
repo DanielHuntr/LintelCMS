@@ -154,6 +154,10 @@ export const fieldStrings = {
 
   "editor.fieldTabs": "Parts of the form",
   "editor.mainTab": "Main",
+  "editor.replacedByDesign":
+    "This page has a design, so your website shows the design instead of: {fields}.",
+  "editor.showReplacedFields": "Show them anyway",
+  "editor.hideReplacedFields": "Hide them",
   "editor.tabHasProblem": "Has a field that needs attention",
 
   "fields.readOnly": "Read only",
