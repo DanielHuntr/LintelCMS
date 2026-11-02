@@ -101,7 +101,10 @@ describe("exporting and importing content", { timeout: 60_000 }, () => {
       data: Record<string, unknown>;
     }>();
     const imageId = full.data.featured_image as string;
-    expect((await tools.server.inject({ url: `/media/${imageId}/file` })).statusCode).toBe(200);
+    const file = await tools.server.inject({ url: `/media/${imageId}/file` });
+    expect(file.statusCode).toBe(200);
+    // The picture itself comes across, not an empty file with the right name.
+    expect(file.rawPayload.equals(await makeTestPng())).toBe(true);
     const categories = (await api("GET", "/taxonomies/categories/terms")).json<{
       terms: Array<{ id: string; title: string }>;
     }>().terms;
