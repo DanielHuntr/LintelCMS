@@ -304,4 +304,88 @@ describe("selling a product from start to finish", () => {
     },
     JOURNEY_TIMEOUT,
   );
+
+  // Stripe counts ISK and UGX in hundredths; the amounts used to go across as whole krónur,
+  // so Stripe charged 1% of the price, and the order still matched.
+  it(
+    "charges the full price in Icelandic krónur, which Stripe counts in hundredths",
+    async () => {
+      await shop.admin("POST", "/shop/markets", {
+        name: "Iceland",
+        currency: "ISK",
+        countries: ["IS"],
+        pricesIncludeTax: false,
+      });
+      const zone = await shop.admin("POST", "/shop/shipping/zones", {
+        name: "Iceland",
+        countries: ["IS"],
+      });
+      const rates = await shop.admin("POST", `/shop/shipping/zones/${zone.json().id}/rates`, {
+        name: "Standard",
+        kind: "flat",
+        amounts: { ISK: 990 },
+      });
+      const locations = await shop.admin("GET", "/shop/locations");
+      const product = await shop.admin("POST", "/shop/products", {
+        title: "Wool hat",
+        status: "active",
+        variants: [
+          {
+            sku: "HAT",
+            prices: [{ currency: "ISK", amount: 10_000 }],
+            stock: [{ locationId: locations.json().locations[0].id, onHand: 5 }],
+          },
+        ],
+      });
+      const cart = await shop.storefront("POST", "/delivery/shop/carts", { country: "IS" });
+      const token: string = cart.json().token;
+      await shop.storefront("POST", `/delivery/shop/carts/${token}/lines`, {
+        variantId: product.json().variants[0].id,
+        quantity: 1,
+      });
+      await shop.storefront("PATCH", `/delivery/shop/carts/${token}`, {
+        email: "jon@example.is",
+        shippingAddress: {
+          name: "Jón",
+          line1: "Laugavegur 1",
+          city: "Reykjavík",
+          postalCode: "101",
+          country: "IS",
+        },
+        shippingRateId: rates.json().rates[0].id,
+      });
+
+      const started = await shop.storefront(
+        "POST",
+        `/delivery/shop/carts/${token}/checkout`,
+        CHECKOUT_PAGES,
+      );
+      const checkout = started.json();
+      expect(checkout.total.currency).toBe("ISK");
+
+      const [session] = shop.stripe.requestsTo("/v1/checkout/sessions");
+      expect(session?.form.get("line_items[0][price_data][unit_amount]")).toBe("1000000");
+      expect(
+        session?.form.get("shipping_options[0][shipping_rate_data][fixed_amount][amount]"),
+      ).toBe("99000");
+      await shop.sendWebhook({
+        id: "evt_paid_isk",
+        type: "checkout.session.completed",
+        data: {
+          object: {
+            id: "cs_test_isk",
+            payment_status: "paid",
+            amount_total: checkout.total.amount * 100,
+            currency: "isk",
+            payment_intent: "pi_test_isk",
+            client_reference_id: checkout.checkoutId,
+            metadata: { lintel_checkout_id: checkout.checkoutId },
+          },
+        },
+      });
+      const order = (await shop.admin("GET", "/shop/orders")).json().items[0];
+      expect(order).toMatchObject({ status: "paid", total: checkout.total });
+    },
+    JOURNEY_TIMEOUT,
+  );
 });

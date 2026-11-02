@@ -9,6 +9,7 @@ import {
   expireStripeCheckoutSession,
 } from "./stripe-api.js";
 import { StripeRequestError } from "./stripe-client.js";
+import { toStripeAmount } from "../money/stripe-amounts.js";
 
 /**
  * Stripe behind the PaymentProvider interface: its hosted Checkout page, or a
@@ -55,7 +56,7 @@ export function stripePaymentProvider(shop: ShopContext): PaymentProvider {
       const made = await explain(() =>
         createStripeRefund(stripe, {
           paymentIntentId,
-          amount: refund.amount,
+          amount: toStripeAmount(refund.amount, order.currency),
           orderId: order.id,
           refundId: refund.id,
         }),

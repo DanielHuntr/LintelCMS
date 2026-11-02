@@ -31,6 +31,7 @@ import {
   insertRefund,
   updateRefundRow,
 } from "./refunds-and-fulfilments.repository.js";
+import { fromStripeAmount } from "../money/stripe-amounts.js";
 
 /**
  * Giving money back, always through the provider that took it (Stripe, PayPal or Mollie).
@@ -127,7 +128,7 @@ export async function recordStripeRefund(
     if (!order) return null;
     refund = await insertRefund(transaction, {
       orderId: order.id,
-      amount: stripeRefund.amount,
+      amount: fromStripeAmount(stripeRefund.amount, stripeRefund.currency),
       currency: order.currency,
       reason: "Refunded in Stripe",
       stripeRefundId: stripeRefund.id,
