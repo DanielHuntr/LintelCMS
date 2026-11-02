@@ -137,7 +137,11 @@ describe("Settings → Updates", { timeout: 60_000 }, () => {
     await admin("PUT", "/updates/preferences", { channel: "beta" });
     const withBetas = (await admin("GET", "/updates")).json<UpdatesOverview>();
     expect(withBetas.releases.map((release) => release.version)).toEqual(["1.2.0-beta.1", "1.1.0"]);
-    expect((await admin("GET", "/updates/summary")).json()).toEqual({ count: 2, securityCount: 1 });
+    expect((await admin("GET", "/updates/summary")).json()).toEqual({
+      count: 2,
+      securityCount: 1,
+      checkFailed: false,
+    });
   });
 
   it("emails owners once about a new security release", async () => {
@@ -163,6 +167,26 @@ describe("Settings → Updates", { timeout: 60_000 }, () => {
     const overview = (await admin("POST", "/updates/check")).json<UpdatesOverview>();
     expect(overview.problem).toContain("couldn't reach the update feed");
     expect(overview.releases.map((release) => release.version)).toEqual(["1.1.0"]);
+  });
+
+  it("says a check failed, and only promises another look after a scheduled one", async () => {
+    const admin = await as("admin@example.com", "admin");
+    feedIsDown = true;
+
+    const manual = (await admin("POST", "/updates/check")).json<UpdatesOverview>();
+    expect(manual.problem).toContain("couldn't reach the update feed");
+    expect(manual.problem).not.toContain("tomorrow");
+    // Nothing is known, so the summary mustn't read as up to date.
+    expect((await admin("GET", "/updates/summary")).json()).toEqual({
+      count: 0,
+      securityCount: 0,
+      checkFailed: true,
+    });
+
+    const tomorrow = new Date(Date.now() + 25 * 60 * 60 * 1000);
+    await checkForUpdatesIfDue(updateChecksContextFor(server), tomorrow);
+    const scheduled = (await admin("GET", "/updates")).json<UpdatesOverview>();
+    expect(scheduled.problem).toContain("It will try again tomorrow.");
   });
 
   it("only lets owners update, after confirming, and logs it in the security log", async () => {

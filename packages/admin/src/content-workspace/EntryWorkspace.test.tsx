@@ -30,6 +30,7 @@ const info = {
   usedBy: [],
   childCount: 0,
   childrenAsCollection: false,
+  unpublishedAncestors: [] as Array<{ id: string; title: string }>,
 };
 
 function answerWorkspace(infoChanges: Partial<typeof info> = {}) {
@@ -151,5 +152,73 @@ describe("an entry's workspace", () => {
     await userEvent.click(within(bar).getByRole("button", { name: "More publishing options" }));
     expect(screen.getByRole("menuitem", { name: "Schedule…" })).toBeTruthy();
     expect(screen.getByRole("menuitem", { name: "Unpublish" })).toBeTruthy();
+  });
+
+  describe("publishing a page whose parent isn't published", () => {
+    function answerPublishing() {
+      return mockApi(({ method, url }) => {
+        const path = url.pathname;
+        if (path.endsWith("/info"))
+          return { ...info, unpublishedAncestors: [{ id: "h1", title: "Home" }] };
+        if (path.endsWith("/path")) return { path: [] };
+        if (path.endsWith("/website/address")) return { siteAddress: null, defaultLocale: "en-GB" };
+        if (method === "PATCH") return samplePost();
+        if (method === "POST" && path === "/content-tree/bulk")
+          return { changed: ["h1"], skipped: [] };
+        if (method === "POST" && path.endsWith("/publish"))
+          return samplePost({ status: "published" });
+        throw new Error(`Unexpected ${method} ${path}`);
+      });
+    }
+    const posts = (api: ReturnType<typeof answerPublishing>) =>
+      api.calls
+        .filter((call) => call.method === "POST")
+        .map((call) => ({ path: call.url.pathname, body: call.body }));
+
+    async function pressSaveAndPublish() {
+      const bar = await screen.findByRole("region", { name: "Saving and publishing" });
+      await waitFor(() =>
+        expect(within(bar).getByRole("button", { name: "Save and publish" })).toBeEnabled(),
+      );
+      // The question needs the page's info (shown on the Info tab), which loads beside it.
+      await screen.findByText("/blog/hello-world");
+      await userEvent.click(within(bar).getByRole("button", { name: "Save and publish" }));
+      return screen.findByRole("alertdialog", { name: "Its parent page isn’t published" });
+    }
+
+    it("explains, and publishes the parent first when asked", async () => {
+      const api = answerPublishing();
+      renderWorkspace("info");
+
+      const question = await pressSaveAndPublish();
+      expect(question).toHaveTextContent(
+        "“Hello world” is under “Home”, which isn’t on your website yet.",
+      );
+      expect(posts(api)).toEqual([]);
+      await userEvent.click(
+        within(question).getByRole("button", { name: "Publish with its parent" }),
+      );
+
+      await waitFor(() =>
+        expect(posts(api)).toEqual([
+          { path: "/content-tree/bulk", body: { action: "publish", entryIds: ["h1"] } },
+          { path: "/entries/p1/publish", body: undefined },
+        ]),
+      );
+    });
+
+    it("can still publish the page on its own", async () => {
+      const api = answerPublishing();
+      renderWorkspace("info");
+
+      const question = await pressSaveAndPublish();
+      await userEvent.click(
+        within(question).getByRole("button", { name: "Publish this page only" }),
+      );
+
+      await waitFor(() =>
+        expect(posts(api)).toEqual([{ path: "/entries/p1/publish", body: undefined }]),
+      );
+    });
   });
 });

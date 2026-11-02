@@ -14,7 +14,22 @@ const applied = {
   themeApplied: true,
   menuFilled: true,
   menuHasLinks: false,
+  skippedHome: false,
+  replacedCount: 0,
 };
+
+const existingPages = {
+  pageCount: 3,
+  hasHome: true,
+  clashes: [{ title: "Menu", slug: "menu", existingTitle: "Our menu" }],
+};
+
+async function openBakery(user: ReturnType<typeof userEvent.setup>) {
+  const list = await screen.findByRole("list", { name: "Templates to start from" });
+  const bakery = within(list).getByRole("article", { name: "Bakery and café" });
+  await user.click(within(bakery).getByRole("button", { name: /Use this template/ }));
+  return screen.getByRole("dialog", { name: "Start from Bakery and café?" });
+}
 
 describe("the template library", () => {
   it("lists the templates and adds one's pages, then links to the builder", async () => {
@@ -86,5 +101,68 @@ describe("the template library", () => {
     await user.click((await screen.findAllByRole("button", { name: /Use this template/ }))[0]!);
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).queryByRole("switch")).not.toBeInTheDocument();
+  });
+
+  describe("on a site that has pages", () => {
+    function answer() {
+      return mockApi(({ method, url }) => {
+        if (url.pathname === "/website/address") return { siteAddress: null, defaultLocale: "en" };
+        if (url.pathname === "/starter-sites/bakery/existing-pages") return existingPages;
+        if (method === "POST" && url.pathname === "/starter-sites/bakery/apply") {
+          return { ...applied, skippedHome: true };
+        }
+        return undefined;
+      });
+    }
+
+    it("adds the pages alongside by default, saying what happens to Home and clashes", async () => {
+      const user = userEvent.setup();
+      const { calls } = answer();
+      renderScreen(<TemplateLibraryPage />, { permissions: ["*"] });
+      const dialog = await openBakery(user);
+
+      expect(await within(dialog).findByText("Your site already has pages")).toBeInTheDocument();
+      expect(within(dialog).getByRole("radio", { name: /Add them alongside/ })).toBeChecked();
+      expect(dialog).toHaveTextContent("is added as “Menu (2)”");
+      await user.click(within(dialog).getByRole("button", { name: "Add the pages" }));
+
+      expect(await screen.findByText(/Your home page stayed as it was/)).toBeInTheDocument();
+      expect(calls.find((call) => call.method === "POST")?.body).toMatchObject({
+        existingPages: "alongside",
+      });
+    });
+
+    it("replaces the pages when chosen, and only for people who may delete", async () => {
+      const user = userEvent.setup();
+      const { calls } = answer();
+      renderScreen(<TemplateLibraryPage />, { permissions: ["*"] });
+      const dialog = await openBakery(user);
+
+      await user.click(await within(dialog).findByRole("radio", { name: /Replace my pages/ }));
+      await user.click(within(dialog).getByRole("button", { name: "Add the pages" }));
+      await screen.findByRole("heading", { name: "Your Bakery and café pages are ready" });
+      expect(calls.find((call) => call.method === "POST")?.body).toMatchObject({
+        existingPages: "replace",
+      });
+    });
+
+    it("keeps Replace from people who can't delete pages", async () => {
+      const user = userEvent.setup();
+      answer();
+      renderScreen(<TemplateLibraryPage />, { permissions: ["entries:read", "entries:create"] });
+      const dialog = await openBakery(user);
+      expect(await within(dialog).findByRole("radio", { name: /Replace my pages/ })).toBeDisabled();
+    });
+
+    it("changes nothing when cancelled", async () => {
+      const user = userEvent.setup();
+      const { calls } = answer();
+      renderScreen(<TemplateLibraryPage />, { permissions: ["*"] });
+      const dialog = await openBakery(user);
+      await within(dialog).findByText("Your site already has pages");
+      await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(calls.some((call) => call.method === "POST")).toBe(false);
+    });
   });
 });

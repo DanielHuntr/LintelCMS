@@ -58,7 +58,14 @@ export function TreeDialogs({ pending, onClose, onNotice, selectedKey }: TreeDia
   const name = node.title || t("tree.untitled");
   switch (action) {
     case "create":
-      return <CreateDialog place={{ parentId: node.id }} placeName={name} onClose={onClose} />;
+      return (
+        <CreateDialog
+          place={{ parentId: node.id }}
+          placeName={name}
+          isUnderSiteStart={node.isSiteStart}
+          onClose={onClose}
+        />
+      );
     case "sort":
       return <SortDialog place={{ parentId: node.id }} placeName={name} onClose={onClose} />;
     case "hostnames":

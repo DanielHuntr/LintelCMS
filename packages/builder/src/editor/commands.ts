@@ -10,6 +10,7 @@ import {
   insertNode,
   moveNode,
   type NodeAnimation,
+  pageEdgeFor,
   type NodeBlueprint,
   type NodeStyles,
   type PageDocument,
@@ -86,7 +87,7 @@ export function findInsertPlace(
 }
 
 export function insertBlueprint(context: CommandContext, blueprint: NodeBlueprint): CommandResult {
-  const place = findInsertPlace(context, blueprint.type);
+  const place = findEdgePlace(context, blueprint) ?? findInsertPlace(context, blueprint.type);
   const definition = context.catalogue.find(blueprint.type);
   if (!place || !definition) {
     return {
@@ -102,6 +103,22 @@ export function insertBlueprint(context: CommandContext, blueprint: NodeBlueprin
     place,
     context.text("pageBuilder.history.added", { name: layerName(node, context.catalogue) }),
   );
+}
+
+/**
+ * A header goes at the very top of the page and a footer at the very bottom, whatever is
+ * selected (see `pageEdgeFor`). Null for anything else, or when the page itself is locked.
+ */
+function findEdgePlace(
+  context: CommandContext,
+  blueprint: NodeBlueprint,
+): { parentId: string; index: number } | null {
+  const edge = pageEdgeFor(blueprint);
+  const { document, catalogue } = context;
+  if (!edge || !catalogue.canContain("page", blueprint.type) || isLocked(document, rootNodeId)) {
+    return null;
+  }
+  return { parentId: rootNodeId, index: edge === "top" ? 0 : document.root.children.length };
 }
 
 /** Puts ready-made nodes (pasted, imported) at a place, with fresh ids. */

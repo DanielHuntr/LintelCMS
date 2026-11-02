@@ -21,6 +21,10 @@ export interface PageDesign {
   script?: string;
   /** It has sliders, tabs, pop-ups, forms or the shop, so it loads the elements script. */
   usesBehaviours?: boolean;
+  /** It has its own Header, so the site's isn't drawn above it. */
+  ownHeader?: boolean;
+  /** It has its own Footer (or footer section), so the site's isn't drawn below it. */
+  ownFooter?: boolean;
 }
 
 /** A page from a collection like Pages: a title, an optional body and its sections. */

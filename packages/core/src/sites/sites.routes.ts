@@ -23,7 +23,7 @@ import {
   updateSiteRequestSchema,
 } from "./sites.schema.js";
 import { NoSiteForAddressError } from "./sites.errors.js";
-import { listAllSites } from "./sites.service.js";
+import { isDefaultSite, listAllSites } from "./sites.service.js";
 
 const WEBSITE_CACHE = "public, max-age=60";
 
@@ -100,10 +100,12 @@ export async function sitesRoutes(server: FastifyInstance) {
   server.get("/delivery/sites/match", publicContent, async (request, reply) => {
     const { url } = parseRequest(matchSiteQuerySchema, request.query);
     const address = new URL(url);
-    const site = matchSiteForAddress(await listAllSites(server.database), {
-      host: address.host,
-      path: address.pathname,
-    });
+    const sites = await listAllSites(server.database);
+    const site = matchSiteForAddress(
+      sites,
+      { host: address.host, path: address.pathname },
+      sites.find(isDefaultSite),
+    );
     if (!site) {
       throw new NoSiteForAddressError(address.host);
     }

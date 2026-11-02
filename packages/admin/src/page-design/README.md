@@ -59,3 +59,10 @@ message at the bottom of the screen.
 - **The tour**: Publish and **View page** (shown once the page is live, see
   `content/viewPage.ts`) sit together inside `data-tour="publish"`, so the tour's last step
   can point at both.
+
+## Menus in the builder
+
+The builder gets the site's menus with their links (`useBuilderMenus` in `src/menus`), so a
+Header, Menu or Menu drawer on the canvas shows the real menu, and its Content tab offers
+"Which menu" and "Edit menu". Edit menu opens `InlineMenuEditor` in the panel: the same
+editing as the Menus screen (add pages, rename, reorder, nest), saved to the same menu.

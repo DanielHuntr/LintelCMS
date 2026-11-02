@@ -21,6 +21,10 @@ reducer, autosave, actions, fields, history), laid out differently:
   type, people, dates, what links here, the id). The tab is in the address.
 - **Footer** (`WorkspaceFooter.tsx`): saving state, Preview, View page, Save (keeps a
   version) and "Save and publish" with Schedule… and Unpublish in its menu.
+- **Publishing under an unpublished parent** (`PublishWithParentDialog.tsx`): when a page
+  that isn't live sits under pages that aren't either (`unpublishedAncestors` in the entry's
+  info), "Save and publish" asks first: publish it with its parent (the pages above go live
+  first, through the bulk publish), publish this page only, or cancel.
 - Leaving with unsaved changes asks first (`useLeaveWarning`), including opening another
   row in the tree.
 

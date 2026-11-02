@@ -21,6 +21,9 @@ export const updatesStrings = {
   "updates.upToDateTitle": "You’re up to date",
   "updates.upToDateText":
     "{product} {version} is the newest version. {product} looks again every day.",
+  "updates.checkFailedTitle": "Couldn’t check for updates",
+  "updates.checkFailedText":
+    "{product} doesn’t know yet whether there’s a version newer than {version}.",
   "updates.available": "{count, plural, one {# update available} other {# updates available}}",
   "updates.securityCount": "{count, plural, one {# security} other {# security}}",
   "updates.availableTitle": "{product} {version} is available",
@@ -132,6 +135,7 @@ export const updatesStrings = {
   "dashboard.updates.title": "Updates",
   "dashboard.updates.description": "New versions of {product} and your plugins",
   "dashboard.updates.upToDate": "{product} {version} is up to date.",
+  "dashboard.updates.checkFailed": "Couldn’t check for updates",
   "dashboard.updates.summarySecurity": "{available} · {security}",
   "dashboard.updates.open": "See updates",
 

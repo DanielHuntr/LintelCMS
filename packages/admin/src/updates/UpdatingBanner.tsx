@@ -9,7 +9,7 @@ export function UpdatingBanner() {
   return (
     <div
       role="status"
-      className="fixed top-3 inset-e-16 inset-s-[264px] z-20 flex items-center gap-2 rounded-control bg-warning/15 px-4 py-2 text-footnote text-label shadow-float backdrop-blur-xl"
+      className="fixed top-3 inset-e-16 inset-s-16 z-20 md:inset-s-[264px] flex items-center gap-2 rounded-control bg-warning/15 px-4 py-2 text-footnote text-label shadow-float backdrop-blur-xl"
     >
       <LoaderCircle
         aria-hidden="true"

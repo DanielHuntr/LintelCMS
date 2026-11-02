@@ -26,7 +26,7 @@ const KEEP_ALIVE_MILLISECONDS = 25_000;
  *
  *   GET  /about                         (signed in)        -> { version }
  *   GET  /updates                       (updates:read)     -> UpdatesOverview
- *   GET  /updates/summary               (updates:read)     -> { count, securityCount }
+ *   GET  /updates/summary               (updates:read)     -> { count, securityCount, checkFailed }
  *   POST /updates/check                 (updates:read)     -> UpdatesOverview, after a fresh look
  *   PUT  /updates/preferences           (settings:update)  { channel } -> preferences
  *   POST /updates/install               (updates:read, owners) { version, confirmed } -> 202 progress

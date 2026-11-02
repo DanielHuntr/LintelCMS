@@ -68,6 +68,8 @@ export interface UpdateProgress {
 export interface UpdateSummary {
   count: number;
   securityCount: number;
+  /** The last look for updates didn't work, so a count of 0 doesn't mean up to date. */
+  checkFailed: boolean;
 }
 
 export interface UpdatesOverview {

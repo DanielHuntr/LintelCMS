@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { collectionsTable } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { entriesTable } from "../entries/entries.table.js";
@@ -57,7 +57,7 @@ export async function insertNavigationIfMissing(
 export async function updateNavigationRow(
   database: DatabaseOrTransaction,
   navigationId: string,
-  changes: Partial<Pick<Navigation, "name" | "maxDepth" | "items">>,
+  changes: Partial<Pick<Navigation, "name" | "maxDepth" | "items" | "source" | "pageTree">>,
 ): Promise<void> {
   await database
     .update(navigationsTable)
@@ -90,4 +90,52 @@ export async function findLinkedEntries(
     .from(entriesTable)
     .innerJoin(collectionsTable, eq(collectionsTable.id, entriesTable.collectionId))
     .where(inArray(entriesTable.id, [...entryIds]));
+}
+
+/**
+ * Every page of the site's page trees in one language (tree collections with addresses),
+ * with their places: what a menu that follows the page tree is made from.
+ */
+export async function listMenuTreePages(
+  database: DatabaseOrTransaction,
+  tenantId: string,
+  siteId: string,
+  locale: string,
+) {
+  return database
+    .select({
+      id: entriesTable.id,
+      parentId: entriesTable.parentId,
+      sortOrder: entriesTable.sortOrder,
+    })
+    .from(entriesTable)
+    .innerJoin(collectionsTable, eq(collectionsTable.id, entriesTable.collectionId))
+    .where(
+      and(
+        eq(entriesTable.tenantId, tenantId),
+        eq(entriesTable.siteId, siteId),
+        eq(entriesTable.locale, locale),
+        eq(collectionsTable.structure, "tree"),
+        isNotNull(collectionsTable.routePattern),
+      ),
+    )
+    .orderBy(asc(entriesTable.sortOrder), asc(entriesTable.createdAt));
+}
+
+/** A page's site, language and parent: where its menu item goes. */
+export async function findMenuPageRow(database: DatabaseOrTransaction, entryId: string) {
+  const [row] = await database
+    .select({
+      id: entriesTable.id,
+      siteId: entriesTable.siteId,
+      locale: entriesTable.locale,
+      parentId: entriesTable.parentId,
+      structure: collectionsTable.structure,
+      routePattern: collectionsTable.routePattern,
+    })
+    .from(entriesTable)
+    .innerJoin(collectionsTable, eq(collectionsTable.id, entriesTable.collectionId))
+    .where(eq(entriesTable.id, entryId))
+    .limit(1);
+  return row;
 }

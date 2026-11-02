@@ -61,6 +61,12 @@ export const collectionItemsQuerySchema = z
       }),
     ),
     direction: optionalQueryValue(z.enum(["asc", "desc"])),
+    /** Only entries of this content type (a collection handle). */
+    type: optionalQueryValue(z.string().max(64)),
+    /** "true": everything under the place, every level down, in the tree's order. */
+    allLevels: optionalQueryValue(
+      z.enum(["true", "false"], { error: 'allLevels should be "true" or "false"' }),
+    ).transform((value) => value === "true"),
     page: z.coerce.number({ error: "The page should be a number" }).int().min(1).default(1),
     perPage: z.coerce
       .number({ error: "perPage should be a number" })
@@ -128,7 +134,22 @@ export const withDescendantsRequestSchema = z.object({
   includeDescendants: z.boolean().default(false),
 });
 
-/** `POST /content-tree/bulk`: what the collection view's bulk actions send. */
+/** `POST /content-tree/bulk/summary`: what a bulk delete is about to take, for its question. */
+export const bulkSummaryRequestSchema = z.object({
+  entryIds: z
+    .array(z.uuid({ error: "Each item should be an entry id" }))
+    .min(1, { error: "Pick at least one entry" })
+    .max(500, { error: "Pick at most 500 entries at once" }),
+});
+
+/** Each picked entry (one under another picked entry is counted with it, not again). */
+export interface BulkSummary {
+  items: { id: string; title: string; descendantCount: number }[];
+  /** Every entry the action would reach: the picked ones and everything under them. */
+  totalCount: number;
+}
+
+/** `POST /content-tree/bulk`: what the tree's and the collection view's bulk actions send. */
 export const bulkActionRequestSchema = z.object({
   action: z.enum(["publish", "unpublish", "move", "recycle"], {
     error: 'The action should be "publish", "unpublish", "move" or "recycle"',
@@ -209,4 +230,6 @@ export interface PathStep {
 export interface BatchResult {
   changed: string[];
   skipped: { id: string; title: string; reason: string }[];
+  /** For a bulk delete: the recycle bin items made, so the admin can offer Undo. */
+  recycleBinItemIds?: string[];
 }

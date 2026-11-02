@@ -41,6 +41,7 @@ import type {
 } from "./entries.schema.js";
 import type { Entry, EntryData } from "./entries.table.js";
 import { firstFreeSlug, slugify } from "./slugs.js";
+import { checkAddressIsFree } from "./address-clash.js";
 import { recordEdit } from "./revision-log.js";
 
 /**
@@ -131,6 +132,7 @@ export async function createEntry(
         createdBy: context.authorId,
         updatedBy: context.authorId,
       });
+      await checkAddressIsFree(transaction, created.id);
       await recordEdit(transaction, {
         entryId: created.id,
         authorId: context.authorId,
@@ -193,6 +195,8 @@ export async function saveEntry(
         parentId: request.parentId === undefined ? entry.parentId : request.parentId,
         updatedBy: context.authorId,
       });
+      const isMoved = request.parentId !== undefined && request.parentId !== entry.parentId;
+      if (slug !== entry.slug || isMoved) await checkAddressIsFree(transaction, entry.id);
       await recordEdit(transaction, {
         entryId: entry.id,
         authorId: context.authorId,

@@ -65,6 +65,39 @@ describe("matching an address to a site", () => {
     expect(matchSiteForAddress(sites, { host: "acme.com" })).toBe(global);
     expect(matchSiteForAddress([france], { host: "acme.com" })).toBe(france);
   });
+
+  it("finds a site with only a path prefix on the default site's domain", () => {
+    const main = { handle: "default", name: "Main", hostnames: [], pathPrefix: "" };
+    const ireland = { handle: "ie", name: "Ireland", hostnames: [], pathPrefix: "/ie" };
+    const withIreland = [main, global, ireland];
+
+    // The default site lists no domain, so it has every domain no site lists.
+    expect(matchSiteForAddress(withIreland, { host: "localhost:3000", path: "/ie" }, main)).toBe(
+      ireland,
+    );
+    expect(
+      matchSiteForAddress(withIreland, { host: "localhost:3000", path: "/ie/about" }, main),
+    ).toBe(ireland);
+    // Other addresses stay with the default site (the caller's fallback), not matched here.
+    expect(
+      matchSiteForAddress(withIreland, { host: "localhost:3000", path: "/iex" }, main),
+    ).toBeUndefined();
+    // Another site's domain isn't the default site's.
+    expect(matchSiteForAddress(withIreland, { host: "acme.com", path: "/ie" }, main)).toBe(global);
+
+    // A default site with a domain shares only that one.
+    const mainOnUk = { ...main, hostnames: ["acme.co.uk"] };
+    const onUk = [mainOnUk, ireland];
+    expect(matchSiteForAddress(onUk, { host: "acme.co.uk", path: "/ie/about" }, mainOnUk)).toBe(
+      ireland,
+    );
+    expect(matchSiteForAddress(onUk, { host: "acme.co.uk", path: "/about" }, mainOnUk)).toBe(
+      mainOnUk,
+    );
+    expect(
+      matchSiteForAddress(onUk, { host: "elsewhere.example", path: "/ie" }, mainOnUk),
+    ).toBeUndefined();
+  });
 });
 
 describe("path prefixes in addresses", () => {

@@ -66,6 +66,11 @@ export interface CanvasSite {
   footerHtml: string;
   baseUrl: string | null;
   motionScript: string;
+  /** For Header and Footer elements on the canvas. */
+  siteName: string;
+  logo: { src: string; alt: string; width: number | null; height: number | null } | null;
+  socialLinks: string[];
+  footerText: string;
 }
 
 export function getCanvasSite() {

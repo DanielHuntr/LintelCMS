@@ -1,10 +1,11 @@
 import { type StarterSite, starterSites } from "@lintel/builder-model";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { CheckCircle2, ExternalLink } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { describeError } from "../api/describeError.js";
 import { Button, buttonClasses } from "../design/Button.js";
+import { classNames } from "../design/classNames.js";
 import { Dialog } from "../design/Dialog.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { Toggle } from "../design/Toggle.js";
@@ -15,6 +16,9 @@ import {
   type AppliedStarterSite,
   addPagesToMainMenu,
   applyStarterSite,
+  type ExistingPages,
+  type ExistingPagesChoice,
+  getExistingPages,
 } from "./starter-sites.api.js";
 import { StarterSiteCard } from "./StarterSiteCard.js";
 
@@ -74,13 +78,21 @@ function UseTemplateDialog({
   const queryClient = useQueryClient();
   const canChangeLook = useCan("settings:update");
   const canPublish = useCan("entries:publish");
+  const canDelete = useCan("entries:delete");
   const [useTheme, setUseTheme] = useState(true);
   const [publish, setPublish] = useState(false);
+  const [choice, setChoice] = useState<ExistingPagesChoice>("alongside");
+  const existing = useQuery({
+    queryKey: ["starter-sites", site.id, "existing-pages"],
+    queryFn: () => getExistingPages(site.id),
+  });
+  const hasPages = (existing.data?.pageCount ?? 0) > 0;
   const apply = useMutation({
     mutationFn: () =>
       applyStarterSite(site.id, {
         useTheme: canChangeLook && useTheme,
         publish: canPublish && publish,
+        existingPages: hasPages ? choice : undefined,
       }),
     onSuccess: (result) => {
       void queryClient.invalidateQueries();
@@ -99,13 +111,28 @@ function UseTemplateDialog({
           <Button variant="plain" onClick={onClose}>
             {t("templates.cancel")}
           </Button>
-          <Button onClick={() => apply.mutate()} disabled={apply.isPending} data-autofocus>
+          <Button
+            onClick={() => apply.mutate()}
+            disabled={apply.isPending || existing.isPending}
+            data-autofocus
+          >
             {apply.isPending ? t("templates.applying") : t("templates.apply")}
           </Button>
         </>
       }
     >
       <div className="flex flex-col gap-4">
+        {existing.isPending && (
+          <p className="text-footnote text-label-secondary">{t("templates.existing.loading")}</p>
+        )}
+        {existing.data && hasPages && (
+          <ExistingPagesChoiceField
+            existing={existing.data}
+            choice={choice}
+            canReplace={canDelete}
+            onChange={setChoice}
+          />
+        )}
         {canChangeLook && (
           <Toggle
             label={t("templates.useTheme")}
@@ -133,6 +160,81 @@ function UseTemplateDialog({
         )}
       </div>
     </Dialog>
+  );
+}
+
+/**
+ * The site has pages already: ask, in plain words, whether the template's go beside them or
+ * replace them. Cancel is the dialog's own button; nothing is ever doubled silently.
+ */
+function ExistingPagesChoiceField({
+  existing,
+  choice,
+  canReplace,
+  onChange,
+}: {
+  existing: ExistingPages;
+  choice: ExistingPagesChoice;
+  canReplace: boolean;
+  onChange: (choice: ExistingPagesChoice) => void;
+}) {
+  const name = useId();
+  const example = existing.clashes[0]?.title ?? "";
+  const options: { value: ExistingPagesChoice; label: string; hint: string; disabled?: boolean }[] =
+    [
+      {
+        value: "alongside",
+        label: t("templates.existing.alongside"),
+        hint: [
+          t("templates.existing.alongsideHint"),
+          existing.clashes.length > 0
+            ? t("templates.existing.alongsideClashes", { count: existing.clashes.length, example })
+            : "",
+        ]
+          .filter(Boolean)
+          .join(" "),
+      },
+      {
+        value: "replace",
+        label: t("templates.existing.replace"),
+        hint: canReplace
+          ? t("templates.existing.replaceHint")
+          : t("templates.existing.replaceNotAllowed"),
+        disabled: !canReplace,
+      },
+    ];
+  return (
+    <fieldset className="flex flex-col gap-2 rounded-card bg-warning/10 p-4">
+      <legend className="sr-only">{t("templates.existing.choose")}</legend>
+      <p className="text-body font-semibold text-label">{t("templates.existing.title")}</p>
+      <p className="text-footnote text-label-secondary">
+        {t("templates.existing.description", { count: existing.pageCount })}
+      </p>
+      {options.map((option) => (
+        <label
+          key={option.value}
+          className={classNames(
+            "flex cursor-pointer items-start gap-3 rounded-control px-3 py-2.5 has-focus-visible:focus-ring",
+            choice === option.value ? "bg-surface ring-1 ring-accent" : "bg-surface/60",
+            option.disabled && "cursor-not-allowed opacity-60",
+          )}
+        >
+          <input
+            type="radio"
+            name={name}
+            value={option.value}
+            checked={choice === option.value}
+            disabled={option.disabled}
+            onChange={() => onChange(option.value)}
+            className="mt-1 size-4 accent-(--color-accent-fill)"
+          />
+          <span className="flex flex-col gap-0.5">
+            <span className="text-body font-medium text-label">{option.label}</span>
+            <span className="text-footnote text-label-secondary">{option.hint}</span>
+          </span>
+        </label>
+      ))}
+    </fieldset>
   );
 }
 
@@ -166,6 +268,9 @@ function AppliedSummary({
       </div>
       <p className="text-footnote text-label-secondary">
         {published ? t("templates.donePublished") : t("templates.doneDrafts")}
+        {result.skippedHome && ` ${t("templates.result.skippedHome")}`}
+        {result.replacedCount > 0 &&
+          ` ${t("templates.result.replaced", { count: result.replacedCount })}`}
       </p>
       <ul className="flex flex-wrap gap-2">
         {result.pages.map((page) => (

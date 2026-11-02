@@ -22,6 +22,7 @@ import { ImageField, type ImagePicker, TextInputField } from "./content-fields.j
 import { type BindingScope, findBindingScope, useDataSources } from "./data-sources.js";
 import { FieldControl, SourceField } from "./field-controls.js";
 import { BindingPicker, ItemListField } from "./item-list-field.js";
+import { MenuSection } from "../menus/menu-editing.js";
 
 interface ContentPanelProps {
   node: PageNode;
@@ -93,6 +94,7 @@ export function ContentPanel({
           {text("pageBuilder.style.lockedNote")}
         </p>
       )}
+      <MenuSection node={node} isLocked={isLocked} onChange={onChange} />
       {isGrouped ? (
         <OpenSectionsContext.Provider value={groupSections}>
           <h2 className="px-4 pt-3 pb-1 text-footnote font-semibold text-label">

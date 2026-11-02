@@ -11,7 +11,7 @@ import {
 } from "../entries/entries.service.js";
 import { HttpError } from "../http/http-errors.js";
 import { findNodeRows, listChildLinks } from "./content-tree.repository.js";
-import type { BatchResult } from "./content-tree.schema.js";
+import type { BatchResult, BulkSummary } from "./content-tree.schema.js";
 
 /**
  * Acting on a whole branch of the tree: an entry and everything under it, in any collection.
@@ -33,6 +33,34 @@ export async function listBranchIds(
     level = children.map((child) => child.id);
   }
   return ids;
+}
+
+/**
+ * What deleting these entries would take: each with how many entries sit under it. One
+ * picked under another picked one is counted with that one, not again.
+ */
+export async function summarizeBranches(
+  database: DatabaseOrTransaction,
+  entryIds: readonly string[],
+): Promise<BulkSummary> {
+  const rows = new Map((await findNodeRows(database, entryIds)).map((row) => [row.id, row]));
+  const branches = new Map<string, string[]>();
+  for (const entryId of new Set(entryIds)) {
+    if (rows.has(entryId)) branches.set(entryId, await listBranchIds(database, entryId));
+  }
+  const covered = new Set<string>();
+  for (const [entryId, branch] of branches) {
+    for (const id of branch) if (id !== entryId) covered.add(id);
+  }
+  const items = [...branches]
+    .filter(([entryId]) => !covered.has(entryId))
+    .map(([entryId, branch]) => ({
+      id: entryId,
+      title: rows.get(entryId)?.title ?? "",
+      descendantCount: branch.length - 1,
+    }));
+  const totalCount = new Set([...branches.values()].flat()).size;
+  return { items, totalCount };
 }
 
 /** Asks the features that may refuse a publish (content approval) before it happens. */

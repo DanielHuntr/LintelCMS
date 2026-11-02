@@ -16,6 +16,11 @@ export interface CanvasSiteResponse {
   footerHtml: string;
   baseUrl: string | null;
   motionScript: string;
+  /** The site's name, logo, social links and footer words, for Header and Footer elements. */
+  siteName: string;
+  logo: { src: string; alt: string; width: number | null; height: number | null } | null;
+  socialLinks: string[];
+  footerText: string;
 }
 
 export async function readCanvasSite(
@@ -36,5 +41,16 @@ export async function readCanvasSite(
     // Illustrations and the like are served by the built-in site, wherever the site lives.
     baseUrl: dependencies.builtInSiteUrl ?? context.siteAddress,
     motionScript: readMotionRuntime()?.code ?? "",
+    siteName: chrome.siteName,
+    logo: chrome.logo
+      ? {
+          src: chrome.logo.url,
+          alt: chrome.logo.alt,
+          width: chrome.logo.width,
+          height: chrome.logo.height,
+        }
+      : null,
+    socialLinks: chrome.socialLinks,
+    footerText: chrome.footerText,
   };
 }

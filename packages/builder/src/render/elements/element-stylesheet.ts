@@ -299,6 +299,11 @@ ${tablet} { :where(.lintel-site-header__nav, .lintel-site-header__button) { disp
 :where(.lintel-mega) { display: flex; gap: var(--lintel-space-2); margin: 0; padding: 0; list-style: none; }
 :where(.lintel-mega__link, .lintel-mega__toggle) { display: inline-flex; align-items: center; gap: var(--lintel-space-1); min-block-size: 2.75rem; padding: 0 var(--lintel-space-3); border-radius: var(--lintel-radius-button); color: inherit; text-decoration: none; font-weight: 500; cursor: pointer; list-style: none; }
 :where(.lintel-mega__toggle)::-webkit-details-marker { display: none; }
+:where(.lintel-mega__link--button) { margin-inline-start: var(--lintel-space-2); }
+:where(.lintel-site-header__empty-menu) { margin-inline-start: auto; }
+:where(.lintel-empty-menu) { display: inline-flex; align-items: center; gap: var(--lintel-space-1); min-block-size: 2.25rem; padding: 0 var(--lintel-space-3); border: 1px dashed currentColor; border-radius: var(--lintel-radius-button); background: transparent; color: inherit; font: inherit; font-size: 0.875rem; opacity: 0.75; cursor: pointer; }
+:where(.lintel-empty-menu:hover) { opacity: 1; }
+:where(.lintel-empty-menu__icon) { inline-size: 1rem; block-size: 1rem; }
 :where(.lintel-mega__link[aria-current="page"]) { color: var(--lintel-color-brand); }
 :where(.lintel-mega__chevron) { inline-size: 1rem; block-size: 1rem; transition: rotate 0.15s; }
 :where(.lintel-mega__disclosure[open] .lintel-mega__chevron) { rotate: 180deg; }

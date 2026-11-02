@@ -5,15 +5,22 @@ import {
   type PageDocument,
   type ProductListData,
 } from "@lintel/builder-model";
+import type { CanvasSite } from "../canvas/canvas-frame-script.js";
+import { sampleSite } from "../render/elements/navigation.js";
 import type { BuilderDataSources } from "./data-sources.js";
 
 /**
  * What the canvas shows in dynamic elements: each collection list gets its collection's
  * sample entries (up to its limit), and an item page the first sample of its collection,
  * so a design is made with real-looking content. Lists without samples show each field's
- * name instead (see the collection list's drawing).
+ * name instead (see the collection list's drawing). Headers and footers show the site's own
+ * name, logo and menus when the app passes them, else a sample site's.
  */
-export function canvasPageData(document: PageDocument, sources: BuilderDataSources): PageData {
+export function canvasPageData(
+  document: PageDocument,
+  sources: BuilderDataSources,
+  canvasSite?: CanvasSite,
+): PageData {
   const samplesOf = (handle: string) =>
     sources.collections.find((collection) => collection.handle === handle)?.samples ?? [];
   const lists: Record<string, CollectionListData> = {};
@@ -44,8 +51,26 @@ export function canvasPageData(document: PageDocument, sources: BuilderDataSourc
     }
   }
   const itemFor = String(document.root.props.itemDesignFor ?? "");
+  const menus = sources.menus;
+  const site =
+    menus || canvasSite?.siteName !== undefined
+      ? {
+          ...sampleSite,
+          ...(canvasSite?.siteName !== undefined && {
+            siteName: canvasSite.siteName,
+            logo: canvasSite.logo ?? null,
+            socialLinks: canvasSite.socialLinks ?? [],
+            footerText: canvasSite.footerText ?? "",
+          }),
+          ...(menus && {
+            menu: menus.find((menu) => menu.handle === "main")?.links ?? [],
+            menus: Object.fromEntries(menus.map((menu) => [menu.handle, menu.links])),
+          }),
+        }
+      : undefined;
   const product = itemFor === "shop:products" ? sources.sampleProducts?.[0] : undefined;
   return {
+    site,
     lists,
     productLists,
     item: itemFor && !product ? samplesOf(itemFor)[0] : undefined,

@@ -5,9 +5,10 @@ Pages for each page of a starter site (the templates are plain data in
 `@lintel/builder-model`, `src/starter-sites`). Each page gets its title, summary and design
 through the entries service, so it is checked and gets a revision like any other save.
 
-| Method and path                 | Permission       | Body / success                                 |
-| ------------------------------- | ---------------- | ---------------------------------------------- |
-| `POST /starter-sites/:id/apply` | `entries:create` | `{ useTheme?, publish? }` → 201 the pages made |
+| Method and path                         | Permission       | Body / success                                                 |
+| --------------------------------------- | ---------------- | -------------------------------------------------------------- |
+| `GET /starter-sites/:id/existing-pages` | `entries:read`   | → `{ pageCount, hasHome, clashes }`                            |
+| `POST /starter-sites/:id/apply`         | `entries:create` | `{ useTheme?, publish?, existingPages? }` → 201 the pages made |
 
 As far as the person is allowed, it also:
 
@@ -17,14 +18,26 @@ As far as the person is allowed, it also:
   `entry.published` so webhooks and the website's cache follow;
 - fills the main menu with a link to each page, if the menu is empty (`navigation:update`).
 
-Nothing that exists is changed: a page whose address is in use gets the next free one
-(`menu-2`), and the response says which. There is no repository; everything is done
-through the entries, navigation and website services.
+The template's home page starts the page tree and its other pages go under it ("/about").
 
-| File                       | What it does                                     |
-| -------------------------- | ------------------------------------------------ |
-| `starter-sites.routes.ts`  | The endpoint                                     |
-| `starter-sites.service.ts` | Making the pages, the theme and the menu         |
-| `starter-sites.schema.ts`  | The request and response                         |
-| `starter-sites.errors.ts`  | An unknown template                              |
-| `starter-sites.test.ts`    | Applying templates, permissions, taken addresses |
+A site that has pages already is never given a second home page silently. Applying answers
+409 `SITE_HAS_PAGES` unless `existingPages` says what to do:
+
+- `"replace"` (needs `entries:delete`): the site's pages go to the recycle bin, links to
+  them leave the main menu, and the template's pages take their place;
+- `"alongside"`: the site keeps its home page (the template's is skipped, `skippedHome`)
+  and the template's other pages go under it; one whose address is taken gets the next
+  free one and says so in its title ("About (2)" at "/about-2").
+
+`existing-pages` tells the admin what it would meet, to ask in plain words. The only query
+of its own is in `starter-sites.repository.ts`; the rest goes through the entries,
+navigation, recycle bin and website services.
+
+| File                          | What it does                                |
+| ----------------------------- | ------------------------------------------- |
+| `starter-sites.routes.ts`     | The endpoint                                |
+| `starter-sites.service.ts`    | Making the pages, the theme and the menu    |
+| `starter-sites.schema.ts`     | The request and response                    |
+| `starter-sites.errors.ts`     | An unknown template; a site that has pages  |
+| `starter-sites.repository.ts` | The pages a template would join             |
+| `starter-sites.test.ts`       | Applying, replacing, alongside, permissions |

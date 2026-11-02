@@ -1,6 +1,7 @@
 import type {
   BindableField,
   DataCollection,
+  DataMenuLink,
   DataSourceKind,
   PageDocument,
   PageNode,
@@ -21,6 +22,11 @@ export interface BuilderDataSources {
   productCollections: readonly { value: string; label: string }[];
   /** A few of the shop's products, for product grids on the canvas. */
   sampleProducts?: readonly ShopProduct[];
+  /**
+   * The site's menus with their links, so headers and menus on the canvas show the real
+   * thing (and "Which menu" can offer them). Without them the canvas shows a sample menu.
+   */
+  menus?: readonly { handle: string; name: string; links: readonly DataMenuLink[] }[];
 }
 
 export const noDataSources: BuilderDataSources = {

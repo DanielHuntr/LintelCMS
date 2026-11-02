@@ -2,10 +2,12 @@ import { findCollectionByIdOrFail } from "../collections/collections.service.js"
 import { findRootPlaces, placeEntryUrl } from "../content-roots/content-roots.service.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { buildEntryUrl } from "../delivery/entry-urls.js";
+import { findAncestorIds } from "../entries/entries.repository.js";
 import { findEntryOrFail } from "../entries/entries.service.js";
 import { findSiteByIdOrFail } from "../sites/sites.service.js";
 import {
   countChildrenOf,
+  findNodeRows,
   findNodesMentioning,
   findPersonNames,
 } from "./content-tree.repository.js";
@@ -42,6 +44,11 @@ export interface EntryInfo {
   childCount: number;
   /** Its children are listed in the workspace rather than in the tree. */
   childrenAsCollection: boolean;
+  /**
+   * The pages above it that aren't live, from the top down. Publishing it alone would put
+   * it on the site under a parent visitors can't see, so the admin offers to publish them too.
+   */
+  unpublishedAncestors: Array<{ id: string; title: string }>;
 }
 
 /** What the workspace's Info tab shows: where it lives, who made it, and what links to it. */
@@ -94,5 +101,19 @@ export async function findEntryInfo(
     usedBy: await describeNodes(database, usedBy),
     childCount: (await countChildrenOf(database, [entry.id])).get(entry.id) ?? 0,
     childrenAsCollection: collection.childrenAsCollection,
+    unpublishedAncestors: await findUnpublishedAncestors(database, entry.id),
   };
+}
+
+async function findUnpublishedAncestors(
+  database: DatabaseOrTransaction,
+  entryId: string,
+): Promise<Array<{ id: string; title: string }>> {
+  // The path starts with the entry itself; its ancestors are the rest, nearest first.
+  const ancestorIds = (await findAncestorIds(database, entryId)).slice(1).reverse();
+  const rows = new Map((await findNodeRows(database, ancestorIds)).map((row) => [row.id, row]));
+  return ancestorIds.flatMap((id) => {
+    const row = rows.get(id);
+    return row && row.status !== "published" ? [{ id, title: row.title ?? "" }] : [];
+  });
 }

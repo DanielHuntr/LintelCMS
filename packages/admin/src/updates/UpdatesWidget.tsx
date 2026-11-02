@@ -1,4 +1,4 @@
-import { CircleCheck, ShieldAlert } from "lucide-react";
+import { CircleCheck, ShieldAlert, TriangleAlert } from "lucide-react";
 import { LoadError } from "../api/LoadError.js";
 import { LinkButton } from "../design/LinkButton.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
@@ -6,7 +6,10 @@ import { Skeleton } from "../design/Skeleton.js";
 import { t } from "../i18n/strings.js";
 import { useAbout, useUpdateSummary } from "./updates.queries.js";
 
-/** The dashboard's Updates widget: "2 updates available · 1 security", or up to date. */
+/**
+ * The dashboard's Updates widget: "2 updates available · 1 security", up to date, or that
+ * the last look for updates didn't work.
+ */
 export function UpdatesWidget() {
   const summary = useUpdateSummary();
   const about = useAbout();
@@ -21,7 +24,20 @@ export function UpdatesWidget() {
       </LoadingRegion>
     );
   }
-  const { count, securityCount } = summary.data;
+  const { count, securityCount, checkFailed } = summary.data;
+  if (count === 0 && checkFailed) {
+    return (
+      <div className="flex flex-col items-start gap-4">
+        <p className="flex items-center gap-2 text-body text-label">
+          <TriangleAlert aria-hidden="true" strokeWidth={1.75} className="size-5 text-warning" />
+          {t("dashboard.updates.checkFailed")}
+        </p>
+        <LinkButton to="/settings/updates" variant="tinted" size="small">
+          {t("dashboard.updates.open")}
+        </LinkButton>
+      </div>
+    );
+  }
   if (count === 0) {
     return (
       <p className="flex items-center gap-2 text-body text-label">

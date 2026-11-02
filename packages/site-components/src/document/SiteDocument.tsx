@@ -58,11 +58,13 @@ export function SiteDocument({
       </head>
       <body className={`lintel-site lintel-template-${template.id}`}>
         <SkipLink label={labels.skipToContent} />
-        <Header chrome={chrome} labels={labels} layout={template.headerLayout} />
+        {!design?.ownHeader && (
+          <Header chrome={chrome} labels={labels} layout={template.headerLayout} />
+        )}
         <main id={MAIN_CONTENT_ID} className="lintel-main" tabIndex={-1}>
           {template.renderView({ view, chrome, labels })}
         </main>
-        <Footer chrome={chrome} labels={labels} year={year} />
+        {!design?.ownFooter && <Footer chrome={chrome} labels={labels} year={year} />}
       </body>
     </html>
   );

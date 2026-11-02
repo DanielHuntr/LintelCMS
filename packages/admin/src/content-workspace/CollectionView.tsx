@@ -39,6 +39,8 @@ interface CollectionViewProps {
   /** The search, filter, sort and page, when the address keeps them; otherwise kept here. */
   query?: CollectionQuery;
   onQueryChange?: (query: CollectionQuery) => void;
+  /** Lists everything under the place, every level down (a page tree shown as a list). */
+  allLevels?: boolean;
 }
 
 const statusOptions: readonly ("all" | EntryStatus)[] = ["all", "draft", "published", "scheduled"];
@@ -54,6 +56,7 @@ export function CollectionView({
   root,
   query,
   onQueryChange,
+  allLevels = false,
 }: CollectionViewProps) {
   const tree = useContentTree();
   const now = useNow();
@@ -62,7 +65,11 @@ export function CollectionView({
   const change = (next: CollectionQuery) => (onQueryChange ?? setOwnQuery)(next);
   const [searchText, setSearchText] = useState(current.search ?? "");
   const search = useDebouncedValue(searchText.trim(), 300);
-  const effective = { ...current, search: search === "" ? undefined : search };
+  const effective = {
+    ...current,
+    search: search === "" ? undefined : search,
+    allLevels: allLevels || undefined,
+  };
   const items = useCollectionItems(place, effective);
   const [layout, setLayout] = useState<Layout>("table");
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
@@ -81,7 +88,11 @@ export function CollectionView({
   const rows = items.data?.items ?? [];
   const pages = Math.max(1, Math.ceil((items.data?.total ?? 0) / COLLECTION_PAGE_SIZE));
   const page = current.page ?? 1;
-  const isFiltered = effective.search !== undefined || current.status !== undefined;
+  const isFiltered =
+    effective.search !== undefined || current.status !== undefined || current.type !== undefined;
+  const types = items.data?.types ?? [];
+  const showsAddress = rows.some((row) => row.url !== null);
+  const showsType = types.length > 1 || current.type !== undefined;
   const selectedNodes = rows.filter((row) => selected.has(row.id));
 
   function toggleSort(sort: string) {
@@ -135,6 +146,25 @@ export function CollectionView({
             ))}
           </select>
         </label>
+        {showsType && (
+          <label className="flex items-center gap-2 text-footnote text-label-secondary">
+            {t("collectionView.type")}
+            <select
+              value={current.type ?? ""}
+              onChange={(event) =>
+                change({ ...current, type: event.target.value || undefined, page: undefined })
+              }
+              className="h-9 rounded-control bg-fill/70 px-2 text-body text-label focus-visible:focus-ring"
+            >
+              <option value="">{t("collectionView.type.all")}</option>
+              {types.map((type) => (
+                <option key={type.handle} value={type.handle}>
+                  {type.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <span className="flex-1" />
         <SegmentedControl
           label={t("collectionView.layout")}
@@ -152,7 +182,11 @@ export function CollectionView({
         )}
       </div>
 
-      <BulkActionBar nodes={selectedNodes} onDone={() => setSelected(new Set())} />
+      <BulkActionBar
+        nodes={selectedNodes}
+        selectedKey={tree.selectedKey}
+        onDone={() => setSelected(new Set())}
+      />
 
       {items.isError && <LoadError error={items.error} onRetry={() => void items.refetch()} />}
       {items.isPending && (
@@ -199,6 +233,11 @@ export function CollectionView({
                   current={current}
                   onSort={toggleSort}
                 />
+                {showsAddress && (
+                  <th scope="col" className="px-3 py-2 font-medium">
+                    {t("collectionView.column.address")}
+                  </th>
+                )}
                 {items.data.columns.map((column) => (
                   <SortableHeader
                     key={column.handle}
@@ -208,6 +247,11 @@ export function CollectionView({
                     onSort={toggleSort}
                   />
                 ))}
+                {showsType && (
+                  <th scope="col" className="px-3 py-2 font-medium">
+                    {t("collectionView.column.type")}
+                  </th>
+                )}
                 <SortableHeader
                   label={t("collectionView.column.status")}
                   sort="status"
@@ -231,6 +275,11 @@ export function CollectionView({
                   <td className="max-w-80 px-3 py-2">
                     <ItemLink row={row} />
                   </td>
+                  {showsAddress && (
+                    <td className="max-w-64 truncate px-3 py-2 font-mono text-footnote text-label-secondary">
+                      {row.url ?? ""}
+                    </td>
+                  )}
                   {items.data.columns.map((column) => (
                     <td
                       key={column.handle}
@@ -239,6 +288,11 @@ export function CollectionView({
                       {formatColumnValue(row.values[column.handle])}
                     </td>
                   ))}
+                  {showsType && (
+                    <td className="px-3 py-2 text-footnote whitespace-nowrap text-label-secondary">
+                      {row.collection.name}
+                    </td>
+                  )}
                   <td className="px-3 py-2">
                     <span className="flex items-center gap-2 text-footnote text-label-secondary">
                       <StatusDot state={nodeState(row)} />

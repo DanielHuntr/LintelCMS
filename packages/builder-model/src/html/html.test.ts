@@ -96,6 +96,8 @@ describe("importing HTML", () => {
           [
             "navigation",
             {
+              menuSource: "custom",
+              menuHandle: "main",
               label: "Main",
               links: [
                 { label: "Home", href: "/" },

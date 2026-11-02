@@ -32,7 +32,9 @@ their service; nothing is stored on the request.
   entries to someone kept to some sites.
 
 Address rules (tidying domains and prefixes, the longest matching prefix, clashes) are pure
-functions in `site-addresses.ts`.
+functions in `site-addresses.ts`. A site with a path prefix and no domains of its own ("/ie")
+answers on the default site's domain: the default site's domains, or any domain no site
+lists when the default site has none.
 
 ## Sites
 

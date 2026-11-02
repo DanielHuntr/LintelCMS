@@ -122,6 +122,15 @@ function UpdatesContent({ overview }: { overview: UpdatesOverview }) {
           isStarting={install.isPending}
           onUpdate={() => setConfirming(true)}
         />
+      ) : overview.problem ? (
+        // The last look didn't work, so it isn't known whether this is the newest version.
+        <div className="rounded-card bg-surface">
+          <EmptyState
+            icon={TriangleAlert}
+            title={t("updates.checkFailedTitle")}
+            description={t("updates.checkFailedText", { version: overview.currentVersion })}
+          />
+        </div>
       ) : (
         <div className="rounded-card bg-surface">
           <EmptyState

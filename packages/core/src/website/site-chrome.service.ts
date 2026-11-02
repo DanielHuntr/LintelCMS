@@ -85,14 +85,30 @@ async function readOwnSiteName(
   return readSetting(database, "siteName");
 }
 
+/**
+ * Another of the site's menus, for a header or menu that chose it ("Which menu" in the
+ * builder), ready for the page: in the language shown, with the site's prefix.
+ */
+export async function loadOtherMenu(
+  database: DatabaseOrTransaction,
+  handle: string,
+  context: SiteContext,
+  locale: string,
+  site?: Site,
+): Promise<MenuItem[]> {
+  const items = await loadMainMenu(database, locale, site, handle);
+  return items.map((item) => toMenuItem(item, (url) => localiseUrl(url, locale, context)));
+}
+
 /** A site may have deleted its main menu; then the header shows the name alone. */
 async function loadMainMenu(
   database: DatabaseOrTransaction,
   locale: string,
   site?: Site,
+  handle: string = mainMenu.handle,
 ): Promise<DeliveredNavigationItem[]> {
   try {
-    return (await deliverNavigation(database, mainMenu.handle, locale, site)).items;
+    return (await deliverNavigation(database, handle, locale, site)).items;
   } catch (error) {
     if (error instanceof NavigationNotFoundError) {
       return [];
@@ -106,6 +122,7 @@ function toMenuItem(item: DeliveredNavigationItem, localise: (url: string) => st
     label: item.label,
     url: item.url === null ? null : localise(item.url),
     newTab: item.newTab,
+    style: item.style,
     current: false,
     children: item.children.map((child) => toMenuItem(child, localise)),
   };

@@ -7,9 +7,14 @@ import { usersTable } from "../users/users.table.js";
 
 /** Database reads and writes for the content tree, nothing else. */
 
-/** Where a list of tree nodes comes from: under one entry, or the top of one collection. */
+/**
+ * Where a list of tree nodes comes from: under one entry, the top of one collection, or
+ * (for the collection view's "Every level") a whole branch, as ids in the tree's order.
+ */
 export type NodePlace =
-  { parentId: string } | { collectionId: string; siteId: string; locale: string };
+  | { parentId: string }
+  | { collectionId: string; siteId: string; locale: string }
+  | { entryIds: readonly string[] };
 
 export interface TreeNodeRow {
   id: string;
@@ -50,6 +55,9 @@ const nodeColumns = {
 };
 
 function placeCondition(place: NodePlace): SQL | undefined {
+  if ("entryIds" in place) {
+    return place.entryIds.length === 0 ? sql`false` : inArray(entriesTable.id, [...place.entryIds]);
+  }
   if ("parentId" in place) {
     return eq(entriesTable.parentId, place.parentId);
   }
@@ -146,6 +154,8 @@ export async function countTopLevelByCollection(
 export interface ItemFilters {
   search?: string;
   status?: EntryStatus;
+  /** Only entries of this content type (collection id). */
+  collectionId?: string;
 }
 
 /** Sort keys the collection view offers; a list column sorts by its stored value. */
@@ -166,6 +176,7 @@ function itemConditions(place: NodePlace, filters: ItemFilters): SQL | undefined
     placeCondition(place),
     escaped ? ilike(titleColumn, `%${escaped}%`) : undefined,
     filters.status ? eq(entriesTable.status, filters.status) : undefined,
+    filters.collectionId ? eq(entriesTable.collectionId, filters.collectionId) : undefined,
   );
 }
 
@@ -180,7 +191,14 @@ export async function listItemRows(
     columns: readonly string[];
     page: { limit: number; offset: number };
   },
-): Promise<(TreeNodeRow & { values: Record<string, unknown>; updatedByName: string | null })[]> {
+): Promise<
+  (TreeNodeRow & {
+    values: Record<string, unknown>;
+    updatedByName: string | null;
+    routePattern: string | null;
+    publishedAt: Date | null;
+  })[]
+> {
   const values =
     options.columns.length === 0
       ? sql<Record<string, unknown>>`'{}'::jsonb`
@@ -190,7 +208,9 @@ export async function listItemRows(
         )})`;
   const ordering =
     typeof options.sort === "string"
-      ? orderings[options.sort]
+      ? options.sort === "manual" && "entryIds" in place
+        ? [givenOrder(place.entryIds)]
+        : orderings[options.sort]
       : [
           options.direction === "asc"
             ? sql`${itemSortExpression(options.sort)} asc nulls last`
@@ -198,7 +218,13 @@ export async function listItemRows(
           desc(entriesTable.createdAt),
         ];
   return database
-    .select({ ...nodeColumns, values, updatedByName: usersTable.name })
+    .select({
+      ...nodeColumns,
+      values,
+      updatedByName: usersTable.name,
+      routePattern: collectionsTable.routePattern,
+      publishedAt: entriesTable.publishedAt,
+    })
     .from(entriesTable)
     .innerJoin(collectionsTable, eq(collectionsTable.id, entriesTable.collectionId))
     .leftJoin(usersTable, eq(usersTable.id, entriesTable.updatedBy))
@@ -206,6 +232,32 @@ export async function listItemRows(
     .orderBy(...ordering)
     .limit(options.page.limit)
     .offset(options.page.offset);
+}
+
+/** The order the ids were given in: a branch's tree order, for "Every level". */
+function givenOrder(entryIds: readonly string[]): SQL {
+  if (entryIds.length === 0) return sql`1`;
+  return sql`array_position(array[${sql.join(
+    entryIds.map((id) => sql`${id}`),
+    sql`, `,
+  )}]::uuid[], ${entriesTable.id})`;
+}
+
+/** The content types of the entries at a place, for the collection view's type filter. */
+export async function listTypesAt(
+  database: DatabaseOrTransaction,
+  place: NodePlace,
+): Promise<{ id: string; handle: string; name: string }[]> {
+  return database
+    .selectDistinct({
+      id: collectionsTable.id,
+      handle: collectionsTable.handle,
+      name: collectionsTable.name,
+    })
+    .from(entriesTable)
+    .innerJoin(collectionsTable, eq(collectionsTable.id, entriesTable.collectionId))
+    .where(placeCondition(place))
+    .orderBy(asc(collectionsTable.name));
 }
 
 export async function countItems(

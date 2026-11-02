@@ -158,6 +158,14 @@ export const contentTreeStrings = {
   "workspace.saveAndPublish": "Save and publish",
   "workspace.saveAndPublishChanges": "Save and publish changes",
   "workspace.publishOptions": "More publishing options",
+  "workspace.parentUnpublished.title":
+    "{count, plural, one {Its parent page isn’t published} other {The pages above it aren’t published}}",
+  "workspace.parentUnpublished.message":
+    "{count, plural, one {“{title}” is under “{parent}”, which isn’t on your website yet.} other {“{title}” is under # pages that aren’t on your website yet, starting with “{parent}”.}} Published on its own, it goes live under a page visitors can’t open.",
+  "workspace.parentUnpublished.withParent":
+    "{count, plural, one {Publish with its parent} other {Publish with the pages above it}}",
+  "workspace.parentUnpublished.alone": "Publish this page only",
+  "workspace.parentUnpublished.failed": "“{title}” couldn’t be published: {reason}",
   "workspace.schedule": "Schedule…",
   "workspace.unpublish": "Unpublish",
   "workspace.preview": "Preview",

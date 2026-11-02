@@ -333,6 +333,10 @@ export function runCanvasFrame(snap: typeof snapBox): void {
     if (editing && editing.contains(event.target as Node)) return;
     finishEditing(true);
     send({ type: "select", nodeId: nodeIdAt(event.target) });
+    const openMenu =
+      event.target instanceof Element ? event.target.closest("[data-lintel-open-menu]") : null;
+    if (openMenu)
+      send({ type: "openMenu", nodeId: openMenu.getAttribute("data-lintel-open-menu") });
   });
 
   document.addEventListener("dblclick", (event) => {
@@ -562,6 +566,14 @@ export interface CanvasSite {
   baseUrl: string | null;
   /** The motion runtime (`@lintel/motion/site-runtime.js`), for previews. Empty for none. */
   motionScript: string;
+  /**
+   * The site's name, logo, social links and footer words, so Header and Footer elements on
+   * the canvas show the site's own rather than a sample's.
+   */
+  siteName?: string;
+  logo?: { src: string; alt: string; width: number | null; height: number | null } | null;
+  socialLinks?: readonly string[];
+  footerText?: string;
 }
 
 const escapeAttribute = (value: string) => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
@@ -592,8 +604,13 @@ export interface CanvasScriptAddresses {
 export function canvasFrameSource(site?: CanvasSite, scripts?: CanvasScriptAddresses): string {
   const base = site?.baseUrl ? `<base href="${escapeAttribute(site.baseUrl)}">` : "";
   const bodyClass = site ? ` class="${escapeAttribute(site.bodyClassName)}"` : "";
-  const header = site?.headerHtml ? `<div inert>${site.headerHtml}</div>` : "";
-  const footer = site?.footerHtml ? `<div inert>${site.footerHtml}</div>` : "";
+  // Marked, so a page with its own header or footer can hide the site's (see PageBuilder).
+  const header = site?.headerHtml
+    ? `<div inert data-lintel-site-chrome="header">${site.headerHtml}</div>`
+    : "";
+  const footer = site?.footerHtml
+    ? `<div inert data-lintel-site-chrome="footer">${site.footerHtml}</div>`
+    : "";
   const motion = !site?.motionScript
     ? ""
     : scripts?.motion

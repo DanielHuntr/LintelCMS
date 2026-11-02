@@ -1,4 +1,4 @@
-import { ChevronRight, Ellipsis, type LucideIcon } from "lucide-react";
+import { Check, ChevronRight, Ellipsis, type LucideIcon } from "lucide-react";
 import {
   useState,
   type DragEvent,
@@ -11,6 +11,7 @@ import { t } from "../i18n/strings.js";
 import { StatusDot } from "./StatusDot.js";
 import { TreeActionsMenu, type ActionItem } from "./TreeActionsMenu.js";
 import type { NodeState } from "./treeActions.js";
+import type { SelectGesture } from "./treeSelection.js";
 import type { DropPosition, TreeKey } from "./treeState.js";
 
 /** Pointer and drop handlers for rows that can be dragged or dropped on. */
@@ -44,6 +45,17 @@ interface TreeRowProps {
   actions?: readonly ActionItem[];
   drag?: RowDragHandlers;
   onFocus: () => void;
+  /**
+   * For entries: picks the row along with others (Ctrl/⌘-click or Space toggles it,
+   * Shift-click picks the run), and Shift and an arrow key extends the pick to the next row.
+   */
+  selecting?: {
+    isPicked: boolean;
+    /** Some row is picked, so the tree is choosing several rather than opening one. */
+    isActive: boolean;
+    onSelect: (gesture: SelectGesture) => void;
+    onExtendTo: (key: TreeKey) => void;
+  };
   /** The branch under the row, when it is expanded. */
   children?: ReactNode;
 }
@@ -72,6 +84,7 @@ export function TreeRow({
   actions,
   drag,
   onFocus,
+  selecting,
   children,
 }: TreeRowProps) {
   const [menuAt, setMenuAt] = useState<{ x: number; y: number } | null>(null);
@@ -81,6 +94,19 @@ export function TreeRow({
   function handleKeyDown(event: KeyboardEvent<HTMLLIElement>) {
     if (event.target !== event.currentTarget) return;
     const row = event.currentTarget;
+    if (selecting && event.key === " ") {
+      event.preventDefault();
+      selecting.onSelect("toggle");
+      return;
+    }
+    if (selecting && event.shiftKey && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+      event.preventDefault();
+      if (!selecting.isPicked) selecting.onSelect("toggle");
+      moveFocus(event.key, row, { isExpandable, isExpanded, parentKey, onToggle, onOpen });
+      const focused = document.activeElement as HTMLElement | null;
+      if (focused?.dataset.key && focused !== row) selecting.onExtendTo(focused.dataset.key);
+      return;
+    }
     if ((event.shiftKey && event.key === "F10") || event.key === "ContextMenu") {
       if (!hasActions) return;
       event.preventDefault();
@@ -109,8 +135,14 @@ export function TreeRow({
       role="treeitem"
       aria-level={depth + 1}
       aria-expanded={isExpandable ? isExpanded : undefined}
-      aria-selected={isSelected}
-      aria-label={state ? `${label}, ${t(`tree.status.${stateLabel(state)}`)}` : label}
+      aria-selected={selecting?.isActive ? selecting.isPicked : isSelected}
+      aria-label={[
+        label,
+        state ? t(`tree.status.${stateLabel(state)}`) : undefined,
+        selecting?.isPicked ? t("tree.selection.selectedState") : undefined,
+      ]
+        .filter(Boolean)
+        .join(", ")}
       aria-keyshortcuts={hasActions ? "Shift+F10" : undefined}
       tabIndex={isTabStop ? 0 : -1}
       data-tree-row=""
@@ -129,12 +161,23 @@ export function TreeRow({
         onDragLeave={drag?.onDragLeave}
         onDrop={drag?.onDrop}
         onContextMenu={openMenuAtPointer}
-        onClick={onOpen}
+        onClick={(event) => {
+          if (selecting && (event.metaKey || event.ctrlKey || event.shiftKey)) {
+            event.preventDefault();
+            selecting.onSelect(event.shiftKey ? "range" : "toggle");
+            return;
+          }
+          onOpen();
+        }}
         style={{ paddingLeft: 6 + depth * INDENT_PX }}
         className={classNames(
           "group relative flex h-8 cursor-default items-center gap-1.5 rounded-control pe-1 text-body select-none",
           "transition-colors duration-150 ease-standard",
-          isSelected ? "bg-accent/12 font-medium text-accent" : "text-label hover:bg-fill",
+          selecting?.isPicked
+            ? "bg-accent/18 font-medium text-label ring-1 ring-accent/50 ring-inset"
+            : isSelected && !selecting?.isActive
+              ? "bg-accent/12 font-medium text-accent"
+              : "text-label hover:bg-fill",
           drag?.dropIndicator === "inside" && "ring-2 ring-accent ring-inset",
           drag?.dropIndicator === "before" &&
             "before:absolute before:inset-x-1 before:-top-px before:h-0.5 before:rounded-full before:bg-accent",
@@ -161,14 +204,23 @@ export function TreeRow({
             )}
           />
         </span>
-        <Icon
-          aria-hidden="true"
-          strokeWidth={1.75}
-          className={classNames(
-            "size-4 shrink-0",
-            isSelected ? "text-accent" : "text-label-secondary",
-          )}
-        />
+        {selecting?.isPicked ? (
+          <span
+            aria-hidden="true"
+            className="flex size-4 shrink-0 items-center justify-center rounded-full bg-accent-fill text-on-accent"
+          >
+            <Check strokeWidth={3} className="size-2.5" />
+          </span>
+        ) : (
+          <Icon
+            aria-hidden="true"
+            strokeWidth={1.75}
+            className={classNames(
+              "size-4 shrink-0",
+              isSelected ? "text-accent" : "text-label-secondary",
+            )}
+          />
+        )}
         <span className="min-w-0 flex-1 truncate" title={label}>
           {label}
         </span>
