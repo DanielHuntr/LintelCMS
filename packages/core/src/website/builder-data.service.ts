@@ -1,4 +1,4 @@
-import type { DataCollection, ShopProduct } from "@lintel/builder-model";
+import type { DataCollection, DataForm, ShopProduct } from "@lintel/builder-model";
 import type { FastifyInstance } from "fastify";
 import { findBlueprintByIdOrFail } from "../blueprints/blueprints.service.js";
 import { findCollectionOrFail } from "../collections/collections.service.js";
@@ -7,7 +7,7 @@ import { deliverTaxonomy } from "../taxonomies/taxonomies-delivery.service.js";
 import { bindableFieldsOf, entryAsItem } from "./bound-entries.js";
 import { localiseUrl } from "./site-chrome.service.js";
 import { readSiteContext, type SiteDependencies } from "./site-pages.service.js";
-import { readStorefrontProduct } from "./site-sources.js";
+import { readForm, readStorefrontProduct } from "./site-sources.js";
 
 /**
  * What the page builder offers to show: the site's collections (with their fields, the
@@ -22,6 +22,8 @@ export interface BuilderData {
   products: Array<{ value: string; label: string }>;
   productCollections: Array<{ value: string; label: string }>;
   sampleProducts: ShopProduct[];
+  /** Every form, as a page draws it, so a Form element on the canvas shows the real form. */
+  sampleForms: DataForm[];
 }
 
 const SAMPLES = 3;
@@ -114,5 +116,12 @@ export async function readBuilderData(
       .map((item) => choice(item, "title"))
       .filter((item) => item.value),
     sampleProducts: sampleProducts.slice(0, 8),
+    sampleForms: listOf(forms, "items", "forms").flatMap((item) => {
+      const form = readForm(item);
+      // Step dividers split a form into pages; the website's delivery API leaves them out too.
+      return form
+        ? [{ ...form, fields: form.fields.filter((field) => field.type !== "step") }]
+        : [];
+    }),
   };
 }

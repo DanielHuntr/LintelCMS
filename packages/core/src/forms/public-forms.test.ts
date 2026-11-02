@@ -343,6 +343,22 @@ describe("forms on websites", () => {
     expect((await forms.api("GET", `/media/${libraryImageId}`)).statusCode).toBe(200);
   });
 
+  // The builder's Form element said "Choose a form in the Content panel." even with a form
+  // chosen, because the canvas had no form to draw.
+  it("gives the page builder every form as a page draws it, without step dividers", async () => {
+    const form = await forms.createForm("Quote", "quote_request");
+
+    const response = await forms.api("GET", "/website/builder-data");
+
+    const drawn = response
+      .json()
+      .sampleForms.find((sample: { handle: string }) => sample.handle === form.handle);
+    expect(drawn).toMatchObject({ name: "Quote", acceptingSubmissions: true });
+    const types = drawn.fields.map((field: { type: string }) => field.type);
+    expect(types).toContain("email");
+    expect(types).not.toContain("step");
+  });
+
   it("works as a plain HTML form, without JavaScript", async () => {
     const form = await forms.createForm("Contact", "contact");
     const token = await forms.tokenFor(form);

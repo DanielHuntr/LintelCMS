@@ -129,6 +129,21 @@ describe("the element library in the panels", () => {
     expect(canvasPageData(document, sources).lists?.[list.id]?.items).toHaveLength(1);
   });
 
+  it("gives the canvas the site's forms, so a Form element draws the chosen form", () => {
+    const form = {
+      handle: "contact",
+      name: "Contact",
+      submitLabel: "Send",
+      acceptingSubmissions: true,
+      fields: [],
+      spamProtection: { honeypotField: "_website", tokenField: "_token", token: "" },
+      confirmationMessage: "Thanks",
+    };
+    const sources: BuilderDataSources = { ...noDataSources, sampleForms: [form] };
+
+    expect(canvasPageData(pageWith(), sources).forms).toEqual({ contact: form });
+  });
+
   it("binds a heading in a list to a field, and back to typed words", async () => {
     const document = pageWith({ type: "collectionList", props: { collection: "posts" } });
     const heading = (document.root.children[0] as PageNode).children[0]?.children[2] as PageNode;

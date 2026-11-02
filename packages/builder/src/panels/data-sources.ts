@@ -1,6 +1,7 @@
 import type {
   BindableField,
   DataCollection,
+  DataForm,
   DataMenuLink,
   DataSourceKind,
   PageDocument,
@@ -22,6 +23,8 @@ export interface BuilderDataSources {
   productCollections: readonly { value: string; label: string }[];
   /** A few of the shop's products, for product grids on the canvas. */
   sampleProducts?: readonly ShopProduct[];
+  /** The site's forms, as a page draws them, so a Form element on the canvas shows the form. */
+  sampleForms?: readonly DataForm[];
   /**
    * The site's menus with their links, so headers and menus on the canvas show the real
    * thing (and "Which menu" can offer them). Without them the canvas shows a sample menu.

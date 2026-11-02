@@ -78,5 +78,6 @@ export function canvasPageData(
     products: Object.fromEntries(
       (sources.sampleProducts ?? []).map((sample) => [sample.handle, sample]),
     ),
+    forms: Object.fromEntries((sources.sampleForms ?? []).map((form) => [form.handle, form])),
   };
 }
