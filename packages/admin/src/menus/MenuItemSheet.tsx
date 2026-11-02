@@ -39,6 +39,7 @@ export function MenuItemSheet({
   const [url, setUrl] = useState(item?.url ?? "");
   const [label, setLabel] = useState(item?.label ?? "");
   const [newTab, setNewTab] = useState(item?.newTab ?? false);
+  const [isButton, setIsButton] = useState(item?.style === "button");
   const [isPicking, setIsPicking] = useState(false);
   const [problems, setProblems] = useState<{ link?: string; label?: string }>({});
 
@@ -63,6 +64,7 @@ export function MenuItemSheet({
         entryId: kind === "page" ? entryId : null,
         url: kind === "address" ? url.trim() : null,
         newTab,
+        style: isButton ? "button" : "link",
       },
       kind === "page" ? picked : null,
     );
@@ -149,6 +151,17 @@ export function MenuItemSheet({
           onChange={(event) => setLabel(event.target.value)}
         />
         <Toggle label={t("menus.item.newTab")} checked={newTab} onCheckedChange={setNewTab} />
+        <div className="flex flex-col gap-1">
+          <Toggle
+            label={t("menus.item.button")}
+            checked={isButton}
+            onCheckedChange={setIsButton}
+            describedBy="menu-item-button-hint"
+          />
+          <p id="menu-item-button-hint" className="text-caption text-label-secondary">
+            {t("menus.item.buttonHint")}
+          </p>
+        </div>
         <button type="submit" className="hidden" aria-hidden="true" tabIndex={-1} />
       </form>
 

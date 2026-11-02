@@ -96,6 +96,21 @@
   font-weight: 600;
 }
 
+/* A menu item drawn as a button, such as "Book now". */
+.lintel-menu__link--button {
+  margin-inline-start: var(--lintel-space-2);
+  border-radius: var(--lintel-radius-button, var(--lintel-radius-small));
+  background: var(--lintel-color-brand, var(--lintel-color-link));
+  color: var(--lintel-color-on-brand, #fff);
+  font-weight: 600;
+}
+
+.lintel-menu__link--button:hover,
+.lintel-menu__link--button[aria-current="page"] {
+  color: var(--lintel-color-on-brand, #fff);
+  filter: brightness(1.08);
+}
+
 summary.lintel-menu__link {
   list-style: none;
 }

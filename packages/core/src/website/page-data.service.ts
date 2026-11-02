@@ -16,7 +16,7 @@ import { TaxonomyNotFoundError, TermNotFoundError } from "../taxonomies/taxonomi
 import type { DeliveredEntry } from "../delivery/delivery.schema.js";
 import { entryAsItem } from "./bound-entries.js";
 import { entryTitle } from "./delivered-to-site.js";
-import { localiseUrl } from "./site-chrome.service.js";
+import { loadOtherMenu, localiseUrl, markCurrent } from "./site-chrome.service.js";
 import type { PageRequest } from "./site-pages.service.js";
 import { noSources } from "./site-sources.js";
 
@@ -65,7 +65,7 @@ export async function loadPageData(
     if (list) productLists[node.id] = list;
   }
   return {
-    site: siteData(request),
+    site: { ...siteData(request), menus: await loadChosenMenus(request, document) },
     item: options.item,
     product: options.product,
     lists,
@@ -80,8 +80,31 @@ function menuLinks(items: readonly MenuItem[]): DataSite["menu"] {
     label: item.label,
     url: item.url,
     current: item.current,
+    style: item.style,
     children: menuLinks(item.children),
   }));
+}
+
+/** The menus other than the main one that the page's headers and menus chose, by handle. */
+async function loadChosenMenus(
+  request: PageRequest,
+  document: PageDocument,
+): Promise<Record<string, DataSite["menu"]>> {
+  const handles = new Set(
+    findNodesOfType(document.root, ["siteHeader", "mobileMenu", "navigation"])
+      .filter((node) => node.props.menuSource === "site")
+      .map((node) => node.props.menuHandle)
+      .filter((handle): handle is string => typeof handle === "string" && handle !== "main"),
+  );
+  const { dependencies, context, locale } = request;
+  const menus: Record<string, DataSite["menu"]> = {};
+  for (const handle of handles) {
+    const items = await dependencies.cache.shareValue(`menu:${handle}:${locale}`, () =>
+      loadOtherMenu(dependencies.database, handle, context, locale, dependencies.site),
+    );
+    menus[handle] = menuLinks(markCurrent(items, request.path));
+  }
+  return menus;
 }
 
 function siteData(request: PageRequest): DataSite {

@@ -15,3 +15,14 @@ export class NavigationHandleTakenError extends HttpError {
     );
   }
 }
+
+/** "In the main menu" is for pages: entries of a page tree, which have addresses of their own. */
+export class NotAPageError extends HttpError {
+  constructor() {
+    super(
+      400,
+      "NOT_A_PAGE",
+      "Only pages can go in a menu this way. Add other links from the Menus screen.",
+    );
+  }
+}

@@ -22,6 +22,7 @@ import { classNames } from "../design/classNames.js";
 import { titleFieldHandle } from "../fields/field.types.js";
 import { textValue } from "../fields/fieldValues.js";
 import { t } from "../i18n/strings.js";
+import { PageMenuSection } from "../menus/PageMenuSection.js";
 import { PluginEditorPanels } from "../plugins/PluginEditorPanels.js";
 import { EntryPreviewPane } from "../preview/EntryPreviewPane.js";
 import { useCan } from "../session/SessionContext.js";
@@ -84,8 +85,9 @@ export function EntryWorkspace({
     "slug",
     ...blueprint.fields.map((field) => field.handle),
   ];
-  const listsChildren =
-    (info.data?.childrenAsCollection ?? false) && (info.data?.childCount ?? 0) > 0;
+  // Any page with pages under it can show them as a list ("Show as list" in the tree).
+  const listsChildren = (info.data?.childCount ?? 0) > 0;
+  const childrenInTree = !(info.data?.childrenAsCollection ?? false);
   const tabs = visibleWorkspaceTabs({ listsChildren });
   const selectedTab = tab && tabs.includes(tab) ? tab : "content";
 
@@ -229,10 +231,14 @@ export function EntryWorkspace({
           <CollectionView
             place={{ parentId: entry.id }}
             placeName={title || t("editor.untitled")}
+            allLevels={childrenInTree}
           />
         )}
         {selectedTab === "settings" && (
           <div className="flex max-w-xl flex-col overflow-hidden rounded-card bg-surface">
+            {collection.structure === "tree" && Boolean(collection.routePattern) && (
+              <PageMenuSection entryId={entry.id} pageTitle={title || t("editor.untitled")} />
+            )}
             <TranslationsSection
               collectionHandle={collection.handle}
               entry={entry}

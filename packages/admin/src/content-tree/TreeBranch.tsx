@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useState, type DragEvent } from "react";
+import { useEffect, useState, type DragEvent } from "react";
 import { Skeleton } from "../design/Skeleton.js";
 import { t } from "../i18n/strings.js";
 import { useContentTree } from "./ContentTreeContext.js";
@@ -113,6 +113,8 @@ function EntryTreeItem({
   const actions = useActionItems({ kind: "entry", node });
   const [dropAt, setDropAt] = useState<DropPosition | undefined>();
   const showsChildren = node.childCount > 0 && !node.childrenAsCollection;
+  const { rememberNode } = tree;
+  useEffect(() => rememberNode(node), [rememberNode, node]);
   const isExpanded = showsChildren && tree.expanded.has(node.id);
   const title = node.title || t("tree.untitled");
 
@@ -160,12 +162,19 @@ function EntryTreeItem({
       isSelected={tree.selectedKey === node.id}
       isTabStop={tabStopKey === node.id}
       onFocus={() => onRowFocus(node.id)}
-      onOpen={() =>
+      onOpen={() => {
+        tree.clearSelection();
         void navigate({
           to: "/content/$collection/$entryId",
           params: { collection: node.collection.handle, entryId: node.id },
-        })
-      }
+        });
+      }}
+      selecting={{
+        isPicked: tree.selection.has(node.id),
+        isActive: tree.selection.size > 0,
+        onSelect: (gesture) => tree.selectNode(node, gesture),
+        onExtendTo: (key) => tree.extendSelection(key, node.id),
+      }}
       isExpandable={showsChildren}
       isExpanded={isExpanded}
       onToggle={showsChildren ? () => tree.toggle(node.id) : undefined}

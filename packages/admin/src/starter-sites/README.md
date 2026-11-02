@@ -8,6 +8,12 @@ straight away (`entries:publish`, off by default). The API makes the pages
 (`POST /starter-sites/:id/apply`, see packages/core/src/starter-sites) and the screen then
 links each page to the page builder.
 
+On a site that has pages already, the dialog first asks what should happen to them (from
+`GET /starter-sites/:id/existing-pages`): **Add them alongside** (the default: the site's home
+page stays, the template's other pages go under it, and a page whose name is taken is added
+as "About (2)") or **Replace my pages** (they go to the recycle bin; only for people who may
+delete pages). Cancel changes nothing. A second home page is never made.
+
 | File                      | What it is                                         |
 | ------------------------- | -------------------------------------------------- |
 | `TemplateLibraryPage.tsx` | The library, the "Start from …?" dialog and result |

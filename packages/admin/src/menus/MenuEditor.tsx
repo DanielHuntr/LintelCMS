@@ -1,49 +1,36 @@
-import { closestCenter, DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { Ellipsis, ListTree, Plus, Settings2, Trash2 } from "lucide-react";
+import { Ellipsis, FilePlus2, Link2, ListTree, Settings2, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { ApiError, type FieldMessages } from "../api/client.js";
 import { describeError } from "../api/describeError.js";
-import { isSameValue } from "../content/sameValue.js";
 import { useLeaveWarning } from "../content/useLeaveWarning.js";
+import { useContentModelEditable } from "../content-model-sync/contentModelSync.queries.js";
 import { BackLink } from "../design/BackLink.js";
 import { Button } from "../design/Button.js";
 import { ConfirmDialog } from "../design/ConfirmDialog.js";
 import { EmptyState } from "../design/EmptyState.js";
-import { useContentModelEditable } from "../content-model-sync/contentModelSync.queries.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { Menu as ActionsMenu } from "../design/Menu.js";
+import { SegmentedControl } from "../design/SegmentedControl.js";
 import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
-import { MenuItemRow, menuItemLabel } from "./MenuItemRow.js";
+import { AddPagesDialog } from "./AddPagesDialog.js";
 import { MenuItemSheet } from "./MenuItemSheet.js";
+import { MenuItemsList } from "./MenuItemsList.js";
+import { MenuPreview } from "./MenuPreview.js";
 import { MenuSettingsSheet } from "./MenuSettingsSheet.js";
-import {
-  blockSize,
-  buildMenu,
-  canIndent,
-  canOutdent,
-  type FlatMenuItem,
-  flattenMenu,
-  indentItem,
-  moveItemBy,
-  moveItemTo,
-  outdentItem,
-  removeItem,
-} from "./menuTree.js";
+import { type FlatMenuItem, removeItem } from "./menuTree.js";
 import { deleteMenu, saveMenu } from "./menus.api.js";
 import { menuKeys } from "./menus.queries.js";
-import type { LinkedEntry, Menu } from "./menus.types.js";
-
-type Editing = { item: FlatMenuItem | null } | null;
+import type { Menu, MenuSource } from "./menus.types.js";
+import { PageTreeMenuList, pageTreePreviewItems } from "./PageTreeMenuList.js";
+import { type MenuDraft, useMenuDraft } from "./useMenuDraft.js";
 
 /**
- * A menu's items as an indented list. Drag a row to move it, or use its buttons: up and
- * down among its siblings, in (under the item above) and out (back up a level). Changes are
- * saved together with Save.
+ * A menu, made by hand or following the page tree. By hand: add pages (several at once, from
+ * the tree) and links, drag them into order and to the right to make drop-downs, or use each
+ * row's buttons. Following the tree: hide pages or rename them. A preview shows how it looks.
+ * Changes are saved together with Save.
  */
 export function MenuEditor({ menu }: { menu: Menu }) {
   const queryClient = useQueryClient();
@@ -51,66 +38,19 @@ export function MenuEditor({ menu }: { menu: Menu }) {
   const canEdit = useCan("navigation:update");
   // The menu's name and levels are part of the content model; its items are content.
   const canChangeSettings = useContentModelEditable();
-  const [saved, setSaved] = useState(() => flattenMenu(menu.items));
-  const [items, setItems] = useState(saved);
-  const [settings, setSettings] = useState({ name: menu.name, maxDepth: menu.maxDepth });
-  const [linkedEntries, setLinkedEntries] = useState<Record<string, LinkedEntry>>(
-    menu.linkedEntries,
-  );
-  const [editing, setEditing] = useState<Editing>(null);
-  const [itemToRemove, setItemToRemove] = useState<FlatMenuItem | null>(null);
+  const draft = useMenuDraft(menu);
+  const [name, setName] = useState(menu.name);
   const [isEditingSettings, setIsEditingSettings] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [problems, setProblems] = useState<FieldMessages>({});
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [announcement, setAnnouncement] = useState("");
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
-  const isUnsaved = !isSameValue(saved, items);
-  const leaveWarning = useLeaveWarning(isUnsaved);
+  const [switchingTo, setSwitchingTo] = useState<MenuSource | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const leaveWarning = useLeaveWarning(draft.isUnsaved);
+  const followsTree = draft.source === "pageTree";
 
-  function change(next: FlatMenuItem[], movedId?: string) {
-    setItems(next);
-    if (movedId) {
-      const index = next.findIndex((item) => item.id === movedId);
-      const moved = next[index];
-      if (moved) {
-        setAnnouncement(
-          t("menus.moved", {
-            label: menuItemLabel(moved, linkedEntries[moved.entryId ?? ""]),
-            position: index + 1,
-            count: next.length,
-            level: moved.depth + 1,
-          }),
-        );
-      }
-    }
-  }
-
-  async function save() {
-    setIsSaving(true);
-    setSaveError(null);
-    try {
-      const updated = await saveMenu(menu.handle, { items: buildMenu(items) });
-      queryClient.setQueryData(menuKeys.menu(menu.handle), updated);
-      void queryClient.invalidateQueries({ queryKey: menuKeys.menus() });
-      const fresh = flattenMenu(updated.items);
-      setSaved(fresh);
-      setItems(fresh);
-      setLinkedEntries(updated.linkedEntries);
-      setProblems({});
-    } catch (error) {
-      setProblems(error instanceof ApiError ? (error.fields ?? {}) : {});
-      setSaveError(describeError(error));
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  async function saveSettings(name: string, maxDepth: number) {
-    const updated = await saveMenu(menu.handle, { name, maxDepth });
-    setSettings({ name: updated.name, maxDepth: updated.maxDepth });
-    void queryClient.invalidateQueries({ queryKey: menuKeys.menus() });
+  async function saveSettings(nextName: string, maxDepth: number) {
+    const updated = await saveMenu(menu.handle, { name: nextName, maxDepth });
+    setName(updated.name);
+    draft.adopt(updated);
     setIsEditingSettings(false);
   }
 
@@ -120,32 +60,23 @@ export function MenuEditor({ menu }: { menu: Menu }) {
       await queryClient.invalidateQueries({ queryKey: menuKeys.menus() });
       await navigate({ to: "/content/navigation", ignoreBlocker: true });
     } catch (error) {
-      setSaveError(describeError(error));
+      setDeleteError(describeError(error));
       setIsDeleting(false);
     }
   }
-
-  function removeNow(item: FlatMenuItem) {
-    change(removeItem(items, item.id));
-    setItemToRemove(null);
-    setEditing(null);
-  }
-
-  const canMove = (id: string, direction: -1 | 1) =>
-    !isSameValue(moveItemBy(items, id, direction), items);
 
   return (
     <>
       <BackLink to="/content/navigation">{t("menus.title")}</BackLink>
       <LargeTitle
-        title={settings.name}
-        subtitle={t("menus.levels", { count: settings.maxDepth })}
+        title={name}
+        subtitle={t("menus.levels", { count: draft.maxDepth })}
         actions={
           canEdit && (
             <>
               {canChangeSettings && (
                 <ActionsMenu
-                  label={t("menus.moreActions", { name: settings.name })}
+                  label={t("menus.moreActions", { name })}
                   trigger={<Ellipsis aria-hidden="true" className="size-5" />}
                   items={[
                     {
@@ -163,91 +94,182 @@ export function MenuEditor({ menu }: { menu: Menu }) {
                 />
               )}
               <Button
-                variant="tinted"
-                icon={<Plus aria-hidden="true" />}
-                onClick={() => setEditing({ item: null })}
+                onClick={() => void draft.save()}
+                disabled={draft.isSaving || !draft.isUnsaved}
               >
-                {t("menus.addItem")}
-              </Button>
-              <Button onClick={() => void save()} disabled={isSaving || !isUnsaved}>
-                {isSaving ? t("builder.saving") : t("menus.save")}
+                {draft.isSaving ? t("builder.saving") : t("menus.save")}
               </Button>
             </>
           )
         }
       />
 
-      {saveError && (
+      {(draft.saveError || deleteError) && (
         <p
           role="alert"
           className="mb-6 rounded-card bg-danger/10 px-4 py-3 text-footnote text-label"
         >
-          {saveError}
+          {draft.saveError ?? deleteError}
         </p>
       )}
 
+      <div className="flex flex-col gap-6">
+        {canEdit && (
+          <div className="flex flex-col gap-1.5">
+            <SegmentedControl<MenuSource>
+              label={t("menus.source")}
+              options={[
+                { value: "items", label: t("menus.source.items") },
+                { value: "pageTree", label: t("menus.source.pageTree") },
+              ]}
+              value={draft.source}
+              onChange={(next) => next !== draft.source && setSwitchingTo(next)}
+            />
+            <p className="px-1 text-footnote text-label-secondary">
+              {followsTree ? t("menus.source.pageTreeHint") : t("menus.source.itemsHint")}
+            </p>
+          </div>
+        )}
+
+        <MenuPreview
+          items={followsTree ? pageTreePreviewItems(draft) : draft.items}
+          linkedEntries={draft.linkedEntries}
+        />
+
+        {followsTree ? (
+          <PageTreeMenuList draft={draft} />
+        ) : (
+          <HandMadeItems draft={draft} menuName={name} canEdit={canEdit} />
+        )}
+      </div>
+
+      <ConfirmDialog
+        open={switchingTo !== null}
+        title={
+          switchingTo === "pageTree"
+            ? t("menus.source.toTreeTitle")
+            : t("menus.source.toItemsTitle")
+        }
+        message={
+          switchingTo === "pageTree"
+            ? t("menus.source.toTreeMessage")
+            : t("menus.source.toItemsMessage")
+        }
+        confirmLabel={
+          switchingTo === "pageTree"
+            ? t("menus.source.toTreeConfirm")
+            : t("menus.source.toItemsConfirm")
+        }
+        cancelLabel={t("common.cancel")}
+        isWorking={draft.isSaving}
+        onCancel={() => setSwitchingTo(null)}
+        onConfirm={() => {
+          if (switchingTo) void draft.switchSource(switchingTo).then(() => setSwitchingTo(null));
+        }}
+      />
+      <ConfirmDialog
+        open={isDeleting}
+        title={t("menus.deleteTitle", { name })}
+        message={t("menus.deleteMessage")}
+        confirmLabel={t("menus.delete")}
+        cancelLabel={t("common.cancel")}
+        isDestructive
+        onCancel={() => setIsDeleting(false)}
+        onConfirm={() => void confirmDelete()}
+      />
+      {isEditingSettings && (
+        <MenuSettingsSheet
+          title={t("menus.settings")}
+          submitLabel={t("common.done")}
+          initialName={name}
+          initialMaxDepth={draft.maxDepth}
+          onSubmit={(nextName, _handle, maxDepth) => saveSettings(nextName, maxDepth)}
+          onClose={() => setIsEditingSettings(false)}
+        />
+      )}
+      <ConfirmDialog
+        open={leaveWarning.isAsking}
+        title={t("editor.leaveTitle")}
+        message={t("menus.leaveMessage")}
+        confirmLabel={t("editor.leave")}
+        cancelLabel={t("editor.stay")}
+        isDestructive
+        onCancel={leaveWarning.stay}
+        onConfirm={leaveWarning.leave}
+      />
+    </>
+  );
+}
+
+/**
+ * The items of a hand-made menu with "Add pages" and "Add link", and the sheets they open.
+ * Shared with the page builder's menu editor (`compact`).
+ */
+export function HandMadeItems({
+  draft,
+  menuName,
+  canEdit,
+  compact = false,
+}: {
+  draft: MenuDraft;
+  menuName: string;
+  canEdit: boolean;
+  compact?: boolean;
+}) {
+  const [editing, setEditing] = useState<{ item: FlatMenuItem | null } | null>(null);
+  const [isAddingPages, setIsAddingPages] = useState(false);
+  const { items, change, linkedEntries } = draft;
+
+  const addButtons = canEdit && (
+    <div className="flex flex-wrap gap-2">
+      <Button
+        size={compact ? "small" : "medium"}
+        icon={<FilePlus2 aria-hidden="true" />}
+        onClick={() => setIsAddingPages(true)}
+      >
+        {t("menus.addPages")}
+      </Button>
+      <Button
+        size={compact ? "small" : "medium"}
+        variant="tinted"
+        icon={<Link2 aria-hidden="true" />}
+        onClick={() => setEditing({ item: null })}
+      >
+        {t("menus.addLink")}
+      </Button>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col gap-3">
       {items.length === 0 ? (
         <div className="rounded-card bg-surface">
           <EmptyState
-            size="page"
+            size={compact ? "card" : "page"}
             icon={ListTree}
             title={t("menus.emptyItemsTitle")}
             description={t("menus.emptyItemsDescription")}
-            action={
-              canEdit && (
-                <Button
-                  onClick={() => setEditing({ item: null })}
-                  icon={<Plus aria-hidden="true" />}
-                >
-                  {t("menus.addItem")}
-                </Button>
-              )
-            }
+            action={addButtons}
           />
         </div>
       ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          modifiers={[restrictToVerticalAxis]}
-          onDragEnd={({ active, over }) => {
-            if (!over || active.id === over.id) return;
-            change(moveItemTo(items, String(active.id), String(over.id)), String(active.id));
-          }}
-        >
-          <SortableContext
-            items={items.map((item) => item.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <ul aria-label={t("menus.items")} className="overflow-hidden rounded-card bg-surface">
-              {items.map((item) => (
-                <MenuItemRow
-                  key={item.id}
-                  item={item}
-                  linkedEntry={item.entryId ? linkedEntries[item.entryId] : undefined}
-                  problem={problems[item.id]}
-                  canMoveUp={canMove(item.id, -1)}
-                  canMoveDown={canMove(item.id, 1)}
-                  canIndent={canIndent(items, item.id, settings.maxDepth)}
-                  canOutdent={canOutdent(items, item.id)}
-                  onMove={(direction) => change(moveItemBy(items, item.id, direction), item.id)}
-                  onIndent={() => change(indentItem(items, item.id, settings.maxDepth), item.id)}
-                  onOutdent={() => change(outdentItem(items, item.id), item.id)}
-                  onEdit={() => setEditing({ item })}
-                  onRemove={() =>
-                    blockSize(items, item.id) > 1 ? setItemToRemove(item) : removeNow(item)
-                  }
-                />
-              ))}
-            </ul>
-          </SortableContext>
-          <p className="mt-3 px-1 text-footnote text-label-secondary">{t("menus.hint")}</p>
-          <p role="status" className="sr-only">
-            {announcement}
-          </p>
-        </DndContext>
+        <>
+          {addButtons}
+          <MenuItemsList draft={draft} compact={compact} onEdit={(item) => setEditing({ item })} />
+        </>
       )}
 
+      {isAddingPages && (
+        <AddPagesDialog
+          menuName={menuName}
+          linkedIds={new Set(items.flatMap((item) => (item.entryId ? [item.entryId] : [])))}
+          onAdd={(pages) => {
+            draft.addPages(pages);
+            setIsAddingPages(false);
+          }}
+          onClose={() => setIsAddingPages(false)}
+        />
+      )}
       {editing && (
         <MenuItemSheet
           item={editing.item}
@@ -256,7 +278,7 @@ export function MenuEditor({ menu }: { menu: Menu }) {
           }
           onSave={(changed, picked) => {
             if (picked) {
-              setLinkedEntries((current) => ({
+              draft.setLinkedEntries((current) => ({
                 ...current,
                 [picked.id]: {
                   title: picked.title,
@@ -279,60 +301,14 @@ export function MenuEditor({ menu }: { menu: Menu }) {
             editing.item
               ? () => {
                   const item = editing.item;
-                  if (!item) return;
                   setEditing(null);
-                  if (blockSize(items, item.id) > 1) setItemToRemove(item);
-                  else removeNow(item);
+                  if (item) change(removeItem(items, item.id));
                 }
               : undefined
           }
           onClose={() => setEditing(null)}
         />
       )}
-      <ConfirmDialog
-        open={itemToRemove !== null}
-        title={t("menus.removeTitle", {
-          label: itemToRemove
-            ? menuItemLabel(itemToRemove, linkedEntries[itemToRemove.entryId ?? ""])
-            : "",
-        })}
-        message={t("menus.removeMessage")}
-        confirmLabel={t("menus.item.remove")}
-        cancelLabel={t("common.cancel")}
-        isDestructive
-        onCancel={() => setItemToRemove(null)}
-        onConfirm={() => itemToRemove && removeNow(itemToRemove)}
-      />
-      <ConfirmDialog
-        open={isDeleting}
-        title={t("menus.deleteTitle", { name: settings.name })}
-        message={t("menus.deleteMessage")}
-        confirmLabel={t("menus.delete")}
-        cancelLabel={t("common.cancel")}
-        isDestructive
-        onCancel={() => setIsDeleting(false)}
-        onConfirm={() => void confirmDelete()}
-      />
-      {isEditingSettings && (
-        <MenuSettingsSheet
-          title={t("menus.settings")}
-          submitLabel={t("common.done")}
-          initialName={settings.name}
-          initialMaxDepth={settings.maxDepth}
-          onSubmit={(name, _handle, maxDepth) => saveSettings(name, maxDepth)}
-          onClose={() => setIsEditingSettings(false)}
-        />
-      )}
-      <ConfirmDialog
-        open={leaveWarning.isAsking}
-        title={t("editor.leaveTitle")}
-        message={t("menus.leaveMessage")}
-        confirmLabel={t("editor.leave")}
-        cancelLabel={t("editor.stay")}
-        isDestructive
-        onCancel={leaveWarning.stay}
-        onConfirm={leaveWarning.leave}
-      />
-    </>
+    </div>
   );
 }

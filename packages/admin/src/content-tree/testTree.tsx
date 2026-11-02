@@ -45,6 +45,13 @@ export function WithTestTree({
     moveWithUndo: async () => undefined,
     announceSorted: () => undefined,
     canUpdate: true,
+    selection: new Set(),
+    selectedNodes: [],
+    selectNode: () => undefined,
+    extendSelection: () => undefined,
+    clearSelection: () => undefined,
+    rememberNode: () => undefined,
+    notify: (notice) => actions.push({ notice }),
   };
   return <ContentTreeContext value={state}>{children}</ContentTreeContext>;
 }

@@ -7,6 +7,9 @@ import { classNames } from "../design/classNames.js";
 import { Dialog } from "../design/Dialog.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { TextField } from "../design/TextField.js";
+import { Toggle } from "../design/Toggle.js";
+import { setPageInMenu } from "../menus/menus.api.js";
+import { useCan } from "../session/SessionContext.js";
 import { t } from "../i18n/strings.js";
 import { useContentTree } from "./ContentTreeContext.js";
 import type { TreePlace } from "./contentTree.types.js";
@@ -21,6 +24,8 @@ interface CreateDialogProps {
   placeName: string | undefined;
   /** "Create your home page": a page tree chosen first, and Home as the name. */
   isHome?: boolean;
+  /** Making it right under the site's start (its home page): "In the main menu" starts on. */
+  isUnderSiteStart?: boolean;
   onClose: () => void;
 }
 
@@ -28,7 +33,13 @@ interface CreateDialogProps {
  * "Create": offers only the content types allowed at this place (the server decides, from
  * each content type's "Where it goes"), asks for a name, makes a draft and opens it.
  */
-export function CreateDialog({ place, placeName, isHome = false, onClose }: CreateDialogProps) {
+export function CreateDialog({
+  place,
+  placeName,
+  isHome = false,
+  isUnderSiteStart = false,
+  onClose,
+}: CreateDialogProps) {
   const navigate = useNavigate();
   const tree = useContentTree();
   const refresh = useRefreshContent();
@@ -38,11 +49,21 @@ export function CreateDialog({ place, placeName, isHome = false, onClose }: Crea
   const [name, setName] = useState(isHome ? t("tree.createHome.name") : "");
   const [error, setError] = useState<string | null>(null);
   const [isWorking, setIsWorking] = useState(false);
+  const [inMainMenu, setInMainMenu] = useState(isUnderSiteStart);
+  const canChangeMenus = useCan("navigation:update");
   const groupLabelId = useId();
   const chosenType =
     types.find((type) => type.handle === chosen) ??
     (isHome ? types.find((type) => type.structure === "tree") : undefined) ??
     types[0];
+
+  // Pages (a page tree with addresses) can go in the main menu; the home page is its start.
+  const offersMenu =
+    canChangeMenus &&
+    !isHome &&
+    chosenType?.structure === "tree" &&
+    place !== null &&
+    "parentId" in place;
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -60,6 +81,10 @@ export function CreateDialog({ place, placeName, isHome = false, onClose }: Crea
         slug: "",
         parentId,
       });
+      if (offersMenu && inMainMenu) {
+        // The page is made either way; a menu that can't be changed is said on the page.
+        await setPageInMenu("main", created.id, { inMenu: true }).catch(() => undefined);
+      }
       tree.open([parentId ?? rootKey(chosenType.handle)]);
       await refresh();
       onClose();
@@ -75,6 +100,7 @@ export function CreateDialog({ place, placeName, isHome = false, onClose }: Crea
   }
 
   const formId = useId();
+  const menuHintId = useId();
   return (
     <Dialog
       open
@@ -157,6 +183,19 @@ export function CreateDialog({ place, placeName, isHome = false, onClose }: Crea
             data-autofocus=""
             autoComplete="off"
           />
+        )}
+        {offersMenu && (
+          <div className="flex flex-col gap-1">
+            <Toggle
+              label={t("pageMenu.toggle")}
+              checked={inMainMenu}
+              onCheckedChange={setInMainMenu}
+              describedBy={menuHintId}
+            />
+            <p id={menuHintId} className="text-caption text-label-secondary">
+              {t("pageMenu.toggleHint")}
+            </p>
+          </div>
         )}
       </form>
     </Dialog>

@@ -65,7 +65,7 @@ export function actionsFor(target: TreeTarget, can: ActionPermissions): TreeActi
   actions.push("preview");
   if (isLive) actions.push("viewPage");
   actions.push("history", "info");
-  if (node.childrenAsCollection && node.childCount > 0) actions.push("openList");
+  if (node.childCount > 0) actions.push("openList");
   if (can.settings && node.isSiteStart) actions.push("hostnames");
   if (can.delete) actions.push("delete");
   return actions;

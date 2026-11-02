@@ -8,6 +8,7 @@ import type { Site } from "../sites/sites.table.js";
 import { linkedEntryIds } from "./navigation-items.js";
 import type { DeliveredNavigationItem, NavigationItem } from "./navigation.schema.js";
 import { findNavigationOrFail } from "./navigation.service.js";
+import { currentMenuItems } from "./navigation-tree-items.service.js";
 
 /**
  * A menu for websites. Entry links become the entry's address in the language asked
@@ -22,12 +23,13 @@ export async function deliverNavigation(
 ): Promise<{ handle: string; name: string; locale: string; items: DeliveredNavigationItem[] }> {
   const { site, locale } = await resolveLocale(database, requestedLocale, forSite);
   const navigation = await findNavigationOrFail(database, handle, site);
-  const links = await findDeliveredEntryLinks(database, linkedEntryIds(navigation.items), locale);
+  const items = await currentMenuItems(database, navigation, site);
+  const links = await findDeliveredEntryLinks(database, linkedEntryIds(items), locale);
   return {
     handle: navigation.handle,
     name: navigation.name,
     locale,
-    items: deliverItems(navigation.items, links),
+    items: deliverItems(items, links),
   };
 }
 
@@ -45,6 +47,7 @@ export function deliverItems(
         label: item.label || link?.title || "",
         url: link ? link.url : item.url,
         newTab: item.newTab,
+        style: item.style ?? "link",
         entryId: link ? link.id : null,
         children: deliverItems(item.children, links),
       },

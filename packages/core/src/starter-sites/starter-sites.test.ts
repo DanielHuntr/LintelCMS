@@ -110,11 +110,56 @@ describe("starting from a template", () => {
       data: { title: "Our menu" },
       slug: "menu",
     });
-    const applied = (await owner("POST", "/starter-sites/bakery/apply", {})).json();
+    const asked = await owner("POST", "/starter-sites/bakery/apply", {});
+    expect(asked.statusCode).toBe(409);
+    expect(asked.json().code).toBe("SITE_HAS_PAGES");
+    const existing = (await owner("GET", "/starter-sites/bakery/existing-pages")).json();
+    expect(existing).toEqual({
+      pageCount: 1,
+      hasHome: true,
+      clashes: [{ title: "Menu", slug: "menu", existingTitle: "Our menu" }],
+    });
+
+    const applied = (
+      await owner("POST", "/starter-sites/bakery/apply", { existingPages: "alongside" })
+    ).json();
     const menuPage = applied.pages.find(
       (page: { wantedSlug: string }) => page.wantedSlug === "menu",
     );
-    expect(menuPage).toMatchObject({ slug: "menu-2", published: false });
+    expect(menuPage).toMatchObject({ slug: "menu-2", title: "Menu (2)", published: false });
+    // The site keeps its one home page; the template's goes nowhere.
+    expect(applied.skippedHome).toBe(true);
+    expect(applied.pages.map((page: { wantedSlug: string }) => page.wantedSlug)).not.toContain(
+      "home",
+    );
+    const tree = (await owner("GET", "/content-tree")).json();
+    expect(tree.siteStartCount).toBe(1);
+  });
+
+  it("replaces the site's pages when asked, sending them to the recycle bin", async () => {
+    const first = (await owner("POST", "/starter-sites/bakery/apply", {})).json();
+    const second = await owner("POST", "/starter-sites/portfolio/apply", {
+      existingPages: "replace",
+    });
+    expect(second.statusCode, second.body).toBe(201);
+    expect(second.json()).toMatchObject({ replacedCount: first.pages.length, menuFilled: true });
+    const bin = (await owner("GET", "/recycle-bin")).json();
+    expect(bin.items.map((item: { title: string }) => item.title)).toEqual(["Home"]);
+    const menu = (await owner("GET", "/navigation/main")).json();
+    expect(menu.items).toHaveLength(second.json().pages.length);
+    // The template's home starts the tree, and its other pages sit under it.
+    const tree = (await owner("GET", "/content-tree")).json();
+    expect(tree.siteStartCount).toBe(1);
+    const homeId = second.json().pages[0].entryId;
+    const under = (await owner("GET", `/content-tree/children?parentId=${homeId}`)).json();
+    expect(under.total).toBe(second.json().pages.length - 1);
+  });
+
+  it("leaves everything as it was when the person cancels (asks again)", async () => {
+    await owner("POST", "/starter-sites/bakery/apply", {});
+    const before = (await owner("GET", "/content-tree")).json();
+    expect((await owner("POST", "/starter-sites/portfolio/apply", {})).statusCode).toBe(409);
+    expect((await owner("GET", "/content-tree")).json()).toEqual(before);
   });
 
   it("names the site in the header with the name it was given, not the template's", async () => {
@@ -128,7 +173,9 @@ describe("starting from a template", () => {
 
   it("leaves a menu with links alone, then adds every page to it when asked", async () => {
     const first = (await owner("POST", "/starter-sites/bakery/apply", {})).json();
-    const second = (await owner("POST", "/starter-sites/portfolio/apply", {})).json();
+    const second = (
+      await owner("POST", "/starter-sites/portfolio/apply", { existingPages: "alongside" })
+    ).json();
     expect(second).toMatchObject({ menuFilled: false, menuHasLinks: true });
 
     const added = await owner("POST", "/starter-sites/menu", {

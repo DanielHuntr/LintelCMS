@@ -73,6 +73,8 @@ export interface PathStep {
 export interface BatchResult {
   changed: string[];
   skipped: { id: string; title: string; reason: string }[];
+  /** After a bulk delete: the recycle bin items made, for Undo. */
+  recycleBinItemIds?: string[];
 }
 
 export interface RecycleBinItem {
@@ -143,6 +145,14 @@ export interface ListColumn {
 export interface CollectionItem extends TreeNode {
   values: Record<string, unknown>;
   updatedBy: string | null;
+  /** Where it answers on the site, or null for content without pages. */
+  url: string | null;
+}
+
+/** What a bulk delete would take: the picked entries and how many sit under each. */
+export interface BulkSummary {
+  items: { id: string; title: string; descendantCount: number }[];
+  totalCount: number;
 }
 
 export interface CollectionItems {
@@ -152,6 +162,8 @@ export interface CollectionItems {
   page: number;
   perPage: number;
   canSortByHand: boolean;
+  /** The content types found here, for the type filter. */
+  types: { handle: string; name: string }[];
 }
 
 /** What the collection view asks for; it lives in the address so it survives a reload. */
@@ -161,4 +173,8 @@ export interface CollectionQuery {
   sort?: string;
   direction?: "asc" | "desc";
   page?: number;
+  /** One content type, by its collection's handle. */
+  type?: string;
+  /** Everything under the place, every level down, in the tree's order. */
+  allLevels?: boolean;
 }

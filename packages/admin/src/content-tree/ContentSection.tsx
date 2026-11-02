@@ -1,5 +1,5 @@
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { describeError } from "../api/describeError.js";
 import { t } from "../i18n/strings.js";
 import { useCan, useSession } from "../session/SessionContext.js";
@@ -15,6 +15,8 @@ import { TreeDialogs, type PendingAction } from "./TreeDialogs.js";
 import type { TreeAction, TreeTarget } from "./treeActions.js";
 import { TREE_WIDTH, rootKey, useExpandedBranches, useTreeWidth } from "./treeState.js";
 import { TreeToast, type TreeNotice } from "./TreeToast.js";
+import { useTreeSelection } from "./treeSelection.js";
+import { rememberFolderView } from "../content-workspace/folderView.js";
 
 /**
  * The Content section's frame: the content tree in a resizable pane beside the main
@@ -40,6 +42,8 @@ export function ContentSection() {
   const canManageRedirects = useCan("settings:update");
   const isSeoOn = useSession().enabledPlugins.includes("seo");
   const [redirectOffer, setRedirectOffer] = useState<AddressChange[] | null>(null);
+  const treeElement = useRef<HTMLElement>(null);
+  const selection = useTreeSelection(useCallback(() => treeElement.current, []));
 
   // Opening an entry from elsewhere (a link, search, the back button) opens its branch.
   const isEntry = selectedKey !== undefined && !selectedKey.includes(":");
@@ -101,6 +105,7 @@ export function ContentSection() {
 
   function runAction(action: TreeAction, target: TreeTarget) {
     if (target.kind === "root" && action === "openList") {
+      rememberFolderView(target.root.handle, "list");
       void navigate({ to: "/content/$collection", params: { collection: target.root.handle } });
       return;
     }
@@ -128,14 +133,33 @@ export function ContentSection() {
     moveWithUndo,
     announceSorted,
     canUpdate,
+    selection: selection.ids,
+    selectedNodes: selection.nodes,
+    selectNode: (node, gesture) =>
+      selection.select(
+        node,
+        gesture,
+        selectedKey !== undefined && !selectedKey.includes(":") ? selectedKey : null,
+      ),
+    extendSelection: selection.extendTo,
+    clearSelection: selection.clear,
+    rememberNode: selection.rememberNode,
+    notify: show,
   };
 
   return (
     <ContentTreeContext value={state}>
       <div style={{ "--tree-width": `${width}px` } as CSSProperties} className="pl-(--tree-width)">
         <nav
+          ref={treeElement}
           aria-label={t("tree.label")}
           data-content-tree=""
+          onKeyDown={(event) => {
+            if (event.key !== "Escape" || selection.ids.size === 0) return;
+            if ((event.target as Element).closest("input, textarea, [role=menu]")) return;
+            event.preventDefault();
+            selection.clear();
+          }}
           className="fixed inset-y-3 inset-s-[264px] z-10 flex w-(--tree-width) flex-col rounded-panel bg-sidebar shadow-float hairline-ring backdrop-blur-2xl backdrop-saturate-150"
         >
           <ContentTree />

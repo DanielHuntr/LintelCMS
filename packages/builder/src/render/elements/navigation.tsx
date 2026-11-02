@@ -24,7 +24,7 @@ import { SiteIcon } from "./media.js";
  */
 
 /** Until the website passes its own, the canvas shows a short sample menu. */
-const sampleSite: DataSite = {
+export const sampleSite: DataSite = {
   siteName: "Your site",
   homeUrl: "/",
   logo: null,
@@ -44,10 +44,30 @@ export function useSite(): DataSite {
   return usePageData().site ?? sampleSite;
 }
 
+/** The links of the menu an element chose: the main menu unless another was picked. */
+export function menuOf(site: DataSite, handle: string): readonly DataMenuLink[] {
+  if (handle === "" || handle === "main") return site.menu;
+  return site.menus?.[handle] ?? [];
+}
+
+/**
+ * On the canvas, in place of a menu with nothing in it: a small button that opens the menu
+ * editor beside the canvas (the frame reports clicks on `data-lintel-open-menu`).
+ */
+export function EmptyMenuButton({ nodeId }: { nodeId: string }) {
+  return (
+    <button type="button" className="lintel-empty-menu" data-lintel-open-menu={nodeId}>
+      <SiteIcon name="plus" className="lintel-empty-menu__icon" />
+      Add pages to your menu
+    </button>
+  );
+}
+
 interface MenuEntry {
   label: string;
   href: string;
   current: boolean;
+  isButton: boolean;
   columns: { title: string; links: LinkProp[] }[];
   featured: { src: string; alt: string; title: string; href: string } | null;
 }
@@ -68,6 +88,7 @@ function fromSiteMenu(menu: readonly DataMenuLink[]): MenuEntry[] {
       label: link.label,
       href: link.url ?? "",
       current: link.current,
+      isButton: link.style === "button" && link.children.length === 0,
       columns,
       featured: null,
     };
@@ -79,6 +100,7 @@ function fromCustomMenu(items: readonly MegaMenuItem[]): MenuEntry[] {
     label: item.label,
     href: item.href,
     current: false,
+    isButton: false,
     columns: [
       { title: item.columnOneTitle, links: item.columnOneLinks },
       { title: item.columnTwoTitle, links: item.columnTwoLinks },
@@ -117,7 +139,10 @@ function MegaMenu({
           return (
             <li key={index} className="lintel-mega__item">
               <a
-                className="lintel-mega__link"
+                className={cx(
+                  "lintel-mega__link",
+                  entry.isButton && "lintel-button lintel-mega__link--button",
+                )}
                 href={href(entry.href, mode)}
                 aria-current={entry.current ? "page" : undefined}
               >
@@ -254,7 +279,10 @@ function drawerLinks(entries: MenuEntry[]) {
 const SiteHeader = drawsProps(siteHeaderComponent, ({ props, attributes, node, mode }) => {
   const site = useSite();
   const entries =
-    props.menuSource === "site" ? fromSiteMenu(site.menu) : fromCustomMenu(props.items);
+    props.menuSource === "site"
+      ? fromSiteMenu(menuOf(site, props.menuHandle))
+      : fromCustomMenu(props.items);
+  const showsEmptyMenu = props.menuSource === "site" && entries.length === 0 && mode === "canvas";
   const logo = props.logo.src
     ? props.logo
     : site.logo
@@ -282,22 +310,31 @@ const SiteHeader = drawsProps(siteHeaderComponent, ({ props, attributes, node, m
           <span className="lintel-site-header__name">{site.siteName}</span>
         )}
       </a>
-      <nav className="lintel-site-header__nav" aria-label="Main">
-        <MegaMenu entries={entries} mode={mode} idPrefix={node.id} />
-      </nav>
+      {showsEmptyMenu ? (
+        // Shown at every width, in place of both the menu and the phone's menu button.
+        <div className="lintel-site-header__empty-menu">
+          <EmptyMenuButton nodeId={node.id} />
+        </div>
+      ) : (
+        <nav className="lintel-site-header__nav" aria-label="Main">
+          <MegaMenu entries={entries} mode={mode} idPrefix={node.id} />
+        </nav>
+      )}
       {props.buttonLabel && (
         <a className="lintel-button lintel-site-header__button" href={href(props.buttonHref, mode)}>
           {props.buttonLabel}
         </a>
       )}
-      <Drawer
-        id={`drawer-${node.id}`}
-        buttonLabel="Menu"
-        side="right"
-        links={drawerLinks(entries)}
-        mode={mode}
-        buttonClassName="lintel-site-header__menu-button lintel-drawer__open"
-      />
+      {!showsEmptyMenu && (
+        <Drawer
+          id={`drawer-${node.id}`}
+          buttonLabel="Menu"
+          side="right"
+          links={drawerLinks(entries)}
+          mode={mode}
+          buttonClassName="lintel-site-header__menu-button lintel-drawer__open"
+        />
+      )}
     </header>
   );
 });
@@ -306,8 +343,15 @@ const MobileMenu = drawsProps(mobileMenuComponent, ({ props, attributes, node, m
   const site = useSite();
   const links =
     props.menuSource === "site"
-      ? drawerLinks(fromSiteMenu(site.menu))
+      ? drawerLinks(fromSiteMenu(menuOf(site, props.menuHandle)))
       : props.links.map((link) => ({ label: link.label, href: link.href }));
+  if (props.menuSource === "site" && links.length === 0 && mode === "canvas") {
+    return (
+      <div {...attributes} className={cx(attributes.className, "lintel-mobile-menu")}>
+        <EmptyMenuButton nodeId={node.id} />
+      </div>
+    );
+  }
   return (
     <div
       {...attributes}

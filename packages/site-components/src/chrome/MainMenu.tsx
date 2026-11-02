@@ -22,7 +22,18 @@ export function MainMenu({ items, label }: MainMenuProps) {
       <ul className="lintel-menu">
         {items.map((item, index) => (
           <li key={`${index}-${item.label}`} className="lintel-menu__item">
-            {item.children.length > 0 ? <MenuGroup item={item} /> : <MenuLink item={item} />}
+            {item.children.length > 0 ? (
+              <MenuGroup item={item} />
+            ) : (
+              <MenuLink
+                item={item}
+                className={
+                  item.style === "button"
+                    ? "lintel-menu__link lintel-menu__link--button"
+                    : "lintel-menu__link"
+                }
+              />
+            )}
           </li>
         ))}
       </ul>

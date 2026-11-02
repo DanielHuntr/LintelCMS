@@ -151,3 +151,80 @@ export function blockSize(flat: readonly FlatMenuItem[], id: string): number {
   const { start, end } = blockOf(flat, id);
   return start === -1 ? 0 : end - start;
 }
+
+/**
+ * Moves an item (with its children) this many levels in (positive) or out (negative), as
+ * far as the menu allows: what dragging a row to the right or left does.
+ */
+export function shiftDepth(
+  flat: readonly FlatMenuItem[],
+  id: string,
+  levels: number,
+  maxDepth: number,
+): FlatMenuItem[] {
+  let next = [...flat];
+  for (let step = 0; step < Math.abs(levels); step++) {
+    const moved = levels > 0 ? indentItem(next, id, maxDepth) : outdentItem(next, id);
+    if (isSameOrder(moved, next)) break;
+    next = moved;
+  }
+  return next;
+}
+
+function isSameOrder(first: readonly FlatMenuItem[], second: readonly FlatMenuItem[]): boolean {
+  return (
+    first.length === second.length &&
+    first.every(
+      (item, index) => item.id === second[index]?.id && item.depth === second[index]?.depth,
+    )
+  );
+}
+
+/** A page picked in "Add pages", with its parent: what decides where its item goes. */
+export interface PickedPage {
+  id: string;
+  title: string;
+  /** Its parent page, or null when it is at the top or right under the home page. */
+  parentId: string | null;
+}
+
+/**
+ * Adds a link for each page, in the order given (the tree's), leaving pages the menu links
+ * to already. A page whose parent is in the menu goes inside the parent's item, as a
+ * drop-down, when the menu has a level for it; the others go at the end, before buttons.
+ */
+export function addPageItems(
+  flat: readonly FlatMenuItem[],
+  pages: readonly PickedPage[],
+  maxDepth: number,
+  createId: () => string = () => crypto.randomUUID(),
+): FlatMenuItem[] {
+  let next = [...flat];
+  for (const page of pages) {
+    if (next.some((item) => item.entryId === page.id)) continue;
+    const item = (depth: number): FlatMenuItem => ({
+      id: createId(),
+      label: "",
+      entryId: page.id,
+      url: null,
+      newTab: false,
+      style: "link",
+      depth,
+    });
+    const parent =
+      page.parentId === null
+        ? undefined
+        : next.find((candidate) => candidate.entryId === page.parentId);
+    if (parent && parent.depth + 1 < maxDepth) {
+      const { end } = blockOf(next, parent.id);
+      next = [...next.slice(0, end), item(parent.depth + 1), ...next.slice(end)];
+      continue;
+    }
+    const firstButton = next.findIndex(
+      (candidate) => candidate.depth === 0 && candidate.style === "button",
+    );
+    const at = firstButton === -1 ? next.length : firstButton;
+    next = [...next.slice(0, at), item(0), ...next.slice(at)];
+  }
+  return next;
+}

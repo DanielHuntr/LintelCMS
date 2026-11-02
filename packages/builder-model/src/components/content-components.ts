@@ -1,7 +1,14 @@
 import { z } from "zod";
 import { defineComponent } from "./component-definition.js";
 import { marksFitText, textMarksSchema } from "../text-marks/text-marks.js";
-import { imageAddressSchema, linkAddressSchema, linkSchema, plainText } from "./component-props.js";
+import {
+  imageAddressSchema,
+  linkAddressSchema,
+  linkSchema,
+  oneOf,
+  plainText,
+} from "./component-props.js";
+import { menuHandleSchema, menuSourceField } from "./site-navigation-components.js";
 
 const marksFitError = { error: "Styled parts of the text should sit inside it, one after another" };
 
@@ -162,6 +169,9 @@ export const navigationComponent = defineComponent({
   icon: "menu",
   category: "navigation",
   propsSchema: z.object({
+    // Menus made before they could follow the site's menus kept their own links.
+    menuSource: oneOf(["custom", "site"], "Where the links come from"),
+    menuHandle: menuHandleSchema,
     label: plainText(100, "Main"),
     links: z
       .array(linkSchema, { error: "A menu’s links should be a list" })
@@ -169,6 +179,8 @@ export const navigationComponent = defineComponent({
       .default([]),
   }),
   defaultProps: {
+    menuSource: "site",
+    menuHandle: "main",
     label: "Main",
     links: [
       { label: "Home", href: "/" },
@@ -178,8 +190,9 @@ export const navigationComponent = defineComponent({
   },
   allowedChildren: "none",
   editableFields: [
+    menuSourceField,
     { kind: "text", prop: "label", label: "Name for screen readers" },
-    { kind: "linkList", prop: "links", label: "Links" },
+    { kind: "linkList", prop: "links", label: "Links I choose" },
   ],
 });
 

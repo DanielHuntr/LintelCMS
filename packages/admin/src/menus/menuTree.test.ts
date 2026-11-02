@@ -9,6 +9,8 @@ import {
   moveItemTo,
   outdentItem,
   removeItem,
+  addPageItems,
+  shiftDepth,
 } from "./menuTree.js";
 import type { MenuItem } from "./menus.types.js";
 
@@ -110,5 +112,78 @@ describe("the menu tree", () => {
 
   it("removes an item with everything inside it", () => {
     expect(outline(removeItem(flattenMenu(menu), "about"))).toEqual(["home", "contact"]);
+  });
+});
+
+describe("dragging to the side and adding pages", () => {
+  const flat = (entries: [string, number, ("link" | "button")?][]): FlatMenuItem[] =>
+    entries.map(([id, depth, style]) => ({
+      id,
+      label: id,
+      entryId: id,
+      url: null,
+      newTab: false,
+      style: style ?? "link",
+      depth,
+    }));
+  const shape = (items: readonly FlatMenuItem[]) => items.map((item) => `${item.id}:${item.depth}`);
+
+  it("goes in one level per step to the right, as far as the menu allows", () => {
+    const items = flat([
+      ["a", 0],
+      ["b", 0],
+      ["c", 0],
+    ]);
+    expect(shape(shiftDepth(items, "c", 2, 3))).toEqual(["a:0", "b:0", "c:1"]);
+    expect(
+      shape(
+        shiftDepth(
+          flat([
+            ["a", 0],
+            ["b", 1],
+            ["c", 1],
+          ]),
+          "c",
+          1,
+          3,
+        ),
+      ),
+    ).toEqual(["a:0", "b:1", "c:2"]);
+    expect(
+      shape(
+        shiftDepth(
+          flat([
+            ["a", 0],
+            ["b", 1],
+          ]),
+          "b",
+          -3,
+          3,
+        ),
+      ),
+    ).toEqual(["a:0", "b:0"]);
+  });
+
+  it("adds pages under their parent's item, and before buttons at the top", () => {
+    const counter = { next: 0 };
+    const added = addPageItems(
+      flat([
+        ["about", 0],
+        ["book", 0, "button"],
+      ]),
+      [
+        { id: "team", title: "Team", parentId: "about" },
+        { id: "contact", title: "Contact", parentId: null },
+        { id: "about", title: "About", parentId: null },
+      ],
+      2,
+      () => `new-${counter.next++}`,
+    );
+    expect(added.map((item) => `${item.entryId}:${item.depth}`)).toEqual([
+      "about:0",
+      "team:1",
+      "contact:0",
+      "book:0",
+    ]);
   });
 });

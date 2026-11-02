@@ -3,6 +3,7 @@ import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import { createContentReferences } from "../entries/entry-references.js";
 import { InvalidFieldsError } from "../http/http-errors.js";
 import { siteOrDefault } from "../sites/sites.service.js";
+import { currentMenuItems } from "./navigation-tree-items.service.js";
 import type { Site } from "../sites/sites.table.js";
 import { NavigationHandleTakenError, NavigationNotFoundError } from "./navigation.errors.js";
 import {
@@ -41,6 +42,7 @@ export function describeNavigationSummary(navigation: Navigation): NavigationSum
     handle: navigation.handle,
     name: navigation.name,
     maxDepth: navigation.maxDepth,
+    source: navigation.source,
     itemCount: countItems(navigation.items),
     updatedAt: navigation.updatedAt.toISOString(),
   };
@@ -73,8 +75,14 @@ export async function findNavigation(
   handle: string,
   forSite?: Site,
 ): Promise<NavigationResponse> {
-  const navigation = await findNavigationOrFail(database, handle, forSite);
-  const linked = await findLinkedEntries(database, linkedEntryIds(navigation.items));
+  const site = await siteOrDefault(database, forSite);
+  const navigation = await findNavigationOrFail(database, handle, site);
+  const items = await currentMenuItems(database, navigation, site);
+  // Hidden pages are named too, so the editor can list them to show again.
+  const linked = await findLinkedEntries(database, [
+    ...linkedEntryIds(items),
+    ...(navigation.source === "pageTree" ? navigation.pageTree.hiddenEntryIds : []),
+  ]);
   const linkedEntries: Record<string, LinkedEntry> = {};
   for (const entry of linked) {
     linkedEntries[entry.id] = {
@@ -83,7 +91,12 @@ export async function findNavigation(
       status: entry.status,
     };
   }
-  return { ...describeNavigationSummary(navigation), items: navigation.items, linkedEntries };
+  return {
+    ...describeNavigationSummary(navigation),
+    items,
+    pageTree: navigation.pageTree,
+    linkedEntries,
+  };
 }
 
 export async function createNavigation(
@@ -104,8 +117,9 @@ export async function createNavigation(
 }
 
 /**
- * Saves the name, levels or items. Items are checked as a whole tree, against the new
- * number of levels; problems come back keyed by item id, in `fields`.
+ * Saves the name, levels, items, or where the items come from. Items are checked as a whole
+ * tree, against the new number of levels; problems come back keyed by item id, in `fields`.
+ * Switching to the page tree keeps the hand-made items, for switching back.
  */
 export async function updateNavigation(
   database: DatabaseOrTransaction,
@@ -121,6 +135,8 @@ export async function updateNavigation(
     name: request.name,
     maxDepth: request.maxDepth,
     items: request.items,
+    source: request.source,
+    pageTree: request.pageTree,
   });
   return findNavigation(database, handle, forSite);
 }

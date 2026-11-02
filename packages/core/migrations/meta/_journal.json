@@ -148,6 +148,13 @@
       "when": 1793567297792,
       "tag": "0020_add_backups_and_wordpress_imports",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793634515709,
+      "tag": "0021_menus_follow_page_tree",
+      "breakpoints": true
     }
   ]
 }

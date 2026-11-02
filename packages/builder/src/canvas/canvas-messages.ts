@@ -46,6 +46,8 @@ export type MessageFromFrame =
   | { type: "rotate"; nodeId: string; degrees: number }
   /** An element was dragged or nudged in its free layout, to this place in percent. */
   | { type: "place"; nodeId: string; left: number; top: number }
+  /** "Add pages to your menu" was pressed in place of an empty menu. */
+  | { type: "openMenu"; nodeId: string }
   /** Part of a text is selected (or, with nodeId null, nothing is). */
   | { type: "textSelection"; nodeId: null }
   | TextSelectionMessage;
@@ -70,6 +72,7 @@ const frameMessageTypes = new Set([
   "rotate",
   "place",
   "textSelection",
+  "openMenu",
 ]);
 
 /** Reads a message from the frame, or null if it isn't one of ours. */
@@ -97,6 +100,8 @@ export function readFrameMessage(data: unknown): MessageFromFrame | null {
         : null;
     case "paste":
       return isText(message.html) && isText(message.text) ? (message as MessageFromFrame) : null;
+    case "openMenu":
+      return isText(message.nodeId) ? (message as MessageFromFrame) : null;
     case "rotate":
       return isText(message.nodeId) && isFiniteNumber(message.degrees)
         ? (message as MessageFromFrame)

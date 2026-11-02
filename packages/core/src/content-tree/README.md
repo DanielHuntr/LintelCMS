@@ -6,22 +6,23 @@ on whole branches. The reasoning is in `docs/decisions/0023-content-tree-and-rec
 
 ## Endpoints
 
-| Method and path                            | Permission                   | Body or query                                                              | Success                                                            |
-| ------------------------------------------ | ---------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| `GET /content-tree`                        | `entries:read`               | `?siteId&locale`                                                           | 200 `{ sites, site, locale, roots, recycleBinCount }`              |
-| `GET /content-tree/children`               | `entries:read`               | `?parentId` or `?collection`, `&offset&limit` (≤ 200)                      | 200 `{ items: [TreeNode], total, offset, limit }`                  |
-| `GET /content-tree/search`                 | `entries:read`               | `?search`                                                                  | 200 `{ items }`, titles starting with it first                     |
-| `GET /content-tree/items`                  | `entries:read`               | `?parentId` or `?collection`, `&search&status&sort&direction&page&perPage` | 200 `{ items, columns, total, page, perPage, canSortByHand }`      |
-| `GET /content-tree/allowed-types`          | `entries:read`               | `?parentId`, `?collection` or neither                                      | 200 `{ types: [{ handle, name, blueprintHandle, structure }] }`    |
-| `GET /content-tree/entries/:id/path`       | `entries:read`               | none                                                                       | 200 `{ path }`, from the top down to the entry                     |
-| `GET /content-tree/entries/:id/info`       | `entries:read`               | none                                                                       | 200 address, people, dates, `usedBy`, `childCount`                 |
-| `POST /content-tree/move`                  | `entries:update`             | `{ entryId, parentId, index }`                                             | 200 `{ previous, addressChanges: [{ entryId, title, from, to }] }` |
-| `POST /content-tree/sort`                  | `entries:update`             | `{ parentId, collection?, siteId?, order }`                                | 200 `{ addressChanges }` (at the top: pages whose address changed) |
-| `POST /content-tree/entries/:id/publish`   | `entries:publish`            | `{ includeDescendants }`                                                   | 200 `{ changed, skipped: [{ id, title, reason }] }`                |
-| `POST /content-tree/entries/:id/unpublish` | `entries:publish`            | `{ includeDescendants }`                                                   | 200 the same                                                       |
-| `POST /content-tree/entries/:id/duplicate` | `entries:create`             | `{ includeDescendants }`                                                   | 201 `{ entry, copied }`                                            |
-| `POST /content-tree/entries/:id/recycle`   | `entries:delete` (or `-own`) | none                                                                       | 201 `{ itemId, entryIds }`, see `src/recycle-bin`                  |
-| `POST /content-tree/bulk`                  | the action's own             | `{ action: publish, unpublish, move or recycle, entryIds, parentId? }`     | 200 `{ changed, skipped }`                                         |
+| Method and path                            | Permission                   | Body or query                                                                             | Success                                                              |
+| ------------------------------------------ | ---------------------------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `GET /content-tree`                        | `entries:read`               | `?siteId&locale`                                                                          | 200 `{ sites, site, locale, roots, recycleBinCount }`                |
+| `GET /content-tree/children`               | `entries:read`               | `?parentId` or `?collection`, `&offset&limit` (≤ 200)                                     | 200 `{ items: [TreeNode], total, offset, limit }`                    |
+| `GET /content-tree/search`                 | `entries:read`               | `?search`                                                                                 | 200 `{ items }`, titles starting with it first                       |
+| `GET /content-tree/items`                  | `entries:read`               | `?parentId` or `?collection`, `&search&status&type&allLevels&sort&direction&page&perPage` | 200 `{ items, columns, types, total, page, perPage, canSortByHand }` |
+| `GET /content-tree/allowed-types`          | `entries:read`               | `?parentId`, `?collection` or neither                                                     | 200 `{ types: [{ handle, name, blueprintHandle, structure }] }`      |
+| `GET /content-tree/entries/:id/path`       | `entries:read`               | none                                                                                      | 200 `{ path }`, from the top down to the entry                       |
+| `GET /content-tree/entries/:id/info`       | `entries:read`               | none                                                                                      | 200 address, people, dates, `usedBy`, `childCount`                   |
+| `POST /content-tree/move`                  | `entries:update`             | `{ entryId, parentId, index }`                                                            | 200 `{ previous, addressChanges: [{ entryId, title, from, to }] }`   |
+| `POST /content-tree/sort`                  | `entries:update`             | `{ parentId, collection?, siteId?, order }`                                               | 200 `{ addressChanges }` (at the top: pages whose address changed)   |
+| `POST /content-tree/entries/:id/publish`   | `entries:publish`            | `{ includeDescendants }`                                                                  | 200 `{ changed, skipped: [{ id, title, reason }] }`                  |
+| `POST /content-tree/entries/:id/unpublish` | `entries:publish`            | `{ includeDescendants }`                                                                  | 200 the same                                                         |
+| `POST /content-tree/entries/:id/duplicate` | `entries:create`             | `{ includeDescendants }`                                                                  | 201 `{ entry, copied }`                                              |
+| `POST /content-tree/entries/:id/recycle`   | `entries:delete` (or `-own`) | none                                                                                      | 201 `{ itemId, entryIds }`, see `src/recycle-bin`                    |
+| `POST /content-tree/bulk`                  | the action's own             | `{ action: publish, unpublish, move or recycle, entryIds, parentId? }`                    | 200 `{ changed, skipped, recycleBinItemIds? }`                       |
+| `POST /content-tree/bulk/summary`          | `entries:read`               | `{ entryIds }`                                                                            | 200 `{ items: [{ id, title, descendantCount }], totalCount }`        |
 
 `TreeNode = { id, title, slug, status, hasUnpublishedChanges, scheduledFor, updatedAt, parentId, locale, collection: { handle, name }, childCount, childrenAsCollection, isSiteStart }`
 
@@ -44,7 +45,15 @@ are the site's starts (see `src/content-roots`, which also has the Hostnames end
 - **Addresses after a move**: `addressChanges` lists the live pages whose address the move
   changed (moving to or from the top can change which site start is "/"). Each is announced
   as `entry.moved`, so the SEO tools suggest a redirect; the admin offers to add them.
-- **Bulk actions** need `entries:read` plus the action's own permission.
+- **Bulk actions** need `entries:read` plus the action's own permission. A bulk delete makes
+  one recycle bin item per picked entry and answers their ids, so the admin's Undo restores
+  them; `bulk/summary` says beforehand how many pages sit under the picked ones.
+- **The list** (`items`) shows one level, or with `allLevels=true` everything under the
+  place in the tree's order (at most 5,000), each with its address (`url`); `type` keeps
+  one content type and `types` says which are there.
+- **One address, one page**: creating, renaming or moving a page whose address another page
+  on the site answers on (a "/{slug}" collection beside Pages, say) is refused with 409
+  `ADDRESS_TAKEN`, the message also given on `slug` (see `entries/address-clash.ts`).
 - **Sites**: the tree shows one site and language; the main one unless `siteId` (and
   `locale`) say otherwise. With more than one site the admin offers a switcher.
 
