@@ -206,20 +206,24 @@ describe("the Shop screens", () => {
     );
   });
 
-  describe("the Shop home's warning when shoppers can't order (LINTEL-LEFT-002, LINTEL-UX-009)", () => {
+  describe("the Shop home's setup card and warning (LINTEL-LEFT-002, LINTEL-UX-009)", () => {
     const market = { id: "m1", name: "United Kingdom", currency: "GBP" };
     const zoneWithPrice = { id: "z1", name: "UK", countries: ["GB"], rates: [{ id: "r1" }] };
-    function shop(
-      stripeConnected: boolean,
-      provider: "stripe" | "paypal" = "stripe",
-      zones: unknown[] = [zoneWithPrice],
-    ) {
+    function shop({
+      stripeConnected,
+      provider = "stripe",
+      productCount = 0,
+    }: {
+      stripeConnected: boolean;
+      provider?: "stripe" | "paypal";
+      productCount?: number;
+    }) {
       mockApi(({ url }) => {
         switch (url.pathname) {
           case "/shop/markets":
             return { markets: [{ ...market, countries: ["GB"], isPrimary: true }] };
           case "/shop/shipping/zones":
-            return { zones };
+            return { zones: [zoneWithPrice] };
           case "/shop/settings/payments":
             return { ...notConnected, connected: stripeConnected };
           case "/shop/settings/payment-providers":
@@ -229,47 +233,51 @@ describe("the Shop screens", () => {
               markets: [{ ...market, paymentProvider: provider }],
             };
           case "/shop/products":
-            return { items: [], total: 0 };
+            return { items: [], total: productCount };
           default:
             return [];
         }
       });
     }
 
-    it("says products show as coming soon, and links to Payments, while payments aren't connected", async () => {
-      shop(false);
+    // A warning box, a checklist and a footer all said the same thing.
+    it("puts setup in one card: what's left, how far along, and why it matters", async () => {
+      shop({ stripeConnected: false });
+      renderScreen(<ShopHomePage />, withShop);
+
+      const card = await screen.findByRole("region", { name: "Get ready to sell" });
+      expect(
+        within(card).getByText(/shows your products as “Coming soon” until these are done/),
+      ).toBeInTheDocument();
+      expect(within(card).getByRole("progressbar")).toHaveAttribute("aria-valuenow", "2");
+      expect(within(card).getByText("2 of 4 done")).toBeInTheDocument();
+      expect(within(card).getByRole("link", { name: /Connect Stripe/ })).toHaveAttribute(
+        "href",
+        "/commerce/settings/payments",
+      );
+      expect(
+        within(card).getByText("Done: Choose where you sell, Set your delivery prices"),
+      ).toBeInTheDocument();
+      expect(screen.queryByText(/isn’t connected/)).not.toBeInTheDocument();
+    });
+
+    it("shows neither once the shop is set up and can take orders", async () => {
+      shop({ stripeConnected: true, productCount: 1 });
+      renderScreen(<ShopHomePage />, withShop);
+      expect(await screen.findByText("Products")).toBeInTheDocument();
+      expect(screen.queryByRole("region", { name: "Get ready to sell" })).not.toBeInTheDocument();
+      expect(screen.queryByText(/Coming soon/)).not.toBeInTheDocument();
+    });
+
+    it("warns, after setup, when a market pays with a provider that isn't connected", async () => {
+      shop({ stripeConnected: true, provider: "paypal", productCount: 1 });
       renderScreen(<ShopHomePage />, withShop);
       expect(
-        await screen.findByText(
-          /shows your products as “Coming soon” until payments are connected\./,
-        ),
+        await screen.findByText(/the way your markets take payment isn’t connected/),
       ).toBeInTheDocument();
       expect(screen.getByRole("link", { name: "Connect payments" })).toHaveAttribute(
         "href",
         "/commerce/settings/payments",
-      );
-    });
-
-    it("says nothing once payments are connected and there's a delivery price", async () => {
-      shop(true);
-      renderScreen(<ShopHomePage />, withShop);
-      expect(await screen.findByText("Get ready to sell")).toBeInTheDocument();
-      expect(screen.queryByText(/Coming soon/)).not.toBeInTheDocument();
-    });
-
-    it("warns when a market pays with a provider that isn't connected", async () => {
-      shop(true, "paypal");
-      renderScreen(<ShopHomePage />, withShop);
-      expect(await screen.findByText(/until payments are connected/)).toBeInTheDocument();
-    });
-
-    it("asks for a delivery price when there's nowhere to deliver", async () => {
-      shop(true, "stripe", []);
-      renderScreen(<ShopHomePage />, withShop);
-      expect(await screen.findByText(/until you add a delivery price\./)).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: "Add delivery prices" })).toHaveAttribute(
-        "href",
-        "/commerce/settings/shipping",
       );
     });
   });
@@ -293,6 +301,8 @@ describe("the Shop screens", () => {
 
     function emptyShop(path: string): unknown {
       if (path === "/shop/products") return { items: [], total: 0 };
+      if (path === "/shop/markets") return { markets: [] };
+      if (path === "/shop/shipping/zones") return { zones: [] };
       if (path === "/shop/settings/payments") return notConnected;
       if (path === "/shop/settings/payment-providers") {
         return { paypal: { connected: false }, mollie: { connected: false }, markets: [] };
@@ -309,9 +319,7 @@ describe("the Shop screens", () => {
       });
       renderScreen(<ShopHomePage />, withShop);
 
-      await userEvent.click(
-        await screen.findByRole("button", { name: "Add Shop to your main menu" }),
-      );
+      await userEvent.click(await screen.findByRole("button", { name: "Add to menu" }));
 
       expect(await screen.findByText("Shop is now in your main menu.")).toBeInTheDocument();
       const saved = calls.find((call) => call.method === "PUT");
@@ -321,6 +329,35 @@ describe("the Shop screens", () => {
           { label: "Shop", url: "/shop", entryId: null, newTab: false, children: [] },
         ],
       });
+    });
+
+    // A link to a deleted page made the save fail with "Some fields need attention: <an id>".
+    it("says a link to a deleted page will go, and takes it out so the menu saves", async () => {
+      const withDeletedPage = {
+        ...mainMenu,
+        items: [
+          ...mainMenu.items,
+          { id: "i2", label: "", entryId: "gone", url: null, newTab: false, children: [] },
+        ],
+      };
+      const { calls } = mockApi(({ url, method }) => {
+        if (url.pathname === "/navigation/main") {
+          return method === "PUT" ? mainMenu : withDeletedPage;
+        }
+        return emptyShop(url.pathname);
+      });
+      renderScreen(<ShopHomePage />, withShop);
+
+      expect(
+        await screen.findByText(/One link in the menu goes to a page that was deleted/),
+      ).toBeInTheDocument();
+      await userEvent.click(screen.getByRole("button", { name: "Add to menu" }));
+
+      expect(await screen.findByText("Shop is now in your main menu.")).toBeInTheDocument();
+      const saved = calls.find((call) => call.method === "PUT")?.body as {
+        items: Array<{ entryId: string | null }>;
+      };
+      expect(saved.items.map((item) => item.entryId)).toEqual([null, null]);
     });
 
     it("isn't offered once the menu links to the shop, or follows the page tree", async () => {
@@ -333,10 +370,8 @@ describe("the Shop screens", () => {
           return emptyShop(url.pathname);
         });
         renderScreen(<ShopHomePage />, withShop);
-        expect(await screen.findByRole("heading", { name: "Shop" })).toBeInTheDocument();
-        expect(
-          screen.queryByRole("button", { name: "Add Shop to your main menu" }),
-        ).not.toBeInTheDocument();
+        expect(await screen.findByText("Products")).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Add to menu" })).not.toBeInTheDocument();
         cleanup();
       }
     });

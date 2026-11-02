@@ -13,12 +13,11 @@ import {
   Users,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { Badge } from "../design/Badge.js";
 import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { t } from "../i18n/strings.js";
-import { ShopMenuOffer } from "./ShopMenuOffer.js";
+import { ShopMenuStep, useShopMenuOffer } from "./ShopMenuOffer.js";
 import { usePaymentProviders } from "./paymentProviders.queries.js";
 import { useProducts } from "./shop.queries.js";
 import { useMarkets, usePaymentSettings, useShippingZones } from "./shopSettings.queries.js";
@@ -65,64 +64,109 @@ export function ShopHomePage() {
     },
   ];
   const isLoaded = markets.data && zones.data && payments.data && products.data;
-  const remaining = steps.filter((step) => !step.done).length;
+  const done = steps.filter((step) => step.done);
+  const toDo = steps.filter((step) => !step.done);
+  const menuOffer = useShopMenuOffer();
   // Checkout uses each market's own payment provider; one that isn't connected can't take orders.
   const connected = {
     stripe: payments.data?.connected ?? false,
     paypal: providers.data?.paypal.connected ?? false,
     mollie: providers.data?.mollie.connected ?? false,
   };
-  const marketsWithoutPayments = (providers.data?.markets ?? markets.data ?? []).filter(
-    (market) => !connected["paymentProvider" in market ? market.paymentProvider : "stripe"],
-  );
+  const sellsIn = providers.data?.markets ?? markets.data ?? [];
+  const lacksPayments =
+    sellsIn.length === 0 ||
+    sellsIn.every(
+      (market) => !connected["paymentProvider" in market ? market.paymentProvider : "stripe"],
+    );
+  const lacksDelivery = !(steps[1]?.done ?? false);
   // Matches the website: until a market can be paid and something can be delivered, products
   // show as "Coming soon" (LINTEL-UX-009).
-  const lacksPayments =
-    (markets.data?.length ?? 0) === 0 ||
-    marketsWithoutPayments.length === (providers.data?.markets ?? markets.data ?? []).length;
-  const lacksDelivery = !steps[1]!.done;
-  const showsNotTakingOrders = Boolean(isLoaded && (lacksPayments || lacksDelivery));
-  const missing = lacksPayments && lacksDelivery ? "both" : lacksPayments ? "payments" : "delivery";
+  const isOpen = !lacksPayments && !lacksDelivery;
+  const showsSetup = Boolean(
+    isLoaded && (toDo.length > 0 || menuOffer.isOffered || menuOffer.isAdded),
+  );
+  // The setup list already explains a new shop. Once setup is done, the only thing left that
+  // stops a sale is a market paying with a provider that isn't connected (LINTEL-LEFT-002).
+  const showsWarning = Boolean(isLoaded && toDo.length === 0 && !isOpen);
 
   return (
     <>
       <LargeTitle title={t("shop.title")} subtitle={t("shop.subtitle")} />
       <div className="flex max-w-2xl flex-col gap-8">
-        {showsNotTakingOrders && (
+        {showsWarning && (
           <p className="flex items-start gap-2 rounded-control bg-warning/12 px-3 py-2 text-footnote text-label">
             <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-warning" />
             <span>
-              {t("shop.notTakingOrders", { missing })}{" "}
+              {t("shop.notTakingOrders")}{" "}
               <Link
-                to={lacksPayments ? "/commerce/settings/payments" : "/commerce/settings/shipping"}
+                to="/commerce/settings/payments"
                 className="font-medium text-accent hover:underline focus-visible:focus-ring"
               >
-                {lacksPayments ? t("shop.notTakingOrdersAction") : t("shop.addDeliveryPrices")}
+                {t("shop.notTakingOrdersAction")}
               </Link>
             </span>
           </p>
         )}
-        <ShopMenuOffer />
-        {isLoaded && remaining > 0 && (
-          <GroupedList
-            header={t("shop.setup.header")}
-            footer={t("shop.setup.footer", { count: remaining })}
+        {showsSetup && (
+          <section
+            aria-labelledby="shop-setup-title"
+            className="flex flex-col overflow-hidden rounded-card bg-surface"
           >
-            {steps.map((step) => (
-              <GroupedListRow
-                key={step.to}
-                icon={step.done ? CircleCheck : step.icon}
-                iconTone={step.done ? "success" : "accent"}
-                label={step.label}
-                description={step.description}
-                wrapsText
-                accessory={
-                  step.done ? <Badge tone="success">{t("shop.setup.done")}</Badge> : undefined
-                }
-                to={step.to}
-              />
-            ))}
-          </GroupedList>
+            <div className="flex flex-col gap-3 px-4 pt-4 pb-3">
+              <div className="flex flex-col gap-0.5">
+                <h2 id="shop-setup-title" className="text-headline text-label">
+                  {toDo.length > 0 ? t("shop.setup.header") : t("shop.setup.ready")}
+                </h2>
+                <p className="text-footnote text-label-secondary">
+                  {isOpen ? t("shop.setup.openIntro") : t("shop.setup.comingSoonIntro")}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div
+                  role="progressbar"
+                  aria-label={t("shop.setup.header")}
+                  aria-valuemin={0}
+                  aria-valuemax={steps.length}
+                  aria-valuenow={done.length}
+                  aria-valuetext={t("shop.setup.progress", {
+                    done: done.length,
+                    total: steps.length,
+                  })}
+                  className="h-1.5 flex-1 overflow-hidden rounded-full bg-fill"
+                >
+                  <div
+                    className="h-full rounded-full bg-accent-fill"
+                    style={{ width: `${(done.length / steps.length) * 100}%` }}
+                  />
+                </div>
+                <span className="shrink-0 text-footnote font-medium text-label-secondary">
+                  {t("shop.setup.progress", { done: done.length, total: steps.length })}
+                </span>
+              </div>
+            </div>
+            <ul className="hairline-top">
+              {toDo.map((step) => (
+                <GroupedListRow
+                  key={step.to}
+                  icon={step.icon}
+                  label={step.label}
+                  description={step.description}
+                  wrapsText
+                  to={step.to}
+                />
+              ))}
+              <ShopMenuStep offer={menuOffer} />
+            </ul>
+            {done.length > 0 && (
+              <p className="flex items-start gap-2 px-4 py-3 text-footnote text-label-secondary hairline-top">
+                <CircleCheck aria-hidden="true" className="mt-px size-4 shrink-0 text-success" />
+                <span>
+                  {t("shop.setup.doneList", { steps: done.map((step) => step.label).join(", ") })}
+                </span>
+              </p>
+            )}
+          </section>
         )}
         <GroupedList header={t("shop.sectionsHeader")}>
           <GroupedListRow

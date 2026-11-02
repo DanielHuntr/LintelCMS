@@ -12,16 +12,23 @@ export const commerceStrings = {
   "shop.saved": "Saved",
 
   "shop.notTakingOrders":
-    "Your website shows your products as “Coming soon” until {missing, select, payments {payments are connected} delivery {you add a delivery price} other {payments are connected and you add a delivery price}}. Shoppers can look, but can’t buy yet.",
-  "shop.addDeliveryPrices": "Add delivery prices",
-  "shop.menuOffer.text":
-    "Your main menu doesn’t link to your shop yet, so visitors may not find it.",
-  "shop.menuOffer.add": "Add Shop to your main menu",
+    "Your website shows your products as “Coming soon” because the way your markets take payment isn’t connected. Shoppers can look, but can’t buy yet.",
+  "shop.menuOffer.step": "Add Shop to your main menu",
+  "shop.menuOffer.text": "So visitors can find your products from any page.",
+  "shop.menuOffer.removesBroken":
+    "{count, plural, one {One link in the menu goes to a page that was deleted, so it’ll be taken out at the same time.} other {# links in the menu go to pages that were deleted, so they’ll be taken out at the same time.}}",
+  "shop.menuOffer.add": "Add to menu",
   "shop.menuOffer.label": "Shop",
   "shop.menuOffer.added": "Shop is now in your main menu.",
   "shop.notTakingOrdersAction": "Connect payments",
   "shop.setup.header": "Get ready to sell",
-  "shop.setup.footer": "{count} left to do. You can come back to these at any time.",
+  "shop.setup.ready": "Your shop is ready",
+  "shop.setup.comingSoonIntro":
+    "Your website shows your products as “Coming soon” until these are done. You can come back to them at any time.",
+  "shop.setup.openIntro": "Shoppers can buy from you now.",
+  "shop.setup.progress": "{done} of {total} done",
+  "shop.setup.doneList": "Done: {steps}",
+  "shop.setup.optional": "Optional",
   "shop.setup.done": "Done",
   "shop.setup.markets": "Choose where you sell",
   "shop.setup.marketsDescription": "Pick your currency and the countries you sell to.",
