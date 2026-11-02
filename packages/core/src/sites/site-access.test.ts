@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ensurePagesCollection } from "../collections/default-collections.js";
+import { ensureBuiltInRoles } from "../roles/roles.service.js";
 import { useTestDatabase } from "../testing/test-database.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
@@ -197,5 +198,37 @@ describe("limiting a role to some sites", () => {
 
     const left = (await admin("GET", "/recycle-bin")).json().items as Array<{ title: string }>;
     expect(left.map((item) => item.title)).toEqual(["About us"]);
+  });
+
+  // Anyone with settings:update could lift their own limit, or limit the Owner role.
+  it("lets someone limited to some sites change only those, and never their own limit", async () => {
+    await ensureBuiltInRoles(testDatabase.database);
+    await createTestUser(testDatabase.database, "sam@example.com", [
+      ["settings:*", "roles:update", "entries:*"],
+    ]);
+    await admin("PUT", "/sites/access/sam@example.com-role-0", { siteHandles: ["france"] });
+    await admin("PUT", "/sites/access/pierre@example.com-role-0", { siteHandles: ["france"] });
+    const sam = requestsAs(server, await signInAndGetCookies(server, "sam@example.com"), {
+      "lintel-site": "france",
+    });
+    const sites = (await admin("GET", "/sites")).json().sites as Array<{ handle: string }>;
+    const otherSite = sites.find((site) => site.handle !== "france")?.handle;
+
+    const refused = [
+      await sam("PUT", "/sites/access/sam@example.com-role-0", { siteHandles: null }),
+      await sam("PUT", "/sites/access/sam@example.com-role-0", {
+        siteHandles: ["france", otherSite],
+      }),
+      await sam("PUT", "/sites/access/owner", { siteHandles: ["france"] }),
+      await sam("PATCH", `/sites/${otherSite}`, { name: "Not yours" }),
+      await sam("DELETE", `/sites/${otherSite}`),
+    ];
+    expect(refused.map((response) => response.statusCode)).toEqual(refused.map(() => 403));
+
+    const allowed = await sam("PUT", "/sites/access/pierre@example.com-role-0", {
+      siteHandles: ["france"],
+    });
+    expect(allowed.statusCode).toBe(200);
+    expect((await sam("PATCH", "/sites/france", { name: "Acme France SAS" })).statusCode).toBe(200);
   });
 });
