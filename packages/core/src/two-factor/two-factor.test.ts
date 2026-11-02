@@ -73,6 +73,21 @@ describe("two-factor authentication", () => {
     });
   });
 
+  // Setting up again used to swap the authenticator with no password, from any open session.
+  it("can't be swapped for another phone while on, without the password", async () => {
+    const { secret } = await turnOn(asEd);
+
+    const again = await asEd("POST", "/account/two-factor/setup");
+
+    expect(again.statusCode).toBe(409);
+    expect(again.json()).toMatchObject({ code: "TWO_FACTOR_ALREADY_ON" });
+    expect(again.body).not.toContain("otpauth");
+    const stillMine = await asEd("POST", "/account/two-factor/confirm", {
+      code: codeFor(secret),
+    });
+    expect(stillMine.json()).toMatchObject({ code: "TWO_FACTOR_ALREADY_ON" });
+  });
+
   it("asks for a code after the password, and signs in only with a right one", async () => {
     const { secret } = await turnOn(asEd);
 
