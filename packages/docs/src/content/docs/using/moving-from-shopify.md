@@ -12,7 +12,7 @@ Shopify shop, so you can keep selling there until your new site is ready.
 
 ## Before you start
 
-- Switch on **Online shop** and add your main **market** under **Commerce → Settings →
+- Switch on **Online shop** and add your main **market** under **Shop → Settings →
   Markets**, in the same currency as your Shopify shop. Shopify's files have prices but not
   their currency, so Lintel reads them in your shop's own currency.
 - Export the files from your Shopify admin:
@@ -22,7 +22,7 @@ Shopify shop, so you can keep selling there until your new site is ready.
 
 ## The four steps
 
-Open **Commerce → Move from Shopify**.
+Open **Shop → Move from Shopify**.
 
 1. **Choose the files.** Pick the products file, and the customers and orders files if you
    have them, then press **Read the files**.

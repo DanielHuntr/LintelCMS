@@ -16,7 +16,7 @@ the [plugin API reference](/building/plugin-api/).
 | id            | Name        | What it adds                                                                    |
 | ------------- | ----------- | ------------------------------------------------------------------------------- |
 | `blog`        | Blog        | Makes the **Blog posts** collection, with Categories and Tags, when switched on |
-| `commerce`    | Online shop | Shows the Commerce section (screens on the roadmap)                             |
+| `commerce`    | Online shop | Shows the Shop section (screens on the roadmap)                                 |
 | `forms`       | Forms       | The Forms section, for people with `forms:read` (screens on the roadmap)        |
 | `automations` | Automations | Workflows, content approval and notifications ([details](/building/workflows/)) |
 | `seo`         | SEO tools   | Search engine settings, redirects, the sitemap and the editor's SEO panel       |

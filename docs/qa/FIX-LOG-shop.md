@@ -207,3 +207,25 @@ Screenshots are in [screenshots/fix-shop/](screenshots/fix-shop/). "Before" scre
 - Before: [desktop light](screenshots/fix-shop/vis-001-line-before-desktop-light.png), [desktop dark](screenshots/fix-shop/vis-001-line-before-desktop-dark.png), [390 light](screenshots/fix-shop/vis-001-line-before-390-light.png), [390 dark](screenshots/fix-shop/vis-001-line-before-390-dark.png).
 - After: [desktop light](screenshots/fix-shop/vis-001-line-after-desktop-light.png), [desktop dark](screenshots/fix-shop/vis-001-line-after-desktop-dark.png), [390 light](screenshots/fix-shop/vis-001-line-after-390-light.png), [390 dark](screenshots/fix-shop/vis-001-line-after-390-dark.png).
 - Drawer after: [desktop light](screenshots/fix-shop/vis-001-drawer-after-desktop-light.png), [390 dark](screenshots/fix-shop/vis-001-drawer-after-390-dark.png).
+
+## LINTEL-UX-002: "Commerce" vs "Shop" naming
+
+**Status:** Verified.
+
+**Root cause (confirmed):** the sidebar label `nav.commerce` in `packages/admin/src/i18n/strings.ts` said "Commerce". Everything inside the section says "Shop": the back link, "Shop settings", and core's own messages ("Connect Stripe in Shop → Settings → Payments").
+
+**Change:**
+
+- `packages/admin/src/i18n/strings.ts`: `nav.commerce` is "Shop". `features.keptContent.commerce` (shown when the shop is switched off) now says "the Shop section just hides".
+- Docs that name the sidebar section now say Shop: `using/selling.md`, `using/moving-from-shopify.md` (Shop → Settings…, Shop → Move from Shopify), `using/getting-around.md` and `building/plugins.md`.
+- Route paths (`/commerce/...`), code names and the "Online shop" feature name are unchanged. No layout or component was touched.
+
+**Tests:** `packages/admin/src/navigation/sections.test.ts` now expects "Shop" in the sidebar labels when the shop is on, and not when it's off or not permitted. It fails against the old string. Navigation and i18n tests pass (21).
+
+**Runtime verification:** the sidebar reads Dashboard · Content · Design · **Shop** · Media · Forms · Users · Settings · Help, with the Shop back link and "Products" heading under it. Checked at desktop and 390px, light and dark.
+
+**Screenshots:**
+
+- Before: [desktop light](screenshots/fix-shop/ux-002-sidebar-before-desktop-light.png), [desktop dark](screenshots/fix-shop/ux-002-sidebar-before-desktop-dark.png), [390 light](screenshots/fix-shop/ux-002-sidebar-before-390-light.png), [390 dark](screenshots/fix-shop/ux-002-sidebar-before-390-dark.png).
+- After: [desktop light](screenshots/fix-shop/ux-002-sidebar-after-desktop-light.png), [desktop dark](screenshots/fix-shop/ux-002-sidebar-after-desktop-dark.png), [390 light](screenshots/fix-shop/ux-002-sidebar-after-390-light.png), [390 dark](screenshots/fix-shop/ux-002-sidebar-after-390-dark.png).
+- At 390px the admin still overflows sideways (LINTEL-UX-001, the other fix agent's defect). That is visible in these captures and not changed here.

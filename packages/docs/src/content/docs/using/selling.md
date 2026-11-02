@@ -6,7 +6,7 @@ sidebar:
   label: Selling
 ---
 
-Lintel has a built-in online shop. It appears as **Commerce** in the sidebar once **Online
+Lintel has a built-in online shop. It appears as **Shop** in the sidebar once **Online
 shop** is switched on, either in the setup wizard or later under **Settings → Plugins**.
 
 ## Getting ready to sell

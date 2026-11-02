@@ -21,7 +21,7 @@ item.
 | **Help**      | These help pages, inside Lintel.                                 |
 
 Features your site has switched on, such as Forms or Bookings, add their own items
-after Media. Design, Commerce, Forms and Users are on the way. Their sections show "On
+after Media. Design, Shop, Forms and Users are on the way. Their sections show "On
 the roadmap" for now.
 
 Your name is at the bottom of the sidebar. The button beside it signs you out.
