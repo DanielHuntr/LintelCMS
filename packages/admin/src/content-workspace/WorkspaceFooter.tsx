@@ -11,6 +11,7 @@ import { Button, buttonClasses } from "../design/Button.js";
 import { classNames } from "../design/classNames.js";
 import { Dialog } from "../design/Dialog.js";
 import { t } from "../i18n/strings.js";
+import { PageStatus, pageStateOf } from "./PageStatus.js";
 
 interface WorkspaceFooterProps {
   entry: Entry;
@@ -34,19 +35,28 @@ interface WorkspaceFooterProps {
 }
 
 /**
- * The bar along the bottom of the workspace, always in reach: how saving is going, Preview
- * and View page, Save, and "Save and publish" with the rarer choices (Schedule…, Unpublish)
- * in its menu.
+ * The bar along the bottom of the workspace, always in reach: where the page stands on the
+ * website, in words, and how saving is going; then Preview and View page; Save, only while
+ * there is something to save; and one main button, "Save and publish" or "Publish changes",
+ * with the rarer choices (Schedule…, Unpublish) in its menu. A live page with nothing new
+ * shows just "Publishing options", rather than a greyed-out button to puzzle over.
  */
 export function WorkspaceFooter(props: WorkspaceFooterProps) {
   const { entry, canPublish, isWorking } = props;
   const [menuAt, setMenuAt] = useState<{ x: number; y: number } | null>(null);
   const [isScheduling, setIsScheduling] = useState(false);
   const isLive = entry.status === "published";
-  const hasNewerEdits = props.hasUnsavedChanges || entry.hasUnpublishedChanges;
+  const state = pageStateOf(entry, props.hasUnsavedChanges);
+  const hasNothingToPublish = state === "live";
   const publishLabel = isLive
     ? t("workspace.saveAndPublishChanges")
     : t("workspace.saveAndPublish");
+  const showsSave =
+    props.canSave && (props.hasUnsavedChanges || props.saveStatus === "failed" || !canPublish);
+  const openMenu = (button: HTMLElement) => {
+    const box = button.getBoundingClientRect();
+    setMenuAt({ x: box.right - 208, y: box.top - 8 - 44 * publishOptions.length });
+  };
 
   const publishOptions: ActionItem[] = [
     {
@@ -73,7 +83,8 @@ export function WorkspaceFooter(props: WorkspaceFooterProps) {
       aria-label={t("workspace.footer")}
       className="sticky bottom-3 z-10 -mx-2 flex items-center gap-2 rounded-panel bg-sidebar px-3 py-2.5 shadow-float hairline-ring backdrop-blur-2xl backdrop-saturate-150 max-md:flex-wrap max-md:justify-end"
     >
-      <div className="min-w-0 flex-1">
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
+        <PageStatus entry={entry} state={state} />
         <SaveIndicator
           status={props.saveStatus}
           hasUnsavedChanges={props.hasUnsavedChanges}
@@ -98,7 +109,7 @@ export function WorkspaceFooter(props: WorkspaceFooterProps) {
           {t("workspace.viewPage")}
         </ViewPageLink>
       )}
-      {props.canSave && (
+      {showsSave && (
         <Button
           variant={canPublish ? "tinted" : "filled"}
           onClick={props.onSave}
@@ -107,14 +118,26 @@ export function WorkspaceFooter(props: WorkspaceFooterProps) {
           {t("workspace.save")}
         </Button>
       )}
-      {canPublish && (
+      {canPublish && hasNothingToPublish && (
+        <Button
+          variant="plain"
+          aria-haspopup="menu"
+          aria-expanded={menuAt !== null}
+          disabled={isWorking}
+          onClick={(event) => openMenu(event.currentTarget)}
+        >
+          {t("workspace.publishingOptions")}
+          <ChevronDown aria-hidden="true" className="size-4" />
+        </Button>
+      )}
+      {canPublish && !hasNothingToPublish && (
         <div className="flex">
           <Button
             onClick={() => void props.onSaveAndPublish()}
-            disabled={isWorking || (isLive && !hasNewerEdits)}
+            disabled={isWorking}
             className="rounded-e-none"
           >
-            {isLive && !hasNewerEdits ? t("editor.published") : publishLabel}
+            {publishLabel}
           </Button>
           <button
             type="button"
@@ -122,10 +145,7 @@ export function WorkspaceFooter(props: WorkspaceFooterProps) {
             aria-haspopup="menu"
             aria-expanded={menuAt !== null}
             disabled={isWorking}
-            onClick={(event) => {
-              const box = event.currentTarget.getBoundingClientRect();
-              setMenuAt({ x: box.right - 208, y: box.top - 8 - 44 * publishOptions.length });
-            }}
+            onClick={(event) => openMenu(event.currentTarget)}
             className={classNames(
               buttonClasses("filled", "medium"),
               "rounded-s-none border-s border-on-accent/25 px-2",

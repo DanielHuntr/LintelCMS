@@ -149,9 +149,27 @@ describe("an entry's workspace", () => {
         true,
       ),
     );
-    await userEvent.click(within(bar).getByRole("button", { name: "More publishing options" }));
+    // Live with nothing new: the bar says so, and offers the rarer choices in one menu.
+    expect(await within(bar).findByText("Live on your site")).toBeTruthy();
+    expect(within(bar).queryByRole("button", { name: "Published" })).toBeNull();
+    await userEvent.click(within(bar).getByRole("button", { name: "Publishing options" }));
     expect(screen.getByRole("menuitem", { name: "Schedule…" })).toBeTruthy();
     expect(screen.getByRole("menuitem", { name: "Unpublish" })).toBeTruthy();
+  });
+
+  // The bar showed a greyed-out "Published" and a Save with nothing to save, so people
+  // couldn't tell where the page stood or what to press.
+  it("says where the page stands in words, with Save only when there's something to save", async () => {
+    answerWorkspace();
+    renderWorkspace();
+
+    const bar = await screen.findByRole("region", { name: "Saving and publishing" });
+    expect(within(bar).getByText("Draft, not on your site yet")).toBeTruthy();
+    expect(within(bar).queryByRole("button", { name: "Save" })).toBeNull();
+    expect(within(bar).getByRole("button", { name: "Save and publish" })).toBeTruthy();
+
+    await userEvent.type(screen.getByRole("textbox", { name: "Title" }), "!");
+    expect(within(bar).getByRole("button", { name: "Save" })).toBeTruthy();
   });
 
   // Saving used to send the parent the editor opened with, so a page moved in the tree

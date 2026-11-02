@@ -158,6 +158,11 @@ export const contentTreeStrings = {
   "workspace.saveAndPublish": "Save and publish",
   "workspace.saveAndPublishChanges": "Save and publish changes",
   "workspace.publishOptions": "More publishing options",
+  "workspace.publishingOptions": "Publishing options",
+  "workspace.status.live": "Live on your site",
+  "workspace.status.liveWithChanges": "Live, with changes not published",
+  "workspace.status.draft": "Draft, not on your site yet",
+  "workspace.status.scheduled": "Scheduled for {when}",
   "workspace.parentUnpublished.title":
     "{count, plural, one {Its parent page isn’t published} other {The pages above it aren’t published}}",
   "workspace.parentUnpublished.message":
