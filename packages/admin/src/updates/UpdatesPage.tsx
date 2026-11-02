@@ -141,10 +141,7 @@ function UpdatesContent({ overview }: { overview: UpdatesOverview }) {
         </div>
       )}
       <OtherVersions releases={others} />
-      <UpdateMethodCard
-        method={overview.method}
-        version={recommended?.version ?? overview.currentVersion}
-      />
+      <UpdateMethodCard method={overview.method} version={recommended?.version ?? null} />
       <PluginUpdatesCard plugins={overview.plugins} />
       <EarlierVersionsCard
         versions={overview.installedVersions}
