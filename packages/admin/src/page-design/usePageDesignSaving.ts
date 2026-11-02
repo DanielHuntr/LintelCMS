@@ -40,10 +40,8 @@ export function usePageDesignSaving(entry: Entry, fieldHandle: string) {
       setStatus("saving");
       try {
         const current = entryRef.current;
-        const updated = await updateEntry(current.id, {
-          data: { [fieldHandle]: next },
-          slug: current.slug,
-        });
+        // Only the design is sent; the rest of the entry is the entry editor's.
+        const updated = await updateEntry(current.id, { data: { [fieldHandle]: next } });
         entryRef.current = updated;
         setLatestEntry(updated);
         setSaved(next);

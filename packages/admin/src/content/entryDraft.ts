@@ -52,6 +52,25 @@ export function draftFromEntry(entry: Entry): EntryDraft {
 export const emptyDraft: EntryDraft = { data: {}, slug: "", parentId: null };
 
 /**
+ * What changed in the editor since its last save: the fields, slug and parent that differ.
+ * Saving sends only these, so someone else's saved changes to anything else are kept.
+ */
+export function changesSince(
+  saved: EntryDraft,
+  current: EntryDraft,
+): { data: EntryData; slug?: string; parentId?: string | null } {
+  const data: EntryData = {};
+  for (const [handle, value] of Object.entries(current.data)) {
+    if (!isSameValue(value, saved.data[handle])) data[handle] = value;
+  }
+  return {
+    data,
+    ...(current.slug !== saved.slug ? { slug: current.slug } : {}),
+    ...(current.parentId !== saved.parentId ? { parentId: current.parentId } : {}),
+  };
+}
+
+/**
  * New entries follow the title. So does an entry that has never been published and whose
  * slug still matches its title: changing a live page's address would break links to it.
  */

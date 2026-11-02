@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  changesSince,
   entryDraftReducer,
   hasUnsavedChanges,
   initialDraftState,
@@ -146,5 +147,29 @@ describe("field errors", () => {
 
     expect(blocked.fieldErrors).toEqual({ excerpt: "Excerpt is required" });
     expect(blocked.saveStatus).toBe(saved.saveStatus);
+  });
+});
+
+describe("what a save sends", () => {
+  const saved = {
+    data: { title: "Hours", body: "Open 9 to 5", tags: ["a"] },
+    slug: "hours",
+    parentId: "p1",
+  };
+
+  it("is only the fields, slug and parent changed since the last save", () => {
+    const current = { ...saved, data: { ...saved.data, body: "Open 8 to 6" } };
+
+    expect(changesSince(saved, current)).toEqual({ data: { body: "Open 8 to 6" } });
+  });
+
+  it("compares lists and blocks by value, not by object", () => {
+    const current = { ...saved, data: { ...saved.data, tags: ["a"] }, slug: "opening-hours" };
+
+    expect(changesSince(saved, current)).toEqual({ data: {}, slug: "opening-hours" });
+  });
+
+  it("sends the parent only when it was changed here", () => {
+    expect(changesSince(saved, { ...saved, parentId: null })).toEqual({ data: {}, parentId: null });
   });
 });

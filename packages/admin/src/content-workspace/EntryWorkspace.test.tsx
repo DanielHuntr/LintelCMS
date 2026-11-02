@@ -169,6 +169,23 @@ describe("an entry's workspace", () => {
     expect(saved?.body).not.toHaveProperty("parentId");
   });
 
+  // LINTEL-DATA-004: every save sent every field, so a second editor's save put back the
+  // values they had opened, over the first editor's saved changes.
+  it("saves only the fields changed here, so someone else's changes to the rest are kept", async () => {
+    const api = answerWorkspace();
+    renderWorkspace();
+
+    await userEvent.type(await screen.findByRole("textbox", { name: "Title" }), "!");
+    await userEvent.keyboard("{Control>}s{/Control}");
+
+    await waitFor(() => expect(api.calls.some((call) => call.method === "PATCH")).toBe(true));
+    const saved = api.calls.find((call) => call.method === "PATCH")?.body as {
+      data: Record<string, unknown>;
+    };
+    expect(Object.keys(saved.data)).toEqual(["title"]);
+    expect(saved).not.toHaveProperty("slug");
+  });
+
   describe("publishing a page whose parent isn't published", () => {
     function answerPublishing() {
       return mockApi(({ method, url }) => {

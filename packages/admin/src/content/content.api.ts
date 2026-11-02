@@ -68,11 +68,15 @@ export function translateEntry(entryId: string, locale: string): Promise<Entry> 
 }
 
 /**
- * What saving an entry sends. Leave `parentId` out unless the person moved the entry here:
- * it may have been moved in the tree since the editor opened, and sending the parent the
- * editor started with would quietly move it back.
+ * What saving an entry sends: only what this person changed (see `changesSince`). The API
+ * keeps every field, the slug and the parent that aren't sent, so two people editing one
+ * entry each keep their own changes, and a move made in the tree isn't moved back.
  */
-export type EntryUpdate = Omit<EntryChanges, "parentId"> & { parentId?: string | null };
+export interface EntryUpdate {
+  data: EntryData;
+  slug?: string;
+  parentId?: string | null;
+}
 
 /** `saveVersion` keeps this save as a revision of its own, rather than joining the open one. */
 export function updateEntry(
@@ -84,7 +88,7 @@ export function updateEntry(
     method: "PATCH",
     body: {
       data: changes.data,
-      slug: slugForSaving(changes.slug),
+      slug: changes.slug === undefined ? undefined : slugForSaving(changes.slug),
       parentId: changes.parentId,
       ...(saveVersion ? { saveVersion: true } : {}),
     },
