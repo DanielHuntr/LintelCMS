@@ -38,12 +38,24 @@ const problems: Record<string, string> = {
   not_enough_stock: "Not enough left.",
 };
 
+/** The line's picture, or the same neutral "no picture" tile the product page shows. */
+function linePicture(line: CartLine): HTMLElement {
+  if (line.image?.url) {
+    const picture = document.createElement("img");
+    picture.src = line.image.url;
+    picture.alt = "";
+    return picture;
+  }
+  const tile = element("span", "lintel-cart__line-picture");
+  tile.setAttribute("aria-hidden", "true");
+  const icon = document.querySelector<HTMLTemplateElement>("template.lintel-cart__no-picture");
+  if (icon) tile.append(icon.content.cloneNode(true));
+  return tile;
+}
+
 function lineItem(line: CartLine, onChange: (cart: Cart) => void): HTMLLIElement {
   const item = element("li", "lintel-cart__line");
-  const picture = document.createElement("img");
-  picture.src = line.image?.url ?? "";
-  picture.alt = "";
-  item.append(picture);
+  item.append(linePicture(line));
   const words = element("div", "lintel-cart__line-words");
   words.append(element("p", "lintel-cart__line-name", line.productTitle));
   if (line.variantTitle && line.variantTitle !== "Default")

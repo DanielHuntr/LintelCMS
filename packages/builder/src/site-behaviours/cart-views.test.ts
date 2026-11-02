@@ -294,3 +294,31 @@ describe("the basket page's country", () => {
     expect(document.querySelector("input[name=country]")).toBeNull();
   });
 });
+
+describe("basket lines without a picture", () => {
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("show the neutral no-picture tile instead of a broken image", () => {
+    document.body.innerHTML = `
+      <div class="lintel-cart lintel-cart--page" data-behaviour="cart" data-cart-view="page">
+        <template class="lintel-cart__no-picture"><svg class="lucide-shopping-bag"></svg></template>
+      </div>`;
+    const withPicture = {
+      ...shirt,
+      id: "line-2",
+      productTitle: "Linen trousers",
+      image: { url: "/media/trousers.jpg", alt: "" },
+    };
+
+    renderCartViews(cartWith({ lines: [shirt, withPicture] }), () => {});
+
+    const [first, second] = document.querySelectorAll(".lintel-cart__line");
+    expect(first?.querySelector("img")).toBeNull();
+    const tile = first?.querySelector(".lintel-cart__line-picture");
+    expect(tile?.getAttribute("aria-hidden")).toBe("true");
+    expect(tile?.querySelector("svg.lucide-shopping-bag")).not.toBeNull();
+    expect(second?.querySelector("img")?.getAttribute("src")).toBe("/media/trousers.jpg");
+  });
+});

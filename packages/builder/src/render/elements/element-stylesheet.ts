@@ -424,7 +424,9 @@ ${phone} { :where(.lintel-product-gallery--side) { grid-template-columns: 1fr; }
 :where(.lintel-cart__contents) { flex: 1; overflow-y: auto; }
 :where(.lintel-cart__lines) { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 :where(.lintel-cart__line) { display: grid; grid-template-columns: 4.5rem 1fr auto; gap: var(--lintel-space-3); align-items: start; padding: var(--lintel-space-3) 0; border-bottom: 1px solid var(--lintel-color-border); }
-:where(.lintel-cart__line img) { inline-size: 4.5rem; aspect-ratio: 1; object-fit: cover; border-radius: var(--lintel-radius-small, 0.375rem); background: var(--lintel-color-surface); }
+:where(.lintel-cart__line img, .lintel-cart__line-picture) { inline-size: 4.5rem; aspect-ratio: 1; object-fit: cover; border-radius: var(--lintel-radius-small, 0.375rem); background: var(--lintel-color-surface); }
+:where(.lintel-cart__line-picture) { display: grid; place-items: center; color: var(--lintel-color-text-secondary); }
+:where(.lintel-cart__line-picture svg) { inline-size: 1.5rem; block-size: 1.5rem; opacity: 0.4; }
 :where(.lintel-cart__line-name) { font-weight: 600; }
 :where(.lintel-cart__line-detail, .lintel-cart__problem) { font-size: 0.875rem; color: var(--lintel-color-text-secondary); }
 :where(.lintel-cart__problem) { color: #c0392b; }

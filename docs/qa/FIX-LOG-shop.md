@@ -185,3 +185,25 @@ Screenshots are in [screenshots/fix-shop/](screenshots/fix-shop/). "Before" scre
 - Before (text box): [desktop light](screenshots/fix-shop/ux-003-country-before-desktop-light.png), [desktop dark](screenshots/fix-shop/ux-003-country-before-desktop-dark.png), [390 light](screenshots/fix-shop/ux-003-country-before-390-light.png), [390 dark](screenshots/fix-shop/ux-003-country-before-390-dark.png).
 - After (select): [desktop light](screenshots/fix-shop/ux-003-country-after-desktop-light.png), [desktop dark](screenshots/fix-shop/ux-003-country-after-desktop-dark.png), [390 light](screenshots/fix-shop/ux-003-country-after-390-light.png), [390 dark](screenshots/fix-shop/ux-003-country-after-390-dark.png).
 - Headless screenshots can't show an open native dropdown, so the option list is evidenced by the DOM readout above.
+
+## LINTEL-VIS-001: Broken-image icon in basket lines without a picture
+
+**Status:** Verified.
+
+**Root cause (confirmed):** `lineItem` in `cart-views.ts` always created `<img src="">` (`line.image?.url ?? ""`), and the browser draws an empty `src` as a broken image.
+
+**Change:**
+
+- `cart-views.ts`: new `linePicture`. A line with a picture gets the `<img>` as before. A line without one gets a `span.lintel-cart__line-picture` (`aria-hidden`) holding the product page's own "no picture" icon.
+- `packages/builder/src/render/elements/shop.tsx`: the basket drawer and basket page each server-render that icon once (`SiteIcon name="shopping-bag"`, the same one product cards and the gallery use) in a `<template class="lintel-cart__no-picture">`, for the script to copy. This avoids bundling the icon library into the site script.
+- `element-stylesheet.ts`: the tile shares the `img` rule (4.5rem square, `--lintel-color-surface`, small radius). The icon is secondary text colour at 0.4 opacity, as on the empty product gallery.
+
+**Tests:** `cart-views.test.ts` (jsdom). For a basket with one line without a picture and one with a picture: the first line has no `<img>` but an `aria-hidden` tile with the copied icon; the second keeps its `<img src>`. The builder's `src/render` tests and snapshots still pass (102 tests in `src/render` and `src/site-behaviours`).
+
+**Runtime verification (`/cart` and the drawer, Linen shirt with no picture):** broken images on the basket page went from 1 to 0 at desktop and 390px, light and dark.
+
+**Screenshots (basket line close-ups):**
+
+- Before: [desktop light](screenshots/fix-shop/vis-001-line-before-desktop-light.png), [desktop dark](screenshots/fix-shop/vis-001-line-before-desktop-dark.png), [390 light](screenshots/fix-shop/vis-001-line-before-390-light.png), [390 dark](screenshots/fix-shop/vis-001-line-before-390-dark.png).
+- After: [desktop light](screenshots/fix-shop/vis-001-line-after-desktop-light.png), [desktop dark](screenshots/fix-shop/vis-001-line-after-desktop-dark.png), [390 light](screenshots/fix-shop/vis-001-line-after-390-light.png), [390 dark](screenshots/fix-shop/vis-001-line-after-390-dark.png).
+- Drawer after: [desktop light](screenshots/fix-shop/vis-001-drawer-after-desktop-light.png), [390 dark](screenshots/fix-shop/vis-001-drawer-after-390-dark.png).
