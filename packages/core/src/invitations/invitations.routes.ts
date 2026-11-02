@@ -52,7 +52,11 @@ export async function invitationsRoutes(server: FastifyInstance) {
   });
 
   server.post("/invitations/:id/resend", canInvite, async (request, reply) => {
-    const sent = await resendInvitation(server, readInvitationId(request.params));
+    const sent = await resendInvitation(
+      server,
+      getSignedIn(request),
+      readInvitationId(request.params),
+    );
     await logInvitationEvent(
       request,
       "user-invited",
@@ -63,7 +67,11 @@ export async function invitationsRoutes(server: FastifyInstance) {
   });
 
   server.delete("/invitations/:id", canInvite, async (request, reply) => {
-    const revoked = await revokeInvitation(server, readInvitationId(request.params));
+    const revoked = await revokeInvitation(
+      server,
+      getSignedIn(request),
+      readInvitationId(request.params),
+    );
     await logInvitationEvent(request, "invitation-revoked", revoked.email, revoked.roleName);
     return reply.code(204).send();
   });
