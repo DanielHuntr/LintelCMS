@@ -465,33 +465,33 @@ Logs referred to below are in `screenshots/batch-2/logs/`. Throwaway reset and i
 
 ## Batch 2 summary
 
-| ID              | Priority | Summary                                                                                                                    |
-| --------------- | -------- | -------------------------------------------------------------------------------------------------------------------------- |
-| LINTEL-SEC-001  | P0       | Anyone with `settings:read` (every Admin, or a "See settings" custom role) can read reset links in the email outbox and take over the Owner account |
-| LINTEL-DATA-003 | P1       | Renaming a field's handle (in a content type or a fieldset) hides its values at once on the live site, and the next save of each entry deletes them |
-| LINTEL-DATA-004 | P1       | Two editors on one entry: the second Save silently reverts the first editor's saved changes, including to fields the second editor never touched |
-| LINTEL-DATA-005 | P2       | Adding a condition to a field that already holds values clears those values on the next save of each entry where the condition is false |
-| LINTEL-FUNC-008 | P2       | Changing a field's type, or removing a select choice that entries use, is accepted; the affected entries then can't be saved at all |
-| LINTEL-FUNC-009 | P2       | Deeply nested rich text is accepted on save; the entry then answers 500 on open and publish (stack overflow)                |
-| LINTEL-SEC-002  | P2       | Global search (Ctrl K) lists titles, drafts included, from sites the person's role can't access                              |
-| LINTEL-A11Y-001 | P2       | Website basket drawer: closing it with Escape leaves focus on the page body, not on the button that opened it                |
-| LINTEL-A11Y-002 | P2       | Website checkout: after "Choose delivery" focus is lost; the next Tab starts again at "Skip to content"                       |
-| LINTEL-A11Y-003 | P2       | At 320 CSS px (400% zoom) the entry editor and content type editor scroll sideways; the entry's "…" menu is pushed off-screen |
-| LINTEL-UX-004   | P3       | Titles have no length limit (10,000 characters accepted); a long unbroken title makes Content scroll sideways below 768px     |
-| LINTEL-SEC-003  | P3       | Code saved while "allow scripts" was on keeps its scripts after the site is switched back to "remove scripts"                 |
-| LINTEL-FUNC-010 | P3       | `PATCH /shop/settings` with nothing to change answers 500                                                                    |
-| LINTEL-FUNC-011 | P3       | A damaged content export (bytes changed inside the zip) answers 500 instead of "this file is damaged"                        |
-| LINTEL-FUNC-012 | P3       | A delivery rate with no price is accepted, and its zone then can't deliver anywhere                                          |
-| LINTEL-UX-005   | P3       | Upload messages: an empty .png is refused as "looks like a .png file" (which is allowed); a safe-but-linked SVG is called "damaged" |
-| LINTEL-DATA-006 | P3       | Duplicate form submissions (same form token, same answers, milliseconds apart) are both stored                               |
-| LINTEL-A11Y-004 | P3       | Accessible names don't contain the visible text (WCAG 2.5.3) on tree items with counts, the account link and field settings buttons |
-| LINTEL-A11Y-005 | P3       | Contrast below 4.5:1 in the field picker's footer text (3.15:1) and the builder's breakpoint switch (4.41:1)                 |
-| LINTEL-A11Y-006 | P3       | On the website's basket page the sticky header covers most of a field that the browser scrolls to for a validation message   |
-| LINTEL-A11Y-007 | P3       | At 390px the entry editor's "Actions" (…) button is 20px wide and an inline text input 18px tall, under the 24px target size |
-| LINTEL-VIS-002  | P3       | The entry header shows two status badges at once: "Published" and "Published, with changes not yet published"              |
-| LINTEL-FUNC-013 | P3       | A collection list bound to a select field shows the stored value ("web"), not its label ("Web")                              |
-| LINTEL-SPEC-003 | P3       | Slugs must be unique across a whole tree collection, even under different parents, although addresses follow the tree       |
-| LINTEL-SPEC-004 | P2       | No conflict handling is specified for two people editing one entry (Scenario E); see DATA-004                                |
+| ID              | Priority | Summary                                                                                                                                                               |
+| --------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| LINTEL-SEC-001  | P0       | Anyone with `settings:read` (every Admin, or a "See settings" custom role) can read reset links in the email outbox and take over the Owner account                   |
+| LINTEL-DATA-003 | P1       | Renaming a field's handle (in a content type or a fieldset) hides its values at once on the live site, and the next save of each entry deletes them                   |
+| LINTEL-DATA-004 | P1       | Two editors on one entry: the second Save silently reverts the first editor's saved changes, including to fields the second editor never touched                      |
+| LINTEL-DATA-005 | P2       | Adding a condition to a field that already holds values clears those values on the next save of each entry where the condition is false                               |
+| LINTEL-FUNC-008 | P2       | Changing a field's type, or removing a select choice that entries use, is accepted; the affected entries then can't be saved at all                                   |
+| LINTEL-FUNC-009 | P2       | Deeply nested rich text is accepted on save; the entry then answers 500 on open and publish (stack overflow)                                                          |
+| LINTEL-SEC-002  | P2       | Global search (Ctrl K) lists titles, drafts included, from sites the person's role can't access                                                                       |
+| LINTEL-A11Y-001 | P2       | Website basket drawer: closing it with Escape leaves focus on the page body, not on the button that opened it                                                         |
+| LINTEL-A11Y-002 | P2       | Website checkout: after "Choose delivery" focus is lost; the next Tab starts again at "Skip to content"                                                               |
+| LINTEL-A11Y-003 | P2       | At 320 CSS px (400% zoom) the entry editor and content type editor scroll sideways; the entry's "…" menu is pushed off-screen                                         |
+| LINTEL-UX-004   | P3       | Titles have no length limit (10,000 characters accepted); a long unbroken title makes Content scroll sideways below 768px                                             |
+| LINTEL-SEC-003  | P3       | Code saved while "allow scripts" was on keeps its scripts after the site is switched back to "remove scripts"                                                         |
+| LINTEL-FUNC-010 | P3       | `PATCH /shop/settings` with nothing to change answers 500                                                                                                             |
+| LINTEL-FUNC-011 | P3       | A damaged content export (bytes changed inside the zip) answers 500 instead of "this file is damaged"                                                                 |
+| LINTEL-FUNC-012 | P3       | A delivery rate with no price is accepted, and its zone then can't deliver anywhere                                                                                   |
+| LINTEL-UX-005   | P3       | Upload messages: an empty .png is refused as "looks like a .png file" (which is allowed); a safe-but-linked SVG is called "damaged"                                   |
+| LINTEL-DATA-006 | P3       | Duplicate form submissions (same form token, same answers, milliseconds apart) are both stored                                                                        |
+| LINTEL-A11Y-004 | P3       | Accessible names don't contain the visible text (WCAG 2.5.3) on tree items with counts, the account link and field settings buttons                                   |
+| LINTEL-A11Y-005 | P3       | Contrast below 4.5:1 in the field picker's footer text (3.15:1) and the builder's breakpoint switch (4.41:1)                                                          |
+| LINTEL-A11Y-006 | P3       | On the website's basket page the sticky header covers most of a field that the browser scrolls to for a validation message                                            |
+| LINTEL-A11Y-007 | P3       | At 390px the entry editor's "Actions" (…) button is 20px wide and an inline text input 18px tall, under the 24px target size                                          |
+| LINTEL-VIS-002  | P3       | The entry header shows two status badges at once: "Published" and "Published, with changes not yet published"                                                         |
+| LINTEL-FUNC-013 | P3       | A collection list bound to a select field shows the stored value ("web"), not its label ("Web")                                                                       |
+| LINTEL-SPEC-003 | P3       | Slugs must be unique across a whole tree collection, even under different parents, although addresses follow the tree                                                 |
+| LINTEL-SPEC-004 | P2       | No conflict handling is specified for two people editing one entry (Scenario E); see DATA-004                                                                         |
 | LINTEL-SPEC-005 | P3       | The guide's role examples ("design pages", "manage updates") have no matching permission; Admin carries `orders:*` and `automations:*`, which aren't in the catalogue |
 
 **Counts (batch 2):** P0 1, P1 2, P2 8, P3 15 (26 in all; SPEC-004 is counted as P2).
