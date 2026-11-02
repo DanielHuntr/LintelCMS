@@ -419,7 +419,7 @@ ${phone} { :where(.lintel-product-gallery--side) { grid-template-columns: 1fr; }
 :where(.lintel-cart-button__open) { position: relative; display: inline-flex; align-items: center; justify-content: center; inline-size: 2.75rem; block-size: 2.75rem; border: 0; border-radius: 999px; background: transparent; color: inherit; cursor: pointer; }
 :where(.lintel-cart-button__count) { position: absolute; inset-block-start: 0; inset-inline-end: 0; min-inline-size: 1.25rem; block-size: 1.25rem; padding: 0 0.3rem; border-radius: 999px; background: var(--lintel-color-brand); color: var(--lintel-color-on-brand); font-size: 0.75rem; font-weight: 700; line-height: 1.25rem; }
 :where(.lintel-cart-button__count[data-empty]) { display: none; }
-:where(.lintel-cart) { display: flex; flex-direction: column; gap: var(--lintel-space-4); }
+:where(.lintel-cart:not(dialog), .lintel-cart[open]) { display: flex; flex-direction: column; gap: var(--lintel-space-4); }
 :where(.lintel-cart__title) { font-size: 1.5rem; }
 :where(.lintel-cart__contents) { flex: 1; overflow-y: auto; }
 :where(.lintel-cart__lines) { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
