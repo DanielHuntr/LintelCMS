@@ -23,7 +23,9 @@ import { defaultValues } from "../fields/fieldLayout.js";
 import { EntrySidePanel } from "./EntrySidePanel.js";
 import { EntrySlugInput } from "./EntrySlugInput.js";
 import { EntryTitleInput } from "./EntryTitleInput.js";
+import type { FieldMessages } from "../api/client.js";
 import {
+  countFieldsWithErrors,
   errorsWithoutAField,
   fieldErrorsFrom,
   firstFieldWithError,
@@ -117,7 +119,10 @@ export function EntryEditor({
   const leaveWarning = useLeaveWarning(isUnsaved);
 
   function focusFirstFieldError(error: unknown) {
-    const errors = fieldErrorsFrom(error);
+    focusFieldProblem(fieldErrorsFrom(error));
+  }
+
+  function focusFieldProblem(errors: FieldMessages) {
     const handle = firstFieldWithError(handlesInOrder, errors);
     if (handle && documentElement.current) {
       // A block opens when it has a problem, so wait a frame for its fields to be drawn.
@@ -240,6 +245,8 @@ export function EntryEditor({
             hasUnsavedChanges={isUnsaved}
             errorMessage={state.saveError}
             onRetry={() => void saveExplicitly()}
+            fieldProblemCount={countFieldsWithErrors(state.fieldErrors)}
+            onShowProblems={() => focusFieldProblem(state.fieldErrors)}
           />
         }
         primaryAction={

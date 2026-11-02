@@ -17,6 +17,8 @@ interface WorkspaceFooterProps {
   title: string;
   saveStatus: SaveStatus;
   saveError: string | null;
+  fieldProblemCount: number;
+  onShowProblems: () => void;
   hasUnsavedChanges: boolean;
   canSave: boolean;
   canPublish: boolean;
@@ -77,6 +79,8 @@ export function WorkspaceFooter(props: WorkspaceFooterProps) {
           hasUnsavedChanges={props.hasUnsavedChanges}
           errorMessage={props.saveError}
           onRetry={props.onSave}
+          fieldProblemCount={props.fieldProblemCount}
+          onShowProblems={props.onShowProblems}
         />
       </div>
       <Button

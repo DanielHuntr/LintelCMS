@@ -3,7 +3,9 @@ import { useEffect, useEffectEvent, useId, useReducer, useRef, useState } from "
 import type { Collection, Entry } from "../content/content.types.js";
 import { entryDraftReducer, hasUnsavedChanges, initialDraftState } from "../content/entryDraft.js";
 import { EntryFields } from "../content/EntryFields.js";
+import type { FieldMessages } from "../api/client.js";
 import {
+  countFieldsWithErrors,
   errorsWithoutAField,
   fieldErrorsFrom,
   firstFieldWithError,
@@ -108,7 +110,10 @@ export function EntryWorkspace({
   const leaveWarning = useLeaveWarning(isUnsaved);
 
   function focusFirstFieldError(error: unknown) {
-    const errors = fieldErrorsFrom(error);
+    focusFieldProblem(fieldErrorsFrom(error));
+  }
+
+  function focusFieldProblem(errors: FieldMessages) {
     const handle = firstFieldWithError(handlesInOrder, errors);
     if (!handle) return;
     if (selectedTab !== "content") onTabChange("content");
@@ -316,6 +321,8 @@ export function EntryWorkspace({
         title={title}
         saveStatus={state.saveStatus}
         saveError={state.saveError}
+        fieldProblemCount={countFieldsWithErrors(state.fieldErrors)}
+        onShowProblems={() => focusFieldProblem(state.fieldErrors)}
         hasUnsavedChanges={isUnsaved}
         canSave={canSave}
         canPublish={canPublish}

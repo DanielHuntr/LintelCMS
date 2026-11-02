@@ -5,6 +5,11 @@ export function fieldErrorsFrom(error: unknown): FieldMessages {
   return error instanceof ApiError && error.fields ? error.fields : {};
 }
 
+/** How many fields have a problem; a field's inner parts (`blocks.0.title`) count as it. */
+export function countFieldsWithErrors(errors: FieldMessages): number {
+  return new Set(Object.keys(errors).map((key) => key.split(".")[0])).size;
+}
+
 /** The first field, in the order they appear on screen, that has an error. */
 export function firstFieldWithError(
   handlesInOrder: readonly string[],
