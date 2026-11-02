@@ -311,6 +311,38 @@ describe("forms on websites", () => {
     expect(asset.json().uploadedBy).toBeNull();
   });
 
+  // Sending the bytes of a library image used to attach that image to the submission, and
+  // deleting the spam then deleted the image (a product photo, say) for good.
+  it("never deletes a library file a visitor happened to send too", async () => {
+    const form = await forms.createForm("Jobs");
+    await forms.api("PATCH", `/forms/${form.id}`, {
+      fields: [{ id: "p", type: "file", handle: "photo", label: "Photo" }],
+    });
+    const photo = await makeTestPng(40, 20, 7);
+    const uploaded = await forms.server.inject({
+      method: "POST",
+      url: "/media",
+      cookies: forms.cookies,
+      ...multipartBody({}, [{ name: "file", filename: "loaf.png", contents: photo }]),
+    });
+    const libraryImageId = uploaded.json().id as string;
+
+    const sent = await forms.server.inject({
+      method: "POST",
+      url: `/delivery/forms/${form.handle}/submissions`,
+      ...multipartBody({ _token: await forms.tokenFor(form) }, [
+        { name: "photo", filename: "spam.png", contents: photo },
+      ]),
+    });
+    expect(sent.statusCode).toBe(201);
+    const [spam] = await testDatabase.database.select().from(formSubmissionsTable);
+    expect(spam?.values.photo).toEqual([expect.objectContaining({ assetId: libraryImageId })]);
+
+    await forms.api("DELETE", `/forms/${form.id}/submissions/${spam?.id}`);
+
+    expect((await forms.api("GET", `/media/${libraryImageId}`)).statusCode).toBe(200);
+  });
+
   it("works as a plain HTML form, without JavaScript", async () => {
     const form = await forms.createForm("Contact", "contact");
     const token = await forms.tokenFor(form);
