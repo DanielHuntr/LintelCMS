@@ -149,7 +149,11 @@ export function ContentSection() {
 
   return (
     <ContentTreeContext value={state}>
-      <div style={{ "--tree-width": `${width}px` } as CSSProperties} className="pl-(--tree-width)">
+      {/* On a phone the tree sits above the workspace, the full width, instead of beside it. */}
+      <div
+        style={{ "--tree-width": `${width}px` } as CSSProperties}
+        className="md:pl-(--tree-width)"
+      >
         <nav
           ref={treeElement}
           aria-label={t("tree.label")}
@@ -160,7 +164,7 @@ export function ContentSection() {
             event.preventDefault();
             selection.clear();
           }}
-          className="fixed inset-y-3 inset-s-[264px] z-10 flex w-(--tree-width) flex-col rounded-panel bg-sidebar shadow-float hairline-ring backdrop-blur-2xl backdrop-saturate-150"
+          className="relative mb-6 flex h-[min(60dvh,28rem)] flex-col rounded-panel bg-sidebar shadow-float hairline-ring backdrop-blur-2xl backdrop-saturate-150 md:fixed md:inset-y-3 md:inset-s-[264px] md:z-10 md:mb-0 md:h-auto md:w-(--tree-width)"
         >
           <ContentTree />
           <TreeToast notice={notice} onDismiss={() => setNotice(null)} />
@@ -235,7 +239,7 @@ function ResizeHandle({ width, onResize }: ResizeHandleProps) {
         else return;
         event.preventDefault();
       }}
-      className="absolute inset-y-4 -inset-e-1.5 w-3 cursor-col-resize rounded-full outline-none after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:rounded-full hover:after:bg-accent/40 focus-visible:after:bg-accent"
+      className="absolute inset-y-4 -inset-e-1.5 w-3 cursor-col-resize max-md:hidden rounded-full outline-none after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:rounded-full hover:after:bg-accent/40 focus-visible:after:bg-accent"
     />
   );
 }

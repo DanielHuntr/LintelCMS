@@ -55,6 +55,8 @@ const english = {
   ...updatesStrings,
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",
+  "nav.openMenu": "Open the menu",
+  "nav.closeMenu": "Close the menu",
   "documentTitle.page": "{page} · {site}",
   "nav.dashboard": "Dashboard",
   "nav.content": "Content",

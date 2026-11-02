@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { BrandLogo } from "../branding/BrandLogo.js";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
+import { classNames } from "../design/classNames.js";
 import { t } from "../i18n/strings.js";
 import { visibleSections } from "../navigation/sections.js";
 import { isMacPlatform } from "../search/useCommandPalette.js";
@@ -19,6 +20,10 @@ interface SidebarProps {
   onOpenSearch?: () => void;
   /** Shown above the account, such as the updates link. */
   notice?: ReactNode;
+  id?: string;
+  /** On a phone the sidebar is folded away until the menu button opens it over the page. */
+  isOpenOnNarrowScreens?: boolean;
+  onCloseOnNarrowScreens?: () => void;
 }
 
 /**
@@ -33,11 +38,27 @@ export function Sidebar({
   onSignOut,
   onOpenSearch,
   notice,
+  id,
+  isOpenOnNarrowScreens = false,
+  onCloseOnNarrowScreens,
 }: SidebarProps) {
+  const sidebar = useRef<HTMLElement>(null);
+  // Opening it on a phone takes focus into it, so the keyboard carries on from there.
+  useEffect(() => {
+    if (isOpenOnNarrowScreens) sidebar.current?.querySelector<HTMLElement>("a, button")?.focus();
+  }, [isOpenOnNarrowScreens]);
+
   return (
-    <aside className="fixed inset-y-3 inset-s-3 z-10 flex w-60 flex-col rounded-panel bg-sidebar shadow-float hairline-ring backdrop-blur-2xl backdrop-saturate-150">
+    <aside
+      ref={sidebar}
+      id={id}
+      className={classNames(
+        "fixed inset-y-3 inset-s-3 z-10 flex w-60 flex-col rounded-panel bg-sidebar shadow-float hairline-ring backdrop-blur-2xl backdrop-saturate-150",
+        isOpenOnNarrowScreens ? "max-md:z-40" : "max-md:hidden",
+      )}
+    >
       <div className="flex items-center gap-2.5 px-4 pt-5 pb-6">
-        <span className="flex min-w-0 flex-col gap-1">
+        <span className="flex min-w-0 flex-1 flex-col gap-1">
           <BrandLogo />
           {siteName && (
             <span className="truncate text-footnote text-label-secondary" title={siteName}>
@@ -45,6 +66,16 @@ export function Sidebar({
             </span>
           )}
         </span>
+        {onCloseOnNarrowScreens && (
+          <button
+            type="button"
+            onClick={onCloseOnNarrowScreens}
+            aria-label={t("nav.closeMenu")}
+            className="-me-2 flex size-8 shrink-0 items-center justify-center self-start rounded-full bg-fill text-label-secondary transition-colors duration-150 ease-standard hover:text-label focus-visible:focus-ring md:hidden"
+          >
+            <X aria-hidden="true" strokeWidth={2.25} className="size-4" />
+          </button>
+        )}
       </div>
 
       <SiteSwitcher />

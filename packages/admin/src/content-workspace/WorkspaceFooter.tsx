@@ -69,7 +69,7 @@ export function WorkspaceFooter(props: WorkspaceFooterProps) {
     <div
       role="region"
       aria-label={t("workspace.footer")}
-      className="sticky bottom-3 z-10 -mx-2 flex items-center gap-2 rounded-panel bg-sidebar px-3 py-2.5 shadow-float hairline-ring backdrop-blur-2xl backdrop-saturate-150"
+      className="sticky bottom-3 z-10 -mx-2 flex items-center gap-2 rounded-panel bg-sidebar px-3 py-2.5 shadow-float hairline-ring backdrop-blur-2xl backdrop-saturate-150 max-md:flex-wrap max-md:justify-end"
     >
       <div className="min-w-0 flex-1">
         <SaveIndicator
