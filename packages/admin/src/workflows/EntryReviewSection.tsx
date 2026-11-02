@@ -56,7 +56,7 @@ function ReviewPanel({
 
   return (
     <PanelSection
-      title={t("review.title")}
+      title={t("workflowReview.title")}
       accessory={<Badge tone={stateTones[review.state]}>{t(`review.state.${review.state}`)}</Badge>}
     >
       <p className="text-footnote text-label-secondary">{describeState(review, collectionName)}</p>

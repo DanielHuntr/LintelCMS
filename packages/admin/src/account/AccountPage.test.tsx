@@ -72,9 +72,13 @@ afterEach(() => vi.restoreAllMocks());
 
 describe("your account", () => {
   // The admin's language is your own choice, so it lives with your account, not site settings.
-  it("links to the language of the admin", async () => {
+  it("is titled Your account, and links to the language of the admin", async () => {
     serveAccount();
     renderScreen(<AccountPage />);
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Your account" }),
+    ).toBeInTheDocument();
 
     expect(await screen.findByRole("link", { name: /Interface language/ })).toHaveAttribute(
       "href",

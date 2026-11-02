@@ -37,17 +37,15 @@ export const workflowStrings = {
   "templates.callServer.name": "Call my server when content changes",
   "templates.callServer.description":
     "Send every change to your own code, signed so you know it came from {product}.",
-  "templates.use": "Use this",
+  "workflowTemplates.use": "Use this",
 
   "builder.newTitle": "New automation",
-  "builder.loading": "Loading the automation",
+  "workflowBuilder.loading": "Loading the automation",
   "builder.nameLabel": "Name",
   "builder.namePlaceholder": "Tell the team about new posts",
   "builder.descriptionLabel": "What it’s for",
   "builder.descriptionHint": "Optional. Helps others understand it later.",
   "builder.enabled": "On",
-  "builder.save": "Save",
-  "builder.saving": "Saving…",
   "builder.saved": "Saved",
   "builder.testRun": "Test run",
   "builder.runNow": "Run now",
@@ -261,7 +259,7 @@ export const workflowStrings = {
   "approval.emptyDescription": "Make a collection first, then choose whether it needs approval.",
   "approval.openWorkflow": "See its automation",
 
-  "review.title": "Review",
+  "workflowReview.title": "Review",
   "review.state.not_submitted": "Not submitted",
   "review.state.in_review": "In review",
   "review.state.approved": "Approved",

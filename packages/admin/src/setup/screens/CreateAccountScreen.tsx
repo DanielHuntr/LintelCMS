@@ -51,8 +51,8 @@ export function CreateAccountScreen({
 
   return (
     <WizardScreen
-      title={t("account.title")}
-      subtitle={t("account.subtitle")}
+      title={t("createAccount.title")}
+      subtitle={t("createAccount.subtitle")}
       focusTarget={nameInput}
       onContinue={() => onContinue(strength)}
       onBack={onBack}

@@ -28,7 +28,7 @@ export function TemplateGallery({ onUse }: TemplateGalleryProps) {
                   {t(template.description)}
                 </span>
                 <span className="mt-1 text-footnote font-medium text-accent">
-                  {t("templates.use")}
+                  {t("workflowTemplates.use")}
                 </span>
               </span>
             </button>

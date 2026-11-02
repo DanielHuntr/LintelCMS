@@ -48,7 +48,7 @@ export function WorkflowBuilderPage({ workflowId, templateId }: WorkflowBuilderP
   }
   if (workflowId && !workflow.data) {
     return (
-      <LoadingRegion label={t("builder.loading")}>
+      <LoadingRegion label={t("workflowBuilder.loading")}>
         <Skeleton className="h-40 max-w-3xl rounded-card" />
       </LoadingRegion>
     );
