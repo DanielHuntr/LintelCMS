@@ -130,13 +130,15 @@ function AddToCartForm({
 }) {
   const variant = firstAvailableVariant(product);
   const soldOut = !product.availableForSale || !variant?.availableForSale;
+  // A shop that can't take orders yet says so, rather than "Sold out".
+  const unavailableLabel = product.comingSoon ? "Coming soon" : soldOutLabel;
   return (
     <form
       className="lintel-add-to-cart"
       data-behaviour="add-to-cart"
       data-product={product.handle}
       data-opens-cart={opensCart ? "" : undefined}
-      data-sold-out-label={soldOutLabel}
+      data-sold-out-label={unavailableLabel}
       data-label={label}
     >
       <input type="hidden" name="variantId" value={variant?.id ?? ""} />
@@ -159,7 +161,7 @@ function AddToCartForm({
         className="lintel-button lintel-add-to-cart__button"
         disabled={soldOut || undefined}
       >
-        {soldOut ? soldOutLabel : label}
+        {soldOut ? unavailableLabel : label}
       </button>
       <p className="lintel-add-to-cart__status" role="status" aria-live="polite" />
     </form>
@@ -199,7 +201,9 @@ function ProductCardBody({
       </a>
       <PriceText product={product} showSaving={false} />
       {!product.availableForSale && (
-        <span className="lintel-badge lintel-badge--neutral">Sold out</span>
+        <span className="lintel-badge lintel-badge--neutral">
+          {product.comingSoon ? "Coming soon" : "Sold out"}
+        </span>
       )}
       {showAddToCart && product.availableForSale && (
         <>

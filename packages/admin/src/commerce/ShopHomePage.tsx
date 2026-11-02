@@ -18,6 +18,7 @@ import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { t } from "../i18n/strings.js";
+import { ShopMenuOffer } from "./ShopMenuOffer.js";
 import { usePaymentProviders } from "./paymentProviders.queries.js";
 import { useProducts } from "./shop.queries.js";
 import { useMarkets, usePaymentSettings, useShippingZones } from "./shopSettings.queries.js";
@@ -74,7 +75,14 @@ export function ShopHomePage() {
   const marketsWithoutPayments = (providers.data?.markets ?? markets.data ?? []).filter(
     (market) => !connected["paymentProvider" in market ? market.paymentProvider : "stripe"],
   );
-  const showsNotTakingOrders = Boolean(isLoaded && marketsWithoutPayments.length > 0);
+  // Matches the website: until a market can be paid and something can be delivered, products
+  // show as "Coming soon" (LINTEL-UX-009).
+  const lacksPayments =
+    (markets.data?.length ?? 0) === 0 ||
+    marketsWithoutPayments.length === (providers.data?.markets ?? markets.data ?? []).length;
+  const lacksDelivery = !steps[1]!.done;
+  const showsNotTakingOrders = Boolean(isLoaded && (lacksPayments || lacksDelivery));
+  const missing = lacksPayments && lacksDelivery ? "both" : lacksPayments ? "payments" : "delivery";
 
   return (
     <>
@@ -84,16 +92,17 @@ export function ShopHomePage() {
           <p className="flex items-start gap-2 rounded-control bg-warning/12 px-3 py-2 text-footnote text-label">
             <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-warning" />
             <span>
-              {t("shop.notTakingOrders")}{" "}
+              {t("shop.notTakingOrders", { missing })}{" "}
               <Link
-                to="/commerce/settings/payments"
+                to={lacksPayments ? "/commerce/settings/payments" : "/commerce/settings/shipping"}
                 className="font-medium text-accent hover:underline focus-visible:focus-ring"
               >
-                {t("shop.notTakingOrdersAction")}
+                {lacksPayments ? t("shop.notTakingOrdersAction") : t("shop.addDeliveryPrices")}
               </Link>
             </span>
           </p>
         )}
+        <ShopMenuOffer />
         {isLoaded && remaining > 0 && (
           <GroupedList
             header={t("shop.setup.header")}

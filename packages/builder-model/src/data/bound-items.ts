@@ -126,6 +126,8 @@ export interface ShopProduct {
   options: readonly { name: string; values: readonly string[] }[];
   priceRange: { min: ShopMoney; max: ShopMoney } | null;
   availableForSale: boolean;
+  /** The shop can't take orders yet, so it shows as coming soon rather than sold out. */
+  comingSoon?: boolean;
   variants: readonly ShopVariant[];
 }
 

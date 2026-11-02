@@ -12,7 +12,13 @@ export const commerceStrings = {
   "shop.saved": "Saved",
 
   "shop.notTakingOrders":
-    "Your shop isn’t taking orders yet because payments aren’t connected. Shoppers who try to check out are told “This shop isn’t taking orders yet.”",
+    "Your website shows your products as “Coming soon” until {missing, select, payments {payments are connected} delivery {you add a delivery price} other {payments are connected and you add a delivery price}}. Shoppers can look, but can’t buy yet.",
+  "shop.addDeliveryPrices": "Add delivery prices",
+  "shop.menuOffer.text":
+    "Your main menu doesn’t link to your shop yet, so visitors may not find it.",
+  "shop.menuOffer.add": "Add Shop to your main menu",
+  "shop.menuOffer.label": "Shop",
+  "shop.menuOffer.added": "Shop is now in your main menu.",
   "shop.notTakingOrdersAction": "Connect payments",
   "shop.setup.header": "Get ready to sell",
   "shop.setup.footer": "{count} left to do. You can come back to these at any time.",

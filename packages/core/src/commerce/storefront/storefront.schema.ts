@@ -41,6 +41,8 @@ export const storefrontProductSchema = z.object({
   options: z.array(z.object({ name: z.string(), values: z.array(z.string()) })),
   priceRange: z.object({ min: moneySchema, max: moneySchema }).nullable(),
   availableForSale: z.boolean(),
+  /** The shop can't take orders yet (no payments or delivery), so nothing is for sale. */
+  comingSoon: z.boolean(),
   variants: z.array(
     z.object({
       id: z.uuid(),

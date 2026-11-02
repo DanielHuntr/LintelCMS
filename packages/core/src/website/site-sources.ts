@@ -120,6 +120,7 @@ export function readStorefrontProduct(value: unknown): ShopProduct | null {
     })),
     priceRange: min && max ? { min, max } : null,
     availableForSale: product.availableForSale === true,
+    comingSoon: product.comingSoon === true,
     variants,
   };
 }

@@ -162,6 +162,22 @@ describe("drawing the element library", () => {
     expect(draw(page({ type: "productPrice" })).html).toBe('<div class="page"></div>');
   });
 
+  // A shop without payments or delivery looked open; now its products say they're coming.
+  it("says coming soon, not sold out, while the shop can't take orders", () => {
+    const comingSoon = {
+      ...sampleProduct,
+      comingSoon: true,
+      availableForSale: false,
+      variants: sampleProduct.variants.map((variant) => ({ ...variant, availableForSale: false })),
+    };
+
+    const html = draw(page({ type: "addToCart" }), { product: comingSoon }).html;
+
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Coming soon<\/button>/);
+    expect(html).toContain('data-sold-out-label="Coming soon"');
+    expect(html).not.toContain("Sold out");
+  });
+
   it("writes rich text as safe HTML", () => {
     expect(markdownToHtml("## Hello\n\nSome **bold** and a [link](/about).\n\n- one\n- two")).toBe(
       '<h2>Hello</h2><p>Some <strong>bold</strong> and a <a href="/about">link</a>.</p><ul><li>one</li><li>two</li></ul>',

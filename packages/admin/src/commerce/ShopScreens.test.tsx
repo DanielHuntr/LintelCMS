@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { cleanup, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockApi } from "../testing/mockApi.js";
@@ -206,15 +206,20 @@ describe("the Shop screens", () => {
     );
   });
 
-  describe("the Shop home's warning when shoppers can't order (LINTEL-LEFT-002)", () => {
+  describe("the Shop home's warning when shoppers can't order (LINTEL-LEFT-002, LINTEL-UX-009)", () => {
     const market = { id: "m1", name: "United Kingdom", currency: "GBP" };
-    function shop(stripeConnected: boolean, provider: "stripe" | "paypal" = "stripe") {
+    const zoneWithPrice = { id: "z1", name: "UK", countries: ["GB"], rates: [{ id: "r1" }] };
+    function shop(
+      stripeConnected: boolean,
+      provider: "stripe" | "paypal" = "stripe",
+      zones: unknown[] = [zoneWithPrice],
+    ) {
       mockApi(({ url }) => {
         switch (url.pathname) {
           case "/shop/markets":
             return { markets: [{ ...market, countries: ["GB"], isPrimary: true }] };
           case "/shop/shipping/zones":
-            return { zones: [] };
+            return { zones };
           case "/shop/settings/payments":
             return { ...notConnected, connected: stripeConnected };
           case "/shop/settings/payment-providers":
@@ -231,27 +236,109 @@ describe("the Shop screens", () => {
       });
     }
 
-    it("warns the owner and links to Payments while payments aren't connected", async () => {
+    it("says products show as coming soon, and links to Payments, while payments aren't connected", async () => {
       shop(false);
       renderScreen(<ShopHomePage />, withShop);
-      expect(await screen.findByText(/Your shop isn’t taking orders yet/)).toBeInTheDocument();
+      expect(
+        await screen.findByText(
+          /shows your products as “Coming soon” until payments are connected\./,
+        ),
+      ).toBeInTheDocument();
       expect(screen.getByRole("link", { name: "Connect payments" })).toHaveAttribute(
         "href",
         "/commerce/settings/payments",
       );
     });
 
-    it("says nothing once every market's payment provider is connected", async () => {
+    it("says nothing once payments are connected and there's a delivery price", async () => {
       shop(true);
       renderScreen(<ShopHomePage />, withShop);
       expect(await screen.findByText("Get ready to sell")).toBeInTheDocument();
-      expect(screen.queryByText(/isn’t taking orders/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Coming soon/)).not.toBeInTheDocument();
     });
 
     it("warns when a market pays with a provider that isn't connected", async () => {
       shop(true, "paypal");
       renderScreen(<ShopHomePage />, withShop);
-      expect(await screen.findByText(/Your shop isn’t taking orders yet/)).toBeInTheDocument();
+      expect(await screen.findByText(/until payments are connected/)).toBeInTheDocument();
+    });
+
+    it("asks for a delivery price when there's nowhere to deliver", async () => {
+      shop(true, "stripe", []);
+      renderScreen(<ShopHomePage />, withShop);
+      expect(await screen.findByText(/until you add a delivery price\./)).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Add delivery prices" })).toHaveAttribute(
+        "href",
+        "/commerce/settings/shipping",
+      );
+    });
+  });
+
+  // Nothing on the website linked to the shop unless someone added the link by hand.
+  describe("the offer to add Shop to the main menu (LINTEL-UX-009)", () => {
+    const mainMenu = {
+      id: "n1",
+      handle: "main",
+      name: "Main menu",
+      maxDepth: 2,
+      source: "items",
+      itemCount: 1,
+      updatedAt: "2026-11-01T10:00:00Z",
+      items: [
+        { id: "i1", label: "About", entryId: null, url: "/about", newTab: false, children: [] },
+      ],
+      pageTree: { includeHome: true, hiddenEntryIds: [], labels: {} },
+      linkedEntries: {},
+    };
+
+    function emptyShop(path: string): unknown {
+      if (path === "/shop/products") return { items: [], total: 0 };
+      if (path === "/shop/settings/payments") return notConnected;
+      if (path === "/shop/settings/payment-providers") {
+        return { paypal: { connected: false }, mollie: { connected: false }, markets: [] };
+      }
+      return [];
+    }
+
+    it("adds a Shop link to the end of the main menu", async () => {
+      const { calls } = mockApi(({ url, method }) => {
+        if (url.pathname === "/navigation/main") {
+          return method === "PUT" ? { ...mainMenu, itemCount: 2 } : mainMenu;
+        }
+        return emptyShop(url.pathname);
+      });
+      renderScreen(<ShopHomePage />, withShop);
+
+      await userEvent.click(
+        await screen.findByRole("button", { name: "Add Shop to your main menu" }),
+      );
+
+      expect(await screen.findByText("Shop is now in your main menu.")).toBeInTheDocument();
+      const saved = calls.find((call) => call.method === "PUT");
+      expect(saved?.body).toMatchObject({
+        items: [
+          { label: "About", url: "/about" },
+          { label: "Shop", url: "/shop", entryId: null, newTab: false, children: [] },
+        ],
+      });
+    });
+
+    it("isn't offered once the menu links to the shop, or follows the page tree", async () => {
+      for (const menu of [
+        { ...mainMenu, items: [{ ...mainMenu.items[0], url: "/shop" }] },
+        { ...mainMenu, source: "pageTree" },
+      ]) {
+        mockApi(({ url }) => {
+          if (url.pathname === "/navigation/main") return menu;
+          return emptyShop(url.pathname);
+        });
+        renderScreen(<ShopHomePage />, withShop);
+        expect(await screen.findByRole("heading", { name: "Shop" })).toBeInTheDocument();
+        expect(
+          screen.queryByRole("button", { name: "Add Shop to your main menu" }),
+        ).not.toBeInTheDocument();
+        cleanup();
+      }
     });
   });
 });

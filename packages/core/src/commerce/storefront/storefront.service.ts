@@ -15,6 +15,7 @@ import { findProductRowByHandle, listProductRows } from "../products/products.re
 import { listRateRows, listZoneRows } from "../shipping/shipping.repository.js";
 import { loadProductDetails, type ProductDetails } from "../products/products.service.js";
 import type { ProductRow } from "../products/products.table.js";
+import { isShopOpen } from "./shop-readiness.service.js";
 import type {
   StorefrontListQuery,
   StorefrontMarket,
@@ -140,7 +141,17 @@ async function describeProducts(
   const details = await loadProductDetails(shop.database, rows, shop.now());
   const primaryCurrency = (await findPrimaryMarket(shop.database)).currency;
   const images = await shop.assetLookup.findAssetsByIds(rows.flatMap((row) => row.mediaIds));
-  return rows.map((row) => describeProduct(row, details, market, primaryCurrency, images));
+  const products = rows.map((row) =>
+    describeProduct(row, details, market, primaryCurrency, images),
+  );
+  // Until the shop can take an order, products show as coming soon, with nothing to buy.
+  if (await isShopOpen(shop)) return products;
+  return products.map((product) => ({
+    ...product,
+    availableForSale: false,
+    comingSoon: true,
+    variants: product.variants.map((variant) => ({ ...variant, availableForSale: false })),
+  }));
 }
 
 function describeProduct(
@@ -191,6 +202,7 @@ function describeProduct(
           }
         : null,
     availableForSale: variants.some((variant) => variant.availableForSale),
+    comingSoon: false,
     variants,
   };
 }
