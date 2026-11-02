@@ -25,6 +25,11 @@
       "development": "./src/canvas/canvas-frame-script.ts",
       "default": "./dist/canvas/canvas-frame-script.js"
     },
+    "./site-shop-api": {
+      "types": "./dist/site-behaviours/shop-api.d.ts",
+      "development": "./src/site-behaviours/shop-api.ts",
+      "default": "./dist/site-behaviours/shop-api.js"
+    },
     "./site-behaviours.js": "./dist/site-behaviours.js"
   },
   "scripts": {

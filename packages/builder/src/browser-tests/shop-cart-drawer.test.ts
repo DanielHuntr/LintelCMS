@@ -81,6 +81,16 @@ describe("the basket drawer on the website", () => {
         "flex",
       );
 
+      // The delivery choices the basket script adds stay hidden until there are rates.
+      const ratesWhileHidden = await page.$eval(".lintel-cart--page", (view) => {
+        const rates = document.createElement("fieldset");
+        rates.className = "lintel-cart__rates";
+        rates.hidden = true;
+        view.append(rates);
+        return getComputedStyle(rates).display;
+      });
+      expect(ratesWhileHidden).toBe("none");
+
       await page.$eval("dialog.lintel-cart", (dialog) => (dialog as HTMLDialogElement).showModal());
       expect(
         await page.$eval("dialog.lintel-cart", (dialog) => getComputedStyle(dialog).display),

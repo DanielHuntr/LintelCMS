@@ -149,10 +149,31 @@ export async function updateCart(changes: Record<string, unknown>): Promise<Cart
   });
 }
 
+/**
+ * One way to deliver the cart, exactly as `GET /delivery/shop/carts/:token/shipping-rates`
+ * answers (`ShippingQuote` in core). A contract test in core feeds the real answer through
+ * `describeShippingRate`, so the two can't drift apart again.
+ */
 export interface ShippingRate {
-  id: string;
+  rateId: string;
   name: string;
-  price: Money;
+  deliveryEstimate: string;
+  amount: Money;
+}
+
+/** How a delivery choice reads to the shopper: "Standard, £4.95 (2 to 3 working days)". */
+export function describeShippingRate(rate: ShippingRate): string {
+  const price = `${rate.name}, ${formatMoney(rate.amount)}`;
+  return rate.deliveryEstimate ? `${price} (${rate.deliveryEstimate})` : price;
+}
+
+/**
+ * What to tell the shopper when something fails. The shop's own answers are written for
+ * shoppers; anything else (a bug, a dropped connection) gets a plain sentence instead of
+ * the browser's technical message.
+ */
+export function shopperMessage(error: unknown, fallback: string): string {
+  return error instanceof ShopRequestError ? error.message : fallback;
 }
 
 export async function listShippingRates(): Promise<ShippingRate[]> {

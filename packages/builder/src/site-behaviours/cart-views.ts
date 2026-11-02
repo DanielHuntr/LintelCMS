@@ -2,8 +2,10 @@ import {
   type Cart,
   type CartLine,
   changeLine,
+  describeShippingRate,
   formatMoney,
   listShippingRates,
+  shopperMessage,
   startCheckout,
   updateCart,
 } from "./shop-api.js";
@@ -163,9 +165,9 @@ export function setUpCheckoutDetails(onChange: (cart: Cart) => void): void {
           const radio = document.createElement("input");
           radio.type = "radio";
           radio.name = "shippingRateId";
-          radio.value = rate.id;
+          radio.value = rate.rateId;
           radio.checked = index === 0;
-          option.append(radio, `${rate.name}, ${formatMoney(rate.price)}`);
+          option.append(radio, describeShippingRate(rate));
           rates.append(option);
         });
         rates.hidden = offered.length === 0;
@@ -183,8 +185,7 @@ export function setUpCheckoutDetails(onChange: (cart: Cart) => void): void {
         message.textContent =
           "Payment for this shop is set up to happen on a page of its own. Please contact the shop.";
     } catch (error) {
-      message.textContent =
-        error instanceof Error ? error.message : "Something went wrong. Please try again.";
+      message.textContent = shopperMessage(error, "Something went wrong. Please try again.");
     } finally {
       next.disabled = false;
     }

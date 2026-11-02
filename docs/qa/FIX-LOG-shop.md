@@ -73,3 +73,41 @@ Screenshots are in [screenshots/fix-shop/](screenshots/fix-shop/). "Before" scre
 - Drawer opened by Add to basket: [desktop light](screenshots/fix-shop/func-001-drawer-open-after-desktop-light.png), [390 dark](screenshots/fix-shop/func-001-drawer-open-after-390-dark.png).
 
 **Noticed, not fixed (new):** in the open drawer the "Check out" link is brand-coloured text on a brand-coloured button, so it reads as an empty purple bar. The site stylesheet's `a { color: var(--lintel-color-link) }` outranks the zero-specificity `:where(.lintel-button)`. It affects any `<a class="lintel-button">` on the website, so it is left for a separate decision.
+
+## LINTEL-FUNC-002: "Choose delivery" throws a TypeError
+
+**Status:** Fixed and verified up to the payment hand-off. Paying itself is Blocked here: no Stripe account can be connected without internet (see below).
+
+**Root cause (confirmed):**
+
+- The site's `ShippingRate` type was `{ id, name, price }`. The API answers `{ rateId, name, deliveryEstimate, amount }` (`ShippingQuote` in `core/src/commerce/shipping/shipping-quotes.ts`, `shippingRateOptionSchema` in `storefront.openapi.ts`). `formatMoney(rate.price)` read `.amount` of `undefined`.
+- The `catch` in the basket form put `error.message` on the page, so the shopper saw the JavaScript error. "Add to basket" had the same pattern.
+- Nothing tied the two sides together: core can't be imported by the builder, and the site script had no tests.
+
+**Change:**
+
+- `packages/builder/src/site-behaviours/shop-api.ts`: `ShippingRate` now matches the API. New `describeShippingRate` ("Standard, £4.95 (2 to 3 working days)") and `shopperMessage`, which shows the shop API's own messages (written for shoppers) and a plain sentence for anything else.
+- `cart-views.ts`: the radio's value is `rateId`; the label comes from `describeShippingRate`; failures go through `shopperMessage`.
+- `shop-behaviours.ts`: "Add to basket" failures go through `shopperMessage` too.
+- `packages/builder/package.json`: new export `@lintel/builder/site-shop-api` (types and code of `shop-api.ts`) so core can test against it.
+- `packages/core/src/commerce/storefront/storefront.openapi.ts`: `shippingRateOptionSchema` is exported for the contract test.
+- `element-stylesheet.ts`: the delivery choices had never been seen, because the step always failed. Once shown, the basket form's `label` rule (flex column, bold) overrode the existing `.lintel-form__choice` row style, so the radio sat above its text in a browser-default fieldset box. The label rule now skips `.lintel-form__choice`; the rates fieldset gets the same reset as the variant picker's (no border, margin or padding), and its legend matches the other labels. `display: grid` applies only when the fieldset isn't `hidden`, so it stays hidden until there are rates.
+
+**Tests:**
+
+- New contract test `packages/core/src/commerce/storefront/storefront-site-contract.test.ts`: it asks the real storefront API (test server) for a cart's delivery rates, parses the answer with the OpenAPI `shippingRateOptionSchema`, assigns it to the site's `ShippingRate[]` (a typecheck error if they drift apart) and runs it through the site's `describeShippingRate`. With the old site type it fails both ways: at runtime with the original `TypeError: Cannot read properties of undefined (reading 'amount')`, and in `tsc` with `TS2322 … is not assignable to type 'ShippingRate[]'`.
+- New jsdom test `packages/builder/src/site-behaviours/cart-views.test.ts`: Choose delivery lists "Standard, £4.95 (2 to 3 working days)" with value `rateId` and the button becomes "Pay now"; an API refusal shows the API's message; an unexpected `TypeError` shows "Something went wrong. Please try again." Two of the three fail on the unfixed code.
+- `shop-cart-drawer.test.ts` (browser) also checks that the hidden rates fieldset stays `display: none`.
+
+**Runtime verification (`/cart`, desktop and 390px, light and dark):**
+
+- Before: "Cannot read properties of undefined (reading 'amount')" above Choose delivery; no rates.
+- After: "Delivery: Standard, £4.95 (2 to 3 working days)" is listed and chosen; the button reads "Pay now".
+- Pay now: the site updates the cart with the rate (200) and calls `POST /carts/:token/checkout`, which answers `409 SHOP_NOT_READY`: "Payments aren't set up yet. Connect Stripe in Shop → Settings → Payments first." The shopper sees that text. This is the hand-off point. Connecting Stripe needs internet, so the payment page itself was not reached. The API path through a faked Stripe is covered by `commerce.e2e.test.ts`, which passes.
+- That 409 message is written for the shop owner, not the shopper. This is the prior review's "shoppers see an admin message" lead. It isn't in this fix's scope and is not changed.
+
+**Screenshots:**
+
+- Before: [desktop light](screenshots/fix-shop/func-002-delivery-before-desktop-light.png), [desktop dark](screenshots/fix-shop/func-002-delivery-before-desktop-dark.png), [390 light](screenshots/fix-shop/func-002-delivery-before-390-light.png), [390 dark](screenshots/fix-shop/func-002-delivery-before-390-dark.png).
+- After: [desktop light](screenshots/fix-shop/func-002-delivery-after-desktop-light.png), [desktop dark](screenshots/fix-shop/func-002-delivery-after-desktop-dark.png), [390 light](screenshots/fix-shop/func-002-delivery-after-390-light.png), [390 dark](screenshots/fix-shop/func-002-delivery-after-390-dark.png); [Pay now hand-off](screenshots/fix-shop/func-002-paynow-after-desktop-light.png).
+- The full-page captures show the site's sticky header part way down the page. That is how full-page screenshots draw a sticky header, not a defect.

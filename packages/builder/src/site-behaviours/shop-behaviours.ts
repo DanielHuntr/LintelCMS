@@ -5,6 +5,7 @@ import {
   type Cart,
   loadCart,
   shopRequest,
+  shopperMessage,
   startedCheckoutId,
   forgetCart,
 } from "./shop-api.js";
@@ -130,8 +131,7 @@ export function setUpAddToCart(root: ParentNode): void {
           if (drawer && !drawer.open) drawer.showModal();
         }
       } catch (error) {
-        if (status)
-          status.textContent = error instanceof Error ? error.message : "That couldn’t be added.";
+        if (status) status.textContent = shopperMessage(error, "That couldn’t be added.");
       } finally {
         if (button) button.disabled = false;
       }
