@@ -124,11 +124,17 @@ describe("the Shop screens", () => {
     });
     renderScreen(<ProductsPage />, withShop);
 
-    const sourdough = await screen.findByRole("link", { name: /Sourdough/ });
+    const sourdough = await screen.findByRole("row", { name: /Sourdough/ });
     expect(within(sourdough).getByText("Sold out")).toBeInTheDocument();
     expect(
-      within(screen.getByRole("link", { name: /Rye/ })).getByText("On sale"),
+      within(screen.getByRole("row", { name: /Rye/ })).getByText("On sale"),
     ).toBeInTheDocument();
+    // Price and stock in their own columns, and the name opens the product.
+    expect(within(sourdough).getAllByText("£4.50").length).toBeGreaterThan(0);
+    expect(within(sourdough).getByRole("link", { name: "Sourdough" })).toHaveAttribute(
+      "href",
+      "/commerce/products/p1",
+    );
   });
 
   it("connects Stripe step by step, saving the keys typed in", async () => {

@@ -57,6 +57,11 @@ export const commerceStrings = {
   "shop.products.inStock": "{count, plural, one {# in stock} other {# in stock}}",
   "shop.products.notTracked": "Stock not counted",
   "shop.products.noPrice": "No price yet",
+  "shop.products.column.product": "Product",
+  "shop.products.column.status": "Status",
+  "shop.products.column.price": "Price",
+  "shop.products.column.stock": "Stock",
+  "shop.products.variantCount": "{count, plural, one {# variant} other {# variants}}",
   "shop.products.newTitle": "New product",
   "shop.products.editorSubtitle":
     "Changes show on your site when you save, if the product is on sale.",
