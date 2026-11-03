@@ -153,6 +153,35 @@ describe("MediaLibraryPage", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("names the site whose cursor shows a picture when deleting is refused", async () => {
+    mockApi((path, init) => {
+      if (init?.method === "DELETE") {
+        return new Response(
+          JSON.stringify({
+            statusCode: 409,
+            code: "ASSET_IN_USE",
+            error: "Conflict",
+            message: "This file is used in 1 place.",
+            usedBy: [{ entryId: "s1", title: "Bakery", place: "siteCursor" }],
+          }),
+          { status: 409 },
+        );
+      }
+      return { assets: [beach], total: 1 };
+    });
+    renderWithQueries(<MediaLibraryPage permissions={["*"]} />);
+
+    await userEvent.click(await screen.findByRole("button", { name: /beach\.jpg/ }));
+    const sheet = screen.getByRole("dialog", { name: "beach.jpg" });
+    await userEvent.click(within(sheet).getByRole("button", { name: "Delete" }));
+    const confirm = screen.getByRole("alertdialog", { name: "Delete “beach.jpg”?" });
+    await userEvent.click(within(confirm).getByRole("button", { name: "Move to recycle bin" }));
+
+    const inUse = await screen.findByRole("alertdialog", { name: "This file is still in use" });
+    expect(within(inUse).getByText("Site cursor → Bakery")).toBeInTheDocument();
+    expect(inUse).toHaveAccessibleDescription(/Your site’s cursor shows this picture/);
+  });
+
   it("moves a file to the recycle bin and brings it back with Undo", async () => {
     let isBinned = false;
     const requested = mockApi((path, init) => {
