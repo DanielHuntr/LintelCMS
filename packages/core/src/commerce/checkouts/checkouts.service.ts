@@ -21,6 +21,7 @@ import {
   ProviderRequestError,
   type StartedPayment,
 } from "../payments/payment-provider.js";
+import { confirmOpenCheckout } from "../payments/payment-confirmation.service.js";
 import { paymentProviderFor } from "../payments/payment-providers.js";
 import { StripeRequestError } from "../payments/stripe-client.js";
 import { chooseTaxProvider } from "../taxes/taxes.service.js";
@@ -44,7 +45,8 @@ import type { CheckoutRow } from "./checkouts.table.js";
 /**
  * Going from a cart to paying: freeze the prices, work out tax, hold the stock and any
  * discount's use, and ask the market's payment provider (Stripe, PayPal or Mollie) for a
- * payment. The order itself is made later, by the webhook (orders/order-placement).
+ * payment. The order itself is made later, once the provider confirms the payment
+ * (orders/order-placement).
  */
 
 /** How long stock is held, and the payment page stays open. Stripe needs at least 30 minutes. */
@@ -54,6 +56,7 @@ export async function startCheckout(
   shop: ShopContext,
   token: string,
   request: StartCheckoutRequest,
+  { testSession = false }: { testSession?: boolean } = {},
 ): Promise<StartedCheckout> {
   const cartRow = await findCartByToken(shop.database, token);
   const cart = await loadPricedCart(shop, shop.database, cartRow);
@@ -63,7 +66,8 @@ export async function startCheckout(
     throw new Error("refuseUnreadyCart checks the email and address");
   }
   refuseUnusableDiscounts(cart);
-  const providerId = marketPaymentProvider(cart.market);
+  // A checkout is only ever a test one because the request carried a good test session.
+  const providerId: PaymentProviderId = testSession ? "test" : marketPaymentProvider(cart.market);
   const provider = paymentProviderFor(shop, providerId);
   const hosted = await provider.needsPages();
   if (hosted) {
@@ -159,10 +163,13 @@ export async function findCheckoutStatus(
   shop: ShopContext,
   checkoutId: string,
 ): Promise<CheckoutStatusResponse> {
-  const checkout = await findCheckoutRow(shop.database, DEFAULT_TENANT_ID, checkoutId);
-  if (!checkout) {
+  const found = await findCheckoutRow(shop.database, DEFAULT_TENANT_ID, checkoutId);
+  if (!found) {
     throw new ShopRecordNotFoundError("checkout");
   }
+  // The shopper is back, or waiting: ask the provider rather than wait for its webhook.
+  await confirmOpenCheckout(shop, found);
+  const checkout = (await findCheckoutRow(shop.database, DEFAULT_TENANT_ID, checkoutId)) ?? found;
   const order = checkout.orderId ? await findOrderRow(shop.database, checkout.orderId) : undefined;
   return {
     checkoutId: checkout.id,

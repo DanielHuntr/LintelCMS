@@ -16,6 +16,7 @@ import { shopSettingsRoutes } from "./settings/shop-settings.routes.js";
 import { shippingRoutes } from "./shipping/shipping.routes.js";
 import { shopifyImportRoutes } from "./shopify-import/shopify-import.routes.js";
 import { storefrontRoutes } from "./storefront/storefront.routes.js";
+import { testCheckoutRoutes } from "./test-checkout/test-checkout.routes.js";
 
 /**
  * The online shop. Its routes answer only while it is switched on (404 PLUGIN_NOT_ENABLED
@@ -65,5 +66,6 @@ export const commercePlugin = definePlugin({
     await server.register(paymentProvidersRoutes, withShop);
     await server.register(payPalWebhookRoutes, withShop);
     await server.register(mollieWebhookRoutes, withShop);
+    await server.register(testCheckoutRoutes, withShop);
   },
 });

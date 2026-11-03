@@ -25,7 +25,7 @@ import { buildPreviewUrl } from "./preview-urls.js";
  * aren't stored, and the signing secret lives in settings.
  */
 
-function findSigningSecret(database: DatabaseOrTransaction): Promise<string> {
+export function findSigningSecret(database: DatabaseOrTransaction): Promise<string> {
   return readOrCreateSetting(database, "previewSigningSecret", generatePreviewSecret);
 }
 

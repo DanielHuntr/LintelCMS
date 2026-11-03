@@ -1,9 +1,11 @@
 import { and, asc, eq, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../database/client.js";
 import { DEFAULT_TENANT_ID } from "../../database/columns.js";
+import type { MarketPaymentProviderId } from "../payments/payment-provider.js";
 import {
   type FulfilmentRow,
   fulfilmentsTable,
+  ordersTable,
   type RefundRow,
   refundsTable,
   type RefundStatus,
@@ -116,4 +118,19 @@ export async function listFulfilmentRows(
       and(eq(fulfilmentsTable.tenantId, DEFAULT_TENANT_ID), eq(fulfilmentsTable.orderId, orderId)),
     )
     .orderBy(asc(fulfilmentsTable.createdAt));
+}
+
+/** Orders with a refund the provider hasn't settled yet, with those refunds' ids. */
+export async function listOrdersWithPendingRefunds(
+  database: DatabaseOrTransaction,
+  provider: MarketPaymentProviderId,
+): Promise<Array<{ providerPaymentId: string | null; providerRefundId: string | null }>> {
+  return database
+    .select({
+      providerPaymentId: ordersTable.providerPaymentId,
+      providerRefundId: refundsTable.providerRefundId,
+    })
+    .from(refundsTable)
+    .innerJoin(ordersTable, eq(refundsTable.orderId, ordersTable.id))
+    .where(and(eq(refundsTable.status, "pending"), eq(ordersTable.paymentProvider, provider)));
 }

@@ -1,4 +1,4 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { requireDeliveryAccess } from "../../delivery/require-delivery-access.js";
 import { parseRequest } from "../../http/http-errors.js";
 import type { ShopContext } from "../commerce.context.js";
@@ -15,6 +15,8 @@ import {
   listStorefrontProducts,
 } from "./storefront.service.js";
 import { ShopRecordNotFoundError } from "../commerce.errors.js";
+import { isTestSession } from "../test-checkout/test-session.service.js";
+import { TEST_SESSION_HEADER } from "../test-checkout/test-session-tokens.js";
 
 /** Catalogue reads may be cached for a minute, like the delivery API. */
 const CATALOGUE_CACHE = "public, max-age=60";
@@ -33,23 +35,29 @@ const CATALOGUE_CACHE = "public, max-age=60";
 export async function storefrontRoutes(server: FastifyInstance, { shop }: { shop: ShopContext }) {
   const access = { preHandler: requireDeliveryAccess };
 
+  /** A test session's answers are its own, so they are never kept by a shared cache. */
+  const readVisit = async (request: FastifyRequest, reply: FastifyReply) => {
+    const header = request.headers[TEST_SESSION_HEADER];
+    const testSession = await isTestSession(shop, typeof header === "string" ? header : undefined);
+    reply.header("cache-control", testSession ? "no-store" : CATALOGUE_CACHE);
+    return { testSession };
+  };
+
   server.get("/delivery/shop/markets", access, async (_request, reply) =>
     reply.header("cache-control", CATALOGUE_CACHE).send(await listStorefrontMarkets(shop)),
   );
 
   server.get("/delivery/shop/products", access, async (request, reply) => {
     const query = parseRequest(storefrontListQuerySchema, request.query);
-    return reply
-      .header("cache-control", CATALOGUE_CACHE)
-      .send(await listStorefrontProducts(shop, query));
+    const visit = await readVisit(request, reply);
+    return reply.send(await listStorefrontProducts(shop, query, visit));
   });
 
   server.get("/delivery/shop/products/:handle", access, async (request, reply) => {
     const { handle } = readHandle(request.params, "product");
     const { country } = parseRequest(storefrontItemQuerySchema, request.query);
-    return reply
-      .header("cache-control", CATALOGUE_CACHE)
-      .send(await findStorefrontProduct(shop, handle, country));
+    const visit = await readVisit(request, reply);
+    return reply.send(await findStorefrontProduct(shop, handle, country, visit));
   });
 
   server.get("/delivery/shop/collections", access, async (_request, reply) =>
@@ -59,9 +67,8 @@ export async function storefrontRoutes(server: FastifyInstance, { shop }: { shop
   server.get("/delivery/shop/collections/:handle", access, async (request, reply) => {
     const { handle } = readHandle(request.params, "collection");
     const query = parseRequest(storefrontListQuerySchema, request.query);
-    return reply
-      .header("cache-control", CATALOGUE_CACHE)
-      .send(await findStorefrontCollection(shop, handle, query));
+    const visit = await readVisit(request, reply);
+    return reply.send(await findStorefrontCollection(shop, handle, query, visit));
   });
 }
 

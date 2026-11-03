@@ -1,5 +1,6 @@
-import { and, eq, lte } from "drizzle-orm";
+import { and, asc, eq, lte } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../database/client.js";
+import type { MarketPaymentProviderId } from "../payments/payment-provider.js";
 import { type CheckoutRow, checkoutsTable, type NewCheckoutRow } from "./checkouts.table.js";
 
 /** Database reads and writes for checkouts. */
@@ -77,6 +78,20 @@ export async function listOpenCheckoutIdsForCart(
     .from(checkoutsTable)
     .where(and(eq(checkoutsTable.cartId, cartId), eq(checkoutsTable.status, "open")));
   return rows.map((row) => row.id);
+}
+
+/** Checkouts a provider may have news about, oldest first. */
+export async function listOpenCheckoutRowsForProvider(
+  database: DatabaseOrTransaction,
+  provider: MarketPaymentProviderId,
+  limit = 50,
+): Promise<CheckoutRow[]> {
+  return database
+    .select()
+    .from(checkoutsTable)
+    .where(and(eq(checkoutsTable.status, "open"), eq(checkoutsTable.paymentProvider, provider)))
+    .orderBy(asc(checkoutsTable.createdAt))
+    .limit(limit);
 }
 
 export async function listExpiredOpenCheckoutRows(

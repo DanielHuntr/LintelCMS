@@ -23,6 +23,8 @@ export const STRIPE_WEBHOOK_EVENTS = [
 export const stripeEventSchema = z.object({
   id: z.string(),
   type: z.string(),
+  /** When it happened, in seconds since 1970. */
+  created: z.number().optional(),
   livemode: z.boolean().optional(),
   data: z.object({ object: z.record(z.string(), z.unknown()) }),
 });

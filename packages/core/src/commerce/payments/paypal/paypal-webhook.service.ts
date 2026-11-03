@@ -1,4 +1,6 @@
 import { DEFAULT_TENANT_ID } from "../../../database/columns.js";
+import type { CheckoutRow } from "../../checkouts/checkouts.table.js";
+import { listOrdersWithPendingRefunds } from "../../orders/refunds-and-fulfilments.repository.js";
 import { HttpError } from "../../../http/http-errors.js";
 import { abandonCheckout } from "../../checkouts/checkout-expiry.js";
 import { findCheckoutRow } from "../../checkouts/checkouts.repository.js";
@@ -18,6 +20,8 @@ import {
   payPalOrderResourceSchema,
   payPalRefundResourceSchema,
   payPalRefundStatus,
+  retrievePayPalOrder,
+  retrievePayPalRefund,
   verifyPayPalWebhook,
 } from "./paypal-api.js";
 import { connectPayPal } from "./paypal-provider.js";
@@ -131,6 +135,66 @@ export async function handlePayPalWebhook(
   });
   await runAfterCommit(shop, afterCommit, `PayPal event ${event.id}`);
   return { received: true, duplicate: !isNew };
+}
+
+/**
+ * What the webhook does, for a shop it can't reach or when the shopper comes back: fetches
+ * the order from PayPal with the shop's own credentials, takes the money if the shopper
+ * approved (only while the checkout is open, as the webhook does), and places the order once
+ * the capture is complete. The checkout's lock makes it safe against the webhook.
+ */
+export async function confirmPayPalCheckout(
+  shop: ShopContext,
+  checkout: CheckoutRow,
+): Promise<void> {
+  const orderId = checkout.providerPaymentId;
+  if (!orderId) return;
+  const { client } = await connectPayPal(shop);
+  let order = await retrievePayPalOrder(client, orderId);
+  if (order.status === "APPROVED" && checkout.status === "open") {
+    await capturePayPalOrder(client, orderId);
+    order = await retrievePayPalOrder(client, orderId);
+  }
+  const capture = order.purchase_units?.[0]?.payments?.captures?.[0];
+  if (!capture) return;
+
+  const afterCommit: AfterCommit[] = [];
+  await shop.database.transaction(async (transaction) => {
+    if (capture.status === "COMPLETED") {
+      const currency = (capture.amount?.currency_code ?? "").toUpperCase();
+      const result = await placeOrderForPayment(
+        transaction,
+        checkout.id,
+        {
+          provider: "paypal",
+          paymentIntentId: null,
+          providerPaymentId: capture.id,
+          amount: capture.amount ? (fromDecimalAmount(capture.amount.value, currency) ?? -1) : -1,
+          currency,
+        },
+        shop.now(),
+      );
+      followUpPlacement(shop, result, afterCommit);
+    } else if (capture.status === "DECLINED" || capture.status === "FAILED") {
+      await abandonCheckout(transaction, checkout.id);
+    }
+  });
+  await runAfterCommit(shop, afterCommit, `PayPal order ${orderId}`);
+}
+
+/** Brings refunds PayPal hadn't finished up to date, as its webhook would. */
+export async function settlePendingPayPalRefunds(shop: ShopContext): Promise<void> {
+  const pending = await listOrdersWithPendingRefunds(shop.database, "paypal");
+  if (pending.length === 0) return;
+  const { client } = await connectPayPal(shop);
+  for (const { providerRefundId } of pending) {
+    if (!providerRefundId) continue;
+    const refund = await retrievePayPalRefund(client, providerRefundId);
+    const outcome = await shop.database.transaction((transaction) =>
+      settleProviderRefund(transaction, refund.id, payPalRefundStatus(refund.status)),
+    );
+    await announceIfRefunded(shop, outcome);
+  }
 }
 
 function readTransmission(headers: Partial<PayPalTransmission>): PayPalTransmission | null {

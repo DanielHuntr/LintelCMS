@@ -7,7 +7,8 @@ import { createStripeTaxTransaction } from "./stripe-api.js";
 /**
  * What happens after a payment webhook's transaction has committed: the things that talk
  * to the outside world (the confirmation email and the order.paid event, recording tax with Stripe), so a failure
- * there never undoes the order. Shared by the Stripe, PayPal and Mollie webhooks.
+ * there never undoes the order. Shared by everything that can confirm a payment: the Stripe,
+ * PayPal and Mollie webhooks, Lintel's own checks with them, and the test checkout.
  */
 export type AfterCommit = () => Promise<void>;
 
@@ -37,7 +38,8 @@ export function followUpPlacement(
   if (result.outcome !== "placed") return;
   const { order, checkout } = result;
   afterCommit.push(() => announceOrderPaid(shop, order.id));
-  if (checkout.taxCalculation === "stripe" && checkout.taxReference) {
+  // A test order took no money, so there is no tax to report to Stripe.
+  if (!order.isTest && checkout.taxCalculation === "stripe" && checkout.taxReference) {
     const calculationId = checkout.taxReference;
     afterCommit.push(async () => {
       try {

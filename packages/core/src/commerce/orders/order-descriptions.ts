@@ -21,6 +21,7 @@ export function describeOrderSummary(row: OrderRow, itemCount: number): OrderSum
     paymentStatus: row.paymentStatus,
     fulfilmentStatus: row.fulfilmentStatus,
     cancelled: row.cancelledAt !== null,
+    isTest: row.isTest,
     total: { amount: row.totalAmount, currency: row.currency },
     itemCount,
     createdAt: row.createdAt.toISOString(),

@@ -4,6 +4,7 @@ import { findOrderRow, insertOrderEvent, listOrderLineRows } from "../orders/ord
 import type { FulfilmentRow, OrderRow, RefundRow } from "../orders/orders.table.js";
 import { readShopSettings } from "../settings/shop-settings.service.js";
 import {
+  asTestEmail,
   type OrderEmail,
   orderConfirmationEmail,
   orderRefundedEmail,
@@ -16,6 +17,9 @@ import {
  * automations listen to. Neither failing undoes the order, the shipment or the refund: an
  * email failure is logged and noted on the order's timeline, so staff can tell the
  * customer another way.
+ *
+ * A test order's emails say so, and it stays off the event bus, so it never reaches Visitors'
+ * goals or an automation that tells a warehouse or an accounts package about a sale.
  */
 
 export async function announceOrderPaid(shop: ShopContext, orderId: string): Promise<void> {
@@ -24,6 +28,7 @@ export async function announceOrderPaid(shop: ShopContext, orderId: string): Pro
   await emailCustomer(shop, order, (lines, identity) =>
     orderConfirmationEmail(order, lines, identity),
   );
+  if (order.isTest) return;
   await shop.events.publish("order.paid", { order: orderEventData(order) }, { actor: null });
 }
 
@@ -40,6 +45,7 @@ export async function announceOrderFulfilled(
       orderShippedEmail(order, fulfilment, lines, identity),
     );
   }
+  if (order.isTest) return;
   await shop.events.publish(
     "order.fulfilled",
     { order: orderEventData(order), fulfilment: fulfilmentEventData(fulfilment) },
@@ -60,6 +66,7 @@ export async function announceOrderRefunded(
       orderRefundedEmail(order, refund, identity),
     );
   }
+  if (order.isTest) return;
   await shop.events.publish(
     "order.refunded",
     { order: orderEventData(order), refund: refundEventData(refund) },
@@ -74,7 +81,8 @@ type Compose = (
 
 async function emailCustomer(shop: ShopContext, order: OrderRow, compose: Compose) {
   const settings = await readShopSettings(shop.database);
-  const message = compose(await listOrderLineRows(shop.database, order.id), settings);
+  const composed = compose(await listOrderLineRows(shop.database, order.id), settings);
+  const message = order.isTest ? asTestEmail(composed) : composed;
   try {
     await shop.email.send({
       to: message.to,

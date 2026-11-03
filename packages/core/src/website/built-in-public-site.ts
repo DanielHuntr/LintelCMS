@@ -1,3 +1,7 @@
+import {
+  testCheckoutSiteRoutes,
+  testVisitReader,
+} from "../commerce/test-checkout/test-checkout-site.routes.js";
 import type { PublicSite } from "../production/public-site.js";
 import { siteApiRoutes } from "./site-api.routes.js";
 import { storefrontSources } from "./site-sources.js";
@@ -34,8 +38,11 @@ export const builtInPublicSite: PublicSite = async (server, options) => {
   // shop and form elements read it, all inside this one process (see site-sources.ts).
   const sources = storefrontSources(server, options.apiPrefix);
   await server.register(siteApiRoutes, { api: server, apiPrefix: options.apiPrefix });
+  const testCheckout = { api: server, ...options };
+  await server.register(testCheckoutSiteRoutes, testCheckout);
   await server.register(siteRoutes, {
     database: () => server.database,
+    testVisit: testVisitReader(testCheckout),
     // Each site has its own pages, so each reads and caches its own (see site-for-address.ts).
     dependencies: (site) => ({
       sources,

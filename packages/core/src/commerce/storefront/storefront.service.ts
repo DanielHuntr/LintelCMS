@@ -28,10 +28,21 @@ import type {
  * numbers stay private; the storefront learns only whether each variant can be bought.
  */
 
-export async function listStorefrontProducts(shop: ShopContext, query: StorefrontListQuery) {
+/** A test session shops before the shop is open, so it gets products that can be bought. */
+export interface StorefrontVisit {
+  testSession: boolean;
+}
+
+const ORDINARY_VISIT: StorefrontVisit = { testSession: false };
+
+export async function listStorefrontProducts(
+  shop: ShopContext,
+  query: StorefrontListQuery,
+  visit: StorefrontVisit = ORDINARY_VISIT,
+) {
   const market = await findMarketForCountry(shop.database, query.country);
   if (query.collection) {
-    return listCollectionProducts(shop, query.collection, market, query);
+    return listCollectionProducts(shop, query.collection, market, query, visit);
   }
   const { rows, total } = await listProductRows(
     shop.database,
@@ -39,20 +50,25 @@ export async function listStorefrontProducts(shop: ShopContext, query: Storefron
     { status: "active" },
     query,
   );
-  return { items: await describeProducts(shop, rows, market), total, currency: market.currency };
+  return {
+    items: await describeProducts(shop, rows, market, visit),
+    total,
+    currency: market.currency,
+  };
 }
 
 export async function findStorefrontProduct(
   shop: ShopContext,
   handle: string,
   country: string | undefined,
+  visit: StorefrontVisit = ORDINARY_VISIT,
 ): Promise<StorefrontProduct> {
   const row = await findProductRowByHandle(shop.database, DEFAULT_TENANT_ID, handle);
   if (!row || row.status !== "active") {
     throw new ShopRecordNotFoundError("product");
   }
   const market = await findMarketForCountry(shop.database, country);
-  const [product] = await describeProducts(shop, [row], market);
+  const [product] = await describeProducts(shop, [row], market, visit);
   if (!product) throw new ShopRecordNotFoundError("product");
   return product;
 }
@@ -73,13 +89,14 @@ export async function findStorefrontCollection(
   shop: ShopContext,
   handle: string,
   query: StorefrontListQuery,
+  visit: StorefrontVisit = ORDINARY_VISIT,
 ) {
   const collection = await findProductCollectionByHandle(shop.database, handle);
   if (!collection) {
     throw new ShopRecordNotFoundError("collection");
   }
   const market = await findMarketForCountry(shop.database, query.country);
-  const products = await listCollectionProducts(shop, handle, market, query);
+  const products = await listCollectionProducts(shop, handle, market, query, visit);
   return {
     id: collection.id,
     title: collection.title,
@@ -124,19 +141,25 @@ async function listCollectionProducts(
   handle: string,
   market: MarketRow,
   page: { page: number; perPage: number },
+  visit: StorefrontVisit,
 ) {
   const collection = await findProductCollectionByHandle(shop.database, handle);
   if (!collection) {
     throw new ShopRecordNotFoundError("collection");
   }
   const { rows, total } = await findCollectionProducts(shop.database, collection, "active", page);
-  return { items: await describeProducts(shop, rows, market), total, currency: market.currency };
+  return {
+    items: await describeProducts(shop, rows, market, visit),
+    total,
+    currency: market.currency,
+  };
 }
 
 async function describeProducts(
   shop: ShopContext,
   rows: readonly ProductRow[],
   market: MarketRow,
+  visit: StorefrontVisit,
 ): Promise<StorefrontProduct[]> {
   const details = await loadProductDetails(shop.database, rows, shop.now());
   const primaryCurrency = (await findPrimaryMarket(shop.database)).currency;
@@ -145,7 +168,7 @@ async function describeProducts(
     describeProduct(row, details, market, primaryCurrency, images),
   );
   // Until the shop can take an order, products show as coming soon, with nothing to buy.
-  if (await isShopOpen(shop)) return products;
+  if (visit.testSession || (await isShopOpen(shop))) return products;
   return products.map((product) => ({
     ...product,
     availableForSale: false,

@@ -19,6 +19,8 @@ export const FAKE_STRIPE_ENVIRONMENT = {
 export interface RecordedStripeRequest {
   method: string;
   path: string;
+  /** What was asked in the address, for reads such as the list of events. */
+  query: URLSearchParams;
   form: URLSearchParams;
   idempotencyKey: string | null;
 }
@@ -30,6 +32,19 @@ export class FakeStripe {
   refundStatus = "succeeded";
   /** Set to make the next request to a path fail with Stripe's error shape. */
   failNext: { path: string; status: number; message: string } | null = null;
+  /** What `GET /v1/checkout/sessions/:id` answers; unknown sessions are unpaid. */
+  readonly sessions = new Map<string, Record<string, unknown>>();
+  /** What `GET /v1/payment_intents/:id` answers; unknown ones still need paying. */
+  readonly paymentIntents = new Map<string, Record<string, unknown>>();
+  /** What `GET /v1/events` lists, oldest first, as a test plays Stripe's side. */
+  readonly events: Array<{
+    id: string;
+    type: string;
+    created: number;
+    data: { object: Record<string, unknown> };
+  }> = [];
+  /** Events per page of `GET /v1/events`. */
+  eventPageSize = 100;
   private counter = 0;
 
   readonly fetch: typeof fetch = async (input, init) => {
@@ -39,6 +54,7 @@ export class FakeStripe {
     const request = {
       method: init?.method ?? "GET",
       path: url.pathname,
+      query: url.searchParams,
       form,
       idempotencyKey: headers.get("idempotency-key"),
     };
@@ -63,6 +79,17 @@ export class FakeStripe {
 
   private answer(request: RecordedStripeRequest): Record<string, unknown> {
     const { path, form } = request;
+    if (request.method === "GET" && path === "/v1/events") {
+      return this.eventList(request.query);
+    }
+    if (request.method === "GET" && path.startsWith("/v1/checkout/sessions/")) {
+      const id = path.split("/")[4] ?? "";
+      return this.sessions.get(id) ?? { id, payment_status: "unpaid" };
+    }
+    if (request.method === "GET" && path.startsWith("/v1/payment_intents/")) {
+      const id = path.split("/")[3] ?? "";
+      return this.paymentIntents.get(id) ?? { id, status: "requires_payment_method" };
+    }
     if (path === "/v1/account") {
       return { id: "acct_test123", settings: { dashboard: { display_name: "Test shop" } } };
     }
@@ -107,6 +134,19 @@ export class FakeStripe {
       return { id: `tax_txn_${this.next()}` };
     }
     throw new Error(`The fake Stripe doesn't know ${request.method} ${path}`);
+  }
+
+  private eventList(query: URLSearchParams): Record<string, unknown> {
+    const from = Number(query.get("created[gte]") ?? 0);
+    const newestFirst = this.events.filter((event) => event.created >= from).reverse();
+    const after = query.get("starting_after");
+    const start = after ? newestFirst.findIndex((event) => event.id === after) + 1 : 0;
+    const page = newestFirst.slice(start, start + this.eventPageSize);
+    return {
+      object: "list",
+      data: page.map((event) => ({ object: "event", livemode: false, ...event })),
+      has_more: start + page.length < newestFirst.length,
+    };
   }
 
   private taxCalculation(form: URLSearchParams): Record<string, unknown> {

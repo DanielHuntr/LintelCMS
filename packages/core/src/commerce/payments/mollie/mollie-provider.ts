@@ -2,6 +2,7 @@ import type { ShopContext } from "../../commerce.context.js";
 import { ShopNotReadyError } from "../../commerce.errors.js";
 import { findSavedCredentials } from "../payment-accounts.repository.js";
 import type { SavedMollieCredentials } from "../payment-accounts.table.js";
+import { isLocalAddress } from "../local-address.js";
 import type { PaymentProvider } from "../payment-provider.js";
 import { type MollieCredentials, resolveMollieCredentials } from "../provider-credentials.js";
 import {
@@ -59,12 +60,11 @@ export function molliePaymentProvider(shop: ShopContext): PaymentProvider {
 }
 
 /**
- * Mollie can't reach a server on localhost, and refuses payments that name such a webhook,
- * so while developing locally the webhook is left out and payments are checked by hand.
+ * Mollie can't reach a shop on someone's own computer, and refuses payments that name such a
+ * webhook, so the webhook is left out and Lintel asks Mollie itself (payment-checks.service.ts).
  */
 export function mollieWebhookUrl(publicApiUrl: string): string | null {
-  const host = new URL(publicApiUrl).hostname;
-  if (host === "localhost" || host === "127.0.0.1" || host.endsWith(".local")) return null;
+  if (isLocalAddress(publicApiUrl)) return null;
   return `${publicApiUrl.replace(/\/+$/, "")}${MOLLIE_WEBHOOK_PATH}`;
 }
 

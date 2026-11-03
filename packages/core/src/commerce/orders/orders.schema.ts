@@ -86,6 +86,8 @@ export const orderSummarySchema = z.object({
   paymentStatus: z.enum(paymentStatuses),
   fulfilmentStatus: z.enum(fulfilmentStatuses),
   cancelled: z.boolean(),
+  /** Placed through the test checkout: no money moved, and it isn't a sale. */
+  isTest: z.boolean(),
   total: moneySchema,
   itemCount: z.number().int(),
   createdAt: z.iso.datetime(),

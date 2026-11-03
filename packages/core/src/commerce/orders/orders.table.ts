@@ -65,6 +65,11 @@ export const ordersTable = pgTable(
     /** PayPal's capture id or Mollie's payment id, which refunds go against. */
     providerPaymentId: text("provider_payment_id"),
     stripePaymentIntentId: text("stripe_payment_intent_id"),
+    /**
+     * Placed through the test checkout: no money moved. Shown with a Test badge, left out of
+     * every sales figure, and deleted with one action (see ../test-checkout).
+     */
+    isTest: boolean("is_test").notNull().default(false),
     paidAt: timestamp("paid_at", { withTimezone: true }).notNull(),
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
     cancelReason: text("cancel_reason"),

@@ -3,6 +3,7 @@ import { molliePaymentProvider } from "./mollie/mollie-provider.js";
 import type { PaymentProvider, PaymentProviderId } from "./payment-provider.js";
 import { payPalPaymentProvider } from "./paypal/paypal-provider.js";
 import { stripePaymentProvider } from "./stripe-provider.js";
+import { testPaymentProvider } from "../test-checkout/test-payment-provider.js";
 
 /** Every payment provider the shop knows, in one visible list. */
 export function paymentProviderFor(shop: ShopContext, id: PaymentProviderId): PaymentProvider {
@@ -13,5 +14,7 @@ export function paymentProviderFor(shop: ShopContext, id: PaymentProviderId): Pa
       return payPalPaymentProvider(shop);
     case "mollie":
       return molliePaymentProvider(shop);
+    case "test":
+      return testPaymentProvider();
   }
 }

@@ -225,6 +225,13 @@
       "when": 1793734205184,
       "tag": "0031_client_reviews",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793745932206,
+      "tag": "0038_test_orders_and_payment_checks",
+      "breakpoints": true
     }
   ]
 }

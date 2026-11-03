@@ -126,6 +126,7 @@ export async function cancelOrder(
       orderId,
       kind: "cancelled",
       message: `Order cancelled${request.reason ? `: ${request.reason}` : ""}${request.restock ? ". Items put back in stock" : ""}`,
+      data: { restocked: request.restock },
       createdBy: cancelledBy,
     });
   });
