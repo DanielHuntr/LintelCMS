@@ -883,7 +883,7 @@ const mailingListPage = {
           name: "Sign-up",
           props: {
             form: "newsletter",
-            title: "Join the list",
+            title: "JOIN THE LIST",
             text: "We never share your address, and every email has a link to leave.",
             emailLabel: "Your email address",
             buttonLabel: "Sign me up",

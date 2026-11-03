@@ -131,4 +131,10 @@ describe("the section packs", () => {
       ).toBeGreaterThan(0);
     }
   });
+
+  it("keeps the scrolling names inside the page's width", () => {
+    const template = sectionPacks.find((candidate) => candidate.id === "logos-scrolling");
+    const marquee = everyNode(template!.blueprint).find((node) => node.type === "marquee");
+    expect(marquee?.styles?.base.width).toBe("100%");
+  });
 });

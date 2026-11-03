@@ -118,6 +118,8 @@ export function scrollingNames(copy: { label: string; names: string[] }): NodeBl
             props: { items: copy.names, speed: "slow", direction: "left" },
             styles: {
               base: {
+                // Centred content shrinks to fit, which would let the names widen the page.
+                width: "100%",
                 fontFamily: "var(--lintel-font-heading)",
                 fontSize: "clamp(1.5rem, 4vw, 2.5rem)",
                 fontWeight: "700",
