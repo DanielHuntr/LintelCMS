@@ -36,6 +36,17 @@ Unlink. A colour or size picked by hand can be saved as a variable from under th
 When two elements around the selected one have the same name, "What has to be hovered" says
 how far up each is ("Container, just around it", "Container, 2 levels up").
 
+### Light and dark values for colours
+
+A colour variable can have a second value for dark mode (`darkValue`, optional, so older
+designs read as before). It's written as `--lintel-var-paper: light-dark(#faf7f2, #17191c)`.
+`light-dark()` follows the `color-scheme` the theme's stylesheet already sets on `:root`:
+`light dark` for an automatic theme (the visitor's own setting), `light` or `dark` for a
+fixed one. So a variable follows the scheme exactly as the theme's own colours do, with no
+second copy of the theme's rules. Browsers without `light-dark()` get the light value from an
+`@supports not` block. In Site styles, "Add a dark-mode colour" offers a starting value (the
+light one's brightness turned round), and "Use the same colour in dark mode" takes it off.
+
 ## Not done here
 
 Usage counts cover this page and the site's shared styles, not every page: counting every
