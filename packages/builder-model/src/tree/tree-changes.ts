@@ -95,13 +95,36 @@ export function moveNode(
   return insertNode(removeNode(root, nodeId), parentId, target, node);
 }
 
-/** A copy of a node and everything inside it, with new ids throughout. */
+/**
+ * A copy of a node and everything inside it, with new ids throughout. An animation that
+ * plays on elements inside the copy is pointed at the copied elements; it used to keep
+ * playing on the original's (LINTEL-FUNC-021). Targets outside the copy are kept.
+ */
 export function copyWithNewIds(node: PageNode, createId: CreateNodeId): PageNode {
+  const newIds = new Map<string, string>();
+  const copy = copyIds(node, createId, newIds);
+  return retargetAnimations(copy, newIds);
+}
+
+function copyIds(node: PageNode, createId: CreateNodeId, newIds: Map<string, string>): PageNode {
+  const id = createId();
+  newIds.set(node.id, id);
   return {
     ...node,
-    id: createId(),
-    children: node.children.map((child) => copyWithNewIds(child, createId)),
+    id,
+    children: node.children.map((child) => copyIds(child, createId, newIds)),
   };
+}
+
+function retargetAnimations(node: PageNode, newIds: ReadonlyMap<string, string>): PageNode {
+  const children = node.children.map((child) => retargetAnimations(child, newIds));
+  const targets = node.animation?.spec.targets;
+  if (!node.animation || targets?.type !== "nodes") return { ...node, children };
+  const spec = {
+    ...node.animation.spec,
+    targets: { ...targets, nodeIds: targets.nodeIds.map((id) => newIds.get(id) ?? id) },
+  };
+  return { ...node, children, animation: { ...node.animation, spec } };
 }
 
 /** Puts a copy straight after the original and gives back the copy's id. */

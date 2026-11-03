@@ -1,3 +1,4 @@
+import { motionSpecSchema } from "@lintel/motion/schema";
 import { describe, expect, it } from "vitest";
 import { standardCatalogue } from "../components/component-catalogue.js";
 import { createEmptyPage, type PageNode } from "../document/page-document.schema.js";
@@ -61,6 +62,38 @@ describe("changing a page tree", () => {
     expect(ids(root)).toEqual(["n1", "copy1"]);
     expect(ids(root.children[1] as PageNode)).toEqual(["copy2", "copy3", "copy4"]);
     expect(countNodes(root)).toBe(9);
+  });
+
+  // LINTEL-FUNC-021: a copy's animation kept playing on the original's elements.
+  it("points a copied animation at the copied elements, and keeps targets outside the copy", () => {
+    const page = samplePage();
+    const spec = motionSpecSchema.parse({
+      trigger: { type: "load" },
+      targets: { type: "nodes", nodeIds: ["n2", "n4", "elsewhere"] },
+      tracks: [
+        {
+          property: "opacity",
+          keyframes: [
+            { offset: 0, value: 0 },
+            { offset: 1, value: 1 },
+          ],
+        },
+      ],
+    });
+    const animated = updateNode(page, "n1", (node) => ({ ...node, animation: { spec } }));
+
+    const { root } = duplicateNode(animated, "n1", createCountingNodeIds("copy"));
+
+    const original = root.children[0] as PageNode;
+    const copy = root.children[1] as PageNode;
+    expect(original.animation?.spec.targets).toEqual({
+      type: "nodes",
+      nodeIds: ["n2", "n4", "elsewhere"],
+    });
+    expect(copy.animation?.spec.targets).toEqual({
+      type: "nodes",
+      nodeIds: ["copy2", "copy4", "elsewhere"],
+    });
   });
 
   it("inserts, removes and finds places", () => {
