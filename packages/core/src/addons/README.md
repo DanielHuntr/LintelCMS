@@ -17,7 +17,8 @@ and serves add-ons.
 
 The Lintel folder is `.lintel` in a copy of the source, `<home>/.lintel` under `lintel start`
 and `/data` in Docker. Updates and roll backs never touch it, so add-ons stay installed.
-Backups don't include it: add-ons are code, installed again with `lintel addons add`.
+Backups don't include it: add-ons are code, installed again with `lintel addons add`. Their
+own tables aren't in backups yet either (backups cover Lintel's schema).
 
 ## An add-on package
 
