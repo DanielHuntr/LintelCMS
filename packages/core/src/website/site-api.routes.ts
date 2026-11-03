@@ -8,6 +8,8 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
  *   ALL /_lintel/api/shop/*   -> /delivery/shop/*
  *   ALL /_lintel/api/forms/*  -> /delivery/forms/*
  *   ALL /_lintel/api/analytics/*  -> /delivery/analytics/*  (the Visitors plugin's beacon)
+ *   ALL /_lintel/api/addons/*  -> /delivery/add-ons/*  (add-ons' public routes, such as a
+ *                                 newsletter sign-up; see ADDON_PUBLIC_PREFIX)
  *
  * Requests are passed to the API inside the process (`inject`) with their body, content
  * type, privacy signals and the visitor's address (as the request's own, so per-address
@@ -24,7 +26,21 @@ const forwardedHeaders = [
   "sec-gpc",
 ] as const;
 
-type Area = "shop" | "forms" | "analytics";
+type Area = "shop" | "forms" | "analytics" | "addons";
+
+/**
+ * Where an add-on's routes for visitors live on the API: `/delivery/add-ons/<add-on id>/...`.
+ * Its pages reach them at their own address, `/_lintel/api/addons/<add-on id>/...`. The dash
+ * keeps them apart from collections, whose handles can't contain one.
+ */
+export const ADDON_PUBLIC_PREFIX = "/delivery/add-ons";
+
+const apiPathFor: Record<Area, string> = {
+  shop: "/delivery/shop",
+  forms: "/delivery/forms",
+  analytics: "/delivery/analytics",
+  addons: ADDON_PUBLIC_PREFIX,
+};
 
 export async function siteApiRoutes(
   server: FastifyInstance,
@@ -47,7 +63,7 @@ export async function siteApiRoutes(
     }
     const response = await options.api.inject({
       method: request.method as "GET",
-      url: `${options.apiPrefix ?? ""}/delivery/${area}${rest}`,
+      url: `${options.apiPrefix ?? ""}${apiPathFor[area]}${rest}`,
       headers,
       remoteAddress: request.ip,
       payload: Buffer.isBuffer(request.body) ? request.body : undefined,
@@ -65,7 +81,7 @@ export async function siteApiRoutes(
       .send(response.rawPayload);
   };
 
-  for (const area of ["shop", "forms", "analytics"] as const) {
+  for (const area of ["shop", "forms", "analytics", "addons"] as const) {
     server.all(`/_lintel/api/${area}`, (request, reply) => forward(request, reply, area));
     server.all(`/_lintel/api/${area}/*`, (request, reply) => forward(request, reply, area));
   }
