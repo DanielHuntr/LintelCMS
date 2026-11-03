@@ -1,4 +1,5 @@
 import { DEFAULT_TENANT_ID } from "../../database/columns.js";
+import { InvalidFieldsError } from "../../http/http-errors.js";
 import type { ShopContext } from "../commerce.context.js";
 import { DiscountCodeError } from "../discounts/discounts.errors.js";
 import { findMarketForCountry } from "../markets/markets.service.js";
@@ -105,6 +106,20 @@ export async function updateCart(
 ): Promise<Cart> {
   const row = await findCartByToken(shop.database, token);
   const country = request.shippingAddress?.country ?? request.country;
+  // Once there's a delivery address, its country sets the prices. A country on its own used
+  // to move the cart to another market's prices while it still went to the same address
+  // (LINTEL-FUNC-019).
+  const addressCountry = row.shippingAddress?.country;
+  if (
+    !request.shippingAddress &&
+    addressCountry &&
+    request.country &&
+    request.country !== addressCountry
+  ) {
+    throw new InvalidFieldsError({
+      country: "The country comes from the delivery address. Change the address to change it.",
+    });
+  }
   const market = country ? await findMarketForCountry(shop.database, country) : undefined;
   const discountCodes = request.discountCodes && [
     ...new Set(request.discountCodes.map((code) => code.toUpperCase())),
