@@ -114,6 +114,32 @@ describe("pictures in rich text", () => {
     expect(html).toContain('sizes="(max-width: 48rem) 100vw, 48rem"');
   });
 
+  it("credits the photo under it when its licence asks, after the caption or on its own", () => {
+    const credited: DeliveredAsset = {
+      ...photo,
+      credit: {
+        text: "Photo: Ian Sane, CC BY 2.0",
+        creator: "Ian Sane",
+        sourceUrl: "https://example.com/photo",
+        licenceName: "CC BY 2.0",
+        licenceUrl: "https://creativecommons.org/licenses/by/2.0/",
+      },
+    };
+    const withCredit: RichTextLookups = { ...lookups, picture: () => credited };
+    const captioned = renderRichTextHtml(
+      doc(picture({ assetId: PHOTO_ID, alt: "A", caption: "Our shop", align: "full" })),
+      withCredit,
+    );
+    expect(captioned).toMatch(
+      /<figcaption><span>Our shop<\/span><span class="lintel-credit">Photo: <a href="https:\/\/example.com\/photo" rel="noopener">Ian Sane<\/a>, <a href="https:\/\/creativecommons.org\/licenses\/by\/2.0\/" rel="license noopener">CC BY 2.0<\/a><\/span><\/figcaption><\/figure>$/,
+    );
+    const alone = renderRichTextHtml(
+      doc(picture({ assetId: PHOTO_ID, alt: "A", align: "left" })),
+      withCredit,
+    );
+    expect(alone).toContain('<figcaption class="lintel-credit">Photo: ');
+  });
+
   it("floats a picture beside the text when asked, at a smaller size", () => {
     const html = renderRichTextHtml(
       doc(picture({ assetId: PHOTO_ID, alt: "A", align: "left" })),

@@ -2,7 +2,7 @@ import { getSchema, type JSONContent } from "@tiptap/core";
 import { generateHTML } from "@tiptap/html";
 import { Node } from "@tiptap/pm/model";
 import StarterKit from "@tiptap/starter-kit";
-import { renderResponsiveImageHtml } from "@lintel/site-components/server";
+import { renderFigureCaptionHtml, renderResponsiveImageHtml } from "@lintel/site-components/server";
 import { readPageLinkId } from "@lintel/builder-model";
 import type { DeliveredAsset } from "./image-assets.js";
 import {
@@ -189,14 +189,8 @@ function renderPictureHtml(attributes: Record<string, unknown> | undefined): str
     image: { ...image, alt },
     sizes: pictureSizes[align],
   });
-  const captionHtml = caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : "";
+  // The caption, with the photo's credit after it when its licence asks for one, as
+  // {% image %} and the Picture element show it.
+  const captionHtml = renderFigureCaptionHtml(caption, image.credit);
   return `<figure class="lintel-picture lintel-picture--${align}">${picture}${captionHtml}</figure>`;
-}
-
-function escapeHtml(text: string): string {
-  return text
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
 }

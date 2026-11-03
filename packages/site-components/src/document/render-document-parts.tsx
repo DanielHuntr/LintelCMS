@@ -3,7 +3,7 @@ import { Header } from "../chrome/Header.js";
 import { MAIN_CONTENT_ID, SkipLink } from "../chrome/SkipLink.js";
 import { FigureCaption } from "../media/PhotoCredit.js";
 import { ResponsiveImage, type ResponsiveImageProps } from "../media/ResponsiveImage.js";
-import type { SiteChrome, SiteLabels } from "../site.types.js";
+import type { PhotoCredit, SiteChrome, SiteLabels } from "../site.types.js";
 import type { SiteTemplate } from "../templates/site-template.js";
 import type { PageDesign, SiteEffectsHead } from "../templates/view.types.js";
 import { DesignHead } from "./DesignHead.js";
@@ -120,4 +120,16 @@ export function renderCreditedImageHtml(props: ResponsiveImageProps): string {
       <FigureCaption caption={null} credit={credit} />
     </figure>,
   );
+}
+
+/**
+ * A figure's caption and its photo's credit, as `FigureCaption` draws them (for HTML put
+ * together on the server, such as pictures in rich text); "" when there is neither.
+ */
+export function renderFigureCaptionHtml(
+  caption: string,
+  credit: PhotoCredit | null | undefined,
+): string {
+  if (!caption && !credit) return "";
+  return renderComponentHtml(<FigureCaption caption={caption || null} credit={credit} />);
 }
