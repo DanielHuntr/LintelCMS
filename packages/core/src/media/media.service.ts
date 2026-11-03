@@ -139,6 +139,7 @@ export async function listAssets(
   const { rows, total } = await listAssetRows(media.database, DEFAULT_TENANT_ID, {
     search: query.search,
     kind: query.type,
+    missingAlt: query.missingAlt,
     siteId:
       query.folder === undefined ? undefined : await findFolderSiteId(media.database, query.folder),
     limit: query.perPage,

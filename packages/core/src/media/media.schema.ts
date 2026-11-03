@@ -54,6 +54,8 @@ export const listAssetsQuerySchema = z.object({
   ),
   /** Only one folder: "shared", or a site's handle. Left out, every file. */
   folder: optionalQueryValue(z.string().max(64)),
+  /** "true": only pictures with no description yet (the dashboard's "N have none" link). */
+  missingAlt: optionalQueryValue(z.enum(["true", "false"])).transform((value) => value === "true"),
 });
 
 /** `POST /media?folder=<site handle>` puts the upload in that site's folder. */

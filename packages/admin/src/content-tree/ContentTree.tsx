@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { CalendarDays, House, Plus, Trash2 } from "lucide-react";
-import { useState, type DragEvent, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type DragEvent, type MouseEvent } from "react";
 import { LoadError } from "../api/LoadError.js";
 import { Button } from "../design/Button.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
@@ -11,7 +11,7 @@ import { t } from "../i18n/strings.js";
 import { useDebouncedValue } from "../media/useDebouncedValue.js";
 import { useContentTree } from "./ContentTreeContext.js";
 import type { TreeRoot } from "./contentTree.types.js";
-import { useTreeRoots, useTreeSearch } from "./contentTree.queries.js";
+import { useTreeChildren, useTreeRoots, useTreeSearch } from "./contentTree.queries.js";
 import { SiteWideSection } from "./SiteWideSection.js";
 import { nodeState } from "./treeActions.js";
 import { TreeActionsMenu } from "./TreeActionsMenu.js";
@@ -211,6 +211,26 @@ function RootItem({ root, isSiteTop, tabStopKey, onRowFocus }: RootItemProps) {
   const showsChildren = !root.childrenAsCollection;
   const isExpanded = showsChildren && tree.expanded.has(key);
   const [dropAt, setDropAt] = useState<DropPosition | undefined>();
+  // Choosing the site's pages unfolds them and the home page, so the pages are in view.
+  const isSelected = tree.selectedKey === key;
+  const unfoldsStart = isSiteTop && showsChildren && isSelected;
+  const topLevel = useTreeChildren({ collection: root.handle }, tree.siteId, unfoldsStart);
+  const { open } = tree;
+  const unfolded = useRef(false);
+  useEffect(() => {
+    if (!unfoldsStart) {
+      unfolded.current = false;
+      return;
+    }
+    if (unfolded.current) return;
+    const items = topLevel.data?.pages.flatMap((page) => page.items);
+    if (!items) return;
+    unfolded.current = true;
+    open([
+      key,
+      ...items.filter((node) => node.isSiteStart && node.childCount > 0).map((node) => node.id),
+    ]);
+  }, [unfoldsStart, topLevel.data, open, key]);
 
   // Dropping a page on its own section puts it at the top, as a page of its own there.
   function acceptsDrop(): boolean {
@@ -237,7 +257,7 @@ function RootItem({ root, isSiteTop, tabStopKey, onRowFocus }: RootItemProps) {
       depth={0}
       label={root.name}
       icon={iconForContent(root)}
-      isSelected={tree.selectedKey === key}
+      isSelected={isSelected}
       isTabStop={tabStopKey === key}
       onFocus={() => onRowFocus(key)}
       onOpen={() =>

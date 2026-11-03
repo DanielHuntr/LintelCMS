@@ -47,6 +47,15 @@ describe("MediaLibraryPage", () => {
     );
   });
 
+  it("shows only the pictures that need a description, from the dashboard's link", async () => {
+    const requested = mockApi(() => ({ assets: [beach], total: 1 }));
+    renderWithQueries(<MediaLibraryPage permissions={["*"]} initialFilter="needsDescription" />);
+
+    expect(await screen.findByRole("button", { name: /beach/ })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "No description" })).toBeChecked();
+    expect(requested).toEqual(["/media?page=1&perPage=60&missingAlt=true"]);
+  });
+
   it("guides people when the library is empty, and hides upload without permission", async () => {
     mockApi(() => ({ assets: [], total: 0 }));
     const { unmount } = renderWithQueries(<MediaLibraryPage permissions={["*"]} />);
@@ -97,8 +106,8 @@ describe("MediaLibraryPage", () => {
 
     await userEvent.click(await screen.findByRole("button", { name: /beach\.jpg/ }));
     const sheet = screen.getByRole("dialog", { name: "beach.jpg" });
-    expect(within(sheet).getByLabelText("Alt text")).toHaveAccessibleDescription(
-      /Describe the image for people who can’t see it/,
+    expect(within(sheet).getByLabelText("Picture description")).toHaveAccessibleDescription(
+      /For people who can’t see it/,
     );
     await userEvent.click(within(sheet).getByRole("button", { name: "Delete" }));
     const confirm = screen.getByRole("alertdialog", { name: "Delete “beach.jpg”?" });

@@ -43,3 +43,7 @@ bin of their own, `GET /media-bin` (see `src/media/README.md`).
 | `recycle-bin.repository.ts` | Database reads and writes                          |
 | `recycle-bin.errors.ts`     | Named errors with the messages people see          |
 | `recycle-bin.routes.ts`     | The endpoints                                      |
+
+Each item keeps where it was on the site (`branch.address`, worked out when it is binned) and
+the list names the first few entries that were straight under it (`childTitles`), so two
+items called "Home" can be told apart. Items binned before this have no address.

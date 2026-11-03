@@ -100,8 +100,8 @@ export const dashboardStrings = {
   "dashboard.media.files": "{count, plural, one {# file} other {# files}}",
   "dashboard.media.size": "{size} in all",
   "dashboard.media.missingAlt":
-    "{count, plural, one {# image has no description for screen readers} other {# images have no description for screen readers}}",
-  "dashboard.media.allDescribed": "Every image has a description for screen readers.",
+    "{count, plural, one {# picture needs a description} other {# pictures need a description}}",
+  "dashboard.media.allDescribed": "Every picture has a description.",
   "dashboard.media.open": "Open the media library",
   "dashboard.media.emptyTitle": "No files yet",
   "dashboard.media.emptyDescription": "Images and documents you upload will be counted here.",

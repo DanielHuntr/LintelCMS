@@ -47,6 +47,21 @@ describe("the media library", () => {
     expect(paged.json().total).toBe(4);
   });
 
+  it("lists only the pictures that need a description", async () => {
+    await uploadImage("beach.png", 1);
+    await media.upload("menu.csv", Buffer.from("dish,price"));
+    await request("PATCH", `/media/${(await uploadImage("hills.png", 2)).id}`, {
+      alt: "Sunset over the hills",
+    });
+
+    const response = await request("GET", "/media?missingAlt=true");
+
+    expect(response.json().assets.map((asset: { filename: string }) => asset.filename)).toEqual([
+      "beach.png",
+    ]);
+    expect(response.json().total).toBe(1);
+  });
+
   it("treats % and _ in a search as plain characters", async () => {
     await uploadImage("50%_off.png", 1);
     await uploadImage("500 off.png", 2);

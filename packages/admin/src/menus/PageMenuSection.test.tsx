@@ -118,7 +118,7 @@ describe("“In the main menu” when creating a page", () => {
     const row = await screen.findByRole("treeitem", { name: rowName });
     fireEvent.contextMenu(row.firstElementChild ?? row);
     await userEvent.click(await screen.findByRole("menuitem", { name: "Create…" }));
-    return screen.findByRole("dialog", { name: /^Create in/ });
+    return screen.findByRole("dialog", { name: /^(Create|New .*) in/ });
   }
 
   it("is on for a page right under the home page, and puts it in the menu", async () => {

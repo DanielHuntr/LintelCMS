@@ -133,6 +133,10 @@ describe("a page's editor", () => {
       "/content/pages/p1/design/design",
     );
     expect(screen.queryByText("Page sections")).not.toBeInTheDocument();
+    // In a narrow column the heading kept one word per line beside the button: the words
+    // now keep a sensible width, so the button wraps below them instead (QA sweep).
+    const heading = within(card).getByRole("heading", { name: "Design" });
+    expect(heading.parentElement?.className).toContain("flex-[1_1_14rem]");
     expect(screen.queryByRole("button", { name: /Simple sections/ })).not.toBeInTheDocument();
     // The picture is the page drawn with the website's look, in a frame without scripts.
     await waitFor(() => expect(card.querySelector("iframe")).not.toBeNull());

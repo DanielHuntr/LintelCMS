@@ -229,3 +229,6 @@ All three are exported from `index.ts` for that (see `src/forms/submission-files
 | `storage-move.service.ts` | Copying every file from one storage to another              |
 | `asset-lookup.ts`         | `AssetLookup`, `AssetExists` and `AssetUsageFinder`         |
 | `index.ts`                | What other features may import                              |
+
+`GET /media?missingAlt=true` lists only the pictures with no description yet, for the
+library's "No description" filter and the dashboard's "N pictures need a description" link.

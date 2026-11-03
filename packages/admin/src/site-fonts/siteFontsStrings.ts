@@ -6,9 +6,10 @@ export const siteFontsStrings = {
   "siteFonts.add": "Add a font",
   "siteFonts.empty.title": "No fonts of your own yet",
   "siteFonts.empty.description":
-    "The fonts that come with Lintel are always there. Add one from Google Fonts, your own files or Adobe Fonts.",
+    "The fonts that come with {product} are always there. Add one from Google Fonts, your own files or Adobe Fonts.",
   "siteFonts.listHeader": "This site’s fonts",
-  "siteFonts.included": "Lintel also includes {count} fonts, such as Inter, Lora and Bebas Neue.",
+  "siteFonts.included":
+    "{product} also includes {count} fonts, such as Inter, Lora and Bebas Neue.",
   "siteFonts.source.upload": "Your files",
   "siteFonts.source.google": "Google Fonts",
   "siteFonts.source.adobe": "Adobe Fonts",
@@ -41,7 +42,7 @@ export const siteFontsStrings = {
   "siteFonts.google.searching": "Searching Google Fonts",
   "siteFonts.google.none": "No Google Fonts called “{search}”.",
   "siteFonts.google.more": "Showing {shown} of {total}. Type more of the name to narrow it down.",
-  "siteFonts.google.included": "Comes with Lintel",
+  "siteFonts.google.included": "Comes with {product}",
   "siteFonts.google.onSite": "On this site",
   "siteFonts.google.weights": "Weights",
   "siteFonts.google.weightCount": "{count} weights",
@@ -50,7 +51,7 @@ export const siteFontsStrings = {
   "siteFonts.google.adding": "Downloading…",
   "siteFonts.google.added": "Added {family}",
   "siteFonts.google.privacy":
-    "Lintel downloads the files and serves them from your website, so visitors’ browsers never contact Google.",
+    "{product} downloads the files and serves them from your website, so visitors’ browsers never contact Google.",
   "siteFonts.google.back": "Back to the list",
 
   "siteFonts.upload.choose": "Choose font files",

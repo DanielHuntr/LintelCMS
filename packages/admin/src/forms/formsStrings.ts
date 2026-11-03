@@ -11,7 +11,7 @@ export const formsStrings = {
   "forms.list.emptyTitle": "No forms yet",
   "forms.list.emptyDescription":
     "Start from a contact form, a newsletter sign-up, a quote request or an event booking, then make it your own.",
-  "forms.list.footer": "Add a form to a page with the Form section, or embed it on any website.",
+  "forms.list.footer": "Add a form to a page with the Form element, or embed it on any website.",
   "forms.list.unread": "{count} new",
   "forms.list.closed": "Closed",
   "forms.list.submissionCount": "{count, plural, one {# submission} other {# submissions}}",
@@ -194,6 +194,8 @@ export const formsStrings = {
   "forms.settings.confirmationEmail": "Send a confirmation to the person",
   "forms.settings.emailNotSetUp":
     "Email isn’t set up on this website yet, so these emails won’t be sent. New messages still arrive in Submissions.",
+  "forms.settings.emailNextStep": "Ask whoever set up your website to connect an email service.",
+  "forms.settings.emailHelp": "How emails work",
   "forms.settings.needsEmailField":
     "Add an Email field so {product} knows where to send the confirmation.",
   "forms.settings.confirmationSubject": "Confirmation subject",
@@ -208,13 +210,14 @@ export const formsStrings = {
   "forms.share.pageTitle": "On a page",
   "forms.share.pageDescription":
     "Open a page in Content, add a Form element and pick this form. It appears wherever the element is.",
+  "forms.share.developersTitle": "For developers",
   "forms.share.embedTitle": "On any other website",
   "forms.share.embedDescription":
     "Paste this where the form should appear. It works on any website.",
   "forms.share.copyEmbed": "Copy code",
   "forms.share.embedFooter":
     "The website's address must be listed in Build → API access, so browsers let it send the form.",
-  "forms.share.apiTitle": "For developers",
+  "forms.share.apiTitle": "Through the API",
   "forms.share.apiDescription":
     "Fetch the form's fields from the delivery API and post answers back. The form's handle is “{handle}”.",
 

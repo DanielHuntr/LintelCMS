@@ -28,6 +28,7 @@ describe("the actions menu", () => {
     expect(actionsFor({ kind: "entry", node: node() }, everything)).toEqual([
       "create",
       "duplicate",
+      "rename",
       "move",
       "publish",
       "preview",

@@ -101,6 +101,9 @@ export function CreateDialog({
 
   const formId = useId();
   const menuHintId = useId();
+  // With only one thing to make here, there's nothing to ask: the title names it.
+  const onlyType = !isHome && types.length === 1 ? types[0] : undefined;
+  const onlyName = onlyType ? singularName(onlyType) : undefined;
   return (
     <Dialog
       open
@@ -108,9 +111,13 @@ export function CreateDialog({
       title={
         isHome
           ? t("tree.createHome.title")
-          : placeName
-            ? t("tree.create.title", { place: placeName })
-            : t("tree.create.titleAtTop")
+          : onlyName
+            ? placeName
+              ? t("tree.create.titleOne", { type: onlyName, place: placeName })
+              : t("tree.create.titleOneAtTop", { type: onlyName })
+            : placeName
+              ? t("tree.create.title", { place: placeName })
+              : t("tree.create.titleAtTop")
       }
       footer={
         <>
@@ -136,7 +143,7 @@ export function CreateDialog({
               : t("tree.create.noTypesAtTop")}
           </p>
         )}
-        {types.length > 0 && (
+        {types.length > 1 && (
           <div role="radiogroup" aria-labelledby={groupLabelId} className="flex flex-col gap-2">
             <span id={groupLabelId} className="text-footnote font-medium text-label">
               {t("tree.create.typeLabel")}
@@ -200,4 +207,13 @@ export function CreateDialog({
       </form>
     </Dialog>
   );
+}
+
+/**
+ * One of a content type, in a sentence: "page" for Pages. Taken from its blueprint ("page",
+ * "blog-post"), which names one, where the content type's own name names many.
+ */
+export function singularName(type: { blueprintHandle: string; name: string }): string {
+  const words = type.blueprintHandle.replace(/[-_]+/g, " ").trim().toLowerCase();
+  return words === "" ? type.name : words;
 }

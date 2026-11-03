@@ -1,5 +1,7 @@
 import { findCollectionById } from "../collections/collections.repository.js";
-import { listSiteStarts } from "../content-roots/content-roots.service.js";
+import { listSiteStarts, placeEntryUrl } from "../content-roots/content-roots.service.js";
+import { buildEntryUrl } from "../delivery/entry-urls.js";
+import { findSiteByIdOrFail } from "../sites/sites.service.js";
 import { findAddressClash } from "../content-roots/root-addresses.js";
 import { listBranchIds } from "../content-tree/content-tree-branches.service.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
@@ -62,6 +64,10 @@ export interface RecycleBinListItem {
   itemCount: number;
   deletedAt: string;
   deletedBy: { id: string; name: string } | null;
+  /** Where it was on the site, or null (no page, or binned before this was kept). */
+  address: string | null;
+  /** The first few entries that were straight under it, so two "Home"s can be told apart. */
+  childTitles: string[];
 }
 
 export async function listRecycleBin(
@@ -70,7 +76,7 @@ export async function listRecycleBin(
 ): Promise<{ items: RecycleBinListItem[] }> {
   const rows = await listRecycleBinRows(database, DEFAULT_TENANT_ID, LIST_LIMIT, siteLimit);
   return {
-    items: rows.map(({ item, collectionHandle, collectionName, deletedByName }) => ({
+    items: rows.map(({ item, collectionHandle, collectionName, deletedByName, ...more }) => ({
       id: item.id,
       entryId: item.entryId,
       title: item.title,
@@ -81,6 +87,10 @@ export async function listRecycleBin(
         item.deletedBy !== null && deletedByName !== null
           ? { id: item.deletedBy, name: deletedByName }
           : null,
+      address: more.address,
+      childTitles: (more.childTitles ?? []).filter(
+        (title): title is string => typeof title === "string" && title !== "",
+      ),
     })),
   };
 }
@@ -121,8 +131,15 @@ export async function moveToRecycleBin(
   const rowsById = new Map((await listEntryRows(database, ids)).map((row) => [row.id, row]));
   // Parents before children, so restoring can put them back in this order.
   const entries = ids.flatMap((id) => rowsById.get(id) ?? []);
+  const collection = await findCollectionById(database, entry.collectionId);
+  const address = collection
+    ? await placeEntryUrl(database, entry.id, buildEntryUrl(collection.routePattern, entry), {
+        site: await findSiteByIdOrFail(database, entry.siteId),
+      })
+    : null;
   const branch: BinnedBranch = {
     entries: entries.map(binEntry),
+    address,
     revisions: (await listRevisionRows(database, ids)).map((revision) => ({
       id: revision.id,
       entryId: revision.entryId,

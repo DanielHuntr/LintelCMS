@@ -73,7 +73,7 @@ const RESIZED_IMAGES_PER_MINUTE = 300;
  * HTTP only:
  *
  *   POST   /media           (media:upload)  multipart "file", ?folder= -> 201 Asset (200 if already uploaded)
- *   GET    /media           (media:read)    ?search=&type=image|document&page=&perPage=&folder=
+ *   GET    /media           (media:read)    ?search=&type=image|document&page=&perPage=&folder=&missingAlt=true
  *   GET    /media/:id       (media:read)    -> Asset
  *   PATCH  /media/:id       (media:update)  { alt?, credit?, focalPoint?, filename?, folder? } -> Asset
  *   DELETE /media/:id       (media:delete)  -> 204 (to the recycle bin), or 409 ASSET_IN_USE with usedBy

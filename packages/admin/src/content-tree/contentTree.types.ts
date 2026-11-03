@@ -85,6 +85,10 @@ export interface RecycleBinItem {
   itemCount: number;
   deletedAt: string;
   deletedBy: { id: string; name: string } | null;
+  /** Where it was on the site; null when it had no page or was binned before this was kept. */
+  address?: string | null;
+  /** The first few entries that were straight under it. */
+  childTitles?: string[];
 }
 
 export interface EntryInfo {

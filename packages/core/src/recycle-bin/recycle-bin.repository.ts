@@ -38,7 +38,14 @@ export interface RecycleBinRow {
   collectionHandle: string;
   collectionName: string;
   deletedByName: string | null;
+  /** Where it was on the site when it was binned; null for items binned before this was kept. */
+  address: string | null;
+  /** The titles of the first few entries that were straight under it. */
+  childTitles: string[] | null;
 }
+
+/** How many of an item's children the list names, to tell items with the same title apart. */
+const LISTED_CHILDREN = 3;
 
 /**
  * The site an item's entries were on. A branch never spans sites, so the first entry's site
@@ -74,6 +81,15 @@ export async function listRecycleBinRows(
       collectionHandle: collectionsTable.handle,
       collectionName: collectionsTable.name,
       deletedByName: usersTable.name,
+      address: sql<string | null>`${recycleBinItemsTable.branch}->>'address'`,
+      childTitles: sql<string[] | null>`(
+        select jsonb_agg(child.value->'data'->>'title')
+        from (
+          select value from jsonb_array_elements(${recycleBinItemsTable.branch}->'entries')
+          where value->>'parentId' = ${recycleBinItemsTable.entryId}::text
+          limit ${LISTED_CHILDREN}
+        ) as child
+      )`,
     })
     .from(recycleBinItemsTable)
     .innerJoin(collectionsTable, eq(collectionsTable.id, recycleBinItemsTable.collectionId))

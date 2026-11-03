@@ -30,6 +30,19 @@ describe("a form's email settings", () => {
     expect(await screen.findByRole("note")).toHaveTextContent(warning);
   });
 
+  // The warning was a dead end: it now says what to do and where to read more.
+  it("says what to do next, with a link to help", async () => {
+    mockApi(() => ({ delivers: false }));
+    renderScreen(<FormSettingsSection draft={draft} hasEmailField onChange={vi.fn()} />);
+
+    const note = await screen.findByRole("note");
+    expect(note).toHaveTextContent(/Ask whoever set up your website to connect an email service/);
+    expect(screen.getByRole("link", { name: "How emails work" })).toHaveAttribute(
+      "href",
+      expect.stringContaining("topic=using%2Fforms"),
+    );
+  });
+
   it("says nothing once a mail service sends them", async () => {
     const api = mockApi(() => ({ delivers: true }));
     renderScreen(<FormSettingsSection draft={draft} hasEmailField onChange={vi.fn()} />);

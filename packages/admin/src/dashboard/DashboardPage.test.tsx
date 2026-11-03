@@ -183,3 +183,12 @@ describe("the home dashboard", () => {
     ).toBeInTheDocument();
   });
 });
+
+describe("the dashboard's media widget (QA sweep)", () => {
+  it("links the pictures with no description to the media library's filter", async () => {
+    serveDashboard();
+    renderDashboard();
+    const link = await screen.findByRole("link", { name: "1 picture needs a description" });
+    expect(link).toHaveAttribute("href", "/media?filter=needs-description");
+  });
+});

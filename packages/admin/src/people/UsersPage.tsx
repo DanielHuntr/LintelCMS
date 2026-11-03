@@ -114,7 +114,10 @@ export function UsersPage({
             header={t("people.listHeader")}
             footer={
               people.data.length === 1 && search === "" && canInvite
-                ? t("people.onlyYou")
+                ? // An invitation on its way means it won't be just you for long.
+                  (invitations.data?.length ?? 0) > 0
+                  ? t("people.onlyYouInvited", { count: invitations.data?.length ?? 0 })
+                  : t("people.onlyYou")
                 : undefined
             }
           >

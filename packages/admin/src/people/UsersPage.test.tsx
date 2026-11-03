@@ -66,6 +66,16 @@ describe("the Users screen", () => {
     expect(within(invitations).getByText("nia@example.com")).toBeInTheDocument();
   });
 
+  // "It's just you so far" sat under a pending invitation, as if nobody had been asked.
+  it("mentions the invitation waiting when it's only you so far", async () => {
+    servePeople([you]);
+    renderScreen(<UsersPage />);
+    expect(
+      await screen.findByText("Just you for now, with one invitation waiting to be accepted."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/It’s just you so far/)).toBeNull();
+  });
+
   it("searches by name", async () => {
     servePeople();
     renderScreen(<UsersPage />);

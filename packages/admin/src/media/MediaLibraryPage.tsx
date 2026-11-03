@@ -24,7 +24,9 @@ import { Page } from "../design/Page.js";
 import { FreePhotosDialog } from "../free-photos/FreePhotosDialog.js";
 import { useCanAddFreePhotos } from "../free-photos/useFreePhotos.js";
 
-type Filter = "all" | AssetKind;
+/** What the library shows: everything, one kind, or the pictures still needing a description. */
+export type MediaFilter = "all" | AssetKind | "needsDescription";
+type Filter = MediaFilter;
 
 const SEARCH_DELAY_MILLISECONDS = 250;
 
@@ -33,9 +35,12 @@ export function MediaLibraryPage({
   permissions,
   initialAssetId,
   initialSearch,
+  initialFilter = "all",
   startUpload = false,
   onUploadStarted,
 }: {
+  /** "needsDescription" from the dashboard's "N pictures have no description". */
+  initialFilter?: MediaFilter;
   permissions: readonly string[];
   /** A file whose details open straight away, such as one picked in search. */
   initialAssetId?: string;
@@ -47,7 +52,7 @@ export function MediaLibraryPage({
 }) {
   const canUpload = hasPermission(permissions, "media:upload");
   const [search, setSearch] = useState(initialSearch ?? "");
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<Filter>(initialFilter);
   const [openAssetId, setOpenAssetId] = useState<string | null>(initialAssetId ?? null);
   const [isFindingFreePhotos, setIsFindingFreePhotos] = useState(false);
   const canAddFreePhotos = useCanAddFreePhotos() && canUpload;
@@ -56,8 +61,9 @@ export function MediaLibraryPage({
   const folder = useMediaFolder();
   const assetList = useAssetList(
     debouncedSearch,
-    filter === "all" ? undefined : filter,
+    filter === "all" || filter === "needsDescription" ? undefined : filter,
     folder.listFolder,
+    filter === "needsDescription",
   );
   const refreshLists = useRefreshAssetLists();
   const uploads = useUploadQueue({
@@ -150,12 +156,12 @@ export function MediaLibraryPage({
             className="pointer-events-none absolute bottom-3 inset-s-3 size-4 text-label-tertiary"
           />
         </div>
-        <div className="flex flex-col gap-1.5">
+        <div className="flex max-w-full flex-col gap-1.5">
           <span aria-hidden="true" className="text-footnote font-medium text-label">
             {t("media.filter.label")}
           </span>
           {/* As tall as the search field, so the two sit on one line. */}
-          <div className="flex h-10 items-center">
+          <div className="flex h-10 max-w-full items-center overflow-x-auto">
             <SegmentedControl
               label={t("media.filter.label")}
               value={filter}
@@ -164,6 +170,7 @@ export function MediaLibraryPage({
                 { value: "all", label: t("media.filter.all") },
                 { value: "image", label: t("media.filter.images") },
                 { value: "document", label: t("media.filter.documents") },
+                { value: "needsDescription", label: t("media.filter.needsDescription") },
               ]}
             />
           </div>
@@ -299,6 +306,16 @@ function LibraryEmptyState({
         icon={Search}
         title={t("media.noResults.title")}
         description={t("media.noResults.description", { search: search.trim() })}
+      />
+    );
+  }
+  if (filter === "needsDescription") {
+    return (
+      <EmptyState
+        size="page"
+        icon={ImagePlus}
+        title={t("media.allDescribed.title")}
+        description={t("media.noKind.description")}
       />
     );
   }

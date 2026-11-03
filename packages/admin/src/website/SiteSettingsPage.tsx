@@ -171,8 +171,16 @@ function SiteSettingsForm({
         <FontPairingChoice
           pairings={initial.fontPairings}
           value={values.theme.fontPairing}
+          usesOwnFonts={values.headingFont !== null || values.bodyFont !== null}
           disabled={!canChange}
-          onChange={(fontPairing) => changeTheme({ fontPairing })}
+          // A pairing brings both its fonts, in place of any chosen below.
+          onChange={(fontPairing) =>
+            change({
+              theme: { ...values.theme, fontPairing },
+              headingFont: null,
+              bodyFont: null,
+            })
+          }
         />
         <ThemeFontChoice
           headingFont={values.headingFont}

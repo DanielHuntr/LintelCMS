@@ -68,6 +68,22 @@ describe("the recycle bin", () => {
     ]);
   });
 
+  it("tells two binned items with the same title apart by address and what was under them", async () => {
+    const home = await create("Home");
+    const about = await create("About", home);
+    await create("Team", about);
+    await create("History", about);
+    await recycle(about);
+    const other = await create("About", home, "about-us");
+    await recycle(other);
+
+    const items = (await api("GET", "/recycle-bin")).json().items;
+    expect(items).toMatchObject([
+      { title: "About", address: "/about-us", childTitles: [] },
+      { title: "About", address: "/about", childTitles: ["Team", "History"] },
+    ]);
+  });
+
   it("restores a branch under its old parent, with its history, as drafts", async () => {
     const home = await create("Home");
     const about = await create("About", home);
