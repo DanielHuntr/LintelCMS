@@ -7,10 +7,10 @@ is `packages/core/src/content-tree` and `packages/core/src/recycle-bin`.
 
 ## Screens
 
-| Route                  | File                 | What it is                                |
-| ---------------------- | -------------------- | ----------------------------------------- |
-| (layout)               | `ContentSection.tsx` | The resizable tree pane and the workspace |
-| `/content/recycle-bin` | `RecycleBinPage.tsx` | Restore, delete for good, empty the bin   |
+| Route                  | File                 | What it is                                                                                 |
+| ---------------------- | -------------------- | ------------------------------------------------------------------------------------------ |
+| (layout)               | `ContentSection.tsx` | The resizable tree pane and the workspace                                                  |
+| `/content/recycle-bin` | `RecycleBinPage.tsx` | Restore, delete for good, empty the bin; deleted files under Files (`RecycleBinFiles.tsx`) |
 
 ## The tree
 
@@ -35,17 +35,17 @@ is `packages/core/src/content-tree` and `packages/core/src/recycle-bin`.
 The "…" button, a right-click or Shift+F10 opens a row's menu (`TreeActionsMenu.tsx`);
 `treeActions.ts` decides what it offers from the person's permissions and the row.
 
-| Action                 | What happens                                                        |
-| ---------------------- | ------------------------------------------------------------------- |
-| Create…                | `CreateDialog`: only the content types allowed there, then a name   |
-| Duplicate…             | Optionally with everything under it; opens the copy                 |
-| Move…                  | `MoveDialog`: find a page, or the top of its section (undo offered) |
-| Sort children…         | `SortDialog`: up and down buttons, or A to Z, saved together        |
-| Publish… Unpublish…    | Optionally with everything under it; reports what wasn't ready      |
-| Preview, History, Info | Open that part of the workspace                                     |
-| View page              | The live page on the website, or Lintel's own view of it            |
-| Delete…                | To the recycle bin, with everything under it                        |
-| Hostnames…             | `HostnamesDialog`: a domain and/or path for a page at the top       |
+| Action                 | What happens                                                                                                               |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Create…                | `CreateDialog`: only the content types allowed there, then a name                                                          |
+| Duplicate…             | Optionally with everything under it; opens the copy                                                                        |
+| Move…                  | `MoveDialog`: find a page, or the top of its section (undo offered)                                                        |
+| Sort children…         | `SortDialog`: up and down buttons, or A to Z, saved together                                                               |
+| Publish… Unpublish…    | Optionally with everything under it; reports what wasn't ready                                                             |
+| Preview, History, Info | Open that part of the workspace                                                                                            |
+| View page              | The live page on the website, or Lintel's own view of it                                                                   |
+| Delete…                | To the recycle bin, with everything under it; the note offers Undo (`useRecycleWithUndo.ts`), which puts it back as it was |
+| Hostnames…             | `HostnamesDialog`: a domain and/or path for a page at the top                                                              |
 
 **Creating at the top**: the "+" beside Content, a right-click on empty space, or Create on
 a section offers only content types allowed at the top. Pages at the top are site starts

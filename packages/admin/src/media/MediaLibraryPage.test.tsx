@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { ToastProvider } from "../design/Toast.js";
 import { MediaLibraryPage } from "./MediaLibraryPage.js";
 import { makeAsset, mockApi, renderWithQueries } from "./media.test-helpers.js";
 
@@ -101,11 +102,51 @@ describe("MediaLibraryPage", () => {
     );
     await userEvent.click(within(sheet).getByRole("button", { name: "Delete" }));
     const confirm = screen.getByRole("alertdialog", { name: "Delete “beach.jpg”?" });
-    await userEvent.click(within(confirm).getByRole("button", { name: "Delete file" }));
+    await userEvent.click(within(confirm).getByRole("button", { name: "Move to recycle bin" }));
 
     const inUse = await screen.findByRole("alertdialog", { name: "This file is still in use" });
     expect(within(inUse).getByText("Home")).toBeInTheDocument();
     expect(within(inUse).getByText("About us")).toBeInTheDocument();
-    expect(within(inUse).queryByRole("button", { name: "Delete file" })).not.toBeInTheDocument();
+    expect(
+      within(inUse).queryByRole("button", { name: "Move to recycle bin" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("moves a file to the recycle bin and brings it back with Undo", async () => {
+    let isBinned = false;
+    const requested = mockApi((path, init) => {
+      if (init?.method === "DELETE") {
+        isBinned = true;
+        return new Response(null, { status: 204 });
+      }
+      if (init?.method === "POST" && path === `/media-bin/${beach.id}/restore`) {
+        isBinned = false;
+        return beach;
+      }
+      return isBinned ? { assets: [], total: 0 } : { assets: [beach], total: 1 };
+    });
+    renderWithQueries(
+      <ToastProvider>
+        <MediaLibraryPage permissions={["*"]} />
+      </ToastProvider>,
+    );
+
+    await userEvent.click(await screen.findByRole("button", { name: /beach\.jpg/ }));
+    await userEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", { name: "Delete" }),
+    );
+    const confirm = screen.getByRole("alertdialog", { name: "Delete “beach.jpg”?" });
+    expect(confirm).toHaveAccessibleDescription(/goes to the recycle bin/);
+    await userEvent.click(within(confirm).getByRole("button", { name: "Move to recycle bin" }));
+
+    await screen.findByText("Moved “beach.jpg” to the recycle bin.");
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: /beach\.jpg/ })).not.toBeInTheDocument(),
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Undo" }));
+
+    await screen.findByText("Brought “beach.jpg” back.");
+    expect(requested).toContain(`/media-bin/${beach.id}/restore`);
+    expect(await screen.findByRole("button", { name: /beach\.jpg/ })).toBeInTheDocument();
   });
 });

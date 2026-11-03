@@ -6,7 +6,6 @@ import { Dialog } from "../design/Dialog.js";
 import { t, type StringKey } from "../i18n/strings.js";
 import {
   duplicateBranch,
-  moveToRecycleBin,
   publishBranch,
   runBulkAction,
   unpublishBranch,
@@ -14,6 +13,7 @@ import {
 import type { BatchResult, TreeNode } from "./contentTree.types.js";
 import { useRefreshContent } from "./contentTree.queries.js";
 import type { TreeNotice } from "./TreeToast.js";
+import { useRecycleWithUndo } from "./useRecycleWithUndo.js";
 import { useUnpublishedParentQuestion } from "./useUnpublishedParentQuestion.js";
 
 export type BranchAction = "publish" | "unpublish" | "duplicate" | "delete";
@@ -71,6 +71,7 @@ export function BranchActionDialog({
   const refresh = useRefreshContent();
   const checkboxId = useId();
   const parentQuestion = useUnpublishedParentQuestion();
+  const recycle = useRecycleWithUndo();
   const [includeChildren, setIncludeChildren] = useState(false);
   const [isWorking, setIsWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -120,12 +121,22 @@ export function BranchActionDialog({
         });
         return;
       } else {
-        const { entryIds } = await moveToRecycleBin(node.id);
-        await refresh(entryIds);
-        if (selectedKey !== undefined && entryIds.includes(selectedKey)) {
-          await navigate({ to: "/content", ignoreBlocker: true });
-        }
-        onNotice({ tone: "neutral", message: t("tree.delete.done", { title }) });
+        // When the workspace showed it, it goes back to Content, and Undo opens it again.
+        let wasOpen = false;
+        await recycle(node.id, title, {
+          notify: onNotice,
+          afterRecycle: async (entryIds) => {
+            wasOpen = selectedKey !== undefined && entryIds.includes(selectedKey);
+            if (wasOpen) await navigate({ to: "/content", ignoreBlocker: true });
+          },
+          afterUndo: async () => {
+            if (!wasOpen || selectedKey === undefined) return;
+            await navigate({
+              to: "/content/$collection/$entryId",
+              params: { collection: node.collection.handle, entryId: selectedKey },
+            });
+          },
+        });
       }
       onClose();
     } catch (failure) {

@@ -366,3 +366,28 @@ Each name now starts with what's shown:
 - When added from Insert, it goes to the top of the page, as footer sections go to the bottom.
 
 **Test:** `builder-model/src/components/site-chrome.test.ts`. Two of its three cases fail on the old code.
+
+## QOL-A-1: Undo after deleting (3 November 2026)
+
+**Asked for by Daniel:** after a page, an entry or a file goes to the recycle bin, a note says so with Undo, and Undo puts it back where it was.
+
+**What changed:**
+
+- **One note for the whole admin:** `design/Toast.tsx`. It is a polite live region, Alt+T takes keyboard focus to Undo (screen readers hear that in the note), and it stays about 8 seconds, longer while the pointer or keyboard focus is on it. Checked in Chromium: Alt+T, then Enter, undid a media delete, and the note stayed past 9 seconds while focused. The content tree's note is the same component, placed at the foot of the tree.
+- **Content tree, one page:** "Moved “About” to the recycle bin. Undo" (it used to say "“About” is in the recycle bin." with no Undo). Undo reopens the page if the workspace was showing it.
+- **Content tree and list, several pages:** the existing Undo now puts them back as they were too.
+- **Entry editor:** Delete now moves the entry to the recycle bin (it deleted for good before, and said "This can’t be undone"), goes back to the list and offers Undo, which reopens the entry.
+- **Media library:** Delete moves the file to a new media recycle bin and offers Undo. The Recycle bin screen has a Files group with Restore and Delete for good; Empty empties both.
+- **Undo is a real undo:** `POST /recycle-bin/:id/restore` with `asBefore: true` puts an entry back in its old place, live again with what it showed when the person may publish. See `docs/decisions/0027-undo-after-deleting.md`.
+- **Fixed on the way (LINTEL-UX-024):** the tree's note said it stayed while hovered or focused, but its timer ran regardless, and restarted whenever the tree re-rendered.
+
+**Tests:**
+
+- core: `recycle-bin/recycle-bin.test.ts` (Undo in place and live; a draft for someone who can't publish), `media/media-bin.test.ts`, `media/media-library.test.ts`.
+- admin: `design/Toast.test.tsx`, `content-tree/RecycleWithUndo.test.tsx`, `content-tree/RecycleBinPage.test.tsx`, `content/EntryEditor.test.tsx`, `media/MediaLibraryPage.test.tsx`, `content-workspace/CollectionView.test.tsx`.
+- Migration `0023_media_recycle_bin` checked on a fresh database (the tests) and on one made before it (the browser check's, set up on the release code first).
+
+**Screenshots** (`screenshots/qol-a/`):
+
+- before: `f1-before-tree-delete-note`, `f1-before-editor-delete-dialog`, `f1-before-media-delete-dialog`;
+- after, each at desktop and 390px, light and dark: `f1-after-tree-delete-undo-*`, `f1-after-tree-undone-*`, `f1-after-editor-delete-dialog-*`, `f1-after-editor-deleted-toast-*`, `f1-after-media-delete-dialog-*`, `f1-after-media-deleted-toast-*`, `f1-after-recycle-bin-files-*`; `f1-after-media-toast-keyboard-desktop-light` (Undo focused with Alt+T).

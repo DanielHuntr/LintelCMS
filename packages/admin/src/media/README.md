@@ -24,8 +24,9 @@ Opens from a tile. Changes save as they're made, with "Saved" in the header:
   geometry (`@lintel/core/media-crop`), so they match what the website gets.
 - **Alt text** (saved on leaving the field), with guidance on writing it, and the
   **filename** (the API keeps the real extension).
-- Details, Copy URL, Download, and Delete. Delete asks first; if entries still use the
-  file, the API's 409 is shown as "Used in" with their titles.
+- Details, Copy URL, Download, and Delete. Delete asks first, then moves the file to the
+  recycle bin and offers Undo; if entries still use the file, the API's 409 is shown as
+  "Used in" with their titles.
 
 ## MediaPicker
 
@@ -62,6 +63,7 @@ arrives.
 | `AssetDetailsList.tsx`   | Type, size, dimensions, uploader and date                         |
 | `AssetActions.tsx`       | Copy URL, Download, Delete                                        |
 | `DeleteAssetDialog.tsx`  | Confirming a delete, and "Used in" when it's refused              |
+| `useOfferAssetUndo.ts`   | "Moved to the recycle bin" with Undo, at the foot of the window   |
 | `MediaPicker.tsx`        | The image field                                                   |
 | `MediaPickerDialog.tsx`  | Choosing or uploading an image                                    |
 | `UploadTray.tsx`         | The floating uploads list on the library                          |

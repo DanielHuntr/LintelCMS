@@ -12,6 +12,7 @@ export { entriesTable, revisionsTable } from "../entries/entries.table.js";
 export { sessionsTable } from "../sessions/sessions.table.js";
 export { settingsTable } from "../settings/settings.table.js";
 export { assetsTable } from "../media/media.table.js";
+export { binnedAssetsTable } from "../media/media-bin.table.js";
 export { siteLocalesTable } from "../sites/locales.table.js";
 export { taxonomiesTable, termsTable } from "../taxonomies/taxonomies.table.js";
 export { globalSetsTable, globalValuesTable } from "../globals/globals.table.js";

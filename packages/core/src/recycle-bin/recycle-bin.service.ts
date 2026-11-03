@@ -10,6 +10,7 @@ import {
   findEntryById,
   findNextSortOrder,
   findSlugsStartingWith,
+  makeRoomAfter,
 } from "../entries/entries.repository.js";
 import { findEntryOrFail } from "../entries/entries.service.js";
 import type { Entry, RevisionKind } from "../entries/entries.table.js";
@@ -95,6 +96,10 @@ function binEntry(entry: Entry): BinnedEntry {
     slug: entry.slug,
     data: entry.data,
     sortOrder: entry.sortOrder,
+    status: entry.status,
+    publishedAt: entry.publishedAt?.toISOString() ?? null,
+    publishedData: entry.publishedData,
+    scheduledFor: entry.scheduledFor?.toISOString() ?? null,
     createdBy: entry.createdBy,
     updatedBy: entry.updatedBy,
     createdAt: entry.createdAt.toISOString(),
@@ -169,16 +174,34 @@ export async function moveToRecycleBin(
 }
 
 /**
+ * How to put an item back. Undo, straight after binning, asks for `asBefore`: the entry goes
+ * back to its old place among its siblings rather than last, and, when the person may
+ * publish (`mayPublish`), what was live is live again with what it showed. Otherwise
+ * everything comes back as a draft.
+ */
+export interface RestoreOptions {
+  asBefore: boolean;
+  mayPublish: boolean;
+}
+
+/**
  * Puts a binned entry and everything under it back. It goes under its old parent when that
  * is still there, else at the top of its collection. Everything comes back as a draft, so
- * nothing reappears on the site until someone publishes it, and a slug taken meanwhile gets
- * a number.
+ * nothing reappears on the site until someone publishes it (unless it's an Undo, see
+ * RestoreOptions), and a slug taken meanwhile gets a number. `liveEntryIds` are the entries
+ * that came back live, for the caller to announce.
  */
 export async function restoreFromRecycleBin(
   database: DatabaseOrTransaction,
   itemId: string,
   siteLimit: SiteLimit,
-): Promise<{ entryId: string; parentId: string | null; restoredCount: number }> {
+  options: RestoreOptions = { asBefore: false, mayPublish: false },
+): Promise<{
+  entryId: string;
+  parentId: string | null;
+  restoredCount: number;
+  liveEntryIds: string[];
+}> {
   const item = await findRecycleBinItem(database, DEFAULT_TENANT_ID, itemId);
   if (!item || !isOnSites(item, siteLimit)) {
     throw new RecycleBinItemNotFoundError();
@@ -205,6 +228,8 @@ export async function restoreFromRecycleBin(
   );
   const parentIsBack = item.parentId !== null && (await findEntryById(database, item.parentId));
   const topParentId = parentIsBack ? item.parentId : null;
+  const keepsLive = options.asBefore && options.mayPublish;
+  const liveEntryIds: string[] = [];
 
   await database.transaction(async (transaction) => {
     // Stored parents first: the branch was saved in that order.
@@ -217,6 +242,13 @@ export async function restoreFromRecycleBin(
         locale: entry.locale,
       };
       const taken = await findSlugsStartingWith(transaction, scope, entry.slug);
+      // Undo puts it back where it was, when its parent is still there to go back to.
+      const returnsToItsPlace = isTop && options.asBefore && topParentId === item.parentId;
+      if (returnsToItsPlace) {
+        await makeRoomAfter(transaction, entry.collectionId, parentId, entry.sortOrder - 1);
+      }
+      const state = restoredState(entry, keepsLive);
+      if (state.status !== "draft") liveEntryIds.push(entry.id);
       await insertEntryRow(transaction, {
         id: entry.id,
         collectionId: entry.collectionId,
@@ -228,11 +260,12 @@ export async function restoreFromRecycleBin(
             : null,
         parentId,
         slug: firstFreeSlug(entry.slug, new Set(taken)),
-        status: "draft",
+        ...state,
         data: entry.data,
-        sortOrder: isTop
-          ? await findNextSortOrder(transaction, entry.collectionId, parentId)
-          : entry.sortOrder,
+        sortOrder:
+          isTop && !returnsToItsPlace
+            ? await findNextSortOrder(transaction, entry.collectionId, parentId)
+            : entry.sortOrder,
         createdBy: someone(entry.createdBy),
         updatedBy: someone(entry.updatedBy),
         createdAt: new Date(entry.createdAt),
@@ -276,7 +309,25 @@ export async function restoreFromRecycleBin(
     }
     await deleteRecycleBinItem(transaction, item.id);
   });
-  return { entryId: item.entryId, parentId: topParentId, restoredCount: entries.length };
+  return {
+    entryId: item.entryId,
+    parentId: topParentId,
+    restoredCount: entries.length,
+    liveEntryIds,
+  };
+}
+
+/** A draft, or, for an Undo by someone who may publish, live again as it was. */
+function restoredState(entry: BinnedEntry, keepsLive: boolean) {
+  if (!keepsLive || entry.status === undefined || entry.status === "draft") {
+    return { status: "draft" as const };
+  }
+  return {
+    status: entry.status,
+    publishedAt: entry.publishedAt ? new Date(entry.publishedAt) : null,
+    publishedData: entry.publishedData ?? null,
+    scheduledFor: entry.scheduledFor ? new Date(entry.scheduledFor) : null,
+  };
 }
 
 /** Deletes one binned item for good. */

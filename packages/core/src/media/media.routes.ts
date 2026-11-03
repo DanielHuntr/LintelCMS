@@ -22,8 +22,8 @@ import {
   uploadAssetQuerySchema,
   updateAssetRequestSchema,
 } from "./media.schema.js";
+import { moveAssetToRecycleBin } from "./media-bin.service.js";
 import {
-  deleteAsset,
   getAsset,
   listAssets,
   type MediaContext,
@@ -76,7 +76,7 @@ const RESIZED_IMAGES_PER_MINUTE = 300;
  *   GET    /media           (media:read)    ?search=&type=image|document&page=&perPage=&folder=
  *   GET    /media/:id       (media:read)    -> Asset
  *   PATCH  /media/:id       (media:update)  { alt?, focalPoint?, filename?, folder? } -> Asset
- *   DELETE /media/:id       (media:delete)  -> 204, or 409 ASSET_IN_USE with usedBy
+ *   DELETE /media/:id       (media:delete)  -> 204 (to the recycle bin), or 409 ASSET_IN_USE with usedBy
  *   GET    /media/:id/file  (public)        ?w=&h=&fit=cover|contain&format=webp|avif|jpeg|png
  */
 export async function mediaRoutes(server: FastifyInstance, options: MediaRoutesOptions) {
@@ -139,7 +139,7 @@ export async function mediaRoutes(server: FastifyInstance, options: MediaRoutesO
       const assetId = parseAssetId(request.params);
       const asset = await getAsset(context(), assetId);
       try {
-        await deleteAsset(context(), assetId);
+        await moveAssetToRecycleBin(context(), assetId, getSignedIn(request).user.id);
       } catch (error) {
         if (error instanceof AssetInUseError) {
           return sendAssetInUse(reply, error);

@@ -95,3 +95,35 @@ export class AssetInUseError extends HttpError {
     this.usedBy = usedBy;
   }
 }
+
+export class BinnedAssetNotFoundError extends HttpError {
+  constructor() {
+    super(
+      404,
+      "NOT_FOUND",
+      "That file isn't in the recycle bin. It may have been restored or emptied.",
+    );
+  }
+}
+
+/** The same file was uploaded again while the deleted one was in the bin. */
+export class AssetAlreadyInLibraryError extends HttpError {
+  constructor(filename: string) {
+    super(
+      409,
+      "ASSET_ALREADY_IN_LIBRARY",
+      `“${filename}” is already in the media library: it was uploaded again after it was deleted.`,
+    );
+  }
+}
+
+/** The bytes went missing from storage (moved to another storage, say) while it was binned. */
+export class BinnedFileMissingError extends HttpError {
+  constructor(filename: string) {
+    super(
+      409,
+      "FILE_MISSING",
+      `“${filename}” can't be restored because its file is no longer in storage.`,
+    );
+  }
+}

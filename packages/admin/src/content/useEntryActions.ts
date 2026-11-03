@@ -4,7 +4,6 @@ import { describeError } from "../api/describeError.js";
 import { t } from "../i18n/strings.js";
 import {
   createEntry,
-  deleteEntry,
   duplicateEntry,
   publishEntry,
   restoreRevision,
@@ -139,11 +138,11 @@ export function useEntryActions({
       });
       return copy;
     },
-    remove: () =>
+    /** Deletes by `recycle` (to the recycle bin, offering Undo); false when that failed. */
+    remove: (recycle: (id: string) => Promise<void>) =>
       run(async (id) => {
-        await deleteEntry(id);
+        await recycle(id);
         queryClient.removeQueries({ queryKey: contentKeys.entry(id) });
-        await queryClient.invalidateQueries({ queryKey: contentKeys.collections() });
       }),
   };
 }

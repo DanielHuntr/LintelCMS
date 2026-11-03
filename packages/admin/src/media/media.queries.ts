@@ -12,6 +12,7 @@ import {
   deleteAsset,
   getAsset,
   listAssets,
+  listMediaBin,
   updateAsset,
 } from "./media.api.js";
 
@@ -24,6 +25,7 @@ export const mediaKeys = {
   list: (search: string, type: AssetKind | undefined, folder?: string) =>
     [...mediaKeys.lists(), { search: search.trim(), type, folder }] as const,
   asset: (assetId: string) => [...mediaKeys.all, "asset", assetId] as const,
+  bin: () => [...mediaKeys.all, "bin"] as const,
 };
 
 type AssetPages = InfiniteData<{ assets: Asset[]; total: number }, number>;
@@ -73,9 +75,25 @@ export function useDeleteAsset() {
     mutationFn: (assetId: string) => deleteAsset(assetId),
     onSuccess: (_result, assetId) => {
       queryClient.removeQueries({ queryKey: mediaKeys.asset(assetId) });
+      void queryClient.invalidateQueries({ queryKey: mediaKeys.bin() });
       return queryClient.invalidateQueries({ queryKey: mediaKeys.lists() });
     },
   });
+}
+
+/** The media recycle bin, for the Recycle bin screen. Only asked for when `enabled`. */
+export function useMediaBin(enabled: boolean) {
+  return useQuery({ queryKey: mediaKeys.bin(), queryFn: listMediaBin, enabled });
+}
+
+/** After a file comes back or leaves the bin: show it where it now is. */
+export function useRefreshMediaBin() {
+  const queryClient = useQueryClient();
+  return () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: mediaKeys.bin() }),
+      queryClient.invalidateQueries({ queryKey: mediaKeys.lists() }),
+    ]);
 }
 
 /** After an upload: show the new file in every list. */

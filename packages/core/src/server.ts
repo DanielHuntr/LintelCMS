@@ -51,6 +51,7 @@ import { addSecurityHeaders } from "./http/security-headers.js";
 import { type AssetUsageFinder, createAssetLookup } from "./media/asset-lookup.js";
 import { LocalDiskStorage } from "./media/local-disk-storage.js";
 import { type MediaRoutesOptions, mediaRoutes } from "./media/media.routes.js";
+import { mediaBinRoutes } from "./media/media-bin.routes.js";
 import type { StorageDriver } from "./media/storage-driver.js";
 import { DEFAULT_TRANSFORM_CACHE_FOLDER } from "./media/transform-cache.js";
 import { openApiRoutes } from "./openapi/openapi.routes.js";
@@ -466,6 +467,7 @@ function registerApiRoutes(
   server.register(starterSitesRoutes);
   registerContentModelSyncRoutes(server);
   server.register(mediaRoutes, media);
+  server.register(mediaBinRoutes, media);
   server.register(backupsRoutes);
   server.register(contentTransferRoutes);
   server.register(wordpressImportRoutes);

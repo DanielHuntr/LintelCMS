@@ -145,7 +145,9 @@ export const contentTreeStrings = {
   "tree.delete.messageWithChildren":
     "{count, plural, one {It comes off your site straight away and goes to the recycle bin with the item under it. You can restore them from there.} other {It comes off your site straight away and goes to the recycle bin with the # items under it. You can restore them from there.}}",
   "tree.delete.confirm": "Move to recycle bin",
-  "tree.delete.done": "“{title}” is in the recycle bin.",
+  "tree.delete.done": "Moved “{title}” to the recycle bin.",
+  "tree.delete.undone": "Brought “{title}” back.",
+  "tree.delete.undoFailed": "Couldn’t bring “{title}” back. {reason}",
 
   "workspace.breadcrumbs": "Where it is",
   "workspace.tabs": "Sections of {title}",
@@ -256,8 +258,7 @@ export const contentTreeStrings = {
   "recycleBin.title": "Recycle bin",
   "recycleBin.subtitle": "Deleted content waits here until you restore it or empty the bin.",
   "recycleBin.empty": "The recycle bin is empty",
-  "recycleBin.emptyDescription":
-    "When you delete something from the content tree, it comes here first.",
+  "recycleBin.emptyDescription": "When you delete a page, an entry or a file, it comes here first.",
   "recycleBin.loading": "Loading the recycle bin…",
   "recycleBin.detail": "{collection} · deleted {time} by {person}",
   "recycleBin.detailNobody": "{collection} · deleted {time}",
@@ -275,6 +276,11 @@ export const contentTreeStrings = {
   "recycleBin.emptyBinMessage":
     "Everything in it, {count} items, is deleted for good. This can’t be undone.",
   "recycleBin.emptied": "The recycle bin is empty.",
+  "recycleBin.content": "Pages and entries",
+  "recycleBin.files": "Files",
+  "recycleBin.fileDetail": "Deleted {time} by {person}",
+  "recycleBin.fileDetailNobody": "Deleted {time}",
+  "recycleBin.restoredFile": "Restored “{name}” to the media library.",
 
   "placement.title": "Where it goes",
   "placement.description":

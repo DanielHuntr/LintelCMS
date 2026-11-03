@@ -61,7 +61,7 @@ connecting a site. Drafts have no View page.
 
 - `entries:create` shows "New entry"; `entries:update` allows reordering.
 - `entries:publish` shows Publish, Unpublish and Schedule. Without it, the main button is Save.
-- `entries:delete` shows Delete in the "More" menu; `entries:create` shows "Duplicate entry".
+- `entries:delete` shows Delete in the "More" menu (to the recycle bin, then a note at the foot of the window with Undo, which reopens the entry); `entries:create` shows "Duplicate entry".
 - `blueprints:update` shows "New content type" on the overview.
 
 The API checks every permission again; hiding buttons is about clarity, not security.

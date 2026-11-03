@@ -162,6 +162,13 @@
       "when": 1793682872689,
       "tag": "0022_form_submission_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793702678447,
+      "tag": "0023_media_recycle_bin",
+      "breakpoints": true
     }
   ]
 }

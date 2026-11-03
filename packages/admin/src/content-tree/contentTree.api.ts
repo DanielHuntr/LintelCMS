@@ -173,10 +173,18 @@ export function listRecycleBin(): Promise<{ items: RecycleBinItem[] }> {
   return apiRequest("/recycle-bin");
 }
 
+/**
+ * `asBefore` is Undo's: back in its old place, and live again if it was and the person may
+ * publish. Without it, restoring brings back a draft at the end of its old parent's list.
+ */
 export function restoreFromRecycleBin(
   itemId: string,
+  options: { asBefore?: boolean } = {},
 ): Promise<{ entryId: string; parentId: string | null; restoredCount: number }> {
-  return apiRequest(`/recycle-bin/${itemId}/restore`, { method: "POST" });
+  return apiRequest(
+    `/recycle-bin/${itemId}/restore`,
+    options.asBefore ? { method: "POST", body: { asBefore: true } } : { method: "POST" },
+  );
 }
 
 export function deleteFromRecycleBin(itemId: string): Promise<void> {

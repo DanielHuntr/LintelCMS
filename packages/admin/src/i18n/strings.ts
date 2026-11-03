@@ -330,8 +330,11 @@ const english = {
   "media.delete.button": "Delete",
   "media.delete.confirmTitle": "Delete “{name}”?",
   "media.delete.confirmDescription":
-    "It will be removed from the library, and its address will stop working on your site. This can’t be undone.",
-  "media.delete.confirm": "Delete file",
+    "It goes to the recycle bin, and its address stops working on your site until you restore it.",
+  "media.delete.confirm": "Move to recycle bin",
+  "media.delete.done": "Moved “{name}” to the recycle bin.",
+  "media.delete.undone": "Brought “{name}” back.",
+  "media.delete.undoFailed": "Couldn’t bring “{name}” back. {reason}",
   "media.delete.deleting": "Deleting…",
   "media.delete.cancel": "Cancel",
   "media.delete.inUseTitle": "This file is still in use",
@@ -432,6 +435,8 @@ const english = {
   "common.cancel": "Cancel",
   "common.done": "Done",
   "common.dismiss": "Dismiss",
+  "common.undo": "Undo",
+  "common.toastShortcut": "Press Alt T for {action}.",
   "dialog.close": "Close",
   "error.loadTitle": "This didn’t load",
   "error.retry": "Try again",
@@ -472,7 +477,8 @@ const english = {
     "{count, plural, one {Fix # field to save} other {Fix # fields to save}}",
   "editor.delete": "Delete",
   "editor.deleteTitle": "Delete “{title}”?",
-  "editor.deleteMessage": "It’s removed from the site straight away. This can’t be undone.",
+  "editor.deleteMessage":
+    "It comes off your site straight away and goes to the recycle bin, with anything under it. You can restore it from there.",
   "editor.leaveTitle": "Leave without saving?",
   "editor.leaveMessage":
     "Your latest changes haven’t been saved yet. If you leave now, they’ll be lost.",
