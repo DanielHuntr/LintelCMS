@@ -138,6 +138,24 @@ describe("the site's motion settings", () => {
     expect(screen.queryByTestId("cursor-preview-word")).toBeNull();
   });
 
+  it("show the cursor's trail in the preview, but not behind a picture", () => {
+    const withTrail = {
+      ...defaultSiteEffectSettings,
+      cursor: {
+        ...defaultSiteEffectSettings.cursor,
+        style: "dot" as const,
+        trail: "comet" as const,
+      },
+    };
+    const { unmount } = render(<Harness initial={withTrail} onSettings={() => undefined} />);
+    expect(screen.getByTestId("cursor-preview-trail")).toHaveAttribute("data-trail", "comet");
+    unmount();
+
+    const picture = { ...withTrail, cursor: { ...withTrail.cursor, style: "picture" as const } };
+    render(<Harness initial={picture} onSettings={() => undefined} />);
+    expect(screen.queryByTestId("cursor-preview-trail")).toBeNull();
+  });
+
   it("read cursor settings saved before the word had a look", () => {
     const older = {
       ...defaultSiteEffectSettings,
