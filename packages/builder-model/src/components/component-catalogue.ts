@@ -88,6 +88,7 @@ export const standardComponents: readonly AnyComponentDefinition[] = [
   eraseProps(linkComponent),
   eraseProps(navigationComponent),
   eraseProps(navigation.siteHeaderComponent),
+  eraseProps(navigation.siteLogoComponent),
   eraseProps(navigation.mobileMenuComponent),
   eraseProps(navigation.siteFooterComponent),
   eraseProps(info.breadcrumbsComponent),

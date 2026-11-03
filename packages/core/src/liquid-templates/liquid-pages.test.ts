@@ -19,6 +19,7 @@ import { requestsAs, type SendRequest, startTestServer } from "../testing/test-s
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
 import { buildSiteServer } from "../website/site-server.js";
 import { readForm, type SiteSources } from "../website/site-sources.js";
+import { starterSiteSections } from "../site-sections/site-sections.service.js";
 
 const SITE_URL = "http://localhost:3999";
 
@@ -225,6 +226,32 @@ describe("pages drawn with Liquid templates", { timeout: 30000 }, () => {
     expect(page).toContain("<h1>Story</h1><p class=byline>Corner Bakery</p>");
     expect(page).toContain('class="lintel-header');
     expect(page).not.toContain("lintel-head-");
+  });
+
+  it("draws the site's own navigation and footer for {% site_header %} and {% site_footer %}", async () => {
+    const saved = await admin("PUT", "/website/sections", starterSiteSections());
+    expect(saved.statusCode, saved.body).toBe(200);
+    await file(
+      "layouts/main.liquid",
+      '<!DOCTYPE html><html lang="{{ site.language }}"><head>{% lintel_head %}</head>' +
+        "<body>{% site_header %}<main>{% block content %}{% endblock %}</main>{% site_footer %}</body></html>",
+    );
+    await file(
+      "templates/pages.liquid",
+      "{% layout 'main' %}{% block content %}<h1>{{ entry.title }}</h1>{% endblock %}",
+    );
+    await publish({ title: "Story" }, "story");
+
+    const page = (await visit("/story")).body;
+
+    expect(page).toMatch(
+      /<body><div class="lintel-design lintel-site-section"[^>]*><header class="site-navigation/,
+    );
+    expect(page).toMatch(
+      /<\/main><div class="lintel-design lintel-site-section"[^>]*><footer class="site-footer/,
+    );
+    expect(page).not.toContain('class="lintel-header');
+    expect(page).toContain(".site-navigation {");
   });
 
   it("lets each page choose its template, or the visual designer", async () => {

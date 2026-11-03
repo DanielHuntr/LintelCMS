@@ -1,5 +1,6 @@
 import type { NodeBlueprint } from "../components/component-definition.js";
 import { closingSections } from "./closing-sections.js";
+import { extraFooterSections, navigationSections } from "./navigation-sections.js";
 import { openingSections } from "./opening-sections.js";
 
 /**
@@ -16,6 +17,7 @@ import { openingSections } from "./opening-sections.js";
  */
 
 export const sectionCategories = [
+  "navigation",
   "intro",
   "features",
   "about",
@@ -41,9 +43,20 @@ export interface SectionTemplate {
 }
 
 export const sectionTemplates: readonly SectionTemplate[] = [
+  ...navigationSections,
   ...openingSections,
   ...closingSections,
+  ...extraFooterSections,
 ];
+
+/**
+ * The groups whose sections are the site's own navigation and footer: added from Insert,
+ * they go on every page (see site-sections/).
+ */
+export const siteSectionCategories = {
+  navigation: "navigation",
+  footer: "footer",
+} as const satisfies Record<string, SectionCategory>;
 
 export function findSectionTemplate(templateId: string): SectionTemplate | undefined {
   return sectionTemplates.find((template) => template.id === templateId);

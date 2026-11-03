@@ -105,6 +105,10 @@ interface SelectedElementPanelProps {
   pageWeight?: PageWeight;
   /** Site-wide motion settings, shown when nothing is selected on the Animate tab. */
   siteMotion?: ReactNode;
+  /** The page's own settings, shown when nothing is selected on the Content tab. */
+  pageSettings?: ReactNode;
+  /** Under the selected element: making a section the site's navigation or footer. */
+  sectionTools?: ReactNode;
   /** Told which state is being styled, so the canvas can show it; null for none. */
   onStyleStateChange?: (nodeId: string, target: StyleTarget | null) => void;
 }
@@ -260,6 +264,7 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
               <div className="px-4 pb-6">{props.siteMotion}</div>
             )}
             {tab === "style" && <SiteStylesPanel uses={sharedStyleUses} />}
+            {tab === "content" && props.pageSettings}
           </>
         ) : tab === "style" && design ? (
           <StylePanel
@@ -321,6 +326,7 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
           />
         )}
       </div>
+      {props.sectionTools}
       {blockTools}
     </aside>
   );

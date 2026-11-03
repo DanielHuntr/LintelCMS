@@ -38,6 +38,7 @@ export interface InsertItem {
 }
 
 export const sectionGroupTitles: Record<SectionCategory, BuilderStringKey> = {
+  navigation: "pageBuilder.insert.sectionCategory.navigation",
   intro: "pageBuilder.insert.sectionCategory.intro",
   features: "pageBuilder.insert.sectionCategory.features",
   about: "pageBuilder.insert.sectionCategory.about",

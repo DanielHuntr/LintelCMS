@@ -3,6 +3,7 @@ import { builderDesignStrings } from "./design-strings.js";
 import { builderElementStrings } from "./element-strings.js";
 import { builderLayoutStrings } from "./layout-strings.js";
 import { builderMenuStrings } from "./menu-strings.js";
+import { builderSiteSectionStrings } from "./site-section-strings.js";
 import { builderPanelStrings } from "./panel-strings.js";
 import { builderStudioStrings } from "./studio-strings.js";
 
@@ -361,6 +362,7 @@ export const builderStrings = {
   ...builderDesignStrings,
   ...builderElementStrings,
   ...builderMenuStrings,
+  ...builderSiteSectionStrings,
   ...builderBlockStrings,
   ...builderLayoutStrings,
 } as const;

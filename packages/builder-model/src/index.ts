@@ -97,6 +97,7 @@ export {
   findSectionTemplate,
   sectionCategories,
   sectionTemplates,
+  siteSectionCategories,
   type SectionCategory,
   type SectionTemplate,
 } from "./templates/section-templates.js";
@@ -111,3 +112,4 @@ export {
 } from "./starter-sites/starter-site.js";
 export { findStarterSite, starterSites } from "./starter-sites/starter-sites.js";
 export { findIllustration, illustrationNames } from "./starter-sites/illustrations.js";
+export * from "./site-sections/site-sections.js";

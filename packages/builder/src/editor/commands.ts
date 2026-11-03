@@ -21,6 +21,7 @@ import {
   removeNode,
   rootNodeId,
   setStyles,
+  siteSectionSlotOf,
   type StylePropertyName,
   type StyleTarget,
   type TextMark,
@@ -28,6 +29,7 @@ import {
 } from "@lintel/builder-model";
 import type { Translate } from "../i18n/builder-text.js";
 import type { PageChange } from "./editor-state.js";
+import { setSiteSectionHidden } from "./site-section-commands.js";
 
 /**
  * Everything the builder can do to a page, as changes for the editor's history. Each one
@@ -189,6 +191,9 @@ function selectedNode(context: CommandContext): PageNode | { refused: string } {
 export function removeSelected(context: CommandContext): CommandResult {
   const node = selectedNode(context);
   if ("refused" in node) return node;
+  // The site's navigation and footer are on every page: deleting one here hides it here.
+  const slot = siteSectionSlotOf(node.id);
+  if (slot) return setSiteSectionHidden(context, slot, true);
   const place = findPlace(context.document.root, node.id);
   const neighbour =
     place?.parent.children[place.index + 1] ??
@@ -504,10 +509,16 @@ export function replacePageContent(
   return {
     change: {
       label,
-      update: (document) => ({
-        ...document,
-        root: { ...document.root, children: page.root.children },
-      }),
+      // The site's navigation and footer stay where they are, around the new content.
+      update: (document) => {
+        const shared = document.root.children.filter((child) => siteSectionSlotOf(child.id));
+        const first = shared.filter((child) => siteSectionSlotOf(child.id) === "navigation");
+        const last = shared.filter((child) => siteSectionSlotOf(child.id) === "footer");
+        return {
+          ...document,
+          root: { ...document.root, children: [...first, ...page.root.children, ...last] },
+        };
+      },
       select: null,
     },
   };

@@ -21,8 +21,11 @@ export const pageComponent = defineComponent({
       .string()
       .regex(/^([a-z0-9][a-z0-9_:-]{0,63})?$/, { error: "Choose a collection by its handle" })
       .default(""),
+    // This page leaves out the site's navigation or footer (see site-sections/).
+    hideSiteNavigation: z.boolean().default(false),
+    hideSiteFooter: z.boolean().default(false),
   }),
-  defaultProps: { fonts: [], itemDesignFor: "" },
+  defaultProps: { fonts: [], itemDesignFor: "", hideSiteNavigation: false, hideSiteFooter: false },
   allowedChildren: "any",
   editableFields: [
     {

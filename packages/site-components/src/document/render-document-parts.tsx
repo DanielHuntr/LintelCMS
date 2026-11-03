@@ -11,6 +11,7 @@ import { EffectsHead } from "./EffectsHead.js";
 import { HeadTags } from "./HeadTags.js";
 import type { PageHead } from "./page-head.types.js";
 import { renderComponentHtml } from "./render-html.js";
+import { chromeSlots, headDesign, SiteSection } from "./site-sections.js";
 
 /** What a page drawn by something other than a template needs to look like the site. */
 export interface DocumentPartsProps {
@@ -50,7 +51,9 @@ export interface DocumentParts {
  * templates in core): they keep the same `<head>`, skip link, header and footer.
  */
 export function renderDocumentParts(props: DocumentPartsProps): DocumentParts {
-  const { head, chrome, template, labels, design } = props;
+  const { head, chrome, template, labels } = props;
+  const slots = chromeSlots(chrome, props.design);
+  const design = headDesign(props.design, slots);
   return {
     language: chrome.locale,
     head: renderComponentHtml(
@@ -81,14 +84,20 @@ export function renderDocumentParts(props: DocumentPartsProps): DocumentParts {
       ? `<div>${props.siteEffects.bodyStartHtml}</div>`
       : "",
     skipLink: renderComponentHtml(<SkipLink label={labels.skipToContent} />),
-    header: design?.ownHeader
-      ? ""
-      : renderComponentHtml(
-          <Header chrome={chrome} labels={labels} layout={template.headerLayout} />,
-        ),
-    footer: design?.ownFooter
-      ? ""
-      : renderComponentHtml(<Footer chrome={chrome} labels={labels} year={props.year} />),
+    header:
+      slots.header === "automatic"
+        ? renderComponentHtml(
+            <Header chrome={chrome} labels={labels} layout={template.headerLayout} />,
+          )
+        : slots.header
+          ? renderComponentHtml(<SiteSection design={slots.header} />)
+          : "",
+    footer:
+      slots.footer === "automatic"
+        ? renderComponentHtml(<Footer chrome={chrome} labels={labels} year={props.year} />)
+        : slots.footer
+          ? renderComponentHtml(<SiteSection design={slots.footer} />)
+          : "",
     mainId: MAIN_CONTENT_ID,
   };
 }

@@ -22,6 +22,7 @@ import {
 } from "../website/site-assets.js";
 import { loadOtherMenu, localiseUrl, markCurrent } from "../website/site-chrome.service.js";
 import { htmlResponse, pageChrome } from "../website/site-documents.js";
+import { withSiteSections } from "../website/site-sections-drawing.js";
 import { buildPageHead, type HeadSubject } from "../website/site-head.service.js";
 import type { PageRequest } from "../website/site-pages.service.js";
 import { createLintelGlobal, type LiquidPageHelpers } from "./liquid-page-helpers.js";
@@ -63,7 +64,11 @@ export async function renderEntryWithLiquid(
     dependencies.assetLookup,
     dependencies.site,
   );
-  const chrome = pageChrome(context, request.chrome, request.path, page.translations);
+  // The site's own navigation and footer, when it has them, for {% site_header %} and the rest.
+  const chrome = await withSiteSections(
+    request,
+    pageChrome(context, request.chrome, request.path, page.translations),
+  );
   const year = (dependencies.now?.() ?? new Date()).getUTCFullYear();
   const partsFor = (design: PageDesign | null): DocumentParts =>
     renderDocumentParts({

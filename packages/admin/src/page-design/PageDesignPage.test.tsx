@@ -87,6 +87,44 @@ describe("the page design screen", () => {
     expect(screen.getByRole("link", { name: "Back to Home" })).toBeInTheDocument();
   });
 
+  it("saves a Navigation for the whole site, keeping it out of the page", async () => {
+    const user = userEvent.setup();
+    const { calls } = mockApi(({ method, url, body }) => {
+      if (method === "GET" && url.pathname === "/entries/p1") return samplePage();
+      if (method === "PATCH" && url.pathname === "/entries/p1") {
+        return samplePage((body as { data: { design: unknown } }).data.design);
+      }
+      if (method === "GET" && url.pathname === "/website/sections") {
+        return { navigation: null, footer: null };
+      }
+      if (method === "PUT" && url.pathname === "/website/sections") {
+        return { navigation: (body as { navigation: unknown }).navigation, footer: null };
+      }
+      throw apiErrorResponse(404, "NOT_FOUND", "Not found");
+    });
+    renderScreen(<PageDesignPage collectionHandle="pages" entryId="p1" fieldHandle="design" />);
+    await addSection(user, "call to action", "Call to action");
+    await user.click(screen.getByRole("tab", { name: "Insert" }));
+    await user.clear(screen.getByRole("searchbox", { name: "Search sections and elements" }));
+    await user.keyboard("logo and menu");
+    await user.click(screen.getByRole("button", { name: /^Logo and menu/ }));
+    await waitFor(() => expect(calls.some((call) => call.method === "PUT")).toBe(true), {
+      timeout: 4000,
+    });
+    const put = calls.find((call) => call.method === "PUT")?.body as {
+      navigation: { id: string; props: { element: string } };
+    };
+    expect(put.navigation).toMatchObject({ id: "site-navigation", props: { element: "header" } });
+    await waitFor(
+      () => {
+        const patches = calls.filter((call) => call.method === "PATCH");
+        expect(patches.length).toBeGreaterThan(0);
+        expect(JSON.stringify(patches.at(-1)?.body ?? {})).not.toContain("site-navigation");
+      },
+      { timeout: 4000 },
+    );
+  });
+
   it("shows the server’s message when it refuses a design", async () => {
     const user = userEvent.setup();
     mockApi(({ method, url }) => {
