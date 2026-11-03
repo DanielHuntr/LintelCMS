@@ -29,7 +29,7 @@ export const experimentsPlugin = definePlugin({
   // Counting needs no consent by default; a site that asks first lists it in the cookie
   // notice, and the counting script waits for "plugin:experiments" (see tests-script.ts).
   consentServicesFromSettings: (settings) =>
-    settings.countOnlyAfterConsent ? [{ name: "A/B test counts" }] : [],
+    settings.countOnlyAfterConsent ? [{ name: "A/B test counts", countsWithoutCookies: true }] : [],
   async routes(server) {
     await server.register(experimentsRoutes);
   },

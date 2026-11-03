@@ -27,7 +27,7 @@ export const analyticsPlugin = definePlugin({
   // Counting is cookieless, so the cookie notice names it only when the site asks visitors
   // first; the beacon then waits for "plugin:analytics" (see analytics-script.ts).
   consentServicesFromSettings: (settings) =>
-    settings.countOnlyAfterConsent ? [{ name: "Visitor counts" }] : [],
+    settings.countOnlyAfterConsent ? [{ name: "Visitor counts", countsWithoutCookies: true }] : [],
   async routes(server) {
     await server.register(collectRoutes);
     await server.register(analyticsRoutes);

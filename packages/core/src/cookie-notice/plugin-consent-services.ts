@@ -24,6 +24,8 @@ export interface PluginConsentService {
 export interface SettingsConsentService {
   handle?: string;
   name: string;
+  /** It counts visits and sets no cookies, so the notice says so rather than "may set cookies". */
+  countsWithoutCookies?: boolean;
 }
 
 /** Reads a plugin's saved settings and says which services they need asked about. */
@@ -71,9 +73,10 @@ export async function findPluginConsentServices(
     enabledPlugins.map(async (pluginId) => {
       const read = readersByPlugin.get(pluginId);
       if (!read) return [];
-      return (await read(database)).map(({ handle, name }) => ({
+      return (await read(database)).map(({ handle, name, countsWithoutCookies }) => ({
         id: pluginConsentServiceId(pluginId, handle),
         name,
+        ...(countsWithoutCookies ? { countsWithoutCookies } : {}),
       }));
     }),
   );
