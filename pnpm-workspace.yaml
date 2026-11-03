@@ -4,3 +4,11 @@ packages:
 
 onlyBuiltDependencies:
   - esbuild
+
+# Page drafting runs its writing model on the processor. The graphics-card builds of the
+# model runner are several hundred megabytes each, so they are left out of every install.
+overrides:
+  "@node-llama-cpp/linux-x64-cuda": "-"
+  "@node-llama-cpp/linux-x64-cuda-ext": "-"
+  "@node-llama-cpp/win-x64-cuda": "-"
+  "@node-llama-cpp/win-x64-cuda-ext": "-"

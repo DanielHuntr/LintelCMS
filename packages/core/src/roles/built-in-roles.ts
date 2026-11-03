@@ -51,6 +51,7 @@ export const builtInRoles: readonly BuiltInRole[] = [
       "orders:*",
       "forms:*",
       "automations:*",
+      "drafts:*",
     ],
   },
   {
@@ -64,6 +65,8 @@ export const builtInRoles: readonly BuiltInRole[] = [
       "terms:*",
       "globals:read",
       "globals:update",
+      // Drafting only ever adds editable sections to a page; nothing is published by it.
+      "drafts:*",
       ...readContentModel,
     ],
   },

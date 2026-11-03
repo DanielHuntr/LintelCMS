@@ -1231,3 +1231,28 @@ Decision record: `docs/decisions/0040-cookie-notice.md`. No migration: the setti
 **Checked in a browser** (Chromium) on the published site with a YouTube video and a map: desktop and 390px in light, desktop in dark, Choose at 390px, after Accept all, and the settings at desktop.
 
 **Screenshots** (in `screenshots/cookie-consent/`): `site-desktop-light`, `site-390-light`, `site-390-choose`, `site-desktop-dark`, `site-desktop-accepted`, `settings-desktop`, `settings-off-warning`.
+
+## Drafting a page from a description
+
+**Asked for:** draft a page from a plain description, with a model running on the site's own server and nothing sent anywhere at run time. An optional plugin, off by default (approved by Daniel).
+
+**Now:**
+
+- **Page drafting** in Build → Features (plugin id `drafts`, off by default). Switched on, it does nothing until an admin sets the model up.
+- **Settings → Page drafting**, before anything is downloaded, shows the model (Qwen2.5 7B Instruct), who made it (the Qwen team at Alibaba Cloud), its licence (Apache License 2.0, linked), its size (4.4 GB), the exact addresses it downloads from (the makers' own repository, pinned to one revision), the folder it is saved in, the memory it needs (about 6 GB free), and "Nothing about your site is sent anywhere, now or later. After this it works offline." Then **Download 4.4 GB** (progress, Cancel keeps what arrived, Resume carries on with a Range request) or **I'll copy the file in myself** (the folder and file names, then Check files). Every file is checked against its published SHA-256 and deleted and refused if it doesn't match. Installed, the screen shows the same details and **Remove**. A server with too little memory or disk is told so plainly, and Download is refused when the disk is too small.
+- **In the builder:** "Draft a page for me" on an empty page and at the top of Insert → Sections. A short form: what the page is for, who it's for, a tone, and which sections (Welcome, What you offer, About you and Call to action to start with; all off lets the model choose). It says "This can take a minute or two" and asks people to read the words before publishing. While it writes: a progress bar and **Stop**. The model writes under a grammar made from the plan's JSON schema, so the answer is always Lintel's own section kinds in the chosen order; the plan is checked again and built with the section library's own builders, so the sections are ordinary, editable and in the site's theme. They are added as one change (one Undo), never published. Buttons link to `#` until a page is chosen, pictures are the library's illustrations, example quotes are signed "Customer name", and the model is told to write placeholders such as `[price]` instead of inventing facts.
+- **Rewrite this:** Shorter, Friendlier and More formal under a heading's or paragraph's words in the Content tab, once the model is installed. Undo puts the old words back.
+- **Limits:** one draft at a time per server, a five-minute limit, a free-memory check before the model loads (it is freed after five idle minutes), permission `drafts:use` (Editor and Admin; not Author or Viewer). Prompts and answers stay in memory for the person who asked, for ten minutes; nothing is logged or stored.
+
+Decision record: `docs/decisions/0043-page-drafting.md` (the model's exact files, sizes and checksums, and what downloads when). No migration: the plugin has no tables.
+
+**Tests (the model is always stood in; nothing large is downloaded):**
+
+- builder-model `page-drafts/draft-plan.test.ts` (13): every kind of section, refusing unknown kinds, missing, empty and over-long words; the JSON schema holding the model to the chosen sections in order, or three to six of any; only grammar-safe keywords; every kind making a valid page; links to `#`, unattributed quotes, illustrations taking turns.
+- core `page-drafts/page-drafts.test.ts` (18): plugin off answers 404 and never touches the model or the disk; the setup details before any download; download and check; a bad checksum refused and deleted; resuming after a broken download (`bytes=100000-`); cancelling keeps what arrived; files copied in by hand found and checked; removing; too little memory; drafting with exactly the chosen sections; refusing before install; a malformed answer; one draft at a time and Stop; the time limit; the free-memory guard; rewriting; `drafts:use` for editors and admins and not authors; a draft visible only to the person who asked. `plugins.test.ts` and `plugin-system.test.ts` list the new plugin.
+- builder `page-drafts/page-drafts.test.tsx` (7): not offered without page drafting; the form, inserting as one change and Undo; Stop adds nothing; a failure keeps the form; the not-set-up note; Rewrite this.
+- admin `page-drafts/PageDraftingSettingsPage.test.tsx` (5): the details before download; copying in by hand; progress with Cancel; too small a server; Remove after asking.
+
+**Checked in a browser** (Chromium, desktop, light and dark): the setup screen before download (real API), the draft form, and a drafted page (the server's drafting answers stood in with Playwright, since no model was downloaded on this machine). A real end-to-end run with the 4.4 GB model was skipped; node-llama-cpp's prebuilt llama.cpp was checked to load on this machine with `build: "never"`.
+
+**Screenshots** (in `screenshots/page-drafts/`): `setup-before-download-{light,dark}`, `draft-form-{light,dark}`, `draft-writing-light`, `drafted-page-{light,dark}`.

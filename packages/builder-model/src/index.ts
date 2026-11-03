@@ -118,3 +118,20 @@ export {
 export { findStarterSite, starterSites } from "./starter-sites/starter-sites.js";
 export { findIllustration, illustrationNames } from "./starter-sites/illustrations.js";
 export * from "./site-sections/site-sections.js";
+
+export {
+  draftPlanJsonSchema,
+  draftPlanSchema,
+  draftSectionFields,
+  draftSectionKinds,
+  readDraftPlan,
+  rewriteJsonSchema,
+  rewriteSchema,
+  MOST_DRAFT_SECTIONS,
+  MOST_REWRITE_CHARACTERS,
+  type DraftPlan,
+  type DraftSection,
+  type DraftSectionKind,
+  type JsonSchema,
+} from "./page-drafts/draft-plan.js";
+export { sectionsFromDraftPlan } from "./page-drafts/draft-plan-sections.js";

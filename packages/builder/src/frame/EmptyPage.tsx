@@ -1,6 +1,6 @@
 import type { StarterPage, StarterSite } from "@lintel/builder-model";
 import { LayoutTemplate, PanelsTopLeft, Shapes } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { TemplatePagesDialog } from "./TemplatePagesDialog.js";
 
@@ -12,6 +12,8 @@ interface EmptyPageProps {
   onChooseStarterPage: (page: StarterPage, name: string) => void;
   /** Focus goes to the heading when the page opens empty, unless something else wants it. */
   takesFocus: boolean;
+  /** "Draft a page for me", when page drafting is on. */
+  draftButton?: ReactNode;
 }
 
 /**
@@ -25,6 +27,7 @@ export function EmptyPage({
   onAddElements,
   onChooseStarterPage,
   takesFocus,
+  draftButton,
 }: EmptyPageProps) {
   const text = useBuilderText();
   const heading = useRef<HTMLHeadingElement>(null);
@@ -83,6 +86,7 @@ export function EmptyPage({
             {text("pageBuilder.start.fromTemplate")}
           </button>
         )}
+        {draftButton}
       </div>
       {isChoosingTemplate && (
         <TemplatePagesDialog

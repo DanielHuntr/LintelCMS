@@ -22,6 +22,7 @@ import {
   type StyleTarget,
   type PageDocument,
   sectionTemplates,
+  sectionsFromDraftPlan,
   starterSites as allStarterSites,
   type StarterSite,
   hasOwnContent,
@@ -113,6 +114,8 @@ import {
   siteSectionAround,
 } from "./site-sections/SiteSectionControls.js";
 import { type SiteSectionsSource, useSiteSections } from "./site-sections/useSiteSections.js";
+import { DraftPageButton } from "./page-drafts/DraftPageButton.js";
+import { type PageDrafting, PageDraftingContext } from "./page-drafts/page-drafting.js";
 
 export interface PageBuilderProps {
   /** The page as stored. Read once; the builder owns it from then on. */
@@ -205,6 +208,11 @@ export interface PageBuilderProps {
    * site-sections/). Without it, Navigation and Footer sections belong to the page alone.
    */
   siteSections?: SiteSectionsSource;
+  /**
+   * Page drafting from the app (see page-drafts/): "Draft a page for me" and "Rewrite this".
+   * Left out, neither is shown.
+   */
+  pageDrafting?: PageDrafting;
 }
 
 /** The site's default theme, until the app passes the site's own. */
@@ -228,7 +236,9 @@ export function PageBuilder({ text = englishText, ...props }: PageBuilderProps) 
       <PagePickerContext value={props.pickPage}>
         <PageFinderContext value={props.findPage}>
           <SiteFontsContext value={siteFonts}>
-            <PageBuilderScreen {...props} text={text} />
+            <PageDraftingContext value={props.pageDrafting}>
+              <PageBuilderScreen {...props} text={text} />
+            </PageDraftingContext>
           </SiteFontsContext>
         </PageFinderContext>
       </PagePickerContext>
@@ -277,6 +287,24 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   const [isTouring, setIsTouring] = useState(false);
   const [editingMenuFor, setEditingMenuFor] = useState<string | null>(null);
   const tips = useTips(preferences);
+  // Drafted sections go on the page as one change; people are asked to check the words.
+  const draftButton = (look: "link" | "row") => (
+    <DraftPageButton
+      look={look}
+      onMessage={announce}
+      onDrafted={(plan) => {
+        const count = plan.sections.length;
+        if (
+          actions.insertDraftedSections(
+            sectionsFromDraftPlan(plan),
+            text("pageBuilder.draft.history", { count }),
+          )
+        ) {
+          announce(text("pageBuilder.draft.added", { count }));
+        }
+      }}
+    />
+  );
   const pictures = usePictureDrop({
     root: state.document.root,
     uploadPicture: props.uploadPicture,
@@ -894,6 +922,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                             if (!item) showCanvasDrop(null);
                           }}
                           focusRequest={insertFocusRequest}
+                          draftButton={draftButton("row")}
                         />
                       )}
                     </div>
@@ -929,6 +958,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                         onAddElements={() => openInsert("elements")}
                         onChooseStarterPage={actions.useStarterPage}
                         takesFocus={!showsTour}
+                        draftButton={draftButton("link")}
                       />
                     ) : (
                       <Canvas

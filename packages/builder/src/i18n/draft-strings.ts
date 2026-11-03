@@ -1,0 +1,53 @@
+/** "Draft a page for me" and "Rewrite this" (see src/page-drafts). */
+export const builderDraftStrings = {
+  "pageBuilder.draft.open": "Draft a page for me",
+  "pageBuilder.draft.title": "Draft a page",
+  "pageBuilder.draft.description":
+    "Describe the page and a writing model on your own server drafts it. Nothing is sent anywhere.",
+  "pageBuilder.draft.purpose": "What is this page for?",
+  "pageBuilder.draft.purposePlaceholder":
+    "The home page for a small bakery that also does cakes to order",
+  "pageBuilder.draft.audience": "Who is it for?",
+  "pageBuilder.draft.audiencePlaceholder": "People who live nearby",
+  "pageBuilder.draft.tone": "Tone",
+  "pageBuilder.draft.tone.friendly": "Friendly",
+  "pageBuilder.draft.tone.professional": "Professional",
+  "pageBuilder.draft.tone.playful": "Playful",
+  "pageBuilder.draft.tone.calm": "Calm",
+  "pageBuilder.draft.sections": "Sections",
+  "pageBuilder.draft.sectionsHint": "Leave them all off to let the model choose.",
+  "pageBuilder.draft.section.welcome": "Welcome",
+  "pageBuilder.draft.section.welcome-with-picture": "Welcome with picture",
+  "pageBuilder.draft.section.page-title": "Page title",
+  "pageBuilder.draft.section.features": "What you offer",
+  "pageBuilder.draft.section.steps": "How it works",
+  "pageBuilder.draft.section.story": "About you",
+  "pageBuilder.draft.section.quotes": "What people say",
+  "pageBuilder.draft.section.prices": "Prices",
+  "pageBuilder.draft.section.questions": "Questions",
+  "pageBuilder.draft.section.call-to-action": "Call to action",
+  "pageBuilder.draft.section.quiet-call-to-action": "Quiet call to action",
+  "pageBuilder.draft.timeNote": "This can take a minute or two.",
+  "pageBuilder.draft.checkNote":
+    "Read the drafted words and change what isn’t right before you publish.",
+  "pageBuilder.draft.cancel": "Cancel",
+  "pageBuilder.draft.start": "Draft page",
+  "pageBuilder.draft.writing": "Writing your page…",
+  "pageBuilder.draft.progress": "Drafting progress",
+  "pageBuilder.draft.stop": "Stop",
+  "pageBuilder.draft.stopped": "Drafting stopped. Nothing was added.",
+  "pageBuilder.draft.added":
+    "Added {count} drafted sections. Read the words and change what isn’t right before you publish.",
+  "pageBuilder.draft.history": "Drafted {count} sections",
+  "pageBuilder.draft.notReady":
+    "Page drafting isn’t set up on this server yet. An admin can set it up in Settings → Page drafting.",
+  "pageBuilder.draft.close": "Close",
+
+  "pageBuilder.rewrite.label": "Rewrite this",
+  "pageBuilder.rewrite.shorter": "Shorter",
+  "pageBuilder.rewrite.friendlier": "Friendlier",
+  "pageBuilder.rewrite.more-formal": "More formal",
+  "pageBuilder.rewrite.writing": "Rewriting…",
+  "pageBuilder.rewrite.history": "Rewrote the text",
+  "pageBuilder.rewrite.done": "Rewritten. Undo puts the old words back.",
+} as const;

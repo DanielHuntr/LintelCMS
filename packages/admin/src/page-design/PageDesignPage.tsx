@@ -50,6 +50,7 @@ import { useSiteSections } from "./useSiteSections.js";
 import { useBuilderMenus } from "../menus/builderMenus.js";
 import { InlineMenuEditor } from "../menus/InlineMenuEditor.js";
 import { useBuilderFonts } from "../site-fonts/useBuilderFonts.js";
+import { usePageDrafting } from "../page-drafts/usePageDrafting.js";
 
 /**
  * The canvas frame's scripts, served beside the admin (see vite.config.ts), because the
@@ -136,6 +137,7 @@ function PageDesigner({
     [changeSavedDesign],
   );
   const blocks = useBuilderBlocks({ root: currentRoot, beforeLeaving: saving.saveNow });
+  const pageDrafting = usePageDrafting();
   const leave = useLeaveWarning(saving.hasUnsavedChanges);
   const session = useSession();
   // Collection lists and shop elements show real entries on the canvas once this arrives.
@@ -254,6 +256,7 @@ function PageDesigner({
         siteEffects={siteMotion}
         siteDesign={siteDesign}
         siteSections={siteSections}
+        pageDrafting={pageDrafting}
         toolbarStart={
           <Link
             to="/content/$collection/$entryId"
