@@ -20,6 +20,7 @@ export function makeAsset(overrides: Partial<Asset> = {}): Asset {
     width: 1600,
     height: 1000,
     alt: "",
+    credit: "",
     focalPoint: { x: 0.5, y: 0.5 },
     url: `http://localhost:4000/media/${id}/file?v=abc`,
     thumbnailUrl: `http://localhost:4000/media/${id}/file?w=400&format=webp&v=abc`,

@@ -117,7 +117,13 @@ describe("importing HTML", () => {
           ["button", { label: "Order", href: "/order", openInNewTab: false }, []],
           [
             "image",
-            { src: "/soup.jpg", alt: "Soup", assetId: null, caption: "Soup of the day" },
+            {
+              src: "/soup.jpg",
+              alt: "Soup",
+              assetId: null,
+              caption: "Soup of the day",
+              showCredit: true,
+            },
             [],
           ],
           ["list", { items: ["One", "Two"], ordered: true }, []],

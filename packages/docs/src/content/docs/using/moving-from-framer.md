@@ -1,7 +1,7 @@
 ---
 title: Moving from Framer
 description: Bringing a Framer site's CMS collections into Lintel, and its pages as far as they can come.
-since: "1.0"
+since: "1.0.0-rc"
 sidebar:
   label: Moving from Framer
 ---

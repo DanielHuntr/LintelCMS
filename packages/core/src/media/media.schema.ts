@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { photoCreditSchema } from "./photo-credit.js";
 
 /** The largest width or height a transform may ask for, so one request can't exhaust memory. */
 export const MAX_TRANSFORM_DIMENSION = 4000;
@@ -25,6 +26,10 @@ export const assetSchema = z.object({
   width: z.number().int().nullable(),
   height: z.number().int().nullable(),
   alt: z.string(),
+  /** Who made it and under what licence, for files that must be credited. Often empty. */
+  credit: z.string(),
+  /** The credit as the website shows it under the picture; null when nothing is shown. */
+  photoCredit: photoCreditSchema.nullable(),
   focalPoint: focalPointSchema,
   url: z.string(),
   /** 400px wide, in WebP. Null for documents, which have no picture to shrink. */
@@ -58,6 +63,7 @@ export const uploadAssetQuerySchema = z.object({
 
 export const updateAssetRequestSchema = z.object({
   alt: z.string({ error: "Alt text should be text" }).trim().max(1000).optional(),
+  credit: z.string({ error: "The credit should be text" }).trim().max(1000).optional(),
   focalPoint: focalPointSchema.optional(),
   filename: z
     .string({ error: "The filename should be text" })

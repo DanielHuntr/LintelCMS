@@ -1,3 +1,4 @@
+import { FigureCaption } from "@lintel/site-components";
 import {
   boxComponent,
   buttonComponent,
@@ -21,6 +22,7 @@ import {
 } from "@lintel/builder-model";
 import { type ComponentRender, createComponentRegistry, drawsProps } from "./component-registry.js";
 import { CustomBlockElement } from "./custom-block.js";
+import { usePageData } from "./data-context.js";
 import { MarkedText, withLineBreaks } from "./marked-text.js";
 import { elementRenders } from "./elements/index.js";
 import { EmptyMenuButton, menuOf, useSite } from "./elements/navigation.js";
@@ -110,7 +112,9 @@ const List = drawsProps(listComponent, ({ props, attributes }) => {
   );
 });
 
+/** A picture, with its caption and (when the licence asks for one) its credit underneath. */
 const Picture = drawsProps(imageComponent, ({ props, attributes, mode }) => {
+  const data = usePageData();
   if (!props.src) {
     return mode === "canvas" ? (
       <div
@@ -121,11 +125,12 @@ const Picture = drawsProps(imageComponent, ({ props, attributes, mode }) => {
       />
     ) : null;
   }
-  if (!props.caption) return <img {...attributes} src={props.src} alt={props.alt} />;
+  const credit = props.showCredit && props.assetId ? data.credits?.[props.assetId] : undefined;
+  if (!props.caption && !credit) return <img {...attributes} src={props.src} alt={props.alt} />;
   return (
     <figure {...attributes}>
       <img src={props.src} alt={props.alt} />
-      <figcaption>{props.caption}</figcaption>
+      <FigureCaption caption={props.caption} credit={credit} />
     </figure>
   );
 });

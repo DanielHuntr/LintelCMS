@@ -15,7 +15,12 @@ import { requireEntryPermission } from "./entry-access.js";
 import { duplicateEntry } from "./entry-duplication.service.js";
 import { copyEntryToSite } from "./entry-site-copy.service.js";
 import { listEntries } from "./entry-listing.service.js";
-import { publishEntry, scheduleEntry, unpublishEntry } from "./entry-publishing.service.js";
+import {
+  findLiveVersion,
+  publishEntry,
+  scheduleEntry,
+  unpublishEntry,
+} from "./entry-publishing.service.js";
 import {
   collectionEntriesParamsSchema,
   copyEntryToSiteRequestSchema,
@@ -40,6 +45,7 @@ import {
  *   GET    /collections/:handle/entries          (entries:read)     ?status&search&page&perPage&parentId
  *   POST   /collections/:handle/entries          (entries:create)   { data, slug?, parentId? } -> 201
  *   GET    /entries/:id                          (entries:read)
+ *   GET    /entries/:id/live                     (entries:read)     -> { publishedAt, data }
  *   PATCH  /entries/:id                          (entries:update)   { data?, slug?, parentId? }
  *   POST   /entries/:id/publish                  (entries:publish)
  *   POST   /entries/:id/unpublish                (entries:publish)
@@ -128,6 +134,10 @@ export async function entriesRoutes(server: FastifyInstance) {
     const entry = await describeEntryForEvent(server.database, id);
     await announceContentEvent(server, { name: "entry.unpublished", entry }, actorOf(request));
     return unpublished;
+  });
+
+  server.get("/entries/:id/live", can("entries:read"), async (request) => {
+    return findLiveVersion(server.database, readEntryId(request.params));
   });
 
   server.post("/entries/:id/schedule", canOnThisEntry("publish"), async (request) => {

@@ -2,6 +2,48 @@ import { eachBehaviour } from "./behaviour-helpers.js";
 
 /** Tabs (arrow keys, Home and End), accordions that open one at a time, and pop-ups. */
 
+/**
+ * Elements with an open state (a card that shows more, a panel): their first button (or the
+ * element itself, if it's a button) toggles `data-open` on them, which their open styles
+ * follow, and says so with `aria-expanded`. Escape closes it again and puts focus back on the
+ * button. A link inside is left to do its own thing.
+ */
+export function setUpOpenStates(root: ParentNode): void {
+  root.querySelectorAll<HTMLElement>("[data-lintel-opens]").forEach((element) => {
+    if (element.dataset.lintelOpensReady) return;
+    element.dataset.lintelOpensReady = "true";
+    const toggle = element.matches("button, summary")
+      ? element
+      : (element.querySelector<HTMLElement>("button, summary, [role='button']") ?? element);
+    if (toggle === element && !element.matches("button, summary")) {
+      element.tabIndex = 0;
+      element.setAttribute("role", "button");
+    }
+    toggle.setAttribute("aria-expanded", "false");
+    const setOpen = (open: boolean) => {
+      element.toggleAttribute("data-open", open);
+      toggle.setAttribute("aria-expanded", String(open));
+    };
+    toggle.addEventListener("click", (event) => {
+      if ((event.target as Element).closest("a") && toggle !== element) return;
+      if (toggle.matches("summary")) event.preventDefault();
+      setOpen(!element.hasAttribute("data-open"));
+    });
+    if (toggle === element) {
+      element.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        setOpen(!element.hasAttribute("data-open"));
+      });
+    }
+    element.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape" || !element.hasAttribute("data-open")) return;
+      setOpen(false);
+      toggle.focus();
+    });
+  });
+}
+
 export function setUpTabs(root: ParentNode): void {
   eachBehaviour(root, "tabs", (tabs) => {
     const buttons = [

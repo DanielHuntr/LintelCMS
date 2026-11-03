@@ -11,6 +11,9 @@ import { snapBox } from "../free-layout/snapping.js";
  * pixels). The element moves on the canvas straight away; the new angle or place is sent
  * when the pointer is let go.
  *
+ * Pictures dragged in from the computer, or pasted, are sent to the builder as files, for
+ * the Picture element under the pointer (or the selected one).
+ *
  * Any element can be dragged to a new place on the page, with the same line showing where it
  * would go (Escape calls it off). Something dragged from Insert can be dropped on the page: the frame says what the pointer
  * is over, the builder works out where it would land, and the frame draws that line.
@@ -420,6 +423,24 @@ export function runCanvasFrame(snap: typeof snapBox): void {
     send({ type: "insertDrop" });
   });
 
+  // Files dragged in from the computer: the browser would open them in place of the page, so
+  // they are always caught. Pictures dropped on an element go to the builder, which puts
+  // them into a Picture element and says so; the element under the pointer is outlined.
+  const carriesFiles = (event: DragEvent) =>
+    !isInsertDrag(event) && Array.from(event.dataTransfer?.types ?? []).includes("Files");
+  document.addEventListener("dragover", (event) => {
+    if (!carriesFiles(event)) return;
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+    const nodeId = nodeIdAt(event.target);
+    if (nodeId !== outline.hoveredId) send({ type: "hover", nodeId });
+  });
+  document.addEventListener("drop", (event) => {
+    if (!carriesFiles(event)) return;
+    event.preventDefault();
+    const files = Array.from(event.dataTransfer?.files ?? []).slice(0, 10);
+    if (files.length > 0) send({ type: "dropFiles", nodeId: nodeIdAt(event.target), files });
+  });
   // A scroll scene's Start and End lines: fixed to the screen, dragged up and down (or moved
   // with the arrow keys), each move sent to the builder once per frame.
   const sceneLayer = document.createElement("div");
@@ -833,6 +854,11 @@ export function runCanvasFrame(snap: typeof snapBox): void {
   document.addEventListener("paste", (event) => {
     if (editing) return;
     event.preventDefault();
+    const files = Array.from(event.clipboardData?.files ?? []).slice(0, 10);
+    if (files.length > 0) {
+      send({ type: "pasteFiles", files });
+      return;
+    }
     send({
       type: "paste",
       html: event.clipboardData?.getData("text/html") ?? "",

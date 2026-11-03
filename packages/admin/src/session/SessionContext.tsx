@@ -20,6 +20,11 @@ export function useSession(): Session {
   return session;
 }
 
+/** The session, or null outside the signed-in admin (in a component's own test, say). */
+export function useOptionalSession(): Session | null {
+  return useContext(SessionContext);
+}
+
 /** Whether the signed-in person may do something, e.g. `useCan("entries:publish")`. */
 export function useCan(permission: Permission): boolean {
   return hasPermission(useSession().permissions, permission);

@@ -23,9 +23,12 @@ import { importersStrings } from "./importersStrings.js";
 import { updatesStrings } from "./updatesStrings.js";
 import { treeSelectionStrings } from "./treeSelectionStrings.js";
 import { pageMenuStrings } from "./pageMenuStrings.js";
+import { freePhotosStrings } from "../free-photos/freePhotosStrings.js";
+import { quickUploadStrings } from "../media/quickUploadStrings.js";
+import { compareLiveStrings } from "../compare-live/compareLiveStrings.js";
+import { scheduleStrings } from "../schedule-calendar/scheduleStrings.js";
 import { liquidTemplateStrings } from "../liquid-templates/liquidTemplateStrings.js";
 import { pageLinkStrings } from "../page-links/pageLinkStrings.js";
-import { quickUploadStrings } from "../media/quickUploadStrings.js";
 import { richTextPictureStrings } from "../fields/richTextPictureStrings.js";
 import { blockStrings } from "./blockStrings.js";
 
@@ -66,6 +69,9 @@ const english = {
   ...dataToolsStrings,
   ...importersStrings,
   ...updatesStrings,
+  ...freePhotosStrings,
+  ...compareLiveStrings,
+  ...scheduleStrings,
   ...blockStrings,
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",
@@ -343,6 +349,9 @@ const english = {
   "media.detail.alt.hint":
     "Describe the image for people who can’t see it. Say what matters, as you would on the phone: “Two chefs plating desserts”, not “image”.",
   "media.detail.filename.label": "Filename",
+  "media.detail.credit.label": "Credit",
+  "media.detail.credit.hint":
+    "Who made it and its licence. Pictures on your website show it underneath, unless its licence asks for no credit. Free photos fill this in.",
   "media.detail.details": "Details",
   "media.detail.size": "Size",
   "media.detail.dimensions": "Dimensions",

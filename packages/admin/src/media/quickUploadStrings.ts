@@ -8,8 +8,6 @@ export const quickUploadStrings = {
   "media.quickUpload.imageDone": "Picture added to your media and chosen here.",
   "media.quickUpload.markdownDone":
     "Picture added. Describe it between the square brackets, for people who can’t see it.",
-  "media.quickUpload.richTextNotHere":
-    "Pictures can’t go inside this text. Add them with an image field, or in the page design.",
   "media.quickUpload.dropHere": "Drop to use this picture",
   "media.quickUpload.orDrop": "or drop or paste one here",
 } as const;

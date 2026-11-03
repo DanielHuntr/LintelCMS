@@ -20,7 +20,7 @@ import { useRememberedOpenSections } from "../preferences/open-sections.js";
 import { OpenSectionsContext } from "../ui/CollapsibleSection.js";
 import { PanelSection } from "../ui/controls.js";
 import { contentGroupSummary, fieldsShownTogether, groupContentFields } from "./content-groups.js";
-import { ImageField, type ImagePicker, TextInputField } from "./content-fields.js";
+import { ImageField, type ImagePicker, TextInputField, ToggleField } from "./content-fields.js";
 import { type BindingScope, findBindingScope, useDataSources } from "./data-sources.js";
 import { FieldControl, SourceField } from "./field-controls.js";
 import { BindingPicker, ItemListField } from "./item-list-field.js";
@@ -195,6 +195,9 @@ function ContentField({
       />
     ) : null;
   if (boundTo && binding) return binding;
+  if (node.type === "image" && field.prop === "showCredit") {
+    return <PhotoCreditSwitch node={node} label={field.label} onChange={set} />;
+  }
   // Typed text that isn't bound to an entry's field can have styled words.
   if (field.prop === "text" && onMarkText && markableTypes.includes(node.type)) {
     const markable = (
@@ -336,4 +339,36 @@ function humanise(name: string): string {
     .trim()
     .toLowerCase();
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+/**
+ * "Show the photo credit" on a Picture: only there when the picture has a credit to show
+ * (its licence asks for one, or one was typed), on unless someone turned it off. Turned off,
+ * it says why the credit matters.
+ */
+function PhotoCreditSwitch({
+  node,
+  label,
+  onChange,
+}: {
+  node: PageNode;
+  label: string;
+  onChange: (value: boolean) => void;
+}) {
+  const text = useBuilderText();
+  const sources = useDataSources();
+  const assetId = typeof node.props.assetId === "string" ? node.props.assetId : null;
+  const credit = assetId ? sources.photoCredits?.[assetId] : undefined;
+  if (!credit) return null;
+  const isOn = node.props.showCredit !== false;
+  return (
+    <div className="flex flex-col gap-1">
+      <ToggleField label={label} value={isOn} onChange={onChange} />
+      <p className="text-caption text-label-secondary">
+        {isOn
+          ? text("pageBuilder.content.creditShown", { credit: credit.text })
+          : text("pageBuilder.content.creditHidden")}
+      </p>
+    </div>
+  );
 }

@@ -59,6 +59,7 @@ await runWithFriendlyErrors(async () => {
       liquidTemplates: {
         folder: resolveFromRepository(config.LINTEL_TEMPLATES),
         development: config.NODE_ENV === "development",
+        editorSnippetsFolder: resolveFromRepository(".vscode"),
       },
     },
     contentModel: contentModelOptionsFromConfig(config),

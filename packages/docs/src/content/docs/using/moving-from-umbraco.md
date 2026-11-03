@@ -1,7 +1,7 @@
 ---
 title: Moving from Umbraco
 description: Bringing an Umbraco site's document types, content tree, media and dictionary items into Lintel.
-since: "1.0"
+since: "1.0.0-rc"
 sidebar:
   label: Moving from Umbraco
 ---

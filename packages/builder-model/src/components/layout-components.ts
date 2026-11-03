@@ -100,6 +100,7 @@ export const boxElements = [
 export const boxComponent = defineComponent({
   type: "box",
   label: "Box",
+  keywords: ["div", "wrapper", "group"],
   description: "A container that groups and arranges the elements inside it.",
   icon: "square",
   category: "layout",
@@ -162,6 +163,7 @@ export const containerComponent = defineComponent({
 export const columnsComponent = defineComponent({
   type: "columns",
   label: "Columns",
+  keywords: ["split", "side by side"],
   description: "Puts things side by side. On phones they stack, one under another.",
   icon: "columns-2",
   category: "layout",

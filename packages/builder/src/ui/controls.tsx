@@ -70,6 +70,10 @@ interface ChoiceGroupProps<Value extends string> {
   /** Show only icons, with the label as each one's name. */
   iconsOnly?: boolean;
   hideLabel?: boolean;
+  /** Let the choices run onto a second row when they don't fit, rather than squeeze. */
+  wraps?: boolean;
+  /** One choice per row, for longer labels such as names. */
+  stacked?: boolean;
 }
 
 /** A row of exclusive choices: a radio group where the arrow keys move the choice. */
@@ -80,6 +84,8 @@ export function ChoiceGroup<Value extends string>({
   onChange,
   iconsOnly,
   hideLabel,
+  wraps,
+  stacked,
 }: ChoiceGroupProps<Value>) {
   const labelId = useId();
   const buttons = useRef<Array<HTMLButtonElement | null>>([]);
@@ -107,7 +113,11 @@ export function ChoiceGroup<Value extends string>({
       <div
         role="radiogroup"
         aria-labelledby={labelId}
-        className="flex rounded-control bg-fill p-0.5"
+        className={classNames(
+          "flex rounded-control bg-fill p-0.5",
+          wraps && "flex-wrap",
+          stacked && "flex-col",
+        )}
       >
         {choices.map((choice, index) => {
           const isSelected = choice.value === value;
@@ -127,7 +137,9 @@ export function ChoiceGroup<Value extends string>({
               onClick={() => onChange(choice.value)}
               onKeyDown={(event) => handleKeyDown(event, index)}
               className={classNames(
-                "flex h-7 min-w-0 flex-1 items-center justify-center gap-1 rounded-[6px] px-1.5 text-caption font-medium transition-colors duration-150 focus-visible:focus-ring",
+                "flex h-7 min-w-0 flex-1 items-center gap-1 rounded-[6px] px-1.5 text-caption font-medium transition-colors duration-150 focus-visible:focus-ring",
+                stacked ? "flex-none justify-start px-2.5" : "justify-center",
+                wraps && "basis-[30%]",
                 isSelected
                   ? "bg-segment text-label shadow-thumb"
                   : "text-label-secondary hover:text-label",

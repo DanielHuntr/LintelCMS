@@ -19,6 +19,7 @@ import {
 export const marqueeComponent = defineComponent({
   type: "marquee",
   label: "Ticker",
+  keywords: ["marquee", "scrolling text", "news"],
   description:
     "Words that scroll slowly across the screen. It stops when the pointer is over it, and stays still for people who prefer less motion.",
   icon: "move-horizontal",
@@ -66,6 +67,7 @@ export const marqueeComponent = defineComponent({
 export const counterComponent = defineComponent({
   type: "counter",
   label: "Number",
+  keywords: ["stat", "statistic", "count up", "figure"],
   description:
     "A big number with a label, such as “1,200 happy customers”. It can count up as it comes into view.",
   icon: "hash",
@@ -133,6 +135,7 @@ const tableRowSchema = z.object({ cells: itemsOf(plainText(500), 12, "cells").de
 export const tableComponent = defineComponent({
   type: "table",
   label: "Table",
+  keywords: ["data", "spreadsheet"],
   description: "Information in rows and columns, such as opening hours or a comparison.",
   icon: "table",
   category: "text",
@@ -189,6 +192,7 @@ const timelineItemSchema = z.object({
 export const timelineComponent = defineComponent({
   type: "timeline",
   label: "Timeline",
+  keywords: ["history", "steps", "process", "milestones"],
   description: "Moments in order, such as your story or the steps of a process.",
   icon: "milestone",
   category: "text",
@@ -232,6 +236,7 @@ export const timelineComponent = defineComponent({
 export const testimonialComponent = defineComponent({
   type: "testimonial",
   label: "Testimonial",
+  keywords: ["review", "quote", "feedback"],
   description: "A review from a customer, with their name, photo and a star rating.",
   icon: "message-square-quote",
   category: "text",
@@ -271,6 +276,7 @@ export const testimonialComponent = defineComponent({
 export const testimonialSliderComponent = defineComponent({
   type: "testimonialSlider",
   label: "Testimonial slider",
+  keywords: ["carousel", "reviews", "slideshow", "quotes"],
   description: "Several reviews that visitors move through, one at a time.",
   icon: "messages-square",
   category: "text",
@@ -334,6 +340,7 @@ const planSchema = z.object({
 export const pricingTableComponent = defineComponent({
   type: "pricingTable",
   label: "Pricing table",
+  keywords: ["plans", "prices", "tiers"],
   description: "Your plans or packages side by side, with what each includes. One can stand out.",
   icon: "badge-pound-sterling",
   category: "text",
@@ -448,6 +455,7 @@ const networkChoices = socialNetworks.map((network) => ({
 export const socialLinksComponent = defineComponent({
   type: "socialLinks",
   label: "Social links",
+  keywords: ["instagram", "facebook", "x", "linkedin", "social media"],
   description: "Icons that link to your pages on Instagram, Facebook, LinkedIn and others.",
   icon: "share-2",
   category: "navigation",
@@ -497,6 +505,7 @@ export const socialNetworkNames = socialNetworks;
 export const teamMemberComponent = defineComponent({
   type: "teamMember",
   label: "Team member",
+  keywords: ["staff", "people", "profile", "bio"],
   description: "A person: their photo, name, role, a few words and links.",
   icon: "user-round",
   category: "text",
@@ -540,6 +549,7 @@ const featureSchema = z.object({
 export const featureListComponent = defineComponent({
   type: "featureList",
   label: "Feature list",
+  keywords: ["benefits", "services", "icons"],
   description: "Points with an icon each, such as what you offer or why people choose you.",
   icon: "list-checks",
   category: "text",
@@ -595,6 +605,7 @@ export const featureListComponent = defineComponent({
 export const countdownComponent = defineComponent({
   type: "countdown",
   label: "Countdown",
+  keywords: ["timer", "launch", "deadline", "clock"],
   description: "Days, hours and minutes until a date, such as a launch or a sale ending.",
   icon: "timer",
   category: "text",
@@ -627,6 +638,7 @@ export const countdownComponent = defineComponent({
 export const richTextComponent = defineComponent({
   type: "richText",
   label: "Rich text",
+  keywords: ["wysiwyg", "article", "body"],
   description:
     "Longer writing with headings, bold, italics, links and lists. Type **bold**, *italics*, ## for a heading and - for a list.",
   icon: "text",

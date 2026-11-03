@@ -1,7 +1,7 @@
 ---
 title: Updating Lintel
 description: Seeing when there's a new version, what it changes, and installing it safely.
-since: "1.0"
+since: "1.0.0-rc"
 sidebar:
   label: Updating Lintel
 ---

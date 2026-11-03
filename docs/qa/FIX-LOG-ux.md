@@ -447,7 +447,14 @@ Daniel compared the motion with Framer and Webflow: Framer animates between stat
   - the existing tests updated.
 - **Docs:** the spec and effects docs updated.
 
-**Next:** open and selected states.
+**Open and selected states (4 November 2026):**
+
+- **Open:** an element with open styles of its own, or that others follow ("Card: open"), carries `data-lintel-opens` on the website.
+  - The elements script makes its first button (or the element itself, as a button) toggle `data-open` and `aria-expanded`.
+  - Escape closes it and gives focus back to the button. A link inside is left alone.
+- **Selected:** follows what's already marked current or chosen (`aria-current="page"`, `aria-selected`, `aria-pressed`), with no script.
+- Both are in "Style for", for the element and for those around it.
+- **Tests:** compiled selectors and `listOpeningNodes` (model), the website marker (render), the options (panels), and a real-browser test of opening, closing with Escape and focus going back (`browser-tests/open-states.test.ts`).
 
 ## QOL-A-1: Undo after deleting (3 November 2026)
 
@@ -532,6 +539,191 @@ Daniel compared the motion with Framer and Webflow: Framer animates between stat
 - before: `f3-before-link-field`, `f3-before-richtext-link`, `f3-before-builder-button-link`, `f3-before-menu`;
 - after, at desktop and 390px, light and dark: `f3-after-picker-*`, `f3-after-link-field-*`, `f3-after-richtext-link-form-*`, `f3-after-richtext-linked-*`;
 - after, desktop light and dark only (the builder is desktop-only, LINTEL-UX-013): `f3-after-builder-picker-*`, `f3-after-builder-button-link-*`.
+
+## LINTEL-UX-028: free photos from Openverse (3 November 2026)
+
+**Asked for:** a way to find free photos without leaving Lintel.
+
+**What it does:**
+
+- A new optional feature, **Free photos**, off until it's switched on in Build → Features.
+- While it's on, the media library has a **Free photos** button beside Upload, and the image picker has one beside Upload new.
+- Searches go through Lintel's API to Openverse's public API, never from the browser. Only signed-in people who may upload files can use it.
+- Each result shows its title, creator and licence, with a link to where it's from. Only licences a business can use without asking are offered: CC0, Public Domain Mark, CC BY and CC BY-SA. NC and ND licences never show.
+- **Add** downloads the photo on the server and stores it as a normal file. Its credit (title, creator, licence and source) goes in the file's new **Credit** field, which shows in the file's details and can be edited.
+- In the image picker, **Use** adds the photo and chooses it.
+
+**Safety and polite use:**
+
+- The download goes through the same address checks as webhooks, so private and local addresses are refused, after redirects too.
+- Requests name Lintel in their user agent and give up after 8 seconds.
+- Searches are kept for 10 minutes and thumbnails for an hour, so paging back doesn't ask Openverse again.
+- Openverse's "too many searches" answer becomes a plain message.
+
+**Migration:** `0026_asset_credit` adds `assets.credit` (empty for existing files). Checked on a fresh database and on one built with release fd4ee02's migrations (to 0025) with a file already in it.
+
+**Tests:**
+
+- `core/src/free-photos/free-photos.test.ts`, against a stand-in Openverse. It covers switching on, permissions, licences, the cache, plain errors, thumbnails, adding with the credit, adding twice, a refused licence and a refused private address.
+- `core/src/media/media-library.test.ts`: saving a credit.
+- `admin/src/free-photos/FreePhotosDialog.test.tsx`: searching, adding, a gone photo left out, a failed search, and the button showing only while the feature is on.
+
+**Screenshots** (in `screenshots/qol-b/`): `photos-features-desktop-light`, `photos-start-desktop-light`, `photos-results-*` (desktop and 390px, light and dark), `photos-added-desktop-light`, `photos-credit-desktop-light`.
+
+## LINTEL-UX-029: paste or drop pictures where they're used (3 November 2026)
+
+**Asked for:** pictures pasted from the clipboard or dropped from the computer should work wherever a picture belongs, not only in the media library.
+
+**What works now:**
+
+- **Media library:** pasting anywhere on the page uploads, as dropping already did. Pastes into text areas and rich text are left alone.
+- **Image picker:** pasting works there too, and the picture is chosen when it arrives.
+- **Image fields:**
+  - A picture dropped on the field, or pasted while it has focus, is uploaded and chosen.
+  - The field says "or drop or paste one here", and "Drop to use this picture" while a file is over it.
+  - Progress ("Uploading harbour.jpg… 40%") and problems ("“menu.pdf” isn't a picture…") show under the field.
+- **Markdown fields:** a dropped or pasted picture is uploaded and written in as `![](address)` where the cursor was, with a note to describe it between the brackets.
+- **Page builder:**
+  - A picture dropped on a Picture element on the canvas becomes its picture (one Undo step), keeping its description.
+  - Pasting with a Picture element selected does the same.
+  - Dropped anywhere else, a note says pictures go into a Picture element.
+  - Before, the frame let the browser open a dropped file in place of the page.
+- Screenshots pasted without a usable name are called "Pasted picture 14.03.22.png".
+
+Every upload uses the media library's upload and checks, and its plain messages.
+
+**Left out: pictures inside rich text.** Rich text holds words, lists and links only. That's a choice recorded in `richTextExtensions.ts`, and core renders and checks the same list. A picture dropped or pasted there is now caught, rather than left to the browser, and a note says to use an image field or the page design. Adding pictures to rich text would change what rich text is, and what websites receive, so it's Daniel's call.
+
+**Tests:**
+
+- `admin/src/media/quickUpload.test.tsx`: the image field (drop with progress, paste, a non-picture), library paste, Markdown insertion, rich text's note, naming pasted files, and the builder's uploader refusing non-pictures.
+- `builder/src/canvas/picture-drop.test.tsx`: dropping on a Picture element, elsewhere, pasting with nothing selected, a failed upload, no uploader, and checking the frame's file messages.
+
+**Screenshots** (in `screenshots/qol-b/`):
+
+- `drop-image-field-over-desktop-*`;
+- `drop-image-field-after-*` (desktop and 390px, light and dark);
+- `paste-markdown-*` and `paste-rich-text-*` (desktop and 390px, light);
+- `paste-media-library-*` (all four);
+- `drop-builder-wrong-place-desktop-*` and `drop-builder-picture-desktop-*`.
+
+## LINTEL-UX-030: Compare with live (3 November 2026)
+
+**Asked for:** when a published entry has unpublished changes, a way to see exactly what publishing will change.
+
+**What it does:**
+
+- The Status box in the entry editor still says "Unpublished changes". It now has **Compare with live** under that line.
+- The dialog lists every field that differs from the live version, in the content type's order:
+  - **Text and rich text:** the removed and added words, inline. Removed words are struck through and added ones underlined, each on a light tint, so colour isn't the only mark. Screen readers hear "removed:" and "added:" before each change.
+  - **Pictures:** the live and the new picture side by side, with their names.
+  - **Page designs:** "Design changed", with a link to view the live page.
+  - **Choices, switches and dates:** "Live" and "After publishing" values.
+  - **Blocks and other structured values:** "This changed".
+- It compares what's in the editor with the stored `publishedData`. If a change is still waiting for autosave, the dialog says so.
+- **API:** `GET /entries/:id/live` (`entries:read`) returns `{ publishedAt, data }`, where `data` is null while nothing is live. It's a separate endpoint so the entry itself, which every screen loads, doesn't double in size.
+
+**Tests:**
+
+- `core/src/entries/entry-publishing.test.ts`: the live version before and after publishing, and a 404.
+- `admin/src/compare-live/compareLive.test.tsx`:
+  - word comparison;
+  - which fields count as changed, and how each is shown;
+  - rich text read as words;
+  - the dialog's marks and their spoken words;
+  - the live-page link;
+  - "nothing differs";
+  - the button showing only while there are unpublished changes.
+
+**Screenshots** (in `screenshots/qol-b/`): `compare-offer-desktop-light` and `compare-dialog-*` (desktop and 390px, light and dark).
+
+## LINTEL-UX-031: a schedule calendar (3 November 2026)
+
+**Asked for:** one place to see everything that's scheduled, by date.
+
+**What it does:**
+
+- **Schedule** sits at the foot of the content tree, above the recycle bin, and opens `/content/schedule`.
+- **Wide screens:** a month calendar. Each day lists what's due to be published, with its title, time and collection, and each links to the entry. Today is filled in, and days from the months either side are shaded.
+- **Phones:** a list grouped by day, showing only the days with something due. It uses inset grouped lists with the time on the right.
+- **Moving between months:** Previous month and Next month, plus This month when you're elsewhere. The month is in the address, so it survives a reload.
+- **An empty month** says how to schedule something.
+- **Times** are in the person's own time zone, and the footer says so.
+- **Screen readers** hear each day's full date and how many things are due.
+- **Unpublishing:** Lintel only schedules publishing (`scheduledFor`), so there's nothing of that kind to show. The API marks each item `action: "publish"` so the calendar can show both if scheduled unpublishing is added.
+- **API:** `GET /entries/scheduled?from=&to=` (`entries:read`, at most 62 days). It covers the site being worked on plus shared collections, soonest first.
+- "schedule" is now a reserved collection handle, so a collection can't take the calendar's address.
+
+**Tests:**
+
+- `core/src/entries/scheduled-entries.test.ts`: range and order, an entry that's no longer scheduled, range checks, permissions.
+- `admin/src/schedule-calendar/SchedulePage.test.tsx`: the month grid, entries on their days with links, moving months, the empty month, and the phone list.
+
+**Screenshots** (in `screenshots/qol-b/`):
+
+- `schedule-tree-link-desktop-light`;
+- `schedule-*` (desktop and 390px, light and dark);
+- `schedule-empty-month-desktop-light` and `schedule-empty-month-phone-light`.
+
+## LINTEL-UX-032: photo credits on the website (3 November 2026)
+
+**Asked for (decided with Daniel):** show a photo's credit where its licence asks for one. CC BY and CC BY-SA require it, and visitors and photographers expect it.
+
+**What it does:**
+
+- **Where it shows:** a picture whose media item has a credit gets a small line under it, such as "Photo: JeepersMedia, CC BY 2.0". The creator links to where the photo was found, and the licence to its terms. This covers the builder's Picture element, the image section that draws image fields, and Liquid's `{% image %}`.
+- **Markup and styling:** it's drawn as `<figure>` with `<figcaption class="lintel-credit">`. When there's also a caption, the credit follows it in the same figcaption. It's small and in the theme's secondary text colour, so it follows light and dark themes.
+- **Which photos:** CC0 and Public Domain Mark photos show nothing. A credit typed by hand counts as needed and shows as typed.
+- **Switching it off:** the Picture element's Content settings have **Show the photo credit**. It's on by default, offered only when there's a credit to show, and says the licence asks for a credit when it's turned off. Liquid's `{% image %}` takes `credit: false`.
+- **The canvas** shows the credit as the website will.
+- **The delivery API** gives each image its `credit`, so headless sites can show it too.
+
+**What's stored:**
+
+- **Migration:** `0027_asset_credit_details` adds `assets.credit_details` (jsonb, null for existing files).
+- **Free photos** keep the credit's parts there: licence code and name, licence link, creator and source.
+- **Typing a credit by hand** clears the parts, so the site shows exactly what was typed.
+- **Checked** on a fresh database and on one built with release da8e1ac's migrations with a file already in it.
+
+**Tests:**
+
+- `core/src/media/photo-credit.test.ts`: BY in parts, CC0 and PDM show nothing, typed credits.
+- `core/src/free-photos/free-photos.test.ts`: added photos carry the website credit, and a PDM photo carries none.
+- `core/src/media/media-library.test.ts`: a typed credit, and delivered assets carrying `credit`.
+- `core/src/liquid-templates/liquid-engine.test.ts`: `{% image %}` with a credit, with `credit: false`, and without a credit.
+- `builder/src/render/photo-credit.test.tsx`: Picture with a BY credit, with a CC0 photo, with the switch off and with a caption. Also the switch: on, its note when off, and hidden without a credit.
+- `site-components/src/media/photo-credit.test.tsx`: the image section with a credit, a typed credit with a caption, and none.
+
+**Screenshots** (in `screenshots/qol-b/`): `credits-site-desktop-light`, `credits-site-desktop-dark`, `credits-site-phone-light`, `credits-builder-on-desktop-light` and `credits-builder-off-desktop-light`.
+
+## LINTEL-UX-033: choosing which look to change (3 November 2026)
+
+**Reported by Daniel:** the Style panel's "Style for" dropdown "makes no sense, what does it do?". It mixed the element's own states with "Lookbook: pointer over" style entries for the elements around it, in one long list with jargon headings.
+
+**Reproduced:** select a picture inside a card, open Style. The dropdown lists Always, then "This element" and "With what's around it" groups. Nothing says that it picks which look the changes below apply to.
+
+**Fix:** the dropdown is now two plain questions at the top of Style.
+
+- **Which look you're changing:** Normal, Hovered, Pressed, Focused, Open, Current, as buttons that are all visible at once.
+- **What has to be hovered** (or pressed, open, current): this element, or one of the elements around it by name ("Two halves, around it"). It only shows once a look other than Normal is chosen. Focused has no second question, because focus is always the element's own. Moving between looks keeps following the same element around it.
+- **A sentence in a tinted box** says what's being changed, with an example: "You're changing how this looks while the pointer is over Two halves, like a picture that grows when its card is hovered."
+- The designer tour's text now names the looks instead of "Style for".
+
+What's saved is unchanged, so existing pages keep their states.
+
+**Tests:** `builder/src/panels/panels.test.tsx` checks the six looks in order and that Hovered saves to the hover styles. It also checks that the second question appears for Hovered, isn't there for Focused, and keeps the element around it when switching from Open to Hovered. It also covers the owner's transition. `studio.test.tsx` checks the tour text.
+
+**Screenshots** (in `screenshots/looks/`): `before-style-for-desktop-light`, then `looks-normal-desktop-light`, `looks-owner-desktop-light` and `looks-owner-desktop-dark`. At 390px wide the designer shows its "needs a bigger screen" page, as before.
+
+## LINTEL-UX-034: Insert search knows other names for elements (3 November 2026)
+
+**Reported by Daniel:** "We don't currently have anything easy for like Carousels?" There is one, the Slider, but Insert couldn't find it.
+
+**Reproduced:** in Insert, search "carousel". Nothing comes up, because search only looked at an element's name, description and group. "popup", "modal", "lightbox", "marquee", "faq" and "iframe" found nothing either.
+
+**Fix:** element definitions can now carry `keywords`, the other names people know them by, and Insert's search reads them, as it already did for sections. 55 elements have them. For example: Slider has carousel and slideshow; Pop-up has popup, modal and dialog; Gallery has lightbox; Ticker and Logo strip have marquee; Accordion has faq; Embed has iframe; Menu drawer has hamburger.
+
+**Tests:** `builder/src/panels/insert-library.test.ts` searches each of those words and expects the right element.
 
 ## LINKS-1: links to pages follow the page (3 November 2026)
 

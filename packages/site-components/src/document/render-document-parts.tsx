@@ -1,6 +1,7 @@
 import { Footer } from "../chrome/Footer.js";
 import { Header } from "../chrome/Header.js";
 import { MAIN_CONTENT_ID, SkipLink } from "../chrome/SkipLink.js";
+import { FigureCaption } from "../media/PhotoCredit.js";
 import { ResponsiveImage, type ResponsiveImageProps } from "../media/ResponsiveImage.js";
 import type { SiteChrome, SiteLabels } from "../site.types.js";
 import type { SiteTemplate } from "../templates/site-template.js";
@@ -88,4 +89,19 @@ export function renderDocumentParts(props: DocumentPartsProps): DocumentParts {
 /** A picture in several sizes, cropped around its focal point, as `ResponsiveImage` draws it. */
 export function renderResponsiveImageHtml(props: ResponsiveImageProps): string {
   return renderComponentHtml(<ResponsiveImage {...props} />);
+}
+
+/**
+ * A picture with its photo credit underneath, as a `<figure>` with
+ * `<figcaption class="lintel-credit">`; just the picture when there is no credit.
+ */
+export function renderCreditedImageHtml(props: ResponsiveImageProps): string {
+  const { credit } = props.image;
+  if (!credit) return renderResponsiveImageHtml(props);
+  return renderComponentHtml(
+    <figure className="lintel-credited-image">
+      <ResponsiveImage {...props} />
+      <FigureCaption caption={null} credit={credit} />
+    </figure>,
+  );
 }

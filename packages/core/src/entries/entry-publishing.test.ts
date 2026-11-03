@@ -51,6 +51,23 @@ describe("publishing entries", () => {
     });
   });
 
+  it("shows what is live, for comparing with the saved values", async () => {
+    const id = await createPost("Opening hours");
+    const draft = await api("GET", `/entries/${id}/live`);
+    expect(draft.json()).toEqual({ publishedAt: null, data: null });
+
+    const published = await api("POST", `/entries/${id}/publish`);
+    await api("PATCH", `/entries/${id}`, { data: { title: "Opening hours from May" } });
+
+    const live = await api("GET", `/entries/${id}/live`);
+    expect(live.statusCode).toBe(200);
+    expect(live.json()).toEqual({
+      publishedAt: published.json().publishedAt,
+      data: expect.objectContaining({ title: "Opening hours" }),
+    });
+    expect((await api("GET", `/entries/${crypto.randomUUID()}/live`)).statusCode).toBe(404);
+  });
+
   it("unpublishes back to a draft, keeping the saved values", async () => {
     const id = await createPost("Old news");
     await api("POST", `/entries/${id}/publish`);

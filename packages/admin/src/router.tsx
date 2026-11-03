@@ -6,6 +6,8 @@ import {
   redirect,
   useNavigate,
 } from "@tanstack/react-router";
+import { formatMonthParam, monthOf, parseMonth } from "./schedule-calendar/monthGrid.js";
+import { SchedulePage } from "./schedule-calendar/SchedulePage.js";
 import { useCallback } from "react";
 import { ApiAccessPage } from "./api-access/ApiAccessPage.js";
 import { ApiReferencePage } from "./api-access/ApiReferencePage.js";
@@ -201,6 +203,27 @@ const contentRoute = createRoute({
       <SectionTabs section="/content">
         <ContentLanding />
       </SectionTabs>
+    );
+  },
+});
+
+// What is due to be published, a month at a time (see src/schedule-calendar).
+const scheduleRoute = createRoute({
+  getParentRoute: () => contentSectionRoute,
+  path: "/content/schedule",
+  validateSearch: (search: Record<string, unknown>): { month?: string } => ({
+    month: parseMonth(search.month) ? String(search.month) : undefined,
+  }),
+  component: function ScheduleRoute() {
+    const { month } = scheduleRoute.useSearch();
+    const navigate = scheduleRoute.useNavigate();
+    return (
+      <SchedulePage
+        month={parseMonth(month) ?? monthOf(new Date())}
+        onMonthChange={(next) =>
+          void navigate({ search: { month: formatMonthParam(next) }, replace: true })
+        }
+      />
     );
   },
 });
@@ -426,6 +449,7 @@ const contentRoutes = [
   contentSectionRoute.addChildren([
     contentRoute,
     recycleBinRoute,
+    scheduleRoute,
     ...contentModelScreens.content,
     entriesRoute,
     entryEditorRoute,

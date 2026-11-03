@@ -710,66 +710,68 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 
 ## Batch 3 summary
 
-| ID              | Severity | Status | Defect                                                                                                              |
-| --------------- | -------- | ------ | ------------------------------------------------------------------------------------------------------------------- |
-| LINTEL-SEC-004  | P1       | Fixed  | Anyone with `users:invite` can resend a pending Owner invitation, get the new link and accept it themselves         |
-| LINTEL-SEC-005  | P1       | Fixed  | The content tree, recycle bin and SEO routes ignore site limits: a site-A editor can publish or bin site B          |
-| LINTEL-SEC-006  | P1       | Fixed  | A code block's CSS can close the page's `<style>` and add a script, even under "remove scripts"                     |
-| LINTEL-SEC-007  | P1       | Fixed  | The code HTML cleaner parses differently from browsers; four known inputs keep a working `onerror`/`javascript:`    |
-| LINTEL-DATA-007 | P1       | Fixed  | A scheduled publish puts live whatever was saved after scheduling, unchecked and unapproved                         |
-| LINTEL-DATA-008 | P1       | Fixed  | A visitor sending a product photo's bytes through a form, then the spam being deleted, deletes the photo            |
-| LINTEL-DATA-009 | P1       | Fixed  | A refund whose answer is lost is marked failed although Stripe made it; refunding again pays out twice              |
-| LINTEL-DATA-010 | P1       | Fixed  | Autosave sends the parent the editor opened with, quietly moving a page back after a move in the tree               |
-| LINTEL-FUNC-014 | P1       | Fixed  | ISK and UGX amounts go to Stripe in the wrong unit: the shopper pays 1% of the price                                |
-| LINTEL-FUNC-015 | P1       | Fixed  | A new entry's first autosave swaps the editor component, losing focus and words typed during the save               |
-| LINTEL-DATA-011 | P1       | Open   | Rolling back an update restores rows but not the old schema; the old version runs on the new tables                 |
-| LINTEL-FUNC-016 | P1       | Open   | On Windows every one-click update after the first fails: renaming a junction over another gives EPERM               |
-| LINTEL-SEC-008  | P2       | Fixed  | Any API token, read-only included, can answer workflow approvals for the person who made it                         |
-| LINTEL-SEC-009  | P2       | Fixed  | `settings:update` alone can lift its own site limit, limit the Owner role, and change or delete other sites         |
-| LINTEL-SEC-010  | P2       | Fixed  | Two-factor can be set up again while on, swapping the authenticator with no password                                |
-| LINTEL-SEC-011  | P2       | Fixed  | A passkey can be added without the password, and survives a password reset                                          |
-| LINTEL-DATA-012 | P2       | Fixed  | Binning an entry clears its translations' links for good; restoring doesn't bring them back                         |
-| LINTEL-DATA-013 | P2       | Open   | A failed update restores a backup taken before the download, losing orders made while it downloaded                 |
-| LINTEL-FUNC-017 | P2       | Fixed  | Moving a page in the tree doesn't check the new parent is on the same site                                          |
-| LINTEL-FUNC-018 | P2       | Part   | Which page is "/" depends on content type names and counts drafts                                                   |
-| LINTEL-FUNC-019 | P2       | Fixed  | A shopper can switch the cart to another market's prices after giving a delivery address                            |
-| LINTEL-FUNC-020 | P2       | Fixed  | Builder: "The visitor leaves the page" animations never play                                                        |
-| LINTEL-FUNC-021 | P2       | Fixed  | Builder: duplicating keeps animation targets pointing at the original's elements                                    |
-| LINTEL-FUNC-022 | P2       | Fixed  | Builder: generated class names can collide (`heading-2`), so styles bleed between elements                          |
-| LINTEL-FUNC-023 | P2       | Fixed  | One element that no longer validates hides the whole designed page on the website                                   |
-| LINTEL-FUNC-024 | P2       | Fixed  | Switching workspace tabs or opening preview asks "Leave with unsaved changes?"                                      |
-| LINTEL-FUNC-025 | P2       | Fixed  | Dialogs close when a drag starts inside and ends outside; a new API token's one-time secret is lost                 |
-| LINTEL-FUNC-026 | P2       | Fixed  | Webhooks reuse one time for a whole run: deliveries can be sent twice and signed minutes old                        |
-| LINTEL-FUNC-027 | P2       | Open   | The update supervisor doesn't recover from dying mid-switch                                                         |
-| LINTEL-FUNC-028 | P1       | Fixed  | Builder: dragging from Insert onto the page does nothing; only Layers takes drops                                   |
-| LINTEL-FUNC-029 | P2       | Fixed  | Canvas effects lose their first frame; visitors who ask for less motion see no particles, frost or gradient         |
-| LINTEL-FUNC-030 | P1       | Fixed  | Mask reveal and section curtain/iris animations never play on the website, so their words stay hidden               |
-| LINTEL-DATA-014 | P1       | Fixed  | Renaming a delivery rate (or changing any one field) wipes its price, weight steps and delivery estimate            |
-| LINTEL-SEC-012  | P3       | Fixed  | Webhook signing secrets are shown to everyone with `settings:read`                                                  |
-| LINTEL-SEC-013  | P3       | Fixed  | No rate limit on the password checks for turning two-factor off and making recovery codes                           |
-| LINTEL-SEC-014  | P3       | Fixed  | Cart tokens are written to the request log (they are in the path, not the query)                                    |
-| LINTEL-UX-006   | P1       | Fixed  | A page's Body text vanishes from the website once it has a design; the editor still shows it (redesign)             |
-| LINTEL-UX-007   | P1       | Fixed  | Form notifications are on by default but nothing is sent without a mail service, and nothing says so                |
-| LINTEL-UX-008   | P1       | Fixed  | New products count stock from 0, so they show "Sold out" while the admin shows "On sale"                            |
-| LINTEL-UX-009   | P1       | Fixed  | The shop looks open before it can sell; checkout fails at the last step; no Shop link on the site (redesign)        |
-| LINTEL-UX-010   | P1       | Fixed  | Builder: Escape while editing text throws the edit away                                                             |
-| LINTEL-UX-011   | P2       | Fixed  | Builder: Publish gives no confirmation and the builder never shows unpublished changes                              |
-| LINTEL-UX-012   | P2       | Fixed  | No "View website" link anywhere in the admin                                                                        |
-| LINTEL-UX-013   | P2       | Fixed  | Builder spills off the screen at 390px; the tour still runs                                                         |
-| LINTEL-UX-014   | P2       | Part   | A menu with a link to a deleted page can't be saved, and the error shows the link's id                              |
-| LINTEL-UX-015   | P2       | Fixed  | Settings: logo and colour in two places; build-time settings where clients look first; unclear group names          |
-| LINTEL-UX-016   | P2       | Fixed  | Account is titled "Create your account"; three other strings show another screen's words                            |
-| LINTEL-UX-017   | P2       | Fixed  | Settings is a catch-all: logs, tools and the agency's build settings beside the owner's website details             |
-| LINTEL-UX-018   | P2       | Fixed  | The bright violet with lavender tints reads as a generic template, not the intended iOS look                        |
-| LINTEL-UX-019   | P2       | Fixed  | Tables capped at 896px with off-centre headings; Users header buttons far from the list; row hover matches the page |
-| LINTEL-UX-020   | P2       | Fixed  | The admin looked like any iOS-style app: nothing of its own                                                         |
-| LINTEL-UX-021   | P2       | Fixed  | Builder: elements can't be dragged to a new place on the page, only in Layers                                       |
-| LINTEL-UX-022   | P2       | Fixed  | Creating a page and opening one show two different editors; sparkle icons; Publish on an empty new page             |
-| LINTEL-UX-023   | P2       | Fixed  | A page's own header section doesn't replace the site's header (a footer section does), so two navs show             |
-| LINTEL-UX-024   | P2       | Fixed  | Builder: the Animation and Effects tabs feel clunky; people must know which is which                                |     |
-| LINTEL-UX-025   | P2       | Fixed  | Builder: no states like Framer's: a card can't animate its picture on hover; no pressed state; no scroll steps      |
-| LINTEL-UX-026   | P3       | Fixed  | The content tree's note goes after 8 seconds even while hovered or focused, and restarts when the tree re-renders   |
-| LINTEL-UX-027   | P3       | Fixed  | The dashboard's "Add images and files" checks a permission no role has, so Authors who may upload never see it      |
+| ID              | Severity | Status | Defect                                                                                                                         |
+| --------------- | -------- | ------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| LINTEL-SEC-004  | P1       | Fixed  | Anyone with `users:invite` can resend a pending Owner invitation, get the new link and accept it themselves                    |
+| LINTEL-SEC-005  | P1       | Fixed  | The content tree, recycle bin and SEO routes ignore site limits: a site-A editor can publish or bin site B                     |
+| LINTEL-SEC-006  | P1       | Fixed  | A code block's CSS can close the page's `<style>` and add a script, even under "remove scripts"                                |
+| LINTEL-SEC-007  | P1       | Fixed  | The code HTML cleaner parses differently from browsers; four known inputs keep a working `onerror`/`javascript:`               |
+| LINTEL-DATA-007 | P1       | Fixed  | A scheduled publish puts live whatever was saved after scheduling, unchecked and unapproved                                    |
+| LINTEL-DATA-008 | P1       | Fixed  | A visitor sending a product photo's bytes through a form, then the spam being deleted, deletes the photo                       |
+| LINTEL-DATA-009 | P1       | Fixed  | A refund whose answer is lost is marked failed although Stripe made it; refunding again pays out twice                         |
+| LINTEL-DATA-010 | P1       | Fixed  | Autosave sends the parent the editor opened with, quietly moving a page back after a move in the tree                          |
+| LINTEL-FUNC-014 | P1       | Fixed  | ISK and UGX amounts go to Stripe in the wrong unit: the shopper pays 1% of the price                                           |
+| LINTEL-FUNC-015 | P1       | Fixed  | A new entry's first autosave swaps the editor component, losing focus and words typed during the save                          |
+| LINTEL-DATA-011 | P1       | Open   | Rolling back an update restores rows but not the old schema; the old version runs on the new tables                            |
+| LINTEL-FUNC-016 | P1       | Open   | On Windows every one-click update after the first fails: renaming a junction over another gives EPERM                          |
+| LINTEL-SEC-008  | P2       | Fixed  | Any API token, read-only included, can answer workflow approvals for the person who made it                                    |
+| LINTEL-SEC-009  | P2       | Fixed  | `settings:update` alone can lift its own site limit, limit the Owner role, and change or delete other sites                    |
+| LINTEL-SEC-010  | P2       | Fixed  | Two-factor can be set up again while on, swapping the authenticator with no password                                           |
+| LINTEL-SEC-011  | P2       | Fixed  | A passkey can be added without the password, and survives a password reset                                                     |
+| LINTEL-DATA-012 | P2       | Fixed  | Binning an entry clears its translations' links for good; restoring doesn't bring them back                                    |
+| LINTEL-DATA-013 | P2       | Open   | A failed update restores a backup taken before the download, losing orders made while it downloaded                            |
+| LINTEL-FUNC-017 | P2       | Fixed  | Moving a page in the tree doesn't check the new parent is on the same site                                                     |
+| LINTEL-FUNC-018 | P2       | Part   | Which page is "/" depends on content type names and counts drafts                                                              |
+| LINTEL-FUNC-019 | P2       | Fixed  | A shopper can switch the cart to another market's prices after giving a delivery address                                       |
+| LINTEL-FUNC-020 | P2       | Fixed  | Builder: "The visitor leaves the page" animations never play                                                                   |
+| LINTEL-FUNC-021 | P2       | Fixed  | Builder: duplicating keeps animation targets pointing at the original's elements                                               |
+| LINTEL-FUNC-022 | P2       | Fixed  | Builder: generated class names can collide (`heading-2`), so styles bleed between elements                                     |
+| LINTEL-FUNC-023 | P2       | Fixed  | One element that no longer validates hides the whole designed page on the website                                              |
+| LINTEL-FUNC-024 | P2       | Fixed  | Switching workspace tabs or opening preview asks "Leave with unsaved changes?"                                                 |
+| LINTEL-FUNC-025 | P2       | Fixed  | Dialogs close when a drag starts inside and ends outside; a new API token's one-time secret is lost                            |
+| LINTEL-FUNC-026 | P2       | Fixed  | Webhooks reuse one time for a whole run: deliveries can be sent twice and signed minutes old                                   |
+| LINTEL-FUNC-027 | P2       | Open   | The update supervisor doesn't recover from dying mid-switch                                                                    |
+| LINTEL-FUNC-028 | P1       | Fixed  | Builder: dragging from Insert onto the page does nothing; only Layers takes drops                                              |
+| LINTEL-FUNC-029 | P2       | Fixed  | Canvas effects lose their first frame; visitors who ask for less motion see no particles, frost or gradient                    |
+| LINTEL-FUNC-030 | P1       | Fixed  | Mask reveal and section curtain/iris animations never play on the website, so their words stay hidden                          |
+| LINTEL-DATA-014 | P1       | Fixed  | Renaming a delivery rate (or changing any one field) wipes its price, weight steps and delivery estimate                       |
+| LINTEL-SEC-012  | P3       | Fixed  | Webhook signing secrets are shown to everyone with `settings:read`                                                             |
+| LINTEL-SEC-013  | P3       | Fixed  | No rate limit on the password checks for turning two-factor off and making recovery codes                                      |
+| LINTEL-SEC-014  | P3       | Fixed  | Cart tokens are written to the request log (they are in the path, not the query)                                               |
+| LINTEL-UX-006   | P1       | Fixed  | A page's Body text vanishes from the website once it has a design; the editor still shows it (redesign)                        |
+| LINTEL-UX-007   | P1       | Fixed  | Form notifications are on by default but nothing is sent without a mail service, and nothing says so                           |
+| LINTEL-UX-008   | P1       | Fixed  | New products count stock from 0, so they show "Sold out" while the admin shows "On sale"                                       |
+| LINTEL-UX-009   | P1       | Fixed  | The shop looks open before it can sell; checkout fails at the last step; no Shop link on the site (redesign)                   |
+| LINTEL-UX-010   | P1       | Fixed  | Builder: Escape while editing text throws the edit away                                                                        |
+| LINTEL-UX-011   | P2       | Fixed  | Builder: Publish gives no confirmation and the builder never shows unpublished changes                                         |
+| LINTEL-UX-012   | P2       | Fixed  | No "View website" link anywhere in the admin                                                                                   |
+| LINTEL-UX-013   | P2       | Fixed  | Builder spills off the screen at 390px; the tour still runs                                                                    |
+| LINTEL-UX-014   | P2       | Part   | A menu with a link to a deleted page can't be saved, and the error shows the link's id                                         |
+| LINTEL-UX-015   | P2       | Fixed  | Settings: logo and colour in two places; build-time settings where clients look first; unclear group names                     |
+| LINTEL-UX-016   | P2       | Fixed  | Account is titled "Create your account"; three other strings show another screen's words                                       |
+| LINTEL-UX-017   | P2       | Fixed  | Settings is a catch-all: logs, tools and the agency's build settings beside the owner's website details                        |
+| LINTEL-UX-018   | P2       | Fixed  | The bright violet with lavender tints reads as a generic template, not the intended iOS look                                   |
+| LINTEL-UX-019   | P2       | Fixed  | Tables capped at 896px with off-centre headings; Users header buttons far from the list; row hover matches the page            |
+| LINTEL-UX-020   | P2       | Fixed  | The admin looked like any iOS-style app: nothing of its own                                                                    |
+| LINTEL-UX-021   | P2       | Fixed  | Builder: elements can't be dragged to a new place on the page, only in Layers                                                  |
+| LINTEL-UX-022   | P2       | Fixed  | Creating a page and opening one show two different editors; sparkle icons; Publish on an empty new page                        |
+| LINTEL-UX-023   | P2       | Fixed  | A page's own header section doesn't replace the site's header (a footer section does), so two navs show                        |
+| LINTEL-UX-024   | P2       | Fixed  | Builder: the Animation and Effects tabs feel clunky; people must know which is which                                           |     |
+| LINTEL-UX-025   | P2       | Fixed  | Builder: no states like Framer's: a card can't animate its picture on hover; no pressed state; no scroll steps                 |
+| LINTEL-UX-026   | P3       | Fixed  | The content tree's note goes after 8 seconds even while hovered or focused, and restarts when the tree re-renders              |
+| LINTEL-UX-027   | P3       | Fixed  | The dashboard's "Add images and files" checks a permission no role has, so Authors who may upload never see it                 |
+| LINTEL-UX-033   | P2       | Fixed  | Builder: the "Style for" dropdown makes no sense; its labels ("Lookbook: pointer over") don't say what they do                 |
+| LINTEL-UX-034   | P2       | Fixed  | Insert search finds no element by other common names: "carousel" finds nothing (it's called Slider), nor "popup" or "lightbox" |
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 

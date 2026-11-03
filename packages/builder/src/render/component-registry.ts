@@ -39,6 +39,8 @@ export interface ElementAttributes {
   "data-node-id"?: string;
   /** Entrances start hidden until their animation is ready (see `motionCloakCss`). */
   "data-motion-cloak"?: "";
+  /** On the published page: it opens and closes, its button toggling it (open states). */
+  "data-lintel-opens"?: "";
   /** On the canvas only: a free layout, whose children can be dragged anywhere in it. */
   "data-lintel-free"?: "stack-on-phone" | "free";
 }

@@ -96,21 +96,41 @@ export const builderStrings = {
   "pageBuilder.style.modeLabel": "How many style options to show",
   "pageBuilder.style.simple": "Simple",
   "pageBuilder.style.advanced": "Advanced",
-  "pageBuilder.style.stateLabel": "Style for",
-  "pageBuilder.style.stateNone": "Always",
-  "pageBuilder.style.stateHover": "Pointer over",
-  "pageBuilder.style.stateFocus": "Keyboard focus",
-  "pageBuilder.style.statePressed": "Pressed",
+  "pageBuilder.style.lookLabel": "Which look you're changing",
+  "pageBuilder.style.lookNormal": "Normal",
+  "pageBuilder.style.lookHover": "Hovered",
+  "pageBuilder.style.lookPressed": "Pressed",
+  "pageBuilder.style.lookFocus": "Focused",
+  "pageBuilder.style.lookOpen": "Open",
+  "pageBuilder.style.lookSelected": "Current",
+  "pageBuilder.style.whoseLabel": "What has to be {look}",
+  "pageBuilder.style.whoseSelf": "This element",
+  "pageBuilder.style.whoseOwner": "{name}, around it",
+  "pageBuilder.style.meansHover":
+    "You're changing how it looks while a mouse pointer is over it. Its normal look stays as it is. The page shows it now.",
+  "pageBuilder.style.meansPressed":
+    "You're changing how it looks while it's being clicked or tapped. Its normal look stays as it is. The page shows it now.",
+  "pageBuilder.style.meansFocus":
+    "You're changing how it looks when someone reaches it with the Tab key. Its normal look stays as it is. The page shows it now.",
+  "pageBuilder.style.meansOpen":
+    "You're changing how it looks once its button opens it, like a card that shows more. Its normal look stays as it is. The page shows it now.",
+  "pageBuilder.style.meansSelected":
+    "You're changing how it looks when it's the page you're on, or the chosen tab. Its normal look stays as it is. The page shows it now.",
+  "pageBuilder.style.ownerMeansHover":
+    "You're changing how this looks while the pointer is over {name}, like a picture that grows when its card is hovered. The page shows it now.",
+  "pageBuilder.style.ownerMeansPressed":
+    "You're changing how this looks while {name} is being clicked or tapped. The page shows it now.",
+  "pageBuilder.style.ownerMeansOpen":
+    "You're changing how this looks once {name} is opened, like extra text that appears when its card opens. The page shows it now.",
+  "pageBuilder.style.ownerMeansSelected":
+    "You're changing how this looks when {name} is the current page or the chosen tab. The page shows it now.",
+  "pageBuilder.style.changedForOpen": "Changed for open",
+  "pageBuilder.style.changedForSelected": "Changed for selected",
   "pageBuilder.scene.start": "Start",
   "pageBuilder.scene.end": "End",
   "pageBuilder.scene.dragHint":
     "Where on the screen the scroll scene starts or ends. Drag it, or use the up and down arrow keys.",
   "pageBuilder.style.stateOwnHeading": "This element",
-  "pageBuilder.style.stateOwnerHeading": "With what's around it",
-  "pageBuilder.style.stateOwnerHover": "{name}: pointer over",
-  "pageBuilder.style.stateOwnerPressed": "{name}: pressed",
-  "pageBuilder.style.editingOwnerState":
-    "Changes here apply while {name} is in this state, so they move together. The page shows it now.",
   "pageBuilder.style.transitionLabel": "Moving between states",
   "pageBuilder.style.transitionFor": "For {name}, and everything that changes with it.",
   "pageBuilder.style.transitionFeel": "Feel",
@@ -129,8 +149,6 @@ export const builderStrings = {
   "pageBuilder.style.editingTablet":
     "Changes here apply to tablets and phones. Desktop stays as it is.",
   "pageBuilder.style.editingPhone": "Changes here apply to phones only.",
-  "pageBuilder.style.editingState":
-    "Changes here apply only in this state, on every screen size. The page shows it now.",
   "pageBuilder.style.lockedNote": "This element is locked. Unlock it in Layers to change it.",
   "pageBuilder.style.legend": "Style of the selected element",
   "pageBuilder.style.changedHere": "Changed here",
@@ -273,6 +291,18 @@ export const builderStrings = {
     "Start the link with https://, http://, mailto:, tel:, / or #.",
   "pageBuilder.content.noPicture": "No picture yet",
   "pageBuilder.content.choosePicture": "Choose a picture",
+  "pageBuilder.content.creditShown": "Shown under the picture: {credit}",
+  "pageBuilder.content.creditHidden":
+    "This photo’s licence asks for a credit. Keep it hidden only if you credit the photographer somewhere else on the page.",
+  "pageBuilder.pictureDrop.uploading": "Uploading {name}…",
+  "pageBuilder.pictureDrop.done": "Picture added to the page and to your media.",
+  "pageBuilder.pictureDrop.failed": "Couldn’t use {name}. {reason}",
+  "pageBuilder.pictureDrop.notPicture":
+    "Pictures go into a Picture element. Drop it onto one, or add one from Insert first.",
+  "pageBuilder.pictureDrop.selectFirst":
+    "To paste a picture, select a Picture element on the page first.",
+  "pageBuilder.pictureDrop.change": "Change picture",
+  "pageBuilder.pictureDrop.dismiss": "Dismiss",
   "pageBuilder.content.changePicture": "Change picture",
   "pageBuilder.content.pictureAddress": "Or the picture’s address",
   "pageBuilder.content.pictureAddressPlaceholder": "Or paste a picture’s address",

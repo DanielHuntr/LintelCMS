@@ -6,6 +6,7 @@ import {
   expandBlockInstances,
   findNode,
   fontPreloads,
+  listOpeningNodes,
   type PageData,
   type PageDocument,
   type PageNode,
@@ -97,6 +98,13 @@ export function renderPage(
     mode === "site" && withMotion
       ? motionMarks(animations, effects.bindings)
       : new Map<string, ElementAttributes>();
+  // Elements with an open state are marked on the website, so their button can toggle them.
+  const opening = listOpeningNodes(start);
+  if (mode === "site") {
+    for (const nodeId of opening) {
+      marked.set(nodeId, { className: "", ...marked.get(nodeId), "data-lintel-opens": "" });
+    }
+  }
   const html = renderToStaticMarkup(
     <PageDataProvider data={data}>
       <NodeView
@@ -117,7 +125,7 @@ export function renderPage(
     usesMotionApi: mode === "site" && usesMotionApi(start),
     fontPreloads: isWholePage ? fontPreloads(readPageFonts(document.root.props)) : [],
     script: mode === "site" && hasBackgroundVideo(start) ? backgroundVideoScript : "",
-    usesBehaviours: usesBehaviours(start),
+    usesBehaviours: usesBehaviours(start) || opening.size > 0,
   };
 }
 

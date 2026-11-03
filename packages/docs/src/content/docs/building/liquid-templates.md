@@ -1,7 +1,7 @@
 ---
 title: Liquid templates
 description: Write your website's page templates as Liquid files in your project, with layouts, partials and Lintel's own tags, instead of using the visual designer.
-since: "1.0"
+since: "1.0.0-rc"
 ---
 
 If you'd rather write HTML than design pages in the builder, keep page templates as
@@ -148,7 +148,10 @@ them in your own stylesheet.
 
 `{% image %}` also takes `ratio` (`"16/9"`, `"4:5"` or a number), `sizes` (instead of the
 one made from `width`), `class`, `alt` (instead of the picture's own) and `priority: true`
-for the first picture on the page. Menus take `label: "Footer links"` for their accessible
+for the first picture on the page. When the photo's licence asks for a credit (CC BY, CC
+BY-SA, or a credit typed in the media library), it is drawn under the picture as
+`<figure><img><figcaption class="lintel-credit">`. `credit: false` leaves it off, for pages
+that credit their photos somewhere else. Menus take `label: "Footer links"` for their accessible
 name. Forms take `show_title: true`.
 
 ## Choosing a template per page
@@ -180,6 +183,70 @@ Templates are run strictly:
   naturally: `{{ entry.data.subtitle | default: entry.title }}`.
 - Objects show only their own values, and a page that takes more than five seconds to draw
   is stopped.
+
+## Editor support
+
+### Start with an example
+
+```bash
+pnpm lintel templates init
+```
+
+makes the `site/` folder (or your `LINTEL_TEMPLATES`) with a small working example:
+`templates/pages.liquid`, a layout `layouts/main.liquid` with `{% lintel_head %}`,
+`{% site_header %}` and `{% site_footer %}`, and a partial `partials/card.liquid`. It never
+replaces a file that's already there, so it's safe to run in a project that has templates.
+
+### Highlighting
+
+VS Code doesn't know Liquid on its own. Install the **Liquid** extension by Panoply
+(`sissel.shopify-liquid` in the Extensions view), which highlights `.liquid` files and
+handles the HTML in them. Shopify's own **Shopify Liquid** extension
+(`Shopify.theme-check-vscode`) highlights them too, but its checks are written for Shopify
+themes and may flag Lintel's tags as unknown.
+
+### Snippets
+
+`init` also writes two snippets files that VS Code picks up by itself:
+
+- `.vscode/lintel-liquid.code-snippets`: every Lintel tag and filter. Type `image`,
+  `menu`, `form`, `design`, `lintel_head`, `site_header`, `site_footer`, `rich_text` or
+  `image_url`, choose the suggestion, and press Tab to move between the parts to fill in.
+  `lintel-layout` and `lintel-template` write a whole layout and a page template.
+- `.vscode/lintel-fields.code-snippets`: your own fields. Type `entry.data.` to see every
+  content type's fields, each with its label and type (`Photo: image field of Recipe
+(required)`). Pictures come wrapped in `{% image %}`, rich text and Markdown with
+  `| rich_text`, lists in a `for` loop and dates with `| date`. Type `recipe.` to see only
+  one content type's fields.
+
+The snippets are offered in Liquid files and in HTML files. Lintel only ever rewrites the
+entries it named `Lintel: ...`; snippets of your own, in these files or in a
+`.code-snippets` file of your own, are kept.
+
+### Keeping the field snippets up to date
+
+While `pnpm dev` runs and the templates folder exists, Lintel rewrites the field snippets
+whenever a content type changes, in the admin or in a
+[content model file](/building/content-model-as-code/), and each time it starts. Otherwise,
+after changing content types, run:
+
+```bash
+pnpm lintel templates sync
+```
+
+It reads your content model files when you have them, and the database when you don't (stop
+`pnpm dev` first if you use the built-in database; it keeps them up to date anyway).
+
+`.vscode/` is in Lintel's `.gitignore` apart from `extensions.json`, so the snippets stay on
+each computer. Since `init` and `pnpm dev` write them, that's usually what you want.
+
+### What isn't included
+
+Snippets complete what you type; they don't understand the template. Hover help for
+Lintel's tags, checks as you type (an unknown filter, a field that doesn't exist) and
+completion that knows which entry a template draws would need a Liquid language server
+that knows Lintel, and there isn't one yet. Mistakes show on the page instead, while
+`pnpm dev` runs (see below).
 
 ## Development and production
 

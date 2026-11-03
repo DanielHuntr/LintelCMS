@@ -47,6 +47,9 @@ them too. Name buttons as the admin shows them, in **bold**.
 
 `src/version.ts` holds the documented version, shown beside the site title. Each page's
 `since` appears beside its title, marked "New in" when it matches the current version.
+`since` is a release (`"0.6"`) or, for what is only in a release candidate so far, the
+candidate (`"1.0.0-rc"`, shown as "Since the 1.0 release candidate"). Don't call anything
+`"1.0"` until that release is out.
 When a release ships, bump the version; when pages describe something that changed, say so
 on the page ("Before 0.2, ...") rather than keeping a copy of the old docs.
 

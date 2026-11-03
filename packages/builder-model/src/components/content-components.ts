@@ -109,6 +109,7 @@ export const listComponent = defineComponent({
 export const buttonComponent = defineComponent({
   type: "button",
   label: "Button",
+  keywords: ["cta", "call to action"],
   description: "A link that looks like a button, for the main thing you want visitors to do.",
   icon: "mouse-pointer-click",
   category: "navigation",
@@ -165,6 +166,7 @@ export const linkComponent = defineComponent({
 export const navigationComponent = defineComponent({
   type: "navigation",
   label: "Menu",
+  keywords: ["nav", "navbar", "links"],
   description: "A row of links to the main pages of your site.",
   icon: "menu",
   category: "navigation",
@@ -199,6 +201,7 @@ export const navigationComponent = defineComponent({
 export const imageComponent = defineComponent({
   type: "image",
   label: "Picture",
+  keywords: ["photo", "picture", "img"],
   description:
     "A photo or illustration from your media library, with a description for people who can’t see it.",
   icon: "image",
@@ -208,8 +211,10 @@ export const imageComponent = defineComponent({
     alt: plainText(500),
     assetId: z.string().max(100).nullable().default(null),
     caption: plainText(500),
+    /** Show the photo's credit under it, when its licence asks for one (see PageData.credits). */
+    showCredit: z.boolean().default(true),
   }),
-  defaultProps: { src: "", alt: "", assetId: null, caption: "" },
+  defaultProps: { src: "", alt: "", assetId: null, caption: "", showCredit: true },
   defaultStyles: {
     base: { width: "100%", height: "auto", borderRadius: "var(--lintel-radius-medium)" },
   },
@@ -223,12 +228,14 @@ export const imageComponent = defineComponent({
       placeholder: "A smiling barista pouring coffee",
     },
     { kind: "text", prop: "caption", label: "Caption (shown under it)" },
+    { kind: "toggle", prop: "showCredit", label: "Show the photo credit" },
   ],
 });
 
 export const dividerComponent = defineComponent({
   type: "divider",
   label: "Divider",
+  keywords: ["line", "rule", "separator", "hr"],
   description: "A thin line that separates one part of the page from the next.",
   icon: "minus",
   category: "layout",

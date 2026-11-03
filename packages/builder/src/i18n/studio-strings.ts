@@ -54,9 +54,9 @@ export const builderStudioStrings = {
   "pageBuilder.tour.panel.beginnerText":
     "Style changes colours, sizes, spacing and corners. Content changes the words, pictures and links. Animate makes it move. Style changes apply to the screen size you’re looking at.",
   "pageBuilder.tour.panel.designerText":
-    "Style changes colours, sizes, spacing and corners, for the screen size you’re looking at. In Advanced, Style for changes how it looks under the pointer or with keyboard focus. Content changes the words; Animate makes it move.",
+    "Style changes colours, sizes, spacing and corners, for the screen size you’re looking at. At the top of Style, choose Hovered, Pressed or another look to change how it looks then. Content changes the words; Animate makes it move.",
   "pageBuilder.tour.panel.developerText":
-    "Style, for the screen size you’re looking at, with Style for in Advanced for pointer and focus states. Content changes the words, Animate makes it move, and Code shows its HTML and CSS.",
+    "Style, for the screen size you’re looking at, with looks for hovered, pressed, open and current at the top. Content changes the words, Animate makes it move, and Code shows its HTML and CSS.",
   "pageBuilder.tour.screens.title": "Every screen size, and every step",
   "pageBuilder.tour.screens.beginnerText":
     "Switch between desktop, tablet and phone to see and adjust each one. Undo, redo and History take you back to any earlier step. Tools, beside them, shows more settings when you’re ready.",

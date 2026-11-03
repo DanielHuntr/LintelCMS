@@ -66,6 +66,23 @@ describe("the insert library", () => {
     expect(labelsFor("appointment")).toEqual(["Booking"]);
   });
 
+  // People search with the names they know from other tools: "carousel" finds the Slider.
+  it("finds elements by the other names people know them by", () => {
+    const elementsFor = (search: string) =>
+      searchInsertItems(items, search, words)
+        .filter((item) => item.kind === "elements")
+        .map((item) => item.label);
+    expect(elementsFor("carousel")).toContain("Slider");
+    expect(elementsFor("slideshow")).toContain("Slider");
+    expect(elementsFor("popup")).toContain("Pop-up");
+    expect(elementsFor("modal")).toContain("Pop-up");
+    expect(elementsFor("lightbox")).toContain("Gallery");
+    expect(elementsFor("marquee")).toEqual(expect.arrayContaining(["Ticker", "Logo strip"]));
+    expect(elementsFor("faq")).toContain("Accordion");
+    expect(elementsFor("iframe")).toContain("Embed");
+    expect(elementsFor("hamburger")).toContain("Menu drawer");
+  });
+
   it("offers sections that need a plugin only while it is on", () => {
     const shopSection = sectionTemplates.find((template) => template.id === "featured-products");
     const plain = sectionTemplates.find((template) => template.id === "hero");

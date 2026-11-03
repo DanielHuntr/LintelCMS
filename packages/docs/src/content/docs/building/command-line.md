@@ -178,6 +178,24 @@ next to your code, in `CONTENT_MODEL_FOLDER` (`content-model` by default).
 These commands need a version of Lintel that includes content model files; older ones
 say so.
 
+## templates
+
+```bash
+pnpm lintel templates init
+pnpm lintel templates sync
+```
+
+Help for writing [Liquid templates](/building/liquid-templates/#editor-support) in VS Code.
+
+- `init` makes the templates folder (`LINTEL_TEMPLATES`, `site` by default) with a small
+  working example: `templates/pages.liquid`, `layouts/main.liquid` and
+  `partials/card.liquid`. Files that are already there are never replaced. It also writes
+  the snippets below.
+- `sync` writes `.vscode/lintel-liquid.code-snippets` (Lintel's tags and filters) and
+  `.vscode/lintel-fields.code-snippets` (your content types' fields) again. The fields
+  come from the content model files when there are some, so this works while `pnpm dev`
+  runs; otherwise from the database. While `pnpm dev` runs it keeps them up to date itself.
+
 ## create-admin
 
 ```bash

@@ -10,6 +10,7 @@ import { migrateCommand } from "./commands/migrate.js";
 import { modelCommand } from "./commands/model.js";
 import { restoreCommand } from "./commands/restore.js";
 import { startCommand } from "./commands/start.js";
+import { templatesCommand } from "./commands/templates.js";
 import { updateCommand } from "./commands/update.js";
 import { CommandError, formatTable, type Terminal } from "./terminal.js";
 
@@ -27,6 +28,7 @@ export const commands: readonly Command[] = [
   importCommand,
   migrateCommand,
   modelCommand,
+  templatesCommand,
   createAdminCommand,
 ];
 

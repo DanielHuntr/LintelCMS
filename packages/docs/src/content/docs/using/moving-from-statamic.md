@@ -1,7 +1,7 @@
 ---
 title: Moving from Statamic
 description: Bringing a Statamic site's collections, page tree, taxonomies, globals, navigation and assets into Lintel.
-since: "1.0"
+since: "1.0.0-rc"
 sidebar:
   label: Moving from Statamic
 ---

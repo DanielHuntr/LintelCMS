@@ -15,6 +15,7 @@ export const formHandleSchema = z
 export const formEmbedComponent = defineComponent({
   type: "formEmbed",
   label: "Form",
+  keywords: ["contact form", "enquiry"],
   description: "One of the forms from Forms, such as your contact form.",
   icon: "clipboard-list",
   category: "forms",
@@ -34,6 +35,7 @@ export const formEmbedComponent = defineComponent({
 export const newsletterSignupComponent = defineComponent({
   type: "newsletterSignup",
   label: "Newsletter sign-up",
+  keywords: ["email", "subscribe", "mailing list"],
   description: "An email box and a button, for people to join your mailing list.",
   icon: "mail-plus",
   category: "forms",
