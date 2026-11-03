@@ -28,10 +28,14 @@ const MAXIMUM_BYTES = 64 * 1024;
 export async function fetchAppManifest(
   address: string,
   options: SenderOptions,
+  /** Whether this server offers development mode, so it's worth telling people about it. */
+  developmentModeOffered = false,
 ): Promise<AppManifest> {
   const url = new URL(address);
   const onThisComputer = isLoopbackHost(url);
-  if (onThisComputer && !options.allowPrivateAddresses && !options.allowLoopbackAddresses) {
+  const refusedHere =
+    onThisComputer && !options.allowPrivateAddresses && !options.allowLoopbackAddresses;
+  if (refusedHere && developmentModeOffered) {
     throw new AppOnThisComputerError();
   }
   if (url.protocol !== "https:" && !onThisComputer && !options.allowPrivateAddresses) {

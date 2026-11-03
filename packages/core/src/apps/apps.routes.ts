@@ -57,6 +57,7 @@ export async function appsRoutes(server: FastifyInstance, options: AppsRoutesOpt
   const context = async (): Promise<AppInstallContext> => ({
     sender: await appSenderOptions(server.database, server.webhooks.sender, options.development),
     addresses: addresses(),
+    developmentModeOffered: options.development.available,
     featureName: (pluginId) => server.plugins.find(pluginId)?.name ?? pluginId,
   });
 

@@ -131,6 +131,24 @@ describe("apps' development mode", () => {
     expect(response.json().code).toBe("PRIVATE_WEBHOOK_ADDRESS");
   });
 
+  it("doesn't mention it where the server doesn't offer it", async () => {
+    await start(false);
+
+    const preview = await api("POST", "/apps/preview", {
+      manifestUrl: `${local.origin}/lintel-app.json`,
+    });
+    const install = await api("POST", "/apps", {
+      manifest: local.manifest,
+      approvedScopes: ["read_content"],
+    });
+
+    expect(preview.statusCode).toBe(400);
+    expect(preview.json().code).toBe("APP_MANIFEST_UNREACHABLE");
+    expect(preview.body).not.toContain("Development mode");
+    expect(install.statusCode).toBe(400);
+    expect(install.body).not.toContain("development mode");
+  });
+
   it("can't be turned on where the server doesn't allow it", async () => {
     await start(false);
 

@@ -69,6 +69,8 @@ export interface AppInstallContext {
   /** With this computer's addresses allowed while apps' development mode is on. */
   sender: SenderOptions;
   addresses: LintelAddresses;
+  /** Whether this server offers development mode; messages only mention it if so. */
+  developmentModeOffered: boolean;
   /** A plugin's name from its id, so "commerce" is shown as "Online shop". */
   featureName: (pluginId: string) => string;
 }
@@ -108,7 +110,7 @@ export async function installApp(
   if (featuresNeeded.length > 0) {
     throw new AppNeedsFeaturesError(featuresNeeded);
   }
-  const webhookGroups = groupWebhooksByAddress(manifest, context.sender);
+  const webhookGroups = groupWebhooksByAddress(manifest, context);
 
   const clientSecret = generateClientSecret();
   const app = await database.transaction(async (transaction) => {
@@ -272,7 +274,7 @@ async function readManifest(
   const manifest =
     source.manifestUrl === undefined
       ? checkAppManifest(source.manifest)
-      : await fetchAppManifest(source.manifestUrl, context.sender);
+      : await fetchAppManifest(source.manifestUrl, context.sender, context.developmentModeOffered);
   refuseLintelsOwnOrigin(manifest, context.addresses);
   return manifest;
 }
@@ -295,7 +297,7 @@ function refuseLintelsOwnOrigin(manifest: AppManifest, addresses: LintelAddresse
 /** One webhook per address, with every event the app wants sent there. */
 function groupWebhooksByAddress(
   manifest: AppManifest,
-  sender: SenderOptions,
+  { sender, developmentModeOffered }: AppInstallContext,
 ): Map<string, WebhookEventName[]> {
   const groups = new Map<string, WebhookEventName[]>();
   for (const { event, url } of manifest.webhooks) {
@@ -304,7 +306,10 @@ function groupWebhooksByAddress(
       checkWebhookAddress(address, sender);
     } catch (error) {
       if (error instanceof WebhookSendError) {
-        throw new AppWebhookAddressError(address.hostname, isLoopbackHost(address));
+        throw new AppWebhookAddressError(
+          address.hostname,
+          developmentModeOffered && isLoopbackHost(address),
+        );
       }
       throw error;
     }
