@@ -3,6 +3,7 @@ import { Search, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type RefObject } from "react";
 import { useCollections } from "../content/content.queries.js";
 import { classNames } from "../design/classNames.js";
+import { useBackdropClose } from "../design/useBackdropClose.js";
 import { t } from "../i18n/strings.js";
 import { useDebouncedValue } from "../media/useDebouncedValue.js";
 import { useSession } from "../session/SessionContext.js";
@@ -39,6 +40,7 @@ interface CommandPaletteProps {
  */
 export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const dialogElement = useRef<HTMLDialogElement>(null);
+  const backdrop = useBackdropClose(onClose);
   const input = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -63,9 +65,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
         event.preventDefault();
         onClose();
       }}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
+      {...backdrop}
       className={classNames(
         "mx-auto mt-[12vh] w-[calc(100vw-32px)] max-w-[600px] overflow-hidden rounded-panel bg-surface-raised p-0 text-label shadow-float backdrop:bg-scrim",
         "motion-safe:transition-[opacity,scale] motion-safe:duration-150 motion-safe:ease-standard motion-safe:starting:scale-[0.98] starting:opacity-0",

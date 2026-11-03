@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { t } from "../i18n/strings.js";
 import { classNames } from "./classNames.js";
+import { useBackdropClose } from "./useBackdropClose.js";
 
 interface DialogProps {
   open: boolean;
@@ -42,6 +43,7 @@ export function Dialog({
   const titleId = useId();
   const descriptionId = useId();
   const isAlert = size === "alert";
+  const backdrop = useBackdropClose(onClose, !isAlert);
 
   useEffect(() => {
     const dialog = dialogElement.current;
@@ -72,10 +74,8 @@ export function Dialog({
         event.preventDefault();
         onClose();
       }}
-      onClick={(event) => {
-        // A click on the dialog element itself is a click on the backdrop around the panel.
-        if (!isAlert && event.target === event.currentTarget) onClose();
-      }}
+      // A click on the dialog element itself is a click on the backdrop around the panel.
+      {...backdrop}
       className={classNames(
         "m-auto w-[calc(100vw-32px)] overflow-hidden",
         size === "wide"
