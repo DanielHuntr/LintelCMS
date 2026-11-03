@@ -79,7 +79,8 @@ function PreviewAddressForm({ collection }: { collection: Collection }) {
           setAddress(event.target.value);
           setStatus("idle");
         }}
-        className="flex-1 [&_input]:font-mono [&_input]:text-footnote"
+        // min-w-0 lets the address box narrow, so the row fits a 320px screen (LINTEL-A11Y-003).
+        className="min-w-0 flex-1 [&_input]:font-mono [&_input]:text-footnote"
       />
       <div className="mt-6 flex shrink-0 items-center gap-2">
         <Button type="submit" variant="tinted" disabled={status === "saving" || isUnchanged}>

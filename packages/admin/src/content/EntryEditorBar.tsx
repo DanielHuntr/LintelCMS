@@ -76,15 +76,16 @@ export function EntryEditorBar({
   ];
 
   return (
-    <div className="sticky top-0 z-20 -mt-14 -me-16 -ml-(--page-gutter) mb-8 flex h-16 items-center gap-3 bg-background/80 pt-2 pe-16 pl-(--page-gutter) backdrop-blur-xl backdrop-saturate-150">
+    <div className="sticky top-0 z-20 -mt-14 -me-(--page-gutter) -ml-(--page-gutter) mb-8 flex h-16 items-center gap-3 bg-background/80 pt-2 pe-(--page-gutter) pl-(--page-gutter) backdrop-blur-xl backdrop-saturate-150 md:-me-16 md:pe-16">
       {breadcrumbs}
 
-      <div className="ms-auto flex shrink-0 items-center gap-1.5">
+      {/* Below 400px wide the buttons sit closer, so the bar fits a 320px screen (LINTEL-A11Y-003). */}
+      <div className="ms-auto flex shrink-0 items-center gap-1.5 max-[25rem]:gap-0">
         <div className="me-2 max-sm:me-0">{saveIndicator}</div>
         {viewPage && (
           <ViewPageLink
             target={viewPage}
-            className="flex h-9 items-center gap-1.5 rounded-control px-2.5 text-body text-label-secondary transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring"
+            className="flex h-9 items-center gap-1.5 rounded-control px-2.5 text-body text-label-secondary transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring max-[25rem]:px-2"
           >
             <SquareArrowOutUpRight aria-hidden="true" strokeWidth={1.75} className="size-[17px]" />
             {/* Icons only on a phone, so Publish stays in view; the words stay for screen readers. */}
@@ -97,7 +98,7 @@ export function EntryEditorBar({
           aria-expanded={isPreviewOpen}
           aria-controls={previewId}
           className={classNames(
-            "flex h-9 items-center gap-1.5 rounded-control px-2.5 text-body transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring",
+            "flex h-9 items-center gap-1.5 rounded-control px-2.5 text-body transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring max-[25rem]:px-2",
             isPreviewOpen ? "text-accent" : "text-label-secondary",
           )}
         >
@@ -112,7 +113,7 @@ export function EntryEditorBar({
           aria-label={t("editor.togglePanel")}
           title={t("editor.togglePanel")}
           className={classNames(
-            "flex size-9 items-center justify-center rounded-control transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring",
+            "flex size-9 items-center justify-center rounded-control transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring max-[25rem]:size-8",
             isPanelOpen ? "text-accent" : "text-label-secondary",
           )}
         >
