@@ -37,8 +37,9 @@ export const tagStylesSchema = z.partialRecord(
 const selectors: Record<TagStyleKind, string> = {
   headings: ":where(.lintel-design) :is(h1, h2, h3, h4, h5, h6)",
   paragraphs: ":where(.lintel-design) p",
-  // Not buttons that are links, and not menus, which take their colour from the menu.
-  links: ":where(.lintel-design) a:where(:not(.lintel-button, nav a))",
+  // Not buttons that are links, not menus, which take their colour from the menu, and not
+  // the Site logo, which is the site's name rather than a link in the text.
+  links: ":where(.lintel-design) a:where(:not(.lintel-button, nav a, .lintel-site-logo))",
   // Buttons drawn by other elements (a form's Send, a pricing plan's): the Button element's
   // own look comes from `applyTagStyles`.
   buttons: ":where(.lintel-design) .lintel-button",
