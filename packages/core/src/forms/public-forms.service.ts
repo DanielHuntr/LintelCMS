@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+import { isDeepStrictEqual } from "node:util";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import { InvalidFieldsError } from "../http/http-errors.js";
@@ -25,7 +27,11 @@ import {
 } from "./spam-protection.js";
 import { checkSubmittedFiles, type IncomingFile, storeSubmittedFiles } from "./submission-files.js";
 import { checkSubmissionValues, findSubmitterEmail } from "./submission-values.js";
-import { insertSubmissionRow } from "./submissions.repository.js";
+import {
+  insertSubmissionRow,
+  listRecentSubmissionsWithToken,
+  lockFormSubmissions,
+} from "./submissions.repository.js";
 
 /**
  * What websites see of a form, and taking in what visitors send. Public by design: only
@@ -138,7 +144,10 @@ export interface IncomingSubmission {
 
 export type SubmissionOutcome =
   | { saved: true; form: FormRow; submission: FormSubmissionRow }
-  /** Caught by the honeypot or the timer: answered as if saved, but nothing was kept. */
+  /**
+   * Caught by the honeypot or the timer, or the same answers sent again: answered as if
+   * saved, but nothing new was kept.
+   */
   | { saved: false; form: FormRow };
 
 /**
@@ -179,17 +188,47 @@ export async function receiveSubmission(
     throw new InvalidFieldsError(messages);
   }
 
+  // Outside the transaction: the media library writes through its own connection. A file
+  // sent twice is the same file to the library, so a resend doesn't leave a copy behind.
   const stored = await storeSubmittedFiles(context.media, form.fields, incoming.files);
   const allValues = { ...values, ...stored.values };
-  const submission = await insertSubmissionRow(context.database, {
-    tenantId: DEFAULT_TENANT_ID,
-    formId: form.id,
-    values: allValues,
-    submitterEmail: findSubmitterEmail(form.fields, allValues),
-    assetIds: stored.assetIds,
-    sourceUrl: incoming.sourceUrl?.slice(0, 2000) ?? null,
+  const tokenHash = hashToken(incoming.values[TOKEN_FIELD]);
+  return context.database.transaction(async (transaction) => {
+    // One submission to a form at a time, so a double click's two requests can't both pass
+    // the check below before either is saved (LINTEL-DATA-006).
+    await lockFormSubmissions(transaction, form.id);
+    const recent = await listRecentSubmissionsWithToken(
+      transaction,
+      form.id,
+      tokenHash,
+      new Date(now.getTime() - RESENT_WITHIN_MILLISECONDS),
+    );
+    if (recent.some((submission) => isDeepStrictEqual(submission.values, allValues))) {
+      return { saved: false, form };
+    }
+
+    const submission = await insertSubmissionRow(transaction, {
+      tenantId: DEFAULT_TENANT_ID,
+      formId: form.id,
+      values: allValues,
+      submitterEmail: findSubmitterEmail(form.fields, allValues),
+      assetIds: stored.assetIds,
+      sourceUrl: incoming.sourceUrl?.slice(0, 2000) ?? null,
+      tokenHash,
+    });
+    return { saved: true, form, submission };
   });
-  return { saved: true, form, submission };
+}
+
+/**
+ * The same answers from the same opened form within this long are one submission sent twice:
+ * a double click, or a browser resending. A second, different answer from the same page is
+ * still kept.
+ */
+const RESENT_WITHIN_MILLISECONDS = 60_000;
+
+function hashToken(token: unknown): string {
+  return createHash("sha256").update(String(token)).digest("hex");
 }
 
 async function checkTurnstile(

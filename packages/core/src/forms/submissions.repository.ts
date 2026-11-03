@@ -1,5 +1,5 @@
-import { and, count, desc, eq, ilike, inArray, lt, or, type SQL, sql } from "drizzle-orm";
-import type { DatabaseOrTransaction } from "../database/client.js";
+import { and, count, desc, eq, gte, ilike, inArray, lt, or, type SQL, sql } from "drizzle-orm";
+import type { DatabaseOrTransaction, Transaction } from "../database/client.js";
 import { escapeLikePattern } from "../search/search-terms.js";
 import { usersTable } from "../users/users.table.js";
 import {
@@ -31,6 +31,30 @@ export async function insertSubmissionRow(
     throw new Error("Saving the submission returned nothing.");
   }
   return row;
+}
+
+/** Hashes `formId` into an advisory lock key, held until the transaction ends. */
+export async function lockFormSubmissions(transaction: Transaction, formId: string): Promise<void> {
+  await transaction.execute(sql`select pg_advisory_xact_lock(hashtext(${`form:${formId}`}))`);
+}
+
+/** Submissions to a form sent with the same token since `since`. */
+export async function listRecentSubmissionsWithToken(
+  database: DatabaseOrTransaction,
+  formId: string,
+  tokenHash: string,
+  since: Date,
+): Promise<FormSubmissionRow[]> {
+  return database
+    .select()
+    .from(formSubmissionsTable)
+    .where(
+      and(
+        eq(formSubmissionsTable.formId, formId),
+        eq(formSubmissionsTable.tokenHash, tokenHash),
+        gte(formSubmissionsTable.createdAt, since),
+      ),
+    );
 }
 
 function listConditions(tenantId: string, formId: string, options: SubmissionListOptions) {

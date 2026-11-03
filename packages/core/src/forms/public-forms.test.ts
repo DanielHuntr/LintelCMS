@@ -266,6 +266,32 @@ describe("forms on websites", () => {
     expect(statuses[10]).toBe(429);
   });
 
+  // LINTEL-DATA-006: a double click's two requests were both stored.
+  it("keeps one submission when the same answers are sent twice from one opened form", async () => {
+    const form = await forms.createForm("Contact", "contact");
+    const token = await forms.tokenFor(form);
+    const send = (answers: Record<string, string>) =>
+      forms.server.inject({
+        method: "POST",
+        url: `/delivery/forms/${form.handle}/submissions`,
+        payload: { ...answers, _token: token },
+      });
+
+    const [first, second] = await Promise.all([send(contactAnswers), send(contactAnswers)]);
+    expect([first.statusCode, second.statusCode]).toEqual([201, 201]);
+    const different = await send({ ...contactAnswers, message: "And one more thing." });
+    expect(different.statusCode).toBe(201);
+
+    const stored = await testDatabase.database
+      .select()
+      .from(formSubmissionsTable)
+      .where(eq(formSubmissionsTable.formId, form.id));
+    expect(stored.map((row) => row.values.message).sort()).toEqual([
+      "And one more thing.",
+      "Could you call me back?",
+    ]);
+  });
+
   it("takes files into the media library, within the field's limits", async () => {
     const form = await forms.createForm("Jobs");
     await forms.api("PATCH", `/forms/${form.id}`, {

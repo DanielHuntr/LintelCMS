@@ -43,7 +43,8 @@ export const formsTable = pgTable(
  * One filled-in form. `values` are keyed by field handle, as checked when it arrived.
  * `submitterEmail` is the first email answer, lowercased, so one person's submissions can
  * be found, exported or erased on request. `assetIds` are the files they sent, which live
- * in the media library and go when the submission does.
+ * in the media library and go when the submission does. `tokenHash` is a hash of the form
+ * token it came with, so a double click or a resent request isn't stored twice.
  */
 export const formSubmissionsTable = pgTable(
   "form_submissions",
@@ -58,12 +59,14 @@ export const formSubmissionsTable = pgTable(
     assetIds: jsonb("asset_ids").$type<string[]>().notNull().default([]),
     /** The page the form was sent from, when the browser said. */
     sourceUrl: text("source_url"),
+    tokenHash: text("token_hash"),
     isRead: boolean("is_read").notNull().default(false),
     isStarred: boolean("is_starred").notNull().default(false),
     ...timestamps(),
   },
   (table) => [
     index("form_submissions_form_idx").on(table.formId, table.createdAt),
+    index("form_submissions_token_idx").on(table.formId, table.tokenHash),
     index("form_submissions_email_idx").on(table.tenantId, table.submitterEmail),
   ],
 );
