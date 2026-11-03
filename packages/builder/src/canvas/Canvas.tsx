@@ -309,8 +309,14 @@ export function Canvas({
               : "relative h-full min-h-[480px] max-w-full shrink-0 transition-[width] duration-200 ease-standard"
           }
         >
+          {/*
+            Out of the Tab order, with everything in it: the page's links and buttons go nowhere
+            while designing (LINTEL-A11Y-029). Clicks still select, and the keyboard way to
+            each element is Layers.
+          */}
           <iframe
             ref={frame}
+            tabIndex={-1}
             data-tour="canvas"
             title={text("pageBuilder.canvas.title")}
             srcDoc={source}

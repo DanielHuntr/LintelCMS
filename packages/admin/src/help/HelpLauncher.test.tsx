@@ -1,6 +1,6 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderScreen } from "../testing/renderScreen.js";
 import { HelpLauncher } from "./HelpLauncher.js";
 
@@ -73,5 +73,40 @@ describe("HelpLauncher", () => {
     await router.navigate({ to: "/media" });
 
     expect(await screen.findByRole("complementary", { name: "Photos and files" })).toBeVisible();
+  });
+
+  describe("on a phone", () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    it("is a modal dialog: the page is inert and Escape anywhere closes it (LINTEL-A11Y-030)", async () => {
+      vi.stubGlobal("matchMedia", (query: string) => ({
+        matches: query.includes("max-width"),
+        media: query,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      }));
+      const user = userEvent.setup();
+      renderScreen(
+        <>
+          <main id="page">
+            <button type="button">On the page</button>
+          </main>
+          <HelpLauncher />
+        </>,
+      );
+      const launcher = await screen.findByRole("button", { name: "Help for this screen" });
+      await user.click(launcher);
+      const dialog = await screen.findByRole("dialog", { name: "Getting around" });
+      expect(dialog).toHaveAttribute("aria-modal", "true");
+      expect(document.getElementById("page")).toHaveAttribute("inert");
+      expect(launcher).toHaveAttribute("inert");
+
+      // Escape closes it even when focus has left the panel (onto the body).
+      (document.activeElement as HTMLElement | null)?.blur();
+      await user.keyboard("{Escape}");
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(document.getElementById("page")).not.toHaveAttribute("inert");
+      await waitFor(() => expect(launcher).toHaveFocus());
+    });
   });
 });

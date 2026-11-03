@@ -55,6 +55,10 @@ export function Sidebar({
     <aside
       ref={sidebar}
       id={id}
+      // Open over the page on a phone, it's a modal dialog; otherwise a plain landmark.
+      {...(isOpenOnNarrowScreens
+        ? { role: "dialog", "aria-modal": true, "aria-label": t("nav.label") }
+        : {})}
       className={classNames(
         "fixed inset-y-3 inset-s-3 z-10 flex w-60 flex-col rounded-panel bg-sidebar shadow-float hairline-ring backdrop-blur-2xl backdrop-saturate-150",
         isOpenOnNarrowScreens ? "max-md:z-40" : "max-md:hidden",

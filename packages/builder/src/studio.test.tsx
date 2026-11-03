@@ -175,6 +175,8 @@ describe("the guided tour", () => {
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(preferences.read("tourSeen")).toBe("yes");
+    // Nothing had focus when it opened; focus lands on Insert, not the page body (LINTEL-A11Y-035).
+    expect(document.getElementById("lintel-left-tab-insert")).toHaveFocus();
   });
 
   it("keeps focus inside the card while it's open", async () => {

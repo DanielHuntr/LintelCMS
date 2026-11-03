@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { describeError } from "../api/describeError.js";
 import { createEntry } from "../content/content.api.js";
 import { Button } from "../design/Button.js";
@@ -101,6 +101,16 @@ export function CreateDialog({
 
   const formId = useId();
   const menuHintId = useId();
+  // The Name field appears once the content types have loaded, after the dialog has opened,
+  // so it takes focus then, once (LINTEL-A11Y-031).
+  const form = useRef<HTMLFormElement>(null);
+  const hasFocusedName = useRef(false);
+  const hasTypes = types.length > 0;
+  useEffect(() => {
+    if (!hasTypes || hasFocusedName.current) return;
+    hasFocusedName.current = true;
+    form.current?.querySelector<HTMLElement>("input[data-autofocus]")?.focus();
+  }, [hasTypes]);
   return (
     <Dialog
       open
@@ -124,6 +134,7 @@ export function CreateDialog({
       }
     >
       <form
+        ref={form}
         id={formId}
         onSubmit={(event) => void handleSubmit(event)}
         className="flex flex-col gap-5"

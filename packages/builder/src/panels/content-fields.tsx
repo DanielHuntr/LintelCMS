@@ -6,7 +6,7 @@ import {
   readPageLinkId,
 } from "@lintel/builder-model";
 import { ArrowDown, ArrowUp, ImagePlus, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { useLinkedPage, usePickPage } from "./page-picker.js";
 import { IconButton, inputClassName, Labelled } from "../ui/controls.js";
@@ -204,18 +204,28 @@ export function ChoiceField({
   );
 }
 
+/** An on/off switch with its label, drawn like the admin's Toggle (a pill with a knob). */
 export function ToggleField({ label, value, onChange }: FieldProps<boolean>) {
+  const id = useId();
   return (
-    <label className="flex items-center justify-between gap-3 text-footnote text-label">
-      {label}
-      <input
-        type="checkbox"
+    <div className="flex items-center justify-between gap-3">
+      <label htmlFor={id} className="text-footnote text-label">
+        {label}
+      </label>
+      <button
+        id={id}
+        type="button"
         role="switch"
-        checked={value}
-        onChange={(event) => onChange(event.target.checked)}
-        className="size-4 accent-[var(--color-accent-fill)]"
-      />
-    </label>
+        aria-checked={value}
+        onClick={() => onChange(!value)}
+        className={`relative inline-flex h-[22px] w-[38px] shrink-0 items-center rounded-full p-0.5 transition-colors duration-200 ease-standard focus-visible:focus-ring ${value ? "bg-accent-fill" : "bg-fill-strong"}`}
+      >
+        <span
+          aria-hidden="true"
+          className={`size-[18px] rounded-full bg-knob shadow-thumb transition-transform duration-200 ease-standard ${value ? "translate-x-4 rtl:-translate-x-4" : "translate-x-0"}`}
+        />
+      </button>
+    </div>
   );
 }
 

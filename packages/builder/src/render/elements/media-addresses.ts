@@ -79,3 +79,14 @@ export function openStreetMapAddresses(latitude: number, longitude: number, zoom
     linkUrl: `https://www.openstreetmap.org/?mlat=${round(latitude)}&mlon=${round(longitude)}#map=${zoom}/${round(latitude)}/${round(longitude)}`,
   };
 }
+
+/**
+ * A title as it reads after a verb in a sentence-case button: "Video" becomes "video", but a
+ * name that starts with an acronym or a capitalised word inside ("YouTube", "BBC") stays.
+ */
+export function inSentence(title: string): string {
+  const [first = "", second = ""] = title;
+  return second && second === second.toUpperCase() && second !== second.toLowerCase()
+    ? title
+    : first.toLowerCase() + title.slice(1);
+}

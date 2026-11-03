@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   addWidget,
+  columnSpans,
   defaultLayout,
   moveWidget,
   removeWidget,
@@ -60,5 +61,17 @@ describe("dashboard layouts", () => {
     expect(removeWidget(layout, "core:welcome")).toHaveLength(2);
     expect(addWidget(layout, media).at(-1)).toEqual({ widget: "core:media-usage", size: "small" });
     expect(addWidget(layout, welcome)).toEqual(layout);
+  });
+});
+
+describe("columnSpans", () => {
+  it("stretches the last widget of each row over the columns left (LINTEL-A11Y-032)", () => {
+    // Medium + medium fill a row; small + medium leave one column, which Sales takes.
+    expect(
+      columnSpans(["large", "medium", "medium", "medium", "medium", "small", "medium"]),
+    ).toEqual([6, 3, 3, 3, 3, 2, 4]);
+    expect(columnSpans(["small", "small", "small", "small"])).toEqual([2, 2, 2, 6]);
+    expect(columnSpans(["medium", "large"])).toEqual([6, 6]);
+    expect(columnSpans([])).toEqual([]);
   });
 });

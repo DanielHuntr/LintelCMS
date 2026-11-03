@@ -47,9 +47,10 @@ export function RevisionHistory({ entryId, isWorking, onRestore }: RevisionHisto
 
       {groupRevisionsByDay(shown, now).map((day) => (
         <section key={day.key} aria-label={day.label} className="flex flex-col">
-          <h4 className="pb-1 text-caption font-semibold tracking-wide text-label-tertiary uppercase">
+          {/* Under the panel section's h2 ("History"), so each day is an h3. */}
+          <h3 className="pb-1 text-caption font-semibold tracking-wide text-label-tertiary uppercase">
             {day.label}
-          </h4>
+          </h3>
           <ol className="-mx-1 flex flex-col">
             {day.revisions.map((revision) => {
               const isLatest = revision.id === latestId;

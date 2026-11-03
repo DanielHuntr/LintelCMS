@@ -76,9 +76,12 @@ export function MediaUsageWidget() {
           ? t("dashboard.media.missingAlt", { count: imagesWithoutAltText })
           : t("dashboard.media.allDescribed")}
       </p>
-      <LinkButton to="/media" variant="tinted" size="small">
-        {t("dashboard.media.open")}
-      </LinkButton>
+      {/* Its own width, not the card's: a full-width pill read as a progress bar. */}
+      <div className="self-start">
+        <LinkButton to="/media" variant="tinted" size="small">
+          {t("dashboard.media.open")}
+        </LinkButton>
+      </div>
     </div>
   );
 }

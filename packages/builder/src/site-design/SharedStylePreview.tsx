@@ -7,8 +7,15 @@ import {
 } from "@lintel/builder-model";
 import { useSiteDesign } from "./site-design-context.js";
 
-/** A value as the builder's own page can draw it: tokens and variables become their values. */
-function previewValue(value: string | undefined, variables: readonly DesignVariable[]) {
+/**
+ * A value as the builder's own page can draw it: tokens and variables become their values,
+ * the site's theme first, so the tile shows the site's brand and not the default theme.
+ */
+function previewValue(
+  value: string | undefined,
+  variables: readonly DesignVariable[],
+  themeValues: ReadonlyMap<string, string> | undefined,
+) {
   if (!value) return undefined;
   const tokens = [
     ...designTokens,
@@ -16,14 +23,16 @@ function previewValue(value: string | undefined, variables: readonly DesignVaria
     ...variablesAsTokens(variables, "size"),
     ...variablesAsTokens(variables, "font"),
   ];
-  return findTokenByValue(value, tokens)?.fallback ?? (value.includes("var(") ? undefined : value);
+  const token = findTokenByValue(value, tokens);
+  if (token) return themeValues?.get(token.name) ?? token.fallback;
+  return value.includes("var(") ? undefined : value;
 }
 
 /** A small tile drawn with a shared style's colours, corners and border: "Aa" on its fill. */
 export function SharedStylePreview({ sharedStyle }: { sharedStyle: SharedStyle }) {
-  const { design } = useSiteDesign();
+  const { design, themeValues } = useSiteDesign();
   const base = sharedStyle.styles.base;
-  const read = (value: string | undefined) => previewValue(value, design.variables);
+  const read = (value: string | undefined) => previewValue(value, design.variables, themeValues);
   const background = read(base.backgroundColor);
   return (
     <span

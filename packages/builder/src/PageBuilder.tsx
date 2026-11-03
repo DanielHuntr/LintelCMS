@@ -102,6 +102,7 @@ import { selectedWords, SelectedWordsBar } from "./inline-text/SelectedWordsBar.
 import { toggleChange } from "./inline-text/markToggles.js";
 import type { FileUploader } from "./style-panel/design-tools.js";
 import { SiteDesignContext } from "./site-design/site-design-context.js";
+import { themeTokenValues } from "./site-design/theme-token-values.js";
 import { GuidedTour } from "./tour/GuidedTour.js";
 import { useTips } from "./tour/useTips.js";
 import { Tabs } from "./ui/controls.js";
@@ -324,9 +325,14 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     [blocks.library, blocks.pictures, blocks.renderedBlocks],
   );
   const siteDesign = props.siteDesign?.value ?? emptySiteDesign;
+  const themeValues = useMemo(
+    () =>
+      themeTokenValues(props.site?.stylesheet ?? props.themeStylesheet ?? defaultThemeStylesheet),
+    [props.site?.stylesheet, props.themeStylesheet],
+  );
   const siteDesignTools = useMemo(
-    () => ({ design: siteDesign, change: props.siteDesign?.onChange }),
-    [siteDesign, props.siteDesign?.onChange],
+    () => ({ design: siteDesign, change: props.siteDesign?.onChange, themeValues }),
+    [siteDesign, props.siteDesign?.onChange, themeValues],
   );
   const sharedStyles = useMemo(() => sharedStylesById(siteDesign), [siteDesign]);
   const rendered = useMemo(

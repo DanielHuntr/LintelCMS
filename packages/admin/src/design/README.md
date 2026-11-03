@@ -104,8 +104,9 @@ Chevrons and arrows mirror on their own (see the end of `styles.css`).
 | `Avatar.tsx`           | A person's picture, or their initials on the accent colour                                                                                 |
 
 Helpers: `suggestEmailCorrection.ts` (the typo check behind EmailField: popular domains and
-edit distance, never blocking) and `radioGroupKeys.ts` (the arrow-key rules every radio group
-shares).
+edit distance, never blocking), `radioGroupKeys.ts` (the arrow-key rules every radio group
+shares) and `inertOutside.ts` (makes the rest of the page inert while a panel acts as a modal
+dialog, as the help panel does on a phone).
 
 ## Page widths
 

@@ -77,3 +77,27 @@ export function addWidget(
   if (layout.some((placement) => placement.widget === widget.fullId)) return [...layout];
   return [...layout, { widget: widget.fullId, size: widget.defaultSize }];
 }
+
+/** How many of the grid's six columns each size takes, once there is room for columns. */
+export const sizeColumnCount: Record<WidgetSize, number> = { small: 2, medium: 3, large: 6 };
+
+/**
+ * How many columns each widget takes once the grid has six. The last widget in each row
+ * stretches over the columns left at its end, so rows don't end in a gap
+ * ("Updates" and "Sales" fill the row together).
+ */
+export function columnSpans(sizes: readonly WidgetSize[]): number[] {
+  const spans = sizes.map((size) => sizeColumnCount[size]);
+  let used = 0;
+  spans.forEach((span, index) => {
+    if (used + span > 6) used = 0;
+    used += span;
+    const next = spans[index + 1];
+    const rowEnds = next === undefined || used + next > 6;
+    if (rowEnds) {
+      spans[index] = span + (6 - used);
+      used = 0;
+    }
+  });
+  return spans;
+}

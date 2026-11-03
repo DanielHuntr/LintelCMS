@@ -10,6 +10,7 @@ a page is drawn with them is in `@lintel/builder-model`'s `site-design/` folder.
 | `site-design-context.tsx` | The context, the site's variables as tokens, and small design edits |
 | `SharedStyleBar.tsx`      | The top of Style: use, make, rename or detach a shared style        |
 | `SharedStylePreview.tsx`  | A small "Aa" tile drawn with a shared style's colours and border    |
+| `theme-token-values.ts`   | The site's theme values by token name, so previews show its brand   |
 | `TagStyleEditor.tsx`      | All headings, All links and the like: the style controls for a kind |
 | `SiteStylesPanel.tsx`     | Site styles: the site's colours, sizes, fonts and shared styles     |
 

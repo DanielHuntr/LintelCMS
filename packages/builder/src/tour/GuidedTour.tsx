@@ -2,7 +2,7 @@ import { X } from "lucide-react";
 import { type KeyboardEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { classNames } from "../ui/classNames.js";
-import { keepFocusInside, useReturnFocus } from "../ui/focus-trap.js";
+import { keepFocusInside } from "../ui/focus-trap.js";
 import { type Box, boxAround, placeCard, tourSteps } from "./tour-steps.js";
 
 interface GuidedTourProps {
@@ -41,7 +41,17 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
   const title = useRef<HTMLHeadingElement>(null);
   const step = steps[index] ?? steps[0]!;
   const isLast = index === steps.length - 1;
-  useReturnFocus(true);
+  // Focus goes back where it was. The tour usually opens with the builder, while nothing has
+  // focus (the body); then it goes to the Insert tab, where the tour starts, rather than
+  // being dropped (LINTEL-A11Y-035).
+  useEffect(() => {
+    const before = document.activeElement;
+    return () => {
+      const hadPlace =
+        before instanceof HTMLElement && before !== document.body && before.isConnected;
+      (hadPlace ? before : document.getElementById("lintel-left-tab-insert"))?.focus();
+    };
+  }, []);
 
   useLayoutEffect(() => {
     const update = () => setTarget(measure(step.targets));

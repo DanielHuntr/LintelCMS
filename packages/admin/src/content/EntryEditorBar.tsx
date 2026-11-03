@@ -76,7 +76,9 @@ export function EntryEditorBar({
   ];
 
   return (
-    <div className="sticky top-0 z-20 -mt-14 -me-(--page-gutter) -ml-(--page-gutter) mb-8 flex h-16 items-center gap-3 bg-background/80 pt-2 pe-(--page-gutter) pl-(--page-gutter) backdrop-blur-xl backdrop-saturate-150 md:-me-16 md:pe-16">
+    // Below md the bar also covers the strip with the fixed menu and help buttons, and sits
+    // under them (z-10), so scrolled content never shows through and the buttons stay usable.
+    <div className="sticky top-0 z-20 -mt-14 -me-(--page-gutter) -ml-(--page-gutter) mb-8 flex h-16 items-center gap-3 bg-background/80 pt-2 pe-(--page-gutter) pl-(--page-gutter) backdrop-blur-xl backdrop-saturate-150 max-md:z-10 max-md:-mt-26 max-md:h-28 max-md:pt-14 md:-me-16 md:pe-16">
       {breadcrumbs}
 
       {/* Below 400px wide the buttons sit closer, so the bar fits a 320px screen (LINTEL-A11Y-003). */}

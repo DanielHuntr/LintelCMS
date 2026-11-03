@@ -68,7 +68,14 @@ describe("when the pointer is over an element", () => {
       { effect: "cursor-word", params: { text: "View" } },
     ]);
 
-    await user.click(within(fields).getByRole("switch", { name: "Show a picture when hovered" }));
+    // The shared switch control, not a native checkbox (LINTEL-A11Y-038).
+    const pictureSwitch = within(fields).getByRole("switch", {
+      name: "Show a picture when hovered",
+    });
+    expect(pictureSwitch.tagName).toBe("BUTTON");
+    expect(pictureSwitch).toHaveAttribute("aria-checked", "false");
+    await user.click(pictureSwitch);
+    expect(pictureSwitch).toHaveAttribute("aria-checked", "true");
     await user.click(within(fields).getByRole("button", { name: "Choose a picture" }));
     expect(project()?.effects?.at(-1)).toEqual({
       effect: "hover-picture",

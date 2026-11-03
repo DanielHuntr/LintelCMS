@@ -27,7 +27,7 @@ import {
 import { drawsProps, type RenderMode } from "../component-registry.js";
 import { cx } from "./behaviour-types.js";
 import { findSiteIcon } from "./icon-set.js";
-import { openStreetMapAddresses, videoEmbed } from "./media-addresses.js";
+import { inSentence, openStreetMapAddresses, videoEmbed } from "./media-addresses.js";
 
 /**
  * Media elements. Nothing from another site loads until a visitor asks for it: videos,
@@ -53,6 +53,7 @@ function ConsentFrame({
   service,
   linkUrl,
   linkLabel,
+  verb = "Load",
   mode,
   children,
 }: {
@@ -62,6 +63,8 @@ function ConsentFrame({
   service: ConsentService | null;
   linkUrl: string;
   linkLabel: string;
+  /** "Play" for videos; "Load" for maps and other embeds. */
+  verb?: "Play" | "Load";
   mode: RenderMode;
   children?: ReactNode;
 }) {
@@ -77,7 +80,9 @@ function ConsentFrame({
       <div className="lintel-consent__notice">
         <button type="button" className="lintel-consent__load lintel-button">
           <SiteIcon name="play" className="lintel-consent__icon" />
-          <span>Load {frameTitle}</span>
+          <span>
+            {verb} {inSentence(frameTitle)}
+          </span>
         </button>
         <p className="lintel-consent__text">
           This comes from {provider}, which may set cookies.{" "}
@@ -128,6 +133,7 @@ const Video = drawsProps(videoComponent, ({ props, attributes, mode }) => {
       <ConsentFrame
         frameUrl={embed.embedUrl}
         frameTitle={props.title}
+        verb="Play"
         provider={embed.provider === "youtube" ? "YouTube" : "Vimeo"}
         service={consentServiceForVideo(embed.provider)}
         linkUrl={embed.watchUrl}

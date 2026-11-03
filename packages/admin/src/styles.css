@@ -79,12 +79,12 @@
   --color-separator: #d9d4ca;
   --color-label: #1f1d1a;
   --color-label-secondary: #67625a;
-  --color-label-tertiary: #8f897f;
+  --color-label-tertiary: #6b655c;
   --color-accent: #1f1d1a;
   --color-accent-fill: #1f1d1a;
   --color-accent-fill-hover: #000000;
   --color-on-accent: #fffefb;
-  --color-success: #248a3d;
+  --color-success: #1b6c2f;
   --color-warning: #b25000;
   --color-danger: #d70015;
   --color-scrim: rgb(0 0 0 / 0.25);
@@ -122,7 +122,7 @@
     --color-separator: rgb(80 70 50 / 0.16);
     --color-label: #1f1d1a;
     --color-label-secondary: #67625a;
-    --color-label-tertiary: #8f897f;
+    --color-label-tertiary: #6b655c;
     /*
      * Lintel ink (#1F1D1A): buttons, selection and text links (links are underlined, since
      * ink text alone doesn't look clickable). Paper on ink is about 16:1.
@@ -132,7 +132,7 @@
     /* Filled buttons on hover: a step further from their text, so hovering never fades it. */
     --color-accent-fill-hover: #000000;
     --color-on-accent: #fffefb;
-    --color-success: #248a3d;
+    --color-success: #1b6c2f;
     --color-warning: #b25000;
     --color-danger: #d70015;
     /* The dimmed layer behind dialogs and sheets. */
@@ -152,7 +152,7 @@
       --color-separator: rgb(120 112 100 / 0.5);
       --color-label: #f3efe8;
       --color-label-secondary: #b0a99f;
-      --color-label-tertiary: #78726a;
+      --color-label-tertiary: #9d978d;
       /* Ink turns to paper: paper buttons with ink text. */
       --color-accent: #f3efe8;
       --color-accent-fill: #f3efe8;
@@ -195,21 +195,24 @@
   box-shadow: 0 0 0 0.5px var(--color-separator);
 }
 
-/* The macOS-style focus ring: a soft halo in the accent colour. */
+/*
+ * The macOS-style focus ring: a halo in the accent colour, strong enough to stand 3:1 against
+ * the page and cards in both schemes (WCAG 1.4.11; colourContrast.test.ts checks it).
+ */
 @utility focus-ring {
-  outline: 3px solid color-mix(in srgb, var(--color-accent) 45%, transparent);
+  outline: 3px solid color-mix(in srgb, var(--color-accent) 60%, transparent);
   outline-offset: 1px;
 }
 
 /* The focus ring for a field with an error, so the two rings don't mix into purple. */
 @utility focus-ring-danger {
-  outline: 3px solid color-mix(in srgb, var(--color-danger) 40%, transparent);
+  outline: 3px solid color-mix(in srgb, var(--color-danger) 80%, transparent);
   outline-offset: 0;
 }
 
 /* The same ring drawn inside the element, for rows clipped by a rounded list. */
 @utility focus-ring-inset {
-  outline: 3px solid color-mix(in srgb, var(--color-accent) 45%, transparent);
+  outline: 3px solid color-mix(in srgb, var(--color-accent) 60%, transparent);
   outline-offset: -3px;
 }
 

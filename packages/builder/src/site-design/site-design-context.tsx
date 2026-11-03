@@ -18,6 +18,8 @@ import { createContext, useContext } from "react";
 export interface SiteDesignTools {
   design: SiteDesign;
   change?: (next: SiteDesign) => void;
+  /** The site's theme values by token name (`lintel-color-accent`), for previews. */
+  themeValues?: ReadonlyMap<string, string>;
 }
 
 export const SiteDesignContext = createContext<SiteDesignTools>({ design: emptySiteDesign });

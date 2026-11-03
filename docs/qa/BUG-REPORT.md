@@ -790,3 +790,29 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 
 **Tooling found on the way (fixed):** with `core.autocrlf=true` and no `.gitattributes`, a Windows checkout failed `format:check` on 2,617 files and seven test files; the docs test built page addresses with backslashes. A `.gitattributes` now keeps LF everywhere, and the docs test uses forward slashes.
+
+## UI and accessibility sweep (3 November 2026)
+
+Found by the UI and accessibility sweep (desktop and 390px, light and dark, keyboard and screen reader names). All fixed on `fix/a11y-sweep`; see "UI and accessibility sweep fixes (3 November 2026)" in `FIX-LOG-ux.md`. The motion panel's moment colours were also raised; they wait for Daniel and aren't filed here.
+
+| ID              | Severity | Status | Summary                                                                                                        |
+| --------------- | -------- | ------ | -------------------------------------------------------------------------------------------------------------- |
+| LINTEL-A11Y-020 | P2       | Fixed  | At 390px, once scrolled, the entry editor's sticky bar covers the menu and help buttons                        |
+| LINTEL-A11Y-021 | P2       | Fixed  | The form editor is 607px wide at 390px, so the whole screen scrolls sideways                                   |
+| LINTEL-A11Y-022 | P2       | Fixed  | Tertiary text is 3.16:1 (light) and 4.0:1 (dark); green badge text is 3.38:1 on its tint                       |
+| LINTEL-A11Y-023 | P2       | Fixed  | The phone menu isn't modal: Tab reaches the skip link, menu button, help and notifications behind it           |
+| LINTEL-A11Y-024 | P2       | Fixed  | Links in the video and map consent notice take the site's link colour, 2.65:1 on the dark notice               |
+| LINTEL-A11Y-025 | P2       | Fixed  | The admin's focus ring is about 2.8:1 against the page in light mode (3:1 needed)                              |
+| LINTEL-A11Y-026 | P3       | Fixed  | Builder: shared style tiles show the default violet, not the site's own brand colour                           |
+| LINTEL-A11Y-027 | P3       | Fixed  | The Studio template's home page trips its own "That's a lot of effects" warning as soon as one effect is added |
+| LINTEL-A11Y-028 | P3       | Fixed  | The help panel's pictures show the old admin (blue and violet, old sidebar)                                    |
+| LINTEL-A11Y-029 | P2       | Fixed  | Builder: Tab goes into the canvas and stops on the page's links, which do nothing there                        |
+| LINTEL-A11Y-030 | P2       | Fixed  | At 390px the help panel covers the page but isn't modal; Escape only works with focus inside it                |
+| LINTEL-A11Y-031 | P3       | Fixed  | "Create something new" opens with focus on the close button, not the Name field                                |
+| LINTEL-A11Y-032 | P3       | Fixed  | Dashboard: "Open the media library" is a full-width pill; a row of widgets can end in a gap                    |
+| LINTEL-A11Y-033 | P3       | Fixed  | The automatic site header doesn't line up with full-width pages, and "Shop" wraps under the name at 390px      |
+| LINTEL-A11Y-034 | P3       | Fixed  | The video consent button says "Load Video" (title case, and "load" for a video)                                |
+| LINTEL-A11Y-035 | P3       | Fixed  | Builder: closing the tour with Escape drops focus on the page body                                             |
+| LINTEL-A11Y-036 | P3       | Fixed  | Grouped list names (Settings, Users and the rest) aren't headings; History's "Today" is an h4 under an h2      |
+| LINTEL-A11Y-037 | P3       | Fixed  | Sign in: the error appears under "Sign in with a passkey", away from the fields and the Sign in button         |
+| LINTEL-A11Y-038 | P3       | Fixed  | Builder: "Show a picture when hovered" is a native checkbox, unlike every other on/off control                 |

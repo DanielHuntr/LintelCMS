@@ -133,7 +133,8 @@ const media = `
 :where(.lintel-consent__poster) { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; object-fit: cover; opacity: 0.6; }
 :where(.lintel-consent__notice) { position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--lintel-space-2); padding: var(--lintel-space-4); text-align: center; }
 :where(.lintel-consent__text) { font-size: 0.875rem; max-inline-size: 28rem; }
-:where(.lintel-consent__text a) { color: inherit; }
+/* Two classes, not :where(): the site's own link colour (a { … }) must not win on the notice. */
+.lintel-consent .lintel-consent__text a { color: inherit; text-decoration: underline; text-underline-offset: 0.18em; }
 :where(.lintel-consent__icon) { inline-size: 1.25rem; block-size: 1.25rem; }
 :where(.lintel-consent iframe, .lintel-embed iframe) { inline-size: 100%; block-size: 100%; min-block-size: inherit; border: 0; }
 :where(.lintel-embed) { inline-size: 100%; min-block-size: 16rem; border-radius: var(--lintel-radius-medium); overflow: hidden; }

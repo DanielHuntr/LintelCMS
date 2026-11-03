@@ -90,47 +90,47 @@ export function SignInForm({
   }
 
   return (
-    <>
-      <form onSubmit={handleSubmit} className="mt-10 flex w-full flex-col gap-6">
-        <EmailField
-          fieldSize="large"
-          label={t("signIn.email")}
-          name="email"
-          value={email}
-          onValueChange={setEmail}
-          autoComplete="username webauthn"
-          required
-        />
-        <PasswordField
-          fieldSize="large"
-          label={t("signIn.password")}
-          name="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          autoComplete="current-password"
-          required
-        />
-        <Button type="submit" size="extra-large" fullWidth className="mt-2" disabled={isSigningIn}>
-          {isSigningIn ? t("signIn.submitting") : t("signIn.submit")}
-        </Button>
-        {signInWithPasskey && (
-          <Button
-            type="button"
-            variant="tinted"
-            size="extra-large"
-            fullWidth
-            icon={<Fingerprint aria-hidden="true" strokeWidth={2} />}
-            onClick={() => void handlePasskey()}
-          >
-            {t("signIn.withPasskey")}
-          </Button>
-        )}
-      </form>
-
-      {/* Always rendered, so screen readers are already listening when a message arrives. */}
-      <p role="status" className="mt-5 text-footnote text-danger empty:mt-0">
+    <form onSubmit={handleSubmit} className="mt-10 flex w-full flex-col gap-6">
+      <EmailField
+        fieldSize="large"
+        label={t("signIn.email")}
+        name="email"
+        value={email}
+        onValueChange={setEmail}
+        autoComplete="username webauthn"
+        required
+      />
+      <PasswordField
+        fieldSize="large"
+        label={t("signIn.password")}
+        name="password"
+        value={password}
+        onChange={(event) => setPassword(event.target.value)}
+        autoComplete="current-password"
+        required
+      />
+      {/*
+        By the fields, above Sign in, where people look (LINTEL-A11Y-037). Always rendered,
+        so screen readers are already listening when a message arrives; empty, it takes no room.
+      */}
+      <p role="status" className="text-footnote text-danger empty:-mt-6">
         {errorMessage}
       </p>
-    </>
+      <Button type="submit" size="extra-large" fullWidth className="mt-2" disabled={isSigningIn}>
+        {isSigningIn ? t("signIn.submitting") : t("signIn.submit")}
+      </Button>
+      {signInWithPasskey && (
+        <Button
+          type="button"
+          variant="tinted"
+          size="extra-large"
+          fullWidth
+          icon={<Fingerprint aria-hidden="true" strokeWidth={2} />}
+          onClick={() => void handlePasskey()}
+        >
+          {t("signIn.withPasskey")}
+        </Button>
+      )}
+    </form>
   );
 }
