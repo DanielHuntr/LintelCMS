@@ -77,7 +77,9 @@ await runWithFriendlyErrors(async () => {
 
   // The website reads through the API server, so it listens after it and closes first.
   // Fastify only accepts hooks before it starts listening, so the close hook is added here.
-  const site = config.SITE_ENABLED ? buildSiteServer({ api: server, logger: true }) : null;
+  const site = config.SITE_ENABLED
+    ? buildSiteServer({ api: server, logger: true, trustProxy: config.TRUST_PROXY })
+    : null;
   if (site) {
     server.addHook("preClose", () => site.close());
   }

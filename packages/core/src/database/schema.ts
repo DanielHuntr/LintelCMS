@@ -51,3 +51,8 @@ export {
 } from "../wordpress-import/wordpress-import.table.js";
 export { siteImportsTable, siteImportItemsTable } from "../importers/site-import.table.js";
 export { siteFontsTable } from "../site-fonts/site-fonts.table.js";
+export {
+  analyticsEventsTable,
+  analyticsDailyTable,
+  analyticsSaltsTable,
+} from "../analytics/analytics.table.js";

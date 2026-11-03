@@ -204,6 +204,13 @@
       "when": 1793713867650,
       "tag": "0028_site_fonts",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1793723503380,
+      "tag": "0030_analytics",
+      "breakpoints": true
     }
   ]
 }

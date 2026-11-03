@@ -1131,3 +1131,26 @@ Decision record: `docs/decisions/0039-navigation-and-footer-sections.md`. No mig
 
 - A new site under a path prefix lost the automatic header's prefixed home link once it started with its own navigation (`website-sites.test.ts` expected `lintel-header__brand`). The Site logo already links to the prefixed home; links typed into the site's navigation and footer ("/work") are now drawn with the site's path prefix and language too. New test: "keeps the path prefix in the links of a site's own navigation and footer".
 - Studio, Atelier and Folio no longer repeat a header and footer on each page. Each brings its own shared navigation and footer (`siteSections` on the starter site), in its own look: Folio's navigation keeps the Lisbon clock (its menu now follows the site's menu, its name the site's name), Studio's footer keeps the Rotterdam clock and the cobalt hover, Atelier's footer is the big "Wrenfold" one. Studio and Atelier, which had only a footer, gain a navigation in their type (Studio's mono captions, Atelier's serif name and small caps). Applying a template with its look replaces the site's sections with the template's. Tests: `studio.test.ts`, `atelier.test.ts`, `starter-sites.test.ts` (Folio) and core `site-sections.test.ts` ("uses a starter template's own navigation and footer").
+
+## Built-in visitor counts
+
+**Asked for:** visitor counts built into Lintel, private by design and with no third party: a calm Visitors screen, a dashboard card, per-page figures in the editor and the builder, goals from forms and the shop, and a way for strict sites to count only after consent.
+
+**Now:**
+
+- **Visitors plugin** (`analytics`, Build → Features), on for new sites. Published pages get a small beacon while it is on; it keeps nothing in the browser. Views (path without query), where people came from (referring domain or `utm_source`), `utm_campaign`, phone/tablet/computer, country from the browser's language, time on page (one "leave" event), links to other sites and named events (`lintelAnalytics.track("name")`).
+- **Privacy:** no cookies or storage; the address and browser only make a daily hash with a random salt that is deleted each day, so visitors can't be identified or followed from one day to the next. Do Not Track, Global Privacy Control and robots aren't counted; reloads and floods are limited. Single visits are kept 30 days by default (a setting), daily totals for good.
+- **Goals:** forms sent and orders paid, recorded by the server from `form.submitted` and `order.paid`; conversion rate is goals per 100 visitors.
+- **Visitors screen:** Today / 7 days / 30 days / Custom, four figures compared with the period before in words ("Up 28% on the previous period"), visitors each day as bars or a table, top pages ("Home page" for `/`), where people came from ("Typed in or bookmarked"), devices, countries, goals, and campaigns, events and outside links only when there are any. Export as CSV. Settings: "Count visitors only after they accept" and how long single visits are kept.
+- **Elsewhere:** a Visitors card on new dashboards, a Visitors panel in the entry editor (the page's last 7 days), and "128 visitors this week" in the builder's toolbar.
+- **Permission** `analytics:read`: Owners, Admins and Editors.
+- **Consent hook:** with the strict setting the beacon waits for `window.lintelConsent.allows("plugin:analytics")`, the `lintel:consent` event listing `plugin:analytics`, or `lintelAnalytics.consent()`.
+- Also: the website now passes the visitor's real address to its forms and shop APIs (so per-address limits and the visitor hash tell visitors apart), and follows `TRUST_PROXY` like the API.
+
+Decision record: `docs/decisions/0042-built-in-visitor-counts.md`. Migration: `0030_analytics` (three tables, each with `tenant_id` and `site_id` where it applies).
+
+**Tests:** core `analytics/analytics.test.ts` (16: off means 404, the script, counting every dimension, nothing identifying stored, DNT/GPC/robots, no linking across days and old salts deleted, form and order goals with conversion rate, no goals while off, comparison and custom ranges, retention keeps daily totals, permissions, CSV without formulas, an entry's page, the beacon on public pages only and with the consent flag, counting through the website's address per visitor, the experiments seam), `analytics/visitor-signals.test.ts` (14); updated plugin, roles and setup tests for the new plugin. Admin `analytics/Visitors.test.tsx` (6).
+
+**Checked in a browser** (Chromium): real visits to the published site from four browsers (desktop, phone, tablet; referrers, a campaign link, three languages) showed up on the Visitors screen; a click to another page sent the time on page.
+
+**Screenshots** (in `screenshots/analytics/`): `visitors-desktop-light`, `visitors-desktop-dark`, `visitors-390-light`.

@@ -51,6 +51,7 @@ export const builtInRoles: readonly BuiltInRole[] = [
       "orders:*",
       "forms:*",
       "automations:*",
+      "analytics:*",
     ],
   },
   {
@@ -64,6 +65,8 @@ export const builtInRoles: readonly BuiltInRole[] = [
       "terms:*",
       "globals:read",
       "globals:update",
+      // How many people read what they write (the Visitors plugin).
+      "analytics:read",
       ...readContentModel,
     ],
   },

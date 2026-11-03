@@ -7,12 +7,24 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
  *
  *   ALL /_lintel/api/shop/*   -> /delivery/shop/*
  *   ALL /_lintel/api/forms/*  -> /delivery/forms/*
+ *   ALL /_lintel/api/analytics/*  -> /delivery/analytics/*  (the Visitors plugin's beacon)
  *
  * Requests are passed to the API inside the process (`inject`) with their body, content
- * type and the visitor's address, and the answers come back as they are, uncached.
+ * type, privacy signals and the visitor's address (as the request's own, so per-address
+ * limits count each visitor apart), and the answers come back as they are, uncached, except
+ * the beacon script, which keeps its own caching.
  */
 
-const forwardedHeaders = ["content-type", "accept", "user-agent", "accept-language"] as const;
+const forwardedHeaders = [
+  "content-type",
+  "accept",
+  "user-agent",
+  "accept-language",
+  "dnt",
+  "sec-gpc",
+] as const;
+
+type Area = "shop" | "forms" | "analytics";
 
 export async function siteApiRoutes(
   server: FastifyInstance,
@@ -26,7 +38,7 @@ export async function siteApiRoutes(
     (_request, body, done) => done(null, body),
   );
 
-  const forward = async (request: FastifyRequest, reply: FastifyReply, area: "shop" | "forms") => {
+  const forward = async (request: FastifyRequest, reply: FastifyReply, area: Area) => {
     const rest = request.url.slice(`/_lintel/api/${area}`.length);
     const headers: Record<string, string> = { "x-forwarded-for": request.ip };
     for (const name of forwardedHeaders) {
@@ -37,6 +49,7 @@ export async function siteApiRoutes(
       method: request.method as "GET",
       url: `${options.apiPrefix ?? ""}/delivery/${area}${rest}`,
       headers,
+      remoteAddress: request.ip,
       payload: Buffer.isBuffer(request.body) ? request.body : undefined,
     });
     const passed = ["content-type", "location"] as const;
@@ -44,13 +57,15 @@ export async function siteApiRoutes(
       const value = response.headers[name];
       if (typeof value === "string") reply.header(name, value);
     }
+    const cacheControl = response.headers["cache-control"];
+    const keepsCaching = area === "analytics" && typeof cacheControl === "string";
     return reply
       .code(response.statusCode)
-      .header("cache-control", "no-store")
+      .header("cache-control", keepsCaching ? cacheControl : "no-store")
       .send(response.rawPayload);
   };
 
-  for (const area of ["shop", "forms"] as const) {
+  for (const area of ["shop", "forms", "analytics"] as const) {
     server.all(`/_lintel/api/${area}`, (request, reply) => forward(request, reply, area));
     server.all(`/_lintel/api/${area}/*`, (request, reply) => forward(request, reply, area));
   }

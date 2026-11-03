@@ -2,7 +2,7 @@ import type { PluginId } from "../plugins/plugins.registry.js";
 import type { SiteType } from "../settings/settings.schema.js";
 
 /**
- * The plugins each kind of site starts with. Forms and SEO tools are useful to every site, so
+ * The plugins each kind of site starts with. Forms, SEO tools and Visitors are useful to every site, so
  * they are always on; the kind of site adds its own extras, so a blog never shows an empty
  * shop. Everything can be switched on or off later in Build → Features.
  *
@@ -20,8 +20,10 @@ export const builtInFeatures: readonly { id: PluginId; name: string }[] = [
   { id: "automations", name: "Automations" },
   { id: "seo", name: "SEO tools" },
   { id: "free-photos", name: "Free photos" },
+  { id: "analytics", name: "Visitors" },
 ];
-export const pluginsForEverySite: readonly PluginId[] = ["forms", "seo"];
+/** Visitors counts without cookies or anything personal, so it needs no consent to be on. */
+export const pluginsForEverySite: readonly PluginId[] = ["forms", "seo", "analytics"];
 
 const extrasBySiteType: Record<SiteType, readonly PluginId[]> = {
   business: [],

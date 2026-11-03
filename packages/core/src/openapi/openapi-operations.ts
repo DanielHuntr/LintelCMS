@@ -1,3 +1,4 @@
+import { collectQuerySchema, collectRequestSchema } from "../analytics/analytics.schema.js";
 import { z } from "zod";
 import { storefrontOperations } from "../commerce/storefront/storefront.openapi.js";
 import { blueprintHandleParamsSchema, blueprintSchema } from "../blueprints/blueprints.schema.js";
@@ -689,6 +690,32 @@ export const openApiOperations: Operation[] = [
       },
       403: { description: "The form isn't taking submissions." },
       429: { description: "Too many submissions from one address." },
+    },
+  },
+  {
+    method: "get",
+    path: "/delivery/analytics/script.js",
+    tag: "Delivery",
+    summary: "The Visitors beacon",
+    description:
+      'Add `<script defer src=".../delivery/analytics/script.js" data-site="main" data-endpoint=".../delivery/analytics/collect"></script>` to count visitors without cookies. 404 while Visitors is switched off.',
+    access: "public",
+    responses: { 200: { description: "The script.", contentType: "text/javascript" } },
+  },
+  {
+    method: "post",
+    path: "/delivery/analytics/collect",
+    tag: "Delivery",
+    summary: "Count one visitor event",
+    description:
+      "Sent by the beacon as JSON or plain text: `{ kind, path, referrer?, width?, durationMs?, name?, source?, campaign?, host? }`. Nothing is counted for Do Not Track, Global Privacy Control or robots. Rate limited to 120 a minute per address.",
+    access: "public",
+    query: collectQuerySchema,
+    body: collectRequestSchema,
+    responses: {
+      204: { description: "Received (counted or not)." },
+      400: { description: "The event isn't shaped right." },
+      429: { description: "Too many events from one address." },
     },
   },
   ...storefrontOperations,

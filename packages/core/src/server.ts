@@ -34,6 +34,7 @@ import { revisionsRoutes } from "./entries/revisions.routes.js";
 import { scheduledEntriesRoutes } from "./entries/scheduled-entries.routes.js";
 import { fieldtypesRoutes } from "./fieldtypes/fieldtypes.routes.js";
 import { registerForms } from "./forms/register-forms.js";
+import { registerAnalytics } from "./analytics/register-analytics.js";
 import type { TurnstileVerifier } from "./forms/spam-protection.js";
 import { graphqlRoutes } from "./graphql/graphql.routes.js";
 import type { AssetExists, AssetLookup } from "./fieldtypes/image-assets.js";
@@ -412,6 +413,8 @@ export function buildServer(options: ServerOptions) {
     media,
     runScheduledJobs: options.commerce?.runScheduledJobs ?? options.runScheduledJobs ?? true,
   });
+  // The Visitors plugin's goals (from forms and the shop) and its timed jobs.
+  registerAnalytics(server, { runScheduledJobs: options.runScheduledJobs ?? true });
   // What the Free photos plugin's routes need; its routes are the plugin's own.
   registerFreePhotos(
     server,

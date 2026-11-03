@@ -50,6 +50,7 @@ import { useSiteSections } from "./useSiteSections.js";
 import { useBuilderMenus } from "../menus/builderMenus.js";
 import { InlineMenuEditor } from "../menus/InlineMenuEditor.js";
 import { useBuilderFonts } from "../site-fonts/useBuilderFonts.js";
+import { BuilderVisitorsLine } from "../analytics/BuilderVisitorsLine.js";
 
 /**
  * The canvas frame's scripts, served beside the admin (see vite.config.ts), because the
@@ -282,6 +283,7 @@ function PageDesigner({
                 )}
               </span>
             )}
+            <BuilderVisitorsLine entryId={saving.entry.id} />
             <span role="status" className="sr-only">
               {saving.justPublished ? t("pageDesign.publishedAnnouncement") : ""}
             </span>
