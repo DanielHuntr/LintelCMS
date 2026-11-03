@@ -1,3 +1,5 @@
+import { useEntryReviewState } from "../client-editing/clientEditing.queries.js";
+import { SendForReviewButton, SentBackNote } from "../client-editing/SendForReview.js";
 import {
   type CanvasSite,
   type FileUploader,
@@ -175,6 +177,10 @@ function PageDesigner({
   }, [builderData.data, builderMenus.data, photoCredits]);
   const canEditCode = useCan("builder:code");
   const canPublish = useCan("entries:publish");
+  // Clients change only the content their designer opened up (see src/client-editing).
+  const contentOnly = !useCan("builder:design");
+  const reviewState = useEntryReviewState(saving.entry.id);
+  const mustSendForReview = reviewState.data?.mustSendForReview === true;
   const collection = useCollection(collectionHandle);
   const viewPageSite = useViewPageSite();
   // The server's address knows the page's place in the tree ("/about/team").
@@ -254,6 +260,7 @@ function PageDesigner({
         onSelectionChange={experiments.select}
         title={title}
         canEditCode={canEditCode}
+        contentOnly={contentOnly}
         site={site}
         dataSources={dataSources}
         menuEditor={renderMenuEditor}
@@ -334,7 +341,15 @@ function PageDesigner({
                     {t("editor.viewPage")}
                   </ViewPageLink>
                 )}
-                {canPublish && (
+                {canPublish && mustSendForReview && reviewState.data && (
+                  <SendForReviewButton
+                    entryId={saving.entry.id}
+                    state={reviewState.data}
+                    beforeSending={saving.saveNow}
+                    look="toolbar"
+                  />
+                )}
+                {canPublish && !mustSendForReview && (
                   <button
                     type="button"
                     onClick={() => void saving.publish()}
@@ -361,6 +376,10 @@ function PageDesigner({
           {saving.errorMessage}
         </p>
       )}
+      <SentBackNote
+        state={reviewState.data}
+        className="fixed bottom-4 left-4 z-30 max-w-md shadow-float"
+      />
       {experiments.dialogs}
       <SitePartProblems problems={[siteDesign.problem, shared.problem]} />
       {imagePicker.dialog}

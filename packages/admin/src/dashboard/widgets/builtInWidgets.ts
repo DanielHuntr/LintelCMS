@@ -1,6 +1,7 @@
 import {
   ArrowUpCircle,
   CalendarClock,
+  ClipboardCheck,
   HardDrive,
   History,
   ListTodo,
@@ -8,6 +9,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { UpdatesWidget } from "../../updates/UpdatesWidget.js";
+import { WaitingForReviewWidget } from "../../client-editing/WaitingForReviewWidget.js";
 import { t } from "../../i18n/strings.js";
 import type { DashboardWidget } from "../../plugins/adminPlugin.js";
 import { MediaUsageWidget } from "./MediaUsageWidget.js";
@@ -58,6 +60,17 @@ export const builtInWidgets: readonly DashboardWidget[] = [
     component: NeedsAttentionWidget,
     defaultSize: "medium",
     permission: "entries:read",
+    onDefaultDashboard: true,
+  },
+  {
+    // Clients' changes to approve, while the site waits for approval (see src/client-editing).
+    id: "waiting-for-review",
+    title: t("clientEditing.widget.title"),
+    description: t("clientEditing.widget.description"),
+    icon: ClipboardCheck,
+    component: WaitingForReviewWidget,
+    defaultSize: "medium",
+    permission: "entries:publish",
     onDefaultDashboard: true,
   },
   {

@@ -176,6 +176,8 @@ export interface CollectionItems {
 export interface CollectionQuery {
   search?: string;
   status?: EntryStatus;
+  /** Only entries with clients' changes waiting for review (see src/client-editing). */
+  review?: "waiting";
   sort?: string;
   direction?: "asc" | "desc";
   page?: number;
