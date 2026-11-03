@@ -83,7 +83,20 @@ export async function ensureBuiltInRoles(database: DatabaseOrTransaction): Promi
 export async function listRoles(database: DatabaseOrTransaction): Promise<RoleResponse[]> {
   await ensureBuiltInRoles(database);
   const rows = await listRoleRows(database, DEFAULT_TENANT_ID);
-  return rows.map((row) => describeRole(row, row.memberCount));
+  // Built-in roles in their own order, then the site's own in the order they were made. They
+  // used to go by creation time alone, and the built-in ones, made within the same moment,
+  // could come out in any order.
+  const builtInOrder = (handle: string) => {
+    const index = builtInRoles.findIndex((role) => role.handle === handle);
+    return index === -1 ? builtInRoles.length : index;
+  };
+  const ordered = [...rows].sort(
+    (first, second) =>
+      builtInOrder(first.handle) - builtInOrder(second.handle) ||
+      first.createdAt.getTime() - second.createdAt.getTime() ||
+      first.name.localeCompare(second.name),
+  );
+  return ordered.map((row) => describeRole(row, row.memberCount));
 }
 
 export async function findRoleOrFail(

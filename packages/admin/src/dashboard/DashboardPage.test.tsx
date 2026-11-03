@@ -170,7 +170,7 @@ describe("the home dashboard", () => {
     expect(screen.queryByRole("button", { name: "Default for a role…" })).not.toBeInTheDocument();
   });
 
-  // LINTEL-UX-025: the button asked for "media:create", which no role has, so Authors (who
+  // LINTEL-UX-027: the button asked for "media:create", which no role has, so Authors (who
   // may upload) never saw it.
   it("offers Add images and files to people who may upload", async () => {
     serveDashboard();

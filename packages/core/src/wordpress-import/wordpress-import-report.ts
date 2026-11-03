@@ -30,6 +30,7 @@ export function buildReport(
     entriesWithHtml: [],
     renamedSlugs: [],
     redirectsSuggested: 0,
+    fieldsLeftOut: [],
     problems: [],
   };
 
@@ -68,6 +69,9 @@ function addDetails(report: WordPressImportReport, item: ReportedItem) {
       from: details.renamedFrom,
       to: details.renamedTo,
     });
+  }
+  if (Array.isArray(details.fieldsLeftOut) && details.fieldsLeftOut.length > 0) {
+    report.fieldsLeftOut.push({ title: titleOf(item), fields: details.fieldsLeftOut.map(String) });
   }
   if (details.redirected === true) {
     report.redirectsSuggested += 1;

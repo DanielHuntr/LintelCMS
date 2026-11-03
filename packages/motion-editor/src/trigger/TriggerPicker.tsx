@@ -64,6 +64,49 @@ function LeaveSelect({
   );
 }
 
+const snapChoices: Record<string, number[] | undefined> = {
+  none: undefined,
+  halves: [0, 0.5, 1],
+  thirds: [0, 1 / 3, 2 / 3, 1],
+  quarters: [0, 0.25, 0.5, 0.75, 1],
+};
+
+function snapChoiceOf(points: readonly number[] | undefined): string {
+  if (!points) return "none";
+  return (
+    Object.entries(snapChoices).find(
+      ([, choice]) => choice && choice.length === points.length,
+    )?.[0] ?? "none"
+  );
+}
+
+type BackUp = "stay" | "reverse" | "replay";
+
+/** "Scrolling back up past it", as the in-view trigger's actions per direction. */
+function backUpOf(trigger: Extract<Trigger, { type: "inView" }>): BackUp {
+  const actions = trigger.actions;
+  if (!actions) return "stay";
+  if (actions.leaveBack === "reverse") return "reverse";
+  if (actions.leaveBack === "reset") return "replay";
+  return "stay";
+}
+
+function withBackUp(
+  trigger: Extract<Trigger, { type: "inView" }>,
+  backUp: BackUp,
+): Extract<Trigger, { type: "inView" }> {
+  const rest = { ...trigger };
+  delete rest.actions;
+  if (backUp === "stay") return rest;
+  return {
+    ...rest,
+    actions:
+      backUp === "reverse"
+        ? { enter: "play", leave: "none", enterBack: "none", leaveBack: "reverse" }
+        : { enter: "restart", leave: "none", enterBack: "none", leaveBack: "reset" },
+  };
+}
+
 function TriggerOptions({ spec, onChange, onCommit }: TriggerPickerProps) {
   const t = useTranslate();
   const { trigger } = spec;
@@ -84,9 +127,23 @@ function TriggerOptions({ spec, onChange, onCommit }: TriggerPickerProps) {
             onChange={(threshold) => set({ ...trigger, threshold }, "threshold")}
             onCommit={onCommit}
           />
-          <LeaveSelect
-            value={trigger.onLeave}
-            onChange={(onLeave) => set({ ...trigger, onLeave })}
+          {trigger.actions ? (
+            <div />
+          ) : (
+            <LeaveSelect
+              value={trigger.onLeave}
+              onChange={(onLeave) => set({ ...trigger, onLeave })}
+            />
+          )}
+          <Select
+            label={t("motionEditor.trigger.backUp")}
+            value={backUpOf(trigger)}
+            onChange={(event) => set(withBackUp(trigger, event.target.value as BackUp))}
+            options={[
+              { value: "stay", label: t("motionEditor.trigger.backUpStay") },
+              { value: "reverse", label: t("motionEditor.trigger.backUpReverse") },
+              { value: "replay", label: t("motionEditor.trigger.backUpReplay") },
+            ]}
           />
         </div>
       );
@@ -132,6 +189,38 @@ function TriggerOptions({ spec, onChange, onCommit }: TriggerPickerProps) {
               />
             </>
           )}
+          <Slider
+            label={t("motionEditor.trigger.smooth")}
+            min={0}
+            max={2}
+            step={0.1}
+            value={trigger.smooth}
+            displayValue={
+              trigger.smooth === 0
+                ? t("motionEditor.trigger.smoothExact")
+                : t("motionEditor.trigger.smoothValue", { seconds: trigger.smooth.toFixed(1) })
+            }
+            minLabel={t("motionEditor.trigger.smoothExact")}
+            maxLabel={t("motionEditor.trigger.smoothSoft")}
+            onChange={(smooth) => set({ ...trigger, smooth }, "smooth")}
+            onCommit={onCommit}
+          />
+          <Select
+            label={t("motionEditor.trigger.snap")}
+            value={snapChoiceOf(trigger.snap)}
+            onChange={(event) => {
+              const points = snapChoices[event.target.value];
+              const rest = { ...trigger };
+              delete rest.snap;
+              set(points ? { ...rest, snap: points } : rest);
+            }}
+            options={[
+              { value: "none", label: t("motionEditor.trigger.snapNone") },
+              { value: "halves", label: t("motionEditor.trigger.snapHalves") },
+              { value: "thirds", label: t("motionEditor.trigger.snapThirds") },
+              { value: "quarters", label: t("motionEditor.trigger.snapQuarters") },
+            ]}
+          />
         </div>
       );
     case "hover":

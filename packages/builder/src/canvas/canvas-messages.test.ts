@@ -47,4 +47,11 @@ describe("messages from the canvas about dragging from Insert", () => {
     expect(readFrameMessage({ type: "moveOver", chain: [] })).toBeNull();
     expect(readFrameMessage({ type: "moveDrop" })).toBeNull();
   });
+
+  it("reads a moved scroll scene line, and nothing out of range", () => {
+    const moved = { type: "sceneMarker", which: "end", viewport: 0.4 };
+    expect(readFrameMessage(moved)).toEqual(moved);
+    expect(readFrameMessage({ type: "sceneMarker", which: "middle", viewport: 0.4 })).toBeNull();
+    expect(readFrameMessage({ type: "sceneMarker", which: "start", viewport: 7 })).toBeNull();
+  });
 });

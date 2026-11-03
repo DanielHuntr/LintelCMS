@@ -38,3 +38,8 @@ Link fields (and each address in a list of links) offer **Choose a page…** whe
 gives `PageBuilder` a `pickPage` (`page-picker.ts`, read through context rather than passed
 down every panel). It fills in the page's address, such as `/about`, the form a typed page
 link takes; in a list of links it fills in the words too when there are none.
+
+## The site's blocks
+
+Insert lists the site's own blocks first under "Your site's blocks", and a selected instance
+shows its property form instead of these tabs. See `../blocks/README.md`.

@@ -14,6 +14,7 @@ import { t, type StringKey } from "../i18n/strings.js";
 import { useDryRun, useMappingChoices, useSaveMapping } from "./dataTools.queries.js";
 import type {
   MappingChoices,
+  WordPressCustomField,
   WordPressFieldMapping,
   WordPressImportMapping,
 } from "./wordpressImport.api.js";
@@ -74,7 +75,14 @@ function MappingForm({
   const [mapping, setMapping] = useState<WordPressImportMapping>({
     ...choices.suggested,
     mediaHosts: choices.suggested.mediaHosts ?? [],
+    postFields: choices.suggested.postFields ?? {},
+    pageFields: choices.suggested.pageFields ?? {},
+    menus: choices.suggested.menus ?? true,
+    products: choices.suggested.products ?? "import",
   });
+  const customFields = choices.import.found.customFields ?? { post: [], page: [] };
+  const foundMenus = choices.import.found.menus ?? 0;
+  const foundProducts = choices.import.found.products ?? 0;
   const [mediaHostsText, setMediaHostsText] = useState(mapping.mediaHosts.join(", "));
   const save = useSaveMapping(importId);
   const dryRun = useDryRun(importId);
@@ -172,6 +180,32 @@ function MappingForm({
             }
           />
         </div>
+        {foundProducts > 0 && (
+          <div className="mt-4 flex flex-col gap-1.5">
+            <ChoiceSelect
+              label={t("wordpress.products")}
+              value={mapping.products}
+              required
+              options={[
+                { value: "import", label: t("wordpress.products.import") },
+                { value: "skip", label: t("wordpress.products.skip") },
+              ]}
+              onChange={(products) => change({ products: products === "skip" ? "skip" : "import" })}
+            />
+            {!choices.shopEnabled && (
+              <p className="text-footnote text-warning">{t("wordpress.productsShopOff")}</p>
+            )}
+          </div>
+        )}
+        {foundMenus > 0 && (
+          <div className="mt-5">
+            <Toggle
+              label={t("wordpress.menus")}
+              checked={mapping.menus}
+              onCheckedChange={(menus) => change({ menus })}
+            />
+          </div>
+        )}
         <div className="mt-5 flex flex-col gap-1">
           <Toggle
             label={t("wordpress.redirects")}
@@ -182,6 +216,20 @@ function MappingForm({
         </div>
       </Card>
 
+      <CustomFieldsCard
+        kind="post"
+        found={customFields.post}
+        fields={choices.collectionFields[mapping.postsCollection ?? ""] ?? []}
+        chosen={mapping.postFields}
+        onChange={(postFields) => change({ postFields })}
+      />
+      <CustomFieldsCard
+        kind="page"
+        found={customFields.page}
+        fields={choices.collectionFields[mapping.pagesCollection ?? ""] ?? []}
+        chosen={mapping.pageFields}
+        onChange={(pageFields) => change({ pageFields })}
+      />
       {save.data && (
         <>
           <FieldMappingCard kind="post" fields={save.data.fields.posts} />
@@ -231,7 +279,8 @@ function hostsFromText(text: string): string[] {
     .filter((host) => host !== "");
 }
 
-function ChoiceSelect({
+/** A labelled menu of choices, with "Don’t import" unless `required`. Shared by the importers. */
+export function ChoiceSelect({
   label,
   value,
   options,
@@ -273,6 +322,51 @@ function ChoiceSelect({
         />
       </div>
     </div>
+  );
+}
+
+/** Custom fields (Advanced Custom Fields and the like) and the field each goes into. */
+function CustomFieldsCard({
+  kind,
+  found,
+  fields,
+  chosen,
+  onChange,
+}: {
+  kind: "post" | "page";
+  found: WordPressCustomField[];
+  fields: Array<{ handle: string; label: string }>;
+  chosen: Record<string, string | null>;
+  onChange: (chosen: Record<string, string | null>) => void;
+}) {
+  if (found.length === 0) return null;
+  const options = fields.map((field) => ({ value: field.handle, label: field.label }));
+  return (
+    <Card title={t("wordpress.customFieldsTitle", { kind: t(`wordpress.kind.${kind}`) })}>
+      <p className="mb-4 text-footnote text-label-secondary">{t("wordpress.customFieldsText")}</p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {found.map((field) => (
+          <div key={field.key} className="flex flex-col gap-1">
+            <ChoiceSelect
+              label={t("wordpress.customFieldInto", { key: field.key })}
+              value={chosen[field.key] ?? null}
+              options={options}
+              onChange={(handle) => onChange({ ...chosen, [field.key]: handle })}
+            />
+            <p className="text-footnote text-label-secondary">
+              {[
+                field.fromAcf ? t("wordpress.customFieldFromAcf") : null,
+                field.example
+                  ? t("wordpress.customFieldExample", { example: field.example })
+                  : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 }
 

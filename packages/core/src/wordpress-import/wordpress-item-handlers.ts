@@ -4,6 +4,7 @@ import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import { HttpError } from "../http/http-errors.js";
 import { getAsset, updateAsset, uploadAsset } from "../media/media.service.js";
 import { slugify } from "../entries/slugs.js";
+import { assignRoleToUser, findRoleByHandle } from "../roles/roles.repository.js";
 import { findUserByEmail, insertUser } from "../users/users.repository.js";
 import {
   done,
@@ -52,6 +53,11 @@ export async function importAuthor(
     name: author.displayName || author.login,
     passwordHash: null,
   });
+  // Authors on WordPress write and publish their own posts, which is Lintel's Author role.
+  const authorRole = await findRoleByHandle(context.database, DEFAULT_TENANT_ID, "author");
+  if (authorRole) {
+    await assignRoleToUser(context.database, user.id, authorRole.id);
+  }
   return done(user.id, { invited: true, name: user.name, email: user.email });
 }
 

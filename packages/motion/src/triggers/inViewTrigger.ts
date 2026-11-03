@@ -1,4 +1,4 @@
-import type { InViewTrigger } from "../spec/trigger.schema.js";
+import type { InViewTrigger, ScrollAction, ScrollActions } from "../spec/trigger.schema.js";
 import { supportsIntersectionObserver } from "../runtime/environment.js";
 import type { Playback } from "../runtime/playback.js";
 import {
@@ -23,6 +23,37 @@ function isShowing(entry: IntersectionObserverEntry, threshold: number): boolean
   return screenHeight > 0 && entry.intersectionRect.height >= screenHeight * threshold;
 }
 
+/** Runs one scroll action on an animation. */
+export function runScrollAction(action: ScrollAction, playback: Playback): void {
+  switch (action) {
+    case "play":
+    case "resume":
+      return playback.playForward();
+    case "reverse":
+      return playback.playBackward();
+    case "restart":
+      return playback.restart();
+    case "reset":
+      return playback.reset();
+    case "pause":
+      return playback.pause();
+    case "finish":
+      return playback.finish();
+    case "none":
+      return;
+  }
+}
+
+/**
+ * Which moment this is, from where the element is: coming into view from below the screen is
+ * `enter` (scrolling down), from above it `enterBack`; leaving above the screen is `leave`,
+ * below it `leaveBack`.
+ */
+export function scrollMoment(entering: boolean, elementTop: number): keyof ScrollActions {
+  if (entering) return elementTop > 0 ? "enter" : "enterBack";
+  return elementTop < 0 ? "leave" : "leaveBack";
+}
+
 export function attachInView(context: TriggerContext, trigger: InViewTrigger): AttachedTrigger {
   const playback = context.createPlayback();
   if (!supportsIntersectionObserver()) {
@@ -30,6 +61,7 @@ export function attachInView(context: TriggerContext, trigger: InViewTrigger): A
     return { playback, detach: () => undefined };
   }
   if (clipsItself(context)) return attachMeasuredInView(context, trigger, playback);
+  if (trigger.actions) return attachWithActions(context, trigger, trigger.actions, playback);
   let played = false;
   const observer = new IntersectionObserver(
     (entries) => {
@@ -41,6 +73,36 @@ export function attachInView(context: TriggerContext, trigger: InViewTrigger): A
         } else if (played && !entry.isIntersecting) {
           // Only once it is fully off screen, so it doesn't flicker at the edge.
           applyLeaveBehaviour(trigger.onLeave, playback);
+        }
+      }
+    },
+    { threshold: [0, trigger.threshold, 1], rootMargin: trigger.rootMargin },
+  );
+  observer.observe(context.root);
+  return { playback, detach: () => observer.disconnect() };
+}
+
+/**
+ * With an action per direction, the observer keeps watching: each time the element comes into
+ * view or leaves it entirely, the matching action runs.
+ */
+function attachWithActions(
+  context: TriggerContext,
+  trigger: InViewTrigger,
+  actions: ScrollActions,
+  playback: Playback,
+): AttachedTrigger {
+  let showing = false;
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        const top = entry.boundingClientRect.top;
+        if (!showing && isShowing(entry, trigger.threshold)) {
+          showing = true;
+          runScrollAction(actions[scrollMoment(true, top)], playback);
+        } else if (showing && !entry.isIntersecting) {
+          showing = false;
+          runScrollAction(actions[scrollMoment(false, top)], playback);
         }
       }
     },

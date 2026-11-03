@@ -37,7 +37,10 @@ import {
   allowedMediaHosts,
   downloadingMediaSource,
 } from "./wordpress-media.js";
-import type { WordPressItem } from "./wxr-parser.js";
+import { importWooCommerceProduct } from "./woocommerce-products.js";
+import type { WooCommerceProduct } from "./woocommerce-reader.js";
+import { importMenu } from "./wordpress-menus.js";
+import type { WordPressItem, WordPressMenu } from "./wxr-parser.js";
 
 /**
  * Carries out an import, one item at a time in the order they were listed (authors, terms,
@@ -68,14 +71,21 @@ export async function runWordPressImport(
         break;
       }
       for (const item of batch) {
-        await options.database.transaction(async (transaction) => {
-          const result = await processItem(
-            { ...context, database: transaction, assetExists: assetExistsIn(transaction) },
-            item,
-          );
-          await finishItem(transaction, item.id, result);
+        if (item.kind === "product") {
+          // Saving a product opens its own transaction, so it isn't wrapped in one.
+          const result = await processItem(context, item);
+          await finishItem(options.database, item.id, result);
           rememberTarget(context.targets, item, result.targetId, result.status);
-        });
+        } else {
+          await options.database.transaction(async (transaction) => {
+            const result = await processItem(
+              { ...context, database: transaction, assetExists: assetExistsIn(transaction) },
+              item,
+            );
+            await finishItem(transaction, item.id, result);
+            rememberTarget(context.targets, item, result.targetId, result.status);
+          });
+        }
         await updateImport(options.database, row.id, {
           progress: {
             done: await countFinishedItems(options.database, row.id),
@@ -152,6 +162,7 @@ async function buildItemContext(
   }
   return {
     database,
+    serverDatabase: options.database,
     importId: row.id,
     siteAddress: row.siteAddress,
     dryRun,
@@ -240,6 +251,10 @@ function processItem(context: ItemContext, item: WordPressImportItemRow): Promis
     case "attachment":
     case "image":
       return importFile(context, payload as unknown as FilePayload);
+    case "menu":
+      return importMenu(context, payload as unknown as WordPressMenu);
+    case "product":
+      return importWooCommerceProduct(context, payload as unknown as WooCommerceProduct);
     default:
       return importEntry(context, payload as unknown as WordPressItem);
   }

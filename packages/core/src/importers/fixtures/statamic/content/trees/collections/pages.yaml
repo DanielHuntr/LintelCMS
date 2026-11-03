@@ -1,0 +1,5 @@
+tree:
+  - entry: page-home
+  - entry: page-about
+    children:
+      - entry: page-rules

@@ -26,16 +26,30 @@ export function generateModelTypes(model: ContentModel): string {
     if (unit.kind === "contentType" || unit.kind === "globalSet") {
       writer.writeDataInterface(unit);
     }
+    if (unit.kind === "block") {
+      writer.writeBlockProperties(unit);
+    }
   }
+  const shared = writer.hasBlocks ? `${SHARED_TYPES}\n\n${BLOCK_TYPES}` : SHARED_TYPES;
   return (
-    [HEADER, SHARED_TYPES, writer.declarations.join("\n\n"), writer.handleMaps(model), CLIENT].join(
+    [HEADER, shared, writer.declarations.join("\n\n"), writer.handleMaps(model), CLIENT].join(
       "\n\n",
     ) + "\n"
   );
 }
 
+/** What a React block in code is given for a picture (see src/blocks/block-rendering.ts). */
+const BLOCK_TYPES = `/** A picture a block's image property points at, ready to draw. */
+export interface BlockPicture {
+  src: string;
+  alt: string;
+  width: number | null;
+  height: number | null;
+}`;
+
 class TypesWriter {
   readonly declarations: string[] = [];
+  hasBlocks = false;
   private readonly names = new Set(RESERVED_NAMES);
   /** The data interface of each content type and global set, by `kind:handle`. */
   readonly dataNames = new Map<string, string>();
@@ -56,6 +70,34 @@ class TypesWriter {
     this.declarations.push(
       `/** The ${what} ${unit.name} (\`${unit.handle}\`)${usedBy}. */\nexport interface ${name} {\n${members.join("\n")}\n}`,
     );
+  }
+
+  /**
+   * `TeamCardBlockProperties`: what a block's React component is given as `properties`,
+   * for `defineBlock<TeamCardBlockProperties>({ ... })`.
+   */
+  writeBlockProperties(unit: Extract<ModelUnit, { kind: "block" }>): void {
+    this.hasBlocks = true;
+    const base = pascalCase(unit.handle);
+    const name = this.claim(`${base}BlockProperties`, `${base}BlockPropertiesOfBlock`);
+    const members = unit.properties
+      .filter(isDelivered)
+      .map((field) => this.blockMember(field, `${base}Block`));
+    this.declarations.push(
+      `/** The block ${unit.name} (\`${unit.handle}\`): what its component is given. */\nexport interface ${name} {\n${members.join("\n")}\n}`,
+    );
+  }
+
+  private blockMember(field: FieldDefinition, ownerName: string, indent = "  "): string {
+    const comment = [field.label, field.helpText].filter((part) => part !== "").join(". ");
+    const rows = (field.options.fields ?? []) as FieldDefinition[];
+    const type =
+      field.type === "image"
+        ? "BlockPicture"
+        : field.type === "repeater"
+          ? `Array<{\n${rows.map((row) => this.blockMember(row, ownerName, `${indent}  `)).join("\n")}\n${indent}}>`
+          : this.valueType(field, ownerName);
+    return `${indent}/** ${escapeComment(comment)} */\n${indent}${field.handle}: ${type} | null;`;
   }
 
   private member(field: FieldDefinition, ownerName: string, indent = "  "): string {

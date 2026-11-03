@@ -109,6 +109,10 @@ as an entry's own fields. Problems come back keyed by the field, then the block 
 }
 ```
 
+A block type can be one of the site's own blocks (`{ handle, block: "team_card" }`): its
+name, description and fields are then a copy of the block's properties, kept up to date by
+src/blocks.
+
 Blocks of a type that has since been removed from the blueprint are dropped on save, the
 way values of a removed field are. The delivery API serves the list as `[{ id, type, data }]`
 with each block's `data` expanded like an entry's (images, rich text).

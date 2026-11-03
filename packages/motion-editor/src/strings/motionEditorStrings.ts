@@ -1,4 +1,5 @@
 import { effectsEditorStrings } from "./effectsStrings.js";
+import { motionPanelStrings } from "./motionPanelStrings.js";
 
 /**
  * Every word the animation studio shows, in English. The admin spreads these into its own
@@ -99,6 +100,19 @@ export const motionEditorStrings = {
   "motionEditor.trigger.scopeElement": "This element",
   "motionEditor.trigger.scopePage": "The whole page",
   "motionEditor.trigger.pin": "Hold it on screen while scrolling",
+  "motionEditor.trigger.smooth": "Follows the scrolling",
+  "motionEditor.trigger.smoothExact": "Exactly",
+  "motionEditor.trigger.smoothSoft": "Smoothly",
+  "motionEditor.trigger.smoothValue": "{seconds} s behind",
+  "motionEditor.trigger.snap": "Settles on",
+  "motionEditor.trigger.snapNone": "Wherever scrolling stops",
+  "motionEditor.trigger.snapHalves": "The start, middle or end",
+  "motionEditor.trigger.snapThirds": "Thirds",
+  "motionEditor.trigger.snapQuarters": "Quarters",
+  "motionEditor.trigger.backUp": "Scrolling back up past it",
+  "motionEditor.trigger.backUpStay": "Stays as it is",
+  "motionEditor.trigger.backUpReverse": "Plays backwards",
+  "motionEditor.trigger.backUpReplay": "Plays again next time",
   "motionEditor.trigger.pinLength": "Hold for",
   "motionEditor.trigger.screens": "{count} screens",
   "motionEditor.trigger.toggle": "Clicking again plays it backwards",
@@ -259,6 +273,7 @@ export const motionEditorStrings = {
   "motionEditor.property.borderColor": "Border colour",
   "motionEditor.property.variable": "Variable {name}",
   ...effectsEditorStrings,
+  ...motionPanelStrings,
 } as const;
 
 export type MotionEditorStringKey = keyof typeof motionEditorStrings;

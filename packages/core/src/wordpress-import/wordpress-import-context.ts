@@ -1,5 +1,5 @@
 import type { Collection } from "../collections/collections.table.js";
-import type { DatabaseOrTransaction } from "../database/client.js";
+import type { Database, DatabaseOrTransaction } from "../database/client.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
 import type { AssetExists } from "../fieldtypes/image-assets.js";
 import type { MediaContext } from "../media/media.service.js";
@@ -20,6 +20,11 @@ export interface CollectionTarget {
  */
 export interface ItemContext {
   database: DatabaseOrTransaction;
+  /**
+   * The server's database, outside any transaction, for the few saves that open a
+   * transaction of their own (shop products). Not used in a dry run.
+   */
+  serverDatabase: Database;
   importId: string;
   /** The old site's address, from the export: imports from the same site share it. */
   siteAddress: string;

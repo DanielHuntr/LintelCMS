@@ -118,6 +118,7 @@ function copyIds(node: PageNode, createId: CreateNodeId, newIds: Map<string, str
 
 function retargetAnimations(node: PageNode, newIds: ReadonlyMap<string, string>): PageNode {
   const children = node.children.map((child) => retargetAnimations(child, newIds));
+  node = retargetOwnerStates(node, newIds);
   const targets = node.animation?.spec.targets;
   if (!node.animation || targets?.type !== "nodes") return { ...node, children };
   const spec = {
@@ -141,4 +142,20 @@ export function duplicateNode(
 
 function clamp(value: number, lowest: number, highest: number): number {
   return Math.min(Math.max(value, lowest), highest);
+}
+
+/**
+ * Styles that follow an owner's state ("while the card is hovered") follow the copied owner
+ * when both are copied, so a copied card's picture grows with the copy, not the original.
+ */
+function retargetOwnerStates(node: PageNode, newIds: ReadonlyMap<string, string>): PageNode {
+  const owners = node.styles.owners;
+  if (!owners) return node;
+  const moved = Object.fromEntries(
+    Object.entries(owners).map(([target, declarations]) => {
+      const [state, ownerId = ""] = target.split("@");
+      return [`${state}@${newIds.get(ownerId) ?? ownerId}`, declarations];
+    }),
+  );
+  return { ...node, styles: { ...node.styles, owners: moved } };
 }

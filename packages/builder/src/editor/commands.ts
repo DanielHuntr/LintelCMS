@@ -12,6 +12,7 @@ import {
   type NodeAnimation,
   pageEdgeFor,
   type NodeEffect,
+  type StateTransition,
   type NodeBlueprint,
   type NodeStyles,
   type PageDocument,
@@ -467,6 +468,25 @@ export function changeEffects(
     context.text("pageBuilder.history.changedEffects", { name }),
     ({ effects: _previous, ...rest }) => (effects.length > 0 ? { ...rest, effects } : rest),
     { coalesceKey: `effects:${nodeId}` },
+  );
+}
+
+/** Sets how an element, and what follows its states, moves between states; null for no easing. */
+export function changeStateTransition(
+  context: CommandContext,
+  nodeId: string,
+  transition: StateTransition | null,
+): CommandResult {
+  const node = findNode(context.document.root, nodeId);
+  if (!node) return { refused: context.text("pageBuilder.refused.nothingSelected") };
+  const name = layerName(node, context.catalogue);
+  return changeNode(
+    context,
+    nodeId,
+    context.text("pageBuilder.history.changedStateTransition", { name }),
+    ({ stateTransition: _previous, ...rest }) =>
+      transition ? { ...rest, stateTransition: transition } : rest,
+    { coalesceKey: `stateTransition:${nodeId}` },
   );
 }
 

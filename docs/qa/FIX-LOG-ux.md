@@ -367,6 +367,67 @@ Each name now starts with what's shown:
 
 **Test:** `builder-model/src/components/site-chrome.test.ts`. Two of its three cases fail on the old code.
 
+## LINTEL-UX-024: one Motion panel instead of Animation and Effects tabs (4 November 2026)
+
+**Daniel's finding:** the Animate panel "feels a bit clunky and hard to grasp".
+
+- It had two tabs (Animation, Effects), and tabs inside them (Presets, Simple, Advanced).
+- "Effects: 1, adding 11 kB" sat next to "No effects yet".
+- Filters came before any choice, the effect cards all looked alike, and "when it plays" was folded away at the bottom.
+
+**Redesign:** agreed through clickable mock-ups (Motion panel, then the real library, then states).
+
+`@lintel/motion-editor` has a new `MotionPanel` (`src/motion-panel/`), and the builder's Animate tab now shows only that:
+
+- **One list** of what moves, the animation and the effects together, each named by what it does and when ("Words rise · When it appears"). Point at a row to watch it on the page. Play is in the header.
+- **Add motion** asks "When should it move?": Appears, Hover, Click, Scroll, Always.
+  - Each moment lists its choices in plain groups, such as "Words", "Depth and 3D" and "Backgrounds".
+  - A search box covers every moment at once.
+  - All 42 presets and the element effects are sorted in (`motionChoices.ts`). Only effects that suit the element are offered. Page exits, cursors and page transitions stay in the site-wide settings.
+  - Pointing at a choice plays it on the element on the page.
+- **Editing:**
+  - An animation opens straight in the studio's Simple view, with Advanced (the timeline) for Designers. Beginners see the note about switching to Designer.
+  - An effect shows its settings in plain words.
+  - Remove is at the bottom.
+- **Page weight** is only shown when there's something to warn about.
+- **Still one animation per element:** choosing another replaces the current one, and the panel says so. Several per element is part of the designer push.
+
+**Tests:**
+
+- `motion-editor/src/motion-panel/motionChoices.test.ts` (new): sorting, groups, suitability, search.
+- `builder/src/animate-panel/effects-tab.test.tsx`: adding by moment, the arrow keys, search, editing and removing, animation effects.
+- `studio.test.tsx` and `panels.test.tsx` updated for the new flow.
+
+**Checked in the running builder** at desktop and 390px, light and dark, with the Hero title selected: `screenshots/motion-panel/`. Daniel's screenshots of the old panel are the before.
+
+## LINTEL-UX-025: states and scroll scenes, part 1 (4 November 2026)
+
+Daniel compared the motion with Framer and Webflow: Framer animates between states (a card's normal and hover, with what's inside), and Webflow and GSAP have full scroll triggers. Agreed through the states and scroll scene mock-ups.
+
+**States**
+
+- **The model:**
+  - Element styles have a Pressed state (`:active`) beside Hover and Focus.
+  - Styles can follow the state of an element around it, stored as `owners["hover@<id>"]` and drawn as `.card:hover .picture`.
+  - An owner can have a `stateTransition` (Smooth, Springy or Instant, at a speed). Only the properties its states change are eased, and only for people who don't ask for less motion.
+  - Copying a card points its picture's states at the copy.
+- **The builder:**
+  - "Style for" shows to everyone, with the element's own states and those of the three nearest elements around it ("Two halves: pointer over").
+  - The canvas shows the state while it's being styled.
+  - "Moving between states" sets the transition on the owner.
+- **Tests:** `builder-model/src/styles/states.test.ts` and `builder/src/panels/panels.test.tsx`. Checked in the builder, with screenshots in `screenshots/states/`.
+
+**Scroll scenes**
+
+- **Smoothing:** `smooth` (0 to 2 s) lets a scene follow a moment behind the scrolling.
+- **Snapping:** `snap` points make it settle on a step when scrolling stops. It moves the scene, never the page.
+- **An action per direction:** in-view animations have one for entering, leaving, entering back and leaving back (play, reverse, restart, reset, pause, resume, finish, none).
+- **Settings:** "Follows the scrolling", "Settles on" and "Scrolling back up past it" in the animation settings.
+- **Start and End lines:** drawn on the canvas for the selected element's scene. Drag them, or move them with the arrow keys.
+- **Tests:** browser tests for smoothing, snapping and directions (`motion/src/browser-tests/runtime.browser.test.ts`) and for the lines (`builder/src/browser-tests/canvas-free-layout.test.ts`). Each fails without its change. There are unit tests for the maths and the settings, and the animation spec reference is updated.
+
+**Next:** one scene with steps across several elements, open and selected states, and several animations on one element.
+
 ## QOL-A-1: Undo after deleting (3 November 2026)
 
 **Asked for by Daniel:** after a page, an entry or a file goes to the recycle bin, a note says so with Undo, and Undo puts it back where it was.
@@ -378,14 +439,14 @@ Each name now starts with what's shown:
 - **Content tree and list, several pages:** the existing Undo now puts them back as they were too.
 - **Entry editor:** Delete now moves the entry to the recycle bin (it deleted for good before, and said "This can’t be undone"), goes back to the list and offers Undo, which reopens the entry.
 - **Media library:** Delete moves the file to a new media recycle bin and offers Undo. The Recycle bin screen has a Files group with Restore and Delete for good; Empty empties both.
-- **Undo is a real undo:** `POST /recycle-bin/:id/restore` with `asBefore: true` puts an entry back in its old place, live again with what it showed when the person may publish. See `docs/decisions/0027-undo-after-deleting.md`.
-- **Fixed on the way (LINTEL-UX-024):** the tree's note said it stayed while hovered or focused, but its timer ran regardless, and restarted whenever the tree re-rendered.
+- **Undo is a real undo:** `POST /recycle-bin/:id/restore` with `asBefore: true` puts an entry back in its old place, live again with what it showed when the person may publish. See `docs/decisions/0030-undo-after-deleting.md`.
+- **Fixed on the way (LINTEL-UX-026):** the tree's note said it stayed while hovered or focused, but its timer ran regardless, and restarted whenever the tree re-rendered.
 
 **Tests:**
 
 - core: `recycle-bin/recycle-bin.test.ts` (Undo in place and live; a draft for someone who can't publish), `media/media-bin.test.ts`, `media/media-library.test.ts`.
 - admin: `design/Toast.test.tsx`, `content-tree/RecycleWithUndo.test.tsx`, `content-tree/RecycleBinPage.test.tsx`, `content/EntryEditor.test.tsx`, `media/MediaLibraryPage.test.tsx`, `content-workspace/CollectionView.test.tsx`.
-- Migration `0023_media_recycle_bin` checked on a fresh database (the tests) and on one made before it (the browser check's, set up on the release code first).
+- Migration `0025_media_recycle_bin` checked on a fresh database (the tests) and on one made before it (the browser check's, set up on the release code first).
 
 **Screenshots** (`screenshots/qol-a/`):
 
@@ -403,7 +464,7 @@ Each name now starts with what's shown:
 - **Order:** places to go, then actions, then content and media. "Settings" under Go to is left out when "Open Settings" is offered, so nothing is listed twice. The combobox keys are unchanged: arrows, Ctrl+Home/End, Enter and Escape.
 - **Upload and Invite open their screens ready:** `/media?upload=true` opens the file chooser, and `/users?invite=true` opens the invitation. Both clear the address afterwards, so a reload doesn't ask again.
 - **Light and dark** (`src/appearance`): the admin follows the device, as before, unless someone chooses from the palette. The choice is this browser's and is applied before the first screen is drawn.
-- **Fixed on the way (LINTEL-UX-025):** the dashboard's "Add images and files" asked for `media:create`, which no role has, so Authors (who may upload) never saw it. It now asks for `media:upload`.
+- **Fixed on the way (LINTEL-UX-027):** the dashboard's "Add images and files" asked for `media:create`, which no role has, so Authors (who may upload) never saw it. It now asks for `media:upload`.
 
 **Tests:** `search/paletteItems.test.ts`, `search/CommandPalette.test.tsx`, `appearance/colorScheme.test.ts`, `people/UsersPage.test.tsx`, `media/MediaLibraryPage.test.tsx`, `dashboard/DashboardPage.test.tsx` (fails on the old code).
 

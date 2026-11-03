@@ -1,4 +1,5 @@
-import { ChevronDown, ChevronUp, Plus, Settings2, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Component, Plus, Settings2, X } from "lucide-react";
+import { useBlocks } from "../blocks/blocks.queries.js";
 import { useId, useState, type ReactNode } from "react";
 import { Button } from "../design/Button.js";
 import { classNames } from "../design/classNames.js";
@@ -10,6 +11,7 @@ import { useFieldtypes } from "./blueprints.queries.js";
 import {
   addBlockType,
   addInnerField,
+  addSiteBlockType,
   canGoInBlock,
   changeBlockType,
   changeInnerField,
@@ -64,6 +66,18 @@ export function BlockTypesEditor({
       <ol className="flex flex-col gap-3">
         {blockTypes.map((blockType, index) => {
           const key = blockType.draft?.key ?? blockType.handle;
+          if (blockType.block !== undefined) {
+            return (
+              <SiteBlockTypeCard
+                key={key}
+                blockType={blockType}
+                isFirst={index === 0}
+                isLast={index === blockTypes.length - 1}
+                onMove={(direction) => onChange(moveBlockType(blockTypes, key, direction))}
+                onRemove={() => onChange(removeBlockType(blockTypes, key))}
+              />
+            );
+          }
           return (
             <BlockTypeCard
               key={key}
@@ -80,16 +94,126 @@ export function BlockTypesEditor({
         })}
       </ol>
 
-      <Button
-        variant="tinted"
-        size="small"
-        icon={<Plus aria-hidden="true" />}
-        className="self-start"
-        onClick={() => onChange(addBlockType(blockTypes, newKey("block")))}
-      >
-        {t("builder.blocks.add")}
-      </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="tinted"
+          size="small"
+          icon={<Plus aria-hidden="true" />}
+          onClick={() => onChange(addBlockType(blockTypes, newKey("block")))}
+        >
+          {t("builder.blocks.add")}
+        </Button>
+        <SiteBlockPicker
+          offered={blockTypes.flatMap((blockType) => (blockType.block ? [blockType.block] : []))}
+          onPick={(block) => onChange(addSiteBlockType(blockTypes, block))}
+        />
+      </div>
     </section>
+  );
+}
+
+/** "Add one of your site's blocks": the site's blocks not offered yet. */
+function SiteBlockPicker({
+  offered,
+  onPick,
+}: {
+  offered: readonly string[];
+  onPick: (block: {
+    handle: string;
+    name: string;
+    description: string;
+    properties: Field[];
+  }) => void;
+}) {
+  const blocks = useBlocks();
+  const choices = (blocks.data ?? []).filter((block) => !offered.includes(block.handle));
+  if (!blocks.data) return null;
+  return (
+    <div className="relative max-w-64">
+      <select
+        aria-label={t("builder.blocks.addSiteBlock")}
+        value=""
+        disabled={choices.length === 0}
+        onChange={(event) => {
+          const block = choices.find((candidate) => candidate.handle === event.target.value);
+          if (block) onPick(block);
+        }}
+        className={classNames("h-8 appearance-none pe-8 text-footnote", controlClasses())}
+      >
+        <option value="" disabled>
+          {blocks.data.length === 0
+            ? t("builder.blocks.noSiteBlocks")
+            : t("builder.blocks.addSiteBlock")}
+        </option>
+        {choices.map((block) => (
+          <option key={block.handle} value={block.handle}>
+            {block.name}
+          </option>
+        ))}
+      </select>
+      <Component
+        aria-hidden="true"
+        strokeWidth={2}
+        className="pointer-events-none absolute top-1/2 inset-e-2.5 size-3.5 -translate-y-1/2 text-label-secondary"
+      />
+    </div>
+  );
+}
+
+/** A block type that is one of the site's blocks: named by the block, its fields the block's. */
+function SiteBlockTypeCard({
+  blockType,
+  isFirst,
+  isLast,
+  onMove,
+  onRemove,
+}: {
+  blockType: BlockType;
+  isFirst: boolean;
+  isLast: boolean;
+  onMove: (direction: -1 | 1) => void;
+  onRemove: () => void;
+}) {
+  const name = blockType.name;
+  return (
+    <li
+      className="flex items-start gap-3 rounded-card bg-background p-3 hairline-ring"
+      data-site-block={blockType.block}
+    >
+      <Component aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-accent" />
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <p className="text-body font-medium text-label">
+          {t("builder.blocks.siteBlock", { name })}
+        </p>
+        <p className="text-footnote text-label-secondary">{t("builder.blocks.siteBlockHint")}</p>
+        <p className="text-caption text-label-tertiary">
+          {blockType.fields.map((field) => field.label).join(", ")}
+        </p>
+      </div>
+      <div className="flex shrink-0 items-center">
+        <SmallButton
+          label={t("builder.blocks.moveUp", { name })}
+          disabled={isFirst}
+          onClick={() => onMove(-1)}
+        >
+          <ChevronUp aria-hidden="true" strokeWidth={2} className="size-4" />
+        </SmallButton>
+        <SmallButton
+          label={t("builder.blocks.moveDown", { name })}
+          disabled={isLast}
+          onClick={() => onMove(1)}
+        >
+          <ChevronDown aria-hidden="true" strokeWidth={2} className="size-4" />
+        </SmallButton>
+        <SmallButton
+          label={t("builder.blocks.remove", { name })}
+          disabled={false}
+          onClick={onRemove}
+        >
+          <X aria-hidden="true" strokeWidth={2} className="size-4" />
+        </SmallButton>
+      </div>
+    </li>
   );
 }
 

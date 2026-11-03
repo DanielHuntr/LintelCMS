@@ -1,4 +1,4 @@
-# 27. Undo after deleting, and a recycle bin for media
+# 30. Undo after deleting, and a recycle bin for media
 
 Date: 2026-11-03
 

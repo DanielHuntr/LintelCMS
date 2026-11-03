@@ -64,6 +64,20 @@ export function definitionFromUnit(unit: ModelUnit): ModelDefinition {
     const fields = fieldSpecs(unit.fields, { isEntry: false });
     return { kind: "fieldset", handle: unit.handle, name: unit.name, fields };
   }
+  if (unit.kind === "block") {
+    return {
+      kind: "block",
+      name: unit.name,
+      ...(unit.icon === "square" ? {} : { icon: unit.icon }),
+      ...(unit.category === "" ? {} : { category: unit.category }),
+      ...(unit.description === "" ? {} : { description: unit.description }),
+      ...(unit.properties.length === 0
+        ? {}
+        : { properties: fieldSpecs(unit.properties, { isEntry: false }) }),
+      // Only blocks with templates are written (see writeUnitFile); React ones stay as they are.
+      render: unit.template ?? "",
+    };
+  }
   if (unit.kind === "menu") {
     return {
       kind: "menu",
@@ -160,6 +174,7 @@ interface StoredBlockType {
   handle: string;
   name: string;
   description: string;
+  block?: string;
   fields: FieldDefinition[];
 }
 
@@ -167,6 +182,10 @@ function blockTypeDefinitions(value: unknown): Record<string, unknown> {
   const blockTypes = value as StoredBlockType[];
   return Object.fromEntries(
     blockTypes.map((blockType) => {
+      // One of the site's blocks: its name and fields come from the block's own file.
+      if (blockType.block !== undefined) {
+        return [blockType.handle, { block: blockType.block }];
+      }
       const definition: Record<string, unknown> = {};
       if (blockType.name !== labelFromHandle(blockType.handle)) {
         definition.name = blockType.name;
