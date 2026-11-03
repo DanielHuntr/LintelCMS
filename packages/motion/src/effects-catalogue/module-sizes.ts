@@ -17,7 +17,7 @@ export const effectModuleBytes: Record<EffectModuleName, number> = {
   pointer: 4660,
   ripple: 4180,
   scroll: 4650,
-  "smooth-scroll": 1826,
+  "smooth-scroll": 1854,
   svg: 4879,
   text: 5070,
   transitions: 1682,
