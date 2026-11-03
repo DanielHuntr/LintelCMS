@@ -20,6 +20,8 @@ export type MessageToFrame =
       type: "outline";
       selectedId: string | null;
       hoveredId: string | null;
+      /** Elements outlined together, such as everything using a shared style. */
+      highlightIds?: readonly string[];
       labels: OutlineLabels;
       /** Shows the turning handle and allows dragging and nudging: false when locked. */
       canTransform: boolean;

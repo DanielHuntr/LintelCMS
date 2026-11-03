@@ -1,19 +1,20 @@
 import {
   type DesignVariable,
   type DesignVariableKind,
-  designTokens,
-  findTokenByValue,
   isDesignVariableValue,
   type SharedStyle,
-  variablesAsTokens,
+  sharedStylesById,
+  variantsOf,
+  withoutSharedStyle,
   withoutVariable,
 } from "@lintel/builder-model";
-import { ChevronLeft, ChevronRight, Moon, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Moon, MousePointerClick, Plus } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import type { BuilderStringKey } from "../i18n/builder-strings.js";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { classNames, inputClassName } from "../ui/controls.js";
 import { addVariable, useSiteDesign, withSharedStyle } from "./site-design-context.js";
+import { SharedStylePreview } from "./SharedStylePreview.js";
 
 /** A starting point offered while a group is empty: tap it and it's added. */
 interface Suggestion {
@@ -81,6 +82,8 @@ export interface SiteStylesPanelProps {
   onDeleteVariable?: (variable: DesignVariable) => void;
   /** Detaches this page's elements from a shared style, keeping their look, before it goes. */
   onDeleteSharedStyle?: (sharedStyle: SharedStyle) => void;
+  /** Selects the elements on this page that use a shared style, and outlines them all. */
+  onSelectUsers?: (sharedStyleId: string) => void;
 }
 
 /**
@@ -96,9 +99,11 @@ export function SiteStylesPanel({
   onBack,
   onDeleteVariable,
   onDeleteSharedStyle,
+  onSelectUsers,
 }: SiteStylesPanelProps) {
   const text = useBuilderText();
   const { design, change } = useSiteDesign();
+  const looks = sharedStylesById(design);
   const [openId, setOpenId] = useState<string | null>(null);
   const toggle = (id: string) => setOpenId((current) => (current === id ? null : id));
   const replaceVariable = (next: DesignVariable) =>
@@ -183,24 +188,27 @@ export function SiteStylesPanel({
           <EmptyGroup note={text("pageBuilder.siteStyles.sharedEmpty")} suggestions={[]} />
         ) : (
           <List>
-            {design.sharedStyles.map((sharedStyle) => (
-              <SharedStyleRow
-                key={sharedStyle.id}
-                sharedStyle={sharedStyle}
-                uses={sharedStyleUses.get(sharedStyle.id) ?? 0}
-                isOpen={openId === `shared:${sharedStyle.id}`}
-                onToggle={change ? () => toggle(`shared:${sharedStyle.id}`) : undefined}
-                onRename={(name) => change?.(withSharedStyle(design, { ...sharedStyle, name }))}
-                onDelete={() => {
-                  onDeleteSharedStyle?.(sharedStyle);
-                  change?.({
-                    ...design,
-                    sharedStyles: design.sharedStyles.filter((each) => each.id !== sharedStyle.id),
-                  });
-                  setOpenId(null);
-                }}
-              />
-            ))}
+            {design.sharedStyles
+              .filter((each) => !each.variantOf || !looks[each.variantOf])
+              .flatMap((each) => [each, ...variantsOf(each, design.sharedStyles)])
+              .map((sharedStyle) => (
+                <SharedStyleRow
+                  key={sharedStyle.id}
+                  sharedStyle={sharedStyle}
+                  look={looks[sharedStyle.id] ?? sharedStyle}
+                  uses={sharedStyleUses.get(sharedStyle.id) ?? 0}
+                  isOpen={openId === `shared:${sharedStyle.id}`}
+                  onToggle={() => toggle(`shared:${sharedStyle.id}`)}
+                  canChange={change !== undefined}
+                  onSelect={onSelectUsers ? () => onSelectUsers(sharedStyle.id) : undefined}
+                  onRename={(name) => change?.(withSharedStyle(design, { ...sharedStyle, name }))}
+                  onDelete={() => {
+                    onDeleteSharedStyle?.(sharedStyle);
+                    change?.(withoutSharedStyle(design, sharedStyle.id));
+                    setOpenId(null);
+                  }}
+                />
+              ))}
           </List>
         )}
       </Group>
@@ -651,73 +659,61 @@ export function DeleteAction({
   );
 }
 
-/** A value as the builder's own page can draw it: tokens and variables become their values. */
-function previewValue(value: string | undefined, variables: readonly DesignVariable[]) {
-  if (!value) return undefined;
-  const tokens = [
-    ...designTokens,
-    ...variablesAsTokens(variables, "colour"),
-    ...variablesAsTokens(variables, "size"),
-    ...variablesAsTokens(variables, "font"),
-  ];
-  return findTokenByValue(value, tokens)?.fallback ?? (value.includes("var(") ? undefined : value);
-}
-
-/** A small tile drawn with a shared style's colours, corners and border: "Aa" on its fill. */
-export function SharedStylePreview({ sharedStyle }: { sharedStyle: SharedStyle }) {
-  const { design } = useSiteDesign();
-  const base = sharedStyle.styles.base;
-  const read = (value: string | undefined) => previewValue(value, design.variables);
-  return (
-    <span
-      aria-hidden="true"
-      style={{
-        backgroundColor: read(base.backgroundColor),
-        color: read(base.color),
-        borderColor: read(base.borderColor),
-        borderStyle: base.borderWidth ? "solid" : undefined,
-        borderWidth: base.borderWidth ? "1px" : undefined,
-        borderRadius: base.borderRadius ? "999px" : undefined,
-        fontFamily: read(base.fontFamily),
-        fontWeight: base.fontWeight,
-      }}
-      className="flex size-6 shrink-0 items-center justify-center rounded-control bg-fill text-caption text-label hairline-ring"
-    >
-      Aa
-    </span>
-  );
-}
-
 function SharedStyleRow({
   sharedStyle,
+  look,
   uses,
   isOpen,
   onToggle,
+  canChange,
+  onSelect,
   onRename,
   onDelete,
 }: {
   sharedStyle: SharedStyle;
+  /** How it looks: for a variant, its base's look with its own over it. */
+  look: SharedStyle;
   uses: number;
   isOpen: boolean;
-  onToggle?: () => void;
+  onToggle: () => void;
+  canChange: boolean;
+  onSelect?: () => void;
   onRename: (name: string) => void;
   onDelete: () => void;
 }) {
   const text = useBuilderText();
+  const isVariant = sharedStyle.variantOf !== undefined;
+  const showsEditor = canChange || (onSelect !== undefined && uses > 0);
   return (
     <Row
-      preview={<SharedStylePreview sharedStyle={sharedStyle} />}
+      preview={
+        <span className={classNames("flex shrink-0", isVariant && "ps-5")}>
+          <SharedStylePreview sharedStyle={look} />
+        </span>
+      }
       name={sharedStyle.name}
-      uses={text("pageBuilder.shared.uses", { count: uses })}
+      uses={uses > 0 ? text("pageBuilder.shared.uses", { count: uses }) : null}
       isOpen={isOpen}
-      onToggle={onToggle}
+      onToggle={showsEditor ? onToggle : undefined}
     >
-      <NameInput name={sharedStyle.name} onChange={onRename} />
-      <DeleteAction
-        name={sharedStyle.name}
-        note={text("pageBuilder.siteStyles.deleteShared")}
-        onDelete={onDelete}
-      />
+      {onSelect && uses > 0 && (
+        <button
+          type="button"
+          onClick={onSelect}
+          className="flex h-8 items-center justify-center gap-1.5 rounded-control bg-fill px-3 text-caption font-medium text-label hover:bg-fill-strong focus-visible:focus-ring"
+        >
+          <MousePointerClick aria-hidden="true" className="size-3.5" />
+          {text("pageBuilder.siteStyles.selectThem")}
+        </button>
+      )}
+      {canChange && <NameInput name={sharedStyle.name} onChange={onRename} />}
+      {canChange && (
+        <DeleteAction
+          name={sharedStyle.name}
+          note={text("pageBuilder.siteStyles.deleteShared")}
+          onDelete={onDelete}
+        />
+      )}
     </Row>
   );
 }

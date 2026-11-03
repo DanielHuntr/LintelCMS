@@ -60,6 +60,8 @@ interface CanvasProps {
   breakpoint: Breakpoint;
   selectedId: string | null;
   hoveredId: string | null;
+  /** Elements outlined together, such as everything using a shared style. */
+  highlightIds?: readonly string[];
   labels: OutlineLabels;
   /** Scrolls an element into view, e.g. after picking it in the Layers panel. */
   revealId: string | null;
@@ -89,6 +91,7 @@ export function Canvas({
   breakpoint,
   selectedId,
   hoveredId,
+  highlightIds,
   labels,
   revealId,
   canTransform,
@@ -215,9 +218,27 @@ export function Canvas({
   const rotateLabel = text("pageBuilder.design.rotateHandle");
   useEffect(() => {
     if (isReady) {
-      post({ type: "outline", selectedId, hoveredId, labels, canTransform, rotateLabel });
+      post({
+        type: "outline",
+        selectedId,
+        hoveredId,
+        highlightIds,
+        labels,
+        canTransform,
+        rotateLabel,
+      });
     }
-  }, [isReady, selectedId, hoveredId, labels, html, breakpoint, canTransform, rotateLabel]);
+  }, [
+    isReady,
+    selectedId,
+    hoveredId,
+    highlightIds,
+    labels,
+    html,
+    breakpoint,
+    canTransform,
+    rotateLabel,
+  ]);
 
   useEffect(() => {
     if (isReady && revealId) post({ type: "reveal", nodeId: revealId });

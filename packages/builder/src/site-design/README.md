@@ -9,6 +9,7 @@ a page is drawn with them is in `@lintel/builder-model`'s `site-design/` folder.
 | ------------------------- | ------------------------------------------------------------------- |
 | `site-design-context.tsx` | The context, the site's variables as tokens, and small design edits |
 | `SharedStyleBar.tsx`      | The top of Style: use, make, rename or detach a shared style        |
+| `SharedStylePreview.tsx`  | A small "Aa" tile drawn with a shared style's colours and border    |
 | `SiteStylesPanel.tsx`     | Site styles: the site's colours, sizes, fonts and shared styles     |
 
 - **Site styles** is in the right panel: "Site styles" in Style opens it over the element's
@@ -22,3 +23,6 @@ a page is drawn with them is in `@lintel/builder-model`'s `site-design/` folder.
   saved for the site straight away and are not in the page's Undo.
 - **Variables:** colour swatches, font choices, size chips and size boxes offer the site's
   own before the theme's. A colour or size picked by hand can be saved as one.
+- **Variants:** "Make a variant" on the shared-style row makes one ("Button · Outline")
+  that follows its base; the row switches between them. "Select them" in Site styles
+  selects and outlines this page's elements that use a shared style.

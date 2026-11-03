@@ -217,6 +217,8 @@ export function placeOnGrid(
 export type SharedStyleChange =
   | { kind: "make"; id: string; name: string }
   | { kind: "use"; id: string; name: string }
+  /** To a variant of the same shared style, or back: what's set on the element stays. */
+  | { kind: "switch"; id: string; name: string }
   | { kind: "detach"; sharedStyle: SharedStyle | undefined };
 
 export function changeSharedStyle(
@@ -236,6 +238,7 @@ export function changeSharedStyle(
   return changeNode(context, nodeId, label, (node) => {
     if (change.kind === "make") return makeSharedStyle(node, change.id, change.name).node;
     if (change.kind === "use") return giveSharedStyle(node, change.id);
+    if (change.kind === "switch") return { ...node, sharedStyle: change.id };
     return detachSharedStyle(node, change.sharedStyle);
   });
 }

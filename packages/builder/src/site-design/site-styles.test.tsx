@@ -164,6 +164,84 @@ describe("Site styles in the right panel", () => {
     });
   });
 
+  it("makes a variant that follows its base, and switches between them", async () => {
+    const person = userEvent.setup();
+    const withCard: SiteDesign = {
+      variables: [],
+      sharedStyles: [
+        {
+          id: "card",
+          name: "Card",
+          styles: { base: { backgroundColor: "#ffffff", borderRadius: "8px" } },
+        },
+      ],
+    };
+    const { node, design } = renderBuilder(withCard);
+    await select(person, "Second card");
+    await person.click(screen.getByRole("button", { name: /^No shared style/ }));
+    await person.click(screen.getByRole("button", { name: "Card" }));
+    expect(screen.getByText("1 on this page")).toBeInTheDocument();
+
+    await person.click(screen.getByRole("button", { name: "Make a variant" }));
+    await person.type(screen.getByRole("textbox", { name: "Name for the variant" }), "Dark{Enter}");
+    expect(design().sharedStyles[1]).toEqual({
+      id: "card-dark",
+      name: "Dark",
+      variantOf: "card",
+      styles: { base: {} },
+    });
+    expect(node("Second card")?.sharedStyle).toBe("card-dark");
+
+    // Changes now go to the variant: the base keeps its own look.
+    const background = sectionButton("Background");
+    if (background.getAttribute("aria-expanded") !== "true") await person.click(background);
+    const swatches = within(screen.getByRole("group", { name: "Background colour" }));
+    await person.click(swatches.getAllByRole("button")[0]!);
+    expect(design().sharedStyles[1]?.styles.base.backgroundColor).toBeDefined();
+    expect(design().sharedStyles[0]?.styles.base.backgroundColor).toBe("#ffffff");
+
+    await person.click(screen.getByRole("radio", { name: "Main" }));
+    expect(node("Second card")?.sharedStyle).toBe("card");
+  });
+
+  it("selects the elements using a shared style, and detaches them when it's deleted", async () => {
+    const person = userEvent.setup();
+    const ids = createCountingNodeIds();
+    const cards = createNode(
+      {
+        type: "section",
+        name: "Cards",
+        children: [
+          { type: "box", name: "First card" },
+          { type: "box", name: "Second card" },
+        ],
+      },
+      standardCatalogue,
+      ids,
+    );
+    cards.children = cards.children.map((child) => ({ ...child, sharedStyle: "card" }));
+    const { node, design } = renderBuilder(
+      {
+        variables: [],
+        sharedStyles: [{ id: "card", name: "Card", styles: { base: { borderRadius: "8px" } } }],
+      },
+      [cards],
+    );
+    await person.click(screen.getByRole("button", { name: /^Card\s*2 on this page/ }));
+    await person.click(screen.getByRole("button", { name: "Select them" }));
+    expect(
+      within(screen.getByRole("tree")).getByRole("treeitem", { name: "First card" }),
+    ).toHaveAttribute("aria-selected", "true");
+
+    await person.click(screen.getByRole("button", { name: /^Site styles/ }));
+    await person.click(screen.getByRole("button", { name: /^Card\s*2 on this page/ }));
+    await person.click(screen.getByRole("button", { name: "Delete" }));
+    await person.click(within(screen.getByRole("alert")).getByRole("button", { name: "Delete" }));
+    expect(design().sharedStyles).toEqual([]);
+    expect(node("First card")).not.toHaveProperty("sharedStyle");
+    expect(node("Second card")?.styles.base.borderRadius).toBe("8px");
+  });
+
   it("tells apart elements around it that have the same name", async () => {
     const person = userEvent.setup();
     const ids = createCountingNodeIds();

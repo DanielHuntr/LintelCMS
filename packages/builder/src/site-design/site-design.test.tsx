@@ -90,10 +90,8 @@ describe("shared styles in the Style panel", () => {
     const person = userEvent.setup();
     const { node, design } = renderBuilder();
     await select(person, "First card");
-    await person.selectOptions(
-      screen.getByRole("combobox", { name: "Shared style" }),
-      "Make one from this look…",
-    );
+    await person.click(screen.getByRole("button", { name: /^No shared style/ }));
+    await person.click(screen.getByRole("button", { name: "Save this look…" }));
     const name = screen.getByRole("textbox", { name: "Name for this look" });
     await person.clear(name);
     await person.type(name, "Card{Enter}");
@@ -111,7 +109,12 @@ describe("shared styles in the Style panel", () => {
     expect(screen.getByText("1 on this page")).toBeInTheDocument();
 
     await select(person, "Second card");
-    await person.selectOptions(screen.getByRole("combobox", { name: "Shared style" }), "Card");
+    await person.click(screen.getByRole("button", { name: /^No shared style/ }));
+    await person.click(
+      within(screen.getByRole("group", { name: "Or use one of the site’s" })).getByRole("button", {
+        name: "Card",
+      }),
+    );
     expect(node("Second card")).toMatchObject({ sharedStyle: "card", styles: { base: {} } });
     expect(screen.getByText("2 on this page")).toBeInTheDocument();
 
@@ -155,10 +158,12 @@ describe("shared styles in the Style panel", () => {
       false,
     );
     await select(person, "First card");
-    const choices = within(screen.getByRole("combobox", { name: "Shared style" }))
-      .getAllByRole("option")
+    await person.click(screen.getByRole("button", { name: /^No shared style/ }));
+    expect(screen.queryByRole("button", { name: "Save this look…" })).not.toBeInTheDocument();
+    const choices = within(screen.getByRole("group", { name: "Or use one of the site’s" }))
+      .getAllByRole("button")
       .map((option) => option.textContent);
-    expect(choices).toEqual(["None", "Card"]);
+    expect(choices).toEqual(["AaCard"]);
   });
 });
 
