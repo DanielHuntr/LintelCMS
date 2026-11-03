@@ -30,7 +30,19 @@ import { readSiteDesign } from "../site-design/site-design.service.js";
 import { readSetting } from "../settings/settings.service.js";
 import { readWebsiteFonts } from "../site-fonts/site-fonts.service.js";
 import { websiteFontsStylesheet } from "../site-fonts/website-fonts.js";
-import type { SiteFontChoice } from "@lintel/builder-model";
+import {
+  adobeFontsService,
+  type CookieNoticePage,
+  type SiteFontChoice,
+} from "@lintel/builder-model";
+import {
+  buildCookieNoticePage,
+  findPrivacyPageUrls,
+  findSiteConsentServices,
+  isCookieNoticeShown,
+  readCookieNoticeSettings,
+} from "../cookie-notice/cookie-notice.service.js";
+import { localiseUrl } from "./site-chrome.service.js";
 
 /**
  * What every page of the built-in site needs, whatever its address: languages, which
@@ -62,6 +74,16 @@ export interface SiteContext {
   scriptRule: CustomScriptRule;
   /** The site's design variables and shared styles, made in the page builder. */
   design: SiteDesign;
+  /**
+   * The cookie notice, when the site shows one (see src/cookie-notice): what every page
+   * tells its script, and the privacy page's address in each language. Null otherwise.
+   */
+  cookieNotice: SiteCookieNotice | null;
+}
+
+export interface SiteCookieNotice {
+  page: Omit<CookieNoticePage, "privacyUrl">;
+  privacyUrls: Readonly<Record<string, string>>;
 }
 
 /** The address the stylesheet is served at changes with its contents, so it caches forever. */
@@ -81,6 +103,7 @@ export async function loadSiteContext(
   const websiteFonts = readWebsiteFonts(database, site, options.assetLookup);
   const scriptRule = readSetting(database, "builderCustomScripts");
   const design = await readSiteDesign(database);
+  const noticeSettings = readCookieNoticeSettings(database);
   const [locales, collections, look, seoEnabled, seoDefaults, siteAddress, plugins] =
     await Promise.all([
       listLocales(database, site),
@@ -99,6 +122,21 @@ export async function loadSiteContext(
   // Site fonts follow the theme, so the theme's heading and body choices can name them. The
   // site's own design variables come last, beside the theme's tokens they add to.
   const { fonts, stylesheetUrls } = await websiteFonts;
+  const cookieNotice = await loadCookieNotice(database, {
+    site,
+    settings: await noticeSettings,
+    scriptRule: await scriptRule,
+    enabledPlugins: plugins,
+    fontStylesheets: stylesheetUrls,
+    locales: locales.locales.map(({ code }) => code),
+    localise: (url, locale) =>
+      localiseUrl(url, locale, {
+        defaultLocale: locales.defaultLocale,
+        pathPrefix: site.pathPrefix,
+      }),
+  });
+  // Adobe Fonts' stylesheet waits for visitors to allow it; the theme's fonts show till then.
+  const fontsWait = (cookieNotice?.page.fontStylesheets.length ?? 0) > 0;
   const css = [
     siteStylesheet(look.theme, look.template),
     websiteFontsStylesheet(fonts, look),
@@ -122,10 +160,46 @@ export async function loadSiteContext(
     pathPrefix: site.pathPrefix,
     stylesheet: { css, path: `${STYLESHEET_FOLDER}/site-${fingerprint}.css` },
     fonts: fonts.map(({ family, category, source }) => ({ family, category, source })),
-    fontStylesheetUrls: stylesheetUrls,
+    fontStylesheetUrls: fontsWait ? [] : stylesheetUrls,
     effectSettings: await effects,
     scriptRule: await scriptRule,
     design,
+    cookieNotice,
+  };
+}
+
+/** The site's cookie notice, or null when its settings or its services say there is none. */
+async function loadCookieNotice(
+  database: DatabaseOrTransaction,
+  options: {
+    site: Site;
+    settings: Awaited<ReturnType<typeof readCookieNoticeSettings>>;
+    scriptRule: CustomScriptRule;
+    enabledPlugins: readonly string[];
+    fontStylesheets: readonly string[];
+    locales: readonly string[];
+    localise: (url: string, locale: string) => string;
+  },
+): Promise<SiteCookieNotice | null> {
+  const { settings, site } = options;
+  if (settings.mode === "off") return null;
+  const services = await findSiteConsentServices(database, site, {
+    scriptRule: options.scriptRule,
+    usesAdobeFonts: options.fontStylesheets.length > 0,
+    enabledPlugins: options.enabledPlugins,
+  });
+  if (!isCookieNoticeShown(settings, services)) return null;
+  const waitingFonts = services.some((service) => service.id === adobeFontsService.id)
+    ? options.fontStylesheets
+    : [];
+  return {
+    page: buildCookieNoticePage(settings, services, site, waitingFonts),
+    privacyUrls: await findPrivacyPageUrls(
+      database,
+      settings.privacyPageId,
+      options.locales,
+      options.localise,
+    ),
   };
 }
 

@@ -75,6 +75,34 @@ export function updateSiteEffects(changes: Partial<SiteEffectSettings>) {
   return apiRequest<SiteEffectSettings>("/website/effects", { method: "PUT", body: changes });
 }
 
+/** Settings → Your website → Cookie notice (see core's src/cookie-notice). */
+export type CookieNoticeMode = "automatic" | "always" | "off";
+export type CookieNoticePosition = "bar" | "corner";
+
+export interface CookieNoticeSettings {
+  mode: CookieNoticeMode;
+  position: CookieNoticePosition;
+  heading: string;
+  message: string;
+  privacyPageId: string | null;
+}
+
+export interface CookieNotice {
+  settings: CookieNoticeSettings;
+  /** What the site uses that may set cookies, by name: "YouTube", "Adobe Fonts". */
+  services: Array<{ id: string; name: string }>;
+  /** Whether visitors see the notice. */
+  shown: boolean;
+}
+
+export function getCookieNotice() {
+  return apiRequest<CookieNotice>("/website/cookie-notice");
+}
+
+export function updateCookieNotice(changes: Partial<CookieNoticeSettings>) {
+  return apiRequest<CookieNotice>("/website/cookie-notice", { method: "PUT", body: changes });
+}
+
 /** The site's design variables and shared styles, made in the page builder. */
 export function getSiteDesign() {
   return apiRequest<SiteDesign>("/website/design");

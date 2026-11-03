@@ -70,3 +70,18 @@
   color: var(--lintel-color-text-secondary);
   font-size: 0.8125rem;
 }
+
+.lintel-footer__cookie-settings {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.lintel-footer__cookie-settings:hover {
+  color: var(--lintel-color-link);
+}

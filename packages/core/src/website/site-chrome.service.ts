@@ -70,6 +70,7 @@ export async function loadSiteChrome(
     socialLinks,
     languages: [],
     locale,
+    cookieSettings: context.cookieNotice !== null,
   };
 }
 

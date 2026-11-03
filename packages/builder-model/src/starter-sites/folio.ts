@@ -180,6 +180,11 @@ function footer(): NodeBlueprint {
           link("Instagram", "https://www.instagram.com/", detail),
           link("Are.na", "https://www.are.na/", detail),
           link("Vimeo", "https://vimeo.com/", detail),
+          // Shows only once the site asks visitors about cookies.
+          {
+            type: "cookieSettings",
+            styles: { base: { ...plainLink, ...detail }, hover: { opacity: "0.6" } },
+          },
         ],
       },
       label(`© 2026 ${name}`, "Small print"),

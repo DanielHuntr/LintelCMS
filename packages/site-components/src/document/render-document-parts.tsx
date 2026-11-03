@@ -6,6 +6,7 @@ import { ResponsiveImage, type ResponsiveImageProps } from "../media/ResponsiveI
 import type { SiteChrome, SiteLabels } from "../site.types.js";
 import type { SiteTemplate } from "../templates/site-template.js";
 import type { PageDesign, SiteEffectsHead } from "../templates/view.types.js";
+import { type CookieNoticeHead, CookieNoticeTags } from "./CookieNoticeHead.js";
 import { DesignHead } from "./DesignHead.js";
 import { EffectsHead } from "./EffectsHead.js";
 import { HeadTags } from "./HeadTags.js";
@@ -29,6 +30,8 @@ export interface DocumentPartsProps {
   elementsScriptUrl?: string;
   siteEffects?: SiteEffectsHead;
   effectModuleUrls?: Readonly<Record<string, string>>;
+  /** The cookie notice, on sites that ask visitors about cookies. */
+  cookieNotice?: CookieNoticeHead;
 }
 
 /** The same parts `SiteDocument` puts together, each as finished HTML. */
@@ -64,6 +67,7 @@ export function renderDocumentParts(props: DocumentPartsProps): DocumentParts {
           stylesheetUrl={props.stylesheetUrl}
           fontStylesheetUrls={props.fontStylesheetUrls}
         />
+        <CookieNoticeTags notice={props.cookieNotice} />
         {design && (
           <DesignHead
             design={design}

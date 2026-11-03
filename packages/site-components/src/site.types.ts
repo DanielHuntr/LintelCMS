@@ -96,6 +96,8 @@ export interface SiteChrome {
   navigationDesign?: PageDesign;
   /** The same for the footer. */
   footerDesign?: PageDesign;
+  /** The site asks visitors about cookies, so the footer offers "Cookie settings". */
+  cookieSettings?: boolean;
 }
 
 /**
@@ -121,6 +123,7 @@ export interface SiteLabels {
   emptySiteText: string;
   socialLinks: string;
   contact: string;
+  cookieSettings: string;
 }
 
 export const englishLabels: SiteLabels = {
@@ -143,4 +146,5 @@ export const englishLabels: SiteLabels = {
     "In Lintel, publish the first page at the top of the page tree. It becomes the home page, at this address.",
   socialLinks: "Elsewhere",
   contact: "Contact",
+  cookieSettings: "Cookie settings",
 };

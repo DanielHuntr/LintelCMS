@@ -30,7 +30,8 @@
       "development": "./src/site-behaviours/shop-api.ts",
       "default": "./dist/site-behaviours/shop-api.js"
     },
-    "./site-behaviours.js": "./dist/site-behaviours.js"
+    "./site-behaviours.js": "./dist/site-behaviours.js",
+    "./cookie-notice.js": "./dist/cookie-notice.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json && node scripts/bundle-site-behaviours.mjs",

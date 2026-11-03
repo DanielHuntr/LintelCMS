@@ -103,6 +103,7 @@ import { websiteRoutes } from "./website/website.routes.js";
 import { liquidTemplatesRoutes } from "./liquid-templates/liquid-templates.routes.js";
 import { registerFieldSnippetsSync } from "./liquid-editor-support/field-snippets-sync.js";
 import { siteEffectsRoutes } from "./site-effects/site-effects.routes.js";
+import { cookieNoticeRoutes } from "./cookie-notice/cookie-notice.routes.js";
 import { siteDesignRoutes } from "./site-design/site-design.routes.js";
 import { siteSectionsRoutes } from "./site-sections/site-sections.routes.js";
 import { EventBus } from "./events/event-bus.js";
@@ -506,6 +507,7 @@ function registerApiRoutes(
   server.register(websiteRoutes);
   server.register(liquidTemplatesRoutes);
   server.register(siteEffectsRoutes);
+  server.register(cookieNoticeRoutes);
   server.register(siteDesignRoutes);
   server.register(siteSectionsRoutes);
   server.register(siteFontsRoutes);

@@ -331,7 +331,7 @@ describe("site fonts", () => {
   });
 
   describe("Adobe Fonts", () => {
-    it("lists a project's families and links Adobe's stylesheet on every page", async () => {
+    it("lists a project's families and links Adobe's stylesheet on every page, once allowed", async () => {
       const connected = await api("POST", "/site-fonts/adobe", { projectId: "ABC1DEF" });
 
       expect(connected.statusCode, connected.body).toBe(200);
@@ -347,8 +347,14 @@ describe("site fonts", () => {
         expect.objectContaining({ family: "freight-text-pro", category: "serif", source: "adobe" }),
       ]);
 
+      // Adobe's stylesheet waits for visitors to allow it in the cookie notice (LINTEL-UX-041).
       const { html } = await visitHome();
-      expect(html).toContain('<link rel="stylesheet" href="https://use.typekit.net/abc1def.css"/>');
+      expect(html).not.toContain('<link rel="stylesheet" href="https://use.typekit.net');
+      expect(html).toContain('"fontStylesheets":["https://use.typekit.net/abc1def.css"]');
+      await api("PUT", "/website/cookie-notice", { mode: "off" });
+      expect((await visitHome()).html).toContain(
+        '<link rel="stylesheet" href="https://use.typekit.net/abc1def.css"/>',
+      );
 
       await api("DELETE", "/site-fonts/adobe/abc1def");
       expect((await visitHome()).html).not.toContain("typekit");

@@ -42,3 +42,4 @@ export { builtInTemplates, findTemplate } from "./templates/templates.js";
 export type { PageHead } from "./document/page-head.types.js";
 export { SiteDocument, type SiteDocumentProps } from "./document/SiteDocument.js";
 export { motionCloakCss, scriptSafeJson } from "./document/DesignHead.js";
+export { COOKIE_NOTICE_ELEMENT_ID, type CookieNoticeHead } from "./document/CookieNoticeHead.js";

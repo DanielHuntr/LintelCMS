@@ -165,6 +165,7 @@ function siteData(request: PageRequest): DataSite {
     })),
     locale,
     apiBase: SITE_API_BASE,
+    cookieNotice: chrome.cookieSettings === true,
   };
 }
 

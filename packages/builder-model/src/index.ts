@@ -75,6 +75,8 @@ export * from "./fonts/page-fonts.js";
 export * from "./fonts/site-fonts.js";
 export * from "./text-marks/text-marks.js";
 export * from "./countries/country-codes.js";
+export * from "./consent/consent-services.js";
+export * from "./consent/cookie-notice-page.js";
 
 export * from "./tree/node-ids.js";
 export * from "./tree/tree-queries.js";

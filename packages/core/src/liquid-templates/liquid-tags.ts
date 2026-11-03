@@ -25,6 +25,9 @@ import { findPageHelpers, type LiquidPageHelpers } from "./liquid-page-helpers.j
  *   {% form "contact" %}                                   a form from Forms
  *   {% design %}                                           the page's visual design
  *   {% lintel_head %} {% site_header %} {% site_footer %}  the shared document's parts
+ *   {% cookie_settings %}                                  "Cookie settings", which opens the
+ *                                                          cookie notice again (only on sites
+ *                                                          that show one)
  *   {{ entry.data.body | rich_text }}                      rich text, already made safe
  *   {{ entry.data.hero | image_url: 800 }}                 the address of a resized copy
  *
@@ -50,6 +53,10 @@ export function registerLintelTags(engine: Liquid): void {
   engine.registerTag(
     "site_footer",
     PartTag("site_footer", (helpers) => helpers.footer),
+  );
+  engine.registerTag(
+    "cookie_settings",
+    PartTag("cookie_settings", (helpers) => helpers.cookieSettings),
   );
   // Rich text arrives as finished, cleaned HTML; anything else is printed as plain text.
   engine.registerFilter("rich_text", {

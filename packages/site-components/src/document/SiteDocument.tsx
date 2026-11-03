@@ -5,6 +5,7 @@ import type { SiteChrome, SiteLabels } from "../site.types.js";
 import type { SiteTemplate } from "../templates/site-template.js";
 import type { SiteView } from "../templates/view.types.js";
 import type { SiteEffectsHead } from "../templates/view.types.js";
+import { type CookieNoticeHead, CookieNoticeTags } from "./CookieNoticeHead.js";
 import { DesignHead } from "./DesignHead.js";
 import { EffectsHead } from "./EffectsHead.js";
 import { HeadTags } from "./HeadTags.js";
@@ -34,6 +35,8 @@ export interface SiteDocumentProps {
   siteEffects?: SiteEffectsHead;
   /** Where each effect module is served; only the ones a page uses are listed in it. */
   effectModuleUrls?: Readonly<Record<string, string>>;
+  /** The cookie notice, on sites that ask visitors about cookies. */
+  cookieNotice?: CookieNoticeHead;
 }
 
 /**
@@ -54,6 +57,7 @@ export function SiteDocument({
   elementsScriptUrl,
   siteEffects,
   effectModuleUrls = {},
+  cookieNotice,
 }: SiteDocumentProps) {
   const pageDesign = view.kind === "page" ? view.design : null;
   const slots = chromeSlots(chrome, pageDesign);
@@ -68,6 +72,7 @@ export function SiteDocument({
           stylesheetUrl={stylesheetUrl}
           fontStylesheetUrls={fontStylesheetUrls}
         />
+        <CookieNoticeTags notice={cookieNotice} />
         {design && (
           <DesignHead
             design={design}

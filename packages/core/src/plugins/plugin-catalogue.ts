@@ -1,5 +1,6 @@
 import { getTableName } from "drizzle-orm";
 import { pluginBlockPrefix, registerPluginBlocks } from "../blocks/define-block.js";
+import { registerPluginConsentServices } from "../cookie-notice/plugin-consent-services.js";
 import { registerPluginFieldtypes } from "../fieldtypes/fieldtypes.registry.js";
 import { registerPluginPermissions } from "../roles/permission-catalog.js";
 import type { LintelPlugin } from "./plugin-definition.js";
@@ -20,6 +21,7 @@ export interface PluginMigrations {
 }
 
 const PLUGIN_ID_PATTERN = /^[a-z][a-z0-9-]*$/;
+const CONSENT_HANDLE_PATTERN = /^[a-z][a-z0-9-]*$/;
 
 /**
  * Every plugin this server knows about: the built-in ones first, in the order of their
@@ -46,6 +48,7 @@ export class PluginCatalogue {
       checkPlugin(plugin);
       registerPluginFieldtypes(plugin.id, plugin.fieldtypes ?? []);
       registerPluginBlocks(plugin.id, plugin.blocks ?? []);
+      registerPluginConsentServices(plugin.id, plugin.consentServices ?? []);
       registerPluginPermissions(plugin);
     }
   }
@@ -112,6 +115,12 @@ function findProblem(plugin: LintelPlugin): string | undefined {
   );
   if (strayBlock) {
     return `its block "${strayBlock.handle ?? strayBlock.name}" needs a handle starting with "${pluginBlockPrefix(plugin.id)}".`;
+  }
+  const strayService = plugin.consentServices?.find(
+    ({ handle, name }) => !CONSENT_HANDLE_PATTERN.test(handle) || !name.trim(),
+  );
+  if (strayService) {
+    return `its consent service "${strayService.handle}" needs a handle of lowercase letters, numbers and dashes, and a name.`;
   }
   if (plugin.settings && !plugin.settings.schema.safeParse(plugin.settings.defaults).success) {
     return "its default settings don't pass its own settings schema.";

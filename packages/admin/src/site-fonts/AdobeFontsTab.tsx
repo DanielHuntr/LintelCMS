@@ -45,7 +45,9 @@ export function AdobeFontsTab({ onAdded }: { onAdded: () => void }) {
           setProjectId(event.target.value);
         }}
       />
-      <p className="text-footnote text-label-secondary">{t("siteFonts.adobe.note")}</p>
+      <p className="text-footnote text-label-secondary">
+        {t("siteFonts.adobe.note")} {t("siteFonts.adobe.consent")}
+      </p>
       <div className="flex justify-end">
         <Button type="submit" disabled={!projectId.trim() || connect.isPending}>
           {connect.isPending ? t("siteFonts.adobe.connecting") : t("siteFonts.adobe.connect")}

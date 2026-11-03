@@ -68,6 +68,12 @@ export const TAG_SNIPPETS: EditorSnippets = {
     ["{% site_footer %}$0"],
     "{% site_footer %}: the site's own footer, as on every other page.",
   ),
+  "Lintel: cookie_settings": snippet(
+    ["cookie_settings", "lintel-cookie-settings"],
+    ["{% cookie_settings %}$0"],
+    "{% cookie_settings %}: a Cookie settings link that opens the cookie notice again. It " +
+      "shows only on sites that ask visitors about cookies.",
+  ),
   "Lintel: rich_text": snippet(
     ["rich_text", "lintel-rich-text"],
     ["{{ ${1:entry.data.body} | rich_text }}$0"],

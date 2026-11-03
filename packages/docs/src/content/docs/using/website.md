@@ -67,3 +67,16 @@ you press **Publish changes**. See [Publishing](/using/publishing/).
 Type the address, such as **https://www.example.com**, in **Website address**. Lintel uses
 it for links to your pages in search engines and when pages are shared. Leave it empty
 while you're still using the address Lintel gives you.
+
+## Cookie notice
+
+When your site uses something from another company that may set cookies (a YouTube or Vimeo
+video, a map, an embed, Adobe Fonts or an add-on that says so), visitors see a small notice
+that names them, with **Accept all**, **Only necessary** and **Choose**. Nothing from those
+services loads until a visitor allows it. Sites that use none of these show no notice.
+
+In **Settings → Your website → Cookie notice** you can choose Automatic (recommended),
+Always or Off, a bar along the bottom or a card in the corner, your own heading and message,
+and a privacy page to link to. Visitors can change their mind with **Cookie settings** in the
+footer; add the **Cookie settings** element to your own footer if it doesn't have one. This
+is general guidance, not legal advice.

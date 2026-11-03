@@ -5,9 +5,10 @@ import { socialLinkName } from "./social-links.js";
 export interface FooterProps {
   chrome: Pick<
     SiteChrome,
-    "siteName" | "footerText" | "contactEmail" | "socialLinks" | "languages"
+    "siteName" | "footerText" | "contactEmail" | "socialLinks" | "languages" | "cookieSettings"
   >;
-  labels: Pick<SiteLabels, "languages" | "socialLinks" | "contact">;
+  labels: Pick<SiteLabels, "languages" | "socialLinks" | "contact"> &
+    Partial<Pick<SiteLabels, "cookieSettings">>;
   /** For the copyright line. Passed in, so the same props always give the same HTML. */
   year: number;
 }
@@ -79,6 +80,18 @@ export function Footer({ chrome, labels, year }: FooterProps) {
         </div>
         <p className="lintel-footer__copyright">
           © {year} {chrome.siteName}
+          {chrome.cookieSettings && (
+            <>
+              {" · "}
+              <button
+                type="button"
+                className="lintel-footer__cookie-settings"
+                data-lintel-cookie-settings=""
+              >
+                {labels.cookieSettings ?? "Cookie settings"}
+              </button>
+            </>
+          )}
         </p>
       </Container>
     </footer>
