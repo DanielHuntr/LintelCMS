@@ -85,7 +85,10 @@ describe("when the pointer is over an element", () => {
     await user.click(within(fields).getByRole("button", { name: "Choose a picture" }));
     expect(project()?.effects).toEqual([
       { effect: "magnetic-pull", params: {} },
-      { effect: "hover-picture", params: { src: "/media/harbour.jpg", size: "medium" } },
+      {
+        effect: "hover-picture",
+        params: { src: "/media/harbour.jpg", assetId: "a1", size: "medium" },
+      },
     ]);
 
     for (const mode of ["grow", "hide", "normal"]) {

@@ -7,6 +7,7 @@ import {
   type EffectContext,
   type EffectModule,
   type EffectModuleName,
+  type EffectParams,
   type PageEffects,
 } from "./effect-types.js";
 
@@ -130,17 +131,16 @@ export function startEffects(
   const cursor = site?.cursor;
   if (cursor && cursor.style !== "none" && context.finePointer) {
     // "Your own picture" brings its address (sized by the server), its size and its point.
-    const { style, trail, size, colour, picture } = cursor;
+    // The word's look and the picture also travel as objects; the cursor never reads them,
+    // and passing everything keeps this part of every page small.
     run(body, {
       module: "cursor",
       behaviour: "siteCursor",
       params: {
-        style,
-        trail,
-        size,
-        colour: themeColour(colour),
-        ...(style === "picture" && picture),
-      },
+        ...cursor,
+        colour: themeColour(cursor.colour),
+        ...(cursor.style === "picture" && cursor.picture),
+      } as unknown as EffectParams,
     });
   }
   // Older pages' settings have no smooth scrolling: read it carefully.
