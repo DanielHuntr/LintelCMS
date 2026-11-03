@@ -61,6 +61,21 @@ export {
 
 // Blocks: offered in the builder while the plugin is on, defined as code blocks are.
 export { defineBlock, type BlockDefinition, type BlockInput } from "../blocks/block-definition.js";
+// The properties of a block, written as content model files write fields.
+export {
+  colour,
+  date,
+  image,
+  link,
+  list,
+  number,
+  richText,
+  select,
+  text,
+  textarea,
+  toggle,
+  url,
+} from "../content-model-sync/field-helpers.js";
 export type { PluginConsentService } from "../cookie-notice/plugin-consent-services.js";
 
 // Fieldtypes: a plugin's kinds of field are defined exactly as core's own.
