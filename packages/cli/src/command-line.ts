@@ -1,6 +1,8 @@
 import { HttpError } from "@lintel/core/data-tools";
 import { lintelVersion } from "@lintel/core/updates";
+import { printAddonCommands, runAddonCommand } from "./addons/addon-commands.js";
 import type { Command } from "./command.js";
+import { addonsCommand } from "./commands/addons.js";
 import { backupCommand } from "./commands/backup.js";
 import { createAdminCommand } from "./commands/create-admin.js";
 import { doctorCommand } from "./commands/doctor.js";
@@ -29,10 +31,11 @@ export const commands: readonly Command[] = [
   migrateCommand,
   modelCommand,
   templatesCommand,
+  addonsCommand,
   createAdminCommand,
 ];
 
-export function printHelp(terminal: Terminal) {
+export async function printHelp(terminal: Terminal) {
   terminal.say("Lintel's command line tool. Run commands from the folder Lintel is in:");
   terminal.say();
   terminal.say("  pnpm lintel <command> [options]");
@@ -40,6 +43,7 @@ export function printHelp(terminal: Terminal) {
   for (const line of formatTable(commands.map((command) => [command.name, command.summary]))) {
     terminal.say(`  ${line}`);
   }
+  await printAddonCommands(terminal);
   terminal.say();
   terminal.say("Add --help after a command to see its options, or run --version for the version.");
 }
@@ -51,14 +55,26 @@ export async function runCommandLine(argumentList: string[], terminal: Terminal)
     return 0;
   }
   if (!name || name === "help" || name === "--help" || name === "-h") {
-    printHelp(terminal);
+    await printHelp(terminal);
     return 0;
+  }
+  // An add-on's own command: "lintel bookings:export".
+  if (name.includes(":")) {
+    try {
+      return await runAddonCommand(name, rest, terminal);
+    } catch (error) {
+      if (error instanceof CommandError || error instanceof HttpError) {
+        terminal.warn(error.message);
+        return 1;
+      }
+      throw error;
+    }
   }
   const command = commands.find((candidate) => candidate.name === name);
   if (!command) {
     terminal.warn(`There is no "${name}" command.`);
     terminal.say();
-    printHelp(terminal);
+    await printHelp(terminal);
     return 1;
   }
   if (rest.includes("--help") || rest.includes("-h")) {

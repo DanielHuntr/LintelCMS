@@ -2,7 +2,8 @@
 
 Optional features, switched on only when a site needs them. A plugin is a
 `definePlugin({...})` (`plugin-definition.ts`) that can add permissions, settings, its own
-tables and migrations, API routes, fieldtypes, and content made when it is switched on.
+tables and migrations, API routes, fieldtypes, builder blocks, Liquid tags and filters,
+event handlers, timed jobs, terminal commands, and content made when it is switched on.
 Its admin half is a `defineAdminPlugin` in the admin (see `packages/admin/src/plugins`).
 The beta, the trust model and the lifecycle are explained in
 `docs/decisions/0012-plugins.md`; the developer guide is the docs page "Writing a plugin".
@@ -21,14 +22,18 @@ fieldtypes named after it. A mistake stops the server with a message naming the 
 
 ## What Lintel does with a plugin
 
-| Part            | Where it's handled                                                                                             |
-| --------------- | -------------------------------------------------------------------------------------------------------------- |
-| `routes`        | `plugin-routes.ts`: each plugin in its own Fastify scope that answers 404 `PLUGIN_NOT_ENABLED` while it is off |
-| `database`      | Its migrations run on start and when setup switches database, recorded in `drizzle.__plugin_<id>_migrations`   |
-| `settings`      | `plugin-settings.service.ts`: stored as the `plugin:<id>` setting, checked by its schema                       |
-| `fieldtypes`    | Added to the fieldtype list (`src/fieldtypes`), and offered by `GET /fieldtypes` with the plugin's id          |
-| `createContent` | Run by `setEnabledPlugins` each time the plugin is switched on                                                 |
-| `permissions`   | Listed by `GET /plugins` for the roles screen                                                                  |
+| Part            | Where it's handled                                                                                              |
+| --------------- | --------------------------------------------------------------------------------------------------------------- |
+| `routes`        | `plugin-routes.ts`: each plugin in its own Fastify scope that answers 404 `PLUGIN_NOT_ENABLED` while it is off  |
+| `database`      | Its migrations run on start and when setup switches database, recorded in `drizzle.__plugin_<id>_migrations`    |
+| `settings`      | `plugin-settings.service.ts`: stored as the `plugin:<id>` setting, checked by its schema                        |
+| `fieldtypes`    | Added to the fieldtype list (`src/fieldtypes`), and offered by `GET /fieldtypes` with the plugin's id           |
+| `createContent` | Run by `setEnabledPlugins` each time the plugin is switched on                                                  |
+| `liquid`        | `plugin-liquid.ts`: added to every Liquid engine; while off, a tag draws nothing and a filter returns its value |
+| `events`        | `plugin-events.ts`: subscribed to `server.events`, each handler checking the plugin is on                       |
+| `jobs`          | `plugin-jobs.ts`: started with the server's other timed jobs, run only while the plugin is on                   |
+| `commands`      | `plugin-commands.ts`: `lintel <id>:<name>` in packages/cli, with the database open                              |
+| `permissions`   | Listed by `GET /plugins` for the roles screen                                                                   |
 
 Which plugins are on is the `enabledPlugins` setting, per tenant. `GET /auth/me` carries
 it, so the admin shows the right things without another request. Switching a plugin off
@@ -64,4 +69,10 @@ is `@lintel/core/plugin-testing`: a real server with the plugin installed, for i
 | `plugins.schema.ts`          | Zod schemas for requests and responses                          |
 | `plugins.errors.ts`          | Named errors                                                    |
 | `plugin-api.ts`              | `@lintel/core/plugin`                                           |
+| `plugin-context.ts`          | What handlers, jobs, tags and commands are given                |
+| `plugin-liquid.ts`           | Plugins' Liquid tags and filters                                |
+| `plugin-events.ts`           | Plugins' event handlers                                         |
+| `plugin-jobs.ts`             | Plugins' timed jobs                                             |
+| `plugin-commands.ts`         | Plugins' terminal commands                                      |
+| `plugin-extensions.ts`       | Connecting handlers and jobs when the server is built           |
 | `plugin-testing.ts`          | `@lintel/core/plugin-testing`                                   |

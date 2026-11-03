@@ -17,6 +17,22 @@ export {
   type PluginSettings,
 } from "./plugin-definition.js";
 export { requirePluginEnabled } from "./plugin-routes.js";
+export type { PluginContext, PluginLog } from "./plugin-context.js";
+export type { PluginEventHandler, PluginEventHandlers } from "./plugin-events.js";
+export type { PluginJob } from "./plugin-jobs.js";
+export type { PluginCommand, PluginCommandContext } from "./plugin-commands.js";
+export type { PluginLiquid, PluginLiquidFilter, PluginLiquidTag } from "./plugin-liquid.js";
+export { escapeHtml } from "../liquid-templates/liquid-tags.js";
+export { packageFolder } from "./package-folder.js";
+
+// Events: what handlers are told, and the catalogue a plugin extends with its own.
+export type { PublishedEvent } from "../events/event-bus.js";
+export type {
+  EventActor,
+  EventDefinition,
+  LintelEventName,
+  LintelEvents,
+} from "../events/event-catalogue.js";
 export { isPluginEnabled } from "./plugins.service.js";
 export { PluginNotEnabledError } from "./plugins.errors.js";
 
@@ -45,6 +61,21 @@ export {
 
 // Blocks: offered in the builder while the plugin is on, defined as code blocks are.
 export { defineBlock, type BlockDefinition, type BlockInput } from "../blocks/block-definition.js";
+// The properties of a block, written as content model files write fields.
+export {
+  colour,
+  date,
+  image,
+  link,
+  list,
+  number,
+  richText,
+  select,
+  text,
+  textarea,
+  toggle,
+  url,
+} from "../content-model-sync/field-helpers.js";
 export type { PluginConsentService } from "../cookie-notice/plugin-consent-services.js";
 
 // Fieldtypes: a plugin's kinds of field are defined exactly as core's own.

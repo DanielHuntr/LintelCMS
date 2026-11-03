@@ -1687,3 +1687,26 @@ Decision record: `docs/decisions/0053-content-only-editing-for-clients.md`. Migr
 **Screenshots** (in `screenshots/client-editing/`): `designer-what-clients-can-change-desktop-{light,dark}`, `client-tour-desktop-light`, `client-view-start-desktop-{light,dark}`, `client-view-heading-desktop-{light,dark}`, `client-view-design-part-desktop-{light,dark}`, `client-view-sent-for-review-desktop-light`, `dashboard-waiting-for-review-{desktop,390}-{light,dark}`, `roles-client-setting-{desktop,390}-{light,dark}`.
 
 **Left for later:** the site's own blocks and code blocks are closed to clients (their properties and marked parts could be opened the same way); restoring an older revision isn't checked against the design; a client's new page starts empty until a designer lays it out.
+
+## The add-on kit (3 November 2026)
+
+**Asked by Daniel:** a full add-on kit, so developers can build the kinds of add-ons Statamic has for Lintel (field types, template tags, builder elements, widgets and screens, events and jobs, settings, commands), packaged as npm packages and installed into a site. No directory or marketplace for now.
+
+**Where it started:** plugins (decision 0012) already had field types, builder blocks, routes, tables, settings and the admin's screens, widgets and field editors, but only from Lintel's source tree: the admin half was bundled at build time, so a release install couldn't add one, and one broken plugin stopped the server. The audit is in `docs/decisions/0052-the-add-on-kit.md`.
+
+**What changed:**
+
+- **New things a plugin can add** (`packages/core/src/plugins`): `liquid` tags and filters, typed `events` handlers, timed `jobs`, terminal `commands` (`lintel <id>:<name>`) and a field type's own `deliver()` for the API, GraphQL and templates. Each runs only while the plugin is on; a failing tag leaves a gap, not an error page. `@lintel/core/plugin` also exports the field helpers for block properties, `escapeHtml` and `packageFolder`.
+- **Add-ons** (`packages/core/src/addons`): npm packages with a `lintel-addon` section in package.json (id, Lintel versions, built files), installed into `addons/` in the Lintel folder so they survive updates, roll backs and new Docker images. Each is loaded on its own at start; one that isn't installed, doesn't fit this version, fails to load or fails the checks is left out with a plain reason. The admin loads their admin halves at start against its own React and design system, so a release install works without rebuilding.
+- **Build → Add-ons** (`packages/admin/src/addons`): each add-on with whether it is on; choosing one shows its switch, what it adds and can reach in plain words ("Runs inside your site with full access…"), a settings form drawn from its schema, and how to remove it. Add-ons that can't run are listed apart.
+- **`lintel addons`** (`packages/cli`): `add`, `remove`, `list`, `link`, `unlink`, `build` (esbuild, leaving out what is shared with Lintel) and `new` (a working add-on with a field type and editor, a tag and filter, an element, a widget, an event handler, settings and tests).
+- **Example** `packages/addon-example`: colour swatches and opening hours, one of each part.
+- **Docs:** "Building add-ons", with Umbraco and Statamic comparisons, and `lintel addons` in the command line reference.
+
+**Tests:** core `plugins/plugin-extensions.test.ts` (10), `addons/addons.test.ts` (18); cli `addons/addons.test.ts` (8, including making, building and loading a new add-on); admin `addons/*.test.ts*` (8) and the Build page's list; addon-example (10).
+
+**Checked in a browser** (Chromium, desktop and 390px, light and dark; on a copy of the styles test data with the private reference pages unpublished and out of the menu, the example linked and one missing package listed): Build → Add-ons, an add-on's details with its settings form, and the example's own Opening hours screen loaded from its built bundle.
+
+**Screenshots** (in `screenshots/addon-kit/`): `addons-list-{desktop,390}-{light,dark}`, `addon-details-{desktop,390}-{light,dark}`, `opening-hours-screen-{desktop,390}-{light,dark}`.
+
+**Left for later:** rich text extensions (the editor's buttons and the HTML renderer are one fixed list; documented as next); an add-on's own tables aren't in backups yet (backups cover Lintel's schema; the same was already true of plugins from lintel.config.ts); Lintel's packages aren't on npm, so new add-ons link to a local copy of Lintel for types and tests.

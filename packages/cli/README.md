@@ -16,18 +16,23 @@ reference", `packages/docs/src/content/docs/building/command-line.md`).
 The tool only reads arguments, calls core and prints what happened; the rules all live in
 core, imported through `@lintel/core/data-tools` (`packages/core/src/data-tools.ts`).
 
-| File                                      | What it does                                                      |
-| ----------------------------------------- | ----------------------------------------------------------------- |
-| `main.ts`                                 | The program: runs the command line with the real terminal         |
-| `command-line.ts`                         | The one list of commands, help, and turning errors into messages  |
-| `command.ts`                              | What a command is, reading arguments, opening the database        |
-| `terminal.ts`                             | Saying things, asking, tables, sizes and paths                    |
-| `commands/*.ts`                           | One file per command                                              |
-| `doctor/doctor-checks.ts`                 | The checks behind `lintel doctor`, as plain functions             |
-| `doctor/doctor-probes.ts`                 | Finding out about the real machine for those checks               |
-| `content-model/content-model-commands.ts` | Loading the content model commands from core                      |
-| `commands/templates.ts`                   | `lintel templates init` and `sync`: Liquid templates' editor help |
-| `updating/git-update.ts`                  | `lintel update`: a git clone to the newest release, safely        |
+| File                                      | What it does                                                       |
+| ----------------------------------------- | ------------------------------------------------------------------ |
+| `main.ts`                                 | The program: runs the command line with the real terminal          |
+| `command-line.ts`                         | The one list of commands, help, and turning errors into messages   |
+| `command.ts`                              | What a command is, reading arguments, opening the database         |
+| `terminal.ts`                             | Saying things, asking, tables, sizes and paths                     |
+| `commands/*.ts`                           | One file per command                                               |
+| `doctor/doctor-checks.ts`                 | The checks behind `lintel doctor`, as plain functions              |
+| `doctor/doctor-probes.ts`                 | Finding out about the real machine for those checks                |
+| `content-model/content-model-commands.ts` | Loading the content model commands from core                       |
+| `commands/templates.ts`                   | `lintel templates init` and `sync`: Liquid templates' editor help  |
+| `updating/git-update.ts`                  | `lintel update`: a git clone to the newest release, safely         |
+| `commands/addons.ts`                      | `lintel addons ...`: the subcommands below                         |
+| `addons/addon-install.ts`                 | `add`, `remove`, `list`, `link`, `unlink`, with npm doing installs |
+| `addons/addon-build.ts`                   | `build`: both halves bundled with esbuild, shared modules left out |
+| `addons/addon-scaffold.ts`                | `new`: a new add-on (files in `addon-template.ts`)                 |
+| `addons/addon-commands.ts`                | `lintel <add-on id>:<command>`, and listing them in `lintel help`  |
 
 Everything that talks to the person goes through `Terminal`, so tests run commands with a
 recording terminal and check what was said (`command-line.test.ts`).
@@ -68,6 +73,17 @@ fields are read from the content model files when there are some, else from the 
 when `pnpm dev` holds the built-in database, `init` still makes the folder and says how to
 get the field snippets, and `sync` says there's nothing to do, since `pnpm dev` keeps them
 up to date.
+
+## lintel addons
+
+Add-ons install into `addons/` in the Lintel folder (see `packages/core/src/addons`).
+`add` runs `npm install` there, checks the package is an add-on that works with this
+version (and uninstalls it if not), and adds it to `lintel-addons.json` to be switched on at
+the next start. `remove` uninstalls it and keeps its data. `link` and `unlink` use a folder
+being worked on instead. `new` writes a working add-on that links to this checkout of
+Lintel; `build` bundles one with esbuild (imported only when it runs). Add-ons' own
+commands run as `lintel <id>:<name>`, with the database open and the add-on's tables up to
+date; `lintel help` lists them.
 
 ## Building
 

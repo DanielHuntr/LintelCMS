@@ -8,6 +8,10 @@ import type {
   PluginConsentService,
   SettingsConsentService,
 } from "../cookie-notice/plugin-consent-services.js";
+import type { PluginCommand } from "./plugin-commands.js";
+import type { PluginEventHandlers } from "./plugin-events.js";
+import type { PluginJob } from "./plugin-jobs.js";
+import type { PluginLiquid } from "./plugin-liquid.js";
 
 /**
  * What a plugin is, on the server. Every plugin, built in or installed from a package, is
@@ -114,6 +118,22 @@ export interface PluginDefinition<
    * It must only create what is missing: it runs again after every switch off and on.
    */
   createContent?(database: DatabaseOrTransaction): Promise<void>;
+  /**
+   * Liquid tags and filters for the site's templates. Names start with the plugin id
+   * (dashes as underscores) and an underscore: `{% opening_hours_table %}`. While the
+   * plugin is off a tag draws nothing and a filter gives its value back unchanged.
+   */
+  liquid?: PluginLiquid<z.output<SettingsSchema>>;
+  /**
+   * What to do when something happens, keyed by event name ("entry.published",
+   * "form.submitted", "order.paid"...). Handlers run only while the plugin is on, after the
+   * change is saved; one failing is logged and doesn't affect the others.
+   */
+  events?: PluginEventHandlers<z.output<SettingsSchema>>;
+  /** Work done on a timer while the plugin is on, such as tidying up or syncing. */
+  jobs?: readonly PluginJob<z.output<SettingsSchema>>[];
+  /** Terminal commands, run as `lintel <plugin id>:<name>`. */
+  commands?: readonly PluginCommand<z.output<SettingsSchema>>[];
 }
 
 /** A plugin with its settings type erased, so different plugins can share one list. */

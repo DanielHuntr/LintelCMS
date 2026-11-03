@@ -37,6 +37,8 @@ function helpers(overrides: Partial<LiquidPageHelpers> = {}): LiquidPageHelpers 
     header: "<header>site header</header>",
     footer: "<footer>site footer</footer>",
     cookieSettings: "",
+    // Only plugins' tags read the database, and these tests add none.
+    database: {} as LiquidPageHelpers["database"],
     ...overrides,
   };
 }

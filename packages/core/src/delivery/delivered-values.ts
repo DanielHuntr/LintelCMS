@@ -120,7 +120,19 @@ function deliverValue(
       data: deliverValues(blockType.fields, block.data, assets, references),
     }));
   }
-  return value;
+  return deliverWithFieldtype(field, value);
+}
+
+/** A fieldtype's own way of delivering its values (plugins' fieldtypes), if it has one. */
+function deliverWithFieldtype(field: FieldDefinition, value: unknown): unknown {
+  const fieldtype = findFieldtype(field.type);
+  if (!fieldtype?.deliver) return value;
+  try {
+    return fieldtype.deliver(value, field.options);
+  } catch {
+    // A plugin's mistake shouldn't hide the content: the stored value is still useful.
+    return value;
+  }
 }
 
 function pageAddress(entryId: string, references: DeliveredReferences): string | null {

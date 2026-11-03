@@ -38,6 +38,7 @@ import { pageFlowStrings } from "../website/pageFlowStrings.js";
 import { cookieNoticeStrings } from "../website/cookieNoticeStrings.js";
 import { analyticsStrings } from "../analytics/analyticsStrings.js";
 import { clientEditingStrings } from "../client-editing/clientEditingStrings.js";
+import { addonStrings } from "../addons/addonStrings.js";
 
 /**
  * Every word the admin shows lives here, in English: the source every translation in
@@ -83,6 +84,7 @@ const english = {
   ...pageDraftsStrings,
   ...analyticsStrings,
   ...clientEditingStrings,
+  ...addonStrings,
   ...siteFontsStrings,
   ...compareLiveStrings,
   ...scheduleStrings,

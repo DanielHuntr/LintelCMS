@@ -11,6 +11,10 @@ export * from "./adminPlugin.js";
 export { createTranslator } from "./createTranslator.js";
 export { PluginBackLink, PluginLink, usePluginNavigate } from "./PluginLink.js";
 
+// Field editors for a plugin's fieldtypes get what Lintel's own editors get.
+export type { FieldEditorProps } from "../fields/fieldEditorProps.js";
+export type { Field, FieldValue } from "../fields/field.types.js";
+
 // Talking to the API: the session cookie is sent, and failures carry a readable message.
 export { ApiError, apiRequest, type FieldMessages } from "../api/client.js";
 export { describeError } from "../api/describeError.js";
