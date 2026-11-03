@@ -14,7 +14,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
  * Requests are passed to the API inside the process (`inject`) with their body, content
  * type, privacy signals and the visitor's address (as the request's own, so per-address
  * limits count each visitor apart), and the answers come back as they are, uncached, except
- * the beacon script, which keeps its own caching.
+ * the beacon script and add-ons' answers that say how long to keep them.
  */
 
 const forwardedHeaders = [
@@ -74,7 +74,9 @@ export async function siteApiRoutes(
       if (typeof value === "string") reply.header(name, value);
     }
     const cacheControl = response.headers["cache-control"];
-    const keepsCaching = area === "analytics" && typeof cacheControl === "string";
+    // The beacon script and add-ons' answers (a feed's pictures, say) keep their own caching.
+    const keepsCaching =
+      (area === "analytics" || area === "addons") && typeof cacheControl === "string";
     return reply
       .code(response.statusCode)
       .header("cache-control", keepsCaching ? cacheControl : "no-store")

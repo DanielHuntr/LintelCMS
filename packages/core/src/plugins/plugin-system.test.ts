@@ -39,6 +39,9 @@ const greetingsPlugin = definePlugin({
     server.post(`${ADDON_PUBLIC_PREFIX}/greetings/wave`, async (request) => ({
       waved: (request.body as { name?: string }).name ?? "nobody",
     }));
+    server.get(`${ADDON_PUBLIC_PREFIX}/greetings/badge.svg`, async (_request, reply) =>
+      reply.type("image/svg+xml").header("cache-control", "public, max-age=3600").send("<svg/>"),
+    );
   },
   fieldtypes: [
     defineFieldtype({
@@ -129,6 +132,11 @@ describe("the plugin system", () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({ waved: "Ada" });
     expect(response.headers["cache-control"]).toBe("no-store");
+    const badge = await website.inject({
+      method: "GET",
+      url: "/_lintel/api/addons/greetings/badge.svg",
+    });
+    expect(badge.headers["cache-control"]).toBe("public, max-age=3600");
 
     await request("PUT", "/plugins", { enabled: [] });
     const whileOff = await website.inject({
