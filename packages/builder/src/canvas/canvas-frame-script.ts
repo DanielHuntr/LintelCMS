@@ -11,7 +11,8 @@ import { snapBox } from "../free-layout/snapping.js";
  * pixels). The element moves on the canvas straight away; the new angle or place is sent
  * when the pointer is let go.
  *
- * Something dragged from Insert can be dropped on the page: the frame says what the pointer
+ * Any element can be dragged to a new place on the page, with the same line showing where it
+ * would go (Escape calls it off). Something dragged from Insert can be dropped on the page: the frame says what the pointer
  * is over, the builder works out where it would land, and the frame draws that line.
  *
  * It is written as one self-contained function so it can be put into the frame as text
@@ -76,6 +77,16 @@ export function runCanvasFrame(snap: typeof snapBox): void {
   // Where something dragged from Insert would land, as the builder worked it out.
   let insertMarker: { nodeId: string; position: string; across: boolean } | null = null;
   let lastInsertOver = "";
+  // An element being dragged to a new place in the page's flow (not a free layout).
+  let moving: {
+    element: HTMLElement;
+    nodeId: string;
+    startX: number;
+    startY: number;
+    moved: boolean;
+  } | null = null;
+  // A click straight after a move would select whatever is under the pointer; it's ignored.
+  let justMoved = false;
   // Told by the builder while something from Insert is being dragged.
   let insertDragging = false;
   // The animation being previewed, if any. Stopped before the page is drawn again.
@@ -360,6 +371,16 @@ export function runCanvasFrame(snap: typeof snapBox): void {
 
   /** Tells the builder what's under the pointer at `clientX`, `clientY`, and around it. */
   function reportInsertOver(target: EventTarget | null, clientX: number, clientY: number) {
+    const chain = pointerChain(target, clientX, clientY);
+    const key = chain.map((over) => `${over.nodeId}:${Math.round(over.ratio * 20)}`).join("|");
+    if (key === lastInsertOver) return;
+    lastInsertOver = key;
+    if (moving) send({ type: "moveOver", nodeId: moving.nodeId, chain });
+    else send({ type: "insertOver", chain });
+  }
+
+  /** The element under the pointer and each one around it, with where the pointer is in it. */
+  function pointerChain(target: EventTarget | null, clientX: number, clientY: number) {
     // The element under the pointer and each one around it, with where the pointer is in it.
     const chain: Array<{ nodeId: string; ratio: number; across: boolean }> = [];
     let element = target instanceof Element ? target.closest("[data-lintel-node]") : null;
@@ -377,11 +398,7 @@ export function runCanvasFrame(snap: typeof snapBox): void {
       chain.push({ nodeId: element.getAttribute("data-lintel-node") ?? "", ratio, across });
       element = element.parentElement?.closest("[data-lintel-node]") ?? null;
     }
-    // Only when it changes enough to matter, not on every pixel.
-    const key = chain.map((over) => `${over.nodeId}:${Math.round(over.ratio * 20)}`).join("|");
-    if (key === lastInsertOver) return;
-    lastInsertOver = key;
-    send({ type: "insertOver", chain });
+    return chain;
   }
 
   document.addEventListener("dragover", (event) => {
@@ -455,6 +472,10 @@ export function runCanvasFrame(snap: typeof snapBox): void {
 
   document.addEventListener("click", (event) => {
     event.preventDefault();
+    if (justMoved) {
+      justMoved = false;
+      return;
+    }
     if (event.target instanceof Element && event.target.closest(".lintel-rotate-handle")) return;
     if (editing && editing.contains(event.target as Node)) return;
     finishEditing(true);
@@ -508,6 +529,14 @@ export function runCanvasFrame(snap: typeof snapBox): void {
     }
     const nodeId = nodeIdAt(event.target);
     const free = freeElement(nodeId);
+    if (!free && nodeId) {
+      // Anywhere else, pressing and dragging moves it to a new place in the page.
+      const element = nodeElement(nodeId);
+      if (element && element !== root && !element.closest("[contenteditable]")) {
+        moving = { element, nodeId, startX: event.clientX, startY: event.clientY, moved: false };
+      }
+      return;
+    }
     if (!free || !nodeId) return;
     dragging = {
       element: free.element,
@@ -531,6 +560,22 @@ export function runCanvasFrame(snap: typeof snapBox): void {
       degrees = event.shiftKey ? Math.round(degrees / 15) * 15 : Math.round(degrees);
       rotating.degrees = degrees;
       rotating.element.style.rotate = `${degrees}deg`;
+      return;
+    }
+    if (moving) {
+      if (!moving.moved) {
+        if (Math.hypot(event.clientX - moving.startX, event.clientY - moving.startY) < 4) return;
+        moving.moved = true;
+        moving.element.style.opacity = "0.4";
+        document.body.style.userSelect = "none";
+        document.body.style.cursor = "grabbing";
+        window.getSelection()?.removeAllRanges();
+      }
+      reportInsertOver(
+        document.elementFromPoint(event.clientX, event.clientY),
+        event.clientX,
+        event.clientY,
+      );
       return;
     }
     if (!dragging) return;
@@ -570,7 +615,24 @@ export function runCanvasFrame(snap: typeof snapBox): void {
     drawGuides(container, snapped.guides);
   });
 
+  function endMove(cancelled: boolean) {
+    if (!moving) return;
+    const finished = moving;
+    moving = null;
+    lastInsertOver = "";
+    if (!finished.moved) return;
+    finished.element.style.opacity = "";
+    document.body.style.userSelect = "";
+    document.body.style.cursor = "";
+    justMoved = !cancelled;
+    send(cancelled ? { type: "moveCancel" } : { type: "moveDrop", nodeId: finished.nodeId });
+  }
+
   document.addEventListener("pointerup", () => {
+    if (moving) {
+      endMove(false);
+      return;
+    }
     if (rotating) {
       send({ type: "rotate", nodeId: rotating.nodeId, degrees: rotating.degrees });
       rotating = null;
@@ -603,6 +665,11 @@ export function runCanvasFrame(snap: typeof snapBox): void {
   });
 
   document.addEventListener("keydown", (event) => {
+    if (moving?.moved && event.key === "Escape") {
+      event.preventDefault();
+      endMove(true);
+      return;
+    }
     if (editing) {
       const markKey = (event.metaKey || event.ctrlKey) && !event.shiftKey && !event.altKey;
       if (markKey && ["b", "i", "k"].includes(event.key.toLowerCase())) {

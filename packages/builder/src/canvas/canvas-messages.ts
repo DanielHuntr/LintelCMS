@@ -75,6 +75,11 @@ export type MessageFromFrame =
   /** The drag left the canvas, or was let go on it. */
   | { type: "insertLeave" }
   | { type: "insertDrop" }
+  /** The element `nodeId` is being dragged to a new place on the page, over `chain`. */
+  | { type: "moveOver"; nodeId: string; chain: PointerOver[] }
+  /** It was let go (moved to the place last shown), or the move was called off. */
+  | { type: "moveDrop"; nodeId: string }
+  | { type: "moveCancel" }
   /** "Add pages to your menu" was pressed in place of an empty menu. */
   | { type: "openMenu"; nodeId: string }
   /** How the selected element looks, measured on the canvas, for the style panel. */
@@ -115,6 +120,9 @@ const frameMessageTypes = new Set([
   "insertOver",
   "insertLeave",
   "insertDrop",
+  "moveOver",
+  "moveDrop",
+  "moveCancel",
 ]);
 
 /** Reads a message from the frame, or null if it isn't one of ours. */
@@ -142,7 +150,9 @@ export function readFrameMessage(data: unknown): MessageFromFrame | null {
         : null;
     case "paste":
       return isText(message.html) && isText(message.text) ? (message as MessageFromFrame) : null;
+    case "moveOver":
     case "insertOver":
+      if (type === "moveOver" && !isText(message.nodeId)) return null;
       return Array.isArray(message.chain) &&
         message.chain.length <= 64 &&
         message.chain.every(
@@ -159,6 +169,10 @@ export function readFrameMessage(data: unknown): MessageFromFrame | null {
       return { type: "insertLeave" };
     case "insertDrop":
       return { type: "insertDrop" };
+    case "moveDrop":
+      return isText(message.nodeId) ? (message as MessageFromFrame) : null;
+    case "moveCancel":
+      return { type: "moveCancel" };
     case "openMenu":
       return isText(message.nodeId) ? (message as MessageFromFrame) : null;
     case "rotate":

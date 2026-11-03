@@ -364,6 +364,27 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
             : null,
         );
       }
+      if (message.type === "moveOver") {
+        const root = state.document.root;
+        // A locked element stays where it is, as it does in Layers.
+        const moved = isLocked(state.document, message.nodeId)
+          ? undefined
+          : findNode(root, message.nodeId);
+        // Never into itself: what it holds can't be where it goes.
+        const chain = message.chain.filter(
+          (over) => moved !== undefined && findNode(moved, over.nodeId) === undefined,
+        );
+        showCanvasDrop(moved ? canvasDropTarget(root, catalogue, moved.type, chain) : null);
+      }
+      if (message.type === "moveDrop") {
+        const target = canvasDropRef.current;
+        if (target) {
+          actions.moveTo(message.nodeId, target.place.parentId, target.place.index);
+          actions.select(message.nodeId);
+        }
+        showCanvasDrop(null);
+      }
+      if (message.type === "moveCancel") showCanvasDrop(null);
       if (message.type === "insertLeave") showCanvasDrop(null);
       if (message.type === "insertDrop") {
         const dragged = insertDrag.current;
@@ -404,7 +425,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
         setEditingMenuFor(message.nodeId);
       }
     },
-    [actions, runShortcut, breakpoint, text, state.document.root, catalogue, showCanvasDrop],
+    [actions, runShortcut, breakpoint, text, state.document, catalogue, showCanvasDrop],
   );
 
   // Pasting while the builder (not a text box) has focus imports what's on the clipboard.

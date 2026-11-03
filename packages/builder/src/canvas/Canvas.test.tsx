@@ -9,7 +9,7 @@ function renderCanvas(isInsertDragging: boolean) {
     <Canvas
       html=""
       css=""
-      breakpoint="desktop"
+      breakpoint="base"
       selectedId={null}
       hoveredId={null}
       labels={{ selected: null, hovered: null }}

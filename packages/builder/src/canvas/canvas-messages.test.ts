@@ -29,4 +29,22 @@ describe("messages from the canvas about dragging from Insert", () => {
       }),
     ).toBeNull();
   });
+
+  // Dragging an element on the page moved nothing: it could only be moved in Layers.
+  it("accepts an element being dragged to a new place, and refuses one without a name", () => {
+    const over = {
+      type: "moveOver",
+      nodeId: "n2",
+      chain: [{ nodeId: "n5", ratio: 0.8, across: false }],
+    };
+
+    expect(readFrameMessage(over)).toEqual(over);
+    expect(readFrameMessage({ type: "moveDrop", nodeId: "n2" })).toEqual({
+      type: "moveDrop",
+      nodeId: "n2",
+    });
+    expect(readFrameMessage({ type: "moveCancel" })).toEqual({ type: "moveCancel" });
+    expect(readFrameMessage({ type: "moveOver", chain: [] })).toBeNull();
+    expect(readFrameMessage({ type: "moveDrop" })).toBeNull();
+  });
 });
