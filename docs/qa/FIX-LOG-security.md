@@ -332,3 +332,21 @@ Still to do in this batch: DATA-005 (a new condition clears existing values), FU
 ### LINTEL-SPEC-003: slugs unique across a whole tree (decided: kept)
 
 Kept on purpose: the website finds a page by its last address part when an old address is followed, which only works when each name is unique, and changing it would need a migration and riskier routing. The message now uses the editor's words: "Another entry in Pages already uses this address. Each one needs its own, even under a different parent page." (and the same for taxonomy terms).
+
+## LINTEL-SEC-003: fixed (4 November 2026)
+
+Branch `fix/code-scripts`. This follows "LINTEL-SEC-003: still open" above.
+
+- **Reproduced through the website:**
+  1. With "allow scripts" on, the Owner publishes a page with a Code element (`onclick="steal()"`, `js: "steal()"`).
+  2. They switch the site back to "remove scripts".
+  3. `/` still serves `steal()`.
+- **Fix:** the site's script rule is now part of what the website loads for each request (`SiteContext.scriptRule`).
+  - `checkPageDesign` and `readPageDesign` take it as a required argument and apply it with the same cleaner used when saving. This includes `toPageView`, which gets it from the site context.
+  - All the places that draw a design go through them; shop pages use built-in designs or item designs, which already do.
+  - Changing the setting already empties the rendered-page cache, as any settings change does, so the change shows straight away.
+- **Tests:**
+  - `pages.test.ts`: the steps above, end to end through the website server. It failed on the old code.
+  - `designed-pages.test.ts`: the same design drawn under each rule.
+  - The site-effects tests that check code registering behaviours now say they run with scripts allowed.
+- **Not changed:** the delivery API still returns a design as stored, for apps that draw pages themselves. Those apps should apply their own rule. The builder's canvas shows code in its sandboxed frame, as before.
