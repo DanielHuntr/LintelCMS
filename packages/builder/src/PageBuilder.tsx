@@ -543,7 +543,16 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
         setEditingMenuFor(message.nodeId);
       }
     },
-    [actions, runShortcut, breakpoint, text, state.document, catalogue, showCanvasDrop],
+    [
+      actions,
+      runShortcut,
+      breakpoint,
+      text,
+      state.document,
+      state.selectedId,
+      catalogue,
+      showCanvasDrop,
+    ],
   );
 
   // Pasting while the builder (not a text box) has focus imports what's on the clipboard.
