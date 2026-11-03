@@ -107,7 +107,7 @@ function PageMenuControls({
         <Link
           to="/content/navigation/$handle"
           params={{ handle: MAIN_MENU }}
-          className="inline-flex items-center gap-1.5 rounded-[4px] font-medium text-accent underline decoration-1 underline-offset-2 hover:decoration-2 focus-visible:focus-ring"
+          className="inline-flex min-h-6 items-center gap-1.5 rounded-[4px] font-medium text-accent underline decoration-1 underline-offset-2 hover:decoration-2 focus-visible:focus-ring"
         >
           <ListTree aria-hidden="true" strokeWidth={1.75} className="size-4" />
           {t("pageMenu.openMenu")}

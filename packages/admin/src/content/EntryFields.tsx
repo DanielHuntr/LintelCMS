@@ -86,7 +86,7 @@ export function EntryFields({ fields, data, errors, onChange }: EntryFieldsProps
               type="button"
               aria-expanded={isOpen}
               onClick={() => setShowsReplaced(!isOpen)}
-              className="w-fit rounded-control text-footnote font-medium text-accent focus-visible:focus-ring"
+              className="inline-flex min-h-6 w-fit items-center rounded-control text-footnote font-medium text-accent focus-visible:focus-ring"
             >
               {isOpen ? t("editor.hideReplacedFields") : t("editor.showReplacedFields")}
             </button>
