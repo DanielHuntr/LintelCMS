@@ -1785,3 +1785,29 @@ Files: `packages/motion/src/effects/kit/{shader-renderer,layers,css-colour,pictu
 - Relay's sign-up page uses the standard contact form.
 - A form section added from Insert shows an empty panel or a title without an email box on the website until someone chooses its form, as the existing contact form section does.
 - Intro with video shows only its words until someone adds a link.
+
+## One place for a page (feature/page-home, 2026-11-03)
+
+Daniel looked at the Content tree, its page menu and a page's screen and asked for more help understanding it, and for the whole thing to wrap in nicely to the designer. Screenshots are in `screenshots/page-home/`, `before-*` and `after-*`.
+
+- **LINTEL-UX-230:** The page screen and the designer felt like two products, with different bars. They now share one (`packages/admin/src/page-home`): the page's name, its status in words, a Design and Content switch, View page, Preview and one main action, at the same size in both. The builder only gained two toolbar slots. Moving between views saves first, so nothing asks, and the builder downloads while the page is open: 215ms to Design the first time, about 110ms after that, 125ms back to Content, with the builder's own canvas filling in after.
+- **LINTEL-UX-231:** The designer always said Publish, even with changes waiting on a live page, and the page screen said Publish changes. Both now use the same button. With nothing to publish it's the plain word Published, no greyed-out button, kept the same width so the bar doesn't jump. The designer's two status notes moved under the name.
+- **LINTEL-UX-232:** A page with no design had a large grey placeholder that pushed its fields down, and at 390px "Start from a template or section" ran off the card. It is now one short row. A designed page keeps its live picture, which says Edit design when pointed at.
+- **LINTEL-UX-233:** Nothing said where the Summary shows. It now does, unless the blueprint has its own help: search results, link previews and lists of pages, not the page itself. This was checked in the code (`site-head.service.ts`, `site-search.service.ts`, `bound-entries.ts`).
+- **LINTEL-UX-234:** The tree's dots had no explanation, and a green one on every row was noise. The states, from `nodeState`, are Live, Changes not published (live, with newer saved changes), Draft and Scheduled. Live now has no mark; the others have a mark with its own shape (pencil, dashed circle, clock), a tooltip and an accessible name, and a scheduled page says when. Every row still says its state to screen readers. The "i" beside Content opens a key. The same marks replace the dots in the collection view and Info.
+- **LINTEL-UX-235:** The page menu was 14 items in one list, with Publish and Unpublish side by side. It is now seven rows at most: Create, Rename, Duplicate; Publish or Unpublish, whichever applies, and View page or Preview; More; Delete. More opens in place and holds the rest, including the other publishing action, which can still apply to the pages under this one. "History and rollback" is now History.
+- **LINTEL-UX-236:** On a phone a page's top bar covered "Show pages", so the tree couldn't be reached from a page, and covered the foot of the tree once open. Found while testing. The button now sits in the bar's row, and the bar stays below the tree. The bar also lost the page's name at 390px; the name and status now sit between the menu and help buttons.
+- **LINTEL-UX-237:** Nothing explained why pages sit under Home. There's a first-time hint in the tree, which leaves out dragging for people who can't move pages; a new help page, `using/content-tree`, which the "?" opens from the tree's own screens; a line on the Parent page group; and a new tour step for the two views, now nine steps. The tour's Skip button no longer wraps.
+- **LINTEL-UX-238:** The side panel stacked every group open. Status stays open on top; the rest are folded rows saying what's set ("Parent page: Home", "Menu: In the menu", "Search engines: Shown"). Groups someone opens stay open in that browser, and a review waiting opens by itself. The badge said Published while the bar said Live, so Status now uses the tree's words.
+- **LINTEL-UX-239:** People without `builder:design` saw "Edit design" for a screen where they can only change the content. For them it now says Edit on the page, and the switch says On the page.
+
+**Calls made:** no decision record, since nothing here changes how the product works underneath. No new tables. The Items view of a page such as a Blog page joined the same switch. A phone has no Design view, because the builder can't open there. Move went under More, because dragging and Parent page also do it.
+
+**Checked in a browser** (Chromium, on a copy of the test data with the private pages removed): 1440px and 390px, light and dark, for the page with and without a design, the hint, the key, the menu and More; 1280px and 1024px for both bars; the switch both ways, including with an unsaved edit (no question asked); Preview from the designer opening the draft in a new tab; the tour's new step. Roles: a client-content-only person saw On the page, Edit on the page, their own view with the shared bar and no template choice; a viewer saw only View page and More in the menu. Languages and sites: with French and a second site added, Language appeared as a folded group, translating Home opened the French page with the same bar, and the site switcher was unchanged.
+
+**Left for later:**
+
+- The sidebar and tree aren't in the designer, which fills the window, so the bar's left edge moves between views. The controls keep their order and size, not their exact position.
+- Between about 768px and 1024px the designer's bar is tight, and the status is cut short (its tooltip has the rest).
+- The hint is remembered per browser, like the tree's other state, not per person.
+- Screenshots in the docs still show the older bar.

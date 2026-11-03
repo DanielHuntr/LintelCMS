@@ -8,7 +8,7 @@ status in words, the view switch, View page, Preview and one main action.
 | -------------------- | -------------------------------------------------------------------------- |
 | `PageBarParts.tsx`   | The shared parts: view switch, View page, Preview, the main Publish button |
 | `pageViews.ts`       | Which views a page offers, and what the main button says                   |
-| `useIsBarTight.ts`   | Whether the switch fits in the bar, or sits just under it                  |
+| `useBarRoom.ts`      | How much room the page's bar has: buttons as icons, the switch moved under |
 | `pageHomeStrings.ts` | The words, spread into `i18n/strings.ts`                                   |
 
 The status is `content-workspace/PageStatus.tsx`, which uses the tree's marks.

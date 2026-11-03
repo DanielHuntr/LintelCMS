@@ -29,4 +29,49 @@ describe("EntryEditorBar on a phone", () => {
     expect(bar).toHaveClass("max-md:z-10", "max-md:pt-14");
     expect(bar).toHaveClass("sticky", "top-0");
   });
+
+  it("puts the name and status together, out of the row of buttons", () => {
+    const { getByText } = render(
+      <EntryEditorBar
+        breadcrumbs={<span>Home</span>}
+        status={<span>Live on your site</span>}
+        saveIndicator={null}
+        primaryAction={null}
+        isPanelOpen={false}
+        panelId="panel"
+        onTogglePanel={() => undefined}
+        onDelete={undefined}
+        onDuplicate={undefined}
+        isPreviewOpen={false}
+        previewId="preview"
+        onTogglePreview={() => undefined}
+        viewPage={undefined}
+      />,
+    );
+
+    expect(getByText("Home").parentElement).toContainElement(getByText("Live on your site"));
+    expect(getByText("Home").parentElement).toHaveClass("max-md:absolute", "max-md:inset-x-16");
+  });
+
+  it("marks itself tight, for the words to give way to icons", () => {
+    const { container } = render(
+      <EntryEditorBar
+        breadcrumbs={null}
+        isTight
+        saveIndicator={null}
+        primaryAction={null}
+        isPanelOpen={false}
+        panelId="panel"
+        onTogglePanel={() => undefined}
+        onDelete={undefined}
+        onDuplicate={undefined}
+        isPreviewOpen={false}
+        previewId="preview"
+        onTogglePreview={() => undefined}
+        viewPage={undefined}
+      />,
+    );
+
+    expect(container.firstElementChild).toHaveAttribute("data-tight");
+  });
 });

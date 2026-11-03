@@ -11,15 +11,22 @@ import { publishWords, type PageView, type PublishState } from "./pageViews.js";
  * read as one place: the same switch, the same words, the same buttons at the same size.
  */
 
-/** The words go on a phone, and where the page area is tight; screen readers keep them. */
-const wordsWhenRoomy = "max-sm:sr-only @max-[44rem]:sr-only";
+/**
+ * The words go on a phone, in a small window, and in a page bar marked tight (see useBarRoom);
+ * screen readers keep them.
+ */
+const wordsWhenRoomy = "max-xl:sr-only group-data-tight/bar:sr-only";
 
 const barButton =
   "flex h-8 shrink-0 items-center gap-1.5 rounded-control px-2 text-footnote font-medium whitespace-nowrap transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring max-[25rem]:px-1.5";
 
 export function PageViewLink({ target }: { target: ViewPageTarget }) {
   return (
-    <ViewPageLink target={target} className={classNames(barButton, "text-label-secondary")}>
+    <ViewPageLink
+      target={target}
+      label={t("editor.viewPage")}
+      className={classNames(barButton, "text-label-secondary")}
+    >
       <SquareArrowOutUpRight aria-hidden="true" strokeWidth={1.75} className="size-4" />
       <span className={wordsWhenRoomy}>{t("editor.viewPage")}</span>
     </ViewPageLink>
@@ -39,6 +46,7 @@ export function PagePreviewButton({ onClick, expanded }: PagePreviewButtonProps)
       onClick={onClick}
       aria-expanded={expanded?.isOpen}
       aria-controls={expanded?.controls}
+      title={t("editor.preview")}
       className={classNames(barButton, expanded?.isOpen ? "text-accent" : "text-label-secondary")}
     >
       <Eye aria-hidden="true" strokeWidth={1.75} className="size-4" />

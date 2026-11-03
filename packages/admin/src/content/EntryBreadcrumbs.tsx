@@ -19,7 +19,7 @@ export function EntryBreadcrumbs({ collection, entryId, title }: EntryBreadcrumb
   return (
     <nav aria-label={t("workspace.breadcrumbs")} className="min-w-0 max-w-full">
       <ol className="flex min-w-0 items-center gap-1 text-footnote text-label-secondary">
-        <li className="shrink-0 max-md:hidden">
+        <li className="shrink-0 group-data-tight/bar:hidden max-md:hidden">
           <Link
             to="/content/$collection"
             params={{ collection: collection.handle }}
@@ -29,7 +29,10 @@ export function EntryBreadcrumbs({ collection, entryId, title }: EntryBreadcrumb
           </Link>
         </li>
         {ancestors.map((step) => (
-          <li key={step.id} className="flex min-w-0 items-center gap-1 max-md:hidden">
+          <li
+            key={step.id}
+            className="flex min-w-0 items-center gap-1 group-data-tight/bar:hidden max-md:hidden"
+          >
             <ChevronRight aria-hidden="true" strokeWidth={2} className="size-3 shrink-0" />
             <Link
               to="/content/$collection/$entryId"
@@ -44,7 +47,7 @@ export function EntryBreadcrumbs({ collection, entryId, title }: EntryBreadcrumb
           <ChevronRight
             aria-hidden="true"
             strokeWidth={2}
-            className="size-3 shrink-0 max-md:hidden"
+            className="size-3 shrink-0 group-data-tight/bar:hidden max-md:hidden"
           />
           <span className="truncate text-body font-semibold text-label">
             {title || t("editor.untitled")}

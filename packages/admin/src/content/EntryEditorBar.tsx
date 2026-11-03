@@ -13,6 +13,8 @@ interface EntryEditorBarProps {
   status?: ReactNode;
   /** Design, Content and Items, when there's room for them here. */
   viewSwitch?: ReactNode;
+  /** Little room: the buttons are icons, and the name stands alone. See useBarRoom. */
+  isTight?: boolean;
   saveIndicator: ReactNode;
   /** The main action: Publish, or Save for people who can't publish. */
   primaryAction: ReactNode;
@@ -43,6 +45,7 @@ export function EntryEditorBar({
   breadcrumbs,
   status,
   viewSwitch,
+  isTight = false,
   saveIndicator,
   primaryAction,
   isPanelOpen,
@@ -76,9 +79,12 @@ export function EntryEditorBar({
   return (
     // Below md the bar also covers the strip with the fixed menu and help buttons, and sits
     // under them (z-10), so scrolled content never shows through and the buttons stay usable.
-    <div className="sticky top-0 z-20 -mt-14 -me-(--page-gutter) -ml-(--page-gutter) mb-8 flex h-16 items-center gap-3 bg-background/80 pt-2 pe-(--page-gutter) pl-(--page-gutter) backdrop-blur-xl backdrop-saturate-150 max-md:z-10 max-md:-mt-26 max-md:h-28 max-md:pt-14 md:-me-16 md:pe-16">
+    <div
+      data-tight={isTight ? "" : undefined}
+      className="group/bar sticky top-0 z-20 -mt-14 -me-(--page-gutter) -ml-(--page-gutter) mb-8 flex h-16 items-center gap-3 bg-background/80 pt-2 pe-(--page-gutter) pl-(--page-gutter) backdrop-blur-xl backdrop-saturate-150 max-md:z-10 max-md:-mt-26 max-md:h-28 max-md:pt-14 md:-me-16 md:pe-16"
+    >
       {/* On a phone the name sits between the fixed menu and help buttons, like an iOS title. */}
-      <div className="flex min-w-0 flex-1 flex-col gap-px max-md:absolute max-md:inset-x-16 max-md:top-3 max-md:h-11 max-md:items-center max-md:justify-center">
+      <div className="flex min-w-24 flex-1 flex-col gap-px max-md:absolute max-md:inset-x-16 max-md:top-3 max-md:h-11 max-md:items-center max-md:justify-center">
         {breadcrumbs}
         {status}
       </div>

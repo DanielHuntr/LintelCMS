@@ -57,7 +57,7 @@ import { useIsNarrowScreen } from "../design/useIsNarrowScreen.js";
 import { preloadDesigner, preloadDesignerWhenIdle } from "../page-design/preloadDesigner.js";
 import { PagePublishButton, PageViewSwitch } from "../page-home/PageBarParts.js";
 import { pageViews, publishState, type PageView } from "../page-home/pageViews.js";
-import { useIsBarTight } from "../page-home/useIsBarTight.js";
+import { useBarRoom } from "../page-home/useBarRoom.js";
 import { PageMenuSection } from "../menus/PageMenuSection.js";
 import {
   TEMPLATE_CHOICE_KEY,
@@ -158,7 +158,8 @@ export function EntryEditor({
   const showsChildren = listsChildren && tab === "children";
   const isNarrowScreen = useIsNarrowScreen();
   const [editorElement, setEditorElement] = useState<HTMLDivElement | null>(null);
-  const isBarTight = useIsBarTight(editorElement);
+  const barRoom = useBarRoom(editorElement);
+  const switchSitsUnderBar = barRoom.movesSwitch || isNarrowScreen;
   const canDelete = useCan("entries:delete");
   const canCreate = useCan("entries:create");
   const canSave = useCan(entry ? "entries:update" : "entries:create");
@@ -387,7 +388,8 @@ export function EntryEditor({
         status={
           <PageStatus entry={entry} state={entry ? pageStateOf(entry, isUnsaved) : "draft"} />
         }
-        viewSwitch={views.length > 1 && !isBarTight && !isNarrowScreen ? viewSwitch : undefined}
+        viewSwitch={switchSitsUnderBar ? undefined : viewSwitch}
+        isTight={barRoom.isTight}
         onShowDetails={entry ? () => setIsShowingDetails(true) : undefined}
         isPanelOpen={isPanelOpen}
         panelId={panelId}
@@ -470,9 +472,7 @@ export function EntryEditor({
         </div>
       )}
 
-      {views.length > 1 && (isBarTight || isNarrowScreen) && (
-        <div className="mb-5">{viewSwitch}</div>
-      )}
+      {views.length > 1 && switchSitsUnderBar && <div className="mb-5">{viewSwitch}</div>}
 
       {showsChildren && entry ? (
         <CollectionView

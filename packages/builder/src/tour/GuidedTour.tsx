@@ -142,13 +142,13 @@ export function GuidedTour({
         <p id="lintel-tour-text" className="text-footnote text-label-secondary">
           {text(step.text)}
         </p>
-        <div className="mt-1 flex items-center justify-between gap-2">
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
           <ProgressDots count={steps.length} current={index} />
           <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={onClose}
-              className="h-8 rounded-control px-2 text-footnote font-medium text-label-secondary hover:bg-fill focus-visible:focus-ring"
+              className="h-8 rounded-control px-2 text-footnote font-medium whitespace-nowrap text-label-secondary hover:bg-fill focus-visible:focus-ring"
             >
               {text("pageBuilder.tour.skip")}
             </button>

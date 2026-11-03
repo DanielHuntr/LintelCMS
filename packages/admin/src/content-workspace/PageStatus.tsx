@@ -40,7 +40,9 @@ export function PageStatus({ entry, state, note }: PageStatusProps) {
   return (
     <span className="flex min-w-0 items-center gap-1 text-caption text-label-secondary">
       <StatusMark state={marks[state]} isDecorative />
-      <span className="truncate">{note ?? words}</span>
+      <span className="truncate" title={note ?? words}>
+        {note ?? words}
+      </span>
     </span>
   );
 }
