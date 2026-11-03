@@ -83,7 +83,7 @@ function renderBuilder(options: {
       site={site}
       onAddFont={options.onAddFont}
       onMoveFontToSite={options.onMoveFontToSite}
-      preferences={createMemoryPreferenceStore({ tourSeen: "yes", skillLevel: "beginner" })}
+      preferences={createMemoryPreferenceStore({ tourSeen: "yes" })}
     />,
   );
   return { latest: () => onChange.mock.lastCall?.[0] as PageDocument };

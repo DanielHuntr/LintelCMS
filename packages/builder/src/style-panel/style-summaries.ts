@@ -62,12 +62,12 @@ export function layoutSummary(read: ReadStyle, text: Translate): string {
   const arrangement =
     display === "grid"
       ? join([
-          text("pageBuilder.style.grid"),
+          text("pageBuilder.layout.grid"),
           columns && text("pageBuilder.style.summary.columns", { count: columns }),
         ])
       : display === "flex"
         ? text(
-            read("flexDirection") === "row" ? "pageBuilder.style.row" : "pageBuilder.style.stack",
+            read("flexDirection") === "row" ? "pageBuilder.layout.row" : "pageBuilder.layout.stack",
           )
         : undefined;
   if (!arrangement) return "";

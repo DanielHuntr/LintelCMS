@@ -4,8 +4,6 @@ import { type ReactNode, useId, useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { ChoiceGroup, classNames, IconButton } from "../ui/controls.js";
 import { isMac } from "../editor/shortcuts.js";
-import { SkillLevelMenu } from "../skill-level/SkillLevelMenu.js";
-import type { SkillLevel } from "../skill-level/skill-levels.js";
 import { HelpMenu } from "../tour/HelpMenu.js";
 
 interface ToolbarProps {
@@ -22,14 +20,11 @@ interface ToolbarProps {
   /** How many steps of `history` are done; the rest are undone and can be redone. */
   historyPosition: number;
   onGoToStep: (index: number) => void;
-  canEditCode: boolean;
-  skillLevel: SkillLevel;
-  onSkillLevelChange: (level: SkillLevel) => void;
   onReplayTour: () => void;
   onShowTips: () => void;
 }
 
-/** Back, the page's name, screen sizes, undo and redo, history, tools, help, and the app's own actions. */
+/** Back, the page's name, screen sizes, undo and redo, history, help, and the app's own actions. */
 export function Toolbar(props: ToolbarProps) {
   const text = useBuilderText();
   const mod = isMac() ? "⌘" : "Ctrl+";
@@ -79,11 +74,6 @@ export function Toolbar(props: ToolbarProps) {
           history={props.history}
           position={props.historyPosition}
           onGoToStep={props.onGoToStep}
-        />
-        <SkillLevelMenu
-          level={props.skillLevel}
-          canEditCode={props.canEditCode}
-          onChange={props.onSkillLevelChange}
         />
         <HelpMenu onReplayTour={props.onReplayTour} onShowTips={props.onShowTips} />
         {props.end}

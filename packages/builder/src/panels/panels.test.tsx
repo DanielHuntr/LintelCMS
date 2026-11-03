@@ -26,10 +26,7 @@ function pageWith(...blueprints: NodeBlueprint[]): PageDocument {
 
 function renderBuilder(
   document: PageDocument = pageWith(simpleHero),
-  preferences: PreferenceStore = createMemoryPreferenceStore({
-    tourSeen: "yes",
-    skillLevel: "designer",
-  }),
+  preferences: PreferenceStore = createMemoryPreferenceStore({ tourSeen: "yes" }),
 ) {
   const onChange = vi.fn<(document: PageDocument) => void>();
   const view = render(
@@ -218,12 +215,12 @@ describe("the Style panel's groups", () => {
     expect(disclosure("Spacing")).toHaveAttribute("aria-expanded", "true");
   });
 
-  it("summarises a closed layout group as it reads: Stack · gap L", async () => {
+  it("summarises a closed layout group as it reads: One under another · gap L", async () => {
     const person = user();
     renderBuilder();
     await select(person, "Container");
     await person.click(disclosure("Layout"));
-    expect(disclosure("Layout")).toHaveTextContent("Stack · gap L");
+    expect(disclosure("Layout")).toHaveTextContent("One under another · gap L");
   });
 
   it("opens only the group used last in Advanced", async () => {

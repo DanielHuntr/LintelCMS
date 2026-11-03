@@ -1321,3 +1321,28 @@ Files: `packages/core/src/site-design/*`, `packages/core/src/site-effects/*`, `p
 **Tests:** core `site-design.test.ts` "with several sites" (3): two sites' stylesheets carry their own variables; the old shared row shows on every site until one saves its own; permissions and site access. `site-effects.test.ts` "with several sites" (3): two sites' pages load different effect modules; the old shared row; permissions and site access. `starter-sites.test.ts`: applying Studio to a second site leaves the main site's motion and design as they were.
 
 No screenshots: no UI changed.
+
+## One builder for everyone, and one Arrange control (3 November 2026)
+
+Fixes LINTEL-UX-060 and LINTEL-UX-061. Decision: [0046](../decisions/0046-one-builder-for-everyone.md).
+
+**Asked (Daniel):** "remove the developer, designer, beginner stuff. should all just be 1, we'll just need to expand the tour. If they are a dev, they can use the files in vs code for example." And: merge the two stacked arrange controls on sections, boxes and containers into one.
+
+**Reproduced:** the toolbar's **Tools: Beginner** menu; Beginners get a tip pointing to Designer instead of the Simple/Advanced switch, no timeline, and a different tour; the Code tab shows only for Developers. A section shows **Arrange → Place things: In order / On a grid / Anywhere** above **Layout → Arrange what's inside: Stack / Row / Grid / Normal** (`before-{light,dark}-2-style`, `before-{light,dark}-3-panel`).
+
+**Now:**
+
+- No skill levels and no Tools menu. Everyone gets the Style panel's Simple/Advanced switch (kept in the panel; Simple stays short) and Animate's timeline. A stored `skillLevel` is ignored.
+- No Code tab. The Code element stays behind `builder:code`: with it, its HTML, CSS and JavaScript are edited in **Content** (Save code). Developers use Liquid templates with `lintel templates init/sync`.
+- One tour of eight short steps: Insert and Layers, select and type, Style and which look, Site styles and shared styles, Layout, Animate, screen sizes and History, Publish. First-time tips in Style and Animate, closed with Got it, back from Help and tips.
+- Layout has one control, **How things are arranged**: One under another, Side by side, On a grid, Anywhere (sections, boxes and containers), with the chosen one's details under it: where things sit, space between, wrapping, columns, **Place each thing on the grid yourself** (a placed grid), and phones for Anywhere. An element's own place in its parent is **Where it sits**. "Normal" is gone: plain block layout shows as One under another and is only made a stack when one of its details changes, so existing pages render identically. Summaries read "One under another · gap L", "Side by side", "On a grid · 3 columns".
+
+Judgement calls: the Simple/Advanced switch stays as it was rather than becoming "More options" links per group (one familiar control, fewer words). "On a grid" fills in order by default; placing things by hand is a checkbox under it, since it is the less common choice. Switching to or from Anywhere or a placed grid is two History steps.
+
+Files: `packages/builder/src/PageBuilder.tsx`, `frame/Toolbar.tsx`, `panels/SelectedElementPanel.tsx`, `panels/ContentPanel.tsx`, `code-block/` (new: `CodeBlockEditor.tsx`), `style-panel/LayoutSection.tsx`, `ArrangeSection.tsx`, `StylePanel.tsx`, `style-summaries.ts`, `animate-panel/AnimatePanel.tsx`, `tour/tour-steps.ts`, `tour/GuidedTour.tsx`, `ui/controls.tsx` (`twoColumns` on ChoiceGroup), `editor/useBuilder.ts`, the strings files; removed `skill-level/` and `developer/`. Docs: `using/getting-around-the-builder.md` (was builder-skill-levels), `using/animating-in-the-builder.md`; `builder:code`'s description in `core/src/roles/permission-catalog.ts`.
+
+**Tests:** builder `style-panel/layout-section.test.tsx` (new, 7: stored values map onto the four choices; no Place things or Normal; block layout untouched until a detail changes, then a stack; side by side with wrapping; Anywhere and back; grid columns and placing by hand on and off; no Anywhere on a card); `studio.test.tsx` (no Tools menu, a stored level ignored, every style and the timeline for everyone; no Code tab even with permission; first-time tips; the eight-step tour); `PageBuilder.test.tsx` (Code element edited in Content with permission, not without); updated `advanced-styling`, `panels`, `site-design`, `style-summaries` tests. Builder unit 41 files / 346 tests, browser 10 files / 33 tests; admin 140 files / 746 tests (one timing test passes on its own); core roles 14.
+
+**Screenshots** (`screenshots/one-builder/`): `before-{light,dark}-{1-tour,2-style,3-panel}`, `after-{light,dark}-{1-tour,1b-tour-arrange,2-style,3-panel,4-grid,5-animate}`.
+
+Commit: ffa3dd8.

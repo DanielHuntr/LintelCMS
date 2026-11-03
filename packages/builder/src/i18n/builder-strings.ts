@@ -29,7 +29,6 @@ export const builderStrings = {
   "pageBuilder.panels.insert": "Insert",
   "pageBuilder.panels.style": "Style",
   "pageBuilder.panels.content": "Content",
-  "pageBuilder.panels.code": "Code",
   "pageBuilder.panels.selectSomething":
     "Click something on the page, or pick it in Layers, to change it here.",
 
@@ -76,7 +75,6 @@ export const builderStrings = {
   "pageBuilder.history.pasted": "Pasted {count} elements",
   "pageBuilder.history.cut": "Cut {name}",
   "pageBuilder.history.editedHtml": "Edited the HTML of {name}",
-  "pageBuilder.history.converted": "Converted {name} to code",
   "pageBuilder.history.changedCode": "Changed code",
   "pageBuilder.history.undid": "Undid: {name}",
   "pageBuilder.history.redid": "Redid: {name}",
@@ -173,10 +171,6 @@ export const builderStrings = {
 
   "pageBuilder.style.layout": "Layout",
   "pageBuilder.style.arrange": "Arrange what’s inside",
-  "pageBuilder.style.stack": "Stack",
-  "pageBuilder.style.row": "Row",
-  "pageBuilder.style.grid": "Grid",
-  "pageBuilder.style.normal": "Normal",
   "pageBuilder.style.columns": "Columns",
   "pageBuilder.style.alignment": "Where things sit",
   "pageBuilder.style.alignStart": "start",
@@ -187,8 +181,6 @@ export const builderStrings = {
   "pageBuilder.style.gapExact": "Space between (exact)",
   "pageBuilder.style.display": "Display",
   "pageBuilder.style.wrap": "Wrap onto new lines",
-  "pageBuilder.style.wrapYes": "Wrap",
-  "pageBuilder.style.wrapNo": "Keep on one line",
   "pageBuilder.style.gridColumns": "Grid columns",
   "pageBuilder.style.gridColumn": "Spans columns",
   "pageBuilder.style.order": "Order",
@@ -334,34 +326,15 @@ export const builderStrings = {
   "pageBuilder.content.codeNoMarkers":
     "This part was made in code and has nothing you can change here. Ask a developer.",
 
-  "pageBuilder.code.thePage": "the page",
-  "pageBuilder.code.viewTitle": "Code for {name}",
   "pageBuilder.code.html": "HTML",
   "pageBuilder.code.css": "CSS",
   "pageBuilder.code.js": "JavaScript",
-  "pageBuilder.code.copy": "Copy {name}",
-  "pageBuilder.code.copied": "Copied",
-  "pageBuilder.code.empty": "Nothing here.",
-  "pageBuilder.code.editTitle": "Edit as HTML",
-  "pageBuilder.code.editLabel": "HTML of {name}",
-  "pageBuilder.code.apply": "Apply HTML",
-  "pageBuilder.code.editHint":
-    "Headings, paragraphs, links, pictures, lists and boxes come back as elements you can still edit visually. Anything else becomes a code block.",
-  "pageBuilder.code.someAsCode": "{count} parts didn’t match an element and became code blocks.",
-  "pageBuilder.code.convert": "Convert to code",
-  "pageBuilder.code.convertHint":
-    "Makes this a code block with the same HTML and CSS. Its texts and pictures stay editable for everyone.",
   "pageBuilder.code.blockTitle": "Edit code",
   "pageBuilder.code.markersHint":
     'Add data-lintel-field="name" to an element to let others change its text, and data-lintel-image="name" to an <img> to let them choose the picture.',
   "pageBuilder.code.scriptsHint":
     "Scripts never run while editing. On the site they follow the site’s setting for custom scripts.",
   "pageBuilder.code.saveCode": "Save code",
-  "pageBuilder.code.pasteTitle": "Paste HTML",
-  "pageBuilder.code.pasteLabel": "HTML to add to the page",
-  "pageBuilder.code.pasteApply": "Add to page",
-  "pageBuilder.code.pasteHint":
-    "It’s added after what’s selected. You can also paste HTML straight onto the page.",
   ...builderStudioStrings,
   ...builderPanelStrings,
   ...builderDesignStrings,

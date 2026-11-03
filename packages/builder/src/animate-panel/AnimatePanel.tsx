@@ -6,6 +6,7 @@ import { useBuilderText } from "../i18n/builder-text.js";
 import { usePreferenceStore } from "../preferences/builder-preferences.js";
 import { useRememberedOpenSections } from "../preferences/open-sections.js";
 import type { ImagePicker } from "../panels/content-fields.js";
+import { Tip } from "../tour/Tip.js";
 import { elementKindOf } from "./element-kinds.js";
 import { pointerFieldEffectIds, PointerFields } from "./PointerFields.js";
 
@@ -16,8 +17,6 @@ interface AnimatePanelProps {
   /** The element's name in Layers, for the heading. */
   name: string;
   isLocked: boolean;
-  /** Whether the timeline (the studio's Advanced view) is on offer. */
-  showsTimeline: boolean;
   /** The app's words for the studio; English when left out. */
   motionText?: MotionText;
   onChange: (animations: NodeAnimation[]) => void;
@@ -47,7 +46,6 @@ export function AnimatePanel({
   node,
   name,
   isLocked,
-  showsTimeline,
   motionText,
   onChange,
   onChangeEffects,
@@ -56,6 +54,7 @@ export function AnimatePanel({
   pageWeight,
   sceneElements,
   pickImage,
+  tips,
 }: AnimatePanelProps) {
   const text = useBuilderText();
   // Simple's groups (when it plays, timing, less motion), remembered like the Style panel's.
@@ -79,7 +78,10 @@ export function AnimatePanel({
 
   return (
     <div>
-      <div className="p-4">
+      <div className="flex flex-col gap-3 p-4">
+        <Tip id="animateHowTo" tips={tips}>
+          {text("pageBuilder.animate.howTo")}
+        </Tip>
         <MotionPanel
           key={node.id}
           name={name}
@@ -99,8 +101,7 @@ export function AnimatePanel({
             }
           }}
           onStopPreview={() => onPreviewEffect(null)}
-          showsTimeline={showsTimeline}
-          timelineNote={text("pageBuilder.animate.timelineInDesigner")}
+          showsTimeline
           pageWeight={pageWeight}
           sceneElements={sceneElements}
           openGroups={openGroups}

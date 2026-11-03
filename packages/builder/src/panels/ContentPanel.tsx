@@ -26,6 +26,7 @@ import { FieldControl, SourceField } from "./field-controls.js";
 import { BindingPicker, ItemListField } from "./item-list-field.js";
 import { MenuSection } from "../menus/menu-editing.js";
 import { RewriteText } from "../page-drafts/RewriteText.js";
+import { CodeBlockEditor } from "../code-block/CodeBlockEditor.js";
 
 interface ContentPanelProps {
   node: PageNode;
@@ -44,6 +45,8 @@ interface ContentPanelProps {
     label: string,
   ) => void;
   pageFonts?: readonly PageFont[];
+  /** Saves a Code element's HTML, CSS and JavaScript; left out for people who may not write code. */
+  onChangeCode?: (code: { html: string; css: string; js: string }) => void;
 }
 
 /**
@@ -60,6 +63,7 @@ export function ContentPanel({
   onBind,
   onMarkText,
   pageFonts = [],
+  onChangeCode,
 }: ContentPanelProps) {
   const text = useBuilderText();
   const sources = useDataSources();
@@ -173,6 +177,9 @@ export function ContentPanel({
             )
           }
         />
+      )}
+      {isCode && onChangeCode && !isLocked && (
+        <CodeBlockEditor key={node.id} node={node} onSave={onChangeCode} />
       )}
     </fieldset>
   );

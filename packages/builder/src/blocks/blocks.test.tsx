@@ -90,7 +90,7 @@ function renderBuilder(document: PageDocument, blocks: BuilderBlocks) {
       canEditCode={false}
       blocks={blocks}
       createId={createCountingNodeIds("new")}
-      preferences={createMemoryPreferenceStore({ tourSeen: "yes", skillLevel: "designer" })}
+      preferences={createMemoryPreferenceStore({ tourSeen: "yes" })}
     />,
   );
   return { latest: () => onChange.mock.lastCall?.[0] as PageDocument };

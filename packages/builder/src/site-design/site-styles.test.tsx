@@ -53,7 +53,7 @@ function renderBuilder(start: SiteDesign = emptySiteDesign, children?: PageNode[
         title="Home"
         canEditCode={false}
         createId={createCountingNodeIds("new")}
-        preferences={createMemoryPreferenceStore({ tourSeen: "yes", skillLevel: "designer" })}
+        preferences={createMemoryPreferenceStore({ tourSeen: "yes" })}
         siteDesign={{
           value: design,
           onChange: (next) => {

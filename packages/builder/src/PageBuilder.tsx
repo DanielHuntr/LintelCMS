@@ -98,7 +98,6 @@ import { designBaseStylesheet } from "./render/design-stylesheet.js";
 import { renderPage } from "./render/render-page.js";
 import { standInBaseStylesheet } from "./render/base-stylesheet.js";
 import { standardRegistry } from "./render/stand-in-components.js";
-import { readSkillLevel, type SkillLevel, toolsFor } from "./skill-level/skill-levels.js";
 import { selectedWords, SelectedWordsBar } from "./inline-text/SelectedWordsBar.js";
 import { toggleChange } from "./inline-text/markToggles.js";
 import type { FileUploader } from "./style-panel/design-tools.js";
@@ -124,7 +123,7 @@ export interface PageBuilderProps {
   onChange: (document: PageDocument) => void;
   /** The page's name, shown in the toolbar as the screen's heading. */
   title: string;
-  /** Has the `builder:code` permission: Developer mode and code blocks are available. */
+  /** Has the `builder:code` permission: Code elements can be added and their code edited. */
   canEditCode: boolean;
   registry?: ComponentRegistry;
   /** The site's theme tokens (`themeStylesheet` from site-components); defaults to the default theme. */
@@ -179,7 +178,7 @@ export interface PageBuilderProps {
   siteEffects?: { value: SiteEffectSettings; onChange: (value: SiteEffectSettings) => void };
   /** Whole pages an empty page can start from. The template library's by default. */
   starterSites?: readonly StarterSite[];
-  /** Where skill level, the tour and closed tips are remembered. The browser's by default. */
+  /** Where the tour and closed tips are remembered. The browser's by default. */
   preferences?: PreferenceStore;
   /** The site's collections, forms and products, for collection lists and shop elements. */
   dataSources?: BuilderDataSources;
@@ -280,11 +279,6 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   // Mod+K asks the selected words' bar for a link; the bar watches this go up.
   const [linkRequest, setLinkRequest] = useState(0);
   const preferences = props.preferences ?? browserPreferenceStore;
-  const [skillLevel, setSkillLevel] = usePreference<SkillLevel>(
-    preferences,
-    "skillLevel",
-    (stored) => readSkillLevel(stored, canEditCode),
-  );
   const [tourSeen, setTourSeen] = usePreference(preferences, "tourSeen", (stored) =>
     stored === "yes" ? "yes" : "no",
   );
@@ -317,7 +311,6 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     announce,
     text,
   });
-  const tools = toolsFor(skillLevel, canEditCode);
   const { root } = state.document;
   const catalogue = registry.catalogue;
 
@@ -482,15 +475,6 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     );
     return measurePageWeight(used, props.siteEffects?.value);
   }, [root, props.siteEffects?.value]);
-
-  const changeSkillLevel = useCallback(
-    (level: SkillLevel) => {
-      setSkillLevel(level);
-      const name = text(`pageBuilder.skill.${level}`);
-      announce(text("pageBuilder.skill.changed", { level: name }));
-    },
-    [setSkillLevel, announce, text],
-  );
 
   const selectFromPanel = useCallback(
     (nodeId: string | null) => {
@@ -870,9 +854,6 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                   ]}
                   historyPosition={state.past.length}
                   onGoToStep={actions.goToStep}
-                  canEditCode={canEditCode}
-                  skillLevel={skillLevel}
-                  onSkillLevelChange={changeSkillLevel}
                   onReplayTour={() => setIsTouring(true)}
                   onShowTips={tips.showAgain}
                 />
@@ -916,7 +897,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                         <InsertPanel
                           catalogue={catalogue}
                           templates={sectionTemplates}
-                          canEditCode={tools.codeTools}
+                          canEditCode={canEditCode}
                           enabledPlugins={props.enabledPlugins}
                           blocks={props.blockMaster ? undefined : blocks.library}
                           onInsert={(key) => actions.insert(key)}
@@ -1020,12 +1001,11 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                       isLocked={selectedIsLocked}
                       breakpoint={breakpoint}
                       registry={registry}
-                      tools={tools}
+                      canEditCode={canEditCode}
                       tips={tips}
                       pickImage={props.pickImage}
                       uploadFile={props.uploadFile}
                       motionText={props.motionText}
-                      showCode={skillLevel === "developer"}
                       actions={{
                         ...actions,
                         animate: (nodeId, animations) => {
@@ -1083,7 +1063,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                     />
                   </CanvasLookContext>
                 </div>
-                {showsTour && <GuidedTour skillLevel={skillLevel} onClose={closeTour} />}
+                {showsTour && <GuidedTour onClose={closeTour} />}
                 {/* The same sentence twice in a row is still read out: the space changes the text. */}
                 <div role="status" aria-live="polite" className="sr-only">
                   {announcement.message}

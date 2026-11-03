@@ -1,14 +1,11 @@
 import { X } from "lucide-react";
-import { type KeyboardEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type KeyboardEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
-import type { SkillLevel } from "../skill-level/skill-levels.js";
 import { classNames } from "../ui/classNames.js";
 import { keepFocusInside, useReturnFocus } from "../ui/focus-trap.js";
-import { type Box, boxAround, placeCard, tourStepsFor } from "./tour-steps.js";
+import { type Box, boxAround, placeCard, tourSteps } from "./tour-steps.js";
 
 interface GuidedTourProps {
-  /** Some steps say more, or less, for each skill level. */
-  skillLevel: SkillLevel;
   /** Called when the tour ends, finished or skipped. */
   onClose: () => void;
 }
@@ -34,9 +31,9 @@ function measure(targets: readonly string[]): Box | null {
  * step's title and stays inside the card, Escape or Skip ends the tour, and focus goes back
  * where it was. Movement only happens for people who haven't asked for less.
  */
-export function GuidedTour({ skillLevel, onClose }: GuidedTourProps) {
+export function GuidedTour({ onClose }: GuidedTourProps) {
   const text = useBuilderText();
-  const steps = useMemo(() => tourStepsFor(skillLevel), [skillLevel]);
+  const steps = tourSteps;
   const [index, setIndex] = useState(0);
   const [target, setTarget] = useState<Box | null>(null);
   const [cardHeight, setCardHeight] = useState(220);

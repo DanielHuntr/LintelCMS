@@ -22,10 +22,7 @@ const poster: NodeBlueprint = {
   ],
 };
 
-function renderBuilder(
-  skillLevel: "beginner" | "designer" = "designer",
-  section: NodeBlueprint = poster,
-) {
+function renderBuilder(section: NodeBlueprint = poster) {
   const page = createEmptyPage();
   const ids = createCountingNodeIds();
   const document: PageDocument = {
@@ -42,7 +39,7 @@ function renderBuilder(
       canEditCode={false}
       createId={createCountingNodeIds("new")}
       pickImage={pickImage}
-      preferences={createMemoryPreferenceStore({ tourSeen: "yes", skillLevel })}
+      preferences={createMemoryPreferenceStore({ tourSeen: "yes" })}
     />,
   );
   const latest = () => onChange.mock.lastCall?.[0] as PageDocument;
@@ -81,7 +78,7 @@ describe("advanced styling in the Style panel", () => {
   // A size set elsewhere that no chip matches showed as "1.125rem" with no chip pressed.
   it("shows a size no chip matches as Custom, in pixels", async () => {
     const person = userEvent.setup();
-    renderBuilder("beginner", {
+    renderBuilder({
       type: "section",
       name: "Intro",
       children: [
@@ -205,7 +202,7 @@ describe("advanced styling in the Style panel", () => {
 
   it("adds a bundled font to the page and sizes text with the screen", async () => {
     const person = userEvent.setup();
-    const { latest, node } = renderBuilder("beginner");
+    const { latest, node } = renderBuilder();
     await select(person, "Big word");
     const group = await open(person, "Text");
     // The fonts that come with Lintel are in the list; no "Add a font" without a host for it.
@@ -229,7 +226,7 @@ describe("advanced styling in the Style panel", () => {
 
   it("sizes text with the screen, in Advanced", async () => {
     const person = userEvent.setup();
-    const { node } = renderBuilder("designer");
+    const { node } = renderBuilder();
     await select(person, "Big word");
     await person.click(screen.getByRole("radio", { name: "Advanced" }));
     const group = await open(person, "Text");
@@ -239,9 +236,9 @@ describe("advanced styling in the Style panel", () => {
 
   it("switches a section to a free layout and stacks its children", async () => {
     const person = userEvent.setup();
-    const { node } = renderBuilder("beginner");
+    const { node } = renderBuilder();
     await select(person, "Poster");
-    const group = await open(person, "Arrange");
+    const group = await open(person, "Layout");
     await person.click(within(group).getByRole("radio", { name: "Anywhere" }));
     expect(node("Poster")?.freeLayout).toEqual({ stackOnPhone: true });
     expect(node("Poster")?.styles.base.minHeight).toBe("clamp(28rem, 60vw, 48rem)");
@@ -249,7 +246,7 @@ describe("advanced styling in the Style panel", () => {
     expect(node("Photo")?.styles.base).toMatchObject({ left: "14%", top: "20%" });
 
     await select(person, "Big word");
-    const place = await open(person, "Arrange");
+    const place = await open(person, "Where it sits");
     await person.click(within(place).getByRole("button", { name: "To the front" }));
     expect(node("Big word")?.styles.base.zIndex).toBe("2");
     expect(node("Photo")?.styles.base.zIndex).toBe("1");
@@ -259,16 +256,20 @@ describe("advanced styling in the Style panel", () => {
 
   it("puts a section's elements on a grid and places one by columns and rows", async () => {
     const person = userEvent.setup();
-    const { node } = renderBuilder("beginner");
+    const { node } = renderBuilder();
     await select(person, "Poster");
-    const group = await open(person, "Arrange");
+    const group = await open(person, "Layout");
     await person.click(within(group).getByRole("radio", { name: "On a grid" }));
+    expect(node("Poster")?.placedGrid).toBeUndefined();
+    await person.click(
+      within(group).getByRole("checkbox", { name: "Place each thing on the grid yourself" }),
+    );
     expect(node("Poster")?.placedGrid).toEqual({ columns: 12, stackOnPhone: true });
     await person.click(within(group).getByRole("radio", { name: "8" }));
     expect(node("Poster")?.placedGrid?.columns).toBe(8);
 
     await select(person, "Photo");
-    const place = await open(person, "Arrange");
+    const place = await open(person, "Where it sits");
     // Not placed yet: the whole width, shown as columns 1 to 8.
     expect(within(place).getByRole("combobox", { name: "Last column" })).toHaveValue("8");
     await person.selectOptions(within(place).getByRole("combobox", { name: "First column" }), "2");
@@ -281,7 +282,7 @@ describe("advanced styling in the Style panel", () => {
 
     // Phones stack until the element is given a place of its own there.
     await person.click(screen.getByRole("radio", { name: "Phone" }));
-    const onPhone = await open(person, "Arrange");
+    const onPhone = await open(person, "Where it sits");
     await person.click(within(onPhone).getByRole("button", { name: "Place it on phones too" }));
     expect(node("Photo")?.styles.phone).toMatchObject({
       gridColumn: "2 / span 4",

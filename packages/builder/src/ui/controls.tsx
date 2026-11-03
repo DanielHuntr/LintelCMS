@@ -74,6 +74,8 @@ interface ChoiceGroupProps<Value extends string> {
   wraps?: boolean;
   /** One choice per row, for longer labels such as names. */
   stacked?: boolean;
+  /** Two choices per row, for four choices with labels too long for one row. */
+  twoColumns?: boolean;
   /** Told which choice the pointer or focus is on, and null when it leaves. */
   onPointAt?: (value: Value | null) => void;
 }
@@ -88,6 +90,7 @@ export function ChoiceGroup<Value extends string>({
   hideLabel,
   wraps,
   stacked,
+  twoColumns,
   onPointAt,
 }: ChoiceGroupProps<Value>) {
   const labelId = useId();
@@ -117,7 +120,8 @@ export function ChoiceGroup<Value extends string>({
         role="radiogroup"
         aria-labelledby={labelId}
         className={classNames(
-          "flex rounded-control bg-fill p-0.5",
+          twoColumns ? "grid grid-cols-2 gap-0.5" : "flex",
+          "rounded-control bg-fill p-0.5",
           wraps && "flex-wrap",
           stacked && "flex-col",
         )}

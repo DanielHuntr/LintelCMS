@@ -1,44 +1,24 @@
-import {
-  canUseFreeLayout,
-  isStateTarget,
-  resolveStyle,
-  type StackingMove,
-} from "@lintel/builder-model";
-import {
-  BringToFront,
-  ChevronDown,
-  ChevronUp,
-  LayoutDashboard,
-  Move,
-  Rows3,
-  SendToBack,
-} from "lucide-react";
+import { isStateTarget, resolveStyle, type StackingMove } from "@lintel/builder-model";
+import { BringToFront, ChevronDown, ChevronUp, SendToBack } from "lucide-react";
 import { useBuilderText } from "../i18n/builder-text.js";
-import { ChoiceGroup, PanelSection } from "../ui/controls.js";
+import { PanelSection } from "../ui/controls.js";
 import { useDesignTools } from "./design-tools.js";
-import {
-  GridPlaceControls,
-  GridSettings,
-  gridPlaceSummary,
-  selfAlignments,
-} from "./GridPlaceControls.js";
+import { GridPlaceControls, gridPlaceSummary, selfAlignments } from "./GridPlaceControls.js";
 import { useStyleEditing, useStyleReader } from "./style-field.js";
 import { StyleSelect, StyleTextInput } from "./StyleInputs.js";
 
-type Placing = "order" | "grid" | "free";
-
 /**
- * Where things go: how a section places what's inside it (in order, on a grid, or anywhere),
- * an element's place on its grid or in its free layout, with stacking, and, in Advanced, an
- * element's place in a CSS grid set by hand. Shown only when one of those applies.
+ * Where the selected element sits inside the one around it: its place on a placed grid or in
+ * a free layout, with stacking, and, in Advanced, its place in a CSS grid set by hand. Shown
+ * only when one of those applies. How a container arranges what's inside it is Layout's
+ * (`LayoutSection.tsx`).
  */
 export function ArrangeSection({ advanced }: { advanced: boolean }) {
   const text = useBuilderText();
   const tools = useDesignTools();
   const read = useStyleReader();
   const { target } = useStyleEditing();
-  const { node, parent } = tools;
-  const isFreeContainer = canUseFreeLayout(node);
+  const { parent } = tools;
   const isFreeChild = parent?.freeLayout !== undefined;
   const isPlacedChild = parent?.placedGrid !== undefined;
   const parentTarget = isStateTarget(target) ? "base" : target;
@@ -46,23 +26,21 @@ export function ArrangeSection({ advanced }: { advanced: boolean }) {
     parent && !isPlacedChild
       ? resolveStyle(parent.styles, parentTarget, "display").value === "grid"
       : false;
-  const isGrid = read("display") === "grid" && !node.placedGrid;
-  const showsGrid = advanced && (isGridChild || isGrid);
-  if (!isFreeContainer && !isFreeChild && !isPlacedChild && !showsGrid) return null;
+  const showsGrid = advanced && isGridChild;
+  if (!isFreeChild && !isPlacedChild && !showsGrid) return null;
 
-  const summary = node.placedGrid
-    ? text("pageBuilder.grid.summary", { count: node.placedGrid.columns })
-    : node.freeLayout
-      ? text("pageBuilder.design.freeLayout")
-      : isPlacedChild
-        ? gridPlaceSummary(read("gridColumn"), text)
-        : isFreeChild
-          ? [read("left"), read("top")].filter(Boolean).join(", ")
-          : "";
+  const summary = isPlacedChild
+    ? gridPlaceSummary(read("gridColumn"), text)
+    : isFreeChild
+      ? [read("left"), read("top")].filter(Boolean).join(", ")
+      : "";
 
   return (
-    <PanelSection title={text("pageBuilder.design.arrange")} sectionId="arrange" summary={summary}>
-      {isFreeContainer && <PlaceThings />}
+    <PanelSection
+      title={text("pageBuilder.design.whereItSits")}
+      sectionId="arrange"
+      summary={summary}
+    >
       {isFreeChild && <FreePlace advanced={advanced} />}
       {isPlacedChild && (
         <>
@@ -70,7 +48,7 @@ export function ArrangeSection({ advanced }: { advanced: boolean }) {
           <StackingButtons />
         </>
       )}
-      {showsGrid && isGridChild && (
+      {showsGrid && (
         <div className="grid grid-cols-2 gap-2">
           <StyleTextInput
             property="gridColumn"
@@ -99,75 +77,7 @@ export function ArrangeSection({ advanced }: { advanced: boolean }) {
           />
         </div>
       )}
-      {showsGrid && isGrid && (
-        <div className="grid grid-cols-2 gap-2">
-          <StyleTextInput
-            property="gridTemplateRows"
-            label={text("pageBuilder.design.gridRows")}
-            placeholder="auto 1fr"
-          />
-          <StyleSelect
-            property="justifyItems"
-            label={text("pageBuilder.design.justifyItems")}
-            choices={selfAlignments(text)}
-          />
-          <div className="col-span-2">
-            <StyleTextInput
-              property="gridTemplateAreas"
-              label={text("pageBuilder.design.gridAreas")}
-              placeholder={'"title photo" "text photo"'}
-            />
-          </div>
-        </div>
-      )}
     </PanelSection>
-  );
-}
-
-/** How a section places what's inside it: in order, on a grid, or anywhere. */
-function PlaceThings() {
-  const text = useBuilderText();
-  const tools = useDesignTools();
-  const { node } = tools;
-  const placing: Placing = node.placedGrid ? "grid" : node.freeLayout ? "free" : "order";
-  const choose = (next: Placing) => {
-    if (next === placing) return;
-    if (next === "grid") tools.setPlacedGrid({ columns: 12, stackOnPhone: true });
-    else if (next === "free") tools.setFreeLayout({ stackOnPhone: true });
-    else if (placing === "grid") tools.setPlacedGrid(null);
-    else tools.setFreeLayout(null);
-  };
-  const freeLayout = node.freeLayout;
-  return (
-    <div className="flex flex-col gap-3">
-      <ChoiceGroup<Placing>
-        label={text("pageBuilder.grid.placeThings")}
-        value={placing}
-        onChange={choose}
-        choices={[
-          { value: "order", label: text("pageBuilder.grid.inOrder"), icon: Rows3 },
-          { value: "grid", label: text("pageBuilder.grid.onGrid"), icon: LayoutDashboard },
-          { value: "free", label: text("pageBuilder.grid.anywhere"), icon: Move },
-        ]}
-      />
-      {node.placedGrid && <GridSettings />}
-      {freeLayout && (
-        <>
-          <p className="text-caption text-label-tertiary">
-            {text("pageBuilder.design.freeLayoutHint")}
-          </p>
-          <label className="flex items-center gap-2 text-footnote text-label">
-            <input
-              type="checkbox"
-              checked={freeLayout.stackOnPhone}
-              onChange={(event) => tools.setFreeLayout({ stackOnPhone: event.target.checked })}
-              className="size-4 accent-[var(--color-accent-fill)]"
-            />
-            {text("pageBuilder.design.stackOnPhone")}
-          </label>
-        </>
-      )}
-    </div>
   );
 }
 

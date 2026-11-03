@@ -4,10 +4,12 @@
  * `builderStrings`, kept in their own file so each list stays easy to read.
  */
 export const builderLayoutStrings = {
-  "pageBuilder.grid.placeThings": "Place things",
-  "pageBuilder.grid.inOrder": "In order",
-  "pageBuilder.grid.onGrid": "On a grid",
-  "pageBuilder.grid.anywhere": "Anywhere",
+  "pageBuilder.layout.howArranged": "How things are arranged",
+  "pageBuilder.layout.stack": "One under another",
+  "pageBuilder.layout.row": "Side by side",
+  "pageBuilder.layout.grid": "On a grid",
+  "pageBuilder.layout.free": "Anywhere",
+  "pageBuilder.layout.placeYourself": "Place each thing on the grid yourself",
   "pageBuilder.grid.summary": "On a grid, {count} columns",
   "pageBuilder.grid.hint":
     "Drag things onto the columns. They can overlap; the corner handle makes them wider or taller.",

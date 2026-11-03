@@ -1,5 +1,5 @@
 /**
- * The builder's words for animating, skill levels, the guided tour and tips. Part of
+ * The builder's words for animating, the guided tour and tips. Part of
  * `builderStrings`, kept in their own file so each list stays easy to read.
  */
 export const builderStudioStrings = {
@@ -7,8 +7,8 @@ export const builderStudioStrings = {
   "pageBuilder.animate.selectSomething":
     "Select something on the page to make it move: a heading, a picture, a whole section.",
   "pageBuilder.animate.lockedNote": "This element is locked. Unlock it in Layers to animate it.",
-  "pageBuilder.animate.timelineInDesigner":
-    "Want to fine-tune every moment? Switch to Designer to open the timeline.",
+  "pageBuilder.animate.howTo":
+    "Add motion, then choose when it plays: as the page opens, as it scrolls into view, or on hover. Advanced opens the timeline.",
   "pageBuilder.animate.pointer.title": "When the pointer is over it",
   "pageBuilder.animate.pointer.word": "Word on the cursor",
   "pageBuilder.animate.pointer.word.none": "No word",
@@ -26,21 +26,8 @@ export const builderStudioStrings = {
   "pageBuilder.history.removedAnimation": "Removed the animation from {name}",
   "pageBuilder.history.changedEffects": "Changed the effects on {name}",
 
-  "pageBuilder.skill.label": "Tools to show",
-  "pageBuilder.skill.button": "Tools: {level}",
-  "pageBuilder.skill.beginner": "Beginner",
-  "pageBuilder.skill.designer": "Designer",
-  "pageBuilder.skill.developer": "Developer",
-  "pageBuilder.skill.beginnerDescription":
-    "The essentials: words, pictures, colours, sections and ready-made animations.",
-  "pageBuilder.skill.designerDescription":
-    "Adds every style setting, hover and focus styles, and the animation timeline.",
-  "pageBuilder.skill.developerDescription": "Adds the code tools: HTML, CSS and code blocks.",
-  "pageBuilder.skill.developerNeedsPermission":
-    "Needs permission to edit code. Ask whoever runs your site.",
-  "pageBuilder.skill.changed": "Showing the {level} tools",
-  "pageBuilder.style.moreInDesigner":
-    "Want more control? Choose Designer in Tools, at the top, to see every style setting.",
+  "pageBuilder.style.howTo":
+    "Changes apply to the screen size you’re looking at. Pick Hovered or Pressed above to style those moments.",
 
   "pageBuilder.help.button": "Help and tips",
   "pageBuilder.help.replayTour": "Replay the tour",
@@ -56,28 +43,28 @@ export const builderStudioStrings = {
   "pageBuilder.tour.finish": "Start building",
   "pageBuilder.tour.insert.title": "Add sections and elements",
   "pageBuilder.tour.insert.text":
-    "Insert has ready-made sections, grouped by what they’re for, and single elements such as headings, pictures and buttons. Search finds either.",
-  "pageBuilder.tour.layers.title": "Everything on the page, in order",
-  "pageBuilder.tour.layers.text":
-    "Layers lists every part of your page. Pick something to select it, drag it to move it, and hide or lock what you don’t want to change.",
+    "Insert has ready-made sections, including navigation and a footer, and single elements such as headings, pictures and buttons. Layers lists everything on the page, in order.",
   "pageBuilder.tour.canvas.title": "Click to select, double-click to type",
   "pageBuilder.tour.canvas.text":
-    "Click anything on your page to select it. Double-click any text to type straight into it, then press Enter or click somewhere else.",
-  "pageBuilder.tour.panel.title": "Change what you’ve selected",
-  "pageBuilder.tour.panel.beginnerText":
-    "Style changes colours, sizes, spacing and corners. Content changes the words, pictures and links. Animate makes it move. Style changes apply to the screen size you’re looking at.",
-  "pageBuilder.tour.panel.designerText":
-    "Style changes colours, sizes, spacing and corners, for the screen size you’re looking at. At the top of Style, choose Hovered, Pressed or another look to change how it looks then. Content changes the words; Animate makes it move.",
-  "pageBuilder.tour.panel.developerText":
-    "Style, for the screen size you’re looking at, with looks for hovered, pressed, open and current at the top. Content changes the words, Animate makes it move, and Code shows its HTML and CSS.",
+    "Click anything on your page to select it. Double-click text to type straight into it, and select words to make them bold or a link.",
+  "pageBuilder.tour.style.title": "Change how it looks",
+  "pageBuilder.tour.style.text":
+    "Style changes colours, sizes and spacing. At the top, pick which look you’re changing: as it normally is, or while it’s hovered or pressed.",
+  "pageBuilder.tour.siteStyles.title": "Styles for the whole site",
+  "pageBuilder.tour.siteStyles.text":
+    "Site styles holds the colours, fonts and sizes your site uses. Save a look as a shared style to reuse it: change it once and every copy follows.",
+  "pageBuilder.tour.arrange.title": "Arrange what’s inside",
+  "pageBuilder.tour.arrange.text":
+    "Select a section or box, and Layout in Style puts what’s inside one under another, side by side, on a grid, or anywhere you drag it.",
+  "pageBuilder.tour.animate.title": "Make it move",
+  "pageBuilder.tour.animate.text":
+    "On Animate, choose Add motion and when it plays: as the page opens, as it scrolls into view, or on hover.",
   "pageBuilder.tour.screens.title": "Every screen size, and every step",
-  "pageBuilder.tour.screens.beginnerText":
-    "Switch between desktop, tablet and phone to see and adjust each one. Undo, redo and History take you back to any earlier step. Tools, beside them, shows more settings when you’re ready.",
   "pageBuilder.tour.screens.text":
     "Switch between desktop, tablet and phone to see and adjust each one. Undo, redo and History take you back to any earlier step.",
   "pageBuilder.tour.publish.title": "Publish and view your page",
   "pageBuilder.tour.publish.text":
-    "Your changes save as you go. Publish puts the page on your website, and View page opens it as visitors see it.",
+    "Your changes save as you go. Publish puts the page on your website, and View page opens it as visitors see it. Help and tips brings this tour back.",
 
   "pageBuilder.start.title": "This page is empty",
   "pageBuilder.start.description":

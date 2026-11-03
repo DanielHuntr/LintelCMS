@@ -78,11 +78,9 @@ async function editAndAnimate(page) {
   await page.waitForTimeout(400);
   await shoot(page, "06-animate-panel");
 
-  await page.getByRole("button", { name: "Tools: Beginner" }).click();
-  await page.getByRole("radio", { name: /Designer/ }).click();
   await page.getByRole("radio", { name: "Advanced" }).first().click();
   await page.waitForTimeout(300);
-  await shoot(page, "07-designer-timeline");
+  await shoot(page, "07-timeline");
 
   await page.getByRole("tab", { name: "Insert" }).click();
   check(
