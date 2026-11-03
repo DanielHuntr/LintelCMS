@@ -97,3 +97,41 @@ describe("the timeline with a real pointer", () => {
     await page.close();
   });
 });
+
+// In the builder's side panel the trigger's settings once sat two to a row in a wide window,
+// squeezing "How much must show" until its words overlapped and the selects were unreadable.
+describe("the trigger's settings in a narrow panel", () => {
+  it("stacks them one to a row, each as wide as the panel", async () => {
+    const page = await openStudio(browser, "fade-up", { width: 300 });
+    const trigger = page.getByRole("heading", { name: "Trigger", exact: true }).locator("xpath=..");
+    const section = await trigger.boundingBox();
+    if (!section) throw new Error("Trigger settings are not on screen");
+    const controls = [
+      trigger.getByLabel("Starts when"),
+      trigger.getByLabel("How much must show"),
+      trigger.getByLabel("Afterwards"),
+      trigger.getByLabel("Scrolling back up past it"),
+    ];
+    let previousBottom = 0;
+    for (const control of controls) {
+      const box = await control.boundingBox();
+      if (!box) throw new Error("A trigger setting is not on screen");
+      expect(box.width).toBeGreaterThan(section.width - 4);
+      expect(box.y).toBeGreaterThanOrEqual(previousBottom);
+      previousBottom = box.y + box.height;
+    }
+    const [any, all] = await trigger.getByText(/^(Any|All) of it$/).all();
+    const left = await any?.boundingBox();
+    const right = await all?.boundingBox();
+    expect(left && right && left.x + left.width < right.x).toBe(true);
+    await page.close();
+  });
+
+  it("puts them side by side where there's room", async () => {
+    const page = await openStudio(browser, "fade-up");
+    const starts = await page.getByLabel("How much must show").boundingBox();
+    const afterwards = await page.getByLabel("Afterwards").boundingBox();
+    expect(starts && afterwards && Math.abs(starts.y - afterwards.y) < 40).toBe(true);
+    await page.close();
+  });
+});

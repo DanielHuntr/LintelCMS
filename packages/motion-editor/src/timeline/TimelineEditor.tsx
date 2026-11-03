@@ -96,7 +96,7 @@ export function TimelineEditor({ spec, onChange, onCommit, onSeek }: TimelineEdi
       : undefined;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="@container flex flex-col gap-6">
       <section
         aria-label={t("motionEditor.timeline.title")}
         className="flex flex-col gap-3 rounded-card bg-surface p-4 hairline-ring"
@@ -195,7 +195,7 @@ export function TimelineEditor({ spec, onChange, onCommit, onSeek }: TimelineEdi
         <p className="text-caption text-label-tertiary">{t("motionEditor.timeline.help")}</p>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 @3xl:grid-cols-2">
         <div className="rounded-card bg-surface p-4 hairline-ring">
           {validSelection ? (
             <KeyframeInspector

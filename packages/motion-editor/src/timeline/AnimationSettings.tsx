@@ -41,7 +41,7 @@ export function AnimationSettings({ spec, onChange, onCommit }: AnimationSetting
     Number.isFinite(Number(text)) && text !== "" ? Number(text) : fallback;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="@container flex flex-col gap-6">
       <section className="flex flex-col gap-3">
         <h3 className="text-headline text-label">{t("motionEditor.settings.trigger")}</h3>
         <TriggerPicker spec={spec} onChange={onChange} onCommit={onCommit} />
@@ -49,7 +49,7 @@ export function AnimationSettings({ spec, onChange, onCommit }: AnimationSetting
 
       <section className="flex flex-col gap-3">
         <h3 className="text-headline text-label">{t("motionEditor.settings.targets")}</h3>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3 @md:grid-cols-2">
           <Select
             label={t("motionEditor.settings.whatMoves")}
             value={targetChoice}
@@ -135,7 +135,7 @@ export function AnimationSettings({ spec, onChange, onCommit }: AnimationSetting
 
       <section className="flex flex-col gap-3">
         <h3 className="text-headline text-label">{t("motionEditor.settings.timing")}</h3>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3 @md:grid-cols-2">
           <TextInput
             label={t("motionEditor.settings.duration")}
             type="number"

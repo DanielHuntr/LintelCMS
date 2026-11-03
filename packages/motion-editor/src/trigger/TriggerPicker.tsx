@@ -116,7 +116,7 @@ function TriggerOptions({ spec, onChange, onCommit }: TriggerPickerProps) {
   switch (trigger.type) {
     case "inView":
       return (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 @md:grid-cols-2">
           <Slider
             label={t("motionEditor.trigger.threshold")}
             min={0}
@@ -129,9 +129,7 @@ function TriggerOptions({ spec, onChange, onCommit }: TriggerPickerProps) {
             onChange={(threshold) => set({ ...trigger, threshold }, "threshold")}
             onCommit={onCommit}
           />
-          {trigger.actions ? (
-            <div />
-          ) : (
+          {!trigger.actions && (
             <LeaveSelect
               value={trigger.onLeave}
               onChange={(onLeave) => set({ ...trigger, onLeave })}
@@ -210,7 +208,7 @@ function TriggerOptions({ spec, onChange, onCommit }: TriggerPickerProps) {
             />
           )}
           {trigger.follows && trigger.range && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-4 @md:grid-cols-2">
               <Slider
                 label={t("motionEditor.trigger.rangeFrom")}
                 min={0}
@@ -310,7 +308,7 @@ function TriggerOptions({ spec, onChange, onCommit }: TriggerPickerProps) {
       );
     case "event":
       return (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 @md:grid-cols-2">
           <TextInput
             label={t("motionEditor.trigger.eventName")}
             hint={t("motionEditor.trigger.eventNameHint")}
@@ -350,8 +348,10 @@ export function TriggerPicker({
 }: TriggerPickerProps) {
   const t = useTranslate();
   const types = Object.keys(triggerLabels) as TriggerType[];
+  // Its options sit side by side only where there's room: in the builder's side panel they
+  // stack, one to a row, whatever the size of the window.
   return (
-    <div className="flex flex-col gap-4">
+    <div className="@container flex flex-col gap-4">
       <Select
         label={t("motionEditor.trigger.label")}
         hint={t(triggerHints[spec.trigger.type])}

@@ -110,11 +110,23 @@ export async function openMotionPanel(
   return page;
 }
 
-/** A fresh page with the studio open on the timeline, editing the named preset. */
-export async function openStudio(browser: Browser, presetId: string): Promise<Page> {
-  const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
+/**
+ * A fresh page with the studio open on the timeline, editing the named preset. `width` puts
+ * it in a column that narrow, as in the builder's side panel, in a wide window.
+ */
+export async function openStudio(
+  browser: Browser,
+  presetId: string,
+  options: { width?: number } = {},
+): Promise<Page> {
+  const page = await browser.newPage({
+    viewport: { width: options.width ? 1440 : 1200, height: 900 },
+  });
+  const width = options.width
+    ? ` style="width:${options.width}px;font:13px system-ui,sans-serif"`
+    : "";
   await page.setContent(
-    `<!doctype html><html><head><style>${await buildStylesheet()}</style></head><body><div id="root"></div></body></html>`,
+    `<!doctype html><html><head><style>${await buildStylesheet()}</style></head><body><div id="root"${width}></div></body></html>`,
   );
   await page.addScriptTag({ content: await bundleStudio() });
   await page.evaluate((id) => window.openStudio(id), presetId);

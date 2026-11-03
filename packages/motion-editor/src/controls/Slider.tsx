@@ -57,9 +57,12 @@ export function Slider({
         className="w-full accent-accent-fill focus-visible:focus-ring"
       />
       {(minLabel || maxLabel) && (
-        <div aria-hidden="true" className="flex justify-between text-caption text-label-tertiary">
+        <div
+          aria-hidden="true"
+          className="flex justify-between gap-3 text-caption text-label-tertiary"
+        >
           <span>{minLabel}</span>
-          <span>{maxLabel}</span>
+          <span className="text-end">{maxLabel}</span>
         </div>
       )}
     </div>

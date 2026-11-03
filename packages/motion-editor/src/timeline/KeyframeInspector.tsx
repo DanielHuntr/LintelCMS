@@ -56,7 +56,7 @@ export function KeyframeInspector({
   }
 
   return (
-    <section aria-labelledby="keyframe-inspector-title" className="flex flex-col gap-4">
+    <section aria-labelledby="keyframe-inspector-title" className="@container flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
         <h3 id="keyframe-inspector-title" className="text-headline text-label">
           {t("motionEditor.inspector.title", { property: name, number: keyframeIndex + 1 })}
@@ -73,7 +73,7 @@ export function KeyframeInspector({
           {t("motionEditor.inspector.remove")}
         </Button>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid gap-3 @xs:grid-cols-2">
         <TextInput
           label={t("motionEditor.inspector.time")}
           type="number"
