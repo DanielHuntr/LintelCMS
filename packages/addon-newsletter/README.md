@@ -6,8 +6,10 @@ website.
 - **A sign-up element** for the builder (Insert → Newsletter → Newsletter sign-up): a
   heading, an optional line of text, an email box, a consent tick box and a button.
 - **A Liquid tag** for templates: `{% newsletter_signup heading: "Stay in touch", button: "Join", consent: "…" %}`.
-- **Your own forms** can sign people up too: give a form a tick box with the handle
-  `newsletter`, and anyone who ticks it is added with the email address they gave.
+- **Your own forms** can sign people up too. Everyone who sends the form with the handle
+  `newsletter` (the one the builder's own Newsletter element usually uses) is added; on any
+  other form, give it a tick box with the handle `newsletter`, and anyone who ticks it is
+  added with the email address they gave. Forms keep their answers in Lintel as usual.
 - **Double opt-in** is on by default: Mailchimp sends its confirmation email; Brevo sends
   the double opt-in template you choose and takes people to your page after they confirm.
 
@@ -17,8 +19,8 @@ website.
   from either, so the add-on sets no cookies and the cookie notice has nothing to ask.
 - The API key stays on the server, in the add-on's own table (`newsletter_connection`),
   not in its settings: the admin only ever sees its last four characters.
-- Nobody is added without ticking the consent box, and nothing is stored in Lintel about
-  the people who sign up.
+- Nobody is added from this add-on's own form without ticking the consent box, and it
+  stores nothing in Lintel about the people who sign up.
 - A hidden field catches robots: they are thanked and nothing is sent.
 
 ## Setting it up
