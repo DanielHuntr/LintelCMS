@@ -5,7 +5,7 @@ import { prepareBridgePublish } from "../bridge/bridge-publish.service.js";
 import { exportStaticSite } from "../static-site/static-export.service.js";
 import type { PublishingContext } from "./publishing-context.js";
 import { NotAZipTargetError } from "./publishing.errors.js";
-import { findPublishTargetRow, readSecrets } from "./publishing.service.js";
+import { findPublishTargetRow, readSecrets, siteForTarget } from "./publishing.service.js";
 
 /**
  * "Download as ZIP": the website as one file to upload by hand, through a hosting
@@ -41,6 +41,7 @@ export async function buildZipDownload(
   const exported = await exportStaticSite({
     api: context.api,
     folder,
+    site: await siteForTarget(context.database, target),
     formEndpoints: bridge.formEndpoints,
     siteAddress: target.options.siteAddress || null,
     extraFiles: bridge.extraFiles,

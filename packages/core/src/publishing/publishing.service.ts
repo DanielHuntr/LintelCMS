@@ -2,9 +2,13 @@ import { randomBytes } from "node:crypto";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import type { SecretBox } from "../secrets/secret-box.js";
+import { findSiteById } from "../sites/sites.repository.js";
+import { findOrCreateDefaultSite } from "../sites/sites.service.js";
+import type { Site } from "../sites/sites.table.js";
 import {
   describeConnectionError,
   PublishConnectionError,
+  PublishSiteNotFoundError,
   PublishTargetNotFoundError,
 } from "./publishing.errors.js";
 import {
@@ -33,6 +37,8 @@ import { openTargetRemote, targetLocation } from "./target-remotes.js";
 export interface PublishTarget {
   id: string;
   name: string;
+  /** The site published here; null for the default site. */
+  siteId: string | null;
   kind: PublishTargetKind;
   options: PublishTargetRow["options"];
   formDelivery: FormDeliveryMode;
@@ -105,6 +111,7 @@ export function describeTarget(box: SecretBox, row: PublishTargetRow): PublishTa
   return {
     id: row.id,
     name: row.name,
+    siteId: row.siteId,
     kind: row.kind,
     options: row.options,
     formDelivery: row.kind === "s3" && row.formDelivery === "bridge" ? "api" : row.formDelivery,
@@ -151,15 +158,30 @@ function defaultOptions(request: CreatePublishTargetRequest): PublishTargetRow["
   return options;
 }
 
+/** The site a destination publishes: its own, or the default site. */
+export async function siteForTarget(
+  database: DatabaseOrTransaction,
+  target: Pick<PublishTargetRow, "siteId">,
+): Promise<Site> {
+  const site = target.siteId ? await findSiteById(database, target.siteId) : undefined;
+  return site ?? findOrCreateDefaultSite(database);
+}
+
+async function checkSiteExists(database: DatabaseOrTransaction, siteId: string | null | undefined) {
+  if (siteId && !(await findSiteById(database, siteId))) throw new PublishSiteNotFoundError();
+}
+
 export async function createPublishTarget(
   dependencies: PublishingDependencies,
   request: CreatePublishTargetRequest,
 ): Promise<PublishTarget> {
   const box = dependencies.secretBox();
+  await checkSiteExists(dependencies.database, request.siteId);
   const secrets = mergeSecrets({ bridgeSecret: randomBytes(32).toString("hex") }, request.secrets);
   const row = await insertTargetRow(dependencies.database, {
     tenantId: DEFAULT_TENANT_ID,
     name: request.name,
+    siteId: request.siteId ?? null,
     kind: request.kind,
     options: defaultOptions(request),
     sealedSecrets: sealSecrets(box, secrets),
@@ -177,6 +199,7 @@ export async function updatePublishTarget(
 ): Promise<PublishTarget> {
   const box = dependencies.secretBox();
   const row = await findPublishTargetRow(dependencies.database, targetId);
+  await checkSiteExists(dependencies.database, changes.siteId);
   let sealedSecrets = row.sealedSecrets;
   if (changes.secrets) {
     let saved: PublishTargetSecrets = {};
@@ -189,6 +212,7 @@ export async function updatePublishTarget(
   }
   const updated = await updateTargetRow(dependencies.database, row.id, {
     ...(changes.name !== undefined && { name: changes.name }),
+    ...(changes.siteId !== undefined && { siteId: changes.siteId }),
     ...(changes.options !== undefined && { options: { ...row.options, ...changes.options } }),
     ...(changes.formDelivery !== undefined && { formDelivery: changes.formDelivery }),
     ...(changes.publishAutomatically !== undefined && {

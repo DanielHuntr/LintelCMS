@@ -9,6 +9,7 @@ import { PublishingPage } from "./PublishingPage.js";
 const cpanel: PublishTarget = {
   id: "t1",
   name: "My cPanel hosting",
+  siteId: null,
   kind: "ftp",
   options: {
     host: "ftp.example.com",
@@ -36,6 +37,7 @@ describe("Settings → Publishing", () => {
   it("guides a first destination, sending the password but never showing one", async () => {
     const { calls } = mockApi(({ method, url, body }) => {
       if (url.pathname === "/publishing/targets" && method === "GET") return { targets: [] };
+      if (url.pathname === "/sites") return { sites: [] };
       if (url.pathname === "/publishing/targets" && method === "POST")
         return { ...cpanel, ...(body as object) };
       throw new Error(`Unexpected request: ${method} ${url.pathname}`);
@@ -64,14 +66,23 @@ describe("Settings → Publishing", () => {
     mockApi(({ method, url }) => {
       if (url.pathname === "/publishing/targets" && method === "GET") return { targets: [cpanel] };
       if (url.pathname === "/publishing/targets/t1/runs") return { runs: [] };
+      if (url.pathname === "/sites") return { sites: [] };
       throw new Error(`Unexpected request: ${method} ${url.pathname}`);
     });
-    renderScreen(<PublishingPage />, { enabledPlugins: ["forms", "commerce"] });
+    renderScreen(<PublishingPage />, {
+      enabledPlugins: ["forms", "commerce", "analytics", "experiments"],
+    });
 
     const list = await screen.findByRole("region", { name: "What works on this hosting" });
     expect(within(list).getByText(/Forms, through the PHP file/)).toBeInTheDocument();
     expect(within(list).getByText(/Shop: needs Stripe or Mollie connected/)).toBeInTheDocument();
     expect(within(list).getByText(/Member logins/)).toBeInTheDocument();
+    expect(within(list).getByText(/cookie notice/)).toBeInTheDocument();
+    expect(
+      within(list).getByText(/Shop buttons and baskets placed in page designs/),
+    ).toBeInTheDocument();
+    expect(within(list).getByText(/Visitor counts: files can’t count visits/)).toBeInTheDocument();
+    expect(within(list).getByText(/A\/B tests: each visitor needs a version/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Publish website" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Test connection" })).toBeInTheDocument();
     expect(screen.getByText("Nothing published here yet.")).toBeInTheDocument();

@@ -9,6 +9,7 @@ import { SelectField } from "../design/SelectField.js";
 import { TextField } from "../design/TextField.js";
 import { Toggle } from "../design/Toggle.js";
 import { t } from "../i18n/strings.js";
+import { useSites } from "../sites/sites.queries.js";
 import type {
   FormDelivery,
   PublishTarget,
@@ -79,6 +80,9 @@ export function PublishTargetDialog({
   const [secrets, setSecrets] = useState<PublishTargetSecrets>({});
   const [formDelivery, setFormDelivery] = useState<FormDelivery>(target?.formDelivery ?? "bridge");
   const [automatic, setAutomatic] = useState(target?.publishAutomatically ?? false);
+  const sites = useSites().data ?? [];
+  const defaultSiteId = sites.find((site) => site.isDefault)?.id ?? "";
+  const [siteId, setSiteId] = useState<string | null>(target?.siteId ?? null);
 
   const option = (key: keyof PublishTargetOptions) => ({
     value: String(options[key] ?? ""),
@@ -107,6 +111,7 @@ export function PublishTargetDialog({
     );
     onSubmit({
       name: name || t(`publishing.kind.${kind}`),
+      siteId: siteId === defaultSiteId ? null : siteId,
       kind,
       options,
       secrets: typedSecrets,
@@ -153,6 +158,15 @@ export function PublishTargetDialog({
           onChange={(event) => setName(event.target.value)}
           data-autofocus={target ? true : undefined}
         />
+        {sites.length > 1 && (
+          <SelectField
+            label={t("publishing.field.site")}
+            hint={t("publishing.field.siteHint")}
+            value={siteId ?? defaultSiteId}
+            onValueChange={setSiteId}
+            options={sites.map((site) => ({ value: site.id, label: site.name }))}
+          />
+        )}
         <TextField
           label={t("publishing.field.siteAddress")}
           hint={t("publishing.field.siteAddressHint")}

@@ -14,6 +14,8 @@ describe("exporting again", { timeout: 60_000 }, () => {
   }
 
   async function sampleSite() {
+    // The first page at the top of the page tree is the site's start, shown at "/".
+    await lintel.publish("pages", { title: "Home" }, "home");
     const about = await lintel.publish("pages", { title: "About us" }, "about");
     await lintel.publish("pages", { title: "Contact" }, "contact");
     const first = await lintel.publish("posts", { title: "First bake" }, "first-bake");

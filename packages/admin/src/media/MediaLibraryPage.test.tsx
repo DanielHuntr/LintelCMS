@@ -55,7 +55,8 @@ describe("MediaLibraryPage", () => {
 
     expect(await screen.findByRole("button", { name: /beach/ })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "No description" })).toBeChecked();
-    expect(requested).toEqual(["/media?page=1&perPage=60&missingAlt=true"]);
+    expect(requested).toContain("/media?page=1&perPage=60&missingAlt=true");
+    expect(requested.filter((path) => path.startsWith("/media?"))).toHaveLength(1);
   });
 
   it("explains when the server can't resize images", async () => {

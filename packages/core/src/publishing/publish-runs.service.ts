@@ -18,7 +18,12 @@ import {
   updateRunRow,
   updateTargetRow,
 } from "./publishing.repository.js";
-import { describeRun, findPublishTargetRow, readSecrets } from "./publishing.service.js";
+import {
+  describeRun,
+  findPublishTargetRow,
+  readSecrets,
+  siteForTarget,
+} from "./publishing.service.js";
 import type {
   PublishRunRow,
   PublishRunSummary,
@@ -127,6 +132,7 @@ async function runPublish(
     const exported = await exportStaticSite({
       api: context.api,
       folder,
+      site: await siteForTarget(context.database, target),
       formEndpoints: fresh.formEndpoints,
       siteAddress: target.options.siteAddress || null,
       extraFiles: fresh.extraFiles,

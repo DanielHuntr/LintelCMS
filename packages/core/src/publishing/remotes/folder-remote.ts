@@ -27,7 +27,8 @@ export function openFolderRemote(folderPath: string): RemoteFolder {
     async writeFile(path, content) {
       const target = full(path);
       await mkdir(dirname(target), { recursive: true });
-      const temporary = temporaryName(target);
+      // Named from the "/" path, not the full one: on Windows that has "\\" and a drive.
+      const temporary = full(temporaryName(path));
       await writeFile(temporary, content);
       await rename(temporary, target);
     },

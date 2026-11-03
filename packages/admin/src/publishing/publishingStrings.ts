@@ -28,6 +28,8 @@ export const publishingStrings = {
   "publishing.kind.folder.description": "When the web server is on the same machine as Lintel.",
   "publishing.field.name": "Name",
   "publishing.field.nameHint": "Just for you, like “My cPanel hosting”.",
+  "publishing.field.site": "Website",
+  "publishing.field.siteHint": "Each of your sites is published on its own.",
   "publishing.field.siteAddress": "Your website’s address",
   "publishing.field.siteAddressHint":
     "Such as https://www.example.com. Used for search engines, and to collect forms and orders.",
@@ -93,6 +95,7 @@ export const publishingStrings = {
   "publishing.works": "Works",
   "publishing.doesNotWork": "Doesn’t work",
   "publishing.feature.pages": "Pages, posts, pictures and menus",
+  "publishing.feature.look": "Navigation, footer, fonts, animations, effects and the cookie notice",
   "publishing.feature.search": "Search, built into the site",
   "publishing.feature.formsBridge":
     "Forms, through the PHP file. Submissions appear in Forms within five minutes.",
@@ -104,6 +107,12 @@ export const publishingStrings = {
     "Shop: needs Stripe or Mollie connected in Shop → Settings → Payments, and the Stripe signing secret below.",
   "publishing.feature.shopBucket":
     "Shop: product pages only. Buckets can’t run PHP, so checkout needs a live Lintel server.",
+  "publishing.feature.shopInDesigns":
+    "Shop buttons and baskets placed in page designs: they need a live Lintel server. Visitors use the shop pages instead.",
+  "publishing.feature.visitors":
+    "Visitor counts: files can’t count visits, so the published site leaves the counter out. Your host’s own statistics still work.",
+  "publishing.feature.abTests":
+    "A/B tests: each visitor needs a version picked by Lintel, so the published site always shows the original page.",
   "publishing.feature.members":
     "Member logins and members-only pages: they need a live Lintel server",
   "publishing.history": "Publishing history",
@@ -119,5 +128,5 @@ export const publishingStrings = {
   "publishing.run.trigger.command": "from the command line",
   "publishing.notice.title": "Not every feature works on published files",
   "publishing.notice.text":
-    "Pages, search and forms work anywhere. A shop needs the PHP file (or a live Lintel server); member logins always need a live Lintel server.",
+    "Pages, search and forms work anywhere. A shop needs the PHP file (or a live Lintel server); member logins, visitor counts and A/B tests always need a live Lintel server.",
 } as const;

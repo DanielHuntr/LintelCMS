@@ -32,6 +32,8 @@ export interface PublishTargetSecrets {
 export interface PublishTarget {
   id: string;
   name: string;
+  /** The site published here; null for the default site. */
+  siteId: string | null;
   kind: PublishTargetKind;
   options: PublishTargetOptions;
   formDelivery: FormDelivery;
@@ -47,6 +49,7 @@ export interface PublishTarget {
 
 export interface PublishTargetInput {
   name: string;
+  siteId: string | null;
   kind: PublishTargetKind;
   options: PublishTargetOptions;
   secrets: PublishTargetSecrets;

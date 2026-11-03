@@ -6,8 +6,9 @@ import sharp from "sharp";
 import { afterEach, beforeEach, expect } from "vitest";
 import {
   ensureBlogPostsCollection,
-  ensurePagesCollection,
+  pagesWithSimpleSectionsCollection,
 } from "../collections/default-collections.js";
+import { ensureCollection } from "../collections/collections.service.js";
 import { ensureSiteSettings } from "../globals/default-globals.js";
 import { LocalDiskStorage } from "../media/local-disk-storage.js";
 import { ensureMainMenu } from "../navigation/default-navigation.js";
@@ -53,7 +54,8 @@ export function useStaticSiteTestServer(testDatabase: ReturnType<typeof useTestD
     await state.api.ready();
     state.site = buildSiteServer({ api: state.api });
     await state.site.ready();
-    await ensurePagesCollection(testDatabase.database);
+    // Pages with both the older Page sections (a Form section) and Design.
+    await ensureCollection(testDatabase.database, pagesWithSimpleSectionsCollection);
     await ensureBlogPostsCollection(testDatabase.database);
     await ensureSiteSettings(testDatabase.database);
     await ensureMainMenu(testDatabase.database);

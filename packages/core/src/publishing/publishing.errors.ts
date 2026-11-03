@@ -6,6 +6,12 @@ export class PublishTargetNotFoundError extends HttpError {
   }
 }
 
+export class PublishSiteNotFoundError extends HttpError {
+  constructor() {
+    super(404, "PUBLISH_SITE_NOT_FOUND", "That site doesn't exist any more. Choose another one.");
+  }
+}
+
 export class PublishRunNotFoundError extends HttpError {
   constructor() {
     super(404, "PUBLISH_RUN_NOT_FOUND", "There's no publish with that id.");

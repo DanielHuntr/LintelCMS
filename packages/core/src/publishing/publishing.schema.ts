@@ -60,8 +60,12 @@ const nameSchema = text("Please give this a name", 100).min(1, {
   error: "Please give this a name, like “My cPanel hosting”",
 });
 
+/** The site to publish there, by id; null or left out for the default site. */
+const siteIdSchema = z.uuid({ error: "That isn't one of your sites" }).nullable();
+
 export const createPublishTargetRequestSchema = z.object({
   name: nameSchema,
+  siteId: siteIdSchema.optional(),
   kind: z.enum(publishTargetKinds, { error: "Choose where to publish" }),
   options: publishTargetOptionsSchema.default({}),
   secrets: publishTargetSecretsSchema.default({}),
@@ -72,6 +76,7 @@ export const createPublishTargetRequestSchema = z.object({
 
 export const updatePublishTargetRequestSchema = z.object({
   name: nameSchema.optional(),
+  siteId: siteIdSchema.optional(),
   options: publishTargetOptionsSchema.optional(),
   secrets: publishTargetSecretsSchema.optional(),
   formDelivery: z.enum(formDeliveryModes).optional(),

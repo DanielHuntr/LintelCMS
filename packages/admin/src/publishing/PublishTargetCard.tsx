@@ -225,6 +225,7 @@ function WhatWorks({ target }: { target: PublishTarget }) {
   const usesBridge = target.kind !== "s3" && target.formDelivery === "bridge";
   const features: Array<{ works: boolean; text: string }> = [
     { works: true, text: t("publishing.feature.pages") },
+    { works: true, text: t("publishing.feature.look") },
     { works: true, text: t("publishing.feature.search") },
   ];
   if (enabledPlugins.includes("forms")) {
@@ -247,7 +248,14 @@ function WhatWorks({ target }: { target: PublishTarget }) {
               text: t("publishing.feature.shopBridge", { provider: "Stripe or Mollie" }),
             }
           : { works: false, text: t("publishing.feature.shopNeedsSetup") },
+      { works: false, text: t("publishing.feature.shopInDesigns") },
     );
+  }
+  if (enabledPlugins.includes("analytics")) {
+    features.push({ works: false, text: t("publishing.feature.visitors") });
+  }
+  if (enabledPlugins.includes("experiments")) {
+    features.push({ works: false, text: t("publishing.feature.abTests") });
   }
   features.push({ works: false, text: t("publishing.feature.members") });
   return (
