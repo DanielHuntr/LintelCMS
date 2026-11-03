@@ -87,6 +87,11 @@ function describeReport(report: CollectRequest): Partial<NewAnalyticsEvent> & {
         source: cleanTag(report.source) || referrerDomain(report.referrer, report.host),
         campaign: cleanTag(report.campaign),
         device: deviceFromWidth(report.width),
+        // Which A/B test version the page showed: a test id and a letter, nothing else.
+        properties:
+          report.experiment && report.version
+            ? { experiment: report.experiment, variant: report.version }
+            : {},
       };
     case "leave":
       return { kind: "leave", durationMs: countedDuration(report.durationMs) };

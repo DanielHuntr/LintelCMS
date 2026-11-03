@@ -50,6 +50,7 @@ const stats: VisitorStats = {
   goals: [{ ...row("form:contact", 3), conversions: 3 }],
   events: [],
   outbound: [],
+  versions: [],
 };
 
 afterEach(() => vi.restoreAllMocks());
@@ -78,6 +79,51 @@ describe("the Visitors screen", () => {
 
     await userEvent.click(screen.getByRole("radio", { name: "30 days" }));
     expect(calls.at(-1)?.url.search).toBe("?range=30d");
+  });
+
+  it("shows the visitors of each running test's versions to people who run tests", async () => {
+    const running = {
+      id: "t1",
+      pageTitle: "Home",
+      status: "running",
+      versions: [{ key: "b" }],
+    };
+    const ended = { ...running, id: "t0", status: "ended" };
+    mockApi(({ url }) => {
+      if (url.pathname === "/analytics/stats") {
+        return {
+          ...stats,
+          versions: [row("t1:original", 41), row("t1:b", 39), row("t0:b", 12)],
+        };
+      }
+      if (url.pathname === "/experiments") return { experiments: [running, ended] };
+      throw new Error(`Unexpected request: ${url.pathname}`);
+    });
+    renderScreen(<VisitorsPage />, {
+      enabledPlugins: ["analytics", "experiments"],
+      permissions: ["analytics:read", "experiments:manage"],
+    });
+    const card = (await screen.findByRole("heading", { name: "A/B tests running" })).closest(
+      "section, div",
+    ) as HTMLElement;
+    expect(
+      await within(card.parentElement ?? card).findByText("Home: Original"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Home: Version B")).toBeInTheDocument();
+    expect(screen.queryByText(/t0/)).not.toBeInTheDocument();
+    cleanup();
+
+    // Without the A/B testing permission, no card and no request for tests.
+    const { calls } = mockApi(({ url }) =>
+      url.pathname === "/analytics/stats" ? { ...stats, versions: [row("t1:b", 39)] } : null,
+    );
+    renderScreen(<VisitorsPage />, {
+      enabledPlugins: ["analytics", "experiments"],
+      permissions: ["analytics:read"],
+    });
+    expect(await screen.findByText("128")).toBeInTheDocument();
+    expect(screen.queryByText("A/B tests running")).not.toBeInTheDocument();
+    expect(calls.some((call) => call.url.pathname === "/experiments")).toBe(false);
   });
 
   it("offers the chart as a table", async () => {

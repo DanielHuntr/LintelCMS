@@ -30,6 +30,9 @@ export type ExperimentScope = (typeof experimentScopes)[number];
  * - `order`: someone places an order (reaches the order confirmation page).
  * - `click`: someone clicks a link or button that goes to `target`.
  * - `page`: someone reaches the page `entryId`.
+ * - `analytics`: something the Visitors plugin counts, by its name there: a particular form
+ *   sent ("form:contact"), an order ("order") or an event the site names itself
+ *   (`lintelAnalytics.track("signup")` is "signup"). Offered while Visitors is on.
  */
 export const goalSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("form") }),
@@ -40,6 +43,15 @@ export const goalSchema = z.discriminatedUnion("kind", [
     label: z.string().trim().max(200).optional(),
   }),
   z.object({ kind: z.literal("page"), entryId: z.uuid("Choose the page that counts.") }),
+  z.object({
+    kind: z.literal("analytics"),
+    name: z
+      .string()
+      .trim()
+      .min(1, "Choose what counts.")
+      .max(60)
+      .regex(/^[\p{L}\p{N} _.:-]+$/u, "Use letters, numbers, spaces, dots, colons and dashes."),
+  }),
 ]);
 export type ExperimentGoal = z.infer<typeof goalSchema>;
 

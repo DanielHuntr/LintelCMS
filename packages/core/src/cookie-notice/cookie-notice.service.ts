@@ -33,7 +33,7 @@ import {
   listPublishedDesigns,
   saveStoredCookieNotice,
 } from "./cookie-notice.repository.js";
-import { listPluginConsentServices } from "./plugin-consent-services.js";
+import { findPluginConsentServices } from "./plugin-consent-services.js";
 
 /**
  * The cookie notice: on by default whenever the published site uses something that may set
@@ -84,17 +84,19 @@ export interface ServicesContext {
 /**
  * Every service the published site uses: in its pages' designs (every collection with
  * pages, every language), in its navigation and footer, in the site's own blocks those use,
- * Adobe Fonts, and the services of the plugins that are on. Sorted by name, each once.
+ * Adobe Fonts, and the services of the plugins that are on (those they declare, and those
+ * their settings ask for, like "Visitor counts"). Sorted by name, each once.
  */
 export async function findSiteConsentServices(
   database: DatabaseOrTransaction,
   site: Site,
   context: ServicesContext,
 ): Promise<ConsentService[]> {
-  const [collections, sections, library] = await Promise.all([
+  const [collections, sections, library, fromPlugins] = await Promise.all([
     listCollectionsWithDetails(database, DEFAULT_TENANT_ID),
     readSiteSections(database, site),
     loadBlockLibrary(database),
+    findPluginConsentServices(database, context.enabledPlugins),
   ]);
   const blocks = new Map<string, CustomBlock>(library.map((block) => [block.handle, block]));
   const defaultSite = collections.some((collection) => collection.siteScope === "shared")
@@ -124,7 +126,7 @@ export async function findSiteConsentServices(
     fromPages,
     fromSections,
     context.usesAdobeFonts ? [adobeFontsService] : [],
-    listPluginConsentServices(context.enabledPlugins),
+    fromPlugins,
   );
 }
 

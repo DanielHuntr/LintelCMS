@@ -174,6 +174,7 @@ export async function readVisitorStats(
     goals: rowsFor(figures, "goal"),
     events: rowsFor(figures, "event"),
     outbound: rowsFor(figures, "outbound"),
+    versions: rowsFor(figures, "version"),
   };
 }
 
@@ -215,6 +216,7 @@ const dimensionLabels: Record<RollupDimension, string> = {
   goal: "Goal",
   outbound: "Link to another site",
   event: "Event",
+  version: "A/B test version",
 };
 
 /** Every daily figure in the period, one line each, for a spreadsheet. */

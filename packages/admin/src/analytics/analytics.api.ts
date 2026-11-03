@@ -53,6 +53,8 @@ export interface VisitorStats {
   goals: StatsRow[];
   events: StatsRow[];
   outbound: StatsRow[];
+  /** Visitors of each A/B test version, keyed "<test id>:<version>". */
+  versions: StatsRow[];
 }
 
 export interface PageVisitorStats {

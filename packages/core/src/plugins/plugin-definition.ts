@@ -4,7 +4,10 @@ import type { z } from "zod";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import type { BlockDefinition } from "../blocks/block-definition.js";
 import type { Fieldtype } from "../fieldtypes/fieldtype.js";
-import type { PluginConsentService } from "../cookie-notice/plugin-consent-services.js";
+import type {
+  PluginConsentService,
+  SettingsConsentService,
+} from "../cookie-notice/plugin-consent-services.js";
 
 /**
  * What a plugin is, on the server. Every plugin, built in or installed from a package, is
@@ -97,6 +100,15 @@ export interface PluginDefinition<
    * event on `document` for a choice made later. See src/cookie-notice.
    */
   consentServices?: readonly PluginConsentService[];
+  /**
+   * Services that depend on the plugin's saved settings, read each time the cookie notice is
+   * worked out while the plugin is on: "Visitor counts" while visitors are counted only after
+   * they accept, say. A service without a handle stands for the plugin itself and is allowed
+   * under "plugin:<id>"; with one, under "plugin:<id>:<handle>" as above.
+   */
+  consentServicesFromSettings?(
+    settings: z.output<SettingsSchema>,
+  ): readonly SettingsConsentService[];
   /**
    * Makes the content the plugin needs (a collection, say) each time it is switched on.
    * It must only create what is missing: it runs again after every switch off and on.

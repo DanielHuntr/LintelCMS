@@ -19,6 +19,13 @@ plugin. Why it works this way is in `docs/decisions/0042-built-in-visitor-counts
 Goals from forms and the shop are recorded by `goals.service.ts`, subscribed to the event bus
 in `register-analytics.ts`, which also starts the timed jobs.
 
+On a page running an A/B test, the page view carries the version shown
+(`properties: { experiment, variant }`, from the page's `<template data-lintel-test>`), and
+the daily figures get a `version` row per test version ("<test id>:<version>"). With "Count
+visitors only after they accept" on, the plugin lists "Visitor counts" (`plugin:analytics`)
+in the cookie notice (`consentServicesFromSettings` in `analytics.plugin.ts`). See
+`docs/decisions/0051-visitors-tests-and-the-cookie-notice.md`.
+
 ## Endpoints
 
 | Method and path                         | Permission       | Success                                    |

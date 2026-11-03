@@ -15,6 +15,7 @@ import { downloadVisitorStats, type StatsChoice, type StatsRange } from "./analy
 import { useVisitorStats } from "./analytics.queries.js";
 import { BreakdownCard } from "./BreakdownCard.js";
 import { StatTiles } from "./StatTiles.js";
+import { TestVersionsCard } from "./TestVersionsCard.js";
 import { VisitorSettingsDialog } from "./VisitorSettingsDialog.js";
 import { VisitorsChart } from "./VisitorsChart.js";
 import { countryLabel, deviceLabel, goalLabel, pageLabel, sourceLabel } from "./visitorLabels.js";
@@ -165,6 +166,7 @@ export function VisitorsPage() {
                   value={(row) => row.conversions}
                   emptyText={t("visitors.goalsEmpty")}
                 />
+                <TestVersionsCard rows={stats.data.versions ?? []} />
                 <BreakdownCard
                   title={t("visitors.campaigns")}
                   keyHeading={t("visitors.column.campaign")}

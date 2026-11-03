@@ -230,4 +230,75 @@ describe("the A/B test screens", () => {
     });
     expect(screen.getByRole("button", { name: "Start test" })).toBeInTheDocument();
   });
+
+  it("uses a form or an event Visitors counts as the goal, while Visitors is on", async () => {
+    const draft: Experiment = { ...experiment, status: "draft", startedAt: null, goal: null };
+    const { calls } = mockApi(({ method, url, body }) => {
+      if (url.pathname === "/experiments/e1" && method === "GET") return draft;
+      if (url.pathname === "/experiments/e1" && method === "PATCH")
+        return { ...draft, ...(body as object) };
+      if (url.pathname === "/forms")
+        return { forms: [{ id: "f1", handle: "contact", name: "Contact" }] };
+      if (url.pathname === "/analytics/stats") {
+        return {
+          events: [{ key: "signup", visitors: 3, views: 3, conversions: 0, averageSeconds: null }],
+        };
+      }
+      return { id: "p1", data: { title: "Bakery", design } };
+    });
+    renderScreen(<ExperimentPage experimentId="e1" />, {
+      enabledPlugins: ["experiments", "analytics", "forms"],
+    });
+
+    await userEvent.selectOptions(
+      await screen.findByLabelText("Count a success when someone…"),
+      "analytics",
+    );
+    const which = await screen.findByLabelText("Which one?");
+    expect(await within(which).findByRole("option", { name: "Sends the “Contact” form" }));
+    expect(
+      await within(which).findByRole("option", { name: "“signup” (an event your site sends)" }),
+    );
+    await userEvent.selectOptions(which, "signup");
+    expect(calls.find((call) => call.method === "PATCH")?.body).toEqual({
+      goal: { kind: "analytics", name: "signup" },
+    });
+  });
+
+  it("doesn't offer Visitors' goals while Visitors is off", async () => {
+    const draft: Experiment = { ...experiment, status: "draft", startedAt: null, goal: null };
+    mockApi(({ url }) =>
+      url.pathname === "/experiments/e1" ? draft : { id: "p1", data: { title: "Bakery", design } },
+    );
+    renderScreen(<ExperimentPage experimentId="e1" />, { enabledPlugins: ["experiments"] });
+    const goal = await screen.findByLabelText("Count a success when someone…");
+    expect(
+      within(goal).queryByRole("option", { name: "does something Visitors counts" }),
+    ).toBeNull();
+  });
+
+  it("lets people who change settings wait for consent before counting", async () => {
+    const { calls } = mockApi(({ method, url, body }) => {
+      if (url.pathname === "/experiments") return { experiments: [experiment] };
+      if (url.pathname === "/plugins/experiments/settings" && method === "GET")
+        return { countOnlyAfterConsent: false };
+      if (url.pathname === "/plugins/experiments/settings") return body;
+      throw new Error(`Unexpected request: ${method} ${url.pathname}`);
+    });
+    renderScreen(<ExperimentsPage />, {
+      enabledPlugins: ["experiments"],
+      permissions: ["experiments:manage", "settings:update"],
+    });
+    await userEvent.click(await screen.findByRole("button", { name: "Settings" }));
+    const dialog = await screen.findByRole("dialog", { name: "A/B test settings" });
+    await userEvent.click(
+      await within(dialog).findByRole("switch", {
+        name: "Count test visitors only after they accept",
+      }),
+    );
+    await userEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    expect(
+      calls.find((call) => call.method === "PUT" && call.url.pathname.endsWith("/settings"))?.body,
+    ).toEqual({ countOnlyAfterConsent: true });
+  });
 });

@@ -2,10 +2,13 @@ import { type PageDocument, readPageLinkId } from "@lintel/builder-model";
 import { describeEntryForEvent } from "../content-events/entry-event-data.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
+import { readPluginSettings } from "../plugins/plugin-settings.service.js";
 import { isPluginEnabled } from "../plugins/plugins.service.js";
 import type { SiteResponse } from "../website/rendered-pages-cache.js";
 import { entityTag } from "../website/site-documents.js";
 import { readDesign, versionAsPage } from "./experiment-designs.js";
+import { experimentsPlugin } from "./experiments.plugin.js";
+import { experimentsSettingsSchema } from "./experiments-settings.schema.js";
 import { listRunningExperimentRows, listVersionRows } from "./experiments.repository.js";
 import type { ExperimentGoal, ExperimentScope, VersionKey } from "./experiments.schema.js";
 import { TESTS_ENDPOINT, testsScript } from "./tests-script.js";
@@ -24,7 +27,8 @@ export type BrowserGoal =
   | { kind: "form" }
   | { kind: "order" }
   | { kind: "click"; target: string }
-  | { kind: "page"; path: string | null };
+  | { kind: "page"; path: string | null }
+  | { kind: "analytics"; name: string };
 
 export interface RunningTest {
   id: string;
@@ -39,9 +43,30 @@ export interface RunningTest {
   goal: BrowserGoal | null;
 }
 
+/** What every page of the site needs to know about A/B tests. */
+export interface RunningTests {
+  tests: RunningTest[];
+  /** Count nobody until the cookie notice allows "plugin:experiments" (the plugin's setting). */
+  countOnlyAfterConsent: boolean;
+}
+
 /** The running tests, or none while the A/B testing plugin is off. */
-export async function loadRunningTests(database: DatabaseOrTransaction): Promise<RunningTest[]> {
-  if (!(await isPluginEnabled(database, EXPERIMENTS_PLUGIN_ID))) return [];
+export async function loadRunningTests(database: DatabaseOrTransaction): Promise<RunningTests> {
+  if (!(await isPluginEnabled(database, EXPERIMENTS_PLUGIN_ID))) {
+    return { tests: [], countOnlyAfterConsent: false };
+  }
+  const [tests, settings] = await Promise.all([
+    readRunningTests(database),
+    readPluginSettings(database, experimentsPlugin),
+  ]);
+  const parsed = experimentsSettingsSchema.safeParse(settings);
+  return {
+    tests,
+    countOnlyAfterConsent: parsed.success && parsed.data.countOnlyAfterConsent,
+  };
+}
+
+async function readRunningTests(database: DatabaseOrTransaction): Promise<RunningTest[]> {
   const rows = await listRunningExperimentRows(database, DEFAULT_TENANT_ID);
   const versions = await listVersionRows(
     database,
@@ -81,6 +106,8 @@ async function browserGoal(
     case "form":
     case "order":
       return { kind: goal.kind };
+    case "analytics":
+      return { kind: "analytics", name: goal.name };
     case "click": {
       // A link to one of the site's pages is stored as the page; the page shows its address.
       const linkedPage = readPageLinkId(goal.target);
@@ -106,6 +133,8 @@ async function pathOfPage(
 /** One visit's versions of the running tests. */
 export interface ExperimentVisit {
   tests: RunningTest[];
+  /** The counting script waits for the cookie notice to allow "plugin:experiments". */
+  countOnlyAfterConsent: boolean;
   /** Counted visitors get the markers and the script; others only ever the original. */
   takesPart: boolean;
   versions: Map<string, VersionKey>;
@@ -113,7 +142,8 @@ export interface ExperimentVisit {
   cacheKey: string;
 }
 
-export function visitTests(tests: RunningTest[], visitor: Visitor): ExperimentVisit {
+export function visitTests(running: RunningTests, visitor: Visitor): ExperimentVisit {
+  const { tests, countOnlyAfterConsent } = running;
   const takesPart = tests.length > 0 && takesPartInTests(visitor);
   const versions = new Map<string, VersionKey>();
   for (const test of tests) {
@@ -125,7 +155,7 @@ export function visitTests(tests: RunningTest[], visitor: Visitor): ExperimentVi
       : takesPart
         ? `#tests:${tests.map((test) => `${test.id}=${versions.get(test.id)}`).join(",")}`
         : "#tests:none";
-  return { tests, takesPart, versions, cacheKey };
+  return { tests, countOnlyAfterConsent, takesPart, versions, cacheKey };
 }
 
 /**
@@ -164,6 +194,7 @@ export function withTestsScript(
   if (!response.headers["content-type"]?.startsWith("text/html")) return response;
   const settings = JSON.stringify({
     endpoint: TESTS_ENDPOINT,
+    ...(visit.countOnlyAfterConsent ? { consent: "required" } : {}),
     tests: visit.tests.map((test) => ({ id: test.id, goal: test.goal })),
   }).replaceAll("<", "\\u003c");
   const snippet = `<script type="application/json" id="lintel-tests">${settings}</script><script src="${testsScript.path}" defer></script>`;

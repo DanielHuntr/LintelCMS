@@ -7,8 +7,10 @@ import { Card } from "../design/Card.js";
 import { SelectField } from "../design/SelectField.js";
 import { t } from "../i18n/strings.js";
 import { usePagePicker } from "../page-links/usePagePicker.js";
-import { useSession } from "../session/SessionContext.js";
-import { linksOnPages } from "./experimentText.js";
+import { useCan, useSession } from "../session/SessionContext.js";
+import { useVisitorStats } from "../analytics/analytics.queries.js";
+import { useForms } from "../forms/forms.queries.js";
+import { describeAnalyticsGoal, linksOnPages } from "./experimentText.js";
 import { useUpdateExperiment } from "./experiments.queries.js";
 import type { Experiment, ExperimentGoal } from "./experiments.types.js";
 
@@ -27,6 +29,8 @@ export function GoalCard({ experiment }: { experiment: Experiment }) {
   const [pendingKind, setPendingKind] = useState<GoalKind | null>(null);
   const kind = pendingKind ?? goal?.kind ?? "";
   const isLocked = experiment.status === "running" || experiment.status === "ended";
+  const countsVisitors = session.enabledPlugins.includes("analytics");
+  const counted = useCountedGoals(countsVisitors && kind === "analytics");
 
   const links = useMemo(() => {
     const original = page.data?.data.design as PageDocument | undefined;
@@ -52,6 +56,16 @@ export function GoalCard({ experiment }: { experiment: Experiment }) {
       : []),
     { value: "click", label: t("experiments.goal.click") },
     { value: "page", label: t("experiments.goal.page") },
+    ...(countsVisitors || goal?.kind === "analytics"
+      ? [{ value: "analytics" as const, label: t("experiments.goal.analytics") }]
+      : []),
+  ];
+  const chosenName = goal?.kind === "analytics" ? goal.name : "";
+  const countedOptions = [
+    ...counted,
+    ...(chosenName && !counted.some((option) => option.value === chosenName)
+      ? [{ value: chosenName, label: describeAnalyticsGoal(chosenName) }]
+      : []),
   ];
 
   const choosePage = async () => {
@@ -114,6 +128,25 @@ export function GoalCard({ experiment }: { experiment: Experiment }) {
             </div>
           </div>
         )}
+        {kind === "analytics" &&
+          (countedOptions.length === 0 ? (
+            <p className="text-footnote text-label-secondary">
+              {t("experiments.goal.nothingCounted")}
+            </p>
+          ) : (
+            <SelectField
+              label={t("experiments.goal.whichOne")}
+              value={chosenName}
+              disabled={isLocked || update.isPending}
+              onValueChange={(name) => {
+                if (name) save({ kind: "analytics", name });
+              }}
+              options={[
+                ...(chosenName ? [] : [{ value: "", label: t("experiments.goal.choose") }]),
+                ...countedOptions,
+              ]}
+            />
+          ))}
         <p className="text-footnote text-label-secondary">
           {isLocked && experiment.status === "running"
             ? t("experiments.versions.pauseToChange")
@@ -127,5 +160,33 @@ export function GoalCard({ experiment }: { experiment: Experiment }) {
       </div>
       {pagePicker.dialog}
     </Card>
+  );
+}
+
+/**
+ * What Visitors can count as a goal: the site's forms, orders when the shop is on, and the
+ * events the site has sent in the last 30 days, by their names there ("form:contact").
+ */
+function useCountedGoals(enabled: boolean): { value: string; label: string }[] {
+  const session = useSession();
+  const canSeeForms = useCan("forms:read") && session.enabledPlugins.includes("forms");
+  const canSeeVisitors = useCan("analytics:read");
+  const forms = useForms(enabled && canSeeForms);
+  const stats = useVisitorStats({ range: "30d" }, enabled && canSeeVisitors);
+  return useMemo(
+    () => [
+      ...(forms.data ?? []).map((form) => ({
+        value: `form:${form.handle}`,
+        label: t("experiments.goal.namedForm", { form: form.name }),
+      })),
+      ...(session.enabledPlugins.includes("commerce")
+        ? [{ value: "order", label: t("experiments.goal.placesOrder") }]
+        : []),
+      ...(stats.data?.events ?? []).map((event) => ({
+        value: event.key,
+        label: t("experiments.goal.namedEvent", { event: event.key }),
+      })),
+    ],
+    [forms.data, stats.data, session.enabledPlugins],
   );
 }

@@ -14,6 +14,9 @@ export const collectRequestSchema = z.object({
   campaign: z.string().max(200).optional(),
   /** The page's host, so visits from one page of the site to another aren't "referrals". */
   host: z.string().max(253).optional(),
+  /** For "view": the A/B test running on the page, and the version this visitor was shown. */
+  experiment: z.uuid().optional(),
+  version: z.enum(["original", "b", "c"]).optional(),
 });
 export type CollectRequest = z.infer<typeof collectRequestSchema>;
 
@@ -75,6 +78,11 @@ export interface VisitorStats {
   goals: Row[];
   events: Row[];
   outbound: Row[];
+  /**
+   * Visitors of each A/B test version they were shown, keyed "<test id>:<version>". The
+   * admin names the ones still running; see docs/decisions/0051.
+   */
+  versions: Row[];
 }
 
 export interface PageVisitorStats {

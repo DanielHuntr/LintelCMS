@@ -1,5 +1,9 @@
 import { definePlugin } from "../plugins/plugin-definition.js";
 import { experimentsRoutes } from "./experiments.routes.js";
+import {
+  defaultExperimentsSettings,
+  experimentsSettingsSchema,
+} from "./experiments-settings.schema.js";
 
 /**
  * A/B testing: try another version of a page (or one section of it), show each version to a
@@ -21,6 +25,11 @@ export const experimentsPlugin = definePlugin({
       description: "Try other versions of pages, start and stop tests, and see the results.",
     },
   ],
+  settings: { schema: experimentsSettingsSchema, defaults: defaultExperimentsSettings },
+  // Counting needs no consent by default; a site that asks first lists it in the cookie
+  // notice, and the counting script waits for "plugin:experiments" (see tests-script.ts).
+  consentServicesFromSettings: (settings) =>
+    settings.countOnlyAfterConsent ? [{ name: "A/B test counts" }] : [],
   async routes(server) {
     await server.register(experimentsRoutes);
   },
