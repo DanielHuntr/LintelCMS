@@ -108,6 +108,25 @@ describe("the recycle bin", () => {
     });
   });
 
+  // LINTEL-DATA-012: binning an entry unlinked its translations for good.
+  it("links an entry's translations to it again when it is restored", async () => {
+    await api("POST", "/locales", { code: "fr-FR", name: "Français" });
+    const about = await create("About");
+    const french = await api("POST", `/entries/${about}/translations`, { locale: "fr-FR" });
+    expect(french.statusCode, french.body).toBe(201);
+    const frenchId: string = french.json().id;
+
+    const { itemId } = await recycle(about);
+    expect((await api("GET", `/entries/${frenchId}`)).json().originId).toBeNull();
+
+    const restored = await api("POST", `/recycle-bin/${itemId}/restore`);
+    expect(restored.statusCode, restored.body).toBe(200);
+    expect((await api("GET", `/entries/${frenchId}`)).json().originId).toBe(about);
+    expect((await api("GET", `/entries/${about}`)).json().translations).toEqual([
+      expect.objectContaining({ id: frenchId, locale: "fr-FR" }),
+    ]);
+  });
+
   it("gives a site start its own domain back when it is restored", async () => {
     await create("Home");
     const shop = await create("Shop");

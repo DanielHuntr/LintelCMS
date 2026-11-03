@@ -13,6 +13,18 @@ export interface BinnedBranch {
   seo: BinnedSeo[];
   /** A site start's own domain and path, from "Hostnames". Missing in items binned before. */
   hostnames?: BinnedHostname[];
+  /**
+   * Translations outside the branch that were linked to an entry in it. Binning unlinks
+   * them; restoring links them again. Missing in items binned before.
+   */
+  translations?: BinnedTranslationLink[];
+}
+
+export interface BinnedTranslationLink {
+  /** The translation, which stayed in the tree. */
+  entryId: string;
+  /** The binned entry it is a translation of. */
+  originId: string;
 }
 
 export interface BinnedHostname {

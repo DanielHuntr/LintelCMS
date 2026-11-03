@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, inArray, type SQL, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNull, notInArray, type SQL, sql } from "drizzle-orm";
 import { collectionsTable } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import {
@@ -136,6 +136,39 @@ export async function listEntryRows(
     .select()
     .from(entriesTable)
     .where(inArray(entriesTable.id, [...entryIds]));
+}
+
+/** Entries outside `entryIds` that are translations of one inside, with what they point at. */
+export async function listTranslationLinks(
+  database: DatabaseOrTransaction,
+  entryIds: readonly string[],
+): Promise<Array<{ entryId: string; originId: string }>> {
+  if (entryIds.length === 0) return [];
+  const rows = await database
+    .select({ entryId: entriesTable.id, originId: entriesTable.originId })
+    .from(entriesTable)
+    .where(
+      and(
+        inArray(entriesTable.originId, [...entryIds]),
+        notInArray(entriesTable.id, [...entryIds]),
+      ),
+    );
+  return rows.flatMap((row) =>
+    row.originId ? [{ entryId: row.entryId, originId: row.originId }] : [],
+  );
+}
+
+/** Links translations back to their restored origin, where nothing else has meanwhile. */
+export async function relinkTranslations(
+  database: DatabaseOrTransaction,
+  links: readonly { entryId: string; originId: string }[],
+): Promise<void> {
+  for (const link of links) {
+    await database
+      .update(entriesTable)
+      .set({ originId: link.originId })
+      .where(and(eq(entriesTable.id, link.entryId), isNull(entriesTable.originId)));
+  }
 }
 
 export async function listRevisionRows(

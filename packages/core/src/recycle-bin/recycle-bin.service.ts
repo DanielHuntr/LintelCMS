@@ -32,6 +32,8 @@ import {
   listRecycleBinRows,
   listRevisionRows,
   listRootAddressRows,
+  listTranslationLinks,
+  relinkTranslations,
   listSeoRows,
 } from "./recycle-bin.repository.js";
 import type { BinnedBranch, BinnedEntry, RecycleBinItem } from "./recycle-bin.table.js";
@@ -133,6 +135,9 @@ export async function moveToRecycleBin(
       socialImageId: seo.socialImageId,
       noindex: seo.noindex,
     })),
+    // Binning unlinks translations of the entries that go, so they're noted for restoring.
+    // They used to stay unlinked for good (LINTEL-DATA-012).
+    translations: await listTranslationLinks(database, ids),
     hostnames: (await listRootAddressRows(database, ids)).map((address) => ({
       entryId: address.entryId,
       hostname: address.hostname,
@@ -249,6 +254,7 @@ export async function restoreFromRecycleBin(
       })),
     );
     await insertSeoRows(transaction, seo);
+    await relinkTranslations(transaction, item.branch.translations ?? []);
     // A site start gets its own domain and path back, unless another took them meanwhile.
     for (const address of item.branch.hostnames ?? []) {
       const entry = entries.find((candidate) => candidate.id === address.entryId);
