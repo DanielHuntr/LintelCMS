@@ -13,6 +13,7 @@ export {
   type ModelDefinition,
   type TaxonomyDefinition,
 } from "./define-content-model.js";
+export { defineBlock, type BlockDefinition, type BlockInput } from "../blocks/block-definition.js";
 export {
   blocks,
   buttonGroup,

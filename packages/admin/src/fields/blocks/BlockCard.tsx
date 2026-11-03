@@ -1,4 +1,5 @@
 import { useSortable } from "@dnd-kit/sortable";
+import { SiteBlockPreview } from "../../blocks/SiteBlockPreview.js";
 import { CSS } from "@dnd-kit/utilities";
 import {
   ChevronDown,
@@ -173,6 +174,9 @@ export function BlockCard({
               renderField={renderField}
               handlePrefix={`${fieldHandle}.${block.id}`}
             />
+          )}
+          {blockType?.block !== undefined && (
+            <SiteBlockPreview blockType={blockType} values={block.data} />
           )}
         </div>
       </section>

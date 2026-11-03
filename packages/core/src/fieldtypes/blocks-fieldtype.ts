@@ -26,6 +26,14 @@ const blockTypeSchema = z.object({
     .string({ error: "A block type's description should be text" })
     .max(200, { error: "Block type descriptions can be at most 200 characters" })
     .default(""),
+  /**
+   * One of the site's own blocks (src/blocks): its name, description and fields are a copy of
+   * the block's, kept up to date when the block is saved.
+   */
+  block: z
+    .string({ error: "A block type's block should be a handle" })
+    .regex(/^[a-z][a-z0-9_]*$/, { error: "A block type's block should be a handle" })
+    .optional(),
   // Each field is checked in full by checkInnerFields, which replaces these with the
   // checked definitions; until then only "is it an object" is known.
   fields: z

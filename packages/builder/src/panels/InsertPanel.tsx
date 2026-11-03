@@ -1,4 +1,4 @@
-import type { ComponentCatalogue, SectionTemplate } from "@lintel/builder-model";
+import type { ComponentCatalogue, CustomBlock, SectionTemplate } from "@lintel/builder-model";
 import { Search } from "lucide-react";
 import {
   type DragEvent,
@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { blockInsertItems } from "../blocks/block-commands.js";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { usePreference, usePreferenceStore } from "../preferences/builder-preferences.js";
 import { useRememberedOpenSections } from "../preferences/open-sections.js";
@@ -38,6 +39,8 @@ interface InsertPanelProps {
   canEditCode: boolean;
   /** Elements that belong to a plugin are only offered while it is on. All, when left out. */
   enabledPlugins?: readonly string[];
+  /** The site's own blocks, listed first under "Your site's blocks". */
+  blocks?: readonly CustomBlock[];
   onInsert: (key: InsertKey) => void;
   /** What is being dragged from here (null when the drag ends), for dropping on the canvas. */
   onDragChange?: (item: InsertItem | null) => void;
@@ -72,6 +75,7 @@ export function InsertPanel({
   templates,
   canEditCode,
   enabledPlugins,
+  blocks,
   onInsert,
   onDragChange,
   focusRequest,
@@ -87,23 +91,25 @@ export function InsertPanel({
   );
   const [recent, setRecent] = useState(() => readRecentlyUsed(store.read("insert.recent")));
 
-  const items = useMemo(
-    () =>
-      insertItems(
-        templates.filter((template) =>
-          isTemplateAvailable(template.blueprint, catalogue, enabledPlugins),
-        ),
-        catalogue.definitions.filter(
-          (definition) =>
-            !definition.hiddenFromInsert &&
-            (canEditCode || !definition.requiresCodePermission) &&
-            (!definition.requiresPlugin ||
-              !enabledPlugins ||
-              enabledPlugins.includes(definition.requiresPlugin)),
-        ),
+  const items = useMemo(() => {
+    const library = insertItems(
+      templates.filter((template) =>
+        isTemplateAvailable(template.blueprint, catalogue, enabledPlugins),
       ),
-    [templates, catalogue, canEditCode, enabledPlugins],
-  );
+      catalogue.definitions.filter(
+        (definition) =>
+          !definition.hiddenFromInsert &&
+          (canEditCode || !definition.requiresCodePermission) &&
+          (!definition.requiresPlugin ||
+            !enabledPlugins ||
+            enabledPlugins.includes(definition.requiresPlugin)),
+      ),
+    );
+    // The site's own blocks go first in their group, before the ready-made ones.
+    const firstElement = library.findIndex((item) => item.kind === "elements");
+    const at = firstElement === -1 ? library.length : firstElement;
+    return [...library.slice(0, at), ...blockInsertItems(blocks ?? []), ...library.slice(at)];
+  }, [templates, catalogue, canEditCode, enabledPlugins, blocks]);
   const sectionGroups = useMemo(() => groupInsertItems(items, "sections"), [items]);
   const elementGroups = useMemo(() => groupInsertItems(items, "elements"), [items]);
   const groups = kind === "sections" ? sectionGroups : elementGroups;

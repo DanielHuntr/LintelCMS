@@ -366,3 +366,36 @@ Each name now starts with what's shown:
 - When added from Insert, it goes to the top of the page, as footer sections go to the bottom.
 
 **Test:** `builder-model/src/components/site-chrome.test.ts`. Two of its three cases fail on the old code.
+
+## LINTEL-UX-024: one Motion panel instead of Animation and Effects tabs (4 November 2026)
+
+**Daniel's finding:** the Animate panel "feels a bit clunky and hard to grasp".
+
+- It had two tabs (Animation, Effects), and tabs inside them (Presets, Simple, Advanced).
+- "Effects: 1, adding 11 kB" sat next to "No effects yet".
+- Filters came before any choice, the effect cards all looked alike, and "when it plays" was folded away at the bottom.
+
+**Redesign:** agreed through clickable mock-ups (Motion panel, then the real library, then states).
+
+`@lintel/motion-editor` has a new `MotionPanel` (`src/motion-panel/`), and the builder's Animate tab now shows only that:
+
+- **One list** of what moves, the animation and the effects together, each named by what it does and when ("Words rise · When it appears"). Point at a row to watch it on the page. Play is in the header.
+- **Add motion** asks "When should it move?": Appears, Hover, Click, Scroll, Always.
+  - Each moment lists its choices in plain groups, such as "Words", "Depth and 3D" and "Backgrounds".
+  - A search box covers every moment at once.
+  - All 42 presets and the element effects are sorted in (`motionChoices.ts`). Only effects that suit the element are offered. Page exits, cursors and page transitions stay in the site-wide settings.
+  - Pointing at a choice plays it on the element on the page.
+- **Editing:**
+  - An animation opens straight in the studio's Simple view, with Advanced (the timeline) for Designers. Beginners see the note about switching to Designer.
+  - An effect shows its settings in plain words.
+  - Remove is at the bottom.
+- **Page weight** is only shown when there's something to warn about.
+- **Still one animation per element:** choosing another replaces the current one, and the panel says so. Several per element is part of the designer push.
+
+**Tests:**
+
+- `motion-editor/src/motion-panel/motionChoices.test.ts` (new): sorting, groups, suitability, search.
+- `builder/src/animate-panel/effects-tab.test.tsx`: adding by moment, the arrow keys, search, editing and removing, animation effects.
+- `studio.test.tsx` and `panels.test.tsx` updated for the new flow.
+
+**Checked in the running builder** at desktop and 390px, light and dark, with the Hero title selected: `screenshots/motion-panel/`. Daniel's screenshots of the old panel are the before.

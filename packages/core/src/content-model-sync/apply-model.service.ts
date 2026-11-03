@@ -10,6 +10,7 @@ import {
 } from "../collections/collections.service.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
+import { deleteCodeBlock, saveCodeBlock } from "../blocks/blocks.service.js";
 import { deleteEntry } from "../entries/entries.service.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
 import { replaceGlobalValuesData } from "../globals/global-values.repository.js";
@@ -65,6 +66,7 @@ export async function applyModel(
     const step = new ModelApplier(transaction, current, target);
     await step.addAndRenameTaxonomies();
     await step.saveFieldsets();
+    await step.saveBlocks();
     await step.saveContentTypes();
     await step.saveCollections();
     await step.removeCollections();
@@ -72,6 +74,7 @@ export async function applyModel(
     await step.saveGlobalSets();
     await step.removeUnits("globalSet");
     await step.removeUnits("fieldset");
+    await step.removeUnits("block");
     await step.saveMenus();
     await step.removeUnits("menu");
     await step.removeUnits("taxonomy");
@@ -121,6 +124,26 @@ class ModelApplier {
       } else if (before.name !== name || canonicalJson(before.fields) !== canonicalJson(fields)) {
         await updateFieldset(this.database, handle, { name, fields });
       }
+    }
+  }
+
+  /** Blocks from files are code blocks; saving one refreshes the blocks fields offering it. */
+  async saveBlocks(): Promise<void> {
+    for (const block of this.targetUnits("block")) {
+      const before = this.before(block);
+      if (before && canonicalJson(before) === canonicalJson(block)) continue;
+      await saveCodeBlock(this.database, {
+        handle: block.handle,
+        name: block.name,
+        icon: block.icon,
+        category: block.category,
+        description: block.description,
+        properties: block.properties,
+        template: block.template,
+        source: "code",
+        design: null,
+        renamedProperties: {},
+      });
     }
   }
 
@@ -280,6 +303,7 @@ class ModelApplier {
         taxonomy: deleteTaxonomy,
         globalSet: deleteGlobalSet,
         fieldset: deleteFieldset,
+        block: deleteCodeBlock,
         menu: deleteNavigation,
       }[unit.kind];
       await remove(this.database, unit.handle);

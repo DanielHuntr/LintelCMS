@@ -52,6 +52,14 @@ export function ForItem({
   );
 }
 
+/**
+ * A block's design inside an instance, on the canvas: drawn like copies of an item design,
+ * so clicking it selects the instance and its design can't be edited in place.
+ */
+export function AsBlockCopy({ children }: { children: ReactNode }) {
+  return <RepeatedCopyContext.Provider value={true}>{children}</RepeatedCopyContext.Provider>;
+}
+
 /** On the canvas, copies of an item design aren't selectable: the first one is. */
 export function useIsRepeatedCopy(): boolean {
   return useContext(RepeatedCopyContext);

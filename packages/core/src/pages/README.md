@@ -27,6 +27,9 @@ When a person creates or saves an entry, two more rules apply (`page-code.servic
 Publishing and restoring a revision don't apply these rules again: they store what was
 already saved by someone allowed to save it.
 
+Instances of the site's own blocks (`customBlock` elements) have their values checked
+against their block's properties on every save; see src/blocks.
+
 An empty page (no elements) is stored as null, like any empty field.
 
 ## Endpoints

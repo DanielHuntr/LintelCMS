@@ -13,7 +13,7 @@ Framer, Statamic and Umbraco (and Shopify while the shop is on), each with a
 - Webflow, Framer, Statamic and Umbraco share one engine (`src/importers`). Each system has
   a reader that only turns its export into one shape, a `SourceSite`; the engine does the
   rest: mapping, dry run, running, resuming and the report. Their imports are stored in
-  `site_imports` and `site_import_items` (migration `0023_add_site_importers`).
+  `site_imports` and `site_import_items` (migration `0024_add_site_importers`).
 - Every importer goes the same way: upload, what we found and can't move, mapping with
   sensible defaults, a dry run, progress in the background, then a plain-English report.
 - Pages designed in Webflow or Framer come in as code blocks on a designed page, with

@@ -1,5 +1,7 @@
+import { listBlockRows } from "../blocks/blocks.repository.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
+import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
 import { type ContentModel, type ModelUnit, modelFromUnits } from "./content-model.schema.js";
 import {
   listBlueprintModelRows,
@@ -14,14 +16,16 @@ import {
 export async function readModelFromDatabase(
   database: DatabaseOrTransaction,
 ): Promise<ContentModel> {
-  const [blueprints, collections, taxonomies, globalSets, menus, fieldsets] = await Promise.all([
-    listBlueprintModelRows(database, DEFAULT_TENANT_ID),
-    listCollectionModelRows(database, DEFAULT_TENANT_ID),
-    listTaxonomyModelRows(database, DEFAULT_TENANT_ID),
-    listGlobalSetModelRows(database, DEFAULT_TENANT_ID),
-    listMenuModelRows(database, DEFAULT_TENANT_ID),
-    listFieldsetModelRows(database, DEFAULT_TENANT_ID),
-  ]);
+  const [blueprints, collections, taxonomies, globalSets, menus, fieldsets, blocks] =
+    await Promise.all([
+      listBlueprintModelRows(database, DEFAULT_TENANT_ID),
+      listCollectionModelRows(database, DEFAULT_TENANT_ID),
+      listTaxonomyModelRows(database, DEFAULT_TENANT_ID),
+      listGlobalSetModelRows(database, DEFAULT_TENANT_ID),
+      listMenuModelRows(database, DEFAULT_TENANT_ID),
+      listFieldsetModelRows(database, DEFAULT_TENANT_ID),
+      listBlockRows(database, DEFAULT_TENANT_ID),
+    ]);
 
   const units: ModelUnit[] = [
     ...blueprints.map((blueprint): ModelUnit => ({
@@ -54,6 +58,19 @@ export async function readModelFromDatabase(
       name,
       fields,
     })),
+    // Only blocks from files are part of the model; blocks made in the builder are content.
+    ...blocks
+      .filter((block) => block.source === "code")
+      .map((block): ModelUnit => ({
+        kind: "block",
+        handle: block.handle,
+        name: block.name,
+        icon: block.icon,
+        category: block.category,
+        description: block.description,
+        properties: block.properties as FieldDefinition[],
+        template: block.template,
+      })),
     ...menus.map(({ handle, name, maxDepth }): ModelUnit => ({
       kind: "menu",
       handle,
