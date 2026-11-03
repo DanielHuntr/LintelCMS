@@ -3,6 +3,7 @@
 `startSmoothScroll(window, { strength })` turns the mouse wheel's steps into one soft,
 weighted glide. Sites switch it on in the builder's site settings (Off, Gentle or Strong);
 the `smooth-scroll` effect module starts it, and only on pages of a site that has it on.
+Import it from `@lintel/motion/smooth-scroll`; it isn't part of the main runtime entry.
 
 It moves the page's real scroll position a little each frame, so the scrollbar,
 `position: sticky`, scroll triggers, scroll scenes, find in page and links to a part of the

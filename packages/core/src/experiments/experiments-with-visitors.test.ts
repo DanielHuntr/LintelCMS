@@ -168,9 +168,13 @@ describe("Visitors, A/B tests and the cookie notice", { timeout: 30000 }, () => 
       await admin("PUT", "/plugins/experiments/settings", { countOnlyAfterConsent: true });
       const described = (await admin("GET", "/website/cookie-notice")).json();
       expect(described.services).toEqual([
-        { id: "plugin:experiments", name: "A/B test counts" },
-        { id: "plugin:analytics", name: "Visitor counts" },
+        { id: "plugin:experiments", name: "A/B test counts", countsWithoutCookies: true },
+        { id: "plugin:analytics", name: "Visitor counts", countsWithoutCookies: true },
       ]);
+      // Counting sets no cookies, so the notice doesn't say it may.
+      expect(pageSettings((await visit()).body, "lintel-cookie-notice")).toMatchObject({
+        message: "This site counts visits without cookies. Nothing is counted until you say so.",
+      });
     });
   });
 

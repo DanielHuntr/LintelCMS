@@ -277,12 +277,30 @@ describe("the A/B test screens", () => {
     ).toBeNull();
   });
 
+  it("doesn't warn about the cookie notice while tests count without waiting", async () => {
+    mockApi(({ url }) => {
+      if (url.pathname === "/experiments") return { experiments: [experiment] };
+      if (url.pathname === "/plugins/experiments/settings") return { countOnlyAfterConsent: false };
+      return { settings: { mode: "off" }, services: [], shown: false };
+    });
+    renderScreen(<ExperimentsPage />, {
+      enabledPlugins: ["experiments"],
+      permissions: ["experiments:manage", "settings:update"],
+    });
+    await userEvent.click(await screen.findByRole("button", { name: "Settings" }));
+    const dialog = await screen.findByRole("dialog", { name: "A/B test settings" });
+    await within(dialog).findByRole("switch");
+    expect(within(dialog).queryByText(/Your cookie notice is off/)).toBeNull();
+  });
+
   it("lets people who change settings wait for consent before counting", async () => {
     const { calls } = mockApi(({ method, url, body }) => {
       if (url.pathname === "/experiments") return { experiments: [experiment] };
       if (url.pathname === "/plugins/experiments/settings" && method === "GET")
         return { countOnlyAfterConsent: false };
       if (url.pathname === "/plugins/experiments/settings") return body;
+      if (url.pathname === "/website/cookie-notice")
+        return { settings: { mode: "off" }, services: [], shown: false };
       throw new Error(`Unexpected request: ${method} ${url.pathname}`);
     });
     renderScreen(<ExperimentsPage />, {
@@ -296,6 +314,10 @@ describe("the A/B test screens", () => {
         name: "Count test visitors only after they accept",
       }),
     );
+    // With the cookie notice off nobody is asked, so nobody would be counted: it says so.
+    expect(
+      await within(dialog).findByText(/Your cookie notice is off, so nobody is asked/),
+    ).toBeTruthy();
     await userEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(
       calls.find((call) => call.method === "PUT" && call.url.pathname.endsWith("/settings"))?.body,

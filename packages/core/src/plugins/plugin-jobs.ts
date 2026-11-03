@@ -21,6 +21,20 @@ export interface PluginJob<Settings = unknown> {
 
 const ONE_MINUTE = 60_000;
 
+/** When a job last ran and how it went, since this server started. */
+export interface PluginJobRun {
+  lastRunAt: Date;
+  /** The error's message when it failed; null when it worked. */
+  lastError: string | null;
+}
+
+const jobRuns = new Map<string, PluginJobRun>();
+
+/** How a plugin's job last went since the server started, for Build → Add-ons. */
+export function findPluginJobRun(pluginId: string, jobId: string): PluginJobRun | undefined {
+  return jobRuns.get(`${pluginId}:${jobId}`);
+}
+
 /** Starts every plugin's jobs when the server is ready, and stops them when it closes. */
 export function registerPluginJobs(server: FastifyInstance, catalogue: PluginCatalogue): void {
   const running: RepeatingJob[] = [];
@@ -32,9 +46,17 @@ export function registerPluginJobs(server: FastifyInstance, catalogue: PluginCat
             everyMilliseconds: job.everyMinutes * ONE_MINUTE,
             run: async () => {
               if (!(await isPluginEnabled(server.database, plugin.id))) return;
-              await job.run(
-                createPluginContext(plugin, server.database, pluginLog(plugin.id, server.log)),
-              );
+              const key = `${plugin.id}:${job.id}`;
+              try {
+                await job.run(
+                  createPluginContext(plugin, server.database, pluginLog(plugin.id, server.log)),
+                );
+                jobRuns.set(key, { lastRunAt: new Date(), lastError: null });
+              } catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                jobRuns.set(key, { lastRunAt: new Date(), lastError: message });
+                throw error;
+              }
             },
             onError: (error) =>
               server.log.error({ plugin: plugin.id, err: error }, `${job.name} failed`),

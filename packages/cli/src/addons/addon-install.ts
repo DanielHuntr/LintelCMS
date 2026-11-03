@@ -5,6 +5,7 @@ import {
   type AddonPackage,
   AddonPackageError,
   type AddonsList,
+  describeAddonForReview,
   installedPackageFolder,
   isVersionInRange,
   prepareAddonsFolder,
@@ -80,6 +81,7 @@ export async function addAddon(
       : list.enableOnStart,
   });
   terminal.say(`Added ${packageName} ${addonPackage.version}.`);
+  for (const line of describeAddonForReview(addonPackage)) terminal.say(line);
   terminal.say(
     options.switchOn
       ? `${RESTART} It will be switched on.`
@@ -88,7 +90,10 @@ export async function addAddon(
   return addonPackage;
 }
 
-/** `lintel addons remove <package or id>`: uninstall it. Its data stays in the database. */
+/**
+ * `lintel addons remove <package or id>`: uninstall it. Its data stays in the database;
+ * Build → Add-ons can export it, or delete it, first.
+ */
 export async function removeAddon(context: AddonsContext, nameOrId: string): Promise<void> {
   const { folder, npm, terminal } = context;
   const list = await readAddonsList(folder);

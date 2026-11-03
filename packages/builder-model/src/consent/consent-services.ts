@@ -17,6 +17,8 @@ export interface ConsentService {
   id: string;
   /** What visitors read: "YouTube", "Calendly". */
   name: string;
+  /** Counts visits without cookies ("Visitor counts"), so the notice doesn't say it may set any. */
+  countsWithoutCookies?: boolean;
 }
 
 export const youTubeService: ConsentService = { id: "youtube", name: "YouTube" };

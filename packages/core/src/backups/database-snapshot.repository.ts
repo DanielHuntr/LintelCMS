@@ -15,12 +15,47 @@ import { columnNamesOf } from "./table-order.js";
 
 export type TableRow = Record<string, unknown>;
 
+/**
+ * A table in Lintel's schema, or one known only by name: an add-on's own table, declared in
+ * its manifest (see src/addons/addon-declarations.ts).
+ */
+export type SnapshotTable = PgTable | string;
+
+function nameOf(table: SnapshotTable): string {
+  return typeof table === "string" ? table : getTableName(table);
+}
+
+/** The columns a table has: from the schema, or for a named one from the database. */
+async function columnsOf(database: DatabaseOrTransaction, table: SnapshotTable) {
+  if (typeof table !== "string") return columnNamesOf(table);
+  const result = await database.execute(
+    sql`select column_name from information_schema.columns
+        where table_schema = current_schema() and table_name = ${table}
+        order by ordinal_position`,
+  );
+  return rowsOf(result).map((row) => String(row.column_name));
+}
+
+/** Those of these tables that are in the database now. */
+export async function findExistingTables(
+  database: DatabaseOrTransaction,
+  names: readonly string[],
+): Promise<string[]> {
+  if (names.length === 0) return [];
+  const result = await database.execute(
+    sql`select table_name from information_schema.tables
+        where table_schema = current_schema() and table_type = 'BASE TABLE'`,
+  );
+  const present = new Set(rowsOf(result).map((row) => String(row.table_name)));
+  return names.filter((name) => present.has(name));
+}
+
 /** Every row of a table, with database column names as keys. */
 export async function readAllRows(
   database: DatabaseOrTransaction,
-  table: PgTable,
+  table: SnapshotTable,
 ): Promise<TableRow[]> {
-  const name = sql.identifier(getTableName(table));
+  const name = sql.identifier(nameOf(table));
   const result = await database.execute(
     sql`select coalesce(json_agg(row_to_json(t)), '[]'::json) as rows from ${name} as t`,
   );
@@ -29,8 +64,11 @@ export async function readAllRows(
   return Array.isArray(rows) ? (rows as TableRow[]) : [];
 }
 
-export async function countRows(database: DatabaseOrTransaction, table: PgTable): Promise<number> {
-  const name = sql.identifier(getTableName(table));
+export async function countRows(
+  database: DatabaseOrTransaction,
+  table: SnapshotTable,
+): Promise<number> {
+  const name = sql.identifier(nameOf(table));
   const result = await database.execute(sql`select count(*)::int as count from ${name}`);
   return Number(rowsOf(result)[0]?.count ?? 0);
 }
@@ -38,9 +76,9 @@ export async function countRows(database: DatabaseOrTransaction, table: PgTable)
 /** Empties these tables, and anything that points at them (such as sessions), in one go. */
 export async function emptyTables(
   database: DatabaseOrTransaction,
-  tables: readonly PgTable[],
+  tables: readonly SnapshotTable[],
 ): Promise<void> {
-  const names = tables.map((table) => sql.identifier(getTableName(table)));
+  const names = tables.map((table) => sql.identifier(nameOf(table)));
   await database.execute(sql`truncate table ${sql.join(names, sql`, `)} cascade`);
 }
 
@@ -51,7 +89,7 @@ export async function emptyTables(
  */
 export async function insertAllRows(
   database: DatabaseOrTransaction,
-  table: PgTable,
+  table: SnapshotTable,
   rows: readonly TableRow[],
   columnsLeftEmpty: readonly string[] = [],
 ): Promise<void> {
@@ -62,8 +100,8 @@ export async function insertAllRows(
   for (const column of columnsLeftEmpty) {
     keys.delete(column);
   }
-  const columns = columnNamesOf(table).filter((column) => keys.has(column));
-  const name = sql.identifier(getTableName(table));
+  const columns = (await columnsOf(database, table)).filter((column) => keys.has(column));
+  const name = sql.identifier(nameOf(table));
   const columnList = sql.join(
     columns.map((column) => sql.identifier(column)),
     sql`, `,

@@ -235,6 +235,59 @@ The add-on's `package.json` says what it is:
 `lintel` is the range of Lintel versions it works with, written as npm writes ranges
 (`>=1.0.0-rc.1`, `^1.2.0`, `>=1.0.0 <2.0.0`). Run `npm run build`, then `npm publish`.
 
+### Saying what it keeps and does
+
+Site owners see what an add-on stores, adds, runs and talks to before and after they
+install it, so describe it in the same `lintel-addon` section. Also fill in `license`,
+`author` and `repository`: they show under "Where it comes from".
+
+```json
+"lintel-addon": {
+  "id": "star-ratings",
+  "lintel": ">=1.0.0-rc.1",
+  "tables": [
+    {
+      "name": "star_ratings_votes",
+      "purpose": "Each visitor's rating of a page.",
+      "columns": [
+        { "name": "page_id", "purpose": "The page rated." },
+        { "name": "email", "purpose": "Who rated it.", "personalData": true }
+      ]
+    }
+  ],
+  "publicRoutes": [
+    { "method": "POST", "path": "/star-ratings/vote", "purpose": "Saves a visitor's rating." }
+  ],
+  "jobs": [{ "id": "tidy", "purpose": "Removes votes for deleted pages." }],
+  "events": [{ "event": "entry.published", "purpose": "Refreshes the page's average." }],
+  "hosts": [{ "host": "api.example.com", "purpose": "Checks votes for spam." }]
+}
+```
+
+| Key            | What it says                                                            |
+| -------------- | ----------------------------------------------------------------------- |
+| `tables`       | `{ name, purpose, columns: [{ name, purpose, personalData? }] }`        |
+| `publicRoutes` | Addresses anyone can reach: `{ method, path, purpose }`                 |
+| `jobs`         | `{ id, purpose }`, by the job's `id`; the schedule comes from your code |
+| `events`       | `{ event, purpose }`, by the event's name                               |
+| `hosts`        | Other servers it talks to: `{ host, purpose }`                          |
+
+Mark a column `personalData` when it can identify someone: a name, an email address, an IP
+address, or notes about a person. The privacy tools rely on these marks, so be generous.
+
+Services the cookie notice asks about stay in `consentServices` in `definePlugin`, and
+Lintel reads them from there.
+
+**Build → Add-ons** marks each item. **Checked by Lintel** means Lintel found it for itself:
+the tables and columns in the database, the routes, jobs, events and permissions your code
+registers, the consent services, npm's integrity and a fingerprint of your server file.
+**Says the add-on** is everything only you can say, such as purposes and hosts. A table with
+your add-on's name that isn't listed gets a warning, and so does anything listed that Lintel
+can't find. Only tables listed here, or in `database.tables`, go in backups.
+
+A plugin from `lintel.config.ts` has no `lintel-addon` section, so it passes the same lists
+to `definePlugin` as `declares`.
+
 ## Installing
 
 ```bash
@@ -245,12 +298,16 @@ pnpm lintel addons remove star-ratings
 
 `add` installs the package into `addons/` in the site's Lintel folder (beside `data/`),
 checks it is an add-on that works with this version and switches it on at the next start.
-Use `--off` to leave it off. `remove` uninstalls it; anything it saved stays in the
-database, in case it comes back. Restart Lintel after either.
+Use `--off` to leave it off. `add` also prints what the add-on says it keeps and does.
+`remove` uninstalls it; anything it saved stays in the database, in case it comes back.
+To export or delete that data first, use "Removing it" in **Build → Add-ons**. Restart
+Lintel after either.
 
 Because the add-ons folder sits beside the site's data, add-ons stay installed through
 updates, roll backs and new Docker images. Backups don't include them: they are code,
-installed again with `lintel addons add`. An add-on's own tables aren't in backups yet either, so an add-on that keeps important data should offer its own export.
+installed again with `lintel addons add`. Their own tables are in backups, as long as the
+add-on declares them in `tables` (see "Saying what it keeps and does" above) or defines
+them in `database.tables`.
 
 ## When an add-on breaks
 

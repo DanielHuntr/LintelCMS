@@ -86,12 +86,15 @@ export class AssetNotFoundError extends HttpError {
 }
 
 export interface AssetUsage {
-  /** The entry's id, or for a site font the font's. */
+  /** The entry's id, for a site font the font's, or for a site cursor the site's. */
   entryId: string;
-  /** The entry's title, or the font's family. */
+  /** The entry's title, the font's family, or the site's name. */
   title: string;
-  /** Set when it isn't an entry: "siteFonts" for a file one of the site's fonts is made of. */
-  place?: "siteFonts";
+  /**
+   * Set when it isn't an entry: "siteFonts" for a file one of the site's fonts is made of,
+   * "siteCursor" for the picture a site's cursor shows.
+   */
+  place?: "siteFonts" | "siteCursor";
 }
 
 /**

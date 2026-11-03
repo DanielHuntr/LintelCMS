@@ -162,8 +162,18 @@ export function cookieNoticeMessage(
   if (settings.message) {
     return settings.message.replaceAll("{services}", names || "other services");
   }
-  return names
-    ? `This site uses ${names}, which may set cookies. Nothing from ${services.length > 1 ? "them" : "it"} loads until you say so.`
+  // Visit counting sets no cookies, so it is said apart from the services that may.
+  const withCookies = services.filter((service) => !service.countsWithoutCookies);
+  const counts = withCookies.length < services.length;
+  const cookieNames = listServiceNames(withCookies);
+  const it = withCookies.length > 1 ? "them" : "it";
+  if (cookieNames && counts) {
+    return `This site uses ${cookieNames}, which may set cookies, and counts visits without cookies. Nothing from ${it} loads, and nothing is counted, until you say so.`;
+  }
+  if (counts)
+    return "This site counts visits without cookies. Nothing is counted until you say so.";
+  return cookieNames
+    ? `This site uses ${cookieNames}, which may set cookies. Nothing from ${it} loads until you say so.`
     : "This site may use services from other companies, which may set cookies. Nothing from them loads until you say so.";
 }
 

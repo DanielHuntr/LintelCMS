@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
+import { addonDeclarationsSchema } from "./addon-declarations.js";
 import { isReadableRange } from "./version-range.js";
 
 /**
@@ -11,8 +12,11 @@ import { isReadableRange } from "./version-range.js";
  *     "id": "swatches",                 the plugin id its definePlugin uses
  *     "lintel": ">=1.0.0-rc.1",         the Lintel versions it works with
  *     "server": "dist/server.js",       its server half, built by `lintel addons build`
- *     "admin": "dist/admin.js"          its admin half, if it has one
+ *     "admin": "dist/admin.js",         its admin half, if it has one
+ *     "tables": [...],                  what it keeps, and the rest of addon-declarations.ts
  *   }
+ *
+ * Its `license`, `author` and `repository` (or `homepage`) say where it comes from.
  */
 export const ADDON_MANIFEST_KEY = "lintel-addon";
 
@@ -27,15 +31,37 @@ export const addonManifestSchema = z.object({
   admin: z.string().optional(),
   /** A stylesheet for the admin half, loaded with it. */
   adminStyles: z.string().optional(),
+  ...addonDeclarationsSchema.shape,
 });
 export type AddonManifest = z.output<typeof addonManifestSchema>;
+
+const personSchema = z.union([
+  z.string(),
+  z.object({ name: z.string().optional() }).transform((person) => person.name ?? ""),
+]);
+const linkSchema = z.union([
+  z.string(),
+  z.object({ url: z.string().optional() }).transform((link) => link.url ?? ""),
+]);
 
 const packageFileSchema = z.object({
   name: z.string(),
   version: z.string().default("0.0.0"),
   description: z.string().default(""),
+  license: z.string().optional().catch(undefined),
+  author: personSchema.optional().catch(undefined),
+  repository: linkSchema.optional().catch(undefined),
+  homepage: z.string().optional().catch(undefined),
   [ADDON_MANIFEST_KEY]: z.unknown().optional(),
 });
+
+/** Where an add-on comes from, as its package.json says. */
+export interface AddonOrigin {
+  publisher: string | null;
+  licence: string | null;
+  /** Its source code or home page. */
+  source: string | null;
+}
 
 /** An add-on package on disk, read and checked. */
 export interface AddonPackage {
@@ -44,6 +70,14 @@ export interface AddonPackage {
   description: string;
   folder: string;
   manifest: AddonManifest;
+  origin: AddonOrigin;
+}
+
+/** "git+https://github.com/a/b.git" as a link people can open. */
+function readableSource(address: string | undefined): string | null {
+  if (!address) return null;
+  const cleaned = address.replace(/^git\+/, "").replace(/\.git$/, "");
+  return /^https?:\/\//.test(cleaned) ? cleaned : null;
 }
 
 /** A problem with an add-on, said plainly enough for the person who installed it. */
@@ -82,5 +116,10 @@ export async function readAddonPackage(folder: string): Promise<AddonPackage> {
     description: packageInfo.description,
     folder,
     manifest: manifest.data,
+    origin: {
+      publisher: packageInfo.author?.trim() || null,
+      licence: packageInfo.license?.trim() || null,
+      source: readableSource(packageInfo.repository) ?? readableSource(packageInfo.homepage),
+    },
   };
 }

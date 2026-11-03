@@ -27,4 +27,21 @@ export default definePlugin({
     migrationsFolder: fileURLToPath(new URL("../../migrations", import.meta.url)),
   },
   routes: bookingsRoutes,
+  // What it keeps and does, for Build → Add-ons and backups. An add-on writes the same in
+  // its package.json's "lintel-addon" section.
+  declares: {
+    tables: [
+      {
+        name: "bookings",
+        purpose: "Each appointment: who, when and for how long.",
+        columns: [
+          { name: "customer_name", purpose: "Who booked.", personalData: true },
+          { name: "customer_email", purpose: "How to reach them.", personalData: true },
+          { name: "starts_at", purpose: "When it starts." },
+          { name: "duration_minutes", purpose: "How long it lasts." },
+          { name: "notes", purpose: "Anything they or you added.", personalData: true },
+        ],
+      },
+    ],
+  },
 });

@@ -102,3 +102,4 @@ export {
   lettersOnHex,
   safePictureAddress,
 } from "../effects/kit/cursor-look.js";
+export { drawTrail, type TrailPoint } from "../effects/kit/cursor-trail.js";

@@ -1,4 +1,4 @@
-import { CircleAlert, FileText, Type } from "lucide-react";
+import { CircleAlert, FileText, MousePointer2, Type } from "lucide-react";
 import { useId } from "react";
 import { ApiError } from "../api/client.js";
 import { Button } from "../design/Button.js";
@@ -55,7 +55,11 @@ export function DeleteAssetDialog({ asset, onCancel, onDeleted }: DeleteAssetDia
               ? t("media.delete.confirmDescription")
               : usedBy.some((usage) => usage.place === "siteFonts")
                 ? t("media.delete.inUseFontDescription")
-                : t("media.delete.inUseDescription")}
+                : usedBy.every((usage) => usage.place === "siteCursor")
+                  ? t("media.delete.inUseCursorDescription")
+                  : usedBy.some((usage) => usage.place === "siteCursor")
+                    ? t("media.delete.inUsePlacesDescription")
+                    : t("media.delete.inUseDescription")}
           </p>
         </div>
 
@@ -70,13 +74,20 @@ export function DeleteAssetDialog({ asset, onCancel, onDeleted }: DeleteAssetDia
                 >
                   {usage.place === "siteFonts" ? (
                     <Type aria-hidden="true" className="size-4 shrink-0 text-label-secondary" />
+                  ) : usage.place === "siteCursor" ? (
+                    <MousePointer2
+                      aria-hidden="true"
+                      className="size-4 shrink-0 text-label-secondary"
+                    />
                   ) : (
                     <FileText aria-hidden="true" className="size-4 shrink-0 text-label-secondary" />
                   )}
                   <span className="truncate">
                     {usage.place === "siteFonts"
                       ? t("media.delete.siteFont", { family: usage.title })
-                      : usage.title}
+                      : usage.place === "siteCursor"
+                        ? t("media.delete.siteCursor", { site: usage.title })
+                        : usage.title}
                   </span>
                 </li>
               ))}

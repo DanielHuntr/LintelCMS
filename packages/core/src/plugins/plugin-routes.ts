@@ -18,6 +18,19 @@ export function requirePluginEnabled(plugin: Pick<LintelPlugin, "id" | "name">) 
   };
 }
 
+/** A route a plugin registered: "GET /bookings/slots". */
+export interface RegisteredPluginRoute {
+  method: string;
+  path: string;
+}
+
+const routesByPlugin = new Map<string, RegisteredPluginRoute[]>();
+
+/** The routes a plugin registered when the server was built, for Build → Add-ons to check. */
+export function listRegisteredPluginRoutes(pluginId: string): RegisteredPluginRoute[] {
+  return routesByPlugin.get(pluginId) ?? [];
+}
+
 /**
  * Registers every plugin's routes, each in a Fastify scope of its own. The scope's first
  * hook checks the plugin is on, so it runs before any permission check a route adds, and
@@ -27,7 +40,15 @@ export function registerPluginRoutes(server: FastifyInstance, catalogue: PluginC
   for (const plugin of catalogue.plugins) {
     const { routes } = plugin;
     if (!routes) continue;
+    routesByPlugin.set(plugin.id, []);
     server.register(async (scope) => {
+      scope.addHook("onRoute", (route) => {
+        const methods = Array.isArray(route.method) ? route.method : [route.method];
+        for (const method of methods) {
+          if (method === "HEAD") continue;
+          routesByPlugin.get(plugin.id)?.push({ method, path: route.url });
+        }
+      });
       scope.addHook("preHandler", requirePluginEnabled(plugin));
       await routes.call(plugin, scope, {
         readSettings: (database) => readPluginSettings(database, plugin),

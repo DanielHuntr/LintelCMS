@@ -15,6 +15,9 @@ export const cookieNoticeStrings = {
   "cookieNotice.alwaysUses": "Visitors are asked about {names} on every visit until they choose.",
   "cookieNotice.offWarning":
     "With the notice off, Adobe Fonts and features from add-ons load without asking. Videos, maps and embeds still wait for a press of their own button. Privacy laws in the UK, the EU and many other places expect sites to ask first.",
+  "cookieNotice.offNobodyCounted":
+    "Your cookie notice is off, so nobody is asked and nobody will be counted.",
+  "cookieNotice.openSettings": "Cookie notice settings",
   "cookieNotice.notAdvice": "This is general guidance, not legal advice.",
   "cookieNotice.position": "Where it shows",
   "cookieNotice.position.bar": "Bar along the bottom",

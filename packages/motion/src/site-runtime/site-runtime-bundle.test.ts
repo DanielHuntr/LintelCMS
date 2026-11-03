@@ -15,6 +15,8 @@ describe("the site runtime's file", () => {
     });
     const code = result.outputFiles[0]?.text ?? "";
     expect(code).not.toMatch(/ZodError|zod/);
+    // The site cursor works out the theme's colours itself, in its own module.
+    expect(code).not.toContain("--lintel-color-brand");
     expect(gzipSync(code).byteLength).toBeLessThan(10 * 1024);
   });
 });

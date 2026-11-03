@@ -368,6 +368,8 @@ export async function findEntriesMentioning(
   id: string,
 ): Promise<{ entryId: string; title: string | null }[]> {
   const quoted = `%"${id}"%`;
+  // A picture kept only by its address (an element's cursor picture) names the file's id in it.
+  const address = `%/media/${id}/file%`;
   return database
     .select({ entryId: entriesTable.id, title: titleColumn })
     .from(entriesTable)
@@ -375,6 +377,8 @@ export async function findEntriesMentioning(
       or(
         sql`${entriesTable.data}::text like ${quoted}`,
         sql`${entriesTable.publishedData}::text like ${quoted}`,
+        sql`${entriesTable.data}::text like ${address}`,
+        sql`${entriesTable.publishedData}::text like ${address}`,
       ),
     );
 }

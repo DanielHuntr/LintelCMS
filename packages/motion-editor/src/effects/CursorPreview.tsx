@@ -3,15 +3,24 @@ import {
   cursorPictureAddress,
   cursorWordVariables,
   defaultCursorWordLook,
+  drawTrail,
   lettersOnHex,
+  type TrailPoint,
   type CursorSettings,
 } from "@lintel/motion/effects";
-import { useState, type CSSProperties, type PointerEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent,
+  type RefObject,
+} from "react";
 import { useTranslate } from "../strings/translate.js";
 
 /**
  * A small sample of the site, where moving the mouse shows the cursor as it is set up:
- * its look, growing over a link and the word over a card. Nothing has to be published
+ * its look and trail, growing over a link and the word over a card. Nothing has to be published
  * to try a change. It draws the same parts as the site's cursor, from the same settings.
  */
 
@@ -36,11 +45,18 @@ export function CursorPreview({ cursor }: { cursor: CursorSettings }) {
   const on = cursorIsOn(cursor);
   const colour = cursorColour(cursor.colour);
   const grown = zone === "link";
+  // As on the site: no trail behind a picture, or for people who ask for less motion.
+  const trail = on && cursor.style !== "picture" ? cursor.trail : "none";
+  const trailCanvas = useRef<HTMLCanvasElement>(null);
+  const trailPoints = useTrail(trailCanvas, trail, colour, cursor.size);
 
   const move = (event: PointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== "mouse" && event.pointerType !== "pen") return;
     const box = event.currentTarget.getBoundingClientRect();
-    setPoint({ x: event.clientX - box.left, y: event.clientY - box.top });
+    const x = event.clientX - box.left;
+    const y = event.clientY - box.top;
+    trailPoints(x, y);
+    setPoint({ x, y });
     const over = event.target instanceof Element ? event.target.closest("[data-zone]") : null;
     setZone((over?.getAttribute("data-zone") as Zone) ?? null);
   };
@@ -162,6 +178,15 @@ export function CursorPreview({ cursor }: { cursor: CursorSettings }) {
         >
           {t("motionEditor.site.cursor.preview.card")}
         </div>
+        {trail !== "none" && (
+          <canvas
+            ref={trailCanvas}
+            aria-hidden="true"
+            data-testid="cursor-preview-trail"
+            data-trail={trail}
+            className="pointer-events-none absolute inset-0 size-full"
+          />
+        )}
         {parts()}
         {point && zone === "card" && (
           <div aria-hidden="true" data-testid="cursor-preview-word" style={wordStyle}>
@@ -171,4 +196,55 @@ export function CursorPreview({ cursor }: { cursor: CursorSettings }) {
       </div>
     </div>
   );
+}
+
+/**
+ * Draws the trail on the sample's canvas, with the site cursor's own drawing: each point the
+ * pointer passes fades over 450ms. Returns what to call with each new point.
+ */
+function useTrail(
+  canvasRef: RefObject<HTMLCanvasElement | null>,
+  kind: string,
+  colour: string,
+  size: number,
+): (x: number, y: number) => void {
+  const points = useRef<TrailPoint[]>([]);
+  const frame = useRef(0);
+  const reduced = useRef(false);
+  const draw = useRef<(time: number) => void>(() => undefined);
+
+  useEffect(() => {
+    reduced.current = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context) return;
+    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = canvas.clientWidth * ratio;
+    canvas.height = canvas.clientHeight * ratio;
+    // The canvas can't read the theme's colour variables, so the browser works it out.
+    canvas.style.color = colour;
+    const resolved = getComputedStyle(canvas).color || "#111111";
+    let last = 0;
+    draw.current = (time) => {
+      const elapsed = last ? time - last : 16;
+      last = time;
+      points.current.forEach((point) => (point.age += elapsed / 450));
+      while ((points.current[0]?.age ?? 0) >= 1) points.current.shift();
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      drawTrail(context, points.current, kind, resolved, size / 2);
+      frame.current = points.current.length ? requestAnimationFrame(draw.current) : 0;
+      if (!frame.current) last = 0;
+    };
+    return () => {
+      cancelAnimationFrame(frame.current);
+      frame.current = 0;
+      points.current = [];
+    };
+  }, [canvasRef, kind, colour, size]);
+
+  return (x, y) => {
+    if (kind === "none" || reduced.current) return;
+    points.current.push({ x, y, age: 0 });
+    if (!frame.current) frame.current = requestAnimationFrame(draw.current);
+  };
 }

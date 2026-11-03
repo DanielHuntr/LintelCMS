@@ -59,8 +59,8 @@ export interface AssetUsage {
   entryId: string;
   /** The entry's title, or the font's family. */
   title: string;
-  /** "siteFonts" for a file one of the site's fonts is made of. */
-  place?: "siteFonts";
+  /** "siteFonts" for a file one of the site's fonts is made of; "siteCursor" for a site's cursor. */
+  place?: "siteFonts" | "siteCursor";
 }
 
 export function isImage(asset: Pick<Asset, "mimeType">): boolean {

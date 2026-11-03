@@ -15,6 +15,8 @@ import {
 import type { SiteChrome, SiteEffectsHead, SiteLabels } from "@lintel/site-components";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { parseRequest } from "../http/http-errors.js";
+import type { AssetUsage } from "../media/index.js";
+import { listAllSites } from "../sites/sites.service.js";
 import type { Site } from "../sites/sites.table.js";
 import { findStoredSiteEffects, saveStoredSiteEffects } from "./site-effects.repository.js";
 
@@ -59,6 +61,24 @@ export async function updateSiteEffects(
   const next = siteEffectSettingsSchema.parse({ ...current, ...changes });
   await saveStoredSiteEffects(database, site.id, next);
   return next;
+}
+
+/**
+ * The sites whose cursor shows a media library picture, so the library won't delete it: the
+ * cursor would vanish from every page with no warning.
+ */
+export async function findSiteCursorsUsingAsset(
+  database: DatabaseOrTransaction,
+  assetId: string,
+): Promise<AssetUsage[]> {
+  const sites = await listAllSites(database);
+  const effects = await Promise.all(sites.map((site) => readSiteEffects(database, site)));
+  return sites
+    .filter((_, index) => {
+      const cursor = effects[index]?.cursor;
+      return cursor?.style === "picture" && cursor.picture?.assetId === assetId;
+    })
+    .map((site) => ({ entryId: site.id, title: site.name, place: "siteCursor" as const }));
 }
 
 /** The page a site-wide effect is drawn on: where it is and the site's name and logo. */

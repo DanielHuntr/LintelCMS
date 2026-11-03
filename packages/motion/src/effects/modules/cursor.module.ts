@@ -5,6 +5,7 @@ import {
   lettersOnHex,
   safePictureAddress,
 } from "../kit/cursor-look.js";
+import { drawTrail, type TrailPoint } from "../kit/cursor-trail.js";
 import { createFrameLoop } from "../kit/frames.js";
 import { combine, listen } from "../kit/listen.js";
 import { readColour, readNumber, readText } from "../kit/params.js";
@@ -50,6 +51,13 @@ interface CursorPictureShown {
 /** An element's own word look and its own cursor picture, kept here for the site cursor. */
 const wordLooks = new WeakMap<Element, Record<string, string>>();
 const overPictures = new WeakMap<Element, CursorPictureShown>();
+
+/** The cursor's colour as CSS: the theme's text or brand colour, or one picked by hand. */
+function themeColour(colour: string): string {
+  if (colour === "text") return "var(--lintel-color-text, #111111)";
+  if (colour === "brand") return "var(--lintel-color-brand, #111111)";
+  return colour;
+}
 
 /** A colour as the canvas needs it: theme variables worked out to rgb(). */
 function resolvedColour(colour: string): string {
@@ -149,40 +157,6 @@ function trailCanvas() {
   return { canvas, ratio, remove: () => (stop(), canvas.remove()) };
 }
 
-type Point = { x: number; y: number; age: number };
-
-function drawTrail(
-  context: CanvasRenderingContext2D,
-  points: Point[],
-  kind: string,
-  colour: string,
-  size: number,
-) {
-  context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-  context.fillStyle = colour;
-  context.strokeStyle = colour;
-  context.lineCap = "round";
-  points.forEach((point, index) => {
-    const life = 1 - point.age;
-    if (life <= 0) return;
-    context.globalAlpha = life * (kind === "comet" ? 0.6 : 0.45);
-    if (kind === "line" || kind === "comet") {
-      const previous = points[index - 1];
-      if (!previous) return;
-      context.lineWidth = kind === "comet" ? size * life : 2;
-      context.beginPath();
-      context.moveTo(previous.x, previous.y);
-      context.lineTo(point.x, point.y);
-      context.stroke();
-    } else if (index % 3 === 0) {
-      context.beginPath();
-      context.arc(point.x, point.y, (size / 4) * life, 0, Math.PI * 2);
-      context.fill();
-    }
-  });
-  context.globalAlpha = 1;
-}
-
 /**
  * Where a cursor part goes: centred on the point. It's set with `translate`, which the
  * browser applies after `scale`, so a part shrinking on a click (or a word popping in)
@@ -224,7 +198,11 @@ const siteCursor: EffectBehaviour = (_body, params, context) => {
   // A picture is the whole cursor: no trail behind it.
   const trail =
     context.reduced || context.lowPower || ownPicture ? "none" : readText(params, "trail", "none");
-  const colour = readColour(params, "colour", "#111111");
+  const colour = readColour(
+    { colour: themeColour(readText(params, "colour", "")) },
+    "colour",
+    "#111111",
+  );
   const size = readNumber(params, "size", 32);
   const make = (diameter: number, fill: boolean) => {
     const node = document.createElement("div");
@@ -277,7 +255,7 @@ const siteCursor: EffectBehaviour = (_body, params, context) => {
   const drawing = trailLayer?.canvas.getContext("2d");
   const target = { x: -100, y: -100 };
   const eased = { x: -100, y: -100 };
-  const points: Point[] = [];
+  const points: TrailPoint[] = [];
   let hovering = false;
   const smoothing = context.reduced ? 0 : 0.8;
   const loop = createFrameLoop(document.documentElement, (elapsed) => {

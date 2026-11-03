@@ -266,6 +266,22 @@ describe("the notice's words", () => {
     ).toContain("Adobe Fonts, Vimeo and YouTube, which may set cookies. Nothing from them");
     expect(cookieNoticeMessage({ message: "Our own words." }, [])).toBe("Our own words.");
   });
+
+  it("says visit counting sets no cookies, apart from the services that may", () => {
+    const counts = { id: "plugin:analytics", name: "Visitor counts", countsWithoutCookies: true };
+    expect(cookieNoticeMessage({ message: "" }, [counts])).toBe(
+      "This site counts visits without cookies. Nothing is counted until you say so.",
+    );
+    expect(
+      cookieNoticeMessage({ message: "" }, [
+        { id: "youtube", name: "YouTube" },
+        { id: "embed:google.com", name: "Google Maps" },
+        counts,
+      ]),
+    ).toBe(
+      "This site uses YouTube and Google Maps, which may set cookies, and counts visits without cookies. Nothing from them loads, and nothing is counted, until you say so.",
+    );
+  });
 });
 
 describe("Adobe Fonts while visitors haven't allowed them", () => {

@@ -15,6 +15,9 @@ describe("the runtime bundle", () => {
     });
     const code = result.outputFiles[0]?.text ?? "";
     expect(code).not.toMatch(/ZodError|zod/);
+    // Smooth scrolling and the site cursor's colours load with their own modules.
+    expect(code).not.toContain("data-lintel-smooth-scroll");
+    expect(code).not.toContain("--lintel-color-brand");
     expect(gzipSync(code).byteLength).toBeLessThan(10 * 1024);
   });
 });

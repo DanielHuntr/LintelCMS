@@ -4,7 +4,10 @@ import { join } from "node:path";
 import yazl from "yazl";
 import { createWriteStream } from "node:fs";
 import { pipeline } from "node:stream/promises";
+import { sql } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { listAddonTableNames } from "../addons/addon-tables.js";
+import { definePlugin } from "../plugins/plugin-definition.js";
 import { ZipArchiveReader } from "../archives/zip-reader.js";
 import { ensurePagesCollection } from "../collections/default-collections.js";
 import { LocalDiskStorage } from "../media/local-disk-storage.js";
@@ -89,6 +92,54 @@ describe("backup archives", () => {
       avatar: { id: string } | null;
     }>();
     expect(account.avatar?.id).toBe(imageId);
+  });
+
+  it("backs up add-ons' own tables, as they declare them, and puts them back", async () => {
+    const database = testDatabase.database;
+    await database.execute(
+      sql`create table stamps_cards (id text primary key, owner_email text not null, stamps integer not null)`,
+    );
+    await database.execute(
+      sql`insert into stamps_cards values ('c1', 'ann@example.com', 3), ('c2', 'bo@example.com', 9)`,
+    );
+    const plugin = definePlugin({
+      id: "stamps",
+      name: "Stamp cards",
+      description: "Loyalty stamps.",
+      declares: {
+        tables: [
+          {
+            name: "stamps_cards",
+            purpose: "Each customer's stamp card.",
+            columns: [{ name: "owner_email", purpose: "Whose card it is.", personalData: true }],
+          },
+        ],
+      },
+    });
+    const withAddon = { ...context, addonTables: listAddonTableNames([plugin], []) };
+    const path = join(folder, "site.zip");
+
+    const written = await writeBackupArchive(withAddon, path);
+    expect(written.contents.tables.stamps_cards).toBe(2);
+
+    await database.execute(sql`update stamps_cards set stamps = 0`);
+    await database.execute(sql`insert into stamps_cards values ('c3', 'cy@example.com', 1)`);
+    const summary = await restoreBackupArchive(withAddon, path);
+    expect(summary.tables.find((table) => table.table === "stamps_cards")).toEqual({
+      table: "stamps_cards",
+      inBackup: 2,
+      current: 3,
+    });
+    const rows = await database.execute(sql`select id, stamps from stamps_cards order by id`);
+    const list = Array.isArray(rows) ? rows : (rows as { rows: unknown[] }).rows;
+    expect(list).toEqual([
+      { id: "c1", stamps: 3 },
+      { id: "c2", stamps: 9 },
+    ]);
+
+    // Without the declaration, the table isn't in the backup.
+    const plain = await writeBackupArchive(context, join(folder, "plain.zip"));
+    expect(plain.contents.tables.stamps_cards).toBeUndefined();
   });
 
   it("says what a restore would replace without changing anything", async () => {

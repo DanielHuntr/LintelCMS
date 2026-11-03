@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { listAddonTableNames } from "../addons/addon-tables.js";
 import { existsSync } from "node:fs";
 import { mkdir, rename, rm } from "node:fs/promises";
 import { join } from "node:path";
@@ -35,6 +36,8 @@ export interface BackupsContext {
   storage: StorageDriver;
   folder: string;
   tasks: BackgroundTasks;
+  /** Add-ons' and plugins' own tables, by name (see BackupArchiveContext). */
+  addonTables?: readonly string[];
 }
 
 /** The context for a running server: its database, storage and backups folder. */
@@ -45,6 +48,7 @@ export function backupsContextFor(server: FastifyInstance): BackupsContext {
     storage: server.dataTools.storage,
     folder: server.dataTools.backupsFolder,
     tasks: server.dataTools.tasks,
+    addonTables: listAddonTableNames(server.plugins.plugins, server.addons.loaded),
   };
 }
 

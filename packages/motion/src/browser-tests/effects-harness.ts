@@ -43,6 +43,8 @@ export interface OpenOptions {
   withoutViewTransitions?: boolean;
   /** Pretends the browser has no WebGL, to test the shader effects' fallbacks. */
   withoutWebGl?: boolean;
+  /** Runs in the page before anything else, to watch for something that may pass quickly. */
+  beforePageLoads?: () => void;
 }
 
 function document(html: string, effects: readonly EffectOnTest[], options: OpenOptions) {
@@ -87,6 +89,7 @@ export async function openEffectsPage(
       });
     });
   }
+  if (options.beforePageLoads) await page.addInitScript(options.beforePageLoads);
   const requested: string[] = [];
   await page.route(`${origin}/**`, async (route) => {
     const path = new URL(route.request().url()).pathname;

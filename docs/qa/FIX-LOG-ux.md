@@ -2073,3 +2073,54 @@ Files: `packages/motion/src/effects/model/` (new, with README), `effects/modules
 **Screenshots** (`screenshots/creative-3d-layouts/`): `builder-{light,dark}-model-sample`, `builder-light-model-picker`, `builder-dark-arc-carousel`, `site-desktop-model`, `site-desktop-arc-carousel`, `site-desktop-cards-and-depth`, `site-desktop-reduced-arc-flat`, `site-390-model-and-arc`, `site-390-turn-on-scroll`, `sample-models-light-presets`, `builder-built-admin-uploaded-model`, `site-uploaded-model`.
 
 **Runs:** motion unit 22 files / 184, browser 6 / 101; builder-model 27 / 316; builder unit 50 / 414, browser 12 / 40; motion-editor 9 / 67, browser 2 / 7; admin 150 / 811. Core full run 199 files: 1,358 passed, 6 skipped, 5 failed. Three of the five were the new public route missing from the route and API reference lists, now added and passing; two were timeouts with other work on the machine (`two-factor`, `backup-archive`), which pass on their own.
+
+## Gap fixes (3 November 2026)
+
+**Asked by Daniel:** close the follow-ups left by earlier tracks, and make it easy to see what an add-on puts in the database and does. IDs LINTEL-UX-180 to 189.
+
+| ID            | What was wrong                                                              | Fix                                                                                                                                                                |
+| ------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| LINTEL-UX-180 | A content-only client could restore a revision with a different design      | Restores go through the same server check as saves; the regression test failed with 200 before the fix                                                             |
+| LINTEL-UX-181 | The cookie notice said Visitor counts and A/B test counts "may set cookies" | Services that only count say so: "This site counts visits without cookies. Nothing is counted until you say so.", or both halves when other services are there too |
+| LINTEL-UX-182 | "Count only after they accept" with the notice Off counted nobody, silently | Visitor and A/B test settings warn, with a link to the notice's settings                                                                                           |
+| LINTEL-UX-183 | "Used in" missed cursor pictures, so they could be deleted                  | The site's cursor picture and an element's cursor picture count as uses, and deleting is refused                                                                   |
+| LINTEL-UX-184 | The cursor's "Try it" sample showed no trail                                | It draws the trail with the site's own drawing, moved to `kit/cursor-trail.ts`                                                                                     |
+| LINTEL-UX-185 | Two motion browser tests relied on fixed waits                              | They wait on conditions; the intro test records what it needs in the page as it happens                                                                            |
+| LINTEL-UX-186 | The runtime had 6 bytes left of its 10 KB budget                            | See sizes below                                                                                                                                                    |
+| LINTEL-UX-187 | Add-ons' own tables weren't in backups                                      | Tables declared in the manifest (or in `database.tables`) are backed up and restored, from Settings → Backups and the `lintel` commands                            |
+| LINTEL-UX-188 | `lintel addons add` was only tested with a stand-in for npm                 | A test packs the example add-on and installs the `.tgz` with npm itself, then loads and removes it                                                                 |
+| LINTEL-UX-189 | Site owners couldn't see what an add-on keeps or does                       | Manifest declarations, a details screen, an install review, checks, and export or delete on removal                                                                |
+
+**LINTEL-UX-185 evidence:** neither test failed in 10 runs under load before the change, so the failure was not reproduced here and the fix rests on reading the tests. After the change each passed 10 of 10 with the builder's test suite running alongside, and the whole motion browser suite passed (92).
+
+**LINTEL-UX-186 sizes (gzip bytes, budget 10,240):**
+
+| Bundle                                | Before | After | Room left |
+| ------------------------------------- | ------ | ----- | --------- |
+| `src/index.ts` (`bundleSize.test.ts`) | 10,234 | 9,365 | 875       |
+| The site runtime published pages load | 9,823  | 9,769 | 471       |
+
+Moving the cursor's theme colours into the cursor module saved about 50 bytes in both. The rest of the `index.ts` saving is `startSmoothScroll` moving to its own entry, `@lintel/motion/smooth-scroll`: nothing imported it from the main entry and pages already load it as a module, so published pages are no smaller for it. A shorter table of easing curves was tried and dropped: it was 39 bytes larger after gzip.
+
+**LINTEL-UX-189, what changed:**
+
+- **Manifest:** `tables`, `publicRoutes`, `jobs`, `events` and `hosts` in `lintel-addon` (`addon-declarations.ts`), with `declares` in `definePlugin` for plugins from lintel.config.ts. The scaffold, the example add-on and Bookings declare theirs. Consent services stay in `consentServices`, read from the code, so they count as checked.
+- **Details:** Build → Add-ons shows folded sections with stored data first and open: what it stores (purpose, columns, Personal data, rows, size), what it adds, what runs by itself, who it talks to and where it comes from. The line about full access stays, with a pointer to outside apps.
+- **Checks:** each item is marked "Checked by Lintel" or "Says the add-on". A table with the add-on's name that it doesn't describe gets a warning; so does anything described that can't be found.
+- **Removal:** keep or delete its data, with JSON and CSV exports and a note that backups have it too. Deleting needs the add-on off, empties its tables and forgets its settings. The tables stay, so its migrations still match if it comes back.
+
+**Tests:** core `client-editing` (12), `cookie-notice`, `experiments-with-visitors` and `analytics` (48), `site-effects/cursor-picture-usage` (2), `backups/backup-archive` (5), `addons/addon-details` (4); admin `addons` and `i18n` (25), `MediaLibraryPage`, `Experiments`; motion-editor `SiteMotionSettings` (7); cli `addons` (9, one with npm itself); motion unit (168) and browser (92).
+
+**Checked in a browser** (Chromium, desktop and 390px, light and dark, on a copy of the styles test data): the add-on details, closed and with every section open; the Visitors warning; the refused delete of a cursor picture; the notice's words on the published site. The "Try it" trail was checked on desktop only, since the builder needs a desktop window: the canvas had about 1,750 painted pixels after moving the mouse across it.
+
+**Fixed on the way:** the Personal data label broke across two lines at 390px; a picture used on a page and by the cursor now says "these places"; the words for routes and hosts no longer claim more than Lintel can know ("It doesn't list anyone outside your site", not "Nobody").
+
+**Screenshots** (in `screenshots/gap-fixes/`): `addon-details-{desktop,390}-{light,dark}`, `addon-details-open-{desktop,390}-{light,dark}`, `visitors-notice-off-warning-{desktop,390}-{light,dark}`, `media-cursor-in-use-{desktop,390}-{light,dark}` (the dialog only), `cookie-notice-words-{desktop,390}-{light,dark}` (the notice only), `cursor-try-it-trail-desktop-{light,dark}`. No before shots: the fixes add things that weren't on screen.
+
+**Left for later:**
+
+- Installing is command line only, so the install review is what `lintel addons add` prints, after npm has put the package in the folder and before the add-on first runs. There is no screen, and it doesn't ask to confirm.
+- A job's last run and last error are kept in memory, so they start empty after each restart.
+- Lintel can't tell whether a route it found is public, or which hosts an add-on really contacts, so those stay "Says the add-on".
+- `personalData: { find, export, erase }` is left for the privacy tools to add beside `declares`.
+- A restore leaves alone an add-on table the backup doesn't have. If that table points at Lintel's own rows, emptying them during the restore empties it too, as it always has.

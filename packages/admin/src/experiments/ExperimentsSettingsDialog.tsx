@@ -4,6 +4,7 @@ import { Button } from "../design/Button.js";
 import { Dialog } from "../design/Dialog.js";
 import { Toggle } from "../design/Toggle.js";
 import { t } from "../i18n/strings.js";
+import { ConsentNoticeOffWarning } from "../website/ConsentNoticeOffWarning.js";
 import { useExperimentsSettings, useSaveExperimentsSettings } from "./experiments.queries.js";
 import type { ExperimentsSettings } from "./experiments.types.js";
 
@@ -58,6 +59,7 @@ export function ExperimentsSettingsDialog({
           <p id="experiments-consent-hint" className="mt-1.5 text-footnote text-label-secondary">
             {t("experiments.settings.consentHint")}
           </p>
+          <ConsentNoticeOffWarning waitsForConsent={draft.countOnlyAfterConsent} />
         </div>
       )}
       {save.isError && (

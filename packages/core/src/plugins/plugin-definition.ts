@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import type { PgTable } from "drizzle-orm/pg-core";
 import type { z } from "zod";
 import type { DatabaseOrTransaction } from "../database/client.js";
+import type { AddonDeclarationsInput } from "../addons/addon-declarations.js";
 import type { BlockDefinition } from "../blocks/block-definition.js";
 import type { Fieldtype } from "../fieldtypes/fieldtype.js";
 import type {
@@ -134,6 +135,15 @@ export interface PluginDefinition<
   jobs?: readonly PluginJob<z.output<SettingsSchema>>[];
   /** Terminal commands, run as `lintel <plugin id>:<name>`. */
   commands?: readonly PluginCommand<z.output<SettingsSchema>>[];
+  /**
+   * What it keeps and does, in plain words, for Build → Add-ons and for backups: its tables
+   * (with each column's purpose, and which hold personal data), public addresses, jobs,
+   * events and the hosts it talks to. Add-ons write this in their package.json's
+   * `lintel-addon` section instead, so it can be read before they are installed. See
+   * src/addons/addon-declarations.ts. (A `personalData` hook, for finding, exporting and
+   * erasing one person's data, is planned to sit beside it.)
+   */
+  declares?: AddonDeclarationsInput;
 }
 
 /** A plugin with its settings type erased, so different plugins can share one list. */

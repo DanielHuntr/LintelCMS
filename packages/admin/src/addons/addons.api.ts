@@ -1,4 +1,4 @@
-import { apiRequest } from "../api/client.js";
+import { apiRequest, apiUrl } from "../api/client.js";
 
 /** Calls to the API's add-on routes (see packages/core/src/addons). */
 
@@ -61,4 +61,71 @@ export interface AddonAdminScripts {
 
 export function listAdminScripts(): Promise<AddonAdminScripts> {
   return apiRequest<AddonAdminScripts>("/addons/admin-scripts");
+}
+
+/** `GET /addons/:id/details`: see AddonDetails in core's src/addons/addons.schema.ts. */
+export interface AddonDetails {
+  id: string;
+  stores: {
+    tables: Array<{
+      name: string;
+      purpose: string;
+      columns: Array<{ name: string; purpose: string; personalData: boolean; checked: boolean }>;
+      checked: boolean;
+      rows: number | null;
+      bytes: number | null;
+    }>;
+    undeclared: Array<{ name: string; rows: number | null; bytes: number | null }>;
+    settings: boolean;
+  };
+  website: {
+    publicRoutes: Array<{ method: string; path: string; purpose: string; checked: boolean }>;
+    otherRoutes: number;
+    adminScreens: boolean;
+    blocks: string[];
+  };
+  runs: {
+    jobs: Array<{
+      id: string;
+      name: string;
+      everyMinutes: number | null;
+      purpose: string | null;
+      lastRunAt: string | null;
+      lastError: string | null;
+      checked: boolean;
+    }>;
+    events: Array<{ event: string; purpose: string | null; checked: boolean }>;
+  };
+  talksTo: {
+    hosts: Array<{ host: string; purpose: string }>;
+    consentServices: string[];
+    consentFromSettings: boolean;
+  };
+  origin: {
+    packageName: string | null;
+    version: string | null;
+    publisher: string | null;
+    licence: string | null;
+    source: string | null;
+    integrity: string | null;
+    fingerprint: string | null;
+  };
+  permissions: Array<{ permission: string; description: string }>;
+}
+
+export function getAddonDetails(addonId: string): Promise<AddonDetails> {
+  return apiRequest<AddonDetails>(`/addons/${encodeURIComponent(addonId)}/details`);
+}
+
+/** Its data to download: every table as JSON, or one table as CSV. */
+export function addonExportUrl(addonId: string, table?: string): string {
+  const query = new URLSearchParams(table ? { format: "csv", table } : { format: "json" });
+  return `${apiUrl}/addons/${encodeURIComponent(addonId)}/export?${query}`;
+}
+
+export function deleteAddonData(addonId: string): Promise<{ emptied: string[] }> {
+  return apiRequest<{ emptied: string[] }>(`/addons/${encodeURIComponent(addonId)}/delete-data`, {
+    method: "POST",
+    body: { confirm: "DELETE" },
+  });
 }

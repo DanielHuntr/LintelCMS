@@ -138,6 +138,29 @@ describe("content-only editing", () => {
     expect(designer.statusCode).toBe(200);
   });
 
+  it("refuses a client's restore of a revision with a different design", async () => {
+    const page = await designedPage(pageWith([heading, button]));
+    expect((await save(editor, page.id, pageWith([button, heading]))).statusCode).toBe(200);
+    const words = pageWith([button, { ...heading, props: { ...heading.props, text: "Rye" } }]);
+    expect((await save(client, page.id, words)).statusCode).toBe(200);
+    const listed = await client("GET", `/entries/${page.id}/revisions`);
+    const revisions = listed.json().revisions as { id: string }[];
+    const oldest = revisions[revisions.length - 1];
+    const newest = revisions[0];
+
+    const restored = await client("POST", `/entries/${page.id}/revisions/${oldest?.id}/restore`);
+    expect(restored.statusCode).toBe(403);
+    expect(restored.json().code).toBe("DESIGN_CHANGE_NOT_ALLOWED");
+
+    // A revision with today's design (only the words differ) restores, and designers restore any.
+    expect(
+      (await client("POST", `/entries/${page.id}/revisions/${newest?.id}/restore`)).statusCode,
+    ).toBe(200);
+    expect(
+      (await editor("POST", `/entries/${page.id}/revisions/${oldest?.id}/restore`)).statusCode,
+    ).toBe(200);
+  });
+
   it("refuses words where the designer said clients can change nothing", async () => {
     const page = await designedPage(pageWith([{ ...heading, clientEdits: [] }]));
     const response = await save(
