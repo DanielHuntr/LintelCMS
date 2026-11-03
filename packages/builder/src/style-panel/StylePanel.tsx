@@ -13,6 +13,7 @@ import {
   type StyleState,
   type StyleTarget,
 } from "@lintel/builder-model";
+import { ChevronRight, Palette } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { type SharedScope, SharedStyleBar } from "../site-design/SharedStyleBar.js";
 import { useSiteDesign, withSharedStyle } from "../site-design/site-design-context.js";
@@ -50,7 +51,14 @@ export type StateChoice = "none" | StyleState | OwnerStateTarget;
 export interface StateOwner {
   id: string;
   name: string;
+  /** Where it is ("2 levels up"), when another element around has the same name. */
+  place?: string;
   stateTransition?: StateTransition;
+}
+
+/** An owner's name, told apart from another with the same name: "Container (2 levels up)". */
+function ownerName(owner: StateOwner): string {
+  return owner.place ? `${owner.name} (${owner.place})` : owner.name;
 }
 
 interface StylePanelProps {
@@ -81,6 +89,8 @@ interface StylePanelProps {
   sharedStyleUses?: ReadonlyMap<string, number>;
   /** The element's name in Layers, offered as the name of a shared style made from it. */
   nodeName?: string;
+  /** Opens Site styles: the site's named colours, sizes, fonts and shared styles. */
+  onOpenSiteStyles?: () => void;
 }
 
 const textTypes = new Set(["heading", "text", "quote", "list", "button", "link", "navigation"]);
@@ -119,6 +129,7 @@ export function StylePanel({
   onTransitionChange,
   sharedStyleUses,
   nodeName = "",
+  onOpenSiteStyles,
 }: StylePanelProps) {
   const text = useBuilderText();
   const advanced = allowsAdvanced && mode === "advanced";
@@ -209,6 +220,24 @@ export function StylePanel({
           defaultName={nodeName}
           isLocked={isLocked}
         />
+        {onOpenSiteStyles && (
+          <button
+            type="button"
+            onClick={onOpenSiteStyles}
+            className="-mx-1 flex min-h-9 items-center gap-2 rounded-control px-1 text-start hover:bg-fill/60 focus-visible:focus-ring"
+          >
+            <Palette aria-hidden="true" className="size-4 shrink-0 text-label-secondary" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-footnote font-medium text-label">
+                {text("pageBuilder.siteStyles.open")}
+              </span>
+              <span className="block truncate text-caption text-label-tertiary">
+                {text("pageBuilder.siteStyles.openHint")}
+              </span>
+            </span>
+            <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-label-tertiary" />
+          </button>
+        )}
         <LookPicker value={validState} owners={owners} onChange={onStateChange} />
         {validState === "none" && (
           <p className="text-caption text-label-secondary">{text(breakpointNotes[breakpoint])}</p>
@@ -341,7 +370,12 @@ function LookPicker({
             { value: "self", label: text("pageBuilder.style.whoseSelf") },
             ...owners.map((candidate) => ({
               value: candidate.id,
-              label: text("pageBuilder.style.whoseOwner", { name: candidate.name }),
+              label: candidate.place
+                ? text("pageBuilder.style.whoseOwnerPlace", {
+                    name: candidate.name,
+                    place: candidate.place,
+                  })
+                : text("pageBuilder.style.whoseOwner", { name: candidate.name }),
             })),
           ]}
         />
@@ -351,7 +385,9 @@ function LookPicker({
           className="rounded-control bg-accent/10 px-3 py-2 text-caption text-label"
           aria-live="polite"
         >
-          {owner ? text(ownerLookMeanings[look], { name: owner.name }) : text(lookMeanings[look])}
+          {owner
+            ? text(ownerLookMeanings[look], { name: ownerName(owner) })
+            : text(lookMeanings[look])}
         </p>
       )}
     </div>
@@ -407,7 +443,7 @@ function TransitionControls({
         />
       )}
       <p className="text-caption text-label-secondary">
-        {text("pageBuilder.style.transitionFor", { name: owner.name })}
+        {text("pageBuilder.style.transitionFor", { name: ownerName(owner) })}
       </p>
     </div>
   );

@@ -1,15 +1,25 @@
 import {
   type DesignVariable,
   type DesignVariableKind,
+  designTokens,
+  findTokenByValue,
   isDesignVariableValue,
   type SharedStyle,
+  variablesAsTokens,
+  withoutVariable,
 } from "@lintel/builder-model";
-import { Plus, Trash2 } from "lucide-react";
-import { useId, useState } from "react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { type ReactNode, useId, useState } from "react";
 import type { BuilderStringKey } from "../i18n/builder-strings.js";
 import { useBuilderText } from "../i18n/builder-text.js";
-import { inputClassName } from "../ui/controls.js";
+import { classNames, inputClassName } from "../ui/controls.js";
 import { addVariable, useSiteDesign, withSharedStyle } from "./site-design-context.js";
+
+/** A starting point offered while a group is empty: tap it and it's added. */
+interface Suggestion {
+  name: BuilderStringKey;
+  value: string;
+}
 
 const kinds: ReadonlyArray<{
   kind: DesignVariableKind;
@@ -18,192 +28,490 @@ const kinds: ReadonlyArray<{
   add: BuilderStringKey;
   newName: BuilderStringKey;
   start: string;
+  suggestions: readonly Suggestion[];
 }> = [
   {
     kind: "colour",
     title: "pageBuilder.site.colours",
-    empty: "pageBuilder.site.noColours",
+    empty: "pageBuilder.siteStyles.coloursEmpty",
     add: "pageBuilder.site.addColour",
     newName: "pageBuilder.site.newColour",
     start: "#8e8e93",
+    suggestions: [
+      { name: "pageBuilder.siteStyles.suggest.ink", value: "#1f2328" },
+      { name: "pageBuilder.siteStyles.suggest.paper", value: "#faf7f2" },
+      { name: "pageBuilder.siteStyles.suggest.accent", value: "#b4532a" },
+    ],
   },
   {
     kind: "size",
     title: "pageBuilder.site.sizes",
-    empty: "pageBuilder.site.noSizes",
+    empty: "pageBuilder.siteStyles.sizesEmpty",
     add: "pageBuilder.site.addSize",
     newName: "pageBuilder.site.newSize",
     start: "2rem",
+    suggestions: [
+      { name: "pageBuilder.siteStyles.suggest.gutter", value: "1.5rem" },
+      { name: "pageBuilder.siteStyles.suggest.sectionSpace", value: "6rem" },
+      { name: "pageBuilder.siteStyles.suggest.readingWidth", value: "42rem" },
+    ],
   },
   {
     kind: "font",
     title: "pageBuilder.site.fonts",
-    empty: "pageBuilder.site.noFonts",
+    empty: "pageBuilder.siteStyles.fontsEmpty",
     add: "pageBuilder.site.addFont",
     newName: "pageBuilder.site.newFont",
     start: "Georgia, serif",
+    suggestions: [
+      { name: "pageBuilder.siteStyles.suggest.display", value: "Georgia, serif" },
+      { name: "pageBuilder.siteStyles.suggest.text", value: "system-ui, sans-serif" },
+    ],
   },
 ];
 
+export interface SiteStylesPanelProps {
+  /** How many elements on this page use each shared style. */
+  sharedStyleUses: ReadonlyMap<string, number>;
+  /** How many styles name each variable, on this page and in the site's shared styles. */
+  variableUses: ReadonlyMap<string, number>;
+  /** Shown with a selection: goes back to the element's Style. */
+  onBack?: () => void;
+  /** Writes a variable's value out on this page's elements, before it's deleted. */
+  onDeleteVariable?: (variable: DesignVariable) => void;
+  /** Detaches this page's elements from a shared style, keeping their look, before it goes. */
+  onDeleteSharedStyle?: (sharedStyle: SharedStyle) => void;
+}
+
 /**
- * The Style tab with nothing selected: the site's own colours, sizes and fonts, and its
- * shared styles. Each can be renamed, changed or deleted here; every page follows. People
- * who may only use them see the lists without the controls.
+ * Site styles: the site's named colours, sizes and fonts, and its shared styles, in the right
+ * panel. With something selected it opens from "Site styles" in Style and has a Back button;
+ * with nothing selected it's what Style shows. Rows are short and open one at a time to be
+ * renamed, changed or deleted; empty groups offer a few starting points. People who may only
+ * use them see the lists without the controls.
  */
-export function SiteStylesPanel({ uses }: { uses: ReadonlyMap<string, number> }) {
+export function SiteStylesPanel({
+  sharedStyleUses,
+  variableUses,
+  onBack,
+  onDeleteVariable,
+  onDeleteSharedStyle,
+}: SiteStylesPanelProps) {
   const text = useBuilderText();
-  const site = useSiteDesign();
-  const { design, change } = site;
+  const { design, change } = useSiteDesign();
+  const [openId, setOpenId] = useState<string | null>(null);
+  const toggle = (id: string) => setOpenId((current) => (current === id ? null : id));
   const replaceVariable = (next: DesignVariable) =>
     change?.({
       ...design,
       variables: design.variables.map((each) => (each.id === next.id ? next : each)),
     });
-  const removeVariable = (id: string) =>
-    change?.({ ...design, variables: design.variables.filter((each) => each.id !== id) });
-  const removeSharedStyle = (id: string) =>
-    change?.({ ...design, sharedStyles: design.sharedStyles.filter((each) => each.id !== id) });
+  const add = (kind: DesignVariableKind, name: string, value: string) => {
+    if (!change) return;
+    const added = addVariable(design, kind, name, value);
+    change(added.design);
+    setOpenId(`variable:${added.variable.id}`);
+  };
 
   return (
-    <section aria-labelledby="site-styles-title" className="flex flex-col gap-4 px-4 pb-6">
-      <div className="flex flex-col gap-1">
-        <h2 id="site-styles-title" className="text-subheadline font-semibold text-label">
-          {text("pageBuilder.site.title")}
+    <section aria-labelledby="site-styles-title" className="flex flex-col gap-5 px-4 pt-3 pb-6">
+      {onBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          className="-ms-1.5 flex h-8 items-center gap-0.5 self-start rounded-control pe-2 text-body font-medium text-label-secondary hover:bg-fill focus-visible:focus-ring"
+        >
+          <ChevronLeft aria-hidden="true" className="size-4" />
+          {text("pageBuilder.siteStyles.back")}
+        </button>
+      )}
+      <div className="flex flex-col gap-0.5">
+        <h2 id="site-styles-title" className="text-headline font-semibold text-label">
+          {text("pageBuilder.siteStyles.title")}
         </h2>
         <p className="text-caption text-label-secondary">
-          {text(change ? "pageBuilder.site.intro" : "pageBuilder.site.readOnly")}
+          {text(change ? "pageBuilder.siteStyles.intro" : "pageBuilder.site.readOnly")}
         </p>
       </div>
       {kinds.map((group) => {
         const variables = design.variables.filter((each) => each.kind === group.kind);
+        const taken = new Set(variables.map((each) => each.name));
         return (
-          <div key={group.kind} className="flex flex-col gap-1.5">
-            <h3 className="text-caption font-semibold text-label-secondary">{text(group.title)}</h3>
-            {variables.length === 0 && (
-              <p className="text-caption text-label-tertiary">{text(group.empty)}</p>
-            )}
-            {variables.map((variable) => (
-              <VariableRow
-                key={`${variable.id}:${variable.name}`}
-                variable={variable}
-                canChange={change !== undefined}
-                onChange={replaceVariable}
-                onRemove={() => removeVariable(variable.id)}
-              />
-            ))}
-            {change && (
-              <button
-                type="button"
-                onClick={() =>
-                  change(addVariable(design, group.kind, text(group.newName), group.start).design)
+          <Group
+            key={group.kind}
+            title={text(group.title)}
+            addLabel={change ? text(group.add) : undefined}
+            onAdd={() => add(group.kind, text(group.newName), group.start)}
+          >
+            {variables.length === 0 ? (
+              <EmptyGroup
+                note={text(group.empty)}
+                suggestions={
+                  change
+                    ? group.suggestions
+                        .map((each) => ({ name: text(each.name), value: each.value }))
+                        .filter((each) => !taken.has(each.name))
+                    : []
                 }
-                className="flex items-center gap-1 self-start rounded-control px-1 py-0.5 text-caption font-medium text-accent hover:underline focus-visible:focus-ring"
-              >
-                <Plus aria-hidden="true" className="size-3.5" />
-                {text(group.add)}
-              </button>
+                kind={group.kind}
+                onPick={(name, value) => add(group.kind, name, value)}
+              />
+            ) : (
+              <List>
+                {variables.map((variable) => (
+                  <VariableRow
+                    key={variable.id}
+                    variable={variable}
+                    uses={variableUses.get(variable.id) ?? 0}
+                    isOpen={openId === `variable:${variable.id}`}
+                    onToggle={change ? () => toggle(`variable:${variable.id}`) : undefined}
+                    onChange={replaceVariable}
+                    onDelete={() => {
+                      onDeleteVariable?.(variable);
+                      change?.(withoutVariable(design, variable.id));
+                      setOpenId(null);
+                    }}
+                  />
+                ))}
+              </List>
             )}
-          </div>
+          </Group>
         );
       })}
-      <div className="flex flex-col gap-1.5">
-        <h3 className="text-caption font-semibold text-label-secondary">
-          {text("pageBuilder.site.sharedStyles")}
-        </h3>
-        {design.sharedStyles.length === 0 && (
-          <p className="text-caption text-label-tertiary">
-            {text("pageBuilder.site.noSharedStyles")}
-          </p>
+      <Group title={text("pageBuilder.site.sharedStyles")}>
+        {design.sharedStyles.length === 0 ? (
+          <EmptyGroup note={text("pageBuilder.siteStyles.sharedEmpty")} suggestions={[]} />
+        ) : (
+          <List>
+            {design.sharedStyles.map((sharedStyle) => (
+              <SharedStyleRow
+                key={sharedStyle.id}
+                sharedStyle={sharedStyle}
+                uses={sharedStyleUses.get(sharedStyle.id) ?? 0}
+                isOpen={openId === `shared:${sharedStyle.id}`}
+                onToggle={change ? () => toggle(`shared:${sharedStyle.id}`) : undefined}
+                onRename={(name) => change?.(withSharedStyle(design, { ...sharedStyle, name }))}
+                onDelete={() => {
+                  onDeleteSharedStyle?.(sharedStyle);
+                  change?.({
+                    ...design,
+                    sharedStyles: design.sharedStyles.filter((each) => each.id !== sharedStyle.id),
+                  });
+                  setOpenId(null);
+                }}
+              />
+            ))}
+          </List>
         )}
-        {design.sharedStyles.map((sharedStyle) => (
-          <SharedStyleRow
-            key={`${sharedStyle.id}:${sharedStyle.name}`}
-            sharedStyle={sharedStyle}
-            uses={uses.get(sharedStyle.id) ?? 0}
-            canChange={change !== undefined}
-            onRename={(name) => change?.(withSharedStyle(design, { ...sharedStyle, name }))}
-            onRemove={() => removeSharedStyle(sharedStyle.id)}
-          />
-        ))}
-      </div>
+      </Group>
     </section>
+  );
+}
+
+function Group({
+  title,
+  addLabel,
+  onAdd,
+  children,
+}: {
+  title: string;
+  addLabel?: string;
+  onAdd?: () => void;
+  children: ReactNode;
+}) {
+  const headingId = useId();
+  return (
+    <section aria-labelledby={headingId} className="flex flex-col gap-1.5">
+      <div className="flex h-6 items-center">
+        <h3
+          id={headingId}
+          className="text-caption font-semibold tracking-wide text-label-secondary uppercase"
+        >
+          {title}
+        </h3>
+        {addLabel && onAdd && (
+          <button
+            type="button"
+            onClick={onAdd}
+            aria-label={addLabel}
+            title={addLabel}
+            className="ms-auto flex size-6 items-center justify-center rounded-control text-accent hover:bg-fill focus-visible:focus-ring"
+          >
+            <Plus aria-hidden="true" className="size-4" />
+          </button>
+        )}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function List({ children }: { children: ReactNode }) {
+  return (
+    <ul className="m-0 flex list-none flex-col overflow-hidden rounded-card bg-background p-0 [&>li+li]:hairline-top">
+      {children}
+    </ul>
+  );
+}
+
+function EmptyGroup({
+  note,
+  suggestions,
+  kind,
+  onPick,
+}: {
+  note: string;
+  suggestions: ReadonlyArray<{ name: string; value: string }>;
+  kind?: DesignVariableKind;
+  onPick?: (name: string, value: string) => void;
+}) {
+  const text = useBuilderText();
+  return (
+    <div className="flex flex-col gap-2 rounded-card bg-background px-3 py-2.5">
+      <p className="text-caption text-label-secondary">{note}</p>
+      {suggestions.length > 0 && onPick && (
+        <div className="flex flex-wrap items-center gap-1">
+          <span className="me-0.5 text-caption text-label-tertiary">
+            {text("pageBuilder.siteStyles.startWith")}
+          </span>
+          {suggestions.map((each) => (
+            <button
+              key={each.name}
+              type="button"
+              onClick={() => onPick(each.name, each.value)}
+              className="flex h-7 items-center gap-1.5 rounded-control bg-fill px-2.5 text-caption font-medium text-label hover:bg-fill-strong focus-visible:focus-ring"
+            >
+              {kind === "colour" && (
+                <span
+                  aria-hidden="true"
+                  style={{ backgroundColor: each.value }}
+                  className="size-3 rounded-full hairline-ring"
+                />
+              )}
+              {each.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** How a variable looks in its row: a swatch, "Aa" in the font, or a short bar for a size. */
+function VariablePreview({ variable }: { variable: DesignVariable }) {
+  if (variable.kind === "colour") {
+    return (
+      <span
+        aria-hidden="true"
+        style={{ backgroundColor: variable.value }}
+        className="size-6 shrink-0 rounded-full hairline-ring"
+      />
+    );
+  }
+  if (variable.kind === "font") {
+    return (
+      <span
+        aria-hidden="true"
+        style={{ fontFamily: variable.value }}
+        className="flex size-6 shrink-0 items-center justify-center rounded-control bg-fill text-footnote text-label"
+      >
+        Aa
+      </span>
+    );
+  }
+  return (
+    <span
+      aria-hidden="true"
+      className="flex size-6 shrink-0 items-center justify-center rounded-control bg-fill"
+    >
+      <span className="h-0.5 w-3.5 rounded-full bg-label-secondary" />
+    </span>
+  );
+}
+
+function UsesLabel({ text: shown }: { text: string | null }) {
+  if (!shown) return null;
+  return <span className="shrink-0 text-caption text-label-tertiary">{shown}</span>;
+}
+
+/** A row that opens to show its editor below it; without `onToggle` it's a plain row. */
+function Row({
+  preview,
+  name,
+  detail,
+  uses,
+  isOpen,
+  onToggle,
+  children,
+}: {
+  preview: ReactNode;
+  name: string;
+  detail?: string;
+  uses: string | null;
+  isOpen: boolean;
+  onToggle?: () => void;
+  children?: ReactNode;
+}) {
+  const editorId = useId();
+  const content = (
+    <>
+      {preview}
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate text-footnote font-medium text-label">{name}</span>
+        {detail && (
+          <span className="truncate font-mono text-caption text-label-tertiary">{detail}</span>
+        )}
+      </span>
+      <UsesLabel text={uses} />
+    </>
+  );
+  return (
+    <li>
+      {onToggle ? (
+        <button
+          type="button"
+          aria-expanded={isOpen}
+          aria-controls={editorId}
+          onClick={onToggle}
+          className="flex min-h-11 w-full items-center gap-2.5 px-3 py-1.5 text-start hover:bg-fill/60 focus-visible:focus-ring"
+        >
+          {content}
+          <ChevronRight
+            aria-hidden="true"
+            className={classNames(
+              "size-3.5 shrink-0 text-label-tertiary motion-safe:transition-transform motion-safe:duration-150",
+              isOpen && "rotate-90",
+            )}
+          />
+        </button>
+      ) : (
+        <div className="flex min-h-11 items-center gap-2.5 px-3 py-1.5">{content}</div>
+      )}
+      <div id={editorId} hidden={!isOpen}>
+        {isOpen && <div className="flex flex-col gap-2.5 px-3 pt-1 pb-3">{children}</div>}
+      </div>
+    </li>
   );
 }
 
 function VariableRow({
   variable,
-  canChange,
+  uses,
+  isOpen,
+  onToggle,
   onChange,
-  onRemove,
+  onDelete,
 }: {
   variable: DesignVariable;
-  canChange: boolean;
+  uses: number;
+  isOpen: boolean;
+  onToggle?: () => void;
   onChange: (next: DesignVariable) => void;
-  onRemove: () => void;
+  onDelete: () => void;
+}) {
+  const text = useBuilderText();
+  return (
+    <Row
+      preview={<VariablePreview variable={variable} />}
+      name={variable.name}
+      detail={variable.value}
+      uses={
+        uses === 0
+          ? null
+          : uses === 1
+            ? text("pageBuilder.siteStyles.usesOne")
+            : text("pageBuilder.siteStyles.uses", { count: uses })
+      }
+      isOpen={isOpen}
+      onToggle={onToggle}
+    >
+      <NameInput name={variable.name} onChange={(name) => onChange({ ...variable, name })} />
+      <ValueInput
+        label={`${variable.name}: ${text("pageBuilder.site.value")}`}
+        kind={variable.kind}
+        value={variable.value}
+        onChange={(value) => onChange({ ...variable, value })}
+      />
+      <DeleteAction
+        name={variable.name}
+        note={
+          uses > 0
+            ? text("pageBuilder.siteStyles.deleteUsed", { count: uses })
+            : text("pageBuilder.siteStyles.deleteUnused")
+        }
+        onDelete={onDelete}
+      />
+    </Row>
+  );
+}
+
+function NameInput({ name, onChange }: { name: string; onChange: (name: string) => void }) {
+  const text = useBuilderText();
+  return (
+    <label className="flex flex-col gap-1 text-caption text-label-secondary">
+      {text("pageBuilder.site.name")}
+      <input
+        key={name}
+        defaultValue={name}
+        maxLength={40}
+        onBlur={(event) => {
+          const next = event.target.value.trim();
+          if (next && next !== name) onChange(next);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") event.currentTarget.blur();
+        }}
+        className={inputClassName}
+      />
+    </label>
+  );
+}
+
+/** A variable's value, typed or (for a colour) picked; refused with a note when it isn't one. */
+export function ValueInput({
+  label,
+  kind,
+  value,
+  onChange,
+  shownLabel,
+}: {
+  label: string;
+  kind: DesignVariableKind;
+  value: string;
+  onChange: (value: string) => void;
+  /** The words shown above it; "Value" when left out. */
+  shownLabel?: string;
 }) {
   const text = useBuilderText();
   const errorId = useId();
-  const [typed, setTyped] = useState(variable.value);
-  const [lastValue, setLastValue] = useState(variable.value);
-  if (variable.value !== lastValue) {
-    setLastValue(variable.value);
-    setTyped(variable.value);
+  const [typed, setTyped] = useState(value);
+  const [lastValue, setLastValue] = useState(value);
+  if (value !== lastValue) {
+    setLastValue(value);
+    setTyped(value);
   }
-  const isValid = isDesignVariableValue(variable.kind, typed);
-  const isHex = /^#[0-9a-f]{6}$/i.test(variable.value);
+  const isValid = isDesignVariableValue(kind, typed);
+  const isHex = /^#[0-9a-f]{6}$/i.test(value);
   const commit = () => {
-    if (isValid && typed.trim() !== variable.value) onChange({ ...variable, value: typed.trim() });
+    if (isValid && typed.trim() !== value) onChange(typed.trim());
   };
   return (
     <div className="flex flex-col gap-1">
+      <span aria-hidden="true" className="text-caption text-label-secondary">
+        {shownLabel ?? text("pageBuilder.site.value")}
+      </span>
       <div className="flex items-center gap-1.5">
-        {variable.kind === "colour" &&
-          (canChange && isHex ? (
-            <input
-              type="color"
-              aria-label={`${variable.name}: ${text("pageBuilder.site.value")}`}
-              value={variable.value}
-              onChange={(event) => onChange({ ...variable, value: event.target.value })}
-              className="size-7 shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-0"
-            />
-          ) : (
-            <span
-              aria-hidden="true"
-              style={{ backgroundColor: variable.value }}
-              className="size-6 shrink-0 rounded-full hairline-ring"
-            />
-          ))}
-        {canChange ? (
-          <>
-            <input
-              aria-label={text("pageBuilder.site.name")}
-              defaultValue={variable.name}
-              maxLength={40}
-              onBlur={(event) => {
-                const name = event.target.value.trim();
-                if (name && name !== variable.name) onChange({ ...variable, name });
-              }}
-              className={`${inputClassName} min-w-0 flex-1`}
-            />
-            <button
-              type="button"
-              onClick={onRemove}
-              aria-label={text("pageBuilder.site.delete", { name: variable.name })}
-              className="flex size-7 shrink-0 items-center justify-center rounded-control text-label-secondary hover:bg-fill focus-visible:focus-ring"
-            >
-              <Trash2 aria-hidden="true" className="size-3.5" />
-            </button>
-          </>
-        ) : (
-          <span className="text-footnote text-label">
-            {variable.name}{" "}
-            <span className="font-mono text-caption text-label-tertiary">{variable.value}</span>
-          </span>
+        {kind === "colour" && isHex && (
+          <input
+            type="color"
+            aria-label={`${label} (${text("pageBuilder.siteStyles.colourValue")})`}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            className="size-7 shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-0"
+          />
         )}
-      </div>
-      {canChange && (
         <input
-          aria-label={`${variable.name}: ${text("pageBuilder.site.value")}`}
+          aria-label={label}
           aria-invalid={!isValid}
           aria-describedby={isValid ? undefined : errorId}
           value={typed}
@@ -212,64 +520,137 @@ function VariableRow({
           onKeyDown={(event) => {
             if (event.key === "Enter") commit();
           }}
-          className={`${inputClassName} font-mono`}
+          className={`${inputClassName} min-w-0 flex-1 font-mono`}
         />
-      )}
+      </div>
       {!isValid && (
         <p id={errorId} className="text-caption text-warning">
-          {text("pageBuilder.site.badValue", {
-            kind: text(`pageBuilder.site.kind.${variable.kind}`),
-          })}
+          {text("pageBuilder.site.badValue", { kind: text(`pageBuilder.site.kind.${kind}`) })}
         </p>
       )}
     </div>
   );
 }
 
+/** Delete, then a second tap to be sure, saying what happens to what uses it. */
+export function DeleteAction({
+  name,
+  note,
+  onDelete,
+}: {
+  name: string;
+  note: string;
+  onDelete: () => void;
+}) {
+  const text = useBuilderText();
+  const [isAsking, setIsAsking] = useState(false);
+  if (!isAsking) {
+    return (
+      <button
+        type="button"
+        onClick={() => setIsAsking(true)}
+        className="self-start rounded-control px-1 py-0.5 text-caption font-medium text-danger hover:underline focus-visible:focus-ring"
+      >
+        {text("pageBuilder.siteStyles.deleteVariable")}
+      </button>
+    );
+  }
+  return (
+    <div role="alert" className="flex flex-col gap-2 rounded-control bg-fill/70 p-2.5">
+      <p className="text-caption text-label">
+        <span className="font-semibold">
+          {text("pageBuilder.siteStyles.confirmDelete", { name })}
+        </span>{" "}
+        {note}
+      </p>
+      <div className="flex gap-1">
+        <button
+          type="button"
+          onClick={onDelete}
+          className="rounded-control bg-danger px-2.5 py-1 text-caption font-medium text-white focus-visible:focus-ring"
+        >
+          {text("pageBuilder.siteStyles.deleteVariable")}
+        </button>
+        <button
+          type="button"
+          autoFocus
+          onClick={() => setIsAsking(false)}
+          className="rounded-control bg-fill px-2.5 py-1 text-caption font-medium text-label hover:bg-fill-strong focus-visible:focus-ring"
+        >
+          {text("pageBuilder.siteStyles.keep")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** A value as the builder's own page can draw it: tokens and variables become their values. */
+function previewValue(value: string | undefined, variables: readonly DesignVariable[]) {
+  if (!value) return undefined;
+  const tokens = [
+    ...designTokens,
+    ...variablesAsTokens(variables, "colour"),
+    ...variablesAsTokens(variables, "size"),
+    ...variablesAsTokens(variables, "font"),
+  ];
+  return findTokenByValue(value, tokens)?.fallback ?? (value.includes("var(") ? undefined : value);
+}
+
+/** A small tile drawn with a shared style's colours, corners and border: "Aa" on its fill. */
+export function SharedStylePreview({ sharedStyle }: { sharedStyle: SharedStyle }) {
+  const { design } = useSiteDesign();
+  const base = sharedStyle.styles.base;
+  const read = (value: string | undefined) => previewValue(value, design.variables);
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        backgroundColor: read(base.backgroundColor),
+        color: read(base.color),
+        borderColor: read(base.borderColor),
+        borderStyle: base.borderWidth ? "solid" : undefined,
+        borderWidth: base.borderWidth ? "1px" : undefined,
+        borderRadius: base.borderRadius ? "999px" : undefined,
+        fontFamily: read(base.fontFamily),
+        fontWeight: base.fontWeight,
+      }}
+      className="flex size-6 shrink-0 items-center justify-center rounded-control bg-fill text-caption text-label hairline-ring"
+    >
+      Aa
+    </span>
+  );
+}
+
 function SharedStyleRow({
   sharedStyle,
   uses,
-  canChange,
+  isOpen,
+  onToggle,
   onRename,
-  onRemove,
+  onDelete,
 }: {
   sharedStyle: SharedStyle;
   uses: number;
-  canChange: boolean;
+  isOpen: boolean;
+  onToggle?: () => void;
   onRename: (name: string) => void;
-  onRemove: () => void;
+  onDelete: () => void;
 }) {
   const text = useBuilderText();
   return (
-    <div className="flex items-center gap-1.5">
-      <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-accent-fill" />
-      {canChange ? (
-        <input
-          aria-label={text("pageBuilder.site.name")}
-          defaultValue={sharedStyle.name}
-          maxLength={40}
-          onBlur={(event) => {
-            const name = event.target.value.trim();
-            if (name && name !== sharedStyle.name) onRename(name);
-          }}
-          className={`${inputClassName} min-w-0 flex-1`}
-        />
-      ) : (
-        <span className="min-w-0 flex-1 truncate text-footnote text-label">{sharedStyle.name}</span>
-      )}
-      <span className="shrink-0 text-caption text-label-tertiary">
-        {text("pageBuilder.shared.uses", { count: uses })}
-      </span>
-      {canChange && (
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label={text("pageBuilder.site.delete", { name: sharedStyle.name })}
-          className="flex size-7 shrink-0 items-center justify-center rounded-control text-label-secondary hover:bg-fill focus-visible:focus-ring"
-        >
-          <Trash2 aria-hidden="true" className="size-3.5" />
-        </button>
-      )}
-    </div>
+    <Row
+      preview={<SharedStylePreview sharedStyle={sharedStyle} />}
+      name={sharedStyle.name}
+      uses={text("pageBuilder.shared.uses", { count: uses })}
+      isOpen={isOpen}
+      onToggle={onToggle}
+    >
+      <NameInput name={sharedStyle.name} onChange={onRename} />
+      <DeleteAction
+        name={sharedStyle.name}
+        note={text("pageBuilder.siteStyles.deleteShared")}
+        onDelete={onDelete}
+      />
+    </Row>
   );
 }

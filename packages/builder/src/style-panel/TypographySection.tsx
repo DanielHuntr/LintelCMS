@@ -3,11 +3,12 @@ import { AlignCenter, AlignJustify, AlignLeft, AlignRight } from "lucide-react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { ChoiceGroup, PanelSection } from "../ui/controls.js";
 import { lookAlign, nearestSizeChip, useSelectedLook } from "./canvas-look.js";
-import { useStyleField, useStyleReader } from "./style-field.js";
+import { useStyleField } from "./style-field.js";
 import { textSummary } from "./style-summaries.js";
 import { FontPicker } from "./FontPicker.js";
 import { ColourPicker, StyleChips, StyleSelect, StyleTextInput } from "./StyleInputs.js";
 import { AdvancedTextEffects, FluidSizeControl, OutlineChips } from "./TextEffects.js";
+import { useStyleSummary } from "./summary-names.js";
 
 /**
  * How text looks: font, size (or a size that grows with the screen), weight, alignment,
@@ -15,7 +16,7 @@ import { AdvancedTextEffects, FluidSizeControl, OutlineChips } from "./TextEffec
  */
 export function TypographySection({ advanced }: { advanced: boolean }) {
   const text = useBuilderText();
-  const read = useStyleReader();
+  const { summary, linked } = useStyleSummary((read) => textSummary(read, text));
   const align = useStyleField("textAlign", text("pageBuilder.style.textAlign"));
   // While nothing is set, the choices show how the text really looks on the canvas.
   const look = useSelectedLook();
@@ -25,7 +26,8 @@ export function TypographySection({ advanced }: { advanced: boolean }) {
     <PanelSection
       title={text("pageBuilder.style.text")}
       sectionId="text"
-      summary={textSummary(read, text)}
+      summary={summary}
+      linked={linked}
     >
       <FontPicker />
       <StyleChips
