@@ -29,7 +29,7 @@ export function pointFormsAt(html: string, endpoints: FormEndpoints): string {
     (_match, attributes: string, handle: string) => {
       found = true;
       const name = decodeURIComponent(handle);
-      return `<form${attributes} action="${escapeAttribute(endpoints.action(name))}" data-lintel-token-url="${escapeAttribute(endpoints.tokenUrl(name))}"`;
+      return `<form${attributes} action="${escapeAttribute(endpoints.action(name))}" data-lintel-token-url="${escapeAttribute(endpoints.tokenUrl(name))}"${endpoints.plainPost ? " data-plain-post" : ""}`;
     },
   );
   if (!found || pointed.includes(`src="${FORM_SCRIPT_PATH}"`)) return pointed;

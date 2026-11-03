@@ -37,6 +37,18 @@ describe("forms on the website", () => {
     document.removeEventListener("lintel:form-sent", sent);
   });
 
+  it("sends a plain form post on a site published as files", async () => {
+    const send = vi.fn(async () => new Response("{}"));
+    vi.stubGlobal("fetch", send);
+    const form = formOnPage();
+    form.dataset.plainPost = "";
+
+    form.requestSubmit();
+    await vi.waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+    const [, request] = send.mock.calls[0] as unknown as [string, { body: unknown }];
+    expect(String(request.body)).toBe("email=ana%40example.com");
+  });
+
   it("says nothing when the form was refused", async () => {
     vi.stubGlobal(
       "fetch",

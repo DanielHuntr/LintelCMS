@@ -19,6 +19,11 @@ export const FORM_SCRIPT_PATH = `${STYLESHEET_FOLDER}/forms.js`;
 export interface FormEndpoints {
   action(handle: string): string;
   tokenUrl(handle: string): string;
+  /**
+   * Sends answers as a plain form post, not multipart: the PHP companion reads several ticked
+   * boxes under one name only from a plain post.
+   */
+  plainPost?: boolean;
 }
 
 /** Lintel's own API at its public address: for published files on hosting without PHP. */

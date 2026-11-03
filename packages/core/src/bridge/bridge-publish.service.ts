@@ -40,6 +40,7 @@ export interface BridgePublishFiles {
 export const bridgeFormEndpoints: FormEndpoints = {
   action: (handle) => `/${BRIDGE_FILE}?action=form&form=${encodeURIComponent(handle)}`,
   tokenUrl: (handle) => `/${BRIDGE_FILE}?action=token&form=${encodeURIComponent(handle)}`,
+  plainPost: true,
 };
 
 export function targetUsesBridge(target: Pick<PublishTargetRow, "kind" | "formDelivery">): boolean {

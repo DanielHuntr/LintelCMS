@@ -27,6 +27,9 @@ and choices, limits each address to ten a minute, and keeps the answers for Lint
 Lintel collects them (`bridge-pull.service.ts`) into Forms with the usual emails and the
 `form.submitted` event.
 
+File upload questions are left out here: the companion has nowhere safe to keep files. Use
+Lintel's API (`formDelivery: api`) for a form that asks for one.
+
 ## Shop
 
 The basket lives in the visitor's browser. For totals and checkout the companion reads only

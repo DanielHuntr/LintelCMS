@@ -104,7 +104,8 @@ function lintel_handle_request(): void
             lintel_page($problem->status, 'Please check your answers', $problem->getMessage());
             return;
         }
-        lintel_json($problem->status, ['error' => $problem->getMessage(), 'fields' => $problem->fields]);
+        // `message` is what forms on the page show; `error` is what the basket reads.
+        lintel_json($problem->status, ['error' => $problem->getMessage(), 'message' => $problem->getMessage(), 'fields' => $problem->fields]);
     } catch (Throwable $error) {
         error_log('Lintel bridge: ' . $error->getMessage());
         lintel_json(500, ['error' => 'Something went wrong on the website. Please try again in a moment.']);

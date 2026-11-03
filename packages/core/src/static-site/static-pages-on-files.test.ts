@@ -43,6 +43,8 @@ describe("pages as files", () => {
     expect(pointed).toContain('<script src="/_lintel/forms.js" defer></script></body>');
     expect(pointFormsAt(pointed, companion)).toBe(pointed);
     expect(pointFormsAt("<p>No forms</p>", companion)).toBe("<p>No forms</p>");
+    expect(pointed).not.toContain("data-plain-post");
+    expect(pointFormsAt(html, { ...companion, plainPost: true })).toContain("data-plain-post");
   });
 
   it("knows which pages have shop elements that need a running Lintel", () => {
