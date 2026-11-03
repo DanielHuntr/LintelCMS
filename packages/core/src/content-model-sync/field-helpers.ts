@@ -337,7 +337,12 @@ export interface BlockTypeDefinition {
   /** A sentence about the block, shown when adding one. */
   description?: string;
   /** The block's fields, keyed by handle, in the order editors see them. No blocks fields inside. */
-  fields: Record<string, InnerField>;
+  fields?: Record<string, InnerField>;
+  /**
+   * One of the site's blocks, defined in `content-model/blocks/`: its name, description and
+   * properties are used, and the block type's handle should be the block's.
+   */
+  block?: string;
 }
 
 export interface BlocksOptions extends CommonFieldOptions {

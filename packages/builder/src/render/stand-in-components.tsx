@@ -20,6 +20,7 @@ import {
   textComponent,
 } from "@lintel/builder-model";
 import { type ComponentRender, createComponentRegistry, drawsProps } from "./component-registry.js";
+import { CustomBlockElement } from "./custom-block.js";
 import { MarkedText, withLineBreaks } from "./marked-text.js";
 import { elementRenders } from "./elements/index.js";
 import { EmptyMenuButton, menuOf, useSite } from "./elements/navigation.js";
@@ -218,6 +219,7 @@ export const standInRenders: Readonly<Record<string, ComponentRender>> = {
   link: Link,
   navigation: Navigation,
   codeBlock: CodeBlock,
+  customBlock: CustomBlockElement,
 };
 
 /**

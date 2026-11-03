@@ -2,6 +2,7 @@ import type { PageView, PostView } from "@lintel/site-components";
 import type { DeliveredEntryWithTranslations } from "../delivery/delivery.schema.js";
 import { listDeliveredEntries } from "../delivery/delivery.service.js";
 import { entryAsItem } from "./bound-entries.js";
+import { withDesignedBlocks } from "./designed-blocks.js";
 import { checkPageDesign, drawPageDesign } from "./designed-pages.js";
 import { findItemDesign } from "./item-designs.service.js";
 import { loadPageData } from "./page-data.service.js";
@@ -16,6 +17,7 @@ import type { PageRequest } from "./site-pages.service.js";
  *   for, so the design can be looked at on its own address.
  * - An entry of a collection with an item design is drawn with that design, its elements
  *   showing this entry's fields.
+ * - A page's sections (its blocks field) have the site's own blocks drawn in.
  * - Anything else is left as it was.
  */
 export async function designEntryView(
@@ -37,7 +39,7 @@ export async function designEntryView(
     return { ...view, design: drawPageDesign(own, data) };
   }
   const itemDesign = await findItemDesign(request, collectionHandle);
-  if (!itemDesign) return view;
+  if (!itemDesign) return view.kind === "page" ? withDesignedBlocks(request, entry, view) : view;
   const data = await loadPageData(request, itemDesign, {
     item: entryAsItem(entry, url, locale),
     currentEntry: { id: entry.id, collection: collectionHandle },

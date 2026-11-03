@@ -68,5 +68,21 @@ function SingleBlock({
       return <ImageSection {...block} />;
     case "call_to_action":
       return <CallToAction {...block} />;
+    case "design":
+      return <DesignedSection html={block.html} css={block.css} />;
   }
+}
+
+/** The builder's own HTML, made safe by its renderer, in `.lintel-design` as on designed pages. */
+function DesignedSection({ html, css }: { html: string; css: string }) {
+  return (
+    <>
+      {css && <style dangerouslySetInnerHTML={{ __html: css }} />}
+      <div
+        className="lintel-design"
+        data-lintel-component="block"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    </>
+  );
 }

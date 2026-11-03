@@ -3,6 +3,7 @@ import {
   assignClassNames,
   bindProps,
   compileStylesheet,
+  expandBlockInstances,
   findNode,
   fontPreloads,
   type PageData,
@@ -74,8 +75,10 @@ export function renderPage(
   registry: ComponentRegistry,
   { mode = "site", nodeId, withMotion = false, data = {} }: RenderOptions = {},
 ): RenderedPage {
-  const classNames = assignClassNames(document.root, registry.catalogue);
-  const start = nodeId ? findNode(document.root, nodeId) : document.root;
+  // The site's own blocks are drawn as their design, filled in (see custom-blocks/ in the model).
+  const root = expandBlockInstances(document.root, data);
+  const classNames = assignClassNames(root, registry.catalogue);
+  const start = nodeId ? findNode(root, nodeId) : root;
   if (!start || start.hidden) {
     return {
       html: "",
@@ -105,7 +108,7 @@ export function renderPage(
       />
     </PageDataProvider>,
   );
-  const isWholePage = start.id === document.root.id;
+  const isWholePage = start.id === root.id;
   return {
     html,
     css: [compileStylesheet(start, classNames), effects.css].filter(Boolean).join("\n"),

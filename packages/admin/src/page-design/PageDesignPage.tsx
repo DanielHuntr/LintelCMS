@@ -32,6 +32,7 @@ import { useCan, useSession } from "../session/SessionContext.js";
 import { runtimeSettings } from "../runtime-settings.js";
 import { useBuilderData, useCanvasSite, useViewPageSite } from "../website/website.queries.js";
 import { useEffectModules } from "./useEffectModules.js";
+import { useBuilderBlocks } from "../blocks/useBuilderBlocks.js";
 import { usePageDesignSaving } from "./usePageDesignSaving.js";
 import { useSiteMotion } from "./useSiteMotion.js";
 import { useBuilderMenus } from "../menus/builderMenus.js";
@@ -46,7 +47,7 @@ const besideTheAdmin = (file: string) =>
     `${runtimeSettings.basePath.replace(/\/?$/, "/")}${file}`,
     globalThis.location?.origin ?? "http://localhost",
   ).href;
-const canvasFrameScripts = {
+export const canvasFrameScripts = {
   frame: besideTheAdmin("canvas-frame.js"),
   motion: besideTheAdmin("canvas-motion.js"),
 };
@@ -104,6 +105,19 @@ function PageDesigner({
     [loadedEntry, fieldHandle],
   );
   const saving = usePageDesignSaving(loadedEntry, fieldHandle);
+  // The page as it is now, for the pictures and server-drawn HTML its blocks need.
+  const [currentRoot, setCurrentRoot] = useState<PageDocument["root"] | null>(
+    "document" in opened ? opened.document.root : null,
+  );
+  const changeSavedDesign = saving.change;
+  const changeDesign = useCallback(
+    (document: PageDocument) => {
+      setCurrentRoot(document.root);
+      changeSavedDesign(document);
+    },
+    [changeSavedDesign],
+  );
+  const blocks = useBuilderBlocks({ root: currentRoot, beforeLeaving: saving.saveNow });
   const leave = useLeaveWarning(saving.hasUnsavedChanges);
   const session = useSession();
   // Collection lists and shop elements show real entries on the canvas once this arrives.
@@ -190,12 +204,13 @@ function PageDesigner({
     <>
       <PageBuilder
         initialDocument={opened.document}
-        onChange={saving.change}
+        onChange={changeDesign}
         title={title}
         canEditCode={canEditCode}
         site={site}
         dataSources={dataSources}
         menuEditor={renderMenuEditor}
+        blocks={blocks}
         enabledPlugins={session.enabledPlugins}
         themeStylesheet={themeStylesheet(defaultTheme)}
         baseStylesheet={siteStylesheet}
@@ -298,14 +313,14 @@ function openDesign(stored: unknown): { document: PageDocument } | { problem: st
 
 /** The media library as a promise: `pick()` opens it and resolves with the chosen picture. */
 /** Fonts and videos for the builder go into the media library like any other file. */
-const uploadToMediaLibrary: FileUploader = async (file) => {
+export const uploadToMediaLibrary: FileUploader = async (file) => {
   const asset = await uploadAsset(file, () => undefined).catch(() => null);
   return asset
     ? { assetId: asset.id, src: asset.url, mimeType: asset.mimeType, filename: asset.filename }
     : null;
 };
 
-function useImagePicker() {
+export function useImagePicker() {
   const [request, setRequest] = useState<{ label: string; currentAssetId: string | null } | null>(
     null,
   );

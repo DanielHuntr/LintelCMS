@@ -31,6 +31,7 @@ const DEFINE_FUNCTION: Record<ModelDefinition["kind"], string> = {
   taxonomy: "defineTaxonomy",
   globalSet: "defineGlobalSet",
   fieldset: "defineFieldset",
+  block: "defineBlock",
   menu: "defineMenu",
 };
 
@@ -51,14 +52,14 @@ function printImport(names: string[]): string {
   return `import {\n${names.map((name) => `${INDENT}${name},`).join("\n")}\n} from "${CONTENT_MODEL_IMPORT}";`;
 }
 
-/** Field specs (objects with a `type`) inside `fields` become helper calls. */
+/** Field specs (objects with a `type`) inside `fields` (and a block's `properties`) become helper calls. */
 function toPrintable(value: unknown, helpers: Set<string>, parentKey = ""): Printable {
   if (Array.isArray(value)) {
     return value.map((item) => toPrintable(item, helpers));
   }
   if (typeof value === "object" && value !== null) {
     const entries = Object.entries(value).filter(([, inner]) => inner !== undefined);
-    if (parentKey === "fields") {
+    if (parentKey === "fields" || parentKey === "properties") {
       return Object.fromEntries(
         entries.map(([handle, spec]) => [
           handle,

@@ -21,6 +21,10 @@ import {
   type StarterPage,
   type StylePropertyName,
   type StyleTarget,
+  type CustomBlock,
+  detachBlockInstance,
+  instanceBlockHandle,
+  type BoundPicture,
 } from "@lintel/builder-model";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { convertToCode } from "../developer/convert-to-code.js";
@@ -30,14 +34,19 @@ import type { InsertKey } from "../panels/InsertPanel.js";
 import type { ComponentRegistry } from "../render/component-registry.js";
 import { renderPage } from "../render/render-page.js";
 import { type BuilderClipboard, choosePasteSource, writeToSystemClipboard } from "./clipboard.js";
+import { instanceBlueprint } from "../blocks/block-commands.js";
 import * as commands from "./commands.js";
 import * as designCommands from "./design-commands.js";
 import { createEditorState, describeUndo, editorReducer } from "./editor-state.js";
 
 type StyleValues = Partial<Record<StylePropertyName, string | undefined>>;
 
+const noBlockLibrary: readonly CustomBlock[] = [];
+
 interface UseBuilderOptions {
   initialDocument: PageDocument;
+  /** The site's own blocks, for inserting and detaching instances. */
+  blocks?: readonly CustomBlock[];
   registry: ComponentRegistry;
   createId: CreateNodeId;
   canEditCode: boolean;
@@ -57,6 +66,7 @@ export function useBuilder({
   canEditCode,
   text,
   onChange,
+  blocks = noBlockLibrary,
 }: UseBuilderOptions) {
   const [state, dispatch] = useReducer(editorReducer, initialDocument, createEditorState);
   const [announcement, setAnnouncement] = useState({ message: "", count: 0 });
@@ -114,8 +124,14 @@ export function useBuilder({
     const select = (nodeId: string | null) => dispatch({ type: "select", nodeId });
 
     const insert = (key: InsertKey, place?: { parentId: string; index: number }) => {
-      const [kind, id] = key.split(":") as ["component" | "template", string];
-      const blueprint = kind === "template" ? findSectionTemplate(id)?.blueprint : { type: id };
+      const [kind, id] = key.split(":") as ["component" | "template" | "block", string];
+      const block = kind === "block" ? blocks.find((candidate) => candidate.handle === id) : null;
+      const blueprint =
+        kind === "template"
+          ? findSectionTemplate(id)?.blueprint
+          : kind === "block"
+            ? block && instanceBlueprint(block)
+            : { type: id };
       if (!blueprint) return;
       if (!place) return run(commands.insertBlueprint(context(), blueprint));
       const node = createNode(blueprint, registry.catalogue, createId);
@@ -369,6 +385,57 @@ export function useBuilder({
             text("pageBuilder.history.usedTemplatePage", { name }),
           ),
         ),
+      /** Puts an instance of a block just made from the element where the element was. */
+      replaceWithBlock: (nodeId: string, block: CustomBlock) => {
+        const node = nodeById(nodeId);
+        if (!node) return;
+        const instance = createNode(instanceBlueprint(block), registry.catalogue, createId);
+        run(
+          commands.replaceNode(
+            context(),
+            nodeId,
+            instance,
+            text("pageBuilder.history.madeBlock", { name: block.name }),
+          ),
+        );
+      },
+      /** Turns an instance into the plain elements its design is, with its values typed in. */
+      detachBlock: (nodeId: string, pictures?: Readonly<Record<string, BoundPicture>>) => {
+        const node = nodeById(nodeId);
+        const handle = node ? instanceBlockHandle(node) : null;
+        const block = blocks.find((candidate) => candidate.handle === handle);
+        const plain = node && block ? detachBlockInstance(node, block, createId, pictures) : null;
+        if (!node || !block || !plain) return;
+        run(
+          commands.replaceNode(
+            context(),
+            nodeId,
+            plain,
+            text("pageBuilder.history.detachedBlock", { name: block.name }),
+          ),
+        );
+      },
+      changeBlockValues: (nodeId: string, values: Record<string, unknown>, blockName: string) =>
+        run(
+          commands.changeNode(
+            context(),
+            nodeId,
+            text("pageBuilder.history.changedBlockValues", { name: blockName }),
+            (node) => ({ ...node, props: { ...node.props, values } }),
+            { coalesceKey: `block-values:${nodeId}` },
+          ),
+          "",
+        ),
+      /** In a block's design: the design with new bindings, from "Choose what editors can change". */
+      replaceDesign: (nodeId: string, design: PageNode) =>
+        run(
+          commands.changeNode(
+            context(),
+            nodeId,
+            text("pageBuilder.history.remappedBlock"),
+            () => design,
+          ),
+        ),
       selectAdjacent: adjacent,
       selectParent: () => {
         const selected = latest.current.selectedId;
@@ -377,7 +444,7 @@ export function useBuilder({
         select(parent && parent.id !== rootNodeId ? parent.id : null);
       },
     };
-  }, [registry, createId, canEditCode, text, context, run, announce]);
+  }, [registry, createId, canEditCode, text, context, run, announce, blocks]);
 
   return {
     state,

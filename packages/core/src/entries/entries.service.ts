@@ -1,4 +1,5 @@
 import { findBlueprintByIdOrFail } from "../blueprints/blueprints.service.js";
+import { loadBlockCheckLibrary } from "../blocks/blocks.service.js";
 import {
   entrySiteFor,
   findCollectionByIdOrFail,
@@ -257,6 +258,10 @@ export async function validateForCollection(
     previousData: personChange?.previousData,
     pageCode: personChange
       ? await findPageCodeContext(database, blueprint.fields, context.permissions)
+      : undefined,
+    // Instances of the site's blocks in page designs are checked against their properties.
+    blockLibrary: blueprint.fields.some((field) => field.type === "page")
+      ? await loadBlockCheckLibrary(database)
       : undefined,
     assetExists: context.assetExists,
     references: createContentReferences(database),

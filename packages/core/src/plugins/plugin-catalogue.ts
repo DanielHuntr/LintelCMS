@@ -1,4 +1,5 @@
 import { getTableName } from "drizzle-orm";
+import { pluginBlockPrefix, registerPluginBlocks } from "../blocks/define-block.js";
 import { registerPluginFieldtypes } from "../fieldtypes/fieldtypes.registry.js";
 import { registerPluginPermissions } from "../roles/permission-catalog.js";
 import type { LintelPlugin } from "./plugin-definition.js";
@@ -44,6 +45,7 @@ export class PluginCatalogue {
       seen.add(plugin.id);
       checkPlugin(plugin);
       registerPluginFieldtypes(plugin.id, plugin.fieldtypes ?? []);
+      registerPluginBlocks(plugin.id, plugin.blocks ?? []);
       registerPluginPermissions(plugin);
     }
   }
@@ -104,6 +106,12 @@ function findProblem(plugin: LintelPlugin): string | undefined {
   const strayFieldtype = plugin.fieldtypes?.find(({ type }) => !type.startsWith(`${plugin.id}.`));
   if (strayFieldtype) {
     return `its fieldtype "${strayFieldtype.type}" should start with "${plugin.id}.".`;
+  }
+  const strayBlock = plugin.blocks?.find(
+    ({ handle }) => !handle?.startsWith(pluginBlockPrefix(plugin.id)),
+  );
+  if (strayBlock) {
+    return `its block "${strayBlock.handle ?? strayBlock.name}" needs a handle starting with "${pluginBlockPrefix(plugin.id)}".`;
   }
   if (plugin.settings && !plugin.settings.schema.safeParse(plugin.settings.defaults).success) {
     return "its default settings don't pass its own settings schema.";

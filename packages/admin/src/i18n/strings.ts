@@ -22,6 +22,7 @@ import { dataToolsStrings } from "./dataToolsStrings.js";
 import { updatesStrings } from "./updatesStrings.js";
 import { treeSelectionStrings } from "./treeSelectionStrings.js";
 import { pageMenuStrings } from "./pageMenuStrings.js";
+import { blockStrings } from "./blockStrings.js";
 
 /**
  * Every word the admin shows lives here, in English: the source every translation in
@@ -55,6 +56,7 @@ const english = {
   ...contentTreeStrings,
   ...dataToolsStrings,
   ...updatesStrings,
+  ...blockStrings,
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",
   "nav.openMenu": "Open the menu",

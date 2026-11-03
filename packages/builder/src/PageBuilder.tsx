@@ -24,6 +24,13 @@ import {
   useRef,
   useState,
 } from "react";
+import {
+  type BlockMaster,
+  BlocksProvider,
+  type BuilderBlocks,
+  blocksByHandle,
+  noBlocks,
+} from "./blocks/blocks-context.js";
 import { Canvas, type MotionPreview } from "./canvas/Canvas.js";
 import { canvasDropTarget, type CanvasDropTarget } from "./canvas/canvas-drop.js";
 import type { CanvasScriptAddresses, CanvasSite } from "./canvas/canvas-frame-script.js";
@@ -132,6 +139,13 @@ export interface PageBuilderProps {
    * the panel says where menus are edited.
    */
   menuEditor?: RenderMenuEditor;
+  /**
+   * The site's own blocks: offered in Insert, drawn on the canvas, made from a selection
+   * ("Make into a block") and filled in from the right-hand panel.
+   */
+  blocks?: BuilderBlocks;
+  /** Set while editing a block's design: elements are bound to its properties. */
+  blockMaster?: BlockMaster;
 }
 
 /** The site's default theme, until the app passes the site's own. */
@@ -156,6 +170,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   const { text, canEditCode, onSaveNow } = props;
   const registry = props.registry ?? standardRegistry;
   const createId = props.createId ?? createRandomNodeId;
+  const blocks = props.blocks ?? noBlocks;
   const { state, selectedId, selectedNode, actions, announcement, announce } = useBuilder({
     initialDocument: props.initialDocument,
     registry,
@@ -163,6 +178,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     canEditCode,
     text,
     onChange: props.onChange,
+    blocks: blocks.library,
   });
   const [breakpoint, setBreakpoint] = useState<Breakpoint>("base");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -192,13 +208,21 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   const catalogue = registry.catalogue;
 
   const dataSources = props.dataSources ?? noDataSources;
+  const blockData = useMemo(
+    () => ({
+      blocks: blocksByHandle(blocks.library),
+      pictures: blocks.pictures,
+      renderedBlocks: blocks.renderedBlocks,
+    }),
+    [blocks.library, blocks.pictures, blocks.renderedBlocks],
+  );
   const rendered = useMemo(
     () =>
       renderPage(state.document, registry, {
         mode: "canvas",
-        data: canvasPageData(state.document, dataSources, props.site),
+        data: { ...canvasPageData(state.document, dataSources, props.site), ...blockData },
       }),
-    [state.document, registry, dataSources, props.site],
+    [state.document, registry, dataSources, props.site, blockData],
   );
   const menuChoices = useMemo(
     () => (dataSources.menus ?? []).map((menu) => ({ value: menu.handle, label: menu.name })),
@@ -534,176 +558,179 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
 
   return (
     <PreferenceStoreContext.Provider value={preferences}>
-      <DataSourcesContext.Provider value={dataSources}>
-        <MenuEditingContext.Provider value={menuEditing}>
-          <div className="flex h-dvh flex-col bg-background text-label" onKeyDown={handleKeyDown}>
-            <Toolbar
-              title={props.title}
-              start={props.toolbarStart}
-              end={props.toolbarEnd}
-              breakpoint={breakpoint}
-              onBreakpointChange={setBreakpoint}
-              undoLabel={state.past.at(-1)?.label}
-              redoLabel={state.future.at(-1)?.label}
-              onUndo={actions.undo}
-              onRedo={actions.redo}
-              history={[
-                ...state.past.map((step) => step.label),
-                ...state.future.map((step) => step.label).reverse(),
-              ]}
-              historyPosition={state.past.length}
-              onGoToStep={actions.goToStep}
-              canEditCode={canEditCode}
-              skillLevel={skillLevel}
-              onSkillLevelChange={changeSkillLevel}
-              onReplayTour={() => setIsTouring(true)}
-              onShowTips={tips.showAgain}
-            />
-            <div className="flex min-h-0 flex-1">
-              <aside
-                aria-label={text("pageBuilder.panels.leftLabel")}
-                className="flex w-72 shrink-0 flex-col border-e border-separator bg-surface"
-              >
-                <Tabs<LeftTab>
-                  label={text("pageBuilder.panels.leftLabel")}
-                  idPrefix="lintel-left"
-                  value={leftTab}
-                  onChange={setLeftTab}
-                  tabs={[
-                    { value: "layers", label: text("pageBuilder.panels.layers") },
-                    { value: "insert", label: text("pageBuilder.panels.insert") },
-                  ]}
-                />
-                <div
-                  id="lintel-left-panel"
-                  role="tabpanel"
-                  aria-labelledby={`lintel-left-tab-${leftTab}`}
-                  className="min-h-0 flex-1 overflow-auto"
+      <BlocksProvider blocks={blocks} master={props.blockMaster ?? null}>
+        <DataSourcesContext.Provider value={dataSources}>
+          <MenuEditingContext.Provider value={menuEditing}>
+            <div className="flex h-dvh flex-col bg-background text-label" onKeyDown={handleKeyDown}>
+              <Toolbar
+                title={props.title}
+                start={props.toolbarStart}
+                end={props.toolbarEnd}
+                breakpoint={breakpoint}
+                onBreakpointChange={setBreakpoint}
+                undoLabel={state.past.at(-1)?.label}
+                redoLabel={state.future.at(-1)?.label}
+                onUndo={actions.undo}
+                onRedo={actions.redo}
+                history={[
+                  ...state.past.map((step) => step.label),
+                  ...state.future.map((step) => step.label).reverse(),
+                ]}
+                historyPosition={state.past.length}
+                onGoToStep={actions.goToStep}
+                canEditCode={canEditCode}
+                skillLevel={skillLevel}
+                onSkillLevelChange={changeSkillLevel}
+                onReplayTour={() => setIsTouring(true)}
+                onShowTips={tips.showAgain}
+              />
+              <div className="flex min-h-0 flex-1">
+                <aside
+                  aria-label={text("pageBuilder.panels.leftLabel")}
+                  className="flex w-72 shrink-0 flex-col border-e border-separator bg-surface"
                 >
-                  {leftTab === "layers" ? (
-                    <LayersPanel
-                      root={root}
-                      catalogue={catalogue}
-                      selectedId={selectedId}
-                      onSelect={selectFromPanel}
-                      onHover={setHoveredId}
-                      onToggleHidden={actions.toggleHidden}
-                      onToggleLocked={actions.toggleLocked}
-                      onRename={actions.rename}
-                      onMove={actions.moveTo}
-                      onInsertAt={(key, parentId, index) =>
-                        actions.insert(key as `component:${string}`, { parentId, index })
-                      }
-                    />
-                  ) : (
-                    <InsertPanel
-                      catalogue={catalogue}
-                      templates={sectionTemplates}
-                      canEditCode={tools.codeTools}
-                      enabledPlugins={props.enabledPlugins}
-                      onInsert={(key) => actions.insert(key)}
-                      onDragChange={(item) => {
-                        insertDrag.current = item;
-                        setIsInsertDragging(item !== null);
-                        if (!item) showCanvasDrop(null);
-                      }}
-                      focusRequest={insertFocusRequest}
+                  <Tabs<LeftTab>
+                    label={text("pageBuilder.panels.leftLabel")}
+                    idPrefix="lintel-left"
+                    value={leftTab}
+                    onChange={setLeftTab}
+                    tabs={[
+                      { value: "layers", label: text("pageBuilder.panels.layers") },
+                      { value: "insert", label: text("pageBuilder.panels.insert") },
+                    ]}
+                  />
+                  <div
+                    id="lintel-left-panel"
+                    role="tabpanel"
+                    aria-labelledby={`lintel-left-tab-${leftTab}`}
+                    className="min-h-0 flex-1 overflow-auto"
+                  >
+                    {leftTab === "layers" ? (
+                      <LayersPanel
+                        root={root}
+                        catalogue={catalogue}
+                        selectedId={selectedId}
+                        onSelect={selectFromPanel}
+                        onHover={setHoveredId}
+                        onToggleHidden={actions.toggleHidden}
+                        onToggleLocked={actions.toggleLocked}
+                        onRename={actions.rename}
+                        onMove={actions.moveTo}
+                        onInsertAt={(key, parentId, index) =>
+                          actions.insert(key as `component:${string}`, { parentId, index })
+                        }
+                      />
+                    ) : (
+                      <InsertPanel
+                        catalogue={catalogue}
+                        templates={sectionTemplates}
+                        canEditCode={tools.codeTools}
+                        enabledPlugins={props.enabledPlugins}
+                        blocks={props.blockMaster ? undefined : blocks.library}
+                        onInsert={(key) => actions.insert(key)}
+                        onDragChange={(item) => {
+                          insertDrag.current = item;
+                          setIsInsertDragging(item !== null);
+                          if (!item) showCanvasDrop(null);
+                        }}
+                        focusRequest={insertFocusRequest}
+                      />
+                    )}
+                  </div>
+                </aside>
+                <main
+                  className="flex min-w-0 flex-1 flex-col"
+                  aria-label={text("pageBuilder.canvas.regionLabel")}
+                >
+                  <Breadcrumbs
+                    root={root}
+                    catalogue={catalogue}
+                    selectedId={selectedId}
+                    onSelect={selectFromPanel}
+                  />
+                  {!showsStart && textSelection && (
+                    <SelectedWordsBar
+                      document={state.document}
+                      selection={textSelection}
+                      onApply={(styles, label) => actions.markText(textSelection, styles, label)}
+                      linkRequest={linkRequest}
                     />
                   )}
-                </div>
-              </aside>
-              <main
-                className="flex min-w-0 flex-1 flex-col"
-                aria-label={text("pageBuilder.canvas.regionLabel")}
-              >
-                <Breadcrumbs
-                  root={root}
-                  catalogue={catalogue}
-                  selectedId={selectedId}
-                  onSelect={selectFromPanel}
-                />
-                {!showsStart && textSelection && (
-                  <SelectedWordsBar
+                  {showsStart ? (
+                    <EmptyPage
+                      starterSites={props.starterSites ?? allStarterSites}
+                      onAddSection={() => openInsert("sections")}
+                      onAddElements={() => openInsert("elements")}
+                      onChooseStarterPage={actions.useStarterPage}
+                      takesFocus={!showsTour}
+                    />
+                  ) : (
+                    <Canvas
+                      html={rendered.html}
+                      css={canvasCss}
+                      breakpoint={breakpoint}
+                      selectedId={selectedId}
+                      hoveredId={hoveredId}
+                      labels={labels}
+                      revealId={revealId}
+                      canTransform={selectedNode !== undefined && !selectedIsLocked}
+                      site={site}
+                      scripts={props.frameScripts}
+                      motionPreview={motionPreview}
+                      insertMarker={insertMarker}
+                      isInsertDragging={isInsertDragging}
+                      onMessage={handleFrameMessage}
+                    />
+                  )}
+                </main>
+                <CanvasLookContext value={canvasLook}>
+                  <SelectedElementPanel
                     document={state.document}
-                    selection={textSelection}
-                    onApply={(styles, label) => actions.markText(textSelection, styles, label)}
-                    linkRequest={linkRequest}
-                  />
-                )}
-                {showsStart ? (
-                  <EmptyPage
-                    starterSites={props.starterSites ?? allStarterSites}
-                    onAddSection={() => openInsert("sections")}
-                    onAddElements={() => openInsert("elements")}
-                    onChooseStarterPage={actions.useStarterPage}
-                    takesFocus={!showsTour}
-                  />
-                ) : (
-                  <Canvas
-                    html={rendered.html}
-                    css={canvasCss}
+                    node={selectedNode ?? null}
+                    nodeName={labels.selected ?? ""}
+                    definition={definition}
+                    isLocked={selectedIsLocked}
                     breakpoint={breakpoint}
-                    selectedId={selectedId}
-                    hoveredId={hoveredId}
-                    labels={labels}
-                    revealId={revealId}
-                    canTransform={selectedNode !== undefined && !selectedIsLocked}
-                    site={site}
-                    scripts={props.frameScripts}
-                    motionPreview={motionPreview}
-                    insertMarker={insertMarker}
-                    isInsertDragging={isInsertDragging}
-                    onMessage={handleFrameMessage}
+                    registry={registry}
+                    tools={tools}
+                    tips={tips}
+                    pickImage={props.pickImage}
+                    uploadFile={props.uploadFile}
+                    motionText={props.motionText}
+                    showCode={skillLevel === "developer"}
+                    actions={{
+                      ...actions,
+                      animate: (nodeId, animation) => {
+                        actions.animate(nodeId, animation);
+                        if (!animation) setMotionPreview(null);
+                      },
+                    }}
+                    onPreviewMotion={previewMotion}
+                    onPreviewEffect={previewEffect}
+                    effectModules={props.effectModules}
+                    pageWeight={pageWeight}
+                    siteMotion={
+                      props.siteEffects && (
+                        <SiteMotionSettings
+                          value={props.siteEffects.value}
+                          onChange={props.siteEffects.onChange}
+                          translate={props.motionText}
+                        />
+                      )
+                    }
                   />
-                )}
-              </main>
-              <CanvasLookContext value={canvasLook}>
-                <SelectedElementPanel
-                  document={state.document}
-                  node={selectedNode ?? null}
-                  nodeName={labels.selected ?? ""}
-                  definition={definition}
-                  isLocked={selectedIsLocked}
-                  breakpoint={breakpoint}
-                  registry={registry}
-                  tools={tools}
-                  tips={tips}
-                  pickImage={props.pickImage}
-                  uploadFile={props.uploadFile}
-                  motionText={props.motionText}
-                  showCode={skillLevel === "developer"}
-                  actions={{
-                    ...actions,
-                    animate: (nodeId, animation) => {
-                      actions.animate(nodeId, animation);
-                      if (!animation) setMotionPreview(null);
-                    },
-                  }}
-                  onPreviewMotion={previewMotion}
-                  onPreviewEffect={previewEffect}
-                  effectModules={props.effectModules}
-                  pageWeight={pageWeight}
-                  siteMotion={
-                    props.siteEffects && (
-                      <SiteMotionSettings
-                        value={props.siteEffects.value}
-                        onChange={props.siteEffects.onChange}
-                        translate={props.motionText}
-                      />
-                    )
-                  }
-                />
-              </CanvasLookContext>
+                </CanvasLookContext>
+              </div>
+              {showsTour && <GuidedTour skillLevel={skillLevel} onClose={closeTour} />}
+              {/* The same sentence twice in a row is still read out: the space changes the text. */}
+              <div role="status" aria-live="polite" className="sr-only">
+                {announcement.message}
+                {announcement.count % 2 === 1 ? "\u00a0" : ""}
+              </div>
             </div>
-            {showsTour && <GuidedTour skillLevel={skillLevel} onClose={closeTour} />}
-            {/* The same sentence twice in a row is still read out: the space changes the text. */}
-            <div role="status" aria-live="polite" className="sr-only">
-              {announcement.message}
-              {announcement.count % 2 === 1 ? "\u00a0" : ""}
-            </div>
-          </div>
-        </MenuEditingContext.Provider>
-      </DataSourcesContext.Provider>
+          </MenuEditingContext.Provider>
+        </DataSourcesContext.Provider>
+      </BlocksProvider>
     </PreferenceStoreContext.Provider>
   );
 }

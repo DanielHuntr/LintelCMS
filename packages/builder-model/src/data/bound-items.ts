@@ -1,4 +1,5 @@
 import type { EditableField } from "../components/component-definition.js";
+import type { CustomBlock } from "../custom-blocks/custom-block.js";
 import type { PageNode } from "../document/page-document.schema.js";
 
 /**
@@ -180,6 +181,12 @@ export interface PageData {
   /** Products chosen by handle in product cards and other shop elements. */
   products?: Readonly<Record<string, ShopProduct>>;
   forms?: Readonly<Record<string, DataForm>>;
+  /** The site's own blocks the page's instances are of, by handle (see custom-blocks/). */
+  blocks?: Readonly<Record<string, CustomBlock>>;
+  /** Pictures image properties point at, by asset id. */
+  pictures?: Readonly<Record<string, BoundPicture>>;
+  /** Blocks drawn by the server (React blocks in code), by the instance's id. */
+  renderedBlocks?: Readonly<Record<string, string>>;
 }
 
 /** A form from the Forms plugin, as a page draws it. */
