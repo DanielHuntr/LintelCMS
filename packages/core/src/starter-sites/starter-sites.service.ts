@@ -39,6 +39,7 @@ import type { Site } from "../sites/sites.table.js";
 import { updateWebsiteRequestSchema } from "../website/website.schema.js";
 import { updateWebsite } from "../website/website.service.js";
 import { SiteHasPagesError, StarterSiteNotFoundError } from "./starter-sites.errors.js";
+import { addStarterCollections } from "./starter-collections.js";
 import { listCollectionPages } from "./starter-sites.repository.js";
 import type {
   AppliedStarterPage,
@@ -124,6 +125,11 @@ export async function applyStarterSite(
       published: published.status === "published",
     });
   }
+  // The collections the template's pages list (listings, episodes), with sample entries.
+  const collectionsMade =
+    site.collections?.length && hasPermission(context.permissions, "collections:update")
+      ? await addStarterCollections(database, site.collections, editingSite, context, mayPublish)
+      : [];
   const themeApplied =
     request.useTheme && hasPermission(context.permissions, "settings:update")
       ? await applyTheme(database, site, editingSite, context)
@@ -154,6 +160,7 @@ export async function applyStarterSite(
     skippedHome: keptHome !== null,
     replacedCount: replaced.length,
     previousSectionsKept,
+    collectionsMade,
   };
 }
 
@@ -290,9 +297,11 @@ async function ensureTemplateForms(
       const template = (formTemplateIds as readonly string[]).includes(handle)
         ? (handle as FormTemplateId)
         : "blank";
+      // Named after the job it does: "Contact", "Newsletter".
+      const name = handle.charAt(0).toUpperCase() + handle.slice(1).replace(/[-_]+/g, " ");
       await createForm(
         database,
-        { name: "Contact", handle, template },
+        { name, handle, template },
         { id: context.authorId, email: context.authorEmail ?? "" },
       );
     }
