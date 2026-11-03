@@ -248,3 +248,15 @@ Raised by Daniel: "+ Create" opened one editor (fields with a side panel, Publis
 **Also fixed, LINTEL-FUNC-024:** opening the preview or the items list asked "Leave without saving?". The leave warning now asks only when the page itself changes, not when only the address's query does. The regression test fails without the fix.
 
 **Tests:** `OneEditor.test.tsx` (the workspace's tests, carried over, plus new ones), `EntryEditor.test.tsx`, `DesignFirstFields.test.tsx`, `columnValues.test.ts`.
+
+## The effects library merged into the release
+
+`phase-6/effects` (117 effects, the Effects tab, site-wide motion, ready-made animated elements) is merged. Its decision record is renumbered 0026. Both sides of every conflict are kept: the style panel keeps the real-look wrapper and gains effect previews and page weight; designed pages keep their own header and footer and gain effects. The admin no longer stops if the effect modules' list is missing or malformed. Checked in the designer: the Effects gallery opens, "Magnetic pull" applies, and the page weight reads "Effects: 1, adding 3.2 kB" (`effects-gallery-dl.png`).
+
+## LINTEL-FUNC-029: canvas effects lose their first frame
+
+**Found while merging effects:** the branch's own browser test "draws particles behind the content" failed every time. Setting a canvas's size erases it, and the ResizeObserver's first report repeated the size the effect had just set, so the first frame was erased. With full motion the next frame redraws it. For visitors who ask for less motion there is no next frame, so they saw nothing; frosted glass lost its frost the same way.
+
+**Fix:** the shared surface (`effects/kit/surface.ts`) only resizes the canvas when its size changes, and particles, frosted glass and the liquid gradient redraw after a real resize.
+
+**Tests:** the branch's particles test now passes, and a new one, "keeps the still frame for people who ask for less motion", fails without the fix and passes with it. All 37 motion browser tests pass.
