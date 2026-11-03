@@ -1310,3 +1310,13 @@ Decision record: `docs/decisions/0047-designing-the-cursor.md`. No migration: th
 **Screenshots** (in `screenshots/cursor-design/`): `builder-site-cursor-word-desktop-{light,dark}`, `builder-site-cursor-picture-desktop-{light,dark}`, `builder-element-word-look-desktop-{light,dark}`, `builder-element-picture-desktop-{light,dark}`, `site-pointer-variants-desktop-light`, `own-picture-pointer-variants-desktop-light`, `site-page-desktop-light`, `own-picture-page-desktop-light`.
 
 **Left for later:** the media library's "where used" doesn't count a cursor picture; the preview doesn't draw the trail; the Animate tab's picture field shows the cursor picture as large as a photo.
+
+## LINTEL-UX-079: the cursor over an open menu drawer (3 November 2026)
+
+**Reported by Daniel:** "the cursor followers isn't visible when mobile menu open".
+
+**Cause:** the menu drawer is a modal `<dialog>`. Browsers draw modal dialogs in the top layer, above everything else on the page whatever its stacking order, so the cursor, its word, the hover picture and the trail were drawn underneath.
+
+**Fix:** a small helper, `motion/src/effects/kit/top-layer.ts` (`attachAboveDialogs`), adds each of them to the page and moves them inside whichever modal dialog is open, then back out when it closes. It watches for dialogs opening and closing, and forgets anything taken off the page. `cursor.module.ts` and `pointer.module.ts` use it everywhere they add something that follows the pointer.
+
+**Test:** `motion/src/browser-tests/cursor-design.browser.test.ts`, "moves the cursor into the open dialog, and back out when it closes", which uses a real modal dialog.

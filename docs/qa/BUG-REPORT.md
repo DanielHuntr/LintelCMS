@@ -785,6 +785,7 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-063   | P3       | Fixed  | A scroll scene's Start and End lines sit on the canvas's very edges by default, so they're hard to see or grab                 |
 | LINTEL-UX-041   | P1       | Fixed  | No site-wide cookie notice: videos, maps, embeds and Adobe Fonts each asked alone (Adobe Fonts not at all), with no way back   |
 | LINTEL-UX-077   | P2       | Fixed  | The pointer can't be designed: the word has one look, no own cursor picture, few per-element choices                           |
+| LINTEL-UX-079   | P2       | Fixed  | The site cursor, its word and hover pictures are hidden behind the open phone menu drawer                                      |
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 

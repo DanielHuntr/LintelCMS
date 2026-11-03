@@ -6,6 +6,7 @@ import { readColour, readNumber, readSwitch, readText } from "../kit/params.js";
 import { pointerOnFrame, pointerWithin, watchEmbeddedFrames } from "../kit/pointer.js";
 import { addOverlay, addStyleOnce, setStyles } from "../kit/styles.js";
 import { approach } from "../maths/smoothing.js";
+import { attachAboveDialogs } from "../kit/top-layer.js";
 
 /**
  * Effects that follow the pointer: magnetic pull, 3D tilt with glare, follow, spotlight,
@@ -230,7 +231,7 @@ function sharedPictureLayer(smoothing: number) {
   image.alt = "";
   image.decoding = "async";
   box.append(image);
-  document.body.append(box);
+  attachAboveDialogs(box);
   const layer = { box, image, target: { x: 0, y: 0 }, eased: { x: 0, y: 0 }, users: 1 };
   pictureLayer = layer;
   pictureLoop = createFrameLoop(document.documentElement, (elapsed) => {

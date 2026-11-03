@@ -11,6 +11,7 @@ import { readColour, readNumber, readText } from "../kit/params.js";
 import { isEmbeddedFrame, pointerOnFrame, watchEmbeddedFrames } from "../kit/pointer.js";
 import { addStyleOnce } from "../kit/styles.js";
 import { approach } from "../maths/smoothing.js";
+import { attachAboveDialogs } from "../kit/top-layer.js";
 
 /**
  * Custom cursors: the site-wide one picked in the builder's site settings (a ring, a dot or
@@ -143,7 +144,7 @@ function trailCanvas() {
     canvas.style.height = `${innerHeight}px`;
   };
   resize();
-  document.body.append(canvas);
+  attachAboveDialogs(canvas);
   const stop = listen(window, { resize });
   return { canvas, ratio, remove: () => (stop(), canvas.remove()) };
 }
@@ -203,7 +204,7 @@ function makePicture(): HTMLImageElement {
   picture.decoding = "async";
   picture.setAttribute("aria-hidden", "true");
   picture.style.opacity = "0";
-  document.body.append(picture);
+  attachAboveDialogs(picture);
   return picture;
 }
 
@@ -236,7 +237,7 @@ const siteCursor: EffectBehaviour = (_body, params, context) => {
       border: fill ? "none" : `1.5px solid ${colour}`,
       opacity: "0",
     });
-    document.body.append(node);
+    attachAboveDialogs(node);
     return node;
   };
   const blend = style === "blend";
@@ -271,7 +272,7 @@ const siteCursor: EffectBehaviour = (_body, params, context) => {
   // With no look chosen, the word wears the cursor's colour.
   word.style.setProperty("--lintel-cursor-word-auto-background", colour);
   word.style.setProperty("--lintel-cursor-word-auto-colour", wordColourOn(colour));
-  document.body.append(word);
+  attachAboveDialogs(word);
   setWordLook(word, undefined);
   const drawing = trailLayer?.canvas.getContext("2d");
   const target = { x: -100, y: -100 };
@@ -405,7 +406,7 @@ function followingLabel(element: HTMLElement, options: FollowingLabel, reduced: 
   label.textContent = options.text;
   if (options.background) label.style.background = options.background;
   if (options.colour) label.style.color = options.colour;
-  document.body.append(label);
+  attachAboveDialogs(label);
   setWordLook(label, options.look);
   const target = { x: 0, y: 0 };
   const eased = { x: 0, y: 0 };
@@ -571,7 +572,7 @@ const cursorTrail: EffectBehaviour = (element, params, context) => {
         zIndex: "2147483645",
         font: "600 1rem system-ui, sans-serif",
       });
-      document.body.append(mark);
+      attachAboveDialogs(mark);
       mark
         .animate(
           [

@@ -463,3 +463,33 @@ describe("over an embedded video", () => {
     await page.close();
   });
 });
+
+// A modal dialog (the phone menu's drawer) is drawn above everything else on the page, so the
+// cursor went under it and couldn't be seen while the menu was open.
+describe("over an open menu drawer", () => {
+  it("moves the cursor into the open dialog, and back out when it closes", async () => {
+    const page = await open(
+      `<dialog id="menu"><a href="#">Work</a></dialog><p style="margin-top:300px">Text</p>`,
+      [],
+      siteWith({ style: "ring" }),
+    );
+    await page.mouse.move(100, 100);
+    await waitFor(page, () => document.querySelector(".lintel-cursor") !== null);
+    const parentOfCursor = () =>
+      page.$eval(".lintel-cursor", (node) => node.parentElement?.id || node.parentElement?.tagName);
+    expect(await parentOfCursor()).toBe("BODY");
+    await page.evaluate(() => (document.getElementById("menu") as HTMLDialogElement).showModal());
+    await waitFor(page, () => document.querySelector("#menu .lintel-cursor") !== null);
+    expect(await parentOfCursor()).toBe("menu");
+    await page.mouse.move(120, 140);
+    await page.mouse.move(130, 150);
+    await waitFor(
+      page,
+      () => getComputedStyle(document.querySelector(".lintel-cursor") as Element).opacity === "1",
+    );
+    await page.evaluate(() => (document.getElementById("menu") as HTMLDialogElement).close());
+    await waitFor(page, () => document.querySelector("body > .lintel-cursor") !== null);
+    expect(await parentOfCursor()).toBe("BODY");
+    await page.close();
+  });
+});
