@@ -126,9 +126,9 @@ describe("starting from a template", () => {
       "contact",
     ]);
     expect((await owner("GET", "/website")).json()).toMatchObject({
-      headingFont: "Archivo",
+      headingFont: "Space Grotesk",
       bodyFont: "Inter",
-      theme: { brandColour: "#c8441f", cornerStyle: "square" },
+      theme: { brandColour: "#2447d6", cornerStyle: "square" },
     });
     expect((await owner("GET", "/website/effects")).json()).toMatchObject({
       smoothScroll: { strength: "gentle" },
@@ -139,7 +139,12 @@ describe("starting from a template", () => {
     expect(home.statusCode).toBe(200);
     expect(home.body).toContain("Corran Wade");
     expect(home.body).toContain("Selected work");
-    expect(home.body).toContain("Tidewater Baths");
+    expect(home.body).toContain("Maasbad");
+    expect(home.body).toContain("--lintel-var-cobalt");
+    const design = (await owner("GET", "/website/design")).json();
+    expect(design.variables).toContainEqual(
+      expect.objectContaining({ id: "cobalt", value: "#2447d6", darkValue: "#7d95ff" }),
+    );
     expect(home.body).toContain('href="/work"');
     expect(home.body).toContain('src="/_lintel/illustrations/studio-house.svg"');
     const drawing = await visit("/_lintel/illustrations/studio-workshop.svg");

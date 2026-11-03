@@ -3,6 +3,7 @@ import type { ComponentCatalogue } from "../components/component-catalogue.js";
 import type { NodeBlueprint } from "../components/component-definition.js";
 import { createEmptyPage, type PageDocument } from "../document/page-document.schema.js";
 import { createNode } from "../tree/create-node.js";
+import type { DesignVariable } from "../site-design/design-variables.js";
 import type { CreateNodeId } from "../tree/node-ids.js";
 
 /**
@@ -51,6 +52,12 @@ export interface StarterSite {
    * with the theme.
    */
   siteMotion?: StarterSiteMotion;
+  /**
+   * Named colours, sizes or fonts the template's styles use (`var(--lintel-var-cobalt)`),
+   * such as an accent with its own dark-mode value. Applied with the theme: added to the
+   * site's design variables, replacing one with the same id.
+   */
+  designVariables?: readonly DesignVariable[];
   /** Home first; the menu lists them in this order. */
   pages: readonly StarterPage[];
 }

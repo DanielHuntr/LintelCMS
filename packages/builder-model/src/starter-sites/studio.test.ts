@@ -17,7 +17,10 @@ function pageNodes(slug: string) {
 describe("the Studio starter site", () => {
   it("has a home, work, studio and contact page, with its fonts and motion", () => {
     expect(studio?.pages.map((page) => page.slug)).toEqual(["home", "work", "studio", "contact"]);
-    expect(studio?.theme).toMatchObject({ headingFont: "Archivo", bodyFont: "Inter" });
+    expect(studio?.theme).toMatchObject({ headingFont: "Space Grotesk", bodyFont: "Inter" });
+    expect(studio?.designVariables).toEqual([
+      { id: "cobalt", name: "Cobalt", kind: "colour", value: "#2447d6", darkValue: "#7d95ff" },
+    ]);
     expect(studio?.siteMotion).toMatchObject({
       smoothScroll: { strength: "gentle" },
       cursor: { style: "ring", colour: "text" },
@@ -45,6 +48,7 @@ describe("the Studio starter site", () => {
       const word = row.effects?.find((effect) => effect.effect === "cursor-word");
       const picture = row.effects?.find((effect) => effect.effect === "hover-picture");
       expect(word?.params.text).toBe("View");
+      expect(row.styles.hover?.color).toBe("var(--lintel-var-cobalt)");
       const name = /illustrations\/([a-z-]+)\.svg$/.exec(String(picture?.params.src))?.[1] ?? "";
       expect(findIllustration(name), name).toBeDefined();
     }
@@ -54,7 +58,7 @@ describe("the Studio starter site", () => {
     const gallery = pageNodes("work").find((node) => node.type === "carousel");
     expect(gallery?.props.freeDrag).toBe(true);
     const clock = pageNodes("contact").find((node) => node.type === "clock");
-    expect(clock?.props.zone).toBe("Europe/Lisbon");
+    expect(clock?.props.zone).toBe("Europe/Amsterdam");
   });
 
   it("gives every picture alt text, and keeps headings in order", () => {

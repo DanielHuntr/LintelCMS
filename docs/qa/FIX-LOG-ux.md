@@ -1007,3 +1007,27 @@ Decision record: `docs/decisions/0037-site-fonts.md`. New table `site_fonts` (mi
 - `home-midscroll-desktop-{light,dark}`
 - `home-hover-desktop-{light,dark}`
 - `reduced-motion-{home,contact}-*`
+
+## Starter site: Studio, its own identity (3 November 2026)
+
+**Why:** Folio, merged at the same time, is also set in Lisbon, also uses Archivo with Space Mono, and also has a red accent. Side by side in the template library, the two looked the same.
+
+**Changes to Studio:**
+
+- **Place:** the practice is now in Rotterdam, in a former rope works in the Merwe-Vierhavens. The Clock uses Europe/Amsterdam.
+- **Names:** project, place and people names are Dutch-flavoured: Huis aan de Dijk, Maasbad, Kade Reading Room, Polder Pavilion, Mieke Corran and others. No Lisbon references are left.
+- **Fonts:** headings are Space Grotesk (700). Body text is still Inter, and captions are still Space Mono.
+- **Accent:**
+  - The accent is cobalt `#2447d6` in place of red: 7.1:1 on white and 5.8:1 on the drawings' paper.
+  - The template adds a **Cobalt** design variable with a dark-mode value of `#7d95ff` (7.6:1 on black). The hovered row, the step numbers and link hovers use it, so they read on ink in dark mode. The theme's automatic dark link colour would have been `#506cde`, which is only 4.5:1.
+  - The drawings use cobalt too, with a lighter `#5a78f0` on the two dark drawings.
+- **New template option:** a starter site can now bring design variables (`designVariables` on `StarterSite`). They are applied with the theme, and one with the same id is replaced.
+
+**Merge:** `release/1.0.0-rc` (with Folio) was merged in first. `StarterTheme` keeps one copy of `headingFont` and `bodyFont`. `illustrations.ts` and `starter-sites.ts` list both sites.
+
+**Tests:**
+
+- builder-model: 247 passed. `studio.test.ts` now also checks Space Grotesk, the Cobalt variable and its dark value, the hover colour, and the Amsterdam clock.
+- core `src/starter-sites`, `src/website`, `src/site-design` and `src/site-effects`: 77 passed. The Studio test now also checks the variable saved to `/website/design`.
+
+**Screenshots:** every file in `screenshots/starter-studio/` was retaken with the new identity.

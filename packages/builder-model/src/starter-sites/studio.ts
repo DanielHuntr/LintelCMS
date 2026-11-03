@@ -1,12 +1,14 @@
 import type { NodeBlueprint } from "../components/component-definition.js";
 import type { NodeStyles, StyleDeclarations } from "../document/page-document.schema.js";
 import { animate, colour, space } from "../sections/section-parts.js";
+import type { DesignVariable } from "../site-design/design-variables.js";
 import type { StarterSite } from "./starter-site.js";
 
 /**
  * Studio: the site of a small architecture and design practice. Big type on a twelve-column
  * grid with deliberate offsets, a project index whose rows show a drawing under the pointer,
- * and almost no colour besides ink, paper and one warm red (the theme's brand colour).
+ * and almost no colour besides ink, paper and one cobalt blue (the theme's brand colour, and
+ * the Cobalt design variable, which is lighter in dark mode so it reads on ink).
  *
  * Every band is a section placed on twelve columns (the editorial grid), so people move
  * things by dragging them across the columns; on phones everything stacks in reading order.
@@ -15,7 +17,7 @@ import type { StarterSite } from "./starter-site.js";
 const studioEmail = "hello@corranwade.example";
 const workshopPicture = "studio-workshop";
 const workshopAlt =
-  "Line drawing of the studio: a former tile workshop with a saw-tooth roof and a red door";
+  "Line drawing of the studio: a former rope works with a saw-tooth roof and a blue door";
 
 /** The small uppercase captions and the recognition list, in the included mono font. */
 const mono: StyleDeclarations = {
@@ -26,13 +28,26 @@ const mono: StyleDeclarations = {
   textTransform: "uppercase",
 };
 
+/**
+ * The one accent: cobalt, 7.1:1 on white and 5.8:1 on the drawings' paper. In dark mode it
+ * is lighter (#7d95ff, 7.6:1 on black), so the hovered row and the step numbers read on ink.
+ */
+export const cobaltVariable = {
+  id: "cobalt",
+  name: "Cobalt",
+  kind: "colour",
+  value: "#2447d6",
+  darkValue: "#7d95ff",
+} satisfies DesignVariable;
+const cobaltColour = `var(--lintel-var-${cobaltVariable.id})`;
+
 const quiet: StyleDeclarations = { color: colour("text-secondary") };
 
 /** The giant type at the top of each page. */
 const giant: StyleDeclarations = {
-  fontWeight: "900",
-  lineHeight: "0.84",
-  letterSpacing: "-0.055em",
+  fontWeight: "700",
+  lineHeight: "0.86",
+  letterSpacing: "-0.05em",
   marginTop: "0",
   marginBottom: "0",
 };
@@ -136,7 +151,7 @@ function clock(name: string, label: string, styles: StyleDeclarations): NodeBlue
   return {
     type: "clock",
     name,
-    props: { zone: "Europe/Lisbon", hours: "24", label },
+    props: { zone: "Europe/Amsterdam", hours: "24", label },
     styles: { base: styles },
   };
 }
@@ -154,17 +169,17 @@ interface Project {
 const projects: readonly Project[] = [
   {
     number: "01",
-    name: "Casa do Vale",
-    place: "Alentejo",
+    name: "Huis aan de Dijk",
+    place: "Zeeland",
     discipline: "House",
     year: "2025",
     picture: "studio-house",
-    alt: "Elevation drawing of a long, low house under one sloping roof, with a red sun",
+    alt: "Elevation drawing of a long, low house under one sloping roof, with a low blue sun",
   },
   {
     number: "02",
-    name: "Tidewater Baths",
-    place: "Porto",
+    name: "Maasbad",
+    place: "Rotterdam",
     discipline: "Public building",
     year: "2024",
     picture: "studio-baths",
@@ -173,16 +188,16 @@ const projects: readonly Project[] = [
   {
     number: "03",
     name: "The Long Table",
-    place: "Lisbon",
+    place: "Delfshaven",
     discipline: "Furniture",
     year: "2024",
     picture: "studio-table",
-    alt: "Line drawing of a long table with a red bowl on it",
+    alt: "Line drawing of a long table with a blue bowl on it",
   },
   {
     number: "04",
-    name: "Rua Nova Reading Room",
-    place: "Coimbra",
+    name: "Kade Reading Room",
+    place: "Groningen",
     discipline: "Interiors",
     year: "2023",
     picture: "studio-library",
@@ -190,8 +205,8 @@ const projects: readonly Project[] = [
   },
   {
     number: "05",
-    name: "Quarry Pavilion",
-    place: "Estremoz",
+    name: "Polder Pavilion",
+    place: "Flevoland",
     discipline: "Exhibition",
     year: "2022",
     picture: "studio-pavilion",
@@ -200,11 +215,11 @@ const projects: readonly Project[] = [
   {
     number: "06",
     name: "Granary Offices",
-    place: "Évora",
+    place: "Zwolle",
     discipline: "Workplace",
     year: "2021",
     picture: "studio-granary",
-    alt: "Elevation of a tall gabled granary with a grid of small windows, one of them red",
+    alt: "Elevation of a tall gabled granary with a grid of small windows, one of them blue",
   },
 ];
 
@@ -258,7 +273,7 @@ function projectRow(project: Project, options: IndexOptions): NodeBlueprint {
         ...ruleAbove,
       },
       ...smallerIndexColumns,
-      ...(options.href ? { hover: { color: colour("link") } } : {}),
+      ...(options.href ? { hover: { color: cobaltColour } } : {}),
     },
     effects: [
       ...(options.cursorWord
@@ -328,7 +343,7 @@ function studioFooter(): NodeBlueprint {
           ...place(1, 6, 1),
           fontFamily: "var(--lintel-font-heading)",
           fontSize: "clamp(2.5rem, 6vw, 5.5rem)",
-          fontWeight: "900",
+          fontWeight: "700",
           lineHeight: "0.9",
           letterSpacing: "-0.05em",
           marginTop: "0",
@@ -349,12 +364,12 @@ function studioFooter(): NodeBlueprint {
           ].map(([text = "", href = ""]) =>
             pageLink(text, text, href, {
               base: { color: "inherit", textDecoration: "none", width: "fit-content" },
-              hover: { color: colour("link") },
+              hover: { color: cobaltColour },
             }),
           ),
         ],
       },
-      words("Address", "Rua do Açúcar 88, first floor\n1950 Lisbon, Portugal", {
+      words("Address", "Keileweg 48, first floor\n3029 BS Rotterdam, Netherlands", {
         base: {
           ...place(10, 3, 1),
           ...quiet,
@@ -364,7 +379,7 @@ function studioFooter(): NodeBlueprint {
         },
       }),
       label("Small print", "© 2026 Corran Wade", place(1, 6, 2)),
-      clock("Time in Lisbon", "Lisbon", { ...mono, ...place(10, 3, 2) }),
+      clock("Time in Rotterdam", "Rotterdam", { ...mono, ...place(10, 3, 2) }),
     ],
     { element: "footer", rule: true, padding: space(7) },
   );
@@ -374,13 +389,17 @@ const homePage = {
   slug: "home",
   title: "Home",
   summary:
-    "Corran Wade is an architecture and design studio in Lisbon: houses, public rooms and the furniture in them.",
+    "Corran Wade is an architecture and design studio in Rotterdam: houses, public rooms and the furniture in them.",
   sections: [
     band(
       "Opening",
       [
         label("What we do", "Architecture, interiors & objects", place(1, 5, 1)),
-        clock("Time in Lisbon", "Lisbon", { ...mono, ...place(10, 3, 1), justifySelf: "end" }),
+        clock("Time in Rotterdam", "Rotterdam", {
+          ...mono,
+          ...place(10, 3, 1),
+          justifySelf: "end",
+        }),
         moving(
           title("Studio name", "Corran Wade", 1, {
             base: {
@@ -436,7 +455,7 @@ const homePage = {
       moving(
         words(
           "Studio statement",
-          "We are eleven people in a former tile workshop in Marvila. Every project starts on site, with a tape measure and a flask of coffee, and we stay until the last hinge is fitted.",
+          "We are eleven people in a former rope works on the Maas. Every project starts on site, with a tape measure and a flask of coffee, and we stay until the last hinge is fitted.",
           {
             base: {
               ...place(4, 8, 1),
@@ -481,11 +500,11 @@ const homePage = {
             },
           },
           children: [
-            ["2025", "Atlantic House Prize, winner", "Casa do Vale"],
-            ["2024", "Northern Bathing Review, building of the year", "Tidewater Baths"],
-            ["2024", "Material Fair Lisbon, best in show", "The Long Table"],
-            ["2023", "Reading Rooms of Europe, shortlist", "Rua Nova Reading Room"],
-            ["2022", "Stone and Light Awards, exhibition design", "Quarry Pavilion"],
+            ["2025", "North Sea House Prize, winner", "Huis aan de Dijk"],
+            ["2024", "Northern Bathing Review, building of the year", "Maasbad"],
+            ["2024", "Material Fair Rotterdam, best in show", "The Long Table"],
+            ["2023", "Reading Rooms of Europe, shortlist", "Kade Reading Room"],
+            ["2022", "Low Country Landscape Awards, exhibition design", "Polder Pavilion"],
           ].map(([year = "", award = "", project = ""]) => ({
             type: "box",
             name: "Recognition",
@@ -648,7 +667,7 @@ const studioPage = {
         moving(
           words(
             "Introduction",
-            "Inês Corran and Tobias Wade started the studio in 2014, after ten years of drawing other people’s buildings. They still answer the phone themselves.",
+            "Mieke Corran and Tobias Wade started the studio in 2014, after ten years of drawing other people’s buildings. They still answer the phone themselves.",
             {
               base: {
                 ...place(7, 5, 3),
@@ -672,11 +691,11 @@ const studioPage = {
         }),
         "parallax-slow",
       ),
-      label("Caption", "Our workshop in Marvila, Lisbon", place(1, 4, 3)),
+      label("Caption", "Our workshop in the Merwe-Vierhavens, Rotterdam", place(1, 4, 3)),
       moving(
         words(
           "About",
-          "The building made tiles for eighty years. We kept the kiln chimney, the saw-tooth roof and the long benches, and added a model shop, a library of materials and a kitchen everyone stops in at one.",
+          "The building made ships’ rope for sixty years. We kept the long ropewalk, the saw-tooth roof and the hoist, and added a model shop, a library of materials and a kitchen everyone stops in at one.",
           {
             base: {
               ...place(9, 4, 1),
@@ -733,7 +752,7 @@ const studioPage = {
                 },
               },
               children: [
-                label("Number", number, { color: colour("link") }),
+                label("Number", number, { color: cobaltColour }),
                 title("Step title", heading, 3, {
                   base: {
                     fontSize: "1.5rem",
@@ -776,13 +795,13 @@ const studioPage = {
               phone: { gridTemplateColumns: "minmax(0, 1fr)" },
             },
             children: [
-              ["Inês Corran", "Partner, architect"],
+              ["Mieke Corran", "Partner, architect"],
               ["Tobias Wade", "Partner, architect"],
-              ["Marta Seixas", "Associate, interiors"],
-              ["Joel Amaral", "Architect"],
+              ["Sanne Verhoef", "Associate, interiors"],
+              ["Joris Bakker", "Architect"],
               ["Rosa Lindqvist", "Furniture and objects"],
-              ["Dinis Prata", "Model maker"],
-              ["Clara Monteiro", "Architect"],
+              ["Daan Hoekstra", "Model maker"],
+              ["Femke Ouwens", "Architect"],
               ["Hugo Fenn", "Studio manager"],
             ].map(([name = "", role = ""]) => ({
               type: "box",
@@ -825,7 +844,7 @@ const studioPage = {
 const contactPage = {
   slug: "contact",
   title: "Contact",
-  summary: "Write to Corran Wade, call the studio or come and see the workshop in Lisbon.",
+  summary: "Write to Corran Wade, call the studio or come and see the workshop in Rotterdam.",
   sections: [
     band(
       "Opening",
@@ -851,14 +870,14 @@ const contactPage = {
               ...place(1, 12, 3),
               fontFamily: "var(--lintel-font-heading)",
               fontSize: "clamp(1.5rem, 6.2vw, 7.5rem)",
-              fontWeight: "900",
+              fontWeight: "700",
               lineHeight: "1",
               letterSpacing: "-0.05em",
               color: "inherit",
               textDecoration: "none",
               marginTop: space(6),
             },
-            hover: { color: colour("link") },
+            hover: { color: cobaltColour },
             phone: { fontSize: "5.9vw" },
           }),
           "mask-reveal-up",
@@ -873,10 +892,10 @@ const contactPage = {
         ...[
           {
             name: "Studio",
-            text: "Rua do Açúcar 88, first floor\n1950 Lisbon, Portugal",
+            text: "Keileweg 48, first floor\n3029 BS Rotterdam, Netherlands",
             column: 1,
           },
-          { name: "Telephone", text: "+351 210 000 000", column: 4 },
+          { name: "Telephone", text: "+31 10 000 0000", column: 4 },
           {
             name: "Hours",
             text: "Monday to Friday, 9:00 to 18:00. Visits by appointment.",
@@ -931,7 +950,7 @@ const contactPage = {
       }),
       words(
         "Directions",
-        "Ten minutes’ walk from Braço de Prata station. Go through the green gate, cross the yard and ring the bell by the red door. We are on the first floor.",
+        "Ten minutes’ walk from Marconiplein metro station. Go through the yellow gate, cross the yard and ring the bell by the blue door. We are on the first floor.",
         { base: { ...place(1, 4, 2), ...quiet, marginTop: "0", marginBottom: "0" } },
       ),
       moving(
@@ -953,13 +972,14 @@ export const studioSite: StarterSite = {
   suitedTo: "Architects, interior designers and design studios",
   coverIllustration: "studio-cover",
   theme: {
-    brandColour: "#c8441f",
+    brandColour: "#2447d6",
     accentColour: "#1a1a1a",
     fontPairing: "system",
     cornerStyle: "square",
-    headingFont: "Archivo",
+    headingFont: "Space Grotesk",
     bodyFont: "Inter",
   },
+  designVariables: [cobaltVariable],
   siteMotion: {
     smoothScroll: { strength: "gentle" },
     cursor: { style: "ring", colour: "text", size: 28 },

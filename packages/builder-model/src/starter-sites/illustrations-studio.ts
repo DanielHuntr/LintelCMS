@@ -1,6 +1,6 @@
 /**
  * The Studio starter site's drawings: architectural line work in ink on paper (and paper on
- * ink), with one warm accent, as an architect's elevations, plans and sections would be.
+ * ink), with one cobalt accent, as an architect's elevations, plans and sections would be.
  * Drawn here as SVG like the other illustrations, and served the same way.
  */
 
@@ -8,7 +8,9 @@ const paper = "#ebe8e2";
 const ink = "#1a1a1a";
 const night = "#161616";
 const light = "#e9e5dc";
-const accent = "#c8441f";
+const accent = "#2447d6";
+/** The accent on the dark drawings, lighter so it holds its own on ink. */
+const nightAccent = "#5a78f0";
 const faint = "#cfc9be";
 
 const drawing = (background: string, body: string) =>
@@ -95,10 +97,10 @@ export const studioIllustrations: Record<string, string> = {
       `<path d="M40 380H560" ${stroke(ink)}/>` +
       hatch(46, 556, 382),
   ),
-  // A pavilion of thin columns under a flat roof, at a quarry's edge, drawn light on dark.
+  // A pavilion of thin columns under a flat roof, on a polder, drawn light on dark.
   "studio-pavilion": drawing(
     night,
-    `<circle cx="470" cy="92" r="22" fill="${accent}"/>` +
+    `<circle cx="470" cy="92" r="22" fill="${nightAccent}"/>` +
       lines(7, [40, 392, 560, 392], [0, 9], "#3a3833", 1.2) +
       `<path d="M90 330L200 380L530 335" ${stroke("#6d6960", 1.5)}/>` +
       `<path d="M90 150V330M200 205V380M530 160V335M282 194V369M365 183V358M448 171V346M145 177V355" ${stroke(light, 1.6)}/>` +
@@ -135,7 +137,7 @@ export const studioIllustrations: Record<string, string> = {
       `<path d="M120 400Q200 330 262 262" ${stroke(ink, 1.5)} stroke-dasharray="6 6"/>` +
       `<circle cx="120" cy="400" r="8" fill="${accent}"/>`,
   ),
-  // The studio's own building, a former tile workshop with a saw-tooth roof.
+  // The studio's own building, a former rope works with a saw-tooth roof.
   "studio-workshop": drawing(
     night,
     `<path d="M40 360H560" ${stroke(light)}/>` +
@@ -149,10 +151,10 @@ export const studioIllustrations: Record<string, string> = {
         .join("") +
       `<rect x="140" y="250" width="120" height="70" ${stroke(light, 1.6)}/>` +
       lines(3, [170, 250, 170, 320], [30, 0], light, 1.2) +
-      `<rect x="330" y="270" width="54" height="90" fill="${accent}"/>` +
+      `<rect x="330" y="270" width="54" height="90" fill="${nightAccent}"/>` +
       `<rect x="420" y="250" width="50" height="50" ${stroke(light, 1.6)}/>`,
   ),
-  // The template library's card: a twelve-column grid with a heavy block and one red dot.
+  // The template library's card: a twelve-column grid with a heavy block and one blue dot.
   "studio-cover": drawing(
     paper,
     lines(13, [60, 40, 60, 410], [40, 0], faint, 1) +
