@@ -19,6 +19,10 @@ export interface StarterTheme {
   fontPairing: string;
   /** square, soft or round. */
   cornerStyle: string;
+  /** A family from the included fonts for headings ("Archivo"); left out follows the pairing. */
+  headingFont?: string;
+  /** The same for body text. */
+  bodyFont?: string;
 }
 
 export interface StarterPage {

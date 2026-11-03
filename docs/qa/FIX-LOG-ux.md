@@ -930,3 +930,24 @@ Decision record: `docs/decisions/0037-site-fonts.md`. New table `site_fonts` (mi
 **Fix:** the cursor's parts are now placed with the `translate` property (`calc(x - 50%) calc(y - 50%)`), which browsers apply after `scale`, so they shrink in place (`cursor.module.ts`).
 
 **Test:** `motion/src/browser-tests/site-motion.browser.test.ts`, "stays on the pointer while pressed, wherever the pointer is". It fails without the fix (595, 425 instead of 700, 500) and passes with it.
+
+## Starter site: Folio (3 November 2026)
+
+**What:** a new starter site, Folio, a spare personal site for a fictional photographer and art director, Ilse Moreau, in Lisbon. It is in the template library after the others (Design → "Use this template").
+
+- **Pages:** Home, Projects, About and Contact. Each starts with the same Header section (her name linking home, a live Clock showing Lisbon time in the monospace, and the menu) and ends with the same Footer section (email, social links, small print), one section each, so they can be switched to the new header and footer sections later.
+- **Home:** a large statement on the twelve-column grid, stepped labels and a short line about her, then a drag gallery of six works (Slider with "Let visitors drag it freely", no dots, the cursor says "Drag"), then a short statement with links to About and Contact.
+- **Projects:** eight rows (number, title, client, year); pointing at a row shows a frame from the project beside the pointer (hover picture).
+- **About:** an original portrait drawing, a two-paragraph biography, clients and awards on the grid.
+- **Contact:** the email address very large (the cursor says "Write"), how to write, and social links.
+- **Look:** off-white paper and near-black ink, swapped in dark mode (`light-dark()` colours, so they follow the visitor's setting), Archivo for headings and text with Space Mono for the small details, square corners. The theme now takes an optional heading and body font from the included fonts.
+- **Motion:** smooth scrolling Gentle, a small dot cursor in the text colour, the Fade page transition and the counter intro; word reveals on titles, a mask reveal on the portrait and email, quick fades elsewhere.
+- **Pictures:** nine original SVG studies in warm greys (`illustrations-folio.ts`, each under 5 KB), and a contact-sheet cover for the library card. Every picture's alt text says what it shows.
+
+**Judgement calls:** the header links are written into the page ("Projects", "About", "Contact") rather than following the site menu, so the header stays one simple row. The Contact section is at least as tall as the window so the footer sits at the bottom. Applying another template afterwards keeps Folio's heading and body fonts, because those templates don't name fonts.
+
+**Tests:** builder-model `starter-sites/starter-sites.test.ts`, "gives Folio a drag gallery, a live clock, hover pictures and its own motion" (plus the existing checks every page now runs on Folio: valid design, one main heading, animations, illustrations that exist). core `starter-sites/starter-sites.test.ts`, "makes Folio with its fonts, its motion and a home page that says who it is for" (applies it, checks the fonts, the motion settings, the home page's words, clock, drag gallery and pictures, and that the site's own header is left out).
+
+**Checked in a browser:** applied with `existingPages: "replace"` and `publish: true` to a copy of the test data, then looked at every page at 1440px and 390px in light and dark with reduced motion (no sideways scrolling at 390px), and with full motion on desktop: the intro counter, the smooth scroll, the "Drag" word over the gallery and a drag, the Fade transition to Projects and the hover picture on a project row.
+
+**Screenshots** (in `screenshots/starter-folio/`): `{home,projects,about,contact}-{desktop,phone}-{light,dark}`, `intro-desktop-{light,dark}`, `home-midscroll-desktop-{light,dark}`, `home-drag-desktop-{light,dark}`, `transition-desktop-{light,dark}`, `projects-hover-desktop-{light,dark}` and `library-desktop-{light,dark}`.
