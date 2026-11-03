@@ -379,7 +379,7 @@ describe("the site's navigation and footer sections", () => {
 
   it("only lets people who may change blocks replace the menu and footer with a template's", async () => {
     await createTestUser(testDatabase.database, "designer@example.com", [
-      ["entries:*", "settings:update", "navigation:update"],
+      ["entries:*", "builder:design", "settings:update", "navigation:update"],
     ]);
     const designer = requestsAs(api, await signInAndGetCookies(api, "designer@example.com"));
     await putLive(starterSiteSections());

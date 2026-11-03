@@ -78,7 +78,7 @@ describe("the site's blocks", () => {
     await ensurePagesCollection(testDatabase.database);
     await createTestUser(testDatabase.database, "designer@example.com", [["*"]]);
     await createTestUser(testDatabase.database, "editor@example.com", [
-      ["entries:*", "blueprints:read"],
+      ["entries:*", "builder:design", "blueprints:read"],
     ]);
     designer = requestsAs(server, await signInAndGetCookies(server, "designer@example.com"));
     editor = requestsAs(server, await signInAndGetCookies(server, "editor@example.com"));

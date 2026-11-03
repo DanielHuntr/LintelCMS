@@ -38,6 +38,7 @@ describe("createAdmin", () => {
     expect(roles.map((role) => role.name).sort()).toEqual([
       "Admin",
       "Author",
+      "Client (content only)",
       "Editor",
       "Owner",
       "Viewer",

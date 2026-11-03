@@ -55,3 +55,22 @@ export interface EntryReviewState {
   /** The entry's latest review, if any. */
   review: ClientReviewResponse | null;
 }
+
+/** `EntryReviewState` as a schema, for the API's documentation. */
+export const entryReviewStateSchema = z.object({
+  needsApproval: z.boolean(),
+  mustSendForReview: z.boolean(),
+  review: z
+    .object({
+      id: z.uuid(),
+      entryId: z.uuid(),
+      status: z.enum(clientReviewStatuses),
+      requestedByName: z.string().nullable(),
+      requestNote: z.string(),
+      requestedAt: z.string(),
+      decidedByName: z.string().nullable(),
+      decisionNote: z.string(),
+      decidedAt: z.string().nullable(),
+    })
+    .nullable(),
+});
