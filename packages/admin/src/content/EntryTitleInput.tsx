@@ -36,6 +36,8 @@ export function EntryTitleInput({ label, value, onChange, error, onSubmit }: Ent
       <textarea
         id={inputId}
         rows={1}
+        // The API's limit for titles (LINTEL-UX-004).
+        maxLength={300}
         value={value}
         placeholder={label}
         onChange={(event) => onChange(event.target.value.replace(/\n/g, " "))}

@@ -73,7 +73,7 @@ function buildFieldValuesCheck(
     return {
       field,
       fieldtype,
-      valueSchema: fieldtype.buildValueSchema(field.options, field.label),
+      valueSchema: fieldtype.buildValueSchema(optionsFor(field, isTopLevel), field.label),
     };
   });
 
@@ -187,4 +187,20 @@ async function checkOneValue(
 
 function isEnforced(handle: string, context: FieldCheckContext): boolean {
   return context.requiredFields !== "allowEmpty" || (context.alwaysRequired ?? []).includes(handle);
+}
+
+/** The entry's own title: lists, search and the tree show it, so it has a ceiling. */
+const TITLE_HANDLE = "title";
+const MAX_TITLE_LENGTH = 300;
+
+/**
+ * A field's options as checked. A title can be at most 300 characters, whatever its content
+ * type says: a 10,000-character title stretched lists sideways (LINTEL-UX-004).
+ */
+function optionsFor(field: FieldDefinition, isTopLevel: boolean): FieldDefinition["options"] {
+  if (!isTopLevel || field.handle !== TITLE_HANDLE || field.type !== "text") return field.options;
+  const set = Number(field.options?.maxLength);
+  const maxLength =
+    Number.isFinite(set) && set > 0 ? Math.min(set, MAX_TITLE_LENGTH) : MAX_TITLE_LENGTH;
+  return { ...field.options, maxLength };
 }

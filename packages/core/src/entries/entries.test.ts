@@ -87,6 +87,16 @@ describe("entries", () => {
     expect((await api("GET", "/collections/posts/entries")).json().total).toBe(0);
   });
 
+  // LINTEL-UX-004: a 10,000-character title was accepted, and stretched lists sideways.
+  it("keeps titles to 300 characters", async () => {
+    const tooLong = await createPost({ title: "a".repeat(301) });
+    const longest = await createPost({ title: "a".repeat(300) });
+
+    expect(tooLong.statusCode).toBe(400);
+    expect(tooLong.json().fields.title).toMatch(/300/);
+    expect(longest.statusCode).toBe(201);
+  });
+
   it("checks images with the media library's check", async () => {
     await server.close();
     const knownImage = "6f1c2a8e-4b3d-4c5e-9f00-0a1b2c3d4e5f";

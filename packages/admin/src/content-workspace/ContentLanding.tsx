@@ -44,15 +44,16 @@ export function ContentLanding() {
           ) : undefined
         }
       />
-      <div className="grid gap-4 @min-[60rem]:grid-cols-2">
+      {/* One column that can't be stretched by a long title (LINTEL-UX-004), two when wide. */}
+      <div className="grid grid-cols-1 gap-4 @min-[60rem]:grid-cols-2">
         {widgets.map((widget, index) => (
           <section
             key={widget.fullId}
             aria-labelledby={`landing-${widget.id}`}
             className={
               index === 0
-                ? "rounded-card bg-surface px-5 pt-4 pb-2 @min-[60rem]:row-span-2"
-                : "rounded-card bg-surface px-5 pt-4 pb-2"
+                ? "min-w-0 rounded-card bg-surface px-5 pt-4 pb-2 @min-[60rem]:row-span-2"
+                : "min-w-0 rounded-card bg-surface px-5 pt-4 pb-2"
             }
           >
             <h2
