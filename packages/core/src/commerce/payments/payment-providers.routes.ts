@@ -12,6 +12,7 @@ import {
   disconnectProvider,
   readPaymentProviders,
 } from "./payment-providers.service.js";
+import { readWaysToPay } from "./ways-to-pay.service.js";
 
 /**
  * HTTP only. PayPal and Mollie in Shop → Settings → Payments (Stripe's steps are in
@@ -19,6 +20,7 @@ import {
  * keys can move money. Which market uses which is set on the market (PATCH /shop/markets/:id).
  *
  *   GET    /shop/settings/payment-providers          (commerce:read)
+ *   GET    /shop/settings/ways-to-pay                (commerce:read)
  *   PUT    /shop/settings/payment-providers/paypal   (settings:update)  { clientId, clientSecret, webhookId?, environment }
  *   DELETE /shop/settings/payment-providers/paypal   (settings:update)
  *   PUT    /shop/settings/payment-providers/mollie   (settings:update)  { apiKey }
@@ -34,6 +36,7 @@ export async function paymentProvidersRoutes(
   };
 
   server.get("/shop/settings/payment-providers", read, async () => readPaymentProviders(shop));
+  server.get("/shop/settings/ways-to-pay", read, async () => readWaysToPay(shop));
 
   server.put("/shop/settings/payment-providers/paypal", updateKeys, async (request) =>
     savePayPalConnection(shop, parseRequest(connectPayPalRequestSchema, request.body)),
