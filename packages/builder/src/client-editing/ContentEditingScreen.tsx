@@ -266,6 +266,7 @@ export function ContentEditingScreen(props: PageBuilderProps & { text: Translate
             >
               {hasContent ? (
                 <Canvas
+                  finishEditingRef={props.finishEditingRef}
                   html={rendered.html}
                   css={canvasCss}
                   breakpoint={breakpoint}

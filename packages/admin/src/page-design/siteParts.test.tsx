@@ -146,6 +146,32 @@ describe("the site's styles in the builder", () => {
     expect(screen.getByText("2 variables")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
   });
+
+  it("can put this person's change back after someone else's, if they choose", async () => {
+    const user = userEvent.setup();
+    let saves = 0;
+    const { calls } = mockApi(({ method, url, body }) => {
+      if (method === "GET" && url.pathname === "/website/design") {
+        return { variables: [], sharedStyles: [], revision: saves === 0 ? "r1" : "r9" };
+      }
+      if (method === "PUT" && url.pathname === "/website/design") {
+        saves += 1;
+        if (saves === 1) throw apiErrorResponse(409, "SITE_DESIGN_CHANGED", "Changed");
+        return { ...(body as object), revision: "r10" };
+      }
+      throw apiErrorResponse(404, "NOT_FOUND", "Not found");
+    });
+    renderScreen(<StylesProbe />);
+    await user.click(await screen.findByRole("button", { name: "Add Sand" }));
+    await user.click(
+      await screen.findByRole("button", { name: "Use my version" }, { timeout: 3000 }),
+    );
+
+    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+    const puts = calls.filter((call) => call.method === "PUT");
+    expect(puts).toHaveLength(2);
+    expect(puts[1]?.body).toMatchObject({ variables: [sand] });
+  });
 });
 
 describe("the site's navigation and footer in the builder", () => {

@@ -114,6 +114,7 @@ export function useExperimentsInDesigner(options: {
     select: isAvailable ? setSelectedId : undefined,
     hasUnsavedChanges: versions.hasUnsavedChanges,
     saveNow: versions.saveNow,
+    saveBeforeLeaving: versions.saveBeforeLeaving,
     switcher: isAvailable ? (
       <VersionSwitcher
         experiment={experiment}

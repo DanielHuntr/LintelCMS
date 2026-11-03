@@ -62,7 +62,8 @@ import {
   PageViewLink,
   PageViewSwitch,
 } from "../page-home/PageBarParts.js";
-import { pageViews, publishState, type PageView } from "../page-home/pageViews.js";
+import { pageViews, publishState } from "../page-home/pageViews.js";
+import { useViewSwitch } from "../page-home/useViewSwitch.js";
 import { createEntryPreview } from "../preview/preview.api.js";
 
 /**
@@ -215,6 +216,7 @@ function PageDesigner({
   const findPage = usePageFinder();
   const isNarrowScreen = useIsNarrowScreen();
   const navigate = useNavigate();
+  const finishEditing = useRef<(() => Promise<void>) | null>(null);
   const views = pageViews({
     canOpenDesign: true,
     isNarrowScreen,
@@ -222,20 +224,39 @@ function PageDesigner({
       (entryInfo.data?.childCount ?? 0) > 0 && (entryInfo.data?.childrenAsCollection ?? false),
   });
 
-  /** The other views are the page screen. What's unsaved goes first, so nothing asks. */
-  async function openView(view: PageView) {
-    if (view === "design") return;
-    const isSafeToLeave = experiments.isEditingVersion ? false : await saving.saveBeforeLeaving();
-    await navigate({
-      to: "/content/$collection/$entryId",
-      params: { collection: collectionHandle, entryId: saving.entry.id },
-      search: { locale: undefined, tab: view === "children" ? view : undefined },
-      ignoreBlocker: isSafeToLeave,
-    });
+  /** Everything open here: the page or version, the site's styles, its menu and footer. */
+  async function saveEverything() {
+    await finishEditing.current?.();
+    // What was typed passes through the builder's state to the saving hooks in a few renders.
+    for (let render = 0; render < 3; render += 1) {
+      await new Promise((resolve) => setTimeout(resolve));
+    }
+    const results = await Promise.all([
+      saving.saveBeforeLeaving(),
+      experiments.saveBeforeLeaving(),
+      siteDesign.saveNow(),
+      shared.saveNow(),
+    ]);
+    return results.every(Boolean);
   }
+
+  // The other views are the page screen. All of it is saved first, so nothing asks; if any of
+  // it can't be, the person stays here with their work.
+  const viewSwitch = useViewSwitch({
+    current: "design",
+    saveFirst: saveEverything,
+    go: (view) =>
+      navigate({
+        to: "/content/$collection/$entryId",
+        params: { collection: collectionHandle, entryId: saving.entry.id },
+        search: { locale: undefined, tab: view === "children" ? view : undefined },
+        ignoreBlocker: true,
+      }),
+  });
 
   /** The saved draft as the website draws it, in a new tab, or else beside the page's fields. */
   async function openPreview() {
+    await finishEditing.current?.();
     await saving.saveNow();
     const preview = await createEntryPreview(saving.entry.id).catch(() => null);
     const opened = preview?.previewUrl ? window.open(preview.previewUrl, "_blank") : null;
@@ -266,6 +287,16 @@ function PageDesigner({
     shared.unpublished &&
     !saving.justPublished &&
     saving.liveness === "live";
+
+  // Someone else's newer styles explain themselves, and what's on screen has changed.
+  const isStylesConflict = siteDesign.problem?.retryLabel !== undefined;
+  const showsSwitchProblem =
+    viewSwitch.didFail &&
+    !isStylesConflict &&
+    (saving.status === "failed" ||
+      experiments.hasUnsavedChanges ||
+      siteDesign.problem !== null ||
+      shared.problem !== null);
 
   if (!field)
     return (
@@ -325,13 +356,14 @@ function PageDesigner({
             note={showsSitePartsNote ? t("pageDesign.siteSections.notLive") : undefined}
           />
         }
+        finishEditingRef={finishEditing}
         toolbarAfterTitle={
           <PageViewSwitch
             pageTitle={title}
             views={views}
             view="design"
             canDesign={!contentOnly}
-            onChange={(view) => void openView(view)}
+            onChange={(view) => void viewSwitch.request(view)}
           />
         }
         canEditCode={canEditCode}
@@ -426,7 +458,13 @@ function PageDesigner({
         className="fixed bottom-4 left-4 z-30 max-w-md shadow-float"
       />
       {experiments.dialogs}
-      <SitePartProblems problems={[siteDesign.problem, shared.problem]} />
+      <SitePartProblems
+        problems={[
+          showsSwitchProblem ? { message: t("pageHome.switch.notSaved") } : null,
+          siteDesign.problem,
+          shared.problem,
+        ]}
+      />
       {imagePicker.dialog}
       {fonts.dialogs}
       {pagePicker.dialog}

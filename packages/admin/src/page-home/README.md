@@ -8,6 +8,7 @@ status in words, the view switch, View page, Preview and one main action.
 | -------------------- | -------------------------------------------------------------------------- |
 | `PageBarParts.tsx`   | The shared parts: view switch, View page, Preview, the main Publish button |
 | `pageViews.ts`       | Which views a page offers, and what the main button says                   |
+| `useViewSwitch.ts`   | Moving between views: save first, stay on failure, one move per press      |
 | `useBarRoom.ts`      | How much room the page's bar has: buttons as icons, the switch moved under |
 | `pageHomeStrings.ts` | The words, spread into `i18n/strings.ts`                                   |
 
@@ -25,8 +26,12 @@ view, because the builder needs a laptop's width. With fewer than two views ther
 
 ## Moving between them
 
-Both directions save first, then go without the unsaved-changes question. If the save fails,
-the question still asks. The builder's download starts when the browser is idle on a page that
+Both directions go through `useViewSwitch`, which saves first and only then moves, without the
+unsaved-changes question. From the designer that means everything open there: the page or
+A/B version, the site's styles, and its navigation and footer. If any save fails the person
+stays where they are, with their edits and a message saying so. An edit made while a save is
+running is saved too (`saveUntilSaved` in `content/useAutosave.ts`). Presses made while
+switching start nothing new; the last one says where to go. The builder's download starts when the browser is idle on a page that
 can be designed, and again when someone points at the switch, and while the designer loads it
 shows the shape of its bar and panels.
 

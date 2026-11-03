@@ -93,3 +93,11 @@ describe("messages from the canvas about a menu's links", () => {
     expect(readFrameMessage({ type: "select", nodeId: "n4", menuItem: "contact" })).toBeNull();
   });
 });
+
+describe("the answer to finishing typing", () => {
+  it("is understood", () => {
+    expect(readFrameMessage({ source: "lintel-canvas", type: "editingFinished" })).toEqual({
+      type: "editingFinished",
+    });
+  });
+});

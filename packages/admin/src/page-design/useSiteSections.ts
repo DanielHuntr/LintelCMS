@@ -20,6 +20,8 @@ export interface SiteSectionsState {
   unpublished: boolean;
   /** Saves any change still waiting, then puts the changes on the website. */
   publish: () => Promise<void>;
+  /** Saves any change still waiting, and says whether it went. */
+  saveNow: () => Promise<boolean>;
 }
 
 /**
@@ -91,6 +93,7 @@ export function useSiteSections(): SiteSectionsState {
     timer.current = window.setTimeout(() => void flushRef.current(), 500);
   }, []);
   useEffect(() => () => void flushRef.current(), []);
+  const saveNow = useCallback(() => flushRef.current(), []);
 
   const publish = useCallback(async () => {
     if (!(await flushRef.current())) {
@@ -114,14 +117,17 @@ export function useSiteSections(): SiteSectionsState {
   const unpublished = saved.data?.unpublished === true;
 
   if (saved.isPending) {
-    return { isLoading: true, source: undefined, problem, unpublished, publish };
+    return { isLoading: true, source: undefined, problem, unpublished, publish, saveNow };
   }
-  if (!value) return { isLoading: false, source: undefined, problem, unpublished, publish };
+  if (!value) {
+    return { isLoading: false, source: undefined, problem, unpublished, publish, saveNow };
+  }
   return {
     isLoading: false,
     source: canChange ? { value, onChange } : { value },
     problem,
     unpublished,
     publish,
+    saveNow,
   };
 }

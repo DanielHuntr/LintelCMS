@@ -5,6 +5,8 @@ export interface SitePartProblem {
   message: string;
   /** Sends the change again; left out when there is nothing to send. */
   retry?: () => void;
+  /** What that button says, when it isn't simply trying again. */
+  retryLabel?: string;
 }
 
 /**
@@ -33,7 +35,7 @@ export function SitePartProblems({
               onClick={problem.retry}
               className="shrink-0 rounded-control px-2 py-1 font-semibold text-accent hover:bg-fill focus-visible:focus-ring"
             >
-              {t("pageDesign.sitePartsRetry")}
+              {problem.retryLabel ?? t("pageDesign.sitePartsRetry")}
             </button>
           )}
         </p>

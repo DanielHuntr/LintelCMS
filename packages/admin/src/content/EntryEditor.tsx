@@ -56,7 +56,8 @@ import { useRecycleWithUndo } from "../content-tree/useRecycleWithUndo.js";
 import { useIsNarrowScreen } from "../design/useIsNarrowScreen.js";
 import { preloadDesigner, preloadDesignerWhenIdle } from "../page-design/preloadDesigner.js";
 import { PagePublishButton, PageViewSwitch } from "../page-home/PageBarParts.js";
-import { pageViews, publishState, type PageView } from "../page-home/pageViews.js";
+import { pageViews, publishState } from "../page-home/pageViews.js";
+import { useViewSwitch } from "../page-home/useViewSwitch.js";
 import { useBarRoom } from "../page-home/useBarRoom.js";
 import { PageMenuSection } from "../menus/PageMenuSection.js";
 import {
@@ -185,7 +186,7 @@ export function EntryEditor({
     ...blueprint.fields.map((field) => field.handle),
   ];
 
-  const { saveNow } = useAutosave({
+  const { saveNow, saveUntilSaved } = useAutosave({
     draft: state.current,
     hasUnsavedChanges: isUnsaved,
     // A new entry isn't created until it has a title, so empty drafts don't pile up.
@@ -243,19 +244,33 @@ export function EntryEditor({
     });
   }
 
-  /** Design is its own screen, so anything unsaved goes first; the rest are in this one. */
-  async function openView(view: PageView) {
-    if (view !== "design") {
-      onTabChange?.(view);
-      return;
-    }
-    if (!designField || !entry || (isUnsaved && !(await saveExplicitly()))) return;
-    await navigate({
-      to: "/content/$collection/$entryId/design/$field",
-      params: { collection: collection.handle, entryId: entry.id, field: designField.handle },
-      ignoreBlocker: true,
-    });
-  }
+  // Design is its own screen, so anything unsaved goes first, and a save that fails stays
+  // here. The other views are this screen, where the page keeps saving as usual.
+  const viewSwitch = useViewSwitch({
+    current: showsChildren ? "children" : "content",
+    saveFirst: async (view) => {
+      if (view !== "design") return true;
+      try {
+        await saveUntilSaved();
+        return true;
+      } catch (error) {
+        focusFirstFieldError(error);
+        return false;
+      }
+    },
+    go: async (view) => {
+      if (view !== "design") {
+        onTabChange?.(view);
+        return;
+      }
+      if (!designField || !entry) return;
+      await navigate({
+        to: "/content/$collection/$entryId/design/$field",
+        params: { collection: collection.handle, entryId: entry.id, field: designField.handle },
+        ignoreBlocker: true,
+      });
+    },
+  });
 
   async function afterPublishing(succeeded: boolean) {
     if (succeeded) await refresh(entry ? [entry.id] : []);
@@ -366,15 +381,19 @@ export function EntryEditor({
   }, []);
 
   const unplacedErrors = errorsWithoutAField(handlesInOrder, state.fieldErrors);
-  const bannerMessage = actions.actionError ?? unplacedErrors[0] ?? null;
+  const bannerMessage =
+    actions.actionError ??
+    (viewSwitch.didFail && state.saveStatus === "failed"
+      ? t("pageHome.switch.notSaved")
+      : (unplacedErrors[0] ?? null));
 
-  const viewSwitch = (
+  const viewSwitchControl = (
     <PageViewSwitch
       pageTitle={title || t("editor.untitled")}
       views={views}
       view={showsChildren ? "children" : "content"}
       canDesign={canDesign}
-      onChange={(view) => void openView(view)}
+      onChange={(view) => void viewSwitch.request(view)}
       onApproach={designField ? preloadDesigner : undefined}
     />
   );
@@ -388,7 +407,7 @@ export function EntryEditor({
         status={
           <PageStatus entry={entry} state={entry ? pageStateOf(entry, isUnsaved) : "draft"} />
         }
-        viewSwitch={switchSitsUnderBar ? undefined : viewSwitch}
+        viewSwitch={switchSitsUnderBar ? undefined : viewSwitchControl}
         isTight={barRoom.isTight}
         onShowDetails={entry ? () => setIsShowingDetails(true) : undefined}
         isPanelOpen={isPanelOpen}
@@ -472,7 +491,7 @@ export function EntryEditor({
         </div>
       )}
 
-      {views.length > 1 && switchSitsUnderBar && <div className="mb-5">{viewSwitch}</div>}
+      {views.length > 1 && switchSitsUnderBar && <div className="mb-5">{viewSwitchControl}</div>}
 
       {showsChildren && entry ? (
         <CollectionView

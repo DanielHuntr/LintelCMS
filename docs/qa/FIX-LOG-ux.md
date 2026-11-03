@@ -1811,3 +1811,17 @@ Daniel looked at the Content tree, its page menu and a page's screen and asked f
 - Between about 768px and 1024px the designer's bar is tight, and the status is cut short (its tooltip has the rest).
 - The hint is remembered per browser, like the tree's other state, not per person.
 - Screenshots in the docs still show the older bar.
+
+### Switching views without losing work (follow-up, still LINTEL-UX-230)
+
+Switching views saved first but had gaps, now fixed in `page-home/useViewSwitch.ts`:
+
+- A failed save in the designer fell through to the leave question. The person now stays put, with their edits and a plain message, and no question.
+- Only the page's design was saved first. The site's styles, navigation and footer were left to save as the builder closed, where a failure showed nowhere and the change was lost. All of them, and an A/B version, are now saved first, and any failure keeps the person there.
+- When someone else changed the site's styles (409 `SITE_DESIGN_CHANGED`), their version replaced this person's with no way back. There is now **Use my version**. Pressing the switch again after that message does leave, and drops this person's style change.
+- An edit made while a switch was saving could be left behind. `saveUntilSaved` in `useAutosave.ts` now saves until nothing waits.
+- A save asked for during another could send the same draft twice. It no longer does.
+- Presses during a switch start nothing new; the last one says where to go.
+- Words still being typed on the canvas now finish on request (`finishEditing` between the builder and its frame), so saving doesn't rely on timing.
+
+**Checked in a browser** (real canvas edits): a 500 and then going offline in the designer, each staying with the words on the canvas and a message, then saving and moving once back online; a 500 on the page screen, keeping the Summary; a save held open for 1.5 seconds with a second edit and the press during it, giving two saves with the last words on the server and on the canvas after coming back; double presses both ways, one save each; dragging Studio under Contact in the tree, then Undo. The 409 and the navigation and footer failure were checked in tests only.

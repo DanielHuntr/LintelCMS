@@ -19,6 +19,8 @@ export interface SiteDesignSource {
     | undefined;
   /** What went wrong with the last save, to show the person; null when nothing did. */
   problem: SitePartProblem | null;
+  /** Saves any change still waiting, and says whether it went. */
+  saveNow: () => Promise<boolean>;
 }
 
 /**
@@ -29,7 +31,8 @@ export interface SiteDesignSource {
  *
  * Each save sends the revision it started from. When someone else saved in between, the API
  * refuses it; the builder then shows their version and says so, rather than undoing their
- * change. Any other failure is shown with Try again, and the change waits to be sent again.
+ * change, and offers to put this person's back, so nothing is lost without them choosing it.
+ * Any other failure is shown with Try again, and the change waits to be sent again.
  */
 export function useSiteDesign(
   /** The page (`entry`) or block (`block`) being designed: the builder counts its uses itself. */
@@ -42,24 +45,24 @@ export function useSiteDesign(
   const [draft, setDraft] = useState<SiteDesign | null>(null);
   const [problem, setProblem] = useState<SitePartProblem | null>(null);
   const pending = useRef<SiteDesign | null>(null);
-  const isSaving = useRef(false);
+  // The save under way, so anyone waiting for it hears how it went.
+  const saving = useRef<Promise<boolean> | null>(null);
   const revision = useRef<string | null | undefined>(undefined);
   const timer = useRef(0);
   // The latest flush, for timers and saves that finish after a render.
-  const flushRef = useRef<() => void>(() => undefined);
+  const flushRef = useRef<() => Promise<boolean>>(async () => true);
 
   useEffect(() => {
     if (revision.current === undefined && saved.data) revision.current = saved.data.revision;
   }, [saved.data]);
 
-  const flush = useCallback(() => {
+  const flush = useCallback((): Promise<boolean> => {
     window.clearTimeout(timer.current);
     // One save at a time, so each starts from the revision the last one made.
-    if (isSaving.current) return;
+    if (saving.current) return saving.current;
     const value = pending.current;
-    if (!value) return;
+    if (!value) return Promise.resolve(true);
     pending.current = null;
-    isSaving.current = true;
     const showLatest = async () => {
       const latest = await queryClient.fetchQuery({
         queryKey: websiteKeys.design(),
@@ -70,7 +73,7 @@ export function useSiteDesign(
       pending.current = null;
       setDraft(null);
     };
-    void updateSiteDesign(value, revision.current)
+    const save = updateSiteDesign(value, revision.current)
       .then(
         (result: SavedSiteDesign) => {
           revision.current = result.revision;
@@ -81,7 +84,15 @@ export function useSiteDesign(
         async (error: unknown) => {
           if (error instanceof ApiError && error.code === "SITE_DESIGN_CHANGED") {
             await showLatest().catch(() => undefined);
-            setProblem({ message: t("pageDesign.siteStyles.changedElsewhere") });
+            setProblem({
+              message: t("pageDesign.siteStyles.changedElsewhere"),
+              retry: () => {
+                setDraft(value);
+                pending.current = value;
+                void flushRef.current();
+              },
+              retryLabel: t("pageDesign.siteStyles.useMine"),
+            });
             return false;
           }
           // Keep the change for the next try, unless a newer one is already waiting.
@@ -90,18 +101,20 @@ export function useSiteDesign(
             message: t("pageDesign.siteStyles.notSaved", {
               message: error instanceof Error ? error.message : String(error),
             }),
-            retry: () => flushRef.current(),
+            retry: () => void flushRef.current(),
           });
           return false;
         },
       )
       .then((succeeded) => {
-        isSaving.current = false;
+        saving.current = null;
         // Changes made meanwhile go next. After a failure they wait for Try again, the next
         // change or the builder closing, so a server that keeps refusing isn't asked again
         // and again.
-        if (succeeded && pending.current) flushRef.current();
+        return succeeded && pending.current ? flushRef.current() : succeeded;
       });
+    saving.current = save;
+    return save;
   }, [queryClient]);
   useEffect(() => {
     flushRef.current = flush;
@@ -111,14 +124,15 @@ export function useSiteDesign(
     setDraft(value);
     pending.current = value;
     window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(() => flushRef.current(), 500);
+    timer.current = window.setTimeout(() => void flushRef.current(), 500);
   }, []);
   // A change still waiting when the builder closes is saved then, not lost.
-  useEffect(() => () => flushRef.current(), []);
+  useEffect(() => () => void flushRef.current(), []);
+  const saveNow = useCallback(() => flushRef.current(), []);
 
   const value = draft ?? withoutRevision(saved.data);
-  if (!value) return { source: undefined, problem };
-  return { source: canChange ? { value, onChange, uses } : { value, uses }, problem };
+  if (!value) return { source: undefined, problem, saveNow };
+  return { source: canChange ? { value, onChange, uses } : { value, uses }, problem, saveNow };
 }
 
 function withoutRevision(saved: SavedSiteDesign | undefined): SiteDesign | undefined {

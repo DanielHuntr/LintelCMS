@@ -6,7 +6,7 @@ import type { Blueprint } from "../content-types/blueprints.types.js";
 import type { Collection, Entry } from "../content/content.types.js";
 import { EntryEditor } from "../content/EntryEditor.js";
 import { samplePost } from "../content/testEntries.js";
-import { mockApi } from "../testing/mockApi.js";
+import { apiErrorResponse, mockApi } from "../testing/mockApi.js";
 import { renderScreen } from "../testing/renderScreen.js";
 
 const pagesCollection: Collection = {
@@ -196,6 +196,63 @@ describe("a page's editor", () => {
     await waitFor(() =>
       expect(router.state.location.pathname).toBe("/content/pages/p1/design/design"),
     );
+  });
+
+  it("stays on the page, with the edit, when it can't be saved before Design", async () => {
+    const user = userEvent.setup();
+    let isDown = true;
+    const { calls } = mockApi((request) => {
+      if (request.method !== "GET" && request.url.pathname === "/entries/p1") {
+        if (isDown) throw apiErrorResponse(500, "INTERNAL", "Broken");
+        return samplePage({ design: designWithOneSection(), summary: "Fresh bread" });
+      }
+      return designedPageAnswers(request);
+    });
+    const { router } = renderPageEditor(samplePage({ design: designWithOneSection() }));
+
+    const summary = await screen.findByRole("textbox", { name: "Summary" });
+    await user.type(summary, "Fresh bread");
+    const design = await screen.findByRole("radio", { name: "Design" });
+    await user.click(design);
+
+    expect(await screen.findByText(/couldn’t be saved, so you’re still here/)).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/content/pages/p1");
+    expect(summary).toHaveValue("Fresh bread");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    isDown = false;
+    await user.click(design);
+
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe("/content/pages/p1/design/design"),
+    );
+    expect(
+      calls.filter((call) => call.method !== "GET" && call.url.pathname === "/entries/p1").at(-1)
+        ?.body,
+    ).toMatchObject({ data: { summary: "Fresh bread" } });
+  });
+
+  it("saves once and moves once when Design is pressed twice", async () => {
+    const user = userEvent.setup();
+    const { calls } = mockApi((request) =>
+      request.method !== "GET" && request.url.pathname === "/entries/p1"
+        ? samplePage({ design: designWithOneSection(), summary: "Rye" })
+        : designedPageAnswers(request),
+    );
+    const { router } = renderPageEditor(samplePage({ design: designWithOneSection() }));
+
+    await user.type(await screen.findByRole("textbox", { name: "Summary" }), "Rye");
+    const design = await screen.findByRole("radio", { name: "Design" });
+    const steps = router.history.length;
+    await user.dblClick(design);
+
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe("/content/pages/p1/design/design"),
+    );
+    expect(
+      calls.filter((call) => call.method !== "GET" && call.url.pathname === "/entries/p1"),
+    ).toHaveLength(1);
+    expect(router.history.length).toBe(steps + 1);
   });
 
   it("calls Design 'On the page' for someone who can only change the content", async () => {
