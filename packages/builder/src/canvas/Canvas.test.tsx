@@ -43,6 +43,14 @@ describe("dropping from Insert onto the canvas", () => {
   });
 });
 
+describe("the canvas and the keyboard", () => {
+  it("keeps the page's links out of the Tab order (LINTEL-A11Y-029)", () => {
+    renderCanvas(false);
+    // tabindex -1 on a frame takes it and everything in it out of the Tab order.
+    expect(screen.getByTitle("Your page")).toHaveAttribute("tabindex", "-1");
+  });
+});
+
 describe("zooming the canvas", () => {
   it("zooms out and in with its buttons and the keys, and back to actual size", () => {
     renderCanvas(false);

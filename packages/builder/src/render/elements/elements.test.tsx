@@ -12,7 +12,7 @@ import { describe, expect, it } from "vitest";
 import { renderPage } from "../render-page.js";
 import { standardRegistry } from "../stand-in-components.js";
 import { markdownToHtml } from "./markdown.js";
-import { openStreetMapAddresses, videoEmbed } from "./media-addresses.js";
+import { inSentence, openStreetMapAddresses, videoEmbed } from "./media-addresses.js";
 import { sampleProduct } from "./shop.js";
 
 function page(...blueprints: NodeBlueprint[]): PageDocument {
@@ -76,7 +76,10 @@ describe("drawing the element library", () => {
     );
     expect(html).not.toContain("<iframe");
     expect(html).toContain("https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ");
-    expect(html).toContain("Load Our bakery");
+    // Sentence case after the verb (LINTEL-A11Y-034): "Play our bakery", "Load a map of …".
+    expect(html).toContain("Play our bakery");
+    expect(inSentence("Video")).toBe("video");
+    expect(inSentence("BBC film")).toBe("BBC film");
     expect(html).toContain("openstreetmap.org/export/embed.html");
     expect(videoEmbed("vimeo", "https://vimeo.com/123456789", false, false)?.embedUrl).toContain(
       "dnt=1",

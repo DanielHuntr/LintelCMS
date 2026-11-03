@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { englishLabels } from "../site.types.js";
 import { chrome, html, photo } from "../testing.js";
@@ -6,6 +7,17 @@ import { Header } from "./Header.js";
 import { socialLinkName } from "./social-links.js";
 
 describe("the header", () => {
+  it("lines up with designed pages and keeps one row on a phone (LINTEL-A11Y-033)", () => {
+    const css = readFileSync(new URL("../styles/header.css", import.meta.url), "utf8");
+    expect(css).toMatch(
+      /body:has\(\[data-lintel-component="page_design"\]\) \.lintel-header--bar \.lintel-container \{[^}]*padding-inline: var\(--lintel-site-gutter\)/,
+    );
+    const phone = css.slice(css.indexOf("@media (max-width: 40rem)"));
+    expect(phone).toMatch(
+      /\.lintel-header__inner:not\(:has\(\.lintel-menu__submenu\)\) \{\s*flex-wrap: nowrap;/,
+    );
+  });
+
   it("links the site name home and marks the current page in the main menu", () => {
     const output = html(<Header chrome={chrome} labels={englishLabels} />);
     expect(output).toContain(

@@ -41,14 +41,17 @@ describe("the Studio starter site", () => {
     }
   });
 
-  it("shows each project's drawing and the word View over its row on the home page", () => {
-    const rows = pageNodes("home").filter((node) => node.type === "card");
+  it("shows each project's drawing and the word View over its rows on the home page", () => {
+    const nodes = pageNodes("home");
+    const list = nodes.find((node) => node.name === "Project list");
+    const word = list?.effects?.find((effect) => effect.effect === "cursor-word");
+    expect(word?.params.text).toBe("View");
+    const rows = nodes.filter((node) => node.type === "card");
     expect(rows).toHaveLength(6);
     for (const row of rows) {
       expect(row.props.href).toBe("/work");
-      const word = row.effects?.find((effect) => effect.effect === "cursor-word");
+      expect(row.effects?.map((effect) => effect.effect)).toEqual(["hover-picture"]);
       const picture = row.effects?.find((effect) => effect.effect === "hover-picture");
-      expect(word?.params.text).toBe("View");
       expect(row.styles.hover?.color).toBe("var(--lintel-var-cobalt)");
       const name = /illustrations\/([a-z-]+)\.svg$/.exec(String(picture?.params.src))?.[1] ?? "";
       expect(findIllustration(name), name).toBeDefined();
@@ -79,6 +82,16 @@ describe("the Studio starter site", () => {
     expect(gallery?.props.freeDrag).toBe(true);
     const clock = pageNodes("contact").find((node) => node.type === "clock");
     expect(clock?.props.zone).toBe("Europe/Amsterdam");
+  });
+
+  it("leaves room under the builder's 'a lot of effects' mark (over 12) on every page (LINTEL-A11Y-027)", () => {
+    for (const page of studio?.pages ?? []) {
+      const count = pageNodes(page.slug).reduce(
+        (total, node) => total + (node.effects?.length ?? 0),
+        0,
+      );
+      expect(count, page.slug).toBeLessThanOrEqual(10);
+    }
   });
 
   it("gives every picture alt text, and keeps headings in order", () => {

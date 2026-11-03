@@ -227,7 +227,7 @@ const projects: readonly Project[] = [
 interface IndexOptions {
   /** Where every row links to; left out, the rows are not links. */
   href?: string;
-  /** The word the cursor shows over a row, such as "View". */
+  /** The word the cursor shows over the list's rows, such as "View". */
   cursorWord?: string;
   /**
    * "full" adds a Place column, for the Work page, where the index follows the page title
@@ -250,8 +250,8 @@ const smallerIndexColumns: Omit<NodeStyles, "base"> = {
 const foldsAway: Omit<NodeStyles, "base"> = { tablet: { display: "none" } };
 
 /**
- * One project as a row of the index. The whole row is a link, the cursor shows its word, and
- * a drawing of the project follows the pointer over it. On phones, with no pointer to
+ * One project as a row of the index. The whole row is a link (the list shows the cursor's
+ * word), and a drawing of the project follows the pointer over it. On phones, with no pointer to
  * follow, the drawing sits in the row instead.
  */
 function projectRow(project: Project, options: IndexOptions): NodeBlueprint {
@@ -277,9 +277,6 @@ function projectRow(project: Project, options: IndexOptions): NodeBlueprint {
       ...(options.href ? { hover: { color: cobaltColour } } : {}),
     },
     effects: [
-      ...(options.cursorWord
-        ? [{ effect: "cursor-word", params: { text: options.cursorWord } }]
-        : []),
       {
         effect: "hover-picture",
         params: { src: `/_lintel/illustrations/${project.picture}.svg`, size: "medium" },
@@ -328,6 +325,11 @@ function projectIndex(row: number, options: IndexOptions): NodeBlueprint {
           borderColor: colour("border"),
         },
       },
+      // The cursor's word is on the list, not on each row: one effect for the whole index
+      // keeps the home page under the builder's "a lot of effects" mark.
+      ...(options.cursorWord
+        ? { effects: [{ effect: "cursor-word", params: { text: options.cursorWord } }] }
+        : {}),
       children: projects.map((project) => projectRow(project, options)),
     },
     "stagger-up",
