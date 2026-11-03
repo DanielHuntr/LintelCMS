@@ -733,12 +733,12 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-FUNC-017 | P2       | Open   | Moving a page in the tree doesn't check the new parent is on the same site                                          |
 | LINTEL-FUNC-018 | P2       | Open   | Which page is "/" depends on content type names and counts drafts                                                   |
 | LINTEL-FUNC-019 | P2       | Fixed  | A shopper can switch the cart to another market's prices after giving a delivery address                            |
-| LINTEL-FUNC-020 | P2       | Open   | Builder: "The visitor leaves the page" animations never play                                                        |
-| LINTEL-FUNC-021 | P2       | Open   | Builder: duplicating keeps animation targets pointing at the original's elements                                    |
-| LINTEL-FUNC-022 | P2       | Open   | Builder: generated class names can collide (`heading-2`), so styles bleed between elements                          |
-| LINTEL-FUNC-023 | P2       | Open   | One element that no longer validates hides the whole designed page on the website                                   |
+| LINTEL-FUNC-020 | P2       | Fixed  | Builder: "The visitor leaves the page" animations never play                                                        |
+| LINTEL-FUNC-021 | P2       | Fixed  | Builder: duplicating keeps animation targets pointing at the original's elements                                    |
+| LINTEL-FUNC-022 | P2       | Fixed  | Builder: generated class names can collide (`heading-2`), so styles bleed between elements                          |
+| LINTEL-FUNC-023 | P2       | Fixed  | One element that no longer validates hides the whole designed page on the website                                   |
 | LINTEL-FUNC-024 | P2       | Fixed  | Switching workspace tabs or opening preview asks "Leave with unsaved changes?"                                      |
-| LINTEL-FUNC-025 | P2       | Open   | Dialogs close when a drag starts inside and ends outside; a new API token's one-time secret is lost                 |
+| LINTEL-FUNC-025 | P2       | Fixed  | Dialogs close when a drag starts inside and ends outside; a new API token's one-time secret is lost                 |
 | LINTEL-FUNC-026 | P2       | Open   | Webhooks reuse one time for a whole run: deliveries can be sent twice and signed minutes old                        |
 | LINTEL-FUNC-027 | P2       | Open   | The update supervisor doesn't recover from dying mid-switch                                                         |
 | LINTEL-FUNC-028 | P1       | Fixed  | Builder: dragging from Insert onto the page does nothing; only Layers takes drops                                   |

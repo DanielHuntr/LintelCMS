@@ -336,3 +336,60 @@ Screenshots are in `screenshots/fix-site/`, as palette-compressed PNGs. "Desktop
 4. **Updates:** the raw feed error text, and the update command showing the current version when nothing newer is known (from FUNC-006's report, not in this brief).
 5. **`tsx watch` in `packages/core` didn't always reload after a source change** in this environment. Restart core after editing it.
 6. **Process note:** `git stash` is shared between worktrees. A `stash pop` here applied the shop agent's stash for a moment. It was removed straight away, and their work was already committed (`ae94771`), so nothing was lost. The removed changes are backed up in `/tmp/fix-site-foreign-backup`. Use patch files instead of `git stash` when two agents share the repository.
+
+## Builder and site batch (3 November 2026)
+
+Branch `fix/builder-site`. Each regression test was run on the unfixed code first and failed there.
+
+### LINTEL-FUNC-020: "The visitor leaves the page" animations never played
+
+- **Cause:** only the page-transition effect asked for exit animations, when it took over a link click. A page with an exit animation but no page transition navigated straight away.
+- **Fix:**
+  - The site runtime itself waits for exit animations on a plain same-site link click (at most 1.5 seconds), then navigates.
+  - It listens on the window, so a page transition (on the document) still sees the click first and plays the exits with its cover.
+  - New tabs, downloads, same-page anchors and modified clicks are left to the browser.
+  - The click rule is now shared (`runtime/sameSiteClick.ts`).
+  - Coming back with the Back button puts the exit animations back to their start.
+- **Tests:** `site-runtime.test.ts`:
+  - which clicks wait, and that navigation follows once the exits finish;
+  - that a click already taken by a transition is left alone;
+  - `hasPageExits`.
+- **Checked in Chromium** with the built `site-runtime.js` (a page with a 600ms "fade out" exit and a link):
+
+  |        | Opacity 250ms after the click | Left after | Back button          |
+  | ------ | ----------------------------- | ---------- | -------------------- |
+  | Before | (already gone)                | 297ms      |                      |
+  | After  | 0.77                          | 678ms      | page at full opacity |
+
+### LINTEL-FUNC-021: duplicating kept animation targets on the original
+
+- **Cause:** an animation that plays on chosen elements names them by id. A copy got new ids, but its animation still named the original's elements.
+- **Fix:** `copyWithNewIds` (used by duplicate and paste) points targets inside the copy at the copied elements. Targets outside the copy are kept.
+- **Test:** `builder-model/src/tree/tree.test.ts`.
+
+### LINTEL-FUNC-022: generated class names could collide
+
+- **Cause:** a layer named "Heading 2" and the second unnamed heading both became `.heading-2`, so styles bled between them.
+- **Fix:** a number already taken is skipped, and names stay the same from one drawing of the page to the next.
+- **Test:** `styles.test.ts`: five headings, two named "Heading 2" and "Heading 3", all get different classes.
+- The stylesheet snapshot is unchanged.
+
+### LINTEL-FUNC-023: one element that no longer validates hid the whole designed page
+
+- **Fix:**
+  - For problems that each name an element, the validator now also returns the page as read.
+  - The website leaves those elements out, with whatever is inside them, and draws the rest.
+  - The editor still names them when the page is opened.
+  - A design that can't be read at all is still treated as no design.
+- **Tests:** `core/src/website/designed-pages.test.ts`: an unknown element type, a heading whose content no longer fits, and an unreadable design.
+
+### LINTEL-FUNC-025: dialogs closed when a drag ended outside
+
+- **Cause:** a click on the dimmed page closed a dialog even when the press started inside (selecting text in a field). A new API token's one-time secret could be lost that way. The search palette had the same rule.
+- **Fix:** `useBackdropClose`, used by `Dialog` and `CommandPalette`. Both the press and the release have to be on the dimmed page.
+- **Tests:** `design/Dialog.test.tsx`.
+- **Checked in Chromium** on the running admin. The test: type into the Ctrl K search, press inside the box, drag out to the page corner and let go.
+  - Before: the search closed.
+  - After: it stays open.
+  - A plain click on the dimmed page still closes it.
+- These are behaviour-only changes, so there are no screenshots.
