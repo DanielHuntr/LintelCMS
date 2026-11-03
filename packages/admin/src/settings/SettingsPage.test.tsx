@@ -24,6 +24,7 @@ describe("Settings", () => {
       "/settings/site",
       "/settings/languages",
       "/settings/publishing",
+      "/settings/privacy",
       "/settings/backups",
       "/settings/updates",
       "/settings/server",

@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { definePlugin } from "@lintel/core/plugin";
+import { bookingsPersonalData } from "./bookings.personal-data.js";
 import { bookingsRoutes } from "./bookings.routes.js";
 import { bookingSettingsSchema } from "./bookings.schema.js";
 import { bookingsTable } from "./bookings.table.js";
@@ -44,4 +45,6 @@ export default definePlugin({
       },
     ],
   },
+  // Lets Settings → Privacy find, export and erase one person's bookings.
+  personalData: bookingsPersonalData,
 });

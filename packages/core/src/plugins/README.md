@@ -34,6 +34,7 @@ fieldtypes named after it. A mistake stops the server with a message naming the 
 | `jobs`          | `plugin-jobs.ts`: started with the server's other timed jobs, run only while the plugin is on                   |
 | `commands`      | `plugin-commands.ts`: `lintel <id>:<name>` in packages/cli, with the database open                              |
 | `permissions`   | Listed by `GET /plugins` for the roles screen                                                                   |
+| `personalData`  | `src/privacy`: listed in Settings → Privacy, and searched, exported and erased through its hooks                |
 
 Which plugins are on is the `enabledPlugins` setting, per tenant. `GET /auth/me` carries
 it, so the admin shows the right things without another request. Switching a plugin off

@@ -2124,3 +2124,32 @@ Moving the cursor's theme colours into the cursor module saved about 50 bytes in
 - Lintel can't tell whether a route it found is public, or which hosts an add-on really contacts, so those stay "Says the add-on".
 - `personalData: { find, export, erase }` is left for the privacy tools to add beside `declares`.
 - A restore leaves alone an add-on table the backup doesn't have. If that table points at Lintel's own rows, emptying them during the restore empties it too, as it always has.
+
+## Privacy tools (3 November 2026)
+
+**Asked by Daniel:** "Just need to make sure of GDPR etc." A calm Settings → Privacy area with the tools a site owner needs for data protection duties. Lintel never claims a site is compliant: the admin and docs say it gives tools and good defaults, that the rest depends on how the site is run, and that suggested wording is not legal advice.
+
+**What changed:**
+
+- **LINTEL-UX-190, where personal data is kept** (`packages/core/src/privacy`, `packages/admin/src/privacy`): worked out from the site, with Lintel's own kinds and each plugin's and add-on's. Switched-off features stay listed.
+- **LINTEL-UX-191, find a person:** by email or whole name across forms, customers, orders, baskets, the security log, webhook and automation history, accounts and plugins. One .zip export (JSON and a CSV per kind) and erasure by rule, after a confirmation saying what happens to each kind. Each is recorded in `privacy_requests` with who and when, and nothing about the person.
+- **LINTEL-UX-192, the plugin interface:** `personalData` in `definePlugin` (tables, columns, `find`, `export`, `erase`), or the tables alone in an add-on's package.json. Bookings is the example. Others are listed as "can't be searched".
+- **LINTEL-UX-193, retention rules:** run hourly, with what's due shown under each. Decision 0062 records the defaults.
+- **LINTEL-UX-194, consent records:** the exact words, time and page are saved with each entry (`consents`, migration 0037), shown on the entry, and included in the CSV and exports.
+- **LINTEL-UX-195, privacy policy helper and companies list:** a draft from what the site uses, a word check of the privacy page, and outside companies found and added.
+- **Permission:** `privacy:manage`, for Owners and Admins. **Docs:** "Privacy and personal data", and "Personal data" in "Building add-ons".
+
+**Found while checking it, and fixed before it reached the release branch:**
+
+- **LINTEL-UX-196:** changing one retention rule put the others back to their defaults, because Zod fills in defaults inside optional fields. The tests had only sent rules at their defaults. Regression test: "changes only the rule it's given".
+- **LINTEL-UX-197:** erasing said it was done while copies remained: the email in order history, emails in security event details, and form answers in webhook deliveries and automation runs. All are now found and removed. Regression tests in `privacy-copies.test.ts`.
+- **LINTEL-UX-198:** an erasure that failed part way recorded nothing, and restoring a backup would have lost the record of requests. It now records what it finished, and the record is left out of backups.
+- **LINTEL-UX-199:** smaller things. Export file names had a colon Windows can't use; switched-off add-ons were missing from "Not searched"; why something was kept never reached the screen; unpaid checkouts counted as deleted when they're anonymised; the policy named Stripe when it wasn't connected; the word check took "platform" for "form".
+
+**Tests:** core `privacy/privacy.test.ts`, `privacy-copies.test.ts`, `retention.test.ts`, `policy-helper.test.ts`, `forms/consent-records.test.ts`; admin `privacy/Privacy.test.tsx`; bookings `bookings.test.ts`.
+
+**Checked in a browser** (Chromium, 1280px and 390px, light and dark, on a copy of the styles test data with the private reference pages unpublished and out of the menus): a real form entry was found, downloaded and erased, the record appeared, and a retention change survived a reload with the other rules unchanged. No page scrolled sideways. Migration 0037 applied to that older database, and to a fresh one in the tests.
+
+**Screenshots** (in `screenshots/privacy-tools/`): `{privacy,map,retention,policy,companies,consent}-{desktop,phone}-{light,dark}`, `erase-confirmation-desktop-light`, `after-erasing-desktop-light`.
+
+**Left for later:** messages automations write into notifications and text in pages aren't searched; passkeys aren't in an admin's export; an erased person's data returns if an older backup is restored, and can't be re-erased automatically because the record deliberately doesn't say who it was.

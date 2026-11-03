@@ -2,6 +2,7 @@ import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import { answerFields } from "./form-fields.schema.js";
 import type { FormsContext } from "./forms-context.js";
 import { findForm } from "./forms.service.js";
+import type { ConsentRecord } from "./forms.table.js";
 import { fileUrl, isFileList } from "./submission-responses.js";
 import { listAllSubmissionRows } from "./submissions.repository.js";
 import type { SubmissionValue } from "./submission-values.js";
@@ -27,17 +28,29 @@ export async function exportSubmissionsAsCsv(
     .map((handle) => ({ handle, label: handle }));
   const columns = [...fields, ...removed];
 
-  const header = ["Submitted at", ...columns.map((column) => column.label), "Read", "Starred"];
+  const header = [
+    "Submitted at",
+    ...columns.map((column) => column.label),
+    "Read",
+    "Starred",
+    "Consent given",
+  ];
   const lines = rows.map((row) => [
     row.createdAt.toISOString(),
     ...columns.map((column) => cellText(row.values[column.handle], context.media.publicApiUrl)),
     row.isRead ? "yes" : "no",
     row.isStarred ? "yes" : "no",
+    row.consents.map(describeConsent).join(" | "),
   ]);
 
   // The byte order mark makes Excel read the file as UTF-8, so names with accents survive.
   const csv = `\uFEFF${[header, ...lines].map((line) => line.map(csvCell).join(",")).join("\r\n")}\r\n`;
   return { filename: `${form.handle}-submissions.csv`, csv };
+}
+
+/** The exact words, with when and where, so the spreadsheet stands as the record. */
+function describeConsent(consent: ConsentRecord): string {
+  return `"${consent.wording}" at ${consent.givenAt}${consent.page ? ` on ${consent.page}` : ""}`;
 }
 
 function cellText(value: SubmissionValue | undefined, publicApiUrl: string): string {

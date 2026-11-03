@@ -31,6 +31,10 @@ listed in `addon-module-names.ts`. The bundle reads those from
 `packages/admin/src/addons` in the admin, so a prebuilt Lintel can load an add-on without
 installing anything beside it.
 
+An add-on can also say what personal data it keeps, under `personalData` in that section:
+`{ tables: [{ name, columns: [{ name, personalData: true }] }] }`. Settings → Privacy lists it
+(see src/privacy). The hooks that let it be searched go in `definePlugin`.
+
 ## At start
 
 `site-addons.ts` (called by main.ts and the production server) loads each add-on on its own

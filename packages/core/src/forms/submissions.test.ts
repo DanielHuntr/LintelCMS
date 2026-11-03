@@ -92,7 +92,7 @@ describe("the submissions inbox", () => {
     expect(response.headers["content-disposition"]).toContain("contact-submissions.csv");
     const lines = response.body.replace(/^\uFEFF/, "").split("\r\n");
     expect(lines[0]).toBe(
-      "Submitted at,Your name,Email address,Phone number,Message,I agree to this site keeping my details to reply to me.,Read,Starred",
+      "Submitted at,Your name,Email address,Phone number,Message,I agree to this site keeping my details to reply to me.,Read,Starred,Consent given",
     );
     expect(lines[1]).toContain(
       '"Ana, the first",ana@example.com,,"\'=HYPERLINK(""http://evil"")",yes,no,no',

@@ -9,6 +9,7 @@ import type {
   PluginConsentService,
   SettingsConsentService,
 } from "../cookie-notice/plugin-consent-services.js";
+import type { PluginPersonalData } from "../privacy/personal-data-declaration.js";
 import type { PluginCommand } from "./plugin-commands.js";
 import type { PluginEventHandlers } from "./plugin-events.js";
 import type { PluginJob } from "./plugin-jobs.js";
@@ -140,10 +141,16 @@ export interface PluginDefinition<
    * (with each column's purpose, and which hold personal data), public addresses, jobs,
    * events and the hosts it talks to. Add-ons write this in their package.json's
    * `lintel-addon` section instead, so it can be read before they are installed. See
-   * src/addons/addon-declarations.ts. (A `personalData` hook, for finding, exporting and
-   * erasing one person's data, is planned to sit beside it.)
+   * src/addons/addon-declarations.ts.
    */
   declares?: AddonDeclarationsInput;
+
+  /**
+   * The personal data the plugin keeps (its tables and columns), and the `find`, `export` and
+   * `erase` hooks Settings → Privacy uses to answer a person's request. A plugin with tables
+   * but no hooks is listed there as one that can't be searched. See src/privacy.
+   */
+  personalData?: PluginPersonalData;
 }
 
 /** A plugin with its settings type erased, so different plugins can share one list. */

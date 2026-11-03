@@ -126,4 +126,54 @@ describe("the Bookings plugin", () => {
       1,
     );
   });
+
+  it("lets Settings → Privacy find, export and erase one person's bookings", async () => {
+    const receptionist = await lintel.signInWith(["bookings:*"]);
+    await receptionist({ method: "POST", url: "/bookings", payload: haircut });
+    await receptionist({
+      method: "POST",
+      url: "/bookings",
+      payload: { ...haircut, customerName: "Ada Lovelace", customerEmail: "ada@example.com" },
+    });
+    const privacyOfficer = await lintel.signInWith(["privacy:manage"]);
+
+    const map = await privacyOfficer({ method: "GET", url: "/privacy/map" });
+    expect(map.json().kinds).toContainEqual(
+      expect.objectContaining({
+        id: "plugin:bookings",
+        searchable: true,
+        tables: [{ name: "bookings", columns: ["customer_name", "customer_email", "notes"] }],
+      }),
+    );
+
+    const found = await privacyOfficer({
+      method: "POST",
+      url: "/privacy/people/find",
+      payload: { name: "grace hopper" },
+    });
+    expect(found.json().found).toEqual([
+      expect.objectContaining({ kindId: "plugin:bookings", items: [expect.any(Object)] }),
+    ]);
+
+    const exported = await privacyOfficer({
+      method: "POST",
+      url: "/privacy/people/export",
+      payload: { email: "grace@example.com" },
+    });
+    expect(exported.statusCode).toBe(200);
+    expect(exported.headers["content-type"]).toBe("application/zip");
+
+    const erased = await privacyOfficer({
+      method: "POST",
+      url: "/privacy/people/erase",
+      payload: { email: "GRACE@example.com" },
+    });
+    expect(erased.json().parts).toEqual([
+      expect.objectContaining({ source: "Bookings", deleted: 1 }),
+    ]);
+    const left = await receptionist({ method: "GET", url: "/bookings" });
+    expect(
+      left.json().bookings.map((booking: { customerName: string }) => booking.customerName),
+    ).toEqual(["Ada Lovelace"]);
+  });
 });

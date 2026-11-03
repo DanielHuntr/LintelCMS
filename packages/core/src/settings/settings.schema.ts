@@ -16,6 +16,7 @@ import {
   cookieNoticeSettingsSchema,
   defaultCookieNoticeSettings,
 } from "../cookie-notice/cookie-notice.schema.js";
+import { defaultPrivacySettings, privacySettingsSchema } from "../privacy/privacy.schema.js";
 
 /**
  * Every setting, with the shape its value must have. Reading a key that has never been
@@ -91,6 +92,8 @@ export const settingSchemas = {
   clientChanges: z.enum(["goLive", "needsApproval"]),
   /** Apps' development mode: apps on this computer may be installed (see src/apps). */
   appDevelopmentMode: z.boolean(),
+  /** Retention rules and the companies added by hand in Settings → Privacy (see src/privacy). */
+  privacy: privacySettingsSchema,
 };
 
 export type SettingKey = keyof typeof settingSchemas;
@@ -120,4 +123,5 @@ export const settingDefaults: { [Key in SettingKey]: SettingValue<Key> } = {
   cookieNotice: defaultCookieNoticeSettings,
   clientChanges: "goLive",
   appDevelopmentMode: false,
+  privacy: defaultPrivacySettings,
 };

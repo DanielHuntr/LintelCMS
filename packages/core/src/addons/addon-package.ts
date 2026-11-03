@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
 import { addonDeclarationsSchema } from "./addon-declarations.js";
+import { personalDataDeclarationSchema } from "../privacy/personal-data-declaration.js";
 import { isReadableRange } from "./version-range.js";
 
 /**
@@ -14,6 +15,7 @@ import { isReadableRange } from "./version-range.js";
  *     "server": "dist/server.js",       its server half, built by `lintel addons build`
  *     "admin": "dist/admin.js",         its admin half, if it has one
  *     "tables": [...],                  what it keeps, and the rest of addon-declarations.ts
+ *     "personalData": { "tables": [...] }  what personal data it keeps (see src/privacy)
  *   }
  *
  * Its `license`, `author` and `repository` (or `homepage`) say where it comes from.
@@ -32,6 +34,8 @@ export const addonManifestSchema = z.object({
   /** A stylesheet for the admin half, loaded with it. */
   adminStyles: z.string().optional(),
   ...addonDeclarationsSchema.shape,
+  /** The tables and columns it keeps personal data in, for Settings → Privacy. */
+  personalData: personalDataDeclarationSchema.optional(),
 });
 export type AddonManifest = z.output<typeof addonManifestSchema>;
 

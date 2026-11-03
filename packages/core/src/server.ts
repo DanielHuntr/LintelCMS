@@ -111,6 +111,7 @@ import { passkeysRoutes } from "./passkeys/passkeys.routes.js";
 import { passwordResetRoutes } from "./password-reset/password-reset.routes.js";
 import { rolesRoutes } from "./roles/roles.routes.js";
 import { securityLogRoutes } from "./security-log/security-log.routes.js";
+import { privacyRoutes } from "./privacy/privacy.routes.js";
 import { twoFactorRoutes } from "./two-factor/two-factor.routes.js";
 import { usersRoutes } from "./users/users.routes.js";
 import {
@@ -598,6 +599,7 @@ function registerApiRoutes(
   server.register(passkeysRoutes);
   server.register(passwordResetRoutes);
   server.register(securityLogRoutes);
+  server.register(privacyRoutes);
   server.register(emailRoutes);
   server.register(brandingRoutes);
   server.register(interfaceLanguagesRoutes);

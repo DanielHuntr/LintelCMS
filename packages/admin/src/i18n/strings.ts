@@ -42,6 +42,7 @@ import { publishingStrings } from "../publishing/publishingStrings.js";
 import { serverCheckStrings } from "../server-check/serverCheckStrings.js";
 import { clientEditingStrings } from "../client-editing/clientEditingStrings.js";
 import { addonStrings } from "../addons/addonStrings.js";
+import { privacyStrings } from "../privacy/privacyStrings.js";
 
 /**
  * Every word the admin shows lives here, in English: the source every translation in
@@ -88,6 +89,7 @@ const english = {
   ...analyticsStrings,
   ...clientEditingStrings,
   ...addonStrings,
+  ...privacyStrings,
   ...siteFontsStrings,
   ...compareLiveStrings,
   ...scheduleStrings,

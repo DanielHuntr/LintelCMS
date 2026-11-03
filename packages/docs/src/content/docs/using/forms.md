@@ -24,21 +24,21 @@ website until you press **Save**.
 
 Press **Add field** and choose what to ask:
 
-| Field        | What visitors get                                 |
-| ------------ | ------------------------------------------------- |
-| Short text   | One line, such as a name                          |
-| Long text    | A box for a message                               |
-| Email        | An email address, checked as it's typed           |
-| Phone        | A phone number                                    |
-| Number       | A quantity, with a lowest and highest if you like |
-| Choice       | Pick one from a short list                        |
-| Checkboxes   | Tick any from a list                              |
-| Dropdown     | Pick one from a longer list                       |
-| Date         | A day, from a calendar                            |
-| File upload  | Photos or documents, with a size limit            |
-| Consent      | A box to tick, such as agreeing to be contacted   |
-| Hidden value | Saved with every submission, never shown          |
-| Step         | Starts a new page, for a multi-step form          |
+| Field        | What visitors get                                                                                            |
+| ------------ | ------------------------------------------------------------------------------------------------------------ |
+| Short text   | One line, such as a name                                                                                     |
+| Long text    | A box for a message                                                                                          |
+| Email        | An email address, checked as it's typed                                                                      |
+| Phone        | A phone number                                                                                               |
+| Number       | A quantity, with a lowest and highest if you like                                                            |
+| Choice       | Pick one from a short list                                                                                   |
+| Checkboxes   | Tick any from a list                                                                                         |
+| Dropdown     | Pick one from a longer list                                                                                  |
+| Date         | A day, from a calendar                                                                                       |
+| File upload  | Photos or documents, with a size limit                                                                       |
+| Consent      | A box to tick, such as agreeing to be contacted. The [exact words are kept](/using/privacy/#consent-records) |
+| Hidden value | Saved with every submission, never shown                                                                     |
+| Step         | Starts a new page, for a multi-step form                                                                     |
 
 Select a field to change its question, help text and whether it's **Required**. Choices go
 one per line. Text and numbers can have a shortest and longest answer; dates an earliest

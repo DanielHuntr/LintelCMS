@@ -60,6 +60,14 @@ export const anaSubmission: SubmissionDetail = {
   values: { name: "Ana Lima", email: "ana@example.com", message: "Please call me back." },
   submitterEmail: "ana@example.com",
   sourceUrl: "https://example.com/contact",
+  consents: [
+    {
+      field: "consent",
+      wording: "I agree to this site keeping my details to reply to me.",
+      givenAt: "2026-10-31T09:00:00Z",
+      page: "https://example.com/contact",
+    },
+  ],
   isRead: false,
   isStarred: false,
   createdAt: "2026-10-31T09:00:00Z",

@@ -27,6 +27,7 @@ import {
 } from "./spam-protection.js";
 import { checkSubmittedFiles, type IncomingFile, storeSubmittedFiles } from "./submission-files.js";
 import { checkSubmissionValues, findSubmitterEmail } from "./submission-values.js";
+import { recordConsents } from "./consent-records.js";
 import {
   insertSubmissionRow,
   listRecentSubmissionsWithToken,
@@ -207,13 +208,15 @@ export async function receiveSubmission(
       return { saved: false, form };
     }
 
+    const sourceUrl = incoming.sourceUrl?.slice(0, 2000) ?? null;
     const submission = await insertSubmissionRow(transaction, {
       tenantId: DEFAULT_TENANT_ID,
       formId: form.id,
       values: allValues,
       submitterEmail: findSubmitterEmail(form.fields, allValues),
       assetIds: stored.assetIds,
-      sourceUrl: incoming.sourceUrl?.slice(0, 2000) ?? null,
+      sourceUrl,
+      consents: recordConsents(form.fields, allValues, sourceUrl, now),
       tokenHash,
     });
     return { saved: true, form, submission };

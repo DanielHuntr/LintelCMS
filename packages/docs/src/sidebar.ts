@@ -30,6 +30,7 @@ export const usingPages = [
   "using/media",
   "using/forms",
   "using/cookie-notice",
+  "using/privacy",
   "using/visitors",
   "using/ab-testing",
   "using/page-drafting",

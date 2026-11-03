@@ -44,6 +44,7 @@ export function toSubmissionResponse(row: FormSubmissionRow, publicApiUrl: strin
     ),
     submitterEmail: row.submitterEmail,
     sourceUrl: row.sourceUrl,
+    consents: row.consents,
     isRead: row.isRead,
     isStarred: row.isStarred,
     createdAt: row.createdAt.toISOString(),

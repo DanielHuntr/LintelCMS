@@ -82,6 +82,17 @@ export {
   url,
 } from "../content-model-sync/field-helpers.js";
 export type { PluginConsentService } from "../cookie-notice/plugin-consent-services.js";
+// Personal data: what the plugin keeps, and the hooks Settings → Privacy uses.
+export type {
+  FoundPersonalData,
+  PersonalDataColumn,
+  PersonalDataErasure,
+  PersonalDataHookContext,
+  PersonalDataHooks,
+  PersonalDataTable,
+  PersonLookup,
+  PluginPersonalData,
+} from "../privacy/personal-data-declaration.js";
 
 // Fieldtypes: a plugin's kinds of field are defined exactly as core's own.
 export {

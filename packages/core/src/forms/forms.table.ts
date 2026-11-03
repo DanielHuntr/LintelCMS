@@ -16,6 +16,18 @@ import type { FormConfirmation, FormNotifications } from "./forms.schema.js";
 import type { SubmissionValues } from "./submission-values.js";
 
 /**
+ * A consent box the person ticked, recorded as it was: the exact words they saw (the label,
+ * and the help text under it), when they ticked it and the page they were on. Wording can
+ * change later; this keeps what they agreed to.
+ */
+export interface ConsentRecord {
+  field: string;
+  wording: string;
+  givenAt: string;
+  page: string | null;
+}
+
+/**
  * A form people fill in on the website: its fields, what they see after sending it and
  * who is told. `handle` is how websites ask for it (`/delivery/forms/contact`).
  */
@@ -43,7 +55,8 @@ export const formsTable = pgTable(
  * One filled-in form. `values` are keyed by field handle, as checked when it arrived.
  * `submitterEmail` is the first email answer, lowercased, so one person's submissions can
  * be found, exported or erased on request. `assetIds` are the files they sent, which live
- * in the media library and go when the submission does. `tokenHash` is a hash of the form
+ * in the media library and go when the submission does. `consents` records each consent box
+ * they ticked, word for word. `tokenHash` is a hash of the form
  * token it came with, so a double click or a resent request isn't stored twice.
  */
 export const formSubmissionsTable = pgTable(
@@ -59,6 +72,8 @@ export const formSubmissionsTable = pgTable(
     assetIds: jsonb("asset_ids").$type<string[]>().notNull().default([]),
     /** The page the form was sent from, when the browser said. */
     sourceUrl: text("source_url"),
+    /** The consent boxes they ticked, with the words shown (see `ConsentRecord`). */
+    consents: jsonb("consents").$type<ConsentRecord[]>().notNull().default([]),
     tokenHash: text("token_hash"),
     isRead: boolean("is_read").notNull().default(false),
     isStarred: boolean("is_starred").notNull().default(false),
