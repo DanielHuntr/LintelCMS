@@ -99,13 +99,6 @@ function whenNearScreen(element: Element, start: () => void): () => void {
   return () => observer.disconnect();
 }
 
-/** The cursor's colour as CSS: the theme's text or brand colour, or one picked by hand. */
-export function themeColour(colour: string): string {
-  if (colour === "text") return "var(--lintel-color-text, #111111)";
-  if (colour === "brand") return "var(--lintel-color-brand, #111111)";
-  return colour;
-}
-
 /** Every effect listed on the page. Returns a function that stops them all. */
 export function startEffects(
   document: Document,
@@ -135,13 +128,13 @@ export function startEffects(
   if (cursor && cursor.style !== "none" && context.finePointer) {
     // "Your own picture" brings its address (sized by the server), its size and its point.
     // The word's look and the picture also travel as objects; the cursor never reads them,
-    // and passing everything keeps this part of every page small.
+    // and passing everything keeps this part of every page small. The cursor module turns
+    // "text" or "brand" into the theme's colour.
     run(body, {
       module: "cursor",
       behaviour: "siteCursor",
       params: {
         ...cursor,
-        colour: themeColour(cursor.colour),
         ...(cursor.style === "picture" && cursor.picture),
       } as unknown as EffectParams,
     });

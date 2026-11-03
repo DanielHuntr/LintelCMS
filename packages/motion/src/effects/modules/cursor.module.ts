@@ -52,6 +52,13 @@ interface CursorPictureShown {
 const wordLooks = new WeakMap<Element, Record<string, string>>();
 const overPictures = new WeakMap<Element, CursorPictureShown>();
 
+/** The cursor's colour as CSS: the theme's text or brand colour, or one picked by hand. */
+function themeColour(colour: string): string {
+  if (colour === "text") return "var(--lintel-color-text, #111111)";
+  if (colour === "brand") return "var(--lintel-color-brand, #111111)";
+  return colour;
+}
+
 /** A colour as the canvas needs it: theme variables worked out to rgb(). */
 function resolvedColour(colour: string): string {
   if (!colour.startsWith("var(")) return colour;
@@ -191,7 +198,11 @@ const siteCursor: EffectBehaviour = (_body, params, context) => {
   // A picture is the whole cursor: no trail behind it.
   const trail =
     context.reduced || context.lowPower || ownPicture ? "none" : readText(params, "trail", "none");
-  const colour = readColour(params, "colour", "#111111");
+  const colour = readColour(
+    { colour: themeColour(readText(params, "colour", "")) },
+    "colour",
+    "#111111",
+  );
   const size = readNumber(params, "size", 32);
   const make = (diameter: number, fill: boolean) => {
     const node = document.createElement("div");

@@ -21,6 +21,11 @@
       "development": "./src/presets/index.ts",
       "default": "./dist/presets/index.js"
     },
+    "./smooth-scroll": {
+      "types": "./dist/smooth-scroll/smoothScroll.d.ts",
+      "development": "./src/smooth-scroll/smoothScroll.ts",
+      "default": "./dist/smooth-scroll/smoothScroll.js"
+    },
     "./site-runtime.js": "./dist/site-runtime.js",
     "./effects": {
       "types": "./dist/effects-catalogue/index.d.ts",

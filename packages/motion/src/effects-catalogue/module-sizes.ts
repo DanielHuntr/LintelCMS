@@ -5,7 +5,7 @@ import type { EffectModuleName } from "../effects/effect-types.js";
  * imports. Measured by scripts/measure-effect-modules.mjs; a test checks it stays current.
  */
 export const effectModuleBytes: Record<EffectModuleName, number> = {
-  cursor: 7424,
+  cursor: 7464,
   depth: 4970,
   "frosted-glass": 3984,
   "image-distort": 4454,
