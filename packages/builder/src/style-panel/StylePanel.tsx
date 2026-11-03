@@ -3,6 +3,7 @@ import {
   type Breakpoint,
   isOwnerStateTarget,
   layerStyles,
+  placeProperties,
   type OwnerStateTarget,
   type PageNode,
   readOwnerStateTarget,
@@ -148,10 +149,16 @@ export function StylePanel({
   const editing = useMemo<StyleEditing>(() => {
     if (shared && editsShared && changeSite) {
       return {
-        styles: shared.styles,
+        // What shows is the look in effect; where it sits (its place) is always its own.
+        styles: layerStyles(shared.styles, node.styles),
         target,
-        change: (values) => {
-          const styles = setStyles(shared.styles, target, values);
+        change: (values, label) => {
+          const entries = Object.entries(values) as Array<[StylePropertyName, string | undefined]>;
+          const place = entries.filter(([property]) => placeProperties.includes(property));
+          const look = entries.filter(([property]) => !placeProperties.includes(property));
+          if (place.length > 0) onChange(target, Object.fromEntries(place), label);
+          if (look.length === 0) return;
+          const styles = setStyles(shared.styles, target, Object.fromEntries(look));
           delete styles.owners;
           changeSite(withSharedStyle(site.design, { ...shared, styles }));
         },
