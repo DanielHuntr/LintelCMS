@@ -275,6 +275,7 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
           <AnimatePanel
             node={node}
             name={props.nodeName}
+            sceneElements={stateOwners}
             isLocked={props.isLocked}
             showsTimeline={tools.animationTimeline}
             motionText={props.motionText}

@@ -100,6 +100,13 @@ export const motionEditorStrings = {
   "motionEditor.trigger.scopeElement": "This element",
   "motionEditor.trigger.scopePage": "The whole page",
   "motionEditor.trigger.pin": "Hold it on screen while scrolling",
+  "motionEditor.trigger.follows": "Plays as this scrolls past",
+  "motionEditor.trigger.followsSelf": "This element",
+  "motionEditor.trigger.followsHint":
+    "Choose a section around it to make this a step of that section's scene.",
+  "motionEditor.trigger.rangeFrom": "Starts at",
+  "motionEditor.trigger.rangeTo": "Ends at",
+  "motionEditor.trigger.rangeValue": "{percent}% of the scene",
   "motionEditor.trigger.smooth": "Follows the scrolling",
   "motionEditor.trigger.smoothExact": "Exactly",
   "motionEditor.trigger.smoothSoft": "Smoothly",

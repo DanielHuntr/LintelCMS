@@ -1,9 +1,10 @@
 import { findPreset } from "@lintel/motion/presets";
 import type { MotionSpec } from "@lintel/motion";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
+import { SceneElementsContext } from "./sceneElements.js";
 import { TriggerPicker } from "./TriggerPicker.js";
 
 function Harness({ initial, onSpec }: { initial: MotionSpec; onSpec: (spec: MotionSpec) => void }) {
@@ -52,5 +53,35 @@ describe("the trigger picker's scroll choices", () => {
       "Wherever scrolling stops",
     );
     expect(latest.trigger).not.toHaveProperty("snap");
+  });
+
+  it("makes a scroll animation a step of the section around it, over part of its scene", async () => {
+    const user = userEvent.setup();
+    let latest = findPreset("parallax-slow")!.spec;
+    render(
+      <SceneElementsContext value={[{ id: "story", name: "Story" }]}>
+        <Harness initial={latest} onSpec={(spec) => (latest = spec)} />
+      </SceneElementsContext>,
+    );
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Plays as this scrolls past" }),
+      "Story",
+    );
+    expect(latest.trigger).toMatchObject({ follows: "story", range: { from: 0, to: 1 } });
+    fireEvent.change(screen.getByRole("slider", { name: "Starts at" }), {
+      target: { value: "0.1" },
+    });
+    expect(latest.trigger).toMatchObject({ range: { from: 0.1, to: 1 } });
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Plays as this scrolls past" }),
+      "This element",
+    );
+    expect(latest.trigger).not.toHaveProperty("follows");
+    expect(latest.trigger).not.toHaveProperty("range");
+  });
+
+  it("offers no element to follow without a host that knows the page", () => {
+    render(<Harness initial={findPreset("parallax-slow")!.spec} onSpec={() => undefined} />);
+    expect(screen.queryByRole("combobox", { name: "Plays as this scrolls past" })).toBeNull();
   });
 });

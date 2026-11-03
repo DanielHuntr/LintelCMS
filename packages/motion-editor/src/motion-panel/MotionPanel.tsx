@@ -32,6 +32,7 @@ import { PageWeightMeter } from "../effects/PageWeightMeter.js";
 import type { MotionEditorStringKey } from "../strings/motionEditorStrings.js";
 import { TranslateProvider, useTranslate, type Translate } from "../strings/translate.js";
 import { MotionStudio, type StudioView } from "../studio/MotionStudio.js";
+import { type SceneElement, SceneElementsContext } from "../trigger/sceneElements.js";
 import {
   listMotionChoices,
   momentOfEffect,
@@ -69,6 +70,8 @@ export interface MotionPanelProps {
   timelineNote?: string;
   /** Lets undo treat a drag on a slider as one change. */
   onCommit?: () => void;
+  /** Elements around this one whose scroll scenes it can be a step of, nearest first. */
+  sceneElements?: readonly SceneElement[];
   /** The page's effects added up: shown only when there's something to warn about. */
   pageWeight?: PageWeight;
   openGroups?: OpenGroups;
@@ -106,7 +109,9 @@ const momentColours: Record<MotionMoment, string> = {
 export function MotionPanel(props: MotionPanelProps) {
   return (
     <TranslateProvider translate={props.translate}>
-      <Panel {...props} />
+      <SceneElementsContext value={props.sceneElements ?? []}>
+        <Panel {...props} />
+      </SceneElementsContext>
     </TranslateProvider>
   );
 }
