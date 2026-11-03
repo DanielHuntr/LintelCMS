@@ -171,6 +171,8 @@ ${phone} { :where(.lintel-carousel) { --lintel-per-view: 1; } }
   gap: var(--lintel-space-4); overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; overscroll-behavior-x: contain; scrollbar-width: none;
 }
 :where(.lintel-carousel__track)::-webkit-scrollbar { display: none; }
+/* On phones the next slide peeks in at the edge, so it's clear there's more to swipe to. */
+${phone} { :where(.lintel-carousel--peek .lintel-carousel__track) { grid-auto-columns: 88%; } }
 :where(.lintel-carousel--free .lintel-carousel__track) { scroll-snap-type: none; scroll-behavior: auto; cursor: grab; }
 :where(.lintel-carousel--free .lintel-carousel__track[data-dragging]) { cursor: grabbing; user-select: none; }
 :where(.lintel-carousel--free .lintel-carousel__slide) { translate: var(--lintel-drag-offset, 0) 0; }
@@ -178,8 +180,11 @@ ${phone} { :where(.lintel-carousel) { --lintel-per-view: 1; } }
 :where(.lintel-carousel__controls) { display: flex; justify-content: flex-end; gap: var(--lintel-space-2); order: 2; }
 :where(.lintel-carousel__button, .lintel-carousel__pause) {
   display: inline-flex; align-items: center; justify-content: center; min-inline-size: 2.75rem; block-size: 2.75rem; padding: 0 var(--lintel-space-3);
-  border: 1px solid var(--lintel-color-border); border-radius: 999px; background: var(--lintel-color-background); color: var(--lintel-color-text); font: inherit; cursor: pointer;
+  border: 1px solid color-mix(in srgb, currentColor 40%, transparent); border-radius: 999px; background: var(--lintel-color-background); color: var(--lintel-color-link); font: inherit; cursor: pointer;
+  transition: background-color 150ms, color 150ms;
 }
+:where(.lintel-carousel__button:not(:disabled):hover, .lintel-carousel__pause:hover) { background: var(--lintel-color-brand); border-color: var(--lintel-color-brand); color: var(--lintel-color-on-brand); }
+:where(.lintel-carousel__button:focus-visible, .lintel-carousel__pause:focus-visible) { outline: 2px solid var(--lintel-color-link); outline-offset: 2px; }
 :where(.lintel-carousel__button:disabled) { opacity: 0.4; cursor: default; }
 :where(.lintel-carousel__dots) { display: flex; justify-content: center; gap: var(--lintel-space-1); order: 3; }
 :where(.lintel-carousel__dot) { inline-size: 1.5rem; block-size: 1.5rem; padding: 0; border: 0; background: none; cursor: pointer; }
