@@ -1753,3 +1753,78 @@ Decision record: `docs/decisions/0053-content-only-editing-for-clients.md`. Migr
 **Screenshots** (in `screenshots/starters-a/`): `<site>-home-{desktop,phone}-{light,dark}.png` for tollbooth, hollis, verveine, lind, halyard and northside.
 
 **Left for later:** the product grid shows whatever products the site has (in the test data, the bakery's), and Lind's lookbook prices are words, not products, so with Shop on the Shop page shows both. On phones the navigation's button folds away with the menu, so Hollis's "Book online" and Northside's "Donate" are reached from the page rather than the header.
+
+## Creative pack: shader backgrounds and picture effects (3 November 2026)
+
+Decision: [0057](../decisions/0057-shader-backgrounds.md). IDs LINTEL-UX-110 to LINTEL-UX-119.
+
+**Asked (Daniel, the creative pack):** a small set of tasteful, editorial shader backgrounds for sections and effects for pictures, each with two or three plain controls; one WebGL context where possible, paused off screen, lighter on phones; a still fallback without WebGL or with less motion; words kept readable over backgrounds; live on the canvas, offered as tiles in the Motion panel's style.
+
+**Before:** the Effects library had a liquid gradient (with purple and pink defaults), a liquid picture, a lens warp, water ripples and 2D particles. Each shader effect opened its own WebGL context. Under Add motion → Always, a section was offered Breathe, Spin, Hop and Fill. Colour settings took hex only, so a background couldn't follow Site styles. The liquid picture stretched pictures shown with `object-fit: cover` while distorting.
+
+- **LINTEL-UX-110: one WebGL context per page.** `kit/shader-renderer.ts` compiles each shader once and draws every effect on one hidden canvas, copied onto each element's own 2D canvas. The liquid gradient and liquid picture use it too. Canvases draw at most 2x the screen's pixels, 1x on phones and slow devices, half again without a graphics card; soft looks draw at 0.4 to 0.5 of that. Frames stop off screen and in hidden tabs; 30 a second on phones. A lost context leaves the static look.
+- **LINTEL-UX-111: Moving gradient.** Two soft pools of colour drifting over the section's own background (warm sand and a pale blue-grey by default). Still version in the page's stylesheet.
+- **LINTEL-UX-112: Soft light.** Light on the bottom of a pool, on a colour of its own. Still version in the stylesheet.
+- **LINTEL-UX-113: Floating dust.** Specks at three depths (near ones larger and soft) that shift a little with the pointer; "Same as the words" by default, so light on dark sections. Builds on the existing 2D particles rather than repeating them: this one is a shader with depth.
+- **LINTEL-UX-114: Contour lines.** A map's contour lines over a slowly shifting landscape, one pixel wide, every fifth line stronger; words' colour by default.
+- **LINTEL-UX-115: Film grain.** An SVG noise tile with an overlay blend over the section (or a picture); no WebGL; still for less motion.
+- **LINTEL-UX-116: picture reveals.** Develop from noise (WebGL) and Pixelate in (2D canvas, no WebGL), played once as the picture comes into view; the real picture is put back when they finish. Without WebGL, with less motion, or for a picture that can't be read, the picture just shows.
+- **LINTEL-UX-117: Colour split.** The picture's colours part very slightly as the pointer moves over it, more when it moves fast, and settle back. Mouse and trackpad only. The liquid picture now lines up with `object-fit` and `object-position` (it stretched before).
+- **LINTEL-UX-118: readable words and site colours.** "Keep words readable" (on by default for the gradient and the light) reads the colours of the words in the section and lays a black or white veil just strong enough for 4.5:1 over every colour of the background (at most 85%), also without WebGL. Colour settings accept `var(--name)` and `currentColor` besides hex, offer the site's colours first, then the theme's, and "Same as the words" where the effect starts from it.
+- **LINTEL-UX-119: in the builder.** Add motion → Always on a section shows Gradient, Soft light, Dust, Contours and Grain; a picture's Appears shows Fade up, Develop, Pixelate, Blur in, Reveal, Fade in, and its Hover shows Grow, Liquid, Colour split, Lens, Lift, Tilt. Each tile has a small looping drawing in the existing style (CSS only, still for less motion). The chosen effect's settings show under the tiles, and every change plays on the canvas. Picture effects ask for a readable copy when the canvas can't read a picture, and uploaded pictures now say any address may read them (as fonts already did), so previews work on the canvas.
+
+**Sizes (gzipped, with what each shares):** shader-backgrounds 7.7 kB, picture-effects 7.5 kB, film-grain 1.8 kB; liquid gradient 5.7 kB and liquid picture 6.5 kB now include the shared renderer (they were 4.7 and 4.5). Nothing added to the page runtime (10 KB budget unchanged).
+
+**Judgement calls:** default colours are restrained hex palettes rather than the site's brand colour, which on the default theme is near black and made a muddy gradient; the site's colours are the first swatches. Dust on a light section looks like specks of dirt, so its description says "Best on a dark section" and it starts softer. Ripples and frosted glass keep their own WebGL contexts for now. Video elements count as pictures in the gallery, but the picture effects only act on images.
+
+**Needs a design pass after Daniel sees them:** Film grain (invisible on pure black, where an overlay blend has nothing to lighten; may want a different blend on dark sections), Floating dust on light sections, and the tile drawings for Develop and Colour split (small and easy to miss at rest). Contour lines show the odd sharp kink from value noise.
+
+Files: `packages/motion/src/effects/kit/{shader-renderer,layers,css-colour,picture-shader,shader-source,loaded}.ts` (new), `kit/webgl.ts`, `maths/{readable,picture-fit}.ts` (new), `modules/{shader-backgrounds,picture-effects,film-grain}.module.ts` (new), `modules/{liquid-gradient,image-distort,frosted-glass}.module.ts`, `effect-types.ts`, `effects-catalogue/catalogue/creative-effects.ts` (new), `catalogue/canvas-effects.ts`, `effect-definition.ts`, `page-weight.ts`, `module-sizes.ts`; `packages/motion-editor/src/motion-panel/{quickPicks,motionChoices,MotionPanel,QuickMotion,MotionTile,motionDemos}.ts(x)`, `effects/{EffectSettings,AppliedEffect}.tsx`, strings; `packages/builder/src/animate-panel/AnimatePanel.tsx`; `packages/core/src/media/media.routes.ts`; docs `using/effects.md`.
+
+**Tests:** motion `effects/maths/creative-maths.test.ts` (11: contrast, veil none/dark/light/capped, picture fit), `effects-catalogue/creative-effects.test.ts` (7: suits, few settings, readable default, colour values accepted and refused, still CSS and bindings, shader warning); browser `creative-effects.browser.test.ts` (11: gradient behind the words, four backgrounds through 2D canvases, veil under light words only, static look and veil without WebGL, pictures untouched without WebGL, still frame for less motion, grain without WebGL and still, develop and pixelate hand back the picture, nothing for less motion, colour split on pointer movement), `effects.browser.test.ts` (liquid gradient through the shared context). motion-editor `MotionPanel.test.tsx` (+3, picture hover row updated), `quickPicks.test.ts` (+1). core `media-transforms.test.ts` (+1).
+
+**Screenshots** (`screenshots/creative-shaders/`): `builder-light-1-gradient-tiles`, `builder-light-2-soft-light`, `builder-light-3-contours`, `builder-light-4-develop-preview`, `builder-light-5-picture-hover-tiles`, `builder-dark-1-gradient-tiles`, `builder-dark-2-dust`, `site-desktop-1-gradient-develop`, `site-desktop-2-developed`, `site-desktop-3-colour-split`, `site-390-1`, `site-390-2-develop`, `site-390-less-motion`, `runtime-{mesh,light-dark,dust,contours}`.
+
+## Starter sites batch B and section packs (3 November 2026)
+
+**Asked by Daniel:** more starting points. Five new starter sites, each unlike the others, and at least twenty new sections for the library.
+
+**Starter sites** (`packages/builder-model/src/starter-sites`), each with its own pages, shared navigation and footer, site motion, words and drawings:
+
+- **Relay**, a crew rota app in Glasgow: home, pricing, updates (a release log) and start free. Manrope with Space Mono, one green.
+- **Chambers**, a law and accountancy practice in Edinburgh: home, services and fees, team and contact. DM Serif Display with DM Sans, deep green and oxblood.
+- **Longplay**, a band from Manchester: home, music, tour and mailing list. Anton with Space Mono, near-black and bone, one red.
+- **Threshold**, an estate and letting agent in Bath: home, homes, area guides and valuation. Fraunces with Manrope, limestone and terracotta. Its homes are a Listings collection.
+- **Longwave**, a podcast recorded in Cardiff: home, episodes, hosts and listen. Syne with DM Sans, ink blue and amber. Its episodes are an Episodes collection.
+
+**Section packs:** thirty new sections (`sections/pack-*.ts`, `templates/section-packs.ts`), each with search keywords: six intros and invitations, four features, two about, two pictures, six proof (logos, quotes, numbers), two pricing, two questions, three contact and three footers.
+
+**New for templates:** a starter site can bring collections with sample entries (`collections` on `StarterSite`, made by `core/src/starter-sites/starter-collections.ts`). A collection the site already has is left as it is, and someone without `collections:update` gets the pages without it.
+
+**Fixed on the way:**
+
+- **LINTEL-UX-160:** Collection lists and the builder's list of collections left out collections with no pages of their own, although that setting exists for entries shown on other pages. Lists now show them (`listedCollections` in the site context), and those entries' addresses are empty.
+- **LINTEL-UX-161:** A newsletter sign-up in a template never got a form, so the website drew its title with no email box. Templates now make the form for it, as they do for a contact form.
+- **LINTEL-UX-162:** Every form a template made was called "Contact". Each is now named after its handle.
+- **LINTEL-UX-163:** Relay's phone drawing moved over the words beside it, at 390px most of all, because of its parallax. It now fades up.
+- **LINTEL-UX-164:** Headings on Relay's green band and Threshold's terracotta band took the theme's heading colour: ink in light mode, and green on green in Relay's dark mode. They now follow the band's text colour.
+- **LINTEL-UX-165:** Longplay's band name was dark grey on the always-dark stage in light mode. It is now bone in both.
+- **LINTEL-UX-166:** Longplay's video poster had a drawn play button that played nothing. The drawing and its alt text no longer have one.
+- **LINTEL-UX-167:** Relay's start page lost its main title without Forms, because the form shared a band with it. The form has its own band.
+- **LINTEL-UX-168:** Two new sections needed changes. The Quiet footer didn't follow the site's menu like the other footers, and now shows it. Scrolling names widened the page to 1,601px at desktop and 1,094px at 390px, because the marquee shrank to fit its centred content; it now takes the page's width.
+- **LINTEL-UX-169:** Longplay's "Join the list" looked squashed in tight lower-case Anton. It is now in capitals, like the site's other headings.
+
+**Tests:** a test file for each site in `builder-model` (Relay 9, Chambers 7, Longplay 9, Threshold 8, Longwave 8), `templates/section-packs.test.ts` (9), and three new tests in `core/src/starter-sites/starter-sites.test.ts` for collections, permissions and the newsletter form.
+
+**Checked in a browser** (Chromium, 1440px and 390px, light and dark, on a copy of the styles test data, each template applied with "replace" and published). Every site's home page was checked in all four views and its other pages in desktop light and 390px dark. The palettes' text pairs were measured: the lowest is 4.6:1. All the new sections were also checked on one page at both widths with reduced motion: no sideways scrolling, and nothing left hidden once scrolled through.
+
+**Screenshots** (in `screenshots/starters-b/`): `<id>-home-{desktop,phone}-{light,dark}` for relay, chambers, longplay, threshold and longwave, and `sheet-section-packs-{desktop,phone}-{light,dark}`, the contact sheet of the new sections.
+
+**Left for later:**
+
+- Listings and episodes have no pages of their own, so their cards don't link anywhere.
+- Pictures in those collections are addresses in a text field, not media library pictures, until someone changes the field.
+- A video or audio element with no link draws nothing on the website, so Longplay shows a poster drawing above its video, and Longwave's "Play the latest episode" goes to the episode on the page.
+- Relay's sign-up page uses the standard contact form.
+- A form section added from Insert shows an empty panel or a title without an email box on the website until someone chooses its form, as the existing contact form section does.
+- Intro with video shows only its words until someone adds a link.

@@ -47,6 +47,27 @@ There are also ready-made animated elements in the Insert panel: **Magnetic butt
 **Card stack**, **3D gallery**, **Scrolling row**, **Counter row**, **Switch**, **Round
 menu** and **Notification**. They start with their effects, which you can change or remove.
 
+## Moving backgrounds and picture effects
+
+Select a section, choose **Add motion**, then **Always**: the tiles are quiet moving
+backgrounds. **Gradient** drifts two soft colours over the section, **Soft light** is like
+sunlight on the bottom of a pool, **Dust** floats specks through the light (best on a dark
+section), **Contours** draws a map's contour lines, and **Grain** lays film grain over it.
+Each has only a few settings: its colours, its speed and how much. The colours offer your
+site's colours first, so the background changes when Site styles do; dust and lines can be
+**Same as the words**.
+
+**Keep words readable** (on by default) checks the colour of the words in the section and,
+only if they would be hard to read over the background, lays a quiet veil just strong
+enough behind them.
+
+For a picture, **Appears** offers **Develop** (it develops out of soft noise as it comes into
+view) and **Pixelate** (it sharpens from big blocks), and **Hover** offers **Liquid**,
+**Colour split** and **Lens**.
+
+Without WebGL, and for people who ask for less motion, sections show a still version and
+pictures show as they are.
+
 ## Motion across the whole site
 
 Smooth scrolling, the site's cursor, page transitions and an intro on the first visit are

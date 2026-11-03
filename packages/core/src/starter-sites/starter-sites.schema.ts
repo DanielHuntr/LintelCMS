@@ -65,6 +65,8 @@ export interface AppliedStarterSiteResponse {
    * `POST /website/sections/restore-previous` brings them back.
    */
   previousSectionsKept: boolean;
+  /** The template's own collections made for it (listings, episodes), by handle. */
+  collectionsMade: string[];
 }
 
 /** `GET /starter-sites/:id/existing-pages`: what applying would meet, for the admin's question. */

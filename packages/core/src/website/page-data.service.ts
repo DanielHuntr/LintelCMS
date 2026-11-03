@@ -228,7 +228,9 @@ async function loadCollectionList(
   currentEntry: PageDataOptions["currentEntry"],
 ): Promise<CollectionListData | null> {
   const { dependencies, context, locale } = request;
-  const collection = context.collections.find(({ handle }) => handle === node.props.collection);
+  const collection = context.listedCollections.find(
+    ({ handle }) => handle === node.props.collection,
+  );
   if (!collection) return null;
   const limit = Number(node.props.limit) || 6;
   const [taxonomy, term] = String(node.props.term ?? "").split("/");
@@ -279,7 +281,10 @@ async function loadCollectionList(
     items: entries.map((entry) =>
       entryAsItem(
         entry,
-        localiseUrl(entry.url ?? `/${entry.slug}`, locale, context),
+        // Entries without pages of their own (listings shown only here) link nowhere.
+        collection.routePattern === null
+          ? ""
+          : localiseUrl(entry.url ?? `/${entry.slug}`, locale, context),
         locale,
         collection.choiceLabels,
       ),

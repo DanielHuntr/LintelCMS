@@ -34,6 +34,8 @@ export interface OpenOptions {
   pages?: Record<string, string>;
   /** Pretends the browser has no cross-document view transitions, to test the fallback. */
   withoutViewTransitions?: boolean;
+  /** Pretends the browser has no WebGL, to test the shader effects' fallbacks. */
+  withoutWebGl?: boolean;
 }
 
 function document(html: string, effects: readonly EffectOnTest[], options: OpenOptions) {
@@ -65,6 +67,16 @@ export async function openEffectsPage(
   if (options.withoutViewTransitions) {
     await page.addInitScript(() => {
       delete (window as Partial<Window & { CSSViewTransitionRule: unknown }>).CSSViewTransitionRule;
+    });
+  }
+  if (options.withoutWebGl) {
+    await page.addInitScript(() => {
+      const original = HTMLCanvasElement.prototype.getContext;
+      Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {
+        value(this: HTMLCanvasElement, kind: string, settings?: unknown) {
+          return kind.startsWith("webgl") ? null : original.call(this, kind as "2d", settings);
+        },
+      });
     });
   }
   const requested: string[] = [];

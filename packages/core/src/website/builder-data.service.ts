@@ -35,7 +35,7 @@ export async function readBuilderData(
 ): Promise<BuilderData> {
   const context = await readSiteContext(dependencies);
   const collections = await Promise.all(
-    context.collections.map(async (routed): Promise<DataCollection> => {
+    context.listedCollections.map(async (routed): Promise<DataCollection> => {
       const collection = await findCollectionOrFail(dependencies.database, routed.handle);
       const blueprint = await findBlueprintByIdOrFail(
         dependencies.database,
@@ -69,7 +69,9 @@ export async function readBuilderData(
         samples: samples.items.map((entry) =>
           entryAsItem(
             entry,
-            localiseUrl(entry.url ?? `/${entry.slug}`, entry.locale, context),
+            routed.routePattern === null
+              ? ""
+              : localiseUrl(entry.url ?? `/${entry.slug}`, entry.locale, context),
             context.defaultLocale,
             choiceLabelsOf(blueprint.fields),
           ),

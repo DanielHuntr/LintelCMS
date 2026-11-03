@@ -38,5 +38,5 @@ the gallery and the Motion panel's list leave them out), which means a page load
 code only when one of its elements uses them. All are for a mouse or trackpad only.
 
 `cursor-colours.ts` offers the site's own colours, then the theme's, as swatches for the
-word's look; `SiteMotionSettingsWithColours` passes them to the site-wide settings too. See
+word's look and for effects' colour settings (a moving background's colours, say); `SiteMotionSettingsWithColours` passes them to the site-wide settings too. See
 `docs/decisions/0047-designing-the-cursor.md`.

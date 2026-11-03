@@ -5,11 +5,13 @@ import { readColour, readNumber } from "../kit/params.js";
 import { pointerWithin } from "../kit/pointer.js";
 import { createSurface } from "../kit/surface.js";
 import { approach } from "../maths/smoothing.js";
-import { colourToRgb, createShaderPass, noiseFunctions } from "../kit/webgl.js";
+import { shaderRenderer } from "../kit/shader-renderer.js";
+import { noiseFunctions } from "../kit/shader-source.js";
+import { resolveColour } from "../kit/css-colour.js";
 
 /**
  * A slow liquid blend of four colours behind the content, gently stirred by the pointer.
- * One small WebGL shader. The page's stylesheet already paints the same colours as a
+ * One small shader, drawn through the page's shared WebGL context. The page's stylesheet already paints the same colours as a
  * plain gradient (the static fallback), which is what shows without WebGL, before this
  * module loads, and as a still frame for people who ask for less motion.
  */
@@ -26,39 +28,45 @@ const liquidGradient: EffectBehaviour = (element, params, context) => {
   // The colours blend softly, so half the screen's pixels look the same and cost a quarter.
   let redraw = () => {};
   const surface = createSurface(element, context, { resolution: 0.5, onResize: () => redraw() });
-  const pass = createShaderPass(surface.canvas, shader);
-  if (!pass) return surface.remove;
-  if (pass.software) {
+  const renderer = shaderRenderer();
+  if (!renderer?.supports(shader)) return surface.remove;
+  if (renderer.software) {
     surface.ratio = 0.25;
     surface.canvas.width = Math.max(1, Math.round(surface.width * surface.ratio));
     surface.canvas.height = Math.max(1, Math.round(surface.height * surface.ratio));
   }
   let skipped = 0;
-  ["one", "two", "three", "four"].forEach((name, index) => {
+  const colours = ["one", "two", "three", "four"].map((name, index) => {
     const fallback = ["#7539fd", "#ff5c8a", "#ffb347", "#3ec6ff"][index]!;
-    pass.set("abcd"[index]!, ...colourToRgb(readColour(params, name, fallback)));
+    return resolveColour(element, readColour(params, name, fallback), fallback);
   });
-  pass.set("g", readNumber(params, "grain", 0.04));
+  const grain = readNumber(params, "grain", 0.04);
   const speed = readNumber(params, "speed", 1);
   const pointer = { x: 0.5, y: 0.5 };
   const eased = { x: 0.5, y: 0.5 };
   let time = Math.random() * 100;
   const draw = () => {
-    pass.set("r", surface.canvas.width, surface.canvas.height);
-    pass.set("t", time);
-    pass.set("m", eased.x, eased.y);
-    pass.draw();
+    renderer.paint(surface.canvas, shader, {
+      r: [surface.canvas.width, surface.canvas.height],
+      t: time,
+      m: [eased.x, eased.y],
+      a: colours[0]!,
+      b: colours[1]!,
+      c: colours[2]!,
+      d: colours[3]!,
+      g: grain,
+    });
   };
   redraw = draw;
   draw();
-  if (context.reduced) return combine(() => pass.destroy(), surface.remove);
+  if (context.reduced) return surface.remove;
   const loop = createFrameLoop(element, (elapsed) => {
     time += (elapsed / 1000) * speed * (context.lowPower ? 0.6 : 1);
     eased.x = approach(eased.x, pointer.x, 0.95, elapsed);
     eased.y = approach(eased.y, pointer.y, 0.95, elapsed);
     // Slow colours lose nothing at 30 frames a second where every frame is costly.
     skipped += 1;
-    if (!(pass.software || context.lowPower) || skipped % 2 === 0) draw();
+    if (!(renderer.software || context.lowPower) || skipped % 2 === 0) draw();
     return true;
   });
   return combine(
@@ -70,7 +78,6 @@ const liquidGradient: EffectBehaviour = (element, params, context) => {
       },
     }),
     () => loop.destroy(),
-    () => pass.destroy(),
     surface.remove,
   );
 };

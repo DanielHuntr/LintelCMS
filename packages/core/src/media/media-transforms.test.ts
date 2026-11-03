@@ -129,6 +129,12 @@ describe("image transforms", () => {
     expect(response.body).toBe("item,price\n");
   });
 
+  it("lets pages on any address read a picture's pixels, for picture effects", async () => {
+    const asset = await uploadTestImage();
+    const response = await requestFile(asset.id, "w=100&format=webp", { origin: "null" });
+    expect(response.headers["access-control-allow-origin"]).toBe("*");
+  });
+
   it("answers 404 for an unknown or malformed id", async () => {
     const unknown = await requestFile("00000000-0000-4000-8000-000000000000", "w=10");
     const malformed = await requestFile("not-an-id", "");

@@ -9,6 +9,7 @@ export {
   defaultProps,
   cleanProps,
   effectAnimation,
+  effectColourPattern,
   effectCategories,
   elementKinds,
   InvalidEffectError,

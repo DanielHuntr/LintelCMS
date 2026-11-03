@@ -15,7 +15,7 @@ import { isCollectionOnSite } from "../collections/collections.service.js";
 import { readAddressForSite } from "../sites/site-address.service.js";
 import type { Site } from "../sites/sites.table.js";
 import { listLocales } from "../sites/locales.service.js";
-import type { RoutedCollection } from "./site-routing.js";
+import type { ListedCollection, RoutedCollection } from "./site-routing.js";
 import { readWebsiteLook, type WebsiteLook } from "./website.service.js";
 import type { SiteEffectSettings } from "@lintel/motion/effects";
 import { readSiteEffects } from "../site-effects/site-effects.service.js";
@@ -53,6 +53,8 @@ export interface SiteContext {
   defaultLocale: string;
   locales: Array<{ code: string; name: string }>;
   collections: RoutedCollection[];
+  /** Every collection a Collection list may show, with pages of their own or without. */
+  listedCollections: ListedCollection[];
   look: WebsiteLook;
   logo: DeliveredAsset | null;
   seoEnabled: boolean;
@@ -104,10 +106,10 @@ export async function loadSiteContext(
   const scriptRule = readSetting(database, "builderCustomScripts");
   const design = await readSiteDesign(database, site);
   const noticeSettings = readCookieNoticeSettings(database);
-  const [locales, collections, look, seoEnabled, seoDefaults, siteAddress, plugins] =
+  const [locales, listedCollections, look, seoEnabled, seoDefaults, siteAddress, plugins] =
     await Promise.all([
       listLocales(database, site),
-      listRoutedCollections(database, site),
+      listSiteCollections(database, site),
       readWebsiteLook(database, options.templates),
       isSeoPluginEnabled(database),
       readSeoDefaults(database),
@@ -150,7 +152,10 @@ export async function loadSiteContext(
   return {
     defaultLocale: locales.defaultLocale,
     locales: locales.locales.map(({ code, name }) => ({ code, name })),
-    collections,
+    collections: listedCollections.flatMap(({ routePattern, ...collection }) =>
+      routePattern === null ? [] : [{ ...collection, routePattern }],
+    ),
+    listedCollections,
     look,
     logo,
     seoEnabled,
@@ -203,17 +208,18 @@ async function loadCookieNotice(
   };
 }
 
-/** Collections whose entries have pages, with the taxonomies their posts are filed under. */
-async function listRoutedCollections(
+/**
+ * The site's collections, with the taxonomies their entries are filed under; those whose
+ * entries have pages of their own are the site's routed `collections`.
+ */
+async function listSiteCollections(
   database: DatabaseOrTransaction,
   site: Site,
-): Promise<RoutedCollection[]> {
+): Promise<ListedCollection[]> {
   const collections = await listCollectionsWithDetails(database, DEFAULT_TENANT_ID);
-  const routed = collections.filter(
-    (collection) => collection.routePattern !== null && isCollectionOnSite(collection, site),
-  );
+  const onSite = collections.filter((collection) => isCollectionOnSite(collection, site));
   return Promise.all(
-    routed.map(async (collection) => {
+    onSite.map(async (collection) => {
       const blueprint = await findBlueprintByIdOrFail(database, collection.blueprintId);
       const taxonomyHandles = blueprint.fields.flatMap((field) =>
         field.type === "terms" && typeof field.options.taxonomy === "string"
@@ -224,7 +230,8 @@ async function listRoutedCollections(
         handle: collection.handle,
         name: collection.name,
         structure: collection.structure,
-        routePattern: collection.routePattern ?? "/{slug}",
+        // null: no pages of their own, so only Collection lists show the entries.
+        routePattern: collection.routePattern,
         taxonomyHandles: [...new Set(taxonomyHandles)],
         choiceLabels: choiceLabelsOf(blueprint.fields),
       };

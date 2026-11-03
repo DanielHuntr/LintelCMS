@@ -6,12 +6,17 @@
  */
 
 import { atelierIllustrations } from "./illustrations-atelier.js";
+import { chambersIllustrations } from "./illustrations-chambers.js";
 import { folioIllustrations } from "./illustrations-folio.js";
 import { halyardIllustrations } from "./illustrations-halyard.js";
 import { hollisIllustrations } from "./illustrations-hollis.js";
 import { lindIllustrations } from "./illustrations-lind.js";
+import { longplayIllustrations } from "./illustrations-longplay.js";
+import { longwaveIllustrations } from "./illustrations-longwave.js";
 import { northsideIllustrations } from "./illustrations-northside.js";
+import { relayIllustrations } from "./illustrations-relay.js";
 import { studioIllustrations } from "./illustrations-studio.js";
+import { thresholdIllustrations } from "./illustrations-threshold.js";
 import { tollboothIllustrations } from "./illustrations-tollbooth.js";
 import { verveineIllustrations } from "./illustrations-verveine.js";
 
@@ -108,6 +113,11 @@ const illustrationList: Record<string, string> = {
   ...lindIllustrations,
   ...halyardIllustrations,
   ...northsideIllustrations,
+  ...relayIllustrations,
+  ...chambersIllustrations,
+  ...longplayIllustrations,
+  ...thresholdIllustrations,
+  ...longwaveIllustrations,
 };
 
 export const illustrationNames: readonly string[] = Object.keys(illustrationList);

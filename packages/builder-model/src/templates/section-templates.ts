@@ -2,6 +2,7 @@ import type { NodeBlueprint } from "../components/component-definition.js";
 import { closingSections } from "./closing-sections.js";
 import { extraFooterSections, navigationSections } from "./navigation-sections.js";
 import { openingSections } from "./opening-sections.js";
+import { sectionPacks } from "./section-packs.js";
 
 /**
  * The section library: ready-made sections for the Insert panel, grouped by what they are
@@ -47,6 +48,7 @@ export const sectionTemplates: readonly SectionTemplate[] = [
   ...openingSections,
   ...closingSections,
   ...extraFooterSections,
+  ...sectionPacks,
 ];
 
 /**

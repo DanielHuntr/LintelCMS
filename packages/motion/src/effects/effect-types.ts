@@ -21,6 +21,9 @@ export const effectModuleNames = [
   "transitions",
   "intro",
   "smooth-scroll",
+  "shader-backgrounds",
+  "film-grain",
+  "picture-effects",
 ] as const;
 
 export type EffectModuleName = (typeof effectModuleNames)[number];

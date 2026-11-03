@@ -3,58 +3,41 @@ import { createFrameLoop } from "../kit/frames.js";
 import { combine, listen } from "../kit/listen.js";
 import { readNumber, readText } from "../kit/params.js";
 import { pointerWithin } from "../kit/pointer.js";
-import { setStyles } from "../kit/styles.js";
+import { addPictureLayer, drawingRatio, findPicture } from "../kit/layers.js";
+import { loaded } from "../kit/loaded.js";
+import { shaderRenderer, type ShaderTexture } from "../kit/shader-renderer.js";
+import { noiseFunctions } from "../kit/shader-source.js";
+import { pictureLookup, pictureTexture, placementUniforms } from "../kit/picture-shader.js";
 import { approach } from "../maths/smoothing.js";
-import { createShaderPass, loaded, noiseFunctions } from "../kit/webgl.js";
 
 /**
  * Ripples a picture with flowing noise while the pointer is over it (or it has focus). The
  * picture itself stays in the page; a canvas copy lies over it only while distorting, so
- * the real picture is the fallback everywhere else.
+ * the real picture is the fallback everywhere else. Drawn through the page's shared WebGL
+ * context, with the other shader effects.
  */
-const shader = `${noiseFunctions}
-uniform sampler2D s;uniform float t;uniform float k;uniform vec2 m;uniform float mode;
+const shader = `${noiseFunctions}${pictureLookup}
+uniform float t;uniform float k;uniform vec2 m;uniform float mode;
 void main(){vec2 p=uv;float d=distance(uv,m);
 vec2 o=vec2(n(uv*6.+t),n(uv*6.-t+4.))-.5;
 if(mode>.5){o*=smoothstep(.45,0.,d)*2.;}
 vec2 sp=p+o*k*.08;
-vec4 col=vec4(texture2D(s,sp+vec2(k*.004,0)).r,texture2D(s,sp).g,texture2D(s,sp-vec2(k*.004,0)).b,1.);
-gl_FragColor=col;}`;
+gl_FragColor=vec4(edge(sp+vec2(k*.004,0)).r,edge(sp).g,edge(sp-vec2(k*.004,0)).b,1.)*pic(uv).a;}`;
 
 const imageDistort: EffectBehaviour = (element, params, context) => {
-  const image = element instanceof HTMLImageElement ? element : element.querySelector("img");
+  const image = findPicture(element);
   if (!image || context.reduced) return;
-  const holder = image.parentElement ?? element;
-  const restoreHolder =
-    getComputedStyle(holder).position === "static"
-      ? setStyles(holder, { position: "relative" })
-      : () => undefined;
-  const canvas = document.createElement("canvas");
-  canvas.setAttribute("aria-hidden", "true");
-  Object.assign(canvas.style, {
-    position: "absolute",
-    pointerEvents: "none",
-    opacity: "0",
-    transition: "opacity 200ms",
-  });
-  holder.append(canvas);
-  const pass = createShaderPass(canvas, shader);
-  if (!pass) return combine(() => canvas.remove(), restoreHolder);
-  pass.set("mode", readText(params, "focus", "whole") === "pointer" ? 1 : 0);
+  const renderer = shaderRenderer();
+  if (!renderer?.supports(shader)) return;
+  const layer = addPictureLayer(image);
+  Object.assign(layer.canvas.style, { opacity: "0", transition: "opacity 200ms" });
+  const focus = readText(params, "focus", "whole") === "pointer" ? 1 : 0;
   const strength = readNumber(params, "strength", 1);
-  let ready = false;
-  void loaded(image).then(() => (ready = pass.texture(image)));
-  const place = () => {
-    const ratio = context.lowPower ? 1 : Math.min(devicePixelRatio || 1, 2);
-    Object.assign(canvas.style, {
-      left: `${image.offsetLeft}px`,
-      top: `${image.offsetTop}px`,
-      width: `${image.offsetWidth}px`,
-      height: `${image.offsetHeight}px`,
-    });
-    canvas.width = image.offsetWidth * ratio;
-    canvas.height = image.offsetHeight * ratio;
-  };
+  const ratio = drawingRatio(context, { software: renderer.software });
+  let texture: ShaderTexture | undefined;
+  void loaded(image)
+    .then(async () => (texture = await pictureTexture(renderer, image)))
+    .catch(() => undefined);
   let amount = 0;
   let target = 0;
   let time = 0;
@@ -62,16 +45,24 @@ const imageDistort: EffectBehaviour = (element, params, context) => {
   const loop = createFrameLoop(element, (elapsed) => {
     amount = approach(amount, target, 0.9, elapsed);
     time += elapsed / 1600;
-    if (!ready) return target > 0;
-    canvas.style.opacity = amount > 0.01 ? "1" : "0";
-    pass.set("t", time);
-    pass.set("k", amount * strength);
-    pass.set("m", pointer.x, 1 - pointer.y);
-    pass.draw();
+    if (!texture) return target > 0;
+    layer.canvas.style.opacity = amount > 0.01 ? "1" : "0";
+    renderer.paint(
+      layer.canvas,
+      shader,
+      {
+        t: time,
+        k: amount * strength,
+        m: [pointer.x, 1 - pointer.y],
+        mode: focus,
+        ...placementUniforms(image),
+      },
+      texture,
+    );
     return amount > 0 || target > 0;
   });
   const start = () => {
-    place();
+    layer.place(ratio);
     target = 1;
     loop.wake();
   };
@@ -92,9 +83,8 @@ const imageDistort: EffectBehaviour = (element, params, context) => {
       },
     }),
     () => loop.destroy(),
-    () => pass.destroy(),
-    () => canvas.remove(),
-    restoreHolder,
+    () => texture?.release(),
+    layer.remove,
   );
 };
 

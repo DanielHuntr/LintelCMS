@@ -7,6 +7,7 @@ import { usePreferenceStore } from "../preferences/builder-preferences.js";
 import { useRememberedOpenSections } from "../preferences/open-sections.js";
 import type { ImagePicker } from "../panels/content-fields.js";
 import { Tip } from "../tour/Tip.js";
+import { useCursorColourSwatches } from "./cursor-colours.js";
 import { elementKindOf } from "./element-kinds.js";
 import { pointerFieldEffectIds, PointerFields } from "./PointerFields.js";
 
@@ -60,6 +61,8 @@ export function AnimatePanel({
   siteCursorOn,
 }: AnimatePanelProps) {
   const text = useBuilderText();
+  // The site's colours, offered for backgrounds' and other effects' colour settings.
+  const colours = useCursorColourSwatches();
   // Simple's groups (when it plays, timing, less motion), remembered like the Style panel's.
   const openGroups = useRememberedOpenSections(usePreferenceStore(), "animate.open", [
     "trigger",
@@ -109,6 +112,7 @@ export function AnimatePanel({
           sceneElements={sceneElements}
           openGroups={openGroups}
           translate={motionText}
+          colours={colours}
         />
       </div>
       <PointerFields

@@ -45,7 +45,17 @@ export type MotionDemo =
   | "roll"
   | "scramble"
   | "wave"
-  | "bolder";
+  | "bolder"
+  | "mesh"
+  | "light"
+  | "dust"
+  | "contours"
+  | "grain"
+  | "develop"
+  | "pixels"
+  | "split"
+  | "liquid"
+  | "lens";
 
 export interface QuickPick {
   /** The preset's or effect's id. */
@@ -128,6 +138,45 @@ export const wordHoverPicks: Partial<Record<ElementKind, readonly QuickPick[]>> 
   ],
 };
 
+/**
+ * Some kinds of element get tiles of their own in a moment: sections and boxes get the
+ * moving backgrounds under "Always", and pictures get picture effects on hover and as they
+ * appear. The first is still the default.
+ */
+export const elementPicks: Partial<
+  Record<MotionMoment, Partial<Record<ElementKind, readonly QuickPick[]>>>
+> = {
+  always: {
+    container: [
+      { id: "moving-gradient", demo: "mesh" },
+      { id: "soft-light", demo: "light" },
+      { id: "floating-dust", demo: "dust" },
+      { id: "contour-lines", demo: "contours" },
+      { id: "film-grain", demo: "grain" },
+    ],
+  },
+  hover: {
+    image: [
+      { id: "hover-grow", demo: "grow" },
+      { id: "image-ripple-hover", demo: "liquid" },
+      { id: "colour-split-hover", demo: "split" },
+      { id: "image-lens-hover", demo: "lens" },
+      { id: "hover-lift", demo: "lift" },
+      { id: "hover-tilt", demo: "tilt" },
+    ],
+  },
+  appears: {
+    image: [
+      { id: "fade-up", demo: "rise" },
+      { id: "develop-reveal", demo: "develop" },
+      { id: "pixel-reveal", demo: "pixels" },
+      { id: "blur-in", demo: "blur" },
+      { id: "mask-reveal-up", demo: "reveal" },
+      { id: "fade-in", demo: "fade" },
+    ],
+  },
+};
+
 export interface QuickChoice {
   pick: QuickPick;
   choice: MotionChoice;
@@ -141,7 +190,8 @@ export function isAnimationChoice(choice: MotionChoice): boolean {
 /**
  * A moment's tiles for this element: the picks that exist among its choices (which already
  * leave out effects that don't suit it) and suit the element. Most tiles are animations;
- * words on hover also get effects made for words (see `wordHoverPicks`).
+ * words on hover also get effects made for words (see `wordHoverPicks`), and sections and
+ * pictures get theirs (see `elementPicks`).
  */
 export function quickChoicesFor(
   moment: MotionMoment,
@@ -149,7 +199,10 @@ export function quickChoicesFor(
   elementKind: ElementKind,
 ): QuickChoice[] {
   const found: QuickChoice[] = [];
-  const picks = (moment === "hover" && wordHoverPicks[elementKind]) || quickPicks[moment];
+  const picks =
+    (moment === "hover" && wordHoverPicks[elementKind]) ||
+    elementPicks[moment]?.[elementKind] ||
+    quickPicks[moment];
   for (const pick of picks) {
     if (pick.onlyFor && !pick.onlyFor.includes(elementKind)) continue;
     // An id can be both a preset and an effect ("parallax-slow"); the animation is the tile.

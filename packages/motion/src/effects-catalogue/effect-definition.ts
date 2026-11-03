@@ -144,6 +144,13 @@ export class InvalidEffectError extends Error {
 
 const idPattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
+/**
+ * A colour setting's value: a hex colour, one of the site's or theme's colours by name
+ * (`var(--lintel-color-brand)`), which follows the site's styles, or `currentColor`, the
+ * colour of the element's words.
+ */
+export const effectColourPattern = /^(#[0-9a-f]{6}|var\(--[a-z0-9-]{1,60}\)|currentColor)$/i;
+
 /** The settings' starting values. */
 export function defaultProps<Parameters extends EffectParameters>(
   params: Parameters,
@@ -239,7 +246,9 @@ export function cleanProps(
         case "colour":
           return [
             name,
-            typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value) ? value : parameter.default,
+            typeof value === "string" && effectColourPattern.test(value)
+              ? value
+              : parameter.default,
           ];
         case "text":
           return [

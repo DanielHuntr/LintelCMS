@@ -65,6 +65,45 @@ export interface StarterSite {
    * Pages don't repeat them. Left out, a site gets the standard ones.
    */
   siteSections?: { navigation?: NodeBlueprint; footer?: NodeBlueprint };
+  /**
+   * Collections the template's pages list (property listings, podcast episodes), with a few
+   * sample entries. Applied only when the site has no collection with that handle yet; a
+   * Collection list on a page shows them, and people add their own in Content.
+   */
+  collections?: readonly StarterCollection[];
+}
+
+/** A plain field of a template's collection: a line of text, a paragraph or an address. */
+export interface StarterCollectionField {
+  /** Lowercase letters, numbers and underscores: "price", "area". */
+  handle: string;
+  label: string;
+  type: "text" | "textarea";
+  helpText?: string;
+}
+
+/** One sample entry: its title and address, and its fields by handle. */
+export interface StarterCollectionEntry {
+  title: string;
+  slug: string;
+  data: Readonly<Record<string, string>>;
+}
+
+/**
+ * A collection a template brings, such as "Listings". Its entries have no page of their own;
+ * the template's pages show them in a Collection list (`collectionList` with this handle).
+ * Pictures are addresses kept in a text field (`/_lintel/illustrations/<name>.svg`) until
+ * people choose their own.
+ */
+export interface StarterCollection {
+  handle: string;
+  /** "Listings": what Content calls the collection. */
+  name: string;
+  /** "Listing": what one entry is called. */
+  itemName: string;
+  fields: readonly StarterCollectionField[];
+  /** In the order the lists show them (the collection's own order). */
+  entries: readonly StarterCollectionEntry[];
 }
 
 /** Some of the site's motion settings, each part only the values it changes. */
@@ -108,11 +147,18 @@ export function buildStarterPage(
   };
 }
 
+/** The elements that show one of the site's forms: a form, and a newsletter sign-up. */
+const formElements = new Set(["formEmbed", "newsletterSignup"]);
+
 /** The forms a template's pages show, by the handle the template gives them. */
 export function formsUsedBy(page: StarterPage): string[] {
   const handles = new Set<string>();
   const visit = (blueprint: NodeBlueprint) => {
-    if (blueprint.type === "formEmbed" && typeof blueprint.props?.form === "string") {
+    if (
+      formElements.has(blueprint.type) &&
+      typeof blueprint.props?.form === "string" &&
+      blueprint.props.form
+    ) {
       handles.add(blueprint.props.form);
     }
     blueprint.children?.forEach(visit);
@@ -125,7 +171,7 @@ function withFormHandles(
   blueprint: NodeBlueprint,
   forms: Readonly<Record<string, string>>,
 ): NodeBlueprint {
-  const form = blueprint.type === "formEmbed" ? blueprint.props?.form : undefined;
+  const form = formElements.has(blueprint.type) ? blueprint.props?.form : undefined;
   return {
     ...blueprint,
     ...(typeof form === "string" && forms[form]

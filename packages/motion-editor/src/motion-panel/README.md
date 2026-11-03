@@ -8,6 +8,7 @@ Everything that makes the selected element move, in one place. It replaces the b
   - the plain controls: how much, speed, feel (smooth or springy) and, for entrances, when it starts. Only the ones that mean something for the motion show;
   - "More settings" opens the full settings (Simple, and the timeline for designers);
   - "More effects…" opens the full catalogue: every preset and effect in plain groups ("Words", "Depth and 3D"), with search across all of them. Only effects that suit the element are offered. Point at a choice to watch it on the page before adding it. A choice made there takes the place of the default.
+- **Sections and pictures** get tiles of their own (`elementPicks` in `quickPicks.ts`): under "Always", a section is offered the moving backgrounds (gradient, soft light, dust, contours, grain); a picture is offered picture effects on hover (liquid, colour split, lens) and reveals as it appears (develop, pixelate). These are effects, so their few settings (colours, speed, how much) show under the tiles, and each change plays on the page. Colour settings offer the site's colours first (`colours`, saved as `var(--name)` so they follow Site styles) and, for dust and lines, "Same as the words".
 - **Choosing again** swaps the motion added on this screen rather than adding more; the moment picker and the tiles are radio groups, so the arrow keys move between them.
 - **Editing:**
   - an animation opens in the studio's Simple view, with the timeline as "Advanced" when the host offers it;

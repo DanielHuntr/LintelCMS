@@ -68,7 +68,9 @@ builder's canvas draws with exactly that stylesheet, header and footer
 
 Collection lists, product grids, forms and headers in a design are filled in before it is
 drawn (`page-data.service.ts`): `?page=` pages through the first list that links to more
-pages and `?sort=` orders product grids. A published page whose design is the **item design**
+pages and `?sort=` orders product grids. A Collection list can show any of the site's
+collections, including those whose entries have no pages of their own (no route pattern,
+such as listings shown only on one page); those entries' addresses are empty. A published page whose design is the **item design**
 for a collection (`itemDesignFor`) draws every entry of that collection, its bound elements
 showing the entry's fields (`item-designs.service.ts`, `entry-designs.service.ts`). The
 shop's products and the forms are read from their own APIs inside the process
