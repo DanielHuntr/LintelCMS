@@ -651,6 +651,18 @@ export const openApiOperations: Operation[] = [
   },
   {
     method: "get",
+    path: "/media/sample-models/{file}",
+    tag: "Media",
+    summary: "Download one of the sample 3D models",
+    access: "public",
+    params: z.object({ file: z.string() }),
+    responses: {
+      200: { description: "The model.", contentType: "model/gltf-binary" },
+      404: { description: "There is no sample with this name." },
+    },
+  },
+  {
+    method: "get",
     path: "/delivery/forms.js",
     tag: "Delivery",
     summary: "The embeddable forms script",
