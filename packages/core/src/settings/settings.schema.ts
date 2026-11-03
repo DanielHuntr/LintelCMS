@@ -87,6 +87,8 @@ export const settingSchemas = {
   siteEffects: siteEffectSettingsSchema,
   /** Whether and how the website asks visitors about cookies (see src/cookie-notice). */
   cookieNotice: cookieNoticeSettingsSchema,
+  /** Whether clients' changes go live when they publish, or wait for approval (src/client-editing). */
+  clientChanges: z.enum(["goLive", "needsApproval"]),
 };
 
 export type SettingKey = keyof typeof settingSchemas;
@@ -114,4 +116,5 @@ export const settingDefaults: { [Key in SettingKey]: SettingValue<Key> } = {
   updatePreferences: defaultUpdatePreferences,
   siteEffects: defaultSiteEffectSettings,
   cookieNotice: defaultCookieNoticeSettings,
+  clientChanges: "goLive",
 };

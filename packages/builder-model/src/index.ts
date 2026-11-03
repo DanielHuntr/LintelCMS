@@ -75,7 +75,11 @@ export * from "./fonts/page-fonts.js";
 export * from "./fonts/site-fonts.js";
 export * from "./text-marks/text-marks.js";
 export * from "./client-editing/client-content.js";
-export { findDesignChanges, type DesignChange } from "./client-editing/client-changes.js";
+export {
+  findDesignChanges,
+  sameValue,
+  type DesignChange,
+} from "./client-editing/client-changes.js";
 export * from "./countries/country-codes.js";
 export * from "./consent/consent-services.js";
 export * from "./consent/cookie-notice-page.js";

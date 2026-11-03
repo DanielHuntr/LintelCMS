@@ -55,6 +55,8 @@ export const collectionItemsQuerySchema = z
     status: optionalQueryValue(
       z.enum(entryStatuses, { error: 'The status should be "draft", "published" or "scheduled"' }),
     ),
+    /** "waiting": only entries with clients' changes waiting for review (src/client-editing). */
+    review: optionalQueryValue(z.enum(["waiting"], { error: 'review should be "waiting"' })),
     sort: optionalQueryValue(
       z.string().regex(/^(title|updated|status|published|field:[a-z][a-z0-9_]*)$/, {
         error: 'Sort by "title", "updated", "status", "published" or "field:<handle>"',

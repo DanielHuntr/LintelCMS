@@ -1,11 +1,12 @@
 /**
- * The five roles every site has. Their permissions are fixed here, so improving a role in a
+ * The roles every site has. Their permissions are fixed here, so improving a role in a
  * new version of Lintel improves it on every site. Admins add custom roles for anything else.
  *
  * Owner is special: only owners can make someone an owner, change an owner or remove one,
  * and the last active owner can't be removed, deactivated or demoted (see src/users).
  */
 export const OWNER_ROLE_HANDLE = "owner";
+export const CLIENT_ROLE_HANDLE = "client-content-only";
 
 export interface BuiltInRole {
   handle: string;
@@ -36,6 +37,7 @@ export const builtInRoles: readonly BuiltInRole[] = [
       "globals:*",
       "collections:*",
       "blueprints:*",
+      "builder:design",
       "builder:code",
       "builder:blocks",
       "users:*",
@@ -61,6 +63,7 @@ export const builtInRoles: readonly BuiltInRole[] = [
     description: "Writes, edits and publishes all content, and manages media and menus.",
     permissions: [
       "entries:*",
+      "builder:design",
       "media:*",
       "navigation:*",
       "terms:*",
@@ -83,8 +86,28 @@ export const builtInRoles: readonly BuiltInRole[] = [
       "entries:update-own",
       "entries:publish-own",
       "entries:delete-own",
+      "builder:design",
       "media:read",
       "media:upload",
+      ...readContentModel,
+    ],
+  },
+  {
+    // Agencies design the site and give their clients this: they change the words,
+    // pictures and links the designer opened up, never the design (see src/client-editing).
+    handle: CLIENT_ROLE_HANDLE,
+    name: "Client (content only)",
+    description:
+      "Changes the words, pictures and links the designer allows, and edits content. Can't change the design.",
+    permissions: [
+      "entries:read",
+      "entries:create",
+      "entries:update",
+      "entries:publish",
+      "media:read",
+      "media:upload",
+      "navigation:read",
+      "globals:read",
       ...readContentModel,
     ],
   },

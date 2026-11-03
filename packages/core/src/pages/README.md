@@ -20,6 +20,9 @@ When a person creates or saves an entry, two more rules apply (`page-code.servic
   and deleting code blocks, and filling in their marked text and pictures, are fine.
   Owners and Admins have it; give it to other roles in Users → Roles to let developers
   write code.
+- **Design needs `builder:design`.** Without it (the Client role), a save may change only
+  the words, pictures and links the designer opened up, and add or remove items where
+  allowed; anything else is refused with 403. See src/client-editing.
 - **Scripts follow the site setting** `builderCustomScripts`: `removeScripts` (the default)
   takes `<script>`, `on…` attributes and `javascript:` links out of code blocks and empties
   their JavaScript when the page is saved; `allowScripts` keeps them.
