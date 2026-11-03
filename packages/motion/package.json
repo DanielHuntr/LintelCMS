@@ -38,6 +38,8 @@
     "measure:effects": "node scripts/measure-effect-modules.mjs && prettier --write src/effects-catalogue/module-sizes.ts"
   },
   "dependencies": {
+    "@rive-app/canvas-lite": "^2.49.1",
+    "lottie-web": "^5.13.0",
     "motion": "^14.9.0",
     "zod": "^4.6.7"
   },

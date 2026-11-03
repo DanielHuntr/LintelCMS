@@ -14,6 +14,7 @@ const modules = Object.fromEntries(
     { ...module, gzipBytes: measured.modules[name]?.gzipBytes ?? 0 },
   ]),
 );
+for (const { file, contents } of written.beside) writeFileSync(`${outdir}${file}`, contents);
 writeFileSync(
   `${outdir}manifest.json`,
   `${JSON.stringify({ modules, files: written.files }, null, 2)}\n`,

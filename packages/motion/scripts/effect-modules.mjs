@@ -1,7 +1,9 @@
 // Builds the lazily loaded effect modules: one ES module per file in src/effects/modules,
 // with code they share split into chunks, and a manifest the server reads to find them.
 import { build } from "esbuild";
-import { readdirSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { readdirSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 
@@ -15,12 +17,65 @@ export function effectModuleEntries() {
   );
 }
 
+const require = createRequire(import.meta.url);
+
+const fingerprinted = (name, contents) => {
+  const fingerprint = createHash("sha256").update(contents).digest("hex").slice(0, 8);
+  const dot = name.lastIndexOf(".");
+  return { name, file: `${name.slice(0, dot)}-${fingerprint}${name.slice(dot)}`, contents };
+};
+
+/** The Lottie and Rive players (src/effects/players), each bundled whole into one file. */
+async function buildPlayers() {
+  const players = ["lottie-player", "rive-player"];
+  return Promise.all(
+    players.map(async (name) => {
+      const result = await build({
+        entryPoints: [fileURLToPath(new URL(`../src/effects/players/${name}.ts`, import.meta.url))],
+        bundle: true,
+        minify: true,
+        format: "esm",
+        target: "es2020",
+        legalComments: "none",
+        write: false,
+        outfile: `${name}.js`,
+        logLevel: "silent",
+      });
+      return fingerprinted(`${name}.js`, Buffer.from(result.outputFiles[0].contents));
+    }),
+  );
+}
+
+/**
+ * Files served beside the modules rather than bundled with them: the players, the Lottie and
+ * Rive samples (made by samples/make-sample-*.mjs) and Rive's WebAssembly. Each gets a
+ * fingerprint in its name, and the modules find them through `__LINTEL_EFFECT_FILES__`
+ * (see kit/media-player.ts). Kept apart so the modules' shared chunks never change for them.
+ */
+export async function besideModuleFiles() {
+  const sources = {
+    "sample-hop.json": fileURLToPath(new URL("../samples/sample-hop.json", import.meta.url)),
+    "sample-orbit.riv": fileURLToPath(new URL("../samples/sample-orbit.riv", import.meta.url)),
+    "rive.wasm": require.resolve("@rive-app/canvas-lite/rive.wasm"),
+  };
+  return [
+    ...(await buildPlayers()),
+    ...Object.entries(sources).map(([name, path]) => fingerprinted(name, readFileSync(path))),
+  ];
+}
+
 /**
  * Bundles the modules. With `outdir` it writes them; either way it returns the manifest:
  * each module's file and what it costs a page (gzipped, with the shared chunks it imports).
  */
 export async function buildEffectModules({ outdir } = {}) {
+  const beside = await besideModuleFiles();
   const result = await build({
+    define: {
+      __LINTEL_EFFECT_FILES__: JSON.stringify(
+        Object.fromEntries(beside.map(({ name, file }) => [name, file])),
+      ),
+    },
     entryPoints: effectModuleEntries(),
     bundle: true,
     splitting: true,
@@ -69,6 +124,10 @@ export async function buildEffectModules({ outdir } = {}) {
   }
   return {
     modules,
-    files: Object.keys(result.metafile.outputs).map((path) => path.split("/").pop()),
+    files: [
+      ...Object.keys(result.metafile.outputs).map((path) => path.split("/").pop()),
+      ...beside.map(({ file }) => file),
+    ],
+    beside,
   };
 }

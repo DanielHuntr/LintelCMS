@@ -21,6 +21,9 @@ export const effectModuleNames = [
   "transitions",
   "intro",
   "smooth-scroll",
+  "playground",
+  "lottie",
+  "rive",
 ] as const;
 
 export type EffectModuleName = (typeof effectModuleNames)[number];

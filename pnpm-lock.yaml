@@ -472,6 +472,12 @@ importers:
 
   packages/motion:
     dependencies:
+      '@rive-app/canvas-lite':
+        specifier: ^2.49.1
+        version: 2.49.1
+      lottie-web:
+        specifier: ^5.13.0
+        version: 5.13.0
       motion:
         specifier: ^14.9.0
         version: 14.9.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -2297,6 +2303,9 @@ packages:
 
   '@repeaterjs/repeater@3.1.0':
     resolution: {integrity: sha512-TaoVksZRSx2KWYYpyLQtMQXXeS98VsgZImzW65xmiVgbYhXLk+aEsmzPLirqVuE4/XuUapH2iMtxUzaBNDzdSQ==}
+
+  '@rive-app/canvas-lite@2.49.1':
+    resolution: {integrity: sha512-yrt30denVjSMDGbq/gtXx3l5EziyDndtl3Xz5WtLRO+NuoSeesjB6C4L0BWOaGWDxu33M3GaiwGtVr97IB+r6Q==}
 
   '@rolldown/binding-android-arm-eabi@1.2.16':
     resolution: {integrity: sha512-ia3DwAs0OsMGS7+IConptSiyk9pEXkOx/AbJ2n/lAGxH3QkWQus1t8d7gnAT38FCU2sQu8lUbeR6AiZFv4JxaA==}
@@ -4711,6 +4720,9 @@ packages:
 
   longest-streak@3.1.0:
     resolution: {integrity: sha512-9Ri+o0JYgehTaVBBDoMqIl8GXtbWg711O3srftcHhZ0dqnETqLaoIK0x17fUw9rFSlK/0NlsKe0Ahhyl5pXE2g==}
+
+  lottie-web@5.13.0:
+    resolution: {integrity: sha512-+gfBXl6sxXMPe8tKQm7qzLnUy5DUPJPKIyRHwtpCpyUEYjHYRJC/5gjUvdkuO2c3JllrPtHXH5UJJK8LRYl5yQ==}
 
   lowdb@7.0.1:
     resolution: {integrity: sha512-neJAj8GwF0e8EpycYIDFqEPcx9Qz4GUho20jWFR7YiFeXzF1YMLdxB36PypcTSPMA+4+LvgyMacYhlr18Zlymw==}
@@ -7817,6 +7829,8 @@ snapshots:
 
   '@repeaterjs/repeater@3.1.0': {}
 
+  '@rive-app/canvas-lite@2.49.1': {}
+
   '@rolldown/binding-android-arm-eabi@1.2.16':
     optional: true
 
@@ -10348,6 +10362,8 @@ snapshots:
       yoctocolors: 2.2.0
 
   longest-streak@3.1.0: {}
+
+  lottie-web@5.13.0: {}
 
   lowdb@7.0.1:
     dependencies:
