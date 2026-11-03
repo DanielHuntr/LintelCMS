@@ -25,6 +25,7 @@ import type { NavigationResponse } from "../navigation/navigation.schema.js";
 import { findNavigation, updateNavigation } from "../navigation/navigation.service.js";
 import { NavigationNotFoundError } from "../navigation/navigation.errors.js";
 import { removePageItems } from "../navigation/page-menu-items.js";
+import { ensureStarterSiteSections } from "../site-sections/site-sections.service.js";
 import { pageComponentCatalogue } from "../pages/page-components.js";
 import { createForm, listForms } from "../forms/forms.service.js";
 import { type FormTemplateId, formTemplateIds } from "../forms/form-templates.js";
@@ -128,6 +129,9 @@ export async function applyStarterSite(
   const menu = hasPermission(context.permissions, "navigation:update")
     ? await fillEmptyMainMenu(database, pages, editingSite, replaced)
     : "left";
+  // The template's pages share a navigation and footer that follow the main menu, unless
+  // the site already chose its own.
+  await ensureStarterSiteSections(database, editingSite);
   return {
     starterSiteId: site.id,
     pages,

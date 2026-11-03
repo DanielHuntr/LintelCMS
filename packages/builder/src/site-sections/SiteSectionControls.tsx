@@ -149,7 +149,7 @@ export function SiteSectionNote({
 }) {
   const text = useBuilderText();
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-4 z-10 flex justify-center px-4">
+    <div className="pointer-events-none absolute inset-x-0 bottom-16 z-10 flex justify-center px-4">
       <div
         role="status"
         className="pointer-events-auto flex max-w-xl flex-wrap items-center gap-x-3 gap-y-2 rounded-card bg-surface px-3 py-2 text-footnote text-label shadow-float hairline-ring"

@@ -166,6 +166,32 @@ describe("the site's navigation and footer sections", () => {
     expect(broken.statusCode).toBe(400);
   });
 
+  it("gives a starter template's pages a shared navigation and footer", async () => {
+    const applied = await owner("POST", "/starter-sites/bakery/apply", { publish: true });
+    expect(applied.statusCode, applied.body).toBe(201);
+    expect(chromeOf(await visit("/"))).toEqual({
+      automaticHeader: 0,
+      automaticFooter: 0,
+      siteNavigation: 1,
+      siteFooter: 1,
+    });
+  });
+
+  it("gives a site made in Websites and domains its own starter sections", async () => {
+    const created = await owner("POST", "/sites", {
+      handle: "france",
+      name: "Acme France",
+      hostnames: ["acme.fr"],
+      siteUrl: "https://www.acme.fr",
+      defaultLocale: "fr-FR",
+    });
+    expect(created.statusCode, created.body).toBe(201);
+    const france = await owner("GET", "/website/sections?site=france");
+    expect(france.json().navigation.id).toBe("site-navigation");
+    // The first site, set up before sections existed, keeps its automatic header.
+    expect((await owner("GET", "/website/sections")).json().navigation).toBeNull();
+  });
+
   it("gives a new site its starter navigation and footer, but never replaces a site's own", async () => {
     const database = testDatabase.database;
     const defaultSite = await findOrCreateDefaultSite(database);
