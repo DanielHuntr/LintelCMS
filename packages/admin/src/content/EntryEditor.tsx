@@ -38,6 +38,19 @@ import { useEntryActions } from "./useEntryActions.js";
 import { viewPageTarget } from "./viewPage.js";
 import { useViewPageSite } from "../website/website.queries.js";
 import { useLeaveWarning } from "./useLeaveWarning.js";
+import { describeError } from "../api/describeError.js";
+import { runBulkAction } from "../content-tree/contentTree.api.js";
+import { useEntryInfo, useRefreshContent } from "../content-tree/contentTree.queries.js";
+import { CollectionView } from "../content-workspace/CollectionView.js";
+import { entryAddressPattern } from "../content-workspace/entryAddressPattern.js";
+import { InfoTab } from "../content-workspace/InfoTab.js";
+import { PageStatus } from "../content-workspace/PageStatus.js";
+import { PublishWithParentDialog } from "../content-workspace/PublishWithParentDialog.js";
+import type { WorkspaceTab } from "../content-workspace/workspaceTabs.js";
+import { Dialog } from "../design/Dialog.js";
+import { SegmentedControl } from "../design/SegmentedControl.js";
+import { PageMenuSection } from "../menus/PageMenuSection.js";
+import { EntryBreadcrumbs } from "./EntryBreadcrumbs.js";
 
 interface EntryEditorProps {
   collection: Collection;
@@ -47,11 +60,19 @@ interface EntryEditorProps {
   onCreated: (entry: Entry) => void;
   /** The language a new entry is written in. Undefined is the site's main language. */
   locale?: string;
+  /** "children" shows the items listed under it (a Blog page's posts), from the address. */
+  tab?: WorkspaceTab;
+  onTabChange?: (tab: WorkspaceTab) => void;
+  /** The preview beside the fields, kept in the address so it survives a reload. */
+  isPreviewOpen?: boolean;
+  onPreviewChange?: (isOpen: boolean) => void;
 }
 
 /**
- * The entry editor: a calm document with the title at the top and the blueprint's fields
- * below, autosaving as a draft, with publishing and history in a side panel.
+ * The entry editor, the same for a new entry and an old one: breadcrumbs and actions along
+ * the top, the title and the blueprint's fields (a page's design first) in a calm document,
+ * and the entry's status, place, menus, search settings and history in a side panel. It
+ * saves as people type, and keeps the content tree up to date as it does.
  */
 export function EntryEditor({
   collection,
@@ -59,11 +80,23 @@ export function EntryEditor({
   initialEntry,
   onCreated,
   locale,
+  tab,
+  onTabChange,
+  isPreviewOpen: isPreviewOpenInAddress = false,
+  onPreviewChange,
 }: EntryEditorProps) {
   const [state, dispatch] = useReducer(entryDraftReducer, initialEntry, (entry) =>
     initialDraftState(entry, defaultValues(blueprint.fields)),
   );
-  const [companion, setCompanion] = useState<Companion>("panel");
+  const [companion, setCompanionState] = useState<Companion>(
+    isPreviewOpenInAddress ? "preview" : "panel",
+  );
+  const setCompanion = (next: Companion | ((current: Companion) => Companion)) => {
+    const value = typeof next === "function" ? next(companion) : next;
+    setCompanionState(value);
+    if ((value === "preview") !== (companion === "preview")) onPreviewChange?.(value === "preview");
+  };
+  const [isShowingDetails, setIsShowingDetails] = useState(false);
   const isPanelOpen = companion === "panel";
   const isPreviewOpen = companion === "preview";
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
@@ -92,9 +125,18 @@ export function EntryEditor({
     onPublishBlocked: (error) => focusFirstFieldError(error),
   });
   const { entry } = actions;
+  const info = useEntryInfo(entry?.id);
+  const refresh = useRefreshContent();
   const canPublish = useCan("entries:publish");
   const site = useViewPageSite();
-  const viewPage = entry ? viewPageTarget(site, collection, entry) : undefined;
+  const viewPage = entry ? viewPageTarget(site, collection, entry, info.data?.url) : undefined;
+  const address = entryAddressPattern(collection.routePattern, entry?.slug ?? "", info.data);
+  // A page with pages under it that are listed here rather than in the tree (a Blog page).
+  const listsChildren =
+    entry !== undefined &&
+    (info.data?.childCount ?? 0) > 0 &&
+    (info.data?.childrenAsCollection ?? false);
+  const showsChildren = listsChildren && tab === "children";
   const canDelete = useCan("entries:delete");
   const canCreate = useCan("entries:create");
   const canSave = useCan(entry ? "entries:update" : "entries:create");
@@ -115,7 +157,12 @@ export function EntryEditor({
     hasUnsavedChanges: isUnsaved,
     // A new entry isn't created until it has a title, so empty drafts don't pile up.
     isEnabled: canSave && (entry !== undefined || title.trim() !== ""),
-    save: actions.save,
+    save: async (draft, options) => {
+      const saved = await actions.save(draft, options);
+      // The tree shows the name and the "changed since publishing" dot.
+      void refresh();
+      return saved;
+    },
   });
   const leaveWarning = useLeaveWarning(isUnsaved);
 
@@ -163,8 +210,52 @@ export function EntryEditor({
     });
   }
 
+  async function afterPublishing(succeeded: boolean) {
+    if (succeeded) await refresh(entry ? [entry.id] : []);
+  }
+
+  // A page going live under a parent that isn't live is asked about first (LINTEL-SPEC-001).
+  const [parentQuestion, setParentQuestion] = useState<{
+    isWorking: boolean;
+    error: string | null;
+  } | null>(null);
+  const unpublishedAncestors = info.data?.unpublishedAncestors ?? [];
+
+  async function saveAndPublish() {
+    if (await saveExplicitly()) await afterPublishing(await actions.publish());
+  }
+
   async function publish() {
-    if (await saveExplicitly()) await actions.publish();
+    if (entry && entry.status !== "published" && unpublishedAncestors.length > 0) {
+      setParentQuestion({ isWorking: false, error: null });
+      return;
+    }
+    await saveAndPublish();
+  }
+
+  async function publishWithParent() {
+    setParentQuestion({ isWorking: true, error: null });
+    try {
+      const result = await runBulkAction(
+        "publish",
+        unpublishedAncestors.map((ancestor) => ancestor.id),
+      );
+      const [skipped] = result.skipped;
+      await refresh(result.changed);
+      if (skipped) {
+        const message = t("workspace.parentUnpublished.failed", {
+          title: skipped.title || t("editor.untitled"),
+          reason: skipped.reason,
+        });
+        setParentQuestion({ isWorking: false, error: message });
+        return;
+      }
+    } catch (failure) {
+      setParentQuestion({ isWorking: false, error: describeError(failure) });
+      return;
+    }
+    setParentQuestion(null);
+    await saveAndPublish();
   }
 
   /** Saves first, so the copy has the latest changes, then opens the copy. */
@@ -222,8 +313,8 @@ export function EntryEditor({
       <h1 className="sr-only">{title || t("editor.untitled")}</h1>
 
       <EntryEditorBar
-        collectionHandle={collection.handle}
-        collectionName={collection.name}
+        breadcrumbs={<EntryBreadcrumbs collection={collection} entryId={entry?.id} title={title} />}
+        onShowDetails={entry ? () => setIsShowingDetails(true) : undefined}
         isPanelOpen={isPanelOpen}
         panelId={panelId}
         onTogglePanel={() => setCompanion((current) => (current === "panel" ? "none" : "panel"))}
@@ -255,8 +346,9 @@ export function EntryEditor({
             <PublishButton
               entry={entry}
               hasUnsavedChanges={isUnsaved}
-              disabled={actions.isWorking}
-              onPublish={publish}
+              // A new entry has nothing to publish until it has a title.
+              disabled={actions.isWorking || (entry === undefined && title.trim() === "")}
+              onPublish={() => void publish()}
             />
           ) : (
             <Button
@@ -293,98 +385,152 @@ export function EntryEditor({
         </div>
       )}
 
-      <div className={classNames("grid items-start", editorColumns[companion])}>
-        <div
-          ref={documentElement}
-          // The document sits on a white page over the grey desk, like a document in Pages.
-          className="flex min-w-0 flex-col gap-9 rounded-panel bg-surface px-9 pt-8 pb-10"
-        >
-          <div className="flex flex-col gap-1">
-            <EntryTitleInput
-              label={titleField?.label ?? t("editor.titleFallback")}
-              onSubmit={designField && !entry ? () => void startDesigning() : undefined}
-              value={title}
-              onChange={(value) =>
-                dispatch({ type: "fieldChanged", handle: titleFieldHandle, value })
-              }
-              error={state.fieldErrors[titleFieldHandle]}
-            />
-            <EntrySlugInput
-              routePattern={collection.routePattern}
-              slug={state.current.slug}
-              onChange={(slug) => dispatch({ type: "slugChanged", slug })}
-              error={state.fieldErrors.slug}
-              viewPage={viewPage}
-            />
+      {listsChildren && (
+        <div className="mb-5">
+          <SegmentedControl
+            label={t("workspace.tabs", { title: title || t("editor.untitled") })}
+            options={[
+              { value: "content", label: t("workspace.tab.content") },
+              { value: "children", label: t("workspace.tab.children") },
+            ]}
+            value={showsChildren ? "children" : "content"}
+            onChange={(next) => onTabChange?.(next)}
+          />
+        </div>
+      )}
+
+      {showsChildren && entry ? (
+        <CollectionView
+          place={{ parentId: entry.id }}
+          placeName={title || t("editor.untitled")}
+          allLevels={false}
+        />
+      ) : (
+        <div className={classNames("grid items-start", editorColumns[companion])}>
+          <div
+            ref={documentElement}
+            // The document sits on a white page over the grey desk, like a document in Pages.
+            className="flex min-w-0 flex-col gap-9 rounded-panel bg-surface px-9 pt-8 pb-10"
+          >
+            <div className="flex flex-col gap-1">
+              <EntryTitleInput
+                label={titleField?.label ?? t("editor.titleFallback")}
+                onSubmit={designField && !entry ? () => void startDesigning() : undefined}
+                value={title}
+                onChange={(value) =>
+                  dispatch({ type: "fieldChanged", handle: titleFieldHandle, value })
+                }
+                error={state.fieldErrors[titleFieldHandle]}
+              />
+              <EntrySlugInput
+                routePattern={address.pattern}
+                fixedAddress={address.fixedAddress}
+                slug={state.current.slug}
+                onChange={(slug) => dispatch({ type: "slugChanged", slug })}
+                error={state.fieldErrors.slug}
+                viewPage={viewPage}
+              />
+            </div>
+
+            {designField ? (
+              <DesignFirstFields
+                key={state.formVersion}
+                designField={designField}
+                fields={blueprint.fields}
+                data={state.current.data}
+                errors={state.fieldErrors}
+                onChange={(handle, value) => dispatch({ type: "fieldChanged", handle, value })}
+                collectionHandle={collection.handle}
+                entryId={entry?.id}
+                hasTitle={title.trim() !== ""}
+                onStartDesigning={() => void startDesigning()}
+                isStarting={isStartingDesign}
+              />
+            ) : (
+              <EntryFields
+                key={state.formVersion}
+                fields={blueprint.fields}
+                data={state.current.data}
+                errors={state.fieldErrors}
+                onChange={(handle, value) => dispatch({ type: "fieldChanged", handle, value })}
+              />
+            )}
           </div>
 
-          {designField ? (
-            <DesignFirstFields
-              key={state.formVersion}
-              designField={designField}
+          {isPanelOpen && (
+            <EntrySidePanel
+              id={panelId}
+              collection={collection}
+              entry={entry}
+              locale={entry?.locale ?? locale}
+              parentId={state.current.parentId}
+              onParentChange={(parentId) => dispatch({ type: "parentChanged", parentId })}
+              canPublish={canPublish}
+              isWorking={actions.isWorking}
+              onUnpublish={() => void actions.unpublish().then(afterPublishing)}
+              onSchedule={(publishAt) =>
+                void saveExplicitly().then(
+                  async (saved) => saved && afterPublishing(await actions.schedule(publishAt)),
+                )
+              }
+              onRestore={async (revisionId) => {
+                await actions.restore(revisionId);
+                await refresh(entry ? [entry.id] : []);
+              }}
+            >
+              {entry && collection.structure === "tree" && Boolean(collection.routePattern) && (
+                <PageMenuSection entryId={entry.id} pageTitle={title || t("editor.untitled")} />
+              )}
+              <PluginEditorPanels
+                entryId={entry?.id}
+                entryTitle={title}
+                slug={state.current.slug}
+                collection={{
+                  handle: collection.handle,
+                  name: collection.name,
+                  routePattern: collection.routePattern,
+                }}
+              />
+            </EntrySidePanel>
+          )}
+
+          {isPreviewOpen && (
+            <EntryPreviewPane
+              id={previewId}
+              collection={collection}
+              entry={entry}
               fields={blueprint.fields}
-              data={state.current.data}
-              errors={state.fieldErrors}
-              onChange={(handle, value) => dispatch({ type: "fieldChanged", handle, value })}
-              collectionHandle={collection.handle}
-              entryId={entry?.id}
-              hasTitle={title.trim() !== ""}
-              onStartDesigning={() => void startDesigning()}
-              isStarting={isStartingDesign}
-            />
-          ) : (
-            <EntryFields
-              key={state.formVersion}
-              fields={blueprint.fields}
-              data={state.current.data}
-              errors={state.fieldErrors}
-              onChange={(handle, value) => dispatch({ type: "fieldChanged", handle, value })}
+              title={title}
+              onClose={() => setCompanion("panel")}
             />
           )}
         </div>
+      )}
 
-        {isPanelOpen && (
-          <EntrySidePanel
-            id={panelId}
-            collection={collection}
-            entry={entry}
-            locale={entry?.locale ?? locale}
-            parentId={state.current.parentId}
-            onParentChange={(parentId) => dispatch({ type: "parentChanged", parentId })}
-            canPublish={canPublish}
-            isWorking={actions.isWorking}
-            onUnpublish={() => void actions.unpublish()}
-            onSchedule={(publishAt) =>
-              void saveExplicitly().then((saved) => saved && actions.schedule(publishAt))
-            }
-            onRestore={async (revisionId) => {
-              await actions.restore(revisionId);
-            }}
-          >
-            <PluginEditorPanels
-              entryId={entry?.id}
-              entryTitle={title}
-              slug={state.current.slug}
-              collection={{
-                handle: collection.handle,
-                name: collection.name,
-                routePattern: collection.routePattern,
-              }}
-            />
-          </EntrySidePanel>
-        )}
+      <PublishWithParentDialog
+        open={parentQuestion !== null}
+        title={title || t("editor.untitled")}
+        ancestors={unpublishedAncestors}
+        isWorking={parentQuestion?.isWorking ?? false}
+        error={parentQuestion?.error ?? null}
+        onCancel={() => setParentQuestion(null)}
+        onPublishAlone={() => {
+          setParentQuestion(null);
+          void saveAndPublish();
+        }}
+        onPublishWithParent={() => void publishWithParent()}
+      />
 
-        {isPreviewOpen && (
-          <EntryPreviewPane
-            id={previewId}
-            collection={collection}
-            entry={entry}
-            fields={blueprint.fields}
-            title={title}
-            onClose={() => setCompanion("panel")}
-          />
-        )}
-      </div>
+      {entry && (
+        <Dialog
+          open={isShowingDetails}
+          onClose={() => setIsShowingDetails(false)}
+          title={t("editor.details")}
+          size="sheet"
+        >
+          <InfoTab entry={entry} collection={collection} info={info} />
+        </Dialog>
+      )}
 
       <ConfirmDialog
         open={isConfirmingDelete}
@@ -433,12 +579,8 @@ function PublishButton({ entry, hasUnsavedChanges, disabled, onPublish }: Publis
   const isLive = entry?.status === "published";
   const hasNewerEdits = hasUnsavedChanges || entry?.hasUnpublishedChanges === true;
 
-  if (isLive && !hasNewerEdits) {
-    return (
-      <Button variant="tinted" disabled>
-        {t("editor.published")}
-      </Button>
-    );
+  if (entry && isLive && !hasNewerEdits) {
+    return <PageStatus entry={entry} state="live" />;
   }
 
   return (

@@ -94,8 +94,13 @@ export function useEntryPath(entryId: string | undefined) {
   });
 }
 
-export function useEntryInfo(entryId: string) {
-  return useQuery({ queryKey: treeKeys.info(entryId), queryFn: () => getEntryInfo(entryId) });
+/** Undefined (a new entry, not saved yet) asks nothing. */
+export function useEntryInfo(entryId: string | undefined) {
+  return useQuery({
+    queryKey: treeKeys.info(entryId ?? "none"),
+    queryFn: () => getEntryInfo(entryId ?? ""),
+    enabled: entryId !== undefined,
+  });
 }
 
 export function useCollectionItems(place: TreePlace, query: CollectionQuery) {

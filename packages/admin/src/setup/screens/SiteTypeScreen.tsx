@@ -1,4 +1,4 @@
-import { Briefcase, Images, NotebookPen, ShoppingBag, Sparkles } from "lucide-react";
+import { Briefcase, File, Images, NotebookPen, ShoppingBag } from "lucide-react";
 import { useId } from "react";
 import { ChoiceCardGroup, type ChoiceCard } from "../../design/ChoiceCardGroup.js";
 import { t } from "../../i18n/strings.js";
@@ -34,7 +34,7 @@ const siteChoices: readonly ChoiceCard<SiteType>[] = [
     value: "blank",
     title: t("site.blank"),
     description: t("site.blankDescription"),
-    icon: Sparkles,
+    icon: File,
   },
 ];
 

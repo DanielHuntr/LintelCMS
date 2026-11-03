@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { CircleAlert, PanelsTopLeft, Sparkles } from "lucide-react";
+import { CircleAlert, PanelsTopLeft, PencilRuler } from "lucide-react";
 import { lazy, Suspense, useId } from "react";
 import { Button } from "../design/Button.js";
 import { LinkButton } from "../design/LinkButton.js";
@@ -85,7 +85,7 @@ export function PageDesignCard({
         {entryId === undefined ? (
           <Button
             size="large"
-            icon={<Sparkles aria-hidden="true" />}
+            icon={<PencilRuler aria-hidden="true" />}
             disabled={!hasTitle || isStarting}
             aria-describedby={describedBy}
             onClick={onStartDesigning}

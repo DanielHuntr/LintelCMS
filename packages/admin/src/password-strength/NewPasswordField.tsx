@@ -1,4 +1,4 @@
-import { Check, Copy, WandSparkles } from "lucide-react";
+import { Check, Copy, Dices } from "lucide-react";
 import { useId, useRef, useState, type Ref } from "react";
 import { Button } from "../design/Button.js";
 import { PasswordField } from "../design/PasswordField.js";
@@ -88,7 +88,7 @@ export function NewPasswordField({
         <Button
           variant="tinted"
           size="small"
-          icon={<WandSparkles aria-hidden="true" strokeWidth={2} />}
+          icon={<Dices aria-hidden="true" strokeWidth={2} />}
           onClick={() => void suggestPassword()}
         >
           {t("passwordSuggestion.suggest")}

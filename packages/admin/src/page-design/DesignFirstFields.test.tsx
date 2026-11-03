@@ -101,19 +101,28 @@ function renderPageEditor(entry: Entry | undefined) {
 
 afterEach(() => vi.restoreAllMocks());
 
+// A saved page's side panel asks whether it's in the main menu.
+const notInMenu = {
+  menu: { handle: "main", name: "Main menu", source: "items" },
+  inMenu: false,
+  label: "",
+};
+
 describe("a page's editor", () => {
   it("leads with a picture of the design and Edit design, and hides Page sections", async () => {
     mockApi(({ url }) =>
-      url.pathname === "/website/canvas"
-        ? {
-            stylesheet: ".lintel-site { color: #222; }",
-            bodyClassName: "lintel-site",
-            headerHtml: '<header class="lintel-header">Corner Bakery</header>',
-            footerHtml: "",
-            baseUrl: "http://localhost:3000",
-            motionScript: "",
-          }
-        : { revisions: [] },
+      url.pathname.startsWith("/navigation/")
+        ? notInMenu
+        : url.pathname === "/website/canvas"
+          ? {
+              stylesheet: ".lintel-site { color: #222; }",
+              bodyClassName: "lintel-site",
+              headerHtml: '<header class="lintel-header">Corner Bakery</header>',
+              footerHtml: "",
+              baseUrl: "http://localhost:3000",
+              motionScript: "",
+            }
+          : { revisions: [] },
     );
     renderPageEditor(samplePage({ design: designWithOneSection() }));
 
@@ -137,7 +146,7 @@ describe("a page's editor", () => {
 
   it("offers templates and sections for an empty design, with simple sections folded away", async () => {
     const user = userEvent.setup();
-    mockApi(() => ({ revisions: [] }));
+    mockApi(({ url }) => (url.pathname.startsWith("/navigation/") ? notInMenu : { revisions: [] }));
     renderPageEditor(
       samplePage({ sections: [{ id: "f1", type: "faq", data: { question: "Do you deliver?" } }] }),
     );

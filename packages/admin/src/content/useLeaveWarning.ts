@@ -7,7 +7,9 @@ import { useBlocker } from "@tanstack/react-router";
  */
 export function useLeaveWarning(hasUnsavedChanges: boolean) {
   const blocker = useBlocker({
-    shouldBlockFn: () => hasUnsavedChanges,
+    // Opening the preview or the items list changes only the address's query, on the same
+    // screen, so it isn't leaving (LINTEL-FUNC-024).
+    shouldBlockFn: ({ current, next }) => hasUnsavedChanges && current.pathname !== next.pathname,
     enableBeforeUnload: hasUnsavedChanges,
     withResolver: true,
   });

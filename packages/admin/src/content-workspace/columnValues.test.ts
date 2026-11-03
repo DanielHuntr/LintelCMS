@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { formatColumnValue } from "./columnValues.js";
-import { visibleWorkspaceTabs, readWorkspaceTab } from "./workspaceTabs.js";
+import { readWorkspaceTab } from "./workspaceTabs.js";
 
 describe("list column values", () => {
   it("shows plain values as short text and leaves out what a cell can't show", () => {
@@ -15,19 +15,11 @@ describe("list column values", () => {
   });
 });
 
-describe("workspace tabs", () => {
-  it("shows Items only when children are listed in the workspace", () => {
-    expect(visibleWorkspaceTabs({ listsChildren: false })).toEqual([
-      "content",
-      "settings",
-      "history",
-      "info",
-    ]);
-    expect(visibleWorkspaceTabs({ listsChildren: true })).toContain("children");
-  });
-
-  it("reads a tab from the address", () => {
-    expect(readWorkspaceTab("info")).toBe("info");
+describe("what an entry shows, from the address", () => {
+  it("reads the items view, and opens the fields for anything else", () => {
+    expect(readWorkspaceTab("children")).toBe("children");
+    // The old Settings, History and Info tabs are in the editor's side panel and menu now.
+    expect(readWorkspaceTab("info")).toBeUndefined();
     expect(readWorkspaceTab("nonsense")).toBeUndefined();
   });
 });

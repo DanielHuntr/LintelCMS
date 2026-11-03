@@ -25,8 +25,8 @@ function describeSiteStart(siteStart: NonNullable<EntryInfo["siteStart"]>): stri
 }
 
 /**
- * The Info tab: the entry's address, content type and layout, who made and last changed it,
- * when it was published, what links to it, and its id for developers.
+ * An entry's details ("Details" in the editor's menu): its address, content type and layout,
+ * who made and last changed it, when it was published, what links to it, and its id.
  */
 export function InfoTab({ entry, collection, info }: InfoTabProps) {
   if (info.isError) return <LoadError error={info.error} onRetry={() => void info.refetch()} />;
@@ -44,7 +44,7 @@ export function InfoTab({ entry, collection, info }: InfoTabProps) {
       : formatDateTime(time);
 
   return (
-    <div className="grid max-w-4xl items-start gap-5 @min-[60rem]:grid-cols-[1fr_1fr]">
+    <div className="grid items-start gap-5">
       <dl className="overflow-hidden rounded-card bg-surface">
         <Detail label={details.urls.length > 1 ? t("info.addresses") : t("info.address")}>
           {details.urls.length === 0 ? (

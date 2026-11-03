@@ -12,6 +12,7 @@ import type { Entry } from "./content.types.js";
 import { editorColumns, editorWidths } from "./editorLayout.js";
 import { EntryEditor } from "./EntryEditor.js";
 import { newEntryId } from "./newEntryId.js";
+import type { WorkspaceTab } from "../content-workspace/workspaceTabs.js";
 
 interface EntryEditorPageProps {
   collectionHandle: string;
@@ -20,6 +21,10 @@ interface EntryEditorPageProps {
   locale?: string;
   /** Called once a new entry is first saved, just before the address changes to its id. */
   onCreated?: (entryId: string) => void;
+  tab?: WorkspaceTab;
+  onTabChange?: (tab: WorkspaceTab) => void;
+  isPreviewOpen?: boolean;
+  onPreviewChange?: (isOpen: boolean) => void;
 }
 
 /**
@@ -35,7 +40,16 @@ export function EntryEditorPage(props: EntryEditorPageProps) {
   );
 }
 
-function LoadedEntryEditor({ collectionHandle, entryId, locale, onCreated }: EntryEditorPageProps) {
+function LoadedEntryEditor({
+  collectionHandle,
+  entryId,
+  locale,
+  onCreated,
+  tab,
+  onTabChange,
+  isPreviewOpen,
+  onPreviewChange,
+}: EntryEditorPageProps) {
   const navigate = useNavigate();
   const isNew = entryId === newEntryId;
   const collection = useCollection(collectionHandle);
@@ -73,6 +87,10 @@ function LoadedEntryEditor({ collectionHandle, entryId, locale, onCreated }: Ent
       initialEntry={entry.data}
       onCreated={handleCreated}
       locale={isNew ? locale : undefined}
+      tab={tab}
+      onTabChange={onTabChange}
+      isPreviewOpen={isPreviewOpen}
+      onPreviewChange={onPreviewChange}
     />
   );
 }

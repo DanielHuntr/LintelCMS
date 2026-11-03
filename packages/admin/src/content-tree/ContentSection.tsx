@@ -123,7 +123,9 @@ export function ContentSection() {
       void navigate({
         to: "/content/$collection/$entryId",
         params: { collection: target.node.collection.handle, entryId: target.node.id },
-        search: tab === "preview" ? { preview: true } : { tab },
+        // History is in the editor's side panel and Info is "Details" in its menu, so
+        // those open the page itself.
+        search: tab === "preview" ? { preview: true } : tab === "children" ? { tab } : {},
       });
       return;
     }

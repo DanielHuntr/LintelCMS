@@ -108,7 +108,8 @@ describe("EntryEditor", () => {
     await userEvent.type(screen.getByRole("textbox", { name: "Title" }), "!");
     await userEvent.click(screen.getByRole("button", { name: "Publish" }));
 
-    await screen.findByRole("button", { name: "Published" });
+    // Live with nothing new is said in words, not with a greyed-out "Published" button.
+    await screen.findByText("Live on your site");
     const writes = api.calls
       .filter(({ method }) => method !== "GET")
       .map(({ method, url }) => `${method} ${url.pathname}`);

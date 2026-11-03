@@ -1,7 +1,7 @@
 import type { MotionSpec } from "@lintel/motion";
 import { motionPresets, type MotionPreset, type PreviewSample } from "@lintel/motion/presets";
 import { motionSpecSchema } from "@lintel/motion/schema";
-import { Redo2, Sparkles, Undo2 } from "lucide-react";
+import { Redo2, Undo2, Waves } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { Button } from "../controls/Button.js";
 import type { OpenGroups } from "../controls/CollapsibleGroup.js";
@@ -163,7 +163,7 @@ function Studio({
 
       {view !== "gallery" && !state && (
         <div className="flex flex-col items-center gap-3 rounded-card bg-surface px-6 py-12 text-center hairline-ring">
-          <Sparkles aria-hidden="true" className="size-8 text-accent" />
+          <Waves aria-hidden="true" className="size-8 text-accent" />
           <h3 className="text-headline">{t("motionEditor.empty.title")}</h3>
           <p className="max-w-sm text-footnote text-label-secondary">
             {t("motionEditor.empty.description")}

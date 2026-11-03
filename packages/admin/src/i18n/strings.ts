@@ -501,6 +501,7 @@ const english = {
   "editor.parentNone": "None (top level)",
   "editor.parentHint": "Pages can sit under other pages, like folders.",
   "editor.duplicate": "Duplicate entry",
+  "editor.details": "Details",
   "editor.preview": "Preview",
   "editor.hidePreview": "Hide preview",
   "preview.title": "Preview",

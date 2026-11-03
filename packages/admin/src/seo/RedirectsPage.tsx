@@ -1,4 +1,13 @@
-import { ArrowRight, ArrowRightLeft, Check, FileUp, Plus, Sparkles, Trash2, X } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowRightLeft,
+  Check,
+  FileUp,
+  Lightbulb,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 import { LoadError } from "../api/LoadError.js";
 import { PluginBackLink } from "../plugins/PluginLink.js";
@@ -72,7 +81,7 @@ export function RedirectsPage() {
               {suggested.map((redirect) => (
                 <GroupedListRow
                   key={redirect.id}
-                  icon={Sparkles}
+                  icon={Lightbulb}
                   iconTone="warning"
                   label={describePaths(redirect)}
                   description={t("redirects.suggestedDescription")}

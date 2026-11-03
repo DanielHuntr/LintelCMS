@@ -1,10 +1,9 @@
-import { Link } from "@tanstack/react-router";
 import {
-  ChevronLeft,
   Copy,
   Ellipsis,
   Eye,
   Globe,
+  Info,
   PanelRight,
   SquareArrowOutUpRight,
   Trash2,
@@ -17,8 +16,8 @@ import type { ViewPageTarget } from "./viewPage.js";
 import { ViewPageLink } from "./ViewPageLink.js";
 
 interface EntryEditorBarProps {
-  collectionHandle: string;
-  collectionName: string;
+  /** Where the entry is: its section and the pages above it. */
+  breadcrumbs: ReactNode;
   saveIndicator: ReactNode;
   /** The main action: Publish, or Save for people who can't publish. */
   primaryAction: ReactNode;
@@ -31,6 +30,8 @@ interface EntryEditorBarProps {
   onDuplicate: (() => void) | undefined;
   /** Undefined leaves "Copy to site" out (one site only, a shared collection, or not allowed). */
   onCopyToSite?: () => void;
+  /** Undefined leaves "Details" out (nothing saved yet). */
+  onShowDetails?: () => void;
   isPreviewOpen: boolean;
   previewId: string;
   onTogglePreview: () => void;
@@ -43,8 +44,7 @@ interface EntryEditorBarProps {
  * Publish are always in reach, and it blurs the page beneath it like a macOS title bar.
  */
 export function EntryEditorBar({
-  collectionHandle,
-  collectionName,
+  breadcrumbs,
   saveIndicator,
   primaryAction,
   isPanelOpen,
@@ -53,6 +53,7 @@ export function EntryEditorBar({
   onDelete,
   onDuplicate,
   onCopyToSite,
+  onShowDetails,
   isPreviewOpen,
   previewId,
   onTogglePreview,
@@ -64,6 +65,7 @@ export function EntryEditorBar({
       icon: Eye,
       onSelect: onTogglePreview,
     },
+    ...(onShowDetails ? [{ label: t("editor.details"), icon: Info, onSelect: onShowDetails }] : []),
     ...(onDuplicate ? [{ label: t("editor.duplicate"), icon: Copy, onSelect: onDuplicate }] : []),
     ...(onCopyToSite
       ? [{ label: t("sites.copy.action"), icon: Globe, onSelect: onCopyToSite }]
@@ -75,24 +77,18 @@ export function EntryEditorBar({
 
   return (
     <div className="sticky top-0 z-20 -mt-14 -me-16 -ml-(--page-gutter) mb-8 flex h-16 items-center gap-3 bg-background/80 pt-2 pe-16 pl-(--page-gutter) backdrop-blur-xl backdrop-saturate-150">
-      <Link
-        to="/content/$collection"
-        params={{ collection: collectionHandle }}
-        className="-ms-2 flex h-8 min-w-0 items-center gap-0.5 rounded-control pe-2.5 ps-1 text-body text-accent transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring"
-      >
-        <ChevronLeft aria-hidden="true" strokeWidth={2.25} className="size-5 shrink-0" />
-        <span className="truncate">{collectionName}</span>
-      </Link>
+      {breadcrumbs}
 
-      <div className="ms-auto flex items-center gap-1.5">
-        <div className="me-2">{saveIndicator}</div>
+      <div className="ms-auto flex shrink-0 items-center gap-1.5">
+        <div className="me-2 max-sm:me-0">{saveIndicator}</div>
         {viewPage && (
           <ViewPageLink
             target={viewPage}
             className="flex h-9 items-center gap-1.5 rounded-control px-2.5 text-body text-label-secondary transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring"
           >
             <SquareArrowOutUpRight aria-hidden="true" strokeWidth={1.75} className="size-[17px]" />
-            {t("editor.viewPage")}
+            {/* Icons only on a phone, so Publish stays in view; the words stay for screen readers. */}
+            <span className="max-sm:sr-only">{t("editor.viewPage")}</span>
           </ViewPageLink>
         )}
         <button
@@ -106,7 +102,7 @@ export function EntryEditorBar({
           )}
         >
           <Eye aria-hidden="true" strokeWidth={1.75} className="size-[18px]" />
-          {t("editor.preview")}
+          <span className="max-sm:sr-only">{t("editor.preview")}</span>
         </button>
         <button
           type="button"
