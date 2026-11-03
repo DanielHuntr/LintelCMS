@@ -796,13 +796,13 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-057   | P3       | Fixed  | The content tree's right-click menu has no Rename                                                                              |
 | LINTEL-UX-058   | P3       | Fixed  | Recycle bin: identical "Home" items can't be told apart                                                                        |
 | LINTEL-UX-059   | P3       | Fixed  | The dashboard's "N images have no description" leads nowhere; the library can't list them                                      |
-| LINTEL-UX-060   | P3       | Fixed  | The sidebar says Design and the page it opens says Templates                                                                   |
-| LINTEL-UX-061   | P3       | Fixed  | Forms: "Form section" and "Form element" for the same thing; code and API cards sit beside "On a page"                         |
-| LINTEL-UX-062   | P2       | Fixed  | The site fonts' words say "Lintel" in a white-labelled admin                                                                   |
-| LINTEL-UX-063   | P3       | Fixed  | Site styles in Beginner show colour codes and "Gutter 1.5rem"                                                                  |
-| LINTEL-UX-064   | P3       | Fixed  | Create asks "What would you like to make?" with one choice, Pages                                                              |
-| LINTEL-UX-065   | P3       | Fixed  | Users says "It's just you so far" while an invitation is waiting                                                               |
-| LINTEL-UX-066   | P3       | Fixed  | Style chips ignore the real look: a 600 button shows Weight Custom, a 1fr 1fr grid no Columns chip, a 17px button no size      |
+| LINTEL-UX-070   | P3       | Fixed  | The sidebar says Design and the page it opens says Templates                                                                   |
+| LINTEL-UX-071   | P3       | Fixed  | Forms: "Form section" and "Form element" for the same thing; code and API cards sit beside "On a page"                         |
+| LINTEL-UX-072   | P2       | Fixed  | The site fonts' words say "Lintel" in a white-labelled admin                                                                   |
+| LINTEL-UX-073   | P3       | Fixed  | Site styles in Beginner show colour codes and "Gutter 1.5rem"                                                                  |
+| LINTEL-UX-074   | P3       | Fixed  | Create asks "What would you like to make?" with one choice, Pages                                                              |
+| LINTEL-UX-075   | P3       | Fixed  | Users says "It's just you so far" while an invitation is waiting                                                               |
+| LINTEL-UX-076   | P3       | Fixed  | Style chips ignore the real look: a 600 button shows Weight Custom, a 1fr 1fr grid no Columns chip, a 17px button no size      |
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 
