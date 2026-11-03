@@ -32,7 +32,45 @@ function boundValue(value: unknown): BoundValue | undefined {
   return undefined;
 }
 
-export function entryAsItem(entry: DeliveredEntry, url: string, locale: string): BoundItem {
+/**
+ * The labels of a content type's choices, by field handle then stored value: a select's
+ * "web" shows as "Web" on the website (LINTEL-FUNC-013).
+ */
+export type ChoiceLabels = Readonly<Record<string, Readonly<Record<string, string>>>>;
+
+export function choiceLabelsOf(
+  fields: ReadonlyArray<{ handle: string; options?: Record<string, unknown> }>,
+): ChoiceLabels {
+  const labels: Record<string, Record<string, string>> = {};
+  for (const field of fields) {
+    const choices = field.options?.choices;
+    if (!Array.isArray(choices)) continue;
+    const byValue: Record<string, string> = {};
+    for (const choice of choices) {
+      if (typeof choice?.value === "string" && typeof choice.label === "string") {
+        byValue[choice.value] = choice.label;
+      }
+    }
+    labels[field.handle] = byValue;
+  }
+  return labels;
+}
+
+/** A stored choice (or list of them) as its label, when the content type gives one. */
+function withChoiceLabels(value: unknown, labels: Readonly<Record<string, string>>): unknown {
+  if (typeof value === "string") return labels[value] ?? value;
+  if (Array.isArray(value) && value.every((item) => typeof item === "string")) {
+    return value.map((item) => labels[item] ?? item);
+  }
+  return value;
+}
+
+export function entryAsItem(
+  entry: DeliveredEntry,
+  url: string,
+  locale: string,
+  choiceLabels: ChoiceLabels = {},
+): BoundItem {
   const image = entryImage(entry);
   const fields: Record<string, BoundValue> = {
     title: entryTitle(entry),
@@ -45,7 +83,8 @@ export function entryAsItem(entry: DeliveredEntry, url: string, locale: string):
     body: { html: readHtml(entry.data.body) },
   };
   for (const [handle, value] of Object.entries(entry.data)) {
-    const bound = boundValue(value);
+    const labels = choiceLabels[handle];
+    const bound = boundValue(labels ? withChoiceLabels(value, labels) : value);
     if (bound !== undefined) fields[`data.${handle}`] = bound;
   }
   return { id: entry.id, fields };

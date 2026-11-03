@@ -19,6 +19,7 @@ import type { RoutedCollection } from "./site-routing.js";
 import { readWebsiteLook, type WebsiteLook } from "./website.service.js";
 import type { SiteEffectsHead } from "@lintel/site-components";
 import { readSiteEffects, siteEffectsHead } from "../site-effects/site-effects.service.js";
+import { choiceLabelsOf } from "./bound-entries.js";
 
 /**
  * What every page of the built-in site needs, whatever its address: languages, which
@@ -114,6 +115,7 @@ async function listRoutedCollections(
         structure: collection.structure,
         routePattern: collection.routePattern ?? "/{slug}",
         taxonomyHandles: [...new Set(taxonomyHandles)],
+        choiceLabels: choiceLabelsOf(blueprint.fields),
       };
     }),
   );

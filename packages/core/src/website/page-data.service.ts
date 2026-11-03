@@ -234,7 +234,12 @@ async function loadCollectionList(
   const totalPages = Math.max(1, Math.ceil(total / limit));
   return {
     items: entries.map((entry) =>
-      entryAsItem(entry, localiseUrl(entry.url ?? `/${entry.slug}`, locale, context), locale),
+      entryAsItem(
+        entry,
+        localiseUrl(entry.url ?? `/${entry.slug}`, locale, context),
+        locale,
+        collection.choiceLabels,
+      ),
     ),
     ...pageLinks(request, Math.min(page, totalPages), totalPages),
   };

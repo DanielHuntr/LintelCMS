@@ -1,3 +1,5 @@
+import type { ChoiceLabels } from "./bound-entries.js";
+
 /**
  * Which content an address on the website could mean. Pure functions: the site pages
  * service tries the candidates in order and serves the first that exists.
@@ -19,6 +21,8 @@ export interface RoutedCollection {
   routePattern: string;
   /** Handles of the taxonomies its blueprint's terms fields choose from. */
   taxonomyHandles: string[];
+  /** Its choice fields' labels, so lists show "Web" rather than the stored "web". */
+  choiceLabels?: ChoiceLabels;
 }
 
 export type SiteRoute =

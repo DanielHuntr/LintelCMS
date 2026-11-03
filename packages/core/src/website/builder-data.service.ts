@@ -4,7 +4,7 @@ import { findBlueprintByIdOrFail } from "../blueprints/blueprints.service.js";
 import { findCollectionOrFail } from "../collections/collections.service.js";
 import { listDeliveredEntries } from "../delivery/delivery.service.js";
 import { deliverTaxonomy } from "../taxonomies/taxonomies-delivery.service.js";
-import { bindableFieldsOf, entryAsItem } from "./bound-entries.js";
+import { bindableFieldsOf, choiceLabelsOf, entryAsItem } from "./bound-entries.js";
 import { localiseUrl } from "./site-chrome.service.js";
 import { readSiteContext, type SiteDependencies } from "./site-pages.service.js";
 import { readForm, readStorefrontProduct } from "./site-sources.js";
@@ -71,6 +71,7 @@ export async function readBuilderData(
             entry,
             localiseUrl(entry.url ?? `/${entry.slug}`, entry.locale, context),
             context.defaultLocale,
+            choiceLabelsOf(blueprint.fields),
           ),
         ),
       };
