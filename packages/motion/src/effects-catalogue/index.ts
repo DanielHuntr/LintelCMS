@@ -29,6 +29,11 @@ export type {
 export { number, choice, colour, toggle, text } from "./parameters.js";
 export { standardEffects } from "./catalogue/index.js";
 export {
+  dragPlaygroundEffectId,
+  lottiePlayerEffectId,
+  rivePlayerEffectId,
+} from "./catalogue/creative-effects.js";
+export {
   cursorOverEffectId,
   cursorWordEffectId,
   hoverPictureEffectId,

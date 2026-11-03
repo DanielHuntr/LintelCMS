@@ -36,6 +36,10 @@ const kinds: Readonly<Record<string, ElementKind>> = {
   sticky: "container",
   testimonial: "container",
   pricingTable: "container",
+  stickerPlayground: "container",
+  pathText: "svg",
+  lottieAnimation: "image",
+  riveAnimation: "image",
 };
 
 export function elementKindOf(type: string): ElementKind {

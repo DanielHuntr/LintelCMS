@@ -820,6 +820,10 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-087   | P2       | Fixed  | Deleting a downloaded Google Fonts file in the media library breaks that font with no warning                                  |
 | LINTEL-UX-088   | P3       | Fixed  | Two command line tests fail on Windows because they expect Linux-style paths                                                   |
 | LINTEL-UX-080   | P2       | Fixed  | Clients can't be given content-only access: anyone who edits a page can change its design                                      |
+| LINTEL-UX-090   | P2       | Fixed  | No way to set words around a circle (a turning sticker) or along an arc or wave without code                                   |
+| LINTEL-UX-091   | P2       | Fixed  | Lottie animations can't be used: the media library refuses .json and .lottie, and there is no element to play one              |
+| LINTEL-UX-092   | P2       | Fixed  | Rive animations can't be used: the media library refuses .riv, and there is no element to play or interact with one            |
+| LINTEL-UX-093   | P2       | Fixed  | Visitors can't pick up and throw a group of stickers or cards; the drag effects move one element alone, with no collisions     |
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 

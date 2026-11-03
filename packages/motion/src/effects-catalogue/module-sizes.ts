@@ -5,23 +5,35 @@ import type { EffectModuleName } from "../effects/effect-types.js";
  * imports. Measured by scripts/measure-effect-modules.mjs; a test checks it stays current.
  */
 export const effectModuleBytes: Record<EffectModuleName, number> = {
-  cursor: 7413,
-  depth: 4970,
+  cursor: 7583,
+  depth: 5077,
   "film-grain": 1807,
-  "frosted-glass": 2911,
-  "image-distort": 6499,
-  intro: 2659,
-  "liquid-gradient": 5736,
-  marquee: 3030,
-  particles: 2682,
-  physics: 7175,
+  "frosted-glass": 4093,
+  "image-distort": 4566,
+  intro: 2591,
+  "liquid-gradient": 4839,
+  lottie: 3158,
+  marquee: 3135,
+  particles: 2789,
+  physics: 7281,
   "picture-effects": 7511,
-  pointer: 5005,
-  ripple: 4212,
-  scroll: 4651,
+  playground: 4698,
+  pointer: 5178,
+  ripple: 4289,
+  rive: 2495,
+  scroll: 4759,
   "shader-backgrounds": 7867,
-  "smooth-scroll": 1854,
-  svg: 4879,
-  text: 5371,
-  transitions: 1682,
+  "smooth-scroll": 1962,
+  svg: 4986,
+  text: 5476,
+  transitions: 1786,
+};
+
+/**
+ * What a page also downloads, gzipped, once such an element nears the screen: the player
+ * and, for Rive, its WebAssembly. Kept apart from the modules, which stay small.
+ */
+export const effectPlayerBytes: Partial<Record<EffectModuleName, number>> = {
+  lottie: 49178,
+  rive: 414602,
 };

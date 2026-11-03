@@ -20,6 +20,7 @@ import {
   ToggleField,
 } from "./content-fields.js";
 import { sourceChoices, useDataSources } from "./data-sources.js";
+import { FileField } from "./file-field.js";
 
 /**
  * One control for any simple field, given its value: what the Content panel and each item
@@ -108,6 +109,15 @@ export function FieldControl({
       return <DateTimeField label={field.label} value={String(value ?? "")} onChange={onChange} />;
     case "icon":
       return <IconField label={field.label} value={String(value ?? "")} onChange={onChange} />;
+    case "file":
+      return (
+        <FileField
+          label={field.label}
+          value={String(value ?? "")}
+          accept={field.accept}
+          onChange={(address) => onChange(address)}
+        />
+      );
   }
 }
 

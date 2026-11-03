@@ -1,4 +1,5 @@
 import { clockStylesheet } from "./clock.js";
+import { creativeElementsStylesheet } from "./creative.js";
 import { effectElementsStylesheet } from "./effects.js";
 
 /**
@@ -501,6 +502,7 @@ export const elementStylesheet = [
   layout,
   effectElementsStylesheet,
   clockStylesheet,
+  creativeElementsStylesheet,
   media,
   text,
   navigation,

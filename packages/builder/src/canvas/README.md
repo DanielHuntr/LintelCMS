@@ -29,12 +29,13 @@ same with buttons. `canvas-zoom.ts` holds the steps and the keys.
 
 ## Files
 
-| File                     | What it does                                         |
-| ------------------------ | ---------------------------------------------------- |
-| `Canvas.tsx`             | The frame, sized to the chosen screen                |
-| `canvas-frame-script.ts` | The script inside the frame                          |
-| `canvas-messages.ts`     | Messages to and from the frame, checked              |
-| `canvas-drop.ts`         | Where something dragged from Insert would land       |
-| `canvas-zoom.ts`         | Zoom steps, the wheel and the zoom keys              |
-| `usePictureDrop.ts`      | Pictures dropped on or pasted into a Picture element |
-| `PictureDropStatus.tsx`  | The note while a picture uploads, and afterwards     |
+| File                     | What it does                                          |
+| ------------------------ | ----------------------------------------------------- |
+| `Canvas.tsx`             | The frame, sized to the chosen screen                 |
+| `canvas-frame-script.ts` | The script inside the frame                           |
+| `canvas-messages.ts`     | Messages to and from the frame, checked               |
+| `canvas-drop.ts`         | Where something dragged from Insert would land        |
+| `canvas-zoom.ts`         | Zoom steps, the wheel and the zoom keys               |
+| `usePictureDrop.ts`      | Pictures dropped on or pasted into a Picture element  |
+| `PictureDropStatus.tsx`  | The note while a picture uploads, and afterwards      |
+| `animation-preview.ts`   | Plays a selected Lottie or Rive element on the canvas |

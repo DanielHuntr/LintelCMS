@@ -7,6 +7,7 @@ import {
 } from "./block-components.js";
 import { clockComponent } from "./clock-component.js";
 import { codeBlockComponent } from "./code-block-component.js";
+import { creativeComponents } from "./creative-components.js";
 import { effectComponents } from "./effect-components.js";
 import { customBlockComponent } from "../custom-blocks/custom-block.js";
 import type { AnyComponentDefinition, ComponentDefinition } from "./component-definition.js";
@@ -119,6 +120,8 @@ export const standardComponents: readonly AnyComponentDefinition[] = [
   eraseProps(codeBlockComponent),
   // Ready-made animated elements, which start with their effects (see effect-components.ts).
   ...effectComponents,
+  // The creative pack: text on a path, Lottie and Rive, the sticker playground.
+  ...creativeComponents,
   eraseProps(customBlockComponent),
 ];
 

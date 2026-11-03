@@ -111,6 +111,8 @@ export type SimpleField = FieldBase &
     | { kind: "number"; min?: number; max?: number; step?: number; unit?: string }
     | { kind: "dateTime" }
     | { kind: "icon" }
+    /** A file from the media library (an animation), uploaded or by address. */
+    | { kind: "file"; accept: readonly string[] }
   );
 
 /**

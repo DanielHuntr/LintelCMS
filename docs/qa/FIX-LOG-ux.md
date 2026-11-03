@@ -1882,3 +1882,70 @@ The product editor stacked a whole card per variant, so a few choices became a l
 - One variant can't be removed by itself, only by removing a choice, so a single combination that doesn't exist can't be taken out of the table.
 - Saving problems are matched to rows by position, so one shown after a failed save can sit on the wrong row if choices are then changed, until the next save.
 - Prices in other currencies are still kept but not edited here.
+
+## Creative pack: text on a path, Lottie and Rive, physics (LINTEL-UX-090 to 093, 3 November 2026)
+
+Decision: [0055](../decisions/0055-creative-pack-path-text-lottie-rive-physics.md).
+
+**Asked (Daniel):** a creative pack so website makers can build playful, award-style sites without code: words on a circle or a curve, Lottie and Rive animations, and things visitors can drag and throw.
+
+**Reproduced:** no element could set words on a path; the media library refused `.json`, `.lottie` and `.riv`, and nothing could play them; the existing drag effects moved one element alone, with no collisions, gravity or way back.
+
+**Now:**
+
+- **LINTEL-UX-090, Text on a path.** Words around a circle badge (turning slowly, turning as visitors scroll, or still), or along an arc or a wave. SVG and CSS only, so it loads no script. Size, font and colour come from the text's style; a bigger text size makes a bigger badge. Screen readers read the words once. Less motion keeps it still.
+- **LINTEL-UX-091, Lottie animation.** Plays a `.json` or `.lottie` from the media library, uploaded in its Content panel, or a small sample until then. Plays in view, as the page opens, on hover (and backwards when the pointer leaves) or with the scroll, and can loop. A still picture shows before it loads and for less motion; with none, less motion gets one still frame.
+- **LINTEL-UX-092, Rive animation.** Plays a `.riv` the same way, in view or as the page opens, and can respond to hover (turns the state machine's switch on and off, with keyboard focus too) or a click (fires a trigger or flips a switch, with Enter and Space too).
+- **LINTEL-UX-093, Drag and throw these.** An effect for any container, and a ready-made **Sticker playground**. Items keep their designed place until moved; they glide, bounce off the walls and push each other. Three feels: float and drift, fall into a pile, bouncy. A Tidy up button appears once something has moved. Arrow keys move the focused item, further with Shift. A finger on an item drags it and a finger on empty space scrolls the page. Less motion leaves the layout alone. Positions reset on reload.
+- **Files.** Uploads are recognised by their bytes; other JSON and plain zips are still refused. The elements keep the media library's id beside the address, so a file in use can't be deleted. The page weight meter counts the players.
+- **Canvas.** The canvas only previews effects, so a selected Lottie or Rive plays and the others show a quiet stand-in.
+- **Samples.** `packages/motion/samples` writes both from scratch.
+
+**Found while checking, and fixed:**
+
+- Hover and click on a Rive did nothing. The sample's animation and state machine shared the name "Hover", and playing a name picks the animation, so the state machine never ran. The first hover test passed by luck, on the idle animation's swell. The sample's animation is now "Quick", inputs are read when needed, and the test compares sizes over several looks.
+- Deleting a Lottie or Rive that a page used wasn't refused (204). It is now (409 `ASSET_IN_USE`), checked on the running API.
+- The page weight meter showed 3 kB for a Lottie and 2.5 kB for a Rive, leaving out 49 kB and 415 kB of player. It now counts them, and both get the heavy download warning.
+- The address box kept the previous element's address when another was selected; the element's words said "Plays file" for media library addresses.
+- Spaces at the end of SVG text vanish, so a circle's last word ran into its first ("GUTTRUST"); a dot and fixed spaces now keep them apart.
+
+**Sizes (gzipped):**
+
+| What                        |      Size | Loads                                   |
+| --------------------------- | --------: | --------------------------------------- |
+| `playground` module         |   4,698 B | Pages using Drag and throw these        |
+| `lottie` module             |   3,158 B | Pages with a Lottie                     |
+| lottie-web light player     |  48,912 B | When a Lottie nears the screen          |
+| `rive` module               |   2,495 B | Pages with a Rive                       |
+| Rive lite player            |  61,650 B | When a Rive nears the screen            |
+| Rive WebAssembly            | 348,978 B | When a Rive nears the screen            |
+| Element stylesheet addition |     529 B | Every page (1,589 B before compression) |
+| Core page runtime           |   9,676 B | Unchanged by this work                  |
+
+Other effect modules grew by 100 to 170 bytes, because the new modules share small kit files and so split a chunk further.
+
+**Limits:**
+
+- Rive's lite runtime doesn't draw Rive Text or play Rive Audio (its README says such files still run without them).
+- A Rive file with an animation and a state machine of the same name plays the animation, so its inputs don't respond.
+- Lottie expressions don't run. The light build is used on purpose, so a file can't run code.
+- A Rive set to respond to a click with no description is a button with no name. The element asks for a description, but doesn't insist.
+- With less motion a Rive that responds to a click stays a focusable button that does nothing.
+- "Turns as visitors scroll" needs CSS scroll-driven animations; other browsers show it still.
+- The playground's collisions ignore rotation (the tilt is only a look), and it suits a handful to a few dozen items. Resizing the window puts everything back. The Tidy up button can sit over an item, and items don't collide with it.
+- A text size in a wave or arc shrinks with the drawing on a phone.
+- A file typed in as an address has no media library id, so it isn't protected from deletion.
+- `vite preview` doesn't send the `access-control-allow-origin` header the canvas needs for effect modules (`core/src/production/admin-app.ts` does). So the check of Rive under the admin's real Content-Security-Policy added that header in the test browser, which matches production.
+
+Judgement calls: `@rive-app/canvas-lite` rather than `@rive-app/canvas` (WebAssembly 349 kB against 932 kB gzipped). lottie-web rather than dotlottie-web, with `.lottie` unpacked by the browser's `DecompressionStream`. An own small engine rather than Matter.js (25.8 kB gzipped, over a module's 8 kB limit). The admin's Content-Security-Policy gains `'wasm-unsafe-eval'` so the canvas can preview Rive; `eval` stays refused. Daniel may want to review that one.
+
+Files: `packages/motion/src/effects/modules/{playground,lottie,rive}.module.ts`, `effects/maths/playground.ts`, `effects/kit/{media-player,lottie-file,unzip}.ts`, `effects/players/`, `effects-catalogue/catalogue/creative-effects.ts`, `effects-catalogue/page-weight.ts`, `scripts/`, `samples/`; `packages/builder-model/src/components/creative-components.ts`; `packages/builder/src/render/elements/creative.tsx`, `render/page-effects.ts`, `panels/file-field.tsx`, `panels/ContentPanel.tsx`, `canvas/animation-preview.ts`, `i18n/creative-strings.ts`; `packages/core/src/media/file-types.ts`, `media/media.routes.ts`, `website/site-assets.ts`, `website/site.routes.ts`; `packages/admin/src/media/`, `security/contentSecurityPolicy.ts`, `vite.config.ts`.
+
+**Tests:**
+
+- motion: `maths/playground.test.ts` (8), `module-sizes.test.ts` (+1), browser `creative.browser.test.ts` (17): throwing, Tidy up, arrow keys, the pile, real touch on a sticker and on empty space, less motion; Lottie sample, `.lottie`, scroll, hover, poster and still frame; Rive runtime from this site, hover, click and keyboard, poster and still frame.
+- builder-model `creative-components.test.ts` (6). builder `creative.test.tsx` (7), `file-field.test.tsx` (6), browser `path-text.test.ts` (5). core `animation-files.test.ts` (5). admin `contentSecurityPolicy.test.ts` (changed).
+
+**Screenshots** (`screenshots/creative-pack/`): `after-site-desktop-{light,dark,thrown,less-motion}`, `after-site-390`, `after-site-390-thrown`, `after-builder-light-{lottie,insert}`, `after-builder-dark-rive`.
+
+**Runs:** motion unit 21 files / 177 tests, browser 6 / 106; builder unit 51 / 420, browser 13 / 45; builder-model 28 / 324; motion-editor 9 / 66, browser 2 / 7; site-components 10 / 45. Format, lint, typecheck and build pass. Admin 148 of 149 files, 804 of 808 tests: the 4 failures are all `HelpLauncher.test.tsx`, whose lazily loaded panel missed its 1 second limit with the machine at 99% CPU. That file passed 2 of 3 runs alone; this work didn't change it. Core: `src/media`, `src/website`, `src/site-effects` and `src/production` 24 files / 167 tests. The full core suite was stopped after 38 minutes under that load and has not finished on this branch; its one failure by then, in `two-factor.test.ts`, passed 12 of 12 alone.

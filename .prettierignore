@@ -9,3 +9,5 @@ next-env.d.ts
 # Written by `model types`, exactly as the content model check expects it
 starters/nextjs/lib/lintel.generated.ts
 generated
+# Written by the sample scripts, minified on purpose
+packages/motion/samples/*.json

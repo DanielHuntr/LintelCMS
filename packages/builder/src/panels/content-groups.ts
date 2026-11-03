@@ -33,6 +33,7 @@ const groupOfKind: Record<EditableFieldKind, ContentGroupId> = {
   icon: "picture",
   itemList: "words",
   source: "source",
+  file: "source",
 };
 
 const groupTitles: Record<ContentGroupId, BuilderStringKey> = {
@@ -100,6 +101,10 @@ function fieldSummary(field: EditableField, node: PageNode, text: Translate): st
     case "icon":
     case "source":
       return typeof value === "string" && value !== "" ? shortened(value) : undefined;
+    case "file":
+      return typeof value === "string" && value !== ""
+        ? shortened(value.split("/").pop() ?? value)
+        : undefined;
   }
 }
 

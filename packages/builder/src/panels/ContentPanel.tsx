@@ -21,6 +21,7 @@ import { OpenSectionsContext } from "../ui/CollapsibleSection.js";
 import { PanelSection } from "../ui/controls.js";
 import { contentGroupSummary, fieldsShownTogether, groupContentFields } from "./content-groups.js";
 import { ImageField, type ImagePicker, TextInputField, ToggleField } from "./content-fields.js";
+import { FileField } from "./file-field.js";
 import { type BindingScope, findBindingScope, useDataSources } from "./data-sources.js";
 import { FieldControl, SourceField } from "./field-controls.js";
 import { BindingPicker, ItemListField } from "./item-list-field.js";
@@ -279,6 +280,18 @@ function ContentField({
             node={node}
             value={String(value ?? "")}
             onChange={set}
+          />
+        );
+      case "file":
+        // Kept with its media library id, as Picture is, so a file in use can't be deleted.
+        return (
+          <FileField
+            label={field.label}
+            value={String(value ?? "")}
+            accept={field.accept}
+            onChange={(address, assetId) =>
+              onChange({ [field.prop]: address, assetId }, field.label)
+            }
           />
         );
       case "image":

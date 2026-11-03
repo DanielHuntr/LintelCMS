@@ -21,6 +21,7 @@ export const standardEffects: readonly EffectDefinition[] = [
   ...canvasEffects,
   ...creativeEffects,
   ...physicsEffects,
+  ...creativeEffects,
   ...svgEffects,
   ...cursorEffects,
   ...marqueeEffects,

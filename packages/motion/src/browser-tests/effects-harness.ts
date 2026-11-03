@@ -32,6 +32,12 @@ export interface OpenOptions {
   reducedMotion?: "reduce" | "no-preference";
   /** Extra pages by path, for following links. */
   pages?: Record<string, string>;
+  /** Other files by path, such as an animation: served with their own type. */
+  files?: Record<string, { type: string; body: Buffer | string }>;
+  /** A touch screen, for tapping and swiping. */
+  touch?: boolean;
+  /** The window's size; 1000 by 700 unless given. */
+  viewport?: { width: number; height: number };
   /** Pretends the browser has no cross-document view transitions, to test the fallback. */
   withoutViewTransitions?: boolean;
   /** Pretends the browser has no WebGL, to test the shader effects' fallbacks. */
@@ -61,7 +67,8 @@ export async function openEffectsPage(
   options: OpenOptions = {},
 ): Promise<{ page: Page; requested: string[] }> {
   const page = await browser.newPage({
-    viewport: { width: 1000, height: 700 },
+    viewport: options.viewport ?? { width: 1000, height: 700 },
+    hasTouch: options.touch === true,
     reducedMotion: options.reducedMotion ?? "no-preference",
   });
   if (options.withoutViewTransitions) {
@@ -90,11 +97,14 @@ export async function openEffectsPage(
       });
     }
     if (path.startsWith("/_lintel/effects/")) {
+      const name = path.split("/").pop() ?? "";
       return route.fulfill({
-        contentType: "text/javascript",
-        body: readFileSync(`${dist}effect-modules/${path.split("/").pop()}`, "utf8"),
+        contentType: effectFileType(name),
+        body: readFileSync(`${dist}effect-modules/${name}`),
       });
     }
+    const file = options.files?.[path];
+    if (file) return route.fulfill({ contentType: file.type, body: file.body });
     const body = path === "/" ? document(html, effects, options) : options.pages?.[path];
     return body === undefined
       ? route.fulfill({ status: 404, body: "" })
@@ -106,6 +116,14 @@ export async function openEffectsPage(
   });
   await page.goto(`${origin}/`);
   return { page, requested };
+}
+
+/** The type a file beside the effect modules is served as. */
+function effectFileType(name: string): string {
+  if (name.endsWith(".wasm")) return "application/wasm";
+  if (name.endsWith(".json")) return "application/json";
+  if (name.endsWith(".riv")) return "application/octet-stream";
+  return "text/javascript";
 }
 
 export { document as effectsDocument };

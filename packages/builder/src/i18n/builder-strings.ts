@@ -1,6 +1,7 @@
 import { builderClientEditingStrings } from "./client-editing-strings.js";
 import { builderSiteStylesStrings } from "./site-styles-strings.js";
 import { builderBlockStrings } from "./block-strings.js";
+import { builderCreativeStrings } from "./creative-strings.js";
 import { builderDraftStrings } from "./draft-strings.js";
 import { builderDesignStrings } from "./design-strings.js";
 import { builderElementStrings } from "./element-strings.js";
@@ -349,6 +350,7 @@ export const builderStrings = {
   ...builderSiteStylesStrings,
   ...builderDraftStrings,
   ...builderClientEditingStrings,
+  ...builderCreativeStrings,
 } as const;
 
 export type BuilderStringKey = keyof typeof builderStrings;

@@ -24,6 +24,9 @@ export const effectModuleNames = [
   "shader-backgrounds",
   "film-grain",
   "picture-effects",
+  "playground",
+  "lottie",
+  "rive",
 ] as const;
 
 export type EffectModuleName = (typeof effectModuleNames)[number];

@@ -1,6 +1,6 @@
 import type { EffectModuleName, SiteEffectSettings } from "../effects/effect-types.js";
 import type { EffectDefinition } from "./effect-definition.js";
-import { effectModuleBytes } from "./module-sizes.js";
+import { effectModuleBytes, effectPlayerBytes } from "./module-sizes.js";
 import { cursorIsOn } from "../effects/kit/cursor-look.js";
 
 /**
@@ -47,7 +47,10 @@ export function measurePageWeight(
   if (site?.smoothScroll?.strength && site.smoothScroll.strength !== "off")
     modules.add("smooth-scroll");
   const list = [...modules].sort();
-  const bytes = list.reduce((total, name) => total + effectModuleBytes[name], 0);
+  const bytes = list.reduce(
+    (total, name) => total + effectModuleBytes[name] + (effectPlayerBytes[name] ?? 0),
+    0,
+  );
   const warnings: PageWeightWarning[] = [];
   const shaders = effects.filter(
     (effect) =>

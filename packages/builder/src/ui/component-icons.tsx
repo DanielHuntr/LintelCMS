@@ -1,9 +1,12 @@
 import { createElement } from "react";
 import {
   Box,
+  CircleDashed,
   CodeXml,
   Columns2,
   File,
+  Film,
+  Hand,
   Heading,
   Image,
   Link,
@@ -16,6 +19,7 @@ import {
   Pilcrow,
   Quote,
   Rows3,
+  Shapes,
   Square,
 } from "lucide-react";
 import { findSiteIcon } from "../render/elements/icon-set.js";
@@ -40,6 +44,11 @@ const componentIcons: Record<string, LucideIcon> = {
   link: Link,
   menu: Menu,
   "code-xml": CodeXml,
+  // The creative pack.
+  "circle-dashed": CircleDashed,
+  film: Film,
+  shapes: Shapes,
+  hand: Hand,
 };
 
 export function componentIcon(name: string | undefined): LucideIcon {
