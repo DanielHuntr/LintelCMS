@@ -302,3 +302,19 @@ Highest first:
 ### LINTEL-SEC-003: still open
 
 The script rule is applied only when a page is saved. The fix is to apply the current rule again when the website draws a design, but designs are drawn in four places (one, `toPageView`, without access to settings), and rendered pages are cached, so the cache would need clearing when the rule changes. Left for a careful change of its own.
+
+## Content and fields batch, part 1 (4 November)
+
+### LINTEL-FUNC-009: deeply nested rich text broke the entry
+
+**Reproduced** in the field check: a Body of 2,000 nested quotes overflowed the stack. **Fix:** rich text may nest at most 50 levels, checked when saved by a walk without recursion, before the editor's own check (`rich-text.ts`). The message: "Body is nested too deeply: at most 50 levels, such as quotes inside quotes". **Test:** `fieldtypes.test.ts` (fails without the fix).
+
+### LINTEL-UX-004: no title length limit
+
+**Reproduced:** a 301-character title was accepted. **Fix:** a top-level title may be at most 300 characters whatever its content type says (`entry-data-validator.ts`), and the title box stops there. The Content screen's lists are one column that can't be stretched (`grid-cols-1`, `min-w-0`): at 390px with a 300-character title the page stays 390px wide (it measured 95,998px). **Test:** `entries.test.ts` (fails without the fix).
+
+### LINTEL-FUNC-013: lists showed a select's stored value
+
+**Fix:** routed collections carry their choice fields' labels (`choiceLabelsOf`), and list items use them, on the website and in the builder's samples: "web" shows as "Web", lists of choices as "Online, Paper". **Test:** `bound-entries.test.ts`.
+
+Still to do in this batch: DATA-005 (a new condition clears existing values), FUNC-008 (type changes and removed choices make entries unsaveable), SPEC-003 (slugs unique across a whole tree).
