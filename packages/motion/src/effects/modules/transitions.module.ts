@@ -1,6 +1,7 @@
 import type { EffectBehaviour, EffectModule } from "../effect-types.js";
 import { combine, listen } from "../kit/listen.js";
 import { readNumber, readText } from "../kit/params.js";
+import { isTransitionableClick } from "../../runtime/sameSiteClick.js";
 
 /**
  * Page transitions. Browsers with cross-document view transitions run them from the CSS the
@@ -38,27 +39,6 @@ const arrivalKey = "lintel-transition-arriving";
 
 export function supportsCrossDocumentTransitions(): boolean {
   return typeof window !== "undefined" && "CSSViewTransitionRule" in window;
-}
-
-/** Whether a click on this link should get the transition rather than the browser's default. */
-export function isTransitionableClick(
-  event: MouseEvent,
-  link: HTMLAnchorElement,
-  here: Location,
-): boolean {
-  if (
-    event.defaultPrevented ||
-    event.button !== 0 ||
-    event.metaKey ||
-    event.ctrlKey ||
-    event.shiftKey ||
-    event.altKey
-  )
-    return false;
-  if ((link.target && link.target !== "_self") || link.hasAttribute("download")) return false;
-  const url = new URL(link.href, here.href);
-  if (url.origin !== here.origin) return false;
-  return !(url.pathname === here.pathname && url.search === here.search && url.hash !== "");
 }
 
 function cover(): HTMLDivElement {

@@ -13,8 +13,12 @@ export interface MotionBinding {
 
 export interface PageMotion {
   controllers: MotionController[];
+  /** Whether any animation plays when the visitor leaves the page. */
+  hasPageExits: boolean;
   /** Plays every page-exit animation and resolves when they have all finished. */
   exitPage(): Promise<void>;
+  /** Puts page-exit animations back to their start, for a page the browser brings back. */
+  resetPageExits(): void;
   destroy(): void;
 }
 
@@ -25,7 +29,13 @@ export function mountMotionList(
   const document =
     options.document ?? (typeof window === "undefined" ? undefined : window.document);
   if (!document)
-    return { controllers: [], exitPage: () => Promise.resolve(), destroy: () => undefined };
+    return {
+      controllers: [],
+      hasPageExits: false,
+      exitPage: () => Promise.resolve(),
+      resetPageExits: () => undefined,
+      destroy: () => undefined,
+    };
   const attribute = options.nodeAttribute ?? "data-node-id";
   const mounted = bindings.flatMap((binding) => {
     const escaped = binding.nodeId.replace(/["\\]/g, "\\$&");
@@ -33,12 +43,14 @@ export function mountMotionList(
     if (!(element instanceof HTMLElement)) return [];
     return [{ spec: binding.spec, controller: mountMotion(element, binding.spec, options) }];
   });
+  const exits = mounted.filter(({ spec }) => spec.trigger.type === "pageExit");
   return {
     controllers: mounted.map(({ controller }) => controller),
+    hasPageExits: exits.length > 0,
     exitPage: async () => {
-      const exits = mounted.filter(({ spec }) => spec.trigger.type === "pageExit");
       await Promise.all(exits.map(({ controller }) => controller.exit()));
     },
+    resetPageExits: () => exits.forEach(({ controller }) => controller.reset()),
     destroy: () => mounted.forEach(({ controller }) => controller.destroy()),
   };
 }

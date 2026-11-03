@@ -6,6 +6,7 @@ import {
   startEffects,
 } from "../effects/loadEffects.js";
 import type { PageEffects } from "../effects/effect-types.js";
+import { isTransitionableClick } from "../runtime/sameSiteClick.js";
 import {
   mountMotionList,
   type MotionBinding,
@@ -73,6 +74,42 @@ export function startPageMotion(document: Document): PageMotion {
   return mountMotionList(readPageAnimations(document), { document });
 }
 
+/** Longest a visitor waits on a click for exit animations, however long they are set to run. */
+const LONGEST_EXIT_WAIT_MILLISECONDS = 1500;
+
+/**
+ * Page-exit animations used to play only alongside a page transition, which was the one
+ * thing that asked for them; on their own they never played (LINTEL-FUNC-020). Now a
+ * same-site link click waits for them, then navigates.
+ *
+ * The listener is on the window, so a page transition (listening on the document) sees the
+ * click first and, when there is one, plays the exits itself with its cover.
+ */
+export function playExitsBeforeLeaving(
+  window: Window,
+  page: Pick<PageMotion, "exitPage" | "resetPageExits">,
+) {
+  let leaving = false;
+  window.addEventListener("click", (event) => {
+    const link = (event.target as Element | null)?.closest?.("a[href]");
+    if (leaving || !(link instanceof HTMLAnchorElement)) return;
+    if (!isTransitionableClick(event, link, window.location)) return;
+    event.preventDefault();
+    leaving = true;
+    void Promise.race([
+      page.exitPage(),
+      new Promise((resolve) => window.setTimeout(resolve, LONGEST_EXIT_WAIT_MILLISECONDS)),
+    ]).then(() => {
+      window.location.href = link.href;
+    });
+  });
+  // Coming back with the back button can restore this page as it was left: faded out.
+  window.addEventListener("pageshow", (event) => {
+    leaving = false;
+    if ((event as PageTransitionEvent).persisted) page.resetPageExits();
+  });
+}
+
 export function installSiteRuntime(window: Window): void {
   window.lintelMotion = {
     mountMotion,
@@ -84,6 +121,7 @@ export function installSiteRuntime(window: Window): void {
   const start = () => {
     const page = startPageMotion(window.document);
     if (window.lintelMotion) window.lintelMotion.exitPage = () => page.exitPage();
+    if (page.hasPageExits) playExitsBeforeLeaving(window, page);
     startEffects(window.document, readPageEffects(window.document));
   };
   if (window.document.readyState === "loading") {
