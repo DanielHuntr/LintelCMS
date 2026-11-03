@@ -3,7 +3,16 @@ import { describe, expect, it } from "vitest";
 import { checkPageDesign, readPageDesign } from "./designed-pages.js";
 
 function element(id: string, type: string, props: Record<string, unknown> = {}): PageNode {
-  return { id, type, name: "", props, styles: {}, children: [], hidden: false, locked: false };
+  return {
+    id,
+    type,
+    name: "",
+    props,
+    styles: { base: {} },
+    children: [],
+    hidden: false,
+    locked: false,
+  };
 }
 
 function designWith(...children: PageNode[]): PageDocument {
