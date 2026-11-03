@@ -53,6 +53,8 @@ describe("checking a page", () => {
           message: "Heading 2: A heading level should be a number from 1 to 6",
         },
       ],
+      // The page as read comes back too, so the website can leave out just that element.
+      document: expect.objectContaining({ root: expect.objectContaining({ type: "page" }) }),
     });
   });
 
