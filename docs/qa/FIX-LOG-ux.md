@@ -967,3 +967,16 @@ Decision record: `docs/decisions/0037-site-fonts.md`. New table `site_fonts` (mi
 **Checked in a browser:** applied with `existingPages: "replace"` and `publish: true` to a copy of the test data, then looked at every page at 1440px and 390px in light and dark with reduced motion (no sideways scrolling at 390px), and with full motion on desktop: the intro counter, the smooth scroll, the "Drag" word over the gallery and a drag, the Fade transition to Projects and the hover picture on a project row.
 
 **Screenshots** (in `screenshots/starter-folio/`): `{home,projects,about,contact}-{desktop,phone}-{light,dark}`, `intro-desktop-{light,dark}`, `home-midscroll-desktop-{light,dark}`, `home-drag-desktop-{light,dark}`, `transition-desktop-{light,dark}`, `projects-hover-desktop-{light,dark}` and `library-desktop-{light,dark}`.
+
+## LINTEL-UX-040: a size no chip matches (3 November 2026)
+
+**Reported by Daniel:** the Text group's summary said "1.125rem", but none of Normal, Small, Large, Huge or Giant was pressed.
+
+**Reproduced:** an element whose text size was set elsewhere (in Advanced, or by a template) to a value no chip has showed its raw CSS value in the summary and no chip pressed.
+
+**Fix:**
+
+- Chips now show a pressed **"Custom · 18px"** after the choices when the value set matches none of them. Picking a chip replaces it. With nothing set, the chip nearest how it looks is still pressed. This works for every chip group, not just text size.
+- Summaries give rem and em sizes in pixels ("18px"), which people know. Sizes that grow with the screen still read as written.
+
+**Tests:** `builder/src/style-panel/advanced-styling.test.tsx` ("shows a size no chip matches as Custom, in pixels") and `style-summaries.test.ts` ("gives lengths in pixels").

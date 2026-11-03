@@ -9,6 +9,17 @@ import {
 import type { Translate } from "../i18n/builder-text.js";
 
 /**
+ * A length as people know it: rem and em in pixels (at the usual 16px), pixels as they are.
+ * Anything else (a size that grows with the screen, a variable) comes back undefined.
+ */
+export function friendlyLength(value: string | undefined): string | undefined {
+  const match = value?.trim().match(/^(-?\d*\.?\d+)(rem|em|px)$/);
+  if (!match) return undefined;
+  const amount = Number(match[1]) * (match[2] === "px" ? 1 : 16);
+  return `${Math.round(amount * 10) / 10}px`;
+}
+
+/**
  * What a closed style section says is set inside it, in a few words: "Row · gap M",
  * "Huge · Bold", "Brand". Empty when nothing is set, so a closed section stays quiet.
  */
@@ -109,7 +120,7 @@ export function textSummary(read: ReadStyle, text: Translate): string {
   const weight = weights[read("fontWeight") ?? ""];
   const align = alignments[read("textAlign") ?? ""];
   return join([
-    sizeKey ? text(sizeKey) : size,
+    sizeKey ? text(sizeKey) : (friendlyLength(size) ?? size),
     weight && text(weight),
     align && text(align),
     named(read("color"), colourTokens),

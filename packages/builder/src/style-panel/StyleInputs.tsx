@@ -11,6 +11,7 @@ import { Fragment, useId, useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { addVariable, useSiteDesign, useSiteTokens } from "../site-design/site-design-context.js";
 import { classNames, inputClassName, Labelled } from "../ui/controls.js";
+import { friendlyLength } from "./style-summaries.js";
 import {
   normaliseTypedValue,
   overrideNoteFor,
@@ -265,13 +266,11 @@ export function StyleChips({
             {label}
           </span>
           {choices.map((choice) => {
-            // A value no chip matches (a size that grows with the screen, say) shows the chip
-            // nearest how it looks, as nothing set does.
+            // A value set here that no chip matches shows as "Custom" below, with no chip
+            // pressed; with nothing set, the chip nearest how it looks is pressed.
             const isChipValue = choices.some((each) => each.value === first.value);
             const shown =
-              (first.value !== undefined && isChipValue) || lookValue === null
-                ? first.value
-                : lookValue;
+              first.value !== undefined ? (isChipValue ? first.value : null) : lookValue;
             const isCurrent = choice.value === shown;
             return (
               <button
@@ -295,6 +294,13 @@ export function StyleChips({
               </button>
             );
           })}
+          {first.value !== undefined && !choices.some((each) => each.value === first.value) && (
+            <span className="flex h-7 items-center rounded-control bg-accent-fill px-2.5 text-caption font-medium text-on-accent">
+              {friendlyLength(first.value)
+                ? text("pageBuilder.style.customValue", { value: friendlyLength(first.value)! })
+                : text("pageBuilder.style.custom")}
+            </span>
+          )}
         </div>
       )}
     </Labelled>

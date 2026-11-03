@@ -5,6 +5,7 @@ import {
   backgroundSummary,
   bordersSummary,
   effectsSummary,
+  friendlyLength,
   layoutSummary,
   positionSummary,
   shadows,
@@ -66,5 +67,13 @@ describe("what a closed style group says", () => {
     expect(effectsSummary(reading({ opacity: "0.75", boxShadow: shadows.soft }), englishText)).toBe(
       "25% see-through · soft shadow",
     );
+  });
+
+  it("gives lengths in pixels, as people know them", () => {
+    expect(friendlyLength("1.125rem")).toBe("18px");
+    expect(friendlyLength("0.75em")).toBe("12px");
+    expect(friendlyLength("24px")).toBe("24px");
+    expect(friendlyLength("clamp(1rem, 2vw, 2rem)")).toBeUndefined();
+    expect(textSummary(reading({ fontSize: "1.125rem" }), englishText)).toBe("18px");
   });
 });

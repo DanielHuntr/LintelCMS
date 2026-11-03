@@ -160,6 +160,8 @@ export const builderStrings = {
   "pageBuilder.style.changedForHover": "Changed for pointer over",
   "pageBuilder.style.changedForFocus": "Changed for keyboard focus",
   "pageBuilder.style.reset": "Reset",
+  "pageBuilder.style.custom": "Custom",
+  "pageBuilder.style.customValue": "Custom · {value}",
   "pageBuilder.style.auto": "Auto",
   "pageBuilder.style.notSet": "Not set",
   "pageBuilder.style.none": "None",
