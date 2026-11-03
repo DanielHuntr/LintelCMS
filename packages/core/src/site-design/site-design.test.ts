@@ -82,6 +82,22 @@ describe("the site's design system", () => {
     );
   });
 
+  it("gives a colour its dark-mode value on the website, following the theme's scheme", async () => {
+    const saved = await owner("PUT", "/website/design", {
+      variables: [
+        { id: "paper", name: "Paper", kind: "colour", value: "#faf7f2", darkValue: "#16181d" },
+      ],
+    });
+    expect(saved.statusCode, saved.body).toBe(200);
+    await owner("POST", "/starter-sites/bakery/apply", { publish: true });
+    const website = await site.inject({ method: "GET", url: "/" });
+    const stylesheetPath = /href="(\/_lintel\/site-[^"]+\.css)"/.exec(website.body)?.[1];
+    const stylesheet = await site.inject({ method: "GET", url: stylesheetPath ?? "" });
+    expect(stylesheet.body).toContain("--lintel-var-paper: light-dark(#faf7f2, #16181d);");
+    // The theme sets the scheme light-dark() follows.
+    expect(stylesheet.body).toMatch(/color-scheme: (light dark|light|dark);/);
+  });
+
   it("refuses values that could break the stylesheet, and people who can't change blocks", async () => {
     const unsafe = await owner("PUT", "/website/design", {
       variables: [{ id: "sand", name: "Sand", kind: "colour", value: "#fff; } body { x: y" }],

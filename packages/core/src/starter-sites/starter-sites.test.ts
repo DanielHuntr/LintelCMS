@@ -67,6 +67,32 @@ describe("starting from a template", () => {
     expect(home.body).toContain('href="/menu"');
   });
 
+  it("makes Folio with its fonts, its motion and a home page that says who it is for", async () => {
+    const response = await owner("POST", "/starter-sites/folio/apply", { publish: true });
+    expect(response.statusCode, response.body).toBe(201);
+    const website = (await owner("GET", "/website")).json();
+    expect(website).toMatchObject({ headingFont: "Archivo", bodyFont: "Archivo" });
+    expect((await owner("GET", "/website/effects")).json()).toMatchObject({
+      smoothScroll: { strength: "gentle" },
+      cursor: { style: "dot" },
+      pageTransition: { style: "fade" },
+      intro: { style: "counter", text: "Ilse Moreau" },
+    });
+
+    const home = await visit("/");
+    expect(home.statusCode).toBe(200);
+    expect(home.body).toContain("I photograph rooms, objects and the hands that make them.");
+    expect(home.body).toContain('data-behaviour="clock"');
+    expect(home.body).toContain("data-free-drag");
+    expect(home.body).toContain('src="/_lintel/illustrations/folio-window.svg"');
+    // The page brings its own header, so the site's is left out.
+    expect(home.body).not.toContain('class="lintel-header');
+    const projects = await visit("/projects");
+    expect(projects.body).toContain("Concrete Weather");
+    const picture = await visit("/_lintel/illustrations/folio-portrait.svg");
+    expect(picture.statusCode).toBe(200);
+  });
+
   it("switches on the template's site-wide motion with its theme, keeping the rest", async () => {
     const bakery = findStarterSite("bakery") as StarterSite & { siteMotion?: unknown };
     bakery.siteMotion = {

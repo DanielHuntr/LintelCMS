@@ -19,6 +19,7 @@ import { GradientEditor } from "./GradientEditor.js";
 import { useStyleEditing, useStyleReader } from "./style-field.js";
 import { backgroundSummary } from "./style-summaries.js";
 import { ColourPicker, StyleSelect } from "./StyleInputs.js";
+import { useStyleSummary } from "./summary-names.js";
 
 const overlays = {
   light: "rgb(0 0 0 / 0.2)",
@@ -35,6 +36,7 @@ const overlays = {
 export function BackgroundSection({ advanced }: { advanced: boolean }) {
   const text = useBuilderText();
   const read = useStyleReader();
+  const summary = useStyleSummary(backgroundSummary);
   const tools = useDesignTools();
   const { change } = useStyleEditing();
   const label = text("pageBuilder.style.background");
@@ -78,7 +80,12 @@ export function BackgroundSection({ advanced }: { advanced: boolean }) {
   const showsVideo = backgroundVideoTypes.includes(tools.node.type);
 
   return (
-    <PanelSection title={label} sectionId="background" summary={backgroundSummary(read)}>
+    <PanelSection
+      title={label}
+      sectionId="background"
+      summary={summary.summary}
+      linked={summary.linked}
+    >
       <ColourPicker
         property="backgroundColor"
         label={text("pageBuilder.style.backgroundColour")}

@@ -19,8 +19,16 @@ import {
   giveSharedStyle,
   makeSharedStyle,
   type SharedStyle,
+  sharedStyleTitle,
 } from "./shared-styles.js";
-import { siteDesignSchema } from "./site-design.js";
+import {
+  countVariableUsesInDesign,
+  sharedStylesById,
+  siteDesignSchema,
+  withoutSharedStyle,
+  withoutVariable,
+} from "./site-design.js";
+import { countVariableUses, inlineVariableOnPage } from "./variable-uses.js";
 
 function cards(): PageNode {
   return createNode(
@@ -195,5 +203,190 @@ describe("a site's design", () => {
         sharedStyles: [{ id: "card", name: "Card", styles: { base: { colour: "red" } } }],
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("where variables are used", () => {
+  const sand = { id: "sand", name: "Sand", kind: "colour" as const, value: "#efe6d6" };
+
+  it("counts each variable's uses on a page and in shared styles, telling sand from sand-2", () => {
+    const root = createNode(
+      {
+        type: "page",
+        children: [
+          {
+            type: "box",
+            styles: {
+              base: {
+                backgroundColor: "var(--lintel-var-sand)",
+                color: "var(--lintel-var-sand-2)",
+              },
+              hover: { borderColor: "var(--lintel-var-sand)" },
+            },
+          },
+        ],
+      },
+      standardCatalogue,
+      createCountingNodeIds(),
+    );
+    const onPage = countVariableUses(root);
+    expect(onPage.get("sand")).toBe(2);
+    expect(onPage.get("sand-2")).toBe(1);
+    const design = {
+      variables: [sand],
+      sharedStyles: [
+        { id: "card", name: "Card", styles: { base: { color: "var(--lintel-var-sand)" } } },
+      ],
+    };
+    expect(countVariableUsesInDesign(design, onPage).get("sand")).toBe(3);
+  });
+
+  it("writes a deleted variable's value out, on the page and in shared styles", () => {
+    const root = createNode(
+      {
+        type: "page",
+        children: [
+          { type: "box", styles: { base: { backgroundColor: "var(--lintel-var-sand)" } } },
+          { type: "box", styles: { base: { backgroundColor: "red" } } },
+        ],
+      },
+      standardCatalogue,
+      createCountingNodeIds(),
+    );
+    const written = inlineVariableOnPage(root, sand);
+    expect(written.children[0]?.styles.base.backgroundColor).toBe("#efe6d6");
+    expect(written.children[1]).toBe(root.children[1]);
+    expect(inlineVariableOnPage(written, sand)).toBe(written);
+
+    const design = withoutVariable(
+      {
+        variables: [sand],
+        sharedStyles: [
+          { id: "card", name: "Card", styles: { base: { color: "var(--lintel-var-sand)" } } },
+        ],
+      },
+      "sand",
+    );
+    expect(design.variables).toEqual([]);
+    expect(design.sharedStyles[0]?.styles.base.color).toBe("#efe6d6");
+  });
+});
+
+describe("colours with a dark-mode value", () => {
+  it("writes light-dark() for them, with the light value for browsers without it", () => {
+    const css = designVariablesStylesheet([
+      { id: "paper", name: "Paper", kind: "colour", value: "#faf7f2", darkValue: "#16181d" },
+      { id: "ink", name: "Ink", kind: "colour", value: "#1f2328" },
+    ]);
+    expect(css).toBe(
+      [
+        ":root {",
+        "  --lintel-var-paper: light-dark(#faf7f2, #16181d);",
+        "  --lintel-var-ink: #1f2328;",
+        "}",
+        "@supports not (color: light-dark(#000, #fff)) {",
+        "  :root {",
+        "    --lintel-var-paper: #faf7f2;",
+        "  }",
+        "}",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("stays as it was for variables without one", () => {
+    expect(
+      designVariablesStylesheet([{ id: "ink", name: "Ink", kind: "colour", value: "#1f2328" }]),
+    ).toBe(":root {\n  --lintel-var-ink: #1f2328;\n}\n");
+  });
+
+  it("only takes a dark-mode value that's a colour, on a colour", () => {
+    const parse = (variable: Record<string, string>) =>
+      siteDesignSchema.safeParse({ variables: [variable] }).success;
+    expect(parse({ id: "a", name: "A", kind: "colour", value: "#fff", darkValue: "#000" })).toBe(
+      true,
+    );
+    expect(parse({ id: "a", name: "A", kind: "colour", value: "#fff", darkValue: "red; x" })).toBe(
+      false,
+    );
+    expect(parse({ id: "a", name: "A", kind: "size", value: "2rem", darkValue: "#000" })).toBe(
+      false,
+    );
+  });
+});
+
+describe("variants of a shared style", () => {
+  const button: SharedStyle = {
+    id: "button",
+    name: "Button",
+    styles: {
+      base: { backgroundColor: "var(--lintel-var-ink)", color: "#fff", borderRadius: "999px" },
+      hover: { opacity: "0.9" },
+    },
+  };
+  const outline: SharedStyle = {
+    id: "button-outline",
+    name: "Outline",
+    variantOf: "button",
+    styles: { base: { backgroundColor: "transparent", color: "var(--lintel-var-ink)" } },
+  };
+
+  it("draws a variant with its base's look under its own", () => {
+    const resolved = sharedStylesById({ variables: [], sharedStyles: [button, outline] });
+    expect(resolved["button-outline"]?.styles).toEqual({
+      base: {
+        backgroundColor: "transparent",
+        color: "var(--lintel-var-ink)",
+        borderRadius: "999px",
+      },
+      hover: { opacity: "0.9" },
+    });
+    expect(resolved.button).toBe(button);
+  });
+
+  it("compiles an element using a variant, and follows changes to the base", () => {
+    const page = createNode(
+      { type: "page", children: [{ type: "box", name: "Call" }] },
+      standardCatalogue,
+      createCountingNodeIds(),
+    );
+    const root = { ...page, children: [{ ...page.children[0]!, sharedStyle: "button-outline" }] };
+    const draw = (base: SharedStyle) => {
+      const drawn = applySharedStyles(
+        root,
+        sharedStylesById({ variables: [], sharedStyles: [base, outline] }),
+      );
+      return compileStylesheet(drawn, assignClassNames(drawn, standardCatalogue));
+    };
+    expect(draw(button)).toContain("border-radius: 999px;");
+    expect(draw(button)).toContain("background-color: transparent;");
+    const squarer = { ...button, styles: { base: { ...button.styles.base, borderRadius: "4px" } } };
+    expect(draw(squarer)).toContain("border-radius: 4px;");
+  });
+
+  it("keeps a variant's look when its base is deleted", () => {
+    const design = withoutSharedStyle({ variables: [], sharedStyles: [button, outline] }, "button");
+    expect(design.sharedStyles).toEqual([
+      {
+        id: "button-outline",
+        name: "Outline",
+        styles: {
+          base: {
+            backgroundColor: "transparent",
+            color: "var(--lintel-var-ink)",
+            borderRadius: "999px",
+          },
+          hover: { opacity: "0.9" },
+        },
+      },
+    ]);
+  });
+
+  it("reads designs saved before variants, and names a variant with its base", () => {
+    expect(
+      siteDesignSchema.parse({ sharedStyles: [{ id: "card", name: "Card", styles: { base: {} } }] })
+        .sharedStyles[0],
+    ).toEqual({ id: "card", name: "Card", styles: { base: {} } });
+    expect(sharedStyleTitle(outline, [button, outline])).toBe("Button · Outline");
   });
 });

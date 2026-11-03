@@ -1,11 +1,12 @@
-import { studioIllustrations } from "./illustrations-studio.js";
-
 /**
  * The pictures the section library and starter sites use: simple, flat illustrations drawn
  * here as SVG, so every site starts with artwork of its own and nothing borrowed. The
  * built-in website serves them at `/_lintel/illustrations/<name>.svg`; people replace them
  * with their own photos from the media library whenever they like.
  */
+
+import { folioIllustrations } from "./illustrations-folio.js";
+import { studioIllustrations } from "./illustrations-studio.js";
 
 const frame = (background: string, body: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" role="img"><rect width="600" height="450" fill="${background}"/>${body}</svg>`;
@@ -91,6 +92,7 @@ const illustrationList: Record<string, string> = {
     "#0f1530",
     `<path d="M0 260 Q150 180 300 260 T600 260" stroke="#7a5cff" stroke-width="18" fill="none"/><path d="M0 310 Q150 230 300 310 T600 310" stroke="#4dd2ff" stroke-width="18" fill="none" opacity="0.8"/><path d="M0 360 Q150 280 300 360 T600 360" stroke="#ffb84d" stroke-width="18" fill="none" opacity="0.7"/><circle cx="460" cy="120" r="40" fill="#ffffff" opacity="0.15"/>`,
   ),
+  ...folioIllustrations,
   ...studioIllustrations,
 };
 

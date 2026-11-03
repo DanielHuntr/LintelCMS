@@ -774,6 +774,7 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-034   | P2       | Fixed  | Insert search finds no element by other common names: "carousel" finds nothing (it's called Slider), nor "popup" or "lightbox" |
 | LINTEL-UX-035   | P2       | Fixed  | Builder: adding motion shows a wall of choices ("26 choices", tall cards with paragraphs); "Always" is cut off at panel width  |
 | LINTEL-UX-037   | P2       | Fixed  | Site cursor: clicking makes the circle jump far from the pointer (further the further from the window's corner)                |
+| LINTEL-UX-039   | P2       | Fixed  | Style: "What has to be hovered" always shows and lists plain layout boxes ("Container, 2 levels up") nobody recognises         |
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 

@@ -6,7 +6,8 @@ keyboard-focus states.
 
 Each group (Arrange, Layout, Spacing, Size, Text, Background, Corners and borders, Move and
 turn, Shape and mask, Position, Effects, Blend and filters) is a collapsible section (`ui/CollapsibleSection.tsx`). Closed, it says what's set
-inside, such as "Row · gap M" (`style-summaries.ts`). Simple opens Layout, Spacing and Text
+inside, such as "Row · gap M" (`style-summaries.ts`). A site variable is said by its name
+("Ink"), with a small dot for "linked" (`summary-names.ts`). Simple opens Layout, Spacing and Text
 the first time and then remembers; Advanced opens only the group used last. A locked
 element's groups still open, with their controls disabled.
 
@@ -30,3 +31,10 @@ state; `StyleInputs.tsx` has the controls themselves.
 
 Settings that aren't styles (free layout, the video, the page's fonts, stacking) reach the
 controls through `design-tools.ts`, which the Style panel provides.
+
+## The site's styles in every control
+
+Colour swatches, size chips, the font list and size boxes offer the site's own named colours,
+sizes and fonts first, then the theme's. A size box using one shows its name with Unlink;
+a colour or size picked by hand can be saved as one ("Save as a colour", "Save as a size").
+"Site styles" under the shared style opens the whole list (`site-design/SiteStylesPanel.tsx`).
