@@ -4,7 +4,7 @@ import { listMarketRows } from "../commerce/markets/markets.repository.js";
 import {
   marketPaymentProvider,
   PAYMENT_PROVIDER_NAMES,
-  type PaymentProviderId,
+  type MarketPaymentProviderId,
 } from "../commerce/payments/payment-provider.js";
 import { readPaymentProviders } from "../commerce/payments/payment-providers.service.js";
 import { readPaymentSettings } from "../commerce/payments/payment-settings.service.js";
@@ -110,7 +110,7 @@ async function describeShop(shop: ShopContext): Promise<SiteServices["shop"]> {
     readPaymentSettings(shop),
     readPaymentProviders(shop),
   ]);
-  const connected: Record<PaymentProviderId, boolean> = {
+  const connected: Record<MarketPaymentProviderId, boolean> = {
     stripe: stripe.connected,
     paypal: others.paypal.connected,
     mollie: others.mollie.connected,
