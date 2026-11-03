@@ -1,6 +1,7 @@
 import { createEmptyPage, sharedStylesById } from "@lintel/builder-model";
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { ensurePagesCollection } from "../collections/default-collections.js";
 import { acceptAnyAsset } from "../fieldtypes/image-assets.js";
 import { ensureSiteSettings } from "../globals/default-globals.js";
 import { ensureMainMenu } from "../navigation/default-navigation.js";
@@ -12,6 +13,7 @@ import { buildSiteServer } from "../website/site-server.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import { upsertSettingValue } from "../settings/settings.repository.js";
 import { findOrCreateDefaultSite } from "../sites/sites.service.js";
+import { starterSiteSections } from "../site-sections/site-sections.service.js";
 import { readSiteDesign } from "./site-design.service.js";
 
 describe("the site's design system", () => {
@@ -120,6 +122,66 @@ describe("the site's design system", () => {
     expect(drawn.css).toContain(
       ".hero {\n  padding-top: 7rem;\n  padding-bottom: 1rem;\n  background-color: var(--lintel-var-sand);\n}",
     );
+  });
+
+  it("counts each variable's and shared style's uses across the whole site, page by page", async () => {
+    await owner("PUT", "/website/design", {
+      variables: [{ id: "sand", name: "Sand", kind: "colour", value: "#efe6d6" }],
+      sharedStyles: [{ id: "roomy", name: "Roomy", styles: { base: { paddingTop: "7rem" } } }],
+    });
+    const node = (id: string, base: Record<string, string>, sharedStyle?: string) => ({
+      id,
+      type: "section",
+      name: id,
+      props: {},
+      styles: { base },
+      children: [],
+      hidden: false,
+      locked: false,
+      ...(sharedStyle ? { sharedStyle } : {}),
+    });
+    const pageWith = (children: unknown[]) => ({
+      ...createEmptyPage(),
+      root: { ...createEmptyPage().root, children },
+    });
+    const sandy = { backgroundColor: "var(--lintel-var-sand)" };
+    await ensurePagesCollection(testDatabase.database);
+    const create = async (title: string, children: unknown[]) => {
+      const created = await owner("POST", "/collections/pages/entries", {
+        data: { title, design: pageWith(children) },
+      });
+      expect(created.statusCode, created.body).toBe(201);
+      return created.json().id as string;
+    };
+    const homeId = await create("Home", [node("a", sandy, "roomy"), node("b", sandy)]);
+    await create("About", [node("c", { color: "var(--lintel-var-sand)" }, "roomy")]);
+    await create("Contact", [node("d", { paddingTop: "1rem" })]);
+
+    const all = await writer("GET", "/website/design/uses");
+    expect(all.statusCode, all.body).toBe(200);
+    expect(all.json()).toEqual({
+      variables: { sand: { uses: 3, pages: 2 } },
+      sharedStyles: { roomy: { uses: 2, pages: 2 } },
+    });
+    // The page being designed is counted by the builder, so it can be left out.
+    expect((await writer("GET", `/website/design/uses?entry=${homeId}`)).json()).toEqual({
+      variables: { sand: { uses: 1, pages: 1 } },
+      sharedStyles: { roomy: { uses: 1, pages: 1 } },
+    });
+
+    // The navigation and footer count as uses, not pages; with a page left out they go too,
+    // since the builder shows them on the page.
+    const { navigation } = starterSiteSections();
+    const sandyNavigation = { ...navigation, styles: { ...navigation?.styles, base: sandy } };
+    expect(
+      (await owner("PUT", "/website/sections", { navigation: sandyNavigation })).statusCode,
+    ).toBe(200);
+    expect((await writer("GET", "/website/design/uses")).json().variables).toEqual({
+      sand: { uses: 4, pages: 2 },
+    });
+    expect((await writer("GET", `/website/design/uses?entry=${homeId}`)).json().variables).toEqual({
+      sand: { uses: 1, pages: 1 },
+    });
   });
 
   it("gives a colour its dark-mode value on the website, following the theme's scheme", async () => {

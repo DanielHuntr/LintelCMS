@@ -5,6 +5,7 @@ import {
   getCookieNotice,
   getSiteAddress,
   getSiteDesign,
+  getSiteDesignUses,
   getSiteEffects,
   getSiteSections,
   getWebsite,
@@ -20,6 +21,8 @@ export const websiteKeys = {
   builderData: () => ["website", "builder-data"] as const,
   effects: () => ["website", "effects"] as const,
   design: () => ["website", "design"] as const,
+  designUses: (leftOut: { entry?: string; block?: string }) =>
+    ["website", "design", "uses", leftOut.entry ?? null, leftOut.block ?? null] as const,
   sections: () => ["website", "sections"] as const,
   cookieNotice: () => ["website", "cookie-notice"] as const,
 };
@@ -45,6 +48,19 @@ export function useSiteSectionsQuery() {
 /** The site's design variables and shared styles. */
 export function useSiteDesignQuery() {
   return useQuery({ queryKey: websiteKeys.design(), queryFn: getSiteDesign, retry: false });
+}
+
+/**
+ * Where the site's variables and shared styles are used on the rest of the site, for the
+ * builder's "12 uses". Counted again when the builder comes back into view, since other
+ * pages may have changed.
+ */
+export function useSiteDesignUsesQuery(leftOut: { entry?: string; block?: string }) {
+  return useQuery({
+    queryKey: websiteKeys.designUses(leftOut),
+    queryFn: () => getSiteDesignUses(leftOut),
+    retry: false,
+  });
 }
 
 /** The site-wide motion settings. */

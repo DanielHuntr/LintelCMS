@@ -1,10 +1,20 @@
-import { emptySiteDesign, type SiteDesign, siteDesignSchema } from "@lintel/builder-model";
+import {
+  addDesignUses,
+  countDesignUsesIn,
+  emptySiteDesign,
+  type SiteDesign,
+  type SiteDesignUses,
+  siteDesignSchema,
+} from "@lintel/builder-model";
+import { loadBlockLibrary } from "../blocks/blocks.service.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
+import { readSiteSectionsDraft } from "../site-sections/site-sections.service.js";
 import type { Site } from "../sites/sites.table.js";
 import { SiteDesignChangedError } from "./site-design.errors.js";
 import {
   findStoredSiteDesign,
   findStoredSiteDesignUpdatedAt,
+  listEntriesUsingSiteDesign,
   saveStoredSiteDesign,
 } from "./site-design.repository.js";
 
@@ -56,4 +66,38 @@ export async function saveSiteDesign(
   const checked = siteDesignSchema.parse(design);
   await saveStoredSiteDesign(database, site.id, checked);
   return checked;
+}
+
+/** What the builder already counts itself, left out of `countSiteDesignUses`. */
+export interface DesignUsesLeftOut {
+  /** The page being designed; its navigation and footer are on screen with it, so they go too. */
+  entryId?: string;
+  /** The block being designed. */
+  blockHandle?: string;
+}
+
+/**
+ * Where the site's variables and shared styles are used: on its pages (their latest saved
+ * values), in its navigation and footer and in blocks, so the builder can say "12 uses" and
+ * name the pages a delete would change, not only what's on the page open in front of it.
+ */
+export async function countSiteDesignUses(
+  database: DatabaseOrTransaction,
+  site: Site,
+  leftOut: DesignUsesLeftOut = {},
+): Promise<SiteDesignUses> {
+  const total: SiteDesignUses = { variables: {}, sharedStyles: {} };
+  for (const entry of await listEntriesUsingSiteDesign(database, site.id)) {
+    if (entry.id !== leftOut.entryId) addDesignUses(total, countDesignUsesIn(entry.data), true);
+  }
+  if (leftOut.entryId === undefined) {
+    const sections = await readSiteSectionsDraft(database, site);
+    addDesignUses(total, countDesignUsesIn([sections.navigation, sections.footer]), false);
+  }
+  for (const block of await loadBlockLibrary(database)) {
+    if (block.handle !== leftOut.blockHandle) {
+      addDesignUses(total, countDesignUsesIn(block.design), false);
+    }
+  }
+  return total;
 }

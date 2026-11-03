@@ -6,6 +6,7 @@ import {
   newVariableId,
   type SharedStyle,
   type SiteDesign,
+  type SiteDesignUses,
   variablesAsTokens,
 } from "@lintel/builder-model";
 import { createContext, useContext } from "react";
@@ -20,6 +21,12 @@ export interface SiteDesignTools {
   change?: (next: SiteDesign) => void;
   /** The site's theme values by token name (`lintel-color-accent`), for previews. */
   themeValues?: ReadonlyMap<string, string>;
+  /**
+   * Where each variable and shared style is used on the rest of the site (other pages, the
+   * navigation and footer when they aren't on screen, blocks), counted by the server.
+   * Undefined until it has loaded.
+   */
+  uses?: SiteDesignUses;
 }
 
 export const SiteDesignContext = createContext<SiteDesignTools>({ design: emptySiteDesign });

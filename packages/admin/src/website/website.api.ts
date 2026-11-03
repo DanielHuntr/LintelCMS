@@ -1,4 +1,9 @@
-import type { SiteDesign, SiteSections, SiteSectionsChange } from "@lintel/builder-model";
+import type {
+  SiteDesign,
+  SiteDesignUses,
+  SiteSections,
+  SiteSectionsChange,
+} from "@lintel/builder-model";
 import type { SiteEffectSettings } from "@lintel/motion";
 import type { BuilderDataSources } from "@lintel/builder";
 import { apiRequest } from "../api/client.js";
@@ -111,6 +116,18 @@ export type SavedSiteDesign = SiteDesign & { revision?: string | null };
 
 export function getSiteDesign() {
   return apiRequest<SavedSiteDesign>("/website/design");
+}
+
+/**
+ * Where each variable and shared style is used across the site, leaving out the page
+ * (`entry`) or block (`block`) being designed, which the builder counts itself.
+ */
+export function getSiteDesignUses(leftOut: { entry?: string; block?: string }) {
+  const query = new URLSearchParams();
+  if (leftOut.entry) query.set("entry", leftOut.entry);
+  if (leftOut.block) query.set("block", leftOut.block);
+  const search = query.toString();
+  return apiRequest<SiteDesignUses>(`/website/design/uses${search ? `?${search}` : ""}`);
 }
 
 /**

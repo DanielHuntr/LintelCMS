@@ -76,7 +76,7 @@ function BlockDesigner({ block, site }: { block: SiteBlock; site: CanvasSite | u
   const fonts = useBuilderFonts();
   const effectModules = useEffectModules(besideTheAdmin);
   const isNarrowScreen = useIsNarrowScreen();
-  const siteDesign = useSiteDesign();
+  const siteDesign = useSiteDesign({ block: block.handle });
   const initial = useMemo(() => designAsPage(block.design as PageNode), [block.design]);
   const [document, setDocument] = useState<PageDocument>(initial);
   const [properties, setProperties] = useState<BlockProperty[]>(() =>
