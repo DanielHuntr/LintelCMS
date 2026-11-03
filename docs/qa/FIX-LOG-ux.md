@@ -447,7 +447,14 @@ Daniel compared the motion with Framer and Webflow: Framer animates between stat
   - the existing tests updated.
 - **Docs:** the spec and effects docs updated.
 
-**Next:** open and selected states.
+**Open and selected states (4 November 2026):**
+
+- **Open:** an element with open styles of its own, or that others follow ("Card: open"), carries `data-lintel-opens` on the website.
+  - The elements script makes its first button (or the element itself, as a button) toggle `data-open` and `aria-expanded`.
+  - Escape closes it and gives focus back to the button. A link inside is left alone.
+- **Selected:** follows what's already marked current or chosen (`aria-current="page"`, `aria-selected`, `aria-pressed`), with no script.
+- Both are in "Style for", for the element and for those around it.
+- **Tests:** compiled selectors and `listOpeningNodes` (model), the website marker (render), the options (panels), and a real-browser test of opening, closing with Escape and focus going back (`browser-tests/open-states.test.ts`).
 
 ## QOL-A-1: Undo after deleting (3 November 2026)
 
