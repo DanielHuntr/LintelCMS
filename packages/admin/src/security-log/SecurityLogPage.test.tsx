@@ -30,4 +30,29 @@ describe("the security log, in Users", () => {
     expect(await screen.findByRole("heading", { name: "Security log" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Emails sent" })).not.toBeInTheDocument();
   });
+
+  // The log stopped at 896px however wide the window was.
+  it("lets the table use the whole width", async () => {
+    mockApi(() => ({
+      events: [
+        {
+          id: "e1",
+          kind: "sign_in",
+          actor: { id: "u1", email: "sam@bakery.test" },
+          subject: null,
+          details: {},
+          ipAddress: "127.0.0.1",
+          userAgent: null,
+          createdAt: "2026-11-02T10:54:00Z",
+        },
+      ],
+      total: 1,
+      page: 1,
+      perPage: 50,
+    }));
+    renderScreen(<SecurityLogPage />, { permissions: ["*"] });
+
+    const table = await screen.findByRole("table");
+    expect(table.closest("[class*='max-w-']")).toBeNull();
+  });
 });

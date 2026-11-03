@@ -61,7 +61,7 @@ export function SecurityLogPage() {
           </>
         }
       />
-      <div className="flex max-w-4xl flex-col gap-6">
+      <div className="flex flex-col gap-6">
         <SelectField
           className="max-w-xs"
           label={t("securityLog.filter")}

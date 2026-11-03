@@ -381,3 +381,14 @@
   ) {
   transform: scaleX(-1);
 }
+
+/*
+ * Browsers centre table headings, and they don't inherit `text-start` from the table, so
+ * headings sat off-centre over left-aligned columns. A column that needs another alignment
+ * (numbers, say) still sets `text-end` on its heading.
+ */
+@layer base {
+  th {
+    text-align: start;
+  }
+}
