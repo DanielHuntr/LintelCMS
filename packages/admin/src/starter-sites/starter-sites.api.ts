@@ -16,6 +16,8 @@ export interface ApplyStarterSiteOptions {
 export interface ExistingPages {
   pageCount: number;
   hasHome: boolean;
+  /** How many pages adding beside the site's would add (its home page is left out). */
+  addedCount: number;
   clashes: { title: string; slug: string; existingTitle: string }[];
 }
 

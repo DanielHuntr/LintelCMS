@@ -71,6 +71,11 @@ export interface AppliedStarterSiteResponse {
 export interface ExistingPagesResponse {
   pageCount: number;
   hasHome: boolean;
-  /** Template pages whose address a page already has. */
+  /**
+   * How many pages adding the template beside the site's would add: all of them, or all but
+   * its home page when the site has one.
+   */
+  addedCount: number;
+  /** Template pages whose address a page already has (never its home page beside a home). */
   clashes: { title: string; slug: string; existingTitle: string }[];
 }

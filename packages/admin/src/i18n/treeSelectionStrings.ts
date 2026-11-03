@@ -55,6 +55,7 @@ export const treeSelectionStrings = {
     "Your pages stay as they are. Your home page stays the home page, and the template’s other pages go under it.",
   "templates.existing.alongsideClashes":
     "{count, plural, one {# page has the same name as one of yours and is added as “{example} (2)”.} other {# pages have the same names as yours and are added as “{example} (2)” and so on.}}",
+  "templates.existing.homeSkipped": "The template’s home page isn’t added; your home page stays.",
   "templates.existing.replace": "Replace my pages",
   "templates.existing.replaceHint":
     "Your pages go to the recycle bin, where you can bring them back, and the template’s pages take their place.",

@@ -170,10 +170,18 @@ export async function findExistingPages(
   await ensurePagesCollection(database);
   const existing = await readExistingPages(database, await siteOrDefault(database, forSite));
   const bySlug = new Map(existing.pages.map((page) => [page.slug, page]));
+  const hasHome = existing.homeId !== null;
+  // Beside a site with a home page, the template's home page isn't added, so it neither
+  // counts nor clashes.
+  const [homePage, ...otherPages] = arrangeHomeFirst(site.pages);
+  const added = hasHome
+    ? otherPages
+    : [homePage, ...otherPages].filter((page) => page !== undefined);
   return {
     pageCount: existing.pages.length,
-    hasHome: existing.homeId !== null,
-    clashes: site.pages.flatMap((page) => {
+    hasHome,
+    addedCount: added.length,
+    clashes: added.flatMap((page) => {
       const taken = bySlug.get(page.slug);
       return taken
         ? [{ title: page.title, slug: page.slug, existingTitle: taken.title ?? "" }]

@@ -233,6 +233,7 @@ describe("starting from a template", () => {
     expect(existing).toEqual({
       pageCount: 1,
       hasHome: true,
+      addedCount: 3,
       clashes: [{ title: "Menu", slug: "menu", existingTitle: "Our menu" }],
     });
 
@@ -250,6 +251,18 @@ describe("starting from a template", () => {
     );
     const tree = (await owner("GET", "/content-tree")).json();
     expect(tree.siteStartCount).toBe(1);
+  });
+
+  it("leaves the template's home page out of what it would add beside a home page", async () => {
+    await ensurePagesCollection(testDatabase.database);
+    await owner("POST", "/collections/pages/entries", { data: { title: "Home" }, slug: "home" });
+    const existing = (await owner("GET", "/starter-sites/bakery/existing-pages")).json();
+    expect(existing).toMatchObject({ hasHome: true, addedCount: 3, clashes: [] });
+    const applied = (
+      await owner("POST", "/starter-sites/bakery/apply", { existingPages: "alongside" })
+    ).json();
+    expect(applied.pages).toHaveLength(existing.addedCount);
+    expect(applied.pages.map((page: { title: string }) => page.title)).not.toContain("Home (2)");
   });
 
   it("replaces the site's pages when asked, sending them to the recycle bin", async () => {

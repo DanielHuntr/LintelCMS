@@ -16,6 +16,7 @@ export const starterSiteStrings = {
     "We’ll add {count} pages to Pages, ready to change in the page builder. Pages you already have stay as they are.",
   "templates.useTheme":
     "Use this template’s colours, fonts, menu and footer, and motion for the website",
+  "templates.useThemeHint": "Changes your live website now.",
   "templates.publish": "Publish the pages straight away",
   "templates.publishHint":
     "Leave this off to look everything over first. The pages wait as drafts.",

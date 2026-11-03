@@ -21,6 +21,7 @@ const applied = {
 
 const existingPages = {
   pageCount: 3,
+  addedCount: 3,
   hasHome: true,
   clashes: [{ title: "Menu", slug: "menu", existingTitle: "Our menu" }],
 };
@@ -127,11 +128,21 @@ describe("the template library", () => {
       expect(await within(dialog).findByText("Your site already has pages")).toBeInTheDocument();
       expect(within(dialog).getByRole("radio", { name: /Add them alongside/ })).toBeChecked();
       expect(dialog).toHaveTextContent("is added as “Menu (2)”");
+      // Beside the site's home page, the template's isn't added, and the count says so.
+      expect(dialog).toHaveTextContent("We’ll add 3 pages");
+      expect(dialog).toHaveTextContent(
+        "The template’s home page isn’t added; your home page stays.",
+      );
+      // The template's look changes the live site, so beside the site's pages it starts off.
+      const look = within(dialog).getByRole("switch", { name: /colours, fonts/ });
+      expect(look).not.toBeChecked();
+      expect(look).toHaveAccessibleDescription("Changes your live website now.");
       await user.click(within(dialog).getByRole("button", { name: "Add the pages" }));
 
       expect(await screen.findByText(/Your home page stayed as it was/)).toBeInTheDocument();
       expect(calls.find((call) => call.method === "POST")?.body).toMatchObject({
         existingPages: "alongside",
+        useTheme: false,
       });
     });
 
@@ -142,10 +153,13 @@ describe("the template library", () => {
       const dialog = await openBakery(user);
 
       await user.click(await within(dialog).findByRole("radio", { name: /Replace my pages/ }));
+      // Replacing the site's pages, the template's look comes with them unless switched off.
+      expect(within(dialog).getByRole("switch", { name: /colours, fonts/ })).toBeChecked();
       await user.click(within(dialog).getByRole("button", { name: "Add the pages" }));
       await screen.findByRole("heading", { name: "Your Bakery and café pages are ready" });
       expect(calls.find((call) => call.method === "POST")?.body).toMatchObject({
         existingPages: "replace",
+        useTheme: true,
       });
     });
 
