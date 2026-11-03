@@ -40,11 +40,7 @@ export function renderPage(
 ): SiteResponse {
   const body = renderSiteDocument({
     head: page.head,
-    chrome: {
-      ...chrome,
-      menu: markCurrent(chrome.menu, page.path),
-      languages: languageLinks(context, chrome.locale, page.translations ?? new Map()),
-    },
+    chrome: pageChrome(context, chrome, page.path, page.translations),
     view: page.view,
     template: context.look.template,
     labels: englishLabels,
@@ -55,6 +51,28 @@ export function renderPage(
     siteEffects: context.effects,
     effectModuleUrls: readEffectModules()?.urls,
   });
+  return htmlResponse(body, page);
+}
+
+/** The header and footer for one page: its menu item marked, its languages linked. */
+export function pageChrome(
+  context: SiteContext,
+  chrome: SiteChrome,
+  path: string,
+  translations: ReadonlyMap<string, string> = new Map(),
+): SiteChrome {
+  return {
+    ...chrome,
+    menu: markCurrent(chrome.menu, path),
+    languages: languageLinks(context, chrome.locale, translations),
+  };
+}
+
+/** A finished page as the response that is sent and cached. */
+export function htmlResponse(
+  body: string,
+  page: { statusCode?: number; private?: boolean },
+): SiteResponse {
   return {
     statusCode: page.statusCode ?? 200,
     headers: {

@@ -139,6 +139,134 @@ describe("playing presets in a real browser", () => {
     expect(Number(await style(page, "li:nth-child(2)", "opacity"))).toBeCloseTo(0.25, 1);
   });
 
+  it("follows a smoothed scene a moment behind the scrolling, then catches up", async () => {
+    const page = await openPage(
+      browser,
+      `<div style="height:600px"></div><div id="box" style="height:200px">Box</div><div style="height:1200px"></div>`,
+    );
+    await page.evaluate(() => {
+      const base = window.presets.findPreset("scroll-fade-through")!.spec;
+      window.motion.mountMotion(document.getElementById("box")!, {
+        ...base,
+        stagger: { each: 0, from: "first" },
+        trigger: { ...base.trigger, smooth: 0.6 } as typeof base.trigger,
+        tracks: [
+          {
+            property: "opacity",
+            keyframes: [
+              { offset: 0, value: 0 },
+              { offset: 1, value: 1 },
+            ],
+          },
+        ],
+      });
+    });
+    const before = Number(await style(page, "#box", "opacity"));
+    await page.evaluate(() => window.scrollTo(0, 700));
+    await nextFrames(page);
+    const justAfter = Number(await style(page, "#box", "opacity"));
+    await page.waitForTimeout(900);
+    const settled = Number(await style(page, "#box", "opacity"));
+    expect(justAfter).toBeGreaterThan(before);
+    expect(settled - justAfter).toBeGreaterThan(0.05);
+  });
+
+  it("settles a snapping scene on the nearest step once scrolling stops", async () => {
+    const page = await openPage(
+      browser,
+      `<div style="height:600px"></div><div id="box" style="height:200px">Box</div><div style="height:1200px"></div>`,
+    );
+    await page.evaluate(() => {
+      const base = window.presets.findPreset("scroll-fade-through")!.spec;
+      window.motion.mountMotion(document.getElementById("box")!, {
+        ...base,
+        stagger: { each: 0, from: "first" },
+        trigger: { ...base.trigger, snap: [0, 0.5, 1] } as typeof base.trigger,
+        tracks: [
+          {
+            property: "opacity",
+            keyframes: [
+              { offset: 0, value: 0 },
+              { offset: 1, value: 1 },
+            ],
+          },
+        ],
+      });
+    });
+    // A little past halfway through the scene: it settles back on the middle step.
+    await page.evaluate(() => window.scrollTo(0, 560));
+    await page.waitForTimeout(900);
+    expect(Number(await style(page, "#box", "opacity"))).toBeCloseTo(0.5, 1);
+  });
+
+  it("plays on the way down and reverses on the way back up, with an action per direction", async () => {
+    const page = await openPage(
+      browser,
+      `<div style="height:1200px"></div><div id="card" style="height:200px">Card</div><div style="height:1200px"></div>`,
+    );
+    await page.evaluate(() => {
+      const base = window.presets.findPreset("fade-in")!.spec;
+      window.motion.mountMotion(document.getElementById("card")!, {
+        ...base,
+        duration: 200,
+        trigger: {
+          ...base.trigger,
+          actions: { enter: "play", leave: "none", enterBack: "none", leaveBack: "reverse" },
+        } as typeof base.trigger,
+      });
+    });
+    const opacity = () => style(page, "#card", "opacity").then(Number);
+    await page.evaluate(() => document.getElementById("card")!.scrollIntoView({ block: "center" }));
+    await page.waitForTimeout(500);
+    expect(await opacity()).toBeCloseTo(1, 1);
+    // Past it and back down into view: nothing changes.
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(300);
+    await page.evaluate(() => document.getElementById("card")!.scrollIntoView({ block: "center" }));
+    await page.waitForTimeout(300);
+    expect(await opacity()).toBeCloseTo(1, 1);
+    // Back up above it: it plays backwards.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(500);
+    expect(await opacity()).toBeCloseTo(0, 1);
+  });
+
+  it("plays a step over part of another element's scene", async () => {
+    const page = await openPage(
+      browser,
+      `<div style="height:600px"></div><section data-node-id="scene" style="height:200px"><h2 id="title">Title</h2></section><div style="height:1200px"></div>`,
+    );
+    await page.evaluate(() => {
+      const base = window.presets.findPreset("scroll-fade-through")!.spec;
+      window.motion.mountMotion(document.getElementById("title")!, {
+        ...base,
+        stagger: { each: 0, from: "first" },
+        trigger: {
+          ...base.trigger,
+          follows: "scene",
+          range: { from: 0.5, to: 1 },
+        } as typeof base.trigger,
+        tracks: [
+          {
+            property: "opacity",
+            keyframes: [
+              { offset: 0, value: 0 },
+              { offset: 1, value: 1 },
+            ],
+          },
+        ],
+      });
+    });
+    // The section's scene runs from 0 to 800px of scrolling: a quarter in, the second-half
+    // step hasn't started; three quarters in, it's halfway.
+    await page.evaluate(() => window.scrollTo(0, 200));
+    await nextFrames(page);
+    expect(Number(await style(page, "#title", "opacity"))).toBeCloseTo(0, 1);
+    await page.evaluate(() => window.scrollTo(0, 600));
+    await nextFrames(page);
+    expect(Number(await style(page, "#title", "opacity"))).toBeCloseTo(0.5, 1);
+  });
+
   it("pins a sideways scrolling section and moves its row", async () => {
     const page = await openPage(
       browser,

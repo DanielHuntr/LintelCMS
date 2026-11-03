@@ -1,4 +1,9 @@
-import { canUseFreeLayout, resolveStyle, type StackingMove } from "@lintel/builder-model";
+import {
+  canUseFreeLayout,
+  isStateTarget,
+  resolveStyle,
+  type StackingMove,
+} from "@lintel/builder-model";
 import { BringToFront, ChevronDown, ChevronUp, SendToBack } from "lucide-react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { PanelSection } from "../ui/controls.js";
@@ -19,7 +24,7 @@ export function ArrangeSection({ advanced }: { advanced: boolean }) {
   const { node, parent } = tools;
   const isFreeContainer = canUseFreeLayout(node);
   const isFreeChild = parent?.freeLayout !== undefined;
-  const parentTarget = target === "hover" || target === "focus" ? "base" : target;
+  const parentTarget = isStateTarget(target) ? "base" : target;
   const isGridChild = parent
     ? resolveStyle(parent.styles, parentTarget, "display").value === "grid"
     : false;

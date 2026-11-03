@@ -49,8 +49,14 @@ import { PageStatus } from "../content-workspace/PageStatus.js";
 import { PublishWithParentDialog } from "../content-workspace/PublishWithParentDialog.js";
 import type { WorkspaceTab } from "../content-workspace/workspaceTabs.js";
 import { Dialog } from "../design/Dialog.js";
+import { useToast } from "../design/Toast.js";
+import { useRecycleWithUndo } from "../content-tree/useRecycleWithUndo.js";
 import { SegmentedControl } from "../design/SegmentedControl.js";
 import { PageMenuSection } from "../menus/PageMenuSection.js";
+import {
+  TEMPLATE_CHOICE_KEY,
+  TemplateChoiceSection,
+} from "../liquid-templates/TemplateChoiceSection.js";
 import { EntryBreadcrumbs } from "./EntryBreadcrumbs.js";
 
 interface EntryEditorProps {
@@ -113,6 +119,8 @@ export function EntryEditor({
   const panelId = useId();
   const previewId = useId();
   const navigate = useNavigate();
+  const showToast = useToast();
+  const recycle = useRecycleWithUndo();
 
   const actions = useEntryActions({
     collectionHandle: collection.handle,
@@ -286,14 +294,27 @@ export function EntryEditor({
     });
   }
 
+  /** To the recycle bin, then back to the list, with a note offering Undo. */
   async function deleteEntry() {
-    if (!(await actions.remove())) return;
-    setIsConfirmingDelete(false);
-    await navigate({
-      to: "/content/$collection",
-      params: { collection: collection.handle },
-      ignoreBlocker: true,
-    });
+    await actions.remove((id) =>
+      recycle(id, title || t("editor.untitled"), {
+        notify: showToast,
+        afterRecycle: async () => {
+          setIsConfirmingDelete(false);
+          await navigate({
+            to: "/content/$collection",
+            params: { collection: collection.handle },
+            ignoreBlocker: true,
+          });
+        },
+        afterUndo: async (entryId) => {
+          await navigate({
+            to: "/content/$collection/$entryId",
+            params: { collection: collection.handle, entryId },
+          });
+        },
+      }),
+    );
   }
 
   const saveWithShortcut = useEffectEvent((event: KeyboardEvent) => {
@@ -481,6 +502,15 @@ export function EntryEditor({
                 await refresh(entry ? [entry.id] : []);
               }}
             >
+              {Boolean(collection.routePattern) && (
+                <TemplateChoiceSection
+                  collection={collection}
+                  value={state.current.data[TEMPLATE_CHOICE_KEY]}
+                  onChange={(value) =>
+                    dispatch({ type: "fieldChanged", handle: TEMPLATE_CHOICE_KEY, value })
+                  }
+                />
+              )}
               {entry && collection.structure === "tree" && Boolean(collection.routePattern) && (
                 <PageMenuSection entryId={entry.id} pageTitle={title || t("editor.untitled")} />
               )}
@@ -539,7 +569,7 @@ export function EntryEditor({
         open={isConfirmingDelete}
         title={t("editor.deleteTitle", { title: title || t("editor.untitled") })}
         message={t("editor.deleteMessage")}
-        confirmLabel={t("editor.delete")}
+        confirmLabel={t("tree.delete.confirm")}
         cancelLabel={t("common.cancel")}
         isDestructive
         isWorking={actions.isWorking}

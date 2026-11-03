@@ -1,8 +1,10 @@
-import type {
-  Breakpoint,
-  NodeStyles,
-  StyleDeclarations,
-  StyleTarget,
+import {
+  type Breakpoint,
+  isOwnerStateTarget,
+  isStateTarget,
+  type NodeStyles,
+  type StyleDeclarations,
+  type StyleTarget,
 } from "../document/page-document.schema.js";
 import type { StylePropertyName } from "./style-properties.js";
 
@@ -31,19 +33,29 @@ export interface ResolvedStyle {
   setAt: StyleTarget | undefined;
 }
 
+/** The declarations stored for one target, wherever that target keeps them. */
+export function declarationsAt(
+  styles: NodeStyles,
+  target: StyleTarget,
+): StyleDeclarations | undefined {
+  return isOwnerStateTarget(target) ? styles.owners?.[target] : styles[target];
+}
+
 /**
- * The value a property has at a breakpoint, or in a state (hover, focus), and where it came
- * from. A state falls back to the desktop value, since states apply at every size.
+ * The value a property has at a breakpoint, or in a state (hover, pressed, focus, or an
+ * owner's state), and where it came from. A state falls back to the desktop value, since
+ * states apply at every size.
  */
 export function resolveStyle(
   styles: NodeStyles,
   target: StyleTarget,
   property: StylePropertyName,
 ): ResolvedStyle {
-  const sources: StyleTarget[] =
-    target === "hover" || target === "focus" ? [target, "base"] : cascadeFrom(target);
+  const sources: StyleTarget[] = isStateTarget(target)
+    ? [target, "base"]
+    : cascadeFrom(target as Breakpoint);
   for (const source of sources) {
-    const value = styles[source]?.[property];
+    const value = declarationsAt(styles, source)?.[property];
     if (value !== undefined) return { value, setAt: source };
   }
   return { value: undefined, setAt: undefined };
@@ -55,7 +67,7 @@ export function isSetAt(
   target: StyleTarget,
   property: StylePropertyName,
 ): boolean {
-  return styles[target]?.[property] !== undefined;
+  return declarationsAt(styles, target)?.[property] !== undefined;
 }
 
 /**
@@ -68,7 +80,7 @@ export function setStyle(
   property: StylePropertyName,
   value: string | undefined,
 ): NodeStyles {
-  const current: StyleDeclarations = { ...(styles[target] ?? {}) };
+  const current: StyleDeclarations = { ...(declarationsAt(styles, target) ?? {}) };
   if (value === undefined || value.trim() === "") {
     delete current[property];
   } else {
@@ -98,6 +110,14 @@ function withTarget(
   declarations: StyleDeclarations,
 ): NodeStyles {
   if (target === "base") return { ...styles, base: declarations };
+  if (isOwnerStateTarget(target)) {
+    const owners = { ...styles.owners };
+    if (Object.keys(declarations).length === 0) delete owners[target];
+    else owners[target] = declarations;
+    const next: NodeStyles = { ...styles, owners };
+    if (Object.keys(owners).length === 0) delete next.owners;
+    return next;
+  }
   const next: NodeStyles = { ...styles };
   if (Object.keys(declarations).length === 0) {
     delete next[target];
@@ -110,5 +130,5 @@ function withTarget(
 /** The properties changed at a breakpoint or state, for the dots in the style panel. */
 export function overriddenProperties(styles: NodeStyles, target: StyleTarget): StylePropertyName[] {
   if (target === "base") return [];
-  return Object.keys(styles[target] ?? {}) as StylePropertyName[];
+  return Object.keys(declarationsAt(styles, target) ?? {}) as StylePropertyName[];
 }

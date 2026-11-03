@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockApi } from "../testing/mockApi.js";
@@ -47,5 +47,43 @@ describe("the recycle bin", () => {
     expect(actions).toContainEqual({
       notice: { tone: "neutral", message: "Restored “About” as a draft." },
     });
+  });
+
+  it("lists deleted files under Files and restores one to the media library", async () => {
+    const api = mockApi(({ method, url }) => {
+      if (url.pathname === "/recycle-bin") return { items: [] };
+      if (method === "GET" && url.pathname === "/media-bin") {
+        return {
+          items: [
+            {
+              id: "f1",
+              filename: "logo.png",
+              mimeType: "image/png",
+              size: 2048,
+              deletedAt: "2026-11-01T09:00:00.000Z",
+              deletedBy: { id: "u1", name: "Ana" },
+            },
+          ],
+        };
+      }
+      if (method === "POST" && url.pathname === "/media-bin/f1/restore") return { id: "f1" };
+      return {};
+    });
+    renderScreen(
+      <WithTestTree>
+        <RecycleBinPage />
+      </WithTestTree>,
+      { initialPath: "/content/recycle-bin" },
+    );
+
+    const files = await screen.findByRole("list", { name: "Files" });
+    expect(within(files).getByText("logo.png")).toBeInTheDocument();
+    expect(within(files).getByText(/by Ana · 2 kB/)).toBeInTheDocument();
+    await userEvent.click(within(files).getByRole("button", { name: "Restore logo.png" }));
+
+    expect(
+      await screen.findByText("Restored “logo.png” to the media library."),
+    ).toBeInTheDocument();
+    expect(api.calls.some((call) => call.url.pathname === "/media-bin/f1/restore")).toBe(true);
   });
 });

@@ -9,12 +9,14 @@ const shownKinds: WordPressItemKind[] = [
   "author",
   "category",
   "tag",
+  "product",
+  "menu",
 ];
 
 /** What an import did (or, from a dry run, would do), in sections people can act on. */
 export function WordPressReport({ report }: { report: WordPressImportReport }) {
   const rows = shownKinds.filter((kind) => {
-    const counts = report.counts[kind];
+    const counts = report.counts[kind] ?? { done: 0, skipped: 0, failed: 0 };
     return counts.done + counts.skipped + counts.failed > 0;
   });
   const keptAsHtml = Object.entries(report.keptAsHtml);
@@ -24,7 +26,7 @@ export function WordPressReport({ report }: { report: WordPressImportReport }) {
       <table className="w-full text-start text-body text-label">
         <thead className="text-footnote text-label-secondary">
           <tr>
-            <th scope="col" className="pb-2 font-medium">
+            <th scope="col" className="pb-2 text-start font-medium">
               {t("wordpress.column.what")}
             </th>
             <th scope="col" className="pb-2 text-end font-medium">
@@ -41,7 +43,7 @@ export function WordPressReport({ report }: { report: WordPressImportReport }) {
         <tbody>
           {rows.map((kind) => (
             <tr key={kind} className="hairline-top">
-              <th scope="row" className="py-2 font-normal">
+              <th scope="row" className="py-2 text-start font-normal">
                 {t(`wordpress.count.${kind}` as StringKey)}
               </th>
               <td className="py-2 text-end tabular-nums">{report.counts[kind].done}</td>
@@ -76,6 +78,11 @@ export function WordPressReport({ report }: { report: WordPressImportReport }) {
           {report.renamedSlugs.map((renamed) => t("wordpress.renamed", renamed))}
         </ReportSection>
       )}
+      {(report.fieldsLeftOut ?? []).length > 0 && (
+        <ReportSection title={t("wordpress.fieldsLeftOutTitle")} text={t("siteImport.leftOutText")}>
+          {(report.fieldsLeftOut ?? []).map((item) => `${item.title}: ${item.fields.join(", ")}`)}
+        </ReportSection>
+      )}
       {report.redirectsSuggested > 0 && (
         <p className="text-body text-label">
           {t("wordpress.redirectsSuggested", { count: report.redirectsSuggested })}
@@ -90,7 +97,8 @@ export function WordPressReport({ report }: { report: WordPressImportReport }) {
   );
 }
 
-function ReportSection({
+/** A titled list in an import report. Shared by the importers. */
+export function ReportSection({
   title,
   text,
   tone = "neutral",

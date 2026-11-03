@@ -64,15 +64,16 @@ describe("animating in the builder", () => {
     const { latest } = renderBuilder(headingPage());
     await selectTitle(user);
     await user.click(screen.getByRole("tab", { name: "Animate" }));
-    expect(screen.getByRole("heading", { name: "Animation for Title" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /^Motion.*Title$/ })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Add motion" }));
     await user.click(screen.getByRole("button", { name: /^Fade up/ }));
     const animated = findNode(latest().root, "n2");
-    expect(animated?.animation?.presetId).toBe("fade-up");
-    expect(animated?.animation?.spec.trigger.type).toBe("inView");
+    expect(animated?.animations?.[0]?.presetId).toBe("fade-up");
+    expect(animated?.animations?.[0]?.spec.trigger.type).toBe("inView");
     expect(screen.getByRole("status")).toHaveTextContent("");
 
-    await user.click(screen.getByRole("button", { name: "Remove animation" }));
-    expect(findNode(latest().root, "n2")?.animation).toBeUndefined();
+    await user.click(screen.getByRole("button", { name: "Remove “Fade up”" }));
+    expect(findNode(latest().root, "n2")?.animations).toBeUndefined();
     expect(screen.getByRole("status")).toHaveTextContent("Removed the animation from Title");
   });
 
@@ -81,10 +82,11 @@ describe("animating in the builder", () => {
     const { latest } = renderBuilder(headingPage());
     await selectTitle(user);
     await user.click(screen.getByRole("tab", { name: "Animate" }));
+    await user.click(screen.getByRole("button", { name: "Add motion" }));
     await user.click(screen.getByRole("button", { name: /^Pop in/ }));
-    expect(findNode(latest().root, "n2")?.animation?.presetId).toBe("pop-in");
+    expect(findNode(latest().root, "n2")?.animations?.[0]?.presetId).toBe("pop-in");
     await user.click(screen.getByRole("button", { name: "Undo: Animated Title" }));
-    expect(findNode(latest().root, "n2")?.animation).toBeUndefined();
+    expect(findNode(latest().root, "n2")?.animations).toBeUndefined();
   });
 
   // Ctrl+Z did nothing with focus on a tab, or on the page after clicking empty space.
@@ -93,16 +95,17 @@ describe("animating in the builder", () => {
     const { latest } = renderBuilder(headingPage());
     await selectTitle(user);
     await user.click(screen.getByRole("tab", { name: "Animate" }));
+    await user.click(screen.getByRole("button", { name: "Add motion" }));
     await user.click(screen.getByRole("button", { name: /^Pop in/ }));
 
     screen.getByRole("tab", { name: "Animate" }).focus();
     await user.keyboard("{Control>}z{/Control}");
-    expect(findNode(latest().root, "n2")?.animation).toBeUndefined();
+    expect(findNode(latest().root, "n2")?.animations).toBeUndefined();
 
     (document.activeElement as HTMLElement | null)?.blur();
     expect(document.activeElement).toBe(document.body);
     await user.keyboard("{Control>}{Shift>}z{/Shift}{/Control}");
-    expect(findNode(latest().root, "n2")?.animation?.presetId).toBe("pop-in");
+    expect(findNode(latest().root, "n2")?.animations?.[0]?.presetId).toBe("pop-in");
   });
 });
 
@@ -115,6 +118,7 @@ describe("skill levels", () => {
     expect(screen.queryByRole("radio", { name: "Advanced" })).not.toBeInTheDocument();
     expect(screen.getByText(/Choose Designer in Tools/)).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Animate" }));
+    await user.click(screen.getByRole("button", { name: "Add motion" }));
     await user.click(screen.getByRole("button", { name: /^Fade up/ }));
     expect(screen.queryByRole("radio", { name: "Advanced" })).not.toBeInTheDocument();
     expect(screen.getByText(/Switch to Designer to open the timeline/)).toBeInTheDocument();
@@ -131,6 +135,7 @@ describe("skill levels", () => {
     await selectTitle(user);
     expect(screen.getByRole("radio", { name: "Advanced" })).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Animate" }));
+    await user.click(screen.getByRole("button", { name: "Add motion" }));
     await user.click(screen.getByRole("button", { name: /^Fade up/ }));
     expect(screen.getByRole("radio", { name: "Advanced" })).toBeInTheDocument();
   });

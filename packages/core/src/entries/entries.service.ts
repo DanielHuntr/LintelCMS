@@ -1,4 +1,5 @@
 import { findBlueprintByIdOrFail } from "../blueprints/blueprints.service.js";
+import { loadBlockCheckLibrary } from "../blocks/blocks.service.js";
 import {
   entrySiteFor,
   findCollectionByIdOrFail,
@@ -8,6 +9,7 @@ import type { Collection } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { isUniqueViolation } from "../database/database-errors.js";
 import { buildEntryDataValidator } from "../fieldtypes/entry-data-validator.js";
+import { keepTemplateChoice } from "../liquid-templates/template-choice.js";
 import { removeReferencesFromGlobalValues } from "../globals/global-references.js";
 import type { AssetExists } from "../fieldtypes/image-assets.js";
 import { InvalidFieldsError } from "../http/http-errors.js";
@@ -258,6 +260,10 @@ export async function validateForCollection(
     pageCode: personChange
       ? await findPageCodeContext(database, blueprint.fields, context.permissions)
       : undefined,
+    // Instances of the site's blocks in page designs are checked against their properties.
+    blockLibrary: blueprint.fields.some((field) => field.type === "page")
+      ? await loadBlockCheckLibrary(database)
+      : undefined,
     assetExists: context.assetExists,
     references: createContentReferences(database),
     requiredFields: when === "saving" ? "allowEmpty" : "enforce",
@@ -279,7 +285,8 @@ export async function validateForCollection(
           ))
       : undefined,
   });
-  return validate(data);
+  // The page's template choice isn't a field, but is kept with the values (see template-choice.ts).
+  return keepTemplateChoice(data, await validate(data));
 }
 
 /**

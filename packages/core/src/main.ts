@@ -1,6 +1,9 @@
 import type { FastifyInstance } from "fastify";
 import { loadConfig, loadProjectEnvFile } from "./config.js";
-import { contentModelOptionsFromConfig } from "./content-model-sync/content-model-config.js";
+import {
+  contentModelOptionsFromConfig,
+  resolveFromRepository,
+} from "./content-model-sync/content-model-config.js";
 import { readDeploymentOptions } from "./deployment-options.js";
 import { describeActiveDatabase } from "./database/active-database.js";
 import { createConfiguredEmailSender } from "./email/index.js";
@@ -51,7 +54,13 @@ await runWithFriendlyErrors(async () => {
     webhooks: { allowPrivateAddresses: config.WEBHOOKS_ALLOW_PRIVATE_ADDRESSES },
     trustProxy: config.TRUST_PROXY,
     plugins: installedPlugins,
-    website: { builtInSiteUrl: config.SITE_ENABLED ? siteUrl : null },
+    website: {
+      builtInSiteUrl: config.SITE_ENABLED ? siteUrl : null,
+      liquidTemplates: {
+        folder: resolveFromRepository(config.LINTEL_TEMPLATES),
+        development: config.NODE_ENV === "development",
+      },
+    },
     contentModel: contentModelOptionsFromConfig(config),
     media: {
       storage: createConfiguredStorage(config, paths.uploadsFolder),

@@ -2,6 +2,7 @@ import { isSafeImageAddress, isSafeLinkAddress, type LinkProp } from "@lintel/bu
 import { ArrowDown, ArrowUp, ImagePlus, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
+import { usePickPage } from "./page-picker.js";
 import { IconButton, inputClassName, Labelled } from "../ui/controls.js";
 
 /**
@@ -63,8 +64,17 @@ export function TextInputField({
 
 export function LinkInputField({ label, value, onChange }: FieldProps<string>) {
   const text = useBuilderText();
+  const pickPage = usePickPage();
   const [draft, setDraft] = useState(value);
   const isValid = isSafeLinkAddress(draft);
+
+  async function choosePage() {
+    const page = await pickPage?.();
+    if (!page || !isSafeLinkAddress(page.url)) return;
+    setDraft(page.url);
+    onChange(page.url);
+  }
+
   return (
     <Labelled label={label} hint={isValid ? text("pageBuilder.content.linkHint") : undefined}>
       {(id) => (
@@ -84,6 +94,11 @@ export function LinkInputField({ label, value, onChange }: FieldProps<string>) {
             <span className="text-caption text-danger">
               {text("pageBuilder.content.linkInvalid")}
             </span>
+          )}
+          {pickPage && (
+            <ChoosePageLink onClick={() => void choosePage()}>
+              {text("pageBuilder.content.choosePage")}
+            </ChoosePageLink>
           )}
         </>
       )}
@@ -253,8 +268,15 @@ export function TextListField({
 
 export function LinkListField({ label, value, onChange }: FieldProps<LinkProp[]>) {
   const text = useBuilderText();
+  const pickPage = usePickPage();
   const replace = (index: number, link: LinkProp) =>
     onChange(value.map((current, at) => (at === index ? link : current)));
+
+  async function choosePage(index: number, link: LinkProp) {
+    const page = await pickPage?.();
+    if (!page || !isSafeLinkAddress(page.url)) return;
+    replace(index, { label: link.label || page.title, href: page.url });
+  }
   return (
     <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
       <legend className="mb-1 text-caption text-label-secondary">{label}</legend>
@@ -277,6 +299,14 @@ export function LinkListField({ label, value, onChange }: FieldProps<LinkProp[]>
               }
               className={inputClassName}
             />
+            {pickPage && (
+              <ChoosePageLink
+                label={text("pageBuilder.content.choosePageFor", { number: index + 1 })}
+                onClick={() => void choosePage(index, link)}
+              >
+                {text("pageBuilder.content.choosePage")}
+              </ChoosePageLink>
+            )}
           </div>
           <IconButton
             size="small"
@@ -295,5 +325,27 @@ export function LinkListField({ label, value, onChange }: FieldProps<LinkProp[]>
         {text("pageBuilder.content.addLink")}
       </button>
     </fieldset>
+  );
+}
+
+/** "Choose a page…" under a link's address: a plain text action, as the admin's are. */
+function ChoosePageLink({
+  label,
+  onClick,
+  children,
+}: {
+  label?: string;
+  onClick: () => void;
+  children: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      className="min-h-6 self-start rounded-control text-caption font-medium text-accent underline decoration-1 underline-offset-2 hover:decoration-2 focus-visible:focus-ring"
+    >
+      {children}
+    </button>
   );
 }

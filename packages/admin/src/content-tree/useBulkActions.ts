@@ -23,7 +23,7 @@ const doneMessages = {
 /**
  * Runs a bulk action from the tree's selection bar or the list's, refreshes what changed,
  * and says what happened. A delete offers Undo, which brings every page back from the
- * recycle bin. When the workspace shows a page that was deleted, it goes back to Content.
+ * recycle bin as it was: in its old place, and live if it was (for people who may publish). When the workspace shows a page that was deleted, it goes back to Content.
  */
 export function useBulkActions(selectedKey: string | undefined) {
   const refresh = useRefreshContent();
@@ -57,7 +57,8 @@ export function useBulkActions(selectedKey: string | undefined) {
               run: async () => {
                 let restored = 0;
                 for (const itemId of itemIds) {
-                  restored += (await restoreFromRecycleBin(itemId)).restoredCount > 0 ? 1 : 0;
+                  const back = await restoreFromRecycleBin(itemId, { asBefore: true });
+                  restored += back.restoredCount > 0 ? 1 : 0;
                 }
                 await refresh(result.changed);
                 return t("bulkDelete.undone", { count: restored });

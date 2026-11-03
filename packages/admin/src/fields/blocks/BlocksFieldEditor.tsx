@@ -15,6 +15,7 @@ import { ConfirmDialog } from "../../design/ConfirmDialog.js";
 import { t } from "../../i18n/strings.js";
 import type { BlockType, BlockValue } from "../field.types.js";
 import type { FieldEditorProps } from "../fieldEditorProps.js";
+import { defaultValues } from "../fieldLayout.js";
 import { AddBlockSheet } from "./AddBlockSheet.js";
 import { BlockCard } from "./BlockCard.js";
 import {
@@ -85,7 +86,8 @@ export function BlocksFieldEditor({
   function add(blockType: BlockType) {
     const id = newBlockId();
     setIsAdding(false);
-    update(addBlock(blocks, blockType.handle, id));
+    // A new block starts with its fields' defaults, as a new entry does.
+    update(addBlock(blocks, blockType.handle, id, blocks.length, defaultValues(blockType.fields)));
     setAnnouncement(
       t("fields.blocks.added", { name: blockType.name, position: blocks.length + 1 }),
     );

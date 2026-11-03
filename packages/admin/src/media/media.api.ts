@@ -88,8 +88,36 @@ export function updateAsset(assetId: string, changes: AssetChanges) {
 }
 
 /** Rejects with an ApiError whose `details.usedBy` lists the entries when the file is in use. */
+/** Moves the file to the media recycle bin, from where Undo or the bin can bring it back. */
 export function deleteAsset(assetId: string) {
   return apiRequest<void>(`/media/${encodeURIComponent(assetId)}`, { method: "DELETE" });
+}
+
+/** A file in the media recycle bin (`GET /media-bin`). */
+export interface BinnedAsset {
+  id: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  deletedAt: string;
+  deletedBy: { id: string; name: string } | null;
+}
+
+export function listMediaBin(): Promise<{ items: BinnedAsset[] }> {
+  return apiRequest("/media-bin");
+}
+
+/** Puts a deleted file back in the library, with the same id, name and alt text. */
+export function restoreAsset(assetId: string): Promise<Asset> {
+  return apiRequest(`/media-bin/${encodeURIComponent(assetId)}/restore`, { method: "POST" });
+}
+
+export function deleteAssetForGood(assetId: string): Promise<void> {
+  return apiRequest(`/media-bin/${encodeURIComponent(assetId)}`, { method: "DELETE" });
+}
+
+export function emptyMediaBin(): Promise<{ deleted: number }> {
+  return apiRequest("/media-bin", { method: "DELETE" });
 }
 
 /**

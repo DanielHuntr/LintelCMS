@@ -14,7 +14,13 @@ import { ReorderNotAllowedError } from "../entries/entries.errors.js";
 import { findAncestorIds } from "../entries/entries.repository.js";
 import { findEntryOrFail } from "../entries/entries.service.js";
 import { checkParent } from "../entries/entry-ordering.service.js";
-import { findLiveAddresses, listSiteStarts } from "../content-roots/content-roots.service.js";
+import {
+  findLiveAddresses,
+  listSiteStarts,
+  placeEntryUrls,
+} from "../content-roots/content-roots.service.js";
+import { buildEntryUrl } from "../delivery/entry-urls.js";
+import { findSiteByIdOrFail } from "../sites/sites.service.js";
 import { countRecycleBinItems } from "../recycle-bin/recycle-bin.repository.js";
 import { findSiteWithLocales } from "../sites/locales.service.js";
 import { listBranchIds } from "./content-tree-branches.service.js";
@@ -175,14 +181,24 @@ export async function listTreeChildren(
   };
 }
 
-/** Entries whose titles contain the search, for the filter at the top of the tree. */
+/**
+ * Entries whose titles contain the search, for the filter at the top of the tree and the
+ * admin's page picker for links. Each has its address on the site (`url`), or null when its
+ * collection has no pages.
+ */
 export async function searchTree(
   database: DatabaseOrTransaction,
   query: { search: string; siteId?: string; locale?: string },
-): Promise<{ items: TreeNode[] }> {
+): Promise<{ items: (TreeNode & { url: string | null })[] }> {
   const { site, locale } = await resolveSiteAndLocale(database, query.siteId, query.locale);
   const rows = await searchNodeRows(database, query.search, site.id, locale, SEARCH_LIMIT);
-  return { items: await describeNodes(database, rows) };
+  const urls = await placeEntryUrls(
+    database,
+    rows.map((row) => ({ id: row.id, url: buildEntryUrl(row.routePattern, row) })),
+    { site: await findSiteByIdOrFail(database, site.id) },
+  );
+  const nodes = await describeNodes(database, rows);
+  return { items: nodes.map((node) => ({ ...node, url: urls.get(node.id) ?? null })) };
 }
 
 /** The entries from the top of the tree down to this one, for breadcrumbs and opening the tree. */

@@ -16,6 +16,8 @@ import {
   removePathPrefix,
 } from "../sites/site-addresses.js";
 import type { Site } from "../sites/sites.table.js";
+import type { LiquidTemplates } from "../liquid-templates/liquid-templates.service.js";
+import { renderEntryWithLiquid } from "../liquid-templates/liquid-pages.service.js";
 import type { PageCache, SiteResponse } from "./rendered-pages-cache.js";
 import { loadSiteChrome, localiseUrl } from "./site-chrome.service.js";
 import { loadSiteContext, type SiteContext } from "./site-context.service.js";
@@ -56,6 +58,8 @@ export interface SiteDependencies {
   now?: () => Date;
   /** The shop's products and the forms, for the elements that show them. None when left out. */
   sources?: SiteSources;
+  /** The templates folder's Liquid templates (see src/liquid-templates). None when left out. */
+  liquidTemplates?: LiquidTemplates | null;
 }
 
 /** What the address's query asks of the page's lists: `?page=2&sort=priceLowToHigh`. */
@@ -385,7 +389,8 @@ export async function renderEntry(
   request: PageRequest,
   collectionHandle: string,
   entry: DeliveredEntryWithTranslations,
-  options: { private?: boolean } = {},
+  /** `draft`: the entry is its working copy, shown with a preview token. */
+  options: { private?: boolean; draft?: boolean } = {},
 ): Promise<SiteResponse> {
   const { context, locale } = request;
   const listed = entryView(context, collectionHandle, entry, locale);
@@ -394,6 +399,24 @@ export async function renderEntry(
   const translations = new Map(
     subject.alternates.map((alternate) => [alternate.locale, alternate.path] as const),
   );
+  const templates = request.dependencies.liquidTemplates;
+  const templateName = await templates?.findTemplateForEntry(
+    request.dependencies.database,
+    { id: entry.id, collectionHandle },
+    options.draft ? "draft" : "published",
+  );
+  if (templates && templateName) {
+    return renderEntryWithLiquid(request, {
+      templates,
+      templateName,
+      collectionHandle,
+      entry,
+      view,
+      subject: { ...subject, noindex: options.private },
+      translations,
+      private: options.private,
+    });
+  }
   return renderWithHead(
     request,
     view,

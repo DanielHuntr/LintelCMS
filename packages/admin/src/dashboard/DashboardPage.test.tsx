@@ -169,4 +169,17 @@ describe("the home dashboard", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Edit dashboard" }));
     expect(screen.queryByRole("button", { name: "Default for a role…" })).not.toBeInTheDocument();
   });
+
+  // LINTEL-UX-027: the button asked for "media:create", which no role has, so Authors (who
+  // may upload) never saw it.
+  it("offers Add images and files to people who may upload", async () => {
+    serveDashboard();
+    renderDashboard({
+      permissions: ["entries:read", "entries:create", "media:read", "media:upload"],
+    });
+
+    expect(
+      await screen.findByRole("link", { name: "Add images and files" }, { timeout: 5000 }),
+    ).toBeInTheDocument();
+  });
 });

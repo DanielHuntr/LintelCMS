@@ -3,7 +3,7 @@
 An optional plugin, off until someone switches it on in Build → Features. It lets people
 search openly licensed photos on [Openverse](https://openverse.org) from the media library
 and the image picker, and add one to the media library as an ordinary file, with its credit.
-Why it works this way: `docs/decisions/0027-free-photos-from-openverse.md`.
+Why it works this way: `docs/decisions/0031-free-photos-from-openverse.md`.
 
 ## How it works
 

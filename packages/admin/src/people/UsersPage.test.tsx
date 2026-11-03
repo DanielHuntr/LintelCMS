@@ -167,4 +167,22 @@ describe("which roles someone may give", () => {
     expect(canGrantRole(viewerRole, ["entries:*", "media:read"])).toBe(true);
     expect(canGrantRole(editorRole, ["entries:read", "media:read"])).toBe(false);
   });
+
+  it("opens the invitation straight away when the command palette asks", async () => {
+    servePeople();
+    const onInvitingStarted = vi.fn();
+    renderScreen(<UsersPage startInviting onInvitingStarted={onInvitingStarted} />);
+
+    const dialog = await screen.findByRole("dialog", { name: "Invite someone" });
+    expect(await within(dialog).findByLabelText("Their email address")).toBeInTheDocument();
+    expect(onInvitingStarted).toHaveBeenCalledOnce();
+  });
+
+  it("doesn't open the invitation for someone who can't invite", async () => {
+    servePeople();
+    renderScreen(<UsersPage startInviting />, { permissions: ["users:read"] });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Users" })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Invite someone" })).not.toBeInTheDocument();
+  });
 });

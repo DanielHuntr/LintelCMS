@@ -22,10 +22,10 @@ flowing colour. There are over a hundred, and you add them without any code.
 The gallery only shows effects that suit what you selected. Untick **Only ones that suit
 this element** to see every kind, or search: "carousel", "glow", "typing".
 
-An element can have up to six effects, and an animation as well: a card can fade up as it
-arrives _and_ tilt when the pointer is over it. A few effects, such as **Letters rise**,
-are animations themselves. Adding one replaces the element's animation, and you can
-fine-tune it on the **Animation** tab, with the timeline if you're a Designer.
+An element can have up to six effects and up to six animations: a card can fade up as it
+arrives _and_ tilt when the pointer is over it. A few effects, such as **Letters rise**, are
+animations themselves. Adding one adds an animation to the element, which you can fine-tune
+in the **Motion** panel, with the timeline if you're a Designer.
 
 ## The kinds of effect
 

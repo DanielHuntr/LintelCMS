@@ -130,3 +130,40 @@ Branch `fix/content-tree`. Each regression test was run on the unfixed code firs
 - **Tests:** `webhooks.test.ts`:
   - New: three deliveries to a receiver that takes 300ms each are attempted at least 500ms apart. Before, all three had the same time.
   - The retry test now measures each gap from that attempt (1, 5, 30, 120 and 720 minutes) rather than from the run's start time.
+
+## Custom blocks merge (4 November 2026)
+
+`phase-6/custom-blocks` is merged into the release line on `merge/custom-blocks`.
+
+- **Migration:** became `0023_add_custom_blocks.sql`, regenerated with `db:generate`. Its SQL is the same as the branch's: the `blocks` table with `tenantId()`, and a unique (tenant, handle) index.
+  - Checked on a fresh database (the suite) and on a copy of a database made on the release before it.
+- **Decision record:** became `0027-custom-blocks.md`, with its links updated.
+- **Conflicts:** release's behaviour was kept where both sides changed the same thing:
+  - field renames and conversions in blueprints;
+  - the content routes;
+  - the page designer's data sources;
+  - Insert's plugin filter;
+  - the builder's layout.
+
+  The blocks parts were added on top.
+
+- **Fixes the merge needed:**
+  - Insert items need keywords.
+  - Tests started an empty page with a button that no longer exists.
+  - The block designer now previews effects, and says on a phone that it needs a bigger screen (as the page designer does, LINTEL-UX-013). There's a regression test.
+- **Checked:** the blocks journey (`custom-blocks.e2e.mjs`) passes in a real browser, and the block screens were checked at desktop and 390px, light and dark.
+- **Left as it is:**
+  - The block screens stay at `/design/blocks`. They'll move when Design moves into the content tree (the designer push).
+  - The block designer doesn't yet pass data sources or the menu editor, so lists and menus inside a block's design show no real data.
+
+## Importers merge (3 November 2026)
+
+Branch `merge/importers`: `phase-6/importers` merged onto `release/1.0.0-rc` (60c5010).
+
+- **Spec check** (`spec-importers.md`): WordPress (menus, custom fields, WooCommerce products), Webflow, Framer, Statamic and Umbraco importers, the "Move your site to Lintel" hub, `lintel import <source> <file|url>`, dry run, mapping, resumable background runs, reports, zip and download safety, fixture tests, the WordPress end-to-end test and a "Moving from X" page per source are all in. Nothing left to build. Existing content is never overwritten; there is no "replace it" choice to ask about.
+- **Migration:** the branch's `0021_add_site_importers` was dropped and regenerated after release's migrations as `0024_add_site_importers` (custom blocks took 0023) (only the two new tables, both with `tenant_id`). Checked on a fresh database (the test suite) and on a copy of a database made with release's migrations (24 → 25 applied, both tables there).
+- **Decision record:** `0028-site-importers.md` (the branch had none).
+- **Screens moved to Build:** the importer screens were made under `/settings/import/*`; they are now `/build/import/*`, matching release's Build split. Old addresses already redirect through `movedPages.ts`; a test now covers `/settings/import/webflow/:id`. "Settings → Import" and "Settings → Features" in copy and docs now say Build.
+- **Wording kept from release:** "Import an export from {product}" (the branch had changed it back to "Import a {product} export", which `copyFixes.test.ts` caught).
+- **Browser check:** hub, Webflow and Statamic upload, mapping, dry run, report and the old address, at desktop and 390px, light and dark: `docs/qa/screenshots/merge-importers/`. No sideways scrolling and no console errors.
+- **Checks:** format, lint, typecheck and build pass. Tests: admin 661, builder, motion and the rest pass; core 1023 passed with the 22 known Windows failures; CLI 28 passed with the 2 known Windows failures.

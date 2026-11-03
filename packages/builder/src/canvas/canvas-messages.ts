@@ -39,6 +39,11 @@ export type MessageToFrame =
       modules: Readonly<Record<string, string>>;
     }
   | { type: "stopMotion" }
+  /**
+   * The selected element's scroll scene: where on the screen it starts and ends (0 the top,
+   * 1 the bottom), drawn as lines people can drag. Null hides them.
+   */
+  | { type: "sceneMarkers"; markers: SceneMarkers | null }
   /** Where something dragged from Insert would land: a line, or a box for "inside". */
   | { type: "insertMarker"; marker: InsertMarker | null }
   /**
@@ -52,6 +57,15 @@ export type MessageToFrame =
    * over the frame and says where it is; the frame answers with `insertOver`.
    */
   | { type: "insertPoint"; x: number; y: number };
+
+export interface SceneMarkers {
+  start: number;
+  end: number;
+  startLabel: string;
+  endLabel: string;
+  /** Read out while a line has focus and is moved with the arrow keys. */
+  dragHint: string;
+}
 
 export interface InsertMarker {
   nodeId: string;
@@ -97,6 +111,8 @@ export type MessageFromFrame =
   | { type: "moveCancel" }
   /** "Add pages to your menu" was pressed in place of an empty menu. */
   | { type: "openMenu"; nodeId: string }
+  /** A scroll scene's Start or End line was moved to this point on the screen (0 to 1). */
+  | { type: "sceneMarker"; which: "start" | "end"; viewport: number }
   /** How the selected element looks, measured on the canvas, for the style panel. */
   | {
       type: "look";
@@ -140,6 +156,7 @@ const frameMessageTypes = new Set([
   "moveOver",
   "moveDrop",
   "moveCancel",
+  "sceneMarker",
 ]);
 
 /** Reads a message from the frame, or null if it isn't one of ours. */
@@ -198,6 +215,13 @@ export function readFrameMessage(data: unknown): MessageFromFrame | null {
       return { type: "moveCancel" };
     case "openMenu":
       return isText(message.nodeId) ? (message as MessageFromFrame) : null;
+    case "sceneMarker":
+      return (message.which === "start" || message.which === "end") &&
+        isFiniteNumber(message.viewport) &&
+        message.viewport >= 0 &&
+        message.viewport <= 1
+        ? (message as MessageFromFrame)
+        : null;
     case "rotate":
       return isText(message.nodeId) && isFiniteNumber(message.degrees)
         ? (message as MessageFromFrame)

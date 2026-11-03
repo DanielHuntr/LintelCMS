@@ -38,11 +38,16 @@ export * from "./components/collection-components.js";
 export * from "./components/shop-components.js";
 export * from "./components/effect-components.js";
 export * from "./data/bound-items.js";
+export * from "./custom-blocks/custom-block.js";
+export * from "./custom-blocks/block-bindings.js";
+export * from "./custom-blocks/expand-blocks.js";
+export * from "./custom-blocks/block-template.js";
+export * from "./custom-blocks/make-block.js";
 
 export * from "./styles/style-properties.js";
 export * from "./styles/style-cascade.js";
 export { assignClassNames, slugifyClassName } from "./styles/class-names.js";
-export { compileStylesheet, formatRule } from "./styles/compile-stylesheet.js";
+export { compileStatePreview, compileStylesheet, formatRule } from "./styles/compile-stylesheet.js";
 export * from "./styles/style-values.js";
 export * from "./styles/clip-shapes.js";
 export * from "./styles/background-layers.js";

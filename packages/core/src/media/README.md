@@ -38,6 +38,26 @@ PowerPoint (`.pptx`), plain text and CSV documents.
 `credit` holds who made a file and its licence, for files that must be credited, such as
 photos added by the Free photos plugin (`src/free-photos`). It is empty for most files.
 
+## The recycle bin
+
+Deleting a file moves it to the media recycle bin (`media-bin.service.ts`): its row is kept
+in `binned_assets` and its bytes stay in storage, so the admin's Undo, or Restore in the
+recycle bin, brings it back with the same id, name, alt text and folder. Only files nothing
+uses can be deleted, so nothing points at a binned file. Deleting it from the bin, or
+emptying the bin, removes the bytes for good. Forms delete their uploads for good straight
+away (`deleteAsset`).
+
+| Method and path               | Permission     | Success                                                                   |
+| ----------------------------- | -------------- | ------------------------------------------------------------------------- |
+| `GET /media-bin`              | `media:read`   | 200 `{ items: [{ id, filename, mimeType, size, deletedAt, deletedBy }] }` |
+| `POST /media-bin/:id/restore` | `media:upload` | 200 `Asset`; 409 `ASSET_ALREADY_IN_LIBRARY` or `FILE_MISSING` if it can't |
+| `DELETE /media-bin/:id`       | `media:delete` | 204, gone for good                                                        |
+| `DELETE /media-bin`           | `media:delete` | 200 `{ deleted }`, the bin emptied                                        |
+
+`:id` is the file's own id. A restore is refused when the same file was uploaded again
+meanwhile, or when its bytes left storage (moving to a bucket only copies the library's
+files, and backups only hold those too).
+
 `GET /media` takes `search` (filename or alt text), `type` (`image` or `document`), `page`
 and `perPage` (25 by default, 100 at most). The `Asset` shape is in `media.schema.ts`.
 
@@ -183,6 +203,10 @@ All three are exported from `index.ts` for that (see `src/forms/submission-files
 | `media.service.ts`        | Uploading, listing, updating and deleting                   |
 | `media-file.service.ts`   | Serving originals and resized images                        |
 | `media.repository.ts`     | Database reads and writes                                   |
+| `media-bin.table.ts`      | The `binned_assets` table: deleted files, kept for Undo     |
+| `media-bin.service.ts`    | Binning, restoring, deleting for good and emptying          |
+| `media-bin.repository.ts` | The bin's database reads and writes                         |
+| `media-bin.routes.ts`     | The bin's endpoints                                         |
 | `media.errors.ts`         | Named errors with the messages people see                   |
 | `file-types.ts`           | The allowed types and telling what a file really is         |
 | `svg-safety.ts`           | Refusing SVGs with active content                           |

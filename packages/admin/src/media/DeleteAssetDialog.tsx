@@ -6,6 +6,7 @@ import { t } from "../i18n/strings.js";
 import type { Asset, AssetUsage } from "./media.api.js";
 import { useDeleteAsset } from "./media.queries.js";
 import { Modal } from "./Modal.js";
+import { useOfferAssetUndo } from "./useOfferAssetUndo.js";
 
 interface DeleteAssetDialogProps {
   asset: Asset;
@@ -14,18 +15,25 @@ interface DeleteAssetDialogProps {
 }
 
 /**
- * Asks before deleting, because it can't be undone. If entries still use the file, the API
- * refuses and this lists them, so the editor knows exactly what to change first.
+ * Asks before moving a file to the recycle bin, since it comes off the site straight away,
+ * then offers Undo. If entries still use the file, the API refuses and this lists them, so
+ * the editor knows exactly what to change first.
  */
 export function DeleteAssetDialog({ asset, onCancel, onDeleted }: DeleteAssetDialogProps) {
   const titleId = useId();
   const descriptionId = useId();
   const deletion = useDeleteAsset();
+  const offerUndo = useOfferAssetUndo();
   const usedBy = usageFrom(deletion.error);
   const otherError = deletion.error && !usedBy ? deletion.error.message : undefined;
 
   function confirmDelete() {
-    deletion.mutate(asset.id, { onSuccess: onDeleted });
+    deletion.mutate(asset.id, {
+      onSuccess: () => {
+        onDeleted();
+        offerUndo(asset);
+      },
+    });
   }
 
   return (

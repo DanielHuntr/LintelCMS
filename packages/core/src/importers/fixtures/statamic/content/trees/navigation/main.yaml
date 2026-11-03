@@ -1,0 +1,9 @@
+tree:
+  - id: nav-1
+    entry: page-about
+    children:
+      - id: nav-2
+        entry: page-rules
+  - id: nav-3
+    title: Council website
+    url: "https://council.example/allotments"

@@ -72,5 +72,6 @@ export async function renderPreview(
   const draftPath = localiseUrl(draft.entry.url ?? path, draft.entry.locale, context);
   return renderEntry({ ...draftRequest, path: draftPath }, draft.collectionHandle, draft.entry, {
     private: true,
+    draft: true,
   });
 }

@@ -49,52 +49,101 @@ function renderBuilder(siteEffects?: {
   return { latest: () => onChange.mock.lastCall?.[0] as PageDocument };
 }
 
-async function openEffects(user: ReturnType<typeof userEvent.setup>) {
+async function openMotion(user: ReturnType<typeof userEvent.setup>) {
   await user.click(within(screen.getByRole("tree")).getByRole("treeitem", { name: "Title" }));
   await user.click(screen.getByRole("tab", { name: "Animate" }));
-  await user.click(screen.getByRole("button", { name: "Effects" }));
 }
 
-describe("the Effects tab", () => {
-  it("adds an effect, changes its settings in plain words and removes it, all undoable", async () => {
+describe("the Motion panel", () => {
+  it("adds an effect by when it moves, changes it in plain words and removes it", async () => {
     const user = userEvent.setup();
     const { latest } = renderBuilder();
-    await openEffects(user);
-    expect(screen.getByRole("heading", { name: "Effects for Title" })).toBeInTheDocument();
-    // A heading is text, so the gallery offers text effects and not 3D galleries.
-    expect(screen.queryByRole("button", { name: "Add Cylinder gallery" })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Add Scramble" }));
+    await openMotion(user);
+    expect(screen.getByText("Nothing moves yet")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Add motion" }));
+    expect(screen.getByRole("heading", { name: "When should it move?" })).toBeInTheDocument();
+    // A heading is text, so Appears offers word effects, and no 3D galleries anywhere.
+    expect(screen.getByRole("region", { name: "Words" })).toBeInTheDocument();
+    // Choosing a moment shows its groups; the arrow keys move between moments.
+    await user.click(screen.getByRole("radio", { name: "Hover" }));
+    expect(screen.getByRole("region", { name: "Pictures and buttons" })).toBeInTheDocument();
+    await user.keyboard("{ArrowLeft}");
+    expect(screen.getByRole("radio", { name: "Appears" })).toHaveAttribute("aria-checked", "true");
+    await user.click(screen.getByRole("button", { name: /^Scramble/ }));
     expect(findNode(latest().root, "n2")?.effects).toEqual([
       { effect: "scramble-in", params: { duration: 900, trigger: "view" } },
     ]);
-    expect(screen.getByText(/^Effects: 1, adding/)).toBeInTheDocument();
 
     await user.selectOptions(screen.getByRole("combobox", { name: "When it plays" }), "hover");
     expect(findNode(latest().root, "n2")?.effects?.[0]?.params.trigger).toBe("hover");
 
+    await user.click(screen.getByRole("button", { name: "Motion" }));
+    const list = screen.getByRole("list", { name: "What moves" });
+    expect(within(list).getByRole("button", { name: "Edit Scramble" })).toBeInTheDocument();
+
+    await user.click(within(list).getByRole("button", { name: "Edit Scramble" }));
     await user.click(screen.getByRole("button", { name: "Remove Scramble" }));
     expect(findNode(latest().root, "n2")?.effects).toBeUndefined();
+    expect(screen.getByText("Nothing moves yet")).toBeInTheDocument();
   });
 
-  it("finds effects by search, and shows every kind when asked", async () => {
+  it("searches every moment at once, offering only what suits the element", async () => {
     const user = userEvent.setup();
     renderBuilder();
-    await openEffects(user);
-    await user.click(screen.getByRole("checkbox", { name: "Only ones that suit this element" }));
-    await user.type(screen.getByRole("searchbox", { name: "Search effects" }), "carousel");
-    expect(screen.getByRole("button", { name: "Add Cylinder gallery" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Add Scramble" })).not.toBeInTheDocument();
+    await openMotion(user);
+    await user.click(screen.getByRole("button", { name: "Add motion" }));
+    await user.type(screen.getByRole("searchbox", { name: "Search all motion" }), "scramble");
+    expect(screen.getByRole("button", { name: /^Scramble/ })).toBeInTheDocument();
+    expect(screen.getByText(/^[0-9]+ match/)).toBeInTheDocument();
+    await user.clear(screen.getByRole("searchbox", { name: "Search all motion" }));
+    await user.type(screen.getByRole("searchbox", { name: "Search all motion" }), "cylinder");
+    expect(screen.queryByRole("button", { name: /^Cylinder gallery/ })).not.toBeInTheDocument();
   });
 
-  it("turns an animation effect into the element's animation, ready for the timeline", async () => {
+  it("makes an animation effect the element's animation, and edits it in Simple", async () => {
     const user = userEvent.setup();
     const { latest } = renderBuilder();
-    await openEffects(user);
-    await user.click(screen.getByRole("button", { name: "Add Letters rise" }));
-    const animation = findNode(latest().root, "n2")?.animation;
+    await openMotion(user);
+    await user.click(screen.getByRole("button", { name: "Add motion" }));
+    await user.click(screen.getByRole("button", { name: /^Letters rise/ }));
+    const animation = findNode(latest().root, "n2")?.animations?.[0];
     expect(animation?.presetId).toBe("letters-rise");
     expect(animation?.spec.targets).toEqual({ type: "text", split: "letters" });
-    expect(screen.getByRole("heading", { name: "Animation for Title" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Letters rise" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Motion" }));
+    expect(
+      within(screen.getByRole("list", { name: "What moves" })).getByRole("button", {
+        name: "Edit Letters rise",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps several animations on one element: one as it appears, one on hover", async () => {
+    const user = userEvent.setup();
+    const { latest } = renderBuilder();
+    await openMotion(user);
+    await user.click(screen.getByRole("button", { name: "Add motion" }));
+    await user.click(screen.getByRole("button", { name: /^Fade up/ }));
+    await user.click(screen.getByRole("button", { name: "Motion" }));
+    await user.click(screen.getByRole("button", { name: "Add motion" }));
+    await user.click(screen.getByRole("radio", { name: "Hover" }));
+    const hoverGroup = screen.getByRole("region", { name: "Pictures and buttons" });
+    await user.click(within(hoverGroup).getAllByRole("button")[0]!);
+
+    const animations = findNode(latest().root, "n2")?.animations ?? [];
+    expect(animations.map((animation) => animation.spec.trigger.type)).toEqual(["inView", "hover"]);
+    await user.click(screen.getByRole("button", { name: "Motion" }));
+    const list = screen.getByRole("list", { name: "What moves" });
+    expect(within(list).getByRole("button", { name: "Edit Fade up" })).toBeInTheDocument();
+    expect(within(list).getAllByRole("button")).toHaveLength(2);
+
+    // Removing one keeps the other.
+    await user.click(within(list).getByRole("button", { name: "Edit Fade up" }));
+    await user.click(screen.getByRole("button", { name: "Remove “Fade up”" }));
+    expect(findNode(latest().root, "n2")?.animations?.map((a) => a.spec.trigger.type)).toEqual([
+      "hover",
+    ]);
   });
 
   it("offers the site-wide motion settings when nothing is selected", async () => {

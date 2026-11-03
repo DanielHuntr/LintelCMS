@@ -19,6 +19,7 @@ import { starterSiteStrings } from "./starterSiteStrings.js";
 import { fieldStrings } from "./fieldStrings.js";
 import { contentTreeStrings } from "./contentTreeStrings.js";
 import { dataToolsStrings } from "./dataToolsStrings.js";
+import { importersStrings } from "./importersStrings.js";
 import { updatesStrings } from "./updatesStrings.js";
 import { treeSelectionStrings } from "./treeSelectionStrings.js";
 import { pageMenuStrings } from "./pageMenuStrings.js";
@@ -26,6 +27,9 @@ import { freePhotosStrings } from "../free-photos/freePhotosStrings.js";
 import { quickUploadStrings } from "../media/quickUploadStrings.js";
 import { compareLiveStrings } from "../compare-live/compareLiveStrings.js";
 import { scheduleStrings } from "../schedule-calendar/scheduleStrings.js";
+import { liquidTemplateStrings } from "../liquid-templates/liquidTemplateStrings.js";
+import { pageLinkStrings } from "../page-links/pageLinkStrings.js";
+import { blockStrings } from "./blockStrings.js";
 
 /**
  * Every word the admin shows lives here, in English: the source every translation in
@@ -38,6 +42,8 @@ const english = {
   ...contentModelStrings,
   ...treeSelectionStrings,
   ...pageMenuStrings,
+  ...liquidTemplateStrings,
+  ...pageLinkStrings,
   ...dashboardStrings,
   ...pluginStrings,
   ...peopleStrings,
@@ -58,11 +64,13 @@ const english = {
   ...fieldStrings,
   ...contentTreeStrings,
   ...dataToolsStrings,
+  ...importersStrings,
   ...updatesStrings,
   ...freePhotosStrings,
   ...quickUploadStrings,
   ...compareLiveStrings,
   ...scheduleStrings,
+  ...blockStrings,
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",
   "nav.openMenu": "Open the menu",
@@ -87,6 +95,7 @@ const english = {
   "search.label": "Search {product}",
   "search.placeholder": "Search pages, posts, media and settings",
   "search.close": "Close search",
+  "search.group.actions": "Actions",
   "search.group.pages": "Go to",
   "search.group.entries": "Content",
   "search.group.media": "Media",
@@ -97,6 +106,23 @@ const english = {
   "search.entryDetail": "{collection} · {status}",
   "search.collectionDetail": "All {name}",
   "search.failed": "Search isn’t working right now. Check your connection and try again.",
+  "search.action.newPage": "New page",
+  "search.action.newEntry": "New entry in {collection}",
+  "search.action.newKeywords": "create add write",
+  "search.action.upload": "Upload media",
+  "search.action.uploadKeywords": "add images pictures photos files documents",
+  "search.action.openSettings": "Open Settings",
+  "search.action.openSettingsKeywords": "preferences",
+  "search.action.openBuild": "Open Build",
+  "search.action.openBuildKeywords": "content types developer",
+  "search.action.invite": "Invite someone",
+  "search.action.inviteKeywords": "add user person people team member",
+  "search.action.darkMode": "Switch to dark mode",
+  "search.action.lightMode": "Switch to light mode",
+  "search.action.deviceMode": "Match my device’s light or dark setting",
+  "search.action.modeKeywords": "theme appearance colour color night day",
+  "search.action.signOut": "Sign out",
+  "search.action.signOutKeywords": "log out logout",
   "badge.new": "New",
   "section.comingSoonTitle": "On the roadmap",
   "section.comingSoon": "This section arrives in a later phase of the roadmap.",
@@ -341,8 +367,11 @@ const english = {
   "media.delete.button": "Delete",
   "media.delete.confirmTitle": "Delete “{name}”?",
   "media.delete.confirmDescription":
-    "It will be removed from the library, and its address will stop working on your site. This can’t be undone.",
-  "media.delete.confirm": "Delete file",
+    "It goes to the recycle bin, and its address stops working on your site until you restore it.",
+  "media.delete.confirm": "Move to recycle bin",
+  "media.delete.done": "Moved “{name}” to the recycle bin.",
+  "media.delete.undone": "Brought “{name}” back.",
+  "media.delete.undoFailed": "Couldn’t bring “{name}” back. {reason}",
   "media.delete.deleting": "Deleting…",
   "media.delete.cancel": "Cancel",
   "media.delete.inUseTitle": "This file is still in use",
@@ -443,6 +472,8 @@ const english = {
   "common.cancel": "Cancel",
   "common.done": "Done",
   "common.dismiss": "Dismiss",
+  "common.undo": "Undo",
+  "common.toastShortcut": "Press Alt T for {action}.",
   "dialog.close": "Close",
   "error.loadTitle": "This didn’t load",
   "error.retry": "Try again",
@@ -483,7 +514,8 @@ const english = {
     "{count, plural, one {Fix # field to save} other {Fix # fields to save}}",
   "editor.delete": "Delete",
   "editor.deleteTitle": "Delete “{title}”?",
-  "editor.deleteMessage": "It’s removed from the site straight away. This can’t be undone.",
+  "editor.deleteMessage":
+    "It comes off your site straight away and goes to the recycle bin, with anything under it. You can restore it from there.",
   "editor.leaveTitle": "Leave without saving?",
   "editor.leaveMessage":
     "Your latest changes haven’t been saved yet. If you leave now, they’ll be lost.",

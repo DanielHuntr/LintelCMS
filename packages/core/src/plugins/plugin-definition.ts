@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import type { PgTable } from "drizzle-orm/pg-core";
 import type { z } from "zod";
 import type { DatabaseOrTransaction } from "../database/client.js";
+import type { BlockDefinition } from "../blocks/block-definition.js";
 import type { Fieldtype } from "../fieldtypes/fieldtype.js";
 
 /**
@@ -81,6 +82,12 @@ export interface PluginDefinition<
    * plugin id and a dot ("bookings.duration"). The admin needs a matching field editor.
    */
   fieldtypes?: readonly Fieldtype[];
+  /**
+   * Blocks the site's builder offers under "Your site's blocks" while the plugin is on, made
+   * with `defineBlock`. Each `handle` must start with the plugin id (dashes as underscores)
+   * and an underscore ("bookings_slot_picker"). See src/blocks.
+   */
+  blocks?: readonly BlockDefinition<never>[];
   /**
    * Makes the content the plugin needs (a collection, say) each time it is switched on.
    * It must only create what is missing: it runs again after every switch off and on.

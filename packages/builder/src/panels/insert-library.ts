@@ -16,8 +16,8 @@ import type { BuilderStringKey } from "../i18n/builder-strings.js";
  * ones used recently.
  */
 
-/** What the Insert panel offers: `component:heading` or `template:hero`. */
-export type InsertKey = `component:${string}` | `template:${string}`;
+/** What the Insert panel offers: `component:heading`, `template:hero` or one of the site's own blocks, `block:team_card`. */
+export type InsertKey = `component:${string}` | `template:${string}` | `block:${string}`;
 
 export type InsertKind = "sections" | "elements";
 
@@ -170,5 +170,8 @@ export function withRecentlyUsed(recent: readonly InsertKey[], key: InsertKey): 
 export function readRecentlyUsed(stored: string | null): InsertKey[] {
   return (stored ?? "")
     .split(",")
-    .filter((key): key is InsertKey => key.startsWith("component:") || key.startsWith("template:"));
+    .filter(
+      (key): key is InsertKey =>
+        key.startsWith("component:") || key.startsWith("template:") || key.startsWith("block:"),
+    );
 }

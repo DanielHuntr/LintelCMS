@@ -1,4 +1,4 @@
-# 27. Free photos come from Openverse, through the server, with a credit on the file
+# 31. Free photos come from Openverse, through the server, with a credit on the file
 
 Date: 2026-11-03
 
@@ -22,7 +22,7 @@ until someone switches it on, because it sends searches to another service.
   says (Flickr, Wikimedia Commons, a museum), so local and private addresses are refused,
   checked on the address actually connected to, after every redirect.
 - **The credit is kept on the file.** Media items gain a `credit` column (migration
-  `0023_asset_credit`): plain text, empty for most files, editable in the file's details.
+  `0026_asset_credit`): plain text, empty for most files, editable in the file's details.
   A free photo's credit is written as the licences ask (title, creator, licence with its
   link, and source), ready to print under the photo or on a credits page.
 

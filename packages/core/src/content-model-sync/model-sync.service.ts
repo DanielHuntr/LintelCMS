@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { registerBlockComponent } from "../blocks/define-block.js";
 import { type FSWatcher, watch } from "node:fs";
 import type { Database } from "../database/client.js";
 import { readSetting, writeSetting } from "../settings/settings.service.js";
@@ -242,7 +243,12 @@ export class ContentModelSync {
 
   private async readFolderOrRecordProblems() {
     try {
-      return await readModelFolder(this.options.folder);
+      const folder = await readModelFolder(this.options.folder);
+      // React blocks are drawn from their files' components, which the database can't hold.
+      for (const [handle, component] of folder.blockComponents) {
+        registerBlockComponent(handle, component);
+      }
+      return folder;
     } catch (error) {
       if (!(error instanceof ContentModelProblemsError)) {
         throw error;

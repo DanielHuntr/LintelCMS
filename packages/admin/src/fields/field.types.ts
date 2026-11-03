@@ -58,6 +58,8 @@ export interface BlockType {
   handle: string;
   name: string;
   description?: string;
+  /** One of the site's own blocks: its fields are a copy of the block's, kept by the API. */
+  block?: string;
   fields: Field[];
   draft?: DraftBookkeeping;
 }

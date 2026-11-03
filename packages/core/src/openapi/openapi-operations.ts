@@ -573,10 +573,70 @@ export const openApiOperations: Operation[] = [
     method: "delete",
     path: "/media/{id}",
     tag: "Media",
-    summary: "Delete an asset",
+    summary: "Move an asset to the recycle bin",
+    description:
+      "The file stays in storage until it is deleted from the bin, so it can be restored with the same id.",
     access: "media:delete",
     params: assetIdParamsSchema,
     responses: { 204: noContent, 409: { description: "Entries still use it." } },
+  },
+  {
+    method: "get",
+    path: "/media-bin",
+    tag: "Media",
+    summary: "List files in the recycle bin",
+    access: "media:read",
+    responses: {
+      200: {
+        description: "Deleted files, newest first.",
+        schema: z.object({
+          items: z.array(
+            z.object({
+              id: z.string(),
+              filename: z.string(),
+              mimeType: z.string(),
+              size: z.number().int(),
+              deletedAt: z.string(),
+              deletedBy: z.object({ id: z.string(), name: z.string() }).nullable(),
+            }),
+          ),
+        }),
+      },
+    },
+  },
+  {
+    method: "post",
+    path: "/media-bin/{id}/restore",
+    tag: "Media",
+    summary: "Put a deleted file back in the media library",
+    access: "media:upload",
+    params: assetIdParamsSchema,
+    responses: {
+      200: { description: "The asset, with its old id.", schema: assetSchema },
+      409: { description: "The same file was uploaded again, or its bytes left storage." },
+    },
+  },
+  {
+    method: "delete",
+    path: "/media-bin/{id}",
+    tag: "Media",
+    summary: "Delete a file from the recycle bin for good",
+    access: "media:delete",
+    params: assetIdParamsSchema,
+    responses: { 204: noContent },
+  },
+  {
+    method: "delete",
+    path: "/media-bin",
+    tag: "Media",
+    summary: "Empty the media recycle bin",
+    access: "media:delete",
+    responses: {
+      200: {
+        description: "How many files were deleted for good.",
+        schema: z.object({ deleted: z.number().int() }),
+      },
+    },
   },
   {
     method: "get",

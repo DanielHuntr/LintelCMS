@@ -1,7 +1,11 @@
 import { createHash } from "node:crypto";
 import type { Readable } from "node:stream";
 import yauzl, { type Entry, type ZipFile } from "yauzl";
-import { ArchiveTooLargeError, UnreadableArchiveError } from "./archives.errors.js";
+import {
+  ArchiveHasTooManyFilesError,
+  ArchiveTooLargeError,
+  UnreadableArchiveError,
+} from "./archives.errors.js";
 
 /** How much an archive may unpack to, so a small upload can't fill the disk or memory. */
 export interface ArchiveLimits {
@@ -9,6 +13,8 @@ export interface ArchiveLimits {
   maxFileBytes: number;
   /** The most all files together may be, in bytes. */
   maxTotalBytes: number;
+  /** The most files it may hold. No limit when left out. */
+  maxFiles?: number;
 }
 
 export const DEFAULT_ARCHIVE_LIMITS: ArchiveLimits = {
@@ -122,6 +128,10 @@ function readEntries(zip: ZipFile, limits: ArchiveLimits): Promise<Map<string, E
           return;
         }
         entries.set(entry.fileName, entry);
+        if (limits.maxFiles !== undefined && entries.size > limits.maxFiles) {
+          reject(new ArchiveHasTooManyFilesError(limits.maxFiles));
+          return;
+        }
       }
       zip.readEntry();
     });

@@ -367,7 +367,173 @@ Each name now starts with what's shown:
 
 **Test:** `builder-model/src/components/site-chrome.test.ts`. Two of its three cases fail on the old code.
 
-## LINTEL-UX-024: free photos from Openverse (3 November 2026)
+## LINTEL-UX-024: one Motion panel instead of Animation and Effects tabs (4 November 2026)
+
+**Daniel's finding:** the Animate panel "feels a bit clunky and hard to grasp".
+
+- It had two tabs (Animation, Effects), and tabs inside them (Presets, Simple, Advanced).
+- "Effects: 1, adding 11 kB" sat next to "No effects yet".
+- Filters came before any choice, the effect cards all looked alike, and "when it plays" was folded away at the bottom.
+
+**Redesign:** agreed through clickable mock-ups (Motion panel, then the real library, then states).
+
+`@lintel/motion-editor` has a new `MotionPanel` (`src/motion-panel/`), and the builder's Animate tab now shows only that:
+
+- **One list** of what moves, the animation and the effects together, each named by what it does and when ("Words rise · When it appears"). Point at a row to watch it on the page. Play is in the header.
+- **Add motion** asks "When should it move?": Appears, Hover, Click, Scroll, Always.
+  - Each moment lists its choices in plain groups, such as "Words", "Depth and 3D" and "Backgrounds".
+  - A search box covers every moment at once.
+  - All 42 presets and the element effects are sorted in (`motionChoices.ts`). Only effects that suit the element are offered. Page exits, cursors and page transitions stay in the site-wide settings.
+  - Pointing at a choice plays it on the element on the page.
+- **Editing:**
+  - An animation opens straight in the studio's Simple view, with Advanced (the timeline) for Designers. Beginners see the note about switching to Designer.
+  - An effect shows its settings in plain words.
+  - Remove is at the bottom.
+- **Page weight** is only shown when there's something to warn about.
+- **Still one animation per element:** choosing another replaces the current one, and the panel says so. Several per element is part of the designer push.
+
+**Tests:**
+
+- `motion-editor/src/motion-panel/motionChoices.test.ts` (new): sorting, groups, suitability, search.
+- `builder/src/animate-panel/effects-tab.test.tsx`: adding by moment, the arrow keys, search, editing and removing, animation effects.
+- `studio.test.tsx` and `panels.test.tsx` updated for the new flow.
+
+**Checked in the running builder** at desktop and 390px, light and dark, with the Hero title selected: `screenshots/motion-panel/`. Daniel's screenshots of the old panel are the before.
+
+## LINTEL-UX-025: states and scroll scenes, part 1 (4 November 2026)
+
+Daniel compared the motion with Framer and Webflow: Framer animates between states (a card's normal and hover, with what's inside), and Webflow and GSAP have full scroll triggers. Agreed through the states and scroll scene mock-ups.
+
+**States**
+
+- **The model:**
+  - Element styles have a Pressed state (`:active`) beside Hover and Focus.
+  - Styles can follow the state of an element around it, stored as `owners["hover@<id>"]` and drawn as `.card:hover .picture`.
+  - An owner can have a `stateTransition` (Smooth, Springy or Instant, at a speed). Only the properties its states change are eased, and only for people who don't ask for less motion.
+  - Copying a card points its picture's states at the copy.
+- **The builder:**
+  - "Style for" shows to everyone, with the element's own states and those of the three nearest elements around it ("Two halves: pointer over").
+  - The canvas shows the state while it's being styled.
+  - "Moving between states" sets the transition on the owner.
+- **Tests:** `builder-model/src/styles/states.test.ts` and `builder/src/panels/panels.test.tsx`. Checked in the builder, with screenshots in `screenshots/states/`.
+
+**Scroll scenes**
+
+- **Smoothing:** `smooth` (0 to 2 s) lets a scene follow a moment behind the scrolling.
+- **Snapping:** `snap` points make it settle on a step when scrolling stops. It moves the scene, never the page.
+- **An action per direction:** in-view animations have one for entering, leaving, entering back and leaving back (play, reverse, restart, reset, pause, resume, finish, none).
+- **Settings:** "Follows the scrolling", "Settles on" and "Scrolling back up past it" in the animation settings.
+- **Start and End lines:** drawn on the canvas for the selected element's scene. Drag them, or move them with the arrow keys.
+- **Tests:** browser tests for smoothing, snapping and directions (`motion/src/browser-tests/runtime.browser.test.ts`) and for the lines (`builder/src/browser-tests/canvas-free-layout.test.ts`). Each fails without its change. There are unit tests for the maths and the settings, and the animation spec reference is updated.
+
+**Scene steps (4 November 2026):**
+
+- A scroll animation can follow another element's scroll (`follows`, by node id) over part of its scene (`range`). The title, picture and numbers in a held section can each play their own step.
+- In the settings: "Plays as this scrolls past" offers this element or the elements around it, with "Starts at" and "Ends at" as percentages of the scene.
+- On the website, the followed element carries its id.
+- Tests:
+  - a browser test of a step in the second half of a section's scene;
+  - unit tests for the maths and the settings;
+  - a render test for the id.
+
+**Several animations on one element (4 November 2026):**
+
+- An element keeps `animations`, a list of up to six (an entrance, a hover, scroll steps), instead of one `animation`.
+- Page documents are now version 2. Version 1 pages are migrated when read, with each `animation` becoming a list of one, so nothing in the database has to change.
+- The Motion panel lists each animation, Play plays them all, and choosing one adds it rather than replacing.
+- **Tests:**
+  - `builder-model/src/document/migrations.test.ts` (new), and a limit test in `validate-page.test.ts`;
+  - in the builder: two animations kept, and removing one keeps the other;
+  - the existing tests updated.
+- **Docs:** the spec and effects docs updated.
+
+**Next:** open and selected states.
+
+## QOL-A-1: Undo after deleting (3 November 2026)
+
+**Asked for by Daniel:** after a page, an entry or a file goes to the recycle bin, a note says so with Undo, and Undo puts it back where it was.
+
+**What changed:**
+
+- **One note for the whole admin:** `design/Toast.tsx`. It is a polite live region, Alt+T takes keyboard focus to Undo (screen readers hear that in the note), and it stays about 8 seconds, longer while the pointer or keyboard focus is on it. Checked in Chromium: Alt+T, then Enter, undid a media delete, and the note stayed past 9 seconds while focused. The content tree's note is the same component, placed at the foot of the tree.
+- **Content tree, one page:** "Moved “About” to the recycle bin. Undo" (it used to say "“About” is in the recycle bin." with no Undo). Undo reopens the page if the workspace was showing it.
+- **Content tree and list, several pages:** the existing Undo now puts them back as they were too.
+- **Entry editor:** Delete now moves the entry to the recycle bin (it deleted for good before, and said "This can’t be undone"), goes back to the list and offers Undo, which reopens the entry.
+- **Media library:** Delete moves the file to a new media recycle bin and offers Undo. The Recycle bin screen has a Files group with Restore and Delete for good; Empty empties both.
+- **Undo is a real undo:** `POST /recycle-bin/:id/restore` with `asBefore: true` puts an entry back in its old place, live again with what it showed when the person may publish. See `docs/decisions/0030-undo-after-deleting.md`.
+- **Fixed on the way (LINTEL-UX-026):** the tree's note said it stayed while hovered or focused, but its timer ran regardless, and restarted whenever the tree re-rendered.
+
+**Tests:**
+
+- core: `recycle-bin/recycle-bin.test.ts` (Undo in place and live; a draft for someone who can't publish), `media/media-bin.test.ts`, `media/media-library.test.ts`.
+- admin: `design/Toast.test.tsx`, `content-tree/RecycleWithUndo.test.tsx`, `content-tree/RecycleBinPage.test.tsx`, `content/EntryEditor.test.tsx`, `media/MediaLibraryPage.test.tsx`, `content-workspace/CollectionView.test.tsx`.
+- Migration `0025_media_recycle_bin` checked on a fresh database (the tests) and on one made before it (the browser check's, set up on the release code first).
+
+**Screenshots** (`screenshots/qol-a/`):
+
+- before: `f1-before-tree-delete-note`, `f1-before-editor-delete-dialog`, `f1-before-media-delete-dialog`;
+- after, each at desktop and 390px, light and dark: `f1-after-tree-delete-undo-*`, `f1-after-tree-undone-*`, `f1-after-editor-delete-dialog-*`, `f1-after-editor-deleted-toast-*`, `f1-after-media-delete-dialog-*`, `f1-after-media-deleted-toast-*`, `f1-after-recycle-bin-files-*`; `f1-after-media-toast-keyboard-desktop-light` (Undo focused with Alt+T).
+
+## QOL-A-2: actions in the command palette (3 November 2026)
+
+**Asked for by Daniel:** Ctrl K (⌘K) finds pages and media; it should also do things.
+
+**What changed:**
+
+- **An Actions group** (`search/paletteActions.ts`) lists what matches the words typed: "New page", "New entry in <collection>", "Upload media", "Open Settings", "Open Build", "Invite someone", "Switch to dark mode" (or light), "Match my device’s light or dark setting" (once someone has chosen) and "Sign out". Each also answers to a few everyday words: "create", "log out", "theme".
+- **Only what the person may do:** the same permissions as the screens behind them (`entries:create`, `media:upload`, the Settings and Build sections' rules, `users:invite`).
+- **Order:** places to go, then actions, then content and media. "Settings" under Go to is left out when "Open Settings" is offered, so nothing is listed twice. The combobox keys are unchanged: arrows, Ctrl+Home/End, Enter and Escape.
+- **Upload and Invite open their screens ready:** `/media?upload=true` opens the file chooser, and `/users?invite=true` opens the invitation. Both clear the address afterwards, so a reload doesn't ask again.
+- **Light and dark** (`src/appearance`): the admin follows the device, as before, unless someone chooses from the palette. The choice is this browser's and is applied before the first screen is drawn.
+- **Fixed on the way (LINTEL-UX-027):** the dashboard's "Add images and files" asked for `media:create`, which no role has, so Authors (who may upload) never saw it. It now asks for `media:upload`.
+
+**Tests:** `search/paletteItems.test.ts`, `search/CommandPalette.test.tsx`, `appearance/colorScheme.test.ts`, `people/UsersPage.test.tsx`, `media/MediaLibraryPage.test.tsx`, `dashboard/DashboardPage.test.tsx` (fails on the old code).
+
+**Checked in Chromium:**
+
+- "new" then Enter opens a new page.
+- "dark" switches, and the choice survives a reload; "Match my device" clears it.
+- "invite" opens the invitation, and "upload" opens the file chooser.
+- "log out" signs out.
+
+**Screenshots** (`screenshots/qol-a/`):
+
+- before: `f2-before-palette-new`;
+- after: `f2-after-palette-new-*` (desktop and 390px, light and dark), `f2-after-palette-dark-mode`, `f2-after-palette-theme-when-dark`, `f2-after-palette-settings`, `f2-after-invite-opened`, `f2-after-palette-sign-out`.
+
+## QOL-A-3: choose a page for a link (3 November 2026)
+
+**Asked for by Daniel:** wherever a link's address is typed, offer a page picker that finds pages by title.
+
+**The format it inserts:** the page's address on the site, such as `/about`. Outside menus, Lintel has no link-by-id format, so nothing new was invented. An address starting with `/` is the form these places already take for a page on the site: the builder's hint says "a page on your site such as /about", and Link fields and rich text accept it. The cost is that a link doesn't follow the page if its address changes later. With the SEO tools on, Lintel offers a redirect when an address changes. A by-id format (resolved when the site is drawn, as menus are) would need a decision record; see the report.
+
+**What changed:**
+
+- **"Choose a page…"**, a plain text action, opens a dialog (`admin/src/page-links`) that searches pages by title. Each result shows its address on the right. Entries without a page of their own aren't offered.
+- **Where it appears:**
+  - the rich text link form, which links the selected words or inserts the page's title, linked;
+  - Link fields, which fill in the address, and the link text when there is none;
+  - the builder's Content panel, for every element with a link (buttons, links, cards, pricing, social links and the rest) and for each address in a list of links.
+- **Unchanged:** typing a full web address still works everywhere. Menus already link to pages by id ("Choose page") and are left as they are.
+- **API:** `GET /content-tree/search` now gives each result its `url`.
+
+**Not covered:** the builder's inline text links (the small bar over selected words on the canvas), because a dialog takes focus from the text being edited; URL fields, which are for web addresses; and the redirect target in SEO tools.
+
+**Tests:**
+
+- `admin/src/page-links/PagePicker.test.tsx`: Link fields and rich text, end to end against a mocked API.
+- `builder/src/panels/page-picker.test.tsx`.
+- `core/src/content-tree/content-tree.test.ts`: addresses in search results.
+
+**Checked in Chromium:** picked pages fill `/about/our-story` in a Link field, `/opening-hours` in rich text and `/contact` on a builder button.
+
+**Screenshots** (`screenshots/qol-a/`):
+
+- before: `f3-before-link-field`, `f3-before-richtext-link`, `f3-before-builder-button-link`, `f3-before-menu`;
+- after, at desktop and 390px, light and dark: `f3-after-picker-*`, `f3-after-link-field-*`, `f3-after-richtext-link-form-*`, `f3-after-richtext-linked-*`;
+- after, desktop light and dark only (the builder is desktop-only, LINTEL-UX-013): `f3-after-builder-picker-*`, `f3-after-builder-button-link-*`.
+
+## LINTEL-UX-028: free photos from Openverse (3 November 2026)
 
 **Asked for:** a way to find free photos without leaving Lintel.
 
@@ -387,7 +553,7 @@ Each name now starts with what's shown:
 - Searches are kept for 10 minutes and thumbnails for an hour, so paging back doesn't ask Openverse again.
 - Openverse's "too many searches" answer becomes a plain message.
 
-**Migration:** `0023_asset_credit` adds `assets.credit` (empty for existing files). Checked on a fresh database and on one migrated to 0022 with a file already in it.
+**Migration:** `0026_asset_credit` adds `assets.credit` (empty for existing files). Checked on a fresh database and on one built with release fd4ee02's migrations (to 0025) with a file already in it.
 
 **Tests:**
 
@@ -397,7 +563,7 @@ Each name now starts with what's shown:
 
 **Screenshots** (in `screenshots/qol-b/`): `photos-features-desktop-light`, `photos-start-desktop-light`, `photos-results-*` (desktop and 390px, light and dark), `photos-added-desktop-light`, `photos-credit-desktop-light`.
 
-## LINTEL-UX-025: paste or drop pictures where they're used (3 November 2026)
+## LINTEL-UX-029: paste or drop pictures where they're used (3 November 2026)
 
 **Asked for:** pictures pasted from the clipboard or dropped from the computer should work wherever a picture belongs, not only in the media library.
 
@@ -434,7 +600,7 @@ Every upload uses the media library's upload and checks, and its plain messages.
 - `paste-media-library-*` (all four);
 - `drop-builder-wrong-place-desktop-*` and `drop-builder-picture-desktop-*`.
 
-## LINTEL-UX-026: Compare with live (3 November 2026)
+## LINTEL-UX-030: Compare with live (3 November 2026)
 
 **Asked for:** when a published entry has unpublished changes, a way to see exactly what publishing will change.
 
@@ -464,7 +630,7 @@ Every upload uses the media library's upload and checks, and its plain messages.
 
 **Screenshots** (in `screenshots/qol-b/`): `compare-offer-desktop-light` and `compare-dialog-*` (desktop and 390px, light and dark).
 
-## LINTEL-UX-027: a schedule calendar (3 November 2026)
+## LINTEL-UX-031: a schedule calendar (3 November 2026)
 
 **Asked for:** one place to see everything that's scheduled, by date.
 

@@ -74,6 +74,9 @@ const coreSettingsSchema = z.object({
     .default("")
     .transform((value) => (value === "" ? undefined : value === "true")),
   CONTENT_MODEL_TYPES_FILE: z.string().default("generated/lintel-content.ts"),
+  // Liquid page templates (see src/liquid-templates): templates/, layouts/ and partials/ in
+  // this folder, relative to the repository root. Nothing changes while it doesn't exist.
+  LINTEL_TEMPLATES: z.string().default("site"),
 });
 
 /**
