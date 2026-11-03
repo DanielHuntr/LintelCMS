@@ -20,6 +20,7 @@ export const effectModuleNames = [
   "ripple",
   "transitions",
   "intro",
+  "smooth-scroll",
 ] as const;
 
 export type EffectModuleName = (typeof effectModuleNames)[number];
@@ -48,6 +49,7 @@ export interface PageTransitionSettings {
 export interface CursorSettings {
   style: "none" | "dot" | "ring" | "ring-and-dot" | "blend";
   trail: "none" | "dots" | "line" | "comet";
+  /** "text" or "brand" follow the site's theme (light and dark); otherwise a hex colour. */
   colour: string;
   /** Pixels across. */
   size: number;
@@ -61,11 +63,17 @@ export interface IntroSettings {
   colour: string;
 }
 
+export interface SmoothScrollSettings {
+  /** How long the wheel's glide lasts. */
+  strength: "off" | "gentle" | "strong";
+}
+
 /** Motion across the whole site: picked once in the builder's site settings. */
 export interface SiteEffectSettings {
   pageTransition: PageTransitionSettings;
   cursor: CursorSettings;
   intro: IntroSettings;
+  smoothScroll: SmoothScrollSettings;
 }
 
 /** What a page hands the runtime: where each module lives, its effects and the site's. */

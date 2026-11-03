@@ -788,3 +788,26 @@ What's saved is unchanged: the element's `animations` array (at most six) with o
 - `builder/src/animate-panel/effects-tab.test.tsx`, `builder/src/studio.test.tsx` and `builder/src/panels/panels.test.tsx` follow the new flow. Undo now steps back through each choice.
 
 **Screenshots** (in `screenshots/motion-picker/`): `before-hover-desktop-light` and `before-hover-desktop-dark`, then `after-hover-desktop-light` and `after-hover-desktop-dark`. At 390px wide the designer shows its "needs a bigger screen" page, as before.
+
+## Site motion: smooth scrolling, cursor, hover pictures, drag gallery, clock (3 November 2026)
+
+**Asked for by Daniel:** let website makers build the kind of site that wins design awards (studio portfolios, product launches), with each piece one switch or one choice and nothing cluttered. Decision record: `docs/decisions/0034-site-motion.md`.
+
+**What's new:**
+
+- **Smooth scrolling** (builder, Animate tab with nothing selected, "Motion across the site"): Off, Gentle or Strong. The mouse wheel glides to a stop. It moves the page's real scroll position, so the scrollbar, sticky headers, scroll triggers and scroll scenes, find in page and links to part of a page keep working. Keys, the scrollbar, touch and jumps scroll as usual. Areas that scroll by themselves and pop-ups keep the browser's wheel. It's off for touch screens and for people who ask for less motion. Written in `@lintel/motion` (`src/smooth-scroll`, about 1.8 kB), loaded only when it's on.
+- **Cursor:** the colour now follows the theme by default (Text colour or Brand colour, so it suits light and dark), with "Pick a colour" for anything else. It still grows over links and buttons. Over an element given a word, it turns into a small pill with that word. Less motion means no lag and no easing. Fields keep the normal cursor, and focus rings are untouched.
+- **When the pointer is over it** (Animate tab, any element): **Word on the cursor** (No word, View, Open, Drag, Play, Read or your own) and **Show a picture when hovered** with a picture picker. The picture follows the pointer like a studio's project list. It's decorative (hidden from screen readers, clicks pass through it) and only for a mouse or trackpad. Both are saved as effects that the gallery leaves out, so pages only load their code when they use them.
+- **Drag gallery:** the Slider has a new switch, "Let visitors drag it freely". It drops snapping, follows a mouse drag, glides on with momentum and gives a little at either end. Touch, the wheel, the arrow keys and Previous and Next still work, and a drag never counts as a click on a link inside it. Insert finds it under "drag gallery".
+- **Clock:** a new element (Insert, search "clock" or "time zone") showing the time in a chosen city, or the visitor's own, as 24 or 12-hour. It changes on the minute and isn't read out as it ticks.
+
+**Also fixed:** saving one part of the site's motion settings through the API (say, only `smoothScroll`) used to reset the parts left out to their defaults. Now only the parts sent change (`site-effects.routes.ts`).
+
+**Tests:**
+
+- `motion/src/browser-tests/site-motion.browser.test.ts` (12, in Chromium). Smooth scrolling: glides the real position, sticky stays put, Strong glides for longer, keys and links to part of the page take over, an inner scrolling area keeps the wheel, and it's off (and not loaded) for less motion, for touch and when the site has it off. Cursor: theme colour, growing over links, the word replacing the ring, the word on its own without a site cursor, and no easing for less motion. Hover picture: it shows and follows, is hidden from screen readers and doesn't block clicks.
+- `motion/src/smooth-scroll/smoothScroll.test.ts` and `effects-catalogue/catalogue.test.ts`: wheel units, areas left alone, older saved settings, the cursor's colour, the unlisted effects and page weight.
+- `builder/src/browser-tests/drag-gallery-and-clock.test.ts` (6, in Chromium): momentum, the soft stop and spring back, arrow keys without snapping, drags not clicking links, stopping exactly for less motion, and the clock showing Tokyo's time.
+- `builder/src/render/elements/clock.test.tsx` and `builder/src/animate-panel/pointer-fields.test.tsx`; `motion-editor/src/effects/SiteMotionSettings.test.tsx`; `core/src/site-effects/site-effects.test.ts` (saving smooth scrolling on its own keeps the cursor, and pages load the module).
+
+**Screenshots** (in `screenshots/site-motion/`): `site-hover-picture-desktop-light` and `-dark` (picture and "View" over a project row), `site-drag-gallery-desktop-light` and `-dark` (mid-drag, "Drag" on the cursor), `site-phone-light`, `site-phone-dark`, `site-phone-gallery-light` and `site-phone-gallery-dark` (390px: no cursor, picture or smooth scrolling). In the builder: `builder-site-motion-desktop-light` and `-dark`, `builder-pointer-fields-desktop-light` and `-dark`, `builder-clock-desktop-light` and `-dark`, and `builder-slider-drag-desktop-light` and `-dark`. The pictures in the shots were made for the test (plain colours with a name).

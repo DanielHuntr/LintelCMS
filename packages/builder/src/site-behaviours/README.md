@@ -16,6 +16,8 @@ of these elements (`render/elements/behaviour-types.ts`).
 | `layout-behaviours.ts`     | Tabs, one-open accordions, pop-ups in older browsers                  |
 | `media-behaviours.ts`      | Sliders, product pictures, lightbox, consent frames, comparisons      |
 | `info-behaviours.ts`       | Counters, countdowns, big menus, back to top, sort and language menus |
+| `clock-behaviours.ts`      | Live clocks: the time in a chosen place, changed on the minute        |
+| `drag-scroll.ts`           | Sliders dragged freely, with momentum and a soft stop at each end     |
 | `form-behaviours.ts`       | Forms sent in the background, with problems shown by each field       |
 | `shop-api.ts`              | The storefront API through `/_lintel/api/shop`, the cart token        |
 | `shop-behaviours.ts`       | Options picker, Add to basket, basket count, order confirmation       |

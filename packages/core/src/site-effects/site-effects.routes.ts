@@ -7,8 +7,8 @@ import { readSiteEffects, updateSiteEffects } from "./site-effects.service.js";
 /**
  * HTTP only:
  *
- *   GET /website/effects  (entries:read)    -> { pageTransition, cursor, intro }
- *   PUT /website/effects  (settings:update) any of { pageTransition, cursor, intro } -> the same
+ *   GET /website/effects  (entries:read)    -> { pageTransition, cursor, intro, smoothScroll }
+ *   PUT /website/effects  (settings:update) any of those -> all of them
  */
 const updateSiteEffectsRequestSchema = siteEffectSettingsSchema.partial();
 
@@ -21,7 +21,12 @@ export async function siteEffectsRoutes(server: FastifyInstance) {
     "/website/effects",
     { preHandler: requirePermission("settings:update") },
     async (request) => {
-      const changes = parseRequest(updateSiteEffectsRequestSchema, request.body);
+      const parsed = parseRequest(updateSiteEffectsRequestSchema, request.body);
+      // The schema fills in defaults for parts left out; only the parts sent are changes.
+      const sent = new Set(Object.keys(request.body as object));
+      const changes = Object.fromEntries(
+        Object.entries(parsed).filter(([key]) => sent.has(key)),
+      ) as typeof parsed;
       return updateSiteEffects(server.database, changes);
     },
   );

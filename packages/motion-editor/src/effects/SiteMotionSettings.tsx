@@ -1,11 +1,13 @@
 import type { SiteEffectSettings } from "@lintel/motion";
 import { Select, TextInput } from "../controls/Field.js";
+import { SegmentedControl } from "../controls/SegmentedControl.js";
 import { Slider } from "../controls/Slider.js";
 import { TranslateProvider, useTranslate, type Translate } from "../strings/translate.js";
 
 /**
- * Motion across the whole site: the page transition, the cursor and the intro. Plain
- * choices with sensible defaults; each says what visitors who prefer less motion get.
+ * Motion across the whole site: smooth scrolling, the page transition, the cursor and the
+ * intro. Plain choices with sensible defaults; each says what visitors who prefer less
+ * motion get.
  */
 interface SiteMotionSettingsProps {
   value: SiteEffectSettings;
@@ -46,6 +48,10 @@ function ColourWell({
 function Settings({ value, onChange }: SiteMotionSettingsProps) {
   const t = useTranslate();
   const { pageTransition, cursor, intro } = value;
+  // Settings saved before smooth scrolling existed don't have it.
+  const smoothScroll = value.smoothScroll ?? { strength: "off" as const };
+  const cursorColourChoice =
+    cursor.colour === "text" || cursor.colour === "brand" ? cursor.colour : "own";
   const set = <Key extends keyof SiteEffectSettings>(
     key: Key,
     change: Partial<SiteEffectSettings[Key]>,
@@ -57,6 +63,26 @@ function Settings({ value, onChange }: SiteMotionSettingsProps) {
           {t("motionEditor.site.title")}
         </h3>
         <p className="text-footnote text-label-secondary">{t("motionEditor.site.description")}</p>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <span aria-hidden="true" className="text-caption font-medium text-label-secondary">
+          {t("motionEditor.site.smoothScroll")}
+        </span>
+        <SegmentedControl
+          label={t("motionEditor.site.smoothScroll")}
+          value={smoothScroll.strength}
+          onChange={(strength) => onChange({ ...value, smoothScroll: { strength } })}
+          options={(["off", "gentle", "strong"] as const).map((strength) => ({
+            value: strength,
+            label: t(`motionEditor.site.smoothScroll.${strength}`),
+          }))}
+        />
+        {smoothScroll.strength !== "off" && (
+          <p className="text-caption text-label-tertiary">
+            {t("motionEditor.site.smoothScroll.note")}
+          </p>
+        )}
       </div>
 
       <div className="flex flex-col gap-3">
@@ -116,11 +142,26 @@ function Settings({ value, onChange }: SiteMotionSettingsProps) {
                 label: t(`motionEditor.site.cursor.trail.${trail}`),
               }))}
             />
-            <ColourWell
+            <Select
               label={t("motionEditor.site.cursor.colour")}
-              value={cursor.colour}
-              onChange={(colour) => set("cursor", { colour })}
+              value={cursorColourChoice}
+              onChange={(event) =>
+                set("cursor", {
+                  colour: event.target.value === "own" ? "#111111" : event.target.value,
+                })
+              }
+              options={(["text", "brand", "own"] as const).map((choice) => ({
+                value: choice,
+                label: t(`motionEditor.site.cursor.colour.${choice}`),
+              }))}
             />
+            {cursorColourChoice === "own" && (
+              <ColourWell
+                label={t("motionEditor.site.cursor.ownColour")}
+                value={cursor.colour}
+                onChange={(colour) => set("cursor", { colour })}
+              />
+            )}
             <Slider
               label={t("motionEditor.site.cursor.size")}
               value={cursor.size}

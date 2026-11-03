@@ -1,6 +1,6 @@
 import type { EffectDefinition } from "../effect-definition.js";
 import { canvasEffects } from "./canvas-effects.js";
-import { cursorEffects } from "./cursor-effects.js";
+import { cursorEffects, pointerFieldEffects } from "./cursor-effects.js";
 import { depthEffects } from "./depth-effects.js";
 import { hoverEffects } from "./hover-effects.js";
 import { loaderEffects } from "./loader-effects.js";
@@ -24,4 +24,5 @@ export const standardEffects: readonly EffectDefinition[] = [
   ...marqueeEffects,
   ...loaderEffects,
   ...transitionEffects,
+  ...pointerFieldEffects,
 ] as readonly EffectDefinition[];

@@ -1,4 +1,5 @@
 import { clamp, eachBehaviour, prefersReducedMotion } from "./behaviour-helpers.js";
+import { enableDragScroll } from "./drag-scroll.js";
 
 /** Sliders, the gallery's lightbox, frames that load on request, and before-and-after. */
 
@@ -6,6 +7,7 @@ export function setUpCarousels(root: ParentNode): void {
   eachBehaviour(root, "carousel", (carousel) => {
     const track = carousel.querySelector<HTMLElement>(".lintel-carousel__track");
     if (!track) return;
+    if (carousel.hasAttribute("data-free-drag")) enableDragScroll(track);
     const slides = [...track.children] as HTMLElement[];
     const dots = [...carousel.querySelectorAll<HTMLButtonElement>("[data-carousel=dot]")];
     const previous = carousel.querySelector<HTMLButtonElement>("[data-carousel=previous]");

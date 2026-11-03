@@ -37,6 +37,8 @@ export function measurePageWeight(
   if (site?.pageTransition.style && site.pageTransition.style !== "none")
     modules.add("transitions");
   if (site?.intro.style && site.intro.style !== "none") modules.add("intro");
+  if (site?.smoothScroll?.strength && site.smoothScroll.strength !== "off")
+    modules.add("smooth-scroll");
   const list = [...modules].sort();
   const bytes = list.reduce((total, name) => total + effectModuleBytes[name], 0);
   const warnings: PageWeightWarning[] = [];
@@ -52,7 +54,7 @@ export function measurePageWeight(
   if (
     site?.cursor.style !== undefined &&
     site.cursor.style !== "none" &&
-    effects.some((effect) => effect.category === "cursor")
+    effects.some((effect) => effect.category === "cursor" && effect.listed !== false)
   ) {
     warnings.push("cursorAndTrails");
   }

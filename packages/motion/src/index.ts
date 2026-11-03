@@ -28,6 +28,8 @@ export type {
   PageEffects,
   SiteEffectSettings,
 } from "./effects/effect-types.js";
+export { startSmoothScroll } from "./smooth-scroll/smoothScroll.js";
+export type { SmoothScroll, SmoothScrollStrength } from "./smooth-scroll/smoothScroll.js";
 export type { ReducedMotionPreference } from "./runtime/environment.js";
 export { reduceMotion } from "./reduced-motion/reducedMotion.js";
 export {

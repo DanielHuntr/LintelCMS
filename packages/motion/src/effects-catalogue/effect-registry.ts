@@ -16,8 +16,8 @@ export interface EffectRegistry {
   /** Adds an effect. Throws InvalidEffectError if one with the same id is already there. */
   register(definition: EffectDefinition): void;
   /**
-   * Effects that suit an element of this kind, the ones made for it first, then the ones
-   * that suit anything.
+   * Effects the gallery offers for an element of this kind (leaving out those set with a
+   * field of their own, `listed: false`).
    */
   suiting(kind: ElementKind): readonly EffectDefinition[];
 }
@@ -40,7 +40,8 @@ export function createEffectRegistry(
         .all()
         .filter(
           (definition) =>
-            definition.suits.includes("any") || kind === "any" || definition.suits.includes(kind),
+            definition.listed !== false &&
+            (definition.suits.includes("any") || kind === "any" || definition.suits.includes(kind)),
         ),
   };
   initial.forEach(registry.register);

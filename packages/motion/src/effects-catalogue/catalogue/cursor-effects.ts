@@ -1,5 +1,5 @@
 import { defineEffect } from "../effect-definition.js";
-import { colour, number, text } from "../parameters.js";
+import { choice, colour, number, text } from "../parameters.js";
 
 /**
  * Cursors that appear over one element. The site-wide cursor is chosen in the builder's
@@ -73,4 +73,50 @@ export const cursorEffects = [
     "Hello, Bonjour, Hola, Ciao, Hallo",
   ),
   trail("emoji-trail", "Emoji trail", "A playful trail of emoji. Use sparingly!", "🎉, ✨, 💜"),
+];
+
+/**
+ * Two pointer touches set with fields of their own on the Animate tab rather than from the
+ * gallery (`listed: false`): a short word the cursor shows over the element, and a picture
+ * that follows the pointer while it is over the element.
+ */
+export const cursorWordEffectId = "cursor-word";
+export const hoverPictureEffectId = "hover-picture";
+
+export const pointerFieldEffects = [
+  defineEffect({
+    id: cursorWordEffectId,
+    name: "Word on the cursor",
+    description: "A short word, such as “View”, shown by the cursor over this element.",
+    category: "cursor",
+    kind: "behaviour",
+    module: "cursor",
+    behaviour: "cursorWord",
+    suits: ["any"],
+    params: { text: text("Word", "View", 16) },
+    reducedMotion: "The word follows the pointer exactly.",
+    preview: "card",
+    listed: false,
+  }),
+  defineEffect({
+    id: hoverPictureEffectId,
+    name: "Picture on hover",
+    description: "A picture that appears and follows the pointer while it is over this element.",
+    category: "cursor",
+    kind: "behaviour",
+    module: "pointer",
+    behaviour: "hoverPicture",
+    suits: ["any"],
+    params: {
+      src: text("Picture", "", 400),
+      size: choice("Size", "medium", [
+        ["small", "Small"],
+        ["medium", "Medium"],
+        ["large", "Large"],
+      ]),
+    },
+    reducedMotion: "The picture appears without fading or trailing behind the pointer.",
+    preview: "card",
+    listed: false,
+  }),
 ];

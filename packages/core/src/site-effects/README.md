@@ -1,8 +1,9 @@
 # site-effects
 
 Motion across the whole website, picked in the page builder's site settings: the page
-transition (fade, slide, wipe or zoom), a custom cursor (with an optional trail) and an
-intro shown once per visit. All three start off.
+transition (fade, slide, wipe or zoom), a custom cursor (with an optional trail, in the
+theme's text or brand colour or one picked by hand), an intro shown once per visit and
+smooth scrolling (Gentle or Strong). All of them start off.
 
 - `site-effects.routes.ts`: `GET` and `PUT /website/effects`.
 - `site-effects.service.ts`: reading and saving the settings, and `siteEffectsHead`, the CSS,

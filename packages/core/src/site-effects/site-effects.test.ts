@@ -150,6 +150,26 @@ describe("site-wide effects", () => {
     expect(effects.site.intro.text).toBe("Corner Bakery");
   });
 
+  it("save smooth scrolling on its own, keeping the cursor, and pages then load its module", async () => {
+    await owner("PUT", "/website/effects", {
+      cursor: { style: "ring", trail: "none", colour: "brand", size: 32 },
+    });
+    const saved = await owner("PUT", "/website/effects", { smoothScroll: { strength: "gentle" } });
+    expect(saved.statusCode, saved.body).toBe(200);
+    expect(saved.json()).toMatchObject({
+      smoothScroll: { strength: "gentle" },
+      cursor: { style: "ring", colour: "brand" },
+    });
+    await owner("POST", "/starter-sites/bakery/apply", { publish: true });
+    const home = await site.inject({ method: "GET", url: "/" });
+    const data = /<script type="application\/json" id="lintel-effects">(.*?)<\/script>/.exec(
+      home.body,
+    );
+    const effects = JSON.parse(data?.[1] ?? "{}");
+    expect(Object.keys(effects.modules).sort()).toEqual(["cursor", "smooth-scroll"]);
+    expect(effects.site.smoothScroll.strength).toBe("gentle");
+  });
+
   it("refuses settings that aren't on offer", async () => {
     const response = await owner("PUT", "/website/effects", { cursor: { style: "sparkly" } });
     expect(response.statusCode).toBe(400);

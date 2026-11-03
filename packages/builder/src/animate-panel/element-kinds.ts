@@ -12,6 +12,7 @@ const kinds: Readonly<Record<string, ElementKind>> = {
   badge: "text",
   counter: "text",
   countdown: "text",
+  clock: "text",
   button: "button",
   link: "button",
   image: "image",

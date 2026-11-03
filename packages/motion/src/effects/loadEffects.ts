@@ -98,6 +98,13 @@ function whenNearScreen(element: Element, start: () => void): () => void {
   return () => observer.disconnect();
 }
 
+/** The cursor's colour as CSS: the theme's text or brand colour, or one picked by hand. */
+export function themeColour(colour: string): string {
+  if (colour === "text") return "var(--lintel-color-text, #111111)";
+  if (colour === "brand") return "var(--lintel-color-brand, #111111)";
+  return colour;
+}
+
 /** Every effect listed on the page. Returns a function that stops them all. */
 export function startEffects(
   document: Document,
@@ -121,7 +128,20 @@ export function startEffects(
   const site = effects.site;
   const body = document.body;
   if (site && site.cursor.style !== "none" && context.finePointer) {
-    run(body, { module: "cursor", behaviour: "siteCursor", params: { ...site.cursor } });
+    run(body, {
+      module: "cursor",
+      behaviour: "siteCursor",
+      params: { ...site.cursor, colour: themeColour(site.cursor.colour) },
+    });
+  }
+  // Older pages' settings have no smooth scrolling: read it carefully.
+  const smoothScroll = site?.smoothScroll?.strength ?? "off";
+  if (smoothScroll !== "off" && context.finePointer && !context.reduced) {
+    run(body, {
+      module: "smooth-scroll",
+      behaviour: "siteSmoothScroll",
+      params: { strength: smoothScroll },
+    });
   }
   if (site && site.pageTransition.style !== "none") {
     run(body, {

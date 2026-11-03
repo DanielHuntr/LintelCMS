@@ -10,11 +10,40 @@ import { approach } from "../maths/smoothing.js";
  * that only show over one element (a "View" label over a gallery, a trail of words).
  *
  * The runtime only starts the site cursor for a mouse or trackpad. Fields, text areas and
- * anything editable keep the normal cursor, so typing never loses its caret. With less
- * motion asked for, the cursor follows exactly and leaves no trail.
+ * anything editable keep the normal cursor, so typing never loses its caret. Keyboard
+ * focus rings are untouched. With less motion asked for, the cursor follows exactly,
+ * changes size without easing and leaves no trail.
+ *
+ * Elements given a word on the Animate tab carry `data-lintel-cursor-word`: the site
+ * cursor turns into a small pill with that word over them, and without a site cursor the
+ * word follows the pointer on its own.
  */
 
 const hiddenCursorClass = "lintel-custom-cursor";
+const cursorWordAttribute = "data-lintel-cursor-word";
+
+/** A colour as the canvas needs it: theme variables worked out to rgb(). */
+function resolvedColour(colour: string): string {
+  if (!colour.startsWith("var(")) return colour;
+  const probe = document.createElement("span");
+  probe.style.color = colour;
+  document.body.append(probe);
+  const resolved = getComputedStyle(probe).color;
+  probe.remove();
+  return resolved || "#111111";
+}
+
+/** Words on a pill of this colour: the theme's background on its text colour, else black or white. */
+function wordColourOn(colour: string): string {
+  if (colour.includes("--lintel-color-text")) return "var(--lintel-color-background, #ffffff)";
+  if (colour.includes("--lintel-color-brand")) return "var(--lintel-color-on-brand, #ffffff)";
+  const hex = /^#([0-9a-f]{6})$/i.exec(colour)?.[1];
+  if (!hex) return "#ffffff";
+  const [red, green, blue] = [0, 2, 4].map((at) => parseInt(hex.slice(at, at + 2), 16));
+  return (red ?? 0) * 0.299 + (green ?? 0) * 0.587 + (blue ?? 0) * 0.114 > 160
+    ? "#111111"
+    : "#ffffff";
+}
 
 function cursorStyles() {
   addStyleOnce(
@@ -23,7 +52,9 @@ function cursorStyles() {
 .${hiddenCursorClass} :is(input,textarea,select,[contenteditable]){cursor:auto!important}
 .lintel-cursor{position:fixed;left:0;top:0;pointer-events:none;z-index:2147483646;border-radius:50%;translate:-50% -50%;transition:width .2s,height .2s,opacity .2s,background-color .2s}
 .lintel-cursor-label{position:fixed;left:0;top:0;pointer-events:none;z-index:2147483646;padding:.5em .9em;border-radius:999px;font:600 .8rem/1 system-ui,sans-serif;translate:-50% -50%;opacity:0;scale:.6;transition:opacity .2s,scale .2s}
-.lintel-cursor-label[data-shown]{opacity:1;scale:1}`,
+.lintel-cursor-label[data-shown]{opacity:1;scale:1}
+.lintel-cursor[data-hidden]{opacity:0!important}
+@media (prefers-reduced-motion:reduce){.lintel-cursor,.lintel-cursor-label{transition:none}}`,
   );
 }
 
@@ -114,6 +145,14 @@ const siteCursor: EffectBehaviour = (_body, params, context) => {
   }
   document.documentElement.classList.add(hiddenCursorClass);
   const trailLayer = trail !== "none" ? trailCanvas() : undefined;
+  const trailColour = trailLayer ? resolvedColour(colour) : colour;
+  const word = document.createElement("div");
+  word.className = "lintel-cursor-label";
+  word.setAttribute("aria-hidden", "true");
+  word.style.background = colour;
+  word.style.color = wordColourOn(colour);
+  document.body.append(word);
+  let shownWord = "";
   const drawing = trailLayer?.canvas.getContext("2d");
   const target = { x: -100, y: -100 };
   const eased = { x: -100, y: -100 };
@@ -124,6 +163,7 @@ const siteCursor: EffectBehaviour = (_body, params, context) => {
     eased.x = approach(eased.x, target.x, smoothing, elapsed);
     eased.y = approach(eased.y, target.y, smoothing, elapsed);
     if (dot) dot.style.transform = `translate(${target.x}px, ${target.y}px)`;
+    word.style.transform = `translate(${eased.x}px, ${eased.y}px)`;
     if (ring) {
       ring.style.transform = `translate(${eased.x}px, ${eased.y}px)`;
       const grown = hovering ? size * 1.8 : size;
@@ -133,7 +173,7 @@ const siteCursor: EffectBehaviour = (_body, params, context) => {
       points.forEach((point) => (point.age += elapsed / 450));
       while (points.length && (points[0]?.age ?? 0) >= 1) points.shift();
       drawing.setTransform(trailLayer.ratio, 0, 0, trailLayer.ratio, 0, 0);
-      drawTrail(drawing, points, trail, colour, size / 2);
+      drawTrail(drawing, points, trail, trailColour, size / 2);
     }
     return eased.x !== target.x || eased.y !== target.y || points.length > 0;
   });
@@ -148,9 +188,16 @@ const siteCursor: EffectBehaviour = (_body, params, context) => {
           target.x = event.clientX;
           target.y = event.clientY;
           if (drawing) points.push({ x: target.x, y: target.y, age: 0 });
-          hovering =
-            event.target instanceof Element &&
-            event.target.closest("a, button, [role='button'], label, summary") !== null;
+          const over = event.target instanceof Element ? event.target : null;
+          hovering = over?.closest("a, button, [role='button'], label, summary") != null;
+          const nextWord =
+            over?.closest(`[${cursorWordAttribute}]`)?.getAttribute(cursorWordAttribute) ?? "";
+          if (nextWord !== shownWord) {
+            shownWord = nextWord;
+            if (nextWord) word.textContent = nextWord;
+            word.toggleAttribute("data-shown", nextWord !== "");
+            [ring, dot].forEach((node) => node?.toggleAttribute("data-hidden", nextWord !== ""));
+          }
           show(true);
           loop.wake();
         },
@@ -159,11 +206,18 @@ const siteCursor: EffectBehaviour = (_body, params, context) => {
       },
       { passive: true },
     ),
-    listen(document.documentElement, { pointerleave: () => show(false) }),
+    listen(document.documentElement, {
+      pointerleave: () => {
+        show(false);
+        word.removeAttribute("data-shown");
+        shownWord = "";
+      },
+    }),
     () => {
       loop.destroy();
       ring?.remove();
       dot?.remove();
+      word.remove();
       trailLayer?.remove();
       document.documentElement.classList.remove(hiddenCursorClass);
     },
@@ -191,9 +245,15 @@ const cursorLabel: EffectBehaviour = (element, params, context) => {
     return eased.x !== target.x || eased.y !== target.y;
   });
   const hideNative = readText(params, "native", "hide") === "hide";
+  // A word set on the element defers to the site cursor, which shows it itself.
+  const deferToSiteCursor = params.onlyWithoutSiteCursor === true;
   return combine(
     listen(element, {
       pointerenter: (event: PointerEvent) => {
+        if (event.pointerType !== "mouse" && event.pointerType !== "pen") return;
+        if (deferToSiteCursor && document.documentElement.classList.contains(hiddenCursorClass)) {
+          return;
+        }
         eased.x = target.x = event.clientX;
         eased.y = target.y = event.clientY;
         label.toggleAttribute("data-shown", true);
@@ -213,6 +273,29 @@ const cursorLabel: EffectBehaviour = (element, params, context) => {
       element.style.removeProperty("cursor");
     },
   );
+};
+
+/**
+ * The word set on an element with "Word on the cursor". The site cursor shows it when there
+ * is one; otherwise this shows it as a small pill in the theme's colours.
+ */
+const cursorWord: EffectBehaviour = (element, params, context) => {
+  const text = readText(params, "text", "").trim().slice(0, 16);
+  if (!text) return;
+  element.setAttribute(cursorWordAttribute, text);
+  const undoAttribute = () => element.removeAttribute(cursorWordAttribute);
+  if (!context.finePointer) return undoAttribute;
+  const ownLabel = cursorLabel(
+    element,
+    {
+      text,
+      background: "var(--lintel-color-text, #111111)",
+      colour: "var(--lintel-color-background, #ffffff)",
+      onlyWithoutSiteCursor: true,
+    },
+    context,
+  );
+  return combine(undoAttribute, ownLabel ?? undefined);
 };
 
 /** Words or emoji left behind the pointer as it moves over the element, fading away. */
@@ -260,5 +343,5 @@ const cursorTrail: EffectBehaviour = (element, params, context) => {
   });
 };
 
-export const behaviours = { siteCursor, cursorLabel, cursorTrail };
+export const behaviours = { siteCursor, cursorLabel, cursorWord, cursorTrail };
 export default { behaviours } satisfies EffectModule;

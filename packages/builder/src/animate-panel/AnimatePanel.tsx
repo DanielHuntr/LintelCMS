@@ -5,7 +5,9 @@ import { MotionPanel, type Translate as MotionText } from "@lintel/motion-editor
 import { useBuilderText } from "../i18n/builder-text.js";
 import { usePreferenceStore } from "../preferences/builder-preferences.js";
 import { useRememberedOpenSections } from "../preferences/open-sections.js";
+import type { ImagePicker } from "../panels/content-fields.js";
 import { elementKindOf } from "./element-kinds.js";
+import { pointerFieldEffectIds, PointerFields } from "./PointerFields.js";
 
 export type EffectPreview = Pick<EffectBinding, "module" | "behaviour" | "params">;
 
@@ -31,6 +33,8 @@ interface AnimatePanelProps {
   tips: { isDismissed: (tip: string) => boolean; dismiss: (tip: string) => void };
   /** Elements around this one whose scroll scenes it can be a step of, nearest first. */
   sceneElements?: ReadonlyArray<{ id: string; name: string }>;
+  /** Opens the media library, for the picture shown on hover. */
+  pickImage?: ImagePicker;
 }
 
 /**
@@ -51,6 +55,7 @@ export function AnimatePanel({
   onPreviewEffect,
   pageWeight,
   sceneElements,
+  pickImage,
 }: AnimatePanelProps) {
   const text = useBuilderText();
   // Simple's groups (when it plays, timing, less motion), remembered like the Style panel's.
@@ -67,33 +72,46 @@ export function AnimatePanel({
     );
   }
 
+  // The word on the cursor and the hover picture have fields of their own below.
+  const allEffects = node.effects ?? [];
+  const pointerEffects = allEffects.filter((effect) => pointerFieldEffectIds.has(effect.effect));
+  const listedEffects = allEffects.filter((effect) => !pointerFieldEffectIds.has(effect.effect));
+
   return (
-    <div className="p-4">
-      <MotionPanel
-        key={node.id}
-        name={name}
-        animations={node.animations ?? []}
-        effects={node.effects ?? []}
-        elementKind={elementKindOf(node.type)}
-        onChangeAnimations={onChange}
-        onChangeEffects={onChangeEffects}
-        onPreviewSpec={onPreview}
-        onPreviewEffect={(definition, props) => {
-          if (definition.kind === "behaviour") {
-            onPreviewEffect({
-              module: definition.module,
-              behaviour: definition.module === "custom" ? definition.id : definition.behaviour,
-              params: { ...definition.fixed, ...props },
-            });
-          }
-        }}
-        onStopPreview={() => onPreviewEffect(null)}
-        showsTimeline={showsTimeline}
-        timelineNote={text("pageBuilder.animate.timelineInDesigner")}
-        pageWeight={pageWeight}
-        sceneElements={sceneElements}
-        openGroups={openGroups}
-        translate={motionText}
+    <div>
+      <div className="p-4">
+        <MotionPanel
+          key={node.id}
+          name={name}
+          animations={node.animations ?? []}
+          effects={listedEffects}
+          elementKind={elementKindOf(node.type)}
+          onChangeAnimations={onChange}
+          onChangeEffects={(effects) => onChangeEffects([...effects, ...pointerEffects])}
+          onPreviewSpec={onPreview}
+          onPreviewEffect={(definition, props) => {
+            if (definition.kind === "behaviour") {
+              onPreviewEffect({
+                module: definition.module,
+                behaviour: definition.module === "custom" ? definition.id : definition.behaviour,
+                params: { ...definition.fixed, ...props },
+              });
+            }
+          }}
+          onStopPreview={() => onPreviewEffect(null)}
+          showsTimeline={showsTimeline}
+          timelineNote={text("pageBuilder.animate.timelineInDesigner")}
+          pageWeight={pageWeight}
+          sceneElements={sceneElements}
+          openGroups={openGroups}
+          translate={motionText}
+        />
+      </div>
+      <PointerFields
+        key={`pointer-${node.id}`}
+        effects={pointerEffects}
+        pickImage={pickImage}
+        onChange={(effects) => onChangeEffects([...listedEffects, ...effects])}
       />
     </div>
   );
