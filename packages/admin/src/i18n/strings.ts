@@ -318,6 +318,7 @@ const english = {
   "media.filter.all": "All",
   "media.filter.images": "Images",
   "media.filter.documents": "Documents",
+  "media.filter.models": "3D models",
   "media.filter.needsDescription": "No description",
   "media.allDescribed.title": "Every picture has a description",
   "media.grid.label": "Media files",

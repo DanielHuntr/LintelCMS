@@ -106,6 +106,36 @@ describe("the 3D model element", () => {
     await page.close();
   });
 
+  it("stops drawing while it is off screen, and carries on when it comes back", async () => {
+    const { page } = await openEffectsPage(browser, `${model()}<div style="height:3000px"></div>`, [
+      modelEffect(),
+    ]);
+    await waitFor(page, () => document.querySelector("[data-model-ready]") !== null, 15_000);
+    await page.evaluate(() => {
+      const counted = window as unknown as { drawn: number };
+      counted.drawn = 0;
+      for (const context of [WebGLRenderingContext, WebGL2RenderingContext]) {
+        const draw = context.prototype.drawElements;
+        context.prototype.drawElements = function (...args: Parameters<typeof draw>) {
+          counted.drawn += 1;
+          draw.apply(this, args);
+        };
+      }
+    });
+    const drawn = () => page.evaluate(() => (window as unknown as { drawn: number }).drawn);
+    await page.waitForTimeout(500);
+    expect(await drawn()).toBeGreaterThan(0);
+    await page.evaluate(() => window.scrollTo(0, 2500));
+    await page.waitForTimeout(400);
+    const whenGone = await drawn();
+    await page.waitForTimeout(500);
+    expect(await drawn()).toBe(whenGone);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(500);
+    expect(await drawn()).toBeGreaterThan(whenGone);
+    await page.close();
+  });
+
   it("turns with the arrow keys when it is dragged to turn", async () => {
     const { page } = await openEffectsPage(browser, model(), [modelEffect({ motion: "drag" })]);
     await waitFor(page, () => document.querySelector("[data-model-ready]") !== null, 15_000);
@@ -165,6 +195,50 @@ describe("the arc carousel", () => {
     await page.keyboard.press("ArrowRight");
     await page.waitForTimeout(800);
     expect(await middle()).toBe(1);
+    await page.close();
+  });
+
+  it("follows a drag over a picture, yet a plain click still reaches a link", async () => {
+    const picture = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="110"><rect width="160" height="110" fill="tan"/></svg>')}`;
+    const links = Array.from(
+      { length: 6 },
+      (_, index) => `<a href="#p${index}"><img src="${picture}" alt="Picture ${index}"></a>`,
+    ).join("");
+    const { page } = await openEffectsPage(
+      browser,
+      `<div data-node-id="arc" style="height:300px">${links}</div>`,
+      [{ nodeId: "arc", module: "depth", behaviour: "arcCarousel", params: { speed: 0 } }],
+    );
+    await waitFor(
+      page,
+      () => (document.querySelector("[data-node-id=arc] a") as HTMLElement).style.transform !== "",
+    );
+    await page.waitForTimeout(200);
+    const box = (await page.locator("[data-node-id=arc] a").first().boundingBox())!;
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x - 120, y, { steps: 6 });
+    await page.mouse.up();
+    await waitFor(
+      page,
+      () =>
+        [...document.querySelectorAll<HTMLElement>("[data-node-id=arc] a")].some(
+          (link, index) => index > 0 && link.style.transform.includes("translate3d(0px"),
+        ),
+      10_000,
+    );
+    // Moved on by a picture, and the drag didn't count as a click.
+    expect(new URL(page.url()).hash).toBe("");
+    const middle = await page.$$eval("[data-node-id=arc] a", (all) =>
+      all.findIndex((link) => (link as HTMLElement).style.transform.includes("translate3d(0px")),
+    );
+    expect(middle).toBeGreaterThan(0);
+    const front = (await page.locator("[data-node-id=arc] a").nth(middle).boundingBox())!;
+    await page.mouse.click(front.x + front.width / 2, front.y + front.height / 2);
+    await page.waitForTimeout(100);
+    expect(new URL(page.url()).hash).toBe(`#p${middle}`);
     await page.close();
   });
 
@@ -268,11 +342,11 @@ describe("depth on scroll", () => {
           Number(/, (-?[\d.]+)px,/.exec((layer as HTMLElement).style.transform)?.[1]),
         ),
       );
-    const [near, , far] = await travel();
-    expect(Math.abs(near!)).toBeGreaterThan(Math.abs(far!) - 0.01);
+    const [near, middle] = await travel();
+    expect(Math.abs(near!)).toBeGreaterThan(Math.abs(middle!));
     expect(
-      await page.$eval("[data-node-id=s]", (section) => (section as HTMLElement).style.perspective),
-    ).toBe("1000px");
+      await page.$eval("[data-node-id=s] h2", (layer) => (layer as HTMLElement).style.transform),
+    ).toContain("perspective(1000px)");
     await page.close();
 
     const reduced = await openEffectsPage(browser, html, [effect], { reducedMotion: "reduce" });

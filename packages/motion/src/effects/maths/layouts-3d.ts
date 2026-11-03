@@ -134,5 +134,7 @@ export function depthLayerTransform(
   const tilt = settings.tilt
     ? ` rotateX(${((progress - 0.5) * settings.tilt * strength).toFixed(2)}deg)`
     : "";
-  return `translate3d(0, ${y.toFixed(1)}px, ${z.toFixed(1)}px)${tilt}`;
+  // Each layer has its own perspective, so it shrinks about its own middle. A shared one would
+  // pull everything towards the section's middle, and the layers on to one another.
+  return `perspective(1000px) translate3d(0, ${y.toFixed(1)}px, ${z.toFixed(1)}px)${tilt}`;
 }

@@ -319,7 +319,6 @@ const depthOnScroll: EffectBehaviour = (element, params, context) => {
   const look = readText(params, "look", "deep") as DepthLook;
   const strength = readNumber(params, "strength", 1);
   const depths = layerDepths(layers.length, readText(params, "order", "front-first") as LayerOrder);
-  const restore = setStyles(parent, { perspective: "1000px" });
   return combine(
     onScroll(element, (progress) => {
       const screenHeight = window.innerHeight;
@@ -332,7 +331,6 @@ const depthOnScroll: EffectBehaviour = (element, params, context) => {
       });
     }),
     () => layers.forEach((layer) => layer.style.removeProperty("transform")),
-    restore,
   );
 };
 

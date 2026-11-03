@@ -6,7 +6,7 @@ import type { EffectModuleName } from "../effects/effect-types.js";
  */
 export const effectModuleBytes: Record<EffectModuleName, number> = {
   cursor: 7484,
-  depth: 6941,
+  depth: 7125,
   "frosted-glass": 4057,
   "image-distort": 4528,
   intro: 2555,
@@ -17,7 +17,7 @@ export const effectModuleBytes: Record<EffectModuleName, number> = {
   physics: 7250,
   pointer: 5078,
   ripple: 4249,
-  scroll: 5911,
+  scroll: 5920,
   "smooth-scroll": 1930,
   svg: 4953,
   text: 5444,

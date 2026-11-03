@@ -8,32 +8,35 @@ import { cx } from "./behaviour-types.js";
  * effect (see impliedModelEffect) draws the model over it on the page and the canvas.
  */
 
-const Model3d = drawsProps(model3dComponent, ({ props, attributes }) => (
-  <figure
-    {...attributes}
-    className={cx(
-      attributes.className,
-      "lintel-model",
-      props.motion === "drag" && "lintel-model--drag",
-    )}
-    role="img"
-    aria-label={props.alt.trim() || "3D model"}
-  >
-    {props.poster ? (
-      <img className="lintel-model__poster" src={props.poster} alt="" decoding="async" />
-    ) : (
-      <svg
-        className="lintel-model__placeholder"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-        focusable="false"
-      >
-        <path d="M12 2.5 3.5 7v10l8.5 4.5 8.5-4.5V7z" />
-        <path d="m3.5 7 8.5 4.5L20.5 7M12 11.5v10" />
-      </svg>
-    )}
-  </figure>
-));
+const Model3d = drawsProps(model3dComponent, ({ props, attributes, mode }) =>
+  // Visitors never see an element still waiting for its model.
+  mode === "site" && !props.model.src && !props.poster ? null : (
+    <figure
+      {...attributes}
+      className={cx(
+        attributes.className,
+        "lintel-model",
+        props.motion === "drag" && "lintel-model--drag",
+      )}
+      role="img"
+      aria-label={props.alt.trim() || "3D model"}
+    >
+      {props.poster ? (
+        <img className="lintel-model__poster" src={props.poster} alt="" decoding="async" />
+      ) : (
+        <svg
+          className="lintel-model__placeholder"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path d="M12 2.5 3.5 7v10l8.5 4.5 8.5-4.5V7z" />
+          <path d="m3.5 7 8.5 4.5L20.5 7M12 11.5v10" />
+        </svg>
+      )}
+    </figure>
+  ),
+);
 
 export const modelRenders = { model3d: Model3d };
 

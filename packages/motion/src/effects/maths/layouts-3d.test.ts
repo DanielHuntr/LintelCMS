@@ -106,8 +106,12 @@ describe("depth on scroll", () => {
 
   it("rests every layer at its place mid-screen, nearer ones moving further", () => {
     const options = { look: "deep" as const, strength: 1, screenHeight: 800 };
-    expect(depthLayerTransform(1, 0.5, options)).toBe("translate3d(0, 0.0px, 0.0px)");
-    expect(depthLayerTransform(-1, 0.5, options)).toBe("translate3d(0, 0.0px, -120.0px)");
+    expect(depthLayerTransform(1, 0.5, options)).toBe(
+      "perspective(1000px) translate3d(0, 0.0px, 0.0px)",
+    );
+    expect(depthLayerTransform(-1, 0.5, options)).toBe(
+      "perspective(1000px) translate3d(0, 0.0px, -120.0px)",
+    );
     const near = depthLayerTransform(1, 0.2, options);
     const far = depthLayerTransform(0.2, 0.2, options);
     const travel = (transform: string) => Number(/, (-?[\d.]+)px,/.exec(transform)?.[1]);

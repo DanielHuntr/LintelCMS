@@ -69,11 +69,20 @@ describe("the 3D model element on the page", () => {
     expect(rendered.html).toContain('data-node-id="e1"');
   });
 
-  it("loads nothing until a model is chosen, and says what it is without a description", () => {
+  it("loads and shows nothing on the site until a model is chosen", () => {
     const rendered = renderPage(page({ type: "model3d" }), standardRegistry, { withMotion: true });
     expect(rendered.effects).toEqual([]);
+    expect(rendered.html).not.toContain("lintel-model");
+    const canvas = renderPage(page({ type: "model3d" }), standardRegistry, { mode: "canvas" });
+    expect(canvas.html).toContain("lintel-model__placeholder");
+  });
+
+  it("says what it is without a description", () => {
+    const rendered = renderPage(
+      page({ type: "model3d", props: { model: vase } }),
+      standardRegistry,
+    );
     expect(rendered.html).toContain('aria-label="3D model"');
-    expect(rendered.html).toContain("lintel-model__placeholder");
   });
 
   it("passes a chosen background colour to the model", () => {

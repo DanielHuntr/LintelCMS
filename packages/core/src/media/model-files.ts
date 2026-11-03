@@ -78,12 +78,16 @@ function glbFile(json: GltfDocument, binary: Buffer): Buffer {
 
 /** Packs a self-contained .gltf into a .glb with the same contents. */
 export function packGltfAsGlb(text: string, filename: string): Buffer {
-  let gltf: GltfDocument;
   try {
-    gltf = JSON.parse(text) as GltfDocument;
-  } catch {
+    return packDocument(JSON.parse(text) as GltfDocument, filename);
+  } catch (error) {
+    if (error instanceof UnreadableModelError) throw error;
+    // Text that is JSON but not shaped like glTF: lists that aren't lists, and so on.
     throw new UnreadableModelError(filename, "unreadable");
   }
+}
+
+function packDocument(gltf: GltfDocument, filename: string): Buffer {
   if (String(gltf.asset?.version ?? "").split(".")[0] !== "2") {
     throw new UnreadableModelError(filename, "version");
   }
@@ -96,11 +100,8 @@ export function packGltfAsGlb(text: string, filename: string): Buffer {
     return offset;
   };
   const bufferOffsets = (gltf.buffers ?? []).map((buffer) =>
-    append(
-      buffer.uri === undefined
-        ? Buffer.alloc(buffer.byteLength)
-        : decodeDataAddress(buffer.uri, filename).bytes,
-    ),
+    // Only a .glb's own binary part has no address, so here the data is missing.
+    append(decodeDataAddress(buffer.uri ?? "", filename).bytes),
   );
   const bufferViews: GltfBufferView[] = (gltf.bufferViews ?? []).map((view) => ({
     ...view,

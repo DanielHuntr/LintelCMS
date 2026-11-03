@@ -96,6 +96,13 @@ describe("3D model files", () => {
     const broken = Buffer.concat([vase.subarray(0, 12), Buffer.from("not json at all")]);
     expect((await media.upload("broken.glb", broken)).statusCode).toBe(422);
     expect((await media.upload("data.gltf", Buffer.from('{"name":"x"}'))).statusCode).toBe(415);
+    const odd = { asset: { version: "2.0" }, buffers: "none" };
+    expect((await media.upload("odd.gltf", Buffer.from(JSON.stringify(odd)))).statusCode).toBe(422);
+    // A size with no data behind it is refused, not set aside in memory.
+    const empty = { asset: { version: "2.0" }, buffers: [{ byteLength: 1e12 }] };
+    expect((await media.upload("empty.gltf", Buffer.from(JSON.stringify(empty)))).statusCode).toBe(
+      422,
+    );
   });
 });
 

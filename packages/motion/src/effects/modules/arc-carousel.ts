@@ -40,17 +40,23 @@ export const arcCarousel: EffectBehaviour = (element, params, context) => {
   const shape: ArcShape = readText(params, "shape", "away") === "around" ? "around" : "away";
   const speed = readNumber(params, "speed", 0.25);
   const bend = arcBend(readNumber(params, "bend", 14), items.length, shape);
-  const tallest = Math.max(...items.map((item) => item.offsetHeight), 1);
-  const widest = () => Math.max(...items.map((item) => item.offsetWidth), 1);
-  let pitch = widest() + 16;
+  let pitch = 1;
   const restore = setStyles(element, {
     position: getComputedStyle(element).position === "static" ? "relative" : "",
     overflow: "hidden",
-    "min-height": `${Math.round(tallest * 1.25)}px`,
-    perspective: `${Math.round(arcPerspective(bend, pitch, shape))}px`,
+    "min-height": "",
+    perspective: "",
     "touch-action": "pan-y",
     "user-select": "none",
   });
+  /** Sizes the curve from the items, again as pictures load and the window changes. */
+  const measure = () => {
+    pitch = Math.max(...items.map((item) => item.offsetWidth), 1) + 16;
+    const tallest = Math.max(...items.map((item) => item.offsetHeight), 1);
+    element.style.minHeight = `${Math.round(tallest * 1.25)}px`;
+    element.style.perspective = `${Math.round(arcPerspective(bend, pitch, shape))}px`;
+  };
+  measure();
   items.forEach((item) =>
     Object.assign(item.style, { position: "absolute", left: "50%", top: "50%", margin: "0" }),
   );
@@ -58,7 +64,9 @@ export const arcCarousel: EffectBehaviour = (element, params, context) => {
   let position = 0;
   let velocity = 0;
   let target: number | undefined;
+  let pressed = false;
   let dragging = false;
+  let justDragged = false;
   let paused = false;
   const draw = () => {
     items.forEach((item, index) => {
@@ -91,6 +99,7 @@ export const arcCarousel: EffectBehaviour = (element, params, context) => {
   };
 
   const tracker = new VelocityTracker(100);
+  let startX = 0;
   let lastX = 0;
   let lastScroll = window.scrollY;
   return combine(
@@ -98,27 +107,40 @@ export const arcCarousel: EffectBehaviour = (element, params, context) => {
     listen(element, {
       pointerdown: (event: PointerEvent) => {
         if (event.button !== 0) return;
-        dragging = true;
-        target = undefined;
-        lastX = event.clientX;
+        pressed = true;
+        justDragged = false;
+        startX = lastX = event.clientX;
         tracker.reset();
-        element.setPointerCapture?.(event.pointerId);
-        loop.wake();
       },
       pointermove: (event: PointerEvent) => {
-        if (!dragging) return;
+        if (!pressed) return;
+        // Held until it is really a drag, so a click still reaches a link inside.
+        if (!dragging) {
+          if (Math.abs(event.clientX - startX) < 5) return;
+          dragging = justDragged = true;
+          target = undefined;
+          element.setPointerCapture?.(event.pointerId);
+        }
         position -= (event.clientX - lastX) / pitch;
         lastX = event.clientX;
         tracker.add(position, event.timeStamp);
         loop.wake();
       },
       pointerup: (event: PointerEvent) => {
+        pressed = false;
         if (!dragging) return;
         dragging = false;
         velocity = clamp(tracker.velocity(event.timeStamp), -8, 8);
         loop.wake();
       },
-      pointercancel: () => ((dragging = false), loop.wake()),
+      pointercancel: () => ((pressed = dragging = false), loop.wake()),
+      // The browser's own drag of a picture or link would end ours.
+      dragstart: (event: DragEvent) => event.preventDefault(),
+      click: (event: MouseEvent) => {
+        if (!justDragged) return;
+        justDragged = false;
+        event.preventDefault();
+      },
       pointerenter: () => (paused = true),
       pointerleave: () => ((paused = false), loop.wake()),
       wheel: (event: WheelEvent) => {
@@ -152,12 +174,14 @@ export const arcCarousel: EffectBehaviour = (element, params, context) => {
           loop.wake();
         },
         resize: () => {
-          pitch = widest() + 16;
+          measure();
           loop.wake();
         },
       },
       { passive: true },
     ),
+    // Load events don't bubble, so this listens on the way down.
+    listen(element, { load: () => (measure(), loop.wake()) }, { capture: true }),
     () => loop.destroy(),
     () => items.forEach((item) => itemStyles.forEach((name) => item.style.removeProperty(name))),
     restore,
