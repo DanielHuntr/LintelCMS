@@ -34,6 +34,8 @@ interface AnimatePanelProps {
   sceneElements?: ReadonlyArray<{ id: string; name: string }>;
   /** Opens the media library, for the picture shown on hover. */
   pickImage?: ImagePicker;
+  /** Whether the site has a custom cursor, which "The cursor grows" needs. */
+  siteCursorOn?: boolean;
 }
 
 /**
@@ -55,6 +57,7 @@ export function AnimatePanel({
   sceneElements,
   pickImage,
   tips,
+  siteCursorOn,
 }: AnimatePanelProps) {
   const text = useBuilderText();
   // Simple's groups (when it plays, timing, less motion), remembered like the Style panel's.
@@ -112,6 +115,8 @@ export function AnimatePanel({
         key={`pointer-${node.id}`}
         effects={pointerEffects}
         pickImage={pickImage}
+        siteCursorOn={siteCursorOn}
+        motionText={motionText}
         onChange={(effects) => onChangeEffects([...listedEffects, ...effects])}
       />
     </div>

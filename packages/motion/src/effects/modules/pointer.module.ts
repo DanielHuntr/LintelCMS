@@ -1,10 +1,12 @@
 import type { EffectBehaviour, EffectModule } from "../effect-types.js";
+import { safePictureAddress } from "../kit/addresses.js";
 import { createFrameLoop } from "../kit/frames.js";
 import { combine, listen } from "../kit/listen.js";
 import { readColour, readNumber, readSwitch, readText } from "../kit/params.js";
 import { pointerOnFrame, pointerWithin, watchEmbeddedFrames } from "../kit/pointer.js";
 import { addOverlay, addStyleOnce, setStyles } from "../kit/styles.js";
 import { approach } from "../maths/smoothing.js";
+import { attachAboveDialogs } from "../kit/top-layer.js";
 
 /**
  * Effects that follow the pointer: magnetic pull, 3D tilt with glare, follow, spotlight,
@@ -229,7 +231,7 @@ function sharedPictureLayer(smoothing: number) {
   image.alt = "";
   image.decoding = "async";
   box.append(image);
-  document.body.append(box);
+  attachAboveDialogs(box);
   const layer = { box, image, target: { x: 0, y: 0 }, eased: { x: 0, y: 0 }, users: 1 };
   pictureLayer = layer;
   pictureLoop = createFrameLoop(document.documentElement, (elapsed) => {
@@ -251,11 +253,7 @@ function releasePictureLayer() {
   pictureLoop = undefined;
 }
 
-/** Only addresses on this site or on the web: never `javascript:` or other schemes. */
-export function safePictureAddress(address: string): string {
-  const trimmed = address.trim();
-  return /^https?:/i.test(trimmed) || !/^[a-z][\w+.-]*:/i.test(trimmed) ? trimmed : "";
-}
+export { safePictureAddress };
 
 /**
  * The picture is at most 420px wide on screen: a picture from the media library is asked for

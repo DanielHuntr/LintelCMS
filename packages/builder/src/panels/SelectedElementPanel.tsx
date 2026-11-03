@@ -74,6 +74,8 @@ interface SelectedElementPanelProps {
   pickImage?: ImagePicker;
   uploadFile?: FileUploader;
   motionText?: MotionText;
+  /** Whether the site has a custom cursor, for the Animate tab's pointer choices. */
+  siteCursorOn?: boolean;
   actions: {
     changeStyles: (nodeId: string, target: StyleTarget, values: StyleValues, label: string) => void;
     changeProps: (nodeId: string, props: Record<string, unknown>, label: string) => void;
@@ -401,6 +403,7 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
             effectModules={props.effectModules}
             pageWeight={props.pageWeight}
             pickImage={props.pickImage}
+            siteCursorOn={props.siteCursorOn}
           />
         ) : (
           <ContentPanel

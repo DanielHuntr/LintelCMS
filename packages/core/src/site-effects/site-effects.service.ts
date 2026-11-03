@@ -1,5 +1,8 @@
 import {
   carriedElementsScript,
+  cursorIsOn,
+  cursorPictureAddress,
+  cursorWordCss,
   defaultSiteEffectSettings,
   hasSiteEffects,
   introCss,
@@ -82,21 +85,36 @@ export function siteEffectsHead(
   page: PageForEffects,
   labels: Pick<SiteLabels, "skipIntro">,
 ): SiteEffectsHead | undefined {
-  const settings: SiteEffectSettings = isHomePage(page)
-    ? saved
-    : { ...saved, intro: { ...saved.intro, style: "none" } };
-  if (!hasSiteEffects(settings)) return undefined;
+  const picture = saved.cursor.picture;
+  const settings: SiteEffectSettings = {
+    ...saved,
+    intro: isHomePage(page) ? saved.intro : { ...saved.intro, style: "none" },
+    // The page loads the cursor picture at the size it's shown, never the full upload.
+    cursor: picture
+      ? {
+          ...saved.cursor,
+          picture: { ...picture, src: cursorPictureAddress(picture.src, picture.size) },
+        }
+      : saved.cursor,
+  };
+  // The look chosen for the cursor's word is plain CSS, wanted even without a site cursor.
+  const wordCss = cursorWordCss(settings.cursor.word);
+  if (!hasSiteEffects(settings)) {
+    return wordCss
+      ? { css: wordCss, bodyStartHtml: "", headScript: "", settings: { ...settings }, modules: [] }
+      : undefined;
+  }
   const transitionOn = settings.pageTransition.style !== "none";
   const introOn = settings.intro.style !== "none";
   const modules = [
-    settings.cursor.style !== "none" ? "cursor" : "",
+    cursorIsOn(settings.cursor) ? "cursor" : "",
     transitionOn ? "transitions" : "",
     introOn ? "intro" : "",
     settings.smoothScroll.strength !== "off" ? "smooth-scroll" : "",
   ].filter(Boolean);
   const logo = page.chrome.logo;
   return {
-    css: [pageTransitionCss(settings), introCss(settings)].filter(Boolean).join("\n"),
+    css: [pageTransitionCss(settings), introCss(settings), wordCss].filter(Boolean).join("\n"),
     bodyStartHtml: introMarkup(
       settings,
       { skip: labels.skipIntro },

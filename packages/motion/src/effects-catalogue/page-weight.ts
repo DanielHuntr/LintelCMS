@@ -1,6 +1,7 @@
 import type { EffectModuleName, SiteEffectSettings } from "../effects/effect-types.js";
 import type { EffectDefinition } from "./effect-definition.js";
 import { effectModuleBytes } from "./module-sizes.js";
+import { cursorIsOn } from "../effects/kit/cursor-look.js";
 
 /**
  * What a page's effects cost, for the builder's meter ("3 effects, adds 14 kB") and its
@@ -33,7 +34,7 @@ export function measurePageWeight(
   for (const effect of effects) {
     if (effect.kind === "behaviour" && effect.module !== "custom") modules.add(effect.module);
   }
-  if (site?.cursor.style && site.cursor.style !== "none") modules.add("cursor");
+  if (cursorIsOn(site?.cursor)) modules.add("cursor");
   if (site?.pageTransition.style && site.pageTransition.style !== "none")
     modules.add("transitions");
   if (site?.intro.style && site.intro.style !== "none") modules.add("intro");

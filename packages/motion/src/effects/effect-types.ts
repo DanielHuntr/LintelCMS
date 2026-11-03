@@ -47,12 +47,44 @@ export interface PageTransitionSettings {
 }
 
 export interface CursorSettings {
-  style: "none" | "dot" | "ring" | "ring-and-dot" | "blend";
+  /** "picture" is the site's own picture, from the media library. */
+  style: "none" | "dot" | "ring" | "ring-and-dot" | "blend" | "picture";
   trail: "none" | "dots" | "line" | "comet";
   /** "text" or "brand" follow the site's theme (light and dark); otherwise a hex colour. */
   colour: string;
   /** Pixels across. */
   size: number;
+  /** How the word an element gives the cursor ("View") looks. Older settings have none. */
+  word?: CursorWordLook;
+  /** The picture used when `style` is "picture". Older settings have none. */
+  picture?: CursorPicture;
+}
+
+/**
+ * The colour of the cursor's word: "auto" (the cursor's colour, or the theme's text colour
+ * without a custom cursor), a theme colour by name ("brand", "text"...) or a hex colour.
+ */
+export type CursorWordColour = string;
+
+export interface CursorWordLook {
+  background: CursorWordColour;
+  /** The letters; "auto" picks one that reads on the background. */
+  colour: CursorWordColour;
+  size: "small" | "medium" | "large";
+  shape: "pill" | "square" | "circle";
+}
+
+export interface CursorPicture {
+  /** The media library picture, or empty when none is chosen. */
+  assetId: string;
+  /** Its address (the original file); the page asks for a copy at the cursor's size. */
+  src: string;
+  /** Pixels across. */
+  size: number;
+  /** Where the click lands: the middle, or the top-left corner like an arrow. */
+  point: "centre" | "top-left";
+  /** The file's size in bytes, for the "this is large" note; 0 when unknown. */
+  bytes: number;
 }
 
 export interface IntroSettings {

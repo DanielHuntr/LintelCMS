@@ -808,6 +808,8 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-074   | P3       | Fixed  | Create asks "What would you like to make?" with one choice, Pages                                                              |
 | LINTEL-UX-075   | P3       | Fixed  | Users says "It's just you so far" while an invitation is waiting                                                               |
 | LINTEL-UX-076   | P3       | Fixed  | Style chips ignore the real look: a 600 button shows Weight Custom, a 1fr 1fr grid no Columns chip, a 17px button no size      |
+| LINTEL-UX-077   | P2       | Fixed  | The pointer can't be designed: the word has one look, no own cursor picture, few per-element choices                           |
+| LINTEL-UX-079   | P2       | Fixed  | The site cursor, its word and hover pictures are hidden behind the open phone menu drawer                                      |
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 

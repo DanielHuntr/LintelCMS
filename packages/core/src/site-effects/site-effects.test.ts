@@ -159,6 +159,43 @@ describe("site-wide effects for one page", () => {
     expect(englishLabels.skipIntro).toBe("Skip intro");
   });
 
+  it("write the cursor word's look as CSS, even without a custom cursor", () => {
+    const head = siteEffectsHead(
+      {
+        ...defaultSiteEffectSettings,
+        cursor: {
+          ...defaultSiteEffectSettings.cursor,
+          word: { ...defaultSiteEffectSettings.cursor.word, shape: "circle" },
+        },
+      },
+      { path: "/about", chrome },
+      englishLabels,
+    );
+    expect(head?.css).toContain("--lintel-cursor-word-radius:50%");
+    expect(head?.modules).toEqual([]);
+  });
+
+  it("load the cursor picture at the size it's shown, and only once there is one", () => {
+    const withPicture = (src: string) => ({
+      ...defaultSiteEffectSettings,
+      cursor: {
+        ...defaultSiteEffectSettings.cursor,
+        style: "picture" as const,
+        picture: { assetId: "a1", src, size: 40, point: "top-left" as const, bytes: 900 },
+      },
+    });
+    const head = siteEffectsHead(
+      withPicture("https://cms.test/api/media/a1/file?v=3"),
+      { path: "/", chrome },
+      englishLabels,
+    );
+    expect(head?.modules).toEqual(["cursor"]);
+    expect(head?.settings).toMatchObject({
+      cursor: { picture: { src: "https://cms.test/api/media/a1/file?v=3&w=80&format=png" } },
+    });
+    expect(siteEffectsHead(withPicture(""), { path: "/", chrome }, englishLabels)).toBeUndefined();
+  });
+
   it("send the intro alone on the home page, and nothing on others", () => {
     const introOnly = {
       ...introAndTransition,

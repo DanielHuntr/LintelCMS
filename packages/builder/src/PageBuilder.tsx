@@ -33,8 +33,13 @@ import {
   unmarkedOwnNavigation,
 } from "@lintel/builder-model";
 import type { MotionSpec } from "@lintel/motion";
-import { SiteMotionSettings, type Translate as MotionText } from "@lintel/motion-editor";
-import { effectRegistry, measurePageWeight, type SiteEffectSettings } from "@lintel/motion/effects";
+import { type Translate as MotionText } from "@lintel/motion-editor";
+import {
+  cursorIsOn,
+  effectRegistry,
+  measurePageWeight,
+  type SiteEffectSettings,
+} from "@lintel/motion/effects";
 import type { EffectPreview } from "./animate-panel/AnimatePanel.js";
 import { collectNodeEffects } from "./render/page-effects.js";
 import {
@@ -104,6 +109,7 @@ import { toggleChange } from "./inline-text/markToggles.js";
 import type { FileUploader } from "./style-panel/design-tools.js";
 import { SiteDesignContext } from "./site-design/site-design-context.js";
 import { themeTokenValues } from "./site-design/theme-token-values.js";
+import { SiteMotionSettingsWithColours } from "./animate-panel/SiteMotionSettingsWithColours.js";
 import { GuidedTour } from "./tour/GuidedTour.js";
 import { useTips } from "./tour/useTips.js";
 import { Tabs } from "./ui/controls.js";
@@ -1054,6 +1060,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                         pickImage={props.pickImage}
                         uploadFile={props.uploadFile}
                         motionText={props.motionText}
+                        siteCursorOn={cursorIsOn(props.siteEffects?.value.cursor)}
                         actions={{
                           ...actions,
                           animate: (nodeId, animations) => {
@@ -1103,10 +1110,11 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                         }
                         siteMotion={
                           props.siteEffects && (
-                            <SiteMotionSettings
+                            <SiteMotionSettingsWithColours
                               value={props.siteEffects.value}
                               onChange={props.siteEffects.onChange}
                               translate={props.motionText}
+                              pickPicture={props.pickImage}
                             />
                           )
                         }

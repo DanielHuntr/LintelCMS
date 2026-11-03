@@ -1,59 +1,111 @@
 import type { NodeEffect } from "@lintel/builder-model";
-import { cursorWordEffectId, hoverPictureEffectId } from "@lintel/motion/effects";
+import {
+  cursorOverEffectId,
+  cursorWordEffectId,
+  hoverPictureEffectId,
+  largeCursorPictureBytes,
+} from "@lintel/motion/effects";
+import { CursorLookFields, type CursorLookValue, type Translate } from "@lintel/motion-editor";
+import { ChevronRight } from "lucide-react";
+import { useId, useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import {
   ChoiceField,
   ImageField,
   type ImagePicker,
   TextInputField,
-  ToggleField,
 } from "../panels/content-fields.js";
+import { useCursorColourSwatches } from "./cursor-colours.js";
 
 /** The effects these fields set, which the Motion panel's list leaves out. */
 export const pointerFieldEffectIds: ReadonlySet<string> = new Set([
   cursorWordEffectId,
   hoverPictureEffectId,
+  cursorOverEffectId,
 ]);
 
 const readyWords = ["view", "open", "drag", "play", "read"] as const;
+const choices = ["none", "word", "follow", "grow", "picture", "hide", "normal"] as const;
+type PointerChoice = (typeof choices)[number];
+const overModes: ReadonlySet<string> = new Set(["grow", "picture", "hide", "normal"]);
+const pictureSizes = { small: 24, medium: 32, large: 48 } as const;
+type PictureSize = keyof typeof pictureSizes;
+const pictureSizeNames = Object.keys(pictureSizes) as PictureSize[];
 
 interface PointerFieldsProps {
   effects: readonly NodeEffect[];
   onChange: (effects: NodeEffect[]) => void;
   pickImage: ImagePicker | undefined;
+  /** Whether the site has a custom cursor, which growing needs. */
+  siteCursorOn?: boolean;
+  motionText?: Translate;
 }
 
+const readString = (effect: NodeEffect | undefined, name: string): string => {
+  const value = effect?.params[name];
+  return typeof value === "string" ? value : "";
+};
+
 /**
- * Two touches for when a mouse is over the element: a short word the cursor shows ("View",
- * "Drag") and a picture that follows the pointer. Each is one choice; they're saved as the
- * element's `cursor-word` and `hover-picture` effects, so they load only where used.
+ * What the pointer does over the element, as one choice: a short word on the cursor
+ * ("View"), a picture that follows it, or a change to the site's cursor (it grows, becomes
+ * a different picture, hides, or gives way to the normal pointer). Only the chosen
+ * option's fields show. Each is saved as one effect (`cursor-word`, `hover-picture` or
+ * `cursor-over`), so its code loads only where it's used.
  */
-export function PointerFields({ effects, onChange, pickImage }: PointerFieldsProps) {
+export function PointerFields({
+  effects,
+  onChange,
+  pickImage,
+  siteCursorOn = false,
+  motionText,
+}: PointerFieldsProps) {
   const text = useBuilderText();
+  const colours = useCursorColourSwatches();
   const word = effects.find((effect) => effect.effect === cursorWordEffectId);
-  const picture = effects.find((effect) => effect.effect === hoverPictureEffectId);
-  const wordText = typeof word?.params.text === "string" ? word.params.text : "";
-  const pictureSrc = typeof picture?.params.src === "string" ? picture.params.src : "";
-  const pictureAssetId =
-    typeof picture?.params.assetId === "string" && picture.params.assetId !== ""
-      ? picture.params.assetId
-      : null;
+  const follow = effects.find((effect) => effect.effect === hoverPictureEffectId);
+  const over = effects.find((effect) => effect.effect === cursorOverEffectId);
+  const overMode = readString(over, "mode");
+  // Older pages could have a word and a following picture both; the word shows here.
+  const choice: PointerChoice = word
+    ? "word"
+    : follow
+      ? "follow"
+      : over && overModes.has(overMode)
+        ? (overMode as PointerChoice)
+        : "none";
+  const wordText = readString(word, "text");
+  const followAssetId = readString(follow, "assetId") || null;
   const readyWord = readyWords.find(
     (ready) => text(`pageBuilder.animate.pointer.word.${ready}`) === wordText,
   );
-  const wordChoice = !word ? "none" : (readyWord ?? "own");
+  const wordChoice = readyWord ?? "own";
 
-  const replace = (id: string, next: NodeEffect | null) => {
-    const others = effects.filter((effect) => effect.effect !== id);
-    onChange(next ? [...others, next] : others);
+  const others = effects.filter((effect) => !pointerFieldEffectIds.has(effect.effect));
+  const setOnly = (next: NodeEffect | null) => onChange(next ? [...others, next] : others);
+  const update = (id: string, params: NodeEffect["params"]) =>
+    onChange([...effects.filter((effect) => effect.effect !== id), { effect: id, params }]);
+
+  const choose = (next: PointerChoice) => {
+    if (next === "none") setOnly(null);
+    else if (next === "word")
+      setOnly({
+        effect: cursorWordEffectId,
+        params: { text: text("pageBuilder.animate.pointer.word.view") },
+      });
+    else if (next === "follow")
+      setOnly({ effect: hoverPictureEffectId, params: { src: "", size: "medium" } });
+    else if (next === "picture")
+      setOnly({
+        effect: cursorOverEffectId,
+        params: { mode: "picture", src: "", size: 32, point: "centre", bytes: 0 },
+      });
+    else setOnly({ effect: cursorOverEffectId, params: { mode: next } });
   };
+
   const setWord = (value: string) =>
-    replace(
-      cursorWordEffectId,
-      value === "" && wordChoice !== "own"
-        ? null
-        : { effect: cursorWordEffectId, params: { text: value.slice(0, 16) } },
-    );
+    update(cursorWordEffectId, { ...word?.params, text: value.slice(0, 16) });
+  const overBytes = typeof over?.params.bytes === "number" ? over.params.bytes : 0;
 
   return (
     <section
@@ -64,58 +116,174 @@ export function PointerFields({ effects, onChange, pickImage }: PointerFieldsPro
         {text("pageBuilder.animate.pointer.title")}
       </h3>
       <ChoiceField
-        label={text("pageBuilder.animate.pointer.word")}
-        value={wordChoice}
-        choices={(["none", ...readyWords, "own"] as const).map((choice) => ({
-          value: choice,
-          label: text(`pageBuilder.animate.pointer.word.${choice}`),
+        label={text("pageBuilder.animate.pointer.choice")}
+        value={choice}
+        choices={choices.map((each) => ({
+          value: each,
+          label: text(`pageBuilder.animate.pointer.choice.${each}`),
         }))}
-        onChange={(choice) => {
-          if (choice === "none") replace(cursorWordEffectId, null);
-          else if (choice === "own")
-            replace(cursorWordEffectId, { effect: cursorWordEffectId, params: { text: "" } });
-          else
-            setWord(
-              text(`pageBuilder.animate.pointer.word.${choice as (typeof readyWords)[number]}`),
-            );
-        }}
+        onChange={(next) => choose(next as PointerChoice)}
       />
-      {wordChoice === "own" && (
-        <TextInputField
-          label={text("pageBuilder.animate.pointer.ownWord")}
-          value={wordText}
-          onChange={setWord}
-        />
+
+      {choice === "word" && word && (
+        <>
+          <ChoiceField
+            label={text("pageBuilder.animate.pointer.word")}
+            value={wordChoice}
+            choices={([...readyWords, "own"] as const).map((each) => ({
+              value: each,
+              label: text(`pageBuilder.animate.pointer.word.${each}`),
+            }))}
+            onChange={(next) =>
+              setWord(
+                next === "own"
+                  ? ""
+                  : text(`pageBuilder.animate.pointer.word.${next as (typeof readyWords)[number]}`),
+              )
+            }
+          />
+          {wordChoice === "own" && (
+            <TextInputField
+              label={text("pageBuilder.animate.pointer.ownWord")}
+              value={wordText}
+              onChange={setWord}
+            />
+          )}
+          <WordLook
+            value={{
+              background: readString(word, "background"),
+              colour: readString(word, "colour"),
+              size: readString(word, "size"),
+              shape: readString(word, "shape"),
+            }}
+            colours={colours}
+            motionText={motionText}
+            onChange={(look) => update(cursorWordEffectId, { ...word.params, ...look })}
+          />
+        </>
       )}
-      <ToggleField
-        label={text("pageBuilder.animate.pointer.picture")}
-        value={picture !== undefined}
-        onChange={(on) =>
-          replace(
-            hoverPictureEffectId,
-            on ? { effect: hoverPictureEffectId, params: { src: "", size: "medium" } } : null,
-          )
-        }
-      />
-      {picture && (
+
+      {choice === "follow" && follow && (
         <ImageField
           label={text("pageBuilder.animate.pointer.pictureField")}
-          value={{ src: pictureSrc, alt: "", assetId: pictureAssetId }}
+          value={{ src: readString(follow, "src"), alt: "", assetId: followAssetId }}
           pickImage={pickImage}
           onChange={(picked) =>
-            replace(hoverPictureEffectId, {
-              effect: hoverPictureEffectId,
-              // The picture's id too, so the website asks for a smaller copy of it.
-              params: { ...picture.params, src: picked.src, assetId: picked.assetId ?? "" },
+            // The picture's id too, so the website asks for a smaller copy of it.
+            update(hoverPictureEffectId, {
+              ...follow.params,
+              src: picked.src,
+              assetId: picked.assetId ?? "",
             })
           }
         />
       )}
-      {(word || picture) && (
+
+      {choice === "picture" && over && (
+        <>
+          <ImageField
+            label={text("pageBuilder.animate.pointer.cursorPicture")}
+            value={{ src: readString(over, "src"), alt: "", assetId: null }}
+            pickImage={pickImage}
+            onChange={(picked) =>
+              update(cursorOverEffectId, {
+                ...over.params,
+                src: picked.src,
+                bytes: picked.bytes ?? 0,
+              })
+            }
+          />
+          {overBytes > largeCursorPictureBytes && (
+            <p role="status" className="text-caption text-warning">
+              {text("pageBuilder.animate.pointer.pictureLarge", {
+                size: `${Math.round(overBytes / 1024)} kB`,
+              })}
+            </p>
+          )}
+          <ChoiceField
+            label={text("pageBuilder.animate.pointer.pictureSize")}
+            value={
+              pictureSizeNames.find((size) => pictureSizes[size] === over.params.size) ?? "medium"
+            }
+            choices={pictureSizeNames.map((size) => ({
+              value: size,
+              label: text(`pageBuilder.animate.pointer.pictureSize.${size}`),
+            }))}
+            onChange={(size) =>
+              update(cursorOverEffectId, {
+                ...over.params,
+                size: pictureSizes[size as PictureSize],
+              })
+            }
+          />
+          <ChoiceField
+            label={text("pageBuilder.animate.pointer.point")}
+            value={readString(over, "point") || "centre"}
+            choices={(["centre", "top-left"] as const).map((point) => ({
+              value: point,
+              label: text(`pageBuilder.animate.pointer.point.${point}`),
+            }))}
+            onChange={(point) => update(cursorOverEffectId, { ...over.params, point })}
+          />
+        </>
+      )}
+
+      {choice === "grow" && !siteCursorOn && (
+        <p className="text-caption text-label-secondary">
+          {text("pageBuilder.animate.pointer.needsSiteCursor")}
+        </p>
+      )}
+
+      {choice !== "none" && (
         <p className="text-caption text-label-tertiary">
           {text("pageBuilder.animate.pointer.note")}
         </p>
       )}
     </section>
+  );
+}
+
+/** "Change its look", closed until wanted (or open when the word already has its own look). */
+function WordLook({
+  value,
+  colours,
+  motionText,
+  onChange,
+}: {
+  value: CursorLookValue;
+  colours: ReturnType<typeof useCursorColourSwatches>;
+  motionText: Translate | undefined;
+  onChange: (value: CursorLookValue) => void;
+}) {
+  const text = useBuilderText();
+  const contentId = useId();
+  const [open, setOpen] = useState(() => Object.values(value).some((part) => part !== ""));
+  return (
+    <div className="flex flex-col gap-2">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={contentId}
+        onClick={() => setOpen(!open)}
+        className="-mx-1 flex items-center gap-1 self-start rounded-control px-1 text-footnote font-medium text-accent focus-visible:focus-ring"
+      >
+        <ChevronRight
+          aria-hidden="true"
+          className={`size-3.5 motion-safe:transition-transform ${open ? "rotate-90" : ""}`}
+        />
+        {text("pageBuilder.animate.pointer.changeLook")}
+      </button>
+      <div id={contentId} hidden={!open}>
+        {open && (
+          <CursorLookFields
+            blank=""
+            value={value}
+            colours={colours}
+            translate={motionText}
+            onChange={onChange}
+          />
+        )}
+      </div>
+    </div>
   );
 }

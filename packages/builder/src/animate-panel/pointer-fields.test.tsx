@@ -3,6 +3,7 @@ import {
   createEmptyPage,
   createNode,
   findNode,
+  type NodeEffect,
   type PageDocument,
   standardCatalogue,
 } from "@lintel/builder-model";
@@ -11,8 +12,9 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { PageBuilder } from "../PageBuilder.js";
 import { createMemoryPreferenceStore } from "../preferences/builder-preferences.js";
+import type { ImagePicker } from "../panels/content-fields.js";
 
-function cardPage(): PageDocument {
+function cardPage(effects: NodeEffect[] = [{ effect: "magnetic-pull", params: {} }]): PageDocument {
   const page = createEmptyPage();
   const section = createNode(
     {
@@ -23,7 +25,7 @@ function cardPage(): PageDocument {
           type: "heading",
           name: "Project",
           props: { text: "Harbour house", level: 2 },
-          effects: [{ effect: "magnetic-pull", params: {} }],
+          effects,
         },
       ],
     },
@@ -33,12 +35,15 @@ function cardPage(): PageDocument {
   return { ...page, root: { ...page.root, children: [section] } };
 }
 
-function renderBuilder() {
+function renderBuilder(
+  pick: ImagePicker = async () => ({ src: "/media/harbour.jpg", alt: "", assetId: "a1" }),
+  effects?: NodeEffect[],
+) {
   const onChange = vi.fn<(document: PageDocument) => void>();
-  const pickImage = vi.fn(async () => ({ src: "/media/harbour.jpg", alt: "", assetId: "a1" }));
+  const pickImage = vi.fn(pick);
   render(
     <PageBuilder
-      initialDocument={cardPage()}
+      initialDocument={cardPage(effects)}
       onChange={onChange}
       title="Work"
       canEditCode={false}
@@ -52,53 +57,120 @@ function renderBuilder() {
 }
 
 describe("when the pointer is over an element", () => {
-  it("sets a word for the cursor and a picture shown on hover, each with one choice", async () => {
-    const user = userEvent.setup();
-    const { project } = renderBuilder();
+  const openFields = async (user: ReturnType<typeof userEvent.setup>) => {
     await user.click(within(screen.getByRole("tree")).getByRole("treeitem", { name: "Project" }));
     await user.click(screen.getByRole("tab", { name: "Animate" }));
-    const fields = screen.getByRole("region", { name: "When the pointer is over it" });
+    return screen.getByRole("region", { name: "When the pointer is over it" });
+  };
 
-    await user.selectOptions(
-      within(fields).getByRole("combobox", { name: "Word on the cursor" }),
-      "view",
-    );
+  it("is one choice, showing only the chosen option's fields", async () => {
+    const user = userEvent.setup();
+    const { project } = renderBuilder();
+    const fields = await openFields(user);
+    const choice = within(fields).getByRole("combobox", { name: "What happens" });
+    expect(choice).toHaveValue("none");
+    expect(within(fields).queryByRole("combobox", { name: "Word" })).toBeNull();
+
+    await user.selectOptions(choice, "word");
     expect(project()?.effects).toEqual([
       { effect: "magnetic-pull", params: {} },
       { effect: "cursor-word", params: { text: "View" } },
     ]);
-
-    // The shared switch control, not a native checkbox (LINTEL-A11Y-038).
-    const pictureSwitch = within(fields).getByRole("switch", {
-      name: "Show a picture when hovered",
-    });
-    expect(pictureSwitch.tagName).toBe("BUTTON");
-    expect(pictureSwitch).toHaveAttribute("aria-checked", "false");
-    await user.click(pictureSwitch);
-    expect(pictureSwitch).toHaveAttribute("aria-checked", "true");
-    await user.click(within(fields).getByRole("button", { name: "Choose a picture" }));
-    expect(project()?.effects?.at(-1)).toEqual({
-      effect: "hover-picture",
-      params: { src: "/media/harbour.jpg", assetId: "a1", size: "medium" },
-    });
-
-    // They stay out of the Motion panel's own list, which still shows the magnetic pull.
-    expect(screen.queryByText("Word on the cursor", { selector: "button *" })).toBeNull();
-
-    await user.selectOptions(
-      within(fields).getByRole("combobox", { name: "Word on the cursor" }),
-      "own",
-    );
+    await user.selectOptions(within(fields).getByRole("combobox", { name: "Word" }), "own");
     await user.type(within(fields).getByRole("textbox", { name: "Your word" }), "Visit");
-    expect(project()?.effects?.find((effect) => effect.effect === "cursor-word")?.params.text).toBe(
-      "Visit",
-    );
+    expect(project()?.effects?.at(-1)?.params.text).toBe("Visit");
 
-    await user.click(within(fields).getByRole("switch", { name: "Show a picture when hovered" }));
-    await user.selectOptions(
-      within(fields).getByRole("combobox", { name: "Word on the cursor" }),
-      "none",
-    );
+    await user.selectOptions(choice, "follow");
+    expect(within(fields).queryByRole("combobox", { name: "Word" })).toBeNull();
+    await user.click(within(fields).getByRole("button", { name: "Choose a picture" }));
+    expect(project()?.effects).toEqual([
+      { effect: "magnetic-pull", params: {} },
+      { effect: "hover-picture", params: { src: "/media/harbour.jpg", size: "medium" } },
+    ]);
+
+    for (const mode of ["grow", "hide", "normal"]) {
+      await user.selectOptions(choice, mode);
+      expect(project()?.effects).toEqual([
+        { effect: "magnetic-pull", params: {} },
+        { effect: "cursor-over", params: { mode } },
+      ]);
+    }
+    // Growing needs a custom cursor for the site; this one has none, and says so.
+    await user.selectOptions(choice, "grow");
+    expect(within(fields).getByText(/Shows once the site has a custom cursor/)).toBeInTheDocument();
+
+    await user.selectOptions(choice, "none");
     expect(project()?.effects).toEqual([{ effect: "magnetic-pull", params: {} }]);
+    // They stay out of the Motion panel's own list.
+    expect(screen.queryByText("A word on the cursor", { selector: "button *" })).toBeNull();
+  });
+
+  it("changes the cursor to a picture, with its size and point, warning when it's large", async () => {
+    const user = userEvent.setup();
+    const { project } = renderBuilder(async () => ({
+      src: "/media/arrow/file",
+      alt: "",
+      assetId: "arrow",
+      bytes: 100 * 1024,
+    }));
+    const fields = await openFields(user);
+    await user.selectOptions(
+      within(fields).getByRole("combobox", { name: "What happens" }),
+      "picture",
+    );
+    await user.click(within(fields).getByRole("button", { name: "Choose a picture" }));
+    expect(within(fields).getByText(/This picture is 100 kB/)).toBeInTheDocument();
+    await user.selectOptions(within(fields).getByRole("combobox", { name: "Size" }), "large");
+    await user.selectOptions(
+      within(fields).getByRole("combobox", { name: "Where it points" }),
+      "top-left",
+    );
+    expect(project()?.effects?.at(-1)).toEqual({
+      effect: "cursor-over",
+      params: {
+        mode: "picture",
+        src: "/media/arrow/file",
+        size: 48,
+        point: "top-left",
+        bytes: 100 * 1024,
+      },
+    });
+  });
+
+  it("gives a word its own look, folded away until asked for", async () => {
+    const user = userEvent.setup();
+    const { project } = renderBuilder();
+    const fields = await openFields(user);
+    await user.selectOptions(
+      within(fields).getByRole("combobox", { name: "What happens" }),
+      "word",
+    );
+    const changeLook = within(fields).getByRole("button", { name: "Change its look" });
+    expect(changeLook).toHaveAttribute("aria-expanded", "false");
+    expect(within(fields).queryByRole("radiogroup", { name: "Shape" })).toBeNull();
+    await user.click(changeLook);
+    await user.click(within(fields).getByRole("radio", { name: "Pill" }));
+    const background = within(fields).getByRole("group", { name: /Background/ });
+    await user.click(within(background).getByRole("button", { name: "Brand" }));
+    expect(project()?.effects?.at(-1)).toEqual({
+      effect: "cursor-word",
+      params: {
+        text: "View",
+        background: "var(--lintel-color-brand)",
+        colour: "",
+        size: "",
+        shape: "pill",
+      },
+    });
+  });
+
+  it("reads older pages with a word and a picture both, showing the word", async () => {
+    const user = userEvent.setup();
+    renderBuilder(undefined, [
+      { effect: "cursor-word", params: { text: "View" } },
+      { effect: "hover-picture", params: { src: "/a.jpg", size: "medium" } },
+    ]);
+    const fields = await openFields(user);
+    expect(within(fields).getByRole("combobox", { name: "What happens" })).toHaveValue("word");
   });
 });

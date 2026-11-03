@@ -28,9 +28,15 @@ effect on the page with `measurePageWeight`.
 
 ## When the pointer is over it
 
-Below the Motion panel, `PointerFields` offers two touches as plain fields rather than
-gallery cards: **Word on the cursor** (No word, View, Open, Drag, Play, Read or your own)
-and **Show a picture when hovered** with a picture picker. They are saved as the element's
-`cursor-word` and `hover-picture` effects (`listed: false` in `@lintel/motion/effects`, so
+Below the Motion panel, `PointerFields` offers one choice list, **What happens**: Nothing
+changes, A word on the cursor (View, Open, Drag, Play, Read or your own, with **Change its
+look** folded away), A picture follows it, The cursor grows, The cursor becomes a picture
+(with its size and where it points), The cursor hides, or The normal pointer. Only the
+chosen option's fields show. They are saved as the element's `cursor-word`,
+`hover-picture` or `cursor-over` effects (`listed: false` in `@lintel/motion/effects`, so
 the gallery and the Motion panel's list leave them out), which means a page loads their
-code only when one of its elements uses them. Both are for a mouse or trackpad only.
+code only when one of its elements uses them. All are for a mouse or trackpad only.
+
+`cursor-colours.ts` offers the site's own colours, then the theme's, as swatches for the
+word's look; `SiteMotionSettingsWithColours` passes them to the site-wide settings too. See
+`docs/decisions/0047-designing-the-cursor.md`.
