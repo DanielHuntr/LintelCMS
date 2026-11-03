@@ -28,6 +28,7 @@ untouched; set `SITE_ENABLED=false` when the site is built separately.
 | `/cart`, `/order-confirmation`    | The basket and checkout, and the thank-you page             |
 | `/search?q=`                      | What the Search box finds in published titles and summaries |
 | `/_lintel/illustrations/*.svg`    | The starter sites' illustrations                            |
+| `/blog/feed.xml`                  | The newest posts as RSS, for each dated collection          |
 | anything else                     | A friendly 404                                              |
 
 `/home` and addresses with a trailing slash redirect (301) to their one true address, as
@@ -94,6 +95,14 @@ An entry whose collection has a Liquid template in the project's templates folde
 (`site/templates/<collection>.liquid`), or which chose one in the editor, is drawn with it
 instead (see `src/liquid-templates`). It keeps the same `<head>`, cache and preview.
 
+## Forms
+
+A page's Form section is drawn as a plain HTML form (`site-forms.service.ts`), posting to
+`/_lintel/api/forms/<handle>/submissions`; `/_lintel/forms.js` fetches its anti-spam
+token when the page opens. A site published as files draws exactly the same form, posting
+to the PHP companion instead (see `src/static-site` and `src/bridge`). Without the Forms
+plugin, Form sections are left out.
+
 ## Caching
 
 Finished responses are kept in memory (`rendered-pages-cache.ts`) with an `ETag`, so most
@@ -145,6 +154,8 @@ There is no repository: everything is kept in settings and read through other fe
 | `site-chrome.service.ts`   | The header and footer: site settings and the main menu    |
 | `site-head.service.ts`     | Title, description, canonical and Open Graph              |
 | `site-views.ts`            | Which layout an entry gets                                |
+| `site-forms.service.ts`    | Form sections: the form's questions, and where it posts   |
+| `site-feed.service.ts`     | The RSS feeds                                             |
 | `site-documents.ts`        | Views to HTML responses, with headers                     |
 | `delivered-to-site.ts`     | Delivered values to component props, read carefully       |
 | `designed-pages.ts`        | A page design drawn by the builder's renderer             |

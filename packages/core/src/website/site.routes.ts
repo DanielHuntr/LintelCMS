@@ -20,6 +20,7 @@ import { findSiteForAddress } from "./site-for-address.js";
 import { loadRunningTests, visitTests } from "../experiments/experiment-pages.js";
 import { testsScript } from "../experiments/tests-script.js";
 import { readVisitor } from "../experiments/visitor-assignment.js";
+import { FORM_SCRIPT_PATH, formTokenScript } from "./site-forms.service.js";
 import { readSiteContext, respondToSitePath, type SiteDependencies } from "./site-pages.service.js";
 
 /**
@@ -33,6 +34,7 @@ import { readSiteContext, respondToSitePath, type SiteDependencies } from "./sit
  *   ALL /_lintel/api/shop/*, /forms/*, /analytics/*  the storefront, forms and Visitors APIs (site-api.routes.ts)
  *   GET /_lintel/illustrations/<name>.svg the starter sites' illustrations
  *   GET /_lintel/fonts/<file>.woff2       the fonts that come with Lintel
+ *   GET /_lintel/forms.js                 fetches forms' anti-spam tokens
  *   GET /*                                 a page, a redirect, sitemap.xml, robots.txt or 404
  *
  * `?preview=<token>` on any page shows a draft (see site-preview.service.ts). Each visit is
@@ -109,6 +111,13 @@ export async function siteRoutes(
       .header("access-control-allow-origin", "*")
       .send(font);
   });
+
+  server.get(FORM_SCRIPT_PATH, async (_request, reply) =>
+    reply
+      .type("text/javascript; charset=utf-8")
+      .header("cache-control", "public, max-age=3600")
+      .send(formTokenScript),
+  );
 
   server.get(`${STYLESHEET_FOLDER}/:file`, async (request, reply) => {
     const path = request.url.split("?")[0];

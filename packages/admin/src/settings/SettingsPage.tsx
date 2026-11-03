@@ -6,6 +6,7 @@ import {
   Languages,
   MonitorSmartphone,
   Search,
+  UploadCloud,
 } from "lucide-react";
 import { useState } from "react";
 import { EmptyState } from "../design/EmptyState.js";
@@ -113,6 +114,14 @@ function useSettingsGroups(): SettingsGroup[] {
             label: t("languages.title"),
             description: t("settings.languagesDescription"),
             to: "/settings/languages",
+          }),
+          ...when(canSeeSiteSettings, {
+            key: "publishing",
+            icon: UploadCloud,
+            iconTone: "accent",
+            label: t("publishing.title"),
+            description: t("publishing.settingsDescription"),
+            to: "/settings/publishing",
           }),
         ],
       },

@@ -87,6 +87,7 @@ export const hostingPages = [
   "hosting/choose",
   "hosting/cpanel",
   "hosting/one-command",
+  "hosting/without-node",
   "hosting/vps-docker",
   "hosting/forge",
   "hosting/windows",

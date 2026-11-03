@@ -1,6 +1,8 @@
+#!/usr/bin/env node
 import { pathToFileURL } from "node:url";
 import { runCronCommand } from "./cron-command.js";
 import { runDoctorCommand } from "./doctor-command.js";
+import { PUBLISH_USAGE, runPublishCommand } from "./publish-command.js";
 
 /**
  * `lintel <command>`: the commands people run on a server. In the repository it is
@@ -15,6 +17,7 @@ const USAGE = `Usage: lintel <command>
   cron --print-line     Print the line to paste into your host's Cron Jobs screen
   doctor                Check Lintel's settings and data folder
   doctor --hosting      Also check this server can run Lintel (Node.js, memory, images...)
+${PUBLISH_USAGE}
 `;
 
 export async function runCommandLine(argumentsGiven: readonly string[]): Promise<number> {
@@ -24,6 +27,9 @@ export async function runCommandLine(argumentsGiven: readonly string[]): Promise
       return runCronCommand(rest);
     case "doctor":
       return runDoctorCommand(rest);
+    case "publish":
+    case "export":
+      return runPublishCommand(command, rest);
     case undefined:
     case "help":
     case "--help":

@@ -58,6 +58,7 @@ import { loadSitesForAdmin } from "./sites/loadSitesForAdmin.js";
 import { CurrentSiteProvider } from "./sites/SiteContext.js";
 import { SitesPage } from "./sites/SitesPage.js";
 import { SettingsPage } from "./settings/SettingsPage.js";
+import { PublishingPage } from "./publishing/PublishingPage.js";
 import { PublishedPageView } from "./content/PublishedPageView.js";
 import { FeaturesSettingsPage } from "./features/FeaturesSettingsPage.js";
 import { SignInPage } from "./sign-in/SignInPage.js";
@@ -409,6 +410,14 @@ const siteFontsRoute = createRoute({
 });
 
 /** Build → Features: switching plugins on and off. */
+/** Settings → Publishing: the website as files, to hosting that can't run Lintel. */
+const publishingRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/settings/publishing",
+  component: PublishingPage,
+});
+
+/** Settings → Features: switching plugins on and off. */
 const featuresRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: "/build/features",
@@ -431,6 +440,7 @@ const interfaceLanguageRoute = createRoute({
 const integrationRoutes = [
   siteSettingsRoute,
   siteFontsRoute,
+  publishingRoute,
   apiAccessRoute,
   apiReferenceRoute,
   webhooksRoute,

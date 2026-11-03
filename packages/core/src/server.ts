@@ -74,6 +74,9 @@ import { pluginsRoutes } from "./plugins/plugins.routes.js";
 import { previewRoutes } from "./preview/preview.routes.js";
 import { BackgroundTasks } from "./scheduler/background-tasks.js";
 import { ScheduledJobList } from "./scheduler/scheduled-job-list.js";
+import type { PublishingOptions } from "./publishing/publishing-context.js";
+import { publishingRoutes } from "./publishing/publishing.routes.js";
+import { registerPublishing } from "./publishing/register-publishing.js";
 import { registerScheduledJobs } from "./scheduler/scheduled-jobs.js";
 import { schedulerRoutes } from "./scheduler/scheduler.routes.js";
 import { searchRoutes } from "./search/search.routes.js";
@@ -281,6 +284,8 @@ export interface ServerOptions {
   pageDrafts?: PageDraftsOptions;
   /** How site fonts reach Google Fonts and Adobe Fonts. Defaults to the real services. */
   siteFonts?: SiteFontsOptions;
+  /** Publishing the website as files to other hosting (see src/publishing). */
+  publishing?: PublishingOptions & { automaticDelayMilliseconds?: number };
 }
 
 export interface WebhookOptions {
@@ -459,6 +464,10 @@ export function buildServer(options: ServerOptions) {
     publicApiUrl: server.publicApiUrl,
     usageFinder: media.usageFinder,
   }));
+  registerPublishing(server, {
+    ...options.publishing,
+    runScheduledJobs: options.runScheduledJobs ?? true,
+  });
   server.register(async (api) => registerApiRoutes(api, options, media), { prefix: apiPrefix });
 
   if (options.runScheduledJobs ?? true) {
@@ -536,6 +545,7 @@ function registerApiRoutes(
   server.register(siteFontsRoutes);
   server.register(pagesRoutes);
   server.register(starterSitesRoutes);
+  server.register(publishingRoutes);
   registerContentModelSyncRoutes(server);
   registerFieldSnippetsSync(server);
   server.register(mediaRoutes, media);

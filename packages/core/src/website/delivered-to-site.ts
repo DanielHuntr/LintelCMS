@@ -129,6 +129,10 @@ function readBlock(id: string, type: unknown, data: Data): SiteBlock | null {
       };
     case "faq":
       return { type, id, question: readText(data.question), answer: readHtml(data.answer) };
+    case "form": {
+      const handle = readText(data.form);
+      return handle ? { type, id, heading: readText(data.heading), handle, form: null } : null;
+    }
     default:
       return null;
   }
