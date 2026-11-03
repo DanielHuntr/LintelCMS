@@ -71,3 +71,10 @@ for cPanel's "Run JS script" button (`check`, `doctor`, `cron`, `cron-line`).
 `hosting-package.e2e.test.ts` builds the package, installs it with plain npm in a
 temporary folder and starts it; it runs with `LINTEL_HOSTING_E2E=1 pnpm test` after
 `pnpm build`.
+
+## Deploy recipes
+
+For hosting that isn't a control panel, the repository root has `render.yaml`, `railway.json`
+and `fly.toml`, and `deploy/digitalocean/user-data.sh` starts the VPS installer on a new droplet.
+All build the one `Dockerfile`. `deploy-recipes.test.ts` checks they agree with it; the
+reasoning is in docs/decisions/0062-deploy-recipes-and-checking-a-server.md.

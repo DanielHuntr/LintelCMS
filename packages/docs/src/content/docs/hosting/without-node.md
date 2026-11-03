@@ -15,18 +15,35 @@ hosting you already have. Visitors see an ordinary, fast website; you keep editi
 
 ## What you get, and what you don't
 
-| Feature                                  | Lintel running live | Published as files                                    |
-| ---------------------------------------- | ------------------- | ----------------------------------------------------- |
-| Pages, blog posts, menus, pictures       | Yes                 | Yes, looking exactly the same                         |
-| Blog lists, categories, tags, RSS        | Yes                 | Yes                                                   |
-| Sitemap, robots.txt, redirects, 404 page | Yes                 | Yes                                                   |
-| Search                                   | Yes                 | Yes, built into the site                              |
-| Forms                                    | Yes                 | Yes, through a small PHP file (or straight to Lintel) |
-| Shop: product pages                      | Yes                 | Yes                                                   |
-| Shop: basket and checkout                | Yes                 | Yes, through the same PHP file, with Stripe or Mollie |
-| Changes show straight away               | Yes                 | After you publish (or automatically, a minute later)  |
-| Live preview of drafts                   | Yes                 | In Lintel's admin, as always                          |
-| Member logins and members-only pages     | Yes                 | **No**: they need Lintel running live                 |
+| Feature                                        | Lintel running live | Published as files                                    |
+| ---------------------------------------------- | ------------------- | ----------------------------------------------------- |
+| Pages, blog posts, menus, pictures             | Yes                 | Yes, looking exactly the same                         |
+| Blog lists, categories, tags, RSS              | Yes                 | Yes                                                   |
+| Sitemap, robots.txt, redirects, 404 page       | Yes                 | Yes                                                   |
+| Search                                         | Yes                 | Yes, built into the site                              |
+| Navigation, footer, site styles, fonts         | Yes                 | Yes                                                   |
+| Animations, effects, sliders, pop-ups          | Yes                 | Yes                                                   |
+| Cookie notice                                  | Yes                 | Yes                                                   |
+| Forms                                          | Yes                 | Yes, through a small PHP file (or straight to Lintel) |
+| File upload questions in forms                 | Yes                 | Only when forms go straight to Lintel                 |
+| Shop: product pages                            | Yes                 | Yes                                                   |
+| Shop: basket and checkout                      | Yes                 | Yes, through the same PHP file, with Stripe or Mollie |
+| Shop buttons and baskets in page designs       | Yes                 | **No**: visitors use the published shop pages         |
+| Sorting, and further pages of lists in designs | Yes                 | **No**: visitors see the first page                   |
+| Visitor counts (Visitors)                      | Yes                 | **No**: files can't count visits                      |
+| A/B tests                                      | Yes                 | **No**: everyone sees the original page               |
+| Changes show straight away                     | Yes                 | After you publish (or automatically, a minute later)  |
+| Live preview of drafts                         | Yes                 | In Lintel's admin, as always                          |
+| Member logins and members-only pages           | Yes                 | **No**: they need Lintel running live                 |
+
+Those need something to answer each visitor, and a folder of files can't. A visitor count
+needs somewhere to send each visit, and an A/B test needs someone to pick a version for each
+visitor. If you need them, run Lintel live instead: [Railway](/hosting/railway/),
+[Render](/hosting/render/), [Fly.io](/hosting/fly/) and a
+[DigitalOcean droplet](/hosting/digitalocean/) each take about ten minutes.
+
+If you have several sites, each is published on its own: choose the site when you add a place
+to publish to.
 
 Lintel's admin tells you the same thing for each place you publish to, under **What works on
 this hosting**.

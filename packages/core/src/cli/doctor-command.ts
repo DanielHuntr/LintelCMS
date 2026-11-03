@@ -9,6 +9,7 @@ import {
 } from "../production/data-folder.js";
 import { lintelPaths } from "../startup.js";
 import {
+  APP_FOLDER,
   checkDatabaseAddress,
   summarise,
   withDatabaseCheck,
@@ -54,7 +55,12 @@ export async function runDoctorCommand(
   if (options.includes("--hosting")) {
     const checker = findHostingChecker(root);
     // The folders this copy of Lintel really uses, rather than the hosting package's.
-    const found = await runHostingChecks(checker, root, dataFolder ? [dataFolder] : undefined);
+    const found = await runHostingChecks(
+      checker,
+      // Where sharp is really installed: in the Docker image that isn't the repository root.
+      APP_FOLDER,
+      dataFolder ? [dataFolder] : undefined,
+    );
     const report = databaseUrl
       ? summarise(
           withDatabaseCheck(found.checks, await checkDatabaseAddress(databaseUrl), "postgres"),

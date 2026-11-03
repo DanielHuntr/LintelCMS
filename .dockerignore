@@ -13,3 +13,5 @@
 deploy/.env
 *.log
 .DS_Store
+# Screenshots and records of the QA passes: not needed to build or run Lintel.
+docs/qa

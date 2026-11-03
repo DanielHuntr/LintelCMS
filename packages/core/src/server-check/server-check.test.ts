@@ -59,7 +59,6 @@ describe("checking this server", () => {
     expect(report.checks.map((check) => check.name)).toEqual([
       "Node.js version",
       "Memory",
-      "Built-in database",
       "Database",
       "Saving files",
     ]);

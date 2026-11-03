@@ -19,7 +19,7 @@ import type { Database, DatabaseKind } from "../database/client.js";
  */
 
 /** Where `sharp` and Lintel's own packages are installed: the core package's folder. */
-const APP_FOLDER = fileURLToPath(new URL("../../", import.meta.url));
+export const APP_FOLDER = fileURLToPath(new URL("../../", import.meta.url));
 
 /** The oldest Postgres Lintel is tested with. */
 export const MINIMUM_POSTGRES_MAJOR = 14;
@@ -107,7 +107,10 @@ function unreachable(error: unknown): HostingCheck {
   };
 }
 
-/** Puts the database check in place of the built-in database's, when Postgres is used. */
+/**
+ * One Database row: it replaces the "could the built-in database run here" row, which only
+ * stays when the built-in database is in use and that row has something to say.
+ */
 export function withDatabaseCheck(
   checks: readonly HostingCheck[],
   database: HostingCheck,
@@ -115,9 +118,9 @@ export function withDatabaseCheck(
 ): HostingCheck[] {
   return checks.flatMap((check) =>
     check.name === "Built-in database"
-      ? kind === "postgres"
-        ? [database]
-        : [check, database]
+      ? kind === "built-in" && check.status !== "pass"
+        ? [check, database]
+        : [database]
       : [check],
   );
 }

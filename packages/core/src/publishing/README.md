@@ -7,6 +7,8 @@ already have.
 
 ## Destinations
 
+Each destination publishes one site (`siteId`, the default site when null).
+
 | Kind     | How                                   | Forms                                |
 | -------- | ------------------------------------- | ------------------------------------ |
 | `zip`    | Downloaded, uploaded by hand          | the PHP companion                    |

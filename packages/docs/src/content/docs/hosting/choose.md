@@ -46,6 +46,7 @@ neither changes anything on your hosting. Delete them when you have read the rep
 | A server you manage with Laravel Forge                      | [Deploy with Laravel Forge](/hosting/forge/)                                      |
 | A Windows server                                            | [Run on Windows Server](/hosting/windows/)                                        |
 | Your own VPS                                                | [A VPS in one command](/hosting/one-command/)                                     |
+| A new DigitalOcean droplet                                  | [DigitalOcean](/hosting/digitalocean/)                                            |
 
 cPanel hosting can run Lintel **only when it offers "Setup Node.js App"** (CloudLinux's
 Node.js Selector), under the Software section of cPanel. If you can't find it, ask your

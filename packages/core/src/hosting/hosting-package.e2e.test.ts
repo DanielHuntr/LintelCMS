@@ -32,6 +32,8 @@ describe.skipIf(!enabled)("the hosting package, from zip to a running site", () 
     execFileSync("npm", ["install", "--omit=dev", "--no-audit", "--no-fund"], {
       cwd: appFolder,
       stdio: "inherit",
+      // npm is npm.cmd on Windows, which only a shell can start.
+      shell: process.platform === "win32",
       timeout: 600_000,
     });
   }, 900_000);
@@ -42,7 +44,7 @@ describe.skipIf(!enabled)("the hosting package, from zip to a running site", () 
       await new Promise((resolve) => lintel?.once("exit", resolve));
     }
     await rm(folder, { recursive: true, force: true });
-  });
+  }, 60_000);
 
   it("has a plain package.json npm can install from, and no workspace links", async () => {
     const manifest = JSON.parse(await readFile(join(appFolder, "package.json"), "utf8"));
@@ -124,6 +126,8 @@ describe.skipIf(!enabled)("the hosting package, from zip to a running site", () 
 });
 
 function residentMegabytes(processId: number | undefined): number {
+  // Only Linux has /proc; the figure is only printed, for the hosting guide.
+  if (!existsSync(`/proc/${processId}/status`)) return 0;
   const status = readFileSync(`/proc/${processId}/status`, "utf8");
   const kilobytes = Number(/VmRSS:\s+(\d+)/.exec(status)?.[1] ?? 0);
   return Math.round(kilobytes / 1024);

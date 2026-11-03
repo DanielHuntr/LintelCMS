@@ -95,6 +95,8 @@ export const hostingPages = [
   "hosting/railway",
   "hosting/render",
   "hosting/fly",
+  "hosting/digitalocean",
+  "hosting/check-server",
   "hosting/updating",
   "hosting/environment-variables",
   "hosting/checklist",

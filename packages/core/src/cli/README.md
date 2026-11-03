@@ -22,3 +22,9 @@ the host has paused.
 | `cron-command.ts`    | `cron`, and the cron line                              |
 | `doctor-command.ts`  | `doctor`                                               |
 | `hosting-checker.ts` | Loads `lintel-check.cjs` and describes what it exports |
+
+## check, publish and export
+
+`lintel check` is `doctor --hosting`, which also connects to the Postgres database in
+`DATABASE_URL` (see `src/server-check`). `lintel publish` and `lintel export` publish the website
+as files (`publish-command.ts`, see `src/publishing` and `src/static-site`).
