@@ -73,7 +73,9 @@ import { pagesRoutes } from "./pages/pages.routes.js";
 import { pluginsRoutes } from "./plugins/plugins.routes.js";
 import { previewRoutes } from "./preview/preview.routes.js";
 import { BackgroundTasks } from "./scheduler/background-tasks.js";
+import { ScheduledJobList } from "./scheduler/scheduled-job-list.js";
 import { registerScheduledJobs } from "./scheduler/scheduled-jobs.js";
+import { schedulerRoutes } from "./scheduler/scheduler.routes.js";
 import { searchRoutes } from "./search/search.routes.js";
 import { dashboardRoutes } from "./dashboard/dashboard.routes.js";
 import { generateSetupCode } from "./setup/setup-code.js";
@@ -163,6 +165,8 @@ declare module "fastify" {
     dataTools: DataTools;
     /** Looking for and installing new versions of Lintel (see src/updates). */
     updates: UpdatesRuntime;
+    /** The timed jobs that are running, so a cron request can run them all (see src/scheduler). */
+    scheduledJobs: ScheduledJobList;
   }
 }
 
@@ -235,6 +239,8 @@ export interface ServerOptions {
    * closes. On by default; tests that drive the jobs themselves turn it off.
    */
   runScheduledJobs?: boolean;
+  /** CRON_SECRET, for POST /system/run-scheduled-jobs. Defaults to one kept in the data folder. */
+  cronSecret?: string | undefined;
   /** How images are checked and expanded. Defaults to the media library. */
   assetExists?: AssetExists;
   assetLookup?: AssetLookup;
@@ -329,6 +335,7 @@ export function buildServer(options: ServerOptions) {
     onError: (error) => server.log.error(error, "Sending webhooks failed"),
   });
   server.decorate("webhooks", webhooks);
+  server.decorate("scheduledJobs", new ScheduledJobList());
   const plugins = new PluginCatalogue(pluginRegistry, options.plugins);
   server.decorate("plugins", plugins);
   // Plugins' own tables are brought up to date before the server takes requests.
@@ -505,6 +512,7 @@ function registerApiRoutes(
   server.register(openApiRoutes);
   server.register(siteAddressRoutes);
   server.register(dashboardRoutes);
+  server.register(schedulerRoutes, { cronSecret: options.cronSecret });
   // Every plugin's routes, built in (SEO) and installed, each guarded for being switched on.
   registerPluginRoutes(server, server.plugins);
   // People and account security.

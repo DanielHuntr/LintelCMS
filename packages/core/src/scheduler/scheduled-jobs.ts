@@ -32,52 +32,54 @@ export function registerScheduledJobs(server: FastifyInstance): void {
     } catch (error) {
       server.log.error(error, "Tidying up interrupted backups and imports failed");
     }
-    jobs.push(
-      startRepeatingJob({
-        everyMilliseconds: ONE_MINUTE,
-        run: async () => {
-          const published = await publishDueEntries(server.database);
-          if (published.length > 0) {
-            server.log.info({ entryIds: published }, "Published scheduled entries");
-          }
-          for (const entryId of published) {
-            const entry = await describeEntryForEvent(server.database, entryId);
-            await announceContentEvent(server, { name: "entry.published", entry });
-          }
-        },
-        onError: (error) => server.log.error(error, "Publishing scheduled entries failed"),
-      }),
-      // Retries, and anything queued while no server was sending (see src/webhooks).
-      startRepeatingJob({
-        everyMilliseconds: ONE_MINUTE,
-        run: async () => {
-          await server.webhooks.deliverDue();
-        },
-        onError: (error) => server.log.error(error, "Sending webhooks failed"),
-      }),
-      // Daily or weekly backups, when switched on in Settings → Backups (see src/backups).
-      startRepeatingJob({
-        everyMilliseconds: FIVE_MINUTES,
-        run: async () => {
-          if (await runScheduledBackupIfDue(backupsContextFor(server))) {
-            server.log.info("Made the scheduled backup");
-          }
-        },
-        onError: (error) => server.log.error(error, "Making the scheduled backup failed"),
-      }),
-    );
+    const publishing = startRepeatingJob({
+      everyMilliseconds: ONE_MINUTE,
+      run: async () => {
+        const published = await publishDueEntries(server.database);
+        if (published.length > 0) {
+          server.log.info({ entryIds: published }, "Published scheduled entries");
+        }
+        for (const entryId of published) {
+          const entry = await describeEntryForEvent(server.database, entryId);
+          await announceContentEvent(server, { name: "entry.published", entry });
+        }
+      },
+      onError: (error) => server.log.error(error, "Publishing scheduled entries failed"),
+    });
+    // Retries, and anything queued while no server was sending (see src/webhooks).
+    const webhooks = startRepeatingJob({
+      everyMilliseconds: ONE_MINUTE,
+      run: async () => {
+        await server.webhooks.deliverDue();
+      },
+      onError: (error) => server.log.error(error, "Sending webhooks failed"),
+    });
+    // Daily or weekly backups, when switched on in Settings → Backups (see src/backups).
+    const backups = startRepeatingJob({
+      everyMilliseconds: FIVE_MINUTES,
+      run: async () => {
+        if (await runScheduledBackupIfDue(backupsContextFor(server))) {
+          server.log.info("Made the scheduled backup");
+        }
+      },
+      onError: (error) => server.log.error(error, "Making the scheduled backup failed"),
+    });
+    jobs.push(publishing, webhooks, backups);
+    server.scheduledJobs.add("scheduled-publishing", publishing);
+    server.scheduledJobs.add("webhook-deliveries", webhooks);
+    server.scheduledJobs.add("scheduled-backups", backups);
     // Once a day, unless UPDATE_CHECKS=off (see src/updates). Checked hourly so a restart
     // doesn't push the next check back a day, and doesn't add one either.
     if (server.updates.checksEnabled) {
-      jobs.push(
-        startRepeatingJob({
-          everyMilliseconds: ONE_HOUR,
-          run: async () => {
-            await checkForUpdatesIfDue(updateChecksContextFor(server));
-          },
-          onError: (error) => server.log.error(error, "Looking for Lintel updates failed"),
-        }),
-      );
+      const updateChecks = startRepeatingJob({
+        everyMilliseconds: ONE_HOUR,
+        run: async () => {
+          await checkForUpdatesIfDue(updateChecksContextFor(server));
+        },
+        onError: (error) => server.log.error(error, "Looking for Lintel updates failed"),
+      });
+      jobs.push(updateChecks);
+      server.scheduledJobs.add("update-checks", updateChecks);
     }
   });
 

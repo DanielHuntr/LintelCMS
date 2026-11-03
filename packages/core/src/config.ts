@@ -5,8 +5,10 @@ import { DATABASE_URL_ADVICE } from "./database/database-errors.js";
 import { checkEmailSettings, emailSettings } from "./email/email.config.js";
 import { checkStorageSettings, storageSettings } from "./media/storage.config.js";
 import { updateSettings } from "./updates/updates.config.js";
+import { schedulerSettings } from "./scheduler/scheduler.config.js";
 import {
   checkProductionSettings,
+  DEFAULT_SITE_PORT,
   DEFAULT_TRUST_PROXY,
   parseTrustProxy,
   productionSettings,
@@ -37,10 +39,11 @@ const coreSettingsSchema = z.object({
     (value) => (value === "" ? undefined : value),
     z.string().url().optional(),
   ),
-  // The built-in website (see src/website): its port, its address as visitors reach it
+  // The built-in website (see src/website): its port in development (production serves it
+  // on the one port, beside the admin and the API), its address as visitors reach it
   // (defaults to http://localhost:<SITE_PORT>), and whether to serve it at all. Turn it off
   // when the site is built separately, for example with the Next.js starter.
-  SITE_PORT: z.coerce.number().int().positive().default(3000),
+  SITE_PORT: z.coerce.number().int().positive().default(DEFAULT_SITE_PORT),
   SITE_PUBLIC_URL: z.preprocess(
     (value) => (value === "" ? undefined : value),
     z.string().url().optional(),
@@ -88,6 +91,7 @@ const configSchema = coreSettingsSchema
   .extend(storageSettings)
   .extend(emailSettings)
   .extend(updateSettings)
+  .extend(schedulerSettings)
   .superRefine((config, context) => {
     checkProductionSettings(config, context);
     checkStorageSettings(config, context);

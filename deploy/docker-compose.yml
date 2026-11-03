@@ -75,7 +75,8 @@ services:
       - "443:443"
       - "443:443/udp"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # deploy/install.sh writes its own copy, with the email for certificate notices.
+      - ${LINTEL_CADDYFILE:-./Caddyfile}:/etc/caddy/Caddyfile:ro
       # Caddy's certificates. Keep this volume, or Let's Encrypt may rate-limit new ones.
       - caddy-data:/data
       - caddy-config:/config

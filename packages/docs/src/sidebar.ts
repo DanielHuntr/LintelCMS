@@ -84,7 +84,12 @@ export const whyPages = ["why", "why/whitepaper"] as const;
 export const hostingPages = [
   "hosting",
   "hosting/requirements",
+  "hosting/choose",
+  "hosting/cpanel",
+  "hosting/one-command",
   "hosting/vps-docker",
+  "hosting/forge",
+  "hosting/windows",
   "hosting/railway",
   "hosting/render",
   "hosting/fly",

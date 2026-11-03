@@ -38,27 +38,28 @@ export function registerAnalytics(
   const jobs: RepeatingJob[] = [];
   server.addHook("onReady", async () => {
     let caughtUp = false;
-    jobs.push(
-      startRepeatingJob({
-        everyMilliseconds: FIVE_MINUTES,
-        run: async () => {
-          if (!caughtUp) {
-            await rollUpEveryKeptDay(server.database);
-            caughtUp = true;
-          }
-          await rollUpRecentDays(server.database, new Date());
-        },
-        onError: (error) => server.log.error(error, "Counting the day's visitors failed"),
-      }),
-      startRepeatingJob({
-        everyMilliseconds: ONE_HOUR,
-        run: async () => {
-          const settings = await readAnalyticsSettings(server);
-          await applyRetention(server.database, settings.retentionDays, new Date());
-        },
-        onError: (error) => server.log.error(error, "Deleting old visits failed"),
-      }),
-    );
+    const rollUp = startRepeatingJob({
+      everyMilliseconds: FIVE_MINUTES,
+      run: async () => {
+        if (!caughtUp) {
+          await rollUpEveryKeptDay(server.database);
+          caughtUp = true;
+        }
+        await rollUpRecentDays(server.database, new Date());
+      },
+      onError: (error) => server.log.error(error, "Counting the day's visitors failed"),
+    });
+    const retention = startRepeatingJob({
+      everyMilliseconds: ONE_HOUR,
+      run: async () => {
+        const settings = await readAnalyticsSettings(server);
+        await applyRetention(server.database, settings.retentionDays, new Date());
+      },
+      onError: (error) => server.log.error(error, "Deleting old visits failed"),
+    });
+    jobs.push(rollUp, retention);
+    server.scheduledJobs.add("visitor-counts", rollUp);
+    server.scheduledJobs.add("visit-retention", retention);
   });
   server.addHook("onClose", async () => {
     await Promise.all(jobs.map((job) => job.stop()));

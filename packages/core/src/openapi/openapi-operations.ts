@@ -45,6 +45,7 @@ import {
 import {
   assetIdParamsSchema,
   assetSchema,
+  imageResizingStatusSchema,
   fileTransformQuerySchema,
   listAssetsQuerySchema,
   updateAssetRequestSchema,
@@ -549,6 +550,19 @@ export const openApiOperations: Operation[] = [
     responses: {
       201: { description: "The new asset.", schema: assetSchema },
       200: { description: "The same file was already uploaded; here it is.", schema: assetSchema },
+    },
+  },
+  {
+    method: "get",
+    path: "/media/image-resizing",
+    tag: "Media",
+    summary: "Whether this server can resize images",
+    access: "media:read",
+    responses: {
+      200: {
+        description: "False with a reason when sharp can't load; images are then sent as uploaded.",
+        schema: imageResizingStatusSchema,
+      },
     },
   },
   {

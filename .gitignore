@@ -28,3 +28,5 @@ storage/
 
 # Builds made by scripts/release, attached to GitHub releases by hand
 release-files/
+# The shared-hosting package (pnpm build:hosting)
+dist-hosting/

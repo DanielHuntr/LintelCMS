@@ -46,6 +46,7 @@ const PUBLIC_ROUTES: Record<string, string> = {
   "POST /shop/stripe/webhook": "Stripe's payment events, checked by their signature",
   "POST /shop/paypal/webhook": "PayPal's payment events, checked with PayPal",
   "POST /shop/mollie/webhook": "Mollie's payment events, looked up with Mollie",
+  "POST /system/run-scheduled-jobs": "for the host's cron, needs the cron secret",
 };
 
 const SIGNED_IN_ROUTES = new Set([

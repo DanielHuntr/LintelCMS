@@ -106,6 +106,25 @@ describe("the production server", () => {
     expect(other.body).not.toContain("Irish home");
   });
 
+  it("answers the website, the admin and the API on one listening port", async () => {
+    const app = await start({
+      publicSite: builtInPublicSite,
+      website: { builtInSiteUrl: "https://example.com" },
+    });
+    await app.listen({ port: 0, host: "127.0.0.1" });
+    const origin = `http://127.0.0.1:${app.addresses()[0]?.port}`;
+
+    const website = await fetch(`${origin}/`);
+    expect(await website.text()).toContain("This website has no home page yet");
+    expect(await (await fetch(`${origin}/admin/content`)).text()).toContain("lintel-admin");
+    expect((await (await fetch(`${origin}/api/setup/status`)).json()).needsSetup).toBe(true);
+    expect((await fetch(`${origin}/health`)).status).toBe(200);
+    // Any other address belongs to the website, even ones that look like the API's routes.
+    const notApi = await fetch(`${origin}/setup/status`);
+    expect(notApi.status).toBe(404);
+    expect(notApi.headers.get("content-type")).toContain("text/html");
+  });
+
   it("serves the API under /api, with health checks at the root", async () => {
     const app = await start();
 

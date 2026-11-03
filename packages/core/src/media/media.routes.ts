@@ -6,6 +6,7 @@ import { actorOf } from "../events/event-actor.js";
 import { parseRequest } from "../http/http-errors.js";
 import type { AssetUsageFinder } from "./asset-lookup.js";
 import { contentDisposition } from "./content-disposition.js";
+import { findImageResizingStatus } from "./image-resizing.service.js";
 import { findAssetFile } from "./media-file.service.js";
 import {
   AssetInUseError,
@@ -74,6 +75,7 @@ const RESIZED_IMAGES_PER_MINUTE = 300;
  *
  *   POST   /media           (media:upload)  multipart "file", ?folder= -> 201 Asset (200 if already uploaded)
  *   GET    /media           (media:read)    ?search=&type=image|document&page=&perPage=&folder=&missingAlt=true
+ *   GET    /media/image-resizing (media:read) -> { available, problem }
  *   GET    /media/:id       (media:read)    -> Asset
  *   PATCH  /media/:id       (media:update)  { alt?, credit?, focalPoint?, filename?, folder? } -> Asset
  *   DELETE /media/:id       (media:delete)  -> 204 (to the recycle bin), or 409 ASSET_IN_USE with usedBy
@@ -121,6 +123,10 @@ export async function mediaRoutes(server: FastifyInstance, options: MediaRoutesO
 
   server.get("/media", { preHandler: requirePermission("media:read") }, async (request) =>
     listAssets(context(), parseRequest(listAssetsQuerySchema, request.query)),
+  );
+
+  server.get("/media/image-resizing", { preHandler: requirePermission("media:read") }, async () =>
+    findImageResizingStatus(),
   );
 
   server.get("/media/:id", { preHandler: requirePermission("media:read") }, async (request) =>
