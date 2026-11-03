@@ -5,9 +5,10 @@ import { useNow } from "../content/useNow.js";
 import { Button } from "../design/Button.js";
 import { EmptyState } from "../design/EmptyState.js";
 import { GroupedList } from "../design/GroupedList.js";
+import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
-import { LinkButton } from "../design/LinkButton.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
+import { Page } from "../design/Page.js";
 import { SearchField } from "../design/SearchField.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { t } from "../i18n/strings.js";
@@ -56,39 +57,15 @@ export function UsersPage() {
   );
 
   return (
-    <>
+    // One column, so the title, its button and the lists line up, as in iOS.
+    <Page width="readable">
       <LargeTitle
         title={t("people.title")}
         subtitle={t("people.subtitle")}
-        actions={
-          <>
-            {canSeeSecurityLog && (
-              <LinkButton
-                to="/users/activity"
-                variant="tinted"
-                icon={<ScrollText aria-hidden="true" strokeWidth={2} />}
-              >
-                {t("securityLog.title")}
-              </LinkButton>
-            )}
-            <LinkButton
-              to="/users/roles"
-              variant="tinted"
-              icon={<ShieldHalf aria-hidden="true" strokeWidth={2} />}
-            >
-              {t("roles.title")}
-            </LinkButton>
-            {inviteButton}
-          </>
-        }
+        actions={inviteButton}
       />
-      <div className="flex max-w-3xl flex-col gap-8">
-        <SearchField
-          label={t("people.search")}
-          value={search}
-          onValueChange={setSearch}
-          className="max-w-sm"
-        />
+      <div className="flex flex-col gap-8">
+        <SearchField label={t("people.search")} value={search} onValueChange={setSearch} />
 
         {invitations.data && search === "" && (
           <InvitationList
@@ -118,7 +95,14 @@ export function UsersPage() {
           </div>
         )}
         {people.data && people.data.length > 0 && (
-          <GroupedList header={t("people.listHeader")}>
+          <GroupedList
+            header={t("people.listHeader")}
+            footer={
+              people.data.length === 1 && search === "" && canInvite
+                ? t("people.onlyYou")
+                : undefined
+            }
+          >
             {people.data.map((person) => (
               <PersonRow
                 key={person.id}
@@ -130,8 +114,24 @@ export function UsersPage() {
             ))}
           </GroupedList>
         )}
-        {people.data?.length === 1 && search === "" && canInvite && (
-          <p className="px-4 text-footnote text-label-secondary">{t("people.onlyYou")}</p>
+        {search === "" && (
+          <GroupedList header={t("people.accessHeader")}>
+            <GroupedListRow
+              icon={ShieldHalf}
+              label={t("roles.title")}
+              description={t("people.rolesRow")}
+              to="/users/roles"
+            />
+            {canSeeSecurityLog && (
+              <GroupedListRow
+                icon={ScrollText}
+                iconTone="neutral"
+                label={t("securityLog.title")}
+                description={t("people.securityLogRow")}
+                to="/users/activity"
+              />
+            )}
+          </GroupedList>
         )}
       </div>
 
@@ -153,6 +153,6 @@ export function UsersPage() {
           onClose={() => setSelectedId(null)}
         />
       )}
-    </>
+    </Page>
   );
 }

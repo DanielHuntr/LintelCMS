@@ -23,7 +23,7 @@ export function PersonRow({ person, isYou, now, onSelect }: PersonRowProps) {
       <button
         type="button"
         onClick={onSelect}
-        className="flex w-full items-center gap-3 ps-4 text-start transition-colors duration-150 ease-standard hover:bg-fill/60 focus-visible:focus-ring-inset active:bg-fill"
+        className="flex w-full items-center gap-3 ps-4 text-start transition-colors duration-150 ease-standard hover:bg-fill-strong/75 focus-visible:focus-ring-inset active:bg-fill-strong"
       >
         <Avatar name={person.name} imageUrl={person.avatarUrl} />
         <span className="flex min-h-14 min-w-0 flex-1 items-center gap-3 py-2.5 pe-4 [li+li>*>&]:hairline-top">

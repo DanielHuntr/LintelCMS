@@ -56,7 +56,7 @@ export function RevisionHistory({ entryId, isWorking, onRestore }: RevisionHisto
               return (
                 <li
                   key={revision.id}
-                  className="group flex items-center gap-2 rounded-control px-1 py-1.5 hover:bg-fill/60"
+                  className="group flex items-center gap-2 rounded-control px-1 py-1.5 hover:bg-fill-strong/75"
                 >
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="text-footnote font-medium text-label">

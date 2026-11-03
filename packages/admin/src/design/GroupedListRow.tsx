@@ -89,7 +89,7 @@ export function GroupedListRow({
   const rowClasses = "flex w-full items-center gap-3 ps-4 text-start";
   const interactiveClasses = classNames(
     rowClasses,
-    "transition-colors duration-150 ease-standard hover:bg-fill/60 active:bg-fill",
+    "transition-colors duration-150 ease-standard hover:bg-fill-strong/75 active:bg-fill-strong",
     "focus-visible:focus-ring-inset",
   );
 
