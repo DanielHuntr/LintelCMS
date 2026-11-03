@@ -37,7 +37,8 @@ where the admin expects it.
    delivery API wouldn't, and turned into the plain props of a view: `page`, `post`,
    `postList`, `notFound`, `emptySite` or `message`.
 5. The template draws the view inside the shared document (head, skip link, header, main,
-   footer).
+   footer). An entry whose collection (or own choice) has a
+   [Liquid template](/building/liquid-templates/) is drawn by that instead.
 
 The `<head>` comes from the SEO plugin when it is on: the title template, description,
 social image, `noindex`, a canonical address and `hreflang` links between translations.
@@ -80,6 +81,13 @@ The CSS is plain files in `packages/site-components/src/styles`, using only desi
 A theme is six choices (brand and accent colour, font pairing, corners, spacing, and light,
 dark or automatic) that `themeStylesheet` turns into those `--lintel-*` properties on
 `:root`. Link and accent colours are adjusted until they pass 4.5 to 1 on the background.
+
+## Liquid templates
+
+To write pages as HTML instead of designing them, put Liquid files in a `site/` folder in
+your project: `templates/pages.liquid` draws every page of the `pages` collection, with
+layouts, partials and tags for pictures, menus, forms and the page's design. The `<head>`,
+the cache and preview stay Lintel's. See [Liquid templates](/building/liquid-templates/).
 
 ## Writing a template
 

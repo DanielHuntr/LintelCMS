@@ -48,6 +48,7 @@ export const buildingPages = [
   "building/images",
   "building/authentication",
   "building/rendering",
+  "building/liquid-templates",
   "building/content-model-as-code",
   "building/animation-spec",
   "building/effects-api",
