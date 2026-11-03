@@ -1,7 +1,7 @@
 ---
 title: Effects
 description: Adding effects like magnetic buttons, scrambled headlines and liquid backgrounds, and motion across the whole site.
-since: "1.0"
+since: "1.0.0-rc"
 sidebar:
   label: Effects
 ---

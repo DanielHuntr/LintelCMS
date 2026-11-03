@@ -1,7 +1,7 @@
 ---
 title: Effects API
 description: How the Effects library works, adding effects of your own with defineEffect, and the runtime API for code blocks.
-since: "1.0"
+since: "1.0.0-rc"
 sidebar:
   label: Effects API
 ---

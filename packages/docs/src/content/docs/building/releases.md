@@ -1,7 +1,7 @@
 ---
 title: Releases and the update feed
 description: Publishing a release Lintel's updater accepts, the feed format, and the signing key.
-since: "1.0"
+since: "1.0.0-rc"
 sidebar:
   label: Releases and updates
 ---

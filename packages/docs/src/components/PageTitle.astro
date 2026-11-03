@@ -1,6 +1,6 @@
 ---
 // Starlight's page title, with the Lintel version that introduced the page beside it.
-import { docsVersion } from "../version.ts";
+import { describeSince, describeVersion, docsVersion } from "../version.ts";
 
 const { title, since } = Astro.locals.starlightRoute.entry.data;
 const isNew = since === docsVersion;
@@ -10,8 +10,11 @@ const isNew = since === docsVersion;
   <h1 id="_top">{title}</h1>
   {
     since && (
-      <span class:list={["since", { new: isNew }]} title={`Available since Lintel ${since}`}>
-        {isNew ? `New in ${since}` : `Since ${since}`}
+      <span
+        class:list={["since", { new: isNew }]}
+        title={`Available since Lintel ${describeVersion(since)}`}
+      >
+        {describeSince(since)}
       </span>
     )
   }

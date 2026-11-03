@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { readFrontmatter, slugFromPath } from "./help/help-page.js";
 import { buildingPages, hostingPages, usingPages, whyPages } from "./sidebar.js";
+import { SINCE_PATTERN } from "./version.js";
 
 /**
  * Checks on the docs themselves, so a broken link, a missing screenshot or a page left out
@@ -64,7 +65,7 @@ describe("the docs pages", () => {
 
   it("each say which Lintel version introduced them", () => {
     for (const file of sectionPages) {
-      expect(file.fields.since, file.path).toMatch(/^\d+\.\d+$/);
+      expect(file.fields.since, file.path).toMatch(SINCE_PATTERN);
     }
   });
 

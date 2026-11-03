@@ -1,7 +1,7 @@
 ---
 title: Moving from Webflow
 description: Bringing a Webflow site's CMS collections and pages into Lintel.
-since: "1.0"
+since: "1.0.0-rc"
 sidebar:
   label: Moving from Webflow
 ---
