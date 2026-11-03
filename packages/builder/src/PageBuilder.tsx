@@ -22,6 +22,7 @@ import {
   useState,
 } from "react";
 import { Canvas, type MotionPreview } from "./canvas/Canvas.js";
+import { canvasDropTarget, type CanvasDropTarget } from "./canvas/canvas-drop.js";
 import type { CanvasScriptAddresses, CanvasSite } from "./canvas/canvas-frame-script.js";
 import type {
   ForwardedKey,
@@ -50,6 +51,7 @@ import {
   noDataSources,
 } from "./panels/data-sources.js";
 import { type InsertFocusRequest, InsertPanel } from "./panels/InsertPanel.js";
+import type { InsertItem } from "./panels/insert-library.js";
 import { LayersPanel } from "./panels/LayersPanel.js";
 import { SelectedElementPanel } from "./panels/SelectedElementPanel.js";
 import { type CanvasLook, CanvasLookContext } from "./style-panel/canvas-look.js";
@@ -329,8 +331,45 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     [actions, state.selectedId, state.document, textSelection, text, onSaveNow],
   );
 
+  // Something dragged from Insert, and where it would land on the canvas.
+  const insertDrag = useRef<InsertItem | null>(null);
+  const [canvasDrop, setCanvasDrop] = useState<CanvasDropTarget | null>(null);
+  const canvasDropRef = useRef<CanvasDropTarget | null>(null);
+  const showCanvasDrop = useCallback((target: CanvasDropTarget | null) => {
+    canvasDropRef.current = target;
+    setCanvasDrop((current) =>
+      current?.nodeId === target?.nodeId &&
+      current?.position === target?.position &&
+      current?.across === target?.across
+        ? current
+        : target,
+    );
+  }, []);
+  const insertMarker = useMemo(
+    () =>
+      canvasDrop
+        ? { nodeId: canvasDrop.nodeId, position: canvasDrop.position, across: canvasDrop.across }
+        : null,
+    [canvasDrop],
+  );
+
   const handleFrameMessage = useCallback(
     (message: MessageFromFrame) => {
+      if (message.type === "insertOver") {
+        const dragged = insertDrag.current;
+        showCanvasDrop(
+          dragged
+            ? canvasDropTarget(state.document.root, catalogue, dragged.type, message.chain)
+            : null,
+        );
+      }
+      if (message.type === "insertLeave") showCanvasDrop(null);
+      if (message.type === "insertDrop") {
+        const dragged = insertDrag.current;
+        const target = canvasDropRef.current;
+        if (dragged && target) actions.insert(dragged.key, target.place);
+        showCanvasDrop(null);
+      }
       if (message.type === "select") actions.select(message.nodeId);
       if (message.type === "hover") setHoveredId(message.nodeId);
       if (message.type === "editText") actions.editText(message.nodeId, message.prop, message.text);
@@ -364,7 +403,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
         setEditingMenuFor(message.nodeId);
       }
     },
-    [actions, runShortcut, breakpoint, text],
+    [actions, runShortcut, breakpoint, text, state.document.root, catalogue, showCanvasDrop],
   );
 
   // Pasting while the builder (not a text box) has focus imports what's on the clipboard.
@@ -515,6 +554,10 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                       canEditCode={tools.codeTools}
                       enabledPlugins={props.enabledPlugins}
                       onInsert={(key) => actions.insert(key)}
+                      onDragChange={(item) => {
+                        insertDrag.current = item;
+                        if (!item) showCanvasDrop(null);
+                      }}
                       focusRequest={insertFocusRequest}
                     />
                   )}
@@ -559,6 +602,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                     site={site}
                     scripts={props.frameScripts}
                     motionPreview={motionPreview}
+                    insertMarker={insertMarker}
                     onMessage={handleFrameMessage}
                   />
                 )}

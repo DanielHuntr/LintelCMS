@@ -32,7 +32,7 @@ interface InsertTileProps {
 }
 
 /**
- * One thing to insert: press it to add it, or drag it into Layers. A section is a card with
+ * One thing to insert: press it to add it, or drag it onto the page or into Layers. A section is a card with
  * a sketch of it and what it's for, shown in the list, since that is what beginners choose
  * by. An element is a row whose description is in a hover card (also shown when the tile has
  * keyboard focus). Both have a details popover opened with the ⓘ button, and screen readers

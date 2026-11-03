@@ -39,6 +39,8 @@ interface InsertPanelProps {
   /** Elements that belong to a plugin are only offered while it is on. All, when left out. */
   enabledPlugins?: readonly string[];
   onInsert: (key: InsertKey) => void;
+  /** What is being dragged from here (null when the drag ends), for dropping on the canvas. */
+  onDragChange?: (item: InsertItem | null) => void;
   /**
    * Opens a segment with the search focused, as the empty page's buttons do. A new `count`
    * asks again, even for the same segment.
@@ -71,6 +73,7 @@ export function InsertPanel({
   canEditCode,
   enabledPlugins,
   onInsert,
+  onDragChange,
   focusRequest,
 }: InsertPanelProps) {
   const text = useBuilderText();
@@ -147,9 +150,11 @@ export function InsertPanel({
     event.dataTransfer.setData(insertDragType, item.key);
     event.dataTransfer.setData(`${insertDragType}+${item.type.toLowerCase()}`, "");
     event.dataTransfer.effectAllowed = "copy";
+    onDragChange?.(item);
   };
   const endDrag = (event: DragEvent, item: InsertItem) => {
     if (event.dataTransfer.dropEffect !== "none") remember(item.key);
+    onDragChange?.(null);
   };
 
   const handleSearchKeys = (event: KeyboardEvent<HTMLInputElement>) => {

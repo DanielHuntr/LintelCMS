@@ -12,6 +12,7 @@ import {
   type MessageToFrame,
   type OutlineLabels,
   readFrameMessage,
+  type InsertMarker,
 } from "./canvas-messages.js";
 
 /** An animation to play on the canvas; a new `playId` plays it again. */
@@ -43,6 +44,8 @@ interface CanvasProps {
   /** Where the frame's scripts are served (see `canvasFrameScript`); inline when left out. */
   scripts?: CanvasScriptAddresses;
   motionPreview?: MotionPreview | null;
+  /** Where something dragged from Insert would land, drawn as a line. */
+  insertMarker?: InsertMarker | null;
   onMessage: (message: MessageFromFrame) => void;
 }
 
@@ -63,6 +66,7 @@ export function Canvas({
   site,
   scripts,
   motionPreview = null,
+  insertMarker = null,
   onMessage,
 }: CanvasProps) {
   const text = useBuilderText();
@@ -111,6 +115,10 @@ export function Canvas({
   useEffect(() => {
     if (isReady && revealId) post({ type: "reveal", nodeId: revealId });
   }, [isReady, revealId]);
+
+  useEffect(() => {
+    if (isReady) post({ type: "insertMarker", marker: insertMarker });
+  }, [isReady, insertMarker]);
 
   // After the page is drawn (the render above waits a frame), so the element is there.
   useEffect(() => {

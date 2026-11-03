@@ -46,7 +46,7 @@ export const builderStrings = {
   "pageBuilder.layers.lockedState": "locked",
 
   "pageBuilder.insert.hint":
-    "Press something to add it after what’s selected, or drag it into Layers to put it exactly where you want.",
+    "Press something to add it after what’s selected, or drag it onto the page or into Layers to put it exactly where you want.",
   "pageBuilder.insert.sections": "Ready-made sections",
   "pageBuilder.insert.category.blocks": "Your site’s blocks",
   "pageBuilder.insert.category.layout": "Layout",

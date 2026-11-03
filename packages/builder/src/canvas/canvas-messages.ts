@@ -1,4 +1,6 @@
 import type { MotionSpec } from "@lintel/motion";
+import type { DropPosition } from "../panels/layer-drop.js";
+import type { PointerOver } from "./canvas-drop.js";
 
 /**
  * What the builder and its canvas frame say to each other. The frame is sandboxed without
@@ -25,7 +27,15 @@ export type MessageToFrame =
   | { type: "reveal"; nodeId: string }
   /** Plays an animation once on an element, as a preview; the page itself doesn't change. */
   | { type: "previewMotion"; nodeId: string; spec: MotionSpec }
-  | { type: "stopMotion" };
+  | { type: "stopMotion" }
+  /** Where something dragged from Insert would land: a line, or a box for "inside". */
+  | { type: "insertMarker"; marker: InsertMarker | null };
+
+export interface InsertMarker {
+  nodeId: string;
+  position: DropPosition;
+  across: boolean;
+}
 
 export interface ForwardedKey {
   key: string;
@@ -46,6 +56,14 @@ export type MessageFromFrame =
   | { type: "rotate"; nodeId: string; degrees: number }
   /** An element was dragged or nudged in its free layout, to this place in percent. */
   | { type: "place"; nodeId: string; left: number; top: number }
+  /**
+   * Something from Insert is dragged over the page: where the pointer is in the element under
+   * it and in each one around it (empty: over the page itself, below everything).
+   */
+  | { type: "insertOver"; chain: PointerOver[] }
+  /** The drag left the canvas, or was let go on it. */
+  | { type: "insertLeave" }
+  | { type: "insertDrop" }
   /** "Add pages to your menu" was pressed in place of an empty menu. */
   | { type: "openMenu"; nodeId: string }
   /** How the selected element looks, measured on the canvas, for the style panel. */
@@ -83,6 +101,9 @@ const frameMessageTypes = new Set([
   "textSelection",
   "openMenu",
   "look",
+  "insertOver",
+  "insertLeave",
+  "insertDrop",
 ]);
 
 /** Reads a message from the frame, or null if it isn't one of ours. */
@@ -110,6 +131,23 @@ export function readFrameMessage(data: unknown): MessageFromFrame | null {
         : null;
     case "paste":
       return isText(message.html) && isText(message.text) ? (message as MessageFromFrame) : null;
+    case "insertOver":
+      return Array.isArray(message.chain) &&
+        message.chain.length <= 64 &&
+        message.chain.every(
+          (over: unknown) =>
+            typeof over === "object" &&
+            over !== null &&
+            isText((over as PointerOver).nodeId) &&
+            isFiniteNumber((over as PointerOver).ratio) &&
+            typeof (over as PointerOver).across === "boolean",
+        )
+        ? (message as MessageFromFrame)
+        : null;
+    case "insertLeave":
+      return { type: "insertLeave" };
+    case "insertDrop":
+      return { type: "insertDrop" };
     case "openMenu":
       return isText(message.nodeId) ? (message as MessageFromFrame) : null;
     case "rotate":

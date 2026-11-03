@@ -11,6 +11,9 @@ import { snapBox } from "../free-layout/snapping.js";
  * pixels). The element moves on the canvas straight away; the new angle or place is sent
  * when the pointer is let go.
  *
+ * Something dragged from Insert can be dropped on the page: the frame says what the pointer
+ * is over, the builder works out where it would land, and the frame draws that line.
+ *
  * It is written as one self-contained function so it can be put into the frame as text
  * (`canvasFrameSource`): it must not use anything from outside its own body, except
  * `snap`, which is passed in the same way.
@@ -70,6 +73,9 @@ export function runCanvasFrame(snap: typeof snapBox): void {
     left: number;
     top: number;
   } | null = null;
+  // Where something dragged from Insert would land, as the builder worked it out.
+  let insertMarker: { nodeId: string; position: string; across: boolean } | null = null;
+  let lastInsertOver = "";
   // The animation being previewed, if any. Stopped before the page is drawn again.
   let preview: Preview | null = null;
   const stopPreview = () => {
@@ -113,6 +119,45 @@ export function runCanvasFrame(snap: typeof snapBox): void {
     }
     drawBox(outline.selectedId, "selected", outline.labels.selected);
     drawRotateHandle();
+    drawInsertMarker();
+  }
+
+  function drawInsertMarker() {
+    if (!insertMarker) return;
+    const element = nodeElement(insertMarker.nodeId) ?? root;
+    const rect = element.getBoundingClientRect();
+    const left = rect.left + window.scrollX;
+    const top = rect.top + window.scrollY;
+    const mark = document.createElement("div");
+    if (insertMarker.position === "inside") {
+      mark.className = "lintel-drop lintel-drop--inside";
+      Object.assign(mark.style, {
+        left: `${left}px`,
+        top: `${top}px`,
+        width: `${rect.width}px`,
+        height: `${rect.height}px`,
+      });
+    } else {
+      const isAfter = insertMarker.position === "after";
+      mark.className = "lintel-drop lintel-drop--line";
+      Object.assign(
+        mark.style,
+        insertMarker.across
+          ? {
+              left: `${(isAfter ? left + rect.width : left) - 1.5}px`,
+              top: `${top}px`,
+              width: "3px",
+              height: `${rect.height}px`,
+            }
+          : {
+              left: `${left}px`,
+              top: `${(isAfter ? top + rect.height : top) - 1.5}px`,
+              width: `${rect.width}px`,
+              height: "3px",
+            },
+      );
+    }
+    overlay.appendChild(mark);
   }
 
   function drawRotateHandle() {
@@ -307,6 +352,50 @@ export function runCanvasFrame(snap: typeof snapBox): void {
     }
   }
 
+  const insertDragType = "application/x-lintel-insert";
+  const isInsertDrag = (event: DragEvent) =>
+    Array.from(event.dataTransfer?.types ?? []).includes(insertDragType);
+
+  document.addEventListener("dragover", (event) => {
+    if (!isInsertDrag(event)) return;
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+    // The element under the pointer and each one around it, with where the pointer is in it.
+    const chain: Array<{ nodeId: string; ratio: number; across: boolean }> = [];
+    let element =
+      event.target instanceof Element ? event.target.closest("[data-lintel-node]") : null;
+    while (element instanceof HTMLElement && chain.length < 64) {
+      const rect = element.getBoundingClientRect();
+      const parent = element.parentElement ? getComputedStyle(element.parentElement) : null;
+      const across =
+        parent !== null &&
+        ((parent.display.includes("flex") && parent.flexDirection.startsWith("row")) ||
+          (parent.display.includes("grid") &&
+            parent.gridTemplateColumns.trim().split(/\s+/).length > 1));
+      const ratio = across
+        ? (event.clientX - rect.left) / Math.max(rect.width, 1)
+        : (event.clientY - rect.top) / Math.max(rect.height, 1);
+      chain.push({ nodeId: element.getAttribute("data-lintel-node") ?? "", ratio, across });
+      element = element.parentElement?.closest("[data-lintel-node]") ?? null;
+    }
+    // Only when it changes enough to matter, not on every pixel.
+    const key = chain.map((over) => `${over.nodeId}:${Math.round(over.ratio * 20)}`).join("|");
+    if (key === lastInsertOver) return;
+    lastInsertOver = key;
+    send({ type: "insertOver", chain });
+  });
+  document.addEventListener("dragleave", (event) => {
+    if (event.relatedTarget !== null || !isInsertDrag(event)) return;
+    lastInsertOver = "";
+    send({ type: "insertLeave" });
+  });
+  document.addEventListener("drop", (event) => {
+    if (!isInsertDrag(event)) return;
+    event.preventDefault();
+    lastInsertOver = "";
+    send({ type: "insertDrop" });
+  });
+
   window.addEventListener("message", (event) => {
     if (event.source !== builder) return;
     const message = event.data as {
@@ -323,6 +412,9 @@ export function runCanvasFrame(snap: typeof snapBox): void {
       }
       drawPage(message.html, message.css ?? "");
       sendLook();
+    } else if (message.type === "insertMarker") {
+      insertMarker = (event.data as { marker: typeof insertMarker }).marker;
+      drawOutlines();
     } else if (message.type === "outline") {
       const previous = outline.selectedId;
       outline = event.data as typeof outline;
@@ -563,6 +655,9 @@ export function runCanvasFrame(snap: typeof snapBox): void {
 const canvasStyles = `
 #lintel-overlay { position: absolute; inset: 0 auto auto 0; pointer-events: none; z-index: 2147483647; }
 .lintel-outline { position: absolute; box-sizing: border-box; }
+.lintel-drop { position: absolute; box-sizing: border-box; pointer-events: none; }
+.lintel-drop--line { background: #0071e3; border-radius: 2px; box-shadow: 0 0 0 1px #fff; }
+.lintel-drop--inside { outline: 2px dashed #0071e3; outline-offset: -2px; background: rgb(0 113 227 / 0.06); }
 .lintel-outline--selected { outline: 2px solid #0071e3; outline-offset: -1px; }
 .lintel-outline--hover { outline: 1px solid #0071e3; outline-offset: -1px; opacity: 0.8; }
 .lintel-outline__label { position: absolute; left: -1px; bottom: 100%; padding: 1px 6px; font: 600 11px/16px -apple-system, system-ui, sans-serif; color: #fff; background: #0071e3; border-radius: 4px 4px 0 0; white-space: nowrap; }

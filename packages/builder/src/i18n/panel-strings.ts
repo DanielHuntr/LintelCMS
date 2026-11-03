@@ -15,7 +15,7 @@ export const builderPanelStrings = {
   "pageBuilder.insert.insert": "Insert {name}",
   "pageBuilder.insert.close": "Close",
   "pageBuilder.insert.howTo":
-    "Press to add it after what’s selected, or drag it into Layers to place it exactly.",
+    "Press to add it after what’s selected, or drag it onto the page or into Layers to place it exactly.",
 
   "pageBuilder.style.summary.gap": "gap {size}",
   "pageBuilder.style.summary.columns": "{count} columns",
