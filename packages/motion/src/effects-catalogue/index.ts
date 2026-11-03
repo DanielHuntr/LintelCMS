@@ -41,11 +41,31 @@ export {
   siteEffectSettingsSchema,
   defaultSiteEffectSettings,
   hasSiteEffects,
+} from "./site-effects.js";
+export {
+  pageTransitionLooks,
+  pageTransitionSpeeds,
+  nearestPageTransitionSpeed,
   pageTransitionCss,
+  keyframesCss,
+  carriedElementsScript,
+} from "./page-transition-looks.js";
+export type {
+  PageTransitionLook,
+  PageTransitionSpeed,
+  LookKeyframe,
+} from "./page-transition-looks.js";
+export {
   introMarkup,
   introCss,
   introSeenScript,
-} from "./site-effects.js";
+  introWords,
+  INTRO_LONGEST_MILLISECONDS,
+  INTRO_SHORTEST_MILLISECONDS,
+  introCount,
+  introLeavingKeyframes,
+} from "./site-intro.js";
+export type { IntroContent } from "./site-intro.js";
 export { effectModuleNames } from "../effects/effect-types.js";
 export type {
   EffectBinding,

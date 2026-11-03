@@ -66,13 +66,6 @@ export const effectsEditorStrings = {
   "motionEditor.site.smoothScroll.strong": "Strong",
   "motionEditor.site.smoothScroll.note":
     "The mouse wheel glides to a stop. Touch screens and keys scroll as usual.",
-  "motionEditor.site.transition": "Page transition",
-  "motionEditor.site.transition.none": "None",
-  "motionEditor.site.transition.fade": "Fade",
-  "motionEditor.site.transition.slide": "Slide",
-  "motionEditor.site.transition.wipe": "Wipe",
-  "motionEditor.site.transition.zoom": "Zoom",
-  "motionEditor.site.transition.duration": "Transition length",
   "motionEditor.site.cursor": "Cursor",
   "motionEditor.site.cursor.none": "Normal",
   "motionEditor.site.cursor.dot": "Dot",
@@ -92,14 +85,6 @@ export const effectsEditorStrings = {
   "motionEditor.site.cursor.size": "Cursor size",
   "motionEditor.site.cursor.note":
     "Shown only with a mouse or trackpad. It grows over links, and shows the word you give an element on its Animate tab.",
-  "motionEditor.site.intro": "Intro",
-  "motionEditor.site.intro.none": "None",
-  "motionEditor.site.intro.curtain": "Curtain",
-  "motionEditor.site.intro.counter": "Counter",
-  "motionEditor.site.intro.name": "Your name",
-  "motionEditor.site.intro.text": "Words on the intro",
-  "motionEditor.site.intro.background": "Intro background",
-  "motionEditor.site.intro.colour": "Intro text colour",
-  "motionEditor.site.intro.note":
-    "Plays once per visit, for at most three seconds. Visitors can skip it, and it never shows without JavaScript.",
+  "motionEditor.site.elsewhere":
+    "Page transitions and the first-visit intro are in Settings → Your website.",
 } as const;

@@ -7,6 +7,7 @@ import {
   type SiteView,
 } from "@lintel/site-components";
 import { renderSiteDocument } from "@lintel/site-components/server";
+import { siteEffectsHead } from "../site-effects/site-effects.service.js";
 import type { SiteResponse } from "./rendered-pages-cache.js";
 import { readEffectModules, readElementsScript, readMotionRuntime } from "./site-assets.js";
 import type { SiteContext } from "./site-context.service.js";
@@ -38,9 +39,10 @@ export function renderPage(
   page: PageToRender,
   now: Date,
 ): SiteResponse {
+  const thisPageChrome = pageChrome(context, chrome, page.path, page.translations);
   const body = renderSiteDocument({
     head: page.head,
-    chrome: pageChrome(context, chrome, page.path, page.translations),
+    chrome: thisPageChrome,
     view: page.view,
     template: context.look.template,
     labels: englishLabels,
@@ -48,7 +50,10 @@ export function renderPage(
     year: now.getUTCFullYear(),
     motionScriptUrl: readMotionRuntime()?.path,
     elementsScriptUrl: readElementsScript()?.path,
-    siteEffects: context.effects,
+    siteEffects: siteEffectsHead(context.effectSettings, {
+      path: page.path,
+      chrome: thisPageChrome,
+    }),
     effectModuleUrls: readEffectModules()?.urls,
   });
   return htmlResponse(body, page);

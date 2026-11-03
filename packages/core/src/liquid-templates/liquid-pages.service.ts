@@ -26,6 +26,7 @@ import { buildPageHead, type HeadSubject } from "../website/site-head.service.js
 import type { PageRequest } from "../website/site-pages.service.js";
 import { createLintelGlobal, type LiquidPageHelpers } from "./liquid-page-helpers.js";
 import { escapeHtml } from "./liquid-tags.js";
+import { siteEffectsHead } from "../site-effects/site-effects.service.js";
 import type { LiquidTemplates } from "./liquid-templates.service.js";
 
 /**
@@ -75,7 +76,7 @@ export async function renderEntryWithLiquid(
       design,
       motionScriptUrl: readMotionRuntime()?.path,
       elementsScriptUrl: readElementsScript()?.path,
-      siteEffects: context.effects,
+      siteEffects: siteEffectsHead(context.effectSettings, { path: request.path, chrome }),
       effectModuleUrls: readEffectModules()?.urls,
     });
 

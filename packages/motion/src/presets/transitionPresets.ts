@@ -1,8 +1,13 @@
 import { definePreset, fromTo } from "./preset.js";
 
-/** Page and section transitions: how a whole page arrives and leaves, and how sections open. */
+/**
+ * How sections open. Moving between whole pages is a site-wide choice (Settings → Your
+ * website, see page-transition-looks.ts in effects-catalogue), so the four whole-page
+ * animations below are kept only for designs that already use them: they still play, and
+ * still open in the editor, but the gallery no longer offers them.
+ */
 
-export const transitionPresets = [
+export const retiredPagePresets = [
   definePreset({
     id: "page-fade-in",
     name: "Page fades in",
@@ -51,6 +56,9 @@ export const transitionPresets = [
       tracks: [fromTo("opacity", 1, 0), fromTo("translateY", 0, 16)],
     },
   }),
+];
+
+export const transitionPresets = [
   definePreset({
     id: "section-curtain",
     name: "Curtain open",
@@ -77,6 +85,20 @@ export const transitionPresets = [
       easing: "easeInOutCubic",
       reducedMotion: "instant",
       tracks: [fromTo("clipPath", "circle(0% at 50% 50%)", "circle(75% at 50% 50%)")],
+    },
+  }),
+  definePreset({
+    id: "section-split",
+    name: "Split open",
+    description: "A section opens from a line across its middle, upwards and downwards at once.",
+    category: "transition",
+    preview: { sample: "page" },
+    spec: {
+      trigger: { type: "inView", threshold: 0.3 },
+      duration: 1000,
+      easing: "easeInOutQuint",
+      reducedMotion: "instant",
+      tracks: [fromTo("clipPath", "inset(50% 0% 50% 0%)", "inset(0% 0% 0% 0%)")],
     },
   }),
 ];

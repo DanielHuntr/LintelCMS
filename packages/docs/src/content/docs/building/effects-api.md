@@ -156,5 +156,7 @@ licence allows use in a site builder.
 cursor, intro }`. Page transitions use cross-document view transitions
 (`@view-transition { navigation: auto }`) where the browser has them, with no script; the
 `transitions` module covers other browsers by covering the page, playing any `pageExit`
-animations, then navigating. Elements given the **Morph between pages** effect share a
-`view-transition-name` and glide from one page to the next.
+animations, then navigating. Elements given the **Carry across pages** effect share a
+`view-transition-name` and glide from one page to the next; a small head script keeps each
+name unique on a page (in a list, only the element beside the followed link keeps it). The
+intro is drawn on the home page only. Nothing plays for people who ask for less motion.

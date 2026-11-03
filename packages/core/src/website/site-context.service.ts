@@ -17,8 +17,8 @@ import type { Site } from "../sites/sites.table.js";
 import { listLocales } from "../sites/locales.service.js";
 import type { RoutedCollection } from "./site-routing.js";
 import { readWebsiteLook, type WebsiteLook } from "./website.service.js";
-import type { SiteEffectsHead } from "@lintel/site-components";
-import { readSiteEffects, siteEffectsHead } from "../site-effects/site-effects.service.js";
+import type { SiteEffectSettings } from "@lintel/motion/effects";
+import { readSiteEffects } from "../site-effects/site-effects.service.js";
 import { choiceLabelsOf } from "./bound-entries.js";
 import {
   type CustomScriptRule,
@@ -48,8 +48,8 @@ export interface SiteContext {
   /** The site's path prefix ("/fr"), or "" when it has the whole domain. */
   pathPrefix: string;
   stylesheet: { css: string; path: string };
-  /** Page transitions, cursor and intro, or undefined when the site has none switched on. */
-  effects: SiteEffectsHead | undefined;
+  /** Page transitions, cursor and intro; drawn per page by siteEffectsHead. */
+  effectSettings: SiteEffectSettings;
   /** Whether Code elements may run scripts: applied each time a design is drawn. */
   scriptRule: CustomScriptRule;
   /** The site's design variables and shared styles, made in the page builder. */
@@ -108,7 +108,7 @@ export async function loadSiteContext(
     siteAddress,
     pathPrefix: site.pathPrefix,
     stylesheet: { css, path: `${STYLESHEET_FOLDER}/site-${fingerprint}.css` },
-    effects: siteEffectsHead(await effects, { skip: "Skip intro", loading: "Loading" }),
+    effectSettings: await effects,
     scriptRule: await scriptRule,
     design,
   };

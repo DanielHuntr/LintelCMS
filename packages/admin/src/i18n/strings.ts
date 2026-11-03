@@ -31,6 +31,7 @@ import { liquidTemplateStrings } from "../liquid-templates/liquidTemplateStrings
 import { pageLinkStrings } from "../page-links/pageLinkStrings.js";
 import { richTextPictureStrings } from "../fields/richTextPictureStrings.js";
 import { blockStrings } from "./blockStrings.js";
+import { pageFlowStrings } from "../website/pageFlowStrings.js";
 
 /**
  * Every word the admin shows lives here, in English: the source every translation in
@@ -51,6 +52,7 @@ const english = {
   ...pluginStrings,
   ...peopleStrings,
   ...pageDesignStrings,
+  ...pageFlowStrings,
   ...contentModelSyncStrings,
   ...workflowStrings,
   ...buildStrings,
@@ -1010,9 +1012,9 @@ const english = {
   "help.loading": "Loading help…",
   "help.topicsTitle": "Help topics",
   "website.title": "Your website",
-  "website.subtitle": "How your website looks, and where people find it.",
+  "website.subtitle": "How your website looks and moves, and where people find it.",
   "website.loading": "Loading your website’s settings",
-  "website.settingsDescription": "Template, colours, fonts, logo and address",
+  "website.settingsDescription": "Template, colours, fonts, logo, page transitions and address",
   "website.liveAt": "Your website is live",
   "website.notServed": "{product} isn’t serving a website here",
   "website.notServedHint":

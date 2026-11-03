@@ -56,8 +56,9 @@ export interface CursorSettings {
 }
 
 export interface IntroSettings {
-  style: "none" | "curtain" | "counter" | "name";
-  /** What "name" shows: usually the site's name. */
+  /** "curtain" draws a line across; "logo" falls back to the name when there is no logo. */
+  style: "none" | "counter" | "name" | "logo" | "curtain";
+  /** What "name" shows; empty means the site's name. */
   text: string;
   background: string;
   colour: string;
@@ -68,7 +69,7 @@ export interface SmoothScrollSettings {
   strength: "off" | "gentle" | "strong";
 }
 
-/** Motion across the whole site: picked once in the builder's site settings. */
+/** Motion across the whole site: set once, in Settings → Your website and the Animate tab. */
 export interface SiteEffectSettings {
   pageTransition: PageTransitionSettings;
   cursor: CursorSettings;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { reduceMotion } from "../reduced-motion/reducedMotion.js";
 import { motionSpecSchema } from "../spec/motion.schema.js";
-import { motionPresets, presetCategories, presetsIn } from "./index.js";
+import { findPreset, motionPresets, presetCategories, presetsIn } from "./index.js";
 
 describe("the preset library", () => {
   it("has more than thirty presets with unique ids", () => {
@@ -46,10 +46,17 @@ describe("the preset library", () => {
       "hover-underline",
       "pulse",
       "shake",
-      "page-fade-in",
-      "page-fade-out",
+      "section-split",
     ]) {
       expect(ids).toContain(id);
+    }
+  });
+
+  it("leaves whole-page changes to the site setting, but still finds them for saved designs", () => {
+    const ids = motionPresets.map((preset) => preset.id);
+    for (const id of ["page-fade-in", "page-rise-in", "page-fade-out", "page-sink-out"]) {
+      expect(ids).not.toContain(id);
+      expect(findPreset(id)?.spec.trigger.type).toMatch(/load|pageExit/);
     }
   });
 });

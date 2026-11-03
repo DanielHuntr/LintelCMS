@@ -56,12 +56,11 @@ function cover(): HTMLDivElement {
 }
 
 const pageTransition: EffectBehaviour = (_body, params, context) => {
-  if (supportsCrossDocumentTransitions()) return;
+  // Less motion means pages simply change, as they do with the view transition CSS.
+  if (supportsCrossDocumentTransitions() || context.reduced) return;
   const style = readText(params, "style", "fade");
-  const duration = context.reduced ? 150 : readNumber(params, "duration", 450);
-  const [enter, leave] = context.reduced
-    ? coverKeyframes.fade!
-    : (coverKeyframes[style] ?? coverKeyframes.fade!);
+  const duration = readNumber(params, "duration", 500);
+  const [enter, leave] = coverKeyframes[style] ?? coverKeyframes.fade!;
   try {
     if (sessionStorage.getItem(arrivalKey)) {
       sessionStorage.removeItem(arrivalKey);

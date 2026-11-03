@@ -3,7 +3,7 @@ import { entrancePresets } from "./entrancePresets.js";
 import { hoverPresets } from "./hoverPresets.js";
 import type { MotionPreset, PresetCategory } from "./preset.js";
 import { scrollPresets } from "./scrollPresets.js";
-import { transitionPresets } from "./transitionPresets.js";
+import { retiredPagePresets, transitionPresets } from "./transitionPresets.js";
 
 /**
  * Every ready-made animation, in the order the gallery shows them.
@@ -16,8 +16,9 @@ export const motionPresets: readonly MotionPreset[] = [
   ...transitionPresets,
 ];
 
+/** Finds any preset by id, including retired ones that saved designs may still name. */
 export function findPreset(id: string): MotionPreset | undefined {
-  return motionPresets.find((preset) => preset.id === id);
+  return [...motionPresets, ...retiredPagePresets].find((preset) => preset.id === id);
 }
 
 export function presetsIn(category: PresetCategory): MotionPreset[] {

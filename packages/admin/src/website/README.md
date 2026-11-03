@@ -5,10 +5,14 @@ API side is in core's `src/website`.
 
 - `SiteSettingsPage.tsx` is **Settings → Your website** (`/settings/site`): where the site
   is live (with **Open website**), the template, colours, fonts, light or dark, corners,
-  spacing, the logo and the site's address. Picking a template brings that template's own
+  spacing, the logo, moving between pages and the site's address. Picking a template brings that template's own
   look; the light or dark choice stays. Saving needs `settings:update`; with only
   `settings:read` everything shows but can't be changed.
 - `ColourChoice.tsx` and `FontPairingChoice.tsx` are the colour and font pickers.
+- `PageFlowSettings.tsx` is **Moving between pages**: the page transition and its speed,
+  and the first-visit intro, saved with the rest of the form to `PUT /website/effects`.
+  `PageFlowPreview.tsx` plays them on a stand-in website with the same keyframes the
+  published site uses. Its words are in `pageFlowStrings.ts`.
 - The site's address is the one `siteAddress` setting. Left empty, the built-in website's
   own address is used; `GET /website/address` answers with whichever applies, and every
   **View page** (the editor's toolbar and the entry lists, see `src/content/viewPage.ts`) uses

@@ -2,14 +2,21 @@ import type { EffectBehaviour, EffectModule } from "../effect-types.js";
 import { combine, listen } from "../kit/listen.js";
 import { readNumber, readText } from "../kit/params.js";
 import { addOverlay } from "../kit/styles.js";
+import {
+  INTRO_LONGEST_MILLISECONDS,
+  INTRO_SHORTEST_MILLISECONDS,
+  introCount,
+  introLeavingKeyframes,
+} from "../../effects-catalogue/site-intro.js";
 
 /**
  * The site intro and section loaders.
  *
- * The intro's markup is written into the page by the server (see introMarkup in
- * @lintel/motion/effects), with CSS that hides it without scripts and after four seconds
- * whatever happens, so it can never trap anyone. This plays it once per visit: it counts or
- * reveals, then lifts away. "Skip intro", Escape or a click ends it at once.
+ * The intro's markup is written into the home page by the server (see introMarkup in
+ * @lintel/motion/effects), with CSS that shows it only with scripts on and for people happy
+ * with motion, and hides it after four seconds whatever happens, so it can never trap
+ * anyone. This plays it once per visit: it counts or reveals, then lifts away. "Skip intro",
+ * a click or any key ends it at once.
  */
 
 export const introSeenKey = "lintel-intro-seen";
@@ -22,61 +29,63 @@ function markSeen() {
   }
 }
 
+function seenThisVisit(): boolean {
+  try {
+    return sessionStorage.getItem(introSeenKey) === "1";
+  } catch {
+    return false;
+  }
+}
+
 const siteIntro: EffectBehaviour = (_body, params, context) => {
   const intro = document.querySelector<HTMLElement>(".lintel-intro");
   if (!intro) return;
-  const seen = (() => {
-    try {
-      return sessionStorage.getItem(introSeenKey) === "1";
-    } catch {
-      return false;
-    }
-  })();
-  if (seen) {
+  // Less motion means no intro at all (its CSS never shows it either).
+  if (seenThisVisit() || context.reduced) {
     intro.remove();
     return;
   }
   markSeen();
   intro.style.animation = "none";
   const counter = intro.querySelector<HTMLElement>(".lintel-intro__count");
-  const style = readText(params, "style", "curtain");
+  const style = readText(params, "style", "counter");
   let finished = false;
   let timer = 0;
   const finish = () => {
     if (finished) return;
     finished = true;
     window.clearInterval(timer);
-    const leaving = context.reduced
-      ? [{ opacity: 1 }, { opacity: 0 }]
-      : style === "curtain" || style === "name"
-        ? [{ transform: "translateY(0)" }, { transform: "translateY(-100%)" }]
-        : [{ opacity: 1 }, { opacity: 0 }];
     void intro
-      .animate(leaving, {
-        duration: context.reduced ? 200 : 700,
-        easing: "cubic-bezier(.76,0,.24,1)",
-        fill: "forwards",
-      })
+      .animate(
+        [
+          ...(introLeavingKeyframes[style as keyof typeof introLeavingKeyframes] ??
+            introLeavingKeyframes.logo),
+        ] as Keyframe[],
+        {
+          duration: 700,
+          easing: "cubic-bezier(.76,0,.24,1)",
+          fill: "forwards",
+        },
+      )
       .finished.then(() => intro.remove());
   };
   const started = performance.now();
-  const shortest = context.reduced ? 300 : 1300;
   if (counter) {
     timer = window.setInterval(() => {
-      const share = Math.min(1, (performance.now() - started) / shortest);
-      counter.textContent = `${Math.round(share * 100)}`;
+      counter.textContent = `${introCount((performance.now() - started) / INTRO_SHORTEST_MILLISECONDS)}`;
     }, 32);
   }
   const whenLoaded =
     document.readyState === "complete"
       ? Promise.resolve()
       : new Promise((resolve) => window.addEventListener("load", resolve, { once: true }));
-  const atLeast = new Promise((resolve) => setTimeout(resolve, shortest));
-  const atMost = new Promise((resolve) => setTimeout(resolve, 3000));
+  const atLeast = new Promise((resolve) => setTimeout(resolve, INTRO_SHORTEST_MILLISECONDS));
+  const atMost = new Promise((resolve) => setTimeout(resolve, INTRO_LONGEST_MILLISECONDS));
   void Promise.race([Promise.all([whenLoaded, atLeast]), atMost]).then(finish);
   return combine(
     listen(intro, { click: finish }),
-    listen(document, { keydown: (event: KeyboardEvent) => event.key === "Escape" && finish() }),
+    // Any key skips it, except Tab, which moves to the Skip button.
+    listen(document, { keydown: (event: KeyboardEvent) => event.key !== "Tab" && finish() }),
     () => window.clearInterval(timer),
   );
 };
