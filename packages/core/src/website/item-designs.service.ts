@@ -37,7 +37,7 @@ async function loadItemDesigns(request: PageRequest): Promise<Map<string, PageDo
         dependencies.site,
       );
       for (const entry of list.items) {
-        const design = checkPageDesign(entry.data.design);
+        const design = checkPageDesign(entry.data.design, context.scriptRule);
         const designFor = String(design?.root.props.itemDesignFor ?? "");
         if (design && designFor && !designs.has(designFor)) designs.set(designFor, design);
       }

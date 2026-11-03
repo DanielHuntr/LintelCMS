@@ -1,4 +1,6 @@
 import {
+  applyScriptRule,
+  type CustomScriptRule,
   findPlace,
   ownSiteChrome,
   type PageData,
@@ -8,6 +10,7 @@ import {
 } from "@lintel/builder-model";
 import { renderPage, standardRegistry } from "@lintel/builder/render";
 import type { PageDesign } from "@lintel/site-components";
+import { removeScriptsFromCodeHtml } from "../fieldtypes/code-html-cleaner.js";
 import { pageComponentCatalogue } from "../pages/page-components.js";
 
 /**
@@ -21,8 +24,12 @@ import { pageComponentCatalogue } from "../pages/page-components.js";
  * that no longer checks out is left out, with what's inside it; one such element used to
  * hide the whole design (LINTEL-FUNC-023). The editor still names it when the page is
  * opened. A design that can't be read at all, or has nothing on it, counts as no design.
+ *
+ * The site's script rule is applied here too, not only when a design is saved: code saved
+ * while scripts were allowed used to keep them after the site went back to removing them
+ * (LINTEL-SEC-003).
  */
-export function checkPageDesign(value: unknown): PageDocument | null {
+export function checkPageDesign(value: unknown, scriptRule: CustomScriptRule): PageDocument | null {
   if (value === null || value === undefined) {
     return null;
   }
@@ -39,7 +46,7 @@ export function checkPageDesign(value: unknown): PageDocument | null {
   if (!checked.ok || checked.document.root.children.length === 0) {
     return null;
   }
-  return checked.document;
+  return applyScriptRule(checked.document, scriptRule, removeScriptsFromCodeHtml);
 }
 
 /** Draws a checked design with what its dynamic elements show (see page-data.service.ts). */
@@ -63,7 +70,7 @@ export function drawPageDesign(document: PageDocument, data: PageData = {}): Pag
 }
 
 /** A design drawn without data: what a page's view starts with before its lists are loaded. */
-export function readPageDesign(value: unknown): PageDesign | null {
-  const document = checkPageDesign(value);
+export function readPageDesign(value: unknown, scriptRule: CustomScriptRule): PageDesign | null {
+  const document = checkPageDesign(value, scriptRule);
   return document ? drawPageDesign(document) : null;
 }

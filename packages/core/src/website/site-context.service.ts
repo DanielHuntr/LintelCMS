@@ -20,6 +20,8 @@ import { readWebsiteLook, type WebsiteLook } from "./website.service.js";
 import type { SiteEffectsHead } from "@lintel/site-components";
 import { readSiteEffects, siteEffectsHead } from "../site-effects/site-effects.service.js";
 import { choiceLabelsOf } from "./bound-entries.js";
+import type { CustomScriptRule } from "@lintel/builder-model";
+import { readSetting } from "../settings/settings.service.js";
 
 /**
  * What every page of the built-in site needs, whatever its address: languages, which
@@ -43,6 +45,8 @@ export interface SiteContext {
   stylesheet: { css: string; path: string };
   /** Page transitions, cursor and intro, or undefined when the site has none switched on. */
   effects: SiteEffectsHead | undefined;
+  /** Whether Code elements may run scripts: applied each time a design is drawn. */
+  scriptRule: CustomScriptRule;
 }
 
 /** The address the stylesheet is served at changes with its contents, so it caches forever. */
@@ -59,6 +63,7 @@ export async function loadSiteContext(
 ): Promise<SiteContext> {
   const { site } = options;
   const effects = readSiteEffects(database);
+  const scriptRule = readSetting(database, "builderCustomScripts");
   const [locales, collections, look, seoEnabled, seoDefaults, siteAddress, plugins] =
     await Promise.all([
       listLocales(database, site),
@@ -89,6 +94,7 @@ export async function loadSiteContext(
     pathPrefix: site.pathPrefix,
     stylesheet: { css, path: `${STYLESHEET_FOLDER}/site-${fingerprint}.css` },
     effects: siteEffectsHead(await effects, { skip: "Skip intro", loading: "Loading" }),
+    scriptRule: await scriptRule,
   };
 }
 

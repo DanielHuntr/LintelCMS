@@ -26,7 +26,7 @@ export async function designEntryView(
 ): Promise<PageView | PostView> {
   const { locale, context } = request;
   const url = localiseUrl(entry.url ?? `/${entry.slug}`, locale, context);
-  const own = view.kind === "page" ? checkPageDesign(entry.data.design) : null;
+  const own = view.kind === "page" ? checkPageDesign(entry.data.design, context.scriptRule) : null;
   if (view.kind === "page" && own) {
     const designFor = String(own.root.props.itemDesignFor ?? "");
     const sampleData = designFor ? await loadSample(request, designFor) : undefined;

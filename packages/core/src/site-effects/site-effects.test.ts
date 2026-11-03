@@ -41,7 +41,7 @@ function designWithEffects(): PageDocument {
 
 describe("effects on designed pages", () => {
   it("lists what the effects runtime mounts, marks the elements and writes static fallbacks", () => {
-    const design = readPageDesign(designWithEffects());
+    const design = readPageDesign(designWithEffects(), "removeScripts");
     expect(design?.effects).toEqual([
       {
         nodeId: "title",
@@ -82,10 +82,14 @@ describe("code blocks that use the motion runtime", () => {
       },
     });
     expect(
-      readPageDesign(block("window.lintelMotion.registerEffectBehaviour('glow', () => {})"))
-        ?.usesMotionApi,
+      readPageDesign(
+        block("window.lintelMotion.registerEffectBehaviour('glow', () => {})"),
+        "allowScripts",
+      )?.usesMotionApi,
     ).toBe(true);
-    expect(readPageDesign(block("console.log('hello')"))?.usesMotionApi).toBe(false);
+    expect(readPageDesign(block("console.log('hello')"), "allowScripts")?.usesMotionApi).toBe(
+      false,
+    );
   });
 });
 

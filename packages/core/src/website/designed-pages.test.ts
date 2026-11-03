@@ -29,10 +29,10 @@ describe("designed pages on the website", () => {
     };
     const design = designWith(section, element("old", "retired-widget"));
 
-    const checked = checkPageDesign(design);
+    const checked = checkPageDesign(design, "removeScripts");
 
     expect(checked?.root.children.map((child) => child.id)).toEqual(["intro"]);
-    expect(readPageDesign(design)?.html).toContain("Fresh bread daily");
+    expect(readPageDesign(design, "removeScripts")?.html).toContain("Fresh bread daily");
   });
 
   it("leaves out an element whose content no longer fits, with what's inside it", () => {
@@ -42,15 +42,35 @@ describe("designed pages on the website", () => {
     };
     const design = designWith(broken, element("kept", "heading", { text: "Opening hours" }));
 
-    expect(checkPageDesign(design)?.root.children.map((child) => child.id)).toEqual([
-      "hero",
-      "kept",
-    ]);
-    expect(checkPageDesign(design)?.root.children[0]?.children).toEqual([]);
+    expect(
+      checkPageDesign(design, "removeScripts")?.root.children.map((child) => child.id),
+    ).toEqual(["hero", "kept"]);
+    expect(checkPageDesign(design, "removeScripts")?.root.children[0]?.children).toEqual([]);
   });
 
   it("still counts a design it can't read at all as no design", () => {
-    expect(checkPageDesign({ version: 1, root: "not a page" })).toBeNull();
-    expect(checkPageDesign(designWith(element("old", "retired-widget")))).toBeNull();
+    expect(checkPageDesign({ version: 1, root: "not a page" }, "removeScripts")).toBeNull();
+    expect(
+      checkPageDesign(designWith(element("old", "retired-widget")), "removeScripts"),
+    ).toBeNull();
+  });
+
+  // LINTEL-SEC-003: code saved while scripts were allowed kept them after the site went back
+  // to removing them, because the rule was only applied when saving.
+  it("applies the site's script rule each time a design is drawn", () => {
+    const code = element("code", "codeBlock", {
+      html: '<p>Opening times</p><script>alert(1)</script><img src="x" onerror="alert(2)">',
+      css: "",
+      js: "alert(3)",
+    });
+    const design = designWith(code);
+
+    const allowed = readPageDesign(design, "allowScripts")?.html ?? "";
+    expect(allowed).toContain("<script>alert(1)</script>");
+
+    const removed = readPageDesign(design, "removeScripts")?.html ?? "";
+    expect(removed).toContain("Opening times");
+    expect(removed).not.toContain("alert(");
+    expect(removed).not.toContain("onerror");
   });
 });

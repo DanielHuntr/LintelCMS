@@ -8,6 +8,7 @@ import type {
   TermLink,
 } from "@lintel/site-components";
 import type { DeliveredEntry } from "../delivery/delivery.schema.js";
+import type { CustomScriptRule } from "@lintel/builder-model";
 import { readPageDesign } from "./designed-pages.js";
 
 /**
@@ -141,7 +142,7 @@ export function entryImage(entry: Pick<DeliveredEntry, "data">): SiteImage | nul
   return firstOf(entry.data, imageFields, readImage);
 }
 
-export function toPageView(entry: DeliveredEntry): PageView {
+export function toPageView(entry: DeliveredEntry, scriptRule: CustomScriptRule): PageView {
   const sections = firstOf(entry.data, ["sections", "blocks"], (value) => {
     const blocks = readBlocks(value);
     return blocks.length > 0 ? blocks : null;
@@ -153,7 +154,7 @@ export function toPageView(entry: DeliveredEntry): PageView {
     heroImage: entryImage(entry),
     body: readHtml(entry.data.body),
     sections: sections ?? [],
-    design: readPageDesign(entry.data.design),
+    design: readPageDesign(entry.data.design, scriptRule),
   };
 }
 

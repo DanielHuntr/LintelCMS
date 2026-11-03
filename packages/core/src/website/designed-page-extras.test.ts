@@ -33,7 +33,7 @@ function designWithFontAndVideo(): PageDocument {
 
 describe("designed pages with fonts and background videos", () => {
   it("lists the fonts to preload and the script the video needs", () => {
-    const design = readPageDesign(designWithFontAndVideo());
+    const design = readPageDesign(designWithFontAndVideo(), "removeScripts");
     expect(design?.fontPreloads).toEqual(["/_lintel/fonts/anton-latin-400-normal.woff2"]);
     expect(design?.css).toContain("@font-face");
     expect(design?.html).toContain('<video src="/media/sea.mp4" muted="" loop=""');

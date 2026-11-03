@@ -17,7 +17,7 @@ export function entryView(
 ): PageView | PostView {
   const collection = context.collections.find(({ handle }) => handle === collectionHandle);
   if (collection?.structure !== "dated") {
-    return toPageView(entry);
+    return toPageView(entry, context.scriptRule);
   }
   const base = listBase(collection.routePattern);
   const localise = (path: string) => localiseUrl(path, locale, context);

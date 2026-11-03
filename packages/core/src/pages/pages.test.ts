@@ -5,6 +5,7 @@ import { ensurePagesCollection } from "../collections/default-collections.js";
 import { useTestDatabase } from "../testing/test-database.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
+import { buildSiteServer } from "../website/site-server.js";
 
 function pageWith(children: unknown[]): PageDocument {
   const page = createEmptyPage();
@@ -110,5 +111,28 @@ describe("page designs", () => {
     expect((await editor("GET", "/pages/settings")).json()).toEqual({
       customScripts: "allowScripts",
     });
+  });
+
+  // LINTEL-SEC-003: scripts saved while the site allowed them were still served after it
+  // went back to removing them.
+  it("stops serving saved scripts as soon as the site removes them again", async () => {
+    await developer("PATCH", "/pages/settings", { customScripts: "allowScripts" });
+    const created = await createPage(developer, pageWith([code]));
+    await developer("POST", `/entries/${created.json().id}/publish`);
+    const site = buildSiteServer({ api: server });
+    await site.ready();
+    try {
+      const allowed = await site.inject({ method: "GET", url: "/" });
+      expect(allowed.body).toContain('onclick="steal()"');
+
+      await developer("PATCH", "/pages/settings", { customScripts: "removeScripts" });
+
+      const removed = await site.inject({ method: "GET", url: "/" });
+      expect(removed.statusCode).toBe(200);
+      expect(removed.body).toContain("Hi</h2>");
+      expect(removed.body).not.toContain("steal()");
+    } finally {
+      await site.close();
+    }
   });
 });
