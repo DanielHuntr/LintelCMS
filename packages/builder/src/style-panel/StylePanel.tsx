@@ -237,6 +237,8 @@ function StateSelect({
           <option value="hover">{text("pageBuilder.style.stateHover")}</option>
           <option value="pressed">{text("pageBuilder.style.statePressed")}</option>
           <option value="focus">{text("pageBuilder.style.stateFocus")}</option>
+          <option value="open">{text("pageBuilder.style.stateOpen")}</option>
+          <option value="selected">{text("pageBuilder.style.stateSelected")}</option>
         </optgroup>
         {owners.length > 0 && (
           <optgroup label={text("pageBuilder.style.stateOwnerHeading")}>
@@ -246,6 +248,12 @@ function StateSelect({
               </option>,
               <option key={`pressed@${owner.id}`} value={`pressed@${owner.id}`}>
                 {text("pageBuilder.style.stateOwnerPressed", { name: owner.name })}
+              </option>,
+              <option key={`open@${owner.id}`} value={`open@${owner.id}`}>
+                {text("pageBuilder.style.stateOwnerOpen", { name: owner.name })}
+              </option>,
+              <option key={`selected@${owner.id}`} value={`selected@${owner.id}`}>
+                {text("pageBuilder.style.stateOwnerSelected", { name: owner.name })}
               </option>,
             ])}
           </optgroup>
