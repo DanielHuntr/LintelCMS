@@ -16,6 +16,7 @@ import { impliedPlacedGridStyles } from "../placed-grid/placed-grid.js";
 import { planMarkDrawings, type TextMark } from "../text-marks/text-marks.js";
 import { breakpointWidths } from "./style-cascade.js";
 import { stylePropertyNames, styleProperties } from "./style-properties.js";
+import { compileStillScenes } from "./still-scenes.js";
 
 /**
  * Turns a page's node styles into a plain, readable stylesheet: the page's added fonts, one
@@ -45,6 +46,9 @@ import { stylePropertyNames, styleProperties } from "./style-properties.js";
  * state transition eases into its states, with everything that follows them, unless people
  * ask their device for less motion. The builder shows a state while it's being designed with
  * `compileStatePreview`.
+ *
+ * A held sideways scene stacks its panels for people who ask for less motion, and without
+ * scripts (`compileStillScenes`).
  */
 export function compileStylesheet(root: PageNode, classNames: ReadonlyMap<string, string>): string {
   const visible = listVisibleNodes(root);
@@ -107,6 +111,12 @@ export function compileStylesheet(root: PageNode, classNames: ReadonlyMap<string
       );
     }
   }
+
+  const stillScenes = compileStillScenes(
+    visible.map(({ node }) => node),
+    classNames,
+  );
+  if (stillScenes) sections.push(stillScenes);
 
   for (const { node } of visible) {
     const css = node.type === "codeBlock" ? node.props.css : undefined;
