@@ -137,19 +137,24 @@ export function ContentTree({ beside }: { beside?: ReactNode } = {}) {
       <TreeSelectionBar />
 
       <div className="hairline-top px-2.5 py-2">
+        {/* The name starts with the words shown, and the count follows in words, not the bare
+            number in the badge (LINTEL-A11Y-004, WCAG 2.5.3). */}
         <Link
           to="/content/recycle-bin"
-          aria-label={
-            roots.data?.recycleBinCount === 1
-              ? t("tree.recycleBinCountOne")
-              : t("tree.recycleBinCount", { count: roots.data?.recycleBinCount ?? 0 })
-          }
           className="flex h-8 items-center gap-2 rounded-control px-2 text-body text-label hover:bg-fill focus-visible:focus-ring data-[status=active]:bg-accent/12 data-[status=active]:text-accent"
         >
           <Trash2 aria-hidden="true" strokeWidth={1.75} className="size-4 text-label-secondary" />
-          <span className="flex-1">{t("tree.recycleBin")}</span>
+          <span className="flex-1">
+            {t("tree.recycleBin")}
+            <span className="sr-only">
+              , {t("tree.recycleBinItems", { count: roots.data?.recycleBinCount ?? 0 })}
+            </span>
+          </span>
           {(roots.data?.recycleBinCount ?? 0) > 0 && (
-            <span className="rounded-full bg-fill px-1.5 text-caption text-label-secondary tabular-nums">
+            <span
+              aria-hidden="true"
+              className="rounded-full bg-fill px-1.5 text-caption text-label-secondary tabular-nums"
+            >
               {roots.data?.recycleBinCount}
             </span>
           )}

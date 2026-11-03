@@ -28,7 +28,7 @@ function fieldLabels() {
   const list = screen.getByRole("list", { name: "Fields" });
   return within(list)
     .getAllByRole("button", { name: /settings$/ })
-    .map((button) => button.getAttribute("aria-label")?.replace(" settings", ""));
+    .map((button) => button.querySelector(".font-medium")?.textContent);
 }
 
 afterEach(() => vi.restoreAllMocks());
@@ -74,6 +74,17 @@ describe("BlueprintEditor", () => {
     await userEvent.click(within(dialog).getByRole("button", { name: "Remove field" }));
 
     expect(fieldLabels()).toEqual(["Title"]);
+  });
+
+  // LINTEL-A11Y-004: a field card's button was named "Title settings" while it shows the type
+  // and handle too; its name is now what it shows, then "settings".
+  it("names each field's settings button by what the card shows", async () => {
+    mockApi(() => ({ fieldtypes }));
+    renderScreen(<BlueprintEditor blueprint={blueprint} />);
+    await screen.findByRole("heading", { name: "Page" });
+
+    const title = screen.getByRole("button", { name: /^Title .* · title settings$/ });
+    expect(title).not.toHaveAttribute("aria-label");
   });
 
   it("keeps the title locked first, with no move or remove buttons", async () => {

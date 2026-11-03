@@ -108,7 +108,6 @@ export function FieldCard({
         <button
           type="button"
           onClick={onOpenSettings}
-          aria-label={t("builder.editField", { label })}
           className="flex min-w-0 flex-1 items-center gap-2.5 rounded-control py-2.5 text-start focus-visible:focus-ring"
         >
           <span className="flex size-8 shrink-0 items-center justify-center rounded-control bg-fill text-label-secondary">
@@ -122,7 +121,7 @@ export function FieldCard({
               )}
             >
               {label}
-            </span>
+            </span>{" "}
             <span
               className={classNames(
                 "truncate text-caption",
@@ -132,6 +131,8 @@ export function FieldCard({
               {problem ?? `${typeName} · ${field.handle}`}
             </span>
           </span>
+          {/* The name is what the card shows, then "settings" (LINTEL-A11Y-004, WCAG 2.5.3). */}{" "}
+          <span className="sr-only">{t("builder.editFieldSuffix")}</span>
         </button>
         <span
           className={classNames(

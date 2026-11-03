@@ -136,8 +136,10 @@ export function TreeRow({
       aria-level={depth + 1}
       aria-expanded={isExpandable ? isExpanded : undefined}
       aria-selected={selecting?.isActive ? selecting.isPicked : isSelected}
+      // The count shown next to the name is said in words too (LINTEL-A11Y-004, WCAG 2.5.3).
       aria-label={[
         label,
+        count?.description,
         state ? t(`tree.status.${stateLabel(state)}`) : undefined,
         selecting?.isPicked ? t("tree.selection.selectedState") : undefined,
       ]
@@ -226,6 +228,7 @@ export function TreeRow({
         </span>
         {count && (
           <span
+            aria-hidden="true"
             title={count.description}
             className="shrink-0 rounded-full bg-fill px-1.5 text-caption text-label-secondary tabular-nums"
           >

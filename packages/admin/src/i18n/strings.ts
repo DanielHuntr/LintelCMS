@@ -675,6 +675,7 @@ const english = {
   "builder.titleLabel": "Title",
   "builder.alwaysFirst": "Always first",
   "builder.editField": "{label} settings",
+  "builder.editFieldSuffix": "settings",
   "builder.moveUp": "Move “{label}” up",
   "builder.moveDown": "Move “{label}” down",
   "builder.moved": "“{label}” moved to position {position} of {count}.",

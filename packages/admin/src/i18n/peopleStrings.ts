@@ -104,7 +104,7 @@ export const peopleStrings = {
   "roles.deleteMessage": "This can’t be undone. Nobody has this role now.",
   "account.title": "Your account",
   "account.subtitle": "Your details, password and how you sign in.",
-  "account.openAccount": "Your account: {name}",
+  "account.openAccount": "Your account:",
   "account.loading": "Loading your account",
   "account.save": "Save",
   "account.saved": "Saved.",

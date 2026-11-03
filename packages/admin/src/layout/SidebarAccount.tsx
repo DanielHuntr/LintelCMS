@@ -38,12 +38,13 @@ export function SidebarAccount({ signedInUser, onSignOut }: SidebarAccountProps)
     <div className="flex items-center gap-1 px-1 py-1">
       <Link
         to="/account"
-        aria-label={t("account.openAccount", { name: signedInUser.name })}
         className="flex min-w-0 flex-1 items-center gap-3 rounded-control px-1.5 py-1 transition-colors duration-150 ease-standard hover:bg-fill focus-visible:focus-ring"
       >
         <Avatar name={signedInUser.name} />
+        {/* What's shown is the name, so it matches what people see and say (LINTEL-A11Y-004). */}
+        <span className="sr-only">{t("account.openAccount")}</span>{" "}
         <span className="flex min-w-0 flex-col">
-          <span className="truncate text-body font-medium text-label">{signedInUser.name}</span>
+          <span className="truncate text-body font-medium text-label">{signedInUser.name}</span>{" "}
           <span className="truncate text-footnote text-label-secondary">{signedInUser.email}</span>
         </span>
       </Link>

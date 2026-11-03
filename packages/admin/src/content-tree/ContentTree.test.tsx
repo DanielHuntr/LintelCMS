@@ -103,9 +103,9 @@ describe("the content tree", () => {
 
     const tree = await screen.findByRole("tree", { name: "Content tree" });
     expect(within(tree).getByRole("treeitem", { name: "Pages" })).toBeTruthy();
-    expect(
-      within(tree).getByRole("treeitem", { name: "Blog posts" }).getAttribute("aria-expanded"),
-    ).toBeNull();
+    // The count is said in words after the name (LINTEL-A11Y-004).
+    const blog = within(tree).getByRole("treeitem", { name: /^Blog posts, 240 / });
+    expect(blog.getAttribute("aria-expanded")).toBeNull();
     expect(screen.getByText("240")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Recycle bin, 2 items" })).toBeTruthy();
   });
