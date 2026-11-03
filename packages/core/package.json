@@ -89,6 +89,21 @@
       "types": "./dist/liquid-editor-support/liquid-editor-commands.d.ts",
       "development": "./src/liquid-editor-support/liquid-editor-commands.ts",
       "default": "./dist/liquid-editor-support/liquid-editor-commands.js"
+    },
+    "./app-session-tokens": {
+      "types": "./dist/apps/app-session-tokens.d.ts",
+      "development": "./src/apps/app-session-tokens.ts",
+      "default": "./dist/apps/app-session-tokens.js"
+    },
+    "./webhook-signatures": {
+      "types": "./dist/webhooks/webhook-signatures.d.ts",
+      "development": "./src/webhooks/webhook-signatures.ts",
+      "default": "./dist/webhooks/webhook-signatures.js"
+    },
+    "./app-manifest": {
+      "types": "./dist/apps/app-manifest.schema.d.ts",
+      "development": "./src/apps/app-manifest.schema.ts",
+      "default": "./dist/apps/app-manifest.schema.js"
     }
   },
   "bin": {

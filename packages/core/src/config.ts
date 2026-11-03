@@ -67,6 +67,10 @@ const coreSettingsSchema = z.object({
   // addresses and names ("10.0.0.1, 10.0.0.2"). The default trusts proxies on this machine
   // and private networks (Caddy, a platform's load balancer, a Docker network); "false"
   // trusts none. Trusting one that isn't there lets anyone pretend to be any address.
+  // Apps' development mode (Build → Apps): lets an app running on this computer be
+  // installed while you build it, without WEBHOOKS_ALLOW_PRIVATE_ADDRESSES. Left empty, it
+  // is allowed in development and not in production; "true" or "false" decides.
+  APPS_DEVELOPMENT_MODE: z.enum(["true", "false", ""]).default(""),
   TRUST_PROXY: z.string().default(DEFAULT_TRUST_PROXY).transform(parseTrustProxy),
   // Content model as code (see src/content-model-sync). The folder is relative to the
   // repository root; the editing switch defaults to on in development, off in production.
@@ -119,6 +123,16 @@ export function loadProjectEnvFile(envFile = PROJECT_ENV_FILE): void {
   if (existsSync(envFile)) {
     process.loadEnvFile(envFile);
   }
+}
+
+/** Whether Build → Apps may turn on apps' development mode (see src/apps). */
+export function appDevelopmentModeAvailable(
+  config: Pick<Config, "APPS_DEVELOPMENT_MODE" | "NODE_ENV">,
+): boolean {
+  if (config.APPS_DEVELOPMENT_MODE === "") {
+    return config.NODE_ENV === "development";
+  }
+  return config.APPS_DEVELOPMENT_MODE === "true";
 }
 
 export function loadConfig(environment: NodeJS.ProcessEnv = process.env): Config {

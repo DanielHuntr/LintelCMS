@@ -212,6 +212,16 @@ Installs and removes add-ons in the site's Lintel folder, and helps you build yo
 own commands run as `pnpm lintel <add-on id>:<command>`. See
 [Building add-ons](/building/building-addons/).
 
+## apps
+
+```bash
+pnpm lintel apps new <name> [--folder <path>]
+```
+
+Starts a new app that runs on its own server: a plain Node app with its manifest, a page
+inside the admin, its checks, tests and a README. Apps are installed in Build → Apps; see
+[Building an app](/building/building-an-app/).
+
 ## create-admin
 
 ```bash

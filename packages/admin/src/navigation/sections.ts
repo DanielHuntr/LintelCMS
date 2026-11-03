@@ -15,7 +15,7 @@ import {
 import { t, type StringKey } from "../i18n/strings.js";
 import type { AdminPluginDefinition } from "../plugins/adminPlugin.js";
 import { adminPlugins } from "../plugins/adminPlugins.js";
-import { visibleContributions } from "../plugins/pluginContributions.js";
+import { visibleExtensions } from "../plugins/pluginContributions.js";
 
 /**
  * The admin's main sections, in the order people use them most.
@@ -79,12 +79,13 @@ const PLUGIN_ITEMS_AFTER = "/media";
 /**
  * The sidebar a person with these permissions sees, leaving out sections whose plugin isn't
  * switched on (a blog has no use for an empty Commerce section), with the sidebar items of
- * switched-on plugins after Media.
+ * switched-on plugins, then installed apps, after Media.
  */
 export function visibleSections(
   granted: readonly string[],
   enabledPlugins: readonly string[],
   plugins: readonly AdminPluginDefinition[] = adminPlugins,
+  apps: readonly AdminPluginDefinition[] = [],
 ): NavigationItem[] {
   const own = sections
     .filter(
@@ -95,7 +96,7 @@ export function visibleSections(
         (section.plugin === undefined || enabledPlugins.includes(section.plugin)),
     )
     .map((section) => ({ path: section.path, label: t(section.label), icon: section.icon }));
-  const fromPlugins = visibleContributions(plugins, "sidebarItems", {
+  const fromPlugins = visibleExtensions(plugins, apps, "sidebarItems", {
     permissions: granted,
     enabledPlugins,
   }).map(({ path, label, icon }) => ({ path, label, icon }));

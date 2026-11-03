@@ -25,7 +25,9 @@ with the admin and sharing its React, router and query cache.
 | `editorPanels`     | `PluginEditorPanels.tsx`, in the entry editor's side panel   |
 | `fieldEditors`     | `src/fields/FieldEditor.tsx`                                 |
 
-`pluginContributions.ts` decides who sees what (plugin on, permission held).
+`pluginContributions.ts` decides who sees what (plugin on, permission held). Installed
+external apps use the same extension points from a second list that is always on
+(`visibleExtensions`; see `src/apps`).
 `AdminPluginsContext` hands the list to screens, so tests can try a plugin without
 installing it:
 

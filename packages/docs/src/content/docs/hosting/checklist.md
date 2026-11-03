@@ -13,7 +13,7 @@ Go through this once your site is running and before you invite editors.
 - [ ] `PUBLIC_URL` is your real address and starts with `https://`.
 - [ ] The site opens with a padlock, and `http://` redirects to `https://`.
 - [ ] `ALLOW_INSECURE_HTTP` is **not** set.
-- [ ] `WEBHOOKS_ALLOW_PRIVATE_ADDRESSES` is **not** set.
+- [ ] `WEBHOOKS_ALLOW_PRIVATE_ADDRESSES` is **not** set, and nor is `APPS_DEVELOPMENT_MODE=true`.
 - [ ] Every admin has a long password of their own; nobody shares an account.
 - [ ] `https://your-site/ready` says `"status":"ready"`.
 

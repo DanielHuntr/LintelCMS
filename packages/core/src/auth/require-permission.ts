@@ -76,6 +76,22 @@ export function requirePermission(permission: Permission) {
   };
 }
 
+/**
+ * Like `requirePermission`, for routes more than one permission opens: shop orders accept
+ * "commerce:read" or the narrower "commerce:read-orders" that apps are given.
+ */
+export function requireAnyPermission(permissions: readonly [Permission, ...Permission[]]) {
+  return async function checkAnyPermission(request: FastifyRequest, reply: FastifyReply) {
+    const signedIn = await loadSignedIn(request, reply);
+    if (signedIn.mustSetUpTwoFactor) {
+      throw new TwoFactorSetupRequiredError();
+    }
+    if (!permissions.some((permission) => hasPermission(signedIn.permissions, permission))) {
+      throw new PermissionDeniedError(permissions[0]);
+    }
+  };
+}
+
 /** For handlers behind a guard: the signed-in user, without a null check at every use. */
 export function getSignedIn(request: FastifyRequest): SignedIn {
   if (!request.signedIn) {

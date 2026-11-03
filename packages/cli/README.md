@@ -33,6 +33,8 @@ core, imported through `@lintel/core/data-tools` (`packages/core/src/data-tools.
 | `addons/addon-build.ts`                   | `build`: both halves bundled with esbuild, shared modules left out |
 | `addons/addon-scaffold.ts`                | `new`: a new add-on (files in `addon-template.ts`)                 |
 | `addons/addon-commands.ts`                | `lintel <add-on id>:<command>`, and listing them in `lintel help`  |
+| `commands/apps.ts`                        | `lintel apps new`: a new external app                              |
+| `apps/app-scaffold.ts`                    | Copies `templates/app` (a plain Node app) and fills in its name    |
 
 Everything that talks to the person goes through `Terminal`, so tests run commands with a
 recording terminal and check what was said (`command-line.test.ts`).

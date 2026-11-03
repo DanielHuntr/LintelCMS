@@ -3,6 +3,7 @@ import { lintelVersion } from "@lintel/core/updates";
 import { printAddonCommands, runAddonCommand } from "./addons/addon-commands.js";
 import type { Command } from "./command.js";
 import { addonsCommand } from "./commands/addons.js";
+import { appsCommand } from "./commands/apps.js";
 import { backupCommand } from "./commands/backup.js";
 import { createAdminCommand } from "./commands/create-admin.js";
 import { doctorCommand } from "./commands/doctor.js";
@@ -32,6 +33,7 @@ export const commands: readonly Command[] = [
   modelCommand,
   templatesCommand,
   addonsCommand,
+  appsCommand,
   createAdminCommand,
 ];
 

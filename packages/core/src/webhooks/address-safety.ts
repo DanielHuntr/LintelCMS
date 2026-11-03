@@ -96,6 +96,34 @@ function ipv4FromGroups(highGroup: string, lowGroup: string): string {
   return [high >> 8, high & 255, low >> 8, low & 255].join(".");
 }
 
+const loopbackAddresses = new BlockList();
+loopbackAddresses.addSubnet("127.0.0.0", 8, "ipv4");
+loopbackAddresses.addAddress("::1", "ipv6");
+
+/**
+ * True for this computer's own addresses only (127.x.x.x and ::1), not the rest of the
+ * private network. Apps' development mode lets apps reach these and nothing else.
+ */
+export function isLoopbackAddress(address: string): boolean {
+  const version = isIP(address);
+  if (version === 4) {
+    return loopbackAddresses.check(address, "ipv4");
+  }
+  if (version === 6) {
+    const embeddedIpv4 = ipv4InsideIpv6(address);
+    return embeddedIpv4
+      ? loopbackAddresses.check(embeddedIpv4, "ipv4")
+      : loopbackAddresses.check(address, "ipv6");
+  }
+  return false;
+}
+
+/** "localhost", "app.localhost", 127.0.0.1 or [::1]: a web address on this computer. */
+export function isLoopbackHost(url: URL): boolean {
+  const host = bareHostname(url).toLowerCase().replace(/\.$/, "");
+  return host === "localhost" || host.endsWith(".localhost") || isLoopbackAddress(host);
+}
+
 /** Host names that mean "this machine" whatever DNS says. */
 export function isLocalHostName(hostname: string): boolean {
   const name = hostname.toLowerCase().replace(/\.$/, "");

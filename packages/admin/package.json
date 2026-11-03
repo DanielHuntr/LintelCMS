@@ -24,6 +24,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@fontsource/schibsted-grotesk": "^5.3.0",
+    "@lintel/app-bridge": "workspace:*",
     "@lintel/builder": "workspace:*",
     "@lintel/builder-model": "workspace:*",
     "@lintel/core": "workspace:*",

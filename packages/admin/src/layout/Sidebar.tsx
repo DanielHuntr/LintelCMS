@@ -1,10 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { Search, X } from "lucide-react";
+import { useInstalledApps } from "../apps/InstalledAppsContext.js";
 import { BrandLogo } from "../branding/BrandLogo.js";
 import { type ReactNode, useEffect, useRef } from "react";
 import { classNames } from "../design/classNames.js";
 import { t } from "../i18n/strings.js";
 import { visibleSections } from "../navigation/sections.js";
+import { adminPlugins } from "../plugins/adminPlugins.js";
 import { isMacPlatform } from "../search/useCommandPalette.js";
 import { SiteSwitcher } from "../sites/SiteSwitcher.js";
 import { ViewWebsiteLink } from "../website/ViewWebsiteLink.js";
@@ -43,6 +45,7 @@ export function Sidebar({
   isOpenOnNarrowScreens = false,
   onCloseOnNarrowScreens,
 }: SidebarProps) {
+  const apps = useInstalledApps();
   const sidebar = useRef<HTMLElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
   // Opening it on a phone takes focus to its close button, so the keyboard carries on there.
@@ -108,7 +111,7 @@ export function Sidebar({
 
       <nav aria-label={t("nav.label")} className="flex-1 overflow-y-auto px-2.5">
         <ul className="flex flex-col gap-0.5">
-          {visibleSections(permissions, enabledPlugins).map((section) => (
+          {visibleSections(permissions, enabledPlugins, adminPlugins, apps).map((section) => (
             <li key={section.path}>
               {/* TanStack Router marks the current page's link with data-status="active". */}
               <Link

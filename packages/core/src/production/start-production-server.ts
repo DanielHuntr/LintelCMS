@@ -1,6 +1,6 @@
 import { readDeploymentOptions } from "../deployment-options.js";
 import type { FastifyInstance } from "fastify";
-import type { Config } from "../config.js";
+import { appDevelopmentModeAvailable, type Config } from "../config.js";
 import { describeActiveDatabase } from "../database/active-database.js";
 import { createConfiguredEmailSender } from "../email/index.js";
 import {
@@ -115,6 +115,7 @@ export async function prepareProductionServer(
     trustProxy: config.TRUST_PROXY,
     cronSecret: config.CRON_SECRET,
     webhooks: { allowPrivateAddresses: config.WEBHOOKS_ALLOW_PRIVATE_ADDRESSES },
+    appDevelopmentModeAvailable: appDevelopmentModeAvailable(config),
     media: {
       storage,
       transformCacheFolder: paths.transformCacheFolder,

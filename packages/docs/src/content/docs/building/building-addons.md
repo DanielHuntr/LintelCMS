@@ -19,6 +19,11 @@ installs with one command, without touching Lintel's source. It can add any of:
 | Terminal commands                | `commands`                          | `lintel example:hours`                              |
 | API routes and tables            | `routes`, `database`                | See [Writing a plugin](/building/writing-a-plugin/) |
 
+An add-on runs inside Lintel with full access, and sites list it in **Build → Add-ons**. To
+connect a service from its own server instead, with only the access a site owner approves,
+build an [app](/building/building-an-app/) (`pnpm lintel apps new`); apps are listed
+beside add-ons, in **Build → Apps**.
+
 `packages/addon-example` in the repository has one of each. Read it beside this page.
 
 ## Start one

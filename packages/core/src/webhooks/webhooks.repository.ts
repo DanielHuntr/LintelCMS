@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import {
   type NewWebhookRow,
@@ -9,6 +9,15 @@ import {
 } from "./webhooks.table.js";
 
 /** Database reads and writes for webhooks themselves. Deliveries are in their own file. */
+
+/**
+ * Webhooks people added in Settings. Apps' subscriptions (`appId` set) are left out of
+ * listing, changing and deleting: they belong to the app, are shown with it, and are
+ * removed by uninstalling it. They are still sent, by `listWebhooksForEvent`.
+ */
+function addedInSettings(tenantId: string) {
+  return and(eq(webhooksTable.tenantId, tenantId), isNull(webhooksTable.appId));
+}
 
 export type WebhookWithLastDelivery = WebhookRow & {
   lastDelivery: { status: WebhookDeliveryStatus; createdAt: Date } | null;
@@ -21,7 +30,7 @@ export async function listWebhookRows(
   const webhooks = await database
     .select()
     .from(webhooksTable)
-    .where(eq(webhooksTable.tenantId, tenantId))
+    .where(addedInSettings(tenantId))
     .orderBy(webhooksTable.createdAt);
   return attachLastDeliveries(database, webhooks);
 }
@@ -34,7 +43,7 @@ export async function findWebhookRow(
   const [webhook] = await database
     .select()
     .from(webhooksTable)
-    .where(and(eq(webhooksTable.tenantId, tenantId), eq(webhooksTable.id, webhookId)))
+    .where(and(addedInSettings(tenantId), eq(webhooksTable.id, webhookId)))
     .limit(1);
   if (!webhook) {
     return undefined;
@@ -81,7 +90,7 @@ export async function updateWebhookRow(
   await database
     .update(webhooksTable)
     .set(changes)
-    .where(and(eq(webhooksTable.tenantId, tenantId), eq(webhooksTable.id, webhookId)));
+    .where(and(addedInSettings(tenantId), eq(webhooksTable.id, webhookId)));
 }
 
 /** True when a webhook was deleted. Its deliveries go with it. */
@@ -92,7 +101,7 @@ export async function deleteWebhookRow(
 ): Promise<boolean> {
   const deleted = await database
     .delete(webhooksTable)
-    .where(and(eq(webhooksTable.tenantId, tenantId), eq(webhooksTable.id, webhookId)))
+    .where(and(addedInSettings(tenantId), eq(webhooksTable.id, webhookId)))
     .returning({ id: webhooksTable.id });
   return deleted.length > 0;
 }

@@ -55,6 +55,23 @@ export function visibleContributions<Kind extends ContributionKind>(
     .filter((contribution) => mayUse(viewer.permissions, contribution.permission));
 }
 
+/**
+ * The same, from plugins and then installed apps. Apps are on while they are installed, so
+ * only the permission each contribution names decides whether the viewer sees it.
+ */
+export function visibleExtensions<Kind extends ContributionKind>(
+  plugins: readonly AdminPluginDefinition[],
+  apps: readonly AdminPluginDefinition[],
+  kind: Kind,
+  viewer: Viewer,
+): Array<FromPlugin<Contributions[Kind]>> {
+  const appsOn = { ...viewer, enabledPlugins: apps.map((app) => app.id) };
+  return [
+    ...visibleContributions(plugins, kind, viewer),
+    ...visibleContributions(apps, kind, appsOn),
+  ];
+}
+
 export function mayUse(granted: readonly string[], permission: Permission | undefined): boolean {
   return permission === undefined || hasPermission(granted, permission);
 }

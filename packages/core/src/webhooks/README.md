@@ -3,6 +3,10 @@
 Addresses Lintel tells when something happens, such as a static site builder that rebuilds
 when a page is published. Admins add them in Build → Webhooks.
 
+Installed apps (`src/apps`) subscribe to events too. Their webhooks have `app_id` set, are
+signed with the app's client secret, and aren't listed, changed or deleted here: they are
+shown with the app and go when it is uninstalled.
+
 ## Events
 
 `entry.published`, `entry.unpublished`, `entry.deleted`, `asset.uploaded`,
@@ -77,7 +81,10 @@ Webhooks can't be sent to loopback, private, link-local (including cloud metadat
 however they are written. Obvious ones (`localhost`, `10.0.0.5`) are refused when the
 webhook is saved; names are checked against the address they resolve to at the moment of
 connecting, so DNS can't be switched afterwards. Set
-`WEBHOOKS_ALLOW_PRIVATE_ADDRESSES=true` to test a receiver on your own machine.
+`WEBHOOKS_ALLOW_PRIVATE_ADDRESSES=true` to test a receiver on your own machine. Installed
+apps' webhooks may also go to this computer (and only this computer) while apps'
+development mode is on: `allowLoopbackAddresses`, asked for through `appsMayUseLoopback`
+before each delivery to an app (see src/apps).
 
 ## Endpoints
 

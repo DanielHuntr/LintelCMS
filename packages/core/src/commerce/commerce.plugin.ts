@@ -41,6 +41,16 @@ export const commercePlugin = definePlugin({
       description: "Change products and prices, and handle orders.",
     },
     {
+      permission: "commerce:read-orders",
+      name: "See orders",
+      description: "Orders and who placed them, without the rest of the shop.",
+    },
+    {
+      permission: "commerce:handle-orders",
+      name: "Handle orders",
+      description: "Mark orders as sent and add notes. Not refunds.",
+    },
+    {
       permission: "commerce:refund",
       name: "Refund orders",
       description: "Give money back to customers.",

@@ -4,6 +4,9 @@ import rateLimit from "@fastify/rate-limit";
 import compress from "@fastify/compress";
 import Fastify, { type FastifyInstance, type FastifyServerOptions, LogController } from "fastify";
 import { apiTokensRoutes } from "./api-tokens/api-tokens.routes.js";
+import { AppRequestLimiter, limitAppRequests } from "./apps/app-rate-limit.js";
+import { appsMayUseLoopback } from "./apps/app-development-mode.js";
+import { appsRoutes } from "./apps/apps.routes.js";
 import { authRoutes } from "./auth/auth.routes.js";
 import { backupsRoutes } from "./backups/backups.routes.js";
 import { defaultBackupsFolder, defaultImportsFolder } from "./backups/data-tools-folders.js";
@@ -302,6 +305,13 @@ export interface ServerOptions {
   siteFonts?: SiteFontsOptions;
   /** Publishing the website as files to other hosting (see src/publishing). */
   publishing?: PublishingOptions & { automaticDelayMilliseconds?: number };
+  /** How many API requests each installed app may make a minute. Defaults to 240. */
+  appRequestsPerMinute?: number;
+  /**
+   * Whether apps' development mode may be turned on in Build → Apps, letting apps on this
+   * computer be installed (APPS_DEVELOPMENT_MODE). Off by default.
+   */
+  appDevelopmentModeAvailable?: boolean;
 }
 
 export interface WebhookOptions {
@@ -349,9 +359,13 @@ export function buildServer(options: ServerOptions) {
     options.assetExists ?? ((assetId) => mediaLibrary.assetExists(assetId)),
   );
   server.decorate("assetLookup", options.assetLookup ?? mediaLibrary);
+  const appDevelopment = { available: options.appDevelopmentModeAvailable ?? false };
   const webhooks = new WebhookDispatcher({
     database: () => server.database,
-    sender: { allowPrivateAddresses: options.webhooks?.allowPrivateAddresses ?? false },
+    sender: {
+      allowPrivateAddresses: options.webhooks?.allowPrivateAddresses ?? false,
+      appsMayUseLoopback: () => appsMayUseLoopback(server.database, appDevelopment),
+    },
     sendStraightAway: options.webhooks?.sendStraightAway ?? options.runScheduledJobs ?? true,
     onError: (error) => server.log.error(error, "Sending webhooks failed"),
   });
@@ -366,6 +380,7 @@ export function buildServer(options: ServerOptions) {
   server.decorate("addons", addons);
   // Before the website's Liquid engine is made, so it has plugins' tags and filters.
   for (const plugin of plugins.plugins) registerPluginLiquid(plugin, server.log);
+  server.decorate("appRequestLimiter", new AppRequestLimiter(options.appRequestsPerMinute));
   // Plugins' own tables are brought up to date before the server takes requests.
   server.addHook("onReady", () => activeDatabase.applyPluginMigrations(plugins.migrations));
   // Add-ons `lintel addons add` asked to switch on, now that they have loaded.
@@ -438,6 +453,8 @@ export function buildServer(options: ServerOptions) {
   );
   // Off by default; routes that need a limit (like sign-in) set their own.
   server.register(rateLimit, { global: false });
+  // Installed apps share one limit across every route they call (see src/apps).
+  server.addHook("onRequest", limitAppRequests);
 
   server.register(healthRoutes, { storage });
   setUpContentModelSync(server, options.contentModel);
@@ -559,6 +576,10 @@ function registerApiRoutes(
   server.register(deliveryAccessRoutes);
   server.register(apiTokensRoutes);
   server.register(webhooksRoutes);
+  server.register(appsRoutes, {
+    adminOrigin: options.adminOrigin,
+    development: { available: options.appDevelopmentModeAvailable ?? false },
+  });
   server.register(graphqlRoutes, { graphiql: options.graphiql ?? false });
   server.register(openApiRoutes);
   server.register(siteAddressRoutes);

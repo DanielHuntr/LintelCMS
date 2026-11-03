@@ -1,4 +1,5 @@
 import {
+  AppWindow,
   Blocks,
   FileInput,
   Globe,
@@ -87,6 +88,13 @@ function useBuildGroups(): BuildGroup[] {
           label: t("addons.title"),
           description: t("addons.buildDescription"),
           to: "/build/addons",
+        }),
+        ...when(canSeeSiteSettings, {
+          key: "apps",
+          icon: AppWindow,
+          label: t("apps.title"),
+          description: t("apps.buildDescription"),
+          to: "/build/apps",
         }),
       ],
     },

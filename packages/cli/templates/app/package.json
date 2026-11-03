@@ -1,0 +1,18 @@
+{
+  "name": "__APP_HANDLE__",
+  "version": "0.1.0",
+  "private": true,
+  "description": "__APP_NAME__: an app for Lintel.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/main.js",
+    "dev": "node --watch src/main.js",
+    "test": "node --test test/*.js"
+  },
+  "dependencies": {
+    "@lintel/app-bridge": "file:__LINTEL_ROOT__/packages/app-bridge"
+  }
+}
