@@ -1,4 +1,11 @@
-import type { BlockProperty, BoundPicture, CustomBlock, PageNode } from "@lintel/builder-model";
+import type {
+  BlockProperty,
+  BoundPicture,
+  ComponentVariants,
+  CustomBlock,
+  PageNode,
+  VariantSelection,
+} from "@lintel/builder-model";
 import { createContext, type ReactNode, useContext } from "react";
 
 /**
@@ -46,6 +53,15 @@ export interface BlockMaster {
   /** Read-only for blocks defined in code. */
   isReadOnly: boolean;
   onPropertiesChange: (properties: BlockProperty[]) => void;
+  /**
+   * Variants, for components designed in the builder: the bar over the canvas picks which
+   * one is shown (and where changes go), and "Edit variants" changes the choices. Left out,
+   * there's no bar.
+   */
+  variants?: ComponentVariants;
+  selection?: VariantSelection;
+  onSelectionChange?: (selection: Record<string, string>) => void;
+  onVariantsChange?: (variants: ComponentVariants) => void;
 }
 
 export const noBlocks: BuilderBlocks = { library: [], canManage: false };

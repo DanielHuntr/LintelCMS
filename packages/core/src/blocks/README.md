@@ -76,3 +76,14 @@ page can use blocks; `builder:blocks` (Owners and Admins) makes and changes them
 | `block-values.ts`      | Finding and changing what pages hold of a block                    |
 | `block-rendering.ts`   | A page's block data: the blocks, their pictures, server-drawn HTML |
 | `site-block-types.ts`  | Blocks in content types' blocks fields                             |
+
+## Variants
+
+A block (a component, in the builder) can have `variants`: variant properties, the looks they
+give and whether clients may choose them (docs/decisions/0059-components-with-variants.md).
+Requests may send `variants`; they are checked against the design (`checkComponentVariants`,
+400 under `fields.variants`), and left out, an update keeps the ones stored. Saving a page keeps
+only each instance's choices that differ from the defaults and drops choices no longer offered.
+Clients may fill in an instance's properties, and change its variant only when
+`clientsMayChoose` is on (403 `DESIGN_CHANGE_NOT_ALLOWED` otherwise). Migration 0034 adds the
+column, with no variants for blocks saved before.

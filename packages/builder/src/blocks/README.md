@@ -34,3 +34,17 @@ conditions) are edited in the app with the field editor, beside the design.
 | `BlockInstancePanel.tsx` | A selected instance: its form, Edit block design, Detach          |
 | `BlockTools.tsx`         | Make into a block, and Choose what editors can change             |
 | `MakeBlockDialog.tsx`    | The dialog both use                                               |
+
+## Components, variants and similar elements
+
+The builder calls blocks **components** (docs/decisions/0059-components-with-variants.md).
+
+- An instance's panel shows its **Variants** (a row of choices each, `VariantChoices`) above
+  its properties. Clients see the properties, and the variants only when the component allows it.
+- **Make these N one component** (`BlockTools`, `MakeSimilarDialog`) appears when the selected
+  element has others built the same way: those with its shared style, or else its siblings. The
+  dialog says what each keeps of its own; one Undo puts them back. Style suggests it under the
+  shared-style row when the elements sharing the style are built alike.
+- While designing a component, `ComponentVariantBar` sits over the canvas: which variant is
+  shown, where changes go, and **Edit variants** (names and comma-separated choices).
+- Insert shows each component's design as a small sketch.

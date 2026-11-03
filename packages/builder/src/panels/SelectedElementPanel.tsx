@@ -26,6 +26,7 @@ import {
   type StyleTarget,
   type CustomBlock,
   customBlockType,
+  findSimilarElements,
 } from "@lintel/builder-model";
 import type { MotionSpec } from "@lintel/motion";
 import type { Translate as MotionText } from "@lintel/motion-editor";
@@ -103,6 +104,15 @@ interface SelectedElementPanelProps {
     replaceWithBlock: (nodeId: string, block: CustomBlock) => void;
     detachBlock: (nodeId: string, pictures?: Readonly<Record<string, BoundPicture>>) => void;
     changeBlockValues: (nodeId: string, values: Record<string, unknown>, blockName: string) => void;
+    changeBlockVariant: (
+      nodeId: string,
+      variant: Record<string, string>,
+      blockName: string,
+    ) => void;
+    replaceWithInstances: (
+      block: CustomBlock,
+      values: Readonly<Record<string, Record<string, unknown>>>,
+    ) => void;
     replaceDesign: (nodeId: string, design: PageNode) => void;
     markText: (
       selection: { nodeId: string; prop: string; from: number; to: number; text: string },
@@ -298,6 +308,16 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
 
   const blocks = useBuilderBlocks();
   const master = useBlockMaster();
+  // Elements sharing this one's style and built the same way: changes inside them only
+  // follow each other as a component, so Style suggests it (and Make these... opens).
+  const [similarRequest, setSimilarRequest] = useState(0);
+  const similarWithSharedStyle = useMemo(
+    () =>
+      node?.sharedStyle && blocks.canManage && blocks.create && !master
+        ? findSimilarElements(document.root, node.id).length
+        : 0,
+    [node, document.root, blocks.canManage, blocks.create, master],
+  );
   const blockTools = (
     <BlockTools
       document={document}
@@ -305,6 +325,8 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
       nodeName={props.nodeName}
       catalogue={props.registry.catalogue}
       onMadeBlock={actions.replaceWithBlock}
+      onMadeFromSimilar={actions.replaceWithInstances}
+      similarRequest={similarRequest}
       onReplaceDesign={actions.replaceDesign}
     />
   );
@@ -322,6 +344,9 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
           node={node}
           isLocked={props.isLocked}
           onChange={(values, blockName) => actions.changeBlockValues(node.id, values, blockName)}
+          onChangeVariant={(variant, blockName) =>
+            actions.changeBlockVariant(node.id, variant, blockName)
+          }
           onDetach={() => actions.detachBlock(node.id, blocks.pictures)}
         />
       </aside>
@@ -394,6 +419,20 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
             nodeName={props.nodeName}
             onOpenSiteStyles={() => setShowsSiteStyles(true)}
             onChangeProps={(changed, label) => actions.changeProps(node.id, changed, label)}
+            sharedStyleHint={
+              similarWithSharedStyle >= 2 && (
+                <p data-component-hint className="text-caption text-label-secondary">
+                  {text("pageBuilder.components.sharedStyleHint")}{" "}
+                  <button
+                    type="button"
+                    onClick={() => setSimilarRequest((count) => count + 1)}
+                    className="rounded-sm font-medium text-accent hover:underline focus-visible:focus-ring"
+                  >
+                    {text("pageBuilder.components.sharedStyleHintAction")}
+                  </button>
+                </p>
+              )
+            }
           />
         ) : tab === "animate" ? (
           <AnimatePanel

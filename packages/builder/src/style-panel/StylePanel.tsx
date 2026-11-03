@@ -105,6 +105,8 @@ interface StylePanelProps {
   looks?: RelevantLooks;
   /** Changes the element's props: a menu link's own look is kept there (see menu-links/). */
   onChangeProps?: (props: Record<string, unknown>, label: string) => void;
+  /** Under the shared-style row: a quiet suggestion, such as making similar elements one component. */
+  sharedStyleHint?: ReactNode;
 }
 
 const textTypes = new Set([
@@ -155,6 +157,7 @@ export function StylePanel({
   onOpenSiteStyles,
   looks,
   onChangeProps,
+  sharedStyleHint,
 }: StylePanelProps) {
   const text = useBuilderText();
   const advanced = mode === "advanced";
@@ -301,6 +304,7 @@ export function StylePanel({
             isLocked={isLocked}
           />
         )}
+        {sharedStyleHint}
         {onOpenSiteStyles && (
           <button
             type="button"

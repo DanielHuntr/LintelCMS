@@ -493,6 +493,46 @@ export function useBuilder({
           ),
         );
       },
+      /** An instance's variant: the choices that differ from the component's defaults. */
+      changeBlockVariant: (nodeId: string, variant: Record<string, string>, blockName: string) =>
+        run(
+          commands.changeNode(
+            context(),
+            nodeId,
+            text("pageBuilder.history.changedVariant", { name: blockName }),
+            (node) => {
+              const props: Record<string, unknown> = { ...node.props, variant };
+              if (Object.keys(variant).length === 0) delete props.variant;
+              return { ...node, props };
+            },
+          ),
+        ),
+      /**
+       * Several similar elements, made one component: each becomes an instance of it with
+       * its own values, in one change.
+       */
+      replaceWithInstances: (
+        block: CustomBlock,
+        values: Readonly<Record<string, Record<string, unknown>>>,
+      ) => {
+        const replacements = Object.entries(values).map(([nodeId, instanceValues]) => {
+          const instance = createNode(instanceBlueprint(block), registry.catalogue, createId);
+          return {
+            nodeId,
+            node: { ...instance, props: { ...instance.props, values: instanceValues } },
+          };
+        });
+        run(
+          commands.replaceNodes(
+            context(),
+            replacements,
+            text("pageBuilder.history.madeSimilar", {
+              count: replacements.length,
+              name: block.name,
+            }),
+          ),
+        );
+      },
       changeBlockValues: (nodeId: string, values: Record<string, unknown>, blockName: string) =>
         run(
           commands.changeNode(

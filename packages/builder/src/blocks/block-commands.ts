@@ -37,6 +37,7 @@ export function blockInsertItems(library: readonly CustomBlock[]): InsertItem[] 
       groupTitle: "pageBuilder.insert.category.blocks",
       type: customBlockType,
       icon: block.icon,
+      ...(block.design ? { preview: block.design } : {}),
     }));
 }
 

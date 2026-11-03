@@ -33,3 +33,9 @@ A content type's blocks field can offer one of the site's blocks (**Add one of y
 blocks** in the field's settings). Its fields are the block's properties, kept up to date by
 the API, and each block shows a live preview under its fields (`SiteBlockPreview`), drawn by
 the same renderer as the website (`BlockPreview`, loaded lazily).
+
+## Variants
+
+`BlockDesignPage` keeps the design (every variant at its default) and the variants apart from
+the page the builder shows. Picking a variant in the bar over the canvas shows it; edits there
+are kept with `recordVariantEdit` and saved with the design.

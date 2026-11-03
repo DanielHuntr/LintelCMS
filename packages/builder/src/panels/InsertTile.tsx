@@ -1,3 +1,4 @@
+import type { NodeBlueprint } from "@lintel/builder-model";
 import { Info, Plus, X } from "lucide-react";
 import {
   type DragEvent,
@@ -150,6 +151,9 @@ function TileArt({ item, look }: { item: InsertItem; look: InsertTileProps["look
   if (item.blueprint && look === "section") {
     return <BlueprintSketch blueprint={item.blueprint} />;
   }
+  if (item.preview && look === "element") {
+    return <BlueprintSketch blueprint={item.preview} size="thumbnail" />;
+  }
   return (
     <span
       aria-hidden="true"
@@ -249,7 +253,9 @@ function DetailsPopover({ item, align, onClose, onInsert }: DetailsPopoverProps)
           <X aria-hidden="true" className="size-3.5" />
         </IconAction>
       </div>
-      {item.blueprint && <BlueprintSketch blueprint={item.blueprint} />}
+      {(item.blueprint ?? item.preview) && (
+        <BlueprintSketch blueprint={(item.blueprint ?? item.preview) as NodeBlueprint} />
+      )}
       <p className="text-caption text-label-secondary">{item.description}</p>
       <p className="text-caption text-label-tertiary">{text("pageBuilder.insert.howTo")}</p>
       <button

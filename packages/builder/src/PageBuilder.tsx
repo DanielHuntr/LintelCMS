@@ -1,3 +1,4 @@
+import { ComponentVariantBar } from "./blocks/ComponentVariantBar.js";
 import { defaultTheme, themeStylesheet } from "@lintel/site-components";
 import {
   type PageFinder,
@@ -978,6 +979,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                       selectedId={selectedId}
                       onSelect={selectFromPanel}
                     />
+                    {props.blockMaster && <ComponentVariantBar master={props.blockMaster} />}
                     {!isBlank && selectedSiteSection && (
                       <SiteSectionStrip
                         slot={selectedSiteSection}

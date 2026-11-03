@@ -20,7 +20,7 @@ import {
 import { defaultTheme, themeStylesheet } from "@lintel/site-components";
 import { type KeyboardEvent, useCallback, useEffect, useMemo, useState } from "react";
 import type { PageBuilderProps } from "../PageBuilder.js";
-import { blocksByHandle, noBlocks } from "../blocks/blocks-context.js";
+import { BlocksProvider, blocksByHandle, noBlocks } from "../blocks/blocks-context.js";
 import { Canvas } from "../canvas/Canvas.js";
 import type { MessageFromFrame } from "../canvas/canvas-messages.js";
 import { layerName } from "../editor/commands.js";
@@ -284,29 +284,33 @@ export function ContentEditingScreen(props: PageBuilderProps & { text: Translate
               )}
             </main>
             <PictureBaseUrlContext value={site?.baseUrl ?? null}>
-              <ClientContentPanel
-                root={root}
-                node={selectedNode && !sharedIds.has(selectedNode.id) ? selectedNode : null}
-                nodeName={labels.selected ?? ""}
-                catalogue={catalogue}
-                pickImage={props.pickImage}
-                onChangeProps={actions.changeProps}
-                onReplacePicture={(node) => void replacePicture(node)}
-                onAddAnother={(item) => {
-                  if (actions.duplicateById(item.id)) {
-                    announce(
-                      text("pageBuilder.clientView.added", { name: layerName(item, catalogue) }),
-                    );
-                  }
-                }}
-                onRemove={(item) => {
-                  if (actions.removeById(item.id)) {
-                    announce(
-                      text("pageBuilder.clientView.removed", { name: layerName(item, catalogue) }),
-                    );
-                  }
-                }}
-              />
+              <BlocksProvider blocks={blocks} master={null}>
+                <ClientContentPanel
+                  root={root}
+                  node={selectedNode && !sharedIds.has(selectedNode.id) ? selectedNode : null}
+                  nodeName={labels.selected ?? ""}
+                  catalogue={catalogue}
+                  pickImage={props.pickImage}
+                  onChangeProps={actions.changeProps}
+                  onReplacePicture={(node) => void replacePicture(node)}
+                  onAddAnother={(item) => {
+                    if (actions.duplicateById(item.id)) {
+                      announce(
+                        text("pageBuilder.clientView.added", { name: layerName(item, catalogue) }),
+                      );
+                    }
+                  }}
+                  onRemove={(item) => {
+                    if (actions.removeById(item.id)) {
+                      announce(
+                        text("pageBuilder.clientView.removed", {
+                          name: layerName(item, catalogue),
+                        }),
+                      );
+                    }
+                  }}
+                />
+              </BlocksProvider>
             </PictureBaseUrlContext>
           </div>
           {showsTour && (

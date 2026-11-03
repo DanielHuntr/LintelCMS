@@ -2,6 +2,7 @@ import {
   clientEditableFields,
   clientEditsOf,
   type ComponentCatalogue,
+  customBlockType,
   findPath,
   type PageNode,
 } from "@lintel/builder-model";
@@ -11,6 +12,7 @@ import { useBuilderText } from "../i18n/builder-text.js";
 import { ContentPanel } from "../panels/ContentPanel.js";
 import type { ImagePicker } from "../panels/content-fields.js";
 import { ItemsCanChangeContext } from "../panels/item-list-field.js";
+import { BlockInstancePanel } from "../blocks/BlockInstancePanel.js";
 
 interface ClientContentPanelProps {
   root: PageNode;
@@ -97,6 +99,15 @@ export function ClientContentPanel({
               {text("pageBuilder.clientView.empty.text")}
             </p>
           </div>
+        ) : node.type === customBlockType ? (
+          // A component: its properties, and its variants where its designer allows it.
+          <BlockInstancePanel
+            node={node}
+            isLocked={false}
+            isClient
+            onChange={(values, name) => onChangeProps(node.id, { values }, name)}
+            onChangeVariant={(variant, name) => onChangeProps(node.id, { variant }, name)}
+          />
         ) : (
           <>
             {isPicture && pickImage && (

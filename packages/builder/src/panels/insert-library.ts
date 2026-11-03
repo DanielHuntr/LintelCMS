@@ -35,6 +35,8 @@ export interface InsertItem {
   /** Sections are drawn as a sketch; elements as their icon. */
   blueprint?: NodeBlueprint;
   icon?: string;
+  /** A sketch to show instead of the icon: a component's own design. */
+  preview?: NodeBlueprint;
 }
 
 export const sectionGroupTitles: Record<SectionCategory, BuilderStringKey> = {
