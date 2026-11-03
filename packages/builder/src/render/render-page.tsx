@@ -1,6 +1,7 @@
 import {
   type AnyComponentDefinition,
   applySharedStyles,
+  applyTagStyles,
   assignClassNames,
   bindProps,
   compileStylesheet,
@@ -79,7 +80,16 @@ export function renderPage(
 ): RenderedPage {
   // The site's own blocks are drawn as their design, filled in (see custom-blocks/ in the model).
   // Then the site's shared styles go under each element's own (see site-design/ in the model).
-  const root = applySharedStyles(expandBlockInstances(document.root, data), data.sharedStyles);
+  // Buttons and pictures take the site's look for their kind in place of their starting
+  // styles, before shared styles go under them (so those still win).
+  const root = applySharedStyles(
+    applyTagStyles(
+      expandBlockInstances(document.root, data),
+      data.tagStyles,
+      (type) => registry.catalogue.find(type)?.defaultStyles,
+    ),
+    data.sharedStyles,
+  );
   const classNames = assignClassNames(root, registry.catalogue);
   const start = nodeId ? findNode(root, nodeId) : root;
   if (!start || start.hidden) {

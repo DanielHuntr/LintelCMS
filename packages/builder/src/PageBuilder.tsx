@@ -12,6 +12,8 @@ import {
   designVariablesStylesheet,
   emptySiteDesign,
   sharedStylesById,
+  compileTagStyles,
+  withoutTagStyles,
   type SiteDesign,
   findNode,
   ownSiteChrome,
@@ -290,14 +292,29 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
           ...canvasPageData(state.document, dataSources, props.site),
           ...blockData,
           sharedStyles,
+          tagStyles: siteDesign.tagStyles,
         },
       }),
-    [state.document, registry, dataSources, props.site, blockData, sharedStyles],
+    [
+      state.document,
+      registry,
+      dataSources,
+      props.site,
+      blockData,
+      sharedStyles,
+      siteDesign.tagStyles,
+    ],
   );
   // The site's variables, drawn after its stylesheet so changes show before they're saved.
   const variablesCss = useMemo(
     () => designVariablesStylesheet(siteDesign.variables),
     [siteDesign.variables],
+  );
+  // The site's looks for every heading, link and so on, drawn in place of the saved ones in
+  // the site's stylesheet (and before the page's own rules), so changes show at once.
+  const tagStylesCss = useMemo(
+    () => compileTagStyles(siteDesign.tagStyles),
+    [siteDesign.tagStyles],
   );
   const menuChoices = useMemo(
     () => (dataSources.menus ?? []).map((menu) => ({ value: menu.handle, label: menu.name })),
@@ -366,8 +383,8 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     () =>
       `${
         site
-          ? `${site.stylesheet}\n${rendered.css}`
-          : `${props.themeStylesheet ?? defaultThemeStylesheet}\n${standInBaseStylesheet}\n${props.baseStylesheet ?? ""}\n${designBaseStylesheet}\n${rendered.css}`
+          ? `${withoutTagStyles(site.stylesheet)}\n${tagStylesCss}\n${rendered.css}`
+          : `${props.themeStylesheet ?? defaultThemeStylesheet}\n${standInBaseStylesheet}\n${props.baseStylesheet ?? ""}\n${designBaseStylesheet}\n${tagStylesCss}\n${rendered.css}`
       }${ownChrome.header ? '\n[data-lintel-site-chrome="header"]{display:none}' : ""}${
         ownChrome.footer ? '\n[data-lintel-site-chrome="footer"]{display:none}' : ""
       }${statePreviewCss ? `\n${statePreviewCss}` : ""}${variablesCss ? `\n${variablesCss}` : ""}`,
@@ -376,6 +393,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
       props.themeStylesheet,
       props.baseStylesheet,
       rendered.css,
+      tagStylesCss,
       ownChrome,
       statePreviewCss,
       variablesCss,

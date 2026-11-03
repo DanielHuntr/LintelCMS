@@ -242,6 +242,27 @@ describe("Site styles in the right panel", () => {
     expect(node("Second card")?.styles.base.borderRadius).toBe("8px");
   });
 
+  it("sets how every heading looks, and how every link looks while hovered", async () => {
+    const person = userEvent.setup();
+    const { design } = renderBuilder(ink);
+    await person.click(screen.getByRole("button", { name: /^All headings/ }));
+    expect(screen.getByRole("heading", { name: "All headings" })).toBeInTheDocument();
+    const size = screen.getByRole("group", { name: "Text size" });
+    await person.click(within(size).getByRole("button", { name: "Huge" }));
+    expect(design().tagStyles).toEqual({ headings: { base: { fontSize: "2rem" } } });
+
+    await person.click(screen.getByRole("button", { name: "Site styles" }));
+    expect(screen.getByRole("button", { name: /^All headings\s*Changed/ })).toBeInTheDocument();
+    await person.click(screen.getByRole("button", { name: /^All links/ }));
+    await person.click(screen.getByRole("radio", { name: "Hovered" }));
+    const colour = screen.getByRole("group", { name: "Text colour" });
+    await person.click(within(colour).getByRole("button", { name: "Ink" }));
+    expect(design().tagStyles?.links).toEqual({
+      base: {},
+      hover: { color: "var(--lintel-var-ink)" },
+    });
+  });
+
   it("tells apart elements around it that have the same name", async () => {
     const person = userEvent.setup();
     const ids = createCountingNodeIds();

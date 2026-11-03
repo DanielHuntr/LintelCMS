@@ -22,6 +22,7 @@ import { readSiteEffects } from "../site-effects/site-effects.service.js";
 import { choiceLabelsOf } from "./bound-entries.js";
 import {
   type CustomScriptRule,
+  compileTagStyles,
   designVariablesStylesheet,
   type SiteDesign,
 } from "@lintel/builder-model";
@@ -103,6 +104,7 @@ export async function loadSiteContext(
     websiteFontsStylesheet(fonts, look),
     designBaseStylesheet,
     designVariablesStylesheet(design.variables),
+    compileTagStyles(design.tagStyles),
   ]
     .filter(Boolean)
     .join("\n\n");

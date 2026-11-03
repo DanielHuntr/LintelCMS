@@ -66,7 +66,33 @@ a base turns its variants into shared styles of their own with the look they had
 In Site styles, shared styles list their variants under them, and **Select them** selects
 the first element on this page that uses one and outlines the others on the canvas.
 
+### Every element of a kind
+
+Site styles has **All headings**, **All paragraphs**, **All links**, **All buttons** and
+**All pictures** (headings together, H1 to H6: one look is what most sites want, and each
+level's size is better set on the element). Each opens the usual style controls, with Hovered
+for links and buttons. They're saved as `tagStyles` in the site's design (optional).
+
+They are the bottom layer: an element's own styles and its shared style always win. How
+they get there depends on the kind:
+
+- **Headings, paragraphs and links** are rules in the site's stylesheet, after the theme
+  and element defaults, no stronger than a tag: `:where(.lintel-design) p`,
+  `:where(.lintel-design) :is(h1, …, h6)`, and links that aren't buttons or in menus. Any
+  class (an element's styles, which include its shared style) wins, and they also reach the
+  headings and links inside rich text.
+- **Buttons and pictures** are given their starting look when they're added (a button's
+  colour, padding and corners are stored on it), so a stylesheet rule could never get under
+  it. For them, the kind's look replaces the values still at the element's starting value
+  when the page is drawn (`applyTagStyles`, before shared styles are laid under). Anything
+  changed on one button stays on top; buttons with a shared style keep it. A rule for
+  `.lintel-button` covers the buttons other elements draw (a form's Send).
+
+The rules sit between markers in the site's stylesheet so the canvas can swap in the latest
+before they're saved. With none set nothing is added, so existing pages draw as before.
+
 ## Not done here
 
-Usage counts cover this page and the site's shared styles, not every page: counting every
+Text sizes per heading level, and kinds beyond these five (lists, quotes), can follow if
+people ask. Usage counts cover this page and the site's shared styles, not every page: counting every
 page would mean reading them all each time the panel opens.

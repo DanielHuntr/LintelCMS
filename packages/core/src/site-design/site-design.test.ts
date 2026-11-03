@@ -98,6 +98,42 @@ describe("the site's design system", () => {
     expect(stylesheet.body).toMatch(/color-scheme: (light dark|light|dark);/);
   });
 
+  it("draws the site's looks for every heading and every button", async () => {
+    const saved = await owner("PUT", "/website/design", {
+      tagStyles: {
+        headings: { base: { letterSpacing: "-0.03em" } },
+        buttons: { base: { borderRadius: "999px" } },
+      },
+    });
+    expect(saved.statusCode, saved.body).toBe(200);
+    await owner("POST", "/starter-sites/bakery/apply", { publish: true });
+    const website = await site.inject({ method: "GET", url: "/" });
+    const stylesheetPath = /href="(\/_lintel\/site-[^"]+\.css)"/.exec(website.body)?.[1];
+    const stylesheet = await site.inject({ method: "GET", url: stylesheetPath ?? "" });
+    expect(stylesheet.body).toContain(
+      ":where(.lintel-design) :is(h1, h2, h3, h4, h5, h6) {\n  letter-spacing: -0.03em;\n}",
+    );
+
+    const design = createEmptyPage();
+    design.root.children = [
+      {
+        id: "call",
+        type: "button",
+        name: "Call",
+        props: { label: "Call", href: "" },
+        styles: { base: { borderRadius: "var(--lintel-radius-button)", color: "red" } },
+        children: [],
+        hidden: false,
+        locked: false,
+      },
+    ];
+    const drawn = drawPageDesign(design, {
+      tagStyles: (await readSiteDesign(testDatabase.database)).tagStyles,
+    });
+    expect(drawn.css).toContain("border-radius: 999px;");
+    expect(drawn.css).toContain("color: red;");
+  });
+
   it("refuses values that could break the stylesheet, and people who can't change blocks", async () => {
     const unsafe = await owner("PUT", "/website/design", {
       variables: [{ id: "sand", name: "Sand", kind: "colour", value: "#fff; } body { x: y" }],
