@@ -4,6 +4,21 @@ import type { MotionDemo } from "./quickPicks.js";
 
 const shape = "motion-demo-shape block rounded-[4px] bg-label";
 
+/** A small panel for the backgrounds, like a section seen from afar. */
+const canvasBox = "relative block h-6 w-9 overflow-hidden rounded-[5px] bg-fill-strong";
+
+/** Floating dust: left, top and size in pixels, and when each speck starts. */
+const dustSpecks: ReadonlyArray<readonly [number, number, number, number]> = [
+  [4, 14, 3, 0],
+  [12, 6, 2, 0.8],
+  [20, 16, 4, 1.4],
+  [27, 9, 2, 0.4],
+  [31, 18, 3, 1.9],
+];
+
+/** Pixelate in: the blocks' shades before they settle. */
+const pixelShades = [0.9, 0.5, 0.75, 0.35, 1, 0.6, 0.7, 0.45, 0.85];
+
 /** The drawing for one demo: a small square for most, a few bars or dots for the rest. */
 function DemoDrawing({ demo }: { demo: MotionDemo }) {
   switch (demo) {
@@ -66,6 +81,58 @@ function DemoDrawing({ demo }: { demo: MotionDemo }) {
     case "spin":
       return (
         <span className="motion-demo-shape block size-4 rounded-full border-2 border-label border-t-transparent" />
+      );
+    case "mesh":
+      return (
+        <span className={canvasBox}>
+          <span className="motion-demo-shape absolute -top-1 -left-1 block size-5 rounded-full bg-label opacity-40 blur-[5px]" />
+          <span className="motion-demo-extra absolute -right-1 -bottom-1 block size-5 rounded-full bg-label opacity-25 blur-[5px]" />
+        </span>
+      );
+    case "light":
+    case "grain":
+    case "contours":
+      return (
+        <span className={canvasBox}>
+          <span className={`motion-demo-shape motion-demo-${demo} absolute -inset-3 block`} />
+        </span>
+      );
+    case "dust":
+      return (
+        <span className={canvasBox}>
+          {dustSpecks.map(([left, top, size, delay]) => (
+            <span
+              key={`${left}-${top}`}
+              className="motion-demo-shape absolute block rounded-full bg-label"
+              style={{ left, top, width: size, height: size, animationDelay: `${delay}s` }}
+            />
+          ))}
+        </span>
+      );
+    case "develop":
+      return (
+        <span className="relative block size-5 overflow-hidden rounded-[4px]">
+          <span className="motion-demo-shape block size-5 bg-label" />
+          <span className="motion-demo-extra motion-demo-grain absolute -inset-3 block" />
+        </span>
+      );
+    case "pixels":
+      return (
+        <span className="motion-demo-shape grid size-5 grid-cols-3 overflow-hidden rounded-[4px]">
+          {pixelShades.map((opacity, index) => (
+            <span key={index} className="motion-demo-block block bg-label" style={{ opacity }} />
+          ))}
+        </span>
+      );
+    case "split":
+      return <span className={classNames(shape, "size-5")} />;
+    case "liquid":
+      return <span className="motion-demo-shape block size-5 rounded-[6px] bg-label" />;
+    case "lens":
+      return (
+        <span className="relative block size-5 overflow-hidden rounded-[4px] bg-label/50">
+          <span className="motion-demo-extra absolute top-1 left-0 block size-3 rounded-full bg-label ring-2 ring-background/70" />
+        </span>
       );
     case "tilt":
     case "swing":

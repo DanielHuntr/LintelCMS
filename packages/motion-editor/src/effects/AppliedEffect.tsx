@@ -2,6 +2,7 @@ import { cleanProps, type EffectDefinition, type NodeEffect } from "@lintel/moti
 import { Play, Trash2 } from "lucide-react";
 import { Button } from "../controls/Button.js";
 import { useTranslate } from "../strings/translate.js";
+import type { CursorColourSwatch } from "./CursorLookFields.js";
 import { EffectSettings } from "./EffectSettings.js";
 
 interface AppliedEffectProps {
@@ -11,6 +12,8 @@ interface AppliedEffectProps {
   onRemove: () => void;
   onTry: () => void;
   onCommit?: () => void;
+  /** The site's colours, for colour settings. */
+  colours?: readonly CursorColourSwatch[];
 }
 
 /** One effect on the element: its name, what it does with less motion, and its settings. */
@@ -21,6 +24,7 @@ export function AppliedEffect({
   onRemove,
   onTry,
   onCommit,
+  colours,
 }: AppliedEffectProps) {
   const t = useTranslate();
   const values = cleanProps(definition, saved.params);
@@ -51,6 +55,7 @@ export function AppliedEffect({
         values={values}
         onChange={onChange}
         onCommit={onCommit}
+        colours={colours}
       />
       <p className="text-caption text-label-tertiary">
         {t("motionEditor.effects.lessMotion", { text: definition.reducedMotion })}

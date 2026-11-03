@@ -20,6 +20,7 @@ export const effectsEditorStrings = {
   "motionEditor.effects.stopPreview": "Stop trying it",
   "motionEditor.effects.settings": "Settings for {name}",
   "motionEditor.effects.lessMotion": "With less motion: {text}",
+  "motionEditor.effects.wordsColour": "Same as the words",
   "motionEditor.effects.becomesAnimation":
     "Some effects, such as the letter entrances, are animations: adding one replaces the element’s animation, and you can fine-tune it on the Animation tab.",
   "motionEditor.effects.limit":

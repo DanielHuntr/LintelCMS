@@ -1,7 +1,11 @@
 import type { EffectDefinition, EffectParameter } from "@lintel/motion/effects";
+import { Check, Pipette } from "lucide-react";
 import { useId } from "react";
+import { classNames } from "../controls/classNames.js";
 import { Checkbox, Select, TextInput } from "../controls/Field.js";
 import { Slider } from "../controls/Slider.js";
+import { useTranslate } from "../strings/translate.js";
+import { themeCursorSwatches, type CursorColourSwatch } from "./CursorLookFields.js";
 
 /**
  * An effect's settings in plain words, for Simple mode: a slider for each number, a menu for
@@ -12,6 +16,8 @@ interface EffectSettingsProps {
   values: Readonly<Record<string, number | string | boolean>>;
   onChange: (values: Record<string, number | string | boolean>) => void;
   onCommit?: () => void;
+  /** The site's colours, offered for colour settings; the theme's when left out. */
+  colours?: readonly CursorColourSwatch[];
 }
 
 function formatNumber(parameter: Extract<EffectParameter, { kind: "number" }>, value: number) {
@@ -21,33 +27,103 @@ function formatNumber(parameter: Extract<EffectParameter, { kind: "number" }>, v
     : String(rounded);
 }
 
+/**
+ * A colour: the site's colours first (saved by name, so they follow Site styles), "Same as
+ * the words" where the effect starts from it, then any colour picked by hand.
+ */
 function ColourInput({
   label,
   value,
+  offerWords,
+  colours,
   onChange,
 }: {
   label: string;
   value: string;
+  /** Offers the colour of the element's words (`currentColor`). */
+  offerWords: boolean;
+  colours: readonly CursorColourSwatch[];
   onChange: (value: string) => void;
 }) {
-  const id = useId();
+  const t = useTranslate();
+  const labelId = useId();
+  const current = colours.find((colour) => colour.value === value);
+  const words = value === "currentColor";
+  const picked = /^#[0-9a-f]{6}$/i.test(value) ? value : undefined;
+  const chosenName = words ? t("motionEditor.effects.wordsColour") : (current?.label ?? picked);
   return (
-    <div className="flex items-center justify-between gap-3">
-      <label htmlFor={id} className="text-caption font-medium text-label-secondary">
+    <div className="flex flex-col gap-1.5">
+      <span id={labelId} className="text-caption font-medium text-label-secondary">
         {label}
-      </label>
-      <input
-        id={id}
-        type="color"
-        value={/^#[0-9a-f]{6}$/i.test(value) ? value : "#7539fd"}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-8 w-12 cursor-pointer rounded-control bg-fill p-0.5 focus-visible:focus-ring"
-      />
+        {chosenName && <span className="font-normal text-label-tertiary"> · {chosenName}</span>}
+      </span>
+      <div role="group" aria-labelledby={labelId} className="flex flex-wrap items-center gap-1.5">
+        {offerWords && (
+          <button
+            type="button"
+            aria-pressed={words}
+            onClick={() => onChange("currentColor")}
+            className={classNames(
+              "h-6 rounded-full px-2.5 text-caption font-medium focus-visible:focus-ring",
+              words
+                ? "bg-accent-fill text-on-accent"
+                : "bg-fill text-label-secondary hover:bg-fill/70",
+            )}
+          >
+            {t("motionEditor.effects.wordsColour")}
+          </button>
+        )}
+        {colours.map((colour) => {
+          const chosen = colour.value === value;
+          return (
+            <button
+              key={colour.value}
+              type="button"
+              title={colour.label}
+              aria-label={colour.label}
+              aria-pressed={chosen}
+              onClick={() => onChange(colour.value)}
+              style={{ background: colour.swatch }}
+              className="flex size-6 items-center justify-center rounded-full hairline-ring focus-visible:focus-ring"
+            >
+              {chosen && (
+                <Check aria-hidden="true" className="size-3.5 text-white mix-blend-difference" />
+              )}
+            </button>
+          );
+        })}
+        <span
+          style={picked ? { background: picked } : undefined}
+          className="relative flex size-6 items-center justify-center rounded-full bg-fill text-label-secondary hairline-ring has-[:focus-visible]:focus-ring"
+        >
+          {picked ? (
+            <Check aria-hidden="true" className="size-3.5 text-white mix-blend-difference" />
+          ) : (
+            <Pipette aria-hidden="true" className="size-3.5" />
+          )}
+          <input
+            type="color"
+            aria-label={t("motionEditor.site.cursor.colourChoice.pick")}
+            title={t("motionEditor.site.cursor.colourChoice.pick")}
+            value={picked ?? "#7539fd"}
+            onChange={(event) => onChange(event.target.value)}
+            className="absolute inset-0 size-full cursor-pointer opacity-0"
+          />
+        </span>
+      </div>
     </div>
   );
 }
 
-export function EffectSettings({ definition, values, onChange, onCommit }: EffectSettingsProps) {
+export function EffectSettings({
+  definition,
+  values,
+  onChange,
+  onCommit,
+  colours,
+}: EffectSettingsProps) {
+  const t = useTranslate();
+  const swatches = colours ?? themeCursorSwatches(t);
   const entries = Object.entries(definition.params);
   if (entries.length === 0) return null;
   const set = (name: string, value: number | string | boolean) =>
@@ -88,7 +164,9 @@ export function EffectSettings({ definition, values, onChange, onCommit }: Effec
                 key={name}
                 label={parameter.label}
                 value={String(value)}
-                onChange={(next) => set(name, next)}
+                offerWords={parameter.default === "currentColor"}
+                colours={swatches}
+                onChange={(next) => (set(name, next), onCommit?.())}
               />
             );
           case "switch":
