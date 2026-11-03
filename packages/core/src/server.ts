@@ -94,6 +94,7 @@ import {
 } from "./website/website-runtime.js";
 import { starterSitesRoutes } from "./starter-sites/starter-sites.routes.js";
 import { websiteRoutes } from "./website/website.routes.js";
+import { liquidTemplatesRoutes } from "./liquid-templates/liquid-templates.routes.js";
 import { siteEffectsRoutes } from "./site-effects/site-effects.routes.js";
 import { EventBus } from "./events/event-bus.js";
 import { subscribeEventListeners } from "./events/event-listeners.js";
@@ -314,6 +315,8 @@ export function buildServer(options: ServerOptions) {
   server.decorate("email", email);
   server.decorate("emailOutbox", email.outbox);
   server.decorate("website", createWebsiteRuntime(options.website));
+  server.addHook("onReady", async () => server.website.liquidTemplates?.startWatching());
+  server.addHook("onClose", async () => server.website.liquidTemplates?.stopWatching());
   clearRenderedPagesAfterChanges(server);
   server.decorate(
     "deploymentBranding",
@@ -461,6 +464,7 @@ function registerApiRoutes(
   server.register(brandingRoutes);
   server.register(interfaceLanguagesRoutes);
   server.register(websiteRoutes);
+  server.register(liquidTemplatesRoutes);
   server.register(siteEffectsRoutes);
   server.register(pagesRoutes);
   server.register(starterSitesRoutes);

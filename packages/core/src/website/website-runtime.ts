@@ -1,5 +1,9 @@
 import type { SiteTemplate } from "@lintel/site-components";
 import type { FastifyInstance } from "fastify";
+import {
+  LiquidTemplates,
+  type LiquidTemplatesOptions,
+} from "../liquid-templates/liquid-templates.service.js";
 import { RenderedPagesCache } from "./rendered-pages-cache.js";
 import { listSiteTemplates } from "./site-templates.js";
 
@@ -10,19 +14,28 @@ export interface WebsiteRuntime {
   /** The built-in site's address, or null when this install doesn't serve one. */
   builtInSiteUrl: string | null;
   renderedPages: RenderedPagesCache;
+  /** Liquid page templates from the templates folder; null when this install has none set. */
+  liquidTemplates: LiquidTemplates | null;
 }
 
 export interface WebsiteOptions {
   builtInSiteUrl?: string | null;
   /** Templates of your own, offered beside Clean and Journal (one with the same id wins). */
   templates?: SiteTemplate[];
+  /** The templates folder for Liquid page templates (see src/liquid-templates). */
+  liquidTemplates?: LiquidTemplatesOptions;
 }
 
 export function createWebsiteRuntime(options: WebsiteOptions = {}): WebsiteRuntime {
+  const renderedPages = new RenderedPagesCache();
   return {
     templates: listSiteTemplates(options.templates),
     builtInSiteUrl: options.builtInSiteUrl ?? null,
-    renderedPages: new RenderedPagesCache(),
+    renderedPages,
+    // A changed template file changes pages, so the rendered ones go.
+    liquidTemplates: options.liquidTemplates
+      ? new LiquidTemplates(options.liquidTemplates, () => renderedPages.clear())
+      : null,
   };
 }
 

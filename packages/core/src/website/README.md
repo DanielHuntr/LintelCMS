@@ -79,6 +79,12 @@ its animations in `<script type="application/json" id="lintel-motion">` and load
 runtime (`site-assets.ts`). Pages without animations load no script. Reduced motion is
 followed by the runtime.
 
+## Pages drawn with Liquid templates
+
+An entry whose collection has a Liquid template in the project's templates folder
+(`site/templates/<collection>.liquid`), or which chose one in the editor, is drawn with it
+instead (see `src/liquid-templates`). It keeps the same `<head>`, cache and preview.
+
 ## Caching
 
 Finished responses are kept in memory (`rendered-pages-cache.ts`) with an `ETag`, so most
