@@ -1,7 +1,7 @@
 ---
 title: Liquid templates
 description: Write your website's page templates as Liquid files in your project, with layouts, partials and Lintel's own tags, instead of using the visual designer.
-since: "1.0.0-rc"
+since: "1.0"
 ---
 
 If you'd rather write HTML than design pages in the builder, keep page templates as

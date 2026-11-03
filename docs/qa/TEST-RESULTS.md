@@ -260,3 +260,15 @@ None.
 - The `admin/e2e` journeys were not run.
 - The update tests can't run on Windows, so this run neither confirms nor rules out the open update defects (DATA-011, FUNC-016, DATA-013, FUNC-027).
 - Paying through Stripe is still covered only by the faked Stripe in `commerce.e2e.test.ts`.
+
+## Liquid templates (feature/liquid-templates, 2026-11-03)
+
+`pnpm test --continue` on Windows, with the Liquid templates work:
+
+- Core: 1,026 passed, 22 failed, 5 skipped. The 22 are the known Windows ones (updates, supervisor, release-signature, install-type, `main.test`, dev-runtime, model-sync). New: `liquid-templates/` (25 tests: engine, tags, escaping, include safety, choosing per page, the website with layouts, design, forms and preview).
+- Admin: 664, one failure in `router.test` under load; it passes on its own. New: `TemplateChoiceSection.test.tsx` (4).
+- Site components: 38 passed, with 3 new for the document in parts.
+- Docs: the new page's `since` first failed the version-format check; fixed and passing (11).
+- CLI: the known 3 Windows failures.
+
+In a browser (API 4600, site 4601, admin 5690, a fresh Lintel folder): a page drawn by `templates/pages.liquid` through a layout and a partial, a page choosing `landing.liquid` inside the shared document, a template edit showing on reload without a restart, a broken template showing its error in development, and the editor's Template section at desktop and 390px in light and dark. Screenshots in `screenshots/liquid-templates/`.
