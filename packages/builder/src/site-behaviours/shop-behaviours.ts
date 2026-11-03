@@ -128,7 +128,14 @@ export function setUpAddToCart(root: ParentNode): void {
         if (status) status.textContent = "Added to your basket.";
         if (form.hasAttribute("data-opens-cart")) {
           const drawer = document.querySelector<HTMLDialogElement>("dialog[data-cart-drawer]");
-          if (drawer && !drawer.open) drawer.showModal();
+          if (drawer && !drawer.open) {
+            // The button was busy (disabled) during the request, which takes focus off it, so
+            // closing the drawer left focus nowhere (LINTEL-A11Y-001). It's ready again before
+            // the drawer opens, and gets focus back when it closes.
+            if (button) button.disabled = false;
+            drawer.showModal();
+            drawer.addEventListener("close", () => button?.focus(), { once: true });
+          }
         }
       } catch (error) {
         if (status) status.textContent = shopperMessage(error, "That couldn’t be added.");
