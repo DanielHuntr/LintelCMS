@@ -1,3 +1,5 @@
+import { findBlueprintByIdOrFail } from "../blueprints/blueprints.service.js";
+import { checkContentOnlyChange } from "../client-editing/client-editing.service.js";
 import { findCollectionByIdOrFail } from "../collections/collections.service.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { describePerson } from "./entry-responses.js";
@@ -57,7 +59,8 @@ export async function findRevision(
 
 /**
  * Makes an old revision's values the entry's saved values again, checked against the
- * blueprint as it is today. Like any save, it doesn't change what is published.
+ * blueprint as it is today. Like any save, it doesn't change what is published. People
+ * without builder:design may restore only a revision with the same design as now.
  */
 export async function restoreRevision(
   database: DatabaseOrTransaction,
@@ -72,6 +75,8 @@ export async function restoreRevision(
   }
   const collection = await findCollectionByIdOrFail(database, entry.collectionId);
   const data = await validateForCollection(database, collection, revision.data, context);
+  const blueprint = await findBlueprintByIdOrFail(database, collection.blueprintId);
+  checkContentOnlyChange(blueprint.fields, entry.data, data, context.permissions);
 
   await database.transaction(async (transaction) => {
     await updateEntryRow(transaction, entry.id, { data, updatedBy: context.authorId });
