@@ -639,8 +639,6 @@ export function ValueInput({
   }
   const isValid = isDesignVariableValue(kind, typed);
   const isHex = /^#[0-9a-f]{6}$/i.test(value);
-  // Beginners pick a colour from its swatch; the code is for people who want it.
-  const showsCode = useContext(ShowsValuesContext) || kind !== "colour" || !isHex;
   const commit = () => {
     if (isValid && typed.trim() !== value) onChange(typed.trim());
   };
@@ -660,7 +658,6 @@ export function ValueInput({
           />
         )}
         <input
-          hidden={!showsCode}
           aria-label={label}
           aria-invalid={!isValid}
           aria-describedby={isValid ? undefined : errorId}

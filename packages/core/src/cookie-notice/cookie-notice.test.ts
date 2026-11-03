@@ -233,6 +233,9 @@ describe("the cookie notice", { timeout: 30000 }, () => {
     );
     const saved = await admin("PUT", "/website/sections", { footer });
     expect(saved.statusCode, saved.body).toBe(200);
+    // Changes to the shared sections wait for Publish; the notice reads the live ones.
+    const published = await admin("POST", "/website/sections/publish");
+    expect(published.statusCode, published.body).toBe(200);
     registerPluginConsentServices("chat-window", [{ handle: "chat", name: "Chatterbox" }]);
 
     const services = await findSiteConsentServices(testDatabase.database, defaultSite, {

@@ -307,9 +307,8 @@ describe("Site styles show swatches and plain names (QA sweep)", () => {
     expect(row).not.toHaveTextContent("#1f2328");
     await person.click(row);
     expect(screen.getByLabelText("Ink: Value (Colour)")).toBeInTheDocument();
-    const code = document.querySelector<HTMLInputElement>('input[aria-label="Ink: Value"]');
-    expect(code).not.toBeNull();
-    expect(code).not.toBeVisible();
+    // Opened, the exact code can still be typed, for a brand colour given as a code.
+    expect(screen.getByRole("textbox", { name: "Ink: Value" })).toHaveValue("#1f2328");
     expect(screen.getByText("In light mode")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Side space" })).toBeInTheDocument();
   });
