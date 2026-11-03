@@ -732,7 +732,7 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-DATA-013 | P2       | Open   | A failed update restores a backup taken before the download, losing orders made while it downloaded                 |
 | LINTEL-FUNC-017 | P2       | Open   | Moving a page in the tree doesn't check the new parent is on the same site                                          |
 | LINTEL-FUNC-018 | P2       | Open   | Which page is "/" depends on content type names and counts drafts                                                   |
-| LINTEL-FUNC-019 | P2       | Open   | A shopper can switch the cart to another market's prices after giving a delivery address                            |
+| LINTEL-FUNC-019 | P2       | Fixed  | A shopper can switch the cart to another market's prices after giving a delivery address                            |
 | LINTEL-FUNC-020 | P2       | Open   | Builder: "The visitor leaves the page" animations never play                                                        |
 | LINTEL-FUNC-021 | P2       | Open   | Builder: duplicating keeps animation targets pointing at the original's elements                                    |
 | LINTEL-FUNC-022 | P2       | Open   | Builder: generated class names can collide (`heading-2`), so styles bleed between elements                          |
@@ -744,6 +744,7 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-FUNC-028 | P1       | Fixed  | Builder: dragging from Insert onto the page does nothing; only Layers takes drops                                   |
 | LINTEL-FUNC-029 | P2       | Fixed  | Canvas effects lose their first frame; visitors who ask for less motion see no particles, frost or gradient         |
 | LINTEL-FUNC-030 | P1       | Fixed  | Mask reveal and section curtain/iris animations never play on the website, so their words stay hidden               |
+| LINTEL-DATA-014 | P1       | Fixed  | Renaming a delivery rate (or changing any one field) wipes its price, weight steps and delivery estimate            |
 | LINTEL-SEC-012  | P3       | Fixed  | Webhook signing secrets are shown to everyone with `settings:read`                                                  |
 | LINTEL-SEC-013  | P3       | Fixed  | No rate limit on the password checks for turning two-factor off and making recovery codes                           |
 | LINTEL-SEC-014  | P3       | Fixed  | Cart tokens are written to the request log (they are in the path, not the query)                                    |

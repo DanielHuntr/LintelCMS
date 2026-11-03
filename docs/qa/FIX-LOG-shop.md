@@ -367,3 +367,62 @@ None of these screens existed before, so the tests can't run on the unfixed code
   - after: [desktop light](screenshots/fix-shop/func-007-collections-after-desktop-light.png), [desktop dark](screenshots/fix-shop/func-007-collections-after-desktop-dark.png), [390 light](screenshots/fix-shop/func-007-collections-after-390-light.png), [390 dark](screenshots/fix-shop/func-007-collections-after-390-dark.png).
 - Editor: [desktop light](screenshots/fix-shop/func-007-editor-after-desktop-light.png), [desktop dark](screenshots/fix-shop/func-007-editor-after-desktop-dark.png), [390 light](screenshots/fix-shop/func-007-editor-after-390-light.png), [390 dark](screenshots/fix-shop/func-007-editor-after-390-dark.png), [automatic](screenshots/fix-shop/func-007-editor-automatic-after-desktop-light.png).
 - Product editor: [before](screenshots/fix-shop/func-007-product-before-desktop-light.png), [after](screenshots/fix-shop/func-007-product-after-desktop-light.png), [after dark](screenshots/fix-shop/func-007-product-after-desktop-dark.png).
+
+## Shop and forms batch (3 November 2026)
+
+Branch `fix/shop-forms`. These are server fixes with no screen changes, so there are no screenshots. Each test was run first on the unfixed code and failed there.
+
+### LINTEL-FUNC-010: saving shop settings with nothing to change answered 500
+
+- **Reproduced:** `PATCH /shop/settings {}` → 500, `No values to set`.
+- **Fix:** `updateShopSettingsRow` doesn't run an update when there's nothing to set. The answer is the settings as they are.
+- **Test:** `commerce/settings/shop-settings.test.ts`: 500 before, 200 with the unchanged settings after.
+
+### LINTEL-FUNC-012: a delivery rate with no price was accepted
+
+- **Reproduced:** creating a flat rate with no `amounts` → 201 with `amounts: {}`.
+- **Fix:** the shipping service refuses a rate without a price:
+  - a flat rate needs a price in at least one currency;
+  - a weight rate needs at least one step, and a price on every step.
+  - Updates are checked against the rate as it will be, so the price can't be taken off later either.
+- **Messages:** "Give the rate a price, like £4.95", "Add at least one weight step with a price", "Give every weight step a price".
+- **Test:** `commerce/shipping/shipping.test.ts` (three cases).
+
+### LINTEL-DATA-014 (new, P1): renaming a delivery rate wiped its price
+
+- **Found** while testing FUNC-012. The update schema shared the create schema's defaults, so `PATCH /shop/shipping/rates/:id {name: "Post"}` also saved:
+  - `amounts: {}`;
+  - `weightBrackets: []`;
+  - `freeOverAmounts: {}`;
+  - `deliveryEstimate: ""`.
+- **Effect:** any change to one field of a rate (through the API, or any client that sends only what changed) left the zone unable to deliver.
+- **Fix:** the defaults now apply only when a rate is created.
+- **Test:** renaming keeps the price, the free-delivery threshold and the estimate.
+
+### LINTEL-FUNC-011: a damaged export answered 500
+
+- **Reproduced:** flipping 60 bytes inside a zip entry's compressed data. Reading it threw zlib's `invalid distance too far back` straight through.
+- **Fix:** `ZipArchiveReader` reads every entry through one loop. A failure while reading becomes `UNREADABLE_ARCHIVE` (400), naming the damaged file. This covers imports, backups and anything else that reads archives.
+- **Test:** new `archives/zip-reader.test.ts`, for both `readJson` and `hashOf`.
+
+### LINTEL-DATA-006: duplicate form submissions were both stored
+
+- **Reproduced:** two identical submissions with the same `_token`, sent at once. Both were stored.
+- **Fix:**
+  - Submissions now keep a hash of their form token (`token_hash`, migration `0022_form_submission_tokens`).
+  - Under a per-form lock, a new submission with the same token and the same answers as one from the last minute is answered as received, but not stored or announced again.
+  - A different answer from the same opened form is still kept.
+  - Files are stored before the lock: the media library keeps one copy of identical files, so a resent upload leaves nothing behind.
+  - (Storing them inside the transaction deadlocked the built-in database. The upload tests caught that.)
+- **Migration:** applied on a fresh database (the test suite) and on the existing local test site (the dev server applied it on restart).
+- **Test:** `forms/public-forms.test.ts`: "keeps one submission when the same answers are sent twice from one opened form".
+
+### LINTEL-FUNC-019: the cart could switch to another market after the address was given
+
+- **Reproduced:** with a UK address set, `PATCH /delivery/shop/carts/:token {country: "US"}` moved the cart to US prices while it still went to London.
+- **Fix:** once a cart has a delivery address, a different country on its own is refused: "The country comes from the delivery address. Change the address to change it."
+  - Sending the same country is fine.
+  - Changing the address's country still moves the market.
+- **Test:** new `commerce/carts/carts.test.ts`.
+
+**Not done here:** the admin's delivery-rate form wasn't checked in a browser for how it shows the new price messages.
