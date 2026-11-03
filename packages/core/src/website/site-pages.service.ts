@@ -38,6 +38,7 @@ import { renderSearch } from "./site-search.service.js";
 import type { SiteSources } from "./site-sources.js";
 import { entryView, headForEntry } from "./site-views.js";
 import { withSiteSections } from "./site-sections-drawing.js";
+import { type ExperimentVisit, withTestsScript } from "../experiments/experiment-pages.js";
 
 /**
  * The built-in website: what to answer for an address. Responses are kept in the
@@ -61,6 +62,8 @@ export interface SiteDependencies {
   sources?: SiteSources;
   /** The templates folder's Liquid templates (see src/liquid-templates). None when left out. */
   liquidTemplates?: LiquidTemplates | null;
+  /** The running A/B tests and the versions this visitor sees (see src/experiments). */
+  experiments?: ExperimentVisit;
 }
 
 /** What the address's query asks of the page's lists: `?page=2&sort=priceLowToHigh`. */
@@ -156,12 +159,17 @@ export async function respondToSitePath(
     return renderPreview(dependencies, path ?? "/", previewToken);
   }
   const host = await siteStartHost(dependencies);
-  const key = `${host}${path ?? "unreadable"}${queryKey(query)}`;
+  // Each version of a tested page is kept apart (see src/experiments).
+  const experiments = dependencies.experiments;
+  const key = `${host}${path ?? "unreadable"}${queryKey(query)}${experiments?.cacheKey ?? ""}`;
   const cached = dependencies.cache.find(key);
   if (cached) {
     return cached;
   }
-  const response = await resolveSitePath(dependencies, path, query, host);
+  const response = withTestsScript(
+    await resolveSitePath(dependencies, path, query, host),
+    experiments,
+  );
   dependencies.cache.store(key, response);
   return response;
 }

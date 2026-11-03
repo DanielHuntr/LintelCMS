@@ -2,6 +2,7 @@ import { workflowStrings } from "../workflows/workflowStrings.js";
 import { buildStrings } from "../build/buildStrings.js";
 import { motionEditorStrings } from "@lintel/motion-editor";
 import { formsStrings } from "../forms/formsStrings.js";
+import { experimentsStrings } from "../experiments/experimentsStrings.js";
 import { discountStrings } from "../commerce/discountStrings.js";
 import { paymentProviderStrings } from "../commerce/paymentProviderStrings.js";
 import { shopifyImportStrings } from "../commerce/shopifyImportStrings.js";
@@ -59,6 +60,7 @@ const english = {
   ...buildStrings,
   ...motionEditorStrings,
   ...formsStrings,
+  ...experimentsStrings,
   ...commerceStrings,
   ...discountStrings,
   ...paymentProviderStrings,

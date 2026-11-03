@@ -28,6 +28,8 @@ export function setUpForms(root: ParentNode): void {
           confirmation?: { message?: string; redirectUrl?: string };
         };
         if (response.ok) {
+          // Lets the page's other scripts know, such as an A/B test counting a sent form.
+          form.dispatchEvent(new CustomEvent("lintel:form-sent", { bubbles: true }));
           if (answer.confirmation?.redirectUrl) {
             window.location.assign(answer.confirmation.redirectUrl);
             return;

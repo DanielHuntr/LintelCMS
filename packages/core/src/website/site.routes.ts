@@ -15,6 +15,9 @@ import {
 } from "./site-assets.js";
 import { STYLESHEET_FOLDER } from "./site-context.service.js";
 import { findSiteForAddress } from "./site-for-address.js";
+import { loadRunningTests, visitTests } from "../experiments/experiment-pages.js";
+import { testsScript } from "../experiments/tests-script.js";
+import { readVisitor } from "../experiments/visitor-assignment.js";
 import { readSiteContext, respondToSitePath, type SiteDependencies } from "./site-pages.service.js";
 
 /**
@@ -104,7 +107,7 @@ export async function siteRoutes(
 
   server.get(`${STYLESHEET_FOLDER}/:file`, async (request, reply) => {
     const path = request.url.split("?")[0];
-    const script = [readMotionRuntime(), readElementsScript()].find(
+    const script = [readMotionRuntime(), readElementsScript(), testsScript].find(
       (candidate) => candidate?.path === path,
     );
     if (script) {
@@ -126,7 +129,12 @@ export async function siteRoutes(
   server.get("/*", async (request, reply) => {
     const { dependencies, path } = await visit(request);
     const { preview, page, sort, q } = pageQuerySchema.parse(request.query);
-    const response = await respondToSitePath(dependencies, path, preview, {
+    // Running A/B tests, shared until something changes, and this visitor's versions of them.
+    const tests = await dependencies.cache.shareValue("experiments", () =>
+      loadRunningTests(dependencies.database),
+    );
+    const experiments = visitTests(tests, readVisitor(request.headers, request.ip));
+    const response = await respondToSitePath({ ...dependencies, experiments }, path, preview, {
       page: page ?? 1,
       sort,
       search: q,

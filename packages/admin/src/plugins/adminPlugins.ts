@@ -1,5 +1,6 @@
 import { installedAdminPlugins } from "virtual:lintel-plugins";
 import { commerceAdminPlugin } from "../commerce/commerce.adminPlugin.js";
+import { experimentsAdminPlugin } from "../experiments/experiments.adminPlugin.js";
 import { formsAdminPlugin } from "../forms/forms.adminPlugin.js";
 import { seoAdminPlugin } from "../seo/seo.adminPlugin.js";
 import { automationsAdminPlugin } from "../workflows/automations.adminPlugin.js";
@@ -18,5 +19,6 @@ export const adminPlugins: readonly AdminPluginDefinition[] = [
   formsAdminPlugin,
   automationsAdminPlugin,
   seoAdminPlugin,
+  experimentsAdminPlugin,
   ...installedAdminPlugins,
 ];

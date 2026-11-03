@@ -205,6 +205,8 @@ export interface PageBuilderProps {
    * site-sections/). Without it, Navigation and Footer sections belong to the page alone.
    */
   siteSections?: SiteSectionsSource;
+  /** Told which element is selected (null for none), such as for trying another version of it. */
+  onSelectionChange?: (nodeId: string | null) => void;
 }
 
 /** The site's default theme, until the app passes the site's own. */
@@ -252,6 +254,8 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     blocks: blocks.library,
     sharesSiteSections: props.siteSections?.onChange !== undefined,
   });
+  const { onSelectionChange } = props;
+  useEffect(() => onSelectionChange?.(selectedId), [onSelectionChange, selectedId]);
   const [breakpoint, setBreakpoint] = useState<Breakpoint>("base");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   // "Select them" in Site styles: the elements outlined together, while one of them is selected.

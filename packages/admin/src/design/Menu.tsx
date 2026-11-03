@@ -16,6 +16,8 @@ interface MenuProps {
   /** What the button shows, usually an icon such as `<Ellipsis aria-hidden />`. */
   trigger: ReactNode;
   items: readonly MenuItem[];
+  /** Replaces the square icon button's look, for a trigger with words such as a toolbar button. */
+  triggerClassName?: string;
 }
 
 /**
@@ -23,7 +25,7 @@ interface MenuProps {
  * It follows the ARIA menu button pattern: arrow keys move between items, Escape closes the
  * menu and returns focus to the button, and Tab or a click elsewhere closes it.
  */
-export function Menu({ label, trigger, items }: MenuProps) {
+export function Menu({ label, trigger, items, triggerClassName }: MenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuId = useId();
   const container = useRef<HTMLDivElement>(null);
@@ -88,7 +90,10 @@ export function Menu({ label, trigger, items }: MenuProps) {
             setIsOpen(true);
           }
         }}
-        className="flex size-9 items-center justify-center rounded-control text-label-secondary transition-colors duration-150 ease-standard hover:bg-fill hover:text-label focus-visible:focus-ring aria-expanded:bg-fill aria-expanded:text-label"
+        className={
+          triggerClassName ??
+          "flex size-9 items-center justify-center rounded-control text-label-secondary transition-colors duration-150 ease-standard hover:bg-fill hover:text-label focus-visible:focus-ring aria-expanded:bg-fill aria-expanded:text-label"
+        }
       >
         {trigger}
       </button>
