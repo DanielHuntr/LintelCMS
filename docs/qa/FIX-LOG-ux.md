@@ -1558,3 +1558,17 @@ Decision record: `docs/decisions/0047-designing-the-cursor.md`. No migration: th
 **Test:** `packages/docs/src/content.test.ts`, "the docs' wording": no page mentions a hosting service of Lintel's own or a 1.0 release.
 
 **Not done:** the admin's help panel still opens the older pages for Settings → Your website and the new screens (Visitors, A/B tests, Page drafting); pointing those routes at the new pages is a small change in `admin/src/help/helpTopics.ts`, outside the docs.
+
+## Help panel pages for the new screens, and a stale test cache (3 November 2026)
+
+**What changed:** the "?" help on the new admin screens now opens their own pages:
+
+- Visitors (`/visitors`) opens `using/visitors`;
+- A/B tests (`/experiments`) opens `using/ab-testing`;
+- Settings → Page drafting opens `using/page-drafting`;
+- Settings → Your website → Fonts opens `using/fonts`;
+- Settings → Your website opens `using/website`.
+
+The mappings are in `admin/src/help/helpTopics.ts`.
+
+**Found on the way:** the admin's help test reported the new docs pages missing even though they were there. Vitest 5 keeps a file cache (`node_modules/.vitest-cache`) that keys a module on its own text only. The docs help bundle reads its pages with `import.meta.glob`, so pages added to the docs were invisible to the admin's tests until the cache was cleared. Stale results like this could hide real failures. The admin's test config now turns that cache off (`experimental.fsModuleCache: false`). It's the only package whose tests read files this way.
