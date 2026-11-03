@@ -2,10 +2,11 @@ import { siteDesignSchema } from "@lintel/builder-model";
 import type { FastifyInstance } from "fastify";
 import { requirePermission } from "../auth/require-permission.js";
 import { parseRequest } from "../http/http-errors.js";
+import { resolveEditingSite } from "../sites/request-site.js";
 import { readSiteDesign, saveSiteDesign } from "./site-design.service.js";
 
 /**
- * HTTP only:
+ * HTTP only, for the site being edited (the `Lintel-Site` header):
  *
  *   GET /website/design  (entries:read)    -> { variables, sharedStyles }
  *   PUT /website/design  (builder:blocks)  { variables, sharedStyles } -> the same, as saved
@@ -13,8 +14,10 @@ import { readSiteDesign, saveSiteDesign } from "./site-design.service.js";
  * Changing it changes every page, like changing a block, so it needs the same permission.
  */
 export async function siteDesignRoutes(server: FastifyInstance) {
-  server.get("/website/design", { preHandler: requirePermission("entries:read") }, async () =>
-    readSiteDesign(server.database),
+  server.get(
+    "/website/design",
+    { preHandler: requirePermission("entries:read") },
+    async (request) => readSiteDesign(server.database, await resolveEditingSite(request)),
   );
 
   server.put(
@@ -22,7 +25,7 @@ export async function siteDesignRoutes(server: FastifyInstance) {
     { preHandler: requirePermission("builder:blocks") },
     async (request) => {
       const design = parseRequest(siteDesignSchema, request.body);
-      return saveSiteDesign(server.database, design);
+      return saveSiteDesign(server.database, await resolveEditingSite(request), design);
     },
   );
 }

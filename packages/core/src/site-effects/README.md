@@ -6,12 +6,15 @@ a custom cursor (in the theme's text or brand colour or one picked by hand) and 
 scrolling (Gentle or Strong), chosen in the page builder's Animate tab. All start off, and a
 site with everything off ships no effect CSS or script. See decisions 0034 and 0036.
 
-- `site-effects.routes.ts`: `GET` and `PUT /website/effects`.
+- `site-effects.routes.ts`: `GET` and `PUT /website/effects`, for the site being edited (the
+  `Lintel-Site` header).
 - `site-effects.service.ts`: reading and saving the settings, and `siteEffectsHead`, the CSS,
   intro markup, head scripts and runtime settings one page gets. It is drawn per page
   (see `website/site-documents.ts` and the Liquid pages), because the intro only plays
   before the home page, with the site's name or logo.
-- `site-effects.repository.ts`: the one `siteEffects` row in the settings table.
+- `site-effects.repository.ts`: one `siteEffects:<site id>` row per site in the settings
+  table. A site without one reads the single `siteEffects` row kept before sites had their
+  own (decision 0045).
 
 The settings' shape, the transition looks and the intro live in `@lintel/motion/effects`
 (`site-effects.ts`, `page-transition-looks.ts`, `site-intro.ts`), beside the runtime that

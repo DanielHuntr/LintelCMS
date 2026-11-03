@@ -126,7 +126,7 @@ export async function applyStarterSite(
   }
   const themeApplied =
     request.useTheme && hasPermission(context.permissions, "settings:update")
-      ? await applyTheme(database, site, context)
+      ? await applyTheme(database, site, editingSite, context)
       : false;
   const menu = hasPermission(context.permissions, "navigation:update")
     ? await fillEmptyMainMenu(database, pages, editingSite, replaced)
@@ -284,6 +284,7 @@ async function ensureTemplateForms(
 async function applyTheme(
   database: DatabaseOrTransaction,
   site: StarterSite,
+  editingSite: Site,
   context: StarterSiteContext,
 ): Promise<boolean> {
   // The template's theme is checked like any other change to the website's look.
@@ -298,19 +299,23 @@ async function applyTheme(
     builtInSiteUrl: context.builtInSiteUrl,
     assetExists: context.assetExists,
   });
-  if (site.siteMotion) await applySiteMotion(database, site.siteMotion);
-  if (site.designVariables?.length) await addDesignVariables(database, site.designVariables);
+  // Motion and design variables belong to the site being edited; other sites keep theirs.
+  if (site.siteMotion) await applySiteMotion(database, editingSite, site.siteMotion);
+  if (site.designVariables?.length) {
+    await addDesignVariables(database, editingSite, site.designVariables);
+  }
   return true;
 }
 
 /** The template's design variables, added to the site's; one with the same id is replaced. */
 async function addDesignVariables(
   database: DatabaseOrTransaction,
+  editingSite: Site,
   variables: NonNullable<StarterSite["designVariables"]>,
 ): Promise<void> {
-  const design = await readSiteDesign(database);
+  const design = await readSiteDesign(database, editingSite);
   const ids = new Set(variables.map((variable) => variable.id));
-  await saveSiteDesign(database, {
+  await saveSiteDesign(database, editingSite, {
     ...design,
     variables: [
       ...design.variables.filter((variable) => !ids.has(variable.id)),
@@ -322,10 +327,11 @@ async function addDesignVariables(
 /** The template's site-wide motion, part by part over what the site has now. */
 async function applySiteMotion(
   database: DatabaseOrTransaction,
+  editingSite: Site,
   motion: NonNullable<StarterSite["siteMotion"]>,
 ): Promise<void> {
-  const current = await readSiteEffects(database);
-  await updateSiteEffects(database, {
+  const current = await readSiteEffects(database, editingSite);
+  await updateSiteEffects(database, editingSite, {
     pageTransition: { ...current.pageTransition, ...motion.pageTransition },
     cursor: { ...current.cursor, ...motion.cursor },
     intro: { ...current.intro, ...motion.intro },

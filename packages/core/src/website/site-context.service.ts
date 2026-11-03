@@ -77,10 +77,10 @@ export async function loadSiteContext(
   },
 ): Promise<SiteContext> {
   const { site } = options;
-  const effects = readSiteEffects(database);
+  const effects = readSiteEffects(database, site);
   const websiteFonts = readWebsiteFonts(database, site, options.assetLookup);
   const scriptRule = readSetting(database, "builderCustomScripts");
-  const design = await readSiteDesign(database);
+  const design = await readSiteDesign(database, site);
   const [locales, collections, look, seoEnabled, seoDefaults, siteAddress, plugins] =
     await Promise.all([
       listLocales(database, site),

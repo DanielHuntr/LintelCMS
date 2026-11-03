@@ -1187,3 +1187,19 @@ Files: `packages/motion-editor/src/motion-panel/quickPicks.ts` (`growsFrom`, `st
 **Screenshots:** `044-grow-while-scrolling-before-{light,dark}`, `044-grow-while-scrolling-after-{light,dark}`.
 
 Commit: 3ea18b0.
+
+## Per-site styles and motion (3 November 2026)
+
+**Asked:** on an install with several sites, Site styles (design variables, shared styles, tag styles) and site motion (cursor, smooth scrolling, page transitions, intro) should belong to each site, like its fonts and its navigation and footer already do.
+
+**Before:** both were one settings row for every site, so changing the French site's brand colour or cursor changed the main site's too, and applying a template to one site gave its motion and variables to all of them.
+
+**Now:** they are kept per site (`siteDesign:<site id>`, `siteEffects:<site id>`). `/website/design` and `/website/effects` work on the site being edited (the `Lintel-Site` header, as `/website/sections` does), the website draws each site with its own, and a template's motion and variables go to the site being edited only. A site that has not saved its own yet reads the old shared row, so existing installs look the same. Permissions are unchanged, and someone limited to some sites can't read or change another site's. No migration. See decision 0045.
+
+The admin needed no change: it already sends the current site with every request and reloads everything when the site is switched.
+
+Files: `packages/core/src/site-design/*`, `packages/core/src/site-effects/*`, `packages/core/src/website/site-context.service.ts`, `packages/core/src/starter-sites/starter-sites.service.ts`, `docs/decisions/0045-site-styles-and-motion-per-site.md`, `packages/docs/src/content/docs/building/effects-api.md`.
+
+**Tests:** core `site-design.test.ts` "with several sites" (3): two sites' stylesheets carry their own variables; the old shared row shows on every site until one saves its own; permissions and site access. `site-effects.test.ts` "with several sites" (3): two sites' pages load different effect modules; the old shared row; permissions and site access. `starter-sites.test.ts`: applying Studio to a second site leaves the main site's motion and design as they were.
+
+No screenshots: no UI changed.
