@@ -4,11 +4,9 @@ import { minorAmountSchema } from "../money/money.js";
 import { shippingRateKinds } from "./shipping.table.js";
 
 /** `{ "GBP": 495 }`: amounts in minor units, by currency code. */
-const amountsSchema = z
-  .record(currencyCodeSchema, minorAmountSchema, {
-    error: 'Amounts should be listed by currency, like { "GBP": 495 }',
-  })
-  .default({});
+const amountsSchema = z.record(currencyCodeSchema, minorAmountSchema, {
+  error: 'Amounts should be listed by currency, like { "GBP": 495 }',
+});
 
 const zoneFields = {
   name: z
@@ -38,7 +36,7 @@ const weightBracketSchema = z.object({
     .int()
     .positive({ error: "Weight limits should be more than 0 grams" })
     .nullable(),
-  amounts: amountsSchema,
+  amounts: amountsSchema.default({}),
 });
 
 const rateFields = {
@@ -49,10 +47,14 @@ const rateFields = {
     .max(100),
   kind: z.enum(shippingRateKinds, { error: "The rate should be flat or weight" }),
   amounts: amountsSchema,
-  weightBrackets: z.array(weightBracketSchema).max(50).default([]),
+  weightBrackets: z.array(weightBracketSchema).max(50),
   freeOverAmounts: amountsSchema.nullable(),
-  deliveryEstimate: z.string().trim().max(100).default(""),
+  deliveryEstimate: z.string().trim().max(100),
 };
+
+// Defaults belong to creating a rate only. On the update schema they filled in every field
+// left out, so renaming a rate wiped its price, weight steps and delivery estimate
+// (LINTEL-DATA-014).
 
 const rateRules = <
   Schema extends z.ZodType<{ kind?: string; weightBrackets?: Array<{ upToGrams: number | null }> }>,
@@ -77,10 +79,10 @@ export const createShippingRateRequestSchema = rateRules(
   z.object({
     name: rateFields.name,
     kind: rateFields.kind.default("flat"),
-    amounts: rateFields.amounts,
-    weightBrackets: rateFields.weightBrackets,
+    amounts: rateFields.amounts.default({}),
+    weightBrackets: rateFields.weightBrackets.default([]),
     freeOverAmounts: rateFields.freeOverAmounts.default(null),
-    deliveryEstimate: rateFields.deliveryEstimate,
+    deliveryEstimate: rateFields.deliveryEstimate.default(""),
   }),
 );
 

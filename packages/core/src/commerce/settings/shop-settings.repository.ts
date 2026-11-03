@@ -31,6 +31,9 @@ export async function updateShopSettingsRow(
   changes: ShopSettingsChanges,
 ): Promise<void> {
   await findOrCreateShopSettingsRow(database, tenantId);
+  // Nothing to change isn't an error: the database refuses an update with nothing to set
+  // (LINTEL-FUNC-010).
+  if (Object.values(changes).every((value) => value === undefined)) return;
   await database
     .update(shopSettingsTable)
     .set(changes)

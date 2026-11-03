@@ -1,5 +1,6 @@
 import type { DatabaseOrTransaction } from "../../database/client.js";
 import { DEFAULT_TENANT_ID } from "../../database/columns.js";
+import { InvalidFieldsError } from "../../http/http-errors.js";
 import { ShopRecordNotFoundError } from "../commerce.errors.js";
 import type { MarketRow } from "../markets/markets.table.js";
 import {
@@ -86,6 +87,7 @@ export async function createShippingRate(
   request: CreateShippingRateRequest,
 ): Promise<ShippingZone> {
   await findZone(database, zoneId);
+  refuseRateWithoutPrice(request);
   const position = (await listRateRows(database, [zoneId])).length;
   await insertRate(database, { tenantId: DEFAULT_TENANT_ID, zoneId, ...request, position });
   return findZone(database, zoneId);
@@ -100,6 +102,7 @@ export async function updateShippingRate(
   if (!rate) {
     throw new ShopRecordNotFoundError("shipping rate");
   }
+  refuseRateWithoutPrice({ ...rate, ...request });
   await updateRateRow(database, DEFAULT_TENANT_ID, rateId, request);
   return findZone(database, rate.zoneId);
 }
@@ -128,6 +131,28 @@ export async function findShippingQuotes(
   return quoteShipping(zones, rates, parcel, market, primaryCurrency).sort(
     (first, second) => first.amount.amount - second.amount.amount,
   );
+}
+
+/**
+ * A rate needs a price: a flat rate in at least one currency, a weight rate at least one step
+ * with one. A rate without one was accepted, and checkout then couldn't deliver to the zone at
+ * all (LINTEL-FUNC-012).
+ */
+function refuseRateWithoutPrice(
+  rate: Pick<ShippingRateRow, "kind" | "amounts" | "weightBrackets">,
+) {
+  if (rate.kind === "weight") {
+    if (rate.weightBrackets.length === 0) {
+      throw new InvalidFieldsError({ weightBrackets: "Add at least one weight step with a price" });
+    }
+    if (rate.weightBrackets.some((bracket) => Object.keys(bracket.amounts).length === 0)) {
+      throw new InvalidFieldsError({ weightBrackets: "Give every weight step a price" });
+    }
+    return;
+  }
+  if (Object.keys(rate.amounts).length === 0) {
+    throw new InvalidFieldsError({ amounts: "Give the rate a price, like £4.95" });
+  }
 }
 
 async function findZone(database: DatabaseOrTransaction, zoneId: string): Promise<ShippingZone> {
