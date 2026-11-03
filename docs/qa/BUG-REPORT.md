@@ -722,14 +722,14 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-DATA-010 | P1       | Fixed  | Autosave sends the parent the editor opened with, quietly moving a page back after a move in the tree                          |
 | LINTEL-FUNC-014 | P1       | Fixed  | ISK and UGX amounts go to Stripe in the wrong unit: the shopper pays 1% of the price                                           |
 | LINTEL-FUNC-015 | P1       | Fixed  | A new entry's first autosave swaps the editor component, losing focus and words typed during the save                          |
-| LINTEL-DATA-011 | P1       | Open   | Rolling back an update restores rows but not the old schema; the old version runs on the new tables                            |
+| LINTEL-DATA-011 | P1       | Fixed  | Rolling back an update restores rows but not the old schema; the old version runs on the new tables                            |
 | LINTEL-FUNC-016 | P1       | Fixed  | On Windows every one-click update after the first fails: renaming a junction over another gives EPERM                          |
 | LINTEL-SEC-008  | P2       | Fixed  | Any API token, read-only included, can answer workflow approvals for the person who made it                                    |
 | LINTEL-SEC-009  | P2       | Fixed  | `settings:update` alone can lift its own site limit, limit the Owner role, and change or delete other sites                    |
 | LINTEL-SEC-010  | P2       | Fixed  | Two-factor can be set up again while on, swapping the authenticator with no password                                           |
 | LINTEL-SEC-011  | P2       | Fixed  | A passkey can be added without the password, and survives a password reset                                                     |
 | LINTEL-DATA-012 | P2       | Fixed  | Binning an entry clears its translations' links for good; restoring doesn't bring them back                                    |
-| LINTEL-DATA-013 | P2       | Open   | A failed update restores a backup taken before the download, losing orders made while it downloaded                            |
+| LINTEL-DATA-013 | P2       | Fixed  | A failed update restores a backup taken before the download, losing orders made while it downloaded                            |
 | LINTEL-FUNC-017 | P2       | Fixed  | Moving a page in the tree doesn't check the new parent is on the same site                                                     |
 | LINTEL-FUNC-018 | P2       | Part   | Which page is "/" depends on content type names and counts drafts                                                              |
 | LINTEL-FUNC-019 | P2       | Fixed  | A shopper can switch the cart to another market's prices after giving a delivery address                                       |
@@ -740,7 +740,7 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-FUNC-024 | P2       | Fixed  | Switching workspace tabs or opening preview asks "Leave with unsaved changes?"                                                 |
 | LINTEL-FUNC-025 | P2       | Fixed  | Dialogs close when a drag starts inside and ends outside; a new API token's one-time secret is lost                            |
 | LINTEL-FUNC-026 | P2       | Fixed  | Webhooks reuse one time for a whole run: deliveries can be sent twice and signed minutes old                                   |
-| LINTEL-FUNC-027 | P2       | Open   | The update supervisor doesn't recover from dying mid-switch                                                                    |
+| LINTEL-FUNC-027 | P2       | Fixed  | The update supervisor doesn't recover from dying mid-switch                                                                    |
 | LINTEL-FUNC-028 | P1       | Fixed  | Builder: dragging from Insert onto the page does nothing; only Layers takes drops                                              |
 | LINTEL-FUNC-029 | P2       | Fixed  | Canvas effects lose their first frame; visitors who ask for less motion see no particles, frost or gradient                    |
 | LINTEL-FUNC-030 | P1       | Fixed  | Mask reveal and section curtain/iris animations never play on the website, so their words stay hidden                          |

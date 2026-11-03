@@ -2,6 +2,7 @@ import { type ChildProcess, fork } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
+import { FolderDatabaseCopies, locateDatabase } from "./database-copies.js";
 import { openMaintenancePage } from "./maintenance-page.js";
 import {
   programPath,
@@ -41,6 +42,11 @@ export async function runSupervisor(options: RunSupervisorOptions): Promise<Supe
   const port = Number(environment.PORT ?? environment.API_PORT ?? 4000);
   const host = environment.HOST ?? "0.0.0.0";
   const readyUrl = `http://127.0.0.1:${port}/ready`;
+  // The server runs in <home>, so a relative LINTEL_FOLDER is relative to it.
+  const database = locateDatabase(
+    environment,
+    resolve(home, environment.LINTEL_FOLDER ?? ".lintel"),
+  );
 
   const dependencies: SupervisorDependencies = {
     startServer(folder, manifest) {
@@ -78,6 +84,8 @@ export async function runSupervisor(options: RunSupervisorOptions): Promise<Supe
     sleep: (milliseconds) => sleep(milliseconds),
     log,
     now: () => new Date(),
+    databaseCopies:
+      database.kind === "built-in" ? new FolderDatabaseCopies(home, database.dataFolder) : null,
   };
 
   const supervisor = new Supervisor(

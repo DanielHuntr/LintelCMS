@@ -192,10 +192,25 @@ async function unpackInto(
   }
 }
 
+/**
+ * The `tar` to run. On Windows that is the one Windows ships (System32\tar.exe): a GNU tar
+ * found first on the PATH (Git for Windows has one) reads `C:\...` as a remote computer
+ * and stops with "Error is not recoverable".
+ */
+export function tarProgram(platform: NodeJS.Platform = process.platform): string {
+  if (platform === "win32") {
+    const windowsTar = join(process.env.SystemRoot ?? "C:\\Windows", "System32", "tar.exe");
+    if (existsSync(windowsTar)) {
+      return windowsTar;
+    }
+  }
+  return "tar";
+}
+
 /** The release's files are at the archive's top level (scripts/release packs them so). */
 function unpackWithTar(archive: string, into: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const tar = spawn("tar", ["-xzf", archive, "-C", into], {
+    const tar = spawn(tarProgram(), ["-xzf", archive, "-C", into], {
       stdio: ["ignore", "ignore", "pipe"],
     });
     let errors = "";

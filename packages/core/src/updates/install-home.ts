@@ -13,6 +13,7 @@ import {
 } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import { z } from "zod";
+import { listKnownMigrations } from "../database/migration-status.js";
 import { compareVersions, isVersion } from "./semantic-version.js";
 import {
   type InstalledVersion,
@@ -31,6 +32,8 @@ import {
  *     versions/1.1.0/
  *     versions/update-status.json    where the last update or roll back got to
  *     versions/update-history.json   every switch, newest last
+ *     versions/switch-journal.json   a switch under way (see supervisor/switch-journal.ts)
+ *     versions/database-copies/      the built-in database as it was before each switch
  *     current -> versions/1.1.0      the version that runs
  *
  * Switching versions repoints `current`. On Linux and macOS a new link is renamed over the
@@ -49,6 +52,8 @@ export const releaseManifestSchema = z.object({
   migrate: z.string().default("packages/core/dist/scripts/migrate.js"),
   cli: z.string().default("packages/cli/dist/main.js"),
   admin: z.string().default("packages/admin/dist"),
+  /** The release's database migrations, to tell whether two versions' tables differ. */
+  migrations: z.string().default("packages/core/migrations"),
 });
 export type ReleaseManifest = z.infer<typeof releaseManifestSchema>;
 
@@ -83,6 +88,40 @@ export async function readReleaseManifest(
     return releaseManifestSchema.parse({ version: fallbackVersion });
   }
   return releaseManifestSchema.parse(JSON.parse(await readFile(file, "utf8")));
+}
+
+/**
+ * The migrations a release folder ships, oldest first, or null when they can't be read
+ * (which callers treat as "may differ"). A folder without release.json is a repository
+ * checkout, with migrations in the usual place.
+ */
+export async function releaseMigrations(folder: string): Promise<string[] | null> {
+  try {
+    const manifestFile = join(folder, RELEASE_MANIFEST_FILE);
+    const migrations = existsSync(manifestFile)
+      ? releaseManifestSchema.parse(JSON.parse(await readFile(manifestFile, "utf8"))).migrations
+      : releaseManifestSchema.shape.migrations.parse(undefined);
+    return listKnownMigrations(join(folder, migrations));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Whether going from the release in `fromFolder` to the one in `toFolder` leaves the
+ * database with tables the second doesn't know: true when `fromFolder`'s release has a
+ * migration `toFolder`'s hasn't, or when either can't be read.
+ */
+export async function databaseDiffers(fromFolder: string, toFolder: string): Promise<boolean> {
+  const [from, to] = await Promise.all([
+    releaseMigrations(fromFolder),
+    releaseMigrations(toFolder),
+  ]);
+  if (!from || !to) {
+    return true;
+  }
+  const known = new Set(to);
+  return from.some((tag) => !known.has(tag));
 }
 
 /** The folder `current` points at, or `fallback` before the first update. */
@@ -151,7 +190,11 @@ async function removeLink(path: string): Promise<void> {
   }
 }
 
-/** Every unpacked version, newest first, saying which one `runningFolder` (usually `current`) is. */
+/**
+ * Every unpacked version, newest first, saying which one `runningFolder` (usually `current`)
+ * is, which copy of the database was made just before leaving it, and whether going back to
+ * it would leave the database with tables it doesn't know.
+ */
 export async function listInstalledVersions(
   home: string,
   runningFolder: string,
@@ -169,14 +212,35 @@ export async function listInstalledVersions(
       continue;
     }
     const leaving = history.findLast((entry) => entry.fromVersion === name && entry.backupFilename);
+    const copied = history.findLast(
+      (entry) =>
+        entry.fromVersion === name &&
+        entry.databaseCopy !== null &&
+        databaseCopyExists(home, entry.databaseCopy),
+    );
+    const current = (await realpath(path)) === running;
     versions.push({
       version: name,
-      current: (await realpath(path)) === running,
+      current,
       installedAt: (await stat(path)).mtime.toISOString(),
       backupBeforeLeaving: leaving?.backupFilename ?? null,
+      databaseCopyBeforeLeaving: copied?.databaseCopy ?? null,
+      databaseDiffers: current ? false : await databaseDiffers(running, path),
     });
   }
   return versions.sort((left, right) => compareVersions(right.version, left.version));
+}
+
+/** Where copies of the built-in database are kept (see supervisor/database-copies.ts). */
+export function databaseCopiesFolder(home: string): string {
+  return join(versionsFolder(home), "database-copies");
+}
+
+/** A copy is complete once its copy.json is written, which is done last. */
+export function databaseCopyExists(home: string, copyId: string): boolean {
+  return (
+    /^[\w.-]+$/.test(copyId) && existsSync(join(databaseCopiesFolder(home), copyId, "copy.json"))
+  );
 }
 
 export async function readUpdateStatus(home: string): Promise<UpdateProgress | null> {

@@ -63,3 +63,15 @@ export class UpdaterUnreachableError extends HttpError {
     );
   }
 }
+
+export class RollbackNeedsDatabaseCopyError extends HttpError {
+  constructor(runningVersion: string, version: string, copyKept: boolean) {
+    super(
+      409,
+      "ROLLBACK_NEEDS_DATABASE_COPY",
+      copyKept
+        ? `Lintel ${runningVersion} changed the database, so going back to ${version} also means putting the database back as it was before the update. Tick that box to go ahead.`
+        : `Lintel ${runningVersion} changed the database, and there's no copy of it from before the update, so Lintel ${version} can't safely run again. Stay on ${runningVersion}, or ask whoever looks after your server to go back by hand (see “Updating Lintel”).`,
+    );
+  }
+}

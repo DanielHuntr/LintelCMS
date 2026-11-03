@@ -5,7 +5,13 @@ import { backupsContextFor, makeBackup } from "../backups/backups.service.js";
 import { isOwner } from "../roles/roles.service.js";
 import { recordSecurityEvent, type RequestOrigin } from "../security-log/security-log.service.js";
 import { readSetting } from "../settings/settings.service.js";
-import { currentLink, listInstalledVersions, versionFolder } from "./install-home.js";
+import {
+  currentLink,
+  currentTarget,
+  databaseDiffers,
+  listInstalledVersions,
+  versionFolder,
+} from "./install-home.js";
 import { prepareRelease } from "./release-download.js";
 import { compareVersions } from "./semantic-version.js";
 import {
@@ -13,6 +19,7 @@ import {
   OneClickNotAvailableError,
   OwnersOnlyError,
   ReleaseNotAvailableError,
+  RollbackNeedsDatabaseCopyError,
   UpdateAlreadyRunningError,
   UpdateNeedsAnotherFirstError,
   UpdaterUnreachableError,
@@ -26,9 +33,11 @@ import type { UpdatesRuntime } from "./updates-runtime.js";
  * the security log. The work runs in the background and reports each step to
  * `server.updates`, which the admin follows live:
  *
- *   update     backup → download → check signature and checksum → unpack → hand over to the
- *              supervisor (process installs) or to lintel-updater (Docker)
- *   roll back  hand over to the supervisor, saying whether to put the backup back first
+ *   update     download → check signature and checksum → unpack → backup → hand over to
+ *              the supervisor (process installs), which copies the database once the site
+ *              is paused; or backup → hand over to lintel-updater (Docker)
+ *   roll back  hand over to the supervisor, saying whether to put the database back as it
+ *              was before the update (required when the newer version changed it)
  *
  * Everything that changes the running version happens in the supervisor (see supervisor/).
  */
@@ -72,7 +81,10 @@ export async function startUpdate(
     details: { from: updates.currentVersion, to: release.version },
   });
   const progress = progressReporter(updates, release.version, "update");
-  const first = progress("backing-up", "Making a backup of the whole site first.");
+  const first =
+    updates.method.installType === "docker"
+      ? progress("backing-up", "Making a backup of the whole site first.")
+      : progress("downloading", stepMessages.downloading, 0);
   void runUpdate(server, actor, release, progress);
   return first;
 }
@@ -85,12 +97,8 @@ async function runUpdate(
 ): Promise<void> {
   const updates = server.updates;
   try {
-    const backupsContext = backupsContextFor(server);
-    const backup = await makeBackup(backupsContext, "before-update", actor.name);
-    const backupFile = join(backupsContext.folder, backup.filename);
-    progress.backup(backup.filename);
-
     if (updates.method.installType === "docker") {
+      await backUpFirst(server, actor, progress);
       progress("restarting", "Asking lintel-updater to install the new version.");
       await askDockerUpdater(updates, release.version);
       progress(
@@ -100,7 +108,7 @@ async function runUpdate(
       return;
     }
 
-    await prepareRelease(
+    const folder = await prepareRelease(
       {
         home: updates.home,
         publicKey: updates.publicKey,
@@ -110,18 +118,43 @@ async function runUpdate(
       },
       release,
     );
+    const running = await currentTarget(updates.home, updates.installFolder);
+    if (server.activeDatabase.kind === "postgres" && (await databaseDiffers(folder, running))) {
+      throw new Error(
+        `Lintel ${release.version} changes the database, and on a Postgres server Lintel can't ` +
+          "keep a copy to go back to if the update fails. Nothing was changed. Make a backup " +
+          "with your database provider, then update by hand (see “Updating Lintel”).",
+      );
+    }
+    // Made after the download, so it is as recent as it can be. The supervisor also copies
+    // the built-in database once the site is paused; that copy is what a failed update
+    // puts back.
+    const backupFile = await backUpFirst(server, actor, progress);
     progress("maintenance", "Restarting Lintel with the new version.");
     updates.askSupervisor({
       kind: "update",
       version: release.version,
       backupFile,
       restoreBackupFirst: false,
+      databaseCopy: null,
     });
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     progress("failed", reason, null, true);
     server.log.error(error, "Updating Lintel didn't work");
   }
+}
+
+async function backUpFirst(
+  server: FastifyInstance,
+  actor: Actor,
+  progress: ProgressReporter,
+): Promise<string> {
+  progress("backing-up", "Making a backup of the whole site.");
+  const backupsContext = backupsContextFor(server);
+  const backup = await makeBackup(backupsContext, "before-update", actor.name);
+  progress.backup(backup.filename);
+  return join(backupsContext.folder, backup.filename);
 }
 
 const stepMessages = {
@@ -153,10 +186,24 @@ export async function startRollback(
   if (installed.current || request.version === updates.currentVersion) {
     throw new AlreadyRunningVersionError(request.version);
   }
+  // Going back across database changes is only safe with the database put back as it was.
+  if (
+    installed.databaseDiffers &&
+    !(request.restoreBackup && installed.databaseCopyBeforeLeaving)
+  ) {
+    throw new RollbackNeedsDatabaseCopyError(
+      updates.currentVersion,
+      request.version,
+      installed.databaseCopyBeforeLeaving !== null,
+    );
+  }
+  const databaseCopy = request.restoreBackup ? installed.databaseCopyBeforeLeaving : null;
+  // Without a copy (a Postgres server), the backup's rows go back into the same tables.
   const backupFile =
-    request.restoreBackup && installed.backupBeforeLeaving
+    request.restoreBackup && !databaseCopy && installed.backupBeforeLeaving
       ? join(server.dataTools.backupsFolder, installed.backupBeforeLeaving)
       : null;
+  const restoring = databaseCopy !== null || backupFile !== null;
 
   await recordSecurityEvent(server.database, {
     kind: "lintel-rolled-back",
@@ -165,7 +212,7 @@ export async function startRollback(
     details: {
       from: updates.currentVersion,
       to: request.version,
-      restoredBackup: backupFile !== null,
+      restoredBackup: restoring,
     },
   });
   const progress = progressReporter(updates, request.version, "rollback");
@@ -175,7 +222,8 @@ export async function startRollback(
     kind: "rollback",
     version: request.version,
     backupFile,
-    restoreBackupFirst: backupFile !== null,
+    restoreBackupFirst: restoring,
+    databaseCopy,
   });
   return first;
 }
@@ -235,6 +283,7 @@ function progressReporter(
       startedAt,
       finishedAt: finished ? new Date().toISOString() : null,
       backupFilename,
+      databaseCopy: null,
     };
     updates.report(progress);
     return progress;

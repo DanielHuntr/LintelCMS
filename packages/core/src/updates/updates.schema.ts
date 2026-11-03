@@ -121,6 +121,11 @@ export const updateProgressSchema = z.object({
   finishedAt: z.string().nullable(),
   /** The backup made first, by file name (Settings → Backups). */
   backupFilename: z.string().nullable(),
+  /**
+   * The copy of the built-in database made at the switch, with the site already stopped,
+   * by id (see supervisor/database-copies.ts). Older entries don't have it.
+   */
+  databaseCopy: z.string().nullable().default(null),
 });
 export type UpdateProgress = z.infer<typeof updateProgressSchema>;
 
@@ -130,6 +135,13 @@ export const installedVersionSchema = z.object({
   installedAt: z.string().nullable(),
   /** The backup made just before updating away from this version, if there is one. */
   backupBeforeLeaving: z.string().nullable(),
+  /** The copy of the database made as Lintel left this version, if it's still kept. */
+  databaseCopyBeforeLeaving: z.string().nullable(),
+  /**
+   * The running version has database changes this one doesn't know, so going back to it
+   * also means putting back that copy of the database.
+   */
+  databaseDiffers: z.boolean(),
 });
 export type InstalledVersion = z.infer<typeof installedVersionSchema>;
 
@@ -141,7 +153,7 @@ export const startUpdateBodySchema = z.object({
 
 export const startRollbackBodySchema = z.object({
   version: z.string().min(1),
-  /** Also put back the backup made before updating away from that version. */
+  /** Also put the database back as it was when Lintel updated away from that version. */
   restoreBackup: z.boolean(),
   confirmed: z.literal(true, { error: "Please confirm before rolling back" }),
 });
