@@ -94,6 +94,7 @@ import {
 } from "./website/website-runtime.js";
 import { starterSitesRoutes } from "./starter-sites/starter-sites.routes.js";
 import { websiteRoutes } from "./website/website.routes.js";
+import { siteEffectsRoutes } from "./site-effects/site-effects.routes.js";
 import { EventBus } from "./events/event-bus.js";
 import { subscribeEventListeners } from "./events/event-listeners.js";
 import { registerWorkflows, type WorkflowOptions } from "./workflows/register-workflows.js";
@@ -460,6 +461,7 @@ function registerApiRoutes(
   server.register(brandingRoutes);
   server.register(interfaceLanguagesRoutes);
   server.register(websiteRoutes);
+  server.register(siteEffectsRoutes);
   server.register(pagesRoutes);
   server.register(starterSitesRoutes);
   registerContentModelSyncRoutes(server);

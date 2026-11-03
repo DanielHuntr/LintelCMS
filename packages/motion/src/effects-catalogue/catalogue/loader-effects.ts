@@ -1,0 +1,120 @@
+import { fromTo, through } from "../../presets/preset.js";
+import { defineEffect } from "../effect-definition.js";
+import { choice, number } from "../parameters.js";
+
+/** Loaders for sections and elements. The site intro lives in the builder's site settings. */
+
+export const loaderEffects = [
+  defineEffect({
+    id: "section-shimmer",
+    name: "Loading shimmer",
+    description:
+      "A soft shimmer over the section until its pictures have loaded, then it fades away.",
+    category: "loaders",
+    kind: "behaviour",
+    module: "intro",
+    behaviour: "sectionLoader",
+    suits: ["container", "image", "list"],
+    params: {},
+    reducedMotion: "A still, light veil until the pictures load.",
+    preview: "card",
+    keywords: ["skeleton", "loading", "placeholder"],
+  }),
+  defineEffect({
+    id: "pulse-placeholder",
+    name: "Gentle pulse",
+    description: "Softly fades up and down, as a waiting placeholder does.",
+    category: "loaders",
+    kind: "animation",
+    suits: ["any"],
+    params: { duration: number("One pulse", 1400, 400, 4000, { unit: "ms" }) },
+    animation: ({ duration }) => ({
+      trigger: { type: "load" },
+      duration,
+      easing: "easeInOut",
+      repeat: { times: "forever", yoyo: true },
+      tracks: [fromTo("opacity", 1, 0.45)],
+    }),
+    reducedMotion: "Stays still.",
+    preview: "card",
+  }),
+  defineEffect({
+    id: "spinner",
+    name: "Spinner",
+    description: "Turns round and round. Put it on a ring or icon to make a loading spinner.",
+    category: "loaders",
+    kind: "animation",
+    suits: ["any"],
+    params: { duration: number("One turn", 900, 300, 4000, { unit: "ms" }) },
+    animation: ({ duration }) => ({
+      trigger: { type: "load" },
+      duration,
+      easing: "linear",
+      repeat: { times: "forever", yoyo: false },
+      tracks: [fromTo("rotate", 0, 360)],
+      reducedMotion: "none",
+    }),
+    reducedMotion: "Stays still.",
+    preview: "button",
+  }),
+  defineEffect({
+    id: "bouncing-dots",
+    name: "Bouncing dots",
+    description:
+      "The items inside hop one after another, like the three dots of a chat that's typing.",
+    category: "loaders",
+    kind: "animation",
+    suits: ["list", "container"],
+    params: { height: number("Hop height", 8, 2, 24, { unit: "px" }) },
+    animation: ({ height }) => ({
+      trigger: { type: "load" },
+      targets: { type: "children" },
+      stagger: { each: 140, from: "first" },
+      duration: 700,
+      easing: "easeInOut",
+      repeat: { times: "forever", yoyo: false },
+      tracks: [through("translateY", [0, -height, 0])],
+    }),
+    reducedMotion: "Stays still.",
+    preview: "list",
+  }),
+  defineEffect({
+    id: "progress-sweep",
+    name: "Filling bar",
+    description: "Fills from left to right once, like a progress bar. Put it on a thin box.",
+    category: "loaders",
+    kind: "animation",
+    suits: ["container"],
+    params: { duration: number("How long it fills", 1600, 300, 6000, { unit: "ms" }) },
+    animation: ({ duration }) => ({
+      trigger: { type: "inView" },
+      duration,
+      easing: "easeInOut",
+      tracks: [fromTo("scaleX", 0, 1)],
+    }),
+    reducedMotion: "Shows full.",
+    preview: "progress",
+  }),
+  defineEffect({
+    id: "toast",
+    name: "Notification pop-up",
+    description:
+      "Slides in after a moment, stays a few seconds and leaves by itself. Screen readers announce it politely.",
+    category: "loaders",
+    kind: "behaviour",
+    module: "intro",
+    behaviour: "toast",
+    suits: ["container"],
+    params: {
+      delay: number("Appears after", 1.5, 0, 20, { step: 0.5, unit: "s" }),
+      stay: number("Stays for (0 keeps it)", 6, 0, 30, { step: 1, unit: "s" }),
+      from: choice("Slides in from", "bottom", [
+        ["bottom", "Below"],
+        ["top", "Above"],
+      ]),
+    },
+    reducedMotion: "Fades in and out without sliding.",
+    preview: "card",
+    keywords: ["toast", "notification", "alert", "snackbar"],
+  }),
+];

@@ -1,12 +1,13 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { createRequire } from "node:module";
 import { findIllustration, fontFilesFolder, isCatalogueFontFile } from "@lintel/builder-model";
 import { STYLESHEET_FOLDER } from "./site-context.service.js";
 
 /**
  * The website's files besides pages and the stylesheet: the motion runtime (only pages with
- * animations load it), the elements script (only pages with sliders, forms and the like load
+ * animations or effects load it), the effect modules (each only where an effect uses it), the elements script (only pages with sliders, forms and the like load
  * it), the illustrations the starter sites and the section library use, and the fonts that
  * come with Lintel. All are served from `/_lintel`, with fingerprints or long caching.
  */
@@ -54,6 +55,59 @@ export function readElementsScript(): SiteScript | null {
     elementsScript = null;
   }
   return elementsScript;
+}
+
+export const EFFECTS_FOLDER = `${STYLESHEET_FOLDER}/effects`;
+
+export interface EffectModuleFiles {
+  /** Each module's address, for the page's list: { pointer: "/_lintel/effects/pointer-X.js" }. */
+  urls: Record<string, string>;
+  /** Every file (modules and their shared chunks) by name. */
+  files: ReadonlySet<string>;
+  folder: string;
+}
+
+let effectModules: EffectModuleFiles | null | undefined;
+
+/**
+ * The effect modules (`@lintel/motion/effect-modules`), from their manifest, read once.
+ * Pages only list the modules their effects use. Null if `@lintel/motion` isn't built.
+ */
+export function readEffectModules(): EffectModuleFiles | null {
+  if (effectModules !== undefined) {
+    return effectModules;
+  }
+  try {
+    const manifestPath = createRequire(import.meta.url).resolve(
+      "@lintel/motion/effect-modules/manifest.json",
+    );
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
+      modules: Record<string, { file: string }>;
+      files: string[];
+    };
+    effectModules = {
+      urls: Object.fromEntries(
+        Object.entries(manifest.modules).map(([name, { file }]) => [
+          name,
+          `${EFFECTS_FOLDER}/${file}`,
+        ]),
+      ),
+      files: new Set(manifest.files),
+      folder: dirname(manifestPath),
+    };
+  } catch {
+    effectModules = null;
+  }
+  return effectModules;
+}
+
+/** One effect module or shared chunk by file name, or undefined. File names have fingerprints. */
+export function readEffectFile(fileName: string): string | undefined {
+  const modules = readEffectModules();
+  if (!modules?.files.has(fileName)) {
+    return undefined;
+  }
+  return readFileSync(`${modules.folder}/${fileName}`, "utf8");
 }
 
 export const ILLUSTRATIONS_FOLDER = `${STYLESHEET_FOLDER}/illustrations`;

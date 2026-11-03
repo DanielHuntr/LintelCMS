@@ -31,7 +31,9 @@ import { MediaPickerDialog } from "../media/MediaPickerDialog.js";
 import { useCan, useSession } from "../session/SessionContext.js";
 import { runtimeSettings } from "../runtime-settings.js";
 import { useBuilderData, useCanvasSite, useViewPageSite } from "../website/website.queries.js";
+import { useEffectModules } from "./useEffectModules.js";
 import { usePageDesignSaving } from "./usePageDesignSaving.js";
+import { useSiteMotion } from "./useSiteMotion.js";
 import { useBuilderMenus } from "../menus/builderMenus.js";
 import { InlineMenuEditor } from "../menus/InlineMenuEditor.js";
 
@@ -125,6 +127,8 @@ function PageDesigner({
   const viewPage = collection.data
     ? viewPageTarget(viewPageSite, collection.data, saving.entry, entryInfo.data?.url)
     : undefined;
+  const effectModules = useEffectModules(besideTheAdmin);
+  const siteMotion = useSiteMotion();
   const imagePicker = useImagePicker();
   const isNarrowScreen = useIsNarrowScreen();
   const title = String(saving.entry.data.title ?? "") || t("pageDesign.untitled");
@@ -201,6 +205,8 @@ function PageDesigner({
         uploadFile={uploadToMediaLibrary}
         onSaveNow={saving.saveNow}
         frameScripts={canvasFrameScripts}
+        effectModules={effectModules}
+        siteEffects={siteMotion}
         toolbarStart={
           <Link
             to="/content/$collection/$entryId"

@@ -36,6 +36,7 @@ export * from "./components/site-navigation-components.js";
 export * from "./components/form-components.js";
 export * from "./components/collection-components.js";
 export * from "./components/shop-components.js";
+export * from "./components/effect-components.js";
 export * from "./data/bound-items.js";
 
 export * from "./styles/style-properties.js";

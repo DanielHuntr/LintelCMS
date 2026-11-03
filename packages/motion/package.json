@@ -2,7 +2,7 @@
   "name": "@lintel/motion",
   "version": "1.0.0-rc.1",
   "private": true,
-  "description": "Lintel's animation runtime: plays JSON animation specs with the Web Animations API.",
+  "description": "Lintel's animation runtime: plays JSON animation specs with the Web Animations API, and runs the Effects library's lazily loaded modules.",
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -21,16 +21,24 @@
       "development": "./src/presets/index.ts",
       "default": "./dist/presets/index.js"
     },
-    "./site-runtime.js": "./dist/site-runtime.js"
+    "./site-runtime.js": "./dist/site-runtime.js",
+    "./effects": {
+      "types": "./dist/effects-catalogue/index.d.ts",
+      "development": "./src/effects-catalogue/index.ts",
+      "default": "./dist/effects-catalogue/index.js"
+    },
+    "./effect-modules/*": "./dist/effect-modules/*"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && node scripts/bundle-site-runtime.mjs",
+    "build": "tsc -p tsconfig.build.json && node scripts/bundle-site-runtime.mjs && node scripts/bundle-effect-modules.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run && vitest run --config vitest.browser.config.ts",
     "test:unit": "vitest run",
-    "test:browser": "vitest run --config vitest.browser.config.ts"
+    "test:browser": "vitest run --config vitest.browser.config.ts",
+    "measure:effects": "node scripts/measure-effect-modules.mjs && prettier --write src/effects-catalogue/module-sizes.ts"
   },
   "dependencies": {
+    "motion": "^14.9.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {

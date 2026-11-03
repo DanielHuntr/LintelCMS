@@ -1,4 +1,5 @@
 import { customScriptRules } from "@lintel/builder-model";
+import { defaultSiteEffectSettings, siteEffectSettingsSchema } from "@lintel/motion/effects";
 import { z } from "zod";
 import { formsSpamSettingsSchema } from "../forms/forms-settings.schema.js";
 import { brandingOverridesSchema } from "../branding/branding.schema.js";
@@ -78,6 +79,8 @@ export const settingSchemas = {
   updateCheck: updateCheckSchema,
   /** Stable releases only, or betas too (Settings → Updates). */
   updatePreferences: updatePreferencesSchema,
+  /** Page transitions, cursor and intro across the website (see src/site-effects). */
+  siteEffects: siteEffectSettingsSchema,
 };
 
 export type SettingKey = keyof typeof settingSchemas;
@@ -103,4 +106,5 @@ export const settingDefaults: { [Key in SettingKey]: SettingValue<Key> } = {
   backupSchedule: defaultBackupSchedule,
   updateCheck: emptyUpdateCheck,
   updatePreferences: defaultUpdatePreferences,
+  siteEffects: defaultSiteEffectSettings,
 };

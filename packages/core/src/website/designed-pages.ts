@@ -31,17 +31,16 @@ export function checkPageDesign(value: unknown): PageDocument | null {
 
 /** Draws a checked design with what its dynamic elements show (see page-data.service.ts). */
 export function drawPageDesign(document: PageDocument, data: PageData = {}): PageDesign {
-  const { html, css, animations, fontPreloads, script, usesBehaviours } = renderPage(
-    document,
-    standardRegistry,
-    { withMotion: true, data },
-  );
+  const { html, css, animations, effects, usesMotionApi, fontPreloads, script, usesBehaviours } =
+    renderPage(document, standardRegistry, { withMotion: true, data });
   // A page with its own Header or Footer shows it instead of the site's (LINTEL-FUNC-005).
   const own = ownSiteChrome(document.root);
   return {
     html,
     css,
     animations,
+    effects,
+    usesMotionApi,
     fontPreloads,
     script,
     usesBehaviours,

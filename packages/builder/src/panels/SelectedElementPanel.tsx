@@ -5,6 +5,7 @@ import {
   findPath,
   type FreeLayout,
   type NodeAnimation,
+  type NodeEffect,
   type PageDocument,
   type PageFont,
   type PageNode,
@@ -16,8 +17,9 @@ import {
 } from "@lintel/builder-model";
 import type { MotionSpec } from "@lintel/motion";
 import type { Translate as MotionText } from "@lintel/motion-editor";
-import { useContext, useMemo, useState } from "react";
-import { AnimatePanel } from "../animate-panel/AnimatePanel.js";
+import { type ReactNode, useContext, useMemo, useState } from "react";
+import { AnimatePanel, type EffectPreview } from "../animate-panel/AnimatePanel.js";
+import type { PageWeight } from "@lintel/motion/effects";
 import { CodePanel } from "../developer/CodePanel.js";
 import { useBuilderText } from "../i18n/builder-text.js";
 import type { ComponentRegistry } from "../render/component-registry.js";
@@ -55,6 +57,7 @@ interface SelectedElementPanelProps {
     changeProps: (nodeId: string, props: Record<string, unknown>, label: string) => void;
     changeBinding: (nodeId: string, prop: string, fieldPath: string | null, label: string) => void;
     animate: (nodeId: string, animation: NodeAnimation | null) => void;
+    setEffects: (nodeId: string, effects: NodeEffect[]) => void;
     applyHtml: (nodeId: string, html: string) => void;
     convertToCode: (nodeId: string) => void;
     changeCode: (nodeId: string, code: { html: string; css: string; js: string }) => void;
@@ -70,6 +73,12 @@ interface SelectedElementPanelProps {
     ) => void;
   };
   onPreviewMotion: (nodeId: string, spec: MotionSpec) => void;
+  onPreviewEffect: (nodeId: string, effect: EffectPreview | null) => void;
+  /** Where each effect module is served, for previews on the canvas and in the gallery. */
+  effectModules?: Readonly<Record<string, string>>;
+  pageWeight?: PageWeight;
+  /** Site-wide motion settings, shown when nothing is selected on the Animate tab. */
+  siteMotion?: ReactNode;
 }
 
 /**
@@ -153,13 +162,18 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
             onPasteHtml={actions.pasteHtml}
           />
         ) : !node ? (
-          <p className="px-4 py-6 text-footnote text-label-secondary">
-            {text(
-              tab === "animate"
-                ? "pageBuilder.animate.selectSomething"
-                : "pageBuilder.panels.selectSomething",
+          <>
+            <p className="px-4 py-6 text-footnote text-label-secondary">
+              {text(
+                tab === "animate"
+                  ? "pageBuilder.animate.selectSomething"
+                  : "pageBuilder.panels.selectSomething",
+              )}
+            </p>
+            {tab === "animate" && props.siteMotion && (
+              <div className="px-4 pb-6">{props.siteMotion}</div>
             )}
-          </p>
+          </>
         ) : tab === "style" && design ? (
           <StylePanel
             design={design}
@@ -190,7 +204,11 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
             motionText={props.motionText}
             tips={props.tips}
             onChange={(animation) => actions.animate(node.id, animation)}
+            onChangeEffects={(effects) => actions.setEffects(node.id, effects)}
             onPreview={(spec) => props.onPreviewMotion(node.id, spec)}
+            onPreviewEffect={(effect) => props.onPreviewEffect(node.id, effect)}
+            effectModules={props.effectModules}
+            pageWeight={props.pageWeight}
           />
         ) : (
           <ContentPanel

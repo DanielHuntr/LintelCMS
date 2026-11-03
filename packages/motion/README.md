@@ -16,27 +16,31 @@ const controller = mountMotion(element, findPreset("fade-up")!.spec);
 
 ## Entry points
 
-| Import                           | What it is                                                       |
-| -------------------------------- | ---------------------------------------------------------------- |
-| `@lintel/motion`                 | The runtime. No dependencies; only imports types from the schema |
-| `@lintel/motion/schema`          | Zod schemas, the inferred types and `defineMotion()`             |
-| `@lintel/motion/presets`         | The preset library (uses the schema to check every preset)       |
-| `@lintel/motion/site-runtime.js` | The built file published pages load (see `src/site-runtime`)     |
+| Import                            | What it is                                                       |
+| --------------------------------- | ---------------------------------------------------------------- |
+| `@lintel/motion`                  | The runtime. No dependencies; only imports types from the schema |
+| `@lintel/motion/schema`           | Zod schemas, the inferred types and `defineMotion()`             |
+| `@lintel/motion/presets`          | The preset library (uses the schema to check every preset)       |
+| `@lintel/motion/effects`          | The Effects library: definitions, `defineEffect`, site settings  |
+| `@lintel/motion/site-runtime.js`  | The built file published pages load (see `src/site-runtime`)     |
+| `@lintel/motion/effect-modules/*` | The lazily loaded effect modules and their `manifest.json`       |
 
 ## Where things live
 
-| Folder               | What it does                                                                  |
-| -------------------- | ----------------------------------------------------------------------------- |
-| `src/spec`           | The spec's schemas (the single source of its shape) and the property list     |
-| `src/easing`         | Named curves, cubic Béziers, springs and steps: evaluated and as CSS          |
-| `src/keyframes`      | Tracks to Web Animations keyframes, and sampling tracks that share a property |
-| `src/targets`        | Finding targets, splitting text, stagger order                                |
-| `src/reduced-motion` | What each spec becomes for people who prefer less motion                      |
-| `src/runtime`        | `mountMotion`, playback, feature checks, scroll-scene maths                   |
-| `src/triggers`       | One file per kind of trigger, and the list that picks one                     |
-| `src/presets`        | The 42 presets, by category                                                   |
-| `src/site-runtime`   | The script published pages load, and `window.lintelMotion` for the canvas     |
-| `src/browser-tests`  | Tests in real Chromium through Playwright                                     |
+| Folder                  | What it does                                                                  |
+| ----------------------- | ----------------------------------------------------------------------------- |
+| `src/spec`              | The spec's schemas (the single source of its shape) and the property list     |
+| `src/easing`            | Named curves, cubic Béziers, springs and steps: evaluated and as CSS          |
+| `src/keyframes`         | Tracks to Web Animations keyframes, and sampling tracks that share a property |
+| `src/targets`           | Finding targets, splitting text, stagger order                                |
+| `src/reduced-motion`    | What each spec becomes for people who prefer less motion                      |
+| `src/runtime`           | `mountMotion`, playback, feature checks, scroll-scene maths                   |
+| `src/triggers`          | One file per kind of trigger, and the list that picks one                     |
+| `src/presets`           | The 42 presets, by category                                                   |
+| `src/site-runtime`      | The script published pages load, and `window.lintelMotion` for the canvas     |
+| `src/effects`           | The effects runtime: the loader in the core, and the lazily loaded modules    |
+| `src/effects-catalogue` | The Effects library's definitions, registry and page weight meter             |
+| `src/browser-tests`     | Tests in real Chromium through Playwright                                     |
 
 ## Tests
 

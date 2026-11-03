@@ -1,6 +1,11 @@
 import type { z } from "zod";
 import type { BackgroundVideo } from "../backgrounds/background-video.js";
-import type { NodeAnimation, NodeBindings, NodeStyles } from "../document/page-document.schema.js";
+import type {
+  NodeAnimation,
+  NodeBindings,
+  NodeEffect,
+  NodeStyles,
+} from "../document/page-document.schema.js";
 import type { FreeLayout } from "../free-layout/free-layout.js";
 
 /**
@@ -27,6 +32,8 @@ export interface ComponentDefinition<
   defaultProps: Props;
   /** Styles a new one starts with, so it looks right straight away. */
   defaultStyles?: NodeStyles;
+  /** Effects a new one starts with (see @lintel/motion/effects), such as a magnetic pull. */
+  defaultEffects?: readonly NodeEffect[];
   /** Elements a new one starts with, such as the two halves of Columns. */
   defaultChildren?: readonly NodeBlueprint[];
   /** "none" for leaves, "any" for containers, or a list of the types it accepts. */
@@ -67,6 +74,7 @@ export interface NodeBlueprint {
   styles?: NodeStyles;
   children?: readonly NodeBlueprint[];
   animation?: NodeAnimation;
+  effects?: readonly NodeEffect[];
   freeLayout?: FreeLayout;
   backgroundVideo?: BackgroundVideo;
   bindings?: NodeBindings;

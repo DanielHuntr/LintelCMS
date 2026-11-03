@@ -1,5 +1,6 @@
 import type { ComponentRender } from "../component-registry.js";
 import { collectionRenders } from "./collections.js";
+import { effectRenders } from "./effects.js";
 import { formRenders } from "./forms.js";
 import { infoRenders } from "./info.js";
 import { layoutRenders } from "./layout.js";
@@ -16,6 +17,7 @@ export const elementRenders: Readonly<Record<string, ComponentRender>> = {
   ...formRenders,
   ...collectionRenders,
   ...shopRenders,
+  ...effectRenders,
 };
 
 export { behaviourTypes, usesBehaviours } from "./behaviour-types.js";

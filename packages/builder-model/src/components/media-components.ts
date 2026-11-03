@@ -271,6 +271,7 @@ export const beforeAfterComponent = defineComponent({
     afterLabel: "After",
     start: 50,
   },
+  defaultEffects: [{ effect: "gliding-before-after", params: {} }],
   allowedChildren: "none",
   editableFields: [
     { kind: "image", prop: "before", label: "Before picture" },

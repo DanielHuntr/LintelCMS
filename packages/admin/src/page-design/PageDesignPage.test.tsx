@@ -120,7 +120,8 @@ describe("the page design screen", () => {
           motionScript: "",
         };
       }
-      if (method === "GET") return samplePage();
+      // Only the page itself: the site's motion settings and effect modules aren't set up.
+      if (method === "GET" && url.pathname.startsWith("/entries/")) return samplePage();
       throw apiErrorResponse(404, "NOT_FOUND", "Not found");
     });
     renderScreen(<PageDesignPage collectionHandle="pages" entryId="p1" fieldHandle="design" />);

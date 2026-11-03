@@ -3,7 +3,9 @@ import {
   getBuilderData,
   getCanvasSite,
   getSiteAddress,
+  getSiteEffects,
   getWebsite,
+  updateSiteEffects,
   updateWebsite,
 } from "./website.api.js";
 
@@ -12,7 +14,21 @@ export const websiteKeys = {
   address: () => ["website", "address"] as const,
   canvas: () => ["website", "canvas"] as const,
   builderData: () => ["website", "builder-data"] as const,
+  effects: () => ["website", "effects"] as const,
 };
+
+/** The site-wide motion settings. */
+export function useSiteEffects() {
+  return useQuery({ queryKey: websiteKeys.effects(), queryFn: getSiteEffects, retry: false });
+}
+
+export function useUpdateSiteEffects() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateSiteEffects,
+    onSuccess: (settings) => queryClient.setQueryData(websiteKeys.effects(), settings),
+  });
+}
 
 export function useWebsite() {
   return useQuery({ queryKey: websiteKeys.settings(), queryFn: getWebsite });

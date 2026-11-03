@@ -4,8 +4,10 @@ import type { DatabaseOrTransaction } from "../database/client.js";
 import type { Site } from "../sites/sites.table.js";
 import type { SiteResponse } from "./rendered-pages-cache.js";
 import {
+  EFFECTS_FOLDER,
   FONTS_FOLDER,
   ILLUSTRATIONS_FOLDER,
+  readEffectFile,
   readElementsScript,
   readFontFile,
   readIllustration,
@@ -21,6 +23,7 @@ import { readSiteContext, respondToSitePath, type SiteDependencies } from "./sit
  *   GET /_lintel/site-<fingerprint>.css   the theme and component styles, cached for a year
  *   GET /_lintel/motion-<fingerprint>.js  the motion runtime, for pages with animations
  *   GET /_lintel/elements-<fingerprint>.js the elements script, for sliders, forms, the shop
+ *   GET /_lintel/effects/<module>-<fingerprint>.js an effect module or a chunk they share
  *   ALL /_lintel/api/shop/*, /_lintel/api/forms/*  the storefront and forms APIs (site-api.routes.ts)
  *   GET /_lintel/illustrations/<name>.svg the starter sites' illustrations
  *   GET /_lintel/fonts/<file>.woff2       the fonts that come with Lintel
@@ -69,6 +72,20 @@ export async function siteRoutes(
       .header("cache-control", "public, max-age=86400")
       .header("content-security-policy", "default-src 'none'; style-src 'unsafe-inline'")
       .send(svg);
+  });
+
+  server.get(`${EFFECTS_FOLDER}/:file`, async (request, reply) => {
+    const { file } = request.params as { file: string };
+    const code = readEffectFile(file);
+    if (code === undefined) {
+      return reply.code(404).type("text/plain; charset=utf-8").send("Not found");
+    }
+    // Modules are imported across origins by the builder's canvas, so anyone may load them.
+    return reply
+      .type("text/javascript; charset=utf-8")
+      .header("cache-control", "public, max-age=31536000, immutable")
+      .header("access-control-allow-origin", "*")
+      .send(code);
   });
 
   server.get(`${FONTS_FOLDER}/:file`, async (request, reply) => {

@@ -4,7 +4,9 @@ import { MAIN_CONTENT_ID, SkipLink } from "../chrome/SkipLink.js";
 import type { SiteChrome, SiteLabels } from "../site.types.js";
 import type { SiteTemplate } from "../templates/site-template.js";
 import type { SiteView } from "../templates/view.types.js";
+import type { SiteEffectsHead } from "../templates/view.types.js";
 import { DesignHead } from "./DesignHead.js";
+import { EffectsHead } from "./EffectsHead.js";
 import { HeadTags } from "./HeadTags.js";
 import type { PageHead } from "./page-head.types.js";
 
@@ -25,6 +27,10 @@ export interface SiteDocumentProps {
   motionScriptUrl?: string;
   /** The elements script's address, for designs with sliders, tabs, forms or the shop. */
   elementsScriptUrl?: string;
+  /** Page transitions, cursor and intro, when the site has any switched on. */
+  siteEffects?: SiteEffectsHead;
+  /** Where each effect module is served; only the ones a page uses are listed in it. */
+  effectModuleUrls?: Readonly<Record<string, string>>;
 }
 
 /**
@@ -42,6 +48,8 @@ export function SiteDocument({
   year,
   motionScriptUrl,
   elementsScriptUrl,
+  siteEffects,
+  effectModuleUrls = {},
 }: SiteDocumentProps) {
   const design = view.kind === "page" ? view.design : null;
   return (
@@ -55,8 +63,17 @@ export function SiteDocument({
             elementsScriptUrl={elementsScriptUrl}
           />
         )}
+        <EffectsHead
+          design={design ?? null}
+          siteEffects={siteEffects}
+          effectModuleUrls={effectModuleUrls}
+          motionScriptUrl={motionScriptUrl}
+        />
       </head>
       <body className={`lintel-site lintel-template-${template.id}`}>
+        {siteEffects?.bodyStartHtml && (
+          <div dangerouslySetInnerHTML={{ __html: siteEffects.bodyStartHtml }} />
+        )}
         <SkipLink label={labels.skipToContent} />
         {!design?.ownHeader && (
           <Header chrome={chrome} labels={labels} layout={template.headerLayout} />

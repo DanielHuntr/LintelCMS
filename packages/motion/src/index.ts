@@ -10,6 +10,24 @@ export type { MotionController, MountOptions } from "./runtime/mountMotion.js";
 export { mountMotionList } from "./runtime/mountMotionList.js";
 export type { MotionBinding, PageMotion } from "./runtime/mountMotionList.js";
 export { motionCloakCss } from "./runtime/cloak.js";
+export {
+  mountEffect,
+  readEffectContext,
+  registerEffectBehaviour,
+  setEffectModuleAddresses,
+  startEffects,
+} from "./effects/loadEffects.js";
+export type {
+  EffectBehaviour,
+  EffectBinding,
+  EffectCleanup,
+  EffectContext,
+  EffectModule,
+  EffectModuleName,
+  EffectParams,
+  PageEffects,
+  SiteEffectSettings,
+} from "./effects/effect-types.js";
 export type { ReducedMotionPreference } from "./runtime/environment.js";
 export { reduceMotion } from "./reduced-motion/reducedMotion.js";
 export {
