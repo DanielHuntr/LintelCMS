@@ -90,7 +90,9 @@ Set `API_PUBLIC_URL` when browsers reach the API at another address than
 
 `WEBHOOKS_ALLOW_PRIVATE_ADDRESSES=true` lets webhooks go to localhost and private network
 addresses, for testing a receiver on your own machine; leave it off on a real server.
-It also lets an app's `lintel-app.json` be read from such an address while you build one.
+To build an app on your own machine, use apps' development mode in Build → Apps instead:
+it opens only this computer, only for apps. `APPS_DEVELOPMENT_MODE` (`true`, `false`, or
+empty for "only when `NODE_ENV=development`") decides whether that switch is offered.
 GraphiQL is served at `/graphql` when `NODE_ENV=development`.
 
 Every setting has a default, so no `.env` is needed. If the root `.env` exists it is

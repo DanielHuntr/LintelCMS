@@ -9,12 +9,32 @@ without changing Lintel's code: it reads and changes content through the API, he
 events through webhooks, and shows its own pages inside the admin. Site owners install it
 in **Build → Apps** (see [Apps](/using/apps/)).
 
-Apps are not [plugins](/building/plugins/). A plugin is TypeScript built into Lintel and
-trusted like Lintel itself. An app runs elsewhere, gets only the access the owner approves,
-and its pages are shown in sandboxed frames.
+Apps are not add-ons ([plugins](/building/plugins/)). An add-on is code that runs inside
+Lintel, with full access, and is listed in **Build → Add-ons**. An app runs elsewhere, gets
+only the access the owner approves, and its pages are shown in sandboxed frames; it is
+listed beside add-ons, in **Build → Apps**. Build an app to connect a service or to write
+it in another language; build an add-on for a new kind of field or builder element.
 
-`examples/app-node` is a complete app in plain Node, "Publishing Log". Read it beside this
-page; the same steps in C# and Python are [at the end](#the-same-in-c-and-python).
+## Start one
+
+```bash
+pnpm lintel apps new stock-sync
+cd stock-sync
+npm install
+npm test     # checks its session tokens, webhooks and pages
+npm start    # http://localhost:3200
+```
+
+That makes a working app in plain Node, with nothing to build: its manifest
+(`src/manifest.js`), a server (`src/server.js`), a page inside the admin using
+`@lintel/app-bridge`, the session token and webhook checks, tests and a README. Then in
+Lintel, turn on [development mode](#development-mode) in **Build → Apps**, press **Add an
+app** and give `http://localhost:3200/lintel-app.json`. Put the client ID and secret Lintel
+shows into the app's `.env` and start it again: its page is in the sidebar.
+
+`examples/app-node` is a fuller app, "Publishing Log", with a widget, an editor panel and
+a settings page. Read it beside this page; the same steps in C# and Python are
+[at the end](#the-same-in-c-and-python).
 
 ## How it fits together
 
@@ -82,8 +102,20 @@ develop. An app can't be on the same origin as Lintel's admin or API. Lintel kee
 the owner approved: changing the file later changes nothing until the app is installed
 again, and if it asks for different scopes between review and install, the install stops.
 
-While developing, start Lintel with `WEBHOOKS_ALLOW_PRIVATE_ADDRESSES=true` so it may read
-a manifest on localhost and send webhooks there.
+## Development mode
+
+Lintel won't normally read a manifest from, or send webhooks to, an address on its own
+computer. While you build an app there, open **Build → Apps** and turn on **Development
+mode** at the bottom. Lintel shows a warning at the top of the page for as long as it's
+on, and allows `localhost`, `127.0.0.1` and `[::1]` for apps only: the rest of the private
+network stays closed, and other webhooks are unchanged. Turn it off when you've finished;
+an app installed while it was on stops getting webhooks.
+
+The switch is only offered where the server allows it, set by `APPS_DEVELOPMENT_MODE`:
+left empty it is allowed when Lintel runs in development (`pnpm dev`) and not in
+production; `true` or `false` decides. You no longer need
+`WEBHOOKS_ALLOW_PRIVATE_ADDRESSES` for this, which opens every private address to every
+webhook.
 
 ## Scopes
 
@@ -94,10 +126,21 @@ a manifest on localhost and send webhooks there.
 | `publish_content` | Publish and unpublish entries                                                     |
 | `read_media`      | The media library                                                                 |
 | `write_media`     | Upload, change and delete files                                                   |
+| `read_forms`      | Forms and the entries people send through them                                    |
+| `read_orders`     | The shop's orders and who placed them, not products or settings                   |
+| `write_orders`    | Mark orders as sent and add notes; never refunds or cancelling                    |
 
-No scope reaches settings, users, roles, webhooks or apps. An app acts for the person who
-installed it, and only gets its scopes' permissions **that they also have**, checked on
-every request: if their role changes, the app's access changes with it.
+`read_orders` and `write_orders` need the shop switched on, and `read_forms` needs forms:
+an app that asks for them can't be installed until the feature is on in **Build →
+Features**. The `form.submitted` webhook needs `read_forms`.
+
+No scope reaches settings, users, roles, webhooks or apps, or a page's design
+(`builder:design`): apps change content, like a content-only client, so on a site where
+clients' changes wait for approval an app's publishing waits too. An app acts for the
+person who installed it, and only gets its scopes' permissions **that they also have**,
+checked on every request: if their role changes, the app's access changes with it, and if
+their account is deactivated the app stops working. An app installed by an Owner is still
+limited to its scopes.
 
 ## Calling the API
 

@@ -10,6 +10,20 @@ sidebar:
 translation service, a booking system. They run on their own servers, not inside Lintel,
 and they only get the access you approve. Admins manage them in **Build → Apps**.
 
+## Apps or add-ons?
+
+Build has both, side by side:
+
+|                   | **Add-ons** (Build → Add-ons)                | **Apps** (Build → Apps)                         |
+| ----------------- | -------------------------------------------- | ----------------------------------------------- |
+| Where it runs     | Inside your site, as part of Lintel          | On its own server, somewhere else               |
+| What it can reach | Everything, like Lintel itself               | Only the access you approve, and never settings |
+| Who installs it   | Whoever looks after your site's server       | An admin, in the browser                        |
+| Good for          | New kinds of field, elements for the builder | Connecting a service: stock, shipping, a CRM    |
+
+If you aren't sure, an app is the safer choice: it can do less, and uninstalling it takes
+everything back at once.
+
 ## Adding an app
 
 The app's developer gives you one of two things: a web address (it usually ends in
@@ -34,9 +48,11 @@ written for them.
 
 Before you install, Lintel shows three lists in plain words:
 
-- **This app will be able to**: for example "See all your content, including drafts" or
-  "Upload, change and delete images and files". An app that asks for nothing can still show
-  its own pages, but can't read or change your site.
+- **This app will be able to**: for example "See all your content, including drafts",
+  "See your forms and the entries people send through them" or "See your shop's orders and
+  who placed them". An app that asks for nothing can still show its own pages, but can't
+  read or change your site. An app that works with your shop or forms can only be
+  installed while that feature is on in **Build → Features**.
 - **It will be told when**: things that happen on your site that the app hears about, such
   as "Something is published".
 - **It adds**: pages, dashboard widgets and panels it shows inside Lintel.
@@ -44,6 +60,8 @@ Before you install, Lintel shows three lists in plain words:
 Some things an app can never do, whatever it asks for:
 
 - See or change people's accounts, roles, or your site's settings.
+- Change a page's design. Apps change content, as a content-only client does.
+- Refund or cancel an order: those move money, so they stay with people.
 - Do more than the person who installed it. If you can't publish, an app you install
   can't publish either, even if it asked to.
 - Change its own access later. If the app is updated and wants more, it has to be

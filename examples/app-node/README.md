@@ -24,9 +24,10 @@ written without Lintel, agree with what Lintel sends.
 pnpm --filter example-app-node start          # http://localhost:3100
 ```
 
-1. Start Lintel with `WEBHOOKS_ALLOW_PRIVATE_ADDRESSES=true`, so it may read the manifest and
-   send webhooks to localhost (leave that off on a real server).
-2. In the admin, open Build → Apps → Add an app, and give
+1. In the admin, open Build → Apps and turn on Development mode, so Lintel may read the
+   manifest and send webhooks to localhost (it's only offered while Lintel runs in
+   development).
+2. Press Add an app, and give
    `http://localhost:3100/lintel-app.json`.
 3. Approve it, then start the app again with the values Lintel shows:
 

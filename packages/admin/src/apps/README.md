@@ -6,7 +6,10 @@ an app".
 
 ## Installing and removing
 
-- `AppsPage` (`/build/apps`) lists installed apps and opens `AddAppDialog`.
+- `AppsPage` (`/build/apps`, in Build beside Add-ons) lists installed apps and opens
+  `AddAppDialog`. At the bottom, where the server allows it, is the development mode
+  switch; while it is on, a warning sits at the top. The review step says which features
+  (the shop, forms) a scope needs switched on, and won't install until they are.
 - `AddAppDialog` takes the app's `lintel-app.json` address, or the file pasted in, asks the
   server to check it (`POST /apps/preview`), shows `AppAccessSummary` (what it may do, what
   it is told about and what it adds, in plain English), installs it with the scopes the

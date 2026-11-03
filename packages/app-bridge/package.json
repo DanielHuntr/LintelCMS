@@ -1,6 +1,6 @@
 {
   "name": "@lintel/app-bridge",
-  "version": "0.1.0",
+  "version": "1.0.0-rc.1",
   "description": "Talk to the Lintel admin from an app's embedded page: session tokens, resizing, toasts and navigation.",
   "type": "module",
   "license": "MIT",

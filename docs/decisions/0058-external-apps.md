@@ -86,3 +86,36 @@ Besides plugins (trusted TypeScript built into Lintel, see 0011), Lintel can be 
 - **Running app front-ends in the admin (like plugins)**: fastest, but the app's code would
   run with the signed-in person's session. Plugins are for code you would build into
   Lintel; apps are for code you wouldn't.
+
+## Joining the release branch (2026-11-03)
+
+The branch above was written before add-ons (0052) and content-only clients (0053). When it
+joined the release:
+
+- **Apps sit beside add-ons, in Build.** Build → Add-ons is code that runs inside Lintel
+  with full access; Build → Apps is code on its own server with only the scopes it was
+  given. Each screen and the docs say which is which. (The branch had them in Settings;
+  it was never released, so no old address is kept.)
+- **Three more scopes, worded plainly.** `read_forms` (forms and their entries, and the
+  `form.submitted` webhook), `read_orders` and `write_orders` (marking orders as sent and
+  adding notes). The orders scopes map to two new, narrower shop permissions,
+  `commerce:read-orders` and `commerce:handle-orders`, which the orders routes accept
+  beside `commerce:read` and `commerce:update`, so an app never sees products, prices,
+  payments or shop settings, and never refunds. A scope can name the plugin it needs; an
+  app asking for one whose plugin is off is shown why and can't be installed.
+- **Apps change content, never design.** No scope includes `builder:design`, so apps are
+  content-only in the sense of 0053, as API tokens already were: they can't change a page's
+  design, and where clients' changes wait for approval, so does an app's publishing. An
+  app is still capped by its installer's permissions, an Owner's included, and stops
+  working when its installer is deactivated.
+- **Development mode.** A switch in Build → Apps lets apps on this computer (localhost,
+  127.0.0.1, ::1, and nothing else private) be installed and sent webhooks, with a warning
+  shown while it's on. The server must allow it (`APPS_DEVELOPMENT_MODE`, allowed by
+  default only when `NODE_ENV=development`), so a live site can't be switched into it from
+  the admin. It replaces turning on `WEBHOOKS_ALLOW_PRIVATE_ADDRESSES`, which opens every
+  private address to every webhook.
+- **`lintel apps new <name>`** makes a working app in plain JavaScript, with nothing to
+  build: manifest, server, a page using the bridge, the token and webhook checks, tests
+  (`node --test`) and a README. Its files are kept as real files in
+  `packages/cli/templates/app`, and the CLI's tests run the new app's own tests and check
+  its checks against Lintel's signing code.
