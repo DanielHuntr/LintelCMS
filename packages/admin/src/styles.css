@@ -78,7 +78,7 @@
   --color-knob: #fffefb;
   --color-separator: #d9d4ca;
   --color-label: #1f1d1a;
-  --color-label-secondary: #6f6a62;
+  --color-label-secondary: #67625a;
   --color-label-tertiary: #8f897f;
   --color-accent: #1f1d1a;
   --color-accent-fill: #1f1d1a;
@@ -121,7 +121,7 @@
     --color-knob: #fffefb;
     --color-separator: rgb(80 70 50 / 0.16);
     --color-label: #1f1d1a;
-    --color-label-secondary: #6f6a62;
+    --color-label-secondary: #67625a;
     --color-label-tertiary: #8f897f;
     /*
      * Lintel ink (#1F1D1A): buttons, selection and text links (links are underlined, since
@@ -151,7 +151,7 @@
       --color-knob: #fffefb;
       --color-separator: rgb(120 112 100 / 0.5);
       --color-label: #f3efe8;
-      --color-label-secondary: #a8a197;
+      --color-label-secondary: #b0a99f;
       --color-label-tertiary: #78726a;
       /* Ink turns to paper: paper buttons with ink text. */
       --color-accent: #f3efe8;

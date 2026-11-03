@@ -254,7 +254,7 @@ function FieldtypePicker({
               ))}
             </ul>
           )}
-          <p className="mt-auto px-1 pt-4 text-caption text-label-tertiary" aria-hidden="true">
+          <p className="mt-auto px-1 pt-4 text-caption text-label-secondary" aria-hidden="true">
             {t("fieldPicker.keyboardHint")}
           </p>
         </div>
