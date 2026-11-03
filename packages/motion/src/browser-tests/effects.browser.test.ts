@@ -350,6 +350,36 @@ describe("canvas and WebGL", () => {
     await page.close();
   });
 
+  // Resizing a canvas wipes it, and the first resize report repeated the size already set, so
+  // the one still frame drawn for people who ask for less motion was erased and never came back.
+  it("keeps the still frame for people who ask for less motion", async () => {
+    const { page } = await openEffectsPage(
+      browser,
+      `<section data-node-id="p" style="height:300px"><h2>Hello</h2></section>`,
+      [
+        {
+          nodeId: "p",
+          module: "particles",
+          behaviour: "particleField",
+          params: { colour: "#ff0000" },
+        },
+      ],
+      { reducedMotion: "reduce" },
+    );
+    await waitFor(page, () => document.querySelector("[data-node-id=p] canvas") !== null);
+    // Long enough for the resize report that used to wipe it.
+    await page.waitForTimeout(300);
+    const painted = await page.$eval("[data-node-id=p] canvas", (canvas) => {
+      const element = canvas as HTMLCanvasElement;
+      const data = element.getContext("2d")!.getImageData(0, 0, element.width, element.height).data;
+      let count = 0;
+      for (let index = 3; index < data.length; index += 4) if (data[index]! > 0) count += 1;
+      return count;
+    });
+    expect(painted).toBeGreaterThan(0);
+    await page.close();
+  });
+
   it("paints the liquid gradient with WebGL", async () => {
     const { page } = await openEffectsPage(
       browser,

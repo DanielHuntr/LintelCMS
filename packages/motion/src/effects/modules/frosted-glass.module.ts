@@ -11,7 +11,8 @@ import { loaded } from "../kit/webgl.js";
  * all, and screen readers read what is underneath as normal.
  */
 const frostedGlass: EffectBehaviour = (element, params, context) => {
-  const surface = createSurface(element, context, { under: false });
+  let repaint = () => {};
+  const surface = createSurface(element, context, { under: false, onResize: () => repaint() });
   const drawing = surface.canvas.getContext("2d");
   if (!drawing) return surface.remove;
   surface.canvas.style.pointerEvents = "none";
@@ -36,6 +37,7 @@ const frostedGlass: EffectBehaviour = (element, params, context) => {
     drawing.globalCompositeOperation = "source-over";
     drawing.drawImage(frost, 0, 0);
   };
+  repaint = paintFrost;
   paintFrost();
   if (image) void loaded(image).then(paintFrost, () => undefined);
   let clearAmount = 0;

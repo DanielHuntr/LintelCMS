@@ -11,7 +11,8 @@ import { createSurface } from "../kit/surface.js";
  * The element's own background shows until (and wherever) the canvas can't draw.
  */
 const particleField: EffectBehaviour = (element, params, context) => {
-  const surface = createSurface(element, context);
+  let redraw = () => {};
+  const surface = createSurface(element, context, { onResize: () => redraw() });
   const drawing = surface.canvas.getContext("2d");
   if (!drawing) return surface.remove;
   const count = Math.round(readNumber(params, "count", 70) * (context.lowPower ? 0.5 : 1));
@@ -74,6 +75,7 @@ const particleField: EffectBehaviour = (element, params, context) => {
       drawing.globalAlpha = 1;
     }
   };
+  redraw = () => draw(0);
   draw(0);
   if (context.reduced) return surface.remove;
   const loop = createFrameLoop(element, (elapsed) => (draw(elapsed), true));

@@ -41,11 +41,19 @@ export function createSurface(
       remove();
     },
   };
+  // Setting a canvas's size wipes what's drawn on it, so it's only set when it changes: the
+  // ResizeObserver's first report repeats the size measured here, and used to erase the
+  // first frame (a still frame, for people who ask for less motion, never came back).
   const measure = () => {
-    surface.width = element.clientWidth;
-    surface.height = element.clientHeight;
-    canvas.width = Math.max(1, Math.round(surface.width * surface.ratio));
-    canvas.height = Math.max(1, Math.round(surface.height * surface.ratio));
+    const width = element.clientWidth;
+    const height = element.clientHeight;
+    const pixelWidth = Math.max(1, Math.round(width * surface.ratio));
+    const pixelHeight = Math.max(1, Math.round(height * surface.ratio));
+    surface.width = width;
+    surface.height = height;
+    if (canvas.width === pixelWidth && canvas.height === pixelHeight) return;
+    canvas.width = pixelWidth;
+    canvas.height = pixelHeight;
     onResize();
   };
   const observer = typeof ResizeObserver === "function" ? new ResizeObserver(measure) : undefined;

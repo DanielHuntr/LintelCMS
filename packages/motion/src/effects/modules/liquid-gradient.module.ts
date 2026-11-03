@@ -24,7 +24,8 @@ col+=(h(uv*r+t)-.5)*g;gl_FragColor=vec4(col,1.);}`;
 
 const liquidGradient: EffectBehaviour = (element, params, context) => {
   // The colours blend softly, so half the screen's pixels look the same and cost a quarter.
-  const surface = createSurface(element, context, { resolution: 0.5 });
+  let redraw = () => {};
+  const surface = createSurface(element, context, { resolution: 0.5, onResize: () => redraw() });
   const pass = createShaderPass(surface.canvas, shader);
   if (!pass) return surface.remove;
   if (pass.software) {
@@ -48,6 +49,7 @@ const liquidGradient: EffectBehaviour = (element, params, context) => {
     pass.set("m", eased.x, eased.y);
     pass.draw();
   };
+  redraw = draw;
   draw();
   if (context.reduced) return combine(() => pass.destroy(), surface.remove);
   const loop = createFrameLoop(element, (elapsed) => {
