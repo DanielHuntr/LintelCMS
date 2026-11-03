@@ -24,6 +24,8 @@ export interface ComponentDefinition<
   label: string;
   /** One plain sentence for the Insert panel: what it is for, not how it works. */
   description: string;
+  /** Other words people search Insert with, such as "carousel" for the Slider. */
+  keywords?: readonly string[];
   /** A lucide icon name, drawn by the editor ("heading", "image"...). */
   icon: string;
   category: ComponentCategory;

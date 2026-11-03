@@ -37,6 +37,7 @@ const pictureFields: readonly SimpleField[] = [
 export const videoComponent = defineComponent({
   type: "video",
   label: "Video",
+  keywords: ["youtube", "vimeo", "film", "movie", "background video"],
   description:
     "A video you upload, or one from YouTube or Vimeo. Videos from elsewhere only load when a visitor presses play.",
   icon: "video",
@@ -102,6 +103,7 @@ export const videoComponent = defineComponent({
 export const audioComponent = defineComponent({
   type: "audio",
   label: "Sound",
+  keywords: ["podcast", "music", "mp3"],
   description: "A sound file visitors can play, such as a podcast episode or a song.",
   icon: "audio-lines",
   category: "media",
@@ -127,6 +129,7 @@ const galleryItemSchema = z.object({
 export const galleryComponent = defineComponent({
   type: "gallery",
   label: "Gallery",
+  keywords: ["lightbox", "photos", "images", "portfolio", "masonry"],
   description: "Several pictures in a grid. Visitors can open each one bigger.",
   icon: "images",
   category: "media",
@@ -229,6 +232,7 @@ const sliderFields = [
 export const carouselComponent = defineComponent({
   type: "carousel",
   label: "Slider",
+  keywords: ["carousel", "slideshow", "slides", "swipe"],
   description:
     "Slides visitors move through with arrows, a swipe or the keyboard. It only moves by itself if you ask it to.",
   icon: "gallery-horizontal",
@@ -254,6 +258,7 @@ export const carouselComponent = defineComponent({
 export const beforeAfterComponent = defineComponent({
   type: "beforeAfter",
   label: "Before and after",
+  keywords: ["comparison", "compare", "slider", "makeover"],
   description: "Two pictures on top of each other, with a handle visitors drag to compare them.",
   icon: "split",
   category: "media",
@@ -293,6 +298,7 @@ export const beforeAfterComponent = defineComponent({
 export const iconComponent = defineComponent({
   type: "icon",
   label: "Icon",
+  keywords: ["symbol", "svg"],
   description: "A small symbol from the built-in set, such as a star, a phone or an arrow.",
   icon: "star",
   category: "media",
@@ -345,6 +351,7 @@ const logoSchema = z.object({
 export const logoStripComponent = defineComponent({
   type: "logoStrip",
   label: "Logo strip",
+  keywords: ["logos", "clients", "partners", "marquee", "sponsors"],
   description: "A row of logos, such as clients or partners. It can scroll slowly.",
   icon: "gallery-thumbnails",
   category: "media",
@@ -385,6 +392,7 @@ const coordinate = (limit: number, what: string) =>
 export const mapComponent = defineComponent({
   type: "map",
   label: "Map",
+  keywords: ["google maps", "location", "directions", "address"],
   description:
     "A map from OpenStreetMap with a pin. It loads when a visitor asks for it; until then a link opens it.",
   icon: "map-pin",
@@ -435,6 +443,7 @@ export const embedAllowedHosts = [
 export const embedComponent = defineComponent({
   type: "embed",
   label: "Embed",
+  keywords: ["iframe", "calendly", "widget", "third party"],
   description:
     "Something from another website, such as a booking calendar, a playlist or a design. Visitors choose to load it.",
   icon: "app-window",

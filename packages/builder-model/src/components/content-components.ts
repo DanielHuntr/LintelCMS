@@ -109,6 +109,7 @@ export const listComponent = defineComponent({
 export const buttonComponent = defineComponent({
   type: "button",
   label: "Button",
+  keywords: ["cta", "call to action"],
   description: "A link that looks like a button, for the main thing you want visitors to do.",
   icon: "mouse-pointer-click",
   category: "navigation",
@@ -165,6 +166,7 @@ export const linkComponent = defineComponent({
 export const navigationComponent = defineComponent({
   type: "navigation",
   label: "Menu",
+  keywords: ["nav", "navbar", "links"],
   description: "A row of links to the main pages of your site.",
   icon: "menu",
   category: "navigation",
@@ -199,6 +201,7 @@ export const navigationComponent = defineComponent({
 export const imageComponent = defineComponent({
   type: "image",
   label: "Picture",
+  keywords: ["photo", "picture", "img"],
   description:
     "A photo or illustration from your media library, with a description for people who can’t see it.",
   icon: "image",
@@ -232,6 +235,7 @@ export const imageComponent = defineComponent({
 export const dividerComponent = defineComponent({
   type: "divider",
   label: "Divider",
+  keywords: ["line", "rule", "separator", "hr"],
   description: "A thin line that separates one part of the page from the next.",
   icon: "minus",
   category: "layout",

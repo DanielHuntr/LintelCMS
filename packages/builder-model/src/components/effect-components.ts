@@ -30,6 +30,7 @@ const picture = (index: number): NodeBlueprint => ({
 export const magneticButtonComponent = defineComponent({
   type: "magneticButton",
   label: "Magnetic button",
+  keywords: ["hover", "cursor", "interactive"],
   description: "A button that leans towards the pointer and squashes a little when pressed.",
   icon: "sparkles",
   category: "blocks",
@@ -52,6 +53,7 @@ export const magneticButtonComponent = defineComponent({
 export const cardStackComponent = defineComponent({
   type: "cardStack",
   label: "Card stack",
+  keywords: ["carousel", "swipe", "deck"],
   description:
     "Cards piled on one another; visitors click, swipe or use the arrow keys to see the next.",
   icon: "gallery-thumbnails",
@@ -73,6 +75,7 @@ export const cardStackComponent = defineComponent({
 export const cylinderGalleryComponent = defineComponent({
   type: "cylinderGallery",
   label: "3D gallery",
+  keywords: ["carousel", "3d", "rotating", "photos"],
   description: "Pictures around a slowly turning cylinder; visitors drag to spin it.",
   icon: "gallery-horizontal",
   category: "media",
@@ -90,6 +93,7 @@ export const cylinderGalleryComponent = defineComponent({
 export const scrollingRowComponent = defineComponent({
   type: "scrollingRow",
   label: "Scrolling row",
+  keywords: ["horizontal scroll", "carousel", "sideways"],
   description: "Words or logos drifting sideways in an endless row, faster while visitors scroll.",
   icon: "move-horizontal",
   category: "blocks",
@@ -113,6 +117,7 @@ export const scrollingRowComponent = defineComponent({
 export const counterRowComponent = defineComponent({
   type: "counterRow",
   label: "Counter row",
+  keywords: ["stats", "statistics", "numbers", "count up"],
   description: "A row of big numbers that count up when they come into view: “1,200 customers”.",
   icon: "hash",
   category: "blocks",
@@ -148,6 +153,7 @@ export const counterRowComponent = defineComponent({
 export const toggleSwitchComponent = defineComponent({
   type: "toggleSwitch",
   label: "Switch",
+  keywords: ["toggle", "monthly yearly", "checkbox"],
   description:
     "An on and off switch whose knob springs across. Good for “Monthly or yearly” choices.",
   icon: "sliders-horizontal",
@@ -165,6 +171,7 @@ export const toggleSwitchComponent = defineComponent({
 export const radialMenuComponent = defineComponent({
   type: "radialMenu",
   label: "Round menu",
+  keywords: ["floating", "contact", "fab", "speed dial"],
   description: "A button that fans its links out in a circle. Handy for a few quick actions.",
   icon: "plus",
   category: "navigation",
@@ -195,6 +202,7 @@ export const radialMenuComponent = defineComponent({
 export const notificationToastComponent = defineComponent({
   type: "notificationToast",
   label: "Notification",
+  keywords: ["toast", "alert", "banner", "message"],
   description: "A small message that slides in at the corner of the screen, then leaves by itself.",
   icon: "bell",
   category: "blocks",

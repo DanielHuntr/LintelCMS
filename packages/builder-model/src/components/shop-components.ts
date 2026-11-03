@@ -64,6 +64,7 @@ export const productGridSorts = [
 export const productGridComponent = defineComponent({
   type: "productGrid",
   label: "Product grid",
+  keywords: ["shop", "store", "catalogue", "products"],
   description:
     "Products from your shop, or from one of its collections, in a grid. Visitors can sort them.",
   icon: "store",
@@ -190,6 +191,7 @@ export const productPriceComponent = defineComponent({
 export const variantPickerComponent = defineComponent({
   type: "variantPicker",
   label: "Options picker",
+  keywords: ["variants", "sizes", "colours"],
   description: "Lets shoppers choose a size, colour or other option before adding to the basket.",
   icon: "sliders-horizontal",
   category: "shop",
@@ -217,6 +219,7 @@ export const variantPickerComponent = defineComponent({
 export const addToCartComponent = defineComponent({
   type: "addToCart",
   label: "Add to basket",
+  keywords: ["add to cart", "buy"],
   description: "The button that puts the product in the basket, with a quantity box.",
   icon: "shopping-cart",
   category: "shop",
@@ -248,6 +251,7 @@ export const addToCartComponent = defineComponent({
 export const cartDrawerComponent = defineComponent({
   type: "cartDrawer",
   label: "Basket button",
+  keywords: ["cart", "basket"],
   description: "A basket icon with the number of items. It opens the basket from the side.",
   icon: "shopping-basket",
   category: "shop",
@@ -269,6 +273,7 @@ export const cartDrawerComponent = defineComponent({
 export const cartContentsComponent = defineComponent({
   type: "cartContents",
   label: "Basket",
+  keywords: ["cart"],
   description:
     "Everything in the basket, with quantities, the total and the checkout button. For the basket page.",
   icon: "shopping-cart",

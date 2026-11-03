@@ -21,6 +21,7 @@ const gapChoices = [
 export const gridComponent = defineComponent({
   type: "grid",
   label: "Grid",
+  keywords: ["columns", "layout"],
   description:
     "Puts items in rows and columns, such as cards. Choose how many columns each screen size has.",
   icon: "layout-grid",
@@ -49,6 +50,7 @@ export const gridComponent = defineComponent({
 export const spacerComponent = defineComponent({
   type: "spacer",
   label: "Spacer",
+  keywords: ["gap", "whitespace", "padding"],
   description: "Empty space between two things, a little smaller on phones.",
   icon: "move-vertical",
   category: "layout",
@@ -123,6 +125,7 @@ export const tabPanelComponent = defineComponent({
 export const tabsComponent = defineComponent({
   type: "tabs",
   label: "Tabs",
+  keywords: ["tabbed", "switcher"],
   description: "Several panels in the same space; visitors choose which one to see.",
   icon: "folder-open",
   category: "layout",
@@ -162,6 +165,7 @@ export const accordionItemComponent = defineComponent({
 export const accordionComponent = defineComponent({
   type: "accordion",
   label: "Accordion",
+  keywords: ["faq", "collapse", "expand", "dropdown", "toggle"],
   description: "Titles that open to show more when clicked, such as questions and answers.",
   icon: "chevrons-up-down",
   category: "layout",
@@ -179,6 +183,7 @@ export const accordionComponent = defineComponent({
 export const modalComponent = defineComponent({
   type: "modal",
   label: "Pop-up",
+  keywords: ["popup", "modal", "dialog", "overlay", "lightbox"],
   description:
     "A button that opens a pop-up window over the page, with anything inside: a video, a form, a bigger picture.",
   icon: "app-window",
@@ -212,6 +217,7 @@ export const modalComponent = defineComponent({
 export const stickyComponent = defineComponent({
   type: "sticky",
   label: "Sticky container",
+  keywords: ["fixed", "pinned", "stick"],
   description: "Stays in view while the page scrolls past, such as a side menu or a header.",
   icon: "pin",
   category: "layout",

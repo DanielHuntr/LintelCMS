@@ -66,6 +66,7 @@ export const menuHandleSchema = z
 export const siteHeaderComponent = defineComponent({
   type: "siteHeader",
   label: "Header",
+  keywords: ["navbar", "nav", "top bar"],
   description:
     "Your logo and menu across the top. Menu items can open big menus with columns and a featured picture; on phones it becomes a menu button.",
   icon: "panel-top",
@@ -126,6 +127,7 @@ export const siteHeaderComponent = defineComponent({
 export const mobileMenuComponent = defineComponent({
   type: "mobileMenu",
   label: "Menu drawer",
+  keywords: ["hamburger", "nav", "drawer"],
   description: "A menu button that slides a panel of links in from the side. Handy on phones.",
   icon: "panel-left-open",
   category: "navigation",
@@ -177,6 +179,7 @@ const footerColumnSchema = z.object({
 export const siteFooterComponent = defineComponent({
   type: "siteFooter",
   label: "Footer",
+  keywords: ["bottom"],
   description: "Columns of links along the bottom, with your small print and social links.",
   icon: "panel-bottom",
   category: "navigation",
@@ -240,6 +243,7 @@ export const siteFooterComponent = defineComponent({
 export const languageSwitcherComponent = defineComponent({
   type: "languageSwitcher",
   label: "Language switcher",
+  keywords: ["translation", "language"],
   description: "Lets visitors read this page in the site’s other languages.",
   icon: "languages",
   category: "navigation",
@@ -266,6 +270,7 @@ export const languageSwitcherComponent = defineComponent({
 export const searchBoxComponent = defineComponent({
   type: "searchBox",
   label: "Search box",
+  keywords: ["search"],
   description: "A box visitors type in to search your site.",
   icon: "search",
   category: "navigation",
@@ -290,6 +295,7 @@ export const searchBoxComponent = defineComponent({
 export const backToTopComponent = defineComponent({
   type: "backToTop",
   label: "Back to top",
+  keywords: ["scroll to top", "up arrow"],
   description: "A button that takes visitors back to the top of a long page.",
   icon: "arrow-up-to-line",
   category: "navigation",

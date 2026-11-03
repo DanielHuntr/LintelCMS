@@ -105,7 +105,7 @@ export function insertItems(
         kind: "elements",
         label: definition.label,
         description: definition.description,
-        keywords: [],
+        keywords: definition.keywords ?? [],
         group: category,
         groupTitle: elementGroupTitles[category],
         type: definition.type,

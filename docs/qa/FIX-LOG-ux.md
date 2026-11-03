@@ -714,3 +714,13 @@ What's saved is unchanged, so existing pages keep their states.
 **Tests:** `builder/src/panels/panels.test.tsx` checks the six looks in order and that Hovered saves to the hover styles. It also checks that the second question appears for Hovered, isn't there for Focused, and keeps the element around it when switching from Open to Hovered. It also covers the owner's transition. `studio.test.tsx` checks the tour text.
 
 **Screenshots** (in `screenshots/looks/`): `before-style-for-desktop-light`, then `looks-normal-desktop-light`, `looks-owner-desktop-light` and `looks-owner-desktop-dark`. At 390px wide the designer shows its "needs a bigger screen" page, as before.
+
+## LINTEL-UX-034: Insert search knows other names for elements (3 November 2026)
+
+**Reported by Daniel:** "We don't currently have anything easy for like Carousels?" There is one, the Slider, but Insert couldn't find it.
+
+**Reproduced:** in Insert, search "carousel". Nothing comes up, because search only looked at an element's name, description and group. "popup", "modal", "lightbox", "marquee", "faq" and "iframe" found nothing either.
+
+**Fix:** element definitions can now carry `keywords`, the other names people know them by, and Insert's search reads them, as it already did for sections. 55 elements have them. For example: Slider has carousel and slideshow; Pop-up has popup, modal and dialog; Gallery has lightbox; Ticker and Logo strip have marquee; Accordion has faq; Embed has iframe; Menu drawer has hamburger.
+
+**Tests:** `builder/src/panels/insert-library.test.ts` searches each of those words and expects the right element.
