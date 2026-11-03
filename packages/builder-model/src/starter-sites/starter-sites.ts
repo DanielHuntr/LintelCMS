@@ -1,5 +1,6 @@
 import { bakerySite } from "./bakery.js";
 import { consultantSite } from "./consultant.js";
+import { folioSite } from "./folio.js";
 import { localServiceSite } from "./local-service.js";
 import { magazineSite } from "./magazine.js";
 import { portfolioSite } from "./portfolio.js";
@@ -14,6 +15,7 @@ export const starterSites: readonly StarterSite[] = [
   magazineSite,
   localServiceSite,
   productLaunchSite,
+  folioSite,
 ];
 
 export function findStarterSite(starterSiteId: string): StarterSite | undefined {
