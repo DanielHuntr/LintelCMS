@@ -17,6 +17,21 @@ export {
   type PluginSettings,
 } from "./plugin-definition.js";
 export { requirePluginEnabled } from "./plugin-routes.js";
+export type { PluginContext, PluginLog } from "./plugin-context.js";
+export type { PluginEventHandler, PluginEventHandlers } from "./plugin-events.js";
+export type { PluginJob } from "./plugin-jobs.js";
+export type { PluginCommand, PluginCommandContext } from "./plugin-commands.js";
+export type { PluginLiquid, PluginLiquidFilter, PluginLiquidTag } from "./plugin-liquid.js";
+export { escapeHtml } from "../liquid-templates/liquid-tags.js";
+
+// Events: what handlers are told, and the catalogue a plugin extends with its own.
+export type { PublishedEvent } from "../events/event-bus.js";
+export type {
+  EventActor,
+  EventDefinition,
+  LintelEventName,
+  LintelEvents,
+} from "../events/event-catalogue.js";
 export { isPluginEnabled } from "./plugins.service.js";
 export { PluginNotEnabledError } from "./plugins.errors.js";
 

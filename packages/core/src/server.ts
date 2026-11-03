@@ -64,6 +64,8 @@ import { openApiRoutes } from "./openapi/openapi.routes.js";
 import { PluginCatalogue } from "./plugins/plugin-catalogue.js";
 import type { LintelPlugin } from "./plugins/plugin-definition.js";
 import { registerPluginRoutes } from "./plugins/plugin-routes.js";
+import { connectPluginExtensions } from "./plugins/plugin-extensions.js";
+import { registerPluginLiquid } from "./plugins/plugin-liquid.js";
 import { pluginRegistry } from "./plugins/plugins.registry.js";
 import { type FreePhotosOptions, registerFreePhotos } from "./free-photos/register-free-photos.js";
 import { type PageDraftsOptions, registerPageDrafts } from "./page-drafts/register-page-drafts.js";
@@ -331,6 +333,8 @@ export function buildServer(options: ServerOptions) {
   server.decorate("webhooks", webhooks);
   const plugins = new PluginCatalogue(pluginRegistry, options.plugins);
   server.decorate("plugins", plugins);
+  // Before the website's Liquid engine is made, so it has plugins' tags and filters.
+  for (const plugin of plugins.plugins) registerPluginLiquid(plugin, server.log);
   // Plugins' own tables are brought up to date before the server takes requests.
   server.addHook("onReady", () => activeDatabase.applyPluginMigrations(plugins.migrations));
   server.decorate("adminOrigin", options.adminOrigin.replace(/\/+$/, ""));
@@ -360,6 +364,8 @@ export function buildServer(options: ServerOptions) {
     }),
   );
   subscribeEventListeners(server);
+  // Plugins' event handlers, jobs and Liquid tags, each run only while the plugin is on.
+  connectPluginExtensions(server, plugins, { runScheduledJobs: options.runScheduledJobs ?? true });
   const dataTools: DataTools = {
     storage,
     backupsFolder: options.dataTools?.backupsFolder ?? defaultBackupsFolder(),
