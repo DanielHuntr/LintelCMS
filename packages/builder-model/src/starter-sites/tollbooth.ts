@@ -104,15 +104,18 @@ function course(name: string, note: string, dishes: readonly PriceItem[]): NodeB
   return gridBand(
     name,
     [
-      heading(
-        "Course",
-        name,
-        2,
-        at(1, 4, 1, { ...serif, fontSize: "clamp(1.75rem, 3vw, 2.5rem)", fontWeight: "400" }),
+      group(
+        "Course title",
+        [
+          heading("Course", name, 2, {
+            base: { ...serif, fontSize: "clamp(1.75rem, 3vw, 2.5rem)", fontWeight: "400" },
+          }),
+          words("Note", note, { base: { color: parts.look.quiet, fontSize: "0.9375rem" } }),
+        ],
+        at(1, 4, 1, { gap: space(2), paddingTop: space(3) }),
       ),
-      words("Note", note, at(1, 3, 2, { color: parts.look.quiet, fontSize: "0.9375rem" })),
       priceList("Dishes", dishes, {
-        styles: { base: { gridColumn: "6 / span 7", gridRow: "1 / span 2" } },
+        styles: at(6, 7, 1),
         nameStyles: { ...serif, fontSize: "1.25rem" },
         animation: animate("stagger-up", { stagger: 50 }),
       }),
@@ -128,7 +131,7 @@ function navigation(): NodeBlueprint {
       action(
         "Book button",
         "Book a table",
-        "/book",
+        "/visit",
         { background: claret, text: onClaret },
         { fontSize: "0.9375rem", paddingTop: space(2), paddingBottom: space(2) },
       ),
@@ -226,7 +229,7 @@ const homePage = {
             group(
               "Buttons",
               [
-                action("Book button", "Book a table", "/book", {
+                action("Book button", "Book a table", "/visit", {
                   background: claret,
                   text: onClaret,
                 }),
@@ -520,9 +523,9 @@ const storyPage = {
   ],
 };
 
-const bookPage = {
-  slug: "book",
-  title: "Book a table",
+const visitPage = {
+  slug: "visit",
+  title: "Visit",
   summary: "Book a table at Tollbooth, find us on Leith Walk and see when we're open.",
   sections: [
     pageTop({
@@ -640,5 +643,5 @@ export const tollboothSite: StarterSite = {
     intro: { style: "name", text: "Tollbooth", background: "#16130f", colour: "#efe8dc" },
   },
   siteSections: { navigation: navigation(), footer: footer() },
-  pages: [homePage, menuPage, storyPage, bookPage],
+  pages: [homePage, menuPage, storyPage, visitPage],
 };

@@ -32,7 +32,7 @@ describe("the Hollis starter site", () => {
   });
 
   it("has its pages, fonts, accent and motion", () => {
-    expect(site?.pages.map((page) => page.slug)).toEqual(["home", "services", "team", "book"]);
+    expect(site?.pages.map((page) => page.slug)).toEqual(["home", "services", "team", "visit"]);
     expect(site?.theme).toMatchObject({ headingFont: "Syne", bodyFont: "DM Sans" });
     expect(site?.designVariables?.map((variable) => variable.id)).toEqual(["rosewood"]);
     expect(site?.siteMotion).toMatchObject({

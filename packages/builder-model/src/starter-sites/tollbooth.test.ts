@@ -32,7 +32,7 @@ describe("the Tollbooth starter site", () => {
   });
 
   it("has its pages, fonts, accent and motion", () => {
-    expect(site?.pages.map((page) => page.slug)).toEqual(["home", "menu", "story", "book"]);
+    expect(site?.pages.map((page) => page.slug)).toEqual(["home", "menu", "story", "visit"]);
     expect(site?.theme).toMatchObject({ headingFont: "Fraunces", bodyFont: "Work Sans" });
     expect(site?.designVariables?.map((variable) => variable.id)).toEqual(["claret"]);
     expect(site?.siteMotion).toMatchObject({
@@ -77,8 +77,10 @@ describe("the Tollbooth starter site", () => {
 
   it("shows opening hours and a way to book, keeping the phone number when Forms is off", () => {
     expect(pageNodes("home").some((node) => node.type === "table")).toBe(true);
-    expect(pageNodes("book").find((node) => node.type === "formEmbed")?.props.form).toBe("contact");
-    const withoutForms = pageNodes("book", []);
+    expect(pageNodes("visit").find((node) => node.type === "formEmbed")?.props.form).toBe(
+      "contact",
+    );
+    const withoutForms = pageNodes("visit", []);
     expect(withoutForms.some((node) => node.type === "formEmbed")).toBe(false);
     expect(withoutForms.some((node) => node.props.href === "tel:+441315550192")).toBe(true);
     expect(texts("home")).toContain(

@@ -167,10 +167,16 @@ function treatments(name: string, note: string, items: readonly PriceItem[]): No
   return gridBand(
     name,
     [
-      heading("Group title", name, 2, at(1, 5, 1, sectionTitle)),
-      words("Note", note, at(1, 4, 2, { color: parts.look.quiet })),
+      group(
+        "Group title",
+        [
+          heading("Group title", name, 2, { base: sectionTitle }),
+          words("Note", note, { base: { color: parts.look.quiet } }),
+        ],
+        at(1, 5, 1, { gap: space(3) }),
+      ),
       priceList("Prices", items, {
-        styles: { base: { gridColumn: "6 / span 7", gridRow: "1 / span 2" } },
+        styles: at(6, 7, 1),
         nameStyles: { fontWeight: "500" },
         animation: animate("stagger-up", { stagger: 50 }),
       }),
@@ -188,7 +194,7 @@ function treatments(name: string, note: string, items: readonly PriceItem[]): No
 function navigation(): NodeBlueprint {
   return parts.navigation({
     logo: { ...wide, fontSize: "1.375rem", textTransform: "lowercase" },
-    extra: [bookButton("Book", { paddingTop: space(2), paddingBottom: space(2) })],
+    extra: [bookButton("Book online", { paddingTop: space(2), paddingBottom: space(2) })],
   });
 }
 
@@ -464,9 +470,9 @@ const teamPage = {
   ],
 };
 
-const bookPage = {
-  slug: "book",
-  title: "Book",
+const visitPage = {
+  slug: "visit",
+  title: "Visit",
   summary: "Book an appointment at Hollis, see our hours and find the salon in Fitzroy.",
   sections: [
     pageTop({
@@ -579,5 +585,5 @@ export const hollisSite: StarterSite = {
     intro: { style: "none" },
   },
   siteSections: { navigation: navigation(), footer: footer() },
-  pages: [homePage, servicesPage, teamPage, bookPage],
+  pages: [homePage, servicesPage, teamPage, visitPage],
 };
