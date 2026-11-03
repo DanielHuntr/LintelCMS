@@ -290,11 +290,17 @@ function PageDesigner({
                 )}
               </span>
             )}
-            {canPublish && canPublishShared && shared.unpublished && !saving.justPublished && (
-              <span className="hidden text-footnote text-label-secondary sm:inline">
-                {t("pageDesign.siteSections.notLive")}
-              </span>
-            )}
+            {/* One note at a time: the page's own when it has changes waiting, else the
+                navigation and footer's. */}
+            {canPublish &&
+              canPublishShared &&
+              shared.unpublished &&
+              !saving.justPublished &&
+              saving.liveness === "live" && (
+                <span className="hidden text-footnote text-label-secondary sm:inline">
+                  {t("pageDesign.siteSections.notLive")}
+                </span>
+              )}
             <span role="status" className="sr-only">
               {saving.justPublished ? t("pageDesign.publishedAnnouncement") : ""}
             </span>

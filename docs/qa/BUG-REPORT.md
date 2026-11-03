@@ -785,3 +785,30 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 
 **Tooling found on the way (fixed):** with `core.autocrlf=true` and no `.gitattributes`, a Windows checkout failed `format:check` on 2,617 files and seven test files; the docs test built page addresses with backslashes. A `.gitattributes` now keeps LF everywhere, and the docs test uses forward slashes.
+
+# Code review (3 Nov 2026, `release/1.0.0-rc`, branch `fix/review-findings`)
+
+Found by a code review of the newer website, builder, fonts and motion work, and by Daniel's checks of Start from a template. Each was checked against the code first. Every fix has a regression test that fails without it. The fixes are logged in `FIX-LOG-ux.md`, "Code review fixes (3 November 2026)".
+
+## Code review summary
+
+| ID              | Severity | Status | Defect                                                                                                                                       |
+| --------------- | -------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| LINTEL-CODE-001 | P1       | Fixed  | Applying a starter template silently replaces the site's own navigation and footer, even when its pages are added beside the site's own      |
+| LINTEL-CODE-002 | P1       | Fixed  | "Choose a page" links in the site's navigation, footer and own blocks are published as `href="lintel:page/<id>"`                             |
+| LINTEL-CODE-003 | P2       | Fixed  | Pictures in rich text leave out the photo credit their licence asks for                                                                      |
+| LINTEL-CODE-004 | P2       | Fixed  | Builder: a site-styles change made just before closing is lost, and failed saves of the site's styles are never shown                        |
+| LINTEL-CODE-005 | P2       | Fixed  | Builder: a failed save of the navigation or footer is swallowed and the change is dropped                                                    |
+| LINTEL-CODE-006 | P2       | Fixed  | Site styles have no version check: a builder left open on an older copy overwrites someone else's newer styles                               |
+| LINTEL-CODE-007 | P2       | Fixed  | The navigation and footer put the site's prefix and language on every "/…" link, breaking `/_lintel/…` files, `/menu.pdf` and `/fr/…`        |
+| LINTEL-CODE-008 | P3       | Fixed  | Fonts: replaced or failed Google Fonts downloads are left in the media library; no limit per site; same-name race gives a database error     |
+| LINTEL-CODE-009 | P3       | Fixed  | Hover picture loads the full-size file for every element as the page opens                                                                   |
+| LINTEL-CODE-010 | P3       | Fixed  | Page transitions read every animated element's computed styles each time a page is left or arrives                                           |
+| LINTEL-CODE-011 | P3       | Fixed  | Smooth scrolling reads computed styles up the element's ancestors on every wheel step                                                        |
+| LINTEL-CODE-012 | P3       | Fixed  | The intro's "Skip intro" button is always in English, whatever the site's labels say                                                         |
+| LINTEL-CODE-013 | P3       | Fixed  | Rules: the site effects route filters the request's keys itself instead of the service                                                       |
+| LINTEL-CODE-014 | P2       | Fixed  | Start from a template, "Add them alongside": says "We'll add 4 pages" and counts Home as a clash, but adds 3 (the home page is skipped)      |
+| LINTEL-CODE-015 | P2       | Fixed  | Start from a template: the look switch changes the live site at once, even with "Publish straight away" off, and is on when adding alongside |
+| LINTEL-CODE-016 | P2       | Fixed  | Navigation and footer changes made in the builder go live at once, before the page is published                                              |
+
+Not in scope: making site styles and site motion per site (a separate track, Daniel's decision).

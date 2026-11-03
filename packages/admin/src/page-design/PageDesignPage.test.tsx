@@ -222,7 +222,9 @@ describe("the page design screen", () => {
     const user = userEvent.setup();
     let unpublished = true;
     const { calls } = mockApi(({ method, url }) => {
-      if (method === "GET" && url.pathname === "/entries/p1") return samplePage();
+      if (method === "GET" && url.pathname === "/entries/p1") {
+        return { ...samplePage(), status: "published", hasUnpublishedChanges: false };
+      }
       if (method === "GET" && url.pathname === "/website/sections") {
         return { navigation: null, footer: null, unpublished };
       }

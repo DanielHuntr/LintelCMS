@@ -1187,3 +1187,71 @@ Files: `packages/motion-editor/src/motion-panel/quickPicks.ts` (`growsFrom`, `st
 **Screenshots:** `044-grow-while-scrolling-before-{light,dark}`, `044-grow-while-scrolling-after-{light,dark}`.
 
 Commit: 3ea18b0.
+
+## Code review fixes (3 November 2026)
+
+Branch `fix/review-findings` from `release/1.0.0-rc`. The defects are LINTEL-CODE-001 to 016 in `BUG-REPORT.md`. Each was checked against the code first, and each fix has a regression test that fails without it. No migration was needed: the new state lives in settings rows. Decision record: `0042-shared-sections-wait-for-publish.md`.
+
+- **LINTEL-CODE-001 (P1), a template replaced the site's menu and footer.** When pages are added beside the site's own, a template's navigation and footer are only used if the site has never had any. They replace the site's only when the template's look is applied, none of the site's pages stay, and the person may change blocks. The replaced ones are kept in `siteSectionsBeforeTemplate:<site id>`. `POST /website/sections/restore-previous` brings them back, and running it again swaps back. The apply response says `previousSectionsKept`. The switch now reads "Use this template's colours, fonts, menu and footer, and motion for the website". Tests: `site-sections.test.ts` (alongside keeps them; replace keeps and restores them; nothing to restore; no `builder:blocks`, no replace). Commit 8d00a64.
+- **LINTEL-CODE-002 (P1), `lintel:page/<id>` links on the published site.** The navigation and footer (also used by Liquid's `{% site_header %}` and `{% site_footer %}`) and the designs of the site's own blocks now have their page links swapped for the published page's address before they are drawn (`website/page-link-addresses.ts`). Links to pages that aren't published are left empty, as delivery does. Tests: `site-sections.test.ts`, a button in each, on the published site. Commit 8c33d90.
+- **LINTEL-CODE-007 (P2), every "/…" link got the site's prefix and language.** Typed addresses in the navigation and footer keep the website's language only when they are pages. Lintel's files (`/_lintel/…`), files (`/menu.pdf`) and addresses that already name a language are left alone (`isPageAddress`). Tests: `site-sections-drawing.test.ts`, and the published-site test above. Commit 8c33d90.
+- **LINTEL-CODE-003 (P2), rich-text pictures had no photo credit.** They now show the credit as `{% image %}` and the Picture element do (`renderFigureCaptionHtml` in site-components, after the caption or on its own). Test: `rich-text-pictures.test.ts`. Commit 18ad78b.
+- **LINTEL-CODE-004, 005 and 006 (P2), saving the site's styles, navigation and footer.**
+  - The styles hook saves a waiting change when the builder closes.
+  - Both hooks save one change at a time and keep a failed change for the next try.
+  - A failed save shows at the top of the builder with Try again (`SitePartProblems`).
+  - `GET /website/design` now gives a `revision`. A `PUT` that sends the revision it read gets 409 `SITE_DESIGN_CHANGED` if someone saved since. The builder then shows the newer styles and says "Someone else changed the site's styles while you were working, so your last change wasn't saved."
+  - The navigation and footer didn't get the same check. Their PUT only changes the slots it sends, so a stale copy can't wipe the other slot. With LINTEL-CODE-016, changes are drafts until published.
+  - Tests: `site-design.test.ts` (409 on a stale copy) and admin `siteParts.test.tsx` (saved on close, failure shown and retried, newer styles shown).
+  - Commit d91b2a9.
+- **LINTEL-CODE-008 (P3), fonts.**
+  - Google Fonts files download four at a time.
+  - If any fails, or the family can't be added, the files already downloaded for it are deleted.
+  - Files a new download replaced are deleted once no font uses them.
+  - A site can have 40 fonts (409 `TOO_MANY_SITE_FONTS`). An Adobe project with more adds the first ones.
+  - Counting and adding a font happen in one transaction. A unique-name violation becomes "already has a font called…".
+  - The file cache is bounded at 32 MB.
+  - Adding uploaded fonts takes the format from the file's type, without reading the file. Inspecting reads files one at a time.
+  - Tests: `site-fonts.test.ts` (failed download leaves nothing; replaced files deleted; 40 fonts; same-name race) and `google-fonts-client.test.ts` (byte-bounded cache; four at a time).
+  - The two reading changes are covered by the existing upload and inspect tests, which still pass.
+  - Commit 0b7d2e7.
+- **LINTEL-CODE-009 (P3), hover picture.** The builder stores the picture's `assetId` with it, and the website asks the media server for a 720px WebP copy. The picture is fetched the first time the pointer comes over the element, not when the page opens. Tests: motion browser test "the hover picture's file" and builder `pointer-fields.test.tsx`. Commit 2d7df31.
+- **LINTEL-CODE-010 (P3), page transitions read every element's styles.** Elements carried across pages are marked `data-lintel-carried="<name>"` when the page is drawn (`elementAttributes` on effect definitions). The page's script reads only those and no computed styles. On the way, elements whose only effects are style effects now get their `data-node-id` on the website. Before, their CSS had nothing to match. Tests: builder `render-page.test.tsx`; motion browser test (no `getComputedStyle` calls when leaving). Commit a1a9b05.
+- **LINTEL-CODE-011 (P3), smooth scrolling read styles on every wheel step.**
+  - It checks whether the wheel belongs to an inner area, or the page is locked, once at the start of a glide.
+  - It checks again only when the wheel moves to another element or turns round.
+  - A click or a key, as when a pop-up opens, ends the glide.
+  - A MutationObserver cache was tried. It pushed the runtime over its 10 KB budget, so it wasn't kept.
+  - Tests: `smoothScroll.test.ts`, styles read once a glide. All 67 motion browser tests pass. Effect module sizes were measured again.
+  - Commit 7fe23a1.
+- **LINTEL-CODE-012 (P3), "Skip intro" was always English.** The words are now a site label, `skipIntro`. `siteEffectsHead` needs the labels, and the website and Liquid pages pass theirs. Test: `site-effects.test.ts`. Commit 0fbd152.
+- **LINTEL-CODE-013 (P3), rules.** Working out which parts of a site effects change were sent now happens in `updateSiteEffects`. A bad change is a plain 400. Test: `site-effects.test.ts`. Commit 0fbd152.
+- **LINTEL-CODE-014 (P2), "We'll add 4 pages" added 3.** `GET /starter-sites/:id/existing-pages` gives `addedCount`. Beside a site with a home page, the template's home page is left out of the count and the clashes. The dialog uses that count and says "The template's home page isn't added; your home page stays." Tests: `starter-sites.test.ts` and `TemplateLibraryPage.test.tsx`. Commit 26f6ee7.
+- **LINTEL-CODE-015 (P2), the look switch changed the live site without saying so.** It now reads "Changes your live website now." below it. Daniel's decision: it starts off when the pages go alongside the site's own. It stays on when replacing them, or on a site with no pages. Test: `TemplateLibraryPage.test.tsx`. Commit 26f6ee7.
+- **LINTEL-CODE-016 (P2), navigation and footer changes went live at once.** This was Daniel's decision, recorded in 0042.
+  - The builder edits a draft (`siteSectionsDraft:<site id>`).
+  - The website, Liquid and delivery draw the published sections. Sections stored before count as published.
+  - `POST /website/sections/publish` needs `builder:blocks` and `entries:publish`. The page builder's Publish sends it after publishing the page.
+  - The top bar says "Navigation and footer changes not live yet" while there are some.
+  - A draft that is changed back to the published sections is dropped.
+  - Starter templates and restore still change the live sections and drop any draft.
+  - The builder's notes now say the navigation or footer goes on every page "when you publish". These strings are in `builder/src/i18n/site-section-strings.ts`, which fix/ux-sweep may also reword.
+  - Live preview of an unpublished page still shows the published navigation and footer.
+  - Tests: `site-sections.test.ts` (draft until published; nothing to publish after changing back; who may publish) and admin `PageDesignPage.test.tsx` (Publish puts them live; the note).
+  - Commit 391057a.
+
+**Checks:**
+
+- Lint and typecheck pass for core, admin, builder, motion and site-components.
+- Builds pass for motion, site-components, builder-model and builder.
+- Tests:
+  - admin: 750 of 751 in the full run. The one failure was a timeout in "opens an empty page with a way to start" while the core suite ran alongside; it passes on its own (9 of 9 in that file).
+  - builder: 343.
+  - site-components: 44.
+  - motion: unit 157 and browser 67.
+  - core: 1,239 passed and 6 skipped; the 3 failures (`main.test.ts`, `dev-runtime.test.ts`, `model-sync.test.ts`) are among the known Windows platform failures.
+- Screenshots, desktop light, in `docs/qa/screenshots/code-review/`:
+  - `code-014-015-template-alongside-after-desktop-light.png`: "We'll add 3 pages", the home-page line, the switch off and "Changes your live website now."
+  - `code-015-template-replace-after-desktop-light.png`: replacing, the switch on and the count back to 4.
+  - `code-016-unpublished-note-after-desktop-light.png`: the builder's top bar with "Navigation and footer changes not live yet".
+- The first top-bar try showed two notes squeezed side by side ("Changes not live yet" and the navigation one). Now only one shows: the page's own note when the page has changes waiting, else the navigation and footer note.
