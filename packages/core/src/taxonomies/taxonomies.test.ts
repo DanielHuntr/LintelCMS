@@ -81,7 +81,7 @@ describe("taxonomies and terms", () => {
     });
     expect(again.json().slug).toBe("recipes-and-tips-2");
     expect(typed.json().fields).toEqual({
-      slug: "Another term in this taxonomy already uses this slug",
+      slug: "Another term in this taxonomy already uses this address. Each one needs its own.",
     });
     expect(blank.statusCode).toBe(400);
 

@@ -327,6 +327,6 @@ export async function withFriendlySlugConflict<Result>(
 
 function slugTakenError(collectionName: string): InvalidFieldsError {
   return new InvalidFieldsError({
-    slug: `Another entry in ${collectionName} already uses this slug`,
+    slug: `Another entry in ${collectionName} already uses this address. Each one needs its own, even under a different parent page.`,
   });
 }

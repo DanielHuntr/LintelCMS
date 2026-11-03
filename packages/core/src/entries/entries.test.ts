@@ -141,7 +141,7 @@ describe("entries", () => {
     expect(typed.json().slug).toBe("my-fancy-slug");
     expect(taken.statusCode).toBe(400);
     expect(taken.json().fields).toEqual({
-      slug: "Another entry in Blog posts already uses this slug",
+      slug: "Another entry in Blog posts already uses this address. Each one needs its own, even under a different parent page.",
     });
     expect(empty.json().fields).toEqual({ slug: "The slug needs at least one letter or number" });
 
@@ -149,7 +149,7 @@ describe("entries", () => {
     const renamed = await api("PATCH", `/entries/${other.json().id}`, { slug: "my-fancy-slug" });
     const keptOwn = await api("PATCH", `/entries/${typed.json().id}`, { slug: "my-fancy-slug" });
     expect(renamed.json().fields).toEqual({
-      slug: "Another entry in Blog posts already uses this slug",
+      slug: "Another entry in Blog posts already uses this address. Each one needs its own, even under a different parent page.",
     });
     expect(keptOwn.statusCode).toBe(200);
   });

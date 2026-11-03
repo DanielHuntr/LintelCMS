@@ -110,7 +110,7 @@ async function chooseTermSlug(
     const taken = await findTermSlugsStartingWith(database, taxonomyId, slug, exceptTermId);
     if (taken.includes(slug)) {
       throw new InvalidFieldsError({
-        slug: "Another term in this taxonomy already uses this slug",
+        slug: "Another term in this taxonomy already uses this address. Each one needs its own.",
       });
     }
     return slug;
