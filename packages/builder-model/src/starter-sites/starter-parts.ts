@@ -379,25 +379,21 @@ export function starterParts(look: StarterLook) {
     );
   }
 
-  /**
-   * The local time with the place's name beside it. The name is a label of its own, in the
-   * site's quiet colour: the clock's own label takes the theme's grey, whatever the paper.
-   */
+  /** The time in a place, with the place's own name beside it, in the small captions. */
   function localTime(
     place: string,
     zone: string,
     styles: NodeStyles = { base: {} },
     hours: "12" | "24" = "24",
   ): NodeBlueprint {
-    const small = { base: { ...look.detail, color: look.quiet } };
-    return group(
-      `Time in ${place}`,
-      [
-        words("Place", place, small),
-        { type: "clock", name: "Time", props: { zone, hours, label: "" }, styles: small },
-      ],
-      withStyles({ type: "box", styles: { base: { flexDirection: "row", gap: space(2) } } }, styles)
-        .styles,
+    return withStyles(
+      {
+        type: "clock",
+        name: `Time in ${place}`,
+        props: { zone, hours, label: place },
+        styles: { base: { ...look.detail, color: look.quiet } },
+      },
+      styles,
     );
   }
 

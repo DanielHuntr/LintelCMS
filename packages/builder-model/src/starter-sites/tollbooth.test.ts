@@ -50,7 +50,10 @@ describe("the Tollbooth starter site", () => {
       expect.arrayContaining(["siteLogo", "navigation", "mobileMenu"]),
     );
     expect(footer[0]?.props.element).toBe("footer");
-    expect(footer.find((node) => node.type === "clock")?.props.zone).toBe("Europe/London");
+    expect(footer.find((node) => node.type === "clock")?.props).toMatchObject({
+      zone: "Europe/London",
+      label: "Edinburgh",
+    });
     expect(footer.some((node) => node.type === "cookieSettings")).toBe(true);
     for (const page of site?.pages ?? []) {
       const elements = pageNodes(page.slug).map((node) => node.props.element);
