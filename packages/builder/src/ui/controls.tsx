@@ -74,6 +74,8 @@ interface ChoiceGroupProps<Value extends string> {
   wraps?: boolean;
   /** One choice per row, for longer labels such as names. */
   stacked?: boolean;
+  /** Told which choice the pointer or focus is on, and null when it leaves. */
+  onPointAt?: (value: Value | null) => void;
 }
 
 /** A row of exclusive choices: a radio group where the arrow keys move the choice. */
@@ -86,6 +88,7 @@ export function ChoiceGroup<Value extends string>({
   hideLabel,
   wraps,
   stacked,
+  onPointAt,
 }: ChoiceGroupProps<Value>) {
   const labelId = useId();
   const buttons = useRef<Array<HTMLButtonElement | null>>([]);
@@ -136,6 +139,10 @@ export function ChoiceGroup<Value extends string>({
               tabIndex={isSelected || (selectedIndex === -1 && index === 0) ? 0 : -1}
               onClick={() => onChange(choice.value)}
               onKeyDown={(event) => handleKeyDown(event, index)}
+              onPointerEnter={onPointAt && (() => onPointAt(choice.value))}
+              onPointerLeave={onPointAt && (() => onPointAt(null))}
+              onFocus={onPointAt && (() => onPointAt(choice.value))}
+              onBlur={onPointAt && (() => onPointAt(null))}
               className={classNames(
                 "flex h-7 min-w-0 flex-1 items-center gap-1 rounded-[6px] px-1.5 text-caption font-medium transition-colors duration-150 focus-visible:focus-ring",
                 stacked ? "flex-none justify-start px-2.5" : "justify-center",

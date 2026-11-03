@@ -84,6 +84,8 @@ interface StylePanelProps {
   design: DesignTools;
   /** The elements around this one, whose states it can follow ("while the card is hovered"). */
   owners?: readonly StateOwner[];
+  /** Outlines an element around this one while the pointer is on its name; null clears. */
+  onPointAtOwner?: (nodeId: string | null) => void;
   /** Sets how an element, and what follows its states, moves between them. */
   onTransitionChange?: (nodeId: string, transition: StateTransition | null) => void;
   /** How many elements on this page use each shared style. */
@@ -127,6 +129,7 @@ export function StylePanel({
   onChange,
   design,
   owners = [],
+  onPointAtOwner,
   onTransitionChange,
   sharedStyleUses,
   nodeName = "",
@@ -244,7 +247,12 @@ export function StylePanel({
             <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-label-tertiary" />
           </button>
         )}
-        <LookPicker value={validState} owners={owners} onChange={onStateChange} />
+        <LookPicker
+          value={validState}
+          owners={owners}
+          onChange={onStateChange}
+          onPointAtOwner={onPointAtOwner}
+        />
         {validState === "none" && (
           <p className="text-caption text-label-secondary">{text(breakpointNotes[breakpoint])}</p>
         )}
@@ -329,12 +337,15 @@ function LookPicker({
   value,
   owners,
   onChange,
+  onPointAtOwner,
 }: {
   value: StateChoice;
   owners: readonly StateOwner[];
   onChange: (state: StateChoice) => void;
+  onPointAtOwner?: (nodeId: string | null) => void;
 }) {
   const text = useBuilderText();
+  const [isFollowing, setIsFollowing] = useState(false);
   const ownerTarget = readOwnerStateTarget(value === "none" ? "base" : value);
   const look: "none" | StyleState = ownerTarget
     ? ownerTarget.state
@@ -364,13 +375,28 @@ function LookPicker({
           label: text(choice.label),
         }))}
       />
-      {canFollow && (
+      {canFollow && !ownerId && !isFollowing && (
+        <button
+          type="button"
+          onClick={() => setIsFollowing(true)}
+          className="self-start text-caption font-medium text-accent hover:underline focus-visible:focus-ring"
+        >
+          {text("pageBuilder.style.followSomethingAround", {
+            look: text(lookChoices.find((choice) => choice.value === look)!.label).toLowerCase(),
+          })}
+        </button>
+      )}
+      {canFollow && (ownerId || isFollowing) && (
         <ChoiceGroup<string>
           label={text("pageBuilder.style.whoseLabel", {
             look: text(lookChoices.find((choice) => choice.value === look)!.label).toLowerCase(),
           })}
           value={ownerId ?? "self"}
           onChange={(next) => onChange(next === "self" ? look : `${look}@${next}`)}
+          onPointAt={
+            onPointAtOwner &&
+            ((choice) => onPointAtOwner(choice && choice !== "self" ? choice : null))
+          }
           stacked
           choices={[
             { value: "self", label: text("pageBuilder.style.whoseSelf") },

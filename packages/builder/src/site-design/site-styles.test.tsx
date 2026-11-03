@@ -251,8 +251,13 @@ describe("Site styles in the right panel", () => {
         name: "Hero",
         children: [
           {
-            type: "container",
-            children: [{ type: "container", children: [{ type: "heading", name: "Title" }] }],
+            type: "card",
+            children: [
+              {
+                type: "container",
+                children: [{ type: "card", children: [{ type: "heading", name: "Title" }] }],
+              },
+            ],
           },
         ],
       },
@@ -262,8 +267,13 @@ describe("Site styles in the right panel", () => {
     renderBuilder(emptySiteDesign, [nested]);
     await select(person, "Title");
     await person.click(screen.getByRole("radio", { name: "Hovered" }));
-    for (const name of ["Container, just around it", "Container, 2 levels up", "Hero, around it"]) {
+    await person.click(
+      screen.getByRole("button", { name: "Change it when something around it is hovered…" }),
+    );
+    for (const name of ["Card, just around it", "Card, 2 levels up", "Hero, around it"]) {
       expect(screen.getByRole("radio", { name })).toBeInTheDocument();
     }
+    // The plain container between the cards isn't offered.
+    expect(screen.queryByRole("radio", { name: /^Container/ })).toBeNull();
   });
 });

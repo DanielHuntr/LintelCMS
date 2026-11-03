@@ -930,3 +930,19 @@ Decision record: `docs/decisions/0037-site-fonts.md`. New table `site_fonts` (mi
 **Fix:** the cursor's parts are now placed with the `translate` property (`calc(x - 50%) calc(y - 50%)`), which browsers apply after `scale`, so they shrink in place (`cursor.module.ts`).
 
 **Test:** `motion/src/browser-tests/site-motion.browser.test.ts`, "stays on the pointer while pressed, wherever the pointer is". It fails without the fix (595, 425 instead of 700, 500) and passes with it.
+
+## LINTEL-UX-039: following what's around an element, only when asked (3 November 2026)
+
+**Reported by Daniel:** "this seems weird, whats the point of it", about "What has to be hovered" listing "This element", "Container, just around it", "Container, 2 levels up" and "Hero, around it".
+
+**What it's for:** making an element change when something around it is hovered, pressed, opened or current, such as a picture that grows when its card is hovered. The problems were that it was always on show, though nearly everyone means the element itself, and that it named layout boxes people never think about.
+
+**Fix:**
+
+- Choosing Hovered (or Pressed, Open, Current) now just changes the element itself. Underneath, a quiet link, "Change it when something around it is hovered…", opens the list. It stays open while the element follows something around it.
+- The list only offers what people recognise: cards, links, buttons, slides, tabs, accordion items, pop-ups and the like, plus anything with a name of its own ("Hero", "Two halves"). Plain containers and boxes are left out. It shows at most three, nearest first.
+- Pointing at a name, or moving to it with the keyboard, outlines that element on the page.
+
+**Tests:** `builder/src/panels/panels.test.tsx` (the list waits behind the link, and has no plain containers) and `builder/src/site-design/site-styles.test.tsx` (two cards with the same name are told apart, and the container between them isn't offered).
+
+**Screenshots** (in `screenshots/looks/`): `follow-hidden-desktop-light`, `follow-list-desktop-light` (pointing at "Two halves" outlines it) and `follow-list-desktop-dark`.

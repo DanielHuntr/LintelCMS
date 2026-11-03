@@ -120,6 +120,8 @@ interface SelectedElementPanelProps {
   onSelectMany?: (nodeIds: string[]) => void;
   /** Told which state is being styled, so the canvas can show it; null for none. */
   onStyleStateChange?: (nodeId: string, target: StyleTarget | null) => void;
+  /** Outlines an element on the page while the pointer is on its name in a list; null clears. */
+  onPointAtElement?: (nodeId: string | null) => void;
 }
 
 /** The elements on a page that use a shared style, in page order. */
@@ -135,6 +137,20 @@ function findSharedStyleUsers(root: PageNode, sharedStyleId: string): string[] {
 
 /** How many elements around the selected one are offered as owners of its states. */
 const maxStateOwners = 3;
+
+/** Elements people think of as one thing they hover, press or open: a card, a link, a tab. */
+const recognisableOwnerTypes = new Set([
+  "card",
+  "link",
+  "button",
+  "slide",
+  "tabPanel",
+  "accordionItem",
+  "modal",
+  "productCard",
+  "testimonial",
+  "teamMember",
+]);
 
 /**
  * The right-hand side: Style, Content and Animate for the selected element, and Code for
@@ -211,6 +227,36 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
           stateTransition: around.stateTransition,
         };
       });
+  }, [node, document, props.registry, text]);
+  // The ones a state can follow, offered by name: cards, links, buttons and the like, and
+  // anything the person has named. Plain layout boxes ("Container") mean nothing to people.
+  const followableOwners = useMemo<StateOwner[]>(() => {
+    if (!node) return [];
+    const recognisable = findPath(document.root, node.id)
+      .slice(1, -1)
+      .reverse()
+      .filter((around) => {
+        const label = props.registry.catalogue.find(around.type)?.label;
+        const named = Boolean(around.name?.trim()) && around.name !== label;
+        return named || recognisableOwnerTypes.has(around.type);
+      })
+      .slice(0, maxStateOwners);
+    return recognisable.map((around, index) => {
+      const name = layerName(around, props.registry.catalogue);
+      const isShared = recognisable.some(
+        (other) => other !== around && layerName(other, props.registry.catalogue) === name,
+      );
+      return {
+        id: around.id,
+        name,
+        place: isShared
+          ? index === 0
+            ? text("pageBuilder.style.ownerPlaceParent")
+            : text("pageBuilder.style.ownerPlaceLevels", { count: index + 1 })
+          : undefined,
+        stateTransition: around.stateTransition,
+      };
+    });
   }, [node, document, props.registry, text]);
   const onStyleStateChange = props.onStyleStateChange;
   const showsStyleState = tab === "style" && styleState !== "none";
@@ -352,7 +398,8 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
             onChange={(target, values, label) =>
               actions.changeStyles(node.id, target, values, label)
             }
-            owners={stateOwners}
+            owners={followableOwners}
+            onPointAtOwner={props.onPointAtElement}
             onTransitionChange={actions.setStateTransition}
             sharedStyleUses={sharedStyleUses}
             nodeName={props.nodeName}

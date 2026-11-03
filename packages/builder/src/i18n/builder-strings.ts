@@ -107,6 +107,7 @@ export const builderStrings = {
   "pageBuilder.style.lookSelected": "Current",
   "pageBuilder.style.whoseLabel": "What has to be {look}",
   "pageBuilder.style.whoseSelf": "This element",
+  "pageBuilder.style.followSomethingAround": "Change it when something around it is {look}…",
   "pageBuilder.style.whoseOwner": "{name}, around it",
   "pageBuilder.style.meansHover":
     "You're changing how it looks while a mouse pointer is over it. Its normal look stays as it is. The page shows it now.",

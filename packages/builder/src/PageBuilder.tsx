@@ -897,6 +897,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                       onPreviewMotion={previewMotion}
                       onPreviewEffect={previewEffect}
                       onStyleStateChange={reportStylingState}
+                      onPointAtElement={setHoveredId}
                       onSelectMany={(nodeIds) => {
                         const first = nodeIds[0];
                         if (!first) return;
