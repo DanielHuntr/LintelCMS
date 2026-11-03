@@ -4,7 +4,8 @@ Page templates written as Liquid files in the project, for developers who would 
 HTML than use the visual designer. The built-in website (`src/website`) draws an entry's
 page with one when its collection has a template, or the entry chose one; otherwise nothing
 changes. Docs: `packages/docs/src/content/docs/building/liquid-templates.md`. Decision:
-`docs/decisions/0029-liquid-templates.md`.
+`docs/decisions/0029-liquid-templates.md`. The example folder and VS Code snippets
+(`lintel templates init|sync`) are in `src/liquid-editor-support`.
 
 ## The folder
 

@@ -15,6 +15,11 @@ export interface LiquidTemplatesOptions {
   folder: string;
   /** Development: pick up changed files straight away, and show template errors on the page. */
   development?: boolean;
+  /**
+   * In development, the folder to keep VS Code snippets for the content types' fields in
+   * (`.vscode/` at the repository root; see src/liquid-editor-support). Left out, none are written.
+   */
+  editorSnippetsFolder?: string;
 }
 
 /**

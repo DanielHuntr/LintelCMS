@@ -16,17 +16,18 @@ reference", `packages/docs/src/content/docs/building/command-line.md`).
 The tool only reads arguments, calls core and prints what happened; the rules all live in
 core, imported through `@lintel/core/data-tools` (`packages/core/src/data-tools.ts`).
 
-| File                                      | What it does                                                     |
-| ----------------------------------------- | ---------------------------------------------------------------- |
-| `main.ts`                                 | The program: runs the command line with the real terminal        |
-| `command-line.ts`                         | The one list of commands, help, and turning errors into messages |
-| `command.ts`                              | What a command is, reading arguments, opening the database       |
-| `terminal.ts`                             | Saying things, asking, tables, sizes and paths                   |
-| `commands/*.ts`                           | One file per command                                             |
-| `doctor/doctor-checks.ts`                 | The checks behind `lintel doctor`, as plain functions            |
-| `doctor/doctor-probes.ts`                 | Finding out about the real machine for those checks              |
-| `content-model/content-model-commands.ts` | Loading the content model commands from core                     |
-| `updating/git-update.ts`                  | `lintel update`: a git clone to the newest release, safely       |
+| File                                      | What it does                                                      |
+| ----------------------------------------- | ----------------------------------------------------------------- |
+| `main.ts`                                 | The program: runs the command line with the real terminal         |
+| `command-line.ts`                         | The one list of commands, help, and turning errors into messages  |
+| `command.ts`                              | What a command is, reading arguments, opening the database        |
+| `terminal.ts`                             | Saying things, asking, tables, sizes and paths                    |
+| `commands/*.ts`                           | One file per command                                              |
+| `doctor/doctor-checks.ts`                 | The checks behind `lintel doctor`, as plain functions             |
+| `doctor/doctor-probes.ts`                 | Finding out about the real machine for those checks               |
+| `content-model/content-model-commands.ts` | Loading the content model commands from core                      |
+| `commands/templates.ts`                   | `lintel templates init` and `sync`: Liquid templates' editor help |
+| `updating/git-update.ts`                  | `lintel update`: a git clone to the newest release, safely        |
 
 Everything that talks to the person goes through `Terminal`, so tests run commands with a
 recording terminal and check what was said (`command-line.test.ts`).
@@ -57,6 +58,16 @@ server's defaults.
 
 `types` reads the model through `diffModel`, so it opens the database even when it writes
 types from the files; `check` needs no database.
+
+## lintel templates
+
+`lintel templates init` makes the Liquid templates folder with a working example and writes
+VS Code snippets; `sync` writes the snippets again. Both call
+`@lintel/core/liquid-editor-commands` (`packages/core/src/liquid-editor-support`). The
+fields are read from the content model files when there are some, else from the database;
+when `pnpm dev` holds the built-in database, `init` still makes the folder and says how to
+get the field snippets, and `sync` says there's nothing to do, since `pnpm dev` keeps them
+up to date.
 
 ## Building
 

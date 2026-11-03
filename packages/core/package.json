@@ -74,6 +74,11 @@
       "types": "./dist/content-model-sync/model-commands.d.ts",
       "development": "./src/content-model-sync/model-commands.ts",
       "default": "./dist/content-model-sync/model-commands.js"
+    },
+    "./liquid-editor-commands": {
+      "types": "./dist/liquid-editor-support/liquid-editor-commands.d.ts",
+      "development": "./src/liquid-editor-support/liquid-editor-commands.ts",
+      "default": "./dist/liquid-editor-support/liquid-editor-commands.js"
     }
   },
   "scripts": {
