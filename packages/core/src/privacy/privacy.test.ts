@@ -206,7 +206,7 @@ describe("Settings → Privacy", () => {
       expect(archive.listNames().sort()).toEqual([
         "form-entries.csv",
         "personal-data.json",
-        "plugin:readers.csv",
+        "plugin-readers.csv",
         "security-log.csv",
         "shop-carts.csv",
         "shop-customers.csv",

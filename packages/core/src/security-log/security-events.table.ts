@@ -38,7 +38,8 @@ export type SecurityEventDetails = Record<string, string | number | boolean | nu
 
 /**
  * The security log: who signed in, who failed to, and every change to people, roles and
- * API tokens. Rows are only ever added.
+ * API tokens. Rows are added, never edited, except that Settings → Privacy can take a person
+ * out of them, and its retention rule deletes old ones (see src/privacy).
  *
  * - `actorId` is who did it (null for failed sign-ins and for people since removed).
  * - `subjectId` is whose account it was about, when that is someone else.

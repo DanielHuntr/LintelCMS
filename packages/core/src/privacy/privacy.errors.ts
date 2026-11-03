@@ -6,7 +6,7 @@ export class PersonalDataSourceError extends HttpError {
     super(
       500,
       "PERSONAL_DATA_SOURCE_FAILED",
-      `Lintel couldn't finish with ${sourceName}. Nothing after it was changed. Try again, and if it happens again, check ${sourceName} by hand.`,
+      `Lintel couldn't finish with ${sourceName}, so the job stopped there. Anything before it is done. Try again, and if it happens again, check ${sourceName} by hand.`,
     );
     this.cause = cause;
   }

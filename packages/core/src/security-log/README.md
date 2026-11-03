@@ -16,7 +16,8 @@ await recordSecurityEvent(server.database, {
 });
 ```
 
-- Rows are only ever added. Names and emails are copied in, so the log still reads after
+- Rows are added, never edited, except by Settings → Privacy, which takes a person out on
+  request and deletes old rows under its retention rule (90 days unless changed). Names and emails are copied in, so the log still reads after
   someone is removed.
 - Passwords, codes and tokens are never logged. A failed sign-in records the email typed.
 - The CSV export quotes every value and defuses values a spreadsheet would run as formulas.

@@ -9,7 +9,9 @@ import {
   anonymiseCheckout,
   anonymiseOrders,
   deleteCarts,
+  deleteFinishedWorkflowRuns,
   deleteSecurityEvents,
+  deleteWebhookDeliveries,
   listArchivedOrdersByIds,
   listOrdersByIds,
 } from "./personal-data.repository.js";
@@ -46,7 +48,14 @@ const ruleKinds: Record<RetentionRuleId, { kinds: RetainedKind[]; pluginId: stri
     kinds: [retainedKinds.carts, retainedKinds.expiredCheckouts],
     pluginId: "commerce",
   },
-  activityLogs: { kinds: [retainedKinds.securityEvents], pluginId: null },
+  activityLogs: {
+    kinds: [
+      retainedKinds.securityEvents,
+      retainedKinds.webhookDeliveries,
+      retainedKinds.workflowRuns,
+    ],
+    pluginId: null,
+  },
   orders: { kinds: [retainedKinds.orders, retainedKinds.archivedOrders], pluginId: "commerce" },
 };
 
@@ -167,6 +176,10 @@ async function removeOrAnonymise(
       return ids.length;
     case retainedKinds.securityEvents:
       return deleteSecurityEvents(database, ids);
+    case retainedKinds.webhookDeliveries:
+      return deleteWebhookDeliveries(database, ids);
+    case retainedKinds.workflowRuns:
+      return deleteFinishedWorkflowRuns(database, ids);
     case retainedKinds.orders:
       return anonymiseOrders(database, await listOrdersByIds(database, ids));
     case retainedKinds.archivedOrders:

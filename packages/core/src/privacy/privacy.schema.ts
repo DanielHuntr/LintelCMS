@@ -14,16 +14,14 @@ export const retentionRuleIds = [
 ] as const;
 export type RetentionRuleId = (typeof retentionRuleIds)[number];
 
-const ruleSchema = (choices: readonly number[], fallback: { enabled: boolean; days: number }) =>
-  z
-    .object({
-      enabled: z.boolean({ error: "Choose on or off" }),
-      days: z
-        .number({ error: "Choose how long to keep it" })
-        .int()
-        .refine((days) => choices.includes(days), { error: "Choose one of the lengths offered" }),
-    })
-    .default(fallback);
+const ruleSchema = (choices: readonly number[]) =>
+  z.object({
+    enabled: z.boolean({ error: "Choose on or off" }),
+    days: z
+      .number({ error: "Choose how long to keep it" })
+      .int()
+      .refine((days) => choices.includes(days), { error: "Choose one of the lengths offered" }),
+  });
 
 /** The lengths each rule offers, in days, so the screen shows a short list, never a number box. */
 export const retentionChoices: Readonly<Record<RetentionRuleId, readonly number[]>> = {
@@ -45,11 +43,18 @@ export const defaultRetentionRules = {
   orders: { enabled: false, days: 2555 },
 } as const satisfies Record<RetentionRuleId, { enabled: boolean; days: number }>;
 
+const ruleSchemas = {
+  formEntries: ruleSchema(retentionChoices.formEntries),
+  abandonedCarts: ruleSchema(retentionChoices.abandonedCarts),
+  activityLogs: ruleSchema(retentionChoices.activityLogs),
+  orders: ruleSchema(retentionChoices.orders),
+};
+
 export const retentionRulesSchema = z.object({
-  formEntries: ruleSchema(retentionChoices.formEntries, defaultRetentionRules.formEntries),
-  abandonedCarts: ruleSchema(retentionChoices.abandonedCarts, defaultRetentionRules.abandonedCarts),
-  activityLogs: ruleSchema(retentionChoices.activityLogs, defaultRetentionRules.activityLogs),
-  orders: ruleSchema(retentionChoices.orders, defaultRetentionRules.orders),
+  formEntries: ruleSchemas.formEntries.default(defaultRetentionRules.formEntries),
+  abandonedCarts: ruleSchemas.abandonedCarts.default(defaultRetentionRules.abandonedCarts),
+  activityLogs: ruleSchemas.activityLogs.default(defaultRetentionRules.activityLogs),
+  orders: ruleSchemas.orders.default(defaultRetentionRules.orders),
 });
 export type RetentionRules = z.output<typeof retentionRulesSchema>;
 
@@ -80,7 +85,11 @@ export const defaultPrivacySettings: PrivacySettings = {
   processors: [],
 };
 
-export const updateRetentionRequestSchema = retentionRulesSchema.partial();
+/**
+ * Built from the rules without their defaults: Zod fills in a default even inside an optional
+ * field, so a change to one rule would otherwise put every other rule back to its default.
+ */
+export const updateRetentionRequestSchema = z.object(ruleSchemas).partial();
 export const updateProcessorsRequestSchema = z.object({
   processors: z.array(addedProcessorSchema).max(100),
 });
@@ -147,6 +156,8 @@ export interface PersonSearchResponse {
 
 export interface ErasureResponse {
   parts: PrivacyRequestPart[];
+  /** Why anything was kept or only anonymised, in plain sentences. */
+  explanations: string[];
 }
 
 export interface PrivacyRequestResponse {

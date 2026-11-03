@@ -25,7 +25,9 @@ export async function buildPersonalDataArchive(
   zip.addBuffer(Buffer.from(JSON.stringify(everything, null, 2)), "personal-data.json");
   for (const kind of kinds) {
     if (kind.rows.length === 0) continue;
-    zip.addBuffer(Buffer.from(rowsAsCsv(kind.rows)), `${kind.kindId}.csv`);
+    // "plugin:bookings" can't be a file name on Windows.
+    const filename = `${kind.kindId.replace(/[^a-z0-9-]+/gi, "-")}.csv`;
+    zip.addBuffer(Buffer.from(rowsAsCsv(kind.rows)), filename);
   }
   zip.end();
   const chunks: Buffer[] = [];

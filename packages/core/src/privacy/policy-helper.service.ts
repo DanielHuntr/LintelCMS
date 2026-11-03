@@ -179,6 +179,14 @@ export function pageText(content: unknown): string {
   return texts.join(" ").replace(/\s+/g, " ").trim().toLowerCase();
 }
 
+/**
+ * Whether a word appears at the start of a word in the text, so "form" finds "forms" but not
+ * "platform", and "order" not "border", which a page's design is full of.
+ */
+export function mentions(text: string, word: string): boolean {
+  return new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`).test(text);
+}
+
 export async function describePolicyHelper(
   database: DatabaseOrTransaction,
   services: SiteServices,
@@ -190,7 +198,7 @@ export async function describePolicyHelper(
   const notMentioned = page
     ? sections
         .flatMap((section) => section.checks)
-        .filter((check) => !check.words.some((word) => text.includes(word)))
+        .filter((check) => !check.words.some((word) => mentions(text, word)))
         .map((check) => check.label)
     : [];
   return {

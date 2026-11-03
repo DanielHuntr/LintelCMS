@@ -1,11 +1,11 @@
-import { and, desc, eq, inArray, ne, or, type SQL, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, ne, or, type SQL, sql } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { cartsTable } from "../commerce/carts/carts.table.js";
 import { checkoutsTable } from "../commerce/checkouts/checkouts.table.js";
 import type { Address } from "../commerce/customers/address.schema.js";
 import { customersTable } from "../commerce/customers/customers.table.js";
 import { discountRedemptionsTable } from "../commerce/discounts/discounts.table.js";
-import { orderLinesTable, ordersTable } from "../commerce/orders/orders.table.js";
+import { orderEventsTable, orderLinesTable, ordersTable } from "../commerce/orders/orders.table.js";
 import { archivedOrdersTable } from "../commerce/shopify-import/shopify-import.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import {
@@ -15,7 +15,10 @@ import {
 } from "../forms/forms.table.js";
 import { invitationsTable } from "../invitations/invitations.table.js";
 import { securityEventsTable } from "../security-log/security-events.table.js";
+import { sessionsTable } from "../sessions/sessions.table.js";
 import { usersTable } from "../users/users.table.js";
+import { webhookDeliveriesTable } from "../webhooks/webhooks.table.js";
+import { workflowRunsTable } from "../workflows/workflows.table.js";
 import type { PersonLookup } from "./personal-data-declaration.js";
 
 /**
@@ -99,6 +102,17 @@ export function listMatchingInvitations(
         matchesPerson(person, invitationsTable.email, null),
       ),
     );
+}
+
+export function listSessionsOfUsers(database: DatabaseOrTransaction, userIds: readonly string[]) {
+  if (userIds.length === 0) return Promise.resolve([]);
+  return database
+    .select({
+      userAgent: sessionsTable.userAgent,
+      lastUsedAt: sessionsTable.lastUsedAt,
+    })
+    .from(sessionsTable)
+    .where(inArray(sessionsTable.userId, [...userIds]));
 }
 
 export async function deleteInvitations(
@@ -240,9 +254,21 @@ export function listMatchingArchivedOrders(
  */
 export async function anonymiseOrders(
   database: DatabaseOrTransaction,
-  orders: ReadonlyArray<{ id: string; checkoutId: string; shippingAddress: Address }>,
+  orders: ReadonlyArray<{
+    id: string;
+    checkoutId: string;
+    email: string;
+    shippingAddress: Address;
+  }>,
 ): Promise<number> {
   for (const order of orders) {
+    // The order's history says who it was placed by and sent to, in words.
+    if (order.email) {
+      await database
+        .update(orderEventsTable)
+        .set({ message: sql`replace(${orderEventsTable.message}, ${order.email}, 'the customer')` })
+        .where(eq(orderEventsTable.orderId, order.id));
+    }
     await database
       .update(ordersTable)
       .set({
@@ -322,29 +348,24 @@ export function listMatchingUnfinishedCheckouts(
     );
 }
 
-export async function deleteCartsAndCheckouts(
+/**
+ * Unfinished checkouts may still hold stock or a discount code until they expire, so they're
+ * emptied of the person rather than deleted from under the shop.
+ */
+export async function anonymiseCheckouts(
   database: DatabaseOrTransaction,
-  cartIds: readonly string[],
-  checkouts: ReadonlyArray<{ id: string; shippingAddress: Address }>,
+  checkoutIds: readonly string[],
 ): Promise<number> {
-  let deleted = 0;
-  if (cartIds.length > 0) {
-    const rows = await database
-      .delete(cartsTable)
-      .where(inArray(cartsTable.id, [...cartIds]))
-      .returning({ id: cartsTable.id });
-    deleted += rows.length;
-  }
-  // Unfinished checkouts may still hold stock or a discount code until they expire, so
-  // they're emptied of the person rather than deleted from under the shop.
-  for (const checkout of checkouts) {
-    await anonymiseCheckout(database, checkout.id);
-    deleted += 1;
-  }
-  return deleted;
+  for (const id of checkoutIds) await anonymiseCheckout(database, id);
+  return checkoutIds.length;
 }
 
 // Security log -------------------------------------------------------------------------------
+
+/** Some events keep an email in their details (an invitation, a changed address). */
+function detailsInclude(value: string): SQL {
+  return sql`exists (select 1 from jsonb_each_text(${securityEventsTable.details}) as detail where lower(trim(detail.value)) = ${value.trim().toLowerCase()})`;
+}
 
 export function listMatchingSecurityEvents(
   database: DatabaseOrTransaction,
@@ -357,13 +378,18 @@ export function listMatchingSecurityEvents(
     .where(
       and(
         eq(securityEventsTable.tenantId, tenantId),
-        matchesPerson(person, securityEventsTable.actorEmail, securityEventsTable.subjectName),
+        or(
+          matchesPerson(person, securityEventsTable.actorEmail, securityEventsTable.subjectName),
+          // Invitations name the person by their email.
+          matchesPerson(person, securityEventsTable.subjectName, null),
+          person.email ? detailsInclude(person.email) : undefined,
+        ),
       ),
     )
     .orderBy(desc(securityEventsTable.createdAt));
 }
 
-/** Keeps what happened and when; removes the email, name, IP address and browser. */
+/** Keeps what happened and when; removes the email, name, IP address, browser and details. */
 export async function anonymiseSecurityEvents(
   database: DatabaseOrTransaction,
   ids: readonly string[],
@@ -371,10 +397,83 @@ export async function anonymiseSecurityEvents(
   if (ids.length === 0) return 0;
   const updated = await database
     .update(securityEventsTable)
-    .set({ actorEmail: null, subjectName: null, ipAddress: null, userAgent: null })
+    .set({ actorEmail: null, subjectName: null, ipAddress: null, userAgent: null, details: {} })
     .where(inArray(securityEventsTable.id, [...ids]))
     .returning({ id: securityEventsTable.id });
   return updated.length;
+}
+
+// Webhook and automation history ----------------------------------------------------------
+
+/**
+ * A JSON value holds the email or name as a whole value, in any case. Webhook deliveries and
+ * automation runs keep a copy of the event that started them, form answers included.
+ */
+function jsonIncludes(column: AnyPgColumn, person: PersonLookup): SQL {
+  const conditions = [person.email, person.name]
+    .filter((value): value is string => value !== null)
+    .map((value) => JSON.stringify(value.trim().toLowerCase()))
+    .map((quoted) => sql`position(${quoted} in lower(${column}::text)) > 0`);
+  return or(...conditions) ?? sql`false`;
+}
+
+export function listMatchingWebhookDeliveries(
+  database: DatabaseOrTransaction,
+  tenantId: string,
+  person: PersonLookup,
+) {
+  return database
+    .select()
+    .from(webhookDeliveriesTable)
+    .where(
+      and(
+        eq(webhookDeliveriesTable.tenantId, tenantId),
+        jsonIncludes(webhookDeliveriesTable.payload, person),
+      ),
+    )
+    .orderBy(desc(webhookDeliveriesTable.createdAt));
+}
+
+export function listMatchingWorkflowRuns(
+  database: DatabaseOrTransaction,
+  tenantId: string,
+  person: PersonLookup,
+) {
+  return database
+    .select()
+    .from(workflowRunsTable)
+    .where(
+      and(
+        eq(workflowRunsTable.tenantId, tenantId),
+        jsonIncludes(workflowRunsTable.context, person),
+      ),
+    )
+    .orderBy(desc(workflowRunsTable.createdAt));
+}
+
+export async function deleteWebhookDeliveries(
+  database: DatabaseOrTransaction,
+  ids: readonly string[],
+): Promise<number> {
+  if (ids.length === 0) return 0;
+  const deleted = await database
+    .delete(webhookDeliveriesTable)
+    .where(inArray(webhookDeliveriesTable.id, [...ids]))
+    .returning({ id: webhookDeliveriesTable.id });
+  return deleted.length;
+}
+
+/** Only finished runs: a run still going needs what it holds. Its step logs go with it. */
+export async function deleteFinishedWorkflowRuns(
+  database: DatabaseOrTransaction,
+  ids: readonly string[],
+): Promise<number> {
+  if (ids.length === 0) return 0;
+  const deleted = await database
+    .delete(workflowRunsTable)
+    .where(and(inArray(workflowRunsTable.id, [...ids]), isNotNull(workflowRunsTable.finishedAt)))
+    .returning({ id: workflowRunsTable.id });
+  return deleted.length;
 }
 
 // Retention: whole rows by id ---------------------------------------------------------------

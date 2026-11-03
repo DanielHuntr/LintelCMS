@@ -2,11 +2,14 @@ import { deleteSubmissionsAndFiles } from "../forms/submissions.service.js";
 import type { PersonalDataHookContext, PersonalDataHooks } from "./personal-data-declaration.js";
 import {
   anonymiseArchivedOrders,
+  anonymiseCheckouts,
   anonymiseOrders,
   anonymiseSecurityEvents,
-  deleteCartsAndCheckouts,
+  deleteCarts,
   deleteCustomers,
+  deleteFinishedWorkflowRuns,
   deleteInvitations,
+  deleteWebhookDeliveries,
   listLinesOfOrders,
   listMatchingArchivedOrders,
   listMatchingCarts,
@@ -17,7 +20,10 @@ import {
   listMatchingSubmissions,
   listMatchingUnfinishedCheckouts,
   listMatchingUsers,
+  listMatchingWebhookDeliveries,
+  listMatchingWorkflowRuns,
   listNotesOnSubmissions,
+  listSessionsOfUsers,
 } from "./personal-data.repository.js";
 import type { PersonalDataSource, PrivacyContext } from "./personal-data-sources.js";
 
@@ -35,6 +41,7 @@ export function coreSources(context: PrivacyContext): PersonalDataSource[] {
     ordersSource(),
     cartsSource(),
     securityLogSource(),
+    automationHistorySource(),
     ...unsearchedSources(),
   ];
 }
@@ -74,12 +81,21 @@ function accountsSource(): PersonalDataSource {
         listMatchingUsers(database, tenantId, person),
         listMatchingInvitations(database, tenantId, person),
       ]);
+      const sessions = await listSessionsOfUsers(
+        database,
+        users.map((user) => user.id),
+      );
       return [
         ...users.map((user) => ({
           kind: "Admin account",
           name: user.name,
           email: user.email,
           createdAt: iso(user.createdAt),
+        })),
+        ...sessions.map((session) => ({
+          kind: "Signed-in browser",
+          browser: session.userAgent,
+          lastUsedAt: iso(session.lastUsedAt),
         })),
         ...invitations.map((invitation) => ({
           kind: "Invitation",
@@ -294,6 +310,7 @@ function ordersSource(): PersonalDataSource {
     pluginId: "commerce",
     tables: [
       { name: "shop_orders", columns: ["email", "shipping_address"] },
+      { name: "shop_order_events", columns: ["message"] },
       { name: "shop_checkouts", columns: ["email", "shipping_address"] },
       { name: "shop_archived_orders", columns: ["email", "shipping_address"] },
       { name: "shop_discount_redemptions", columns: ["email"] },
@@ -343,12 +360,16 @@ function cartsSource(): PersonalDataSource {
     },
     async erase(context) {
       const { carts, checkouts } = await find(context);
-      const deleted = await deleteCartsAndCheckouts(
-        context.database,
-        carts.map((cart) => cart.id),
-        checkouts,
-      );
-      return { deleted };
+      return {
+        deleted: await deleteCarts(
+          context.database,
+          carts.map((cart) => cart.id),
+        ),
+        anonymised: await anonymiseCheckouts(
+          context.database,
+          checkouts.map((checkout) => checkout.id),
+        ),
+      };
     },
   };
   return source({
@@ -360,7 +381,7 @@ function cartsSource(): PersonalDataSource {
       { name: "shop_carts", columns: ["email", "shipping_address"] },
       { name: "shop_checkouts", columns: ["email", "shipping_address"] },
     ],
-    erasure: "Deleted.",
+    erasure: "Baskets are deleted. Unpaid checkouts have the person's details removed.",
     hooks,
   });
 }
@@ -409,11 +430,94 @@ function securityLogSource(): PersonalDataSource {
     tables: [
       {
         name: "security_events",
-        columns: ["actor_email", "subject_name", "ip_address", "user_agent"],
+        columns: ["actor_email", "subject_name", "ip_address", "user_agent", "details"],
       },
     ],
     erasure:
       "Kept as a record of what happened, with the email, name, IP address and browser removed.",
+    hooks,
+  });
+}
+
+/**
+ * Webhook deliveries and automation runs keep a copy of the event that started them, so a form
+ * sent or an order paid leaves the person's details here too. Runs still going keep theirs
+ * until they finish. Messages an automation wrote into a notification aren't searched.
+ */
+function automationHistorySource(): PersonalDataSource {
+  const look = async ({ database, tenantId, person }: PersonalDataHookContext) => {
+    const [deliveries, runs] = await Promise.all([
+      listMatchingWebhookDeliveries(database, tenantId, person),
+      listMatchingWorkflowRuns(database, tenantId, person),
+    ]);
+    return { deliveries, runs };
+  };
+  const hooks: PersonalDataHooks = {
+    async find(context) {
+      const { deliveries, runs } = await look(context);
+      return [
+        ...deliveries.map((delivery) => ({
+          id: delivery.id,
+          summary: `Webhook: ${delivery.event}`,
+          date: iso(delivery.createdAt),
+        })),
+        ...runs.map((run) => ({
+          id: run.id,
+          summary: `Automation: ${run.workflowName}`,
+          date: iso(run.createdAt),
+        })),
+      ];
+    },
+    async export(context) {
+      const { deliveries, runs } = await look(context);
+      return [
+        ...deliveries.map((delivery) => ({
+          kind: "Webhook",
+          event: delivery.event,
+          sentAt: iso(delivery.createdAt),
+          content: delivery.payload,
+        })),
+        ...runs.map((run) => ({
+          kind: "Automation",
+          automation: run.workflowName,
+          ranAt: iso(run.createdAt),
+          content: run.context,
+        })),
+      ];
+    },
+    async erase(context) {
+      const { deliveries, runs } = await look(context);
+      const deliveriesGone = await deleteWebhookDeliveries(
+        context.database,
+        deliveries.map((delivery) => delivery.id),
+      );
+      const runsGone = await deleteFinishedWorkflowRuns(
+        context.database,
+        runs.map((run) => run.id),
+      );
+      const kept = runs.length - runsGone;
+      return {
+        deleted: deliveriesGone + runsGone,
+        kept,
+        explanation:
+          kept > 0
+            ? "Automations still running keep their details until they finish. Erase again once they have."
+            : undefined,
+      };
+    },
+  };
+  return source({
+    id: "automation-history",
+    name: "Webhook and automation history",
+    description:
+      "Copies of what was sent to webhooks and automations, such as form answers and order details.",
+    tables: [
+      { name: "webhook_deliveries", columns: ["payload"] },
+      { name: "workflow_runs", columns: ["context"] },
+      { name: "workflow_step_logs", columns: ["summary", "detail"] },
+    ],
+    erasure:
+      "Deleted, except automations still running. Anything already sent on is with whoever received it.",
     hooks,
   });
 }
@@ -449,7 +553,7 @@ function unsearchedSources(): PersonalDataSource[] {
       id: "backups",
       name: "Backups",
       description:
-        "Each backup is a copy of everything above as it was then. Erased data leaves your backups as older ones are replaced.",
+        "Each backup is a copy of everything above as it was then. Erased data leaves your backups as older ones are replaced, and restoring an older backup brings it back, so erase it again after a restore.",
       from: "core",
       pluginId: null,
       tables: [],
@@ -457,6 +561,19 @@ function unsearchedSources(): PersonalDataSource[] {
       hooks: null,
       notSearchableReason:
         "Backups can't be changed. Erased data is gone from them once the backups made before the erasure are deleted.",
+    },
+    {
+      id: "outside-companies",
+      name: "Outside companies",
+      description:
+        "Payment providers, email services and others keep their own records of what they receive, and emails you were sent stay in your mailbox.",
+      from: "core",
+      pluginId: null,
+      tables: [],
+      erasure: null,
+      hooks: null,
+      notSearchableReason:
+        "Erasing here doesn't reach them. Ask each one, using your list of companies.",
     },
   ];
 }

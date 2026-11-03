@@ -1,4 +1,17 @@
-import { and, count, eq, gte, isNull, lt, min, ne, type SQL } from "drizzle-orm";
+import {
+  and,
+  count,
+  eq,
+  gte,
+  isNotNull,
+  isNull,
+  lt,
+  min,
+  ne,
+  or,
+  type SQL,
+  sql,
+} from "drizzle-orm";
 import type { AnyPgColumn, PgTable } from "drizzle-orm/pg-core";
 import { cartsTable } from "../commerce/carts/carts.table.js";
 import { checkoutsTable } from "../commerce/checkouts/checkouts.table.js";
@@ -7,6 +20,8 @@ import { archivedOrdersTable } from "../commerce/shopify-import/shopify-import.t
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { formSubmissionsTable, formsTable } from "../forms/forms.table.js";
 import { securityEventsTable } from "../security-log/security-events.table.js";
+import { webhookDeliveriesTable } from "../webhooks/webhooks.table.js";
+import { workflowRunsTable } from "../workflows/workflows.table.js";
 
 /**
  * Database reads for the retention rules: what is past a rule's cutoff now, and when the
@@ -69,7 +84,36 @@ export const retainedKinds = {
     id: archivedOrdersTable.id,
     dated: archivedOrdersTable.placedAt,
     covers: (tenantId: string) =>
-      and(eq(archivedOrdersTable.tenantId, tenantId), ne(archivedOrdersTable.email, "")),
+      and(
+        eq(archivedOrdersTable.tenantId, tenantId),
+        // Some imported orders have an address but never had an email.
+        or(
+          ne(archivedOrdersTable.email, ""),
+          sql`${archivedOrdersTable.shippingAddress} ->> 'name' <> 'Removed'`,
+        ),
+      ),
+  },
+  webhookDeliveries: {
+    table: webhookDeliveriesTable,
+    id: webhookDeliveriesTable.id,
+    dated: webhookDeliveriesTable.createdAt,
+    covers: (tenantId: string) =>
+      and(
+        eq(webhookDeliveriesTable.tenantId, tenantId),
+        ne(webhookDeliveriesTable.status, "pending"),
+      ),
+  },
+  // Runs about an entry are how its reviews are found, so they stay.
+  workflowRuns: {
+    table: workflowRunsTable,
+    id: workflowRunsTable.id,
+    dated: workflowRunsTable.createdAt,
+    covers: (tenantId: string) =>
+      and(
+        eq(workflowRunsTable.tenantId, tenantId),
+        isNotNull(workflowRunsTable.finishedAt),
+        isNull(workflowRunsTable.entryId),
+      ),
   },
 } satisfies Record<string, RetainedKind>;
 

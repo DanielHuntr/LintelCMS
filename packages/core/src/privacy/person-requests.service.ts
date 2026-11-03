@@ -3,7 +3,6 @@ import type { SignedIn } from "../auth/auth.schema.js";
 import type { PersonalDataHookContext, PersonLookup } from "./personal-data-declaration.js";
 import { buildPersonalDataArchive, type ExportedKind } from "./personal-data-archive.js";
 import {
-  isSourceInUse,
   listPersonalDataSources,
   type PersonalDataSource,
   type PrivacyContext,
@@ -59,8 +58,8 @@ export async function findPerson(
     found.push({ kindId: source.id, name: source.name, erasure: source.erasure, items });
   }
   const notSearched = listPersonalDataSources(context)
+    // Switched off or not, its data is still there.
     .filter((source) => source.hooks === null && source.from !== "core")
-    .filter((source) => isSourceInUse(source, context.enabledPlugins))
     .map((source) => ({
       kindId: source.id,
       name: source.name,
@@ -106,21 +105,27 @@ export async function erasePerson(
   signedIn: SignedIn,
 ): Promise<ErasureResponse> {
   const parts: PrivacyRequestPart[] = [];
-  for (const source of searchableSources(context)) {
-    const hookInput = hookContext(context, person);
-    const found = await fromSource(source, () => source.hooks.find(hookInput));
-    if (found.length === 0) continue;
-    const outcome = await fromSource(source, () => source.hooks.erase(hookInput));
-    parts.push({
-      source: source.name,
-      found: found.length,
-      deleted: outcome.deleted,
-      anonymised: outcome.anonymised ?? 0,
-      kept: outcome.kept ?? 0,
-    });
+  const explanations: string[] = [];
+  try {
+    for (const source of searchableSources(context)) {
+      const hookInput = hookContext(context, person);
+      const found = await fromSource(source, () => source.hooks.find(hookInput));
+      if (found.length === 0) continue;
+      const outcome = await fromSource(source, () => source.hooks.erase(hookInput));
+      parts.push({
+        source: source.name,
+        found: found.length,
+        deleted: outcome.deleted,
+        anonymised: outcome.anonymised ?? 0,
+        kept: outcome.kept ?? 0,
+      });
+      if (outcome.explanation) explanations.push(outcome.explanation);
+    }
+  } finally {
+    // Also when one kind failed part way: what was erased before it is still a thing done.
+    await recordRequest(context, "erase", signedIn, parts);
   }
-  await recordRequest(context, "erase", signedIn, parts);
-  return { parts };
+  return { parts, explanations };
 }
 
 async function recordRequest(

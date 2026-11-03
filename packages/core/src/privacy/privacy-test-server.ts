@@ -39,6 +39,9 @@ export function usePrivacyTestServer(
         transformCacheFolder: join(state.folder, "cache"),
       },
       formsTurnstileVerifier: async () => true,
+      commerce: {
+        environment: { STRIPE_SECRET_KEY: "sk_test_a", STRIPE_WEBHOOK_SECRET: "whsec_a" },
+      },
     });
     await state.server.ready();
     await createTestUser(testDatabase.database, "owner@example.com", [["*"]]);

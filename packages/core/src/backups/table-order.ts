@@ -10,6 +10,8 @@ import * as schema from "../database/schema.js";
  *   `site_import_items`: the record of backups and
  *   imports made on this install. Restoring an old backup shouldn't make newer backups
  *   disappear from the list, or forget an import half way through.
+ * - `privacy_requests`: the record of privacy requests answered. Restoring an old backup
+ *   mustn't lose the record that someone's data was erased.
  * - `settings`: kept in the archive's settings.json instead, so it can be read on its own.
  */
 export const TABLES_LEFT_OUT_OF_BACKUPS = [
@@ -19,6 +21,7 @@ export const TABLES_LEFT_OUT_OF_BACKUPS = [
   "wordpress_import_items",
   "site_imports",
   "site_import_items",
+  "privacy_requests",
   "settings",
 ];
 

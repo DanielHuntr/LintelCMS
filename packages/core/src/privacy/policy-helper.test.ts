@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { ensurePagesCollection } from "../collections/default-collections.js";
 import { useTestDatabase } from "../testing/test-database.js";
-import { draftPolicySections, pageText } from "./policy-helper.service.js";
+import { eq } from "drizzle-orm";
+import { marketsTable } from "../commerce/markets/markets.table.js";
+import { draftPolicySections, mentions, pageText } from "./policy-helper.service.js";
 import { defaultRetentionRules } from "./privacy.schema.js";
 import { usePrivacyTestServer } from "./privacy-test-server.js";
 import { detectProcessors } from "./processors.service.js";
@@ -51,6 +53,13 @@ describe("the privacy policy helper", () => {
     expect(
       pageText({ title: "Privacy", body: ["<p>We use <b>Stripe</b></p>", { more: "Forms" }] }),
     ).toBe("privacy we use stripe forms");
+  });
+
+  it("counts a word only where a word starts, so a design's CSS doesn't pass the check", () => {
+    expect(mentions("our forms and orders", "form")).toBe(true);
+    expect(mentions("platform border-radius", "form")).toBe(false);
+    expect(mentions("platform border-radius", "order")).toBe(false);
+    expect(mentions("sent by mail.example.com", "mail.example.com")).toBe(true);
   });
 
   it("lists the companies the site sends data to", () => {
@@ -109,6 +118,13 @@ describe("the privacy policy helper", () => {
       expect(saved.json().detected).toEqual([
         expect.objectContaining({ name: "Stripe", origin: "detected" }),
       ]);
+      // A market set to a provider that isn't connected takes no payments through it.
+      await testDatabase.database
+        .update(marketsTable)
+        .set({ paymentProvider: "paypal" })
+        .where(eq(marketsTable.handle, "uk"));
+      expect((await privacy.api("GET", "/privacy/processors")).json().detected).toEqual([]);
+
       const refused = await privacy.api("PUT", "/privacy/processors", {
         processors: [{ id: "x", name: "" }],
       });

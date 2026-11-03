@@ -76,9 +76,10 @@ function pluginSource(
   plugin: LintelPlugin,
   fromManifest: PersonalDataDeclaration | undefined,
 ): PersonalDataSource[] {
-  const declared = plugin.personalData
-    ? personalDataDeclarationSchema.parse(plugin.personalData)
-    : fromManifest;
+  // A mistake in one plugin's declaration mustn't stop every privacy request: it is treated
+  // as having said nothing, so it shows up as something to look through by hand.
+  const parsed = personalDataDeclarationSchema.safeParse(plugin.personalData);
+  const declared = parsed.success ? parsed.data : fromManifest;
   const tableNames = plugin.database?.tables.length ?? 0;
   if (!declared && tableNames === 0) return [];
   const personalTables = (declared?.tables ?? [])

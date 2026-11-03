@@ -91,7 +91,10 @@ describe("retention rules", () => {
     await oldAndNew();
     const response = await privacy.api("GET", "/privacy/retention");
     const rules = Object.fromEntries(
-      (response.json().rules as Array<{ id: string }>).map((rule) => [rule.id, rule]),
+      (response.json().rules as Array<{ id: string; nextDueAt: string }>).map((rule) => [
+        rule.id,
+        rule,
+      ]),
     );
     expect(rules.formEntries).toMatchObject({
       enabled: false,
@@ -103,7 +106,7 @@ describe("retention rules", () => {
     expect(rules.activityLogs).toMatchObject({ enabled: true, days: 90 });
     expect(rules.orders).toMatchObject({ enabled: false, days: 2555, dueNow: 1 });
     // The new basket is due 30 days after it was last changed: 28 days from now.
-    const nextCart = new Date(rules.abandonedCarts.nextDueAt).getTime();
+    const nextCart = new Date(rules.abandonedCarts?.nextDueAt ?? "").getTime();
     expect(Math.round((nextCart - Date.now()) / DAY)).toBe(28);
   });
 
@@ -135,6 +138,24 @@ describe("retention rules", () => {
     expect(order).toMatchObject({ email: "", totalAmount: 1000 });
     // A second run finds nothing more to do.
     expect(await run()).toEqual({ formEntries: 0, abandonedCarts: 0, activityLogs: 0, orders: 0 });
+  });
+
+  // The screen sends one rule at a time; the others mustn't fall back to their defaults.
+  it("changes only the rule it's given", async () => {
+    await privacy.api("PUT", "/privacy/retention", {
+      abandonedCarts: { enabled: false, days: 90 },
+    });
+    await privacy.api("PUT", "/privacy/retention", {
+      formEntries: { enabled: true, days: 730 },
+    });
+
+    const { rules } = (await privacy.api("GET", "/privacy/retention")).json();
+    expect(rules).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "abandonedCarts", enabled: false, days: 90 }),
+        expect.objectContaining({ id: "formEntries", enabled: true, days: 730 }),
+      ]),
+    );
   });
 
   it("offers a short list of lengths, and refuses others", async () => {

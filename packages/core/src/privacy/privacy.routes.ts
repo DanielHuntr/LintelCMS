@@ -54,6 +54,7 @@ export async function privacyRoutes(server: FastifyInstance) {
       database: server.database,
       site: await resolveEditingSite(request),
       plugins: server.plugins.plugins,
+      shop: server.shop,
       email: server.email,
     });
 
