@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import { Liquid } from "liquidjs";
+import { addPluginLiquid } from "../plugins/plugin-liquid.js";
 import { registerLintelTags } from "./liquid-tags.js";
 import {
   LAYOUTS_SUBFOLDER,
@@ -40,5 +41,7 @@ export function createLiquidEngine(folder: string, options: { cache: boolean }):
     renderLimit: 5000,
   });
   registerLintelTags(engine);
+  // Plugins' own tags and filters (see src/plugins/plugin-liquid.ts).
+  addPluginLiquid(engine);
   return engine;
 }

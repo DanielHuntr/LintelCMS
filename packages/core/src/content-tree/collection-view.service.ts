@@ -149,6 +149,7 @@ export async function listCollectionItems(
   const filters = {
     search: query.search,
     status: query.status,
+    waitingForReview: query.review === "waiting",
     collectionId: query.type === undefined ? undefined : typeIdOf(types, query.type),
   };
   const rows = await listItemRows(database, place, {

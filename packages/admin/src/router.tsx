@@ -61,6 +61,7 @@ import { SettingsPage } from "./settings/SettingsPage.js";
 import { PublishingPage } from "./publishing/PublishingPage.js";
 import { PublishedPageView } from "./content/PublishedPageView.js";
 import { FeaturesSettingsPage } from "./features/FeaturesSettingsPage.js";
+import { AddonsPage } from "./addons/AddonsPage.js";
 import { SignInPage } from "./sign-in/SignInPage.js";
 import { WebhookDetailPage } from "./webhooks/WebhookDetailPage.js";
 import { SiteSettingsPage } from "./website/SiteSettingsPage.js";
@@ -251,6 +252,7 @@ const entriesRoute = createRoute({
     status: entryStatuses.includes(String(search.status))
       ? (search.status as EntryStatus)
       : undefined,
+    review: search.review === "waiting" ? "waiting" : undefined,
     search: typeof search.search === "string" && search.search !== "" ? search.search : undefined,
     sort: typeof search.sort === "string" && search.sort !== "" ? search.sort : undefined,
     direction:
@@ -407,6 +409,13 @@ const siteFontsRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: "/settings/site/fonts",
   component: SiteFontsPage,
+});
+
+/** Build → Add-ons: the add-ons installed into this site. */
+const addonsRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/build/addons",
+  component: AddonsPage,
 });
 
 /** Build → Features: switching plugins on and off. */
@@ -595,6 +604,7 @@ export const routeTree = rootRoute.addChildren([
       ...contentRoutes,
       ...integrationRoutes,
       featuresRoute,
+      addonsRoute,
       ...peopleRoutes(() => adminRoute),
       ...workflowsRoutes(() => adminRoute),
       ...formsRoutes(() => adminRoute),

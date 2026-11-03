@@ -65,6 +65,34 @@ export const tourSteps: readonly TourStep[] = [
   },
 ];
 
+/** The short tour of the client's view (content-only editing): four stops. */
+export const clientTourSteps: readonly TourStep[] = [
+  {
+    id: "page",
+    targets: ['[data-tour="canvas"]'],
+    title: "pageBuilder.clientTour.page.title",
+    text: "pageBuilder.clientTour.page.text",
+  },
+  {
+    id: "panel",
+    targets: ['[data-tour="client-panel"]'],
+    title: "pageBuilder.clientTour.panel.title",
+    text: "pageBuilder.clientTour.panel.text",
+  },
+  {
+    id: "history",
+    targets: ['[data-tour="history"]'],
+    title: "pageBuilder.clientTour.history.title",
+    text: "pageBuilder.clientTour.history.text",
+  },
+  {
+    id: "publish",
+    targets: ['[data-tour="publish"]'],
+    title: "pageBuilder.clientTour.publish.title",
+    text: "pageBuilder.clientTour.publish.text",
+  },
+];
+
 export interface Box {
   top: number;
   left: number;

@@ -171,6 +171,13 @@ export interface FieldtypeDefinition<OptionsSchema extends z.ZodType> {
     label: string,
     context: FieldCheckContext,
   ): ChangeCheckResult;
+  /**
+   * What websites get for a stored value, through the delivery API, GraphQL (as JSON) and
+   * Liquid templates. Left out, they get the value as it is stored. Never called with null.
+   * Plugins' fieldtypes use it to add what a site needs to print the value, such as a
+   * colour's name beside its hex code.
+   */
+  deliver?(value: unknown, options: z.output<OptionsSchema>): unknown;
 }
 
 /**
@@ -212,12 +219,13 @@ export interface Fieldtype {
     label: string,
     context: FieldCheckContext,
   ): ChangeCheckResult;
+  deliver?(value: unknown, options: unknown): unknown;
 }
 
 export function defineFieldtype<OptionsSchema extends z.ZodType>(
   definition: FieldtypeDefinition<OptionsSchema>,
 ): Fieldtype {
-  const { checkReferences, checkInnerFields, checkNestedValues } = definition;
+  const { checkReferences, checkInnerFields, checkNestedValues, deliver } = definition;
   return {
     ...definition,
     category: definition.category ?? "advanced",
@@ -244,6 +252,9 @@ export function defineFieldtype<OptionsSchema extends z.ZodType>(
             checkFieldValues,
             context,
           )
+      : undefined,
+    deliver: deliver
+      ? (value, options) => deliver(value, definition.optionsSchema.parse(options))
       : undefined,
   };
 }

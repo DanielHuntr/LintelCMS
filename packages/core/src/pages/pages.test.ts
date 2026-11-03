@@ -35,7 +35,9 @@ describe("page designs", () => {
     server = await startTestServer(testDatabase.activeDatabase);
     await ensurePagesCollection(testDatabase.database);
     await createTestUser(testDatabase.database, "dev@example.com", [["*"]]);
-    await createTestUser(testDatabase.database, "ed@example.com", [["entries:*", "settings:read"]]);
+    await createTestUser(testDatabase.database, "ed@example.com", [
+      ["entries:*", "builder:design", "settings:read"],
+    ]);
     developer = requestsAs(server, await signInAndGetCookies(server, "dev@example.com"));
     editor = requestsAs(server, await signInAndGetCookies(server, "ed@example.com"));
   });

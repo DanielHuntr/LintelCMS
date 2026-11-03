@@ -7,6 +7,7 @@ import { applyColorScheme, readColorSchemeChoice } from "./appearance/colorSchem
 import { loadBranding } from "./branding/brandingStore.js";
 import { InterfaceLanguageProvider } from "./interface-language/InterfaceLanguageProvider.js";
 import { loadInterfaceLanguage } from "./interface-language/loadInterfaceLanguage.js";
+import { loadAddonAdminHalves } from "./addons/loadAddonAdminHalves.js";
 import { router } from "./router.js";
 import "./styles.css";
 
@@ -18,7 +19,7 @@ if (!rootElement) {
 
 // The admin's name, colours, scheme and language, before anything is drawn in the wrong ones.
 applyColorScheme(readColorSchemeChoice());
-await Promise.all([loadBranding(), loadInterfaceLanguage()]);
+await Promise.all([loadBranding(), loadInterfaceLanguage(), loadAddonAdminHalves()]);
 
 createRoot(rootElement).render(
   <StrictMode>

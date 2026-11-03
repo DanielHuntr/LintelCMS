@@ -38,6 +38,8 @@ import { pageFlowStrings } from "../website/pageFlowStrings.js";
 import { cookieNoticeStrings } from "../website/cookieNoticeStrings.js";
 import { analyticsStrings } from "../analytics/analyticsStrings.js";
 import { publishingStrings } from "../publishing/publishingStrings.js";
+import { clientEditingStrings } from "../client-editing/clientEditingStrings.js";
+import { addonStrings } from "../addons/addonStrings.js";
 
 /**
  * Every word the admin shows lives here, in English: the source every translation in
@@ -82,6 +84,8 @@ const english = {
   ...freePhotosStrings,
   ...pageDraftsStrings,
   ...analyticsStrings,
+  ...clientEditingStrings,
+  ...addonStrings,
   ...siteFontsStrings,
   ...compareLiveStrings,
   ...scheduleStrings,
@@ -395,6 +399,9 @@ const english = {
   "media.delete.inUseTitle": "This file is still in use",
   "media.delete.inUseDescription": "Remove it from these entries first, then delete it.",
   "media.delete.usedIn": "Used in",
+  "media.delete.siteFont": "Site fonts → {family}",
+  "media.delete.inUseFontDescription":
+    "A font your site uses is made from this file. Remove the font in Site settings first, then delete the file.",
   "media.picker.choose": "Choose image",
   "media.picker.replace": "Replace",
   "media.picker.remove": "Remove",

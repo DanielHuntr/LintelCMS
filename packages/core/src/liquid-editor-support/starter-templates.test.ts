@@ -58,6 +58,7 @@ describe("the starter templates", () => {
       design: () => '<div class="lintel-design"></div>',
       headMarker: "<!--head-->",
       header: "<header>site header</header>",
+      database: {} as Parameters<typeof createLintelGlobal>[0]["database"],
       footer: "<footer>site footer</footer>",
       cookieSettings: "",
     });

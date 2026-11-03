@@ -134,7 +134,8 @@ describe("the page design screen", () => {
       });
     });
     renderScreen(<PageDesignPage collectionHandle="pages" entryId="p1" fieldHandle="design" />, {
-      permissions: ["entries:*"],
+      // Someone who designs pages but may not write code.
+      permissions: ["entries:*", "builder:design"],
     });
     await addSection(user, "hero", "Hero");
     expect(await screen.findByRole("alert", {}, { timeout: 4000 })).toHaveTextContent(
@@ -273,5 +274,32 @@ describe("the page design screen", () => {
     expect(screen.getByRole("link", { name: "Back to Home" })).toBeInTheDocument();
     expect(screen.queryByTitle("Your page")).not.toBeInTheDocument();
     vi.unstubAllGlobals();
+  });
+
+  it("opens a client's view of the page, with Send for review while changes wait", async () => {
+    const design = {
+      version: 2,
+      root: {
+        ...createEmptyPage().root,
+        children: [{ id: "h1", type: "heading", props: { text: "Fresh bread", level: 1 } }],
+      },
+    };
+    mockApi(({ method, url }) => {
+      if (url.pathname === "/entries/p1/review") {
+        return { needsApproval: true, mustSendForReview: true, review: null };
+      }
+      if (method === "GET" && url.pathname.startsWith("/entries/")) return samplePage(design);
+      throw apiErrorResponse(404, "NOT_FOUND", "Not found");
+    });
+    renderScreen(<PageDesignPage collectionHandle="pages" entryId="p1" fieldHandle="design" />, {
+      permissions: ["entries:read", "entries:update", "entries:publish", "media:upload"],
+    });
+    const banner = await screen.findByRole("banner");
+    expect(
+      await within(banner).findByRole("button", { name: "Send for review" }),
+    ).toBeInTheDocument();
+    expect(within(banner).queryByRole("button", { name: "Publish" })).toBeNull();
+    expect(screen.getByText("Editing content")).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Insert" })).toBeNull();
   });
 });

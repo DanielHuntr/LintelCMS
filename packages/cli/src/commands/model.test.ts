@@ -1,3 +1,4 @@
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   asContentModelCommands,
@@ -76,9 +77,11 @@ describe("lintel model", () => {
 
   it("reads the same settings and defaults as the server", () => {
     const defaults = contentModelSettings({});
-    expect(defaults.folder.endsWith("/content-model")).toBe(true);
+    expect(defaults.folder.endsWith(`${path.sep}content-model`)).toBe(true);
     expect(defaults.format).toBe("typescript");
-    expect(defaults.typesFile.endsWith("/generated/lintel-content.ts")).toBe(true);
+    expect(defaults.typesFile.endsWith(path.join(path.sep, "generated", "lintel-content.ts"))).toBe(
+      true,
+    );
     expect(
       contentModelSettings({ CONTENT_MODEL_FORMAT: "yaml", CONTENT_MODEL_FOLDER: "/srv/model" }),
     ).toMatchObject({

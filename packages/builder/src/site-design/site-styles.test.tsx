@@ -6,6 +6,7 @@ import {
   type PageDocument,
   type PageNode,
   type SiteDesign,
+  type SiteDesignUses,
   standardCatalogue,
 } from "@lintel/builder-model";
 import { render, screen, within } from "@testing-library/react";
@@ -20,7 +21,11 @@ const ink: SiteDesign = {
   sharedStyles: [],
 };
 
-function renderBuilder(start: SiteDesign = emptySiteDesign, children?: PageNode[]) {
+function renderBuilder(
+  start: SiteDesign = emptySiteDesign,
+  children?: PageNode[],
+  uses?: SiteDesignUses,
+) {
   const page = createEmptyPage();
   const ids = createCountingNodeIds();
   const section = children ?? [
@@ -60,6 +65,7 @@ function renderBuilder(start: SiteDesign = emptySiteDesign, children?: PageNode[
             onDesignChange(next);
             setDesign(next);
           },
+          uses,
         }}
       />
     );
@@ -202,6 +208,28 @@ describe("Site styles in the right panel", () => {
 
     await person.click(screen.getByRole("radio", { name: "Main" }));
     expect(node("Second card")?.sharedStyle).toBe("card");
+  });
+
+  it("counts uses across the whole site, and names the other pages a delete changes", async () => {
+    const person = userEvent.setup();
+    const card = { id: "card", name: "Card", styles: { base: { borderRadius: "8px" } } };
+    renderBuilder({ ...ink, sharedStyles: [card] }, undefined, {
+      variables: { ink: { uses: 11, pages: 3 } },
+      sharedStyles: { card: { uses: 4, pages: 1 } },
+    });
+    // One on this page and eleven elsewhere.
+    await person.click(screen.getByRole("button", { name: /^Ink\s*12 uses/ }));
+    await person.click(screen.getByRole("button", { name: "Delete" }));
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "It’s used 12 times across the site, on 3 other pages. Those pages lose it; this page keeps how it looks now.",
+    );
+    await person.click(screen.getByRole("button", { name: "Keep it" }));
+
+    await person.click(screen.getByRole("button", { name: /^Card\s*4 uses/ }));
+    await person.click(screen.getByRole("button", { name: "Delete" }));
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "It’s used on 1 other page, which loses its look.",
+    );
   });
 
   it("selects the elements using a shared style, and detaches them when it's deleted", async () => {

@@ -68,6 +68,7 @@ export * from "./placed-grid/placed-grid.js";
 export * from "./site-design/design-variables.js";
 export * from "./site-design/shared-styles.js";
 export * from "./site-design/site-design.js";
+export * from "./site-design/site-design-uses.js";
 export * from "./site-design/tag-styles.js";
 export * from "./site-design/variable-uses.js";
 export * from "./backgrounds/background-video.js";
@@ -75,6 +76,12 @@ export * from "./fonts/font-catalogue.js";
 export * from "./fonts/page-fonts.js";
 export * from "./fonts/site-fonts.js";
 export * from "./text-marks/text-marks.js";
+export * from "./client-editing/client-content.js";
+export {
+  findDesignChanges,
+  sameValue,
+  type DesignChange,
+} from "./client-editing/client-changes.js";
 export * from "./countries/country-codes.js";
 export * from "./consent/consent-services.js";
 export * from "./consent/cookie-notice-page.js";

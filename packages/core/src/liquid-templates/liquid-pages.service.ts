@@ -117,6 +117,7 @@ export async function renderEntryWithLiquid(
     cookieSettings: context.cookieNotice
       ? `<button type="button" class="lintel-cookie-settings" data-lintel-cookie-settings="">${escapeHtml(englishLabels.cookieSettings)}</button>`
       : "",
+    database: dependencies.database,
   };
 
   let output: string;

@@ -50,6 +50,11 @@
       "development": "./src/plugins/plugin-api.ts",
       "default": "./dist/plugins/plugin-api.js"
     },
+    "./addon-modules": {
+      "types": "./dist/addons/addon-module-names.d.ts",
+      "development": "./src/addons/addon-module-names.ts",
+      "default": "./dist/addons/addon-module-names.js"
+    },
     "./plugin-testing": {
       "types": "./dist/plugins/plugin-testing.d.ts",
       "development": "./src/plugins/plugin-testing.ts",

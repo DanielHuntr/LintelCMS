@@ -1,4 +1,4 @@
-import { CircleAlert, FileText } from "lucide-react";
+import { CircleAlert, FileText, Type } from "lucide-react";
 import { useId } from "react";
 import { ApiError } from "../api/client.js";
 import { Button } from "../design/Button.js";
@@ -16,8 +16,8 @@ interface DeleteAssetDialogProps {
 
 /**
  * Asks before moving a file to the recycle bin, since it comes off the site straight away,
- * then offers Undo. If entries still use the file, the API refuses and this lists them, so
- * the editor knows exactly what to change first.
+ * then offers Undo. If entries or the site's fonts still use the file, the API refuses and this
+ * lists them, so the editor knows exactly what to change first.
  */
 export function DeleteAssetDialog({ asset, onCancel, onDeleted }: DeleteAssetDialogProps) {
   const titleId = useId();
@@ -51,7 +51,11 @@ export function DeleteAssetDialog({ asset, onCancel, onDeleted }: DeleteAssetDia
               : t("media.delete.confirmTitle", { name: asset.filename })}
           </h2>
           <p id={descriptionId} className="text-body text-label-secondary">
-            {usedBy ? t("media.delete.inUseDescription") : t("media.delete.confirmDescription")}
+            {!usedBy
+              ? t("media.delete.confirmDescription")
+              : usedBy.some((usage) => usage.place === "siteFonts")
+                ? t("media.delete.inUseFontDescription")
+                : t("media.delete.inUseDescription")}
           </p>
         </div>
 
@@ -61,11 +65,19 @@ export function DeleteAssetDialog({ asset, onCancel, onDeleted }: DeleteAssetDia
             <ul>
               {usedBy.map((usage) => (
                 <li
-                  key={usage.entryId}
+                  key={`${usage.place ?? "entry"}-${usage.entryId}`}
                   className="flex items-center gap-2.5 py-2 text-body text-label not-first:hairline-top"
                 >
-                  <FileText aria-hidden="true" className="size-4 shrink-0 text-label-secondary" />
-                  <span className="truncate">{usage.title}</span>
+                  {usage.place === "siteFonts" ? (
+                    <Type aria-hidden="true" className="size-4 shrink-0 text-label-secondary" />
+                  ) : (
+                    <FileText aria-hidden="true" className="size-4 shrink-0 text-label-secondary" />
+                  )}
+                  <span className="truncate">
+                    {usage.place === "siteFonts"
+                      ? t("media.delete.siteFont", { family: usage.title })
+                      : usage.title}
+                  </span>
                 </li>
               ))}
             </ul>

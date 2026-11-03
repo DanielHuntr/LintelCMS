@@ -52,6 +52,48 @@ importers:
         specifier: ^5.0.5
         version: 5.0.5(@types/node@26.6.6)(happy-dom@21.0.4)(jsdom@30.1.3)(vite@8.3.5(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
 
+  packages/addon-example:
+    devDependencies:
+      '@lintel/admin':
+        specifier: workspace:*
+        version: link:../admin
+      '@lintel/cli':
+        specifier: workspace:*
+        version: link:../cli
+      '@lintel/core':
+        specifier: workspace:*
+        version: link:../core
+      '@tanstack/react-query':
+        specifier: ^5.105.0
+        version: 5.105.0(@types/react@19.3.0)(react@19.3.1)
+      '@types/node':
+        specifier: ^26.6.6
+        version: 26.6.6
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      lucide-react:
+        specifier: ^1.66.0
+        version: 1.66.0(@types/react@19.3.0)(react@19.3.1)
+      react:
+        specifier: ^19.3.1
+        version: 19.3.1
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vite:
+        specifier: ^8.3.5
+        version: 8.3.5(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
+      vitest:
+        specifier: ^5.0.5
+        version: 5.0.5(@types/node@26.6.6)(happy-dom@21.0.4)(jsdom@30.1.3)(vite@8.3.5(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+
   packages/admin:
     dependencies:
       '@dnd-kit/core':
@@ -249,6 +291,9 @@ importers:
       '@lintel/core':
         specifier: workspace:*
         version: link:../core
+      esbuild:
+        specifier: ^0.28.2
+        version: 0.28.2
       zod:
         specifier: ^4.6.7
         version: 4.6.7

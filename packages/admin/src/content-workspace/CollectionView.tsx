@@ -89,7 +89,10 @@ export function CollectionView({
   const pages = Math.max(1, Math.ceil((items.data?.total ?? 0) / COLLECTION_PAGE_SIZE));
   const page = current.page ?? 1;
   const isFiltered =
-    effective.search !== undefined || current.status !== undefined || current.type !== undefined;
+    effective.search !== undefined ||
+    current.status !== undefined ||
+    current.review !== undefined ||
+    current.type !== undefined;
   const types = items.data?.types ?? [];
   const showsAddress = rows.some((row) => row.url !== null);
   const showsType = types.length > 1 || current.type !== undefined;
@@ -128,12 +131,14 @@ export function CollectionView({
         <label className="flex items-center gap-2 text-footnote text-label-secondary">
           {t("collectionView.status")}
           <select
-            value={current.status ?? "all"}
+            value={current.review === "waiting" ? "review" : (current.status ?? "all")}
             onChange={(event) => {
               const value = event.target.value;
               change({
                 ...current,
-                status: value === "all" ? undefined : (value as EntryStatus),
+                // Clients' changes waiting for review (see src/client-editing).
+                review: value === "review" ? "waiting" : undefined,
+                status: value === "all" || value === "review" ? undefined : (value as EntryStatus),
                 page: undefined,
               });
             }}
@@ -144,6 +149,7 @@ export function CollectionView({
                 {option === "all" ? t("collectionView.status.all") : t(`entry.status.${option}`)}
               </option>
             ))}
+            <option value="review">{t("clientEditing.filter.waiting")}</option>
           </select>
         </label>
         {showsType && (

@@ -30,6 +30,7 @@ import { buildProductionServer } from "./production-server.js";
 import { placeholderPublicSite, type PublicSite } from "./public-site.js";
 import { contentModelOptionsFromConfig } from "../content-model-sync/content-model-config.js";
 import { loadInstalledPlugins } from "../plugins/installed-plugins.js";
+import { loadSiteAddons } from "../addons/site-addons.js";
 import { builtInPublicSite } from "../website/built-in-public-site.js";
 import { updatesOptionsFromConfig } from "../updates/updates.config.js";
 
@@ -99,6 +100,7 @@ export async function prepareProductionServer(
     options.waitForDataFolderSeconds ?? 0,
   );
   const installedPlugins = await loadInstalledPlugins();
+  const addons = await loadSiteAddons(paths.root, installedPlugins);
 
   const server = buildProductionServer({
     adminOrigin: addresses.adminOrigin,
@@ -121,6 +123,7 @@ export async function prepareProductionServer(
     email: createConfiguredEmailSender(config, paths.root),
     updates: updatesOptionsFromConfig(config),
     plugins: installedPlugins,
+    addons,
     contentModel: contentModelOptionsFromConfig(config),
     // The built-in website is at the site's own address, beside the admin and the API.
     website: { builtInSiteUrl: config.SITE_ENABLED ? addresses.publicUrl : null },

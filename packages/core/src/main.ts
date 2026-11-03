@@ -9,6 +9,7 @@ import { describeActiveDatabase } from "./database/active-database.js";
 import { createConfiguredEmailSender } from "./email/index.js";
 import { createConfiguredStorage, signedUrlSeconds } from "./media/configured-storage.js";
 import { loadInstalledPlugins } from "./plugins/installed-plugins.js";
+import { loadSiteAddons } from "./addons/site-addons.js";
 import { startProductionServer } from "./production/start-production-server.js";
 import { buildServer } from "./server.js";
 import { updatesOptionsFromConfig } from "./updates/updates.config.js";
@@ -40,6 +41,7 @@ await runWithFriendlyErrors(async () => {
   const activeDatabase = await openConfiguredDatabase(config);
   say(describeActiveDatabase(activeDatabase));
   const installedPlugins = await loadInstalledPlugins();
+  const addons = await loadSiteAddons(paths.root, installedPlugins);
 
   const siteUrl =
     config.SITE_PUBLIC_URL?.replace(/\/+$/, "") ?? `http://localhost:${config.SITE_PORT}`;
@@ -54,6 +56,7 @@ await runWithFriendlyErrors(async () => {
     webhooks: { allowPrivateAddresses: config.WEBHOOKS_ALLOW_PRIVATE_ADDRESSES },
     trustProxy: config.TRUST_PROXY,
     plugins: installedPlugins,
+    addons,
     website: {
       builtInSiteUrl: config.SITE_ENABLED ? siteUrl : null,
       liquidTemplates: {

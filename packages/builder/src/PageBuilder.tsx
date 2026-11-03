@@ -15,6 +15,7 @@ import {
   compileTagStyles,
   withoutTagStyles,
   type SiteDesign,
+  type SiteDesignUses,
   findNode,
   ownSiteChrome,
   assignClassNames,
@@ -125,6 +126,7 @@ import {
 import { type SiteSectionsSource, useSiteSections } from "./site-sections/useSiteSections.js";
 import { DraftPageButton } from "./page-drafts/DraftPageButton.js";
 import { type PageDrafting, PageDraftingContext } from "./page-drafts/page-drafting.js";
+import { ContentEditingScreen } from "./client-editing/ContentEditingScreen.js";
 
 export interface PageBuilderProps {
   /** The page as stored. Read once; the builder owns it from then on. */
@@ -211,7 +213,12 @@ export interface PageBuilderProps {
    * The site's design variables and shared styles, and how to save a change to them (left
    * out for people who may only use them). Without it, the site has none.
    */
-  siteDesign?: { value: SiteDesign; onChange?: (value: SiteDesign) => void };
+  siteDesign?: {
+    value: SiteDesign;
+    onChange?: (value: SiteDesign) => void;
+    /** Where they're used on the rest of the site, for "12 uses" (see SiteDesignTools). */
+    uses?: SiteDesignUses;
+  };
   /**
    * The site's navigation and footer, shown on every page and edited from any of them (see
    * site-sections/). Without it, Navigation and Footer sections belong to the page alone.
@@ -224,6 +231,11 @@ export interface PageBuilderProps {
   pageDrafting?: PageDrafting;
   /** Told which element is selected (null for none), such as for trying another version of it. */
   onSelectionChange?: (nodeId: string | null) => void;
+  /**
+   * For people who may change content but not the design (clients): the page opens in
+   * "Edit content", where only the words, pictures and links the designer opened up change.
+   */
+  contentOnly?: boolean;
 }
 
 /** The site's default theme, until the app passes the site's own. */
@@ -248,7 +260,11 @@ export function PageBuilder({ text = englishText, ...props }: PageBuilderProps) 
         <PageFinderContext value={props.findPage}>
           <SiteFontsContext value={siteFonts}>
             <PageDraftingContext value={props.pageDrafting}>
-              <PageBuilderScreen {...props} text={text} />
+              {props.contentOnly ? (
+                <ContentEditingScreen {...props} text={text} />
+              ) : (
+                <PageBuilderScreen {...props} text={text} />
+              )}
             </PageDraftingContext>
           </SiteFontsContext>
         </PageFinderContext>
@@ -342,8 +358,13 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     [props.site?.stylesheet, props.themeStylesheet],
   );
   const siteDesignTools = useMemo(
-    () => ({ design: siteDesign, change: props.siteDesign?.onChange, themeValues }),
-    [siteDesign, props.siteDesign?.onChange, themeValues],
+    () => ({
+      design: siteDesign,
+      change: props.siteDesign?.onChange,
+      themeValues,
+      uses: props.siteDesign?.uses,
+    }),
+    [siteDesign, props.siteDesign?.onChange, themeValues, props.siteDesign?.uses],
   );
   const sharedStyles = useMemo(() => sharedStylesById(siteDesign), [siteDesign]);
   const rendered = useMemo(

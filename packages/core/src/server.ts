@@ -30,6 +30,7 @@ import { contentTreeRoutes } from "./content-tree/content-tree.routes.js";
 import { recycleBinRoutes } from "./recycle-bin/recycle-bin.routes.js";
 import { contentRootsRoutes } from "./content-roots/content-roots.routes.js";
 import { findEntriesUsingAsset } from "./entries/entries.service.js";
+import { findSiteFontsUsingAsset } from "./site-fonts/site-fonts.service.js";
 import { revisionsRoutes } from "./entries/revisions.routes.js";
 import { scheduledEntriesRoutes } from "./entries/scheduled-entries.routes.js";
 import { fieldtypesRoutes } from "./fieldtypes/fieldtypes.routes.js";
@@ -62,8 +63,13 @@ import type { StorageDriver } from "./media/storage-driver.js";
 import { DEFAULT_TRANSFORM_CACHE_FOLDER } from "./media/transform-cache.js";
 import { openApiRoutes } from "./openapi/openapi.routes.js";
 import { PluginCatalogue } from "./plugins/plugin-catalogue.js";
+import { addonsRoutes } from "./addons/addons.routes.js";
+import { enableAddonsAskedFor } from "./addons/addons.service.js";
+import { type AddonsState, noAddons } from "./addons/load-addons.js";
 import type { LintelPlugin } from "./plugins/plugin-definition.js";
 import { registerPluginRoutes } from "./plugins/plugin-routes.js";
+import { connectPluginExtensions } from "./plugins/plugin-extensions.js";
+import { registerPluginLiquid } from "./plugins/plugin-liquid.js";
 import { pluginRegistry } from "./plugins/plugins.registry.js";
 import { type FreePhotosOptions, registerFreePhotos } from "./free-photos/register-free-photos.js";
 import { type PageDraftsOptions, registerPageDrafts } from "./page-drafts/register-page-drafts.js";
@@ -120,6 +126,8 @@ import { siteSectionsRoutes } from "./site-sections/site-sections.routes.js";
 import { EventBus } from "./events/event-bus.js";
 import { subscribeEventListeners } from "./events/event-listeners.js";
 import { registerWorkflows, type WorkflowOptions } from "./workflows/register-workflows.js";
+import { registerClientEditing } from "./client-editing/register-client-editing.js";
+import { clientEditingRoutes } from "./client-editing/client-editing.routes.js";
 import { wordpressImportRoutes } from "./wordpress-import/wordpress-import.routes.js";
 import { siteImportRoutes } from "./importers/site-import.routes.js";
 import { updatesRoutes } from "./updates/updates.routes.js";
@@ -150,6 +158,8 @@ declare module "fastify" {
     webhooks: WebhookDispatcher;
     /** The built-in plugins and the installed ones (see src/plugins). */
     plugins: PluginCatalogue;
+    /** The site's add-ons as found at start, and any that couldn't load (see src/addons). */
+    addons: AddonsState;
     /** The admin app's address, for links in emails and as the passkeys' site. */
     adminOrigin: string;
     /** Sends email: `await server.email.send({ to, subject, text })` (see src/email). */
@@ -259,6 +269,11 @@ export interface ServerOptions {
    * lintel.config.ts; tests pass the ones they test. Defaults to none.
    */
   plugins?: readonly LintelPlugin[];
+  /**
+   * The site's add-ons, loaded from its Lintel folder by main.ts (see src/addons). Their
+   * plugins are added after `plugins`. Defaults to none.
+   */
+  addons?: AddonsState;
   /** The built-in website: its address and any templates of your own. Off by default. */
   website?: WebsiteOptions;
   /** Content model as code (see src/content-model-sync). Off when left out, as in tests. */
@@ -341,10 +356,26 @@ export function buildServer(options: ServerOptions) {
   });
   server.decorate("webhooks", webhooks);
   server.decorate("scheduledJobs", new ScheduledJobList());
-  const plugins = new PluginCatalogue(pluginRegistry, options.plugins);
+  const addons = options.addons ?? noAddons;
+  const plugins = new PluginCatalogue(pluginRegistry, [
+    ...(options.plugins ?? []),
+    ...addons.loaded.map((addon) => addon.plugin),
+  ]);
   server.decorate("plugins", plugins);
+  server.decorate("addons", addons);
+  // Before the website's Liquid engine is made, so it has plugins' tags and filters.
+  for (const plugin of plugins.plugins) registerPluginLiquid(plugin, server.log);
   // Plugins' own tables are brought up to date before the server takes requests.
   server.addHook("onReady", () => activeDatabase.applyPluginMigrations(plugins.migrations));
+  // Add-ons `lintel addons add` asked to switch on, now that they have loaded.
+  server.addHook("onReady", async () => {
+    try {
+      const enabled = await enableAddonsAskedFor(server.database, plugins, addons);
+      if (enabled.length > 0) server.log.info({ addons: enabled }, "Switched on new add-ons");
+    } catch (error) {
+      server.log.error(error, "Switching on new add-ons failed");
+    }
+  });
   server.decorate("adminOrigin", options.adminOrigin.replace(/\/+$/, ""));
   const email =
     options.email ??
@@ -372,6 +403,8 @@ export function buildServer(options: ServerOptions) {
     }),
   );
   subscribeEventListeners(server);
+  // Plugins' event handlers, jobs and Liquid tags, each run only while the plugin is on.
+  connectPluginExtensions(server, plugins, { runScheduledJobs: options.runScheduledJobs ?? true });
   const dataTools: DataTools = {
     storage,
     backupsFolder: options.dataTools?.backupsFolder ?? defaultBackupsFolder(),
@@ -413,13 +446,19 @@ export function buildServer(options: ServerOptions) {
     runScheduledJobs: options.runScheduledJobs ?? true,
     adminOrigin: options.adminOrigin,
   });
+  // Clients whose changes wait for approval send them for review instead of publishing.
+  registerClientEditing(server);
   const media: MediaRoutesOptions = {
     storage,
     signedUrlSeconds: options.media?.signedUrlSeconds,
     cacheFolder: options.media?.transformCacheFolder ?? DEFAULT_TRANSFORM_CACHE_FOLDER,
-    // An asset still used by an entry can't be deleted.
+    // An asset still used by an entry, or a file one of the site's fonts is made of, can't
+    // be deleted.
     usageFinder: options.media?.usageFinder ?? {
-      findEntriesUsingAsset: (assetId) => findEntriesUsingAsset(server.database, assetId),
+      findEntriesUsingAsset: async (assetId) => [
+        ...(await findEntriesUsingAsset(server.database, assetId)),
+        ...(await findSiteFontsUsingAsset(server.database, assetId)),
+      ],
     },
   };
   // What the Forms and Online shop plugins' routes need, and their timed jobs; their routes
@@ -494,8 +533,10 @@ function registerApiRoutes(
   server.register(authRoutes);
   server.register(setupRoutes);
   server.register(pluginsRoutes);
+  server.register(addonsRoutes);
   server.register(fieldtypesRoutes);
   server.register(blueprintsRoutes);
+  server.register(clientEditingRoutes);
   server.register(collectionsRoutes);
   server.register(entriesRoutes);
   server.register(revisionsRoutes);

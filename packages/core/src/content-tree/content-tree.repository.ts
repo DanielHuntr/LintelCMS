@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, ilike, inArray, isNull, ne, or, type SQL, sql } from "drizzle-orm";
+import { clientReviewsTable } from "../client-editing/client-reviews.table.js";
 import { collectionsTable } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { entriesTable, type EntryStatus } from "../entries/entries.table.js";
@@ -159,6 +160,8 @@ export async function countTopLevelByCollection(
 export interface ItemFilters {
   search?: string;
   status?: EntryStatus;
+  /** Only entries whose clients' changes wait for review. */
+  waitingForReview?: boolean;
   /** Only entries of this content type (collection id). */
   collectionId?: string;
 }
@@ -181,6 +184,9 @@ function itemConditions(place: NodePlace, filters: ItemFilters): SQL | undefined
     placeCondition(place),
     escaped ? ilike(titleColumn, `%${escaped}%`) : undefined,
     filters.status ? eq(entriesTable.status, filters.status) : undefined,
+    filters.waitingForReview
+      ? sql`exists (select 1 from ${clientReviewsTable} where ${clientReviewsTable.entryId} = ${entriesTable.id} and ${clientReviewsTable.status} = 'waiting')`
+      : undefined,
     filters.collectionId ? eq(entriesTable.collectionId, filters.collectionId) : undefined,
   );
 }

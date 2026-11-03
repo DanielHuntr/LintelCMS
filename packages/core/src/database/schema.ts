@@ -66,3 +66,4 @@ export {
   publishRunsTable,
   bridgeReceiptsTable,
 } from "../publishing/publishing.table.js";
+export { clientReviewsTable } from "../client-editing/client-reviews.table.js";

@@ -1,3 +1,7 @@
+import {
+  entryReviewStateSchema,
+  sendForReviewRequestSchema,
+} from "../client-editing/client-editing.schema.js";
 import { collectQuerySchema, collectRequestSchema } from "../analytics/analytics.schema.js";
 import { z } from "zod";
 import { storefrontOperations } from "../commerce/storefront/storefront.openapi.js";
@@ -492,6 +496,30 @@ export const openApiOperations: Operation[] = [
     access: "entries:read",
     params: entryIdParamsSchema,
     responses: { 200: { description: "The live version.", schema: liveVersionSchema } },
+  },
+  {
+    method: "get",
+    path: "/entries/{id}/review",
+    tag: "Entries",
+    summary: "Where a client's changes stand",
+    description:
+      "While the site's clients' changes wait for approval, people without builder:design send their changes for review instead of publishing them.",
+    access: "entries:read",
+    params: entryIdParamsSchema,
+    responses: { 200: { description: "The review state.", schema: entryReviewStateSchema } },
+  },
+  {
+    method: "post",
+    path: "/entries/{id}/review",
+    tag: "Entries",
+    summary: "Send a client's changes for review",
+    access: "entries:update",
+    params: entryIdParamsSchema,
+    body: sendForReviewRequestSchema,
+    responses: {
+      201: { description: "The review state.", schema: entryReviewStateSchema },
+      409: { description: "ALREADY_WAITING: these changes are already waiting for review." },
+    },
   },
   {
     method: "get",

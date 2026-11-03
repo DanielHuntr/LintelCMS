@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { standardCatalogue } from "../components/component-catalogue.js";
 import type { PageNode } from "../document/page-document.schema.js";
 import { validatePageDocument } from "../document/validate-page.js";
+import { assignClassNames } from "../styles/class-names.js";
+import { compileStylesheet } from "../styles/compile-stylesheet.js";
 import { createCountingNodeIds } from "../tree/node-ids.js";
 import { createNode } from "../tree/create-node.js";
 import { listNodes } from "../tree/tree-queries.js";
@@ -93,6 +95,20 @@ describe("the Atelier starter site", () => {
     expect(trigger).toMatchObject({ type: "scroll", pin: { length: 2 } });
     const steps = nodes.find((node) => node.name === "Steps");
     expect(steps?.children.map((child) => child.name)).toEqual(["Step 1", "Step 2", "Step 3"]);
+  });
+
+  it("stacks the making steps down the page when motion is reduced or scripts don't run", () => {
+    const page = build("home");
+    const css = compileStylesheet(page.root, assignClassNames(page.root, standardCatalogue));
+    const still = css.slice(
+      css.indexOf("@media (prefers-reduced-motion: reduce), (scripting: none)"),
+    );
+    expect(still).toContain(".how-it-is-made > * > :last-child {");
+    expect(still).toContain("flex-direction: column;");
+    expect(still).toContain(".how-it-is-made > * > :last-child > * {");
+    // With motion allowed and scripts running, the row stays three screens wide and slides.
+    const motion = css.slice(0, css.indexOf("@media (prefers-reduced-motion: reduce)"));
+    expect(motion).toMatch(/\.steps \{[^}]*width: 300%;/);
   });
 
   it("uses the pointer touches: words on the cursor, pictures on hover and a drag gallery", () => {

@@ -54,6 +54,10 @@ import { Tip } from "../tour/Tip.js";
 import { Tabs } from "../ui/controls.js";
 import type { ImagePicker } from "./content-fields.js";
 import { ContentPanel } from "./ContentPanel.js";
+import {
+  type ClientAccessChange,
+  ClientAccessSection,
+} from "../client-editing/ClientAccessSection.js";
 import { MenuEditingContext } from "../menus/menu-editing.js";
 
 type RightTab = "style" | "content" | "animate";
@@ -105,6 +109,8 @@ interface SelectedElementPanelProps {
       styles: MarkChange | null,
       label: string,
     ) => void;
+    /** What clients may change here; left out, the designer isn't asked. */
+    setClientAccess?: (nodeId: string, change: ClientAccessChange) => void;
   };
   onPreviewMotion: (nodeId: string, spec: MotionSpec) => void;
   onPreviewEffect: (nodeId: string, effect: EffectPreview | null) => void;
@@ -424,6 +430,16 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
             onBind={(prop, fieldPath, label) =>
               actions.changeBinding(node.id, prop, fieldPath, label)
             }
+          />
+        )}
+        {node && tab === "content" && actions.setClientAccess && (
+          <ClientAccessSection
+            key={node.id}
+            document={props.document}
+            node={node}
+            definition={props.definition}
+            catalogue={props.registry.catalogue}
+            onChange={actions.setClientAccess}
           />
         )}
       </div>

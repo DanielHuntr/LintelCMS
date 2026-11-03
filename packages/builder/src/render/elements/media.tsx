@@ -234,6 +234,8 @@ interface SliderProps {
   showDots: boolean;
   /** Dragged freely with momentum, without snapping to each slide (the Slider only). */
   freeDrag?: boolean;
+  /** On phones, the next slide peeks in at the edge, when there is more than one (the Slider only). */
+  phonePeek?: boolean;
 }
 
 /**
@@ -262,6 +264,7 @@ function Slider({
         "lintel-carousel",
         `lintel-carousel--per-view-${props.perView}`,
         props.freeDrag && "lintel-carousel--free",
+        props.phonePeek && ids.length > 1 && "lintel-carousel--peek",
         extraClass,
       )}
       aria-roledescription="carousel"

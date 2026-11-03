@@ -1,3 +1,4 @@
+import path from "node:path";
 import { lintelVersion } from "@lintel/core/updates";
 import { describe, expect, it } from "vitest";
 import { runCommandLine } from "./command-line.js";
@@ -91,8 +92,9 @@ describe("terminal output", () => {
   });
 
   it("reads paths from where the person ran the command", () => {
+    // "/home/ana/site" on Linux and macOS, "C:\home\ana\site" (the current drive) on Windows.
     expect(resolvePath(recordingTerminal(), "backups/site.zip")).toBe(
-      "/home/ana/site/backups/site.zip",
+      path.join(path.resolve("/home/ana/site"), "backups", "site.zip"),
     );
     expect(resolvePath(recordingTerminal(), "/tmp/site.zip")).toBe("/tmp/site.zip");
   });

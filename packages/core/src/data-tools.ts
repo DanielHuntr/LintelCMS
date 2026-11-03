@@ -5,7 +5,31 @@
  * calls these and prints what happened.
  */
 export { loadConfig, loadProjectEnvFile, ConfigError, type Config } from "./config.js";
-export { openConfiguredDatabase, runWithFriendlyErrors } from "./startup.js";
+export { lintelPaths, openConfiguredDatabase, runWithFriendlyErrors } from "./startup.js";
+// Add-ons: the `lintel addons` commands, and plugins' own commands (see src/addons).
+export {
+  addonsFolderIn,
+  installedPackageFolder,
+  prepareAddonsFolder,
+  readAddonsList,
+  writeAddonsList,
+  type AddonsList,
+} from "./addons/addons-list.js";
+export {
+  ADDON_MANIFEST_KEY,
+  AddonPackageError,
+  readAddonPackage,
+  type AddonPackage,
+} from "./addons/addon-package.js";
+export { isVersionInRange } from "./addons/version-range.js";
+export { loadSiteAddons } from "./addons/site-addons.js";
+export { loadInstalledPlugins } from "./plugins/installed-plugins.js";
+export {
+  findPluginCommand,
+  listPluginCommands,
+  runPluginCommand,
+} from "./plugins/plugin-commands.js";
+export type { LintelPlugin } from "./plugins/plugin-definition.js";
 export { describeActiveDatabase, type ActiveDatabase } from "./database/active-database.js";
 export { DEFAULT_LINTEL_FOLDER, type LintelFolder } from "./database/database-choice.js";
 export { DataFolderInUseError } from "./database/data-folder-lock.js";

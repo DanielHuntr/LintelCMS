@@ -55,8 +55,12 @@ export interface AssetChanges {
 
 /** Where an asset is used, from the API's 409 when deleting it. */
 export interface AssetUsage {
+  /** The entry's id, or for a site font the font's. */
   entryId: string;
+  /** The entry's title, or the font's family. */
   title: string;
+  /** "siteFonts" for a file one of the site's fonts is made of. */
+  place?: "siteFonts";
 }
 
 export function isImage(asset: Pick<Asset, "mimeType">): boolean {

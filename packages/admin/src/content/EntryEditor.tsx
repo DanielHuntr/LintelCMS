@@ -1,3 +1,5 @@
+import { useEntryReviewState } from "../client-editing/clientEditing.queries.js";
+import { SendForReviewButton, SentBackNote } from "../client-editing/SendForReview.js";
 import { useNavigate } from "@tanstack/react-router";
 import { CircleAlert, X } from "lucide-react";
 import { useEffect, useEffectEvent, useId, useReducer, useRef, useState } from "react";
@@ -138,6 +140,9 @@ export function EntryEditor({
   const info = useEntryInfo(entry?.id);
   const refresh = useRefreshContent();
   const canPublish = useCan("entries:publish");
+  // Clients don't choose templates, and may need to send changes for review (src/client-editing).
+  const canDesign = useCan("builder:design");
+  const reviewState = useEntryReviewState(entry?.id);
   const site = useViewPageSite();
   const viewPage = entry ? viewPageTarget(site, collection, entry, info.data?.url) : undefined;
   const address = entryAddressPattern(collection.routePattern, entry?.slug ?? "", info.data);
@@ -365,7 +370,14 @@ export function EntryEditor({
           />
         }
         primaryAction={
-          canPublish ? (
+          canPublish && entry && reviewState.data?.mustSendForReview ? (
+            <SendForReviewButton
+              entryId={entry.id}
+              state={reviewState.data}
+              disabled={actions.isWorking}
+              beforeSending={() => (isUnsaved ? saveExplicitly() : undefined)}
+            />
+          ) : canPublish ? (
             <PublishButton
               entry={entry}
               hasUnsavedChanges={isUnsaved}
@@ -384,6 +396,7 @@ export function EntryEditor({
         }
       />
 
+      <SentBackNote state={reviewState.data} className="mb-6" />
       {bannerMessage && (
         <div
           role="alert"
@@ -502,7 +515,7 @@ export function EntryEditor({
                 await refresh(entry ? [entry.id] : []);
               }}
             >
-              {Boolean(collection.routePattern) && (
+              {Boolean(collection.routePattern) && canDesign && (
                 <TemplateChoiceSection
                   collection={collection}
                   value={state.current.data[TEMPLATE_CHOICE_KEY]}

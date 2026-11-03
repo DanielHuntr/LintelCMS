@@ -6,6 +6,7 @@ import { registerPluginFieldtypes } from "../fieldtypes/fieldtypes.registry.js";
 import { registerPluginPermissions } from "../roles/permission-catalog.js";
 import type { LintelPlugin } from "./plugin-definition.js";
 import { readPluginSettings } from "./plugin-settings.service.js";
+import { findLiquidProblem } from "./plugin-liquid.js";
 import { InvalidPluginError } from "./plugins.errors.js";
 
 /** "built-in" plugins ship with Lintel; "installed" ones come from lintel.config.ts. */
@@ -23,6 +24,7 @@ export interface PluginMigrations {
 }
 
 const PLUGIN_ID_PATTERN = /^[a-z][a-z0-9-]*$/;
+/** Consent services' handles, jobs' ids and commands' names. */
 const CONSENT_HANDLE_PATTERN = /^[a-z][a-z0-9-]*$/;
 
 /**
@@ -85,13 +87,14 @@ export class PluginCatalogue {
 }
 
 function checkPlugin(plugin: LintelPlugin): void {
-  const problem = findProblem(plugin);
+  const problem = findPluginProblem(plugin);
   if (problem) {
     throw new InvalidPluginError(plugin.id, problem);
   }
 }
 
-function findProblem(plugin: LintelPlugin): string | undefined {
+/** What is wrong with a plugin, in a sentence, or undefined when nothing is. */
+export function findPluginProblem(plugin: LintelPlugin): string | undefined {
   if (!PLUGIN_ID_PATTERN.test(plugin.id)) {
     return "ids use lowercase letters, numbers and dashes, and start with a letter.";
   }
@@ -127,6 +130,24 @@ function findProblem(plugin: LintelPlugin): string | undefined {
   );
   if (strayService) {
     return `its consent service "${strayService.handle}" needs a handle of lowercase letters, numbers and dashes, and a name.`;
+  }
+  const liquidProblem = findLiquidProblem(plugin);
+  if (liquidProblem) return liquidProblem;
+  const strayJob = plugin.jobs?.find(
+    ({ id, name, everyMinutes }) =>
+      !CONSENT_HANDLE_PATTERN.test(id) ||
+      !name.trim() ||
+      !Number.isInteger(everyMinutes) ||
+      everyMinutes < 1,
+  );
+  if (strayJob) {
+    return `its job "${strayJob.id}" needs an id of lowercase letters, numbers and dashes, a name, and everyMinutes of 1 or more.`;
+  }
+  const strayCommand = plugin.commands?.find(
+    ({ name, description }) => !CONSENT_HANDLE_PATTERN.test(name) || !description.trim(),
+  );
+  if (strayCommand) {
+    return `its command "${strayCommand.name}" needs a name of lowercase letters, numbers and dashes, and a description.`;
   }
   if (plugin.settings && !plugin.settings.schema.safeParse(plugin.settings.defaults).success) {
     return "its default settings don't pass its own settings schema.";

@@ -1,4 +1,5 @@
 import type { MenuItem } from "@lintel/site-components";
+import type { DatabaseOrTransaction } from "../database/client.js";
 
 /**
  * What Lintel's own tags need from the page being drawn: its menus, forms and design, and
@@ -18,6 +19,8 @@ export interface LiquidPageHelpers {
   footer: string;
   /** A "Cookie settings" button, on sites with the cookie notice; "" on others. */
   cookieSettings: string;
+  /** For plugins' tags and filters: whether they are on, and what they read. */
+  database: DatabaseOrTransaction;
 }
 
 const helpersByGlobal = new WeakMap<object, LiquidPageHelpers>();

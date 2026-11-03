@@ -20,6 +20,19 @@ export const builderSiteStylesStrings = {
   "pageBuilder.siteStyles.deleteUsed":
     "It’s used {count} times on this page. Those keep how they look now; other pages that use it won’t.",
   "pageBuilder.siteStyles.deleteUnused": "Other pages that use it will lose it.",
+  "pageBuilder.siteStyles.deleteUsedPages":
+    "It’s used {count} times across the site, on {pages} other pages. Those pages lose it; this page keeps how it looks now.",
+  "pageBuilder.siteStyles.deleteUsedPagesOne":
+    "It’s used {count} times across the site, on 1 other page. That page loses it; this page keeps how it looks now.",
+  "pageBuilder.siteStyles.deleteUsedHere":
+    "It’s used {count} times, on no other page. This page keeps how it looks now.",
+  "pageBuilder.siteStyles.deleteNothing": "Nothing on the site uses it.",
+  "pageBuilder.siteStyles.deleteSharedPages":
+    "It’s used on {pages} other pages, which lose its look. Elements on this page keep how they look, as their own.",
+  "pageBuilder.siteStyles.deleteSharedPagesOne":
+    "It’s used on 1 other page, which loses its look. Elements on this page keep how they look, as their own.",
+  "pageBuilder.siteStyles.deleteSharedHere":
+    "Elements on this page keep how they look, as their own. No other page uses it.",
   "pageBuilder.siteStyles.keep": "Keep it",
   "pageBuilder.tagStyles.group": "Every element of a kind",
   "pageBuilder.tagStyles.groupNote": "Element and shared styles still win.",

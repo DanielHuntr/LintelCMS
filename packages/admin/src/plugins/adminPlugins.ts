@@ -15,8 +15,11 @@ import type { AdminPluginDefinition } from "./adminPlugin.js";
  * they are bundled and type-checked like the rest of the admin.
  *
  * The blog has nothing of its own here (yet), so it isn't listed.
+ *
+ * Add-ons installed into the site add theirs while the admin starts, before anything is
+ * drawn (see src/addons/loadAddonAdminHalves.ts).
  */
-export const adminPlugins: readonly AdminPluginDefinition[] = [
+const plugins: AdminPluginDefinition[] = [
   commerceAdminPlugin,
   formsAdminPlugin,
   automationsAdminPlugin,
@@ -26,3 +29,11 @@ export const adminPlugins: readonly AdminPluginDefinition[] = [
   analyticsAdminPlugin,
   ...installedAdminPlugins,
 ];
+
+export const adminPlugins: readonly AdminPluginDefinition[] = plugins;
+
+/** Adds add-ons' admin halves, after the rest. Only called before the admin is drawn. */
+export function addRuntimeAdminPlugins(addons: readonly AdminPluginDefinition[]): void {
+  const known = new Set(plugins.map((plugin) => plugin.id));
+  plugins.push(...addons.filter((addon) => !known.has(addon.id)));
+}
