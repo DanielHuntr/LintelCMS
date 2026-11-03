@@ -19,13 +19,16 @@ export const momentIcons: Record<MotionMoment, LucideIcon> = {
   always: Endless,
 };
 
-/** Each moment's colour, for the small tile beside a row (as iOS Settings colours rows). */
+/**
+ * Each moment's colour, for the small tile beside a row: quiet, earthy tones that sit with the
+ * admin's warm neutrals, each dark enough for a white icon on it in light and dark mode.
+ */
 export const momentColours: Record<MotionMoment, string> = {
-  appears: "#0a84ff",
-  hover: "#ff9f0a",
-  click: "#bf5af2",
-  scroll: "#30b0c7",
-  always: "#34c759",
+  appears: "#4f6b78",
+  hover: "#93652b",
+  click: "#76586f",
+  scroll: "#3f7466",
+  always: "#66733a",
 };
 
 /**
@@ -81,12 +84,7 @@ export function MomentPicker({
             onClick={() => onChange(moment)}
             className="flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-[calc(var(--radius-control)-2px)] px-0.5 py-1.5 text-label-secondary transition-colors duration-150 ease-standard hover:text-label focus-visible:focus-ring aria-checked:bg-surface aria-checked:text-label aria-checked:shadow-float"
           >
-            <Icon
-              aria-hidden="true"
-              className="size-4"
-              strokeWidth={2}
-              style={checked ? { color: momentColours[moment] } : undefined}
-            />
+            <Icon aria-hidden="true" className="size-4" strokeWidth={2} />
             <span className="max-w-full text-[11px] leading-tight font-medium break-words">
               {t(`motionEditor.moment.${moment}` as MotionEditorStringKey)}
             </span>

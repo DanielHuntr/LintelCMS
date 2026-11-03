@@ -781,6 +781,7 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-042   | P2       | Fixed  | Site cursor: the cursor, its word ("Play") and hover pictures freeze on top of a YouTube or Vimeo video                        |
 | LINTEL-UX-043   | P2       | Fixed  | Motion timeline: the Trigger settings are squeezed into a narrow column in the side panel; labels overlap, selects unreadable  |
 | LINTEL-UX-044   | P2       | Fixed  | Grow while scrolling can't start smaller than 60%: a video can't grow from a tenth of its size to full as the page scrolls     |
+| LINTEL-UX-062   | P3       | Fixed  | The Motion panel's moment icons use bright stock iOS colours that clash with the warm admin                                    |
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 

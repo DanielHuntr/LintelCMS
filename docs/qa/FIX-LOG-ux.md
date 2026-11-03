@@ -1187,3 +1187,9 @@ Files: `packages/motion-editor/src/motion-panel/quickPicks.ts` (`growsFrom`, `st
 **Screenshots:** `044-grow-while-scrolling-before-{light,dark}`, `044-grow-while-scrolling-after-{light,dark}`.
 
 Commit: 3ea18b0.
+
+## LINTEL-UX-062: quieter moment colours in the Motion panel (3 November 2026)
+
+**Found in the UI sweep, approved by Daniel:** the moment tiles (Appears, Hover, Click, Scroll, Always) used the iOS system blue, orange, purple, teal and green. That is the generic look removed elsewhere (UX-018, UX-020), and it clashed with the admin's warm neutrals.
+
+**Fix:** the tiles now use quiet, earthy tones: slate, ochre, plum, sage and olive (`#4f6b78`, `#93652b`, `#76586f`, `#3f7466`, `#66733a`). A white icon on each passes 5:1 or better, in light and dark mode. The chosen moment's icon in the picker now uses the normal text colour instead of its tile colour, so it reads in both modes (`motion-editor/src/motion-panel/MomentPicker.tsx`).
