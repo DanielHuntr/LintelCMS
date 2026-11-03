@@ -176,6 +176,23 @@ describe("limiting a role to some sites", () => {
     expect((await admin("GET", `/entries/${ukPage.id}`)).statusCode).toBe(200);
   });
 
+  // LINTEL-SEC-002: global search (Ctrl K) listed other sites' titles, drafts included.
+  it("keeps someone to their sites in global search", async () => {
+    await admin("POST", "/collections/pages/entries", { data: { title: "Secret launch plan" } });
+    const french = requestsAs(server, await signInAndGetCookies(server, "admin@example.com"), {
+      "lintel-site": "france",
+    });
+    await french("POST", "/collections/pages/entries", { data: { title: "Secret menu du jour" } });
+    await admin("PUT", "/sites/access/pierre@example.com-role-0", { siteHandles: ["france"] });
+
+    const pierre = await signInAsPierre("france");
+    const found = (await pierre("GET", "/search?q=Secret")).json();
+
+    expect(found.entries.map((entry: { title: string }) => entry.title)).toEqual([
+      "Secret menu du jour",
+    ]);
+  });
+
   it("keeps someone to their sites in the recycle bin", async () => {
     const ukPage = (
       await admin("POST", "/collections/pages/entries", { data: { title: "About us" } })

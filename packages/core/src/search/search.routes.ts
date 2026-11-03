@@ -15,8 +15,10 @@ import { search } from "./search.service.js";
 export async function searchRoutes(server: FastifyInstance) {
   server.get("/search", { preHandler: requireSignedIn }, async (request) => {
     const query = parseRequest(searchQuerySchema, request.query);
+    const signedIn = getSignedIn(request);
     return search(server.database, query, {
-      permissions: getSignedIn(request).permissions,
+      permissions: signedIn.permissions,
+      siteIds: signedIn.siteIds ?? null,
       publicApiUrl: server.publicApiUrl,
     });
   });

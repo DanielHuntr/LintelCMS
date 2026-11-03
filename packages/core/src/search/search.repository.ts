@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, or, type SQL, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, or, sql, type SQL } from "drizzle-orm";
 import { collectionsTable } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { entriesTable, type EntryStatus } from "../entries/entries.table.js";
@@ -36,7 +36,13 @@ const entryDocument = sql`(
 export async function searchEntries(
   database: DatabaseOrTransaction,
   tenantId: string,
-  search: { words: readonly string[]; phrase: string; limit: number },
+  search: {
+    words: readonly string[];
+    phrase: string;
+    limit: number;
+    /** Only these sites' entries, or null for every site. */
+    siteIds: readonly string[] | null;
+  },
 ): Promise<EntrySearchRow[]> {
   const query = sql`to_tsquery('simple', ${prefixTsQuery(search.words)})`;
   // A title containing the phrase anywhere also counts, for the middle of a word ("port" in "Support").
@@ -57,6 +63,7 @@ export async function searchEntries(
     .where(
       and(
         eq(entriesTable.tenantId, tenantId),
+        search.siteIds === null ? undefined : inArray(entriesTable.siteId, [...search.siteIds]),
         or(sql`${entryDocument} @@ ${query}`, titleContains),
       ),
     )

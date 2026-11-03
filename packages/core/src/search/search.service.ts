@@ -13,6 +13,11 @@ const THUMBNAIL_SIZE = 96;
 export interface SearchContext {
   /** What the signed-in person may do; each kind of result needs its own permission. */
   permissions: readonly string[];
+  /**
+   * The sites the person may work on, or null for every site. Entries from other sites
+   * aren't found (LINTEL-SEC-002), as in the content tree.
+   */
+  siteIds: readonly string[] | null;
   /** For the URLs of image thumbnails. */
   publicApiUrl: string;
 }
@@ -40,7 +45,12 @@ export async function search(
 
   const [entries, assets] = await Promise.all([
     canReadEntries
-      ? searchEntries(database, DEFAULT_TENANT_ID, { words, phrase: query.q, limit: query.limit })
+      ? searchEntries(database, DEFAULT_TENANT_ID, {
+          words,
+          phrase: query.q,
+          limit: query.limit,
+          siteIds: context.siteIds,
+        })
       : null,
     canReadMedia ? searchAssets(database, DEFAULT_TENANT_ID, { words, limit: query.limit }) : null,
   ]);
