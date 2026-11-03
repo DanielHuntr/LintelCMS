@@ -1,4 +1,5 @@
 import { snapBox } from "../free-layout/snapping.js";
+import { fitToGrid } from "../placed-grid/grid-fit.js";
 
 /**
  * The script that runs inside the canvas frame. It draws the page it is sent, outlines the
@@ -11,6 +12,11 @@ import { snapBox } from "../free-layout/snapping.js";
  * pixels). The element moves on the canvas straight away; the new angle or place is sent
  * when the pointer is let go.
  *
+ * On a placed grid, elements are dragged onto its columns and rows instead: the columns show
+ * while dragging, with the cells it would take shaded, and the corner handle of the selected
+ * element changes how many columns and rows it spans. Arrow keys move it a column or a row
+ * (Shift with an arrow makes it wider, narrower, taller or shorter).
+ *
  * Pictures dragged in from the computer, or pasted, are sent to the builder as files, for
  * the Picture element under the pointer (or the selected one).
  *
@@ -20,9 +26,9 @@ import { snapBox } from "../free-layout/snapping.js";
  *
  * It is written as one self-contained function so it can be put into the frame as text
  * (`canvasFrameSource`): it must not use anything from outside its own body, except
- * `snap`, which is passed in the same way.
+ * `snap` and `fitGrid`, which are passed in the same way.
  */
-export function runCanvasFrame(snap: typeof snapBox): void {
+export function runCanvasFrame(snap: typeof snapBox, fitGrid: typeof fitToGrid): void {
   interface Preview {
     destroy(): void;
   }
@@ -78,6 +84,20 @@ export function runCanvasFrame(snap: typeof snapBox): void {
     left: number;
     top: number;
   } | null = null;
+  // An element being moved, or resized, on a placed grid.
+  let gridDragging: {
+    element: HTMLElement;
+    nodeId: string;
+    container: HTMLElement;
+    mode: "move" | "resize";
+    startX: number;
+    startY: number;
+    start: { left: number; top: number; width: number; height: number };
+    keep: { column: number; row: number; columnSpan: number; rowSpan: number };
+    moved: boolean;
+    place: { column: number; row: number; columnSpan: number; rowSpan: number } | null;
+    inline: { translate: string; opacity: string };
+  } | null = null;
   // Where something dragged from Insert would land, as the builder worked it out.
   let insertMarker: { nodeId: string; position: string; across: boolean } | null = null;
   let lastInsertOver = "";
@@ -129,14 +149,120 @@ export function runCanvasFrame(snap: typeof snapBox): void {
   }
 
   function drawOutlines() {
-    if (rotating || dragging?.moved) return;
+    if (rotating || dragging?.moved || gridDragging?.moved) return;
     overlay.replaceChildren();
     if (outline.hoveredId && outline.hoveredId !== outline.selectedId) {
       drawBox(outline.hoveredId, "hover", outline.labels.hovered);
     }
     drawBox(outline.selectedId, "selected", outline.labels.selected);
     drawRotateHandle();
+    drawGridHandle();
     drawInsertMarker();
+  }
+
+  /** The corner handle that changes how many columns and rows a grid element spans. */
+  function drawGridHandle() {
+    const placed = gridChild(outline.selectedId);
+    if (!placed || !outline.canTransform || editing) return;
+    const rect = placed.element.getBoundingClientRect();
+    const handle = document.createElement("div");
+    handle.className = "lintel-grid-handle";
+    handle.style.left = `${rect.right + window.scrollX}px`;
+    handle.style.top = `${rect.bottom + window.scrollY}px`;
+    overlay.appendChild(handle);
+  }
+
+  /** The element when its parent is a placed grid, or null. */
+  function gridChild(
+    nodeId: string | null,
+  ): { element: HTMLElement; container: HTMLElement } | null {
+    const element = nodeElement(nodeId);
+    const container = element?.parentElement;
+    if (!element || !container || !container.hasAttribute("data-lintel-grid")) return null;
+    return getComputedStyle(container).display.includes("grid") ? { element, container } : null;
+  }
+
+  /** Where a grid's content box starts on screen. */
+  function gridOrigin(container: HTMLElement) {
+    const style = getComputedStyle(container);
+    const rect = container.getBoundingClientRect();
+    return {
+      style,
+      x: rect.left + container.clientLeft + (Number.parseFloat(style.paddingLeft) || 0),
+      y: rect.top + container.clientTop + (Number.parseFloat(style.paddingTop) || 0),
+    };
+  }
+
+  /** An element's box from the top left of its grid's content box. */
+  function boxInGrid(element: HTMLElement, container: HTMLElement) {
+    const origin = gridOrigin(container);
+    const rect = element.getBoundingClientRect();
+    return {
+      left: rect.left - origin.x,
+      top: rect.top - origin.y,
+      width: rect.width,
+      height: rect.height,
+    };
+  }
+
+  function fitOnGrid(
+    container: HTMLElement,
+    box: { left: number; top: number; width: number; height: number },
+    mode: "move" | "resize" | "fit",
+    keep?: { column: number; row: number; columnSpan: number; rowSpan: number },
+  ) {
+    const { style } = gridOrigin(container);
+    const minRow = /minmax\(\s*([\d.]+)px/.exec(style.gridAutoRows)?.[1];
+    return fitGrid({
+      columns: style.gridTemplateColumns,
+      rows: style.gridTemplateRows,
+      columnGap: Number.parseFloat(style.columnGap) || 0,
+      rowGap: Number.parseFloat(style.rowGap) || 0,
+      minRow: minRow ? Number(minRow) : 48,
+      box,
+      mode,
+      keep,
+    });
+  }
+
+  /** The grid's columns, and the cells the element would take, shaded while dragging. */
+  function drawGridGuides(container: HTMLElement, fit: NonNullable<ReturnType<typeof fitOnGrid>>) {
+    clearGuides();
+    const origin = gridOrigin(container);
+    const left = origin.x + window.scrollX;
+    const top = origin.y + window.scrollY;
+    const height = Math.max(container.clientHeight, fit.area.top + fit.area.height);
+    for (const column of fit.columnAreas) {
+      const stripe = document.createElement("div");
+      stripe.className = "lintel-guide lintel-grid-column";
+      Object.assign(stripe.style, {
+        left: `${left + column.left}px`,
+        top: `${top}px`,
+        width: `${column.width}px`,
+        height: `${height}px`,
+      });
+      overlay.appendChild(stripe);
+    }
+    const area = document.createElement("div");
+    area.className = "lintel-guide lintel-grid-area";
+    Object.assign(area.style, {
+      left: `${left + fit.area.left}px`,
+      top: `${top + fit.area.top}px`,
+      width: `${fit.area.width}px`,
+      height: `${fit.area.height}px`,
+    });
+    const tag = document.createElement("span");
+    const last = fit.column + fit.columnSpan - 1;
+    tag.textContent = fit.columnSpan > 1 ? `${fit.column}–${last}` : String(fit.column);
+    area.appendChild(tag);
+    overlay.appendChild(area);
+  }
+
+  function sendGridPlace(
+    nodeId: string,
+    place: { column: number; row: number; columnSpan: number; rowSpan: number },
+  ) {
+    send({ type: "gridPlace", nodeId, ...place });
   }
 
   function drawInsertMarker() {
@@ -611,7 +737,11 @@ export function runCanvasFrame(snap: typeof snapBox): void {
       justMoved = false;
       return;
     }
-    if (event.target instanceof Element && event.target.closest(".lintel-rotate-handle")) return;
+    if (
+      event.target instanceof Element &&
+      event.target.closest(".lintel-rotate-handle, .lintel-grid-handle")
+    )
+      return;
     if (editing && editing.contains(event.target as Node)) return;
     finishEditing(true);
     send({ type: "select", nodeId: nodeIdAt(event.target) });
@@ -641,6 +771,21 @@ export function runCanvasFrame(snap: typeof snapBox): void {
 
   document.addEventListener("selectionchange", reportSelection);
 
+  /**
+   * What pressing here would drag on a placed grid: the element under the pointer when it is
+   * on one, or the selected element (when it is on one) from anywhere inside it.
+   */
+  function gridDragTarget(target: Element) {
+    const nodeId = nodeIdAt(target);
+    const direct = gridChild(nodeId);
+    if (direct && nodeId) return { ...direct, nodeId };
+    const selected = gridChild(outline.selectedId);
+    if (selected && outline.selectedId && selected.element.contains(target)) {
+      return { ...selected, nodeId: outline.selectedId };
+    }
+    return null;
+  }
+
   document.addEventListener("pointerdown", (event) => {
     if (editing || event.button !== 0 || !(event.target instanceof Element)) return;
     if (event.target.closest(".lintel-rotate-handle")) {
@@ -661,6 +806,38 @@ export function runCanvasFrame(snap: typeof snapBox): void {
         degrees: startRotation,
       };
       return;
+    }
+    const resizing = event.target.closest(".lintel-grid-handle") !== null;
+    const selectedOnGrid = gridChild(outline.selectedId);
+    const onGrid =
+      resizing && selectedOnGrid && outline.selectedId
+        ? { ...selectedOnGrid, nodeId: outline.selectedId }
+        : resizing
+          ? null
+          : gridDragTarget(event.target);
+    if (onGrid && (onGrid.nodeId !== outline.selectedId || outline.canTransform)) {
+      const start = boxInGrid(onGrid.element, onGrid.container);
+      const now = fitOnGrid(onGrid.container, start, "fit");
+      if (now) {
+        if (resizing) event.preventDefault();
+        gridDragging = {
+          element: onGrid.element,
+          nodeId: onGrid.nodeId,
+          container: onGrid.container,
+          mode: resizing ? "resize" : "move",
+          startX: event.clientX,
+          startY: event.clientY,
+          start,
+          keep: now,
+          moved: false,
+          place: null,
+          inline: {
+            translate: onGrid.element.style.translate,
+            opacity: onGrid.element.style.opacity,
+          },
+        };
+        return;
+      }
     }
     const nodeId = nodeIdAt(event.target);
     const free = freeElement(nodeId);
@@ -695,6 +872,32 @@ export function runCanvasFrame(snap: typeof snapBox): void {
       degrees = event.shiftKey ? Math.round(degrees / 15) * 15 : Math.round(degrees);
       rotating.degrees = degrees;
       rotating.element.style.rotate = `${degrees}deg`;
+      return;
+    }
+    if (gridDragging) {
+      const drag = gridDragging;
+      const dx = event.clientX - drag.startX;
+      const dy = event.clientY - drag.startY;
+      if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+      if (!drag.moved) {
+        drag.moved = true;
+        overlay.replaceChildren();
+        document.body.style.userSelect = "none";
+        window.getSelection()?.removeAllRanges();
+      }
+      const box =
+        drag.mode === "move"
+          ? { ...drag.start, left: drag.start.left + dx, top: drag.start.top + dy }
+          : { ...drag.start, width: drag.start.width + dx, height: drag.start.height + dy };
+      const fit = fitOnGrid(drag.container, box, drag.mode, drag.keep);
+      if (!fit) return;
+      const { column, row, columnSpan, rowSpan } = fit;
+      drag.place = { column, row, columnSpan, rowSpan };
+      if (drag.mode === "move") {
+        drag.element.style.translate = `${dx}px ${dy}px`;
+        drag.element.style.opacity = "0.75";
+      }
+      drawGridGuides(drag.container, fit);
       return;
     }
     if (moving) {
@@ -763,7 +966,32 @@ export function runCanvasFrame(snap: typeof snapBox): void {
     send(cancelled ? { type: "moveCancel" } : { type: "moveDrop", nodeId: finished.nodeId });
   }
 
+  function endGridDrag(cancelled: boolean) {
+    if (!gridDragging) return;
+    const finished = gridDragging;
+    gridDragging = null;
+    finished.element.style.translate = finished.inline.translate;
+    finished.element.style.opacity = finished.inline.opacity;
+    document.body.style.userSelect = "";
+    clearGuides();
+    if (!finished.moved) return;
+    justMoved = true;
+    const { place, keep } = finished;
+    const changed =
+      place !== null &&
+      (place.column !== keep.column ||
+        place.row !== keep.row ||
+        place.columnSpan !== keep.columnSpan ||
+        place.rowSpan !== keep.rowSpan);
+    if (!cancelled && place && changed) sendGridPlace(finished.nodeId, place);
+    drawOutlines();
+  }
+
   document.addEventListener("pointerup", () => {
+    if (gridDragging) {
+      endGridDrag(false);
+      return;
+    }
     if (moving) {
       endMove(false);
       return;
@@ -800,6 +1028,11 @@ export function runCanvasFrame(snap: typeof snapBox): void {
   });
 
   document.addEventListener("keydown", (event) => {
+    if (gridDragging?.moved && event.key === "Escape") {
+      event.preventDefault();
+      endGridDrag(true);
+      return;
+    }
     if (moving?.moved && event.key === "Escape") {
       event.preventDefault();
       endMove(true);
@@ -835,6 +1068,27 @@ export function runCanvasFrame(snap: typeof snapBox): void {
       ArrowDown: [0, 1],
     };
     const nudge = nudges[key];
+    const placed = nudge && !metaKey && !ctrlKey && !altKey ? gridChild(outline.selectedId) : null;
+    if (nudge && placed && outline.selectedId && outline.canTransform) {
+      event.preventDefault();
+      const now = fitOnGrid(placed.container, boxInGrid(placed.element, placed.container), "fit");
+      if (!now) return;
+      const columns = now.columnAreas.length;
+      const next = shiftKey
+        ? {
+            ...now,
+            columnSpan: Math.min(columns - now.column + 1, Math.max(1, now.columnSpan + nudge[0])),
+            rowSpan: Math.max(1, now.rowSpan + nudge[1]),
+          }
+        : {
+            ...now,
+            column: Math.min(columns - now.columnSpan + 1, Math.max(1, now.column + nudge[0])),
+            row: Math.max(1, now.row + nudge[1]),
+          };
+      const { column, row, columnSpan, rowSpan } = next;
+      sendGridPlace(outline.selectedId, { column, row, columnSpan, rowSpan });
+      return;
+    }
     const free = nudge && !metaKey && !ctrlKey && !altKey ? freeElement(outline.selectedId) : null;
     if (nudge && free && outline.selectedId && outline.canTransform) {
       event.preventDefault();
@@ -899,6 +1153,11 @@ const canvasStyles = `
 .lintel-guide--x { width: 1px; }
 .lintel-guide--y { height: 1px; }
 [data-lintel-free] > [data-lintel-node] { cursor: move; touch-action: none; }
+[data-lintel-grid] > [data-lintel-node] { cursor: move; touch-action: none; }
+.lintel-grid-column { background: rgb(255 45 135 / 0.07); box-shadow: inset 1px 0 rgb(255 45 135 / 0.35), inset -1px 0 rgb(255 45 135 / 0.35); }
+.lintel-grid-area { background: rgb(0 113 227 / 0.14); outline: 2px solid #0071e3; outline-offset: -2px; border-radius: 4px; }
+.lintel-grid-area span { position: absolute; left: 6px; top: 6px; padding: 1px 7px; border-radius: 4px; background: #0071e3; color: #fff; font: 600 11px/18px -apple-system, "Segoe UI", system-ui, sans-serif; }
+.lintel-grid-handle { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border: 2px solid #0071e3; border-radius: 3px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 0.3); pointer-events: auto; cursor: nwse-resize; touch-action: none; }
 a { cursor: default; }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
 `;
@@ -940,7 +1199,7 @@ const safeScript = (code: string) => code.replace(/<\/(script)/gi, "<\\/$1");
  * policy of the page around it.
  */
 export function canvasFrameScript(): string {
-  return `(${runCanvasFrame.toString()})(${snapBox.toString()});\n`;
+  return `(${runCanvasFrame.toString()})(${snapBox.toString()}, ${fitToGrid.toString()});\n`;
 }
 
 /**

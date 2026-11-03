@@ -43,6 +43,8 @@ export interface ElementAttributes {
   "data-lintel-opens"?: "";
   /** On the canvas only: a free layout, whose children can be dragged anywhere in it. */
   "data-lintel-free"?: "stack-on-phone" | "free";
+  /** On the canvas only: a placed grid (its column count), whose children are dragged onto it. */
+  "data-lintel-grid"?: string;
 }
 
 export type ComponentRender = ComponentType<RenderProps>;

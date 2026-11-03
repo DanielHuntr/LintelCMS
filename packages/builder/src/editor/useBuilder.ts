@@ -3,7 +3,10 @@ import {
   buildStarterPage,
   type CreateNodeId,
   type FreeLayout,
+  type Breakpoint,
   type FreePlace,
+  type GridPlace,
+  type PlacedGrid,
   type MarkChange,
   type PageFont,
   type StackingMove,
@@ -286,6 +289,21 @@ export function useBuilder({
         if (!node) return;
         run(
           designCommands.placeFreely(
+            context(),
+            nodeId,
+            target,
+            place,
+            text("pageBuilder.design.history.moved", { name: name(node) }),
+          ),
+        );
+      },
+      setPlacedGrid: (nodeId: string, placedGrid: PlacedGrid | null) =>
+        run(designCommands.setPlacedGrid(context(), nodeId, placedGrid)),
+      placeOnGrid: (nodeId: string, target: Breakpoint, place: GridPlace) => {
+        const node = nodeById(nodeId);
+        if (!node) return;
+        run(
+          designCommands.placeOnGrid(
             context(),
             nodeId,
             target,

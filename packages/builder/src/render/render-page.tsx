@@ -220,7 +220,7 @@ function NodeView({
   const motion = motionMarks.get(node.id);
   const isSelectable = mode === "canvas" && !isCopy;
   const attributes: ElementAttributes = isSelectable
-    ? { className, "data-lintel-node": node.id, ...freeLayoutMark(node) }
+    ? { className, "data-lintel-node": node.id, ...freeLayoutMark(node), ...placedGridMark(node) }
     : mode === "canvas"
       ? { className }
       : { ...motion, className };
@@ -247,6 +247,10 @@ function NodeView({
       ))}
     </Render>
   );
+}
+
+function placedGridMark(node: PageNode): Pick<ElementAttributes, "data-lintel-grid"> {
+  return node.placedGrid ? { "data-lintel-grid": String(node.placedGrid.columns) } : {};
 }
 
 function freeLayoutMark(node: PageNode): Pick<ElementAttributes, "data-lintel-free"> {

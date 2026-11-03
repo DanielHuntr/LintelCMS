@@ -54,4 +54,19 @@ describe("messages from the canvas about dragging from Insert", () => {
     expect(readFrameMessage({ type: "sceneMarker", which: "middle", viewport: 0.4 })).toBeNull();
     expect(readFrameMessage({ type: "sceneMarker", which: "start", viewport: 7 })).toBeNull();
   });
+
+  it("reads a place on a placed grid, and refuses lines that aren't whole numbers from 1", () => {
+    const placed = {
+      type: "gridPlace",
+      nodeId: "n4",
+      column: 2,
+      columnSpan: 5,
+      row: 1,
+      rowSpan: 2,
+    };
+    expect(readFrameMessage(placed)).toEqual(placed);
+    expect(readFrameMessage({ ...placed, column: 0 })).toBeNull();
+    expect(readFrameMessage({ ...placed, rowSpan: 1.5 })).toBeNull();
+    expect(readFrameMessage({ ...placed, nodeId: undefined })).toBeNull();
+  });
 });

@@ -1,6 +1,9 @@
 import type {
   BackgroundVideo,
+  Breakpoint,
   FreeLayout,
+  GridPlace,
+  PlacedGrid,
   PageFont,
   PageNode,
   StackingMove,
@@ -32,6 +35,9 @@ export interface DesignTools {
   pageFonts: readonly PageFont[];
   changePageFonts: (fonts: PageFont[], label: string) => void;
   setFreeLayout: (freeLayout: FreeLayout | null) => void;
+  setPlacedGrid: (placedGrid: PlacedGrid | null) => void;
+  /** Puts the element on its parent's placed grid at one screen size. */
+  placeOnGrid: (target: Breakpoint, place: GridPlace) => void;
   setBackgroundVideo: (video: BackgroundVideo | null) => void;
   restack: (move: StackingMove) => void;
   pickImage?: ImagePicker;

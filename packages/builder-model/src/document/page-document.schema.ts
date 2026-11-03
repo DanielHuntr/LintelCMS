@@ -3,6 +3,7 @@ import { motionSpecSchema, type MotionSpec } from "@lintel/motion/schema";
 import { z } from "zod";
 import { type BackgroundVideo, backgroundVideoSchema } from "../backgrounds/background-video.js";
 import { type FreeLayout, freeLayoutSchema } from "../free-layout/free-layout.js";
+import { type PlacedGrid, placedGridSchema } from "../placed-grid/placed-grid.js";
 import { isStylePropertyName, type StylePropertyName } from "../styles/style-properties.js";
 import { isSafeValueFor } from "../styles/style-values.js";
 
@@ -104,6 +105,11 @@ export interface PageNode {
   stateTransition?: StateTransition;
   /** Its children are placed anywhere in it (see free-layout/). Left out for normal flow. */
   freeLayout?: FreeLayout;
+  /**
+   * Its children are placed on its columns and rows, magazine style (see placed-grid/). Left
+   * out for normal flow. A container has a free layout or a placed grid, not both.
+   */
+  placedGrid?: PlacedGrid;
   /** A muted, looping video behind its content (see backgrounds/). */
   backgroundVideo?: BackgroundVideo;
   /**
@@ -232,6 +238,7 @@ export const pageNodeSchema: z.ZodType<PageNode> = z.lazy(() =>
     effects: nodeEffectsSchema.optional(),
     stateTransition: stateTransitionSchema.optional(),
     freeLayout: freeLayoutSchema.optional(),
+    placedGrid: placedGridSchema.optional(),
     backgroundVideo: backgroundVideoSchema.optional(),
     bindings: nodeBindingsSchema.optional(),
   }),

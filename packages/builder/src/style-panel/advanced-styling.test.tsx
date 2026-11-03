@@ -204,9 +204,7 @@ describe("advanced styling in the Style panel", () => {
     const { node } = renderBuilder("beginner");
     await select(person, "Poster");
     const group = await open(person, "Arrange");
-    await person.click(
-      within(group).getByRole("checkbox", { name: "Free layout: place things anywhere" }),
-    );
+    await person.click(within(group).getByRole("radio", { name: "Anywhere" }));
     expect(node("Poster")?.freeLayout).toEqual({ stackOnPhone: true });
     expect(node("Poster")?.styles.base.minHeight).toBe("clamp(28rem, 60vw, 48rem)");
     expect(node("Big word")?.styles.base).toMatchObject({ left: "6%", top: "8%" });
@@ -219,6 +217,40 @@ describe("advanced styling in the Style panel", () => {
     expect(node("Photo")?.styles.base.zIndex).toBe("1");
     // Stacking never changes the reading order.
     expect(node("Poster")?.children.map((child) => child.name)).toEqual(["Big word", "Photo"]);
+  });
+
+  it("puts a section's elements on a grid and places one by columns and rows", async () => {
+    const person = userEvent.setup();
+    const { node } = renderBuilder("beginner");
+    await select(person, "Poster");
+    const group = await open(person, "Arrange");
+    await person.click(within(group).getByRole("radio", { name: "On a grid" }));
+    expect(node("Poster")?.placedGrid).toEqual({ columns: 12, stackOnPhone: true });
+    await person.click(within(group).getByRole("radio", { name: "8" }));
+    expect(node("Poster")?.placedGrid?.columns).toBe(8);
+
+    await select(person, "Photo");
+    const place = await open(person, "Arrange");
+    // Not placed yet: the whole width, shown as columns 1 to 8.
+    expect(within(place).getByRole("combobox", { name: "Last column" })).toHaveValue("8");
+    await person.selectOptions(within(place).getByRole("combobox", { name: "First column" }), "2");
+    expect(node("Photo")?.styles.base.gridColumn).toBe("2 / span 7");
+    await person.selectOptions(within(place).getByRole("combobox", { name: "Last column" }), "5");
+    expect(node("Photo")?.styles.base.gridColumn).toBe("2 / span 4");
+    await person.selectOptions(within(place).getByRole("combobox", { name: "Last row" }), "3");
+    expect(node("Photo")?.styles.base.gridRow).toBe("1 / span 3");
+    expect(within(place).getByText("Exact values")).toBeInTheDocument();
+
+    // Phones stack until the element is given a place of its own there.
+    await person.click(screen.getByRole("radio", { name: "Phone" }));
+    const onPhone = await open(person, "Arrange");
+    await person.click(within(onPhone).getByRole("button", { name: "Place it on phones too" }));
+    expect(node("Photo")?.styles.phone).toMatchObject({
+      gridColumn: "2 / span 4",
+      gridRow: "1 / span 3",
+    });
+    await person.click(within(onPhone).getByRole("button", { name: "Back to one under another" }));
+    expect(node("Photo")?.styles.phone).toBeUndefined();
   });
 
   it("styles selected words from the Content panel", async () => {

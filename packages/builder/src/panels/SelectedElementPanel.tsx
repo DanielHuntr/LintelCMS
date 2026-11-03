@@ -5,6 +5,8 @@ import {
   type Breakpoint,
   findPath,
   type FreeLayout,
+  type GridPlace,
+  type PlacedGrid,
   type NodeAnimation,
   type NodeEffect,
   type PageDocument,
@@ -77,6 +79,8 @@ interface SelectedElementPanelProps {
     changeCode: (nodeId: string, code: { html: string; css: string; js: string }) => void;
     pasteHtml: (html: string) => void;
     setFreeLayout: (nodeId: string, freeLayout: FreeLayout | null) => void;
+    setPlacedGrid: (nodeId: string, placedGrid: PlacedGrid | null) => void;
+    placeOnGrid: (nodeId: string, target: Breakpoint, place: GridPlace) => void;
     setBackgroundVideo: (nodeId: string, video: BackgroundVideo | null) => void;
     changePageFonts: (fonts: PageFont[], label: string) => void;
     restack: (nodeId: string, move: StackingMove) => void;
@@ -157,6 +161,8 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
       pageFonts: readPageFonts(document.root.props),
       changePageFonts: actions.changePageFonts,
       setFreeLayout: (freeLayout) => actions.setFreeLayout(node.id, freeLayout),
+      setPlacedGrid: (placedGrid) => actions.setPlacedGrid(node.id, placedGrid),
+      placeOnGrid: (target, place) => actions.placeOnGrid(node.id, target, place),
       setBackgroundVideo: (video) => actions.setBackgroundVideo(node.id, video),
       restack: (move) => actions.restack(node.id, move),
       pickImage,

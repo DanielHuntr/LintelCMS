@@ -546,6 +546,11 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
       if (message.type === "place") {
         actions.placeFreely(message.nodeId, breakpoint, { left: message.left, top: message.top });
       }
+      if (message.type === "gridPlace") {
+        const { nodeId, column, columnSpan, row, rowSpan } = message;
+        actions.placeOnGrid(nodeId, breakpoint, { column, columnSpan, row, rowSpan });
+        if (nodeId !== state.selectedId) actions.select(nodeId);
+      }
       if (message.type === "sceneMarker") {
         const node = state.selectedId ? findNode(state.document.root, state.selectedId) : undefined;
         const animations = node?.animations ?? [];
