@@ -280,3 +280,25 @@ Highest first:
   - LINTEL-DATA-011 and LINTEL-FUNC-016 (updates: rollback schema, Windows junctions; hosting is deprioritised);
   - LINTEL-UX-006 and LINTEL-UX-009, with the other two redesigns (approved by Daniel; next).
 - **P2:** the rest of the batch 3 table, and DATA-003's uncovered cases above.
+
+## Security batch (4 November)
+
+### LINTEL-SEC-002: global search leaked other sites' titles
+
+**Reproduced:** with Pierre's role limited to the French site, `GET /search?q=Secret` returned the default site's "Secret launch plan" too. **Fix:** `/search` passes the person's allowed sites to the entry search, which filters by them (`search.repository.ts`), as the content tree does. **Test:** `site-access.test.ts`, "keeps someone to their sites in global search" (fails without the fix).
+
+### LINTEL-SEC-012: webhook signing secrets shown to settings readers
+
+**Reproduced:** a person with only `settings:read` got each webhook's `secret` from `GET /webhooks` and `GET /webhooks/:id`, enough to forge deliveries the receiving app would trust. **Fix:** the secret comes back only for people with `settings:update`; others get `null`, and the webhook screen says "Only people who can change webhooks can see the signing secret." **Tests:** `webhooks.test.ts` (fails without the fix), `Webhooks.test.tsx`.
+
+### LINTEL-SEC-013: no limit on password guesses for two-factor changes
+
+**Reproduced:** eleven wrong passwords in a row to `/account/two-factor/disable` were all answered. **Fix:** that and `/account/two-factor/recovery-codes` allow ten tries per address in fifteen minutes, as `/account/password` does. **Test:** `two-factor.test.ts` (fails without the fix).
+
+### LINTEL-SEC-014: basket tokens in the request log
+
+**Reproduced:** `hideSecretsInUrl` left `/delivery/shop/carts/<token>` as it was; the token opens the shopper's basket with their email and address. **Fix:** the token in the path is replaced with `[hidden]` (`request-logging.ts`). **Test:** `security-headers.test.ts`, "hide a basket's token in its address" (fails without the fix).
+
+### LINTEL-SEC-003: still open
+
+The script rule is applied only when a page is saved. The fix is to apply the current rule again when the website draws a design, but designs are drawn in four places (one, `toPageView`, without access to settings), and rendered pages are cached, so the cache would need clearing when the rule changes. Left for a careful change of its own.
