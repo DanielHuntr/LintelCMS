@@ -26,6 +26,7 @@ import type {
   UpdateBlueprintRequest,
 } from "./blueprints.schema.js";
 import type { Blueprint } from "./blueprints.table.js";
+import { convertChangedFieldValues } from "../entries/field-changes.service.js";
 
 /** Business rules for blueprints (content types). Field rules are in blueprint-fields.ts. */
 
@@ -118,6 +119,13 @@ export async function updateBlueprint(
       before: new Set(blueprint.fields.map((field) => field.handle)),
       after: new Set(fields.map((field) => field.handle)),
     });
+    // After the renames, so a renamed field is checked under its new handle.
+    await convertChangedFieldValues(
+      transaction,
+      blueprint.id,
+      { before: blueprint.fields, after: fields },
+      request.renames ?? [],
+    );
     return saved;
   });
   return describeBlueprint(updated);

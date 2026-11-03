@@ -219,6 +219,82 @@ describe("blueprints", () => {
     }
   });
 
+  // LINTEL-FUNC-008: a type change or a removed choice was accepted, and entries using the old
+  // values then couldn't be saved at all, even for changes to other fields.
+  describe("changing a field that entries already use", () => {
+    const price = { handle: "price", label: "Price", type: "number" };
+    const category = {
+      handle: "category",
+      label: "Category",
+      type: "select",
+      options: {
+        choices: [
+          { value: "web", label: "Web" },
+          { value: "print", label: "Print" },
+        ],
+      },
+    };
+
+    async function serviceWith(data: Record<string, unknown>) {
+      await api("POST", "/blueprints", {
+        handle: "service",
+        name: "Service",
+        fields: [titleField, price, category],
+      });
+      await api("POST", "/collections", {
+        handle: "services",
+        name: "Services",
+        blueprintHandle: "service",
+        structure: "flat",
+      });
+      return (await api("POST", "/collections/services/entries", { data })).json();
+    }
+
+    it("converts numbers when a field becomes text, so the entries still save", async () => {
+      const entry = await serviceWith({ title: "Logo design", price: 450, category: "web" });
+
+      const changed = await api("PUT", "/blueprints/service", {
+        name: "Service",
+        fields: [titleField, { ...price, type: "text" }, category],
+      });
+      expect(changed.statusCode).toBe(200);
+
+      const saved = await api("PATCH", `/entries/${entry.id}`, { data: { title: "Logo work" } });
+      expect(saved.statusCode).toBe(200);
+      expect(saved.json().data).toMatchObject({ title: "Logo work", price: "450" });
+    });
+
+    it("refuses to remove a choice entries use, and says how many", async () => {
+      await serviceWith({ title: "Posters", price: 90, category: "print" });
+
+      const refused = await api("PUT", "/blueprints/service", {
+        name: "Service",
+        fields: [
+          titleField,
+          price,
+          { ...category, options: { choices: [{ value: "web", label: "Web" }] } },
+        ],
+      });
+
+      expect(refused.statusCode).toBe(400);
+      expect(refused.json().fields.category).toBe(
+        "1 entry has a value Category can’t hold any more, such as “print”. Change it first, or keep the field as it was.",
+      );
+      const unused = await api("PUT", "/blueprints/service", {
+        name: "Service",
+        fields: [
+          titleField,
+          price,
+          {
+            ...category,
+            options: { choices: [...category.options.choices, { value: "tv", label: "TV" }] },
+          },
+        ],
+      });
+      expect(unused.statusCode).toBe(200);
+    });
+  });
+
   it("deletes an unused blueprint, and refuses one a collection uses", async () => {
     await api("POST", "/blueprints", { handle: "event", name: "Event", fields: [titleField] });
     await api("POST", "/blueprints", { handle: "unused", name: "Unused", fields: [titleField] });
