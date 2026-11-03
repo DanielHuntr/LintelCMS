@@ -2,6 +2,13 @@ import { fromTo } from "../../presets/preset.js";
 import { defineEffect } from "../effect-definition.js";
 import { choice, number } from "../parameters.js";
 
+const stackLook = (fallback: "pile" | "fan" | "tilted") =>
+  choice("Look", fallback, [
+    ["pile", "Pile"],
+    ["fan", "Fan"],
+    ["tilted", "Tilted back"],
+  ]);
+
 /** 3D with CSS: scenes, stacks, cylinders and flips. Content stays in reading order. */
 
 /**
@@ -75,10 +82,32 @@ export const depthEffects = [
     module: "depth",
     behaviour: "cardStack",
     suits: ["container", "list"],
-    params: { spread: number("Offset between cards", 14, 4, 40, { unit: "px" }) },
+    params: {
+      look: stackLook("pile"),
+      spread: number("Offset between cards", 14, 4, 40, { unit: "px" }),
+    },
     reducedMotion: "Cards change without sliding.",
     preview: "list",
-    keywords: ["deck", "stack", "testimonials"],
+    keywords: ["deck", "stack", "testimonials", "fan", "3d"],
+  }),
+  defineEffect({
+    id: "card-stack-scroll",
+    name: "Cards on scroll",
+    description:
+      "A 3D stack of the cards inside that shows the next card as the page scrolls past. Swipes and arrow keys work too.",
+    category: "depth",
+    kind: "behaviour",
+    module: "depth",
+    behaviour: "cardStack",
+    suits: ["container", "list"],
+    params: {
+      look: stackLook("tilted"),
+      spread: number("Offset between cards", 14, 4, 40, { unit: "px" }),
+    },
+    fixed: { advance: "scroll" },
+    reducedMotion: "Cards change without sliding, by tap or arrow keys.",
+    preview: "list",
+    keywords: ["deck", "stack", "3d", "scroll"],
   }),
   defineEffect({
     id: "card-stack-auto",
@@ -91,6 +120,7 @@ export const depthEffects = [
     suits: ["container", "list"],
     params: {
       autoplay: number("Seconds per card", 4, 2, 15),
+      look: stackLook("pile"),
       spread: number("Offset between cards", 14, 4, 40, { unit: "px" }),
     },
     reducedMotion: "Doesn't shuffle by itself.",
@@ -129,6 +159,29 @@ export const depthEffects = [
     preview: "panels",
   }),
   defineEffect({
+    id: "arc-carousel",
+    name: "Arc carousel",
+    description:
+      "Lines the pictures inside up on a curve that drifts by. Drag, swipe or scroll to move it.",
+    category: "depth",
+    kind: "behaviour",
+    module: "depth",
+    behaviour: "arcCarousel",
+    suits: ["container", "list"],
+    params: {
+      shape: choice("Curve", "away", [
+        ["away", "Bends away"],
+        ["around", "Wraps round you"],
+      ]),
+      bend: number("How much it bends", 14, 4, 30, { unit: "°" }),
+      speed: number("Drift", 0.25, 0, 1.5, { step: 0.05, unit: "pictures/s" }),
+    },
+    reducedMotion: "A flat row of pictures you can swipe.",
+    preview: "panels",
+    weight: "medium",
+    keywords: ["carousel", "curved", "gallery", "3d", "arc", "slider"],
+  }),
+  defineEffect({
     id: "cover-flow",
     name: "Cover flow",
     description: "A swipeable row where the middle item faces you and the others turn away.",
@@ -162,6 +215,33 @@ export const depthEffects = [
     "x",
     "hover",
   ),
+  defineEffect({
+    id: "depth-on-scroll",
+    name: "Depth on scroll",
+    description:
+      "Puts the things inside a section at different depths, the nearer ones moving further as the page scrolls.",
+    category: "depth",
+    kind: "behaviour",
+    module: "scroll",
+    behaviour: "depthOnScroll",
+    suits: ["container"],
+    params: {
+      look: choice("Look", "deep", [
+        ["gentle", "Gentle"],
+        ["deep", "Deep"],
+        ["floating", "Floating"],
+      ]),
+      strength: number("How strong", 1, 0.3, 2, { step: 0.1, unit: "×" }),
+      order: choice("Nearest", "front-first", [
+        ["front-first", "First things nearest"],
+        ["back-first", "Last things nearest"],
+        ["mixed", "Mixed"],
+      ]),
+    },
+    reducedMotion: "Everything sits flat and moves with the page.",
+    preview: "panels",
+    keywords: ["parallax", "layers", "3d", "depth", "scroll"],
+  }),
   defineEffect({
     id: "fold-in",
     name: "Fold down",

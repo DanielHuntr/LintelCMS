@@ -5,6 +5,7 @@ import { depthEffects } from "./depth-effects.js";
 import { hoverEffects } from "./hover-effects.js";
 import { loaderEffects } from "./loader-effects.js";
 import { marqueeEffects } from "./marquee-effects.js";
+import { modelEffects } from "./model-effects.js";
 import { physicsEffects } from "./physics-effects.js";
 import { scrollEffects } from "./scroll-effects.js";
 import { svgEffects } from "./svg-effects.js";
@@ -25,4 +26,5 @@ export const standardEffects: readonly EffectDefinition[] = [
   ...loaderEffects,
   ...transitionEffects,
   ...pointerFieldEffects,
+  ...modelEffects,
 ] as readonly EffectDefinition[];

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import type { Browser, Page } from "playwright";
 
@@ -9,6 +9,7 @@ import type { Browser, Page } from "playwright";
  */
 
 const dist = fileURLToPath(new URL("../../dist/", import.meta.url));
+const sampleModels = fileURLToPath(new URL("../../sample-models/", import.meta.url));
 export const origin = "http://effects.test";
 
 interface Manifest {
@@ -34,6 +35,8 @@ export interface OpenOptions {
   pages?: Record<string, string>;
   /** Pretends the browser has no cross-document view transitions, to test the fallback. */
   withoutViewTransitions?: boolean;
+  /** Pretends the browser can't draw WebGL, as on some old or locked-down computers. */
+  withoutWebGL?: boolean;
 }
 
 function document(html: string, effects: readonly EffectOnTest[], options: OpenOptions) {
@@ -67,6 +70,20 @@ export async function openEffectsPage(
       delete (window as Partial<Window & { CSSViewTransitionRule: unknown }>).CSSViewTransitionRule;
     });
   }
+  if (options.withoutWebGL) {
+    await page.addInitScript(() => {
+      const original = HTMLCanvasElement.prototype.getContext;
+      HTMLCanvasElement.prototype.getContext = function (
+        this: HTMLCanvasElement,
+        kind: string,
+        ...rest: unknown[]
+      ) {
+        return kind.startsWith("webgl")
+          ? null
+          : (original as (...args: unknown[]) => unknown).call(this, kind, ...rest);
+      } as typeof original;
+    });
+  }
   const requested: string[] = [];
   await page.route(`${origin}/**`, async (route) => {
     const path = new URL(route.request().url()).pathname;
@@ -81,6 +98,14 @@ export async function openEffectsPage(
       return route.fulfill({
         contentType: "text/javascript",
         body: readFileSync(`${dist}effect-modules/${path.split("/").pop()}`, "utf8"),
+      });
+    }
+    if (path.startsWith("/sample-models/")) {
+      const file = `${sampleModels}${path.split("/").pop()}`;
+      if (!existsSync(file)) return route.fulfill({ status: 404, body: "" });
+      return route.fulfill({
+        contentType: "model/gltf-binary",
+        body: readFileSync(file),
       });
     }
     const body = path === "/" ? document(html, effects, options) : options.pages?.[path];

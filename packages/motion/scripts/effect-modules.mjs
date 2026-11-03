@@ -50,7 +50,9 @@ export async function buildEffectModules({ outdir } = {}) {
   };
   const modules = {};
   for (const [path, output] of Object.entries(result.metafile.outputs)) {
-    if (!output.entryPoint) continue;
+    // Chunks a module imports only when needed (three.js for the 3D model) are entry points
+    // too, but not modules: they are listed in `files` and cost only pages that load them.
+    if (!output.entryPoint?.endsWith(".module.ts")) continue;
     const name = output.entryPoint.split("/").pop().replace(".module.ts", "");
     const seen = new Set([path]);
     const queue = [path];

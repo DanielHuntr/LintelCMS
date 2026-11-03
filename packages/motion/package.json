@@ -27,7 +27,13 @@
       "development": "./src/effects-catalogue/index.ts",
       "default": "./dist/effects-catalogue/index.js"
     },
-    "./effect-modules/*": "./dist/effect-modules/*"
+    "./effect-modules/*": "./dist/effect-modules/*",
+    "./model-poster": {
+      "types": "./dist/effects/model/model-poster.d.ts",
+      "development": "./src/effects/model/model-poster.ts",
+      "default": "./dist/effects/model/model-poster.js"
+    },
+    "./sample-models/*": "./sample-models/*"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json && node scripts/bundle-site-runtime.mjs && node scripts/bundle-effect-modules.mjs",
@@ -39,10 +45,12 @@
   },
   "dependencies": {
     "motion": "^14.9.0",
+    "three": "^0.187.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
+    "@types/three": "^0.187.0",
     "esbuild": "^0.28.2",
     "jsdom": "^30.1.3",
     "playwright": "1.63.0",
