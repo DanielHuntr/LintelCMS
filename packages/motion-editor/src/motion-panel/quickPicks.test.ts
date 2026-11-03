@@ -4,7 +4,9 @@ import { motionSpecSchema } from "@lintel/motion/schema";
 import { describe, expect, it } from "vitest";
 import { listMotionChoices, momentOfSpec, motionMoments } from "./motionChoices.js";
 import {
+  distanceForStartSize,
   feelOf,
+  growsFrom,
   quickChoicesFor,
   quickControls,
   quickPickLimit,
@@ -12,6 +14,7 @@ import {
   quickResult,
   quickSpec,
   settingsOf,
+  startSizeFor,
   withFeel,
 } from "./quickPicks.js";
 
@@ -109,6 +112,33 @@ describe("quick picks", () => {
     });
     const always = quickChoicesFor("always", any, "any")[0]!;
     expect(quickControls(quickSpec(always.choice, "always"), "always").feel).toBe(false);
+  });
+
+  it("reads a grow while scrolling by the size it starts at, from 90% down to 10%", () => {
+    const grow = findPreset("scroll-grow")!.spec;
+    expect(growsFrom(grow)).toBe(0.8);
+    expect(quickControls(grow, "scroll").growsFrom).toBe(0.8);
+    // Only growing while scrolling: not a hover grow, not parallax.
+    expect(growsFrom(findPreset("hover-grow")!.spec)).toBeUndefined();
+    expect(growsFrom(findPreset("parallax-slow")!.spec)).toBeUndefined();
+    expect(quickControls(findPreset("parallax-slow")!.spec, "scroll").growsFrom).toBeUndefined();
+
+    expect(startSizeFor(0.8, 1)).toBe(0.8);
+    for (const size of [0.1, 0.25, 0.5, 0.9]) {
+      expect(startSizeFor(0.8, distanceForStartSize(0.8, size))).toBe(size);
+    }
+    // Never smaller than a tenth or bigger than 90%, however far it's pushed.
+    expect(startSizeFor(0.8, 10)).toBe(0.1);
+    expect(distanceForStartSize(0.8, 0)).toBeCloseTo(distanceForStartSize(0.8, 0.1));
+    expect(startSizeFor(0.8, 0)).toBe(0.9);
+
+    const settings = settingsOf(grow);
+    const smallest = quickResult(grow, {
+      ...settings,
+      adjustments: { ...settings.adjustments, distance: distanceForStartSize(0.8, 0.1) },
+    });
+    const scale = smallest.tracks.find((track) => track.property === "scale");
+    expect(scale?.keyframes.map((keyframe) => keyframe.value)).toEqual([0.1, 1]);
   });
 
   it("lists something that starts with the page and never stops under Always", () => {

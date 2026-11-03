@@ -146,6 +146,29 @@ describe("adding motion", () => {
     expect(screen.queryByRole("radiogroup", { name: "Feel" })).not.toBeInTheDocument();
   });
 
+  // People asked for a video that grows from a tenth of its size while the page scrolls;
+  // "How much" once stopped at 60%.
+  it("lets a grow while scrolling start as small as a tenth of the element", async () => {
+    const { saved, user } = renderPanel({ elementKind: "image" });
+    await user.click(screen.getByRole("button", { name: "Add motion" }));
+    await user.click(screen.getByRole("radio", { name: "Scroll" }));
+    await user.click(within(tiles()).getByRole("radio", { name: "Grow" }));
+    const howMuch = screen.getByRole("slider", { name: "How much" });
+    expect(howMuch).toHaveAttribute("aria-valuetext", "Starts at 80%");
+    expect(screen.getByText("Starts at 80%")).toBeInTheDocument();
+
+    fireEvent.change(howMuch, { target: { value: howMuch.getAttribute("max") } });
+    const scale = () =>
+      saved.animations[0]?.spec.tracks
+        .find((track) => track.property === "scale")
+        ?.keyframes.map((keyframe) => keyframe.value);
+    expect(scale()).toEqual([0.1, 1]);
+    expect(howMuch).toHaveAttribute("aria-valuetext", "Starts at 10%");
+
+    fireEvent.change(howMuch, { target: { value: howMuch.getAttribute("min") } });
+    expect(scale()).toEqual([0.9, 1]);
+  });
+
   it("keeps the full settings one step away, and lists the motion when done", async () => {
     const { user } = renderPanel();
     await user.click(screen.getByRole("button", { name: "Add motion" }));
