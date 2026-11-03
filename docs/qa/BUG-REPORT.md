@@ -756,7 +756,7 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-011   | P2       | Fixed  | Builder: Publish gives no confirmation and the builder never shows unpublished changes                              |
 | LINTEL-UX-012   | P2       | Fixed  | No "View website" link anywhere in the admin                                                                        |
 | LINTEL-UX-013   | P2       | Fixed  | Builder spills off the screen at 390px; the tour still runs                                                         |
-| LINTEL-UX-014   | P2       | Fixed  | A menu with a link to a deleted page can't be saved, and the error shows the link's id                              |
+| LINTEL-UX-014   | P2       | Part   | A menu with a link to a deleted page can't be saved, and the error shows the link's id                              |
 | LINTEL-UX-015   | P2       | Fixed  | Settings: logo and colour in two places; build-time settings where clients look first; unclear group names          |
 | LINTEL-UX-016   | P2       | Fixed  | Account is titled "Create your account"; three other strings show another screen's words                            |
 | LINTEL-UX-017   | P2       | Fixed  | Settings is a catch-all: logs, tools and the agency's build settings beside the owner's website details             |
