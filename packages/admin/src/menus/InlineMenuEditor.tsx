@@ -75,7 +75,7 @@ function LoadedInlineMenuEditor({ menu, onClose }: { menu: Menu; onClose: () => 
           to="/content/navigation/$handle"
           params={{ handle: menu.handle }}
           target="_blank"
-          className="inline-flex items-center gap-1 rounded-[4px] text-caption font-medium text-accent hover:underline focus-visible:focus-ring"
+          className="inline-flex items-center gap-1 rounded-[4px] text-caption font-medium text-accent underline decoration-1 underline-offset-2 hover:decoration-2 focus-visible:focus-ring"
         >
           {t("builderMenu.openFull")}
           <ExternalLink aria-hidden="true" className="size-3.5" />

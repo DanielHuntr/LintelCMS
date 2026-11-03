@@ -56,7 +56,7 @@ export function SignInPage() {
           />
           <Link
             to="/forgot-password"
-            className="mt-2 inline-block rounded-control text-body text-accent hover:underline focus-visible:focus-ring"
+            className="mt-2 inline-block rounded-control text-body text-accent underline decoration-1 underline-offset-2 hover:decoration-2 focus-visible:focus-ring"
           >
             {t("signIn.forgotPassword")}
           </Link>

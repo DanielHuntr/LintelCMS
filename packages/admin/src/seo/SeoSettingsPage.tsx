@@ -76,7 +76,7 @@ function SeoDefaultsForm({ initial }: { initial: SeoDefaults }) {
           {t("seo.siteAddressNote")}{" "}
           <PluginLink
             to="/settings/site"
-            className="text-accent underline-offset-2 hover:underline"
+            className="text-accent underline decoration-1 underline-offset-2 hover:decoration-2"
           >
             {t("seo.siteAddressLink")}
           </PluginLink>

@@ -43,10 +43,12 @@ follows the device's setting, which would stop the review page showing both sche
 
 ### Contrast
 
-The accent is Lintel blue, split in two. `accent-fill` (`#0071e3`, the brand colour) sits
-behind white text on buttons (4.6:1). `accent` is used for text: a shade deeper in light mode
-(`#0066cc` on the grey background) and lighter in dark mode (`#4aa3ff` on raised panels), so
-links pass WCAG AA everywhere (`accent-colours.test.ts` in core checks all three). The mark (`AppMark`) is the bird from
+The accent is Lintel ink (`#1f1d1a`) on warm paper (`#f6f4ef`, cards `#fffefb`). Buttons are
+ink with paper text; in dark mode they swap to paper with ink text on a warm near-black. Ink
+text alone doesn't look clickable, so text links are underlined (`underline decoration-1
+underline-offset-2`, thicker on hover). Page titles (`text-large-title`, `text-display`) use
+Schibsted Grotesk, bundled from `@fontsource` under the OFL; everything else is the system
+font. The mark (`AppMark`) is the bird from
 `brand/` at the repository root.
 
 ## Rebranding for a client

@@ -49,7 +49,7 @@ export function ExternalButton({ href, children }: { href: string; children: Rea
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="inline-flex w-fit items-center gap-1.5 text-body font-medium text-accent underline-offset-2 hover:underline focus-visible:focus-ring"
+      className="inline-flex w-fit items-center gap-1.5 text-body font-medium text-accent underline decoration-1 underline-offset-2 hover:decoration-2 focus-visible:focus-ring"
     >
       {children}
       <ExternalLink aria-hidden="true" className="size-4" />

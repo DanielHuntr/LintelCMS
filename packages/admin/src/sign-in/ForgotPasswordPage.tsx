@@ -70,7 +70,7 @@ export function ForgotPasswordPage({
       <Link
         to="/sign-in"
         search={{ redirect: undefined }}
-        className="mt-6 inline-block rounded-control text-body text-accent hover:underline focus-visible:focus-ring"
+        className="mt-6 inline-block rounded-control text-body text-accent underline decoration-1 underline-offset-2 hover:decoration-2 focus-visible:focus-ring"
       >
         {t("forgotPassword.backToSignIn")}
       </Link>

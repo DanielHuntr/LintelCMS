@@ -96,7 +96,7 @@ export function ContentApprovalPage() {
                       <Link
                         to="/automations/$workflowId"
                         params={{ workflowId: setting.workflowId }}
-                        className="text-footnote text-accent underline-offset-2 hover:underline focus-visible:focus-ring"
+                        className="text-footnote text-accent underline decoration-1 underline-offset-2 hover:decoration-2 focus-visible:focus-ring"
                       >
                         {t("approval.openWorkflow")}
                       </Link>

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@fontsource/schibsted-grotesk/800.css";
 
 /* The page builder's screens live in their own package and use these same tokens. */
 @source "../../builder/src";
@@ -14,19 +15,24 @@
 @theme {
   --color-*: initial;
 
-  /* System fonts: San Francisco on Apple devices, Segoe UI on Windows. Nothing is bundled. */
+  /* System fonts: San Francisco on Apple devices, Segoe UI on Windows. */
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+  /*
+   * Page titles: Schibsted Grotesk, bundled (OFL, from @fontsource), so every screen's title
+   * looks the same on Windows and Mac. Everything else stays in the system font.
+   */
+  --font-display: "Schibsted Grotesk", var(--font-sans);
 
   /* Type scale. Each step carries its own line height, weight and tracking. */
   /* The one big question on each full-screen setup step. */
   --text-display: 2.375rem; /* 38px */
   --text-display--line-height: 2.875rem;
-  --text-display--letter-spacing: -0.028em;
-  --text-display--font-weight: 600;
+  --text-display--letter-spacing: -0.034em;
+  --text-display--font-weight: 800;
   --text-large-title: 2.125rem; /* 34px */
   --text-large-title--line-height: 2.625rem;
-  --text-large-title--letter-spacing: -0.022em;
-  --text-large-title--font-weight: 700;
+  --text-large-title--letter-spacing: -0.034em;
+  --text-large-title--font-weight: 800;
   --text-title: 1.375rem; /* 22px */
   --text-title--line-height: 1.75rem;
   --text-title--letter-spacing: -0.016em;
@@ -62,22 +68,22 @@
  * they only act as fallbacks. The real values are set per scheme in the base layer below.
  */
 @theme reference {
-  --color-background: #f5f5f7;
-  --color-surface: #ffffff;
-  --color-surface-raised: #ffffff;
-  --color-sidebar: #ffffff;
-  --color-fill: #e9e9eb;
-  --color-fill-strong: #e3e3e8;
-  --color-segment: #ffffff;
-  --color-knob: #ffffff;
-  --color-separator: #d1d1d6;
-  --color-label: #1d1d1f;
-  --color-label-secondary: #6e6e73;
-  --color-label-tertiary: #8e8e93;
-  --color-accent: #0066cc;
-  --color-accent-fill: #0071e3;
-  --color-accent-fill-hover: #0066cc;
-  --color-on-accent: #ffffff;
+  --color-background: #f6f4ef;
+  --color-surface: #fffefb;
+  --color-surface-raised: #fffefb;
+  --color-sidebar: #fffefb;
+  --color-fill: #ebe8e1;
+  --color-fill-strong: #e2ded5;
+  --color-segment: #fffefb;
+  --color-knob: #fffefb;
+  --color-separator: #d9d4ca;
+  --color-label: #1f1d1a;
+  --color-label-secondary: #6f6a62;
+  --color-label-tertiary: #8f897f;
+  --color-accent: #1f1d1a;
+  --color-accent-fill: #1f1d1a;
+  --color-accent-fill-hover: #000000;
+  --color-on-accent: #fffefb;
   --color-success: #248a3d;
   --color-warning: #b25000;
   --color-danger: #d70015;
@@ -103,28 +109,29 @@
   :root,
   [data-color-scheme] {
     color-scheme: light;
-    --color-background: #f5f5f7;
-    --color-surface: #ffffff;
-    --color-surface-raised: #ffffff;
-    --color-sidebar: rgb(255 255 255 / 0.6);
-    --color-fill: rgb(118 118 128 / 0.12);
-    --color-fill-strong: rgb(118 118 128 / 0.24);
+    /* Warm paper, not a cool system grey: cards a shade lighter than the page. */
+    --color-background: #f6f4ef;
+    --color-surface: #fffefb;
+    --color-surface-raised: #fffefb;
+    --color-sidebar: rgb(255 254 251 / 0.7);
+    --color-fill: rgb(120 108 90 / 0.12);
+    --color-fill-strong: rgb(120 108 90 / 0.22);
     /* The selected segment of a SegmentedControl, and the round knob of a Toggle. */
-    --color-segment: #ffffff;
-    --color-knob: #ffffff;
-    --color-separator: rgb(60 60 67 / 0.18);
-    --color-label: #1d1d1f;
-    --color-label-secondary: #6e6e73;
-    --color-label-tertiary: #8e8e93;
+    --color-segment: #fffefb;
+    --color-knob: #fffefb;
+    --color-separator: rgb(80 70 50 / 0.16);
+    --color-label: #1f1d1a;
+    --color-label-secondary: #6f6a62;
+    --color-label-tertiary: #8f897f;
     /*
-     * Lintel blue (#0071E3) fills buttons; white on it is 4.6:1. Accent text is a shade
-     * deeper so links pass WCAG AA on the light grey background too.
+     * Lintel ink (#1F1D1A): buttons, selection and text links (links are underlined, since
+     * ink text alone doesn't look clickable). Paper on ink is about 16:1.
      */
-    --color-accent: #0066cc;
-    --color-accent-fill: #0071e3;
+    --color-accent: #1f1d1a;
+    --color-accent-fill: #1f1d1a;
     /* Filled buttons on hover: a step further from their text, so hovering never fades it. */
-    --color-accent-fill-hover: #0066cc;
-    --color-on-accent: #ffffff;
+    --color-accent-fill-hover: #000000;
+    --color-on-accent: #fffefb;
     --color-success: #248a3d;
     --color-warning: #b25000;
     --color-danger: #d70015;
@@ -133,23 +140,24 @@
 
     @variant scheme-dark {
       color-scheme: dark;
-      --color-background: #000000;
-      --color-surface: #1c1c1e;
-      --color-surface-raised: #2c2c2e;
-      --color-sidebar: rgb(28 28 30 / 0.72);
-      --color-fill: rgb(118 118 128 / 0.24);
-      --color-fill-strong: rgb(118 118 128 / 0.36);
-      --color-segment: #636366;
-      --color-knob: #ffffff;
-      --color-separator: rgb(84 84 88 / 0.6);
-      --color-label: #f5f5f7;
-      --color-label-secondary: #98989d;
-      --color-label-tertiary: #6e6e73;
-      /* Lighter blue for text on dark surfaces, so it passes AA on raised panels. */
-      --color-accent: #4aa3ff;
-      --color-accent-fill: #0071e3;
-      --color-accent-fill-hover: #0066cc;
-      --color-on-accent: #ffffff;
+      /* Warm near-black, not blue-black. */
+      --color-background: #11100e;
+      --color-surface: #1d1b18;
+      --color-surface-raised: #26231f;
+      --color-sidebar: rgb(29 27 24 / 0.72);
+      --color-fill: rgb(200 190 170 / 0.16);
+      --color-fill-strong: rgb(200 190 170 / 0.26);
+      --color-segment: #57524a;
+      --color-knob: #fffefb;
+      --color-separator: rgb(120 112 100 / 0.5);
+      --color-label: #f3efe8;
+      --color-label-secondary: #a8a197;
+      --color-label-tertiary: #78726a;
+      /* Ink turns to paper: paper buttons with ink text. */
+      --color-accent: #f3efe8;
+      --color-accent-fill: #f3efe8;
+      --color-accent-fill-hover: #ffffff;
+      --color-on-accent: #1f1d1a;
       --color-success: #30d158;
       --color-warning: #ff9f0a;
       --color-danger: #ff453a;
@@ -390,5 +398,13 @@
 @layer base {
   th {
     text-align: start;
+  }
+}
+
+/* The two title sizes use the title face; the type scale can't carry a font, so it's here. */
+@layer base {
+  .text-large-title,
+  .text-display {
+    font-family: var(--font-display);
   }
 }

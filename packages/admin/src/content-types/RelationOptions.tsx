@@ -51,7 +51,10 @@ export function TermsOptions({ options, onChange }: RelationOptionsProps) {
         </div>
         <p id={hintId} className="text-footnote text-label-secondary">
           {t("builder.taxonomyHint")}{" "}
-          <Link to="/content/taxonomies" className="text-accent hover:underline">
+          <Link
+            to="/content/taxonomies"
+            className="text-accent underline decoration-1 underline-offset-2 hover:decoration-2"
+          >
             {t("builder.manageTaxonomies")}
           </Link>
         </p>

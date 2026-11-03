@@ -296,7 +296,7 @@ function AppliedSummary({
           href={siteAddress}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex w-fit items-center gap-1.5 text-footnote font-medium text-accent hover:underline focus-visible:focus-ring"
+          className="inline-flex w-fit items-center gap-1.5 text-footnote font-medium text-accent underline decoration-1 underline-offset-2 hover:decoration-2 focus-visible:focus-ring"
         >
           {t("templates.viewSite")}
           <ExternalLink aria-hidden="true" className="size-4" />

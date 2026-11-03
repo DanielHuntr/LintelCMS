@@ -151,7 +151,7 @@ function OrderDetail({ order }: { order: Order }) {
               {address.phone && <span className="block text-label-secondary">{address.phone}</span>}
             </address>
             <a
-              className="mt-3 text-body text-accent underline-offset-2 hover:underline"
+              className="mt-3 text-body text-accent underline decoration-1 underline-offset-2 hover:decoration-2"
               href={`mailto:${order.email}`}
             >
               {order.email}

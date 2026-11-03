@@ -23,7 +23,10 @@ export function FieldsetOptions({
     return (
       <p className="text-body text-label-secondary">
         {t("fieldOptions.noFieldsets")}{" "}
-        <Link to="/build/fieldsets" className="text-accent hover:underline">
+        <Link
+          to="/build/fieldsets"
+          className="text-accent underline decoration-1 underline-offset-2 hover:decoration-2"
+        >
           {t("fieldOptions.makeFieldset")}
         </Link>
       </p>
@@ -50,7 +53,7 @@ export function FieldsetOptions({
           <Link
             to="/build/fieldsets/$handle"
             params={{ handle: chosen.handle }}
-            className="text-accent hover:underline"
+            className="text-accent underline decoration-1 underline-offset-2 hover:decoration-2"
           >
             {t("fieldOptions.editFieldset")}
           </Link>

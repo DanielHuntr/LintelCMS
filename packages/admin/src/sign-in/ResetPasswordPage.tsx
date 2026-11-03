@@ -46,7 +46,7 @@ export function ResetPasswordPage() {
     <Link
       to="/sign-in"
       search={{ redirect: undefined }}
-      className="mt-6 inline-block rounded-control text-body text-accent hover:underline focus-visible:focus-ring"
+      className="mt-6 inline-block rounded-control text-body text-accent underline decoration-1 underline-offset-2 hover:decoration-2 focus-visible:focus-ring"
     >
       {linkState === "done" ? t("resetPassword.signIn") : t("forgotPassword.backToSignIn")}
     </Link>
@@ -67,7 +67,7 @@ export function ResetPasswordPage() {
         {linkState === "unusable" && (
           <Link
             to="/forgot-password"
-            className="mt-10 inline-block rounded-control text-body font-medium text-accent hover:underline focus-visible:focus-ring"
+            className="mt-10 inline-block rounded-control text-body font-medium text-accent underline decoration-1 underline-offset-2 hover:decoration-2 focus-visible:focus-ring"
           >
             {t("resetPassword.askAgain")}
           </Link>

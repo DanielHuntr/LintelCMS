@@ -97,7 +97,7 @@ export function RevisionHistory({ entryId, isWorking, onRestore }: RevisionHisto
         <button
           type="button"
           onClick={() => setShownCount((count) => count + revisionsPerPage)}
-          className="self-start rounded-[5px] text-footnote font-medium text-accent hover:underline focus-visible:focus-ring"
+          className="self-start rounded-[5px] text-footnote font-medium text-accent underline decoration-1 underline-offset-2 hover:decoration-2 focus-visible:focus-ring"
         >
           {t("revisions.showOlder")}
         </button>

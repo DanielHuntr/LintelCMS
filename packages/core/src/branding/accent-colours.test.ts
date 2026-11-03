@@ -8,13 +8,13 @@ import {
 } from "./accent-colours.js";
 
 describe("accent shades", () => {
-  it("keeps Lintel blue's hand-tuned shades, all readable", () => {
+  it("keeps Lintel ink's hand-tuned shades, all readable", () => {
     const lintel = accentShades(LINTEL_ACCENT_COLOUR);
     expect(lintel).toMatchObject({
-      fill: "#0071e3",
-      text: "#0066cc",
-      textDark: "#4aa3ff",
-      onFill: "#ffffff",
+      fill: "#1f1d1a",
+      text: "#1f1d1a",
+      textDark: "#f3efe8",
+      onFill: "#fffefb",
     });
     expect(contrastRatio(lintel.onFill, lintel.fill)).toBeGreaterThanOrEqual(MINIMUM_TEXT_CONTRAST);
     expect(contrastRatio(lintel.text, "#f5f5f7")).toBeGreaterThanOrEqual(MINIMUM_TEXT_CONTRAST);

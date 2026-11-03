@@ -145,7 +145,7 @@ export function WorkflowsPage() {
           <Link
             to="/help"
             search={{ topic: "using/automations", anchor: undefined }}
-            className="text-accent underline-offset-2 hover:underline focus-visible:focus-ring"
+            className="text-accent underline decoration-1 underline-offset-2 hover:decoration-2 focus-visible:focus-ring"
           >
             {t("automations.developerDocs")}
           </Link>

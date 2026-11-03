@@ -163,7 +163,7 @@ function BuiltInPreviewFrame({
             to="/build/content-types/$handle"
             params={{ handle: collection.blueprintHandle }}
             hash="live-preview"
-            className="mt-1 self-start text-footnote font-medium text-accent hover:underline focus-visible:focus-ring"
+            className="mt-1 self-start text-footnote font-medium text-accent underline decoration-1 underline-offset-2 hover:decoration-2 focus-visible:focus-ring"
           >
             {t("preview.noSiteLink")}
           </Link>

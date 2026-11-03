@@ -40,7 +40,7 @@ export function ConfirmEmailPage() {
     >
       <Link
         to="/account"
-        className="mt-10 inline-block rounded-control text-body font-medium text-accent hover:underline focus-visible:focus-ring"
+        className="mt-10 inline-block rounded-control text-body font-medium text-accent underline decoration-1 underline-offset-2 hover:decoration-2 focus-visible:focus-ring"
       >
         {t("confirmEmail.toAccount")}
       </Link>

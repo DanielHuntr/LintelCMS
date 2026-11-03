@@ -55,8 +55,8 @@ function placeholderPage(adminPath: string): string {
       body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 2rem; }
       main { max-width: 32rem; text-align: center; line-height: 1.5; }
       h1 { font-size: 1.75rem; margin: 0 0 0.5rem; }
-      a { color: #0066cc; }
-      @media (prefers-color-scheme: dark) { a { color: #4aa3ff; } }
+      a { color: #1f1d1a; }
+      @media (prefers-color-scheme: dark) { a { color: #f3efe8; } }
     </style>
   </head>
   <body>

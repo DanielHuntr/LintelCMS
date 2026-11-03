@@ -55,14 +55,17 @@ export function PublishedPageView({ collectionHandle, entryId }: PublishedPageVi
         <Info aria-hidden="true" strokeWidth={2} className="mt-0.5 size-4 shrink-0 text-accent" />
         <p>
           {t("viewPage.notConnected")}{" "}
-          <Link to="/settings/site" className="font-medium text-accent hover:underline">
+          <Link
+            to="/settings/site"
+            className="font-medium text-accent underline decoration-1 underline-offset-2 hover:decoration-2"
+          >
             {t("viewPage.connect")}
           </Link>{" "}
           <a
             href={fullDocsUrl("building/nextjs-starter")}
             target="_blank"
             rel="noreferrer"
-            className="font-medium text-accent hover:underline"
+            className="font-medium text-accent underline decoration-1 underline-offset-2 hover:decoration-2"
           >
             {t("viewPage.starterGuide")}
           </a>
