@@ -436,7 +436,18 @@ Daniel compared the motion with Framer and Webflow: Framer animates between stat
   - unit tests for the maths and the settings;
   - a render test for the id.
 
-**Next:** open and selected states, and several animations on one element.
+**Several animations on one element (4 November 2026):**
+
+- An element keeps `animations`, a list of up to six (an entrance, a hover, scroll steps), instead of one `animation`.
+- Page documents are now version 2. Version 1 pages are migrated when read, with each `animation` becoming a list of one, so nothing in the database has to change.
+- The Motion panel lists each animation, Play plays them all, and choosing one adds it rather than replacing.
+- **Tests:**
+  - `builder-model/src/document/migrations.test.ts` (new), and a limit test in `validate-page.test.ts`;
+  - in the builder: two animations kept, and removing one keeps the other;
+  - the existing tests updated.
+- **Docs:** the spec and effects docs updated.
+
+**Next:** open and selected states.
 
 ## QOL-A-1: Undo after deleting (3 November 2026)
 
