@@ -49,6 +49,8 @@ interface InsertPanelProps {
    * asks again, even for the same segment.
    */
   focusRequest?: InsertFocusRequest;
+  /** "Draft a page for me", shown above the sections when page drafting is on. */
+  draftButton?: ReactNode;
 }
 
 export interface InsertFocusRequest {
@@ -79,6 +81,7 @@ export function InsertPanel({
   onInsert,
   onDragChange,
   focusRequest,
+  draftButton,
 }: InsertPanelProps) {
   const text = useBuilderText();
   const store = usePreferenceStore();
@@ -227,6 +230,7 @@ export function InsertPanel({
             ]}
           />
         )}
+        {search.trim() === "" && kind === "sections" && draftButton}
       </div>
 
       <div ref={list} className="flex flex-col gap-1 px-2 py-2">

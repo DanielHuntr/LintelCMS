@@ -24,6 +24,7 @@ import { updatesStrings } from "./updatesStrings.js";
 import { treeSelectionStrings } from "./treeSelectionStrings.js";
 import { pageMenuStrings } from "./pageMenuStrings.js";
 import { freePhotosStrings } from "../free-photos/freePhotosStrings.js";
+import { pageDraftsStrings } from "../page-drafts/pageDraftsStrings.js";
 import { siteFontsStrings } from "../site-fonts/siteFontsStrings.js";
 import { quickUploadStrings } from "../media/quickUploadStrings.js";
 import { compareLiveStrings } from "../compare-live/compareLiveStrings.js";
@@ -73,6 +74,7 @@ const english = {
   ...importersStrings,
   ...updatesStrings,
   ...freePhotosStrings,
+  ...pageDraftsStrings,
   ...siteFontsStrings,
   ...compareLiveStrings,
   ...scheduleStrings,

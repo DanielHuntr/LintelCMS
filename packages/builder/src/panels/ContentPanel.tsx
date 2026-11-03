@@ -25,6 +25,7 @@ import { type BindingScope, findBindingScope, useDataSources } from "./data-sour
 import { FieldControl, SourceField } from "./field-controls.js";
 import { BindingPicker, ItemListField } from "./item-list-field.js";
 import { MenuSection } from "../menus/menu-editing.js";
+import { RewriteText } from "../page-drafts/RewriteText.js";
 
 interface ContentPanelProps {
   node: PageNode;
@@ -158,6 +159,20 @@ export function ContentPanel({
             ))
           )}
         </PanelSection>
+      )}
+      {markableTypes.includes(node.type) && (
+        <RewriteText
+          key={node.id}
+          node={node}
+          isLocked={isLocked}
+          onRewrite={(words) =>
+            onChange(
+              // Rewritten words start without the old words' styled parts.
+              { text: words, ...(Array.isArray(node.props.marks) ? { marks: [] } : {}) },
+              text("pageBuilder.rewrite.history"),
+            )
+          }
+        />
       )}
     </fieldset>
   );

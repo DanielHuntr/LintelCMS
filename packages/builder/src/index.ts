@@ -25,3 +25,9 @@ export {
 } from "./preferences/builder-preferences.js";
 export { skillLevels, type SkillLevel } from "./skill-level/skill-levels.js";
 export { BlueprintSketch } from "./panels/BlueprintSketch.js";
+export {
+  type DraftPageRequest,
+  type DraftWatch,
+  type PageDrafting,
+  type RewriteStyle,
+} from "./page-drafts/page-drafting.js";

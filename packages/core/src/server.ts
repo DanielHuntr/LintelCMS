@@ -61,6 +61,7 @@ import type { LintelPlugin } from "./plugins/plugin-definition.js";
 import { registerPluginRoutes } from "./plugins/plugin-routes.js";
 import { pluginRegistry } from "./plugins/plugins.registry.js";
 import { type FreePhotosOptions, registerFreePhotos } from "./free-photos/register-free-photos.js";
+import { type PageDraftsOptions, registerPageDrafts } from "./page-drafts/register-page-drafts.js";
 import { registerSiteFonts, type SiteFontsOptions } from "./site-fonts/register-site-fonts.js";
 import { siteFontsRoutes } from "./site-fonts/site-fonts.routes.js";
 import { pagesRoutes } from "./pages/pages.routes.js";
@@ -262,6 +263,8 @@ export interface ServerOptions {
   updates?: UpdatesOptions;
   /** The Free photos plugin's Openverse address and download rules. Every part has a default. */
   freePhotos?: FreePhotosOptions;
+  /** Page drafting's models folder, model and runner. Every part has a default. */
+  pageDrafts?: PageDraftsOptions;
   /** How site fonts reach Google Fonts and Adobe Fonts. Defaults to the real services. */
   siteFonts?: SiteFontsOptions;
 }
@@ -412,6 +415,8 @@ export function buildServer(options: ServerOptions) {
     media,
     runScheduledJobs: options.commerce?.runScheduledJobs ?? options.runScheduledJobs ?? true,
   });
+  // What the Page drafting plugin's routes need; its routes are the plugin's own.
+  registerPageDrafts(server, options.pageDrafts);
   // What the Free photos plugin's routes need; its routes are the plugin's own.
   registerFreePhotos(
     server,

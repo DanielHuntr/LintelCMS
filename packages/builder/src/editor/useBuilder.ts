@@ -1,5 +1,6 @@
 import {
   type BackgroundVideo,
+  type NodeBlueprint,
   type DesignVariable,
   type SharedStyle,
   buildStarterPage,
@@ -44,6 +45,7 @@ import { type BuilderClipboard, choosePasteSource, writeToSystemClipboard } from
 import { instanceBlueprint } from "../blocks/block-commands.js";
 import * as commands from "./commands.js";
 import * as designCommands from "./design-commands.js";
+import { insertDraftedSections } from "./draft-commands.js";
 import * as siteSectionCommands from "./site-section-commands.js";
 import { createEditorState, describeUndo, editorReducer } from "./editor-state.js";
 
@@ -436,6 +438,9 @@ export function useBuilder({
         run(commands.changeEffects(context(), nodeId, effects), ""),
       setStateTransition: (nodeId: string, transition: StateTransition | null) =>
         run(commands.changeStateTransition(context(), nodeId, transition), ""),
+      /** Drafted sections, added as one change (see src/page-drafts). */
+      insertDraftedSections: (blueprints: readonly NodeBlueprint[], label: string) =>
+        run(insertDraftedSections(context(), blueprints, label)),
       useStarterPage: (page: StarterPage, name: string) =>
         run(
           commands.replacePageContent(
