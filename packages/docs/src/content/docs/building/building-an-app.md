@@ -136,7 +136,8 @@ Features**. The `form.submitted` webhook needs `read_forms`.
 
 No scope reaches settings, users, roles, webhooks or apps, or a page's design
 (`builder:design`): apps change content, like a content-only client, so on a site where
-clients' changes wait for approval an app's publishing waits too. An app acts for the
+clients' changes wait for approval, publishing answers 403 `REVIEW_NEEDED` and the app
+sends the entry for review (`POST /entries/:id/review`) instead. An app acts for the
 person who installed it, and only gets its scopes' permissions **that they also have**,
 checked on every request: if their role changes, the app's access changes with it, and if
 their account is deactivated the app stops working. An app installed by an Owner is still

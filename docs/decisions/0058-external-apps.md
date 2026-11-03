@@ -105,7 +105,8 @@ joined the release:
   app asking for one whose plugin is off is shown why and can't be installed.
 - **Apps change content, never design.** No scope includes `builder:design`, so apps are
   content-only in the sense of 0053, as API tokens already were: they can't change a page's
-  design, and where clients' changes wait for approval, so does an app's publishing. An
+  design, and where clients' changes wait for approval, publishing answers 403
+  `REVIEW_NEEDED` and the app sends the entry for review instead, whoever installed it. An
   app is still capped by its installer's permissions, an Owner's included, and stops
   working when its installer is deactivated.
 - **Development mode.** A switch in Build → Apps lets apps on this computer (localhost,

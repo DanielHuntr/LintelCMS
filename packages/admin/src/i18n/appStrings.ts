@@ -36,7 +36,7 @@ export const appStrings = {
   "apps.add.pastedLabel": "The app’s details",
   "apps.add.pastedHint": "Paste everything from lintel-app.json, including the curly brackets.",
   "apps.add.pasteNotJson":
-    "This doesn’t look like the whole file. Check you copied everything, from the first { to the last }.",
+    "This doesn’t look like the whole file. Check you copied everything, from the first '{' to the last '}'.",
   "apps.add.continue": "Continue",
   "apps.add.checking": "Checking…",
 

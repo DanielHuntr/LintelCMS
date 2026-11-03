@@ -877,3 +877,16 @@ Found by a code review of the newer website, builder, fonts and motion work, and
 | LINTEL-CODE-016 | P2       | Fixed  | Navigation and footer changes made in the builder go live at once, before the page is published                                              |
 
 Not in scope: making site styles and site motion per site (a separate track, Daniel's decision).
+
+## External apps (3 November 2026)
+
+Found while joining external apps to the release branch and checking Build → Apps in a browser. All fixed on `feature/external-apps`; see "External apps" in `FIX-LOG-ux.md`.
+
+| ID            | Severity | Status | Summary                                                                                                         |
+| ------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------- |
+| LINTEL-UX-130 | P2       | Fixed  | Apps sat in Settings, apart from Add-ons in Build, with nothing saying how an app differs from an add-on        |
+| LINTEL-UX-131 | P2       | Fixed  | Building an app on your own computer needed WEBHOOKS_ALLOW_PRIVATE_ADDRESSES, which opens every private address |
+| LINTEL-UX-132 | P3       | Fixed  | Adding an app on localhost said "couldn't read the app's details … Check the address with the app's developer"  |
+| LINTEL-UX-133 | P3       | Fixed  | An app's page said its name twice when its sidebar label is the app's name                                      |
+| LINTEL-UX-134 | P3       | Fixed  | An app's details page: the Uninstall button sat far to the right of the narrower cards below it                 |
+| LINTEL-UX-135 | P2       | Fixed  | An app could keep working after the person who installed it was deactivated (API tokens already stopped)        |

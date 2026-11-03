@@ -215,6 +215,41 @@ describe("forms and orders scopes", () => {
     expect((await asApp(clientSecret, "GET", "/shop/products")).statusCode).toBe(403);
     expect((await asApp(clientSecret, "GET", "/shop/settings")).statusCode).toBe(403);
     expect((await asApp(clientSecret, "GET", "/users")).statusCode).toBe(403);
+
+    // Past the permission check for handling an order (there is no such order), not refunds.
+    const order = "/shop/orders/00000000-0000-4000-8000-000000000001";
+    const note = await asApp(clientSecret, "POST", `${order}/notes`, { message: "Packed" });
+    expect(note.statusCode, note.body).toBe(404);
+    const refund = await asApp(clientSecret, "POST", `${order}/refunds`, {});
+    expect(refund.statusCode, refund.body).toBe(403);
+    const cancel = await asApp(clientSecret, "POST", `${order}/cancel`, {});
+    expect(cancel.statusCode, cancel.body).toBe(403);
+  });
+
+  it("sends for review, rather than publishes, where clients' changes wait for approval", async () => {
+    await ensurePagesCollection(testDatabase.database);
+    const scopes = ["read_content", "write_content", "publish_content"];
+    const install = await api("POST", "/apps", {
+      manifest: { ...manifest(scopes), handle: "writer" },
+      approvedScopes: scopes,
+    });
+    const { clientSecret } = install.json() as { clientSecret: string };
+    const saved = await api("PATCH", "/client-editing/settings", {
+      clientChanges: "needsApproval",
+    });
+    expect(saved.statusCode, saved.body).toBe(200);
+    const created = await asApp(clientSecret, "POST", "/collections/pages/entries", {
+      data: { title: "From the app" },
+    });
+    expect(created.statusCode, created.body).toBe(201);
+    const entry = `/entries/${created.json().id as string}`;
+
+    const publish = await asApp(clientSecret, "POST", `${entry}/publish`);
+    expect(publish.statusCode).toBe(403);
+    expect(publish.json().code).toBe("REVIEW_NEEDED");
+
+    const review = await asApp(clientSecret, "POST", `${entry}/review`, {});
+    expect(review.statusCode, review.body).toBe(201);
   });
 
   it("lets a forms app read forms and their entries, but not change them", async () => {
