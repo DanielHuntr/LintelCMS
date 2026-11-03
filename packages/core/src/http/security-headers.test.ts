@@ -74,4 +74,17 @@ describe("request logs", () => {
     expect(hideSecretsInUrl("/delivery/pages?page=2")).toBe("/delivery/pages?page=2");
     expect(hideSecretsInUrl("/health")).toBe("/health");
   });
+
+  // LINTEL-SEC-014: a basket's token is in its address, and opens the shopper's basket.
+  it("hide a basket's token in its address", () => {
+    expect(hideSecretsInUrl("/delivery/shop/carts/c4rt-t0ken/lines/l1")).toBe(
+      "/delivery/shop/carts/[hidden]/lines/l1",
+    );
+    expect(hideSecretsInUrl("/delivery/shop/carts/c4rt-t0ken?country=GB")).toBe(
+      "/delivery/shop/carts/[hidden]?country=GB",
+    );
+    expect(hideSecretsInUrl("/delivery/shop/products/linen-shirt")).toBe(
+      "/delivery/shop/products/linen-shirt",
+    );
+  });
 });
