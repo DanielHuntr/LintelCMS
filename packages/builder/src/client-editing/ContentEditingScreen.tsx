@@ -233,6 +233,8 @@ export function ContentEditingScreen(props: PageBuilderProps & { text: Translate
         <div className="flex h-dvh flex-col bg-background text-label" onKeyDown={handleKeyDown}>
           <Toolbar
             title={props.title}
+            titleNote={props.toolbarTitleNote}
+            afterTitle={props.toolbarAfterTitle}
             start={
               <>
                 {props.toolbarStart}
@@ -264,6 +266,7 @@ export function ContentEditingScreen(props: PageBuilderProps & { text: Translate
             >
               {hasContent ? (
                 <Canvas
+                  finishEditingRef={props.finishEditingRef}
                   html={rendered.html}
                   css={canvasCss}
                   breakpoint={breakpoint}

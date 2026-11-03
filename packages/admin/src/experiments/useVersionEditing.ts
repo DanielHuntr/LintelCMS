@@ -50,7 +50,12 @@ export function useVersionEditing(entryId: string, enabled: boolean) {
     },
     [experiment, entryId, queryClient],
   );
-  const { saveNow } = useAutosave({ draft, hasUnsavedChanges, isEnabled: true, save });
+  const { saveNow, saveUntilSaved } = useAutosave({
+    draft,
+    hasUnsavedChanges,
+    isEnabled: true,
+    save,
+  });
 
   const change = useCallback(
     (design: PageDocument) => {
@@ -80,6 +85,11 @@ export function useVersionEditing(entryId: string, enabled: boolean) {
     errorMessage,
     hasUnsavedChanges,
     saveNow: () => saveNow().catch(() => undefined),
+    saveBeforeLeaving: () =>
+      saveUntilSaved().then(
+        () => true,
+        () => false,
+      ),
   };
 }
 

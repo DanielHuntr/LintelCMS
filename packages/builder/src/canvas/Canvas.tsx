@@ -1,6 +1,6 @@
 import type { Breakpoint } from "@lintel/builder-model";
 import { Minus, Plus } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import type { MotionSpec } from "@lintel/motion";
 import type { EffectBinding } from "@lintel/motion/effects";
@@ -54,7 +54,12 @@ export const canvasWidths: Record<Breakpoint, string> = {
   phone: "390px",
 };
 
+/** No answer from the frame by then means it's gone or reloading, with nothing to keep. */
+const FINISH_EDITING_WAIT_MS = 400;
+
 interface CanvasProps {
+  /** Filled with a way to keep words being typed on the page, for leaving the builder. */
+  finishEditingRef?: RefObject<(() => Promise<void>) | null>;
   html: string;
   css: string;
   breakpoint: Breakpoint;
@@ -88,6 +93,7 @@ interface CanvasProps {
  * nothing on the page can reach the admin.
  */
 export function Canvas({
+  finishEditingRef,
   html,
   css,
   breakpoint,
@@ -108,6 +114,7 @@ export function Canvas({
 }: CanvasProps) {
   const text = useBuilderText();
   const frame = useRef<HTMLIFrameElement>(null);
+  const finishWaiters = useRef<Array<() => void>>([]);
   const source = useMemo(() => canvasFrameSource(site, scripts), [site, scripts]);
   // A new document (the site's look arrived) is a new frame, which says again when it's ready.
   const [readySource, setReadySource] = useState<string | null>(null);
@@ -192,6 +199,10 @@ export function Canvas({
         setZoom((current) => zoomFromWheel(current, message.deltaY));
         return;
       }
+      if (message.type === "editingFinished") {
+        finishWaiters.current.splice(0).forEach((resolve) => resolve());
+        return;
+      }
       // Zoom keys and Space pressed while the page has focus are the canvas's, not shortcuts.
       if (message.type === "key") {
         const action = zoomKey(message.key);
@@ -209,6 +220,19 @@ export function Canvas({
   }, []);
 
   const post = (message: MessageToFrame) => frame.current?.contentWindow?.postMessage(message, "*");
+
+  useEffect(() => {
+    if (!finishEditingRef) return;
+    finishEditingRef.current = () =>
+      new Promise((resolve) => {
+        finishWaiters.current.push(resolve);
+        setTimeout(resolve, FINISH_EDITING_WAIT_MS);
+        frame.current?.contentWindow?.postMessage({ type: "finishEditing" }, "*");
+      });
+    return () => {
+      finishEditingRef.current = null;
+    };
+  }, [finishEditingRef]);
 
   // Drawing a 300-element page takes a few milliseconds; waiting for the next frame means a
   // burst of changes (dragging a slider) is drawn once per screen refresh, not once per change.

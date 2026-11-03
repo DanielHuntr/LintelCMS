@@ -3,7 +3,8 @@ import { useState } from "react";
 import { Button } from "../design/Button.js";
 import { t } from "../i18n/strings.js";
 import type { Entry } from "./content.types.js";
-import { EntryStatusBadge } from "./EntryStatusBadge.js";
+import { nodeState } from "../content-tree/treeActions.js";
+import { StatusMark } from "../content-tree/StatusMark.js";
 import { PanelSection } from "./PanelSection.js";
 import { formatDateTime } from "./relativeTime.js";
 import { ScheduleForm } from "./ScheduleForm.js";
@@ -33,9 +34,21 @@ export function PublishingSection({
 }: PublishingSectionProps) {
   const [isScheduling, setIsScheduling] = useState(false);
   const status = entry?.status ?? "draft";
+  const state = entry
+    ? nodeState({ status, hasUnpublishedChanges: entry.hasUnpublishedChanges === true })
+    : "draft";
 
   return (
-    <PanelSection title={t("editor.panel.status")} accessory={<EntryStatusBadge status={status} />}>
+    <PanelSection
+      title={t("editor.panel.status")}
+      isAlwaysOpen
+      accessory={
+        <span className="flex items-center gap-1 text-footnote font-medium text-label">
+          <StatusMark state={state} isDecorative />
+          {t(`tree.status.${state}`)}
+        </span>
+      }
+    >
       <p className="text-footnote text-label-secondary">{statusDescription(entry)}</p>
 
       {entry?.hasUnpublishedChanges && status === "published" && (

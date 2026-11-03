@@ -91,4 +91,41 @@ describe("useAutosave", () => {
 
     expect(save).toHaveBeenCalledOnce();
   });
+
+  it("doesn't send a draft twice when a save asked for during another finds nothing new", async () => {
+    let finish: () => void = () => undefined;
+    const save = vi.fn(() => new Promise<void>((resolve) => (finish = resolve)));
+    const { result } = renderAutosave(save, { draft: "H", hasUnsavedChanges: true });
+
+    const first = result.current.saveNow();
+    const second = result.current.saveNow();
+    finish();
+    await act(() => Promise.all([first, second]));
+
+    expect(save).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends an edit made during a save when asked to save until nothing waits", async () => {
+    const finishes: Array<() => void> = [];
+    const save = vi.fn(() => new Promise<void>((resolve) => finishes.push(resolve)));
+    const { result, rerender } = renderAutosave(save, { draft: "H", hasUnsavedChanges: true });
+
+    const leaving = result.current.saveUntilSaved();
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    rerender({ draft: "He", hasUnsavedChanges: true });
+    finishes[0]?.();
+    await act(() => vi.advanceTimersByTimeAsync(1));
+    finishes[1]?.();
+    await act(() => vi.advanceTimersByTimeAsync(1));
+    await leaving;
+
+    expect(save.mock.calls.map((call) => (call as unknown[])[0])).toEqual(["H", "He"]);
+  });
+
+  it("rejects when saving until nothing waits fails, so the caller stays", async () => {
+    const save = vi.fn().mockRejectedValue(new Error("Broken"));
+    const { result } = renderAutosave(save, { draft: "H", hasUnsavedChanges: true });
+
+    await expect(result.current.saveUntilSaved()).rejects.toThrow("Broken");
+  });
 });

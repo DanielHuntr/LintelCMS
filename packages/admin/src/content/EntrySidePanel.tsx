@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { Collection, Entry } from "./content.types.js";
+import { FoldingPanelContext } from "./PanelSection.js";
 import { ParentPagePicker } from "./ParentPagePicker.js";
 import { PublishingSection } from "./PublishingSection.js";
 import { RevisionHistory } from "./RevisionHistory.js";
@@ -23,7 +24,10 @@ interface EntrySidePanelProps {
   children?: ReactNode;
 }
 
-/** Everything about the entry that isn't its content: status, place in the tree, history. */
+/**
+ * Everything about the entry that isn't its content. Status stays open at the top; the rest
+ * are calm folded rows, each saying what's set, until someone opens one.
+ */
 export function EntrySidePanel({
   id,
   collection,
@@ -45,26 +49,28 @@ export function EntrySidePanel({
       aria-label={collection.name}
       className="flex flex-col self-start overflow-hidden rounded-card bg-surface @min-[52rem]:sticky @min-[52rem]:top-20"
     >
-      <PublishingSection
-        entry={entry}
-        canPublish={canPublish}
-        isWorking={isWorking}
-        onUnpublish={onUnpublish}
-        onSchedule={onSchedule}
-        onCompareWithLive={onCompareWithLive}
-      />
-      <TranslationsSection collectionHandle={collection.handle} entry={entry} locale={locale} />
-      {collection.structure === "tree" && (
-        <ParentPagePicker
-          collectionHandle={collection.handle}
-          locale={locale}
-          entryId={entry?.id}
-          parentId={parentId}
-          onChange={onParentChange}
+      <FoldingPanelContext value={true}>
+        <PublishingSection
+          entry={entry}
+          canPublish={canPublish}
+          isWorking={isWorking}
+          onUnpublish={onUnpublish}
+          onSchedule={onSchedule}
+          onCompareWithLive={onCompareWithLive}
         />
-      )}
-      {children}
-      <RevisionHistory entryId={entry?.id} isWorking={isWorking} onRestore={onRestore} />
+        <TranslationsSection collectionHandle={collection.handle} entry={entry} locale={locale} />
+        {collection.structure === "tree" && (
+          <ParentPagePicker
+            collectionHandle={collection.handle}
+            locale={locale}
+            entryId={entry?.id}
+            parentId={parentId}
+            onChange={onParentChange}
+          />
+        )}
+        {children}
+        <RevisionHistory entryId={entry?.id} isWorking={isWorking} onRestore={onRestore} />
+      </FoldingPanelContext>
     </aside>
   );
 }

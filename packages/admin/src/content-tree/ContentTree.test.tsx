@@ -110,6 +110,51 @@ describe("the content tree", () => {
     expect(screen.getByRole("link", { name: "Recycle bin, 2 items" })).toBeTruthy();
   });
 
+  it("opens a key to the marks, and shows the first-time hint once there's a home page", async () => {
+    answerTree();
+    renderScreen(<ContentSection />, editor);
+
+    await screen.findByRole("tree", { name: "Content tree" });
+    expect(screen.queryByRole("region", { name: "What the marks mean" })).toBeNull();
+    const openKey = screen.getByRole("button", { name: "What the marks mean" });
+    await userEvent.click(openKey);
+
+    expect(openKey.getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByRole("region", { name: "What the marks mean" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "How your pages fit together" })).toBeTruthy();
+  });
+
+  it("marks only the pages that need a second look, and still says Live in words", async () => {
+    answerTree();
+    renderScreen(<ContentSection />, editor);
+
+    const pages = await screen.findByRole("treeitem", { name: "Pages" });
+    pages.focus();
+    await userEvent.keyboard("{ArrowRight}");
+    const homeRow = await screen.findByRole("treeitem", { name: "Home, Draft" });
+    expect(within(homeRow).getByRole("img", { name: "Draft" })).toBeTruthy();
+    await userEvent.keyboard("{ArrowDown}{ArrowRight}");
+
+    const aboutRow = await screen.findByRole("treeitem", { name: "About, Live" });
+    expect(within(aboutRow).queryByRole("img")).toBeNull();
+  });
+
+  // On a phone a page's top bar covered "Show pages", so the tree couldn't be reached from a
+  // page, and covered the foot of the tree once it was open (LINTEL-UX-236).
+  it("keeps Show pages above a page's top bar on a phone", async () => {
+    answerTree();
+    window.localStorage.setItem("lintel.contentTree.shown", "no");
+    renderScreen(<ContentSection />, { ...editor, initialPath: "/content/pages/e1" });
+
+    const show = await screen.findByRole("button", { name: "Show pages" });
+    expect(show.className).toContain("max-md:sticky");
+    expect(show.className).toContain("max-md:z-20");
+    await userEvent.click(show);
+
+    const tree = document.querySelector("[data-content-tree]");
+    expect(tree?.className).toContain("max-md:mb-26");
+  });
+
   // The tree always took a column beside the page, and the top of every Content screen on a
   // phone; now it folds away and stays folded.
   it("folds away to give the page room, and remembers it", async () => {
@@ -140,18 +185,14 @@ describe("the content tree", () => {
     expect(document.activeElement).toBe(homeRow);
     await userEvent.keyboard("{ArrowRight}");
 
-    expect(await screen.findByRole("treeitem", { name: "About, Published" })).toBeTruthy();
-    expect(
-      screen.getByRole("treeitem", { name: "Contact, Published, with changes not yet published" }),
-    ).toBeTruthy();
+    expect(await screen.findByRole("treeitem", { name: "About, Live" })).toBeTruthy();
+    expect(screen.getByRole("treeitem", { name: "Contact, Changes not published" })).toBeTruthy();
     expect(
       JSON.parse(window.localStorage.getItem("lintel.contentTree.expanded.main") ?? "[]"),
     ).toEqual(["root:pages", "home"]);
 
     await userEvent.keyboard("{ArrowLeft}");
-    await waitFor(() =>
-      expect(screen.queryByRole("treeitem", { name: "About, Published" })).toBeNull(),
-    );
+    await waitFor(() => expect(screen.queryByRole("treeitem", { name: "About, Live" })).toBeNull());
   });
 
   it("creates under a page from its menu, offering only the allowed content types", async () => {
@@ -186,7 +227,7 @@ describe("the content tree", () => {
     renderScreen(<ContentSection />, editor);
 
     const contactRow = await screen.findByRole("treeitem", { name: /^Contact/ });
-    const aboutRow = await screen.findByRole("treeitem", { name: "About, Published" });
+    const aboutRow = await screen.findByRole("treeitem", { name: "About, Live" });
     const dataTransfer = { setData: () => undefined, effectAllowed: "", dropEffect: "" };
     fireEvent.dragStart(contactRow.firstElementChild as Element, { dataTransfer });
     // jsdom rows have no height, so a drop lands in the middle: inside About.
@@ -257,7 +298,7 @@ describe("the content tree", () => {
     const api = answerTree();
     renderScreen(<ContentSection />, editor);
 
-    const aboutRow = await screen.findByRole("treeitem", { name: "About, Published" });
+    const aboutRow = await screen.findByRole("treeitem", { name: "About, Live" });
     const pages = screen.getByRole("treeitem", { name: "Pages" });
     const dataTransfer = { setData: () => undefined, effectAllowed: "", dropEffect: "" };
     fireEvent.dragStart(aboutRow.firstElementChild as Element, { dataTransfer });
@@ -279,7 +320,7 @@ describe("the content tree", () => {
     const api = answerTree({ addressChanges: [change] });
     renderScreen(<ContentSection />, { initialPath: "/content", enabledPlugins: ["seo"] });
 
-    const aboutRow = await screen.findByRole("treeitem", { name: "About, Published" });
+    const aboutRow = await screen.findByRole("treeitem", { name: "About, Live" });
     const pages = screen.getByRole("treeitem", { name: "Pages" });
     const dataTransfer = { setData: () => undefined, effectAllowed: "", dropEffect: "" };
     fireEvent.dragStart(aboutRow.firstElementChild as Element, { dataTransfer });
@@ -307,7 +348,7 @@ describe("the content tree", () => {
     answerTree({ addressChanges: [change] });
     renderScreen(<ContentSection />, { initialPath: "/content", enabledPlugins: [] });
 
-    const aboutRow = await screen.findByRole("treeitem", { name: "About, Published" });
+    const aboutRow = await screen.findByRole("treeitem", { name: "About, Live" });
     const pages = screen.getByRole("treeitem", { name: "Pages" });
     const dataTransfer = { setData: () => undefined, effectAllowed: "", dropEffect: "" };
     fireEvent.dragStart(aboutRow.firstElementChild as Element, { dataTransfer });
@@ -325,6 +366,7 @@ describe("the content tree", () => {
 
     const homeRow = await screen.findByRole("treeitem", { name: "Home, Draft" });
     fireEvent.contextMenu(homeRow.firstElementChild ?? homeRow);
+    await userEvent.click(await screen.findByRole("menuitem", { name: "More" }));
     await userEvent.click(await screen.findByRole("menuitem", { name: "Hostnames…" }));
 
     const dialog = await screen.findByRole("dialog", { name: "Hostnames for “Home”" });
@@ -373,7 +415,7 @@ describe("the content tree (QA sweep)", () => {
     renderScreen(<ContentSection />, { ...editor, initialPath: "/content/pages" });
 
     expect(await screen.findByRole("treeitem", { name: "Home, Draft" })).toBeTruthy();
-    expect(await screen.findByRole("treeitem", { name: "About, Published" })).toBeTruthy();
+    expect(await screen.findByRole("treeitem", { name: "About, Live" })).toBeTruthy();
   });
 
   it("lists the tree's pages in Move… before anything is typed", async () => {
@@ -381,8 +423,9 @@ describe("the content tree (QA sweep)", () => {
     answerWithEdits();
     renderScreen(<ContentSection />, editor);
 
-    const aboutRow = await screen.findByRole("treeitem", { name: "About, Published" });
+    const aboutRow = await screen.findByRole("treeitem", { name: "About, Live" });
     fireEvent.contextMenu(aboutRow.firstElementChild ?? aboutRow);
+    await userEvent.click(await screen.findByRole("menuitem", { name: "More" }));
     await userEvent.click(await screen.findByRole("menuitem", { name: "Move…" }));
     const dialog = await screen.findByRole("dialog", { name: "Move “About”" });
     await within(dialog).findByRole("radio", { name: /^Home/ });
@@ -396,7 +439,7 @@ describe("the content tree (QA sweep)", () => {
     const api = answerWithEdits();
     renderScreen(<ContentSection />, editor);
 
-    const aboutRow = await screen.findByRole("treeitem", { name: "About, Published" });
+    const aboutRow = await screen.findByRole("treeitem", { name: "About, Live" });
     fireEvent.contextMenu(aboutRow.firstElementChild ?? aboutRow);
     await userEvent.click(await screen.findByRole("menuitem", { name: "Rename…" }));
     const dialog = await screen.findByRole("dialog", { name: "Rename “About”" });

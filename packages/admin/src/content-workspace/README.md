@@ -10,8 +10,8 @@ What opens beside the content tree (`src/content-tree`).
 
 ## An entry's workspace
 
-`EntryWorkspace.tsx` uses the entry editor's building blocks from `src/content` (the draft
-reducer, autosave, actions, fields, history), laid out differently:
+An entry opens in the entry editor (`src/content`), and a page's Content and Design views
+share one top bar (`src/page-home`). What follows is how its parts behave:
 
 - **Header** (`WorkspaceHeader.tsx`): breadcrumbs from the section down, the name as an
   inline-editable heading, the address, status badges and the actions menu.

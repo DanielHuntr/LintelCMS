@@ -62,7 +62,12 @@ export function usePageDesignSaving(
     [fieldHandle, queryClient],
   );
 
-  const { saveNow } = useAutosave({ draft: design, hasUnsavedChanges, isEnabled: true, save });
+  const { saveNow, saveUntilSaved } = useAutosave({
+    draft: design,
+    hasUnsavedChanges,
+    isEnabled: true,
+    save,
+  });
 
   const publish = useCallback(async () => {
     setIsPublishing(true);
@@ -90,6 +95,12 @@ export function usePageDesignSaving(
     errorMessage,
     hasUnsavedChanges,
     saveNow: () => saveNow().catch(() => undefined),
+    /** Saves anything waiting, and says whether it's all safe to leave. */
+    saveBeforeLeaving: () =>
+      saveUntilSaved().then(
+        () => true,
+        () => false,
+      ),
     publish,
     isPublishing,
     justPublished,

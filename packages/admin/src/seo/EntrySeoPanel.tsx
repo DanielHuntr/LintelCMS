@@ -29,8 +29,15 @@ const SAVE_DELAY_MILLISECONDS = 800;
  * networks, and a switch to keep the page out of search results. Saves as you type.
  */
 export function EntrySeoPanel({ entryId, entryTitle, slug, collection }: EditorPanelProps) {
+  const stored = useEntrySeo(entryId);
   return (
-    <PanelSection title={t("seo.panelTitle")}>
+    <PanelSection
+      title={t("seo.panelTitle")}
+      value={
+        stored.data &&
+        (stored.data.noindex ? t("pageHome.panel.searchHidden") : t("pageHome.panel.searchShown"))
+      }
+    >
       {entryId === undefined ? (
         <p className="text-footnote text-label-secondary">{t("seo.saveFirst")}</p>
       ) : (

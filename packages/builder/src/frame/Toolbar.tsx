@@ -8,6 +8,10 @@ import { HelpMenu } from "../tour/HelpMenu.js";
 
 interface ToolbarProps {
   title: string;
+  /** Under the title, such as where the page stands. */
+  titleNote?: ReactNode;
+  /** After the title, such as a switch to the page's other views. */
+  afterTitle?: ReactNode;
   start?: ReactNode;
   end?: ReactNode;
   breakpoint: Breakpoint;
@@ -32,7 +36,11 @@ export function Toolbar(props: ToolbarProps) {
     <header className="flex h-12 shrink-0 items-center gap-3 hairline-bottom bg-surface px-3">
       <div className="flex min-w-0 flex-1 items-center gap-2">
         {props.start}
-        <h1 className="truncate text-headline text-label">{props.title}</h1>
+        <div className="flex min-w-0 flex-col">
+          <h1 className="truncate text-headline leading-tight text-label">{props.title}</h1>
+          {props.titleNote}
+        </div>
+        {props.afterTitle && <div className="ms-2 shrink-0">{props.afterTitle}</div>}
       </div>
       <div className="w-64" data-tour="screen-size">
         <ChoiceGroup<Breakpoint>

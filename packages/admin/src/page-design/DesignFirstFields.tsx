@@ -39,7 +39,9 @@ export function DesignFirstFields({
   onStartDesigning,
   isStarting,
 }: DesignFirstFieldsProps) {
-  const others = fields.filter((field) => field !== designField && field.type !== "blocks");
+  const others = fields
+    .filter((field) => field !== designField && field.type !== "blocks")
+    .map(withPlainSummaryHelp);
   const sectionFields = fields.filter((field) => field.type === "blocks");
   const isDesigned = countDesignSections(data[designField.handle]) > 0;
 
@@ -61,6 +63,19 @@ export function DesignFirstFields({
       )}
     </div>
   );
+}
+
+/** What a site's Page blueprint says unless someone wrote their own. */
+const STOCK_SUMMARY_HELP = "A sentence or two for search results and link previews";
+
+/**
+ * A page's Summary sits under its design, so people wonder where it shows. It says so here,
+ * in words that can be translated; help someone wrote for their own blueprint stays.
+ */
+function withPlainSummaryHelp(field: Field): Field {
+  if (field.handle !== "summary") return field;
+  const isStock = !field.helpText || field.helpText === STOCK_SUMMARY_HELP;
+  return isStock ? { ...field, helpText: t("pageHome.summaryHelp") } : field;
 }
 
 interface SimpleSectionsProps {

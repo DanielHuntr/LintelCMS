@@ -789,6 +789,10 @@ export function runCanvasFrame(snap: typeof snapBox, fitGrid: typeof fitToGrid):
       }
     } else if (message.type === "stopMotion") {
       stopPreview();
+    } else if (message.type === "finishEditing") {
+      // Messages arrive in order, so any words sent here reach the builder before this answer.
+      finishEditing(true);
+      send({ type: "editingFinished" });
     }
   });
 

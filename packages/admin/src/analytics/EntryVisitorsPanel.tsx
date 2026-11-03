@@ -12,7 +12,10 @@ export function EntryVisitorsPanel({ entryId }: EditorPanelProps) {
   const { totals, previousTotals, path } = stats.data;
 
   return (
-    <PanelSection title={t("visitors.panel.title")}>
+    <PanelSection
+      title={t("visitors.panel.title")}
+      value={path === null ? undefined : t("pageHome.panel.visitors", { count: totals.visitors })}
+    >
       {path === null ? (
         <p className="text-footnote text-label-secondary">{t("visitors.panel.noPage")}</p>
       ) : (

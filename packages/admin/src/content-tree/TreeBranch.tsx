@@ -179,6 +179,7 @@ function EntryTreeItem({
       isExpanded={isExpanded}
       onToggle={showsChildren ? () => tree.toggle(node.id) : undefined}
       state={nodeState(node)}
+      scheduledFor={node.scheduledFor}
       count={
         node.childrenAsCollection && node.childCount > 0
           ? {

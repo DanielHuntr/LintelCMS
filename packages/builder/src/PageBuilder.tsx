@@ -53,6 +53,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type RefObject,
 } from "react";
 import {
   type BlockMaster,
@@ -179,6 +180,14 @@ export interface PageBuilderProps {
   /** Before the title: usually a back link. After the toolbar's controls: save state, Publish. */
   toolbarStart?: ReactNode;
   toolbarEnd?: ReactNode;
+  /**
+   * Filled with a way to keep words still being typed on the canvas. They only reach
+   * `onChange` when typing ends, so call it before saving to leave.
+   */
+  finishEditingRef?: RefObject<(() => Promise<void>) | null>;
+  /** Under the page's name in the toolbar, and after it. */
+  toolbarTitleNote?: ReactNode;
+  toolbarAfterTitle?: ReactNode;
   onSaveNow?: () => void;
   createId?: CreateNodeId;
   /**
@@ -970,6 +979,8 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
               >
                 <Toolbar
                   title={props.title}
+                  titleNote={props.toolbarTitleNote}
+                  afterTitle={props.toolbarAfterTitle}
                   start={props.toolbarStart}
                   end={props.toolbarEnd}
                   breakpoint={breakpoint}
@@ -1087,6 +1098,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                     )}
                     {!isBlank && (
                       <Canvas
+                        finishEditingRef={props.finishEditingRef}
                         html={rendered.html}
                         css={canvasCss}
                         breakpoint={breakpoint}

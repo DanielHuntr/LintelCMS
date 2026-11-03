@@ -176,7 +176,13 @@ describe("the page design screen", () => {
   it("offers View page beside Publish once the page is live, for the tour to point at", async () => {
     mockApi(({ method, url }) => {
       if (method === "GET" && url.pathname === "/entries/p1") {
-        return { ...samplePage(), slug: "about", status: "published", locale: "en-GB" };
+        return {
+          ...samplePage(),
+          slug: "about",
+          status: "published",
+          locale: "en-GB",
+          hasUnpublishedChanges: true,
+        };
       }
       if (method === "GET" && url.pathname === "/collections/pages") {
         return { ...postsCollection, handle: "pages", routePattern: "/{slug}" };
@@ -192,7 +198,7 @@ describe("the page design screen", () => {
     const viewPage = await screen.findByRole("link", { name: "View page" });
     expect(viewPage).toHaveAttribute("href", "https://bakery.example/about");
     expect(viewPage.closest("[data-tour='publish']")).toContainElement(
-      within(screen.getByRole("banner")).getByRole("button", { name: "Publish" }),
+      within(screen.getByRole("banner")).getByRole("button", { name: "Publish changes" }),
     );
   });
 
@@ -208,7 +214,7 @@ describe("the page design screen", () => {
     });
     renderScreen(<PageDesignPage collectionHandle="pages" entryId="p1" fieldHandle="design" />);
     const banner = await screen.findByRole("banner");
-    expect(await within(banner).findByText("Not on your site yet")).toBeInTheDocument();
+    expect(await within(banner).findByText("Draft, not on your site yet")).toBeInTheDocument();
 
     await user.click(within(banner).getByRole("button", { name: "Publish" }));
 
@@ -216,7 +222,68 @@ describe("the page design screen", () => {
     expect(
       screen.getByText("Published. Your changes are on your site.", { selector: "[role=status]" }),
     ).toBeInTheDocument();
-    expect(within(banner).queryByText("Not on your site yet")).not.toBeInTheDocument();
+    expect(within(banner).queryByText("Draft, not on your site yet")).not.toBeInTheDocument();
+    expect(within(banner).getByText("Live on your site")).toBeInTheDocument();
+  });
+
+  it("has the same top bar as the page: status in words, the views, View page, Preview", async () => {
+    const user = userEvent.setup();
+    mockApi(({ method, url }) => {
+      if (method === "GET" && url.pathname === "/entries/p1") {
+        return { ...samplePage(), status: "published", hasUnpublishedChanges: true };
+      }
+      if (method === "POST" && url.pathname === "/entries/p1/preview") {
+        return { token: "t1", expiresAt: "", previewUrl: "http://localhost:3000/about?preview=t1" };
+      }
+      throw apiErrorResponse(404, "NOT_FOUND", "Not found");
+    });
+    const open = vi.spyOn(window, "open").mockReturnValue({} as Window);
+    renderScreen(<PageDesignPage collectionHandle="pages" entryId="p1" fieldHandle="design" />);
+
+    const banner = await screen.findByRole("banner");
+    expect(within(banner).getByText("Live, with changes not published")).toBeInTheDocument();
+    expect(within(banner).getByRole("radio", { name: "Design" })).toBeChecked();
+    expect(within(banner).getByRole("button", { name: "Publish changes" })).toBeEnabled();
+
+    await user.click(within(banner).getByRole("button", { name: "Preview" }));
+
+    await waitFor(() =>
+      expect(open).toHaveBeenCalledWith("http://localhost:3000/about?preview=t1", "_blank"),
+    );
+    open.mockRestore();
+  });
+
+  it("goes to the page's Content view without asking, saving anything waiting first", async () => {
+    const user = userEvent.setup();
+    mockApi(({ method, url }) => {
+      if (method === "GET" && url.pathname === "/entries/p1") return samplePage();
+      throw apiErrorResponse(404, "NOT_FOUND", "Not found");
+    });
+    const { router } = renderScreen(
+      <PageDesignPage collectionHandle="pages" entryId="p1" fieldHandle="design" />,
+      { initialPath: "/content/pages/p1/design/design" },
+    );
+
+    const banner = await screen.findByRole("banner");
+    await user.click(within(banner).getByRole("radio", { name: "Content" }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/content/pages/p1"));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("says there's nothing to publish on a live page, with no greyed-out button", async () => {
+    mockApi(({ method, url }) => {
+      if (method === "GET" && url.pathname === "/entries/p1") {
+        return { ...samplePage(), status: "published", hasUnpublishedChanges: false };
+      }
+      throw apiErrorResponse(404, "NOT_FOUND", "Not found");
+    });
+    renderScreen(<PageDesignPage collectionHandle="pages" entryId="p1" fieldHandle="design" />);
+
+    const banner = await screen.findByRole("banner");
+    expect(within(banner).getByText("Live on your site")).toBeInTheDocument();
+    expect(within(banner).getByText("Published")).toBeInTheDocument();
+    expect(within(banner).queryByRole("button", { name: /^Publish/ })).toBeNull();
   });
 
   it("puts navigation and footer changes live with the page, and says when they wait", async () => {
@@ -244,7 +311,7 @@ describe("the page design screen", () => {
       await within(banner).findByText("Navigation and footer changes not live yet"),
     ).toBeInTheDocument();
 
-    await user.click(within(banner).getByRole("button", { name: "Publish" }));
+    await user.click(within(banner).getByRole("button", { name: "Publish changes" }));
 
     expect(await within(banner).findByRole("button", { name: "Published" })).toBeInTheDocument();
     expect(calls.map((call) => `${call.method} ${call.url.pathname}`)).toContain(

@@ -8,7 +8,7 @@ import { CopyButton } from "../design/CopyButton.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
 import type { EntryInfo } from "../content-tree/contentTree.types.js";
-import { StatusDot } from "../content-tree/StatusDot.js";
+import { StatusMark } from "../content-tree/StatusMark.js";
 import { nodeState } from "../content-tree/treeActions.js";
 import { iconForContent } from "../content-tree/typeIcons.js";
 import { t } from "../i18n/strings.js";
@@ -115,7 +115,7 @@ export function InfoTab({ entry, collection, info }: InfoTabProps) {
                       {node.title || t("tree.untitled")}
                     </span>
                     <span className="text-caption text-label-tertiary">{node.collection.name}</span>
-                    <StatusDot state={nodeState(node)} />
+                    <StatusMark state={nodeState(node)} scheduledFor={node.scheduledFor} />
                   </Link>
                 </li>
               );

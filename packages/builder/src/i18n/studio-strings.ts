@@ -82,6 +82,9 @@ export const builderStudioStrings = {
   "pageBuilder.tour.screens.title": "Every screen size, and every step",
   "pageBuilder.tour.screens.text":
     "Switch between desktop, tablet and phone to see and adjust each one. Undo, redo and History take you back to any earlier step.",
+  "pageBuilder.tour.views.title": "One page, two views",
+  "pageBuilder.tour.views.text":
+    "Design is how the page looks. Content holds its summary, address and settings. Switch between them whenever you like; your work is saved first.",
   "pageBuilder.tour.publish.title": "Publish and view your page",
   "pageBuilder.tour.publish.text":
     "Your changes save as you go. Publish puts the page on your website, and View page opens it as visitors see it. Help and tips brings this tour back.",

@@ -57,6 +57,7 @@ function ReviewPanel({
   return (
     <PanelSection
       title={t("workflowReview.title")}
+      needsAttention={Boolean(review.canReview && review.pendingApprovalId) || canSubmit}
       accessory={<Badge tone={stateTones[review.state]}>{t(`review.state.${review.state}`)}</Badge>}
     >
       <p className="text-footnote text-label-secondary">{describeState(review, collectionName)}</p>

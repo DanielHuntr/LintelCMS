@@ -12,6 +12,7 @@
 | `pageDesignRoutes.tsx`   | `/content/:collection/:entryId/design/:field`, full screen                |
 | `PageDesignPage.tsx`     | Loads the entry and opens the builder with the admin's services           |
 | `usePageDesignSaving.ts` | Autosave and Publish through the entries API                              |
+| `preloadDesigner.ts`     | Fetches the builder early, so switching to Design doesn't wait for it     |
 
 ## Design first
 
@@ -21,10 +22,14 @@ Design card for the first page field:
 
 - **Designed**: a live picture of the page (lazy, so the renderer isn't in the main bundle),
   how many sections it has, and **Edit design**.
-- **Saved but empty**: **Start from a template or section**, which opens the builder on its
-  empty page: **Add a section**, **Add elements** and a **Start from a template** link.
+- **Saved but empty**: one short row with **Start from a template or section**, so the page's
+  fields stay in view. It opens the builder on its empty page: **Add a section**, **Add
+  elements** and a **Start from a template** link.
 - **New**: **Start designing** once the page has a title (Return in the title does the same).
   It saves the page, then opens it in the builder.
+
+`DesignFirstFields` also says what the Summary is for, unless the blueprint has its own help.
+People without `builder:design` see **Edit on the page** instead of Edit design.
 
 Blocks fields (the "Page sections" form sites had before designs) are the alternative to a
 design. They're hidden once the page has a design, and until then are folded away under
@@ -58,9 +63,13 @@ message at the bottom of the screen.
   canvas shows the page exactly as the website will and can preview animations on it. The
   screen waits for it; if it can't be had, the canvas uses the default theme.
 - **Animation words**: `motionText`, the admin's `t()` for the animation studio.
+- **The top bar**: `toolbarTitleNote` and `toolbarAfterTitle` put the page's status and the
+  view switch beside its name, and `toolbarEnd` holds View page, Preview and Publish, all from
+  `src/page-home`. Preview opens the saved draft in a new tab, or the page's split view if there
+  is no preview address (or the browser blocks the tab). Switching to Content saves first.
 - **The tour**: Publish and **View page** (shown once the page is live, see
   `content/viewPage.ts`) sit together inside `data-tour="publish"`, so the tour's last step
-  can point at both.
+  can point at both. The view switch is `data-tour="page-views"`, the step before it.
 
 ## Menus in the builder
 

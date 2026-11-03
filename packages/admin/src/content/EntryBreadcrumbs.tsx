@@ -11,15 +11,15 @@ interface EntryBreadcrumbsProps {
   title: string;
 }
 
-/** Where the entry is: its section, the pages above it, then itself. */
+/** The page's name, after its section and the pages above it (the name alone on a phone). */
 export function EntryBreadcrumbs({ collection, entryId, title }: EntryBreadcrumbsProps) {
   const path = useEntryPath(entryId);
   const ancestors = Array.isArray(path.data?.path) ? path.data.path.slice(0, -1) : [];
 
   return (
-    <nav aria-label={t("workspace.breadcrumbs")} className="min-w-0 flex-1">
+    <nav aria-label={t("workspace.breadcrumbs")} className="min-w-0 max-w-full">
       <ol className="flex min-w-0 items-center gap-1 text-footnote text-label-secondary">
-        <li className="shrink-0">
+        <li className="shrink-0 group-data-tight/bar:hidden max-md:hidden">
           <Link
             to="/content/$collection"
             params={{ collection: collection.handle }}
@@ -29,7 +29,10 @@ export function EntryBreadcrumbs({ collection, entryId, title }: EntryBreadcrumb
           </Link>
         </li>
         {ancestors.map((step) => (
-          <li key={step.id} className="flex min-w-0 items-center gap-1">
+          <li
+            key={step.id}
+            className="flex min-w-0 items-center gap-1 group-data-tight/bar:hidden max-md:hidden"
+          >
             <ChevronRight aria-hidden="true" strokeWidth={2} className="size-3 shrink-0" />
             <Link
               to="/content/$collection/$entryId"
@@ -41,8 +44,14 @@ export function EntryBreadcrumbs({ collection, entryId, title }: EntryBreadcrumb
           </li>
         ))}
         <li className="flex min-w-0 items-center gap-1" aria-current="page">
-          <ChevronRight aria-hidden="true" strokeWidth={2} className="size-3 shrink-0" />
-          <span className="truncate text-label">{title || t("editor.untitled")}</span>
+          <ChevronRight
+            aria-hidden="true"
+            strokeWidth={2}
+            className="size-3 shrink-0 group-data-tight/bar:hidden max-md:hidden"
+          />
+          <span className="truncate text-body font-semibold text-label">
+            {title || t("editor.untitled")}
+          </span>
         </li>
       </ol>
     </nav>

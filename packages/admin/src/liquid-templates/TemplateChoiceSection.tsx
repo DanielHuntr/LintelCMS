@@ -46,7 +46,10 @@ export function TemplateChoiceSection({ collection, value, onChange }: TemplateC
   }
 
   return (
-    <PanelSection title={t("liquidTemplates.heading")}>
+    <PanelSection
+      title={t("liquidTemplates.heading")}
+      value={options.find((option) => option.value === current)?.label}
+    >
       <SelectField
         label={t("liquidTemplates.label")}
         hint={t("liquidTemplates.hint")}

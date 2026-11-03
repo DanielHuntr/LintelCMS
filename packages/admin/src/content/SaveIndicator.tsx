@@ -65,7 +65,10 @@ function VisibleState({
 
   if (status === "failed") {
     return (
-      <span className="flex items-center gap-1.5 text-danger" title={errorMessage ?? undefined}>
+      <span
+        className="flex items-center gap-1.5 whitespace-nowrap text-danger"
+        title={errorMessage ?? undefined}
+      >
         <CircleAlert aria-hidden="true" strokeWidth={2} className="size-3.5" />
         <span aria-hidden="true">{t("editor.saveFailed")}</span>
         <button

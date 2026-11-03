@@ -19,7 +19,7 @@ import { t, type StringKey } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import { useContentTree } from "./ContentTreeContext.js";
 import type { ActionItem } from "./TreeActionsMenu.js";
-import { actionsFor, type TreeAction, type TreeTarget } from "./treeActions.js";
+import { menuFor, nodeState, type TreeAction, type TreeTarget } from "./treeActions.js";
 
 const appearance: Record<TreeAction, { label: StringKey; icon: LucideIcon }> = {
   create: { label: "tree.action.create", icon: Plus },
@@ -48,11 +48,15 @@ export function useActionItems(target: TreeTarget): ActionItem[] {
     delete: useCan("entries:delete"),
     settings: useCan("settings:update"),
   };
-  return actionsFor(target, permissions).map((action) => ({
+  const hasChanges = target.kind === "entry" && nodeState(target.node) === "changed";
+  return menuFor(target, permissions).map(({ action, section }) => ({
     key: action,
-    label: t(appearance[action].label),
+    label: t(
+      action === "publish" && hasChanges ? "tree.action.publishChanges" : appearance[action].label,
+    ),
     icon: appearance[action].icon,
     tone: action === "delete" ? "danger" : "default",
+    section,
     onSelect: () => runAction(action, target),
   }));
 }

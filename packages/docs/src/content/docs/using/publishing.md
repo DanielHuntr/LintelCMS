@@ -19,8 +19,9 @@ read from Lintel for a short while.
 ## Changing something that's live
 
 Edit the entry as usual. Your changes are saved, but **your site keeps showing the last
-published version** until you press **Publish changes**. While they differ, the details
-panel says **Unpublished changes**.
+published version** until you press **Publish changes**. While they differ, the top of the
+page says **Live, with changes not published**, and the page has a pencil in the
+[content tree](/using/content-tree/#what-the-marks-mean).
 
 So you can take your time: fix a typo today, rewrite a paragraph tomorrow, and publish
 when it's all ready.

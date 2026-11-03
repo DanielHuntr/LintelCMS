@@ -8,7 +8,7 @@ import {
 } from "react";
 import { classNames } from "../design/classNames.js";
 import { t } from "../i18n/strings.js";
-import { StatusDot } from "./StatusDot.js";
+import { StatusMark, statusLabel } from "./StatusMark.js";
 import { TreeActionsMenu, type ActionItem } from "./TreeActionsMenu.js";
 import type { NodeState } from "./treeActions.js";
 import type { SelectGesture } from "./treeSelection.js";
@@ -40,6 +40,8 @@ interface TreeRowProps {
   isExpanded: boolean;
   onToggle?: () => void;
   state?: NodeState;
+  /** When a scheduled entry goes live, said with its state. */
+  scheduledFor?: string | null;
   /** A count shown at the end, for folders whose items open as a list. */
   count?: { value: number; description: string };
   actions?: readonly ActionItem[];
@@ -80,6 +82,7 @@ export function TreeRow({
   isExpanded,
   onToggle,
   state,
+  scheduledFor,
   count,
   actions,
   drag,
@@ -140,7 +143,7 @@ export function TreeRow({
       aria-label={[
         label,
         count?.description,
-        state ? t(`tree.status.${stateLabel(state)}`) : undefined,
+        state ? statusLabel(state, scheduledFor) : undefined,
         selecting?.isPicked ? t("tree.selection.selectedState") : undefined,
       ]
         .filter(Boolean)
@@ -235,7 +238,9 @@ export function TreeRow({
             {count.value}
           </span>
         )}
-        {state && <StatusDot state={state} />}
+        {/* Live is the usual state, so only pages that need a second look get a mark. Screen
+            readers still hear "Live" from the row's name. */}
+        {state && state !== "published" && <StatusMark state={state} scheduledFor={scheduledFor} />}
         {hasActions && (
           <button
             type="button"
@@ -267,10 +272,6 @@ export function TreeRow({
       )}
     </li>
   );
-}
-
-function stateLabel(state: NodeState): "published" | "draft" | "scheduled" | "changed" {
-  return state;
 }
 
 /** The rows on screen, in order: collapsed branches aren't drawn, so these are the visible ones. */

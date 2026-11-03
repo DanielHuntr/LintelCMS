@@ -16,6 +16,8 @@ export interface OutlineLabels {
 
 export type MessageToFrame =
   | { type: "render"; html: string; css: string }
+  /** Keeps any words being typed on the page; the frame answers `editingFinished`. */
+  | { type: "finishEditing" }
   | {
       type: "outline";
       selectedId: string | null;
@@ -93,6 +95,7 @@ export interface CanvasMenuItem {
 
 export type MessageFromFrame =
   | { type: "ready" }
+  | { type: "editingFinished" }
   /** `menuItem`: the link clicked, when it was one of a menu's links (see menu-links/). */
   /** `add`: Shift (or Ctrl/Cmd) was held, to add the element to the selection or take it away. */
   | { type: "select"; nodeId: string | null; menuItem?: CanvasMenuItem; add?: boolean }
@@ -163,6 +166,7 @@ export interface TextSelectionMessage {
 
 const frameMessageTypes = new Set([
   "ready",
+  "editingFinished",
   "select",
   "hover",
   "editText",
@@ -295,6 +299,8 @@ export function readFrameMessage(data: unknown): MessageFromFrame | null {
         isFiniteNumber(message.to)
         ? (message as MessageFromFrame)
         : null;
+    case "editingFinished":
+      return { type: "editingFinished" };
     default:
       return { type: "ready" };
   }

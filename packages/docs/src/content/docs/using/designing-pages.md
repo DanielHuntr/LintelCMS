@@ -26,12 +26,16 @@ it by clicking on it. New to the builder? Start with
 ## A page you already have
 
 The page's editor starts with its **Design** card: a small, live picture of the page and how
-many sections it has. Press **Edit design** to open it in the page builder.
+many sections it has. Press **Edit design**, or **Design** at the top, to open it in the page
+builder. **Content** at the top of the builder brings you back. See
+[One page, two views](/using/content-tree/#one-page-two-views).
 
-A page that hasn't been designed yet says so, with **Start from a template or section**.
+A page that hasn't been designed yet says so in one short row, with **Start from a template
+or section**.
 
-The page's other details (its summary for search results, its address, where it sits among
-your pages) are below the card, and in the panel on the right.
+The page's other details are below the card, and in the panel on the right. Its **Summary**
+shows in search results, link previews and lists of pages on your site, not on the page
+itself.
 
 ## In the page builder
 

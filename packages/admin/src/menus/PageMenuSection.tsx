@@ -24,7 +24,12 @@ export function PageMenuSection({ entryId, pageTitle }: { entryId: string; pageT
   const page = usePageInMenu(MAIN_MENU, entryId, canRead);
   if (!canRead) return null;
   return (
-    <PanelSection title={t("pageMenu.heading")}>
+    <PanelSection
+      title={t("pageMenu.heading")}
+      value={
+        page.data && (page.data.inMenu ? t("pageHome.panel.inMenu") : t("pageHome.panel.notInMenu"))
+      }
+    >
       {page.isPending && (
         <p className="text-footnote text-label-secondary">{t("pageMenu.loading")}</p>
       )}

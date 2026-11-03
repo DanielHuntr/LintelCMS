@@ -14,6 +14,7 @@ import { dashboardStrings } from "./dashboardStrings.js";
 import { pluginStrings } from "./pluginStrings.js";
 import { peopleStrings } from "./peopleStrings.js";
 import { pageDesignStrings } from "./pageDesignStrings.js";
+import { pageHomeStrings } from "../page-home/pageHomeStrings.js";
 import { contentModelSyncStrings } from "./contentModelSyncStrings.js";
 import { siteStrings } from "./siteStrings.js";
 import { brandingStrings } from "./brandingStrings.js";
@@ -64,6 +65,7 @@ const english = {
   ...pluginStrings,
   ...peopleStrings,
   ...pageDesignStrings,
+  ...pageHomeStrings,
   ...pageFlowStrings,
   ...cookieNoticeStrings,
   ...contentModelSyncStrings,
@@ -592,7 +594,8 @@ const english = {
   "editor.schedule.mustBeFuture": "Choose a time in the future.",
   "editor.parentLabel": "Parent page",
   "editor.parentNone": "None (top level)",
-  "editor.parentHint": "Pages can sit under other pages, like folders.",
+  "editor.parentHint":
+    "Pages can sit under other pages, like folders. The address follows: a page under Blogs is at /blogs/its-name.",
   "editor.duplicate": "Duplicate entry",
   "editor.details": "Details",
   "editor.preview": "Preview",

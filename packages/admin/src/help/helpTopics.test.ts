@@ -5,7 +5,9 @@ import { allHelpTopicSlugs, helpSlugForPath } from "./helpTopics.js";
 describe("helpSlugForPath", () => {
   it.each([
     ["/", "using/getting-around"],
-    ["/content", "using/writing"],
+    ["/content", "using/content-tree"],
+    ["/content/pages", "using/content-tree"],
+    ["/content/pages/0b9a9f8e-5d4c-4b3a-9e2d-1c0b9a8f7e6d", "using/writing"],
     ["/content/posts", "using/writing"],
     ["/content/posts/0b9a9f8e-5d4c-4b3a-9e2d-1c0b9a8f7e6d", "using/writing"],
     ["/media", "using/media"],

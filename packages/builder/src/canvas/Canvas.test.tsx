@@ -77,3 +77,57 @@ describe("zooming the canvas", () => {
     input.remove();
   });
 });
+
+// Words being typed on the page only reach the builder when typing ends, so leaving the
+// builder straight after typing would otherwise leave them behind.
+describe("keeping words still being typed", () => {
+  function renderWithRef() {
+    const finishEditingRef: { current: (() => Promise<void>) | null } = { current: null };
+    const { container } = render(
+      <Canvas
+        finishEditingRef={finishEditingRef}
+        html=""
+        css=""
+        breakpoint="base"
+        selectedId={null}
+        hoveredId={null}
+        labels={{ selected: null, hovered: null }}
+        revealId={null}
+        canTransform={false}
+        isInsertDragging={false}
+        onMessage={() => undefined}
+      />,
+    );
+    const frame = container.querySelector("iframe") as HTMLIFrameElement;
+    return { finishEditingRef, frameWindow: frame.contentWindow as Window };
+  }
+
+  it("asks the frame to finish, and waits for its answer", async () => {
+    const { finishEditingRef, frameWindow } = renderWithRef();
+    const post = vi.spyOn(frameWindow, "postMessage");
+    let isDone = false;
+
+    const finishing = finishEditingRef.current?.().then(() => {
+      isDone = true;
+    });
+    await Promise.resolve();
+
+    expect(post).toHaveBeenCalledWith({ type: "finishEditing" }, "*");
+    expect(isDone).toBe(false);
+    window.dispatchEvent(
+      new MessageEvent("message", { source: frameWindow, data: { type: "editingFinished" } }),
+    );
+    await finishing;
+    expect(isDone).toBe(true);
+  });
+
+  it("doesn't wait for ever if the frame never answers", async () => {
+    vi.useFakeTimers();
+    const { finishEditingRef } = renderWithRef();
+
+    const finishing = finishEditingRef.current?.();
+    await vi.advanceTimersByTimeAsync(500);
+    await finishing;
+    vi.useRealTimers();
+  });
+});

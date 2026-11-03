@@ -72,7 +72,50 @@ export function actionsFor(target: TreeTarget, can: ActionPermissions): TreeActi
   return actions;
 }
 
-/** The tree's own words for an entry's state, which its status dot shows. */
+/**
+ * Where an action sits in the menu. "more" is folded away, so what most people want stays
+ * short: Create, Rename, Duplicate; one publishing action and one way to see the page; Delete.
+ */
+export type MenuSection = "make" | "publish" | "more" | "delete";
+
+export interface MenuEntry {
+  action: TreeAction;
+  section: MenuSection;
+}
+
+const makeActions: readonly TreeAction[] = ["create", "rename", "duplicate"];
+const sectionOrder: readonly MenuSection[] = ["make", "publish", "more", "delete"];
+
+/** Publish, or Unpublish for a live page with nothing waiting: the one that applies now. */
+function mainPublishAction(node: TreeNode): TreeAction {
+  return node.status === "published" && !node.hasUnpublishedChanges ? "unpublish" : "publish";
+}
+
+/**
+ * `actionsFor`, arranged for the menu. Nothing is lost: the publishing action that doesn't
+ * apply to this page itself may still apply to the pages under it, so it waits under More.
+ */
+export function menuFor(target: TreeTarget, can: ActionPermissions): MenuEntry[] {
+  const actions = actionsFor(target, can);
+  if (target.kind !== "entry") return actions.map((action) => ({ action, section: "make" }));
+  const { node } = target;
+  const seePage: TreeAction = node.status === "published" ? "viewPage" : "preview";
+  const inPublish = [mainPublishAction(node), seePage];
+  const sectionOf = (action: TreeAction): MenuSection => {
+    if (action === "delete") return "delete";
+    if (makeActions.includes(action)) return "make";
+    return inPublish.includes(action) ? "publish" : "more";
+  };
+  const entries = actions.map((action) => ({ action, section: sectionOf(action) }));
+  return sectionOrder.flatMap((section) => {
+    const inSection = entries.filter((entry) => entry.section === section);
+    return section === "make"
+      ? inSection.sort((a, b) => makeActions.indexOf(a.action) - makeActions.indexOf(b.action))
+      : inSection;
+  });
+}
+
+/** The tree's own words for an entry's state, which its status mark shows. */
 export type NodeState = "published" | "changed" | "draft" | "scheduled";
 
 export function nodeState(node: Pick<TreeNode, "status" | "hasUnpublishedChanges">): NodeState {
