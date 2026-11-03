@@ -83,7 +83,7 @@ describe("the site's navigation and footer sections", () => {
   }
 
   /** Changes the sections and publishes them, as the builder and a page's Publish do. */
-  async function putLive(change: unknown) {
+  async function putLive(change: object) {
     const saved = await owner("PUT", "/website/sections", change);
     expect(saved.statusCode, saved.body).toBe(200);
     const published = await owner("POST", "/website/sections/publish");
