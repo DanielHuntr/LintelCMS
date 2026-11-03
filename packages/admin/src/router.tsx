@@ -60,6 +60,7 @@ import { SitesPage } from "./sites/SitesPage.js";
 import { SettingsPage } from "./settings/SettingsPage.js";
 import { PublishedPageView } from "./content/PublishedPageView.js";
 import { FeaturesSettingsPage } from "./features/FeaturesSettingsPage.js";
+import { AddonsPage } from "./addons/AddonsPage.js";
 import { SignInPage } from "./sign-in/SignInPage.js";
 import { WebhookDetailPage } from "./webhooks/WebhookDetailPage.js";
 import { SiteSettingsPage } from "./website/SiteSettingsPage.js";
@@ -408,6 +409,13 @@ const siteFontsRoute = createRoute({
   component: SiteFontsPage,
 });
 
+/** Build → Add-ons: the add-ons installed into this site. */
+const addonsRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/build/addons",
+  component: AddonsPage,
+});
+
 /** Build → Features: switching plugins on and off. */
 const featuresRoute = createRoute({
   getParentRoute: () => adminRoute,
@@ -585,6 +593,7 @@ export const routeTree = rootRoute.addChildren([
       ...contentRoutes,
       ...integrationRoutes,
       featuresRoute,
+      addonsRoute,
       ...peopleRoutes(() => adminRoute),
       ...workflowsRoutes(() => adminRoute),
       ...formsRoutes(() => adminRoute),

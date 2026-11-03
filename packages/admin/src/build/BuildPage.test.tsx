@@ -14,6 +14,7 @@ describe("Build", () => {
     expect(screen.getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
       "/build/content-types",
       "/build/features",
+      "/build/addons",
       "/build/sites",
       "/build/branding",
       "/build/api",
