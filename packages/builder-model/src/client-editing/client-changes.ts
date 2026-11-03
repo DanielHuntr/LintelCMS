@@ -6,6 +6,7 @@ import {
   type PageNode,
 } from "../document/page-document.schema.js";
 import type { TextMark } from "../text-marks/text-marks.js";
+import { customBlockType } from "../custom-blocks/custom-block.js";
 import { clientEditsOf, contentKindOfField, contentKindOfProp } from "./client-content.js";
 
 /**
@@ -26,13 +27,20 @@ export interface DesignChange {
   where: string;
 }
 
+/** What the site's components allow clients, from the component library. */
+export interface ComponentClientRules {
+  /** Whether clients may choose this component's variant (its designer allows it). */
+  mayChooseVariant?: (component: string) => boolean;
+}
+
 export function findDesignChanges(
   previous: PageDocument | null,
   next: PageDocument,
   catalogue: ComponentCatalogue,
+  rules: ComponentClientRules = {},
 ): DesignChange[] {
   const changes: DesignChange[] = [];
-  compareNodes((previous ?? createEmptyPage()).root, next.root, catalogue, changes);
+  compareNodes((previous ?? createEmptyPage()).root, next.root, catalogue, changes, rules);
   return changes;
 }
 
@@ -52,6 +60,7 @@ function compareNodes(
   after: PageNode,
   catalogue: ComponentCatalogue,
   changes: DesignChange[],
+  rules: ComponentClientRules,
 ): void {
   const changed = () =>
     changes.push({
@@ -60,6 +69,21 @@ function compareNodes(
     });
   if (!sameValue(designOf(before), designOf(after))) {
     changed();
+    return;
+  }
+  // A component's instance: clients fill in its properties, and choose its variant only
+  // where its designer allows it. Which component it is stays the designer's.
+  if (before.type === customBlockType) {
+    const component = String(before.props.block ?? "");
+    const mayChooseVariant = rules.mayChooseVariant?.(component) === true;
+    const props = new Set([...Object.keys(before.props), ...Object.keys(after.props)]);
+    for (const prop of props) {
+      if (prop === "values" || sameValue(before.props[prop], after.props[prop])) continue;
+      if (prop === "variant" && mayChooseVariant) continue;
+      changed();
+      return;
+    }
+    compareChildren(before, after, catalogue, changes, rules);
     return;
   }
   const definition = catalogue.find(before.type);
@@ -87,7 +111,7 @@ function compareNodes(
       return;
     }
   }
-  compareChildren(before, after, catalogue, changes);
+  compareChildren(before, after, catalogue, changes, rules);
 }
 
 function compareChildren(
@@ -95,13 +119,14 @@ function compareChildren(
   after: PageNode,
   catalogue: ComponentCatalogue,
   changes: DesignChange[],
+  rules: ComponentClientRules,
 ): void {
   const sameIds =
     before.children.length === after.children.length &&
     before.children.every((child, index) => after.children[index]?.id === child.id);
   if (sameIds) {
     before.children.forEach((child, index) =>
-      compareNodes(child, after.children[index] as PageNode, catalogue, changes),
+      compareNodes(child, after.children[index] as PageNode, catalogue, changes, rules),
     );
     return;
   }
@@ -122,8 +147,8 @@ function compareChildren(
   for (const child of after.children) {
     const original = beforeById.get(child.id);
     if (original) {
-      compareNodes(original, child, catalogue, changes);
-    } else if (!before.children.some((sibling) => isCopyOf(sibling, child, catalogue))) {
+      compareNodes(original, child, catalogue, changes, rules);
+    } else if (!before.children.some((sibling) => isCopyOf(sibling, child, catalogue, rules))) {
       changes.push({ nodeId: child.id, where: nameOf(child, catalogue) });
     }
   }
@@ -133,7 +158,12 @@ function compareChildren(
  * Whether `copy` is a copy of `original` (as Duplicate makes it: new ids throughout, with
  * what pointed inside it pointed at the copy), with at most allowed content changed.
  */
-function isCopyOf(original: PageNode, copy: PageNode, catalogue: ComponentCatalogue): boolean {
+function isCopyOf(
+  original: PageNode,
+  copy: PageNode,
+  catalogue: ComponentCatalogue,
+  rules: ComponentClientRules,
+): boolean {
   const originalIds = positionalIds(original);
   const copyIds = positionalIds(copy);
   if (originalIds.size !== copyIds.size) return false;
@@ -143,6 +173,7 @@ function isCopyOf(original: PageNode, copy: PageNode, catalogue: ComponentCatalo
     replaceIds(copy, copyIds) as PageNode,
     catalogue,
     changes,
+    rules,
   );
   return changes.length === 0;
 }

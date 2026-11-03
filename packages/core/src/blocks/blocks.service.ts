@@ -1,11 +1,13 @@
 import {
   type BoundPicture,
   createRandomNodeId,
+  componentVariantsOf,
   type CustomBlock,
   detachBlockInstance,
   findBlockInstances,
   instanceValues,
   type PageNode,
+  withoutMissingElements,
 } from "@lintel/builder-model";
 import { checkBlueprintFields } from "../blueprints/blueprint-fields.js";
 import { listBlueprintRows, updateBlueprintFields } from "../blueprints/blueprints.repository.js";
@@ -16,7 +18,7 @@ import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
 import type { BlockCheckLibrary } from "../fieldtypes/fieldtype.js";
 import type { AssetLookup } from "../fieldtypes/image-assets.js";
 import { readSetting } from "../settings/settings.service.js";
-import { checkBlockDesign, renameBindings } from "./block-design.js";
+import { checkBlockDesign, checkComponentVariants, renameBindings } from "./block-design.js";
 import {
   collectValues,
   isFilledIn,
@@ -92,6 +94,7 @@ export async function loadBlockCheckLibrary(
             name: block.name,
             properties: block.properties as FieldDefinition[],
             renamedProperties: block.renamedProperties,
+            variants: componentVariantsOf(block),
           }
         : undefined;
     },
@@ -128,6 +131,7 @@ export async function createBlock(
 ): Promise<BlockResponse> {
   const properties = checkProperties(request.properties);
   const design = checkBlockDesign(request.design, properties);
+  const variants = checkComponentVariants(request.variants, design);
   const handle = request.handle ?? (await freeHandle(database, request.name));
   if ((await loadBlockLibrary(database)).some((block) => block.handle === handle)) {
     throw new BlockHandleTakenError(handle);
@@ -141,6 +145,7 @@ export async function createBlock(
     source: "site",
     properties,
     design,
+    variants,
   });
   if (!inserted) throw new BlockHandleTakenError(handle);
   return findBlock(database, handle);
@@ -157,6 +162,14 @@ export async function updateBlock(
   );
   const properties = checkProperties(request.properties);
   const design = checkBlockDesign(renameBindings(request.design, renames), properties);
+  // Left out by older callers: the variants stay as they were, without looks for elements
+  // the design no longer has.
+  const variants = checkComponentVariants(
+    request.variants === undefined
+      ? withoutMissingElements(componentVariantsOf(row), design)
+      : request.variants,
+    design,
+  );
 
   const kept = new Set(properties.map((property) => property.handle));
   const removed = row.properties
@@ -179,6 +192,7 @@ export async function updateBlock(
       description: request.description,
       properties,
       design,
+      variants,
       renamedProperties,
       version: propertiesChanged ? row.version + 1 : row.version,
     });
@@ -524,6 +538,7 @@ export function blockFromRow(row: BlockRow): CustomBlock {
     design: row.design,
     template: row.template,
     renamedProperties: row.renamedProperties,
+    variants: componentVariantsOf(row),
   };
 }
 
@@ -544,6 +559,7 @@ function describeBlock(
     design: block.design as unknown as Record<string, unknown> | null,
     template: block.template,
     renamedProperties: { ...block.renamedProperties },
+    variants: componentVariantsOf(block) as BlockResponse["variants"],
     version: row?.version ?? 1,
     editable: block.source === "site",
     usedOn: uses.pages,

@@ -1,0 +1,1 @@
+ALTER TABLE "blocks" ADD COLUMN "variants" jsonb DEFAULT '{"properties":[],"looks":[],"clientsMayChoose":false}'::jsonb NOT NULL;

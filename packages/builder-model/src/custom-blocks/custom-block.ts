@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { defineComponent } from "../components/component-definition.js";
 import type { PageNode } from "../document/page-document.schema.js";
+import type { ComponentVariants } from "./component-variants.js";
 
 /**
  * A site's own block: a design (or, for blocks written in code, an HTML template or a React
@@ -58,6 +59,11 @@ export interface CustomBlock {
   template: string | null;
   /** Property handles that were renamed, old to new, so older instances keep their values. */
   renamedProperties: Readonly<Record<string, string>>;
+  /**
+   * Its variants (Size: Small, Medium, Large...) and how each looks, for components designed
+   * in the builder. Left out by blocks saved before variants, which read as having none.
+   */
+  variants?: ComponentVariants;
 }
 
 /** The element type every instance has. */
@@ -72,6 +78,12 @@ const blockInstancePropsSchema = z.object({
   values: z
     .record(z.string(), z.unknown(), { error: "A block’s values should be an object" })
     .default({}),
+  /** The variant chosen, by variant property: `{ size: "small" }`. Defaults are left out. */
+  variant: z
+    .record(z.string(), z.string({ error: "A variant’s choice should be text" }), {
+      error: "A component’s variant should be an object",
+    })
+    .optional(),
 });
 
 export type BlockInstanceProps = z.output<typeof blockInstancePropsSchema>;

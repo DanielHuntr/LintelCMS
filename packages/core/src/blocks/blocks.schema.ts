@@ -26,6 +26,8 @@ const blockDetailsShape = {
   properties: propertyListSchema.default([]),
   // Checked in full as a page design by the service.
   design: z.record(z.string(), z.unknown(), { error: "The design should be one element" }),
+  // Checked in full against the design by the service (block-design.ts).
+  variants: z.unknown().optional(),
 };
 
 /** `POST /blocks`. The handle is made from the name when it is left out. */
@@ -82,6 +84,24 @@ export const blockSchema = z.object({
   design: z.record(z.string(), z.unknown()).nullable(),
   template: z.string().nullable(),
   renamedProperties: z.record(z.string(), z.string()),
+  /** Variant properties, the looks they give, and whether clients may choose them. */
+  variants: z.object({
+    properties: z.array(
+      z.object({
+        handle: z.string(),
+        label: z.string(),
+        options: z.array(z.object({ value: z.string(), label: z.string() })),
+        default: z.string(),
+      }),
+    ),
+    looks: z.array(
+      z.object({
+        when: z.record(z.string(), z.string()),
+        elements: z.record(z.string(), z.record(z.string(), z.unknown())),
+      }),
+    ),
+    clientsMayChoose: z.boolean(),
+  }),
   version: z.number().int(),
   /** Made in the builder, so its design and properties can be changed in the admin. */
   editable: z.boolean(),

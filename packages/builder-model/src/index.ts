@@ -46,6 +46,8 @@ export * from "./custom-blocks/block-bindings.js";
 export * from "./custom-blocks/expand-blocks.js";
 export * from "./custom-blocks/block-template.js";
 export * from "./custom-blocks/make-block.js";
+export * from "./custom-blocks/component-variants.js";
+export * from "./custom-blocks/similar-elements.js";
 
 export * from "./styles/style-properties.js";
 export * from "./styles/style-cascade.js";

@@ -1,4 +1,9 @@
-import type { BlockProperty, BlockSource, PageNode } from "@lintel/builder-model";
+import type {
+  BlockProperty,
+  BlockSource,
+  ComponentVariants,
+  PageNode,
+} from "@lintel/builder-model";
 import { integer, jsonb, pgTable, text, uniqueIndex } from "drizzle-orm/pg-core";
 import { id, tenantId, timestamps } from "../database/columns.js";
 
@@ -33,6 +38,14 @@ export const blocksTable = pgTable(
       .$type<Record<string, string>>()
       .notNull()
       .default({}),
+    /**
+     * Its variants (Size: Small, Medium, Large...) and how each looks, as differences from the
+     * design. Blocks saved before variants have none.
+     */
+    variants: jsonb("variants")
+      .$type<ComponentVariants>()
+      .notNull()
+      .default({ properties: [], looks: [], clientsMayChoose: false }),
     /** Raised whenever the properties change, so caches can tell. */
     version: integer("version").notNull().default(1),
     ...timestamps(),
