@@ -1855,3 +1855,30 @@ Files: `packages/motion/src/effects/kit/{shader-renderer,layers,css-colour,pictu
 **Screenshots** (in `screenshots/first-party-addons/`): `addons-list`, `newsletter-details`, `instagram-details`, `extra-fields-details`, `newsletter-screen`, `instagram-screen`, `extra-fields-editor`, `site-elements`, each `-{desktop,390}-{light,dark}`.
 
 **Left for later:** an add-on's details dialog doesn't link to its own screen (Newsletter is under Settings, Instagram in the sidebar); add-on field types have no options panel in the content type editor yet; static publishing has no API beside it, so the sign-up form and feed can't reach the add-ons there; the connected Instagram and Newsletter states were checked by the tests only, as no real accounts were used.
+
+## Variant rows (feature/variant-rows)
+
+The product editor stacked a whole card per variant, so a few choices became a long pile. Variants are now one table, with the Options card above it. The data sent to the API and its shape haven't changed, and there's no migration.
+
+- **LINTEL-UX-210:** One row per variant, with name, price and stock typed straight into the row, and SKU when the card is wide enough. A product with no options keeps its single form.
+- **LINTEL-UX-211:** A click on a row or its Edit button opens the rest (Was price, Barcode, Weight, Count stock, stock per location) in the admin's usual sheet. Closing it returns focus to that row's Edit button, even when the row itself was clicked. Enter in the sheet closes it rather than saving the product.
+- **LINTEL-UX-212:** With two options that each have several choices, rows fold into groups by the first option, and "Group by" picks another option or none. Open groups stay open after saving.
+- **LINTEL-UX-213:** A group row sets price and stock for all its variants. It changes them when you leave the box or press Enter, not on each key, so a price typed and rubbed out can't wipe out different prices. Escape cancels.
+- **LINTEL-UX-214:** Tick boxes on rows and groups, plus "Select all", which includes folded rows. "Set price" and "Set stock" change everything ticked. Screen readers hear how many changed.
+- **LINTEL-UX-215:** The footer shows the variant count and total stock across every location, and says how many variants aren't counted. A shop with several locations gets a "Stock at" picker, as a row has room for one stock box. Typing a number for an uncounted variant starts counting it.
+- **LINTEL-UX-216:** Choices are removable chips. A comma, Enter or leaving the box adds one, pasting a list adds them all, and Enter no longer saves the product from that box. Selecting a chip's name rewords it.
+- **LINTEL-UX-217:** Variant details survive option changes. Before, adding a second option replaced every saved variant with an empty one (losing SKUs and stock), and rubbing out part of a choice dropped variants for good. Now each variant moves to the first combination that still fits, rewording a choice keeps its variants, and a removed choice added back before saving restores its details. Changing an option's name also no longer adds the combinations a Shopify import had left out.
+- **LINTEL-UX-218:** On a card narrower than 512px each row stacks: name and Edit, then price and stock, about 97px tall, with no sideways scrolling. It's decided by the card's width, not the window's. The table's parts state their roles, so it stays a table to screen readers.
+- **LINTEL-UX-219:** Problems can't hide. Each row shows its own saving problems, including those for boxes in the sheet, and a group with a problem stays open. Two problems that used to fail with no clear message now say what to do: an option with choices but no name, and more than 100 variants. An option added with no choices yet also no longer leaves a card with an empty title.
+
+**Tests:** `productDraft.test.ts` (15), `variantTableState.test.ts` (15) and `ProductVariants.test.tsx` (36, the whole editor against a stand-in API, including what is sent on saving).
+
+**Checked in a browser** (Chromium against the real API, on a copy of the test data). A one-option product with 4 variants, a two-option product with 12, and one with no options, at 1440px and 390px, in light and dark. Saved and read back through the API: group price and stock, ticked price, sheet details, removing, rewording and adding chips (ids, SKUs and stock of other variants unchanged), and a refused duplicate SKU shown on its row. Keyboard: tabbing along a row, opening with Enter, Escape returning focus. At 390px: no sideways scrolling, SKU hidden, price and stock visible, and table roles present in the accessibility tree. No real screen reader was used.
+
+**Screenshots** (in `screenshots/variant-rows/`): `before-{one-option,two-options}-{desktop,phone}-{light,dark}`, `after-{one-option,two-options}-{desktop,phone}-{light,dark}`, `after-open-group-*`, `after-sheet-*`, `after-ticked-*`, `after-two-locations-*`, `after-no-options-desktop-light` and `after-row-problem-desktop-light`.
+
+**Left for later:**
+
+- One variant can't be removed by itself, only by removing a choice, so a single combination that doesn't exist can't be taken out of the table.
+- Saving problems are matched to rows by position, so one shown after a failed save can sit on the wrong row if choices are then changed, until the next save.
+- Prices in other currencies are still kept but not edited here.

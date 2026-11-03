@@ -1,12 +1,22 @@
 import { Plus, X } from "lucide-react";
+import { useRef } from "react";
 import { Button } from "../design/Button.js";
 import { Card } from "../design/Card.js";
 import { TextField } from "../design/TextField.js";
 import { t } from "../i18n/strings.js";
 import { currencySymbol } from "./money.js";
-import { type ProductDraft, type VariantDraft, variantsForOptions } from "./productDraft.js";
+import { OptionChoicesField } from "./OptionChoicesField.js";
+import {
+  type ProductDraft,
+  renameChoice,
+  splitList,
+  type VariantDraft,
+  variantsForOptions,
+} from "./productDraft.js";
 import type { InventoryLocation } from "./products.api.js";
 import { VariantFields } from "./VariantFields.js";
+import { VariantTable } from "./VariantTable.js";
+import type { VariantTableView } from "./variantTableState.js";
 
 interface ProductVariantsSectionProps {
   draft: ProductDraft;
@@ -14,13 +24,15 @@ interface ProductVariantsSectionProps {
   currency: string;
   locations: InventoryLocation[];
   errors: Record<string, string>;
+  tableView: VariantTableView;
+  onTableViewChange: (view: VariantTableView) => void;
 }
 
 const MAX_OPTIONS = 3;
 
 /**
  * Price, stock and options. A product without options has one set of fields; adding an
- * option ("Size: S, M, L") makes one variant per combination, each with its own fields.
+ * option ("Size: S, M, L") makes one variant per combination, listed in a table.
  */
 export function ProductVariantsSection({
   draft,
@@ -28,17 +40,29 @@ export function ProductVariantsSection({
   currency,
   locations,
   errors,
+  tableView,
+  onTableViewChange,
 }: ProductVariantsSectionProps) {
   const hasOptions = draft.options.length > 0;
+  const onlyVariant = draft.variants[0];
+  // Variants taken out by removing a choice, until saving, so adding it back restores them.
+  const setAside = useRef(new Map<string, VariantDraft>());
 
   function changeOptions(options: ProductDraft["options"]) {
-    onChange({ options, variants: variantsForOptions(options, draft.variants) });
+    const variants = variantsForOptions(options, draft.variants, [...setAside.current.values()]);
+    const keptKeys = new Set(variants.map((variant) => variant.key));
+    for (const variant of draft.variants) {
+      if (!keptKeys.has(variant.key)) setAside.current.set(variant.key, variant);
+    }
+    for (const key of keptKeys) setAside.current.delete(key);
+    onChange({ options, variants });
   }
 
-  function changeVariant(index: number, changes: Partial<VariantDraft>) {
+  function changeOptionName(index: number, name: string) {
+    // Only the name changes, so the variants stay exactly as they are.
     onChange({
-      variants: draft.variants.map((variant, position) =>
-        position === index ? { ...variant, ...changes } : variant,
+      options: draft.options.map((option, position) =>
+        position === index ? { ...option, name } : option,
       ),
     });
   }
@@ -49,34 +73,35 @@ export function ProductVariantsSection({
         <div className="flex flex-col gap-4">
           <p className="text-footnote text-label-secondary">{t("shop.products.optionsHint")}</p>
           {draft.options.map((option, index) => (
-            <div key={index} className="grid grid-cols-[1fr_2fr_auto] items-start gap-3">
+            <div
+              key={index}
+              className="grid grid-cols-[1fr_auto] items-start gap-3 sm:grid-cols-[1fr_2fr_auto]"
+            >
               <TextField
                 label={t("shop.products.optionNameLabel")}
                 placeholder={t("shop.products.optionNamePlaceholder")}
                 value={option.name}
                 error={errors[`options.${index}.name`]}
-                onChange={(event) =>
-                  changeOptions(
-                    draft.options.map((existing, position) =>
-                      position === index ? { ...existing, name: event.target.value } : existing,
-                    ),
-                  )
-                }
+                onChange={(event) => changeOptionName(index, event.target.value)}
               />
-              <TextField
-                label={t("shop.products.optionValuesLabel")}
-                placeholder={t("shop.products.optionValuesPlaceholder")}
-                hint={t("shop.products.optionValuesHint")}
-                value={option.values}
-                error={errors[`options.${index}.values`]}
-                onChange={(event) =>
-                  changeOptions(
-                    draft.options.map((existing, position) =>
-                      position === index ? { ...existing, values: event.target.value } : existing,
-                    ),
-                  )
-                }
-              />
+              <div className="max-sm:col-span-2 max-sm:row-start-2">
+                <OptionChoicesField
+                  label={t("shop.products.optionValuesLabel")}
+                  placeholder={t("shop.products.optionValuesPlaceholder")}
+                  morePlaceholder={t("shop.products.optionValuesMorePlaceholder")}
+                  hint={t("shop.products.optionValuesHint")}
+                  error={errors[`options.${index}.values`]}
+                  choices={splitList(option.values)}
+                  onChange={(choices) =>
+                    changeOptions(
+                      draft.options.map((existing, position) =>
+                        position === index ? { ...existing, values: choices.join(", ") } : existing,
+                      ),
+                    )
+                  }
+                  onRename={(from, to) => onChange(renameChoice(draft, index, from, to))}
+                />
+              </div>
               <Button
                 variant="plain"
                 className="mt-6"
@@ -104,22 +129,30 @@ export function ProductVariantsSection({
         </div>
       </Card>
 
-      {draft.variants.map((variant, index) => (
-        <Card
-          key={variant.key}
-          title={hasOptions ? variant.optionValues.join(" / ") : t("shop.products.pricingHeader")}
-        >
+      {onlyVariant && onlyVariant.optionValues.length === 0 ? (
+        <Card title={t("shop.products.pricingHeader")}>
           <VariantFields
-            variant={variant}
-            index={index}
+            variant={onlyVariant}
+            index={0}
             currency={currency}
             currencySymbol={currencySymbol(currency)}
             locations={locations}
             errors={errors}
-            onChange={(changes) => changeVariant(index, changes)}
+            onChange={(changes) => onChange({ variants: [{ ...onlyVariant, ...changes }] })}
           />
         </Card>
-      ))}
+      ) : (
+        <VariantTable
+          options={draft.options}
+          variants={draft.variants}
+          currency={currency}
+          locations={locations}
+          errors={errors}
+          view={tableView}
+          onViewChange={onTableViewChange}
+          onVariantsChange={(variants) => onChange({ variants })}
+        />
+      )}
     </>
   );
 }

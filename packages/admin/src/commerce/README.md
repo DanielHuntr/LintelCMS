@@ -12,6 +12,23 @@ The Shop section (`/commerce`), shown in the sidebar only while the `commerce` p
   variant in the primary currency (other currencies are worked out unless set), stock per
   location, status, search-engine fields, and which hand-picked collections it's in (saved
   with the product, `ProductCollectionsCard.tsx`).
+- **Variants** (`VariantTable.tsx`). A product with no options has one simple form. Once it
+  has a choice, the variants are a table: one row each, with price, stock and (if the card
+  is wide enough) SKU typed straight into the row. A click on the row or its Edit button
+  opens the rest in a sheet, and closing it puts focus back on that row. With two options
+  that each have several choices, rows fold into groups by the first option; "Group by"
+  changes that. A group row's boxes set price and stock for all its variants when you
+  leave the box or press Enter, and tick boxes with "Select all" do the same for any
+  mix of variants. The table edits stock at one location; a shop with several gets a "Stock
+  at" picker, and the footer adds up every location. Typing a stock number for a variant
+  that isn't counted starts counting it. A card narrower than 512px stacks each row (name,
+  then price and stock) with no sideways scrolling. A group with a saving problem stays open,
+  and each row shows its own problems, even those for boxes in the sheet.
+- **Choices** (`OptionChoicesField.tsx`) are chips: a comma, Enter or leaving the box makes one,
+  a name opens for rewording, and the cross removes it. They're still saved as a list of
+  values on the option. Rewording keeps the variants that use the choice. Removing one sets
+  its variants aside until saving, so adding it back restores them. Adding or removing a whole
+  option moves each variant to a combination that still fits it (`variantsForOptions`).
 - **Collections** (`/commerce/collections`) lists product collections and how each picks its
   products. The editor sets the title, description and, for hand-picked ones, the products;
   automatic (rule-based) ones, such as those the Shopify import makes, keep their rules.
@@ -49,6 +66,10 @@ discounts, payment providers and the importer in `discountStrings.ts`,
 | `ShopHomePage.tsx`                                     | Getting ready to sell, and the sections            |
 | `ProductsPage.tsx`, `ProductEditorPage.tsx`            | The catalogue and the product editor               |
 | `Product*Section.tsx`, `VariantFields.tsx`             | The editor's sections                              |
+| `OptionChoicesField.tsx`                               | An option's choices as chips                       |
+| `VariantTable.tsx`, `VariantRows.tsx`                  | The variants table and its rows                    |
+| `VariantDrawer.tsx`, `VariantBulkDialog.tsx`           | One variant's sheet; setting many at once          |
+| `variantTableState.ts`                                 | Grouping and stock totals for the table            |
 | `productDraft.ts`                                      | The editor's form state and what it sends          |
 | `OrdersPage.tsx`, `OrderDetailPage.tsx`                | Orders and one order                               |
 | `FulfilDialog.tsx`, `RefundDialog.tsx`                 | Marking items as sent, refunding                   |
