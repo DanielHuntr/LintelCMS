@@ -4,6 +4,7 @@ import {
   setUpBackToTop,
   setUpCounters,
   setUpCountdowns,
+  setUpHeaderClearance,
   setUpHeaders,
   setUpMenus,
 } from "./info-behaviours.js";
@@ -49,8 +50,13 @@ function setUpElements(root: ParentNode): void {
   void setUpCart(root);
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => setUpElements(document));
-} else {
+function setUp(): void {
   setUpElements(document);
+  setUpHeaderClearance(document);
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", setUp);
+} else {
+  setUp();
 }

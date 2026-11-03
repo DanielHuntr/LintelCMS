@@ -1,4 +1,20 @@
 /* Header and main menu. */
+
+/*
+ * Whatever the browser scrolls to (a field with a mistake, a #link) stops below the sticky
+ * header rather than under it (LINTEL-A11Y-006). The elements script measures the header
+ * and sets the exact clearance; this covers pages without it.
+ */
+html:has(.lintel-header) {
+  scroll-padding-top: var(--lintel-header-clearance, 5rem);
+}
+
+/* On a phone the menu wraps under the name, so the header is taller. */
+@media (max-width: 47.99rem) {
+  html:has(.lintel-header) {
+    scroll-padding-top: var(--lintel-header-clearance, 8rem);
+  }
+}
 .lintel-header {
   position: sticky;
   top: 0;

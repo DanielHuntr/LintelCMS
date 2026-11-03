@@ -59,6 +59,23 @@ export function setUpCountdowns(root: ParentNode): void {
 }
 
 /** Big menus: one open at a time, Escape closes and returns focus, clicking away closes. */
+/**
+ * Keeps what the browser scrolls to clear of a sticky header: its height (it grows when the
+ * menu wraps on a phone) plus a little room, as `--lintel-header-clearance`, which the
+ * site's and the designer's header styles use for `scroll-padding-top` (LINTEL-A11Y-006).
+ */
+export function setUpHeaderClearance(document: Document): void {
+  const header = document.querySelector<HTMLElement>(".lintel-header, .lintel-site-header--sticky");
+  if (!header || typeof ResizeObserver === "undefined") return;
+  const update = () =>
+    document.documentElement.style.setProperty(
+      "--lintel-header-clearance",
+      `${Math.ceil(header.getBoundingClientRect().height) + 8}px`,
+    );
+  new ResizeObserver(update).observe(header);
+  update();
+}
+
 export function setUpHeaders(root: ParentNode): void {
   eachBehaviour(root, "site-header", (header) => {
     const menus = [...header.querySelectorAll<HTMLDetailsElement>(".lintel-mega__disclosure")];

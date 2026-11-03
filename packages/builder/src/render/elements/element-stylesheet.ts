@@ -297,6 +297,7 @@ ${phone} { :where(.lintel-countdown__unit) { min-inline-size: 3.5rem; } :where(.
 const navigation = `
 :where(.lintel-site-header) { display: flex; align-items: center; gap: var(--lintel-space-5); padding: var(--lintel-space-3) var(--lintel-space-5); background: var(--lintel-color-background); position: relative; z-index: 20; }
 :where(.lintel-site-header--sticky) { position: sticky; top: 0; box-shadow: 0 1px 0 var(--lintel-color-border); }
+:where(html:has(.lintel-site-header--sticky)) { scroll-padding-top: var(--lintel-header-clearance, 5rem); }
 :where(.lintel-site-header__brand) { display: inline-flex; align-items: center; gap: var(--lintel-space-2); color: inherit; text-decoration: none; font-family: var(--lintel-font-heading); font-weight: 700; font-size: 1.25rem; }
 :where(.lintel-site-header__logo) { block-size: 2.25rem; inline-size: auto; }
 :where(.lintel-site-header__nav) { margin-inline-start: auto; }
