@@ -53,6 +53,8 @@ export function AddonDetailsDialog({ addon, onClose }: AddonDetailsDialogProps) 
 
   const formFields = readSettingsForm(addon.settingsSchema);
   const hasSettings = addon.adds.includes("settings");
+  // Settings have a section of their own below, so the list doesn't repeat them.
+  const parts = addon.adds.filter((part) => part !== "settings");
 
   return (
     <Dialog
@@ -74,7 +76,7 @@ export function AddonDetailsDialog({ addon, onClose }: AddonDetailsDialogProps) 
             disabled={!canChange || !addonId || toggle.isPending}
             onCheckedChange={(isOn) => toggle.mutate(isOn)}
           />
-          <p role="status" className="min-h-5 text-footnote text-label-secondary">
+          <p role="status" className="text-footnote text-label-secondary">
             {toggle.isPending && t("addons.saving")}
             {toggle.isError && <span className="text-danger">{describeError(toggle.error)}</span>}
           </p>
@@ -84,10 +86,10 @@ export function AddonDetailsDialog({ addon, onClose }: AddonDetailsDialogProps) 
           )}
         </div>
 
-        {addon.adds.length > 0 && (
+        {parts.length > 0 && (
           <Section title={t("addons.adds")}>
             <ul className="list-disc ps-5 text-body text-label">
-              {addon.adds.map((part) => (
+              {parts.map((part) => (
                 <li key={part}>{t(`addons.part.${part}` as StringKey)}</li>
               ))}
             </ul>
