@@ -228,3 +228,23 @@ Also fixed: `Canvas.test.tsx` (added with FUNC-028) used a screen size that does
 ## LINTEL-UX-006: status brought up to date
 
 Fixed in Phase A (`16f51ff`): fields a page's design replaces (Body, Sections, Blocks) sit behind a tinted note, "Body isn't shown on your website, because this page has a design", with "Show them anyway" (`designReplacedFields.ts`). The bug report still said Open; it now says Fixed.
+
+## LINTEL-UX-022: one editor for creating and editing
+
+Raised by Daniel: "+ Create" opened one editor (fields with a side panel, Publish at the top) and opening a page from the tree another (tabs for Content, Settings, History and Info, and a bar along the bottom). He asked for it to work like Statamic.
+
+**After:** one editor for both (`editor-new-*.png`, `editor-existing-*.png`):
+
+- **Along the top:** breadcrumbs (Pages › Home), then View page, Preview, the side panel toggle, a "…" menu and the main button. On a phone, View page and Preview show as icons so Publish stays in view.
+- **The document:** title, address (the home page shows "/" rather than a slug it doesn't use) and the fields, a page's design first.
+- **The side panel:** status with Schedule and Unpublish, translations, parent page, "In the main menu", search engines and history.
+- **Details** (address, who made it, its id, what links to it) are under "…" (`editor-details-dl.png`). A page that lists its children (a Blog page) has a "Content | Items" switch.
+- **Kept from the workspace:** the tree updates as you save and publish, publishing under an unpublished parent asks first, and saves send only what changed (never the parent).
+- **A live page with nothing new says "Live on your site"** instead of a greyed-out "Published" button.
+- **A new page can't be published until it has a title.**
+- Nothing swaps over after the first save any more: it was always the same editor. The workspace's components are removed.
+- **Sparkle icons replaced:** "Start designing" (pen and ruler), a suggested redirect (lightbulb), "Start from blank" (blank page), "Suggest a password" (dice), the animation studio's empty state (waves).
+
+**Also fixed, LINTEL-FUNC-024:** opening the preview or the items list asked "Leave without saving?". The leave warning now asks only when the page itself changes, not when only the address's query does. The regression test fails without the fix.
+
+**Tests:** `OneEditor.test.tsx` (the workspace's tests, carried over, plus new ones), `EntryEditor.test.tsx`, `DesignFirstFields.test.tsx`, `columnValues.test.ts`.
