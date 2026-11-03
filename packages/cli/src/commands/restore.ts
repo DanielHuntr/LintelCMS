@@ -9,6 +9,7 @@ import {
 } from "@lintel/core/data-tools";
 import { type Command, defaultStorage, readArguments, withDatabase } from "../command.js";
 import { CommandError, formatTable, plural, resolvePath, type Terminal } from "../terminal.js";
+import { loadAddonTableNames } from "../addons/addon-commands.js";
 
 /**
  * Puts a backup back, replacing everything on this site. It is checked in full first, the
@@ -42,6 +43,8 @@ export const restoreCommand: Command = {
         database: activeDatabase.database,
         databaseKind: activeDatabase.kind,
         storage,
+        // Add-ons' own tables too, as they declare them.
+        addonTables: await loadAddonTableNames(),
       };
       terminal.say("Checking the backup…");
       const summary = await inspectBackupArchive(context, path);

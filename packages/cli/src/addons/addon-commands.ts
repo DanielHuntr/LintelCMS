@@ -1,6 +1,7 @@
 import {
   findPluginCommand,
   type LintelPlugin,
+  listAddonTableNames,
   lintelPaths,
   listPluginCommands,
   loadConfig,
@@ -26,6 +27,24 @@ export const loadCommandPlugins: LoadPlugins = async () => {
   const addons = await loadSiteAddons(lintelPaths(loadConfig()).root, configPlugins);
   return [...configPlugins, ...addons.loaded.map((addon) => addon.plugin)];
 };
+
+/**
+ * The tables add-ons and plugins keep their own data in, for `lintel backup` and
+ * `lintel restore`. If they can't be loaded, the backup holds Lintel's own tables only.
+ */
+export async function loadAddonTableNames(): Promise<string[]> {
+  try {
+    loadProjectEnvFile();
+    const configPlugins = await loadInstalledPlugins();
+    const addons = await loadSiteAddons(lintelPaths(loadConfig()).root, configPlugins);
+    return listAddonTableNames(
+      [...configPlugins, ...addons.loaded.map((addon) => addon.plugin)],
+      addons.loaded,
+    );
+  } catch {
+    return [];
+  }
+}
 
 export async function runAddonCommand(
   fullName: string,

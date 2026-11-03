@@ -19,6 +19,7 @@ import {
   countRows,
   emptyTables,
   fillInColumns,
+  findExistingTables,
   insertAllRows,
   readAllRows,
   readAllSettings,
@@ -26,7 +27,11 @@ import {
   type TableRow,
 } from "./database-snapshot.repository.js";
 import type { RestoreSummary } from "./backups.schema.js";
-import { columnsPointingForward, listBackedUpTables } from "./table-order.js";
+import {
+  columnsPointingForward,
+  listBackedUpTables,
+  TABLES_LEFT_OUT_OF_BACKUPS,
+} from "./table-order.js";
 
 /**
  * Writing a whole site into one .zip, and putting it back. Used by Settings → Backups and
@@ -37,6 +42,24 @@ export interface BackupArchiveContext {
   database: Database;
   databaseKind: DatabaseKind;
   storage: StorageDriver;
+  /**
+   * Add-ons' and plugins' own tables, by name, as they declare them (see
+   * src/addons/addon-tables.ts). Each one in the database is backed up after Lintel's own,
+   * and restored when the backup has it.
+   */
+  addonTables?: readonly string[];
+}
+
+/** The add-on tables of this context that are in the database, leaving out Lintel's own. */
+async function presentAddonTables(
+  database: Database,
+  context: BackupArchiveContext,
+): Promise<string[]> {
+  const own = new Set(listBackedUpTables().map((table) => getTableName(table)));
+  const named = [...new Set(context.addonTables ?? [])].filter(
+    (name) => !own.has(name) && !TABLES_LEFT_OUT_OF_BACKUPS.includes(name),
+  );
+  return findExistingTables(database, named);
 }
 
 export interface WrittenBackup {
@@ -51,7 +74,11 @@ export async function writeBackupArchive(
 ): Promise<WrittenBackup> {
   const writer = await ZipArchiveWriter.create(path);
   try {
-    const tables = await addDatabase(context.database, writer);
+    const tables = await addDatabase(
+      context.database,
+      writer,
+      await presentAddonTables(context.database, context),
+    );
     const media = await addMedia(context.storage, writer, tables.assets);
     const contents: BackupContents = { tables: tables.counts, ...media };
     const files = [...writer.listFiles()];
@@ -78,13 +105,17 @@ export async function writeBackupArchive(
  * Reads every table in one read-only snapshot, so a page saved half way through a backup
  * is either wholly in it or not at all.
  */
-async function addDatabase(database: Database, writer: ZipArchiveWriter) {
+async function addDatabase(
+  database: Database,
+  writer: ZipArchiveWriter,
+  addonTables: readonly string[],
+) {
   return database.transaction(
     async (transaction) => {
       const counts: Record<string, number> = {};
       let assets: TableRow[] = [];
-      for (const table of listBackedUpTables()) {
-        const name = getTableName(table);
+      for (const table of [...listBackedUpTables(), ...addonTables]) {
+        const name = typeof table === "string" ? table : getTableName(table);
         const rows = await readAllRows(transaction, table);
         writer.addJson(tableFile(name), rows);
         counts[name] = rows.length;
@@ -124,7 +155,11 @@ export async function inspectBackupArchive(
   const reader = await ZipArchiveReader.open(path);
   try {
     const manifest = await readVerifiedManifest(reader);
-    return await summariseRestore(context.database, manifest);
+    return await summariseRestore(
+      context.database,
+      manifest,
+      restorableAddonTables(manifest, await presentAddonTables(context.database, context)),
+    );
   } finally {
     reader.close();
   }
@@ -143,10 +178,14 @@ export async function restoreBackupArchive(
   const reader = await ZipArchiveReader.open(path);
   try {
     const manifest = await readVerifiedManifest(reader);
-    const summary = await summariseRestore(context.database, manifest);
+    const addonTables = restorableAddonTables(
+      manifest,
+      await presentAddonTables(context.database, context),
+    );
+    const summary = await summariseRestore(context.database, manifest, addonTables);
     const previousKeys = await listStorageKeys(context.database);
     const restoredKeys = await putMediaFiles(context.storage, reader);
-    await replaceDatabase(context.database, reader);
+    await replaceDatabase(context.database, reader, addonTables);
     for (const key of previousKeys) {
       if (!restoredKeys.has(key)) {
         await context.storage.delete(key);
@@ -158,13 +197,22 @@ export async function restoreBackupArchive(
   }
 }
 
+/**
+ * The add-on tables a restore puts back: those the backup holds and the database has now.
+ * One the backup doesn't have (the add-on came later) is left as it is.
+ */
+function restorableAddonTables(manifest: BackupManifest, present: readonly string[]): string[] {
+  return present.filter((name) => manifest.contents.tables[name] !== undefined);
+}
+
 async function summariseRestore(
   database: Database,
   manifest: BackupManifest,
+  addonTables: readonly string[],
 ): Promise<RestoreSummary> {
   const tables = [];
-  for (const table of listBackedUpTables()) {
-    const name = getTableName(table);
+  for (const table of [...listBackedUpTables(), ...addonTables]) {
+    const name = typeof table === "string" ? table : getTableName(table);
     tables.push({
       table: name,
       inBackup: manifest.contents.tables[name] ?? 0,
@@ -205,11 +253,14 @@ async function putMediaFiles(storage: StorageDriver, reader: ZipArchiveReader) {
   return restored;
 }
 
-async function replaceDatabase(database: Database, reader: ZipArchiveReader): Promise<void> {
+async function replaceDatabase(
+  database: Database,
+  reader: ZipArchiveReader,
+  addonTables: readonly string[],
+): Promise<void> {
   const tables = listBackedUpTables();
   const rowsByTable = new Map<string, TableRow[]>();
-  for (const table of tables) {
-    const name = getTableName(table);
+  for (const name of [...tables.map((table) => getTableName(table)), ...addonTables]) {
     const rows = reader.has(tableFile(name)) ? await reader.readJson(tableFile(name)) : [];
     rowsByTable.set(name, Array.isArray(rows) ? (rows as TableRow[]) : []);
   }
@@ -218,7 +269,8 @@ async function replaceDatabase(database: Database, reader: ZipArchiveReader): Pr
   const forwardColumns = columnsPointingForward(tables);
 
   await database.transaction(async (transaction) => {
-    await emptyTables(transaction, tables);
+    // Add-ons' tables go in after Lintel's, since they may point at Lintel's rows.
+    await emptyTables(transaction, [...tables, ...addonTables]);
     for (const table of tables) {
       const name = getTableName(table);
       await insertAllRows(
@@ -233,6 +285,9 @@ async function replaceDatabase(database: Database, reader: ZipArchiveReader): Pr
       if (table) {
         await fillInColumns(transaction, table, rowsByTable.get(name) ?? [], columns);
       }
+    }
+    for (const name of addonTables) {
+      await insertAllRows(transaction, name, rowsByTable.get(name) ?? []);
     }
     await replaceAllSettings(transaction, isRecord(settings) ? settings : {});
   });

@@ -7,6 +7,7 @@ import {
 import { join } from "node:path";
 import { type Command, defaultStorage, readArguments, withDatabase } from "../command.js";
 import { formatBytes, plural, resolvePath } from "../terminal.js";
+import { loadAddonTableNames } from "../addons/addon-commands.js";
 
 /**
  * Backs up the whole site (database, settings and uploaded files) into one .zip. Without
@@ -31,6 +32,8 @@ export const backupCommand: Command = {
         database: activeDatabase.database,
         databaseKind: activeDatabase.kind,
         storage,
+        // Add-ons' own tables too, as they declare them.
+        addonTables: await loadAddonTableNames(),
       };
       let path: string;
       let contents;

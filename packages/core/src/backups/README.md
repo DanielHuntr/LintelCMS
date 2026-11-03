@@ -19,7 +19,9 @@ every file's checksum. A damaged, edited or too-new backup is refused with a nam
 Rows are read and written through Postgres' own JSON functions
 (`database-snapshot.repository.ts`), so there is no per-table code to keep in step.
 `table-order.ts` says which tables are left out (sessions, the backups list itself, imports
-in progress) and why.
+in progress) and why. Add-ons' and plugins' own tables are added by name
+(`BackupArchiveContext.addonTables`, from `src/addons/addon-tables.ts`): written after
+Lintel's, and restored when the backup has them and the database does too.
 
 ## How it flows
 

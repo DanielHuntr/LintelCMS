@@ -245,7 +245,8 @@ database, in case it comes back. Restart Lintel after either.
 
 Because the add-ons folder sits beside the site's data, add-ons stay installed through
 updates, roll backs and new Docker images. Backups don't include them: they are code,
-installed again with `lintel addons add`. An add-on's own tables aren't in backups yet either, so an add-on that keeps important data should offer its own export.
+installed again with `lintel addons add`. Their own tables are in backups, as long as the
+add-on declares them in `tables` (see "Saying what it keeps and does" above).
 
 ## When an add-on breaks
 
