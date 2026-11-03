@@ -1,6 +1,7 @@
 import { Archive, Receipt } from "lucide-react";
 import { useState } from "react";
 import { LoadError } from "../api/LoadError.js";
+import { Badge } from "../design/Badge.js";
 import { BackLink } from "../design/BackLink.js";
 import { Button } from "../design/Button.js";
 import { EmptyState } from "../design/EmptyState.js";
@@ -20,6 +21,7 @@ import { OrderStatusBadge } from "./OrderStatusBadge.js";
 import { formatOrderDate } from "./orderDates.js";
 import { useOrders } from "./shop.queries.js";
 import { useImportedOrders } from "./shopifyImport.queries.js";
+import { TestOrdersNotice } from "./TestOrdersNotice.js";
 
 /** The order filters, plus "Imported" (orders from before a move from Shopify) when any exist. */
 type OrdersView = OrderFilter | "imported";
@@ -66,6 +68,8 @@ export function OrdersPage() {
           ]}
         />
       </div>
+
+      {!showingImported && <TestOrdersNotice />}
 
       {showingImported && imported.data && importedShown.length === 0 && (
         <div className="max-w-3xl rounded-card bg-surface">
@@ -148,7 +152,12 @@ export function OrdersPage() {
                 }
                 label={`${order.name} · ${order.customerName}`}
                 description={`${formatOrderDate(order.createdAt)} · ${formatMoney(order.total)} · ${t("shop.orders.items", { count: order.itemCount })}`}
-                accessory={<OrderStatusBadge status={order.status} />}
+                accessory={
+                  <span className="flex items-center gap-1.5">
+                    {order.isTest && <Badge tone="warning">{t("shop.testOrders.badge")}</Badge>}
+                    <OrderStatusBadge status={order.status} />
+                  </span>
+                }
                 to={`/commerce/orders/${encodeURIComponent(order.id)}`}
               />
             ))}

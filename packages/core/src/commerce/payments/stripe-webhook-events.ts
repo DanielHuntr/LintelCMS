@@ -5,6 +5,7 @@ import { z } from "zod";
  * steps, for ticking when the webhook endpoint is added in Stripe.
  *
  *   checkout.session.completed / async_payment_succeeded   hosted checkout was paid
+ *   checkout.session.async_payment_failed                   a delayed payment didn't arrive
  *   checkout.session.expired                                hosted checkout abandoned
  *   payment_intent.succeeded                                paid (Payment Element, or hosted)
  *   payment_intent.canceled                                 embedded payment given up
@@ -13,6 +14,7 @@ import { z } from "zod";
 export const STRIPE_WEBHOOK_EVENTS = [
   "checkout.session.completed",
   "checkout.session.async_payment_succeeded",
+  "checkout.session.async_payment_failed",
   "checkout.session.expired",
   "payment_intent.succeeded",
   "payment_intent.canceled",

@@ -186,6 +186,7 @@ async function handleEvent(
       await placeForIntent(shop, transaction, intent, afterCommit);
       return;
     }
+    case "checkout.session.async_payment_failed":
     case "checkout.session.expired": {
       const session = stripeCheckoutSessionObjectSchema.parse(object);
       const checkoutId = session.metadata?.lintel_checkout_id ?? session.client_reference_id;

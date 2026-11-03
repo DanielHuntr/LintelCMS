@@ -43,8 +43,10 @@ admin: fulfil ──────────────▶ items sent, tracking
 PayPal and Mollie follow the same shape with their own hosted pages and webhooks (see
 `payments/`); each market says which provider its shoppers pay with.
 
-Orders are made **only** by the signed webhook. The success page a shopper lands on proves
-nothing, so it never marks anything paid.
+Orders are made **only** once the provider confirms the payment: its signed webhook, or the
+payment fetched back from it with the shop's own key (see `payments/`). The success page a
+shopper lands on proves nothing, so it never marks anything paid. The test checkout
+(`test-checkout/`) places orders marked as test, for a signed test session only.
 
 ## Money
 

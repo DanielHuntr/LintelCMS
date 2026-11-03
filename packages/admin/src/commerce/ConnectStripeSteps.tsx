@@ -6,7 +6,7 @@ import { PasswordField } from "../design/PasswordField.js";
 import { TextField } from "../design/TextField.js";
 import { t } from "../i18n/strings.js";
 import type { PaymentSettings } from "./shopSettings.api.js";
-import { ExternalButton, Step } from "./ConnectStep.js";
+import { ExternalButton, LocalWebhookNote, Step } from "./ConnectStep.js";
 import { useCheckStripeConnection, useSavePaymentKeys } from "./shopSettings.queries.js";
 
 const STRIPE_KEYS_PAGE = "https://dashboard.stripe.com/test/apikeys";
@@ -15,6 +15,7 @@ const STRIPE_WEBHOOKS_PAGE = "https://dashboard.stripe.com/test/webhooks/create"
 /**
  * "Connect Stripe" in four numbered steps, each saying exactly where in Stripe to click and
  * which key goes in which box. Keys set on the server are shown as set and can't be changed.
+ * On someone's own computer Stripe's webhook form can only fail, so that step isn't shown.
  */
 export function ConnectStripeSteps({
   settings,
@@ -110,77 +111,87 @@ export function ConnectStripeSteps({
         )}
       </Step>
 
-      <Step number={3} title={t("shop.payments.step3Title")} done={settings.webhookSecret !== null}>
-        <p>{t("shop.payments.step3Body")}</p>
-        <ExternalButton href={STRIPE_WEBHOOKS_PAGE}>
-          {t("shop.payments.step3Action")}
-        </ExternalButton>
-        <div className="flex flex-col gap-1.5">
-          <p className="text-footnote font-medium text-label">{t("shop.payments.endpointUrl")}</p>
-          <div className="flex items-center gap-2">
-            <code className="min-w-0 flex-1 truncate rounded-control bg-fill px-3 py-2 text-footnote text-label">
-              {settings.webhookUrl}
-            </code>
-            <CopyButton value={settings.webhookUrl} label={t("shop.payments.copyUrl")} />
+      {!settings.siteIsLocal && (
+        <Step
+          number={3}
+          title={t("shop.payments.step3Title")}
+          done={settings.webhookSecret !== null}
+        >
+          <p>{t("shop.payments.step3Body")}</p>
+          <ExternalButton href={STRIPE_WEBHOOKS_PAGE}>
+            {t("shop.payments.step3Action")}
+          </ExternalButton>
+          <div className="flex flex-col gap-1.5">
+            <p className="text-footnote font-medium text-label">{t("shop.payments.endpointUrl")}</p>
+            <div className="flex items-center gap-2">
+              <code className="min-w-0 flex-1 truncate rounded-control bg-fill px-3 py-2 text-footnote text-label">
+                {settings.webhookUrl}
+              </code>
+              <CopyButton value={settings.webhookUrl} label={t("shop.payments.copyUrl")} />
+            </div>
           </div>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <p className="text-footnote font-medium text-label">
-            {t("shop.payments.eventsToChoose")}
-          </p>
-          <ul className="flex flex-wrap gap-1.5">
-            {settings.webhookEvents.map((event) => (
-              <li key={event}>
-                <code className="rounded-control bg-fill px-2 py-1 text-caption text-label">
-                  {event}
-                </code>
-              </li>
-            ))}
-          </ul>
-        </div>
-        {fromServer(settings.webhookSecret?.source) ? (
-          <p className="text-footnote text-label-secondary">
-            {t("shop.payments.secretFromServer")}
-          </p>
-        ) : (
-          canChange && (
-            <form
-              className="flex flex-col gap-4"
-              onSubmit={(event) => {
-                event.preventDefault();
-                saveWebhook.mutate(
-                  { webhookSecret: webhookSecret.trim() },
-                  { onSuccess: () => setWebhookSecret("") },
-                );
-              }}
-            >
-              <PasswordField
-                label={t("shop.payments.signingSecretLabel")}
-                hint={
-                  settings.webhookSecret
-                    ? t("shop.payments.signingSecretSaved")
-                    : t("shop.payments.signingSecretHint")
-                }
-                placeholder="whsec_…"
-                value={webhookSecret}
-                autoComplete="off"
-                onChange={(event) => setWebhookSecret(event.target.value)}
-                error={saveWebhook.error ? describeError(saveWebhook.error) : undefined}
-              />
-              <div>
-                <Button
-                  type="submit"
-                  disabled={saveWebhook.isPending || webhookSecret.trim() === ""}
-                >
-                  {t("shop.payments.saveSecret")}
-                </Button>
-              </div>
-            </form>
-          )
-        )}
-      </Step>
+          <div className="flex flex-col gap-1.5">
+            <p className="text-footnote font-medium text-label">
+              {t("shop.payments.eventsToChoose")}
+            </p>
+            <ul className="flex flex-wrap gap-1.5">
+              {settings.webhookEvents.map((event) => (
+                <li key={event}>
+                  <code className="rounded-control bg-fill px-2 py-1 text-caption text-label">
+                    {event}
+                  </code>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {fromServer(settings.webhookSecret?.source) ? (
+            <p className="text-footnote text-label-secondary">
+              {t("shop.payments.secretFromServer")}
+            </p>
+          ) : (
+            canChange && (
+              <form
+                className="flex flex-col gap-4"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  saveWebhook.mutate(
+                    { webhookSecret: webhookSecret.trim() },
+                    { onSuccess: () => setWebhookSecret("") },
+                  );
+                }}
+              >
+                <PasswordField
+                  label={t("shop.payments.signingSecretLabel")}
+                  hint={
+                    settings.webhookSecret
+                      ? t("shop.payments.signingSecretSaved")
+                      : t("shop.payments.signingSecretHint")
+                  }
+                  placeholder="whsec_…"
+                  value={webhookSecret}
+                  autoComplete="off"
+                  onChange={(event) => setWebhookSecret(event.target.value)}
+                  error={saveWebhook.error ? describeError(saveWebhook.error) : undefined}
+                />
+                <div>
+                  <Button
+                    type="submit"
+                    disabled={saveWebhook.isPending || webhookSecret.trim() === ""}
+                  >
+                    {t("shop.payments.saveSecret")}
+                  </Button>
+                </div>
+              </form>
+            )
+          )}
+        </Step>
+      )}
 
-      <Step number={4} title={t("shop.payments.step4Title")} done={check.isSuccess}>
+      <Step
+        number={settings.siteIsLocal ? 3 : 4}
+        title={t("shop.payments.step4Title")}
+        done={check.isSuccess}
+      >
         <p>{t("shop.payments.step4Body")}</p>
         <div className="flex flex-wrap items-center gap-3">
           <Button
@@ -200,6 +211,7 @@ export function ConnectStripeSteps({
           </p>
         )}
       </Step>
+      {settings.siteIsLocal && <LocalWebhookNote providerName={t("shop.providers.name.stripe")} />}
     </ol>
   );
 }

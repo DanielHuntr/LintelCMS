@@ -6,7 +6,7 @@ import { PasswordField } from "../design/PasswordField.js";
 import { SegmentedControl } from "../design/SegmentedControl.js";
 import { TextField } from "../design/TextField.js";
 import { t } from "../i18n/strings.js";
-import { ExternalButton, Step } from "./ConnectStep.js";
+import { ExternalButton, LocalWebhookNote, Step } from "./ConnectStep.js";
 import type { PaymentProviders } from "./paymentProviders.api.js";
 import { useConnectPayPal, useDisconnectProvider } from "./paymentProviders.queries.js";
 
@@ -19,9 +19,11 @@ const PAYPAL_APPS_PAGE = "https://developer.paypal.com/dashboard/applications/sa
 export function ConnectPayPalSteps({
   paypal,
   canChange,
+  siteIsLocal,
 }: {
   paypal: PaymentProviders["paypal"];
   canChange: boolean;
+  siteIsLocal: boolean;
 }) {
   const [environment, setEnvironment] = useState<"sandbox" | "live">(
     paypal.mode === "live" ? "live" : "sandbox",
@@ -52,33 +54,41 @@ export function ConnectPayPalSteps({
         <ExternalButton href={PAYPAL_APPS_PAGE}>{t("shop.paypal.step1Action")}</ExternalButton>
       </Step>
 
-      <Step number={2} title={t("shop.paypal.step2Title")} done={paypal.webhookIdSet}>
-        <p>{t("shop.paypal.step2Body")}</p>
-        <div className="flex items-center gap-2">
-          <code className="min-w-0 flex-1 truncate rounded-control bg-fill px-3 py-2 text-footnote text-label">
-            {paypal.webhookUrl}
-          </code>
-          <CopyButton value={paypal.webhookUrl} label={t("shop.payments.copyUrl")} />
-        </div>
-        <p className="text-footnote font-medium text-label">{t("shop.payments.eventsToChoose")}</p>
-        <ul className="flex flex-wrap gap-1.5">
-          {paypal.webhookEvents.map((event) => (
-            <li key={event}>
-              <code className="rounded-control bg-fill px-2 py-1 text-caption text-label">
-                {event}
-              </code>
-            </li>
-          ))}
-        </ul>
-      </Step>
+      {!siteIsLocal && (
+        <Step number={2} title={t("shop.paypal.step2Title")} done={paypal.webhookIdSet}>
+          <p>{t("shop.paypal.step2Body")}</p>
+          <div className="flex items-center gap-2">
+            <code className="min-w-0 flex-1 truncate rounded-control bg-fill px-3 py-2 text-footnote text-label">
+              {paypal.webhookUrl}
+            </code>
+            <CopyButton value={paypal.webhookUrl} label={t("shop.payments.copyUrl")} />
+          </div>
+          <p className="text-footnote font-medium text-label">
+            {t("shop.payments.eventsToChoose")}
+          </p>
+          <ul className="flex flex-wrap gap-1.5">
+            {paypal.webhookEvents.map((event) => (
+              <li key={event}>
+                <code className="rounded-control bg-fill px-2 py-1 text-caption text-label">
+                  {event}
+                </code>
+              </li>
+            ))}
+          </ul>
+        </Step>
+      )}
 
-      <Step number={3} title={t("shop.paypal.step3Title")} done={paypal.connected}>
+      <Step
+        number={siteIsLocal ? 2 : 3}
+        title={t("shop.paypal.step3Title")}
+        done={paypal.connected}
+      >
         {paypal.source === "environment" ? (
           <p>{t("shop.paypal.fromServer")}</p>
         ) : (
           canChange && (
             <form onSubmit={submit} className="flex flex-col gap-4">
-              <p>{t("shop.paypal.step3Body")}</p>
+              <p>{siteIsLocal ? t("shop.paypal.step3BodyLocal") : t("shop.paypal.step3Body")}</p>
               <SegmentedControl<"sandbox" | "live">
                 label={t("shop.paypal.environmentLabel")}
                 value={environment}
@@ -107,14 +117,16 @@ export function ConnectPayPalSteps({
                 autoComplete="off"
                 onChange={(event) => setClientSecret(event.target.value)}
               />
-              <TextField
-                label={t("shop.paypal.webhookIdLabel")}
-                hint={t("shop.paypal.webhookIdHint")}
-                value={webhookId}
-                autoComplete="off"
-                spellCheck={false}
-                onChange={(event) => setWebhookId(event.target.value)}
-              />
+              {!siteIsLocal && (
+                <TextField
+                  label={t("shop.paypal.webhookIdLabel")}
+                  hint={t("shop.paypal.webhookIdHint")}
+                  value={webhookId}
+                  autoComplete="off"
+                  spellCheck={false}
+                  onChange={(event) => setWebhookId(event.target.value)}
+                />
+              )}
               {save.error && (
                 <p role="alert" className="text-footnote text-danger">
                   {describeError(save.error)}
@@ -137,6 +149,7 @@ export function ConnectPayPalSteps({
           )
         )}
       </Step>
+      {siteIsLocal && <LocalWebhookNote providerName={t("shop.providers.name.paypal")} />}
     </ol>
   );
 }

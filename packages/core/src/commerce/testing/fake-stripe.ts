@@ -45,6 +45,8 @@ export class FakeStripe {
   }> = [];
   /** Events per page of `GET /v1/events`. */
   eventPageSize = 100;
+  /** The hosted payment page made last. */
+  lastSessionId = "";
   private counter = 0;
 
   readonly fetch: typeof fetch = async (input, init) => {
@@ -95,6 +97,7 @@ export class FakeStripe {
     }
     if (path === "/v1/checkout/sessions") {
       const id = `cs_test_${this.next()}`;
+      this.lastSessionId = id;
       return {
         id,
         url: `https://checkout.stripe.com/c/pay/${id}`,

@@ -131,7 +131,12 @@ export async function startCheckout(
   try {
     payment = await provider.startPayment(
       checkout,
-      hosted ? { successUrl: request.successUrl ?? "", cancelUrl: request.cancelUrl ?? "" } : null,
+      hosted
+        ? {
+            successUrl: withCheckoutId(request.successUrl ?? "", checkoutId),
+            cancelUrl: request.cancelUrl ?? "",
+          }
+        : null,
     );
   } catch (error) {
     await abandonCheckout(shop.database, checkoutId);
@@ -157,6 +162,16 @@ export async function startCheckout(
     total: amount(totals.totalAmount),
     taxesIncluded: totals.taxesIncluded,
   };
+}
+
+/**
+ * The payment page sends the shopper back with the checkout's id in the address, because a
+ * banking app can bring them back in a different browser from the one they started in.
+ */
+function withCheckoutId(successUrl: string, checkoutId: string): string {
+  const url = new URL(successUrl);
+  url.searchParams.set("checkout", checkoutId);
+  return url.toString();
 }
 
 export async function findCheckoutStatus(

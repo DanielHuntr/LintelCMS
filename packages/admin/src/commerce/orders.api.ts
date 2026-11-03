@@ -28,6 +28,8 @@ export interface OrderSummary {
   paymentStatus: "paid" | "partially_refunded" | "refunded";
   fulfilmentStatus: "unfulfilled" | "partially_fulfilled" | "fulfilled";
   cancelled: boolean;
+  /** Placed through the test checkout: no money moved, and it isn't a sale. */
+  isTest: boolean;
   total: Money;
   itemCount: number;
   createdAt: string;
@@ -77,7 +79,7 @@ export interface Order extends OrderSummary {
     createdAt: string;
   }>;
   timeline: Array<{ id: string; kind: string; message: string; createdAt: string }>;
-  paymentProvider?: "stripe" | "paypal" | "mollie";
+  paymentProvider?: "stripe" | "paypal" | "mollie" | "test";
   stripePaymentUrl: string | null;
 }
 

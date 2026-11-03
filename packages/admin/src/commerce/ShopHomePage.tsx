@@ -18,6 +18,7 @@ import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { t } from "../i18n/strings.js";
 import { ShopMenuStep, useShopMenuOffer } from "./ShopMenuOffer.js";
+import { TryYourShop } from "./TryYourShop.js";
 import { usePaymentProviders } from "./paymentProviders.queries.js";
 import { useProducts } from "./shop.queries.js";
 import { useMarkets, usePaymentSettings, useShippingZones } from "./shopSettings.queries.js";
@@ -158,6 +159,9 @@ export function ShopHomePage() {
               ))}
               <ShopMenuStep offer={menuOffer} />
             </ul>
+            <div className="px-4 py-3 hairline-top">
+              <TryYourShop isPlain />
+            </div>
             {done.length > 0 && (
               <p className="flex items-start gap-2 px-4 py-3 text-footnote text-label-secondary hairline-top">
                 <CircleCheck aria-hidden="true" className="mt-px size-4 shrink-0 text-success" />
@@ -168,6 +172,7 @@ export function ShopHomePage() {
             )}
           </section>
         )}
+        {isLoaded && !showsSetup && <TryYourShop />}
         <GroupedList header={t("shop.sectionsHeader")}>
           <GroupedListRow
             icon={Package}

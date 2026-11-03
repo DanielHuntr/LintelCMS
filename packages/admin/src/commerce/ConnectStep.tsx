@@ -42,6 +42,22 @@ export function Step({
   );
 }
 
+/** In place of a webhook step that can't work yet: why, and why that's fine. */
+export function LocalWebhookNote({ providerName }: { providerName: string }) {
+  return (
+    <li>
+      <Card>
+        <div className="flex flex-col gap-1">
+          <h2 className="text-headline text-label">{t("shop.checks.localTitle")}</h2>
+          <p className="text-body text-label-secondary">
+            {t("shop.checks.localBody", { provider: providerName })}
+          </p>
+        </div>
+      </Card>
+    </li>
+  );
+}
+
 /** A link into the provider's own dashboard, opening in a new tab. */
 export function ExternalButton({ href, children }: { href: string; children: ReactNode }) {
   return (

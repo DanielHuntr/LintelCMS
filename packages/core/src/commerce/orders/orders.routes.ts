@@ -15,7 +15,7 @@ import { addOrderNote, cancelOrder, findOrder, listOrders } from "./orders.servi
 import { refundOrder } from "./refunds.service.js";
 
 /**
- * HTTP only. Orders are made by the Stripe webhook, never by a request here. Refunds and
+ * HTTP only. Orders are made when a provider confirms a payment, never by a request here. Refunds and
  * cancelling move money, so they need `commerce:refund`.
  *
  *   GET  /shop/orders                   (commerce:read)    ?search&paymentStatus&fulfilmentStatus&cancelled&customerId&page&perPage

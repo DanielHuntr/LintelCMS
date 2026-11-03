@@ -15,9 +15,11 @@ import { ConnectMollieSteps } from "./ConnectMollieSteps.js";
 import { ConnectPayPalSteps } from "./ConnectPayPalSteps.js";
 import { ConnectStripeSteps } from "./ConnectStripeSteps.js";
 import { MarketPaymentProviders } from "./MarketPaymentProviders.js";
+import { PaymentChecksNotice } from "./PaymentChecksNotice.js";
 import type { PaymentProviderId, PaymentProviders } from "./paymentProviders.api.js";
 import { usePaymentProviders } from "./paymentProviders.queries.js";
 import type { PaymentSettings } from "./shopSettings.api.js";
+import { TryYourShop } from "./TryYourShop.js";
 import {
   useDisconnectStripe,
   usePaymentSettings,
@@ -46,6 +48,8 @@ export function PaymentsPage() {
       />
       {payments.data && providers.data && (
         <div className="mb-6 flex max-w-2xl flex-col gap-6">
+          <TryYourShop />
+          <PaymentChecksNotice settings={payments.data} providers={providers.data} />
           <MarketPaymentProviders
             providers={providers.data}
             stripeConnected={payments.data.connected}
@@ -65,7 +69,11 @@ export function PaymentsPage() {
       )}
       {provider === "paypal" && providers.data && (
         <div className="max-w-2xl">
-          <ConnectPayPalSteps paypal={providers.data.paypal} canChange={canChange} />
+          <ConnectPayPalSteps
+            paypal={providers.data.paypal}
+            canChange={canChange}
+            siteIsLocal={payments.data?.siteIsLocal ?? false}
+          />
         </div>
       )}
       {provider === "mollie" && providers.data && (

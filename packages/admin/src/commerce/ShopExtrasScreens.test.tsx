@@ -83,6 +83,8 @@ describe("the discount editor", () => {
 
 const stripeConnected: PaymentSettings = {
   connected: true,
+  siteIsLocal: false,
+  checksForPayments: false,
   mode: "test",
   secretKey: { hint: "sk_test_…4242", source: "admin" },
   publishableKey: { value: "pk_test_abc", source: "admin" },
@@ -95,6 +97,7 @@ const stripeConnected: PaymentSettings = {
 const providers: PaymentProviders = {
   paypal: {
     connected: false,
+    checksForPayments: false,
     mode: null,
     source: null,
     clientIdHint: null,
@@ -102,7 +105,14 @@ const providers: PaymentProviders = {
     webhookUrl: "https://shop.example.com/shop/paypal/webhook",
     webhookEvents: ["CHECKOUT.ORDER.APPROVED", "PAYMENT.CAPTURE.COMPLETED"],
   },
-  mollie: { connected: false, mode: null, source: null, apiKeyHint: null, webhookUrl: null },
+  mollie: {
+    connected: false,
+    checksForPayments: false,
+    mode: null,
+    source: null,
+    apiKeyHint: null,
+    webhookUrl: null,
+  },
   markets: [{ id: "m1", name: "United Kingdom", currency: "GBP", paymentProvider: "stripe" }],
 };
 

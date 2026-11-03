@@ -8,8 +8,8 @@ itself: `mollie-webhook.service.ts` fetches the payment back from Mollie with th
 API key and acts on what Mollie answers (paid: the order is placed once; expired, cancelled
 or failed: the stock goes back). Refund statuses are brought up to date on the same call.
 
-While the API runs on localhost, Mollie can't reach it, so payments are made without a
-webhook address; use a tunnel (or a public address in `API_PUBLIC_URL`) to test webhooks.
+While the API runs on a local address, Mollie can't reach it, so payments are made without a
+webhook address and Lintel asks Mollie itself (see `../README.md`).
 
 | File                 | What it does                             |
 | -------------------- | ---------------------------------------- |

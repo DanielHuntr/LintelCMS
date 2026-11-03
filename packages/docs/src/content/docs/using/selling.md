@@ -95,6 +95,25 @@ Discounts are shown in the cart's totals and on the order, and tax is worked out
 customer actually pays. When you refund an item, the customer gets back what they paid for
 it after the discount.
 
+## Trying your shop
+
+Before you open, place a test order. You don't need a payment account, and it works on your
+own computer.
+
+1. In **Shop**, or in **Shop → Settings → Payments**, choose **Try your shop**. Your website
+   opens in a new tab, with a bar at the bottom saying no money is taken.
+2. Buy something as a shopper would. Discount codes, delivery and tax all work.
+3. On the test payment page, choose **Pay (test)**, or **Make the payment fail** to see what
+   happens then.
+4. Choose **See it in your orders** in the bar. The order has a **Test** badge.
+
+Only your browser is in test mode, for two hours at most, and your shoppers never see it.
+Choose **End test** in the bar to stop sooner.
+
+Test orders take stock and send emails, marked as a test, to the address you typed. They don't
+count as sales and automations don't run for them. When you've finished, choose **Delete test
+orders** on the Orders page. The stock goes back.
+
 ## Taking payments
 
 Lintel can take payments through [Stripe](https://stripe.com), [PayPal](https://paypal.com)
@@ -132,6 +151,10 @@ the keys can't be changed in the admin.
 
 You can also choose how customers pay: on **Stripe's checkout page**, or with a **payment
 form on your own site**.
+
+While your site is on your own computer, Stripe can't reach it, so there's no webhook step.
+Lintel checks with Stripe for payments every few seconds instead, and test payments work with
+nothing else to set up. Add the webhook once your site is live.
 
 ### PayPal
 

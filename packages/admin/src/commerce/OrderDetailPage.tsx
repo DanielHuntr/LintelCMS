@@ -1,6 +1,7 @@
 import { ExternalLink, PackageCheck, Undo2, XCircle } from "lucide-react";
 import { useState } from "react";
 import { LoadError } from "../api/LoadError.js";
+import { Badge } from "../design/Badge.js";
 import { BackLink } from "../design/BackLink.js";
 import { Button } from "../design/Button.js";
 import { Card } from "../design/Card.js";
@@ -86,7 +87,13 @@ function OrderDetail({ order }: { order: Order }) {
         }
       />
       <div className="mb-6 flex flex-wrap items-center gap-2">
+        {order.isTest && <Badge tone="warning">{t("shop.testOrders.badge")}</Badge>}
         <OrderStatusBadge status={order.status} />
+        {order.isTest && (
+          <span className="text-footnote text-label-secondary">
+            {t("shop.testOrders.detailNote")}
+          </span>
+        )}
         {order.cancelled && order.cancelReason && (
           <span className="text-footnote text-label-secondary">{order.cancelReason}</span>
         )}

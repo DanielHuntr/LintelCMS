@@ -166,7 +166,8 @@ Either way, card details go straight to the provider and never pass through your
 Lintel.
 
 The order is made **only** when the provider confirms the payment (Stripe's signed webhook,
-a PayPal webhook PayPal has verified, or a Mollie payment fetched back from Mollie), never by
+a PayPal webhook PayPal has verified, or a payment fetched back from the provider with the
+shop's own key, as happens when `GET /delivery/shop/checkouts/:id` is polled), never by
 the shopper landing on your success page. On that page, poll
 `GET /delivery/shop/checkouts/:checkoutId` until `status` is `completed`, then show
 `orderName` ("#1001").
