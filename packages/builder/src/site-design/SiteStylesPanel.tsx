@@ -8,7 +8,7 @@ import {
   variablesAsTokens,
   withoutVariable,
 } from "@lintel/builder-model";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Moon, Plus } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
 import type { BuilderStringKey } from "../i18n/builder-strings.js";
 import { useBuilderText } from "../i18n/builder-text.js";
@@ -303,7 +303,11 @@ function VariablePreview({ variable }: { variable: DesignVariable }) {
     return (
       <span
         aria-hidden="true"
-        style={{ backgroundColor: variable.value }}
+        style={{
+          background: variable.darkValue
+            ? `linear-gradient(135deg, ${variable.value} 50%, ${variable.darkValue} 50%)`
+            : variable.value,
+        }}
         className="size-6 shrink-0 rounded-full hairline-ring"
       />
     );
@@ -414,7 +418,7 @@ function VariableRow({
     <Row
       preview={<VariablePreview variable={variable} />}
       name={variable.name}
-      detail={variable.value}
+      detail={variable.darkValue ? `${variable.value} · ${variable.darkValue}` : variable.value}
       uses={
         uses === 0
           ? null
@@ -428,10 +432,12 @@ function VariableRow({
       <NameInput name={variable.name} onChange={(name) => onChange({ ...variable, name })} />
       <ValueInput
         label={`${variable.name}: ${text("pageBuilder.site.value")}`}
+        shownLabel={variable.darkValue ? text("pageBuilder.siteStyles.lightValue") : undefined}
         kind={variable.kind}
         value={variable.value}
         onChange={(value) => onChange({ ...variable, value })}
       />
+      {variable.kind === "colour" && <DarkValue variable={variable} onChange={onChange} />}
       <DeleteAction
         name={variable.name}
         note={
@@ -443,6 +449,67 @@ function VariableRow({
       />
     </Row>
   );
+}
+
+/**
+ * A colour's dark-mode value: offered as "Add a dark-mode colour" until there is one, then
+ * changed or taken off here. Used wherever the site shows in dark mode.
+ */
+function DarkValue({
+  variable,
+  onChange,
+}: {
+  variable: DesignVariable;
+  onChange: (next: DesignVariable) => void;
+}) {
+  const text = useBuilderText();
+  if (variable.darkValue === undefined) {
+    return (
+      <button
+        type="button"
+        onClick={() => onChange({ ...variable, darkValue: suggestDark(variable.value) })}
+        className="flex items-center gap-1 self-start rounded-control px-1 py-0.5 text-caption font-medium text-accent hover:underline focus-visible:focus-ring"
+      >
+        <Moon aria-hidden="true" className="size-3.5" />
+        {text("pageBuilder.siteStyles.addDark")}
+      </button>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-1">
+      <ValueInput
+        label={`${variable.name}: ${text("pageBuilder.siteStyles.darkValue")}`}
+        shownLabel={text("pageBuilder.siteStyles.darkValue")}
+        kind="colour"
+        value={variable.darkValue}
+        onChange={(darkValue) => onChange({ ...variable, darkValue })}
+      />
+      <button
+        type="button"
+        onClick={() => {
+          const rest: DesignVariable = { ...variable };
+          delete rest.darkValue;
+          onChange(rest);
+        }}
+        className="self-start rounded-control px-1 py-0.5 text-caption text-label-secondary hover:underline focus-visible:focus-ring"
+      >
+        {text("pageBuilder.siteStyles.sameInDark")}
+      </button>
+    </div>
+  );
+}
+
+/** A starting dark-mode colour: the light one's brightness turned round, for six-digit hex. */
+function suggestDark(light: string): string {
+  const hex = /^#([0-9a-f]{6})$/i.exec(light.trim())?.[1];
+  if (!hex) return "#1c1c1e";
+  const channels = [0, 2, 4].map((at) => Number.parseInt(hex.slice(at, at + 2), 16));
+  const turned = channels.map((channel) =>
+    Math.round(255 - channel * 0.92)
+      .toString(16)
+      .padStart(2, "0"),
+  );
+  return `#${turned.join("")}`;
 }
 
 function NameInput({ name, onChange }: { name: string; onChange: (name: string) => void }) {

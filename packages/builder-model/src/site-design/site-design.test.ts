@@ -264,3 +264,46 @@ describe("where variables are used", () => {
     expect(design.sharedStyles[0]?.styles.base.color).toBe("#efe6d6");
   });
 });
+
+describe("colours with a dark-mode value", () => {
+  it("writes light-dark() for them, with the light value for browsers without it", () => {
+    const css = designVariablesStylesheet([
+      { id: "paper", name: "Paper", kind: "colour", value: "#faf7f2", darkValue: "#16181d" },
+      { id: "ink", name: "Ink", kind: "colour", value: "#1f2328" },
+    ]);
+    expect(css).toBe(
+      [
+        ":root {",
+        "  --lintel-var-paper: light-dark(#faf7f2, #16181d);",
+        "  --lintel-var-ink: #1f2328;",
+        "}",
+        "@supports not (color: light-dark(#000, #fff)) {",
+        "  :root {",
+        "    --lintel-var-paper: #faf7f2;",
+        "  }",
+        "}",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("stays as it was for variables without one", () => {
+    expect(
+      designVariablesStylesheet([{ id: "ink", name: "Ink", kind: "colour", value: "#1f2328" }]),
+    ).toBe(":root {\n  --lintel-var-ink: #1f2328;\n}\n");
+  });
+
+  it("only takes a dark-mode value that's a colour, on a colour", () => {
+    const parse = (variable: Record<string, string>) =>
+      siteDesignSchema.safeParse({ variables: [variable] }).success;
+    expect(parse({ id: "a", name: "A", kind: "colour", value: "#fff", darkValue: "#000" })).toBe(
+      true,
+    );
+    expect(parse({ id: "a", name: "A", kind: "colour", value: "#fff", darkValue: "red; x" })).toBe(
+      false,
+    );
+    expect(parse({ id: "a", name: "A", kind: "size", value: "2rem", darkValue: "#000" })).toBe(
+      false,
+    );
+  });
+});

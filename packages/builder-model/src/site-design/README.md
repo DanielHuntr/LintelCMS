@@ -12,3 +12,6 @@ sizes and fonts) and its shared styles. Saved once for the whole site by core's
 | `site-design.ts`      | The whole design, its schema, and edits across it (deleting a variable) |
 
 See `docs/decisions/0035-editorial-layouts.md` and `0038-reusing-styles.md`.
+
+A colour variable can have a dark-mode value; it is written with `light-dark()`, which
+follows the `color-scheme` the theme sets (see `designVariablesStylesheet`).

@@ -145,6 +145,25 @@ describe("Site styles in the right panel", () => {
     expect(node("First card")?.styles.base.backgroundColor).toBe("#1f2328");
   });
 
+  it("gives a colour a dark-mode value, and takes it off again", async () => {
+    const person = userEvent.setup();
+    const { design } = renderBuilder(ink);
+    await person.click(screen.getByRole("button", { name: /^Ink/ }));
+    await person.click(screen.getByRole("button", { name: "Add a dark-mode colour" }));
+    expect(design().variables[0]?.darkValue).toMatch(/^#[0-9a-f]{6}$/);
+    const dark = screen.getByRole("textbox", { name: "Ink: In dark mode" });
+    await person.clear(dark);
+    await person.type(dark, "#e6e1d8{Enter}");
+    expect(design().variables[0]).toMatchObject({ value: "#1f2328", darkValue: "#e6e1d8" });
+    await person.click(screen.getByRole("button", { name: "Use the same colour in dark mode" }));
+    expect(design().variables[0]).toEqual({
+      id: "ink",
+      name: "Ink",
+      kind: "colour",
+      value: "#1f2328",
+    });
+  });
+
   it("tells apart elements around it that have the same name", async () => {
     const person = userEvent.setup();
     const ids = createCountingNodeIds();

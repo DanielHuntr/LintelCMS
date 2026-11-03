@@ -21,6 +21,10 @@ export const builderSiteStylesStrings = {
     "It’s used {count} times on this page. Those keep how they look now; other pages that use it won’t.",
   "pageBuilder.siteStyles.deleteUnused": "Other pages that use it will lose it.",
   "pageBuilder.siteStyles.keep": "Keep it",
+  "pageBuilder.siteStyles.addDark": "Add a dark-mode colour",
+  "pageBuilder.siteStyles.darkValue": "In dark mode",
+  "pageBuilder.siteStyles.lightValue": "In light mode",
+  "pageBuilder.siteStyles.sameInDark": "Use the same colour in dark mode",
   "pageBuilder.siteStyles.deleteShared":
     "Elements on this page keep how they look, as their own. On other pages they lose it.",
   "pageBuilder.siteStyles.history.variableWritten": "Kept {name} where it was used",
