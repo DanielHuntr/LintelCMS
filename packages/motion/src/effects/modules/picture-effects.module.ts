@@ -10,7 +10,7 @@ import { combine, listen } from "../kit/listen.js";
 import { readNumber } from "../kit/params.js";
 import { pointerWithin } from "../kit/pointer.js";
 import { shaderRenderer, type ShaderTexture } from "../kit/shader-renderer.js";
-import { fitOf, pictureLookup, placementUniforms } from "../kit/picture-shader.js";
+import { fitOf, pictureLookup, pictureTexture, placementUniforms } from "../kit/picture-shader.js";
 import { setStyles } from "../kit/styles.js";
 import { loaded } from "../kit/loaded.js";
 import { noiseFunctions } from "../kit/shader-source.js";
@@ -121,9 +121,10 @@ const developReveal: EffectBehaviour = (element, params, context) => {
   };
   let stopWatching: EffectCleanup = () => undefined;
   void loaded(layer.image)
-    .then((image) => {
+    .then(async (image) => {
       if (ended) return;
-      texture = renderer.texture(image);
+      texture = await pictureTexture(renderer, image);
+      if (ended) return texture?.release();
       layer.place(ratio);
       if (!texture || !draw()) return end();
       hide();
@@ -211,7 +212,7 @@ const colourSplit: EffectBehaviour = (element, params, context) => {
   const ratio = drawingRatio(context, { software: renderer.software });
   let texture: ShaderTexture | undefined;
   void loaded(image)
-    .then(() => (texture = renderer.texture(image)))
+    .then(async () => (texture = await pictureTexture(renderer, image)))
     .catch(() => undefined);
   const pointer = { x: 0, y: 0, dx: 0, dy: 0 };
   const split = { x: 0, y: 0 };

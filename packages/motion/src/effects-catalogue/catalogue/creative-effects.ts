@@ -65,7 +65,7 @@ export const creativeEffects = [
     id: "floating-dust",
     name: "Floating dust",
     description:
-      "Specks of dust at different depths, drifting up through the light. They shift a little with the pointer.",
+      "Specks of dust at different depths, drifting up through the light. Best on a dark section.",
     category: "canvas",
     kind: "behaviour",
     module: "shader-backgrounds",
@@ -74,7 +74,7 @@ export const creativeEffects = [
     params: {
       colour: colour("Dust colour", "currentColor"),
       speed: common.speed(1),
-      strength: howMuch("How much dust", 0.5),
+      strength: howMuch("How much dust", 0.4),
     },
     fixed: { look: "dust" },
     reducedMotion: "The dust stays still.",

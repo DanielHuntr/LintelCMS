@@ -1,5 +1,6 @@
 import { fitPicture, readObjectPosition, type PictureFit } from "../maths/picture-fit.js";
-import type { UniformValue } from "./shader-renderer.js";
+import { readableCopy } from "./loaded.js";
+import type { ShaderRenderer, ShaderTexture, UniformValue } from "./shader-renderer.js";
 
 /**
  * Pictures in shaders, placed the way the page places them (object-fit, object-position),
@@ -43,4 +44,15 @@ export function placementUniforms(image: HTMLImageElement): Record<string, Unifo
       target.height / height,
     ],
   };
+}
+
+/** The picture as a texture, from a copy fetched with permission if the page can't read it. */
+export async function pictureTexture(
+  renderer: ShaderRenderer,
+  image: HTMLImageElement,
+): Promise<ShaderTexture | undefined> {
+  const texture = renderer.texture(image);
+  if (texture) return texture;
+  const copy = await readableCopy(image);
+  return copy ? renderer.texture(copy) : undefined;
 }

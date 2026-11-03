@@ -7,7 +7,7 @@ import { addPictureLayer, drawingRatio, findPicture } from "../kit/layers.js";
 import { loaded } from "../kit/loaded.js";
 import { shaderRenderer, type ShaderTexture } from "../kit/shader-renderer.js";
 import { noiseFunctions } from "../kit/shader-source.js";
-import { pictureLookup, placementUniforms } from "../kit/picture-shader.js";
+import { pictureLookup, pictureTexture, placementUniforms } from "../kit/picture-shader.js";
 import { approach } from "../maths/smoothing.js";
 
 /**
@@ -36,7 +36,7 @@ const imageDistort: EffectBehaviour = (element, params, context) => {
   const ratio = drawingRatio(context, { software: renderer.software });
   let texture: ShaderTexture | undefined;
   void loaded(image)
-    .then(() => (texture = renderer.texture(image)))
+    .then(async () => (texture = await pictureTexture(renderer, image)))
     .catch(() => undefined);
   let amount = 0;
   let target = 0;
