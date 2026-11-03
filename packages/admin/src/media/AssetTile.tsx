@@ -1,4 +1,4 @@
-import { Check, FileSpreadsheet, FileText, Presentation, type LucideIcon } from "lucide-react";
+import { Box, Check, FileSpreadsheet, FileText, Presentation, type LucideIcon } from "lucide-react";
 import type { KeyboardEvent, Ref } from "react";
 import { classNames } from "../design/classNames.js";
 import { assetSummary, fileKindLabel } from "./formatting.js";
@@ -20,6 +20,7 @@ const documentIcons: Partial<Record<string, LucideIcon>> = {
   "text/csv": FileSpreadsheet,
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": FileSpreadsheet,
   "application/vnd.openxmlformats-officedocument.presentationml.presentation": Presentation,
+  "model/gltf-binary": Box,
 };
 
 /** A square thumbnail with the filename underneath, like a photo in a Photos grid. */

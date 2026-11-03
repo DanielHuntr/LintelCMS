@@ -22,7 +22,12 @@ subject is (the focal point) so every crop keeps it in view.
    The filename is cleaned (`filenames.ts`) and given the extension of its real type.
 
 Allowed: JPEG, PNG, WebP, AVIF, GIF and SVG images; PDF, Word (`.docx`), Excel (`.xlsx`),
-PowerPoint (`.pptx`), plain text and CSV documents.
+PowerPoint (`.pptx`), plain text and CSV documents; fonts and videos for the page builder;
+and 3D models for the 3D model element. Models are kept as `.glb` (`model-files.ts`): a
+`.gltf` is packed into one as it is uploaded when everything it needs is inside it, and is
+refused, with a note to export a `.glb`, when it points to other files. `GET /media?type=model`
+lists them, and model files (like fonts) are served with `Access-Control-Allow-Origin: *`,
+since pages fetch them by script. The builder warns about models over 10 MB.
 
 ## Endpoints
 

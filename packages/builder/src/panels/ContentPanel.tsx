@@ -28,6 +28,7 @@ import { MenuSection } from "../menus/menu-editing.js";
 import { MenuLookColourField } from "../menus/menu-link-panel.js";
 import { RewriteText } from "../page-drafts/RewriteText.js";
 import { CodeBlockEditor } from "../code-block/CodeBlockEditor.js";
+import { ModelField } from "./model-field.js";
 
 interface ContentPanelProps {
   node: PageNode;
@@ -212,6 +213,7 @@ function ContentField({
   onMarkText: ContentPanelProps["onMarkText"];
   pageFonts: readonly PageFont[];
 }) {
+  const text = useBuilderText();
   const value = node.props[field.prop];
   const set = (next: unknown) => onChange({ [field.prop]: next }, field.label);
   const boundTo = node.bindings?.[field.prop];
@@ -233,6 +235,30 @@ function ContentField({
     if ((field.prop === "lookColour" || field.prop === "keepOnCurrent") && !draws) return null;
     if (field.prop === "lookColour") {
       return <MenuLookColourField label={field.label} value={String(value ?? "")} onChange={set} />;
+    }
+  }
+  if (node.type === "model3d") {
+    if (field.kind === "model") {
+      return (
+        <ModelField label={field.label} node={node} pickImage={pickImage} onChange={onChange} />
+      );
+    }
+    if (field.prop === "backgroundColour" && node.props.background !== "colour") return null;
+    if (field.prop === "alt") {
+      return (
+        <div className="flex flex-col gap-1">
+          <TextInputField
+            multiline
+            label={field.label}
+            value={String(value ?? "")}
+            placeholder={field.kind === "multilineText" ? field.placeholder : undefined}
+            onChange={set}
+          />
+          {String(value ?? "").trim() === "" && (
+            <p className="text-caption text-warning">{text("pageBuilder.model.describe")}</p>
+          )}
+        </div>
+      );
     }
   }
   if (node.type === "image" && field.prop === "showCredit") {

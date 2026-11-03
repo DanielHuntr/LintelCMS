@@ -108,6 +108,9 @@ export function FieldControl({
       return <DateTimeField label={field.label} value={String(value ?? "")} onChange={onChange} />;
     case "icon":
       return <IconField label={field.label} value={String(value ?? "")} onChange={onChange} />;
+    case "model":
+      // Only the 3D model element has one, and the Content panel draws it (ModelField).
+      return null;
   }
 }
 

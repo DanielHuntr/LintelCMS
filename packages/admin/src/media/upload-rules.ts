@@ -26,24 +26,34 @@ const allowedExtensions = [
   "otf",
   "mp4",
   "webm",
+  "glb",
+  "gltf",
 ] as const;
 
 const imageExtensions = ["jpg", "jpeg", "png", "webp", "avif", "gif", "svg"] as const;
+const modelExtensions = ["glb", "gltf"] as const;
 
 /** For a file input's `accept`, so the file chooser greys out everything else. */
 export const acceptedFileTypes = allowedExtensions.map((extension) => `.${extension}`).join(",");
 export const acceptedImageTypes = imageExtensions.map((extension) => `.${extension}`).join(",");
+export const acceptedModelTypes = modelExtensions.map((extension) => `.${extension}`).join(",");
 
 /** Why this file can't be uploaded, in words for the person, or undefined when it's fine. */
 export function findUploadProblem(
   file: Pick<File, "name" | "size">,
-  options: { imagesOnly?: boolean } = {},
+  options: { imagesOnly?: boolean; modelsOnly?: boolean } = {},
 ): string | undefined {
   const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
-  const allowed: readonly string[] = options.imagesOnly ? imageExtensions : allowedExtensions;
+  const allowed: readonly string[] = options.imagesOnly
+    ? imageExtensions
+    : options.modelsOnly
+      ? modelExtensions
+      : allowedExtensions;
 
   if (!file.name.includes(".") || !allowed.includes(extension)) {
-    return t("media.upload.typeNotAllowed", { name: file.name });
+    return options.modelsOnly
+      ? t("media.upload.notAModel", { name: file.name })
+      : t("media.upload.typeNotAllowed", { name: file.name });
   }
   if (file.size === 0) {
     return t("media.upload.empty", { name: file.name });

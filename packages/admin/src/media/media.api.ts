@@ -32,7 +32,7 @@ export interface Asset {
   siteId?: string | null;
 }
 
-export type AssetKind = "image" | "document";
+export type AssetKind = "image" | "document" | "model";
 
 export interface AssetListQuery {
   search: string;

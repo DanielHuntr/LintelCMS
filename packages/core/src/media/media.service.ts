@@ -5,6 +5,7 @@ import { findErrorCode } from "../database/database-errors.js";
 import type { AssetUsageFinder } from "./asset-lookup.js";
 import { toAssetResponse } from "./asset-response.js";
 import { decodeAsText, detectFileType, findAllowedFileType } from "./file-types.js";
+import { assertGlbIsReadable, packGltfAsGlb } from "./model-files.js";
 import { sanitiseFilename } from "./filenames.js";
 import { MAX_IMAGE_PIXELS, readImageSize } from "./image-transforms.js";
 import {
@@ -80,11 +81,12 @@ export async function uploadAsset(
   const siteId = await findFolderSiteId(media.database, folder);
   const fileType = await detectFileType(file.contents, file.filename);
   const filename = sanitiseFilename(file.filename, fileType.extension);
+  const contents = fileType.kind === "model" ? readModelFile(file) : file.contents;
 
   if (fileType.mimeType === "image/svg+xml") {
-    assertSvgIsSafe(decodeAsText(file.contents) ?? "", filename);
+    assertSvgIsSafe(decodeAsText(contents) ?? "", filename);
   }
-  const size = fileType.kind === "image" ? await readImageSize(file.contents) : undefined;
+  const size = fileType.kind === "image" ? await readImageSize(contents) : undefined;
   if (fileType.kind === "image" && !size) {
     throw new UnreadableImageError(filename);
   }
@@ -92,7 +94,7 @@ export async function uploadAsset(
     throw new ImageTooLargeError(filename, size.width, size.height, MAX_IMAGE_PIXELS / 1_000_000);
   }
 
-  const contentHash = createHash("sha256").update(file.contents).digest("hex");
+  const contentHash = createHash("sha256").update(contents).digest("hex");
   const existingId = await findAssetIdByContentHash(media.database, DEFAULT_TENANT_ID, contentHash);
   if (existingId) {
     return { asset: await getAsset(media, existingId), created: false };
@@ -101,7 +103,7 @@ export async function uploadAsset(
   const assetId = randomUUID();
   // The tenant comes first so a shared bucket can later be split or permissioned per customer.
   const storageKey = `${DEFAULT_TENANT_ID}/${assetId}.${fileType.extension}`;
-  await media.storage.put(storageKey, file.contents, fileType.mimeType);
+  await media.storage.put(storageKey, contents, fileType.mimeType);
 
   try {
     await insertAsset(media.database, {
@@ -110,7 +112,7 @@ export async function uploadAsset(
       filename,
       storageKey,
       mimeType: fileType.mimeType,
-      size: file.contents.length,
+      size: contents.length,
       width: size?.width ?? null,
       height: size?.height ?? null,
       contentHash,
@@ -130,6 +132,14 @@ export async function uploadAsset(
   }
 
   return { asset: await getAsset(media, assetId), created: true };
+}
+
+/** A model as Lintel keeps it: a .gltf packed into a .glb, and either one checked. */
+function readModelFile(file: UploadedFile): Buffer {
+  const text = decodeAsText(file.contents);
+  const contents = text === undefined ? file.contents : packGltfAsGlb(text, file.filename);
+  assertGlbIsReadable(contents, file.filename);
+  return contents;
 }
 
 export async function listAssets(

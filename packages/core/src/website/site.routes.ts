@@ -12,6 +12,8 @@ import {
   readElementsScript,
   readFontFile,
   readIllustration,
+  readSampleModel,
+  SAMPLE_MODELS_FOLDER,
   readMotionRuntime,
 } from "./site-assets.js";
 import { withAnalyticsTag } from "../analytics/page-tag.js";
@@ -33,6 +35,7 @@ import { readSiteContext, respondToSitePath, type SiteDependencies } from "./sit
  *   ALL /_lintel/api/shop/*, /forms/*, /analytics/*  the storefront, forms and Visitors APIs (site-api.routes.ts)
  *   GET /_lintel/illustrations/<name>.svg the starter sites' illustrations
  *   GET /_lintel/fonts/<file>.woff2       the fonts that come with Lintel
+ *   GET /_lintel/models/<file>.glb        the sample 3D models ("Try a sample")
  *   GET /*                                 a page, a redirect, sitemap.xml, robots.txt or 404
  *
  * `?preview=<token>` on any page shows a draft (see site-preview.service.ts). Each visit is
@@ -108,6 +111,20 @@ export async function siteRoutes(
       .header("cache-control", "public, max-age=604800")
       .header("access-control-allow-origin", "*")
       .send(font);
+  });
+
+  server.get(`${SAMPLE_MODELS_FOLDER}/:file`, async (request, reply) => {
+    const { file } = request.params as { file: string };
+    const model = readSampleModel(file);
+    if (!model) {
+      return reply.code(404).type("text/plain; charset=utf-8").send("Not found");
+    }
+    // Fetched by script from other origins: the builder's canvas and its poster pictures.
+    return reply
+      .type("model/gltf-binary")
+      .header("cache-control", "public, max-age=604800")
+      .header("access-control-allow-origin", "*")
+      .send(model);
   });
 
   server.get(`${STYLESHEET_FOLDER}/:file`, async (request, reply) => {

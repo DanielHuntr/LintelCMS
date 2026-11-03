@@ -344,7 +344,7 @@ const english = {
   "media.uploads.close": "Close uploads",
   "media.upload.tooLarge": "“{name}” is larger than 25 MB. Try a smaller or compressed version.",
   "media.upload.typeNotAllowed":
-    "“{name}” isn’t a kind of file {product} accepts. Use an image (JPEG, PNG, WebP, AVIF, GIF or SVG) or a document (PDF, Word, Excel, PowerPoint, text or CSV).",
+    "“{name}” isn’t a kind of file {product} accepts. Use an image (JPEG, PNG, WebP, AVIF, GIF or SVG), a document (PDF, Word, Excel, PowerPoint, text or CSV) or a 3D model (.glb).",
   "media.upload.empty": "“{name}” is empty, so there’s nothing to upload.",
   "media.upload.unreachable":
     "{product} couldn’t reach the server. Check your connection and try again.",
@@ -401,6 +401,13 @@ const english = {
   "media.picker.gridLabel": "Images",
   "media.picker.empty.title": "No images yet",
   "media.picker.empty.description": "Upload one here, or drag it into this window.",
+  "media.picker.model.dialogTitle": "Choose a 3D model",
+  "media.picker.model.gridLabel": "3D models",
+  "media.picker.model.empty.title": "No 3D models yet",
+  "media.picker.model.empty.description":
+    "Upload a .glb file here, or drag one into this window. Under 10 MB loads best.",
+  "media.upload.notAModel":
+    "“{name}” isn’t a 3D model. Choose a .glb file (or a .gltf with everything inside it).",
   "media.picker.missing": "This image was deleted from the media library. Choose another.",
   "media.picker.noAlt": "No picture description yet. Add it in Media.",
   "designReview.title": "Design system",

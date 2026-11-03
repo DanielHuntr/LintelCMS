@@ -6,6 +6,7 @@ import { formRenders } from "./forms.js";
 import { infoRenders } from "./info.js";
 import { layoutRenders } from "./layout.js";
 import { mediaRenders } from "./media.js";
+import { modelRenders } from "./model.js";
 import { navigationRenders } from "./navigation.js";
 import { shopRenders } from "./shop.js";
 
@@ -13,6 +14,7 @@ import { shopRenders } from "./shop.js";
 export const elementRenders: Readonly<Record<string, ComponentRender>> = {
   ...layoutRenders,
   ...mediaRenders,
+  ...modelRenders,
   ...infoRenders,
   ...navigationRenders,
   ...formRenders,

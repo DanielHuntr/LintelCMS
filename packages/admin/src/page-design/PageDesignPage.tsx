@@ -2,6 +2,7 @@ import {
   type CanvasSite,
   type FileUploader,
   PageBuilder,
+  type ImagePicker,
   type PickedImage,
   type PictureUploader,
 } from "@lintel/builder";
@@ -405,9 +406,7 @@ const uploadPictureToMediaLibrary: PictureUploader = async (file) => {
 };
 
 export function useImagePicker() {
-  const [request, setRequest] = useState<{ label: string; currentAssetId: string | null } | null>(
-    null,
-  );
+  const [request, setRequest] = useState<Parameters<ImagePicker>[0] | null>(null);
   const resolver = useRef<((picked: PickedImage | null) => void) | null>(null);
 
   const finish = (picked: PickedImage | null) => {
@@ -416,7 +415,7 @@ export function useImagePicker() {
     setRequest(null);
   };
 
-  const pick = useCallback((next: { label: string; currentAssetId: string | null }) => {
+  const pick = useCallback((next: Parameters<ImagePicker>[0]) => {
     setRequest(next);
     return new Promise<PickedImage | null>((resolve) => {
       resolver.current = resolve;
@@ -427,6 +426,7 @@ export function useImagePicker() {
     <MediaPickerDialog
       fieldLabel={request.label}
       currentAssetId={request.currentAssetId}
+      kind={request.kind}
       onClose={() => finish(null)}
       onChoose={async (assetId) => {
         const asset = await getAsset(assetId).catch(() => null);

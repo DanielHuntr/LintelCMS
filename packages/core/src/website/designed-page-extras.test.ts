@@ -71,5 +71,16 @@ describe("designed pages with fonts and background videos", () => {
       const escape = await site.inject({ method: "GET", url: "/_lintel/fonts/..%2Fpackage.json" });
       expect(escape.statusCode).toBe(404);
     });
+
+    it("serves the sample 3D models to any address, and nothing else from their folder", async () => {
+      const model = await site.inject({ method: "GET", url: "/_lintel/models/vase.glb" });
+      expect(model.statusCode).toBe(200);
+      expect(model.headers["content-type"]).toBe("model/gltf-binary");
+      expect(model.headers["access-control-allow-origin"]).toBe("*");
+      expect(model.rawPayload.subarray(0, 4).toString("latin1")).toBe("glTF");
+      for (const url of ["/_lintel/models/teapot.glb", "/_lintel/models/..%2Fpackage.json"]) {
+        expect((await site.inject({ method: "GET", url })).statusCode).toBe(404);
+      }
+    });
   });
 });

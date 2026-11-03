@@ -7,6 +7,7 @@ import { parseRequest } from "../http/http-errors.js";
 import type { AssetUsageFinder } from "./asset-lookup.js";
 import { contentDisposition } from "./content-disposition.js";
 import { findAssetFile } from "./media-file.service.js";
+import { isModelMimeType } from "./file-types.js";
 import {
   AssetInUseError,
   AssetNotFoundError,
@@ -185,7 +186,8 @@ export async function mediaRoutes(server: FastifyInstance, options: MediaRoutesO
 
     // Browsers only use a font from another address when it says they may (the canvas and
     // the website both load fonts uploaded here).
-    if (file.mimeType.startsWith("font/")) {
+    // 3D models are fetched by script too (the 3D model element, and the builder's canvas).
+    if (file.mimeType.startsWith("font/") || isModelMimeType(file.mimeType)) {
       reply.header("access-control-allow-origin", "*");
     }
 
