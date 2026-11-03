@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { House, Plus, Trash2 } from "lucide-react";
+import { CalendarDays, House, Plus, Trash2 } from "lucide-react";
 import { useState, type DragEvent, type MouseEvent } from "react";
 import { LoadError } from "../api/LoadError.js";
 import { Button } from "../design/Button.js";
@@ -137,6 +137,18 @@ export function ContentTree({ beside }: { beside?: ReactNode } = {}) {
       <TreeSelectionBar />
 
       <div className="hairline-top px-2.5 py-2">
+        <Link
+          to="/content/schedule"
+          search={{ month: undefined }}
+          className="flex h-8 items-center gap-2 rounded-control px-2 text-body text-label hover:bg-fill focus-visible:focus-ring data-[status=active]:bg-accent/12 data-[status=active]:text-accent"
+        >
+          <CalendarDays
+            aria-hidden="true"
+            strokeWidth={1.75}
+            className="size-4 text-label-secondary"
+          />
+          <span className="flex-1">{t("schedule.nav")}</span>
+        </Link>
         {/* The name starts with the words shown, and the count follows in words, not the bare
             number in the badge (LINTEL-A11Y-004, WCAG 2.5.3). */}
         <Link

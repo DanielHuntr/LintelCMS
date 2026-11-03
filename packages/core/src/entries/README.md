@@ -15,6 +15,7 @@ publish, unpublish and restore is kept as a revision.
 | `POST /entries/:id/publish`                       | `entries:publish` | none                            | 200 `Entry`, or 400 `NOT_READY_TO_PUBLISH`            |
 | `POST /entries/:id/unpublish`                     | `entries:publish` | none                            | 200 `Entry`                                           |
 | `POST /entries/:id/schedule`                      | `entries:publish` | `{ publishAt }` (in the future) | 200 `Entry`                                           |
+| `GET /entries/scheduled`                          | `entries:read`    | `?from=&to=` (62 days at most)  | 200 `{ entries }` due then, soonest first             |
 | `GET /entries/:id/live`                           | `entries:read`    | none                            | 200 `{ publishedAt, data }` (null if never published) |
 | `DELETE /entries/:id`                             | `entries:delete`  | none                            | 204                                                   |
 | `POST /entries/:id/duplicate`                     | `entries:create`  | none                            | 201 `Entry`, a draft copy                             |

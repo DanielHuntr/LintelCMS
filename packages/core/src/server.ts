@@ -31,6 +31,7 @@ import { recycleBinRoutes } from "./recycle-bin/recycle-bin.routes.js";
 import { contentRootsRoutes } from "./content-roots/content-roots.routes.js";
 import { findEntriesUsingAsset } from "./entries/entries.service.js";
 import { revisionsRoutes } from "./entries/revisions.routes.js";
+import { scheduledEntriesRoutes } from "./entries/scheduled-entries.routes.js";
 import { fieldtypesRoutes } from "./fieldtypes/fieldtypes.routes.js";
 import { registerForms } from "./forms/register-forms.js";
 import type { TurnstileVerifier } from "./forms/spam-protection.js";
@@ -445,6 +446,7 @@ function registerApiRoutes(
   server.register(collectionsRoutes);
   server.register(entriesRoutes);
   server.register(revisionsRoutes);
+  server.register(scheduledEntriesRoutes);
   server.register(contentTreeRoutes);
   server.register(recycleBinRoutes);
   server.register(contentRootsRoutes);

@@ -138,6 +138,42 @@ export const liveVersionSchema = z.object({
   data: z.record(z.string(), z.unknown()).nullable(),
 });
 
+/** The calendar asks for a month at a time, with the days around it: never more than this. */
+const MAX_SCHEDULE_DAYS = 62;
+
+/** `GET /entries/scheduled?from=&to=`: what is due from `from` (included) until `to`. */
+export const scheduledEntriesQuerySchema = z
+  .object({
+    from: z.iso
+      .datetime({
+        offset: true,
+        error: "from should be a date and time, like 2026-11-01T00:00:00Z",
+      })
+      .transform((value) => new Date(value)),
+    to: z.iso
+      .datetime({ offset: true, error: "to should be a date and time, like 2026-12-01T00:00:00Z" })
+      .transform((value) => new Date(value)),
+  })
+  .refine((range) => range.to > range.from, { error: "to should be after from" })
+  .refine((range) => range.to.getTime() - range.from.getTime() <= MAX_SCHEDULE_DAYS * 86_400_000, {
+    error: `Ask for at most ${MAX_SCHEDULE_DAYS} days at a time`,
+  });
+
+export const scheduledEntrySchema = z.object({
+  id: z.uuid(),
+  title: z.string(),
+  locale: z.string(),
+  collectionHandle: z.string(),
+  collectionName: z.string(),
+  scheduledFor: z.iso.datetime(),
+  /** Only "publish" for now: Lintel schedules publishing, not unpublishing. */
+  action: z.enum(["publish"]),
+});
+
+export const scheduledEntriesResponseSchema = z.object({
+  entries: z.array(scheduledEntrySchema),
+});
+
 export const entryListSchema = z.object({
   entries: z.array(entrySummarySchema),
   total: z.number().int(),
@@ -168,6 +204,8 @@ export type UpdateEntryRequest = z.infer<typeof updateEntryRequestSchema>;
 export type EntrySummaryResponse = z.infer<typeof entrySummarySchema>;
 export type EntryResponse = z.infer<typeof entrySchema>;
 export type LiveVersion = z.infer<typeof liveVersionSchema>;
+export type ScheduledEntriesQuery = z.infer<typeof scheduledEntriesQuerySchema>;
+export type ScheduledEntriesResponse = z.infer<typeof scheduledEntriesResponseSchema>;
 export type EntryTranslation = EntryResponse["translations"][number];
 export type EntryListResponse = z.infer<typeof entryListSchema>;
 export type Person = z.infer<typeof personSchema>;

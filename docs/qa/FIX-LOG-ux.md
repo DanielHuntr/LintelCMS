@@ -463,3 +463,31 @@ Every upload uses the media library's upload and checks, and its plain messages.
   - the button showing only while there are unpublished changes.
 
 **Screenshots** (in `screenshots/qol-b/`): `compare-offer-desktop-light` and `compare-dialog-*` (desktop and 390px, light and dark).
+
+## LINTEL-UX-027: a schedule calendar (3 November 2026)
+
+**Asked for:** one place to see everything that's scheduled, by date.
+
+**What it does:**
+
+- **Schedule** sits at the foot of the content tree, above the recycle bin, and opens `/content/schedule`.
+- **Wide screens:** a month calendar. Each day lists what's due to be published, with its title, time and collection, and each links to the entry. Today is filled in, and days from the months either side are shaded.
+- **Phones:** a list grouped by day, showing only the days with something due. It uses inset grouped lists with the time on the right.
+- **Moving between months:** Previous month and Next month, plus This month when you're elsewhere. The month is in the address, so it survives a reload.
+- **An empty month** says how to schedule something.
+- **Times** are in the person's own time zone, and the footer says so.
+- **Screen readers** hear each day's full date and how many things are due.
+- **Unpublishing:** Lintel only schedules publishing (`scheduledFor`), so there's nothing of that kind to show. The API marks each item `action: "publish"` so the calendar can show both if scheduled unpublishing is added.
+- **API:** `GET /entries/scheduled?from=&to=` (`entries:read`, at most 62 days). It covers the site being worked on plus shared collections, soonest first.
+- "schedule" is now a reserved collection handle, so a collection can't take the calendar's address.
+
+**Tests:**
+
+- `core/src/entries/scheduled-entries.test.ts`: range and order, an entry that's no longer scheduled, range checks, permissions.
+- `admin/src/schedule-calendar/SchedulePage.test.tsx`: the month grid, entries on their days with links, moving months, the empty month, and the phone list.
+
+**Screenshots** (in `screenshots/qol-b/`):
+
+- `schedule-tree-link-desktop-light`;
+- `schedule-*` (desktop and 390px, light and dark);
+- `schedule-empty-month-desktop-light` and `schedule-empty-month-phone-light`.
