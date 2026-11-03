@@ -21,7 +21,7 @@ try {
       paragraph(
         answer.collections === null
           ? "The app couldn't reach Lintel's API from its server."
-          : `Connected. The app can see ${answer.collections} collections.`,
+          : `Connected. The app can see ${answer.collections} ${answer.collections === 1 ? "collection" : "collections"}.`,
         "quiet",
       ),
       answer.published.length

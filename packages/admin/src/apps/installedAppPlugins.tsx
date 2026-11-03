@@ -38,7 +38,11 @@ export function appAsAdminPlugin(app: AppExtensions): AdminPluginDefinition {
               component: function AppPage() {
                 return (
                   <>
-                    <LargeTitle title={page.label} subtitle={app.name} />
+                    {/* The app's name only when the page has another one, so it isn't said twice. */}
+                    <LargeTitle
+                      title={page.label}
+                      subtitle={page.label === app.name ? undefined : app.name}
+                    />
                     <AppFrame
                       app={app}
                       url={page.url}

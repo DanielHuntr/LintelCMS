@@ -9,7 +9,11 @@ import {
   WebhookSendError,
 } from "../webhooks/webhook-sender.js";
 import { type AppManifest, appManifestSchema } from "./app-manifest.schema.js";
-import { AppManifestUnreachableError, InvalidAppManifestError } from "./apps.errors.js";
+import {
+  AppManifestUnreachableError,
+  AppOnThisComputerError,
+  InvalidAppManifestError,
+} from "./apps.errors.js";
 
 /**
  * Reading `lintel-app.json` from the address someone typed in. The same care as sending a
@@ -28,10 +32,7 @@ export async function fetchAppManifest(
   const url = new URL(address);
   const onThisComputer = isLoopbackHost(url);
   if (onThisComputer && !options.allowPrivateAddresses && !options.allowLoopbackAddresses) {
-    throw new AppManifestUnreachableError(
-      address,
-      "it is on this computer. While you build an app, turn on development mode in Build → Apps",
-    );
+    throw new AppOnThisComputerError();
   }
   if (url.protocol !== "https:" && !onThisComputer && !options.allowPrivateAddresses) {
     throw new AppManifestUnreachableError(address, "the address needs to start with https://");

@@ -89,7 +89,8 @@ describe("apps' development mode", () => {
     });
 
     expect(preview.statusCode).toBe(400);
-    expect(preview.json().message).toContain("turn on development mode in Build → Apps");
+    expect(preview.json().code).toBe("APP_ON_THIS_COMPUTER");
+    expect(preview.json().message).toContain("turn on Development mode");
   });
 
   it("lets an app on this computer be installed and get its webhooks while it is on", async () => {

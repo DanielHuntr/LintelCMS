@@ -23,6 +23,17 @@ export class AppManifestUnreachableError extends HttpError {
   }
 }
 
+/** The manifest is on this computer and apps' development mode is off. */
+export class AppOnThisComputerError extends HttpError {
+  constructor() {
+    super(
+      400,
+      "APP_ON_THIS_COMPUTER",
+      "This app is on this computer (localhost). To install it while you build it, turn on Development mode at the bottom of Build → Apps first.",
+    );
+  }
+}
+
 export class AppAlreadyInstalledError extends HttpError {
   constructor(handle: string) {
     super(

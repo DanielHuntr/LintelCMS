@@ -13,6 +13,7 @@ import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
+import { Page } from "../design/Page.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
@@ -53,7 +54,7 @@ export function AppDetailPage({ appId }: { appId: string }) {
   const installedWhen = formatRelativeTime(app.data.installedAt, now);
 
   return (
-    <>
+    <Page width="readable">
       <BackLink to="/build/apps">{t("apps.title")}</BackLink>
       <LargeTitle
         title={app.data.name}
@@ -71,7 +72,7 @@ export function AppDetailPage({ appId }: { appId: string }) {
           )
         }
       />
-      <div className="flex max-w-2xl flex-col gap-8">
+      <div className="flex flex-col gap-8">
         <Card>
           <div className="mb-5 flex items-center gap-3">
             <AppIcon iconUrl={manifest.icon ?? null} size="large" />
@@ -145,6 +146,6 @@ export function AppDetailPage({ appId }: { appId: string }) {
           })
         }
       />
-    </>
+    </Page>
   );
 }
