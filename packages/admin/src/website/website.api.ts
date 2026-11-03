@@ -1,4 +1,4 @@
-import type { SiteDesign } from "@lintel/builder-model";
+import type { SiteDesign, SiteSections, SiteSectionsChange } from "@lintel/builder-model";
 import type { SiteEffectSettings } from "@lintel/motion";
 import type { BuilderDataSources } from "@lintel/builder";
 import { apiRequest } from "../api/client.js";
@@ -82,6 +82,16 @@ export function getSiteDesign() {
 
 export function updateSiteDesign(design: SiteDesign) {
   return apiRequest<SiteDesign>("/website/design", { method: "PUT", body: design });
+}
+
+/** The site's navigation and footer sections, shown on every page. */
+export function getSiteSections() {
+  return apiRequest<SiteSections>("/website/sections");
+}
+
+/** Changes the slots sent; the others stay as they are. */
+export function updateSiteSections(change: SiteSectionsChange) {
+  return apiRequest<SiteSections>("/website/sections", { method: "PUT", body: change });
 }
 
 /** What the page builder draws its canvas with, so pages look exactly as on the website. */

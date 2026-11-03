@@ -4,6 +4,7 @@ import {
   PageBuilder,
   type PickedImage,
   type PictureUploader,
+  type SiteSectionsSource,
 } from "@lintel/builder";
 import { usePageFinder, usePagePicker } from "../page-links/usePagePicker.js";
 import {
@@ -45,6 +46,7 @@ import { useBuilderBlocks } from "../blocks/useBuilderBlocks.js";
 import { usePageDesignSaving } from "./usePageDesignSaving.js";
 import { useSiteDesign } from "./useSiteDesign.js";
 import { useSiteMotion } from "./useSiteMotion.js";
+import { useSiteSections } from "./useSiteSections.js";
 import { useBuilderMenus } from "../menus/builderMenus.js";
 import { InlineMenuEditor } from "../menus/InlineMenuEditor.js";
 import { useBuilderFonts } from "../site-fonts/useBuilderFonts.js";
@@ -75,8 +77,10 @@ export function PageDesignPage({ collectionHandle, entryId, fieldHandle }: PageD
   // The canvas waits for the website's look, so the page never jumps from one look to another.
   // If it can't be had, the canvas uses the default theme instead.
   const canvasSite = useCanvasSite();
+  // The site's navigation and footer open inside the page, so the builder waits for them too.
+  const siteSections = useSiteSections();
   if (entry.isError) return <LoadError error={entry.error} onRetry={() => void entry.refetch()} />;
-  if (!entry.data || canvasSite.isPending) {
+  if (!entry.data || canvasSite.isPending || siteSections.isLoading) {
     return (
       <LoadingRegion label={t("pageDesign.loading")}>
         <div className="flex h-dvh flex-col gap-3 p-3">
@@ -93,6 +97,7 @@ export function PageDesignPage({ collectionHandle, entryId, fieldHandle }: PageD
       collectionHandle={collectionHandle}
       fieldHandle={fieldHandle}
       site={canvasSite.data}
+      siteSections={siteSections.source}
     />
   );
 }
@@ -102,11 +107,13 @@ function PageDesigner({
   collectionHandle,
   fieldHandle,
   site,
+  siteSections,
 }: {
   entry: Entry;
   collectionHandle: string;
   fieldHandle: string;
   site: CanvasSite | undefined;
+  siteSections: SiteSectionsSource | undefined;
 }) {
   const field = loadedEntry.blueprint.fields.find(
     (candidate) => candidate.handle === fieldHandle && candidate.type === "page",
@@ -246,6 +253,7 @@ function PageDesigner({
         effectModules={effectModules}
         siteEffects={siteMotion}
         siteDesign={siteDesign}
+        siteSections={siteSections}
         toolbarStart={
           <Link
             to="/content/$collection/$entryId"

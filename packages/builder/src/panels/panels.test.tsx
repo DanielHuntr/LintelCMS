@@ -86,6 +86,7 @@ describe("the Insert panel", () => {
       groups.map(() => "false"),
     );
     expect(groups.map((group) => group.textContent)).toEqual([
+      "Navigation5",
       "Intro and banners6",
       "Features and steps2",
       "About and story2",
@@ -95,7 +96,7 @@ describe("the Insert panel", () => {
       "Questions1",
       "Contact and booking4",
       "Shop2",
-      "Footer-style2",
+      "Footer5",
     ]);
     expect(screen.queryByRole("button", { name: "Hero" })).not.toBeInTheDocument();
 

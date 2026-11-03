@@ -166,8 +166,9 @@ const Navigation = drawsProps(navigationComponent, ({ props, attributes, node, m
           label: link.label,
           href: link.url ?? "",
           isButton: link.style === "button",
+          current: link.current,
         }))
-      : props.links.map((link) => ({ ...link, isButton: false }));
+      : props.links.map((link) => ({ ...link, isButton: false, current: false }));
   return (
     <nav {...attributes} aria-label={props.label || undefined}>
       {links.length === 0 && props.menuSource === "site" && mode === "canvas" ? (
@@ -179,6 +180,7 @@ const Navigation = drawsProps(navigationComponent, ({ props, attributes, node, m
               <a
                 href={link.href || undefined}
                 className={link.isButton ? "lintel-button" : undefined}
+                aria-current={link.current ? "page" : undefined}
               >
                 {link.label}
               </a>

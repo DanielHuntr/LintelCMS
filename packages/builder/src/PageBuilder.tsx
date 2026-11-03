@@ -22,6 +22,11 @@ import {
   sectionTemplates,
   starterSites as allStarterSites,
   type StarterSite,
+  hasOwnContent,
+  hasSiteSection,
+  isHiddenOnPage,
+  siteSectionSlotOf,
+  unmarkedOwnNavigation,
 } from "@lintel/builder-model";
 import type { MotionSpec } from "@lintel/motion";
 import { SiteMotionSettings, type Translate as MotionText } from "@lintel/motion-editor";
@@ -98,6 +103,14 @@ import { SiteDesignContext } from "./site-design/site-design-context.js";
 import { GuidedTour } from "./tour/GuidedTour.js";
 import { useTips } from "./tour/useTips.js";
 import { Tabs } from "./ui/controls.js";
+import {
+  PageSiteSections,
+  SectionSiteTools,
+  SiteSectionNote,
+  SiteSectionStrip,
+  siteSectionAround,
+} from "./site-sections/SiteSectionControls.js";
+import { type SiteSectionsSource, useSiteSections } from "./site-sections/useSiteSections.js";
 
 export interface PageBuilderProps {
   /** The page as stored. Read once; the builder owns it from then on. */
@@ -185,6 +198,11 @@ export interface PageBuilderProps {
    * out for people who may only use them). Without it, the site has none.
    */
   siteDesign?: { value: SiteDesign; onChange?: (value: SiteDesign) => void };
+  /**
+   * The site's navigation and footer, shown on every page and edited from any of them (see
+   * site-sections/). Without it, Navigation and Footer sections belong to the page alone.
+   */
+  siteSections?: SiteSectionsSource;
 }
 
 /** The site's default theme, until the app passes the site's own. */
@@ -221,14 +239,16 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   const registry = props.registry ?? standardRegistry;
   const createId = props.createId ?? createRandomNodeId;
   const blocks = props.blocks ?? noBlocks;
+  const sharedSections = useSiteSections(props.siteSections, props.initialDocument, props.onChange);
   const { state, selectedId, selectedNode, actions, announcement, announce } = useBuilder({
-    initialDocument: props.initialDocument,
+    initialDocument: sharedSections.initialDocument,
     registry,
     createId,
     canEditCode,
     text,
-    onChange: props.onChange,
+    onChange: sharedSections.onChange,
     blocks: blocks.library,
+    sharesSiteSections: props.siteSections?.onChange !== undefined,
   });
   const [breakpoint, setBreakpoint] = useState<Breakpoint>("base");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -314,7 +334,16 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   );
   const site = props.site;
   // A page with its own header or footer shows it instead of the site's, as the website does.
-  const ownChrome = useMemo(() => ownSiteChrome(state.document.root), [state.document.root]);
+  // The site's own navigation (or footer), shown or hidden here, takes the automatic one's place.
+  const ownChrome = useMemo(() => {
+    const own = ownSiteChrome(state.document.root);
+    const root = state.document.root;
+    return {
+      header:
+        own.header || hasSiteSection(root, "navigation") || isHiddenOnPage(root, "navigation"),
+      footer: own.footer || hasSiteSection(root, "footer") || isHiddenOnPage(root, "footer"),
+    };
+  }, [state.document.root]);
   // While a state is being styled (hover, or "while the card is hovered"), the page shows it.
   const [stylingState, setStylingState] = useState<{ nodeId: string; target: StyleTarget } | null>(
     null,
@@ -716,14 +745,43 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
 
   const definition = selectedNode ? catalogue.find(selectedNode.type) : undefined;
   const selectedIsLocked = selectedNode ? isLocked(state.document, selectedNode.id) : false;
-  const showsStart = root.children.length === 0;
+  const showsStart = !hasOwnContent(root);
   const labels = useMemo(() => {
     const nameOf = (nodeId: string | null) => {
       const node = nodeId ? findNode(state.document.root, nodeId) : undefined;
-      return node ? layerName(node, catalogue) : null;
+      if (!node) return null;
+      // The site's navigation says it's on every page, so nobody edits it by surprise.
+      const slot = siteSectionSlotOf(node.id);
+      return slot
+        ? text("pageBuilder.siteSection.onEveryPage", {
+            name: text(`pageBuilder.siteSection.label.${slot}`),
+          })
+        : layerName(node, catalogue);
     };
     return { selected: nameOf(selectedId), hovered: nameOf(hoveredId) };
-  }, [state.document, selectedId, hoveredId, catalogue]);
+  }, [state.document, selectedId, hoveredId, catalogue, text]);
+  const selectedSiteSection = siteSectionAround(root, selectedId);
+  // A site's first navigation (or footer) replaces the automatic one: say so, once.
+  const [switchNoteDismissed, setSwitchNoteDismissed] = useState(false);
+  const switchedSlot =
+    props.siteSections && !switchNoteDismissed
+      ? (["navigation", "footer"] as const).find(
+          (slot) => !sharedSections.had[slot] && hasSiteSection(root, slot),
+        )
+      : undefined;
+  // A page whose first section is its own menu: offer to mark it, so it never gets two.
+  const [offerDismissed, setOfferDismissed] = usePreference(
+    preferences,
+    "ownNavigationOfferDismissed",
+    (stored) => stored ?? "",
+  );
+  const ownNavigationOffer = useMemo(() => unmarkedOwnNavigation(root), [root]);
+  const offeredId =
+    props.siteSections &&
+    ownNavigationOffer &&
+    !offerDismissed.split(",").includes(ownNavigationOffer.id)
+      ? ownNavigationOffer.id
+      : null;
 
   const showsTour = isTouring || tourSeen === "no";
   const closeTour = () => {
@@ -832,6 +890,12 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                       selectedId={selectedId}
                       onSelect={selectFromPanel}
                     />
+                    {!showsStart && selectedSiteSection && (
+                      <SiteSectionStrip
+                        slot={selectedSiteSection}
+                        onHide={() => actions.setSiteSectionHidden(selectedSiteSection, true)}
+                      />
+                    )}
                     {!showsStart && textSelection && (
                       <SelectedWordsBar
                         document={state.document}
@@ -871,6 +935,29 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                       />
                     )}
                     <PictureDropStatus status={pictures.status} onDismiss={pictures.dismiss} />
+                    {!pictures.status && switchedSlot && (
+                      <SiteSectionNote
+                        message={text(`pageBuilder.siteSection.switched.${switchedSlot}`)}
+                        onDismiss={() => setSwitchNoteDismissed(true)}
+                      />
+                    )}
+                    {!pictures.status && !switchedSlot && !showsStart && offeredId && (
+                      <SiteSectionNote
+                        message={text("pageBuilder.siteSection.offer")}
+                        action={{
+                          label: text("pageBuilder.siteSection.offer.yes"),
+                          onClick: () => actions.markAsPageOwn(offeredId, "navigation"),
+                        }}
+                        dismissLabel={text("pageBuilder.siteSection.offer.no")}
+                        onDismiss={() =>
+                          setOfferDismissed(
+                            [...offerDismissed.split(",").filter(Boolean), offeredId]
+                              .slice(-50)
+                              .join(","),
+                          )
+                        }
+                      />
+                    )}
                   </main>
                   <CanvasLookContext value={canvasLook}>
                     <SelectedElementPanel
@@ -909,6 +996,29 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                       }}
                       effectModules={props.effectModules}
                       pageWeight={pageWeight}
+                      pageSettings={
+                        props.siteSections && (
+                          <PageSiteSections
+                            page={root}
+                            onChange={(slot, hidden) => actions.setSiteSectionHidden(slot, hidden)}
+                          />
+                        )
+                      }
+                      sectionTools={
+                        props.siteSections?.onChange && (
+                          <SectionSiteTools
+                            root={root}
+                            node={selectedNode ?? null}
+                            onUseAsSite={(slot) => {
+                              if (selectedNode) actions.useAsSiteSection(selectedNode.id, slot);
+                            }}
+                            onUseAsOwn={() => {
+                              if (selectedNode)
+                                actions.markAsPageOwn(selectedNode.id, "navigation");
+                            }}
+                          />
+                        )
+                      }
                       siteMotion={
                         props.siteEffects && (
                           <SiteMotionSettings

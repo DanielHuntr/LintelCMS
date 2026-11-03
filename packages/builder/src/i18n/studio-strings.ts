@@ -100,5 +100,5 @@ export const builderStudioStrings = {
   "pageBuilder.insert.sectionCategory.questions": "Questions",
   "pageBuilder.insert.sectionCategory.contact": "Contact and booking",
   "pageBuilder.insert.sectionCategory.shop": "Shop",
-  "pageBuilder.insert.sectionCategory.footer": "Footer-style",
+  "pageBuilder.insert.sectionCategory.footer": "Footer",
 } as const;

@@ -45,7 +45,7 @@ function sketch(blueprint: NodeBlueprint, key: string): ReactNode {
       return (
         <div
           key={key}
-          className={`flex flex-1 flex-col justify-center gap-1 rounded px-2 py-1.5 ${tinted ? "bg-accent-fill/80" : dark ? "bg-label/80" : panel ? "bg-fill" : ""}`}
+          className={`flex flex-1 flex-col gap-1 rounded px-2 py-1.5 ${blueprint.props?.element === "header" ? "justify-start" : "justify-center"} ${tinted ? "bg-accent-fill/80" : dark ? "bg-label/80" : panel ? "bg-fill" : ""}`}
         >
           {children}
         </div>
@@ -55,7 +55,7 @@ function sketch(blueprint: NodeBlueprint, key: string): ReactNode {
       return (
         <div
           key={key}
-          className={`flex min-w-0 flex-1 flex-col gap-1 ${centred ? "items-center" : ""} ${panel ? "rounded bg-fill p-1" : ""}`}
+          className={`flex min-w-0 flex-1 gap-1 ${styles.flexDirection === "row" ? "flex-row flex-wrap items-center justify-between" : "flex-col"} ${centred ? "items-center" : ""} ${panel ? "rounded bg-fill p-1" : ""}`}
         >
           {children}
         </div>
@@ -94,6 +94,25 @@ function sketch(blueprint: NodeBlueprint, key: string): ReactNode {
         <span key={key} className="flex w-full flex-col gap-0.5">
           <span className="block h-1 w-1/2 rounded-full bg-label-tertiary/60" />
           <span className="block h-1 w-2/5 rounded-full bg-label-tertiary/60" />
+        </span>
+      );
+    case "siteLogo":
+      return <span key={key} className="block h-2 w-8 shrink-0 rounded-full bg-label/70" />;
+    case "navigation":
+      return (
+        <span key={key} className="flex shrink-0 gap-1">
+          <span className="block h-1 w-3 rounded-full bg-label-tertiary/80" />
+          <span className="block h-1 w-3 rounded-full bg-label-tertiary/80" />
+          <span className="block h-1 w-3 rounded-full bg-label-tertiary/80" />
+        </span>
+      );
+    case "mobileMenu":
+      // Only the always-shown Menu button is drawn; the phone-only one would just repeat the menu.
+      return blueprint.styles?.base?.display === "none" ? null : (
+        <span key={key} className="flex shrink-0 flex-col gap-0.5">
+          <span className="block h-0.5 w-3 rounded-full bg-label/70" />
+          <span className="block h-0.5 w-3 rounded-full bg-label/70" />
+          <span className="block h-0.5 w-3 rounded-full bg-label/70" />
         </span>
       );
     case "divider":

@@ -124,6 +124,37 @@ export const siteHeaderComponent = defineComponent({
   ],
 });
 
+/**
+ * The site's logo, or its name, linking to the home page: the start of most navigation
+ * sections. Both follow the site's own (Settings → Website and Site settings), so a new
+ * logo shows everywhere at once.
+ */
+export const siteLogoComponent = defineComponent({
+  type: "siteLogo",
+  label: "Site logo",
+  keywords: ["brand", "logo", "site name", "home link"],
+  description: "Your logo or your site's name, linking to the home page.",
+  icon: "house",
+  category: "navigation",
+  propsSchema: z.object({
+    shows: oneOf(["both", "logo", "name"], "What it shows"),
+  }),
+  defaultProps: { shows: "both" },
+  allowedChildren: "none",
+  editableFields: [
+    {
+      kind: "choice",
+      prop: "shows",
+      label: "Shows",
+      choices: [
+        { value: "both", label: "The logo and the name" },
+        { value: "logo", label: "Only the logo" },
+        { value: "name", label: "Only the name" },
+      ],
+    },
+  ],
+});
+
 export const mobileMenuComponent = defineComponent({
   type: "mobileMenu",
   label: "Menu drawer",
@@ -329,16 +360,24 @@ export function pageEdgeFor(element: {
 }
 
 /**
+ * The ids the site's own navigation and footer sections have while a page is being edited
+ * (see site-sections/). They are the site's, not the page's own.
+ */
+export const siteSectionIds: ReadonlySet<string> = new Set(["site-navigation", "site-footer"]);
+
+/**
  * Whether a page brings its own header and footer, so the website (and the canvas) leaves
  * out the site's own: a visible Header or Footer element anywhere, or a header or footer
  * section at the top level of the page. A header section used to be ignored, so a page
- * with its own nav showed the site's above it as well.
+ * with its own nav showed the site's above it as well. The site's shared navigation and
+ * footer, put into the page while it is edited, are not the page's own.
  */
 export function ownSiteChrome(root: PageNode): { header: boolean; footer: boolean } {
-  let header = root.children.some((child) => !child.hidden && pageEdgeFor(child) === "top");
-  let footer = root.children.some((child) => !child.hidden && pageEdgeFor(child) === "bottom");
+  const own = root.children.filter((child) => !child.hidden && !siteSectionIds.has(child.id));
+  let header = own.some((child) => pageEdgeFor(child) === "top");
+  let footer = own.some((child) => pageEdgeFor(child) === "bottom");
   const visit = (node: PageNode) => {
-    if (node.hidden) return;
+    if (node.hidden || siteSectionIds.has(node.id)) return;
     if (node.type === "siteHeader") header = true;
     if (node.type === "siteFooter") footer = true;
     node.children.forEach(visit);

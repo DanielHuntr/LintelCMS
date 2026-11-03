@@ -37,6 +37,7 @@ import { respondToShopPath } from "./shop-pages.service.js";
 import { renderSearch } from "./site-search.service.js";
 import type { SiteSources } from "./site-sources.js";
 import { entryView, headForEntry } from "./site-views.js";
+import { withSiteSections } from "./site-sections-drawing.js";
 
 /**
  * The built-in website: what to answer for an address. Responses are kept in the
@@ -497,7 +498,8 @@ export async function renderWithHead(
     dependencies.site,
   );
   const now = dependencies.now?.() ?? new Date();
-  return renderPage(context, chrome, { view, head, path: request.path, ...options }, now);
+  const withSections = await withSiteSections(request, chrome);
+  return renderPage(context, withSections, { view, head, path: request.path, ...options }, now);
 }
 
 /** sitemap.xml and robots.txt come from the SEO plugin, with the site's own addresses. */

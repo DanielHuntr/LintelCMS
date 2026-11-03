@@ -5,6 +5,7 @@ import {
   getSiteAddress,
   getSiteDesign,
   getSiteEffects,
+  getSiteSections,
   getWebsite,
   updateSiteDesign,
   updateSiteEffects,
@@ -18,7 +19,13 @@ export const websiteKeys = {
   builderData: () => ["website", "builder-data"] as const,
   effects: () => ["website", "effects"] as const,
   design: () => ["website", "design"] as const,
+  sections: () => ["website", "sections"] as const,
 };
+
+/** The site's navigation and footer sections. */
+export function useSiteSectionsQuery() {
+  return useQuery({ queryKey: websiteKeys.sections(), queryFn: getSiteSections, retry: false });
+}
 
 /** The site's design variables and shared styles. */
 export function useSiteDesignQuery() {

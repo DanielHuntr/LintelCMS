@@ -31,6 +31,7 @@ import {
   detachBlockInstance,
   instanceBlockHandle,
   type BoundPicture,
+  type SiteSectionSlot,
 } from "@lintel/builder-model";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { convertToCode } from "../developer/convert-to-code.js";
@@ -43,6 +44,7 @@ import { type BuilderClipboard, choosePasteSource, writeToSystemClipboard } from
 import { instanceBlueprint } from "../blocks/block-commands.js";
 import * as commands from "./commands.js";
 import * as designCommands from "./design-commands.js";
+import * as siteSectionCommands from "./site-section-commands.js";
 import { createEditorState, describeUndo, editorReducer } from "./editor-state.js";
 
 type StyleValues = Partial<Record<StylePropertyName, string | undefined>>;
@@ -58,6 +60,11 @@ interface UseBuilderOptions {
   canEditCode: boolean;
   text: Translate;
   onChange: (document: PageDocument) => void;
+  /**
+   * Sections from the Navigation and Footer groups go on every page of the site (see
+   * site-sections/ in the model). Off, they're added to this page like any other.
+   */
+  sharesSiteSections?: boolean;
 }
 
 /**
@@ -73,6 +80,7 @@ export function useBuilder({
   text,
   onChange,
   blocks = noBlockLibrary,
+  sharesSiteSections = false,
 }: UseBuilderOptions) {
   const [state, dispatch] = useReducer(editorReducer, initialDocument, createEditorState);
   const [announcement, setAnnouncement] = useState({ message: "", count: 0 });
@@ -131,6 +139,16 @@ export function useBuilder({
 
     const insert = (key: InsertKey, place?: { parentId: string; index: number }) => {
       const [kind, id] = key.split(":") as ["component" | "template" | "block", string];
+      const template = kind === "template" ? findSectionTemplate(id) : undefined;
+      if (
+        sharesSiteSections &&
+        template &&
+        (template.category === "navigation" || template.category === "footer")
+      ) {
+        return run(
+          siteSectionCommands.insertSiteSection(context(), template.category, template.blueprint),
+        );
+      }
       const block = kind === "block" ? blocks.find((candidate) => candidate.handle === id) : null;
       const blueprint =
         kind === "template"
@@ -477,6 +495,12 @@ export function useBuilder({
             () => design,
           ),
         ),
+      useAsSiteSection: (nodeId: string, slot: SiteSectionSlot) =>
+        run(siteSectionCommands.useAsSiteSection(context(), nodeId, slot)),
+      markAsPageOwn: (nodeId: string, slot: SiteSectionSlot) =>
+        run(siteSectionCommands.markAsPageOwn(context(), nodeId, slot)),
+      setSiteSectionHidden: (slot: SiteSectionSlot, hidden: boolean) =>
+        run(siteSectionCommands.setSiteSectionHidden(context(), slot, hidden)),
       selectAdjacent: adjacent,
       selectParent: () => {
         const selected = latest.current.selectedId;
@@ -485,7 +509,7 @@ export function useBuilder({
         select(parent && parent.id !== rootNodeId ? parent.id : null);
       },
     };
-  }, [registry, createId, canEditCode, text, context, run, announce, blocks]);
+  }, [registry, createId, canEditCode, text, context, run, announce, blocks, sharesSiteSections]);
 
   return {
     state,

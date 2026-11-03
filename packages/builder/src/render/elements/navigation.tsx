@@ -9,6 +9,7 @@ import {
   searchBoxComponent,
   siteFooterComponent,
   siteHeaderComponent,
+  siteLogoComponent,
 } from "@lintel/builder-model";
 import type { ReactNode } from "react";
 import { drawsProps, type RenderMode } from "../component-registry.js";
@@ -339,6 +340,32 @@ const SiteHeader = drawsProps(siteHeaderComponent, ({ props, attributes, node, m
   );
 });
 
+/** The site's logo and name, linking home. Without a logo, the name shows whatever is chosen. */
+const SiteLogo = drawsProps(siteLogoComponent, ({ props, attributes, mode }) => {
+  const site = useSite();
+  const logo = props.shows !== "name" ? site.logo : null;
+  const showsName = props.shows !== "logo" || !logo;
+  return (
+    <a
+      {...attributes}
+      className={cx(attributes.className, "lintel-site-logo")}
+      href={href(site.homeUrl, mode)}
+      aria-label={showsName ? undefined : site.siteName}
+    >
+      {logo && (
+        <img
+          className="lintel-site-logo__image"
+          src={logo.src}
+          alt=""
+          width={logo.width ?? undefined}
+          height={logo.height ?? undefined}
+        />
+      )}
+      {showsName && <span className="lintel-site-logo__name">{site.siteName}</span>}
+    </a>
+  );
+});
+
 const MobileMenu = drawsProps(mobileMenuComponent, ({ props, attributes, node, mode }) => {
   const site = useSite();
   const links =
@@ -549,6 +576,7 @@ const BackToTop = drawsProps(backToTopComponent, ({ props, attributes, editableT
 
 export const navigationRenders = {
   siteHeader: SiteHeader,
+  siteLogo: SiteLogo,
   mobileMenu: MobileMenu,
   siteFooter: SiteFooter,
   languageSwitcher: LanguageSwitcher,

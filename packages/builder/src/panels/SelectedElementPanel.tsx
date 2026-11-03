@@ -118,6 +118,10 @@ interface SelectedElementPanelProps {
   siteMotion?: ReactNode;
   /** Selects the first of these elements and outlines them all ("Select them"). */
   onSelectMany?: (nodeIds: string[]) => void;
+  /** The page's own settings, shown when nothing is selected on the Content tab. */
+  pageSettings?: ReactNode;
+  /** Under the selected element: making a section the site's navigation or footer. */
+  sectionTools?: ReactNode;
   /** Told which state is being styled, so the canvas can show it; null for none. */
   onStyleStateChange?: (nodeId: string, target: StyleTarget | null) => void;
   /** Outlines an element on the page while the pointer is on its name in a list; null clears. */
@@ -374,6 +378,7 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
               {tab === "animate" && props.siteMotion && (
                 <div className="px-4 pb-6">{props.siteMotion}</div>
               )}
+              {tab === "content" && props.pageSettings}
             </>
           )
         ) : tab === "style" && showsSiteStyles ? (
@@ -440,6 +445,7 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
           />
         )}
       </div>
+      {props.sectionTools}
       {blockTools}
     </aside>
   );

@@ -2,6 +2,7 @@ import {
   applyScriptRule,
   type CustomScriptRule,
   findPlace,
+  isHiddenOnPage,
   ownSiteChrome,
   type PageData,
   type PageDocument,
@@ -53,8 +54,10 @@ export function checkPageDesign(value: unknown, scriptRule: CustomScriptRule): P
 export function drawPageDesign(document: PageDocument, data: PageData = {}): PageDesign {
   const { html, css, animations, effects, usesMotionApi, fontPreloads, script, usesBehaviours } =
     renderPage(document, standardRegistry, { withMotion: true, data });
-  // A page with its own Header or Footer shows it instead of the site's (LINTEL-FUNC-005).
+  // A page with its own Header or Footer shows it instead of the site's (LINTEL-FUNC-005),
+  // and a page can hide the site's navigation or footer (see src/site-sections).
   const own = ownSiteChrome(document.root);
+  const hides = (slot: "navigation" | "footer") => isHiddenOnPage(document.root, slot);
   return {
     html,
     css,
@@ -64,8 +67,8 @@ export function drawPageDesign(document: PageDocument, data: PageData = {}): Pag
     fontPreloads,
     script,
     usesBehaviours,
-    ownHeader: own.header,
-    ownFooter: own.footer,
+    ownHeader: own.header || hides("navigation"),
+    ownFooter: own.footer || hides("footer"),
   };
 }
 

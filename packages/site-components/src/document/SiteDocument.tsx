@@ -8,6 +8,7 @@ import type { SiteEffectsHead } from "../templates/view.types.js";
 import { DesignHead } from "./DesignHead.js";
 import { EffectsHead } from "./EffectsHead.js";
 import { HeadTags } from "./HeadTags.js";
+import { chromeSlots, headDesign, SiteSection } from "./site-sections.js";
 import type { PageHead } from "./page-head.types.js";
 
 export interface SiteDocumentProps {
@@ -54,7 +55,10 @@ export function SiteDocument({
   siteEffects,
   effectModuleUrls = {},
 }: SiteDocumentProps) {
-  const design = view.kind === "page" ? view.design : null;
+  const pageDesign = view.kind === "page" ? view.design : null;
+  const slots = chromeSlots(chrome, pageDesign);
+  // The page's design and the site's navigation and footer share the head.
+  const design = headDesign(pageDesign, slots);
   return (
     <html lang={chrome.locale}>
       <head>
@@ -83,13 +87,19 @@ export function SiteDocument({
           <div dangerouslySetInnerHTML={{ __html: siteEffects.bodyStartHtml }} />
         )}
         <SkipLink label={labels.skipToContent} />
-        {!design?.ownHeader && (
+        {slots.header === "automatic" ? (
           <Header chrome={chrome} labels={labels} layout={template.headerLayout} />
+        ) : (
+          slots.header && <SiteSection design={slots.header} />
         )}
         <main id={MAIN_CONTENT_ID} className="lintel-main" tabIndex={-1}>
           {template.renderView({ view, chrome, labels })}
         </main>
-        {!design?.ownFooter && <Footer chrome={chrome} labels={labels} year={year} />}
+        {slots.footer === "automatic" ? (
+          <Footer chrome={chrome} labels={labels} year={year} />
+        ) : (
+          slots.footer && <SiteSection design={slots.footer} />
+        )}
       </body>
     </html>
   );

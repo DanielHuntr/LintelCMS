@@ -6,6 +6,7 @@ export type { FileUploader, UploadedFile } from "./style-panel/design-tools.js";
 export type { UploadedPageFont } from "./style-panel/font-choices.js";
 export type { PictureUploader } from "./canvas/usePictureDrop.js";
 export type { BuilderDataSources } from "./panels/data-sources.js";
+export type { SiteSectionsSource } from "./site-sections/useSiteSections.js";
 export type { MenuEditorProps, RenderMenuEditor } from "./menus/menu-editing.js";
 export type {
   BlockMaster,

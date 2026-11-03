@@ -7,8 +7,8 @@ Content, Animate and Code on the right (`SelectedElementPanel`).
 
 `InsertPanel` is a library with a search at the top and two segments, **Sections**
 (ready-made sections as compact rows with a small sketch, the default) and **Elements**
-(single pieces as rows of icon tiles). Sections are grouped by purpose (Intro and banners,
-Features and steps, ... Footer-style), every group closed at first with its count; elements
+(single pieces as rows of icon tiles). Sections are grouped by purpose (Navigation,
+Intro and banners, ... Footer), every group closed at first with its count; elements
 by kind, with the first group open. What's left open, the segment and the recently used items
 are remembered (see `preferences/`). The search looks through both at once, including each
 section's keywords, so "bakery" finds Opening times. Sections that need a plugin (the shop's,

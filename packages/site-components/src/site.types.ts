@@ -1,3 +1,5 @@
+import type { PageDesign } from "./templates/view.types.js";
+
 /**
  * The plain values every component takes. Nothing here knows about Lintel's API or
  * database: the site server turns published content into these, and the page builder's
@@ -87,6 +89,13 @@ export interface SiteChrome {
   languages: LanguageLink[];
   /** The language of the page being shown, such as "en-GB". */
   locale: string;
+  /**
+   * The site's own navigation section, made in the builder and drawn for this page, in
+   * place of the automatic header. Left out while the site has none.
+   */
+  navigationDesign?: PageDesign;
+  /** The same for the footer. */
+  footerDesign?: PageDesign;
 }
 
 /**

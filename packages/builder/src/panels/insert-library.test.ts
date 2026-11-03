@@ -17,8 +17,9 @@ const words = (key: keyof typeof builderStrings) => builderStrings[key];
 describe("the insert library", () => {
   it("lists sections by group, then elements by group, in the library's order", () => {
     const sections = groupInsertItems(items, "sections");
-    expect(sections[0]?.id).toBe("intro");
-    expect(sections[0]?.items.map((item) => item.label).slice(0, 3)).toEqual([
+    expect(sections[0]?.id).toBe("navigation");
+    expect(sections[1]?.id).toBe("intro");
+    expect(sections[1]?.items.map((item) => item.label).slice(0, 3)).toEqual([
       "Hero",
       "Hero with picture",
       "Bold banner",
@@ -42,6 +43,7 @@ describe("the insert library", () => {
   it("groups sections by purpose, with no group or name for one kind of business", () => {
     const groups = groupInsertItems(items, "sections");
     expect(groups.map((group) => words(group.title))).toEqual([
+      "Navigation",
       "Intro and banners",
       "Features and steps",
       "About and story",
@@ -51,7 +53,7 @@ describe("the insert library", () => {
       "Questions",
       "Contact and booking",
       "Shop",
-      "Footer-style",
+      "Footer",
     ]);
     const businesses = /bakery|café|cafe|consultant|restaurant|salon|portfolio|magazine/i;
     for (const group of groups) {

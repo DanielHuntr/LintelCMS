@@ -305,6 +305,10 @@ const navigation = `
 :where(.lintel-site-header__brand) { display: inline-flex; align-items: center; gap: var(--lintel-space-2); color: inherit; text-decoration: none; font-family: var(--lintel-font-heading); font-weight: 700; font-size: 1.25rem; }
 :where(.lintel-site-header__logo) { block-size: 2.25rem; inline-size: auto; }
 :where(.lintel-site-header__nav) { margin-inline-start: auto; }
+:where(.lintel-site-logo) { display: inline-flex; align-items: center; gap: var(--lintel-space-2); min-block-size: 2.75rem; text-decoration: none; font-family: var(--lintel-font-heading); font-weight: 700; font-size: 1.25rem; }
+/* As specific as the site's own "a" rule and after it, so the logo takes the section's colour. */
+:where(.lintel-design) .lintel-site-logo { color: inherit; }
+:where(.lintel-site-logo__image) { block-size: 2.25rem; inline-size: auto; }
 ${tablet} { :where(.lintel-site-header__nav, .lintel-site-header__button) { display: none; } }
 :where(.lintel-mega) { display: flex; gap: var(--lintel-space-2); margin: 0; padding: 0; list-style: none; }
 :where(.lintel-mega__link, .lintel-mega__toggle) { display: inline-flex; align-items: center; gap: var(--lintel-space-1); min-block-size: 2.75rem; padding: 0 var(--lintel-space-3); border-radius: var(--lintel-radius-button); color: inherit; text-decoration: none; font-weight: 500; cursor: pointer; list-style: none; }
