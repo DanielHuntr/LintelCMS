@@ -723,7 +723,7 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-FUNC-014 | P1       | Fixed  | ISK and UGX amounts go to Stripe in the wrong unit: the shopper pays 1% of the price                                           |
 | LINTEL-FUNC-015 | P1       | Fixed  | A new entry's first autosave swaps the editor component, losing focus and words typed during the save                          |
 | LINTEL-DATA-011 | P1       | Open   | Rolling back an update restores rows but not the old schema; the old version runs on the new tables                            |
-| LINTEL-FUNC-016 | P1       | Open   | On Windows every one-click update after the first fails: renaming a junction over another gives EPERM                          |
+| LINTEL-FUNC-016 | P1       | Fixed  | On Windows every one-click update after the first fails: renaming a junction over another gives EPERM                          |
 | LINTEL-SEC-008  | P2       | Fixed  | Any API token, read-only included, can answer workflow approvals for the person who made it                                    |
 | LINTEL-SEC-009  | P2       | Fixed  | `settings:update` alone can lift its own site limit, limit the Owner role, and change or delete other sites                    |
 | LINTEL-SEC-010  | P2       | Fixed  | Two-factor can be set up again while on, swapping the authenticator with no password                                           |
