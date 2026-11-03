@@ -32,11 +32,20 @@ export function addonTemplateFiles(values: TemplateValues): Record<string, strin
     type: "module",
     files: ["dist", "migrations"],
     keywords: ["lintel-addon"],
+    license: "MIT",
     "lintel-addon": {
       id,
       lintel: `>=${values.lintelVersion}`,
       server: "dist/server.js",
       admin: "dist/admin.js",
+      // What it keeps and does, shown to site owners before and after they install it.
+      // Describe every table (and which columns hold personal data), public address, job,
+      // event and outside host here. Backups include the tables listed.
+      tables: [],
+      publicRoutes: [],
+      jobs: [],
+      events: [{ event: "entry.published", purpose: "Writes a line in the log." }],
+      hosts: [],
     },
     scripts: {
       build: "lintel addons build",
@@ -299,6 +308,13 @@ An add-on for Lintel, made with \`lintel addons new\`. It adds:
 | A dashboard widget | \`dashboardWidgets\` in src/admin |
 | Something done when a page is published | \`events\` |
 | Settings, with a form on the Add-ons screen | \`settings\` |
+
+## Saying what it keeps and does
+
+\`"lintel-addon"\` in package.json lists its \`tables\` (with each column's purpose and
+\`personalData\`), \`publicRoutes\`, \`jobs\`, \`events\` and the \`hosts\` it talks to.
+Build → Add-ons shows them to site owners, checks what it can, and warns about anything
+it finds that isn't listed. Backups include the tables listed. Keep it up to date.
 
 ## Working on it
 

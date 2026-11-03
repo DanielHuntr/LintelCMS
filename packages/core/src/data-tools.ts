@@ -22,6 +22,7 @@ export {
   type AddonPackage,
 } from "./addons/addon-package.js";
 export { isVersionInRange } from "./addons/version-range.js";
+export { describeAddonForReview } from "./addons/addon-review.js";
 export { loadSiteAddons } from "./addons/site-addons.js";
 export { listAddonTableNames } from "./addons/addon-tables.js";
 export { loadInstalledPlugins } from "./plugins/installed-plugins.js";

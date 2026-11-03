@@ -8,7 +8,22 @@
     "id": "example",
     "lintel": ">=1.0.0-rc.1",
     "server": "dist/server.js",
-    "admin": "dist/admin.js"
+    "admin": "dist/admin.js",
+    "tables": [],
+    "publicRoutes": [],
+    "jobs": [
+      {
+        "id": "check-hours",
+        "purpose": "Once a day, notes in the log if no opening hours are set."
+      }
+    ],
+    "events": [
+      {
+        "event": "form.submitted",
+        "purpose": "Notes in the log when a form is sent on a day you're closed."
+      }
+    ],
+    "hosts": []
   },
   "scripts": {
     "build": "tsx --conditions=development ../cli/src/main.ts addons build",
@@ -29,5 +44,7 @@
     "vite": "^8.3.5",
     "vitest": "^5.0.5",
     "zod": "^4.6.7"
-  }
+  },
+  "license": "MIT",
+  "author": "Lintel"
 }

@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -17,7 +18,7 @@ import { makeAddonsCommand } from "../commands/addons.js";
 import type { Terminal } from "../terminal.js";
 import { buildAddon } from "./addon-build.js";
 import { printAddonCommands, runAddonCommand } from "./addon-commands.js";
-import type { NpmRunner } from "./addon-install.js";
+import { type NpmRunner, runNpm } from "./addon-install.js";
 import { scaffoldAddon } from "./addon-scaffold.js";
 
 const REPOSITORY_ROOT = fileURLToPath(new URL("../../../../", import.meta.url));
@@ -134,7 +135,18 @@ describe("lintel addons add, remove and list", () => {
   const packages = {
     "@acme/lintel-swatches": {
       version: "1.2.0",
-      manifest: { id: "swatches", lintel: ">=1.0.0-rc.1" },
+      manifest: {
+        id: "swatches",
+        lintel: ">=1.0.0-rc.1",
+        tables: [
+          {
+            name: "swatches_palettes",
+            purpose: "Saved colour palettes.",
+            columns: [{ name: "made_by", purpose: "Who made it.", personalData: true }],
+          },
+        ],
+        hosts: [{ host: "colours.example", purpose: "Looks up colour names." }],
+      },
     },
     "far-future": { version: "9.0.0", manifest: { id: "future", lintel: ">=99.0.0" } },
   };
@@ -147,6 +159,19 @@ describe("lintel addons add, remove and list", () => {
 
     expect(said).toEqual([
       "Added @acme/lintel-swatches 1.2.0.",
+      // What it says it keeps and does, before it runs.
+      "What it stores:",
+      "  swatches_palettes: Saved colour palettes.",
+      "    Personal data: made_by",
+      "What it adds to your website:",
+      "  No public addresses, as it says.",
+      "What runs by itself:",
+      "  Nothing, as it says.",
+      "Who it talks to:",
+      "  colours.example: Looks up colour names.",
+      "Where it comes from:",
+      "  @acme/lintel-swatches 1.2.0",
+      "Build → Add-ons checks this against what it finds once it runs.",
       "Restart Lintel to start using it. It will be switched on.",
     ]);
     expect(await readAddonsList(join(folder, "addons"))).toEqual({
@@ -196,6 +221,56 @@ describe("lintel addons add, remove and list", () => {
     await command.run(["unlink", "swatches"], terminal);
     expect((await readAddonsList(join(folder, "addons"))).linked).toEqual([]);
   });
+});
+
+describe("lintel addons add with npm itself", () => {
+  const exampleFolder = join(REPOSITORY_ROOT, "packages", "addon-example");
+
+  it("installs the example add-on from a packed .tgz, and Lintel loads it", async () => {
+    const { terminal, said } = recordingTerminal(folder);
+    // The package as it would be published: built, then packed by npm.
+    await buildAddon(exampleFolder, { watch: false, terminal, nodePaths: [ADMIN_PACKAGES] });
+    console.log("STEP", Date.now(), 'const packed = join(folder, "p');
+    const packed = join(folder, "packed");
+    mkdirSync(packed);
+    const pack = spawnSync("npm", ["pack", "--pack-destination", packed], {
+      cwd: exampleFolder,
+      shell: process.platform === "win32",
+      encoding: "utf8",
+    });
+    expect(pack.status, pack.stderr).toBe(0);
+    const tarball = readdirSync(packed).find((name) => name.endsWith(".tgz"));
+    expect(tarball).toBeDefined();
+
+    console.log("STEP", Date.now(), "const command = makeAddonsComm");
+    const command = makeAddonsCommand({ npm: runNpm, folder: () => join(folder, "addons") });
+    said.length = 0;
+    expect(await command.run(["add", join(packed, tarball ?? "")], terminal)).toBe(0);
+    expect(said[0]).toBe("Added @lintel/addon-example 0.1.0.");
+    expect(said).toContain(
+      "  check-hours: Once a day, notes in the log if no opening hours are set.",
+    );
+
+    console.log("STEP", Date.now(), "const installed = installedPac");
+    const installed = installedPackageFolder(join(folder, "addons"), "@lintel/addon-example");
+    expect(existsSync(join(installed, "dist", "server.js"))).toBe(true);
+    const lock = JSON.parse(readFileSync(join(folder, "addons", "package-lock.json"), "utf8"));
+    expect(lock.packages["node_modules/@lintel/addon-example"].integrity).toMatch(/^sha512-/);
+    expect(await readAddonsList(join(folder, "addons"))).toEqual({
+      packages: ["@lintel/addon-example"],
+      linked: [],
+      enableOnStart: ["example"],
+    });
+
+    console.log("STEP", Date.now(), "const addons = await loadSiteA");
+    const addons = await loadSiteAddons(folder, []);
+    expect(addons.problems).toEqual([]);
+    expect(addons.loaded.map(({ plugin }) => plugin.id)).toEqual(["example"]);
+
+    console.log("STEP", Date.now(), 'expect(await command.run(["rem');
+    expect(await command.run(["remove", "example"], terminal)).toBe(0);
+    expect(existsSync(installed)).toBe(false);
+  }, 180_000);
 });
 
 describe("add-ons' own commands", () => {
