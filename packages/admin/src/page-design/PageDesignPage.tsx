@@ -42,7 +42,7 @@ import { InlineMenuEditor } from "../menus/InlineMenuEditor.js";
  * The canvas frame's scripts, served beside the admin (see vite.config.ts), because the
  * admin's Content-Security-Policy refuses inline scripts and the frame inherits it.
  */
-const besideTheAdmin = (file: string) =>
+export const besideTheAdmin = (file: string) =>
   new URL(
     `${runtimeSettings.basePath.replace(/\/?$/, "/")}${file}`,
     globalThis.location?.origin ?? "http://localhost",

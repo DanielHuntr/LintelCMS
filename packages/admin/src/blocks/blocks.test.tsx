@@ -6,10 +6,11 @@ import { BlockTypesEditor } from "../content-types/BlockTypesEditor.js";
 import type { DraftField } from "../content-types/blueprintDraft.js";
 import { blockTypesForSaving } from "../content-types/blockTypesDraft.js";
 import type { BlockType } from "../fields/field.types.js";
-import { mockApi } from "../testing/mockApi.js";
+import { apiErrorResponse, mockApi } from "../testing/mockApi.js";
 import { renderScreen } from "../testing/renderScreen.js";
 import { renamedProperties, withoutBindingsTo } from "./blockChanges.js";
 import type { SiteBlock } from "./blocks.api.js";
+import { BlockDesignPage } from "./BlockDesignPage.js";
 import { BlocksPage } from "./BlocksPage.js";
 
 afterEach(() => vi.restoreAllMocks());
@@ -136,5 +137,40 @@ describe("site blocks in blocks fields", () => {
     const item = card.closest("li") as HTMLElement;
     expect(within(item).getByText("Name, Role")).toBeInTheDocument();
     expect(within(item).queryByRole("textbox")).not.toBeInTheDocument();
+  });
+});
+
+describe("a block's design", () => {
+  // As with page designs, the builder doesn't fit a phone (LINTEL-UX-013).
+  it("says the designer needs a bigger screen on a phone, with a way back", async () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query.includes("max-width"),
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }));
+    const design: PageNode = {
+      id: "card",
+      type: "box",
+      name: "Team card",
+      props: {},
+      styles: { base: {} },
+      children: [],
+      hidden: false,
+      locked: false,
+    };
+    mockApi(({ method, url }) => {
+      if (method === "GET" && url.pathname === "/blocks/team_card") return { ...teamCard, design };
+      throw apiErrorResponse(404, "NOT_FOUND", "Not found");
+    });
+    renderScreen(<BlockDesignPage handle="team_card" />);
+
+    expect(
+      await screen.findByRole("heading", { name: "The designer needs a bigger screen" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Back to Team card" })).toHaveAttribute(
+      "href",
+      "/design/blocks/team_card",
+    );
+    vi.unstubAllGlobals();
   });
 });

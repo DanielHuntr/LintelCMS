@@ -11,23 +11,28 @@ import siteStylesheet from "@lintel/site-components/styles.css?raw";
 import type { MotionEditorStringKey } from "@lintel/motion-editor";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, MonitorSmartphone } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { ApiError } from "../api/client.js";
 import { describeError } from "../api/describeError.js";
 import { LoadError } from "../api/LoadError.js";
 import { blueprintKeys } from "../content-types/blueprints.queries.js";
 import { useLeaveWarning } from "../content/useLeaveWarning.js";
+import { buttonClasses } from "../design/Button.js";
+import { classNames } from "../design/classNames.js";
 import { ConfirmDialog } from "../design/ConfirmDialog.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
+import { useIsNarrowScreen } from "../design/useIsNarrowScreen.js";
 import type { Field } from "../fields/field.types.js";
 import { type StringKey, t } from "../i18n/strings.js";
 import {
+  besideTheAdmin,
   canvasFrameScripts,
   uploadToMediaLibrary,
   useImagePicker,
 } from "../page-design/PageDesignPage.js";
+import { useEffectModules } from "../page-design/useEffectModules.js";
 import { useCan, useSession } from "../session/SessionContext.js";
 import { useCanvasSite } from "../website/website.queries.js";
 import { withoutBindingsTo } from "./blockChanges.js";
@@ -65,6 +70,8 @@ function BlockDesigner({ block, site }: { block: SiteBlock; site: CanvasSite | u
   const canEdit = useCan("builder:blocks") && block.editable;
   const canEditCode = useCan("builder:code");
   const imagePicker = useImagePicker();
+  const effectModules = useEffectModules(besideTheAdmin);
+  const isNarrowScreen = useIsNarrowScreen();
   const initial = useMemo(() => designAsPage(block.design as PageNode), [block.design]);
   const [document, setDocument] = useState<PageDocument>(initial);
   const [properties, setProperties] = useState<BlockProperty[]>(() =>
@@ -137,6 +144,26 @@ function BlockDesigner({ block, site }: { block: SiteBlock; site: CanvasSite | u
   }
 
   const title = t("blocks.designTitle", { name: block.name });
+  // The canvas, panels and toolbar need a laptop's width, as page designs do (LINTEL-UX-013).
+  if (isNarrowScreen)
+    return (
+      <main className="flex min-h-dvh flex-col items-center justify-center gap-3 p-6 text-center">
+        <span className="mb-1 flex size-16 items-center justify-center rounded-full bg-fill text-label-secondary">
+          <MonitorSmartphone aria-hidden="true" strokeWidth={1.5} className="size-7" />
+        </span>
+        <h1 className="text-title text-label">{t("pageDesign.narrow.title")}</h1>
+        <p className="max-w-md text-body text-balance text-label-secondary">
+          {t("blocks.narrowDescription")}
+        </p>
+        <Link
+          to="/design/blocks/$handle"
+          params={{ handle: block.handle }}
+          className={classNames("mt-2", buttonClasses("tinted", "medium"))}
+        >
+          {t("blocks.designBack", { name: block.name })}
+        </Link>
+      </main>
+    );
   return (
     <>
       <PageBuilder
@@ -159,6 +186,7 @@ function BlockDesigner({ block, site }: { block: SiteBlock; site: CanvasSite | u
         uploadFile={uploadToMediaLibrary}
         onSaveNow={() => void save()}
         frameScripts={canvasFrameScripts}
+        effectModules={effectModules}
         toolbarStart={
           <Link
             to="/design/blocks/$handle"

@@ -56,6 +56,8 @@ export const blockStrings = {
   "blocks.newBlockMade": "Saved {name}. Find it in Insert under Your site’s blocks.",
   "blocks.designTitle": "Design of {name}",
   "blocks.designBack": "Back to {name}",
+  "blocks.narrowDescription":
+    "Designing a block takes a laptop or a tablet held sideways. On this screen you can still change the block’s name and properties.",
   "blocks.designSave": "Save design",
   "blocks.designSaved": "Saved",
   "blocks.designUnsaved": "Not saved yet",
