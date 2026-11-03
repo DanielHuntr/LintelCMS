@@ -1,0 +1,1 @@
+ALTER TABLE "assets" ADD COLUMN "credit" text DEFAULT '' NOT NULL;

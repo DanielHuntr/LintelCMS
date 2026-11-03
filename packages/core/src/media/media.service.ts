@@ -170,6 +170,9 @@ export async function updateAsset(
   if (changes.alt !== undefined) {
     columns.alt = changes.alt;
   }
+  if (changes.credit !== undefined) {
+    columns.credit = changes.credit;
+  }
   if (changes.focalPoint) {
     columns.focalX = changes.focalPoint.x;
     columns.focalY = changes.focalPoint.y;

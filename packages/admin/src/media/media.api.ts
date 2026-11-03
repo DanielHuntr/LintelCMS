@@ -11,6 +11,8 @@ export interface Asset {
   width: number | null;
   height: number | null;
   alt: string;
+  /** Who made it and under what licence, such as a free photo's credit. Often empty. */
+  credit: string;
   focalPoint: FocalPoint;
   /** Absolute and public: the original file. */
   url: string;
@@ -36,6 +38,7 @@ export interface AssetListQuery {
 
 export interface AssetChanges {
   alt?: string;
+  credit?: string;
   focalPoint?: FocalPoint;
   filename?: string;
 }

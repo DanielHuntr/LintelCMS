@@ -1,4 +1,4 @@
-import { ImagePlus, Search, Upload, X } from "lucide-react";
+import { ImagePlus, Images, Search, Upload, X } from "lucide-react";
 import { useId, useRef, useState } from "react";
 import { Button } from "../design/Button.js";
 import { EmptyState } from "../design/EmptyState.js";
@@ -11,6 +11,8 @@ import { Modal } from "./Modal.js";
 import { UploadProgressList } from "./UploadProgressList.js";
 import { acceptedImageTypes } from "./upload-rules.js";
 import { useDebouncedValue } from "./useDebouncedValue.js";
+import { FreePhotosDialog } from "../free-photos/FreePhotosDialog.js";
+import { useCanAddFreePhotos } from "../free-photos/useFreePhotos.js";
 import { useFileDrop } from "./useFileDrop.js";
 import { useUploadQueue } from "./useUploadQueue.js";
 
@@ -36,6 +38,8 @@ export function MediaPickerDialog({
   const fileInput = useRef<HTMLInputElement>(null);
   const dropArea = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState("");
+  const [isFindingFreePhotos, setIsFindingFreePhotos] = useState(false);
+  const canAddFreePhotos = useCanAddFreePhotos();
   const debouncedSearch = useDebouncedValue(search, 250);
   const images = useAssetList(debouncedSearch, "image");
   const refreshLists = useRefreshAssetLists();
@@ -86,6 +90,16 @@ export function MediaPickerDialog({
               className="pointer-events-none absolute bottom-3 inset-s-3 size-4 text-label-tertiary"
             />
           </div>
+          {canAddFreePhotos && (
+            <Button
+              variant="tinted"
+              icon={<Images aria-hidden="true" />}
+              onClick={() => setIsFindingFreePhotos(true)}
+              className="h-10"
+            >
+              {t("freePhotos.open")}
+            </Button>
+          )}
           <Button
             variant="tinted"
             icon={<Upload aria-hidden="true" />}
@@ -154,6 +168,17 @@ export function MediaPickerDialog({
         </div>
         <DropOverlay visible={isDraggingFiles} contained />
       </div>
+      {isFindingFreePhotos && (
+        <FreePhotosDialog
+          mode="choose"
+          fieldLabel={fieldLabel}
+          onAdded={(asset) => {
+            void refreshLists();
+            onChoose(asset.id);
+          }}
+          onClose={() => setIsFindingFreePhotos(false)}
+        />
+      )}
     </Modal>
   );
 }

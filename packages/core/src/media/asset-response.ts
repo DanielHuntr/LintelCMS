@@ -42,6 +42,7 @@ export function toAssetResponse(
     width: asset.width,
     height: asset.height,
     alt: asset.alt,
+    credit: asset.credit,
     focalPoint: { x: asset.focalX, y: asset.focalY },
     url: assetFileUrl(publicApiUrl, asset),
     thumbnailUrl: isImageMimeType(asset.mimeType)

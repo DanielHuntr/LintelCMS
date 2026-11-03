@@ -22,6 +22,7 @@ import { dataToolsStrings } from "./dataToolsStrings.js";
 import { updatesStrings } from "./updatesStrings.js";
 import { treeSelectionStrings } from "./treeSelectionStrings.js";
 import { pageMenuStrings } from "./pageMenuStrings.js";
+import { freePhotosStrings } from "../free-photos/freePhotosStrings.js";
 
 /**
  * Every word the admin shows lives here, in English: the source every translation in
@@ -55,6 +56,7 @@ const english = {
   ...contentTreeStrings,
   ...dataToolsStrings,
   ...updatesStrings,
+  ...freePhotosStrings,
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",
   "nav.openMenu": "Open the menu",
@@ -313,6 +315,9 @@ const english = {
   "media.detail.alt.hint":
     "Describe the image for people who can’t see it. Say what matters, as you would on the phone: “Two chefs plating desserts”, not “image”.",
   "media.detail.filename.label": "Filename",
+  "media.detail.credit.label": "Credit",
+  "media.detail.credit.hint":
+    "Who made it and its licence, if your site should credit them. Free photos fill this in.",
   "media.detail.details": "Details",
   "media.detail.size": "Size",
   "media.detail.dimensions": "Dimensions",

@@ -26,14 +26,17 @@ PowerPoint (`.pptx`), plain text and CSV documents.
 
 ## Endpoints
 
-| Method and path       | Permission     | Success                                                        |
-| --------------------- | -------------- | -------------------------------------------------------------- |
-| `POST /media`         | `media:upload` | 201 `Asset` (200 when the same file was already uploaded)      |
-| `GET /media`          | `media:read`   | 200 `{ assets, total }`, newest first                          |
-| `GET /media/:id`      | `media:read`   | 200 `Asset`                                                    |
-| `PATCH /media/:id`    | `media:update` | 200 `Asset`; body `{ alt?, focalPoint?: { x, y }, filename? }` |
-| `DELETE /media/:id`   | `media:delete` | 204, or 409 `ASSET_IN_USE` with `usedBy: [{ entryId, title }]` |
-| `GET /media/:id/file` | public         | The original, or a resized image                               |
+| Method and path       | Permission     | Success                                                                 |
+| --------------------- | -------------- | ----------------------------------------------------------------------- |
+| `POST /media`         | `media:upload` | 201 `Asset` (200 when the same file was already uploaded)               |
+| `GET /media`          | `media:read`   | 200 `{ assets, total }`, newest first                                   |
+| `GET /media/:id`      | `media:read`   | 200 `Asset`                                                             |
+| `PATCH /media/:id`    | `media:update` | 200 `Asset`; body `{ alt?, credit?, focalPoint?: { x, y }, filename? }` |
+| `DELETE /media/:id`   | `media:delete` | 204, or 409 `ASSET_IN_USE` with `usedBy: [{ entryId, title }]`          |
+| `GET /media/:id/file` | public         | The original, or a resized image                                        |
+
+`credit` holds who made a file and its licence, for files that must be credited, such as
+photos added by the Free photos plugin (`src/free-photos`). It is empty for most files.
 
 `GET /media` takes `search` (filename or alt text), `type` (`image` or `document`), `page`
 and `perPage` (25 by default, 100 at most). The `Asset` shape is in `media.schema.ts`.

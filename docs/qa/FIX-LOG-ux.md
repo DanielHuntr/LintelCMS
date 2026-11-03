@@ -366,3 +366,33 @@ Each name now starts with what's shown:
 - When added from Insert, it goes to the top of the page, as footer sections go to the bottom.
 
 **Test:** `builder-model/src/components/site-chrome.test.ts`. Two of its three cases fail on the old code.
+
+## LINTEL-UX-024: free photos from Openverse (3 November 2026)
+
+**Asked for:** a way to find free photos without leaving Lintel.
+
+**What it does:**
+
+- A new optional feature, **Free photos**, off until it's switched on in Build → Features.
+- While it's on, the media library has a **Free photos** button beside Upload, and the image picker has one beside Upload new.
+- Searches go through Lintel's API to Openverse's public API, never from the browser. Only signed-in people who may upload files can use it.
+- Each result shows its title, creator and licence, with a link to where it's from. Only licences a business can use without asking are offered: CC0, Public Domain Mark, CC BY and CC BY-SA. NC and ND licences never show.
+- **Add** downloads the photo on the server and stores it as a normal file. Its credit (title, creator, licence and source) goes in the file's new **Credit** field, which shows in the file's details and can be edited.
+- In the image picker, **Use** adds the photo and chooses it.
+
+**Safety and polite use:**
+
+- The download goes through the same address checks as webhooks, so private and local addresses are refused, after redirects too.
+- Requests name Lintel in their user agent and give up after 8 seconds.
+- Searches are kept for 10 minutes and thumbnails for an hour, so paging back doesn't ask Openverse again.
+- Openverse's "too many searches" answer becomes a plain message.
+
+**Migration:** `0023_asset_credit` adds `assets.credit` (empty for existing files). Checked on a fresh database and on one migrated to 0022 with a file already in it.
+
+**Tests:**
+
+- `core/src/free-photos/free-photos.test.ts`, against a stand-in Openverse. It covers switching on, permissions, licences, the cache, plain errors, thumbnails, adding with the credit, adding twice, a refused licence and a refused private address.
+- `core/src/media/media-library.test.ts`: saving a credit.
+- `admin/src/free-photos/FreePhotosDialog.test.tsx`: searching, adding, a gone photo left out, a failed search, and the button showing only while the feature is on.
+
+**Screenshots** (in `screenshots/qol-b/`): `photos-features-desktop-light`, `photos-start-desktop-light`, `photos-results-*` (desktop and 390px, light and dark), `photos-added-desktop-light`, `photos-credit-desktop-light`.

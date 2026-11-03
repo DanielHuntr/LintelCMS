@@ -43,6 +43,7 @@ export function AssetDetailSheet({
   const [focalPoint, setFocalPoint] = useState(asset.focalPoint);
   const [alt, setAlt] = useState(asset.alt);
   const [filename, setFilename] = useState(asset.filename);
+  const [credit, setCredit] = useState(asset.credit);
   const focalSaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const image = isImage(asset);
   const aspectRatio = asset.width && asset.height ? asset.width / asset.height : 1;
@@ -60,6 +61,10 @@ export function AssetDetailSheet({
 
   function saveAltIfChanged() {
     if (alt.trim() !== asset.alt) save({ alt: alt.trim() });
+  }
+
+  function saveCreditIfChanged() {
+    if (credit.trim() !== asset.credit) save({ credit: credit.trim() });
   }
 
   function saveFilenameIfChanged() {
@@ -124,6 +129,15 @@ export function AssetDetailSheet({
               onKeyDown={(event) => {
                 if (event.key === "Enter") event.currentTarget.blur();
               }}
+            />
+            <AltTextField
+              label={t("media.detail.credit.label")}
+              hint={t("media.detail.credit.hint")}
+              value={credit}
+              disabled={!canUpdate}
+              maxLength={1000}
+              onChange={(event) => setCredit(event.target.value)}
+              onBlur={saveCreditIfChanged}
             />
             {image && asset.thumbnailUrl && (
               <CropPreviews

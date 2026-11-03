@@ -1,5 +1,5 @@
 import { hasPermission } from "@lintel/core/permissions";
-import { ImagePlus, Search, TriangleAlert, Upload } from "lucide-react";
+import { ImagePlus, Images, Search, TriangleAlert, Upload } from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
 import { Button } from "../design/Button.js";
 import { Card } from "../design/Card.js";
@@ -20,6 +20,8 @@ import { useDebouncedValue } from "./useDebouncedValue.js";
 import { useFileDrop } from "./useFileDrop.js";
 import { useUploadQueue } from "./useUploadQueue.js";
 import { Page } from "../design/Page.js";
+import { FreePhotosDialog } from "../free-photos/FreePhotosDialog.js";
+import { useCanAddFreePhotos } from "../free-photos/useFreePhotos.js";
 
 type Filter = "all" | AssetKind;
 
@@ -40,6 +42,8 @@ export function MediaLibraryPage({
   const [search, setSearch] = useState(initialSearch ?? "");
   const [filter, setFilter] = useState<Filter>("all");
   const [openAssetId, setOpenAssetId] = useState<string | null>(initialAssetId ?? null);
+  const [isFindingFreePhotos, setIsFindingFreePhotos] = useState(false);
+  const canAddFreePhotos = useCanAddFreePhotos() && canUpload;
   const fileInput = useRef<HTMLInputElement>(null);
   const debouncedSearch = useDebouncedValue(search, SEARCH_DELAY_MILLISECONDS);
   const folder = useMediaFolder();
@@ -79,9 +83,20 @@ export function MediaLibraryPage({
         actions={
           canUpload &&
           !isLibraryEmpty && (
-            <Button icon={<Upload aria-hidden="true" />} onClick={chooseFiles}>
-              {t("media.upload")}
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              {canAddFreePhotos && (
+                <Button
+                  variant="tinted"
+                  icon={<Images aria-hidden="true" />}
+                  onClick={() => setIsFindingFreePhotos(true)}
+                >
+                  {t("freePhotos.open")}
+                </Button>
+              )}
+              <Button icon={<Upload aria-hidden="true" />} onClick={chooseFiles}>
+                {t("media.upload")}
+              </Button>
+            </div>
           )
         }
       />
@@ -155,6 +170,7 @@ export function MediaLibraryPage({
             search={debouncedSearch}
             filter={filter}
             onUpload={canUpload ? chooseFiles : undefined}
+            onFindFreePhotos={canAddFreePhotos ? () => setIsFindingFreePhotos(true) : undefined}
           />
         }
       >
@@ -191,6 +207,14 @@ export function MediaLibraryPage({
               ? () => setOpenAssetId(assets[openIndex + 1]?.id ?? null)
               : undefined
           }
+        />
+      )}
+      {isFindingFreePhotos && (
+        <FreePhotosDialog
+          mode="add"
+          folder={folder.uploadFolder}
+          onAdded={() => void refreshLists()}
+          onClose={() => setIsFindingFreePhotos(false)}
         />
       )}
       <UploadTray
@@ -243,10 +267,12 @@ function LibraryEmptyState({
   search,
   filter,
   onUpload,
+  onFindFreePhotos,
 }: {
   search: string;
   filter: Filter;
   onUpload: (() => void) | undefined;
+  onFindFreePhotos: (() => void) | undefined;
 }) {
   if (search.trim()) {
     return (
@@ -276,9 +302,16 @@ function LibraryEmptyState({
       description={t("media.empty.description")}
       action={
         onUpload && (
-          <Button icon={<Upload aria-hidden="true" />} onClick={onUpload}>
-            {t("media.empty.action")}
-          </Button>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Button icon={<Upload aria-hidden="true" />} onClick={onUpload}>
+              {t("media.empty.action")}
+            </Button>
+            {onFindFreePhotos && (
+              <Button variant="plain" onClick={onFindFreePhotos}>
+                {t("freePhotos.open")}
+              </Button>
+            )}
+          </div>
         )
       }
     />

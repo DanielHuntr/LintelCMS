@@ -17,6 +17,7 @@ describe("the media library", () => {
     return (await media.upload(filename, await makeTestPng(20, 10, seed))).json() as {
       id: string;
       url: string;
+      credit: string;
     };
   }
 
@@ -73,6 +74,18 @@ describe("the media library", () => {
     // The URLs change with the focal point, so cached crops are never shown for the old one.
     expect(response.json().url).not.toBe(asset.url);
     expect((await request("GET", `/media/${asset.id}`)).json()).toEqual(response.json());
+  });
+
+  it("keeps a credit for files that must be credited, empty until one is written", async () => {
+    const asset = await uploadImage("harbour.png", 7);
+    expect(asset.credit).toBe("");
+
+    const response = await request("PATCH", `/media/${asset.id}`, {
+      credit: "  Photo by Ana Ruiz, CC BY 4.0  ",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().credit).toBe("Photo by Ana Ruiz, CC BY 4.0");
   });
 
   it("refuses a focal point outside the image", async () => {

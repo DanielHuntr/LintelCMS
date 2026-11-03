@@ -24,6 +24,8 @@ Opens from a tile. Changes save as they're made, with "Saved" in the header:
   geometry (`@lintel/core/media-crop`), so they match what the website gets.
 - **Alt text** (saved on leaving the field), with guidance on writing it, and the
   **filename** (the API keeps the real extension).
+- **Credit**: who made the file and its licence, for files the site must credit. Free
+  photos (`src/free-photos`) fill it in.
 - Details, Copy URL, Download, and Delete. Delete asks first; if entries still use the
   file, the API's 409 is shown as "Used in" with their titles.
 
