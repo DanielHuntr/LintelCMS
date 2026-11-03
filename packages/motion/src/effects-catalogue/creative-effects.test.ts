@@ -28,7 +28,8 @@ describe("the creative pack", () => {
   });
 
   it("keeps to a few plain settings each", () => {
-    for (const effect of creativeEffects) {
+    // Players are set through their elements' own fields, so the gallery leaves them out.
+    for (const effect of creativeEffects.filter(({ listed }) => listed !== false)) {
       const settings = Object.values(effect.params).filter(
         (parameter) => parameter.kind !== "colour",
       );
