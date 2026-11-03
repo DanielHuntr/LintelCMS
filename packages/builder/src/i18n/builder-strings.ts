@@ -283,6 +283,13 @@ export const builderStrings = {
   "pageBuilder.content.addLink": "Add a link",
   "pageBuilder.content.choosePage": "Choose a page…",
   "pageBuilder.content.choosePageFor": "Choose a page for link {number}",
+  "pageBuilder.content.typeAddress": "Type an address instead",
+  "pageBuilder.content.typeAddressFor": "Type an address for link {number} instead",
+  "pageBuilder.content.findingPage": "Finding the page…",
+  "pageBuilder.content.chosenPage": "A page on your site",
+  "pageBuilder.content.untitledPage": "Untitled page",
+  "pageBuilder.content.pageGone":
+    "This page no longer exists. Choose another page, or type an address.",
   "pageBuilder.content.linkWords": "Link {number} words",
   "pageBuilder.content.linkAddress": "Link {number} address",
   "pageBuilder.content.codeHint":

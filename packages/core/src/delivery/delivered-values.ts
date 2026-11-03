@@ -1,7 +1,14 @@
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
 import type { DeliveredAsset } from "../fieldtypes/image-assets.js";
 import { renderMarkdownHtml } from "../fieldtypes/markdown.js";
-import { renderRichTextHtml, type RichTextDocument } from "../fieldtypes/rich-text.js";
+import { readPageLinkId, resolvePageLinks } from "@lintel/builder-model";
+import {
+  renderRichTextHtml,
+  resolveRichText,
+  type RichTextDocument,
+  type RichTextLookups,
+  richTextAssetIds,
+} from "../fieldtypes/rich-text.js";
 import type { FieldsOptions } from "../fieldtypes/container-fieldtypes.js";
 import { findFieldtype } from "../fieldtypes/fieldtypes.registry.js";
 import { describeVideoAddress } from "../fieldtypes/video-addresses.js";
@@ -14,7 +21,8 @@ import { type DeliveredReferences, noDeliveredReferences } from "./delivered-ref
  *
  *   - image:    the stored asset id becomes the asset itself (url, alt text, size, focal
  *               point), or null if the image has since been deleted;
- *   - richText: the editor's JSON is kept and its HTML added, as `{ json, html }`;
+ *   - richText: the editor's JSON is kept and its HTML added, as `{ json, html }`. Its
+ *               pictures carry their `image`, as image fields do;
  *   - blocks:   an ordered array of `{ id, type, data }`, each block's `data` delivered by
  *               these same rules against its block type's fields.
  *
@@ -26,8 +34,14 @@ import { type DeliveredReferences, noDeliveredReferences } from "./delivered-ref
  *               delivered-references.ts); unpublished ones are left out;
  *   - users:    the stored ids become `{ id, name }`;
  *   - video:    the address becomes `{ url, provider, embedUrl }`;
+ *   - link:     a link to a page by its id gets the page's address now, as `{ url, label,
+ *               entryId }`, or null when the page is gone;
+ *   - page:     a page's design, with links to pages swapped for their addresses;
  *   - group, fieldset: their values, delivered by these same rules;
  *   - repeater: `[{ id, data }]`, each row's `data` delivered by these same rules.
+ *
+ * Links to pages by id (`lintel:page/<id>`, see docs/decisions/0032) never reach a website:
+ * a link to a page that is gone or not live becomes plain words, or no link at all.
  *
  * Only the blueprint's fields are delivered, so values left behind by a removed field
  * (or blocks of a removed block type) never reach a website. Fields that only arrange the
@@ -89,7 +103,15 @@ function deliverValue(
     return typeof value === "string" ? (assets.get(value) ?? null) : null;
   }
   if (field.type === "richText") {
-    return isRichTextDocument(value) ? { json: value, html: renderRichTextHtml(value) } : null;
+    if (!isRichTextDocument(value)) return null;
+    const lookups = richTextLookups(assets, references);
+    return { json: resolveRichText(value, lookups), html: renderRichTextHtml(value, lookups) };
+  }
+  if (field.type === "link") {
+    return deliverLink(value, references);
+  }
+  if (field.type === "page") {
+    return resolvePageLinks(value, (entryId) => pageAddress(entryId, references));
   }
   if (field.type === "blocks") {
     return eachBlock(field, value).map(({ block, blockType }) => ({
@@ -99,6 +121,29 @@ function deliverValue(
     }));
   }
   return value;
+}
+
+function pageAddress(entryId: string, references: DeliveredReferences): string | null {
+  return references.pages.get(entryId)?.url ?? null;
+}
+
+function richTextLookups(
+  assets: ReadonlyMap<string, DeliveredAsset>,
+  references: DeliveredReferences,
+): RichTextLookups {
+  return {
+    pageAddress: (entryId) => pageAddress(entryId, references),
+    picture: (assetId) => assets.get(assetId) ?? null,
+  };
+}
+
+/** A Link field: a link to a page by its id gets the page's address, or is gone with it. */
+function deliverLink(value: unknown, references: DeliveredReferences): unknown {
+  if (typeof value !== "object" || value === null || !("url" in value)) return value;
+  const entryId = readPageLinkId(value.url);
+  if (!entryId) return value;
+  const url = pageAddress(entryId, references);
+  return url === null ? null : { ...value, url, entryId };
 }
 
 /** Every image id used by these entries, inside blocks too, once each, to look up together. */
@@ -122,6 +167,9 @@ function addImageIds(
     const value = data[field.handle];
     if (field.type === "image" && typeof value === "string") {
       ids.add(value);
+    }
+    if (field.type === "richText" && isRichTextDocument(value)) {
+      richTextAssetIds(value).forEach((id) => ids.add(id));
     }
     for (const inner of innerValueSets(field, value)) {
       addImageIds(inner.fields, inner.data, ids);

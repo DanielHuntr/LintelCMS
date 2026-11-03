@@ -1,12 +1,17 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { createEmptyPage, createNode, standardCatalogue } from "@lintel/builder-model";
+import {
+  createEmptyPage,
+  createNode,
+  pageLinkHref,
+  standardCatalogue,
+} from "@lintel/builder-model";
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { pagesWithSimpleSectionsCollection } from "../collections/default-collections.js";
 import { ensureCollection } from "../collections/collections.service.js";
-import { acceptAnyAsset } from "../fieldtypes/image-assets.js";
+import { acceptAnyAsset, type DeliveredAsset } from "../fieldtypes/image-assets.js";
 import { ensureSiteSettings } from "../globals/default-globals.js";
 import { ensureMainMenu } from "../navigation/default-navigation.js";
 import { useTestDatabase } from "../testing/test-database.js";
@@ -16,6 +21,15 @@ import { buildSiteServer } from "../website/site-server.js";
 import { readForm, type SiteSources } from "../website/site-sources.js";
 
 const SITE_URL = "http://localhost:3999";
+
+const photo: DeliveredAsset = {
+  id: "6f1c2a8e-4b3d-4c5e-9f00-0a1b2c3d4e5f",
+  url: "http://localhost:4000/media/6f1c2a8e-4b3d-4c5e-9f00-0a1b2c3d4e5f/file",
+  alt: "Loaves",
+  width: 1200,
+  height: 800,
+  focalPoint: null,
+};
 
 const contactForm: SiteSources["forms"] = {
   findForm: async (handle) =>
@@ -44,6 +58,9 @@ describe("pages drawn with Liquid templates", { timeout: 30000 }, () => {
     folder = await mkdtemp(join(tmpdir(), "lintel-liquid-site-"));
     api = await startTestServer(testDatabase.activeDatabase, {
       assetExists: acceptAnyAsset,
+      assetLookup: {
+        findAssetsByIds: async (ids) => new Map(ids.includes(photo.id) ? [[photo.id, photo]] : []),
+      },
       website: { builtInSiteUrl: SITE_URL, liquidTemplates: { folder } },
     });
     site = buildSiteServer({
@@ -141,6 +158,51 @@ describe("pages drawn with Liquid templates", { timeout: 30000 }, () => {
     expect((await visit("/bread")).body).toBe(page.body);
     await file("templates/pages.liquid", "<p>Changed</p>");
     expect((await visit("/bread")).body).toContain("<p>Changed</p>");
+  });
+
+  it("gives templates the page's address for links to pages, and draws pictures in text", async () => {
+    await file(
+      "templates/pages.liquid",
+      "{{ entry.data.body | rich_text }}" +
+        "{% for section in entry.data.sections %}<a href='{{ section.data.button.url }}'>" +
+        "{{ section.data.button.label }}</a>{% endfor %}",
+    );
+    const storyId = await publish({ title: "Our story" }, "story");
+    const link = { type: "link", attrs: { href: pageLinkHref(storyId) } };
+    await publish(
+      {
+        title: "Linking",
+        body: {
+          type: "doc",
+          content: [
+            { type: "paragraph", content: [{ type: "text", text: "Our story", marks: [link] }] },
+            {
+              type: "image",
+              attrs: { assetId: photo.id, alt: "Bread", caption: "", align: "right" },
+            },
+          ],
+        },
+        sections: [
+          {
+            id: "hero-1",
+            type: "hero",
+            data: { heading: "Hi", button: { url: pageLinkHref(storyId), label: "Read it" } },
+          },
+        ],
+      },
+      "linking",
+    );
+    await admin("PATCH", `/entries/${storyId}`, { slug: "about-us" });
+    await admin("POST", `/entries/${storyId}/publish`);
+
+    const page = (await visit("/linking")).body;
+
+    expect(page).toContain('href="/about-us">Our story</a>');
+    expect(page).toContain("<a href='/about-us'>Read it</a>");
+    expect(page).toMatch(
+      /<figure class="lintel-picture lintel-picture--right"><img [^>]*alt="Bread"/,
+    );
+    expect(page).not.toContain("lintel:page/");
   });
 
   it("sends a layout's whole document with the page's head in it", async () => {

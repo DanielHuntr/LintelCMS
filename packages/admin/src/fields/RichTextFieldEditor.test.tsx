@@ -1,6 +1,7 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { renderWithQueries } from "../media/media.test-helpers.js";
 import type { FieldValue, RichTextDocument } from "./field.types.js";
 import { FieldEditor } from "./FieldEditor.js";
 
@@ -11,7 +12,8 @@ const article: RichTextDocument = {
 
 function renderRichText(value: unknown) {
   const onChange = vi.fn<(handle: string, value: FieldValue) => void>();
-  render(
+  // With a query cache: pictures look their images up through it.
+  renderWithQueries(
     <FieldEditor
       field={{ handle: "body", label: "Body", type: "richText", required: false, options: {} }}
       value={value}

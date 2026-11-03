@@ -25,6 +25,8 @@ import { treeSelectionStrings } from "./treeSelectionStrings.js";
 import { pageMenuStrings } from "./pageMenuStrings.js";
 import { liquidTemplateStrings } from "../liquid-templates/liquidTemplateStrings.js";
 import { pageLinkStrings } from "../page-links/pageLinkStrings.js";
+import { quickUploadStrings } from "../media/quickUploadStrings.js";
+import { richTextPictureStrings } from "../fields/richTextPictureStrings.js";
 import { blockStrings } from "./blockStrings.js";
 
 /**
@@ -40,6 +42,8 @@ const english = {
   ...pageMenuStrings,
   ...liquidTemplateStrings,
   ...pageLinkStrings,
+  ...quickUploadStrings,
+  ...richTextPictureStrings,
   ...dashboardStrings,
   ...pluginStrings,
   ...peopleStrings,

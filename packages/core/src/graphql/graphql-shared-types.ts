@@ -120,6 +120,10 @@ export const linkType = new GraphQLObjectType({
   fields: {
     url: { type: new GraphQLNonNull(GraphQLString) },
     label: { type: GraphQLString },
+    entryId: {
+      type: GraphQLID,
+      description: "The page linked to, when the link was made with Choose a page.",
+    },
   },
 });
 

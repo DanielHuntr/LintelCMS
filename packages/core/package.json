@@ -60,6 +60,11 @@
       "development": "./src/branding/accent-colours.ts",
       "default": "./dist/branding/accent-colours.js"
     },
+    "./rich-text-picture": {
+      "types": "./dist/fieldtypes/rich-text-picture.d.ts",
+      "development": "./src/fieldtypes/rich-text-picture.ts",
+      "default": "./dist/fieldtypes/rich-text-picture.js"
+    },
     "./video-addresses": {
       "types": "./dist/fieldtypes/video-addresses.d.ts",
       "development": "./src/fieldtypes/video-addresses.ts",

@@ -1,5 +1,6 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
-import type { PickedPage } from "./pageLinks.queries.js";
+import { fetchLinkedPage, type PickedPage } from "./pageLinks.queries.js";
 import { PagePickerDialog } from "./PagePickerDialog.js";
 
 /**
@@ -34,4 +35,13 @@ export function usePagePicker() {
       />
     ),
   };
+}
+
+/**
+ * For the page builder: a linked page's title by its id, or null when the page no longer
+ * exists, so its link inputs show "About" rather than the stored reference.
+ */
+export function usePageFinder() {
+  const queryClient = useQueryClient();
+  return useCallback((entryId: string) => fetchLinkedPage(queryClient, entryId), [queryClient]);
 }

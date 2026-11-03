@@ -1,3 +1,4 @@
+import { isPageLinkHref } from "@lintel/builder-model";
 import { z } from "zod";
 import { defineFieldtype } from "./fieldtype.js";
 
@@ -70,8 +71,12 @@ export const imageFieldtype = defineFieldtype({
       : `The image chosen for ${label} is no longer in the media library`,
 });
 
-/** Web addresses, email and phone links, and links within the site ("/about", "#team"). */
+/**
+ * Web addresses, email and phone links, links within the site ("/about", "#team"), and a
+ * page chosen with "Choose a page…", stored by its id (`lintel:page/<id>`, see page-links).
+ */
 const safeLinkPattern = /^(https?:\/\/|mailto:|tel:|\/|#)/i;
+const isSafeLink = (url: string) => safeLinkPattern.test(url) || isPageLinkHref(url);
 
 export const linkFieldtype = defineFieldtype({
   type: "link",
@@ -86,7 +91,7 @@ export const linkFieldtype = defineFieldtype({
         url: z
           .string({ error: `${label} needs an address` })
           .trim()
-          .regex(safeLinkPattern, {
+          .refine(isSafeLink, {
             error: `${label} should start with https://, mailto:, tel: or /`,
           }),
         label: z.string({ error: `The text for ${label} should be text` }).optional(),

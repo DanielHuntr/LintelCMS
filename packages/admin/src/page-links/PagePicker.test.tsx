@@ -1,19 +1,27 @@
+import { pageLinkHref } from "@lintel/builder-model";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { FieldValue, RichTextDocument } from "../fields/field.types.js";
 import { FieldEditor } from "../fields/FieldEditor.js";
-import { mockApi } from "../testing/mockApi.js";
+import { apiErrorResponse, mockApi } from "../testing/mockApi.js";
 import { renderScreen } from "../testing/renderScreen.js";
+
+const ABOUT_ID = "0b9d2c1e-5f3a-4c6b-8d7e-1a2b3c4d5e6f";
+const GONE_ID = "9f8e7d6c-5b4a-4321-8765-0fedcba98765";
 
 function servePages() {
   return mockApi(({ url }) => {
+    if (url.pathname === `/entries/${ABOUT_ID}`) return { id: ABOUT_ID, title: "About us" };
+    if (url.pathname === `/entries/${GONE_ID}`) {
+      throw apiErrorResponse(404, "NOT_FOUND", "There is no entry with that id");
+    }
     if (url.pathname === "/content-tree/search") {
       return {
         items: [
           {
-            id: "about",
+            id: ABOUT_ID,
             title: "About us",
             status: "published",
             collection: { handle: "pages", name: "Pages" },
@@ -63,7 +71,7 @@ async function choose(search: string, title: string) {
 afterEach(() => vi.restoreAllMocks());
 
 describe("choosing a page for a link", () => {
-  it("finds pages by title and fills in the address, and the words when there are none", async () => {
+  it("finds pages by title and links to the page itself, showing its title", async () => {
     const api = servePages();
     const changes = renderField("link");
 
@@ -80,9 +88,22 @@ describe("choosing a page for a link", () => {
     await pick();
 
     expect(screen.queryByRole("dialog", { name: "Choose a page" })).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Address")).toHaveValue("/about-us");
+    // The link stores the page, so it follows the page if its address changes.
+    expect(changes.mock.lastCall?.[0]).toEqual({ url: pageLinkHref(ABOUT_ID), label: "About us" });
+    expect(await screen.findByLabelText("Page")).toHaveValue("About us");
     expect(screen.getByLabelText("Link text")).toHaveValue("About us");
-    expect(changes.mock.lastCall?.[0]).toEqual({ url: "/about-us", label: "About us" });
+    expect(screen.queryByDisplayValue(/lintel:page/)).not.toBeInTheDocument();
+  });
+
+  it("says plainly when a linked page no longer exists", async () => {
+    servePages();
+    renderField("link", { url: pageLinkHref(GONE_ID), label: "Old page" });
+
+    expect(
+      await screen.findByText(
+        "This page no longer exists. Choose another page, or type an address.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("keeps words already typed, and a typed web address still works", async () => {
@@ -92,13 +113,13 @@ describe("choosing a page for a link", () => {
     const { pick } = await choose("about", "About us");
     await pick();
 
-    expect(changes.mock.lastCall?.[0]).toEqual({ url: "/about-us", label: "Our story" });
-    await userEvent.clear(screen.getByLabelText("Address"));
+    expect(changes.mock.lastCall?.[0]).toEqual({ url: pageLinkHref(ABOUT_ID), label: "Our story" });
+    await userEvent.click(screen.getByRole("button", { name: "Type an address instead" }));
     await userEvent.type(screen.getByLabelText("Address"), "https://lintel.dev");
     expect(changes.mock.lastCall?.[0]).toEqual({ url: "https://lintel.dev", label: "Our story" });
   });
 
-  it("links the selected words in rich text to the page's address", async () => {
+  it("links the selected words in rich text to the page itself", async () => {
     servePages();
     const document: RichTextDocument = {
       type: "doc",
@@ -118,10 +139,25 @@ describe("choosing a page for a link", () => {
         content: [
           {
             text: "Meet the team",
-            marks: [{ type: "link", attrs: { href: "/about-us" } }],
+            marks: [{ type: "link", attrs: { href: pageLinkHref(ABOUT_ID) } }],
           },
         ],
       }),
     );
+  });
+
+  it("shows the linked page's title when a page link in rich text is opened", async () => {
+    servePages();
+    const link = { type: "link", attrs: { href: pageLinkHref(ABOUT_ID) } };
+    renderField("richText", {
+      type: "doc",
+      content: [{ type: "paragraph", content: [{ type: "text", text: "Meet us", marks: [link] }] }],
+    });
+    const editor = await screen.findByRole("textbox", { name: "Read more" });
+    await userEvent.click(editor);
+    await userEvent.keyboard("{Control>}a{/Control}");
+    await userEvent.click(screen.getByRole("button", { name: "Link" }));
+
+    expect(await screen.findByLabelText("Page")).toHaveValue("About us");
   });
 });

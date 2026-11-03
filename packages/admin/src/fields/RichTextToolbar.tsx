@@ -4,6 +4,7 @@ import {
   Bold,
   Heading2,
   Heading3,
+  ImagePlus,
   Italic,
   Link2,
   List,
@@ -82,6 +83,8 @@ interface RichTextToolbarProps {
   controlId: string;
   isLinkFormOpen: boolean;
   onToggleLinkForm: () => void;
+  /** Opens the image picker, for a picture where the cursor is. */
+  onAddPicture: () => void;
 }
 
 /**
@@ -93,6 +96,7 @@ export function RichTextToolbar({
   controlId,
   isLinkFormOpen,
   onToggleLinkForm,
+  onAddPicture,
 }: RichTextToolbarProps) {
   const [focusIndex, setFocusIndex] = useState(0);
   const buttons = useRef<Array<HTMLButtonElement | null>>([]);
@@ -106,8 +110,9 @@ export function RichTextToolbar({
     }),
   });
 
-  // Every button in order, the link button after italic, with a separator before each group.
-  const buttonItems = actionGroups.flatMap((group, groupIndex) => {
+  // Every button in order, the link button after italic, with a separator before each group,
+  // and Add picture last, in a group of its own.
+  const formattingItems = actionGroups.flatMap((group, groupIndex) => {
     const items = group.map((action, indexInGroup) => ({
       label: t(action.label),
       icon: action.icon,
@@ -127,6 +132,16 @@ export function RichTextToolbar({
       },
     ];
   });
+  const buttonItems = [
+    ...formattingItems,
+    {
+      label: t("fields.richText.addPicture"),
+      icon: ImagePlus,
+      isPressed: undefined,
+      onPress: onAddPicture,
+      startsGroup: true,
+    },
+  ];
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     const count = buttonItems.length;

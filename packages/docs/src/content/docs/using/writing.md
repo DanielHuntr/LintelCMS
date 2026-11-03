@@ -43,17 +43,41 @@ working.
 
 What you fill in depends on the content type. The usual ones:
 
-| Field         | How to fill it in                                                                |
-| ------------- | -------------------------------------------------------------------------------- |
-| **Text**      | A single line, such as a title.                                                  |
-| **Text area** | A few lines of plain text, such as a summary.                                    |
-| **Rich text** | Formatted writing. Use the toolbar for headings, bold, lists, links and quotes.  |
-| **Image**     | Press **Choose image** and pick one from the media library, or upload a new one. |
-| **Select**    | Pick from a list, such as a category.                                            |
-| **Toggle**    | An on or off switch.                                                             |
-| **Date**      | A date, sometimes with a time.                                                   |
-| **Number**    | A number, such as a price.                                                       |
-| **Link**      | A web address, email address or page, with optional link text.                   |
+| Field         | How to fill it in                                                                         |
+| ------------- | ----------------------------------------------------------------------------------------- |
+| **Text**      | A single line, such as a title.                                                           |
+| **Text area** | A few lines of plain text, such as a summary.                                             |
+| **Rich text** | Formatted writing. Use the toolbar for headings, bold, lists, links, quotes and pictures. |
+| **Image**     | Press **Choose image** and pick one from the media library, or upload a new one.          |
+| **Select**    | Pick from a list, such as a category.                                                     |
+| **Toggle**    | An on or off switch.                                                                      |
+| **Date**      | A date, sometimes with a time.                                                            |
+| **Number**    | A number, such as a price.                                                                |
+| **Link**      | A web address, email address or page, with optional link text.                            |
+
+### Links to your own pages
+
+In a Link field, or with **Link** in the rich text toolbar, press **Choose a page…** and
+type part of the page's name. The link remembers the page itself, so it keeps working if you
+rename the page, change its address or move it somewhere else in the tree. Where you edit the
+link you'll see the page's name rather than an address.
+
+If the page is later deleted, the link says **This page no longer exists**. On your site the
+words stay, without a link, until you choose another page. To link somewhere else instead,
+press **Type an address instead**.
+
+### Pictures in your writing
+
+To put a picture in rich text:
+
+- press **Add picture** in the toolbar and choose one from the media library, or upload one;
+- or paste a picture, or drag one in from your computer. It's added to your media library and
+  appears where you dropped it.
+
+Lintel then asks you to **describe the picture**, for people who can't see it. You can also
+add a **caption** and choose **where it sits**: across the text, or on the left or right with
+the words flowing beside it (on phones it always goes across). Click a picture later to change
+any of these, replace it or remove it.
 
 ## Saving
 

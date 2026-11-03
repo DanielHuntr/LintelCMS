@@ -79,6 +79,7 @@ describe("delivering values inside blocks", () => {
     };
     const references: DeliveredReferences = {
       users: new Map(),
+      pages: new Map(),
       terms: new Map([
         [TERM_ID, { id: TERM_ID, title: "Recipes", slug: "recipes", taxonomy: "tags" }],
       ]),

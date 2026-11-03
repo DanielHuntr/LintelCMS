@@ -14,22 +14,25 @@ than typing its address. It appears in:
 Menus already link to pages by their id ("Choose page" in `menus/MenuItemSheet.tsx`) and are
 left as they are. Typing a full web address still works everywhere.
 
-## The address it inserts
+## What it stores
 
-The page's address on the site, such as `/about` (or a full address, for a site start on a
-domain of its own). That is the form these places already took for a page of the site: the
-builder's hint says "a page on your site such as /about", and Link fields and rich text
-accept addresses starting with `/`. Lintel has no link-by-id format outside menus, so a link
-made here is a typed address: if the page's address changes later, the link doesn't follow
-(with the SEO tools on, Lintel offers a redirect from the old address when it changes).
+The page itself, as `lintel:page/<entry id>` (`pageLinkHref` from `@lintel/builder-model`),
+in the place the address would go. Lintel puts the page's current address in its place
+wherever the link is drawn, so the link follows the page when it is renamed or moved; see
+`docs/decisions/0032-links-to-pages-by-id.md`. Where such a link is edited, the page's title
+shows instead of an address (`LinkedPageField.tsx`), with "This page no longer exists" when
+it has been deleted or binned, and **Type an address instead** to go back to typing one.
+Links made before this, such as `/about`, are left as they are.
 
 ## Files
 
-| File                   | What it does                                                           |
-| ---------------------- | ---------------------------------------------------------------------- |
-| `PagePickerDialog.tsx` | The dialog: a search box and the pages that match, with addresses      |
-| `ChoosePageButton.tsx` | "Choose a page…", the text action that opens it                        |
-| `usePagePicker.tsx`    | The dialog as a promise, for the page builder                          |
-| `pageLinks.queries.ts` | Searching pages by title (`GET /content-tree/search`, which has `url`) |
-| `pageLinkStrings.ts`   | Its words                                                              |
-| `PagePicker.test.tsx`  | Link fields and rich text, end to end against a mocked API             |
+| File                    | What it does                                                                   |
+| ----------------------- | ------------------------------------------------------------------------------ |
+| `PagePickerDialog.tsx`  | The dialog: a search box and the pages that match, with addresses              |
+| `ChoosePageButton.tsx`  | "Choose a page…", the text action that opens it                                |
+| `usePagePicker.tsx`     | The dialog as a promise, and the title finder, for the page builder            |
+| `LinkedPageField.tsx`   | A linked page's title where the address would be, or that it is gone           |
+| `TypeAddressButton.tsx` | "Type an address instead"                                                      |
+| `pageLinks.queries.ts`  | Searching pages by title, and a linked page's title by id (`GET /entries/:id`) |
+| `pageLinkStrings.ts`    | Its words                                                                      |
+| `PagePicker.test.tsx`   | Link fields and rich text, end to end against a mocked API                     |

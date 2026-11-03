@@ -61,6 +61,7 @@ docs/decisions/0015-page-documents.md explains why the model looks the way it do
 | `backgrounds/`   | Background videos                                                                           |
 | `fonts/`         | The bundled font catalogue (files in `fonts/` at the package root) and a page's fonts       |
 | `text-marks/`    | Styles on part of a text: applying, clearing, moving with edits, drawing as `<em>`/`<span>` |
+| `page-links/`    | Links to a page by its id (`lintel:page/<id>`), and swapping them for the page's address    |
 | `tree/`          | Reading (`findPath`, `listVisibleRows`) and changing (`moveNode`, `duplicateNode`) trees    |
 | `html/`          | A small HTML parser and writer, `formatHtml` for the code view, and `importHtml`            |
 | `code/`          | Code block markers (`data-lintel-field`), script removal and the code permission rule       |

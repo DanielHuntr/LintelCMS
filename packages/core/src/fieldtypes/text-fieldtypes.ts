@@ -2,7 +2,9 @@ import { z } from "zod";
 import { defineFieldtype } from "./fieldtype.js";
 import {
   isEmptyRichText,
+  findRichTextPictureProblem,
   isReadableRichText,
+  richTextAssetIds,
   isShallowEnoughRichText,
   MAX_RICH_TEXT_DEPTH,
   type RichTextDocument,
@@ -52,7 +54,7 @@ const richTextNodeSchema = z.looseObject({ type: z.string() });
 export const richTextFieldtype = defineFieldtype({
   type: "richText",
   name: "Rich text",
-  description: "Formatted writing with headings, lists, links and quotes.",
+  description: "Formatted writing with headings, lists, links, quotes and pictures.",
   category: "text",
   keywords: ["wysiwyg", "editor", "html", "bard", "formatted", "body", "content"],
   optionsSchema: z.object({}),
@@ -69,7 +71,21 @@ export const richTextFieldtype = defineFieldtype({
       })
       .refine((document: RichTextDocument) => isReadableRichText(document), {
         error: `${label} has formatting the editor doesn't recognise`,
+        abort: true,
+      })
+      .superRefine((document: RichTextDocument, context) => {
+        const problem = findRichTextPictureProblem(document);
+        if (problem) context.addIssue({ code: "custom", message: `${label}: ${problem}` });
       }),
+  // A picture must still be in the media library, as an image field's must.
+  checkReferences: async (value, label, context) => {
+    for (const assetId of richTextAssetIds(value as RichTextDocument)) {
+      if (!(await context.assetExists(assetId))) {
+        return `A picture in ${label} is no longer in the media library`;
+      }
+    }
+    return null;
+  },
   isEmpty: (value) =>
     typeof value === "object" &&
     value !== null &&

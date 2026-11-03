@@ -14,6 +14,7 @@ export {
 
 export * from "./components/component-definition.js";
 export * from "./components/component-props.js";
+export * from "./page-links/page-links.js";
 export {
   createComponentCatalogue,
   DuplicateComponentTypeError,

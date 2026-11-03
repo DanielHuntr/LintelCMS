@@ -65,14 +65,29 @@ Server-side rendering (the usual way sites use it) doesn't need CORS at all.
 Website addresses are tidied to their origin (`https://example.com/blog/` is kept as
 `https://example.com`).
 
+## Links to pages and pictures in rich text
+
+"Choose a page…" stores a link as the page itself, `lintel:page/<entry id>` (see
+`docs/decisions/0032-links-to-pages-by-id.md`). `deliverValues` swaps each for the page's
+address now, so websites, previews, Liquid templates and headless sites only ever see
+ordinary addresses:
+
+- rich text: the address in the HTML, and in the JSON's link mark with `entryId` beside it;
+- Link fields: `{ url, label, entryId }`, or `null` when the page is gone;
+- a page's design (`page` fields): every page link swapped for the address.
+
+A page that is deleted, in the bin or not live leaves plain words behind. Pictures in rich
+text (`image` nodes) are looked up with the response's other images: the JSON gives each its
+`image`, and the HTML draws it as `<figure class="lintel-picture">`.
+
 ## Files
 
 | File                         | What it does                                                                   |
 | ---------------------------- | ------------------------------------------------------------------------------ |
 | `delivery.routes.ts`         | The endpoints and the caching header                                           |
 | `delivery.service.ts`        | Published entries, with images looked up in one go                             |
-| `delivered-values.ts`        | Expanding image, rich text, markdown and list values                           |
-| `delivered-references.ts`    | Looking up terms and linked entries for a response                             |
+| `delivered-values.ts`        | Expanding image, rich text, markdown and list values, and links to pages       |
+| `delivered-references.ts`    | Looking up terms, linked entries and linked pages for a response               |
 | `entry-urls.ts`              | Filling in route patterns                                                      |
 | `delivery.repository.ts`     | Database reads, limited to published content (and one draft read, for preview) |
 | `delivery.schema.ts`         | Zod schemas for requests and responses                                         |

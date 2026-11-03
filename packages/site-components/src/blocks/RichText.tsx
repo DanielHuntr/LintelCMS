@@ -1,7 +1,7 @@
 import { classNames } from "../class-names.js";
 
 export interface RichTextProps {
-  /** Finished HTML from Lintel's rich text editor (headings, lists, links, quotes). */
+  /** Finished HTML from Lintel's rich text editor (headings, lists, links, quotes, pictures). */
   html: string;
   field?: string;
   className?: string;

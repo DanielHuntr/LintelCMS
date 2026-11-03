@@ -1,3 +1,4 @@
+import { collectPageLinkIds } from "@lintel/builder-model";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
 import { findTermsByIds } from "../taxonomies/terms.repository.js";
@@ -40,12 +41,18 @@ export interface DeliveredReferences {
   /** Keyed by the id the field stored, which may be another language's version. */
   entries: ReadonlyMap<string, DeliveredEntryLink>;
   users: ReadonlyMap<string, DeliveredPerson>;
+  /**
+   * Pages linked to by id (`lintel:page/<id>`) in rich text, Link fields and page designs,
+   * keyed by that id. Pages that are gone or not live are left out.
+   */
+  pages: ReadonlyMap<string, DeliveredEntryLink>;
 }
 
 export const noDeliveredReferences: DeliveredReferences = {
   terms: new Map(),
   entries: new Map(),
   users: new Map(),
+  pages: new Map(),
 };
 
 type ListedFieldType = "terms" | "entries" | "users";
@@ -90,9 +97,12 @@ export async function lookUpReferences(
   const termIds = collectListedIds(fields, dataList, "terms");
   const entryIds = collectListedIds(fields, dataList, "entries");
   const userIds = collectListedIds(fields, dataList, "users");
-  const [terms, people] = await Promise.all([
+  const pageIds = new Set<string>();
+  for (const data of dataList) collectPageLinkIds(data, pageIds);
+  const [terms, people, pages] = await Promise.all([
     findTermsByIds(database, termIds),
     findUserNamesByIds(database, userIds),
+    findDeliveredEntryLinks(database, [...pageIds], locale),
   ]);
   return {
     users: new Map(people.map((person) => [person.id, person])),
@@ -103,6 +113,7 @@ export async function lookUpReferences(
       ]),
     ),
     entries: await findDeliveredEntryLinks(database, entryIds, locale),
+    pages,
   };
 }
 

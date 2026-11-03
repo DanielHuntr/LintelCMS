@@ -1,9 +1,14 @@
+import { isPageLinkHref } from "@lintel/builder-model";
+import { RichTextPicture } from "@lintel/core/rich-text-picture";
+import { ReactNodeViewRenderer } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { RichTextPictureView } from "./RichTextPictureView.js";
 
 /**
- * What rich text can contain: paragraphs, two heading levels, bold, italic, links, lists and
- * quotes. Kept deliberately small, so content stays consistent and the site's design decides
- * how it looks. Core renders the same JSON to HTML for the delivery API.
+ * What rich text can contain: paragraphs, two heading levels, bold, italic, links, lists,
+ * quotes and pictures. Kept deliberately small, so content stays consistent and the site's
+ * design decides how it looks. Core renders the same JSON to HTML for the delivery API, and
+ * shares the picture node (`@lintel/core/rich-text-picture`) so both read it the same way.
  */
 export const richTextExtensions = [
   StarterKit.configure({
@@ -18,6 +23,13 @@ export const richTextExtensions = [
       openOnClick: false,
       autolink: true,
       defaultProtocol: "https",
+      // "Choose a page…" links to the page itself (lintel:page/<id>); see page-links.
+      isAllowedUri: (url, context) => isPageLinkHref(url) || context.defaultValidate(url),
+    },
+  }),
+  RichTextPicture.extend({
+    addNodeView() {
+      return ReactNodeViewRenderer(RichTextPictureView);
     },
   }),
 ];

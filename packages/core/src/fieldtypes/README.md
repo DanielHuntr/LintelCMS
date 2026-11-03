@@ -191,6 +191,7 @@ show its values differently, add that to `src/delivery/delivered-values.ts`.
 | `field-definition.schema.ts` | A field in a blueprint, with its options checked by its type     |
 | `entry-data-validator.ts`    | `buildEntryDataValidator`: checking an entry against a blueprint |
 | `rich-text.ts`               | Checking rich text documents and rendering them to HTML          |
+| `rich-text-picture.ts`       | The picture node, shared with the admin's editor                 |
 | `image-assets.ts`            | `AssetExists`, `AssetLookup` and their stand-in defaults         |
 | `fieldtypes.service.ts`      | The list `GET /fieldtypes` returns (no repository: it's code)    |
 | `fieldtypes.routes.ts`       | The endpoint                                                     |

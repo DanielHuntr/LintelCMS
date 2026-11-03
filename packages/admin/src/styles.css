@@ -372,6 +372,13 @@
     & > :first-child {
       margin-top: 0;
     }
+
+    /* A picture beside the text never hangs out of the box. */
+    &::after {
+      content: "";
+      display: table;
+      clear: both;
+    }
   }
 }
 

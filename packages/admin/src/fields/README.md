@@ -20,38 +20,38 @@ One editor per fieldtype, used by the entry editor to draw a blueprint's fields.
   version of a blueprint) and turn input back into stored values. Cleared optional fields are
   stored as `null`.
 
-| Type                                 | Editor                                  | Stores                                       |
-| ------------------------------------ | --------------------------------------- | -------------------------------------------- |
-| `text`                               | `TextFieldEditor.tsx`                   | string                                       |
-| `textarea`                           | `TextareaFieldEditor.tsx`               | string                                       |
-| `richText`                           | `RichTextFieldEditor.tsx`               | TipTap JSON document                         |
-| `number`                             | `NumberFieldEditor.tsx`                 | number, or `null` when cleared               |
-| `toggle`                             | `ToggleFieldEditor.tsx`                 | boolean                                      |
-| `select`                             | `SelectFieldEditor.tsx`                 | string, or string[] when `multiple`          |
-| `date`                               | `DateFieldEditor.tsx`                   | `YYYY-MM-DD`, or an ISO datetime with time   |
-| `link`                               | `LinkFieldEditor.tsx`                   | `{ url, label? }`, or `null`                 |
-| `image`                              | `ImageFieldEditor.tsx`                  | asset id, or `null`                          |
-| `email`                              | `EmailFieldEditor.tsx`                  | string                                       |
-| `url`                                | `UrlFieldEditor.tsx`                    | string, with a button to open it             |
-| `colour`                             | `ColourFieldEditor.tsx`                 | `#rrggbb`; picker, typed code and swatches   |
-| `markdown`                           | `MarkdownFieldEditor.tsx`               | string; Write and Preview                    |
-| `list`                               | `ListFieldEditor.tsx`                   | string[] without blank items, or `null`      |
-| `entries`                            | `EntriesFieldEditor.tsx`                | entry ids, in order, or `null`               |
-| `terms`                              | `TermsFieldEditor.tsx`                  | term ids, or `null`                          |
-| `blocks`                             | `blocks/BlocksFieldEditor.tsx`          | `[{ id, type, data }]`, or `null` when empty |
-| `page`                               | `../page-design/PageFieldEditor.tsx`    | a page design; edited in the visual builder  |
-| `radio`, `checkboxes`, `buttonGroup` | `ChoiceFieldEditors.tsx`                | a choice's value; a list for checkboxes      |
-| `range`, `time`                      | `MeasureFieldEditors.tsx`               | a number on a slider; `09:30`                |
-| `slug`                               | `SlugFieldEditor.tsx`                   | follows another field (`from`) until edited  |
-| `code`                               | `CodeFieldEditor.tsx`                   | string; Tab indents, Escape then Tab leaves  |
-| `table`                              | `TableFieldEditor.tsx`                  | rows of cells, or `null` when all are empty  |
-| `video`                              | `VideoFieldEditor.tsx`                  | an address, with the player shown under it   |
-| `icon`                               | `IconFieldEditor.tsx` (`fieldIcons.ts`) | an icon's name, such as `map-pin`            |
-| `users`                              | `UsersFieldEditor.tsx`                  | user ids, or `null`                          |
-| `group`, `fieldset`                  | `GroupFieldEditor.tsx`                  | `{ handle: value }` of the fields inside     |
-| `repeater`                           | `RepeaterFieldEditor.tsx`               | `[{ id, data }]` rows, or `null` when empty  |
-| `revealer`                           | `LayoutFieldEditors.tsx`                | boolean: a Show more button                  |
-| `hidden`, `tab`, `section`, `spacer` | none (`NothingToEdit`)                  | drawn by the grid or the tabs, or not at all |
+| Type                                 | Editor                                  | Stores                                                              |
+| ------------------------------------ | --------------------------------------- | ------------------------------------------------------------------- |
+| `text`                               | `TextFieldEditor.tsx`                   | string                                                              |
+| `textarea`                           | `TextareaFieldEditor.tsx`               | string                                                              |
+| `richText`                           | `RichTextFieldEditor.tsx`               | TipTap JSON document, with pictures                                 |
+| `number`                             | `NumberFieldEditor.tsx`                 | number, or `null` when cleared                                      |
+| `toggle`                             | `ToggleFieldEditor.tsx`                 | boolean                                                             |
+| `select`                             | `SelectFieldEditor.tsx`                 | string, or string[] when `multiple`                                 |
+| `date`                               | `DateFieldEditor.tsx`                   | `YYYY-MM-DD`, or an ISO datetime with time                          |
+| `link`                               | `LinkFieldEditor.tsx`                   | `{ url, label? }` (`lintel:page/<id>` for a chosen page), or `null` |
+| `image`                              | `ImageFieldEditor.tsx`                  | asset id, or `null`                                                 |
+| `email`                              | `EmailFieldEditor.tsx`                  | string                                                              |
+| `url`                                | `UrlFieldEditor.tsx`                    | string, with a button to open it                                    |
+| `colour`                             | `ColourFieldEditor.tsx`                 | `#rrggbb`; picker, typed code and swatches                          |
+| `markdown`                           | `MarkdownFieldEditor.tsx`               | string; Write and Preview                                           |
+| `list`                               | `ListFieldEditor.tsx`                   | string[] without blank items, or `null`                             |
+| `entries`                            | `EntriesFieldEditor.tsx`                | entry ids, in order, or `null`                                      |
+| `terms`                              | `TermsFieldEditor.tsx`                  | term ids, or `null`                                                 |
+| `blocks`                             | `blocks/BlocksFieldEditor.tsx`          | `[{ id, type, data }]`, or `null` when empty                        |
+| `page`                               | `../page-design/PageFieldEditor.tsx`    | a page design; edited in the visual builder                         |
+| `radio`, `checkboxes`, `buttonGroup` | `ChoiceFieldEditors.tsx`                | a choice's value; a list for checkboxes                             |
+| `range`, `time`                      | `MeasureFieldEditors.tsx`               | a number on a slider; `09:30`                                       |
+| `slug`                               | `SlugFieldEditor.tsx`                   | follows another field (`from`) until edited                         |
+| `code`                               | `CodeFieldEditor.tsx`                   | string; Tab indents, Escape then Tab leaves                         |
+| `table`                              | `TableFieldEditor.tsx`                  | rows of cells, or `null` when all are empty                         |
+| `video`                              | `VideoFieldEditor.tsx`                  | an address, with the player shown under it                          |
+| `icon`                               | `IconFieldEditor.tsx` (`fieldIcons.ts`) | an icon's name, such as `map-pin`                                   |
+| `users`                              | `UsersFieldEditor.tsx`                  | user ids, or `null`                                                 |
+| `group`, `fieldset`                  | `GroupFieldEditor.tsx`                  | `{ handle: value }` of the fields inside                            |
+| `repeater`                           | `RepeaterFieldEditor.tsx`               | `[{ id, data }]` rows, or `null` when empty                         |
+| `revealer`                           | `LayoutFieldEditors.tsx`                | boolean: a Show more button                                         |
+| `hidden`, `tab`, `section`, `spacer` | none (`NothingToEdit`)                  | drawn by the grid or the tabs, or not at all                        |
 
 The `form` fieldtype (a form's handle, for the Form section on pages) is edited by
 `FormPickerFieldEditor.tsx` in `src/forms`, which the Forms plugin owns.
@@ -82,3 +82,13 @@ New blocks get an id from `crypto.randomUUID()`. The API's messages for block fi
 as `sections.<block id>.<handle>`; `innerErrors` and `blockErrors` (in `blockValues.ts`) pick
 out the ones for each block, and a block with a problem stays open. `blockValues.ts` holds
 every change to the list as a plain function.
+
+## Pictures in rich text
+
+**Add picture** in the rich text toolbar opens the image picker; a picture pasted or dropped
+into the text is uploaded to the media library (`media/usePictureUpload.ts`) and put where it
+landed. A picture is an `image` node holding its asset id, a description, an optional caption
+and where it sits (`full`, `left`, `right`); the node itself is core's
+(`@lintel/core/rich-text-picture`), so the editor and the website read it the same way.
+Selecting a picture opens `RichTextPictureForm.tsx` under the toolbar, with the description
+first; a new picture opens it straight away. `RichTextPictureView.tsx` draws it in the text.

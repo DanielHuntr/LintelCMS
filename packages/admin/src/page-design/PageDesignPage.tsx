@@ -1,5 +1,5 @@
 import { type CanvasSite, type FileUploader, PageBuilder, type PickedImage } from "@lintel/builder";
-import { usePagePicker } from "../page-links/usePagePicker.js";
+import { usePageFinder, usePagePicker } from "../page-links/usePagePicker.js";
 import {
   createEmptyPage,
   type PageDocument,
@@ -146,6 +146,7 @@ function PageDesigner({
   const siteMotion = useSiteMotion();
   const imagePicker = useImagePicker();
   const pagePicker = usePagePicker();
+  const findPage = usePageFinder();
   const isNarrowScreen = useIsNarrowScreen();
   const title = String(saving.entry.data.title ?? "") || t("pageDesign.untitled");
   const text = useCallback(
@@ -220,6 +221,7 @@ function PageDesigner({
         motionText={motionText}
         pickImage={imagePicker.pick}
         pickPage={pagePicker.pick}
+        findPage={findPage}
         uploadFile={uploadToMediaLibrary}
         onSaveNow={saving.saveNow}
         frameScripts={canvasFrameScripts}

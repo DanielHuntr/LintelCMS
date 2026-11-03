@@ -36,8 +36,12 @@ an element is in; `canvas-data.ts` turns it into sample data for the canvas.
 
 Link fields (and each address in a list of links) offer **Choose a page…** when the app
 gives `PageBuilder` a `pickPage` (`page-picker.ts`, read through context rather than passed
-down every panel). It fills in the page's address, such as `/about`, the form a typed page
-link takes; in a list of links it fills in the words too when there are none.
+down every panel). It stores the page itself, `lintel:page/<id>` (`pageLinkHref` from
+builder-model), so the link follows the page when its address changes; the website swaps it
+for the address when the page is drawn. In a list of links it fills in the words too when
+there are none. With a `findPage` from the app as well, the input shows the page's title
+instead of an address, or "This page no longer exists" when it has gone, with **Type an
+address instead** to go back to typing one.
 
 ## The site's blocks
 

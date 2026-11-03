@@ -1,8 +1,14 @@
-import { isSafeImageAddress, isSafeLinkAddress, type LinkProp } from "@lintel/builder-model";
+import {
+  isSafeImageAddress,
+  isSafeLinkAddress,
+  type LinkProp,
+  pageLinkHref,
+  readPageLinkId,
+} from "@lintel/builder-model";
 import { ArrowDown, ArrowUp, ImagePlus, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
-import { usePickPage } from "./page-picker.js";
+import { useLinkedPage, usePickPage } from "./page-picker.js";
 import { IconButton, inputClassName, Labelled } from "../ui/controls.js";
 
 /**
@@ -62,47 +68,113 @@ export function TextInputField({
   );
 }
 
+/**
+ * A link's address. "Choose a page…" links to the page itself (`lintel:page/<id>`), so the
+ * link follows the page when its address changes; the page's title then shows in place of
+ * the address, with a plain note if the page has since been deleted.
+ */
 export function LinkInputField({ label, value, onChange }: FieldProps<string>) {
   const text = useBuilderText();
   const pickPage = usePickPage();
   const [draft, setDraft] = useState(value);
+  // Another element selected (or Undo): show its address, not the one typed before.
+  const [previousValue, setPreviousValue] = useState(value);
+  if (value !== previousValue) {
+    setPreviousValue(value);
+    setDraft(value);
+  }
   const isValid = isSafeLinkAddress(draft);
+  const linkedPageId = readPageLinkId(draft);
+
+  function change(address: string) {
+    setDraft(address);
+    onChange(address);
+  }
 
   async function choosePage() {
     const page = await pickPage?.();
-    if (!page || !isSafeLinkAddress(page.url)) return;
-    setDraft(page.url);
-    onChange(page.url);
+    if (page) change(pageLinkHref(page.id));
   }
 
   return (
-    <Labelled label={label} hint={isValid ? text("pageBuilder.content.linkHint") : undefined}>
+    <Labelled
+      label={label}
+      hint={isValid && !linkedPageId ? text("pageBuilder.content.linkHint") : undefined}
+    >
       {(id) => (
         <>
-          <input
-            id={id}
-            value={draft}
-            placeholder={text("pageBuilder.content.linkPlaceholder")}
-            aria-invalid={!isValid}
-            onChange={(event) => {
-              setDraft(event.target.value);
-              if (isSafeLinkAddress(event.target.value)) onChange(event.target.value);
-            }}
-            className={inputClassName}
-          />
+          {linkedPageId ? (
+            <LinkedPageInput id={id} entryId={linkedPageId} />
+          ) : (
+            <input
+              id={id}
+              value={draft}
+              placeholder={text("pageBuilder.content.linkPlaceholder")}
+              aria-invalid={!isValid}
+              onChange={(event) => {
+                setDraft(event.target.value);
+                if (isSafeLinkAddress(event.target.value)) onChange(event.target.value);
+              }}
+              className={inputClassName}
+            />
+          )}
           {!isValid && (
             <span className="text-caption text-danger">
               {text("pageBuilder.content.linkInvalid")}
             </span>
           )}
-          {pickPage && (
-            <ChoosePageLink onClick={() => void choosePage()}>
-              {text("pageBuilder.content.choosePage")}
-            </ChoosePageLink>
-          )}
+          <div className="flex flex-wrap gap-x-3">
+            {pickPage && (
+              <ChoosePageLink onClick={() => void choosePage()}>
+                {text("pageBuilder.content.choosePage")}
+              </ChoosePageLink>
+            )}
+            {linkedPageId && (
+              <ChoosePageLink onClick={() => change("")}>
+                {text("pageBuilder.content.typeAddress")}
+              </ChoosePageLink>
+            )}
+          </div>
         </>
       )}
     </Labelled>
+  );
+}
+
+/** A linked page's title where its address would be, or a note that the page is gone. */
+function LinkedPageInput({
+  id,
+  entryId,
+  ariaLabel,
+}: {
+  id?: string;
+  entryId: string;
+  ariaLabel?: string;
+}) {
+  const text = useBuilderText();
+  const page = useLinkedPage(entryId);
+  const shown =
+    page.state === "found"
+      ? page.title || text("pageBuilder.content.untitledPage")
+      : page.state === "finding"
+        ? text("pageBuilder.content.findingPage")
+        : page.state === "unknown"
+          ? text("pageBuilder.content.chosenPage")
+          : "";
+  return (
+    <>
+      <input
+        id={id}
+        aria-label={ariaLabel}
+        value={shown}
+        readOnly
+        aria-invalid={page.state === "gone" || undefined}
+        className={inputClassName}
+      />
+      {page.state === "gone" && (
+        <span className="text-caption text-danger">{text("pageBuilder.content.pageGone")}</span>
+      )}
+    </>
   );
 }
 
@@ -274,8 +346,8 @@ export function LinkListField({ label, value, onChange }: FieldProps<LinkProp[]>
 
   async function choosePage(index: number, link: LinkProp) {
     const page = await pickPage?.();
-    if (!page || !isSafeLinkAddress(page.url)) return;
-    replace(index, { label: link.label || page.title, href: page.url });
+    if (!page) return;
+    replace(index, { label: link.label || page.title, href: pageLinkHref(page.id) });
   }
   return (
     <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
@@ -289,24 +361,41 @@ export function LinkListField({ label, value, onChange }: FieldProps<LinkProp[]>
               onChange={(event) => replace(index, { ...link, label: event.target.value })}
               className={inputClassName}
             />
-            <input
-              aria-label={text("pageBuilder.content.linkAddress", { number: index + 1 })}
-              value={link.href}
-              placeholder={text("pageBuilder.content.linkPlaceholder")}
-              onChange={(event) =>
-                isSafeLinkAddress(event.target.value) &&
-                replace(index, { ...link, href: event.target.value })
-              }
-              className={inputClassName}
-            />
-            {pickPage && (
-              <ChoosePageLink
-                label={text("pageBuilder.content.choosePageFor", { number: index + 1 })}
-                onClick={() => void choosePage(index, link)}
-              >
-                {text("pageBuilder.content.choosePage")}
-              </ChoosePageLink>
+            {readPageLinkId(link.href) ? (
+              <LinkedPageInput
+                entryId={readPageLinkId(link.href) ?? ""}
+                ariaLabel={text("pageBuilder.content.linkAddress", { number: index + 1 })}
+              />
+            ) : (
+              <input
+                aria-label={text("pageBuilder.content.linkAddress", { number: index + 1 })}
+                value={link.href}
+                placeholder={text("pageBuilder.content.linkPlaceholder")}
+                onChange={(event) =>
+                  isSafeLinkAddress(event.target.value) &&
+                  replace(index, { ...link, href: event.target.value })
+                }
+                className={inputClassName}
+              />
             )}
+            <div className="flex flex-wrap gap-x-3">
+              {pickPage && (
+                <ChoosePageLink
+                  label={text("pageBuilder.content.choosePageFor", { number: index + 1 })}
+                  onClick={() => void choosePage(index, link)}
+                >
+                  {text("pageBuilder.content.choosePage")}
+                </ChoosePageLink>
+              )}
+              {readPageLinkId(link.href) && (
+                <ChoosePageLink
+                  label={text("pageBuilder.content.typeAddressFor", { number: index + 1 })}
+                  onClick={() => replace(index, { ...link, href: "" })}
+                >
+                  {text("pageBuilder.content.typeAddress")}
+                </ChoosePageLink>
+              )}
+            </div>
           </div>
           <IconButton
             size="small"

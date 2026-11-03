@@ -58,19 +58,64 @@ The base URL is the API's address, `http://localhost:4000` by default.
 
 ## Field values
 
-| Fieldtype          | Value                                                               |
-| ------------------ | ------------------------------------------------------------------- |
-| `text`, `textarea` | string                                                              |
-| `richText`         | `{ json, html }`: the editor's document and its HTML                |
-| `number`           | number                                                              |
-| `toggle`           | boolean                                                             |
-| `select`           | string, or string[] when it allows several                          |
-| `date`             | `YYYY-MM-DD`, or a date and time when it includes a time            |
-| `image`            | `{ id, url, alt, width, height, focalPoint }`, or `null` if deleted |
-| `link`             | `{ url, label? }`                                                   |
+| Fieldtype          | Value                                                                 |
+| ------------------ | --------------------------------------------------------------------- |
+| `text`, `textarea` | string                                                                |
+| `richText`         | `{ json, html }`: the editor's document and its HTML                  |
+| `number`           | number                                                                |
+| `toggle`           | boolean                                                               |
+| `select`           | string, or string[] when it allows several                            |
+| `date`             | `YYYY-MM-DD`, or a date and time when it includes a time              |
+| `image`            | `{ id, url, alt, width, height, focalPoint }`, or `null` if deleted   |
+| `link`             | `{ url, label?, entryId? }`, or `null` if it linked to a deleted page |
 
 Rich text HTML is rendered on the server from the editor's document, with the same
 extensions the editor uses. Images are covered in [Images](/building/images/).
+
+### Links to pages
+
+When an editor uses **Choose a page…**, the link remembers the page rather than its address,
+so it keeps working if the page is renamed or moved. The delivery API always gives you the
+page's address now, as an ordinary link:
+
+- in a Link field, `url` is the address and `entryId` is the page's id;
+- in rich text, the HTML has the address, and in the JSON the link mark's `attrs` have
+  `href` (the address) and `entryId`;
+- in a page's design, every link to a page has its address.
+
+If the page has been deleted, moved to the recycle bin or unpublished, a Link field is
+`null`, and in rich text the words are left without a link. Links typed by hand, such as
+`/about` or `https://…`, come through exactly as they were typed.
+
+### Pictures in rich text
+
+Rich text can hold pictures from the media library. In the HTML each one is a responsive
+`<figure class="lintel-picture lintel-picture--full">` (or `--left`, `--right` for one
+beside the text) with an `<img>` in several sizes and an optional `<figcaption>`. In the
+JSON it is a node of type `image`:
+
+```json
+{
+  "type": "image",
+  "attrs": {
+    "assetId": "6f1c2a8e-…",
+    "alt": "Our shop front",
+    "caption": "Open from seven",
+    "align": "full",
+    "image": {
+      "id": "6f1c2a8e-…",
+      "url": "https://…",
+      "alt": "…",
+      "width": 1600,
+      "height": 900,
+      "focalPoint": null
+    }
+  }
+}
+```
+
+`image` is the picture as an image field delivers it, or `null` if it has been deleted
+from the media library (the HTML then leaves the picture out).
 
 ## Examples
 

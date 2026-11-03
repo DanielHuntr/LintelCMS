@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isPageLinkHref } from "../page-links/page-links.js";
 
 /**
  * Prop schemas several components share. Messages are plain, because they reach editors
@@ -7,11 +8,16 @@ import { z } from "zod";
 
 /**
  * A link address: empty (no link yet), a web address, an email or phone link, a path on the
- * site, or an anchor. `javascript:` and other schemes can't be saved.
+ * site, an anchor, or a page of the site chosen by its id (see page-links). `javascript:`
+ * and other schemes can't be saved.
  */
 export function isSafeLinkAddress(address: string): boolean {
   const trimmed = address.trim();
-  return trimmed === "" || /^(https?:\/\/|mailto:|tel:|\/(?!\/)|#|\?)/i.test(trimmed);
+  return (
+    trimmed === "" ||
+    /^(https?:\/\/|mailto:|tel:|\/(?!\/)|#|\?)/i.test(trimmed) ||
+    isPageLinkHref(trimmed)
+  );
 }
 
 export const linkAddressSchema = z

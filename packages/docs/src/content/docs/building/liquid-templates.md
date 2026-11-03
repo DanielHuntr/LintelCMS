@@ -129,16 +129,22 @@ Liquid's standard tags and filters all work (`for`, `if`, `assign`, `capture`, `
 
 ## Lintel's tags and filters
 
-| Tag or filter                             | Draws                                                                                                                                               |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `{% image entry.data.hero width: 800 %}`  | The picture in several sizes, cropped around its focal point, with its width, height and alt text, exactly as the built-in components draw pictures |
-| `{% menu "main" %}`                       | A menu as `<nav class="lintel-menu">` with nested lists, the current page marked with `aria-current="page"`                                         |
-| `{% form "contact" %}`                    | A form from Forms, as the builder's Form element draws it, with its validation and spam protection                                                  |
-| `{% design %}`                            | The page's visual design from the builder, so code and the designer can share a page                                                                |
-| `{% lintel_head %}`                       | The page's `<head>` contents, in a layout                                                                                                           |
-| `{% site_header %}`, `{% site_footer %}`  | The site's own header and footer                                                                                                                    |
-| `{{ entry.data.body \| rich_text }}`      | A rich text or Markdown field's HTML, which Lintel has already cleaned                                                                              |
-| `{{ entry.data.hero \| image_url: 800 }}` | The address of a resized copy, for a background image or `og:image`. `image_url: 800, "1/1"` crops it square                                        |
+| Tag or filter                             | Draws                                                                                                                                                        |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `{% image entry.data.hero width: 800 %}`  | The picture in several sizes, cropped around its focal point, with its width, height and alt text, exactly as the built-in components draw pictures          |
+| `{% menu "main" %}`                       | A menu as `<nav class="lintel-menu">` with nested lists, the current page marked with `aria-current="page"`                                                  |
+| `{% form "contact" %}`                    | A form from Forms, as the builder's Form element draws it, with its validation and spam protection                                                           |
+| `{% design %}`                            | The page's visual design from the builder, so code and the designer can share a page                                                                         |
+| `{% lintel_head %}`                       | The page's `<head>` contents, in a layout                                                                                                                    |
+| `{% site_header %}`, `{% site_footer %}`  | The site's own header and footer                                                                                                                             |
+| `{{ entry.data.body \| rich_text }}`      | A rich text or Markdown field's HTML, which Lintel has already cleaned, with pictures as `figure.lintel-picture` and links to pages at their current address |
+| `{{ entry.data.hero \| image_url: 800 }}` | The address of a resized copy, for a background image or `og:image`. `image_url: 800, "1/1"` crops it square                                                 |
+
+A Link field's `url` is always an address you can print, even when the editor chose a page
+for it: `<a href="{{ entry.data.button.url }}">`. It follows the page if its address changes,
+and the field is empty if the page is deleted. Pictures in rich text are
+`<figure class="lintel-picture lintel-picture--full">` (or `--left`, `--right`); style
+them in your own stylesheet.
 
 `{% image %}` also takes `ratio` (`"16/9"`, `"4:5"` or a number), `sizes` (instead of the
 one made from `width`), `class`, `alt` (instead of the picture's own) and `priority: true`

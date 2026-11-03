@@ -1,5 +1,10 @@
 import { defaultTheme, themeStylesheet } from "@lintel/site-components";
-import { type PagePicker, PagePickerContext } from "./panels/page-picker.js";
+import {
+  type PageFinder,
+  PageFinderContext,
+  type PagePicker,
+  PagePickerContext,
+} from "./panels/page-picker.js";
 import {
   type Breakpoint,
   type CreateNodeId,
@@ -102,6 +107,8 @@ export interface PageBuilderProps {
   pickImage?: ImagePicker;
   /** Finds a page of the site for a link ("Choose a page…" beside link inputs). */
   pickPage?: PagePicker;
+  /** Finds a linked page's title by its id, so links to pages show "About", not a reference. */
+  findPage?: PageFinder;
   /** Uploads a font or video file to the media library, for custom fonts and video backgrounds. */
   uploadFile?: FileUploader;
   /** The admin's `t()`, so the builder's words can be translated with the admin's. */
@@ -168,7 +175,9 @@ export function PageBuilder({ text = englishText, ...props }: PageBuilderProps) 
   return (
     <BuilderTextProvider text={text}>
       <PagePickerContext value={props.pickPage}>
-        <PageBuilderScreen {...props} text={text} />
+        <PageFinderContext value={props.findPage}>
+          <PageBuilderScreen {...props} text={text} />
+        </PageFinderContext>
       </PagePickerContext>
     </BuilderTextProvider>
   );
