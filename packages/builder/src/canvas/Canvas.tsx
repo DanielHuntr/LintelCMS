@@ -46,6 +46,8 @@ interface CanvasProps {
   motionPreview?: MotionPreview | null;
   /** Where something dragged from Insert would land, drawn as a line. */
   insertMarker?: InsertMarker | null;
+  /** Something from Insert is being dragged, so the page accepts it being dropped. */
+  isInsertDragging?: boolean;
   onMessage: (message: MessageFromFrame) => void;
 }
 
@@ -67,6 +69,7 @@ export function Canvas({
   scripts,
   motionPreview = null,
   insertMarker = null,
+  isInsertDragging = false,
   onMessage,
 }: CanvasProps) {
   const text = useBuilderText();
@@ -120,6 +123,10 @@ export function Canvas({
     if (isReady) post({ type: "insertMarker", marker: insertMarker });
   }, [isReady, insertMarker]);
 
+  useEffect(() => {
+    if (isReady) post({ type: "insertDragging", active: isInsertDragging });
+  }, [isReady, isInsertDragging]);
+
   // After the page is drawn (the render above waits a frame), so the element is there.
   useEffect(() => {
     if (!isReady) return;
@@ -137,15 +144,51 @@ export function Canvas({
 
   return (
     <div className="flex min-h-0 flex-1 justify-center overflow-auto bg-background p-4">
-      <iframe
-        ref={frame}
-        data-tour="canvas"
-        title={text("pageBuilder.canvas.title")}
-        srcDoc={source}
-        sandbox="allow-scripts"
+      <div
         style={{ width: canvasWidths[breakpoint] }}
-        className="h-full min-h-[480px] max-w-full shrink-0 rounded-card bg-surface shadow-float transition-[width] duration-200 ease-standard"
-      />
+        className="relative h-full min-h-[480px] max-w-full shrink-0 transition-[width] duration-200 ease-standard"
+      >
+        <iframe
+          ref={frame}
+          data-tour="canvas"
+          title={text("pageBuilder.canvas.title")}
+          srcDoc={source}
+          sandbox="allow-scripts"
+          className="size-full rounded-card bg-surface shadow-float"
+        />
+        {/*
+          Browsers don't carry a drag from the builder into the sandboxed frame, so while
+          something from Insert is dragged, this catches it over the page and tells the frame
+          where the pointer is.
+        */}
+        {isInsertDragging && (
+          <div
+            data-testid="canvas-drop-layer"
+            className="absolute inset-0"
+            onDragOver={(event) => {
+              event.preventDefault();
+              event.dataTransfer.dropEffect = "copy";
+              const box = frame.current?.getBoundingClientRect();
+              if (box) {
+                post({
+                  type: "insertPoint",
+                  x: event.clientX - box.left,
+                  y: event.clientY - box.top,
+                });
+              }
+            }}
+            onDragLeave={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                latestOnMessage.current({ type: "insertLeave" });
+              }
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              latestOnMessage.current({ type: "insertDrop" });
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }

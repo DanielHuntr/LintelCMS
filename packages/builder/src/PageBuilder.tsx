@@ -333,6 +333,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
 
   // Something dragged from Insert, and where it would land on the canvas.
   const insertDrag = useRef<InsertItem | null>(null);
+  const [isInsertDragging, setIsInsertDragging] = useState(false);
   const [canvasDrop, setCanvasDrop] = useState<CanvasDropTarget | null>(null);
   const canvasDropRef = useRef<CanvasDropTarget | null>(null);
   const showCanvasDrop = useCallback((target: CanvasDropTarget | null) => {
@@ -556,6 +557,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                       onInsert={(key) => actions.insert(key)}
                       onDragChange={(item) => {
                         insertDrag.current = item;
+                        setIsInsertDragging(item !== null);
                         if (!item) showCanvasDrop(null);
                       }}
                       focusRequest={insertFocusRequest}
@@ -603,6 +605,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                     scripts={props.frameScripts}
                     motionPreview={motionPreview}
                     insertMarker={insertMarker}
+                    isInsertDragging={isInsertDragging}
                     onMessage={handleFrameMessage}
                   />
                 )}

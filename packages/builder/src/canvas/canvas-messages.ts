@@ -29,7 +29,18 @@ export type MessageToFrame =
   | { type: "previewMotion"; nodeId: string; spec: MotionSpec }
   | { type: "stopMotion" }
   /** Where something dragged from Insert would land: a line, or a box for "inside". */
-  | { type: "insertMarker"; marker: InsertMarker | null };
+  | { type: "insertMarker"; marker: InsertMarker | null }
+  /**
+   * Something from Insert is being dragged (or the drag ended). The frame can't always see a
+   * drag's type from another origin, so it's told, and accepts the drop because of this.
+   */
+  | { type: "insertDragging"; active: boolean }
+  /**
+   * The pointer is at `x`, `y` on the page while something from Insert is dragged. Browsers
+   * don't pass a drag from the builder into the sandboxed frame, so the builder catches it
+   * over the frame and says where it is; the frame answers with `insertOver`.
+   */
+  | { type: "insertPoint"; x: number; y: number };
 
 export interface InsertMarker {
   nodeId: string;

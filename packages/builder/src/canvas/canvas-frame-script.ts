@@ -76,6 +76,8 @@ export function runCanvasFrame(snap: typeof snapBox): void {
   // Where something dragged from Insert would land, as the builder worked it out.
   let insertMarker: { nodeId: string; position: string; across: boolean } | null = null;
   let lastInsertOver = "";
+  // Told by the builder while something from Insert is being dragged.
+  let insertDragging = false;
   // The animation being previewed, if any. Stopped before the page is drawn again.
   let preview: Preview | null = null;
   const stopPreview = () => {
@@ -354,16 +356,13 @@ export function runCanvasFrame(snap: typeof snapBox): void {
 
   const insertDragType = "application/x-lintel-insert";
   const isInsertDrag = (event: DragEvent) =>
-    Array.from(event.dataTransfer?.types ?? []).includes(insertDragType);
+    insertDragging || Array.from(event.dataTransfer?.types ?? []).includes(insertDragType);
 
-  document.addEventListener("dragover", (event) => {
-    if (!isInsertDrag(event)) return;
-    event.preventDefault();
-    if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+  /** Tells the builder what's under the pointer at `clientX`, `clientY`, and around it. */
+  function reportInsertOver(target: EventTarget | null, clientX: number, clientY: number) {
     // The element under the pointer and each one around it, with where the pointer is in it.
     const chain: Array<{ nodeId: string; ratio: number; across: boolean }> = [];
-    let element =
-      event.target instanceof Element ? event.target.closest("[data-lintel-node]") : null;
+    let element = target instanceof Element ? target.closest("[data-lintel-node]") : null;
     while (element instanceof HTMLElement && chain.length < 64) {
       const rect = element.getBoundingClientRect();
       const parent = element.parentElement ? getComputedStyle(element.parentElement) : null;
@@ -373,8 +372,8 @@ export function runCanvasFrame(snap: typeof snapBox): void {
           (parent.display.includes("grid") &&
             parent.gridTemplateColumns.trim().split(/\s+/).length > 1));
       const ratio = across
-        ? (event.clientX - rect.left) / Math.max(rect.width, 1)
-        : (event.clientY - rect.top) / Math.max(rect.height, 1);
+        ? (clientX - rect.left) / Math.max(rect.width, 1)
+        : (clientY - rect.top) / Math.max(rect.height, 1);
       chain.push({ nodeId: element.getAttribute("data-lintel-node") ?? "", ratio, across });
       element = element.parentElement?.closest("[data-lintel-node]") ?? null;
     }
@@ -383,6 +382,13 @@ export function runCanvasFrame(snap: typeof snapBox): void {
     if (key === lastInsertOver) return;
     lastInsertOver = key;
     send({ type: "insertOver", chain });
+  }
+
+  document.addEventListener("dragover", (event) => {
+    if (!isInsertDrag(event)) return;
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+    reportInsertOver(event.target, event.clientX, event.clientY);
   });
   document.addEventListener("dragleave", (event) => {
     if (event.relatedTarget !== null || !isInsertDrag(event)) return;
@@ -412,6 +418,14 @@ export function runCanvasFrame(snap: typeof snapBox): void {
       }
       drawPage(message.html, message.css ?? "");
       sendLook();
+    } else if (message.type === "insertPoint") {
+      const point = event.data as { x?: unknown; y?: unknown };
+      if (typeof point.x === "number" && typeof point.y === "number") {
+        reportInsertOver(document.elementFromPoint(point.x, point.y), point.x, point.y);
+      }
+    } else if (message.type === "insertDragging") {
+      insertDragging = (event.data as { active?: unknown }).active === true;
+      if (!insertDragging) lastInsertOver = "";
     } else if (message.type === "insertMarker") {
       insertMarker = (event.data as { marker: typeof insertMarker }).marker;
       drawOutlines();
