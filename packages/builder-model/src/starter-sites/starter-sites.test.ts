@@ -5,6 +5,7 @@ import { validatePageDocument } from "../document/validate-page.js";
 import { listNodes } from "../tree/tree-queries.js";
 import { sectionCategories, sectionTemplates } from "../templates/section-templates.js";
 import { createCountingNodeIds } from "../tree/node-ids.js";
+import { createNode } from "../tree/create-node.js";
 import { findIllustration } from "./illustrations.js";
 import { buildStarterPage } from "./starter-site.js";
 import { findStarterSite, starterSites } from "./starter-sites.js";
@@ -74,13 +75,26 @@ describe("starter sites", () => {
     const gallery = home.find((node) => node.type === "carousel");
     expect(gallery?.props).toMatchObject({ freeDrag: true, showDots: false });
     expect(gallery?.effects).toEqual([{ effect: "cursor-word", params: { text: "Drag" } }]);
-    expect(home.find((node) => node.type === "clock")?.props.zone).toBe("Europe/Lisbon");
     expect(home.some((node) => node.placedGrid?.columns === 12)).toBe(true);
-    // Every page has the same header and footer, one section each.
+    // The navigation (with the Lisbon clock) and the footer are the site's, on every page,
+    // so no page keeps a copy.
+    const shared = (section: NodeBlueprint | undefined) =>
+      section ? listNodes(createNode(section, standardCatalogue, createCountingNodeIds("s"))) : [];
+    const navigation = shared(folio?.siteSections?.navigation);
+    expect(navigation[0]?.props.element).toBe("header");
+    expect(navigation.find((node) => node.type === "clock")?.props.zone).toBe("Europe/Lisbon");
+    expect(navigation.find((node) => node.type === "navigation")?.props.menuSource).toBe("site");
+    expect(shared(folio?.siteSections?.footer)[0]?.props.element).toBe("footer");
     for (const slug of ["home", "projects", "about", "contact"]) {
       const top = nodes(slug).filter((node) => node.type === "section");
-      expect(top[0]?.props.element, slug).toBe("header");
-      expect(top.at(-1)?.props.element, slug).toBe("footer");
+      expect(
+        top.map((node) => node.props.element),
+        slug,
+      ).not.toContain("header");
+      expect(
+        top.map((node) => node.props.element),
+        slug,
+      ).not.toContain("footer");
     }
     const rows = nodes("projects").filter((node) => node.name === "Project");
     expect(rows).toHaveLength(8);

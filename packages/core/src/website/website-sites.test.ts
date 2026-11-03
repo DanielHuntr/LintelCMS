@@ -80,6 +80,28 @@ describe("the built-in website with several sites", () => {
     expect((await visit("/about-us", "localhost:3999")).statusCode).toBe(200);
   });
 
+  it("keeps the path prefix in the links of a site's own navigation and footer", async () => {
+    await uk("PATCH", "/sites/france", { hostnames: ["acme.co.uk"], pathPrefix: "/fr" });
+    await publish(france, "À propos");
+    const footer = {
+      id: "f",
+      type: "section",
+      props: { element: "footer" },
+      children: [
+        { id: "l", type: "link", props: { label: "À propos", href: "/a-propos" } },
+        { id: "o", type: "link", props: { label: "Ailleurs", href: "https://example.com/x" } },
+      ],
+    };
+    const saved = await france("PUT", "/website/sections", { footer });
+    expect(saved.statusCode, saved.body).toBe(200);
+
+    const page = (await visit("/fr/a-propos", "acme.co.uk")).body;
+    // The starter navigation's logo and the footer's typed link both stay under /fr.
+    expect(page).toMatch(/<a class="[^"]*lintel-site-logo" href="\/fr"/);
+    expect(page).toContain('href="/fr/a-propos"');
+    expect(page).toContain('href="https://example.com/x"');
+  });
+
   it("serves a site under its path prefix on a shared domain", async () => {
     await uk("PATCH", "/sites/france", { hostnames: ["acme.co.uk"], pathPrefix: "/fr" });
     await publish(france, "À propos");

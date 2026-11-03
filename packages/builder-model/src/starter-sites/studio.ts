@@ -1,6 +1,7 @@
 import type { NodeBlueprint } from "../components/component-definition.js";
 import type { NodeStyles, StyleDeclarations } from "../document/page-document.schema.js";
 import { animate, colour, space } from "../sections/section-parts.js";
+import { menuDrawer, siteLogo, siteMenuRow } from "../sections/site-navigation.js";
 import type { DesignVariable } from "../site-design/design-variables.js";
 import type { StarterSite } from "./starter-site.js";
 
@@ -333,7 +334,39 @@ function projectIndex(row: number, options: IndexOptions): NodeBlueprint {
   );
 }
 
-/** The same closing band on every page: the studio, its pages, its address and the time. */
+/** The site's navigation, on every page: the studio's name and its menu, in the mono captions. */
+function studioNavigation(): NodeBlueprint {
+  return {
+    type: "section",
+    name: "Navigation",
+    props: { element: "header", anchor: "" },
+    styles: {
+      base: {
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: space(5),
+        paddingTop: space(4),
+        paddingBottom: space(4),
+        paddingLeft: "clamp(1.25rem, 3.5vw, 3rem)",
+        paddingRight: "clamp(1.25rem, 3.5vw, 3rem)",
+      },
+    },
+    children: [
+      siteLogo("name", {
+        fontFamily: "var(--lintel-font-heading)",
+        fontSize: "1.125rem",
+        fontWeight: "700",
+        letterSpacing: "-0.02em",
+      }),
+      siteMenuRow({ styles: { ...mono, fontWeight: "400" } }),
+      menuDrawer(),
+    ],
+  };
+}
+
+/** The site's footer, on every page: the studio, its pages, its address and the time. */
 function studioFooter(): NodeBlueprint {
   return band(
     "Footer",
@@ -530,7 +563,6 @@ const homePage = {
         "stagger-up",
       ),
     ]),
-    studioFooter(),
   ],
 };
 
@@ -639,7 +671,6 @@ const workPage = {
         "fade-up",
       ),
     ]),
-    studioFooter(),
   ],
 };
 
@@ -837,7 +868,6 @@ const studioPage = {
       ],
       { rule: true },
     ),
-    studioFooter(),
   ],
 };
 
@@ -960,7 +990,6 @@ const contactPage = {
         "mask-reveal-up",
       ),
     ]),
-    studioFooter(),
   ],
 };
 
@@ -986,5 +1015,6 @@ export const studioSite: StarterSite = {
     pageTransition: { style: "fade" },
     intro: { style: "none" },
   },
+  siteSections: { navigation: studioNavigation(), footer: studioFooter() },
   pages: [homePage, workPage, studioPage, contactPage],
 };

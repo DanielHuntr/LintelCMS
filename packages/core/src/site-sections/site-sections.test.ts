@@ -177,6 +177,25 @@ describe("the site's navigation and footer sections", () => {
     });
   });
 
+  it("uses a starter template's own navigation and footer, on every page and not in them", async () => {
+    await owner("PUT", "/website/sections", starterSiteSections());
+    const applied = await owner("POST", "/starter-sites/folio/apply", {
+      publish: true,
+      useTheme: true,
+    });
+    expect(applied.statusCode, applied.body).toBe(201);
+    const sections = (await owner("GET", "/website/sections")).json();
+    expect(JSON.stringify(sections.navigation)).toContain("Europe/Lisbon");
+    for (const url of ["/", "/projects"]) {
+      const body = await visit(url);
+      expect(chromeOf(body)).toMatchObject({ automaticHeader: 0, automaticFooter: 0 });
+      expect((body.match(/<header /g) ?? []).length, url).toBe(1);
+      expect(body.indexOf('data-lintel-component="site_section"')).toBeLessThan(
+        body.indexOf("<main"),
+      );
+    }
+  });
+
   it("gives a site made in Websites and domains its own starter sections", async () => {
     const created = await owner("POST", "/sites", {
       handle: "france",

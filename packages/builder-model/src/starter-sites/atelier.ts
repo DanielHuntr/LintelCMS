@@ -8,6 +8,7 @@ import type {
 } from "../document/page-document.schema.js";
 import { gridPlaceStyles } from "../placed-grid/placed-grid.js";
 import { animate, colour, space } from "../sections/section-parts.js";
+import { menuDrawer, siteLogo, siteMenuRow } from "../sections/site-navigation.js";
 import type { StarterPage, StarterSite } from "./starter-site.js";
 
 /**
@@ -343,7 +344,46 @@ const bench: Piece = {
   alt: "Line drawing of a long, low bench with a folded blanket at one end",
 };
 
-/** The closing band on every page: the workshop's name, where it is and the pages. */
+/** The site's navigation, on every page: the workshop's name in the serif, the menu in small caps. */
+function navigation(): NodeBlueprint {
+  return {
+    type: "section",
+    name: "Navigation",
+    props: { element: "header", anchor: "" },
+    styles: {
+      base: {
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: space(5),
+        paddingTop: space(4),
+        paddingBottom: space(4),
+        paddingLeft: "clamp(1.25rem, 4vw, 3.5rem)",
+        paddingRight: "clamp(1.25rem, 4vw, 3.5rem)",
+      },
+    },
+    children: [
+      siteLogo("name", {
+        fontFamily: displayFont,
+        fontWeight: "400",
+        fontSize: "1.75rem",
+        letterSpacing: "-0.02em",
+      }),
+      siteMenuRow({
+        styles: {
+          fontSize: "0.8125rem",
+          fontWeight: "600",
+          letterSpacing: "0.14em",
+          textTransform: "uppercase",
+        },
+      }),
+      menuDrawer(),
+    ],
+  };
+}
+
+/** The site's footer, on every page: the workshop's name, where it is and the pages. */
 function footer(): NodeBlueprint {
   return gridSection(
     "Footer",
@@ -724,7 +764,6 @@ const homePage: StarterPage = {
         ],
       },
     ]),
-    footer(),
   ],
 };
 
@@ -948,7 +987,6 @@ const collectionPage: StarterPage = {
         ],
       },
     ]),
-    footer(),
   ],
 };
 
@@ -1066,7 +1104,6 @@ const craftPage: StarterPage = {
       ],
       { top: 9, bottom: 9 },
     ),
-    footer(),
   ],
 };
 
@@ -1197,7 +1234,6 @@ const visitPage: StarterPage = {
       ],
       { paper: true },
     ),
-    footer(),
   ],
 };
 
@@ -1222,5 +1258,6 @@ export const atelierSite: StarterSite = {
     intro: { style: "name", text: "Wrenfold", background: "#2e2620", colour: "#ece3d4" },
     cursor: { style: "ring-and-dot", colour: "text", size: 36 },
   },
+  siteSections: { navigation: navigation(), footer: footer() },
   pages: [homePage, collectionPage, craftPage, visitPage],
 };
