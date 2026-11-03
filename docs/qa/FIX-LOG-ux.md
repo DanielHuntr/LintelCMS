@@ -1131,3 +1131,59 @@ Decision record: `docs/decisions/0039-navigation-and-footer-sections.md`. No mig
 
 - A new site under a path prefix lost the automatic header's prefixed home link once it started with its own navigation (`website-sites.test.ts` expected `lintel-header__brand`). The Site logo already links to the prefixed home; links typed into the site's navigation and footer ("/work") are now drawn with the site's path prefix and language too. New test: "keeps the path prefix in the links of a site's own navigation and footer".
 - Studio, Atelier and Folio no longer repeat a header and footer on each page. Each brings its own shared navigation and footer (`siteSections` on the starter site), in its own look: Folio's navigation keeps the Lisbon clock (its menu now follows the site's menu, its name the site's name), Studio's footer keeps the Rotterdam clock and the cobalt hover, Atelier's footer is the big "Wrenfold" one. Studio and Atelier, which had only a footer, gain a navigation in their type (Studio's mono captions, Atelier's serif name and small caps). Applying a template with its look replaces the site's sections with the template's. Tests: `studio.test.ts`, `atelier.test.ts`, `starter-sites.test.ts` (Folio) and core `site-sections.test.ts` ("uses a starter template's own navigation and footer").
+
+## LINTEL-UX-042: the cursor over videos (3 November 2026)
+
+**Reported:** with the site cursor on and the word "Play" on a video, the "Play" pill stayed frozen in the middle of a YouTube video while YouTube's own controls showed.
+
+**Cause:** an embedded player is an iframe, and an iframe keeps the pointer's events to itself. Once the pointer crossed onto the video, the page stopped hearing where it was, so the site cursor, the word and any hover picture stayed where the pointer had crossed. The element's own "pointer left" never fired either, because the iframe is inside the element.
+
+**Reproduced:** the new browser tests failed on the old code (the word and the hover picture never went away over the frame), and `042-cursor-over-video-before-{light,dark}` shows the frozen "Play" pill.
+
+**Now:** when the pointer moves onto an embedded frame (iframe, embed or object), the site cursor, its word and any hover picture hide and the frame's own cursor shows. They come back as soon as the pointer is back on the page: the word reappears if the pointer is still on the video element, and the cursor appears where the pointer is instead of gliding over from where it left. A pointer that lands straight on a frame never shows the word at all. The click-to-load placeholder is ordinary page content, so the word works on it as before. A video file (`<video>`) is part of the page, so the word shows over it, and since the cursor parts ignore the pointer, clicks still reach the player's controls.
+
+Files: `packages/motion/src/effects/kit/pointer.ts` (`isEmbeddedFrame`, `pointerOnFrame`, `watchEmbeddedFrames`), `effects/modules/cursor.module.ts` (site cursor and word), `effects/modules/pointer.module.ts` (hover picture).
+
+**Tests:** motion `browser-tests/site-motion.browser.test.ts`, "over an embedded video" (5): the site cursor and word hide over the frame and come back after; the word on its own (no site cursor) hides and comes back; no word when the pointer lands straight on the frame; a hover picture hides over the frame; over a video file the word shows and clicks still reach the player.
+
+**Screenshots** (`screenshots/motion-polish/`): `042-cursor-over-video-before-{light,dark}`, `042-cursor-over-video-after-{light,dark}`.
+
+Commits: 974a55a, and 1abd938 for the effect modules' recorded sizes.
+
+## LINTEL-UX-043: trigger settings squeezed in the timeline (3 November 2026)
+
+**Reported:** in the Motion panel's Advanced view, the Trigger settings sat in a narrow column: "It scrolls i…", "How much must show" with "Any of it / All of it" overlapping "20%", and "Afterwards" and "Scrolling back up past it" crammed into tiny selects.
+
+**Cause:** the timeline put the keyframe settings and the animation settings side by side whenever the window was wide (`lg:grid-cols-2`), even inside the builder's 300px side panel. The trigger's settings were then two to a row inside that half.
+
+**Reproduced:** `043-trigger-settings-before-{light,dark}` (builder, Designer tools, desktop width); the new browser test failed on the old code.
+
+**Now:** the timeline, the animation settings, the trigger settings and the keyframe settings lay out by the space they actually have (container queries), not by the window. In the side panel every setting has its own row and full-width select; the slider's end words have room and the value shows beside the label. Where there is room, as in the full-screen studio, they still sit side by side. The empty spacer left beside "How much must show" when "Afterwards" doesn't apply is gone.
+
+Files: `packages/motion-editor/src/trigger/TriggerPicker.tsx`, `timeline/AnimationSettings.tsx`, `timeline/TimelineEditor.tsx`, `timeline/KeyframeInspector.tsx`, `controls/Slider.tsx`.
+
+**Tests:** motion-editor `browser-tests/studio.browser.test.ts`, "the trigger's settings in a narrow panel" (2): in a 300px column in a wide window each control is as wide as the panel and below the one before, and "Any of it" and "All of it" don't overlap; in the full studio the settings are still side by side.
+
+**Screenshots:** `043-trigger-settings-before-{light,dark}`, `043-trigger-settings-after-{light,dark}`.
+
+Commit: aab747a.
+
+## LINTEL-UX-044: growing from small while scrolling (3 November 2026)
+
+**Asked:** "what if we wanted something to animate as the user is scrolling? E.g. a video growing from 0.1 to 1 in size."
+
+**Reproduced:** Scroll → Grow on a video goes from 80% to full size, and "How much" at Dramatic only reaches 60% (`044-grow-while-scrolling-before-{light,dark}`).
+
+**Now:** for a grow while scrolling, "How much" runs from Subtle (it starts at 90% of its size) to Dramatic (it starts at a tenth), and the size it starts at shows beside it ("Starts at 10%") and is read out by screen readers. Other motions keep "How much" as it was.
+
+Judgement call: the brief asked for both a wider "How much" and a separate "Starts at" control. These would set the same thing, so they're one slider, with the starting size shown as its value. That keeps the panel uncluttered.
+
+**Checked:** a video scales smoothly with the scroll on the browser's own scroll timeline, from 10% when its top meets the bottom of the window to full size when its middle reaches the middle, and stays centred as it grows. On the canvas the scene's Start and End lines show as for any scroll scene.
+
+Files: `packages/motion-editor/src/motion-panel/quickPicks.ts` (`growsFrom`, `startSizeFor`, `distanceForStartSize`, `growRange`), `motion-panel/QuickMotion.tsx`, `strings/motionPanelStrings.ts`.
+
+**Tests:** motion-editor `quickPicks.test.ts` (the mapping: only scroll grows count, round trips between "How much" and the size it starts at, never below 10% or above 90%, the saved spec goes 0.1 → 1); `MotionPanel.test.tsx` (on a video, Scroll → Grow shows "Starts at 80%"; Dramatic saves scale 0.1 → 1 and Subtle 0.9 → 1). Motion `browser-tests/runtime.browser.test.ts`: a video's scale goes 0.1 → 1 across its scene and it stays centred.
+
+**Screenshots:** `044-grow-while-scrolling-before-{light,dark}`, `044-grow-while-scrolling-after-{light,dark}`.
+
+Commit: 3ea18b0.
