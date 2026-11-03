@@ -967,3 +967,30 @@ Decision record: `docs/decisions/0037-site-fonts.md`. New table `site_fonts` (mi
 **Checked in a browser:** applied with `existingPages: "replace"` and `publish: true` to a copy of the test data, then looked at every page at 1440px and 390px in light and dark with reduced motion (no sideways scrolling at 390px), and with full motion on desktop: the intro counter, the smooth scroll, the "Drag" word over the gallery and a drag, the Fade transition to Projects and the hover picture on a project row.
 
 **Screenshots** (in `screenshots/starter-folio/`): `{home,projects,about,contact}-{desktop,phone}-{light,dark}`, `intro-desktop-{light,dark}`, `home-midscroll-desktop-{light,dark}`, `home-drag-desktop-{light,dark}`, `transition-desktop-{light,dark}`, `projects-hover-desktop-{light,dark}` and `library-desktop-{light,dark}`.
+
+## Starter site: Atelier (3 November 2026)
+
+**Asked for by Daniel:** new starter sites that reach the level of sites featured for their design, using the editorial grid, site motion, the pointer touches and the included fonts.
+
+**Now:** "Atelier" is in the template library: an editorial site for Wrenfold, a fictional four-person furniture workshop in Frome. Original words and original line drawings (warm paper, dark ink and one walnut tone, 14 SVGs of 1 to 3 kB each in `illustrations-atelier.ts`).
+
+- **Home:** the headline "Made slowly, kept for good" arrives letter by letter; a full-width drawing of the workshop is uncovered and drifts with the scroll; a statement in large serif; the collection on the twelve-column grid with deliberate offsets, the title running over the first picture, small-capital captions and a "View" word on the cursor; a held scene, "How a Hollin chair is made", where the page stops while three steps slide past; a visit invitation with a magnetic button.
+- **Collection:** six pieces on the grid, one cut out over its neighbour; "Up close", a Slider visitors drag freely (with "Drag" on the cursor); an index where each row shows the piece's drawing beside the pointer.
+- **Craft:** a long read in a narrow column with chapter labels, two large italic pull quotes and drawings that move at different speeds.
+- **Visit:** address, hours with a live Clock, getting here, a drawn map and a booking band.
+- **Theme:** ochre walnut `#86602f`, square corners, Instrument Serif for headings and Work Sans for text. Warm bands are mixed from the brand colour and the page background, so they follow light and dark.
+- **Site motion:** smooth scrolling Strong, the slide page transition, the "name" intro (Wrenfold) and a ring-and-dot cursor in the text colour.
+
+**Change outside the site file:** a template without `headingFont` and `bodyFont` now goes back to its pairing's fonts when applied, instead of keeping the last template's.
+
+**Tests:** builder-model `starter-sites/atelier.test.ts` (7: offered with its fonts and motion, every page accepted, the letter-by-letter headline, grid places and the overlap, the held scene, cursor words, hover pictures, the drag Slider and the Clock, alt text and drawing sizes). The shared starter-site tests cover it as well. Core `starter-sites.test.ts`, "applies Atelier with its fonts and motion": the theme fonts, the site motion, the published home and collection pages and a drawing, and fonts going back to the pairing when the bakery is applied afterwards.
+
+**Checked in a browser:** applied with `POST /starter-sites/atelier/apply` (`existingPages: replace`, `publish: true`) to a copy of the test data, then opened the published site in Chromium at 1440px and 390px, light and dark, with reduced motion, mid-scroll in the held scene, with the cursor over a piece and over an index row, and on a first visit (intro).
+
+**Judgement calls and limits:**
+
+- The held scene uses the "Sideways scrolling section" preset (pinned, three panels). With reduced motion, or without scripts, it isn't held: the three steps sit side by side in a box that scrolls sideways, so step 1 shows and steps 2 and 3 need a sideways scroll. Showing them one under another would need the motion runtime to mark reduced motion on the page; worth a small follow-up.
+- On a first visit the headline's letter reveal plays under the intro, so it has finished when the intro lifts. Letting page animations wait for the intro would be a runtime change, also left as a follow-up.
+- The header and footer of the website template stay as they are (they show the site's own name); each page ends with one "Footer" section, ready for the header and footer sections work.
+
+**Screenshots** (in `screenshots/starter-atelier/`): `{home,collection,craft,visit}-{desktop,phone}-{light,dark}`, `home-scene-mid-scroll-desktop-light`, `home-scene-mid-scroll-phone-dark`, `home-reduced-motion-desktop-light`, `home-cursor-word-desktop-light`, `collection-hover-picture-desktop-light` and `home-intro-desktop`.

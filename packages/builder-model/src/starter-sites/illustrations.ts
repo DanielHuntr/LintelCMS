@@ -5,6 +5,7 @@
  * with their own photos from the media library whenever they like.
  */
 
+import { atelierIllustrations } from "./illustrations-atelier.js";
 import { folioIllustrations } from "./illustrations-folio.js";
 
 const frame = (background: string, body: string) =>
@@ -92,6 +93,7 @@ const illustrationList: Record<string, string> = {
     `<path d="M0 260 Q150 180 300 260 T600 260" stroke="#7a5cff" stroke-width="18" fill="none"/><path d="M0 310 Q150 230 300 310 T600 310" stroke="#4dd2ff" stroke-width="18" fill="none" opacity="0.8"/><path d="M0 360 Q150 280 300 360 T600 360" stroke="#ffb84d" stroke-width="18" fill="none" opacity="0.7"/><circle cx="460" cy="120" r="40" fill="#ffffff" opacity="0.15"/>`,
   ),
   ...folioIllustrations,
+  ...atelierIllustrations,
 };
 
 export const illustrationNames: readonly string[] = Object.keys(illustrationList);
