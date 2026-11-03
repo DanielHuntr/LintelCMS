@@ -7,6 +7,7 @@ import { requestsAs, type SendRequest, startTestServer } from "../testing/test-s
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
 import { corePermissionGroups } from "./permission-catalog.js";
 import { builtInRoles } from "./built-in-roles.js";
+import { rolesTable } from "./roles.table.js";
 
 describe("roles", () => {
   const testDatabase = useTestDatabase();
@@ -36,6 +37,23 @@ describe("roles", () => {
       memberCount: 1,
       permissions: ["*"],
     });
+  });
+
+  // The built-in roles are made within the same moment; listed by creation time alone, they
+  // could come out in alphabetical order instead (seen as a failure under load).
+  it("lists the built-in roles in their own order, even when they were made at the same moment", async () => {
+    await asOwner("GET", "/roles");
+    await testDatabase.database
+      .update(rolesTable)
+      .set({ createdAt: new Date("2026-01-01T00:00:00Z") });
+    const response = await asOwner("GET", "/roles");
+    expect(response.json().roles.map((role: { name: string }) => role.name)).toEqual([
+      "Owner",
+      "Admin",
+      "Editor",
+      "Author",
+      "Viewer",
+    ]);
   });
 
   it("describes every permission in words, and adds a plugin's group once it is on", async () => {

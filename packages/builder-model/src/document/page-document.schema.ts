@@ -25,12 +25,28 @@ export const pageDocumentVersion = 1;
 export const breakpoints = ["base", "tablet", "phone"] as const;
 export type Breakpoint = (typeof breakpoints)[number];
 
-/** Styles that apply only while the pointer is over a node, or it has keyboard focus. */
-export const styleStates = ["hover", "focus"] as const;
+/**
+ * Styles that apply only in a state: while the pointer is over a node, while it's pressed, or
+ * while it has keyboard focus.
+ */
+export const styleStates = ["hover", "pressed", "focus"] as const;
 export type StyleState = (typeof styleStates)[number];
 
-/** Where a group of styles applies: a screen size, or a state. */
-export type StyleTarget = Breakpoint | StyleState;
+/**
+ * Styles a node takes while another element around it (its "owner", such as a card) is in a
+ * state: `"hover@n3"` is "while n3 is hovered". So a card's picture can grow and its button
+ * fill when the card is hovered, all moving together.
+ */
+export type OwnerStateTarget = `${StyleState}@${string}`;
+
+/** Where a group of styles applies: a screen size, a state, or an owner's state. */
+export type StyleTarget = Breakpoint | StyleState | OwnerStateTarget;
+
+/** How an element (and what follows its states) moves between its states. */
+export interface StateTransition {
+  feel: "smooth" | "springy" | "instant";
+  speed: "quick" | "steady" | "slow";
+}
 
 export type StyleDeclarations = Partial<Record<StylePropertyName, string>>;
 
@@ -39,7 +55,10 @@ export interface NodeStyles {
   tablet?: StyleDeclarations;
   phone?: StyleDeclarations;
   hover?: StyleDeclarations;
+  pressed?: StyleDeclarations;
   focus?: StyleDeclarations;
+  /** Styles while an element around this one is in a state, keyed `"hover@<owner id>"`. */
+  owners?: Partial<Record<OwnerStateTarget, StyleDeclarations>>;
 }
 
 /**
@@ -74,6 +93,8 @@ export interface PageNode {
    * scramble... Several can be on one element, alongside its animation. Left out for none.
    */
   effects?: NodeEffect[];
+  /** How it, and what changes with its states, moves between states. Left out: no easing. */
+  stateTransition?: StateTransition;
   /** Its children are placed anywhere in it (see free-layout/). Left out for normal flow. */
   freeLayout?: FreeLayout;
   /** A muted, looping video behind its content (see backgrounds/). */
@@ -121,8 +142,41 @@ export const nodeStylesSchema = z.object({
   tablet: styleDeclarationsSchema.optional(),
   phone: styleDeclarationsSchema.optional(),
   hover: styleDeclarationsSchema.optional(),
+  pressed: styleDeclarationsSchema.optional(),
   focus: styleDeclarationsSchema.optional(),
+  owners: z
+    .record(
+      z.string().regex(/^(hover|pressed|focus)@[A-Za-z0-9_-]{1,64}$/, {
+        error: "An owner state should look like “hover@n3”",
+      }),
+      styleDeclarationsSchema,
+    )
+    .optional(),
 });
+
+export const stateTransitionSchema = z.object({
+  feel: z.enum(["smooth", "springy", "instant"]).default("smooth"),
+  speed: z.enum(["quick", "steady", "slow"]).default("steady"),
+});
+
+/** Whether a style target is an owner's state, like `"hover@n3"`. */
+export function isOwnerStateTarget(target: StyleTarget): target is OwnerStateTarget {
+  return target.includes("@");
+}
+
+/** `"hover@n3"` as its parts; undefined for any other target. */
+export function readOwnerStateTarget(
+  target: StyleTarget,
+): { state: StyleState; ownerId: string } | undefined {
+  if (!isOwnerStateTarget(target)) return undefined;
+  const [state, ownerId] = target.split("@") as [StyleState, string];
+  return { state, ownerId };
+}
+
+/** Whether a style target is a state (its own or an owner's), rather than a screen size. */
+export function isStateTarget(target: StyleTarget): boolean {
+  return isOwnerStateTarget(target) || (styleStates as readonly string[]).includes(target);
+}
 
 const nodeAnimationSchema = z.object({
   spec: motionSpecSchema,
@@ -164,6 +218,7 @@ export const pageNodeSchema: z.ZodType<PageNode> = z.lazy(() =>
     locked: z.boolean({ error: "locked should be true or false" }).default(false),
     animation: nodeAnimationSchema.optional(),
     effects: nodeEffectsSchema.optional(),
+    stateTransition: stateTransitionSchema.optional(),
     freeLayout: freeLayoutSchema.optional(),
     backgroundVideo: backgroundVideoSchema.optional(),
     bindings: nodeBindingsSchema.optional(),

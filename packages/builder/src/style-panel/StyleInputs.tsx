@@ -10,7 +10,7 @@ import { useBuilderText } from "../i18n/builder-text.js";
 import { classNames, inputClassName, Labelled } from "../ui/controls.js";
 import {
   normaliseTypedValue,
-  overrideNotes,
+  overrideNoteFor,
   useStyleEditing,
   useStyleField,
 } from "./style-field.js";
@@ -26,7 +26,7 @@ interface StyleControlProps {
 function useOverrideNote(isOverridden: boolean) {
   const text = useBuilderText();
   const { target } = useStyleEditing();
-  return isOverridden ? text(overrideNotes[target]) : undefined;
+  return isOverridden ? text(overrideNoteFor(target)) : undefined;
 }
 
 /** Free text, applied on Enter or when leaving the box. Bare numbers become pixels. */

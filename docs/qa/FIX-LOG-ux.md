@@ -399,3 +399,31 @@ Each name now starts with what's shown:
 - `studio.test.tsx` and `panels.test.tsx` updated for the new flow.
 
 **Checked in the running builder** at desktop and 390px, light and dark, with the Hero title selected: `screenshots/motion-panel/`. Daniel's screenshots of the old panel are the before.
+
+## LINTEL-UX-025: states and scroll scenes, part 1 (4 November 2026)
+
+Daniel compared the motion with Framer and Webflow: Framer animates between states (a card's normal and hover, with what's inside), and Webflow and GSAP have full scroll triggers. Agreed through the states and scroll scene mock-ups.
+
+**States**
+
+- **The model:**
+  - Element styles have a Pressed state (`:active`) beside Hover and Focus.
+  - Styles can follow the state of an element around it, stored as `owners["hover@<id>"]` and drawn as `.card:hover .picture`.
+  - An owner can have a `stateTransition` (Smooth, Springy or Instant, at a speed). Only the properties its states change are eased, and only for people who don't ask for less motion.
+  - Copying a card points its picture's states at the copy.
+- **The builder:**
+  - "Style for" shows to everyone, with the element's own states and those of the three nearest elements around it ("Two halves: pointer over").
+  - The canvas shows the state while it's being styled.
+  - "Moving between states" sets the transition on the owner.
+- **Tests:** `builder-model/src/styles/states.test.ts` and `builder/src/panels/panels.test.tsx`. Checked in the builder, with screenshots in `screenshots/states/`.
+
+**Scroll scenes**
+
+- **Smoothing:** `smooth` (0 to 2 s) lets a scene follow a moment behind the scrolling.
+- **Snapping:** `snap` points make it settle on a step when scrolling stops. It moves the scene, never the page.
+- **An action per direction:** in-view animations have one for entering, leaving, entering back and leaving back (play, reverse, restart, reset, pause, resume, finish, none).
+- **Settings:** "Follows the scrolling", "Settles on" and "Scrolling back up past it" in the animation settings.
+- **Start and End lines:** drawn on the canvas for the selected element's scene. Drag them, or move them with the arrow keys.
+- **Tests:** browser tests for smoothing, snapping and directions (`motion/src/browser-tests/runtime.browser.test.ts`) and for the lines (`builder/src/browser-tests/canvas-free-layout.test.ts`). Each fails without its change. There are unit tests for the maths and the settings, and the animation spec reference is updated.
+
+**Next:** one scene with steps across several elements, open and selected states, and several animations on one element.

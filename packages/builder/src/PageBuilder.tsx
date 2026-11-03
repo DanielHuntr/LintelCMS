@@ -5,6 +5,9 @@ import {
   createRandomNodeId,
   findNode,
   ownSiteChrome,
+  assignClassNames,
+  compileStatePreview,
+  type StyleTarget,
   type PageDocument,
   sectionTemplates,
   starterSites as allStarterSites,
@@ -240,6 +243,49 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   const site = props.site;
   // A page with its own header or footer shows it instead of the site's, as the website does.
   const ownChrome = useMemo(() => ownSiteChrome(state.document.root), [state.document.root]);
+  // While a state is being styled (hover, or "while the card is hovered"), the page shows it.
+  const [stylingState, setStylingState] = useState<{ nodeId: string; target: StyleTarget } | null>(
+    null,
+  );
+  const reportStylingState = useCallback(
+    (nodeId: string, target: StyleTarget | null) =>
+      setStylingState(target ? { nodeId, target } : null),
+    [],
+  );
+  // The selected element's scroll scene, as Start and End lines on the canvas to drag. A held
+  // (pinned) scene runs while it's held, so it has no lines of its own.
+  const selectedTrigger = selectedNode?.animation?.spec.trigger;
+  const sceneStart =
+    selectedTrigger?.type === "scroll" &&
+    selectedTrigger.scope === "element" &&
+    !selectedTrigger.pin
+      ? selectedTrigger.start.viewport
+      : null;
+  const sceneEnd =
+    selectedTrigger?.type === "scroll" && sceneStart !== null ? selectedTrigger.end.viewport : null;
+  const sceneMarkers = useMemo(
+    () =>
+      sceneStart === null || sceneEnd === null
+        ? null
+        : {
+            start: sceneStart,
+            end: sceneEnd,
+            startLabel: text("pageBuilder.scene.start"),
+            endLabel: text("pageBuilder.scene.end"),
+            dragHint: text("pageBuilder.scene.dragHint"),
+          },
+    [sceneStart, sceneEnd, text],
+  );
+  const statePreviewCss = useMemo(() => {
+    if (!stylingState || stylingState.nodeId !== selectedId) return "";
+    const root = state.document.root;
+    return compileStatePreview(
+      root,
+      assignClassNames(root, catalogue),
+      stylingState.nodeId,
+      stylingState.target,
+    );
+  }, [stylingState, selectedId, state.document.root, catalogue]);
   const canvasCss = useMemo(
     () =>
       `${
@@ -248,8 +294,8 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
           : `${props.themeStylesheet ?? defaultThemeStylesheet}\n${standInBaseStylesheet}\n${props.baseStylesheet ?? ""}\n${designBaseStylesheet}\n${rendered.css}`
       }${ownChrome.header ? '\n[data-lintel-site-chrome="header"]{display:none}' : ""}${
         ownChrome.footer ? '\n[data-lintel-site-chrome="footer"]{display:none}' : ""
-      }`,
-    [site, props.themeStylesheet, props.baseStylesheet, rendered.css, ownChrome],
+      }${statePreviewCss ? `\n${statePreviewCss}` : ""}`,
+    [site, props.themeStylesheet, props.baseStylesheet, rendered.css, ownChrome, statePreviewCss],
   );
 
   const previewMotion = useCallback(
@@ -470,6 +516,23 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
       if (message.type === "place") {
         actions.placeFreely(message.nodeId, breakpoint, { left: message.left, top: message.top });
       }
+      if (message.type === "sceneMarker") {
+        const node = state.selectedId ? findNode(state.document.root, state.selectedId) : undefined;
+        const animation = node?.animation;
+        const trigger = animation?.spec.trigger;
+        if (node && animation && trigger?.type === "scroll") {
+          actions.animate(node.id, {
+            ...animation,
+            spec: {
+              ...animation.spec,
+              trigger: {
+                ...trigger,
+                [message.which]: { ...trigger[message.which], viewport: message.viewport },
+              },
+            },
+          });
+        }
+      }
       if (message.type === "openMenu") {
         actions.select(message.nodeId);
         setEditingMenuFor(message.nodeId);
@@ -679,6 +742,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                       motionPreview={motionPreview}
                       insertMarker={insertMarker}
                       isInsertDragging={isInsertDragging}
+                      sceneMarkers={sceneMarkers}
                       onMessage={handleFrameMessage}
                     />
                   )}
@@ -707,6 +771,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                     }}
                     onPreviewMotion={previewMotion}
                     onPreviewEffect={previewEffect}
+                    onStyleStateChange={reportStylingState}
                     effectModules={props.effectModules}
                     pageWeight={pageWeight}
                     siteMotion={

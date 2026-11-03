@@ -1,9 +1,12 @@
 import {
+  type Breakpoint,
+  isOwnerStateTarget,
   isSafeValueFor,
   isSetAt,
   type NodeStyles,
   resolveStyle,
   type StylePropertyName,
+  type StyleState,
   type StyleTarget,
 } from "@lintel/builder-model";
 import { createContext, useContext } from "react";
@@ -53,14 +56,21 @@ export function useStyleField(property: StylePropertyName, label: string): Style
   };
 }
 
-/** Where the dot's note comes from: "Changed for tablet" and the like. */
-export const overrideNotes: Record<StyleTarget, BuilderStringKey> = {
+const overrideNotes: Record<Breakpoint | StyleState, BuilderStringKey> = {
   base: "pageBuilder.style.changedHere",
   tablet: "pageBuilder.style.changedForTablet",
   phone: "pageBuilder.style.changedForPhone",
   hover: "pageBuilder.style.changedForHover",
+  pressed: "pageBuilder.style.changedForPressed",
   focus: "pageBuilder.style.changedForFocus",
 };
+
+/** Where the dot's note comes from: "Changed for tablet" and the like. */
+export function overrideNoteFor(target: StyleTarget): BuilderStringKey {
+  return isOwnerStateTarget(target)
+    ? "pageBuilder.style.changedForOwnerState"
+    : overrideNotes[target];
+}
 
 const unitless = new Set<StylePropertyName>([
   "fontWeight",

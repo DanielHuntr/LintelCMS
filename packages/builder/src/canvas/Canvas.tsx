@@ -14,6 +14,7 @@ import {
   type OutlineLabels,
   readFrameMessage,
   type InsertMarker,
+  type SceneMarkers,
 } from "./canvas-messages.js";
 
 /**
@@ -55,6 +56,8 @@ interface CanvasProps {
   insertMarker?: InsertMarker | null;
   /** Something from Insert is being dragged, so the page accepts it being dropped. */
   isInsertDragging?: boolean;
+  /** The selected element's scroll scene lines, or null for none. */
+  sceneMarkers?: SceneMarkers | null;
   onMessage: (message: MessageFromFrame) => void;
 }
 
@@ -77,6 +80,7 @@ export function Canvas({
   motionPreview = null,
   insertMarker = null,
   isInsertDragging = false,
+  sceneMarkers = null,
   onMessage,
 }: CanvasProps) {
   const text = useBuilderText();
@@ -133,6 +137,10 @@ export function Canvas({
   useEffect(() => {
     if (isReady) post({ type: "insertDragging", active: isInsertDragging });
   }, [isReady, isInsertDragging]);
+
+  useEffect(() => {
+    if (isReady) post({ type: "sceneMarkers", markers: sceneMarkers });
+  }, [isReady, sceneMarkers, html]);
 
   // After the page is drawn (the render above waits a frame), so the element is there.
   useEffect(() => {

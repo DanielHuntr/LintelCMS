@@ -47,7 +47,7 @@ export * from "./custom-blocks/make-block.js";
 export * from "./styles/style-properties.js";
 export * from "./styles/style-cascade.js";
 export { assignClassNames, slugifyClassName } from "./styles/class-names.js";
-export { compileStylesheet, formatRule } from "./styles/compile-stylesheet.js";
+export { compileStatePreview, compileStylesheet, formatRule } from "./styles/compile-stylesheet.js";
 export * from "./styles/style-values.js";
 export * from "./styles/clip-shapes.js";
 export * from "./styles/background-layers.js";

@@ -9,6 +9,7 @@ import {
   type StackingMove,
   type NodeAnimation,
   type NodeEffect,
+  type StateTransition,
   createNode,
   findNode,
   findPath,
@@ -377,6 +378,8 @@ export function useBuilder({
         run(commands.changeAnimation(context(), nodeId, animation), animation ? "" : undefined),
       setEffects: (nodeId: string, effects: NodeEffect[]) =>
         run(commands.changeEffects(context(), nodeId, effects), ""),
+      setStateTransition: (nodeId: string, transition: StateTransition | null) =>
+        run(commands.changeStateTransition(context(), nodeId, transition), ""),
       useStarterPage: (page: StarterPage, name: string) =>
         run(
           commands.replacePageContent(
