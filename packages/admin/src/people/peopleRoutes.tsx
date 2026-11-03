@@ -1,4 +1,10 @@
-import { type AnyRoute, createRoute, useParams } from "@tanstack/react-router";
+import {
+  type AnyRoute,
+  createRoute,
+  useNavigate,
+  useParams,
+  useSearch,
+} from "@tanstack/react-router";
 import { AccountPage } from "../account/AccountPage.js";
 import { ConfirmEmailPage } from "../account/ConfirmEmailPage.js";
 import { EmailOutboxPage } from "../email-outbox/EmailOutboxPage.js";
@@ -16,7 +22,24 @@ import { UsersPage } from "./UsersPage.js";
  */
 export function peopleRoutes<Parent extends AnyRoute>(getParentRoute: () => Parent) {
   return [
-    createRoute({ getParentRoute, path: "/users", component: UsersPage }),
+    createRoute({
+      getParentRoute,
+      path: "/users",
+      // `?invite=true` opens the invitation straight away, for the command palette's action.
+      validateSearch: (search: Record<string, unknown>): { invite?: boolean } => ({
+        invite: search.invite === true || search.invite === "true" ? true : undefined,
+      }),
+      component: function UsersRoute() {
+        const { invite } = useSearch({ strict: false });
+        const navigate = useNavigate();
+        return (
+          <UsersPage
+            startInviting={invite === true}
+            onInvitingStarted={() => void navigate({ to: "/users", search: {}, replace: true })}
+          />
+        );
+      },
+    }),
     createRoute({ getParentRoute, path: "/users/roles", component: RolesPage }),
     createRoute({
       getParentRoute,

@@ -123,7 +123,7 @@ export function AdminLayout({
           notice={hasPermission(permissions, "updates:read") && <UpdatesSidebarLink />}
         />
         <UpdatingBanner />
-        <CommandPalette open={palette.isOpen} onClose={palette.close} />
+        <CommandPalette open={palette.isOpen} onClose={palette.close} onSignOut={onSignOut} />
         {!hideLintelHelp && <HelpLauncher />}
         {enabledPlugins.includes("automations") && <NotificationsButton />}
         {/*

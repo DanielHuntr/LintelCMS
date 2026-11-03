@@ -469,19 +469,28 @@ const mediaRoute = createRoute({
   path: "/media",
   // `?asset=` opens one file's details, as search does when a file is picked; `?search=`
   // fills in the library's search, so that file is in the list however old it is.
-  validateSearch: (search: Record<string, unknown>): { asset?: string; search?: string } => ({
+  // `?upload=true` opens the file chooser, for "Upload media" in the command palette.
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { asset?: string; search?: string; upload?: boolean } => ({
     asset: typeof search.asset === "string" && search.asset !== "" ? search.asset : undefined,
     search: typeof search.search === "string" && search.search !== "" ? search.search : undefined,
+    upload: search.upload === true || search.upload === "true" ? true : undefined,
   }),
   component: function MediaRoute() {
     const { session } = adminRoute.useRouteContext();
-    const { asset, search } = mediaRoute.useSearch();
+    const { asset, search, upload } = mediaRoute.useSearch();
+    const navigate = useNavigate();
     return (
       <MediaLibraryPage
         key={asset}
         permissions={session.permissions}
         initialAssetId={asset}
         initialSearch={search}
+        startUpload={upload}
+        onUploadStarted={() =>
+          void navigate({ to: "/media", search: { asset, search }, replace: true })
+        }
       />
     );
   },

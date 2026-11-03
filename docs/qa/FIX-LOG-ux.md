@@ -391,3 +391,30 @@ Each name now starts with what's shown:
 
 - before: `f1-before-tree-delete-note`, `f1-before-editor-delete-dialog`, `f1-before-media-delete-dialog`;
 - after, each at desktop and 390px, light and dark: `f1-after-tree-delete-undo-*`, `f1-after-tree-undone-*`, `f1-after-editor-delete-dialog-*`, `f1-after-editor-deleted-toast-*`, `f1-after-media-delete-dialog-*`, `f1-after-media-deleted-toast-*`, `f1-after-recycle-bin-files-*`; `f1-after-media-toast-keyboard-desktop-light` (Undo focused with Alt+T).
+
+## QOL-A-2: actions in the command palette (3 November 2026)
+
+**Asked for by Daniel:** Ctrl K (⌘K) finds pages and media; it should also do things.
+
+**What changed:**
+
+- **An Actions group** (`search/paletteActions.ts`) lists what matches the words typed: "New page", "New entry in <collection>", "Upload media", "Open Settings", "Open Build", "Invite someone", "Switch to dark mode" (or light), "Match my device’s light or dark setting" (once someone has chosen) and "Sign out". Each also answers to a few everyday words: "create", "log out", "theme".
+- **Only what the person may do:** the same permissions as the screens behind them (`entries:create`, `media:upload`, the Settings and Build sections' rules, `users:invite`).
+- **Order:** places to go, then actions, then content and media. "Settings" under Go to is left out when "Open Settings" is offered, so nothing is listed twice. The combobox keys are unchanged: arrows, Ctrl+Home/End, Enter and Escape.
+- **Upload and Invite open their screens ready:** `/media?upload=true` opens the file chooser, and `/users?invite=true` opens the invitation. Both clear the address afterwards, so a reload doesn't ask again.
+- **Light and dark** (`src/appearance`): the admin follows the device, as before, unless someone chooses from the palette. The choice is this browser's and is applied before the first screen is drawn.
+- **Fixed on the way (LINTEL-UX-025):** the dashboard's "Add images and files" asked for `media:create`, which no role has, so Authors (who may upload) never saw it. It now asks for `media:upload`.
+
+**Tests:** `search/paletteItems.test.ts`, `search/CommandPalette.test.tsx`, `appearance/colorScheme.test.ts`, `people/UsersPage.test.tsx`, `media/MediaLibraryPage.test.tsx`, `dashboard/DashboardPage.test.tsx` (fails on the old code).
+
+**Checked in Chromium:**
+
+- "new" then Enter opens a new page.
+- "dark" switches, and the choice survives a reload; "Match my device" clears it.
+- "invite" opens the invitation, and "upload" opens the file chooser.
+- "log out" signs out.
+
+**Screenshots** (`screenshots/qol-a/`):
+
+- before: `f2-before-palette-new`;
+- after: `f2-after-palette-new-*` (desktop and 390px, light and dark), `f2-after-palette-dark-mode`, `f2-after-palette-theme-when-dark`, `f2-after-palette-settings`, `f2-after-invite-opened`, `f2-after-palette-sign-out`.

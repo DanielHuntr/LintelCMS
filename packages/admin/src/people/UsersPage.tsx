@@ -1,5 +1,5 @@
 import { ScrollText, ShieldHalf, UserPlus, Users } from "lucide-react";
-import { useDeferredValue, useState } from "react";
+import { useDeferredValue, useEffect, useRef, useState } from "react";
 import { LoadError } from "../api/LoadError.js";
 import { useNow } from "../content/useNow.js";
 import { Button } from "../design/Button.js";
@@ -25,7 +25,15 @@ import { PersonSheet } from "./PersonSheet.js";
  * /users: everyone who can sign in, the invitations still waiting, and a way to invite
  * someone new. Selecting a person opens their details.
  */
-export function UsersPage() {
+export function UsersPage({
+  startInviting = false,
+  onInvitingStarted,
+}: {
+  /** Opens the invitation straight away, as "Invite someone" in the command palette asks. */
+  startInviting?: boolean;
+  /** Called once it has, so the address can forget the request. */
+  onInvitingStarted?: () => void;
+} = {}) {
   const canSeeSecurityLog = useCan("security:read");
   const session = useSession();
   const canInvite = useCan("users:invite");
@@ -37,7 +45,14 @@ export function UsersPage() {
   const roles = useRoles();
   const now = useNow();
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [isInviting, setIsInviting] = useState(false);
+  const [isInviting, setIsInviting] = useState(startInviting && canInvite);
+  // Once, on arrival: the address is cleared, so a reload doesn't ask again.
+  const hasStartedInviting = useRef(false);
+  useEffect(() => {
+    if (!startInviting || hasStartedInviting.current) return;
+    hasStartedInviting.current = true;
+    onInvitingStarted?.();
+  }, [startInviting, onInvitingStarted]);
   const [sent, setSent] = useState<SentInvitation | null>(null);
 
   const offeredRoles = grantableRoles(roles.data ?? [], session.permissions);

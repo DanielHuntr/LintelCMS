@@ -149,4 +149,16 @@ describe("MediaLibraryPage", () => {
     expect(requested).toContain(`/media-bin/${beach.id}/restore`);
     expect(await screen.findByRole("button", { name: /beach\.jpg/ })).toBeInTheDocument();
   });
+
+  it("opens the file chooser straight away when the command palette asks", async () => {
+    mockApi(() => ({ assets: [beach], total: 1 }));
+    const chosen = vi.spyOn(HTMLInputElement.prototype, "click").mockImplementation(() => {});
+    const onUploadStarted = vi.fn();
+    renderWithQueries(
+      <MediaLibraryPage permissions={["*"]} startUpload onUploadStarted={onUploadStarted} />,
+    );
+
+    await waitFor(() => expect(onUploadStarted).toHaveBeenCalledOnce());
+    expect(chosen).toHaveBeenCalledOnce();
+  });
 });

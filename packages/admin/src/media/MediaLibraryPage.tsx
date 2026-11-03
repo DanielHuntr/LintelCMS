@@ -1,6 +1,6 @@
 import { hasPermission } from "@lintel/core/permissions";
 import { ImagePlus, Search, TriangleAlert, Upload } from "lucide-react";
-import { type ReactNode, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Button } from "../design/Button.js";
 import { Card } from "../design/Card.js";
 import { EmptyState } from "../design/EmptyState.js";
@@ -30,11 +30,17 @@ export function MediaLibraryPage({
   permissions,
   initialAssetId,
   initialSearch,
+  startUpload = false,
+  onUploadStarted,
 }: {
   permissions: readonly string[];
   /** A file whose details open straight away, such as one picked in search. */
   initialAssetId?: string;
   initialSearch?: string;
+  /** Opens the file chooser straight away, as "Upload media" in the command palette asks. */
+  startUpload?: boolean;
+  /** Called once it has, so the address can forget the request. */
+  onUploadStarted?: () => void;
 }) {
   const canUpload = hasPermission(permissions, "media:upload");
   const [search, setSearch] = useState(initialSearch ?? "");
@@ -68,6 +74,16 @@ export function MediaLibraryPage({
   function chooseFiles() {
     fileInput.current?.click();
   }
+
+  const asksToUpload = startUpload && canUpload;
+  const hasStartedUpload = useRef(false);
+  useEffect(() => {
+    if (!asksToUpload || hasStartedUpload.current) return;
+    hasStartedUpload.current = true;
+    // The browser allows this straight after the Enter or click that asked for it.
+    fileInput.current?.click();
+    onUploadStarted?.();
+  }, [asksToUpload, onUploadStarted]);
 
   return (
     <Page width="wide">

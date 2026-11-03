@@ -4,6 +4,7 @@ import { FileText, FolderOpen, Image, Shapes } from "lucide-react";
 import type { Collection, EntryStatus } from "../content/content.types.js";
 import { t, type StringKey } from "../i18n/strings.js";
 import { visibleSections } from "../navigation/sections.js";
+import type { PaletteAction } from "./paletteActions.js";
 import type { SearchResults } from "./search.types.js";
 
 /**
@@ -15,9 +16,10 @@ export type PaletteTarget =
   | { kind: "page"; path: string }
   | { kind: "collection"; collectionHandle: string }
   | { kind: "entry"; collectionHandle: string; entryId: string }
-  | { kind: "asset"; assetId: string; filename: string };
+  | { kind: "asset"; assetId: string; filename: string }
+  | { kind: "action"; action: PaletteAction };
 
-export type PaletteGroup = "pages" | "entries" | "media";
+export type PaletteGroup = "actions" | "pages" | "entries" | "media";
 
 export interface PaletteItem {
   id: string;
