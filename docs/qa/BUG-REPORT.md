@@ -765,6 +765,7 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-020   | P2       | Fixed  | The admin looked like any iOS-style app: nothing of its own                                                         |
 | LINTEL-UX-021   | P2       | Fixed  | Builder: elements can't be dragged to a new place on the page, only in Layers                                       |
 | LINTEL-UX-022   | P2       | Fixed  | Creating a page and opening one show two different editors; sparkle icons; Publish on an empty new page             |
+| LINTEL-UX-023   | P2       | Fixed  | A page's own header section doesn't replace the site's header (a footer section does), so two navs show             |
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 

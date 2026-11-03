@@ -350,3 +350,19 @@ Each name now starts with what's shown:
   - The breadcrumb link (17px): it sits in a line of text.
   - The content type editor's field width handles (12px): the width can also be set in each field's settings and with the arrow keys.
   - One 16px checkbox: its label is clickable.
+
+## LINTEL-UX-023: two navs on a page with its own header (4 November 2026)
+
+**Found by Daniel** on a designer-test page: the site's header ("Sam's Bakery · Home · Shop") showed above the page's own nav.
+
+**Cause:**
+
+- A page replaces the site's footer with a section drawn as `<footer>`, but the header had no equivalent: only the Header element counted.
+- A nav built from a plain section is a separate gap, and stays one. A clear "Hide the site's header and footer on this page" setting is planned for the designer push (step 9, designer-test finding 1).
+
+**Fix:**
+
+- A visible top-level section drawn as `<header>` now replaces the site's header.
+- When added from Insert, it goes to the top of the page, as footer sections go to the bottom.
+
+**Test:** `builder-model/src/components/site-chrome.test.ts`. Two of its three cases fail on the old code.
