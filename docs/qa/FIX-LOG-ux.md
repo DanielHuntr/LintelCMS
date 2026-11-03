@@ -1095,11 +1095,11 @@ Decision record: `docs/decisions/0038-reusing-styles.md`. No migration: the site
 
 **Checked in a browser:** the builder at desktop in light and dark (Site styles, the shared-style row, summaries with variable names, All buttons and All links), and the published test page at desktop and 390px in light and dark with heading, link and button looks and a dark-mode colour.
 
-**Screenshots** (in `screenshots/styles-panel/`): `builder-nothing-selected-{light,dark}`, `builder-style-{light,dark}`, `builder-site-styles-{light,dark}`, `builder-site-styles-colour-open-{light,dark}`, `builder-site-styles-all-{light,dark}`, `builder-summary-variable-{light,dark}`, `builder-shared-row-{light,dark}`, `builder-shared-choose-light`, `builder-shared-variant-name-light`, `builder-shared-variant-light`, `builder-site-styles-shared-light`, `builder-all-buttons-{light,dark}`, `builder-all-links-hover-{light,dark}`, `site-{desktop,phone}-{light,dark}` and `before-dark-paper-fixed-colour`.
+**Screenshots** (in `screenshots/styles-panel/`): `builder-nothing-selected-{light,dark}`, `builder-style-{light,dark}`, `builder-site-styles-{light,dark}`, `builder-site-styles-colour-open-{light,dark}`, `builder-site-styles-all-{light,dark}`, `builder-summary-variable-{light,dark}`, `builder-shared-row-{light,dark}`, `builder-shared-choose-light`, `builder-shared-variant-name-light`, `builder-shared-variant-light`, `builder-site-styles-shared-light`, `builder-all-buttons-{light,dark}`, `builder-all-links-hover-{light,dark}` and `before-dark-paper-fixed-colour`. The published-page shots are to be retaken on clean test data.
 
 ## LINTEL-UX-038: navigation and footer as sections you add (3 November 2026)
 
-**Reported by Daniel, with screenshots:** every published page gets the site's header ("Sam's Bakery · Home · Ref 2 · Shop") and footer bolted on, even a page whose top row is its own logo and menu. The UX-023 fix only stepped aside for a page with a header section, not for a menu row in an ordinary section. Daniel decided: make Navigation (and Footer) sections people add, not something automatic.
+**Reported by Daniel, with screenshots:** every published page gets the site's header ("Sam's Bakery · Home · Shop") and footer bolted on, even a page whose top row is its own logo and menu. The UX-023 fix only stepped aside for a page with a header section, not for a menu row in an ordinary section. Daniel decided: make Navigation (and Footer) sections people add, not something automatic.
 
 **Reproduced:** a page whose first section holds a logo and a menu, published, showed the site's header above its own (`before-own-menu-site-{light,dark}`), and the builder showed the same two navigations (`before-own-menu-two-navigations-offer-*`).
 
