@@ -1,4 +1,5 @@
 import {
+  arcCarouselComponent,
   cardStackComponent,
   counterRowComponent,
   cylinderGalleryComponent,
@@ -44,6 +45,16 @@ const CylinderGallery = drawsProps(cylinderGalleryComponent, ({ props, attribute
   <div
     {...attributes}
     className={cx(attributes.className, "lintel-cylinder-gallery")}
+    aria-label={props.label || undefined}
+  >
+    {children}
+  </div>
+));
+
+const ArcCarousel = drawsProps(arcCarouselComponent, ({ props, attributes, children }) => (
+  <div
+    {...attributes}
+    className={cx(attributes.className, "lintel-arc-carousel")}
     aria-label={props.label || undefined}
   >
     {children}
@@ -137,6 +148,7 @@ export const effectRenders = {
   magneticButton: MagneticButton,
   cardStack: CardStack,
   cylinderGallery: CylinderGallery,
+  arcCarousel: ArcCarousel,
   scrollingRow: ScrollingRow,
   counterRow: CounterRow,
   toggleSwitch: ToggleSwitch,
@@ -148,6 +160,7 @@ export const effectElementsStylesheet = `
 :where(.lintel-magnetic-button) { transition: scale 200ms ease-out; }
 :where(.lintel-card-stack) { display: grid; gap: var(--lintel-space-4); }
 :where(.lintel-cylinder-gallery) { display: flex; gap: var(--lintel-space-4); overflow-x: auto; }
+:where(.lintel-arc-carousel) { display: flex; align-items: center; gap: var(--lintel-space-4); overflow-x: auto; }
 :where(.lintel-scrolling-row) { display: flex; gap: var(--lintel-space-6); overflow-x: auto; }
 :where(.lintel-counter-row) { display: grid; gap: var(--lintel-space-6); }
 :where(.lintel-toggle-field) { display: inline-flex; align-items: center; gap: var(--lintel-space-3); }

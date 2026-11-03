@@ -90,6 +90,25 @@ export const cylinderGalleryComponent = defineComponent({
   ],
 });
 
+export const arcCarouselComponent = defineComponent({
+  type: "arcCarousel",
+  label: "Arc carousel",
+  keywords: ["carousel", "curved", "3d", "gallery", "slider", "photos"],
+  description:
+    "Pictures on a curve that drifts by in 3D; visitors drag, swipe or scroll to move it.",
+  icon: "gallery-horizontal-end",
+  category: "media",
+  propsSchema: z.object({ label: plainText(100, "Gallery") }),
+  defaultProps: { label: "Gallery" },
+  defaultChildren: [1, 2, 3, 4, 5, 6, 7, 8].map(picture),
+  defaultStyles: { base: { height: "380px" } },
+  defaultEffects: [{ effect: "arc-carousel", params: {} }],
+  allowedChildren: "any",
+  editableFields: [
+    { kind: "text", prop: "label", label: "What the gallery is called (for screen readers)" },
+  ],
+});
+
 export const scrollingRowComponent = defineComponent({
   type: "scrollingRow",
   label: "Scrolling row",
@@ -248,6 +267,7 @@ export const effectComponents = [
   magneticButtonComponent,
   cardStackComponent,
   cylinderGalleryComponent,
+  arcCarouselComponent,
   scrollingRowComponent,
   counterRowComponent,
   toggleSwitchComponent,

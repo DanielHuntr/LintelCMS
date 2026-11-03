@@ -4,6 +4,7 @@ import {
   CodeXml,
   Columns2,
   File,
+  GalleryHorizontalEnd,
   Heading,
   Image,
   Link,
@@ -40,6 +41,8 @@ const componentIcons: Record<string, LucideIcon> = {
   link: Link,
   menu: Menu,
   "code-xml": CodeXml,
+  "gallery-horizontal-end": GalleryHorizontalEnd,
+  box: Box,
 };
 
 export function componentIcon(name: string | undefined): LucideIcon {

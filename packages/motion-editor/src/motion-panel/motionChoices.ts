@@ -174,12 +174,20 @@ export function searchMotionChoices(
 /**
  * Where an effect is offered. Text effects that play while the pointer is over the words
  * (roll up, scramble on hover, the wave) are offered on hover; the rest of the text effects
- * when the words appear.
+ * when the words appear. 3D effects are offered on hover, apart from those that follow the
+ * scroll (depth on scroll, an exploded view, cards on scroll) and the drifting arc carousel.
  */
 function effectPlace(definition: EffectDefinition): [MotionMoment, MotionGroup] | undefined {
   const trigger = definition.kind === "behaviour" ? definition.fixed?.trigger : undefined;
   if (definition.category === "text" && (trigger === "hover" || trigger === "pointer")) {
     return ["hover", "words"];
+  }
+  // 3D layouts that move with the page are offered with scrolling; the arc carousel drifts.
+  if (definition.category === "depth" && definition.kind === "behaviour") {
+    if (definition.module === "scroll" || definition.fixed?.advance === "scroll") {
+      return ["scroll", "depth"];
+    }
+    if (definition.behaviour === "arcCarousel") return ["always", "depth"];
   }
   return effectPlaces[definition.category];
 }
