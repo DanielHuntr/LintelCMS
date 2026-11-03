@@ -33,6 +33,7 @@ import {
   useImagePicker,
 } from "../page-design/PageDesignPage.js";
 import { useEffectModules } from "../page-design/useEffectModules.js";
+import { useSiteDesign } from "../page-design/useSiteDesign.js";
 import { useCan, useSession } from "../session/SessionContext.js";
 import { useCanvasSite } from "../website/website.queries.js";
 import { withoutBindingsTo } from "./blockChanges.js";
@@ -72,6 +73,7 @@ function BlockDesigner({ block, site }: { block: SiteBlock; site: CanvasSite | u
   const imagePicker = useImagePicker();
   const effectModules = useEffectModules(besideTheAdmin);
   const isNarrowScreen = useIsNarrowScreen();
+  const siteDesign = useSiteDesign();
   const initial = useMemo(() => designAsPage(block.design as PageNode), [block.design]);
   const [document, setDocument] = useState<PageDocument>(initial);
   const [properties, setProperties] = useState<BlockProperty[]>(() =>
@@ -177,6 +179,7 @@ function BlockDesigner({ block, site }: { block: SiteBlock; site: CanvasSite | u
         site={site}
         blocks={{ library: [], canManage: false }}
         blockMaster={master}
+        siteDesign={siteDesign}
         enabledPlugins={session.enabledPlugins}
         themeStylesheet={themeStylesheet(defaultTheme)}
         baseStylesheet={siteStylesheet}

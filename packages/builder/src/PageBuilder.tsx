@@ -4,6 +4,10 @@ import {
   type Breakpoint,
   type CreateNodeId,
   createRandomNodeId,
+  designVariablesStylesheet,
+  emptySiteDesign,
+  sharedStylesById,
+  type SiteDesign,
   findNode,
   ownSiteChrome,
   assignClassNames,
@@ -80,6 +84,7 @@ import { readSkillLevel, type SkillLevel, toolsFor } from "./skill-level/skill-l
 import { selectedWords, SelectedWordsBar } from "./inline-text/SelectedWordsBar.js";
 import { toggleChange } from "./inline-text/markToggles.js";
 import type { FileUploader } from "./style-panel/design-tools.js";
+import { SiteDesignContext } from "./site-design/site-design-context.js";
 import { GuidedTour } from "./tour/GuidedTour.js";
 import { useTips } from "./tour/useTips.js";
 import { Tabs } from "./ui/controls.js";
@@ -159,6 +164,11 @@ export interface PageBuilderProps {
   blocks?: BuilderBlocks;
   /** Set while editing a block's design: elements are bound to its properties. */
   blockMaster?: BlockMaster;
+  /**
+   * The site's design variables and shared styles, and how to save a change to them (left
+   * out for people who may only use them). Without it, the site has none.
+   */
+  siteDesign?: { value: SiteDesign; onChange?: (value: SiteDesign) => void };
 }
 
 /** The site's default theme, until the app passes the site's own. */
@@ -239,13 +249,28 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     }),
     [blocks.library, blocks.pictures, blocks.renderedBlocks],
   );
+  const siteDesign = props.siteDesign?.value ?? emptySiteDesign;
+  const siteDesignTools = useMemo(
+    () => ({ design: siteDesign, change: props.siteDesign?.onChange }),
+    [siteDesign, props.siteDesign?.onChange],
+  );
+  const sharedStyles = useMemo(() => sharedStylesById(siteDesign), [siteDesign]);
   const rendered = useMemo(
     () =>
       renderPage(state.document, registry, {
         mode: "canvas",
-        data: { ...canvasPageData(state.document, dataSources, props.site), ...blockData },
+        data: {
+          ...canvasPageData(state.document, dataSources, props.site),
+          ...blockData,
+          sharedStyles,
+        },
       }),
-    [state.document, registry, dataSources, props.site, blockData],
+    [state.document, registry, dataSources, props.site, blockData, sharedStyles],
+  );
+  // The site's variables, drawn after its stylesheet so changes show before they're saved.
+  const variablesCss = useMemo(
+    () => designVariablesStylesheet(siteDesign.variables),
+    [siteDesign.variables],
   );
   const menuChoices = useMemo(
     () => (dataSources.menus ?? []).map((menu) => ({ value: menu.handle, label: menu.name })),
@@ -318,8 +343,16 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
           : `${props.themeStylesheet ?? defaultThemeStylesheet}\n${standInBaseStylesheet}\n${props.baseStylesheet ?? ""}\n${designBaseStylesheet}\n${rendered.css}`
       }${ownChrome.header ? '\n[data-lintel-site-chrome="header"]{display:none}' : ""}${
         ownChrome.footer ? '\n[data-lintel-site-chrome="footer"]{display:none}' : ""
-      }${statePreviewCss ? `\n${statePreviewCss}` : ""}`,
-    [site, props.themeStylesheet, props.baseStylesheet, rendered.css, ownChrome, statePreviewCss],
+      }${statePreviewCss ? `\n${statePreviewCss}` : ""}${variablesCss ? `\n${variablesCss}` : ""}`,
+    [
+      site,
+      props.themeStylesheet,
+      props.baseStylesheet,
+      rendered.css,
+      ownChrome,
+      statePreviewCss,
+      variablesCss,
+    ],
   );
 
   const previewMotion = useCallback(
@@ -679,180 +712,185 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   return (
     <PreferenceStoreContext.Provider value={preferences}>
       <BlocksProvider blocks={blocks} master={props.blockMaster ?? null}>
-        <DataSourcesContext.Provider value={dataSources}>
-          <MenuEditingContext.Provider value={menuEditing}>
-            <div className="flex h-dvh flex-col bg-background text-label" onKeyDown={handleKeyDown}>
-              <Toolbar
-                title={props.title}
-                start={props.toolbarStart}
-                end={props.toolbarEnd}
-                breakpoint={breakpoint}
-                onBreakpointChange={setBreakpoint}
-                undoLabel={state.past.at(-1)?.label}
-                redoLabel={state.future.at(-1)?.label}
-                onUndo={actions.undo}
-                onRedo={actions.redo}
-                history={[
-                  ...state.past.map((step) => step.label),
-                  ...state.future.map((step) => step.label).reverse(),
-                ]}
-                historyPosition={state.past.length}
-                onGoToStep={actions.goToStep}
-                canEditCode={canEditCode}
-                skillLevel={skillLevel}
-                onSkillLevelChange={changeSkillLevel}
-                onReplayTour={() => setIsTouring(true)}
-                onShowTips={tips.showAgain}
-              />
-              <div className="flex min-h-0 flex-1">
-                <aside
-                  aria-label={text("pageBuilder.panels.leftLabel")}
-                  className="flex w-72 shrink-0 flex-col border-e border-separator bg-surface"
-                >
-                  <Tabs<LeftTab>
-                    label={text("pageBuilder.panels.leftLabel")}
-                    idPrefix="lintel-left"
-                    value={leftTab}
-                    onChange={setLeftTab}
-                    tabs={[
-                      { value: "layers", label: text("pageBuilder.panels.layers") },
-                      { value: "insert", label: text("pageBuilder.panels.insert") },
-                    ]}
-                  />
-                  <div
-                    id="lintel-left-panel"
-                    role="tabpanel"
-                    aria-labelledby={`lintel-left-tab-${leftTab}`}
-                    className="min-h-0 flex-1 overflow-auto"
+        <SiteDesignContext value={siteDesignTools}>
+          <DataSourcesContext.Provider value={dataSources}>
+            <MenuEditingContext.Provider value={menuEditing}>
+              <div
+                className="flex h-dvh flex-col bg-background text-label"
+                onKeyDown={handleKeyDown}
+              >
+                <Toolbar
+                  title={props.title}
+                  start={props.toolbarStart}
+                  end={props.toolbarEnd}
+                  breakpoint={breakpoint}
+                  onBreakpointChange={setBreakpoint}
+                  undoLabel={state.past.at(-1)?.label}
+                  redoLabel={state.future.at(-1)?.label}
+                  onUndo={actions.undo}
+                  onRedo={actions.redo}
+                  history={[
+                    ...state.past.map((step) => step.label),
+                    ...state.future.map((step) => step.label).reverse(),
+                  ]}
+                  historyPosition={state.past.length}
+                  onGoToStep={actions.goToStep}
+                  canEditCode={canEditCode}
+                  skillLevel={skillLevel}
+                  onSkillLevelChange={changeSkillLevel}
+                  onReplayTour={() => setIsTouring(true)}
+                  onShowTips={tips.showAgain}
+                />
+                <div className="flex min-h-0 flex-1">
+                  <aside
+                    aria-label={text("pageBuilder.panels.leftLabel")}
+                    className="flex w-72 shrink-0 flex-col border-e border-separator bg-surface"
                   >
-                    {leftTab === "layers" ? (
-                      <LayersPanel
-                        root={root}
-                        catalogue={catalogue}
-                        selectedId={selectedId}
-                        onSelect={selectFromPanel}
-                        onHover={setHoveredId}
-                        onToggleHidden={actions.toggleHidden}
-                        onToggleLocked={actions.toggleLocked}
-                        onRename={actions.rename}
-                        onMove={actions.moveTo}
-                        onInsertAt={(key, parentId, index) =>
-                          actions.insert(key as `component:${string}`, { parentId, index })
-                        }
-                      />
-                    ) : (
-                      <InsertPanel
-                        catalogue={catalogue}
-                        templates={sectionTemplates}
-                        canEditCode={tools.codeTools}
-                        enabledPlugins={props.enabledPlugins}
-                        blocks={props.blockMaster ? undefined : blocks.library}
-                        onInsert={(key) => actions.insert(key)}
-                        onDragChange={(item) => {
-                          insertDrag.current = item;
-                          setIsInsertDragging(item !== null);
-                          if (!item) showCanvasDrop(null);
-                        }}
-                        focusRequest={insertFocusRequest}
+                    <Tabs<LeftTab>
+                      label={text("pageBuilder.panels.leftLabel")}
+                      idPrefix="lintel-left"
+                      value={leftTab}
+                      onChange={setLeftTab}
+                      tabs={[
+                        { value: "layers", label: text("pageBuilder.panels.layers") },
+                        { value: "insert", label: text("pageBuilder.panels.insert") },
+                      ]}
+                    />
+                    <div
+                      id="lintel-left-panel"
+                      role="tabpanel"
+                      aria-labelledby={`lintel-left-tab-${leftTab}`}
+                      className="min-h-0 flex-1 overflow-auto"
+                    >
+                      {leftTab === "layers" ? (
+                        <LayersPanel
+                          root={root}
+                          catalogue={catalogue}
+                          selectedId={selectedId}
+                          onSelect={selectFromPanel}
+                          onHover={setHoveredId}
+                          onToggleHidden={actions.toggleHidden}
+                          onToggleLocked={actions.toggleLocked}
+                          onRename={actions.rename}
+                          onMove={actions.moveTo}
+                          onInsertAt={(key, parentId, index) =>
+                            actions.insert(key as `component:${string}`, { parentId, index })
+                          }
+                        />
+                      ) : (
+                        <InsertPanel
+                          catalogue={catalogue}
+                          templates={sectionTemplates}
+                          canEditCode={tools.codeTools}
+                          enabledPlugins={props.enabledPlugins}
+                          blocks={props.blockMaster ? undefined : blocks.library}
+                          onInsert={(key) => actions.insert(key)}
+                          onDragChange={(item) => {
+                            insertDrag.current = item;
+                            setIsInsertDragging(item !== null);
+                            if (!item) showCanvasDrop(null);
+                          }}
+                          focusRequest={insertFocusRequest}
+                        />
+                      )}
+                    </div>
+                  </aside>
+                  <main
+                    className="relative flex min-w-0 flex-1 flex-col"
+                    aria-label={text("pageBuilder.canvas.regionLabel")}
+                  >
+                    <Breadcrumbs
+                      root={root}
+                      catalogue={catalogue}
+                      selectedId={selectedId}
+                      onSelect={selectFromPanel}
+                    />
+                    {!showsStart && textSelection && (
+                      <SelectedWordsBar
+                        document={state.document}
+                        selection={textSelection}
+                        onApply={(styles, label) => actions.markText(textSelection, styles, label)}
+                        linkRequest={linkRequest}
                       />
                     )}
-                  </div>
-                </aside>
-                <main
-                  className="relative flex min-w-0 flex-1 flex-col"
-                  aria-label={text("pageBuilder.canvas.regionLabel")}
-                >
-                  <Breadcrumbs
-                    root={root}
-                    catalogue={catalogue}
-                    selectedId={selectedId}
-                    onSelect={selectFromPanel}
-                  />
-                  {!showsStart && textSelection && (
-                    <SelectedWordsBar
+                    {showsStart ? (
+                      <EmptyPage
+                        starterSites={props.starterSites ?? allStarterSites}
+                        onAddSection={() => openInsert("sections")}
+                        onAddElements={() => openInsert("elements")}
+                        onChooseStarterPage={actions.useStarterPage}
+                        takesFocus={!showsTour}
+                      />
+                    ) : (
+                      <Canvas
+                        html={rendered.html}
+                        css={canvasCss}
+                        breakpoint={breakpoint}
+                        selectedId={selectedId}
+                        hoveredId={hoveredId}
+                        labels={labels}
+                        revealId={revealId}
+                        canTransform={selectedNode !== undefined && !selectedIsLocked}
+                        site={site}
+                        scripts={props.frameScripts}
+                        motionPreview={motionPreview}
+                        insertMarker={insertMarker}
+                        isInsertDragging={isInsertDragging}
+                        sceneMarkers={sceneMarkers}
+                        onMessage={handleFrameMessage}
+                      />
+                    )}
+                    <PictureDropStatus status={pictures.status} onDismiss={pictures.dismiss} />
+                  </main>
+                  <CanvasLookContext value={canvasLook}>
+                    <SelectedElementPanel
                       document={state.document}
-                      selection={textSelection}
-                      onApply={(styles, label) => actions.markText(textSelection, styles, label)}
-                      linkRequest={linkRequest}
-                    />
-                  )}
-                  {showsStart ? (
-                    <EmptyPage
-                      starterSites={props.starterSites ?? allStarterSites}
-                      onAddSection={() => openInsert("sections")}
-                      onAddElements={() => openInsert("elements")}
-                      onChooseStarterPage={actions.useStarterPage}
-                      takesFocus={!showsTour}
-                    />
-                  ) : (
-                    <Canvas
-                      html={rendered.html}
-                      css={canvasCss}
+                      node={selectedNode ?? null}
+                      nodeName={labels.selected ?? ""}
+                      definition={definition}
+                      isLocked={selectedIsLocked}
                       breakpoint={breakpoint}
-                      selectedId={selectedId}
-                      hoveredId={hoveredId}
-                      labels={labels}
-                      revealId={revealId}
-                      canTransform={selectedNode !== undefined && !selectedIsLocked}
-                      site={site}
-                      scripts={props.frameScripts}
-                      motionPreview={motionPreview}
-                      insertMarker={insertMarker}
-                      isInsertDragging={isInsertDragging}
-                      sceneMarkers={sceneMarkers}
-                      onMessage={handleFrameMessage}
+                      registry={registry}
+                      tools={tools}
+                      tips={tips}
+                      pickImage={props.pickImage}
+                      uploadFile={props.uploadFile}
+                      motionText={props.motionText}
+                      showCode={skillLevel === "developer"}
+                      actions={{
+                        ...actions,
+                        animate: (nodeId, animations) => {
+                          actions.animate(nodeId, animations);
+                          if (animations.length === 0) setMotionPreview(null);
+                        },
+                      }}
+                      onPreviewMotion={previewMotion}
+                      onPreviewEffect={previewEffect}
+                      onStyleStateChange={reportStylingState}
+                      effectModules={props.effectModules}
+                      pageWeight={pageWeight}
+                      siteMotion={
+                        props.siteEffects && (
+                          <SiteMotionSettings
+                            value={props.siteEffects.value}
+                            onChange={props.siteEffects.onChange}
+                            translate={props.motionText}
+                          />
+                        )
+                      }
                     />
-                  )}
-                  <PictureDropStatus status={pictures.status} onDismiss={pictures.dismiss} />
-                </main>
-                <CanvasLookContext value={canvasLook}>
-                  <SelectedElementPanel
-                    document={state.document}
-                    node={selectedNode ?? null}
-                    nodeName={labels.selected ?? ""}
-                    definition={definition}
-                    isLocked={selectedIsLocked}
-                    breakpoint={breakpoint}
-                    registry={registry}
-                    tools={tools}
-                    tips={tips}
-                    pickImage={props.pickImage}
-                    uploadFile={props.uploadFile}
-                    motionText={props.motionText}
-                    showCode={skillLevel === "developer"}
-                    actions={{
-                      ...actions,
-                      animate: (nodeId, animations) => {
-                        actions.animate(nodeId, animations);
-                        if (animations.length === 0) setMotionPreview(null);
-                      },
-                    }}
-                    onPreviewMotion={previewMotion}
-                    onPreviewEffect={previewEffect}
-                    onStyleStateChange={reportStylingState}
-                    effectModules={props.effectModules}
-                    pageWeight={pageWeight}
-                    siteMotion={
-                      props.siteEffects && (
-                        <SiteMotionSettings
-                          value={props.siteEffects.value}
-                          onChange={props.siteEffects.onChange}
-                          translate={props.motionText}
-                        />
-                      )
-                    }
-                  />
-                </CanvasLookContext>
+                  </CanvasLookContext>
+                </div>
+                {showsTour && <GuidedTour skillLevel={skillLevel} onClose={closeTour} />}
+                {/* The same sentence twice in a row is still read out: the space changes the text. */}
+                <div role="status" aria-live="polite" className="sr-only">
+                  {announcement.message}
+                  {announcement.count % 2 === 1 ? "\u00a0" : ""}
+                </div>
               </div>
-              {showsTour && <GuidedTour skillLevel={skillLevel} onClose={closeTour} />}
-              {/* The same sentence twice in a row is still read out: the space changes the text. */}
-              <div role="status" aria-live="polite" className="sr-only">
-                {announcement.message}
-                {announcement.count % 2 === 1 ? "\u00a0" : ""}
-              </div>
-            </div>
-          </MenuEditingContext.Provider>
-        </DataSourcesContext.Provider>
+            </MenuEditingContext.Provider>
+          </DataSourcesContext.Provider>
+        </SiteDesignContext>
       </BlocksProvider>
     </PreferenceStoreContext.Provider>
   );

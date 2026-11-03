@@ -43,6 +43,7 @@ import { useBuilderData, useCanvasSite, useViewPageSite } from "../website/websi
 import { useEffectModules } from "./useEffectModules.js";
 import { useBuilderBlocks } from "../blocks/useBuilderBlocks.js";
 import { usePageDesignSaving } from "./usePageDesignSaving.js";
+import { useSiteDesign } from "./useSiteDesign.js";
 import { useSiteMotion } from "./useSiteMotion.js";
 import { useBuilderMenus } from "../menus/builderMenus.js";
 import { InlineMenuEditor } from "../menus/InlineMenuEditor.js";
@@ -155,6 +156,7 @@ function PageDesigner({
     : undefined;
   const effectModules = useEffectModules(besideTheAdmin);
   const siteMotion = useSiteMotion();
+  const siteDesign = useSiteDesign();
   const imagePicker = useImagePicker();
   const pagePicker = usePagePicker();
   const isNarrowScreen = useIsNarrowScreen();
@@ -237,6 +239,7 @@ function PageDesigner({
         frameScripts={canvasFrameScripts}
         effectModules={effectModules}
         siteEffects={siteMotion}
+        siteDesign={siteDesign}
         toolbarStart={
           <Link
             to="/content/$collection/$entryId"

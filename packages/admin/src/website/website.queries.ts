@@ -3,8 +3,10 @@ import {
   getBuilderData,
   getCanvasSite,
   getSiteAddress,
+  getSiteDesign,
   getSiteEffects,
   getWebsite,
+  updateSiteDesign,
   updateSiteEffects,
   updateWebsite,
 } from "./website.api.js";
@@ -15,7 +17,21 @@ export const websiteKeys = {
   canvas: () => ["website", "canvas"] as const,
   builderData: () => ["website", "builder-data"] as const,
   effects: () => ["website", "effects"] as const,
+  design: () => ["website", "design"] as const,
 };
+
+/** The site's design variables and shared styles. */
+export function useSiteDesignQuery() {
+  return useQuery({ queryKey: websiteKeys.design(), queryFn: getSiteDesign, retry: false });
+}
+
+export function useUpdateSiteDesign() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateSiteDesign,
+    onSuccess: (design) => queryClient.setQueryData(websiteKeys.design(), design),
+  });
+}
 
 /** The site-wide motion settings. */
 export function useSiteEffects() {

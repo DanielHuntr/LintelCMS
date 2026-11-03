@@ -6,7 +6,7 @@ import { ChoiceGroup, classNames, Labelled, PanelSection } from "../ui/controls.
 import { useDesignTools } from "./design-tools.js";
 import { useStyleEditing, useStyleField, useStyleReader } from "./style-field.js";
 import { layoutSummary } from "./style-summaries.js";
-import { StyleChips, StyleSelect, StyleTextInput, tokenChips } from "./StyleInputs.js";
+import { StyleChips, StyleSelect, StyleTextInput, useSizeChips } from "./StyleInputs.js";
 
 type Arrangement = "stack" | "row" | "grid" | "normal";
 
@@ -22,23 +22,21 @@ export function LayoutSection({ advanced }: { advanced: boolean }) {
 function PlacedGridSpacing() {
   const text = useBuilderText();
   const read = useStyleReader();
+  const gapChips = useSizeChips(spacingTokens.slice(1, 8), text("pageBuilder.style.none"));
   return (
     <PanelSection
       title={text("pageBuilder.style.layout")}
       sectionId="layout"
       summary={findTokenByValue(read("gap"))?.label ?? read("gap") ?? ""}
     >
-      <StyleChips
-        properties={["gap"]}
-        label={text("pageBuilder.style.gap")}
-        choices={tokenChips(spacingTokens.slice(1, 8), text("pageBuilder.style.none"))}
-      />
+      <StyleChips properties={["gap"]} label={text("pageBuilder.style.gap")} choices={gapChips} />
     </PanelSection>
   );
 }
 
 function FlowLayout({ advanced }: { advanced: boolean }) {
   const text = useBuilderText();
+  const gapChips = useSizeChips(spacingTokens.slice(1, 8), text("pageBuilder.style.none"));
   const { change } = useStyleEditing();
   const read = useStyleReader();
   const display = useStyleField("display", text("pageBuilder.style.arrange"));
@@ -93,11 +91,7 @@ function FlowLayout({ advanced }: { advanced: boolean }) {
       )}
       {arrangement !== "normal" && <AlignmentPad isRow={arrangement === "row"} />}
       {arrangement !== "normal" && (
-        <StyleChips
-          properties={["gap"]}
-          label={text("pageBuilder.style.gap")}
-          choices={tokenChips(spacingTokens.slice(1, 8), text("pageBuilder.style.none"))}
-        />
+        <StyleChips properties={["gap"]} label={text("pageBuilder.style.gap")} choices={gapChips} />
       )}
       {advanced && (
         <div className="grid grid-cols-2 gap-2">

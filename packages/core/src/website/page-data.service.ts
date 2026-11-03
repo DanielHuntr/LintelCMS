@@ -1,4 +1,5 @@
 import {
+  sharedStylesById,
   type BoundItem,
   type CollectionListData,
   type DataForm,
@@ -76,6 +77,7 @@ export async function loadPageData(
     products: await loadChosenProducts(request, document),
     forms: await loadForms(request, document),
     credits: await loadPictureCredits(request, document),
+    sharedStyles: sharedStylesById(request.context.design),
     // The site's own blocks the page uses, their pictures, and those the server draws.
     ...(await loadBlockPageData(
       request.dependencies.database,

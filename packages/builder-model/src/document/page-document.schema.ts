@@ -113,6 +113,11 @@ export interface PageNode {
   /** A muted, looping video behind its content (see backgrounds/). */
   backgroundVideo?: BackgroundVideo;
   /**
+   * The id of the site's shared style it uses (see site-design/shared-styles.ts): that look
+   * goes under its own styles when the page is drawn. Left out for none.
+   */
+  sharedStyle?: string;
+  /**
    * Inside a collection list (or on a collection's item page), props filled from the current
    * entry instead of typed in: `{ "text": "title", "src": "image" }`. Left out when unbound.
    */
@@ -240,6 +245,12 @@ export const pageNodeSchema: z.ZodType<PageNode> = z.lazy(() =>
     freeLayout: freeLayoutSchema.optional(),
     placedGrid: placedGridSchema.optional(),
     backgroundVideo: backgroundVideoSchema.optional(),
+    sharedStyle: z
+      .string()
+      .regex(/^[a-z][a-z0-9-]{0,39}$/, {
+        error: "A shared style’s id should be a short name like “card”",
+      })
+      .optional(),
     bindings: nodeBindingsSchema.optional(),
   }),
 );

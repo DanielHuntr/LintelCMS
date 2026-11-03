@@ -101,6 +101,7 @@ import { websiteRoutes } from "./website/website.routes.js";
 import { liquidTemplatesRoutes } from "./liquid-templates/liquid-templates.routes.js";
 import { registerFieldSnippetsSync } from "./liquid-editor-support/field-snippets-sync.js";
 import { siteEffectsRoutes } from "./site-effects/site-effects.routes.js";
+import { siteDesignRoutes } from "./site-design/site-design.routes.js";
 import { EventBus } from "./events/event-bus.js";
 import { subscribeEventListeners } from "./events/event-listeners.js";
 import { registerWorkflows, type WorkflowOptions } from "./workflows/register-workflows.js";
@@ -492,6 +493,7 @@ function registerApiRoutes(
   server.register(websiteRoutes);
   server.register(liquidTemplatesRoutes);
   server.register(siteEffectsRoutes);
+  server.register(siteDesignRoutes);
   server.register(pagesRoutes);
   server.register(starterSitesRoutes);
   registerContentModelSyncRoutes(server);

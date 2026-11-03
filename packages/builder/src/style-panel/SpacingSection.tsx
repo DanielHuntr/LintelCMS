@@ -4,7 +4,7 @@ import { useBuilderText } from "../i18n/builder-text.js";
 import { classNames, PanelSection } from "../ui/controls.js";
 import { normaliseTypedValue, useStyleField, useStyleReader } from "./style-field.js";
 import { spacingSummary } from "./style-summaries.js";
-import { StyleChips, tokenChips } from "./StyleInputs.js";
+import { StyleChips, useSizeChips } from "./StyleInputs.js";
 
 const sides = ["Top", "Right", "Bottom", "Left"] as const;
 type Side = (typeof sides)[number];
@@ -18,6 +18,16 @@ export function SpacingSection({ advanced }: { advanced: boolean }) {
   const text = useBuilderText();
   const read = useStyleReader();
   const padding = sides.map((side) => `padding${side}` as StylePropertyName);
+  const sizeChips = useSizeChips(
+    [
+      spacingTokens[3],
+      spacingTokens[4],
+      spacingTokens[5],
+      spacingTokens[6],
+      spacingTokens[7],
+    ].filter((token) => token !== undefined),
+    text("pageBuilder.style.none"),
+  );
   return (
     <PanelSection
       title={text("pageBuilder.style.spacing")}
@@ -27,16 +37,7 @@ export function SpacingSection({ advanced }: { advanced: boolean }) {
       <StyleChips
         properties={padding}
         label={text("pageBuilder.style.paddingAll")}
-        choices={tokenChips(
-          [
-            spacingTokens[3],
-            spacingTokens[4],
-            spacingTokens[5],
-            spacingTokens[6],
-            spacingTokens[7],
-          ].filter((token) => token !== undefined),
-          text("pageBuilder.style.none"),
-        )}
+        choices={sizeChips}
       />
       {advanced && <BoxModel />}
     </PanelSection>

@@ -11,6 +11,7 @@ import {
 import { Plus, Upload } from "lucide-react";
 import { useId, useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
+import { useSiteTokens } from "../site-design/site-design-context.js";
 import { inputClassName, Labelled } from "../ui/controls.js";
 import { useDesignTools } from "./design-tools.js";
 import { overrideNoteFor, useStyleEditing, useStyleField } from "./style-field.js";
@@ -33,8 +34,12 @@ export function FontPicker() {
   const { target } = useStyleEditing();
   const field = useStyleField("fontFamily", text("pageBuilder.style.font"));
   const [isAdding, setIsAdding] = useState(false);
+  const siteFonts = useSiteTokens("font");
   const choices = [
-    ...fontTokens.map((token) => ({ value: tokenValue(token), label: token.label })),
+    ...[...fontTokens, ...siteFonts].map((token) => ({
+      value: tokenValue(token),
+      label: token.label,
+    })),
     ...tools.pageFonts.map((font) => ({
       value: fontFamilyValue(font),
       label: pageFontFamily(font),

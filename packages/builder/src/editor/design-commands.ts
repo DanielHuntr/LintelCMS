@@ -1,4 +1,8 @@
 import {
+  detachSharedStyle,
+  giveSharedStyle,
+  makeSharedStyle,
+  type SharedStyle,
   type Breakpoint,
   breakpoints,
   clampGridPlace,
@@ -201,6 +205,37 @@ export function placeOnGrid(
     }),
     { coalesceKey: `grid:${nodeId}:${target}` },
   );
+}
+
+/**
+ * Shared styles on an element: "make" moves its look into a new shared style (which the app
+ * adds to the site), "use" gives it an existing one in place of its own look, and "detach"
+ * gives it the shared look as its own again. Its place on a grid or in a free layout stays.
+ */
+export type SharedStyleChange =
+  | { kind: "make"; id: string; name: string }
+  | { kind: "use"; id: string; name: string }
+  | { kind: "detach"; sharedStyle: SharedStyle | undefined };
+
+export function changeSharedStyle(
+  context: CommandContext,
+  nodeId: string,
+  change: SharedStyleChange,
+): CommandResult {
+  const label =
+    change.kind === "detach"
+      ? context.text("pageBuilder.shared.history.detached")
+      : context.text(
+          change.kind === "make"
+            ? "pageBuilder.shared.history.made"
+            : "pageBuilder.shared.history.used",
+          { name: change.name },
+        );
+  return changeNode(context, nodeId, label, (node) => {
+    if (change.kind === "make") return makeSharedStyle(node, change.id, change.name).node;
+    if (change.kind === "use") return giveSharedStyle(node, change.id);
+    return detachSharedStyle(node, change.sharedStyle);
+  });
 }
 
 /** Moves an element in its free layout, at one screen size: from dragging or nudging. */

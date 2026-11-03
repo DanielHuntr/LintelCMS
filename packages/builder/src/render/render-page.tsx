@@ -1,5 +1,6 @@
 import {
   type AnyComponentDefinition,
+  applySharedStyles,
   assignClassNames,
   bindProps,
   compileStylesheet,
@@ -77,7 +78,8 @@ export function renderPage(
   { mode = "site", nodeId, withMotion = false, data = {} }: RenderOptions = {},
 ): RenderedPage {
   // The site's own blocks are drawn as their design, filled in (see custom-blocks/ in the model).
-  const root = expandBlockInstances(document.root, data);
+  // Then the site's shared styles go under each element's own (see site-design/ in the model).
+  const root = applySharedStyles(expandBlockInstances(document.root, data), data.sharedStyles);
   const classNames = assignClassNames(root, registry.catalogue);
   const start = nodeId ? findNode(root, nodeId) : root;
   if (!start || start.hidden) {

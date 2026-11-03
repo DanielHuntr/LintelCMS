@@ -312,6 +312,8 @@ export function useBuilder({
           ),
         );
       },
+      changeSharedStyle: (nodeId: string, change: designCommands.SharedStyleChange) =>
+        run(designCommands.changeSharedStyle(context(), nodeId, change)),
       restack: (nodeId: string, move: StackingMove) =>
         run(designCommands.restackNode(context(), nodeId, move)),
       setBackgroundVideo: (nodeId: string, video: BackgroundVideo | null) =>
