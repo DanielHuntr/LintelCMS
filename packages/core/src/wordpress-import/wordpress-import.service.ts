@@ -39,7 +39,7 @@ import type { WordPressImportRow } from "./wordpress-import.table.js";
 import { parseWordPressExport } from "./wxr-parser.js";
 
 /**
- * The steps of Settings → Import → WordPress: upload the export, choose where things go
+ * The steps of Build → Import → WordPress: upload the export, choose where things go
  * (the mapping), see a dry run, then import with progress. An import that stops part way
  * shows as paused, and Resume carries on where it stopped.
  */

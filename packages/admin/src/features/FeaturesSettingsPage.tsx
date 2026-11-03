@@ -27,7 +27,7 @@ interface SavedChange {
 }
 
 /**
- * /settings/features: every plugin, built in or installed, with a switch. Each switch saves
+ * /build/features: every plugin, built in or installed, with a switch. Each switch saves
  * straight away and reloads who is signed in, so the sidebar and every screen follow at
  * once. Switching off a feature that may hold content asks first, and says it is kept.
  */
@@ -80,7 +80,7 @@ export function FeaturesSettingsPage() {
 
   return (
     <Page width="readable">
-      <BackLink to="/settings">{t("nav.settings")}</BackLink>
+      <BackLink to="/build">{t("nav.build")}</BackLink>
       <LargeTitle title={t("features.title")} subtitle={t("features.subtitle")} />
 
       {features.isError && (

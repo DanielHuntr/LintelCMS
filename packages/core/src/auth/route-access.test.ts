@@ -11,7 +11,7 @@ import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
  * Every route the server registers must be one of:
  *
  *   - public by design, listed below with the reason;
- *   - published content, open unless Settings → API access asks for a token;
+ *   - published content, open unless Build → API access asks for a token;
  *   - for anyone signed in, listed below;
  *   - guarded by a permission (everything else).
  *

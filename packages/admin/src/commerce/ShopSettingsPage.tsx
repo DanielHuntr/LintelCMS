@@ -74,7 +74,7 @@ export function ShopSettingsPage() {
               iconTone="neutral"
               label={t("shop.emails.title")}
               description={t("shop.emails.rowDescription")}
-              to="/settings/email-outbox"
+              to="/users/emails"
             />
           )}
         </GroupedList>

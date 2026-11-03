@@ -100,7 +100,7 @@ describe("the plugin system", () => {
     expect(whileOff.statusCode).toBe(404);
     expect(whileOff.json()).toMatchObject({ code: "PLUGIN_NOT_ENABLED" });
     expect(whileOff.json().message).toBe(
-      "“Greetings” is switched off. An admin can switch it on in Settings → Features.",
+      "“Greetings” is switched off. An admin can switch it on in Build → Features.",
     );
 
     await request("PUT", "/plugins", { enabled: ["greetings"] });

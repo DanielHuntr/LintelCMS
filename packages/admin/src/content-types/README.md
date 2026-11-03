@@ -1,13 +1,13 @@
 # Content types
 
-The blueprint builder, at `/settings/content-types`. A content type is a blueprint (the fields
+The blueprint builder, at `/build/content-types`. A content type is a blueprint (the fields
 an entry has) plus a collection (where its entries live). People only ever see "content type".
 
-| Route                             | File                      |
-| --------------------------------- | ------------------------- |
-| `/settings/content-types`         | `ContentTypesPage.tsx`    |
-| `/settings/content-types/new`     | `NewContentTypePage.tsx`  |
-| `/settings/content-types/:handle` | `BlueprintEditorPage.tsx` |
+| Route                          | File                      |
+| ------------------------------ | ------------------------- |
+| `/build/content-types`         | `ContentTypesPage.tsx`    |
+| `/build/content-types/new`     | `NewContentTypePage.tsx`  |
+| `/build/content-types/:handle` | `BlueprintEditorPage.tsx` |
 
 ## How the builder works
 

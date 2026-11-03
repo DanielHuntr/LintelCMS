@@ -201,7 +201,7 @@ from Shopify also show their **orders before the move**.
 Customers get an email when they order (listing any discount codes they used), when their
 order is sent, and when they're refunded. They go out with the rest of Lintel's email, and
 replies go to your shop's support address. Until your site has an email service set up, these
-emails are kept in **Settings → Email outbox** instead of being sent, so you can see exactly
+emails are kept in **Users → Security log → Emails sent** instead of being sent, so you can see exactly
 what customers would get.
 
 Automations can react to orders too: **An order is paid for**, **An order is sent** and **An

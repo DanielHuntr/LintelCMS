@@ -2,7 +2,7 @@
 
 Brings a WordPress site into Lintel from its WXR export (Tools → Export in WordPress):
 posts, pages with their parents, categories, tags, images, and authors (added as people
-with no password, who set their own). Used by Settings → Import → Import from WordPress.
+with no password, who set their own). Used by Build → Import → Import from WordPress.
 
 ## How an import goes
 

@@ -19,9 +19,9 @@ export default definePlugin({ id: "bookings", name: "Bookings", description: "�
 | Option          | Type                                 | What it does                                                                                       |
 | --------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------- |
 | `id`            | `string`                             | Required. Lowercase letters, numbers and dashes, starting with a letter. Unique.                   |
-| `name`          | `string`                             | Required. Shown in Settings → Features and on the setup screen.                                    |
+| `name`          | `string`                             | Required. Shown in Build → Features and on the setup screen.                                       |
 | `description`   | `string`                             | Required. One plain sentence about what it adds.                                                   |
-| `version`       | `string`                             | Shown beside installed plugins in Settings → Features.                                             |
+| `version`       | `string`                             | Shown beside installed plugins in Build → Features.                                                |
 | `permissions`   | `{ permission, description }[]`      | Permissions it adds. Each must start with `<id>:`, such as `bookings:read`.                        |
 | `settings`      | `{ schema, defaults }`               | A Zod schema and the values used until an admin saves some. `defaults` must pass `schema`.         |
 | `database`      | `{ tables, migrationsFolder }`       | Its Drizzle tables (named `<id>` or `<id>_…`) and the folder of migrations drizzle-kit wrote.      |

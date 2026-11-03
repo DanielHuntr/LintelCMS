@@ -6,7 +6,7 @@ sidebar:
   label: Multi-site
 ---
 
-One Lintel can serve several sites. Editors set them up in **Settings → Sites** (see
+One Lintel can serve several sites. Editors set them up in **Build → Websites and domains** (see
 [running several sites](/using/sites/)); this page is about reading each site's content
 from your website. With a single site you can ignore all of it: every request is for that
 site, whatever domain it comes from.
@@ -79,7 +79,7 @@ are otherwise unchanged.
 ## Sitemaps, robots.txt and previews
 
 `/sitemap.xml` and `/robots.txt` are per site. They need the site's **Site address** (set
-in Settings → Sites), since sitemaps hold full URLs; until it's set, the sitemap answers
+in Build → Websites and domains), since sitemaps hold full URLs; until it's set, the sitemap answers
 with a message saying so.
 
 Preview address patterns can use `{site}` (the site's handle) and `{siteUrl}` (its

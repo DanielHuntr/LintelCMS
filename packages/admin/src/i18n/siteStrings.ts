@@ -1,5 +1,5 @@
 /**
- * The words for running several sites from one Lintel: Settings → Sites, the site switcher,
+ * The words for running several sites from one Lintel: Build → Websites and domains, the site switcher,
  * "Copy to site" and site folders in the media library. `strings.ts` spreads them in, so
  * they are used through `t()` like every other string.
  */

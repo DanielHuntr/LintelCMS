@@ -1,7 +1,7 @@
 # Security log
 
 A record of sign-ins, failed sign-ins and every change to people, roles, two-factor
-settings, passkeys and API tokens. Admins read it under **Settings → Security log** and
+settings, passkeys and API tokens. Admins read it under **Users → Security log** and
 can download it as CSV.
 
 Features write to it after something has happened:

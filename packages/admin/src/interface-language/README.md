@@ -1,6 +1,6 @@
 # Interface language (admin)
 
-Settings → Interface language: the language of the admin's own words, for you and (with
+Account → Interface language: the language of the admin's own words, for you and (with
 `settings:update`) the site's default. Not the language of the content; that's
 `src/locales`.
 

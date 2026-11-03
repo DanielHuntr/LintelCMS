@@ -6,7 +6,7 @@ import { lintelPublicBranding } from "./lintelBranding.js";
 
 /**
  * The branding every screen shows. Loaded once before the admin draws anything (see
- * main.tsx), and replaced when someone saves Settings → Branding, so the sidebar, the
+ * main.tsx), and replaced when someone saves Build → Admin branding, so the sidebar, the
  * tab title and the accent colour change straight away.
  */
 

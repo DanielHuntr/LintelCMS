@@ -26,7 +26,7 @@ import {
 let justChanged: "personal" | "site" | null = null;
 
 /**
- * /settings/interface-language: your own language for the admin, and the site's default.
+ * /account/language: your own language for the admin, and the site's default.
  * Reached from Account, since the first choice is personal.
  */
 export function InterfaceLanguagePage() {

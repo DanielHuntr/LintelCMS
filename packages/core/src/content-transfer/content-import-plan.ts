@@ -4,7 +4,7 @@ import type { ConflictStrategy, LintelExport } from "./transfer-format.js";
 /**
  * Working out what an import will do, before it does anything: which things in the export
  * are new here, which this site already has, and what each will be called here. The same
- * plan is shown in Settings → Import's preview and then carried out, so the preview never
+ * plan is shown in Build → Import's preview and then carried out, so the preview never
  * promises something the import does differently.
  *
  * Things are matched by id first and then by what people see as their identity: a content

@@ -39,7 +39,7 @@ interface SettingsPage {
 /** Settings screens that aren't in the sidebar. Add new ones here as they are built. */
 const settingsPages: readonly SettingsPage[] = [
   {
-    path: "/settings/content-types",
+    path: "/build/content-types",
     label: "contentTypes.title",
     description: "settings.contentTypesDescription",
     permission: "blueprints:read",

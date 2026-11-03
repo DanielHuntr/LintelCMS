@@ -160,7 +160,7 @@ function BuiltInPreviewFrame({
         <p className="text-footnote text-label-secondary">{t("preview.noSiteDescription")}</p>
         {canConnect && (
           <Link
-            to="/settings/content-types/$handle"
+            to="/build/content-types/$handle"
             params={{ handle: collection.blueprintHandle }}
             hash="live-preview"
             className="mt-1 self-start text-footnote font-medium text-accent hover:underline focus-visible:focus-ring"

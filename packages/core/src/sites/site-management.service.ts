@@ -40,7 +40,7 @@ import {
 import type { Site, SiteBranding } from "./sites.table.js";
 
 /**
- * Settings → Sites: adding, changing and removing the sites this install serves. Each new
+ * Build → Websites and domains: adding, changing and removing the sites this install serves. Each new
  * site starts with its languages and with empty copies of the default site's menus, so a
  * website asking for "main" gets a menu on every site.
  */

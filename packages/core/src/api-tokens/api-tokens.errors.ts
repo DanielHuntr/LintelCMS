@@ -22,7 +22,7 @@ export class ApiTokenRequiredError extends HttpError {
     super(
       401,
       "API_TOKEN_REQUIRED",
-      "This site's content API needs a token. Send one as “Authorization: Bearer <token>”; admins make them in Settings → API access.",
+      "This site's content API needs a token. Send one as “Authorization: Bearer <token>”; admins make them in Build → API access.",
     );
   }
 }

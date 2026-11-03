@@ -17,7 +17,7 @@ import { useBrandingSettings, useResetBranding, useSaveBranding } from "./brandi
 import { BrandingImageField } from "./BrandingImageField.js";
 
 /**
- * /settings/branding: the name, logo, colour and help links clients see, for agencies
+ * /build/branding: the name, logo, colour and help links clients see, for agencies
  * selling the admin under their own (or their client's) brand. Needs `branding:update`.
  */
 export function BrandingPage() {
@@ -27,7 +27,7 @@ export function BrandingPage() {
 
   return (
     <>
-      <BackLink to="/settings">{t("nav.settings")}</BackLink>
+      <BackLink to="/build">{t("nav.build")}</BackLink>
       <LargeTitle title={t("branding.title")} subtitle={t("branding.subtitle")} />
       {settings.isError && (
         <LoadError error={settings.error} onRetry={() => void settings.refetch()} />

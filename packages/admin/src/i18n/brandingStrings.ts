@@ -1,5 +1,5 @@
 /**
- * The words for Settings → Branding, Settings → Interface language and the support
+ * The words for Build → Admin branding, Account → Interface language and the support
  * details on the Help page. Kept in their own list so the main one stays readable;
  * `strings.ts` spreads them in, so they are used through `t()` like every other string.
  *

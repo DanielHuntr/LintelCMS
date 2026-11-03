@@ -4,7 +4,7 @@ import { isOwner } from "../roles/roles.service.js";
 import { OutboxOwnersOnlyError } from "./email.errors.js";
 import type { OutboxEmailDriver } from "./outbox-email-driver.js";
 
-/** How many of the newest emails Settings → Email outbox shows. */
+/** How many of the newest emails Users → Security log → Emails sent shows. */
 const MESSAGES_SHOWN = 50;
 
 /**

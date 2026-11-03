@@ -1,7 +1,7 @@
 # API tokens
 
 Keys that websites, apps and scripts send as `Authorization: Bearer <token>`. Admins make
-them in Settings → API access.
+them in Build → API access.
 
 - **Shown once, stored hashed.** A token is `lintel_` and 43 random characters. Only its
   SHA-256 hash and its first few characters (`tokenStart`, to tell tokens apart) are kept.

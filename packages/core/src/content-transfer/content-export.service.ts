@@ -29,7 +29,7 @@ import {
 
 /**
  * Making a Lintel export (see transfer-format.ts): content types, entries, taxonomies,
- * globals, menus and media. Used by `lintel export` and Settings → Import's "Export".
+ * globals, menus and media. Used by `lintel export` and Build → Import's "Export".
  */
 export interface ExportOptions {
   /** Every saved version of each entry, not only the current one. Makes the file bigger. */

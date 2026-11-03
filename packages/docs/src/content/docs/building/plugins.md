@@ -5,7 +5,7 @@ since: "0.1"
 ---
 
 Optional features are plugins, so a new site only shows what it needs. The setup screen's
-"What are you building?" step switches the first set on; **Settings → Features** changes
+"What are you building?" step switches the first set on; **Build → Features** changes
 them later. The plugin system is in **beta**.
 
 To build one, follow [Writing a plugin](/building/writing-a-plugin/); every option is in

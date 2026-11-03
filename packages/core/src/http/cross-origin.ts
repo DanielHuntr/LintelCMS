@@ -6,7 +6,7 @@ import { isAllowedSiteOrigin } from "../delivery/delivery-access.service.js";
  * Which browser pages may call the API (CORS), decided per request:
  *
  *   - the admin's origin may call everything, with its session cookie;
- *   - websites listed in Settings → API access may call the public content APIs
+ *   - websites listed in Build → API access may call the public content APIs
  *     (/delivery, /graphql and /openapi.json), without cookies.
  *
  * Anything else gets no CORS headers, so the browser keeps the response from the page.

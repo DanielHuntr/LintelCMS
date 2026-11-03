@@ -1,4 +1,4 @@
-import { Download, ShieldCheck } from "lucide-react";
+import { Download, Inbox, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { LoadError } from "../api/LoadError.js";
 import { Pagination } from "../content/Pagination.js";
@@ -7,10 +7,12 @@ import { BackLink } from "../design/BackLink.js";
 import { buttonClasses } from "../design/Button.js";
 import { EmptyState } from "../design/EmptyState.js";
 import { LargeTitle } from "../design/LargeTitle.js";
+import { LinkButton } from "../design/LinkButton.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { SelectField } from "../design/SelectField.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { t } from "../i18n/strings.js";
+import { useCan } from "../session/SessionContext.js";
 import {
   describeSecurityEvent,
   securityEventKinds,
@@ -21,8 +23,9 @@ import { useSecurityEvents } from "./securityLog.queries.js";
 
 const ALL = "all";
 
-/** Settings → Security log: sign-ins, failures and every change to people and access. */
+/** Users → Security log: sign-ins, failures and every change to people and access. */
 export function SecurityLogPage() {
+  const canReadOutbox = useCan("*");
   const [kind, setKind] = useState(ALL);
   const [page, setPage] = useState(1);
   const filter = { kind: kind === ALL ? undefined : kind, page };
@@ -31,15 +34,31 @@ export function SecurityLogPage() {
 
   return (
     <>
-      <BackLink to="/settings">{t("nav.settings")}</BackLink>
+      <BackLink to="/users">{t("people.title")}</BackLink>
       <LargeTitle
         title={t("securityLog.title")}
         subtitle={t("securityLog.subtitle")}
         actions={
-          <a href={securityLogExportUrl(filter.kind)} download className={buttonClasses("tinted")}>
-            <Download aria-hidden="true" strokeWidth={2} className="size-4" />
-            {t("securityLog.export")}
-          </a>
+          <>
+            {/* The outbox holds other people's sign-in links, so only owners can read it. */}
+            {canReadOutbox && (
+              <LinkButton
+                to="/users/emails"
+                variant="tinted"
+                icon={<Inbox aria-hidden="true" strokeWidth={2} />}
+              >
+                {t("securityLog.emails")}
+              </LinkButton>
+            )}
+            <a
+              href={securityLogExportUrl(filter.kind)}
+              download
+              className={buttonClasses("tinted")}
+            >
+              <Download aria-hidden="true" strokeWidth={2} className="size-4" />
+              {t("securityLog.export")}
+            </a>
+          </>
         }
       />
       <div className="flex max-w-4xl flex-col gap-6">

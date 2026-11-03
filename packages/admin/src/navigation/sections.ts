@@ -2,6 +2,7 @@ import { hasPermission, type Permission } from "@lintel/core/permissions";
 import {
   CircleHelp,
   FileText,
+  Hammer,
   Image,
   LayoutGrid,
   Palette,
@@ -28,6 +29,8 @@ export interface Section {
   icon: LucideIcon;
   /** The permission needed to see this section. Undefined means everyone can see it. */
   permission?: Permission;
+  /** Or: any one of these is enough. */
+  anyPermission?: readonly Permission[];
   /** The plugin that provides this section. Without it switched on, the section is hidden. */
   plugin?: string;
 }
@@ -53,6 +56,13 @@ export const sections: readonly Section[] = [
     icon: Workflow,
   },
   { path: "/settings", label: "nav.settings", permission: "settings:read", icon: Settings },
+  // For whoever built the site: only people who can change its structure see it.
+  {
+    path: "/build",
+    label: "nav.build",
+    anyPermission: ["blueprints:update", "settings:update", "branding:update", "content:transfer"],
+    icon: Hammer,
+  },
   { path: "/help", label: "nav.help", icon: CircleHelp },
 ];
 
@@ -80,6 +90,8 @@ export function visibleSections(
     .filter(
       (section) =>
         (section.permission === undefined || hasPermission(granted, section.permission)) &&
+        (section.anyPermission === undefined ||
+          section.anyPermission.some((permission) => hasPermission(granted, permission))) &&
         (section.plugin === undefined || enabledPlugins.includes(section.plugin)),
     )
     .map((section) => ({ path: section.path, label: t(section.label), icon: section.icon }));

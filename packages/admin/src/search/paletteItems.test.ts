@@ -29,7 +29,7 @@ describe("command palette items", () => {
   it("lists collections and settings screens that aren't in the sidebar", () => {
     const context = { permissions: ["*"], enabledPlugins: [], collections: [postsCollection] };
     expect(matchingPages("types", context).map((item) => item.target)).toEqual([
-      { kind: "page", path: "/settings/content-types" },
+      { kind: "page", path: "/build/content-types" },
     ]);
     expect(matchingPages("blog", context).map((item) => item.target)).toEqual([
       { kind: "collection", collectionHandle: "posts" },

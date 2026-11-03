@@ -6,7 +6,7 @@ import { automationsPlugin } from "../workflows/automations.plugin.js";
 
 /**
  * Every built-in plugin, in one visible list (no discovery by file names), in the order
- * Settings → Features and the setup screen show them. Each is a `definePlugin` from its
+ * Build → Features and the setup screen show them. Each is a `definePlugin` from its
  * own feature folder. Plugins from packages are added after these, from lintel.config.ts
  * at the repository root (see installed-plugins.ts).
  */

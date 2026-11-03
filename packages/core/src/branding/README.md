@@ -10,7 +10,7 @@ Branding comes in three layers, each on top of the one before:
 2. **The deployment's**: the `branding` section of `lintel.config.json`, then the
    `LINTEL_BRAND_*` environment variables (`deployment-branding.ts`). Read once at start,
    so it also applies to the setup screens of a fresh install.
-3. **Settings → Branding** in the admin. Only fields that differ from the deployment are
+3. **Build → Admin branding** in the admin. Only fields that differ from the deployment are
    saved (the `brandingOverrides` setting), so a later deployment change still reaches the
    rest. "Reset" empties it.
 

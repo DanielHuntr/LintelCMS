@@ -84,7 +84,7 @@ Settings → Site keeps one address, such as `https://www.example.com` (only its
 kept), in the `siteAddress` setting. It is the default site's address: it is in every
 session (`siteAddress` on `/auth/me`) so the admin can link "View page" to the live page,
 and the sitemap and canonical addresses use it. Other sites have their own address
-(`siteUrl`, Settings → Sites); `readAddressForSite` gives the right one. Empty means no
+(`siteUrl`, Build → Websites and domains); `readAddressForSite` gives the right one. Empty means no
 website is connected yet.
 
 | Method and path     | Permission        | Success                              |

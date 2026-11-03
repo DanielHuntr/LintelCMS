@@ -4,8 +4,11 @@ import { documentTitleFor } from "./documentTitle.js";
 describe("documentTitleFor", () => {
   it("names the section, then the site", () => {
     expect(documentTitleFor("/", "Brightside Bakery")).toBe("Dashboard · Brightside Bakery");
-    expect(documentTitleFor("/settings/features", "Brightside Bakery")).toBe(
+    expect(documentTitleFor("/settings/site", "Brightside Bakery")).toBe(
       "Settings · Brightside Bakery",
+    );
+    expect(documentTitleFor("/build/features", "Brightside Bakery")).toBe(
+      "Build · Brightside Bakery",
     );
   });
 

@@ -34,10 +34,12 @@ import { SectionTabs } from "./plugins/SectionTabs.js";
 import { HelpPage } from "./help/HelpPage.js";
 import { peopleRoutes, signedOutAccountRoutes } from "./people/peopleRoutes.js";
 import { BrandingPage } from "./branding/BrandingPage.js";
+import { BuildPage } from "./build/BuildPage.js";
 import { InterfaceLanguagePage } from "./interface-language/InterfaceLanguagePage.js";
 import { loadInterfaceLanguage } from "./interface-language/loadInterfaceLanguage.js";
 import { AdminLayout } from "./layout/AdminLayout.js";
 import { MediaLibraryPage } from "./media/MediaLibraryPage.js";
+import { sendOnFromOldAddress } from "./navigation/movedPages.js";
 import { fetchCurrentSession, signOut } from "./session/session.api.js";
 import { ServerUnreachablePage } from "./setup/ServerUnreachablePage.js";
 import { SetupPage } from "./setup/SetupPage.js";
@@ -306,27 +308,33 @@ const settingsRoute = createRoute({
   component: SettingsPage,
 });
 
+const buildRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/build",
+  component: BuildPage,
+});
+
 const sitesRoute = createRoute({
   getParentRoute: () => adminRoute,
-  path: "/settings/sites",
+  path: "/build/sites",
   component: SitesPage,
 });
 
 const contentTypesRoute = createRoute({
   getParentRoute: () => adminRoute,
-  path: "/settings/content-types",
+  path: "/build/content-types",
   component: ContentTypesPage,
 });
 
 const newContentTypeRoute = createRoute({
   getParentRoute: () => adminRoute,
-  path: "/settings/content-types/new",
+  path: "/build/content-types/new",
   component: NewContentTypePage,
 });
 
 const blueprintRoute = createRoute({
   getParentRoute: () => adminRoute,
-  path: "/settings/content-types/$handle",
+  path: "/build/content-types/$handle",
   component: function BlueprintRoute() {
     const { handle } = blueprintRoute.useParams();
     return <BlueprintEditorPage handle={handle} />;
@@ -335,25 +343,25 @@ const blueprintRoute = createRoute({
 
 const apiAccessRoute = createRoute({
   getParentRoute: () => adminRoute,
-  path: "/settings/api",
+  path: "/build/api",
   component: ApiAccessPage,
 });
 
 const apiReferenceRoute = createRoute({
   getParentRoute: () => adminRoute,
-  path: "/settings/api/reference",
+  path: "/build/api/reference",
   component: ApiReferencePage,
 });
 
 const webhooksRoute = createRoute({
   getParentRoute: () => adminRoute,
-  path: "/settings/webhooks",
+  path: "/build/webhooks",
   component: WebhooksPage,
 });
 
 const webhookRoute = createRoute({
   getParentRoute: () => adminRoute,
-  path: "/settings/webhooks/$webhookId",
+  path: "/build/webhooks/$webhookId",
   component: function WebhookRoute() {
     const { webhookId } = webhookRoute.useParams();
     return <WebhookDetailPage webhookId={webhookId} />;
@@ -366,22 +374,22 @@ const siteSettingsRoute = createRoute({
   component: SiteSettingsPage,
 });
 
-/** Settings → Features: switching plugins on and off. */
+/** Build → Features: switching plugins on and off. */
 const featuresRoute = createRoute({
   getParentRoute: () => adminRoute,
-  path: "/settings/features",
+  path: "/build/features",
   component: FeaturesSettingsPage,
 });
 
 const brandingRoute = createRoute({
   getParentRoute: () => adminRoute,
-  path: "/settings/branding",
+  path: "/build/branding",
   component: BrandingPage,
 });
 
 const interfaceLanguageRoute = createRoute({
   getParentRoute: () => adminRoute,
-  path: "/settings/interface-language",
+  path: "/account/language",
   component: InterfaceLanguagePage,
 });
 
@@ -395,12 +403,14 @@ const integrationRoutes = [
 ];
 
 /**
- * Any other address: a plugin's screen, or "page not found" (see PluginScreenRoute). Kept
+ * Any other address: a page's old address (sent on to the new one), a plugin's screen, or
+ * "page not found" (see PluginScreenRoute). Kept
  * last in TanStack Router's ranking, so it never hides one of the admin's own routes.
  */
 const pluginScreensRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: "$",
+  beforeLoad: sendOnFromOldAddress,
   component: PluginScreenRoute,
 });
 
@@ -422,6 +432,7 @@ const contentRoutes = [
   ...fieldsetRoutes(() => adminRoute),
   publishedPageRoute,
   settingsRoute,
+  buildRoute,
   sitesRoute,
   contentTypesRoute,
   newContentTypeRoute,

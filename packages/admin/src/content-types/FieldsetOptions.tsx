@@ -23,7 +23,7 @@ export function FieldsetOptions({
     return (
       <p className="text-body text-label-secondary">
         {t("fieldOptions.noFieldsets")}{" "}
-        <Link to="/settings/fieldsets" className="text-accent hover:underline">
+        <Link to="/build/fieldsets" className="text-accent hover:underline">
           {t("fieldOptions.makeFieldset")}
         </Link>
       </p>
@@ -48,7 +48,7 @@ export function FieldsetOptions({
             fields: chosen.fields.map((field) => field.label).join(", ") || "—",
           })}{" "}
           <Link
-            to="/settings/fieldsets/$handle"
+            to="/build/fieldsets/$handle"
             params={{ handle: chosen.handle }}
             className="text-accent hover:underline"
           >

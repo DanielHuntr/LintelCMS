@@ -27,8 +27,8 @@ export function peopleRoutes<Parent extends AnyRoute>(getParentRoute: () => Pare
       },
     }),
     createRoute({ getParentRoute, path: "/account", component: AccountPage }),
-    createRoute({ getParentRoute, path: "/settings/security-log", component: SecurityLogPage }),
-    createRoute({ getParentRoute, path: "/settings/email-outbox", component: EmailOutboxPage }),
+    createRoute({ getParentRoute, path: "/users/activity", component: SecurityLogPage }),
+    createRoute({ getParentRoute, path: "/users/emails", component: EmailOutboxPage }),
   ];
 }
 

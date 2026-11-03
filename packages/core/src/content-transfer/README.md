@@ -3,7 +3,7 @@
 A Lintel export is a site's content in a portable form: content types, collections,
 entries, taxonomies and terms, globals, menus and media. Unlike a backup, it leaves out
 people, sign-ins, API tokens, webhooks and settings, and importing it adds to a site
-rather than replacing it. Used by Settings → Import, `lintel export` and `lintel import`.
+rather than replacing it. Used by Build → Import, `lintel export` and `lintel import`.
 
 ## The format
 

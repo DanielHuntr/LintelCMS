@@ -41,7 +41,7 @@ const WEBSITE_CACHE = "public, max-age=60";
  * Someone limited to some sites can only change those sites, and only move roles among them
  * (see site-access.service.ts).
  *
- * For websites, open unless delivery needs a token (Settings → API access):
+ * For websites, open unless delivery needs a token (Build → API access):
  *
  *   GET /delivery/sites                -> { sites: [DeliveredSite] }
  *   GET /delivery/site                 -> the site this request is for (?site=, header or domain)

@@ -18,7 +18,7 @@ import { useCreateWebhook, useWebhooks } from "./webhooks.queries.js";
 import { WebhookFormDialog } from "./WebhookFormDialog.js";
 import { Page } from "../design/Page.js";
 
-/** /settings/webhooks: the addresses Lintel tells when content changes. */
+/** /build/webhooks: the addresses Lintel tells when content changes. */
 export function WebhooksPage() {
   const webhooks = useWebhooks();
   const createWebhook = useCreateWebhook();
@@ -34,7 +34,7 @@ export function WebhooksPage() {
 
   return (
     <Page width="readable">
-      <BackLink to="/settings">{t("nav.settings")}</BackLink>
+      <BackLink to="/build">{t("nav.build")}</BackLink>
       <LargeTitle
         title={t("webhooks.title")}
         subtitle={t("webhooks.subtitle")}
@@ -79,7 +79,7 @@ export function WebhooksPage() {
                     <Badge tone="neutral">{t("webhooks.off")}</Badge>
                   )
                 }
-                to={`/settings/webhooks/${encodeURIComponent(webhook.id)}`}
+                to={`/build/webhooks/${encodeURIComponent(webhook.id)}`}
               />
             ))}
           </GroupedList>
@@ -101,7 +101,7 @@ export function WebhooksPage() {
             createWebhook.mutate(values, {
               onSuccess: (webhook) =>
                 void navigate({
-                  to: "/settings/webhooks/$webhookId",
+                  to: "/build/webhooks/$webhookId",
                   params: { webhookId: webhook.id },
                 }),
             })

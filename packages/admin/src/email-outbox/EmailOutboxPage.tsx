@@ -12,7 +12,7 @@ import { t } from "../i18n/strings.js";
 import { getOutbox } from "./emailOutbox.api.js";
 
 /**
- * Settings → Email outbox: the emails Lintel would have sent, while no mail service is set
+ * Users → Security log → Emails sent: the emails Lintel would have sent, while no mail service is set
  * up. Links in invitations and password resets can be opened from here.
  */
 export function EmailOutboxPage() {
@@ -20,7 +20,7 @@ export function EmailOutboxPage() {
 
   return (
     <>
-      <BackLink to="/settings">{t("nav.settings")}</BackLink>
+      <BackLink to="/users">{t("people.title")}</BackLink>
       <LargeTitle
         title={t("emailOutbox.title")}
         subtitle={t("emailOutbox.subtitle")}

@@ -54,10 +54,10 @@ version of Lintel than this one. It says which, and nothing is replaced.
 
 ## Moving content to another site
 
-1. On the site the content is on, go to **Settings → Import** and, under **Export this
+1. On the site the content is on, go to **Build → Import** and, under **Export this
    site's content**, press **Download export**. Leave **Include the media files** ticked
    unless you only want the text.
-2. On the other site, go to **Settings → Import** and choose the file under **Import a
+2. On the other site, go to **Build → Import** and choose the file under **Import a
    Lintel export**.
 3. Lintel shows what the import will do: how many things are new, updated and kept as
    is. Choose what happens **When something is already here**:

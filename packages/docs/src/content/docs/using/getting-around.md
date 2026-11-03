@@ -12,13 +12,14 @@ The sidebar on the left lists the parts of Lintel you can use. What you see depe
 your account and on the features switched on for your site, so not everyone sees every
 item.
 
-| Section       | What it's for                                                    |
-| ------------- | ---------------------------------------------------------------- |
-| **Dashboard** | Your starting point: recent edits, drafts and what's scheduled.  |
-| **Content**   | Your pages, posts and anything else you write.                   |
-| **Media**     | Photos, logos and documents.                                     |
-| **Settings**  | How your site and its content are set up, such as content types. |
-| **Help**      | These help pages, inside Lintel.                                 |
+| Section       | What it's for                                                                                |
+| ------------- | -------------------------------------------------------------------------------------------- |
+| **Dashboard** | Your starting point: recent edits, drafts and what's scheduled.                              |
+| **Content**   | Your pages, posts and anything else you write.                                               |
+| **Media**     | Photos, logos and documents.                                                                 |
+| **Settings**  | Your website's details, backups and updates.                                                 |
+| **Build**     | How the site is put together, such as content types. Only people who can change that see it. |
+| **Help**      | These help pages, inside Lintel.                                                             |
 
 Features your site has switched on, such as Forms or Bookings, add their own items
 after Media. Design, Shop, Forms and Users are on the way. Their sections show "On
@@ -46,11 +47,11 @@ is always your dashboard.
 
 ## Switching features on and off
 
-Admins choose which parts of Lintel a site uses in **Settings → Features**. Switching a
+Admins choose which parts of Lintel a site uses in **Build → Features**. Switching a
 feature off hides it from everyone and keeps everything it made, so switching it back on
 brings it all back as it was.
 
-![Settings → Features](../../../assets/screens/features.png)
+![Build → Features](../../../assets/screens/features.png)
 
 ## Getting help
 

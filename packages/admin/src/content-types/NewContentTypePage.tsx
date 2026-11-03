@@ -23,7 +23,7 @@ import {
 import { StructureChoice } from "./StructureChoice.js";
 import { Page } from "../design/Page.js";
 
-/** /settings/content-types/new: name a kind of content, say how it's organised, then add fields. */
+/** /build/content-types/new: name a kind of content, say how it's organised, then add fields. */
 export function NewContentTypePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -59,7 +59,7 @@ export function NewContentTypePage() {
         queryClient.invalidateQueries({ queryKey: contentKeys.collections() }),
       ]);
       await navigate({
-        to: "/settings/content-types/$handle",
+        to: "/build/content-types/$handle",
         params: { handle: collection.blueprintHandle },
       });
     } catch (caught) {
@@ -78,7 +78,7 @@ export function NewContentTypePage() {
 
   return (
     <Page width="readable">
-      <BackLink to="/settings/content-types">{t("contentTypes.title")}</BackLink>
+      <BackLink to="/build/content-types">{t("contentTypes.title")}</BackLink>
       <LargeTitle title={t("contentTypes.newTitle")} subtitle={t("contentTypes.newSubtitle")} />
       <ManagedInCodeBanner />
 
@@ -115,7 +115,7 @@ export function NewContentTypePage() {
           )}
         </section>
         <div className="flex justify-end gap-2">
-          <LinkButton to="/settings/content-types" variant="plain">
+          <LinkButton to="/build/content-types" variant="plain">
             {t("common.cancel")}
           </LinkButton>
           <Button type="submit" disabled={isCreating}>

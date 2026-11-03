@@ -213,7 +213,7 @@ export const formsStrings = {
     "Paste this where the form should appear. It works on any website.",
   "forms.share.copyEmbed": "Copy code",
   "forms.share.embedFooter":
-    "The website's address must be listed in Settings → API access, so browsers let it send the form.",
+    "The website's address must be listed in Build → API access, so browsers let it send the form.",
   "forms.share.apiTitle": "For developers",
   "forms.share.apiDescription":
     "Fetch the form's fields from the delivery API and post answers back. The form's handle is “{handle}”.",

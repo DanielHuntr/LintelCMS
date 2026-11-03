@@ -1,19 +1,11 @@
 import {
   Archive,
   ArrowUpCircle,
-  Blocks,
-  Globe,
-  FileInput,
-  Inbox,
+  CornerDownRight,
   Info,
-  KeyRound,
   Languages,
   MonitorSmartphone,
-  Palette,
   Search,
-  Shapes,
-  ShieldCheck,
-  Webhook,
 } from "lucide-react";
 import { useState } from "react";
 import { EmptyState } from "../design/EmptyState.js";
@@ -23,6 +15,7 @@ import { LargeTitle } from "../design/LargeTitle.js";
 import { Page } from "../design/Page.js";
 import { SearchField } from "../design/SearchField.js";
 import { t } from "../i18n/strings.js";
+import { movedPages } from "../navigation/movedPages.js";
 import { useVisibleContributions } from "../plugins/AdminPluginsContext.js";
 import { useCan } from "../session/SessionContext.js";
 import { UpdatesCountBadge } from "../updates/UpdatesCountBadge.js";
@@ -34,15 +27,17 @@ import {
 } from "./settingsGroups.js";
 
 /**
- * /settings: one row per area of settings, like iOS Settings, with a search box. The
- * website's own settings come first, as what most owners come here for; the ones set up when
- * the site was built, then developer and system settings, come last. Rows people may not use
- * aren't shown. Your own language for the admin is on Account.
+ * /settings: the things a website owner changes now and then, like iOS Settings, with a
+ * search box. What the site is built from is in Build, the security log and sent emails are
+ * in Users, and your own language for the admin is on Account; searching here for one of
+ * those says where it went. Rows people may not use aren't shown.
  */
 export function SettingsPage() {
   const groups = useSettingsGroups();
   const [search, setSearch] = useState("");
   const shown = searchSettings(groups, search);
+  const moved = searchSettings([{ header: "", entries: movedEntries() }], search);
+  const movedShown = search.trim() === "" ? [] : (moved[0]?.entries ?? []);
 
   return (
     <Page width="readable">
@@ -56,7 +51,14 @@ export function SettingsPage() {
             ))}
           </GroupedList>
         ))}
-        {shown.length === 0 && (
+        {movedShown.length > 0 && (
+          <GroupedList header={t("settings.movedHeader")}>
+            {movedShown.map(({ key, ...entry }) => (
+              <GroupedListRow key={key} wrapsText {...entry} />
+            ))}
+          </GroupedList>
+        )}
+        {shown.length === 0 && movedShown.length === 0 && (
           <div className="rounded-card bg-surface">
             <EmptyState
               icon={Search}
@@ -70,16 +72,22 @@ export function SettingsPage() {
   );
 }
 
+/** Rows for screens that used to be here, found by their name: "Webhooks is now in Build". */
+function movedEntries(): SettingsEntry[] {
+  return movedPages.map((page) => ({
+    key: page.from,
+    icon: CornerDownRight,
+    iconTone: "neutral",
+    label: t(page.label),
+    description: t("settings.movedTo", { name: t(page.label), place: t(page.nowIn) }),
+    to: page.to,
+  }));
+}
+
 function useSettingsGroups(): SettingsGroup[] {
-  const canSeeContentTypes = useCan("blueprints:read");
   const canSeeSiteSettings = useCan("settings:read");
-  const canSeeSecurityLog = useCan("security:read");
-  const canBrand = useCan("branding:update");
   const canSeeBackups = useCan("backups:read");
-  const canTransferContent = useCan("content:transfer");
   const canSeeUpdates = useCan("updates:read");
-  // The outbox holds other people's sign-in links, so only owners can read it.
-  const canReadOutbox = useCan("*");
   const pluginRows = useVisibleContributions("settingsRows");
 
   const when = (condition: boolean, entry: SettingsEntry) => (condition ? [entry] : []);
@@ -109,114 +117,20 @@ function useSettingsGroups(): SettingsGroup[] {
         ],
       },
       {
-        header: t("settings.securityHeader"),
-        entries: [
-          ...when(canSeeSecurityLog, {
-            key: "security-log",
-            icon: ShieldCheck,
-            iconTone: "success",
-            label: t("securityLog.title"),
-            description: t("settings.securityLogDescription"),
-            to: "/settings/security-log",
-          }),
-          ...when(canReadOutbox, {
-            key: "email-outbox",
-            icon: Inbox,
-            iconTone: "success",
-            label: t("emailOutbox.title"),
-            description: t("settings.emailOutboxDescription"),
-            to: "/settings/email-outbox",
-          }),
-        ],
-      },
-      {
-        header: t("settings.dataHeader"),
+        header: t("settings.lookingAfterHeader"),
         entries: [
           ...when(canSeeBackups, {
             key: "backups",
             icon: Archive,
-            iconTone: "warning",
+            iconTone: "success",
             label: t("backups.title"),
             description: t("settings.backupsDescription"),
             to: "/settings/backups",
           }),
-          ...when(canTransferContent, {
-            key: "import",
-            icon: FileInput,
-            iconTone: "warning",
-            label: t("import.title"),
-            description: t("settings.importDescription"),
-            to: "/settings/import",
-          }),
-        ],
-      },
-      {
-        // Set up once when the site is built; changing them can change how the whole site works.
-        header: t("settings.buildHeader"),
-        footer: t("settings.buildFooter"),
-        entries: [
-          ...when(canSeeContentTypes, {
-            key: "content-types",
-            icon: Shapes,
-            iconTone: "neutral",
-            label: t("contentTypes.title"),
-            description: t("settings.contentTypesDescription"),
-            to: "/settings/content-types",
-          }),
-          ...when(canSeeSiteSettings, {
-            key: "features",
-            icon: Blocks,
-            iconTone: "neutral",
-            label: t("features.title"),
-            description: t("settings.featuresDescription"),
-            to: "/settings/features",
-          }),
-          ...when(canSeeSiteSettings, {
-            key: "sites",
-            icon: Globe,
-            iconTone: "neutral",
-            label: t("sites.title"),
-            description: t("settings.sitesDescription"),
-            to: "/settings/sites",
-          }),
-          ...when(canBrand, {
-            key: "branding",
-            icon: Palette,
-            iconTone: "neutral",
-            label: t("branding.title"),
-            description: t("settings.brandingDescription"),
-            to: "/settings/branding",
-          }),
-        ],
-      },
-      {
-        header: t("settings.developersHeader"),
-        entries: [
-          ...when(canSeeSiteSettings, {
-            key: "api",
-            icon: KeyRound,
-            iconTone: "neutral",
-            label: t("apiAccess.title"),
-            description: t("settings.apiAccessDescription"),
-            to: "/settings/api",
-          }),
-          ...when(canSeeSiteSettings, {
-            key: "webhooks",
-            icon: Webhook,
-            iconTone: "neutral",
-            label: t("webhooks.title"),
-            description: t("settings.webhooksDescription"),
-            to: "/settings/webhooks",
-          }),
-        ],
-      },
-      {
-        header: t("settings.systemHeader"),
-        entries: [
           ...when(canSeeUpdates, {
             key: "updates",
             icon: ArrowUpCircle,
-            iconTone: "neutral",
+            iconTone: "success",
             label: t("updates.title"),
             description: t("settings.updatesDescription"),
             accessory: <UpdatesCountBadge />,
@@ -225,7 +139,7 @@ function useSettingsGroups(): SettingsGroup[] {
           {
             key: "about",
             icon: Info,
-            iconTone: "neutral",
+            iconTone: "success",
             label: t("about.title"),
             description: t("settings.aboutDescription"),
             to: "/settings/about",

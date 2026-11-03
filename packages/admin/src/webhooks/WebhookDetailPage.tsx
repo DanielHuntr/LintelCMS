@@ -20,7 +20,7 @@ import { useDeleteWebhook, useUpdateWebhook, useWebhook } from "./webhooks.queri
 import { WebhookFormDialog } from "./WebhookFormDialog.js";
 import { Page } from "../design/Page.js";
 
-/** /settings/webhooks/:id: one webhook's settings, its signing secret and its delivery log. */
+/** /build/webhooks/:id: one webhook's settings, its signing secret and its delivery log. */
 export function WebhookDetailPage({ webhookId }: { webhookId: string }) {
   const webhook = useWebhook(webhookId);
   const update = useUpdateWebhook(webhookId);
@@ -31,7 +31,7 @@ export function WebhookDetailPage({ webhookId }: { webhookId: string }) {
   const [showsSecret, setShowsSecret] = useState(false);
   const navigate = useNavigate();
 
-  const back = <BackLink to="/settings/webhooks">{t("webhooks.title")}</BackLink>;
+  const back = <BackLink to="/build/webhooks">{t("webhooks.title")}</BackLink>;
   if (webhook.isError) {
     return (
       <>
@@ -156,7 +156,7 @@ export function WebhookDetailPage({ webhookId }: { webhookId: string }) {
         onCancel={() => setIsDeleting(false)}
         onConfirm={() =>
           deleteWebhook.mutate(webhookId, {
-            onSuccess: () => void navigate({ to: "/settings/webhooks" }),
+            onSuccess: () => void navigate({ to: "/build/webhooks" }),
           })
         }
       />

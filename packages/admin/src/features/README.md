@@ -1,6 +1,6 @@
 # Features
 
-**Settings → Features** (`/settings/features`): every feature (the API calls them plugins, see
+**Build → Features** (`/build/features`): every feature (the API calls them plugins, see
 `packages/core/src/plugins`) with its description and an on/off switch, in two groups: the ones
 built into Lintel and the ones added by a developer in `lintel.config.ts` (with their version).
 The second group, and the group headers, only show when something is installed.

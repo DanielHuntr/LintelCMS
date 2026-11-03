@@ -33,7 +33,7 @@ Database → Your account → Site name → What you're building → Review → 
 - **Site name** (`SiteNameScreen`): required, trimmed, at most 80 characters (`siteName.ts`).
 - **What you're building** (`SiteTypeScreen`): five tiles. The kind of site decides the features
   (forms and SEO tools for every site, plus its extras: core's `setup/site-presets.ts`); they
-  can be changed later in Settings → Features.
+  can be changed later in Build → Features.
 - **Review** (`ReviewScreen`): every answer, grouped by step, each with Edit. Passwords show as
   dots (the account's can be shown). "I've checked these details" must be ticked before Finish
   setup goes ahead; until then the button says why.

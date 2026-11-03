@@ -9,7 +9,7 @@ import { openImportSource } from "./import-source.js";
 import type { ConflictStrategy } from "./transfer-format.js";
 
 /**
- * Settings → Import's steps: upload a file, preview what it would do, then import it. The
+ * Build → Import's steps: upload a file, preview what it would do, then import it. The
  * upload waits in the imports folder between the steps, named by a random id; uploads
  * nobody imported are tidied away after a day.
  */

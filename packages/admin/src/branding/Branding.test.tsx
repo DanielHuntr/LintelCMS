@@ -40,7 +40,7 @@ afterEach(() => {
   showBranding(lintelPublicBranding);
 });
 
-describe("Settings → Branding", () => {
+describe("Build → Admin branding", () => {
   function serveBranding() {
     let saved: Branding = lintelBranding;
     const settings = (): BrandingSettings => ({

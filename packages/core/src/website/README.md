@@ -48,7 +48,7 @@ when it has one, match the address (`X-Forwarded-Host` behind a proxy, else `Hos
 the default site. That site's pages, posts, menus, global values (so its name, footer and
 contact details), languages, taxonomies it owns, sitemap and canonical addresses are used,
 and its pages are cached apart from other sites' (`RenderedPagesCache.forSite`). A site's
-address is its own (Settings → Sites), or for the default site the one in Settings → Your
+address is its own (Build → Websites and domains), or for the default site the one in Settings → Your
 website.
 
 What every site shares: the template, theme and logo (the `website` setting), the SEO

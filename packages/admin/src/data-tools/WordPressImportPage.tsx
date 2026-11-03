@@ -14,7 +14,7 @@ import { WordPressMappingStep } from "./WordPressMappingStep.js";
 import { WordPressReport } from "./WordPressReport.js";
 
 /**
- * /settings/import/wordpress/:id: one import, from choosing where things go, through the
+ * /build/import/wordpress/:id: one import, from choosing where things go, through the
  * dry run and the progress bar, to the finished report. A paused import can be resumed.
  */
 export function WordPressImportPage({ importId }: { importId: string }) {
@@ -24,7 +24,7 @@ export function WordPressImportPage({ importId }: { importId: string }) {
 
   return (
     <>
-      <BackLink to="/settings/import/wordpress">{t("wordpress.title")}</BackLink>
+      <BackLink to="/build/import/wordpress">{t("wordpress.title")}</BackLink>
       <LargeTitle
         title={data?.siteTitle || data?.filename || t("wordpress.title")}
         subtitle={data?.siteAddress}

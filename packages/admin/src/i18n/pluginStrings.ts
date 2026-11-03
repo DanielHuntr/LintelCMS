@@ -1,5 +1,5 @@
 /**
- * The words for plugins in the admin: section tabs and plugin screens. (Settings → Features
+ * The words for plugins in the admin: section tabs and plugin screens. (Build → Features
  * uses the `features.*` strings in strings.ts.)
  * Spread into `strings.ts`, so they are used through `t()` like every other string.
  * (A plugin's own words live in the plugin, through `createTranslator`.)

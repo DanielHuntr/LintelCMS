@@ -15,20 +15,20 @@ import { t } from "../i18n/strings.js";
 import { useBlueprints } from "./blueprints.queries.js";
 import { Page } from "../design/Page.js";
 
-/** /settings/content-types: every content type, and a way to make a new one. */
+/** /build/content-types: every content type, and a way to make a new one. */
 export function ContentTypesPage() {
   const blueprints = useBlueprints();
   const canCreate = useCanChangeContentModel("blueprints:update");
 
   const newButton = canCreate && (
-    <LinkButton to="/settings/content-types/new" icon={<Plus aria-hidden="true" />}>
+    <LinkButton to="/build/content-types/new" icon={<Plus aria-hidden="true" />}>
       {t("contentTypes.new")}
     </LinkButton>
   );
 
   return (
     <Page width="wide">
-      <BackLink to="/settings">{t("nav.settings")}</BackLink>
+      <BackLink to="/build">{t("nav.build")}</BackLink>
       <LargeTitle
         title={t("contentTypes.title")}
         subtitle={t("contentTypes.subtitle")}
@@ -71,7 +71,7 @@ export function ContentTypesPage() {
               icon={Shapes}
               label={blueprint.name}
               description={t("builder.fieldCount", { count: blueprint.fields.length })}
-              to={`/settings/content-types/${encodeURIComponent(blueprint.handle)}`}
+              to={`/build/content-types/${encodeURIComponent(blueprint.handle)}`}
             />
           ))}
         </GroupedList>
@@ -79,7 +79,7 @@ export function ContentTypesPage() {
 
       <div className="mt-8">
         <GroupedList footer={t("fieldsets.linkFooter")}>
-          <GroupedListRow icon={BookCopy} label={t("fieldsets.title")} to="/settings/fieldsets" />
+          <GroupedListRow icon={BookCopy} label={t("fieldsets.title")} to="/build/fieldsets" />
         </GroupedList>
       </div>
     </Page>

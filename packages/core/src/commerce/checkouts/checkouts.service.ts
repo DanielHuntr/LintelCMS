@@ -204,7 +204,7 @@ function refuseUnreadyCart(cart: PricedCart): void {
 }
 
 /**
- * When the site lists its addresses in Settings → API access, Stripe may only send
+ * When the site lists its addresses in Build → API access, Stripe may only send
  * shoppers back to those, so a stolen cart token can't be used to send them somewhere else.
  */
 async function refuseUnknownPages(shop: ShopContext, request: StartCheckoutRequest): Promise<void> {
@@ -219,7 +219,7 @@ async function refuseUnknownPages(shop: ShopContext, request: StartCheckoutReque
   for (const page of [request.successUrl, request.cancelUrl]) {
     if (!allowed.includes(new URL(page).origin)) {
       throw new ShopNotReadyError(
-        `${new URL(page).origin} isn't one of the site's addresses in Settings → API access.`,
+        `${new URL(page).origin} isn't one of the site's addresses in Build → API access.`,
       );
     }
   }

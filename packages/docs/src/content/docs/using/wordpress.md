@@ -21,7 +21,7 @@ images from there instead of downloading them.
 
 ## 2. Upload the export
 
-In Lintel, go to **Settings → Import → Import from WordPress**. Choose the `.xml` file,
+In Lintel, go to **Build → Import → Import from WordPress**. Choose the `.xml` file,
 and the zip if you have one, then press **Read the file**. Lintel counts what is in the
 export and lists anything it doesn't bring in, such as a shop's products.
 

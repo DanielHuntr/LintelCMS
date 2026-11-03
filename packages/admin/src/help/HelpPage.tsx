@@ -23,7 +23,7 @@ interface HelpPageProps {
 }
 
 /**
- * The Help section: who to ask (from Settings → Branding), then every "Using Lintel" page,
+ * The Help section: who to ask (from Build → Admin branding), then every "Using Lintel" page,
  * readable without leaving the admin. An agency can hide Lintel's own pages and links,
  * leaving only its support details and guides.
  */

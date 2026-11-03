@@ -1,10 +1,9 @@
 /**
- * The words for Settings → Backups, Settings → Import and the WordPress importer. Kept in
+ * The words for Settings → Backups, Build → Import and the WordPress importer. Kept in
  * their own list so the main one stays readable; `strings.ts` spreads them in, so they are
  * used through `t()` like every other string.
  */
 export const dataToolsStrings = {
-  "settings.dataHeader": "Backups and moving",
   "settings.backupsDescription": "Copies of everything, made by you or on a schedule",
   "settings.importDescription": "Bring content in from another {product} or from WordPress",
 

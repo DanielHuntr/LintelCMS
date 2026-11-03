@@ -6,7 +6,7 @@ the site's content, which is `src/sites/locales`.
 The admin shows, in order of preference:
 
 1. the language the signed-in person chose (the `user_interface_languages` table),
-2. the site's default, chosen in Settings → Interface language (the
+2. the site's default, chosen in Account → Interface language (the
    `defaultInterfaceLanguage` setting),
 3. the deployment's, from `LINTEL_DEFAULT_INTERFACE_LANGUAGE` or `interfaceLanguage` in
    `lintel.config.json` (`deployment-interface-language.ts`),

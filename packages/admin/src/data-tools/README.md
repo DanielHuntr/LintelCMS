@@ -1,16 +1,16 @@
-# Data tools: Settings → Backups and Settings → Import
+# Data tools: Settings → Backups and Build → Import
 
 The screens for backups, moving content between Lintel sites, and importing from
 WordPress. The rules all live in core (`src/backups`, `src/content-transfer`,
 `src/wordpress-import`); these screens show what the API says and send what people choose.
 
-| Screen                           | Component                                                         |
-| -------------------------------- | ----------------------------------------------------------------- |
-| `/settings/backups`              | `BackupsPage` (`BackupList`, `BackupScheduleCard`)                |
-| `/settings/backups/:id/restore`  | `RestorePage`                                                     |
-| `/settings/import`               | `ImportPage` (`LintelImportCard`, export)                         |
-| `/settings/import/wordpress`     | `WordPressImportsPage`                                            |
-| `/settings/import/wordpress/:id` | `WordPressImportPage` (`WordPressMappingStep`, `WordPressReport`) |
+| Screen                          | Component                                                         |
+| ------------------------------- | ----------------------------------------------------------------- |
+| `/settings/backups`             | `BackupsPage` (`BackupList`, `BackupScheduleCard`)                |
+| `/settings/backups/:id/restore` | `RestorePage`                                                     |
+| `/build/import`                 | `ImportPage` (`LintelImportCard`, export)                         |
+| `/build/import/wordpress`       | `WordPressImportsPage`                                            |
+| `/build/import/wordpress/:id`   | `WordPressImportPage` (`WordPressMappingStep`, `WordPressReport`) |
 
 Routes are made in `dataToolsRoutes.tsx` and added in `router.tsx`; the links are in
 Settings under "Your site's data".

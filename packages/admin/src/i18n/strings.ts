@@ -1,4 +1,5 @@
 import { workflowStrings } from "../workflows/workflowStrings.js";
+import { buildStrings } from "../build/buildStrings.js";
 import { motionEditorStrings } from "@lintel/motion-editor";
 import { formsStrings } from "../forms/formsStrings.js";
 import { discountStrings } from "../commerce/discountStrings.js";
@@ -39,6 +40,7 @@ const english = {
   ...pageDesignStrings,
   ...contentModelSyncStrings,
   ...workflowStrings,
+  ...buildStrings,
   ...motionEditorStrings,
   ...formsStrings,
   ...commerceStrings,
@@ -194,7 +196,7 @@ const english = {
   "site.portfolioDescription": "Show off your work and let people contact you.",
   "site.blank": "Start from scratch",
   "site.blankDescription": "Just pages, forms and SEO tools. Add more when you need it.",
-  "site.changeLater": "You can switch features on or off later in Settings → Features.",
+  "site.changeLater": "You can switch features on or off later in Build → Features.",
   "review.title": "Check your details",
   "review.subtitle": "Nothing is saved until you finish. Edit anything that isn’t right.",
   "review.edit": "Edit",
@@ -592,13 +594,13 @@ const english = {
     "This kind of block has been removed from the content type, so it can’t be edited. It’s left out the next time this is saved.",
   "fields.blocks.unknownName": "Removed block type",
   "settings.title": "Settings",
-  "settings.subtitle": "How your site and its content are set up.",
+  "settings.subtitle": "Your website’s details, and keeping it safe and up to date.",
   "settings.contentTypesDescription": "The kinds of content you write, and their fields",
   "settings.siteHeader": "Your website",
   "settings.websiteRow": "Look and address",
-  "settings.buildHeader": "Set up by whoever built your site",
-  "settings.buildFooter":
-    "These change how the whole site works, so check with whoever built it before changing them.",
+  "settings.lookingAfterHeader": "Looking after your site",
+  "settings.movedTo": "{name} is now in {place}",
+  "settings.movedHeader": "Moved",
   "settings.search": "Search settings",
   "settings.searchEmptyTitle": "No settings match",
   "settings.searchEmptyDescription": "Nothing in Settings mentions “{search}”. Try another word.",
@@ -736,7 +738,6 @@ const english = {
   "builder.blocks.problem.choices": "Add at least one choice to {label} in {name}.",
   "copy.copy": "Copy",
   "copy.copied": "Copied",
-  "settings.developersHeader": "For developers",
   "settings.apiAccessDescription": "Tokens and addresses for websites, apps and scripts",
   "settings.webhooksDescription": "Tell other services when content changes",
   "settings.searchHeader": "Search engines",

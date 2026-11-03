@@ -10,7 +10,7 @@ import type { InterfaceLanguageResponse } from "./interface-languages.schema.js"
 
 /**
  * Which language the admin speaks: the person's own choice, else the site's default
- * (Settings → Interface language), else the deployment's (LINTEL_DEFAULT_INTERFACE_LANGUAGE
+ * (Account → Interface language), else the deployment's (LINTEL_DEFAULT_INTERFACE_LANGUAGE
  * or lintel.config.json), else English.
  */
 

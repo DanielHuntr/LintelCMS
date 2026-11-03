@@ -50,7 +50,7 @@ come from the admin; see `src/preview`.
 Responses carry `Cache-Control: public, max-age=60`, so a CDN or browser may keep them
 for a minute; a publish shows up within that time.
 
-Browsers on other sites may call it when their origin is listed in Settings → API access
+Browsers on other sites may call it when their origin is listed in Build → API access
 (the `deliveryAllowedOrigins` setting). Those origins get CORS headers on `/delivery`,
 `/graphql` and `/openapi.json` only, without cookies; see `src/http/cross-origin.ts`.
 Server-side rendering (the usual way sites use it) doesn't need CORS at all.

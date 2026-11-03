@@ -77,7 +77,7 @@ export function BlueprintEditor({ blueprint }: { blueprint: Blueprint }) {
 
   return (
     <>
-      <BackLink to="/settings/content-types">{t("contentTypes.title")}</BackLink>
+      <BackLink to="/build/content-types">{t("contentTypes.title")}</BackLink>
       <LargeTitle
         title={state.name.trim() || blueprint.name}
         subtitle={t("builder.fieldCount", { count: state.fields.length })}

@@ -45,4 +45,4 @@ Go through this once your site is running and before you invite editors.
 ## Your website
 
 - [ ] If your website is a separate app, its `LINTEL_API_URL` is
-      `https://your-site/api`, and its address is listed in **Settings → API access**.
+      `https://your-site/api`, and its address is listed in **Build → API access**.

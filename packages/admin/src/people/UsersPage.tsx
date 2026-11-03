@@ -1,4 +1,4 @@
-import { ShieldHalf, UserPlus, Users } from "lucide-react";
+import { ScrollText, ShieldHalf, UserPlus, Users } from "lucide-react";
 import { useDeferredValue, useState } from "react";
 import { LoadError } from "../api/LoadError.js";
 import { useNow } from "../content/useNow.js";
@@ -25,6 +25,7 @@ import { PersonSheet } from "./PersonSheet.js";
  * someone new. Selecting a person opens their details.
  */
 export function UsersPage() {
+  const canSeeSecurityLog = useCan("security:read");
   const session = useSession();
   const canInvite = useCan("users:invite");
   const [search, setSearch] = useState("");
@@ -61,6 +62,15 @@ export function UsersPage() {
         subtitle={t("people.subtitle")}
         actions={
           <>
+            {canSeeSecurityLog && (
+              <LinkButton
+                to="/users/activity"
+                variant="tinted"
+                icon={<ScrollText aria-hidden="true" strokeWidth={2} />}
+              >
+                {t("securityLog.title")}
+              </LinkButton>
+            )}
             <LinkButton
               to="/users/roles"
               variant="tinted"

@@ -14,7 +14,7 @@ export interface EmailSender {
   readonly description: string;
   /** True for the outbox, where nothing really leaves the server. */
   readonly keepsInOutbox: boolean;
-  /** The outbox itself, for Settings → Email outbox and tests; null with a real driver. */
+  /** The outbox itself, for Users → Security log → Emails sent and tests; null with a real driver. */
   readonly outbox: OutboxEmailDriver | null;
   send(message: EmailMessage): Promise<{ messageId?: string | undefined }>;
 }

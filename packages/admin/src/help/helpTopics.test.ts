@@ -10,7 +10,7 @@ describe("helpSlugForPath", () => {
     ["/content/posts/0b9a9f8e-5d4c-4b3a-9e2d-1c0b9a8f7e6d", "using/writing"],
     ["/media", "using/media"],
     ["/settings", "using/content-types"],
-    ["/settings/content-types/page", "using/content-types"],
+    ["/build/content-types/page", "using/content-types"],
     ["/users", "using/users"],
     ["/media/", "using/media"],
   ])("opens the right page on %s", (path, slug) => {

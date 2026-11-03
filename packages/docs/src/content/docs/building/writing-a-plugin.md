@@ -287,7 +287,7 @@ export default {
 } satisfies LintelConfig;
 ```
 
-Restart `pnpm dev`. The server creates the table, and **Settings → Features** lists
+Restart `pnpm dev`. The server creates the table, and **Build → Features** lists
 **Bookings** under "Added by your developer", switched off. Switch it on, and the sidebar
 item, screens, widget and tab appear for everyone allowed to see them.
 

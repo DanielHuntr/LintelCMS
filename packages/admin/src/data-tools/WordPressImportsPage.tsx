@@ -25,13 +25,13 @@ const statusTones: Record<WordPressImportStatus, Tone> = {
   complete: "success",
 };
 
-/** /settings/import/wordpress: upload a WordPress export, and earlier imports. */
+/** /build/import/wordpress: upload a WordPress export, and earlier imports. */
 export function WordPressImportsPage() {
   const imports = useWordPressImports();
 
   return (
     <>
-      <BackLink to="/settings/import">{t("import.title")}</BackLink>
+      <BackLink to="/build/import">{t("import.title")}</BackLink>
       <LargeTitle title={t("wordpress.title")} subtitle={t("wordpress.subtitle")} />
       <div className="flex max-w-2xl flex-col gap-8">
         <UploadCard />
@@ -48,7 +48,7 @@ export function WordPressImportsPage() {
                     {t(`wordpress.status.${item.status}`)}
                   </Badge>
                 }
-                to={`/settings/import/wordpress/${encodeURIComponent(item.id)}`}
+                to={`/build/import/wordpress/${encodeURIComponent(item.id)}`}
               />
             ))}
           </GroupedList>
@@ -77,7 +77,7 @@ function UploadCard() {
       const created = await uploadFiles<WordPressImport>("/wordpress-imports", files, setProgress);
       await queryClient.invalidateQueries({ queryKey: dataToolsKeys.wordpressImports() });
       void navigate({
-        to: "/settings/import/wordpress/$importId",
+        to: "/build/import/wordpress/$importId",
         params: { importId: created.id },
       });
     } catch (failure) {

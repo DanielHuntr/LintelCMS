@@ -1,6 +1,6 @@
 # API access
 
-Settings → API access (`/settings/api`): how websites, apps and scripts reach the content.
+Build → API access (`/build/api`): how websites, apps and scripts reach the content.
 
 - **Where your content is**: the REST and GraphQL addresses, each with a copy button, and
   a link to the API reference.
@@ -13,7 +13,7 @@ Settings → API access (`/settings/api`): how websites, apps and scripts reach 
 
 People with `settings:read` see everything; changing needs `settings:update`.
 
-The API reference (`/settings/api/reference`) reads the server's own `/openapi.json` and
+The API reference (`/build/api/reference`) reads the server's own `/openapi.json` and
 lists every endpoint by area, each opening (a native `<details>`) to show who may call it,
 its parameters and its answers. There is a link to download the file for other tools.
 

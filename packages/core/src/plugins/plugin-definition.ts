@@ -58,11 +58,11 @@ export interface PluginDefinition<
 > {
   /** Lowercase letters, numbers and dashes, starting with a letter: "bookings". */
   id: Id;
-  /** Shown in Settings → Features and on the setup screen: "Bookings". */
+  /** Shown in Build → Features and on the setup screen: "Bookings". */
   name: string;
   /** One plain sentence about what it adds: "Appointments and the people who made them." */
   description: string;
-  /** The package version, shown in Settings → Features. */
+  /** The package version, shown in Build → Features. */
   version?: string;
   permissions?: readonly PluginPermission[];
   settings?: PluginSettings<SettingsSchema>;

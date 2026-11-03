@@ -12,7 +12,7 @@ import { TokenList } from "./TokenList.js";
 import { Page } from "../design/Page.js";
 
 /**
- * /settings/api: how websites, apps and scripts reach the content. Where the APIs are,
+ * /build/api: how websites, apps and scripts reach the content. Where the APIs are,
  * the reference, who may read, and the tokens.
  */
 export function ApiAccessPage() {
@@ -22,7 +22,7 @@ export function ApiAccessPage() {
 
   return (
     <Page width="readable">
-      <BackLink to="/settings">{t("nav.settings")}</BackLink>
+      <BackLink to="/build">{t("nav.build")}</BackLink>
       <LargeTitle title={t("apiAccess.title")} subtitle={t("apiAccess.subtitle")} />
       <div className="flex flex-col gap-8">
         <GroupedList
@@ -54,7 +54,7 @@ export function ApiAccessPage() {
             iconTone="success"
             label={t("apiReference.title")}
             description={t("apiAccess.referenceDescription")}
-            to="/settings/api/reference"
+            to="/build/api/reference"
           />
         </GroupedList>
 

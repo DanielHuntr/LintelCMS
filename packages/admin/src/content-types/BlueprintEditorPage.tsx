@@ -8,7 +8,7 @@ import { ContentTypePlacement } from "./ContentTypePlacement.js";
 import { useBlueprint } from "./blueprints.queries.js";
 import { Page } from "../design/Page.js";
 
-/** /settings/content-types/:handle: loads the blueprint, then shows the builder. */
+/** /build/content-types/:handle: loads the blueprint, then shows the builder. */
 export function BlueprintEditorPage(props: { handle: string }) {
   return (
     <Page width="wide">

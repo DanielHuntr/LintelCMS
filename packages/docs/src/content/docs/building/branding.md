@@ -80,7 +80,7 @@ Or use environment variables, which win over the file:
 A mistake in either (a colour that isn't one, a missing logo file) stops the server at
 start with a message saying which setting is wrong, rather than showing the wrong brand.
 
-The deployment's branding is the starting point. Anything changed in Settings → Branding
+The deployment's branding is the starting point. Anything changed in Build → Admin branding
 is kept on top of it, and only the settings that were changed: if you later update the
 deployment's logo, clients who only changed the colour get the new logo.
 

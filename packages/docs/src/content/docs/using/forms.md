@@ -82,7 +82,7 @@ Email field, so Lintel knows where to send it.
 In subjects and messages, `{form}` is the form's name and a field's handle in braces, such
 as `{name}`, is that answer. "New message from {name}" becomes "New message from Ana Lima".
 
-To tell Slack, a spreadsheet or another service, add a webhook in **Settings → Webhooks**
+To tell Slack, a spreadsheet or another service, add a webhook in **Build → Webhooks**
 and tick **A form is sent**. Slack's incoming webhooks show a one-line summary with a link
 to the submission.
 
@@ -92,7 +92,7 @@ The **Add to your site** tab shows the ways:
 
 - **On a page:** open the page in Content, add a **Form** section and pick the form.
 - **On any other website:** copy the one line of code and paste it where the form should
-  go. The website's address must be listed in **Settings → API access**.
+  go. The website's address must be listed in **Build → API access**.
 
 ## The submissions inbox
 

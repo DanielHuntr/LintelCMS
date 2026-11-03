@@ -1,7 +1,7 @@
 # OpenAPI
 
 `GET /openapi.json` (public) describes the REST API as OpenAPI 3.1. The admin's
-Settings → API access → API reference page reads it, and tools such as Postman or code
+Build → API access → API reference page reads it, and tools such as Postman or code
 generators can import it.
 
 Every endpoint is listed in `openapi-operations.ts`, with the same Zod schemas its route

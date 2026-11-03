@@ -82,7 +82,7 @@ describe("your account", () => {
 
     expect(await screen.findByRole("link", { name: /Interface language/ })).toHaveAttribute(
       "href",
-      "/settings/interface-language",
+      "/account/language",
     );
   });
 

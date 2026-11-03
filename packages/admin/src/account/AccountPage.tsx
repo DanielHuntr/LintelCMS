@@ -59,7 +59,7 @@ export function AccountPage() {
                 iconTone="neutral"
                 label={t("interfaceLanguage.title")}
                 description={t("settings.interfaceLanguageDescription")}
-                to="/settings/interface-language"
+                to="/account/language"
               />
             </GroupedList>
             <PasswordSection />

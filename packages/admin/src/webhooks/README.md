@@ -1,13 +1,13 @@
 # Webhooks
 
-Settings → Webhooks (`/settings/webhooks`): addresses Lintel tells when content changes.
+Build → Webhooks (`/build/webhooks`): addresses Lintel tells when content changes.
 
 - The list shows each webhook's address, how many events it sends and how its last
   delivery went. With none yet, an empty state explains what webhooks are for.
 - "Add webhook" asks for the address, an optional name and the events, as switches in
   plain words ("An entry is published"). The API refuses private and local addresses and
   the message says why.
-- A webhook's page (`/settings/webhooks/:id`) has a switch to pause it, the signing secret
+- A webhook's page (`/build/webhooks/:id`) has a switch to pause it, the signing secret
   (hidden until "Show", with a copy button), and the delivery log. Each delivery opens to
   show what happened in words ("Didn't get through (2 tries). Trying again in 4 minutes."),
   the receiver's answer and the payload, with "Resend". The log refreshes on its own while

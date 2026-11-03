@@ -30,7 +30,7 @@ function serveLanguages(initial: InterfaceLanguageChoice) {
   });
 }
 
-describe("Settings → Interface language", () => {
+describe("Account → Interface language", () => {
   it("switches the admin to the language someone picks", async () => {
     const { calls } = serveLanguages({ personal: null, siteDefault: "en", active: "en" });
     const user = userEvent.setup();

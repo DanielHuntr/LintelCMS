@@ -15,7 +15,7 @@ switcher stays hidden until you add a second site.
 
 ## Adding a site
 
-Go to **Settings → Sites** and press **Add a site**. Only the name is needed:
+Go to **Build → Websites and domains** and press **Add a site**. Only the name is needed:
 
 - **Name**: what editors see, such as "Acme France".
 - **Handle**: a short code developers use for the site, such as `france`. It can't change
@@ -39,7 +39,7 @@ taxonomies and languages. Lintel remembers your choice next time you sign in.
 
 ## What each site has
 
-Under **Content on each site** in Settings → Sites, choose for every collection:
+Under **Content on each site** in Build → Websites and domains, choose for every collection:
 
 - **Each site its own**: every site writes its own entries (the usual choice for pages and
   blog posts). Untick a site to leave the collection out of it.

@@ -13,7 +13,7 @@ export function readSiteAddress(database: DatabaseOrTransaction): Promise<string
 }
 
 /**
- * One site's public address: its own (Settings → Sites), or for the default site the one
+ * One site's public address: its own (Build → Websites and domains), or for the default site the one
  * typed in Settings → Your website. "" when neither is known.
  */
 export async function readAddressForSite(

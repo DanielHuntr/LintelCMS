@@ -54,7 +54,7 @@ export function buildOpenApiDocument(
       title: "Lintel API",
       version: "1",
       description:
-        "Read published content, and manage entries and media from your own code. Send an API token as `Authorization: Bearer <token>`; admins make tokens in Settings → API access. With several sites, choose one with `?site=<handle>` or the `Lintel-Site` header; delivery requests otherwise go by the domain they came to.",
+        "Read published content, and manage entries and media from your own code. Send an API token as `Authorization: Bearer <token>`; admins make tokens in Build → API access. With several sites, choose one with `?site=<handle>` or the `Lintel-Site` header; delivery requests otherwise go by the domain they came to.",
     },
     servers: [{ url: serverUrl }],
     tags: Object.entries(tagDescriptions).map(([name, description]) => ({ name, description })),
@@ -63,7 +63,7 @@ export function buildOpenApiDocument(
         apiToken: {
           type: "http",
           scheme: "bearer",
-          description: "An API token from Settings → API access.",
+          description: "An API token from Build → API access.",
         },
         session: { type: "apiKey", in: "cookie", name: "__Host-lintel_session" },
       },

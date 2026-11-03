@@ -4,7 +4,7 @@ import type { SiteType } from "../settings/settings.schema.js";
 /**
  * The plugins each kind of site starts with. Forms and SEO tools are useful to every site, so
  * they are always on; the kind of site adds its own extras, so a blog never shows an empty
- * shop. Everything can be switched on or off later in Settings → Features.
+ * shop. Everything can be switched on or off later in Build → Features.
  *
  * The admin imports this file (`@lintel/core/site-presets`) to show the same choice, so it
  * must not import server code: the registry's plugin definitions bring in routes and Node
@@ -12,7 +12,7 @@ import type { SiteType } from "../settings/settings.schema.js";
  * list matches the registry.
  */
 
-/** The built-in features, in registry order, with the names Settings → Features shows. */
+/** The built-in features, in registry order, with the names Build → Features shows. */
 export const builtInFeatures: readonly { id: PluginId; name: string }[] = [
   { id: "blog", name: "Blog" },
   { id: "commerce", name: "Online shop" },

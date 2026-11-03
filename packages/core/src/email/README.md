@@ -35,7 +35,7 @@ address, so a client never sees Lintel's name unless that is the branding.
 
 Until `EMAIL_DRIVER` names a real service, emails are kept in the outbox instead of being
 sent: in `<LINTEL_FOLDER>/outbox` when Lintel runs, and in memory in tests. Owners read the
-newest under **Settings → Email outbox** (`GET /email/outbox`), which is how links in
+newest under **Users → Security log → Emails sent** (`GET /email/outbox`), which is how links in
 invitations and password resets are followed on a computer with no mail server.
 
 The outbox holds sign-in links, so only an owner signed in with a browser can read it (not an
@@ -65,21 +65,21 @@ Adding a driver: one class implementing `EmailDriver` (`send(email)`), a case in
 
 ## Files
 
-| File                       | What it does                                         |
-| -------------------------- | ---------------------------------------------------- |
-| `email.schema.ts`          | The message shape, and what drivers receive          |
-| `email.service.ts`         | `EmailSender`: checks, fills in, hands to the driver |
-| `email-driver.ts`          | The driver interface                                 |
-| `smtp-email-driver.ts`     | SMTP, with nodemailer                                |
-| `resend-email-driver.ts`   | Resend                                               |
-| `postmark-email-driver.ts` | Postmark                                             |
-| `http-email-request.ts`    | Posting to an HTTP API and explaining refusals       |
-| `outbox-email-driver.ts`   | Keeping emails instead of sending them               |
-| `email.config.ts`          | The settings and their rules                         |
-| `configured-email.ts`      | The driver and sender the settings ask for           |
-| `email.errors.ts`          | Named errors                                         |
-| `index.ts`                 | What other features may import                       |
-| `send-email.ts`            | `sendEmail`: send without waiting, log failures      |
-| `send-branded-email.ts`    | `sendBrandedEmail`: the admin's emails, branded      |
-| `outbox.service.ts`        | Describing the outbox for Settings → Email outbox    |
-| `email.routes.ts`          | `GET /email/outbox`                                  |
+| File                       | What it does                                                 |
+| -------------------------- | ------------------------------------------------------------ |
+| `email.schema.ts`          | The message shape, and what drivers receive                  |
+| `email.service.ts`         | `EmailSender`: checks, fills in, hands to the driver         |
+| `email-driver.ts`          | The driver interface                                         |
+| `smtp-email-driver.ts`     | SMTP, with nodemailer                                        |
+| `resend-email-driver.ts`   | Resend                                                       |
+| `postmark-email-driver.ts` | Postmark                                                     |
+| `http-email-request.ts`    | Posting to an HTTP API and explaining refusals               |
+| `outbox-email-driver.ts`   | Keeping emails instead of sending them                       |
+| `email.config.ts`          | The settings and their rules                                 |
+| `configured-email.ts`      | The driver and sender the settings ask for                   |
+| `email.errors.ts`          | Named errors                                                 |
+| `index.ts`                 | What other features may import                               |
+| `send-email.ts`            | `sendEmail`: send without waiting, log failures              |
+| `send-branded-email.ts`    | `sendBrandedEmail`: the admin's emails, branded              |
+| `outbox.service.ts`        | Describing the outbox for Users → Security log → Emails sent |
+| `email.routes.ts`          | `GET /email/outbox`                                          |

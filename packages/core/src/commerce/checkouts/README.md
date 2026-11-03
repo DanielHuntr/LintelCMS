@@ -14,5 +14,5 @@ Stock is held for 35 minutes (`CHECKOUT_WINDOW_MINUTES`; Stripe's pages last at 
 still arrives later is honoured, and the order says the stock may be short.
 
 Statuses: `open`, `completed` (an order exists), `expired`, `needs_review` (Stripe reported
-a payment that didn't match). When the site lists its addresses in Settings → API access,
+a payment that didn't match). When the site lists its addresses in Build → API access,
 the hosted page may only send shoppers back to those.

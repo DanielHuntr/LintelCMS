@@ -4,7 +4,7 @@ import { buttonClasses } from "../design/Button.js";
 import { t } from "../i18n/strings.js";
 
 /**
- * Who to ask for help, from Settings → Branding: the agency's support link, email and own
+ * Who to ask for help, from Build → Admin branding: the agency's support link, email and own
  * guides. Shows nothing when none are set.
  */
 export function SupportCard() {

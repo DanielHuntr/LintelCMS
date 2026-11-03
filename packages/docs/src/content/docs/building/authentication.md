@@ -64,7 +64,7 @@ hashes, and placed after `#` so they never reach a server log or a Referer heade
 
 Email goes through `src/email`: `sendEmail(server, message)` with any `EmailSender` passed
 to `buildServer({ email })`. Without one, messages are kept in memory and shown under
-**Settings → Email outbox**.
+**Users → Security log → Emails sent**.
 
 ## Roles and permissions
 

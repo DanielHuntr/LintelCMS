@@ -24,7 +24,7 @@ import { createSite, deleteSite, updateSite } from "./sites.api.js";
 import { siteKeys, useSites } from "./sites.queries.js";
 import type { Site } from "./sites.types.js";
 
-/** /settings/sites: the websites this Lintel serves, where they live, and who works on each. */
+/** /build/sites: the websites this Lintel serves, where they live, and who works on each. */
 export function SitesPage() {
   const sites = useSites();
   const canEdit = useCan("settings:update");
@@ -50,7 +50,7 @@ export function SitesPage() {
 
   return (
     <>
-      <BackLink to="/settings">{t("nav.settings")}</BackLink>
+      <BackLink to="/build">{t("nav.build")}</BackLink>
       <LargeTitle
         title={t("sites.title")}
         subtitle={t("sites.subtitle")}

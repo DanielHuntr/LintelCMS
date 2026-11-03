@@ -11,11 +11,11 @@ import { t } from "../i18n/strings.js";
 import { exportDownloadUrl } from "./dataTools.api.js";
 import { LintelImportCard } from "./LintelImportCard.js";
 
-/** /settings/import: import a Lintel export, export this site, or go to the WordPress importer. */
+/** /build/import: import a Lintel export, export this site, or go to the WordPress importer. */
 export function ImportPage() {
   return (
     <>
-      <BackLink to="/settings">{t("nav.settings")}</BackLink>
+      <BackLink to="/build">{t("nav.build")}</BackLink>
       <LargeTitle title={t("import.title")} subtitle={t("import.subtitle")} />
       <div className="flex max-w-2xl flex-col gap-8">
         <GroupedList>
@@ -23,7 +23,7 @@ export function ImportPage() {
             icon={Newspaper}
             label={t("import.wordpressTitle")}
             description={t("import.wordpressDescription")}
-            to="/settings/import/wordpress"
+            to="/build/import/wordpress"
           />
         </GroupedList>
         <LintelImportCard />

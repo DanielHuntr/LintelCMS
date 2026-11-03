@@ -6,7 +6,7 @@ export class PluginNotEnabledError extends HttpError {
     super(
       404,
       "PLUGIN_NOT_ENABLED",
-      `“${pluginName}” is switched off. An admin can switch it on in Settings → Features.`,
+      `“${pluginName}” is switched off. An admin can switch it on in Build → Features.`,
     );
   }
 }

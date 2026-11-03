@@ -130,7 +130,7 @@ declare module "fastify" {
     adminOrigin: string;
     /** Sends email: `await server.email.send({ to, subject, text })` (see src/email). */
     email: EmailSender;
-    /** The outbox, while no real email driver is set, for Settings → Email outbox. */
+    /** The outbox, while no real email driver is set, for Users → Security log → Emails sent. */
     emailOutbox: OutboxEmailDriver | null;
     /** The built-in website's templates, address and rendered pages (see src/website). */
     website: WebsiteRuntime;

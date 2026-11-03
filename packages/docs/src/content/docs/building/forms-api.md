@@ -10,7 +10,7 @@ again on the server. The embed script does all of this for you on any site.
 
 Forms are public even when the delivery API needs a token, because a form on a public page
 can't keep a token secret. Browsers may call them from the websites listed in
-**Settings → API access**, as for the rest of `/delivery`.
+**Build → API access**, as for the rest of `/delivery`.
 
 ## Endpoints
 

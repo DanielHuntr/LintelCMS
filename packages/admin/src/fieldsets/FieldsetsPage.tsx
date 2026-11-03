@@ -19,7 +19,7 @@ import { t } from "../i18n/strings.js";
 import { createFieldset } from "./fieldsets.api.js";
 import { fieldsetKeys, useFieldsets } from "./fieldsets.queries.js";
 
-/** /settings/fieldsets: saved sets of fields that content types reuse, and a way to make one. */
+/** /build/fieldsets: saved sets of fields that content types reuse, and a way to make one. */
 export function FieldsetsPage() {
   const fieldsets = useFieldsets();
   const queryClient = useQueryClient();
@@ -35,7 +35,7 @@ export function FieldsetsPage() {
 
   return (
     <Page width="wide">
-      <BackLink to="/settings/content-types">{t("contentTypes.title")}</BackLink>
+      <BackLink to="/build/content-types">{t("contentTypes.title")}</BackLink>
       <LargeTitle
         title={t("fieldsets.title")}
         subtitle={t("fieldsets.subtitle")}
@@ -75,7 +75,7 @@ export function FieldsetsPage() {
                   ? t("fieldsets.usedBy", { names: fieldset.usedBy.join(", ") })
                   : t("fieldsets.unused"),
               ].join(" · ")}
-              to={`/settings/fieldsets/${encodeURIComponent(fieldset.handle)}`}
+              to={`/build/fieldsets/${encodeURIComponent(fieldset.handle)}`}
             />
           ))}
         </GroupedList>
@@ -93,7 +93,7 @@ export function FieldsetsPage() {
           const created = await createFieldset({ name, handle });
           await queryClient.invalidateQueries({ queryKey: fieldsetKeys.fieldsets() });
           setIsCreating(false);
-          await navigate({ to: "/settings/fieldsets/$handle", params: { handle: created.handle } });
+          await navigate({ to: "/build/fieldsets/$handle", params: { handle: created.handle } });
         }}
       />
     </Page>

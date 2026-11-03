@@ -41,7 +41,7 @@ import { requireDeliveryAccess } from "../delivery/require-delivery-access.js";
  * Lists and lookups see the taxonomies every site shares and the current site's own.
  */
 export async function taxonomiesRoutes(server: FastifyInstance) {
-  // Published content, open to websites unless delivery needs a token (Settings → API access).
+  // Published content, open to websites unless delivery needs a token (Build → API access).
   const publicContent = { preHandler: requireDeliveryAccess };
   const canRead = { preHandler: requirePermission("taxonomies:read") };
   const canUpdate = { preHandler: requirePermission("taxonomies:update") };

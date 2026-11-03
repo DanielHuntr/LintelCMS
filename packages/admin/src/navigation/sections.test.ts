@@ -29,6 +29,7 @@ describe("visibleSections", () => {
       "Media",
       "Users",
       "Settings",
+      "Build",
       "Help",
     ]);
   });
@@ -37,6 +38,15 @@ describe("visibleSections", () => {
     expect(labelsFor(["*"], ["commerce"])).toContain("Shop");
     expect(labelsFor(["*"], ["commerce"])).not.toContain("Forms");
     expect(labelsFor(["*"], ["forms"])).toContain("Forms");
+  });
+
+  // Build is for whoever built the site: seeing settings or fields isn't enough.
+  it("shows Build only to people who can change the site's structure", () => {
+    expect(labelsFor(["settings:read", "blueprints:read", "entries:*"], allPlugins)).not.toContain(
+      "Build",
+    );
+    expect(labelsFor(["blueprints:update"], allPlugins)).toContain("Build");
+    expect(labelsFor(["content:transfer"], allPlugins)).toContain("Build");
   });
 
   it("still needs permission for a plugin's section", () => {
@@ -64,6 +74,7 @@ describe("sidebar items from plugins", () => {
       "Bookings",
       "Users",
       "Settings",
+      "Build",
       "Help",
     ]);
     expect(labels(["*"], [])).not.toContain("Bookings");

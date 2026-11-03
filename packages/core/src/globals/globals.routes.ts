@@ -36,7 +36,7 @@ import { requireDeliveryAccess } from "../delivery/require-delivery-access.js";
  * or for websites the site asked for (see src/sites/request-site.ts).
  */
 export async function globalsRoutes(server: FastifyInstance) {
-  // Published content, open to websites unless delivery needs a token (Settings → API access).
+  // Published content, open to websites unless delivery needs a token (Build → API access).
   const publicContent = { preHandler: requireDeliveryAccess };
   const canRead = { preHandler: requirePermission("globals:read") };
   const canUpdateValues = { preHandler: requirePermission("globals:update") };

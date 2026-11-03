@@ -23,7 +23,7 @@ import { resolveDeliverySite, resolveEditingSite } from "./request-site.js";
  * Each site has its own; these are the current site's (see request-site.ts).
  */
 export async function localesRoutes(server: FastifyInstance) {
-  // Published content, open to websites unless delivery needs a token (Settings → API access).
+  // Published content, open to websites unless delivery needs a token (Build → API access).
   const publicContent = { preHandler: requireDeliveryAccess };
   const canUpdate = { preHandler: requirePermission("settings:update") };
 

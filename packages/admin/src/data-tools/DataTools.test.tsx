@@ -109,14 +109,14 @@ describe("restoring a backup", () => {
   });
 });
 
-describe("Settings → Import", () => {
+describe("Build → Import", () => {
   it("offers the WordPress importer and an export with options", async () => {
     mockApi(() => undefined);
     renderScreen(<ImportPage />);
 
     expect(await screen.findByRole("link", { name: /Import from WordPress/ })).toHaveAttribute(
       "href",
-      "/settings/import/wordpress",
+      "/build/import/wordpress",
     );
     const download = screen.getByRole("link", { name: "Download export" });
     expect(download).toHaveAttribute("href", expect.stringContaining("revisions=false&files=true"));

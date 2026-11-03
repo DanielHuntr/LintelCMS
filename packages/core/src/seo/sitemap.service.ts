@@ -12,7 +12,7 @@ import { buildRobotsTxt, buildSitemapXml, MAX_SITEMAP_PAGES } from "./sitemap.js
 
 /**
  * `site` is the site whose pages are listed, the default site when left out. Its address is
- * its own (Settings → Sites), or for the default site the one from Settings → Your website.
+ * its own (Build → Websites and domains), or for the default site the one from Settings → Your website.
  * `fallbackSiteUrl` is the built-in website's own address, used when neither has been typed;
  * a website served by Lintel itself also adjusts the paths (language prefixes, the home page
  * at "/").

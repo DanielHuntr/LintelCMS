@@ -7,7 +7,7 @@ interface AppMarkProps {
 }
 
 /**
- * The app's small square mark: the agency's own when it's branded (Settings → Branding),
+ * The app's small square mark: the agency's own when it's branded (Build → Admin branding),
  * otherwise Lintel's bird on a branch, drawn in white on the accent colour. The bird
  * comes from brand/lintel-mark.svg at the repository root; keep the two the same.
  */

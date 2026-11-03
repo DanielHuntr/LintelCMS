@@ -16,7 +16,7 @@ import {
 import { Page } from "../design/Page.js";
 
 /**
- * /settings/api/reference: the REST API's endpoints, read from the API's own OpenAPI
+ * /build/api/reference: the REST API's endpoints, read from the API's own OpenAPI
  * document, so this page is always as up to date as the server it talks to.
  */
 export function ApiReferencePage() {
@@ -29,7 +29,7 @@ export function ApiReferencePage() {
 
   return (
     <Page width="readable">
-      <BackLink to="/settings/api">{t("apiAccess.title")}</BackLink>
+      <BackLink to="/build/api">{t("apiAccess.title")}</BackLink>
       <LargeTitle
         title={t("apiReference.title")}
         subtitle={t("apiReference.subtitle")}

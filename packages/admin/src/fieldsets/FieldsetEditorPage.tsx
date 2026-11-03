@@ -30,7 +30,7 @@ import { t } from "../i18n/strings.js";
 import { deleteFieldset, type Fieldset, updateFieldset } from "./fieldsets.api.js";
 import { fieldsetKeys, useFieldset } from "./fieldsets.queries.js";
 
-/** /settings/fieldsets/:handle: a fieldset's name and fields, built like a content type's. */
+/** /build/fieldsets/:handle: a fieldset's name and fields, built like a content type's. */
 export function FieldsetEditorPage({ handle }: { handle: string }) {
   const fieldset = useFieldset(handle);
   return (
@@ -103,7 +103,7 @@ function FieldsetEditor({ fieldset }: { fieldset: Fieldset }) {
     try {
       await deleteFieldset(fieldset.handle);
       await queryClient.invalidateQueries({ queryKey: fieldsetKeys.fieldsets() });
-      await navigate({ to: "/settings/fieldsets", ignoreBlocker: true });
+      await navigate({ to: "/build/fieldsets", ignoreBlocker: true });
     } catch (error) {
       setSaveError(describeError(error));
       setIsDeleting(false);
@@ -112,7 +112,7 @@ function FieldsetEditor({ fieldset }: { fieldset: Fieldset }) {
 
   return (
     <>
-      <BackLink to="/settings/fieldsets">{t("fieldsets.title")}</BackLink>
+      <BackLink to="/build/fieldsets">{t("fieldsets.title")}</BackLink>
       <LargeTitle
         title={state.name.trim() || fieldset.name}
         subtitle={[

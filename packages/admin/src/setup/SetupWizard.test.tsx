@@ -432,7 +432,7 @@ describe("SetupWizard", () => {
       await userEvent.click(step(/What you’re building/));
 
       expect(
-        screen.getByText("You can switch features on or off later in Settings → Features."),
+        screen.getByText("You can switch features on or off later in Build → Features."),
       ).toBeVisible();
     });
   });

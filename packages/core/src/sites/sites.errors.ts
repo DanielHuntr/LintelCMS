@@ -11,7 +11,7 @@ export class NoSiteForAddressError extends HttpError {
     super(
       404,
       "SITE_NOT_FOUND",
-      `No site answers on ${host}. Add it to a site's domains in Settings → Sites.`,
+      `No site answers on ${host}. Add it to a site's domains in Build → Websites and domains.`,
     );
   }
 }

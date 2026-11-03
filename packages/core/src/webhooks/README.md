@@ -1,7 +1,7 @@
 # Webhooks
 
 Addresses Lintel tells when something happens, such as a static site builder that rebuilds
-when a page is published. Admins add them in Settings → Webhooks.
+when a page is published. Admins add them in Build → Webhooks.
 
 ## Events
 

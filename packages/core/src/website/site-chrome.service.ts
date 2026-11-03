@@ -75,7 +75,7 @@ export async function loadSiteChrome(
 
 /**
  * The site's name when Site settings doesn't give one: the name from setup for the default
- * site, the name in Settings → Sites for the others.
+ * site, the name in Build → Websites and domains for the others.
  */
 async function readOwnSiteName(
   database: DatabaseOrTransaction,

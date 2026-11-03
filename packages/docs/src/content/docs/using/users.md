@@ -94,7 +94,7 @@ outbox**, or whoever installed Lintel can reset it with one command (see
 
 ## The security log
 
-**Settings → Security log** lists sign-ins, failed sign-ins and every change to people,
+**Users → Security log** lists sign-ins, failed sign-ins and every change to people,
 roles, two-factor, passkeys and API tokens. Choose **Download CSV** to keep a copy or to send
 it to someone checking your security.
 

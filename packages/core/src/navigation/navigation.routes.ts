@@ -36,7 +36,7 @@ import { requireDeliveryAccess } from "../delivery/require-delivery-access.js";
  * Menus belong to a site: the admin's current one, or for websites the one asked for.
  */
 export async function navigationRoutes(server: FastifyInstance) {
-  // Published content, open to websites unless delivery needs a token (Settings → API access).
+  // Published content, open to websites unless delivery needs a token (Build → API access).
   const publicContent = { preHandler: requireDeliveryAccess };
   const canRead = { preHandler: requirePermission("navigation:read") };
   const canUpdate = { preHandler: requirePermission("navigation:update") };

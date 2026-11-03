@@ -51,7 +51,7 @@ raised panels), so links pass WCAG AA everywhere. The mark (`AppMark`) is the bi
 
 ## Rebranding for a client
 
-Agencies don't edit CSS: **Settings → Branding** (or `lintel.config.json` when deploying)
+Agencies don't edit CSS: **Build → Admin branding** (or `lintel.config.json` when deploying)
 takes one accent colour, and `src/branding/applyBranding.ts` overrides `accent`,
 `accent-fill`, `accent-fill-hover` and `on-accent` for both schemes with shades worked out
 by `@lintel/core/accent-colours`, so both contrast checks (on-accent on accent-fill, and
