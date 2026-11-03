@@ -8,6 +8,7 @@ import {
 } from "@lintel/builder-model";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
+import { findErrorCode } from "../database/database-errors.js";
 import {
   AssetNotFoundError,
   createAssetLookup,
@@ -23,8 +24,10 @@ import {
   FontFileNotUsableError,
   SiteFontNameTakenError,
   SiteFontNotFoundError,
+  TooManySiteFontsError,
 } from "./site-fonts.errors.js";
 import {
+  countSiteFontRows,
   deleteSiteFontRow,
   findSiteFontRow,
   findSiteFontRowByFamily,
@@ -39,7 +42,8 @@ import type {
   SiteFontResponse,
   SiteFontsResponse,
 } from "./site-fonts.schema.js";
-import type { SiteFontRow, StoredFontFile } from "./site-fonts.table.js";
+import { MAX_FONTS_PER_SITE } from "./site-fonts.schema.js";
+import type { NewSiteFontRow, SiteFontRow, StoredFontFile } from "./site-fonts.table.js";
 
 /**
  * Site fonts: the families a whole site can use (see README.md). This file lists them,
@@ -122,14 +126,20 @@ async function fileUrls(lookup: FileAddressLookup, rows: readonly SiteFontRow[])
 
 /** A font file from the media library: its bytes, name and format, or a plain refusal. */
 export async function readFontAsset(media: MediaContext, assetId: string) {
+  const { file, format } = await findFontAsset(media, assetId);
+  const { body } = await file.read();
+  return { filename: file.filename, format, contents: await toBuffer(body) };
+}
+
+/** A font file in the media library and its format, from its type: nothing is read. */
+async function findFontAsset(media: MediaContext, assetId: string) {
   const file = await findAssetFile(media, assetId, { fit: "cover" }).catch((error: unknown) => {
     if (error instanceof AssetNotFoundError) throw new FontFileNotUsableError("That file");
     throw error;
   });
   const format = formatsByMimeType[file.mimeType];
   if (!format) throw new FontFileNotUsableError(file.filename);
-  const { body } = await file.read();
-  return { filename: file.filename, format, contents: await toBuffer(body) };
+  return { file, format };
 }
 
 async function toBuffer(body: Buffer | Readable): Promise<Buffer> {
@@ -153,27 +163,28 @@ export async function inspectFontFiles(
   context: SiteFontsContext,
   assetIds: readonly string[],
 ): Promise<InspectedFontFile[]> {
-  return Promise.all(
-    assetIds.map(async (assetId) => {
-      const file = await readFontAsset(context.media, assetId);
-      const guess = guessFontFromFileName(file.filename);
-      const details = readFontFileDetails(file.contents);
-      const family = fontFamilyNameSchema.safeParse(
-        details.family
-          ?.replace(/[^A-Za-z0-9 -]+/g, " ")
-          .replace(/\s+/g, " ")
-          .trim(),
-      );
-      return {
-        assetId,
-        filename: file.filename,
-        family: family.success ? family.data : guess.family,
-        weight: details.weight ?? guess.weight,
-        style: details.style ?? guess.style,
-        readFromFile: family.success,
-      };
-    }),
-  );
+  // One at a time: each file is read into memory (up to 18 of them at a few MB each).
+  const inspected: InspectedFontFile[] = [];
+  for (const assetId of assetIds) {
+    const file = await readFontAsset(context.media, assetId);
+    const guess = guessFontFromFileName(file.filename);
+    const details = readFontFileDetails(file.contents);
+    const family = fontFamilyNameSchema.safeParse(
+      details.family
+        ?.replace(/[^A-Za-z0-9 -]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim(),
+    );
+    inspected.push({
+      assetId,
+      filename: file.filename,
+      family: family.success ? family.data : guess.family,
+      weight: details.weight ?? guess.weight,
+      style: details.style ?? guess.style,
+      readFromFile: family.success,
+    });
+  }
+  return inspected;
 }
 
 /**
@@ -187,12 +198,12 @@ export async function addUploadedFont(
   request: AddUploadedFontRequest,
   confirmedBy: string,
 ): Promise<SiteFontResponse> {
-  const files: StoredFontFile[] = await Promise.all(
-    request.files.map(async (file) => {
-      const { format } = await readFontAsset(context.media, file.assetId);
-      return { assetId: file.assetId, weight: file.weight, style: file.style, format };
-    }),
-  );
+  const files: StoredFontFile[] = [];
+  for (const file of request.files) {
+    // The format comes from the file's type; there is no need to read the file itself.
+    const { format } = await findFontAsset(context.media, file.assetId);
+    files.push({ assetId: file.assetId, weight: file.weight, style: file.style, format });
+  }
   const existing = await findSiteFontRowByFamily(
     context.database,
     DEFAULT_TENANT_ID,
@@ -207,7 +218,7 @@ export async function addUploadedFont(
         category: request.category,
         files: mergeFiles(existing.files, files),
       })
-    : await insertSiteFontRow(context.database, {
+    : await insertNewSiteFont(context.database, {
         tenantId: DEFAULT_TENANT_ID,
         siteId: site.id,
         family: request.family,
@@ -217,6 +228,47 @@ export async function addUploadedFont(
         ...licence,
       });
   return describeSiteFont(row, await fileUrls(createAssetLookup(context.media), [row]));
+}
+
+/**
+ * Adds a font to a site, at most MAX_FONTS_PER_SITE of them. The count and the insert are
+ * one transaction, and a family added by someone else a moment earlier is refused as
+ * "already has a font called…" rather than a database error.
+ */
+export async function insertNewSiteFont(
+  database: DatabaseOrTransaction,
+  row: NewSiteFontRow,
+): Promise<SiteFontRow> {
+  try {
+    return await database.transaction(async (transaction) => {
+      const tenantId = row.tenantId ?? DEFAULT_TENANT_ID;
+      const total = await countSiteFontRows(transaction, tenantId, row.siteId);
+      if (total >= MAX_FONTS_PER_SITE) throw new TooManySiteFontsError(MAX_FONTS_PER_SITE);
+      return insertSiteFontRow(transaction, row);
+    });
+  } catch (error) {
+    if (findErrorCode(error) === "23505") throw new SiteFontNameTakenError(row.family);
+    throw error;
+  }
+}
+
+/**
+ * Deletes files Lintel downloaded for fonts (from Google Fonts) that no font on any site
+ * uses any more. One that has already gone, or is in use elsewhere, is left.
+ */
+export async function deleteUnusedFontFiles(
+  context: SiteFontsContext,
+  assetIds: Iterable<string>,
+): Promise<void> {
+  const stillUsed = new Set(
+    (await listAllSiteFontRows(context.database, DEFAULT_TENANT_ID)).flatMap((other) =>
+      other.files.map((file) => file.assetId),
+    ),
+  );
+  for (const assetId of new Set(assetIds)) {
+    if (stillUsed.has(assetId)) continue;
+    await deleteAsset(context.media, assetId).catch(() => undefined);
+  }
 }
 
 /** Later files win for the same weight and style; the list is kept tidy, lightest first. */
@@ -254,16 +306,10 @@ export async function removeSiteFont(
   const row = await findSiteFontOrFail(context.database, site, fontId);
   await deleteSiteFontRow(context.database, DEFAULT_TENANT_ID, row.id);
   if (row.source !== "google") return;
-  const stillUsed = new Set(
-    (await listAllSiteFontRows(context.database, DEFAULT_TENANT_ID)).flatMap((other) =>
-      other.files.map((file) => file.assetId),
-    ),
+  await deleteUnusedFontFiles(
+    context,
+    row.files.map((file) => file.assetId),
   );
-  for (const assetId of new Set(row.files.map((file) => file.assetId))) {
-    if (stillUsed.has(assetId)) continue;
-    // Already gone, or in use somewhere else: either way the font itself is off the site.
-    await deleteAsset(context.media, assetId).catch(() => undefined);
-  }
 }
 
 async function findSiteFontOrFail(database: DatabaseOrTransaction, site: Site, fontId: string) {

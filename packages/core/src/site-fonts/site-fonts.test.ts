@@ -13,7 +13,17 @@ import { createHomePage } from "../testing/test-home-page.js";
 import { requestsAs, type SendRequest } from "../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
 import { buildSiteServer } from "../website/site-server.js";
+import { DEFAULT_TENANT_ID } from "../database/columns.js";
+import { findOrCreateDefaultSite } from "../sites/sites.service.js";
 import type { FetchFunction } from "./font-network.js";
+import { SiteFontNameTakenError } from "./site-fonts.errors.js";
+import { MAX_FONTS_PER_SITE } from "./site-fonts.schema.js";
+import { insertNewSiteFont } from "./site-fonts.service.js";
+import type { GoogleFontsClient } from "./google-fonts-client.js";
+import { addGoogleFont } from "./google-fonts.service.js";
+
+/** Adding Lora's regular weight, as the Google Fonts tab asks. */
+const request = () => ({ id: "lora", weights: ["400"], italic: false });
 
 const fontFile = (name: string) =>
   readFile(createRequire(import.meta.url).resolve(`@lintel/builder-model/fonts/${name}`));
@@ -46,6 +56,8 @@ font-style:normal;font-weight:400;
 class StandInFontServices {
   readonly asked: string[] = [];
   offline = false;
+  /** Italic files fail, as a connection dropped part of the way through would. */
+  italicsFail = false;
   private woff2 = Buffer.alloc(0);
 
   async load() {
@@ -55,6 +67,7 @@ class StandInFontServices {
   fetch: FetchFunction = async (url) => {
     this.asked.push(url);
     if (this.offline) throw new TypeError("fetch failed");
+    if (this.italicsFail && url.endsWith("-italic.woff2")) throw new TypeError("fetch failed");
     const json = (body: unknown) =>
       new Response(JSON.stringify(body), { headers: { "content-type": "application/json" } });
     const lora = {
@@ -103,12 +116,14 @@ describe("site fonts", () => {
   let website: FastifyInstance;
   let api: SendRequest;
   let homeId = "";
+  let ownerId = "";
 
   beforeEach(async () => {
     folder = await mkdtemp(join(tmpdir(), "lintel-site-fonts-"));
     await services.load();
     services.asked.length = 0;
     services.offline = false;
+    services.italicsFail = false;
     server = buildServer({
       adminOrigin: "http://localhost:5173",
       database: testDatabase.activeDatabase,
@@ -124,7 +139,7 @@ describe("site fonts", () => {
     website = buildSiteServer({ api: server });
     await website.ready();
     await ensurePagesCollection(testDatabase.database);
-    await createTestUser(testDatabase.database, "owner@example.com", [["*"]]);
+    ownerId = (await createTestUser(testDatabase.database, "owner@example.com", [["*"]])).id;
     api = requestsAs(server, await signInAndGetCookies(server, "owner@example.com"));
     homeId = await createHomePage(api);
     await api("POST", `/entries/${homeId}/publish`);
@@ -314,6 +329,80 @@ describe("site fonts", () => {
       expect(
         (await api("POST", "/site-fonts/google", { id: "../x", weights: ["400"] })).statusCode,
       ).toBe(400);
+    });
+
+    it("deletes the files a family downloaded when adding it fails part of the way", async () => {
+      services.italicsFail = true;
+      const before = (await api("GET", "/media")).json().total;
+      const failed = await api("POST", "/site-fonts/google", {
+        id: "lora",
+        weights: ["400", "700"],
+        italic: true,
+      });
+      expect(failed.statusCode).toBe(503);
+      expect((await api("GET", "/site-fonts")).json().fonts).toEqual([]);
+      expect((await api("GET", "/media")).json().total).toBe(before);
+    });
+
+    it("deletes the files a family's new download replaced", async () => {
+      const site = await findOrCreateDefaultSite(testDatabase.database);
+      const context = server.siteFonts.context();
+      const lora = await context.google.findFont("lora");
+      let contents = await fontFile("lora-latin-400-normal.woff2");
+      // Fontsource has changed the file since it was first downloaded.
+      const google: GoogleFontsClient = {
+        ...context.google,
+        findFont: async () => lora,
+        downloadFile: async () => contents,
+      };
+      const first = await addGoogleFont({ ...context, google }, site, request(), ownerId);
+      contents = await fontFile("inter-latin-400-normal.woff2");
+      const again = await addGoogleFont({ ...context, google }, site, request(), ownerId);
+
+      const before = first.files.map((file) => file.assetId);
+      const after = again.files.map((file) => file.assetId);
+      expect(after).not.toEqual(before);
+      const media = (await api("GET", "/media")).json().assets as { id: string }[];
+      expect(media.map((asset) => asset.id).sort()).toEqual([...new Set(after)].sort());
+    });
+
+    it("lets a site have at most 40 fonts", async () => {
+      const site = await findOrCreateDefaultSite(testDatabase.database);
+      for (let index = 0; index < MAX_FONTS_PER_SITE; index += 1) {
+        await insertNewSiteFont(testDatabase.database, {
+          tenantId: DEFAULT_TENANT_ID,
+          siteId: site.id,
+          family: `Family ${index}`,
+          category: "sans",
+          source: "upload",
+          files: [],
+        });
+      }
+      const refused = await api("POST", "/site-fonts/google", { id: "lora", weights: ["400"] });
+      expect(refused.statusCode).toBe(409);
+      expect(refused.json().code).toBe("TOO_MANY_SITE_FONTS");
+      // Nothing it downloaded is left behind.
+      expect((await api("GET", "/media")).json().total).toBe(0);
+    });
+
+    it("says a name is taken when two people add the same family at once", async () => {
+      const site = await findOrCreateDefaultSite(testDatabase.database);
+      const row = {
+        tenantId: DEFAULT_TENANT_ID,
+        siteId: site.id,
+        family: "Same Name",
+        category: "sans" as const,
+        source: "upload" as const,
+        files: [],
+      };
+      const results = await Promise.allSettled([
+        insertNewSiteFont(testDatabase.database, row),
+        insertNewSiteFont(testDatabase.database, row),
+      ]);
+      const refused = results.find((result) => result.status === "rejected");
+      expect(refused?.status === "rejected" && refused.reason).toBeInstanceOf(
+        SiteFontNameTakenError,
+      );
     });
 
     it("removes the downloaded files with the font", async () => {

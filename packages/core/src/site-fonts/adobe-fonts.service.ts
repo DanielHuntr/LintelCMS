@@ -2,11 +2,12 @@ import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import type { Site } from "../sites/sites.table.js";
 import { AdobeProjectEmptyError, AdobeProjectNotFoundError } from "./site-fonts.errors.js";
 import {
+  countSiteFontRows,
   deleteAdobeProjectRows,
   findSiteFontRowByFamily,
   insertSiteFontRow,
 } from "./site-fonts.repository.js";
-import type { SiteFontsResponse } from "./site-fonts.schema.js";
+import { MAX_FONTS_PER_SITE, type SiteFontsResponse } from "./site-fonts.schema.js";
 import { listSiteFonts, type SiteFontsContext } from "./site-fonts.service.js";
 
 /**
@@ -35,6 +36,10 @@ export async function connectAdobeProject(
         family.family,
       );
       if (taken) continue;
+      // A project with more families than a site may have adds the first ones; Adobe's
+      // stylesheet still brings the rest to the page.
+      const total = await countSiteFontRows(transaction, DEFAULT_TENANT_ID, site.id);
+      if (total >= MAX_FONTS_PER_SITE) break;
       await insertSiteFontRow(transaction, {
         tenantId: DEFAULT_TENANT_ID,
         siteId: site.id,

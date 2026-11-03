@@ -40,6 +40,17 @@ export class SiteFontNameTakenError extends HttpError {
   }
 }
 
+/** A site can only have so many fonts; each one is more for every visitor to download. */
+export class TooManySiteFontsError extends HttpError {
+  constructor(max: number) {
+    super(
+      409,
+      "TOO_MANY_SITE_FONTS",
+      `A site can have up to ${max} fonts. Remove one you don't use, then add this one.`,
+    );
+  }
+}
+
 export class FontFileNotUsableError extends HttpError {
   constructor(filename: string) {
     super(
