@@ -57,7 +57,9 @@ back, so a site is never left without a menu. The builder offers Hide on this pa
 replacing it, not removing it from every page, so nobody takes it away by accident.
 
 Setup and starter templates give a site that has never had sections the "Logo and menu"
-navigation and the "Centred footer", so nobody publishes a site with no menu.
+navigation and the "Centred footer", so nobody publishes a site with no menu. The Centred
+footer has a Language switcher, which shows only on a site in more than one language, so
+such sites keep the language links the automatic footer gave them.
 
 ## Not done
 
