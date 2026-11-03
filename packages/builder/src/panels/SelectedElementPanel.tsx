@@ -3,6 +3,11 @@ import {
   type BackgroundVideo,
   type BoundPicture,
   countSharedStyleUses,
+  countVariableUses,
+  countVariableUsesInDesign,
+  type DesignVariable,
+  type SharedStyle,
+  sharedStylesById,
   type Breakpoint,
   findPath,
   type FreeLayout,
@@ -44,6 +49,7 @@ import {
 } from "../style-panel/StylePanel.js";
 import { layerName } from "../editor/commands.js";
 import { SiteStylesPanel } from "../site-design/SiteStylesPanel.js";
+import { useSiteDesign } from "../site-design/site-design-context.js";
 import type { SharedStyleChange } from "../editor/design-commands.js";
 import { Tip } from "../tour/Tip.js";
 import { Tabs } from "../ui/controls.js";
@@ -85,6 +91,11 @@ interface SelectedElementPanelProps {
     setPlacedGrid: (nodeId: string, placedGrid: PlacedGrid | null) => void;
     placeOnGrid: (nodeId: string, target: Breakpoint, place: GridPlace) => void;
     changeSharedStyle: (nodeId: string, change: SharedStyleChange) => void;
+    writeOutVariable: (variable: DesignVariable) => void;
+    detachEverything: (
+      sharedStyle: SharedStyle,
+      looks: Readonly<Record<string, SharedStyle>>,
+    ) => void;
     setBackgroundVideo: (nodeId: string, video: BackgroundVideo | null) => void;
     changePageFonts: (fonts: PageFont[], label: string) => void;
     restack: (nodeId: string, move: StackingMove) => void;
@@ -105,16 +116,45 @@ interface SelectedElementPanelProps {
   pageWeight?: PageWeight;
   /** Site-wide motion settings, shown when nothing is selected on the Animate tab. */
   siteMotion?: ReactNode;
+  /** Selects the first of these elements and outlines them all ("Select them"). */
+  onSelectMany?: (nodeIds: string[]) => void;
   /** The page's own settings, shown when nothing is selected on the Content tab. */
   pageSettings?: ReactNode;
   /** Under the selected element: making a section the site's navigation or footer. */
   sectionTools?: ReactNode;
   /** Told which state is being styled, so the canvas can show it; null for none. */
   onStyleStateChange?: (nodeId: string, target: StyleTarget | null) => void;
+  /** Outlines an element on the page while the pointer is on its name in a list; null clears. */
+  onPointAtElement?: (nodeId: string | null) => void;
+}
+
+/** The elements on a page that use a shared style, in page order. */
+function findSharedStyleUsers(root: PageNode, sharedStyleId: string): string[] {
+  const found: string[] = [];
+  const visit = (node: PageNode) => {
+    if (node.sharedStyle === sharedStyleId) found.push(node.id);
+    node.children.forEach(visit);
+  };
+  visit(root);
+  return found;
 }
 
 /** How many elements around the selected one are offered as owners of its states. */
 const maxStateOwners = 3;
+
+/** Elements people think of as one thing they hover, press or open: a card, a link, a tab. */
+const recognisableOwnerTypes = new Set([
+  "card",
+  "link",
+  "button",
+  "slide",
+  "tabPanel",
+  "accordionItem",
+  "modal",
+  "productCard",
+  "testimonial",
+  "teamMember",
+]);
 
 /**
  * The right-hand side: Style, Content and Animate for the selected element, and Code for
@@ -126,6 +166,8 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
   const [chosenTab, setTab] = useState<RightTab>("style");
   const [styleMode, setStyleMode] = useState<StylePanelMode>("simple");
   const [styleState, setStyleState] = useState<StateChoice>("none");
+  // "Site styles" opens over the element's Style, with Back.
+  const [showsSiteStyles, setShowsSiteStyles] = useState(false);
   const wantsCode = props.showCode && tools.codeTools;
   const [lastShowCode, setLastShowCode] = useState(wantsCode);
   if (wantsCode !== lastShowCode) {
@@ -142,6 +184,28 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
   const tab = chosenTab === "code" && !tools.codeTools ? "style" : chosenTab;
   const { document, pickImage, uploadFile } = props;
   const sharedStyleUses = useMemo(() => countSharedStyleUses(document.root), [document.root]);
+  const site = useSiteDesign();
+  const variableUses = useMemo(
+    () => countVariableUsesInDesign(site.design, countVariableUses(document.root)),
+    [document.root, site.design],
+  );
+  const siteStyles = (onBack?: () => void) => (
+    <SiteStylesPanel
+      sharedStyleUses={sharedStyleUses}
+      variableUses={variableUses}
+      onBack={onBack}
+      onDeleteVariable={actions.writeOutVariable}
+      onDeleteSharedStyle={(sharedStyle) => {
+        const look = sharedStylesById(site.design)[sharedStyle.id];
+        if (look) actions.detachEverything(sharedStyle, { [sharedStyle.id]: look });
+      }}
+      onSelectUsers={
+        props.onSelectMany
+          ? (id) => props.onSelectMany?.(findSharedStyleUsers(document.root, id))
+          : undefined
+      }
+    />
+  );
   // The elements around the selected one, nearest first, whose states it can follow.
   const stateOwners = useMemo<StateOwner[]>(() => {
     if (!node) return [];
@@ -149,12 +213,55 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
       .slice(1, -1)
       .reverse()
       .slice(0, maxStateOwners)
-      .map((around) => ({
+      .map((around, index, all) => {
+        const name = layerName(around, props.registry.catalogue);
+        // Two elements around it with the same name ("Container") are told apart by how far
+        // up they are.
+        const isShared = all.some(
+          (other) => other !== around && layerName(other, props.registry.catalogue) === name,
+        );
+        return {
+          id: around.id,
+          name,
+          place: isShared
+            ? index === 0
+              ? text("pageBuilder.style.ownerPlaceParent")
+              : text("pageBuilder.style.ownerPlaceLevels", { count: index + 1 })
+            : undefined,
+          stateTransition: around.stateTransition,
+        };
+      });
+  }, [node, document, props.registry, text]);
+  // The ones a state can follow, offered by name: cards, links, buttons and the like, and
+  // anything the person has named. Plain layout boxes ("Container") mean nothing to people.
+  const followableOwners = useMemo<StateOwner[]>(() => {
+    if (!node) return [];
+    const recognisable = findPath(document.root, node.id)
+      .slice(1, -1)
+      .reverse()
+      .filter((around) => {
+        const label = props.registry.catalogue.find(around.type)?.label;
+        const named = Boolean(around.name?.trim()) && around.name !== label;
+        return named || recognisableOwnerTypes.has(around.type);
+      })
+      .slice(0, maxStateOwners);
+    return recognisable.map((around, index) => {
+      const name = layerName(around, props.registry.catalogue);
+      const isShared = recognisable.some(
+        (other) => other !== around && layerName(other, props.registry.catalogue) === name,
+      );
+      return {
         id: around.id,
-        name: layerName(around, props.registry.catalogue),
+        name,
+        place: isShared
+          ? index === 0
+            ? text("pageBuilder.style.ownerPlaceParent")
+            : text("pageBuilder.style.ownerPlaceLevels", { count: index + 1 })
+          : undefined,
         stateTransition: around.stateTransition,
-      }));
-  }, [node, document, props.registry]);
+      };
+    });
+  }, [node, document, props.registry, text]);
   const onStyleStateChange = props.onStyleStateChange;
   const showsStyleState = tab === "style" && styleState !== "none";
   useEffect(() => {
@@ -252,20 +359,30 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
             onPasteHtml={actions.pasteHtml}
           />
         ) : !node ? (
-          <>
-            <p className="px-4 py-6 text-footnote text-label-secondary">
-              {text(
-                tab === "animate"
-                  ? "pageBuilder.animate.selectSomething"
-                  : "pageBuilder.panels.selectSomething",
+          tab === "style" ? (
+            <>
+              <p className="px-4 pt-4 text-caption text-label-tertiary">
+                {text("pageBuilder.siteStyles.selectHint")}
+              </p>
+              {siteStyles()}
+            </>
+          ) : (
+            <>
+              <p className="px-4 py-6 text-footnote text-label-secondary">
+                {text(
+                  tab === "animate"
+                    ? "pageBuilder.animate.selectSomething"
+                    : "pageBuilder.panels.selectSomething",
+                )}
+              </p>
+              {tab === "animate" && props.siteMotion && (
+                <div className="px-4 pb-6">{props.siteMotion}</div>
               )}
-            </p>
-            {tab === "animate" && props.siteMotion && (
-              <div className="px-4 pb-6">{props.siteMotion}</div>
-            )}
-            {tab === "style" && <SiteStylesPanel uses={sharedStyleUses} />}
-            {tab === "content" && props.pageSettings}
-          </>
+              {tab === "content" && props.pageSettings}
+            </>
+          )
+        ) : tab === "style" && showsSiteStyles ? (
+          siteStyles(() => setShowsSiteStyles(false))
         ) : tab === "style" && design ? (
           <StylePanel
             design={design}
@@ -286,10 +403,12 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
             onChange={(target, values, label) =>
               actions.changeStyles(node.id, target, values, label)
             }
-            owners={stateOwners}
+            owners={followableOwners}
+            onPointAtOwner={props.onPointAtElement}
             onTransitionChange={actions.setStateTransition}
             sharedStyleUses={sharedStyleUses}
             nodeName={props.nodeName}
+            onOpenSiteStyles={() => setShowsSiteStyles(true)}
           />
         ) : tab === "animate" ? (
           <AnimatePanel

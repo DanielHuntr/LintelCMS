@@ -1,7 +1,9 @@
+import type { SiteEffectSettings } from "@lintel/motion/effects";
 import type { ComponentCatalogue } from "../components/component-catalogue.js";
 import type { NodeBlueprint } from "../components/component-definition.js";
 import { createEmptyPage, type PageDocument } from "../document/page-document.schema.js";
 import { createNode } from "../tree/create-node.js";
+import type { DesignVariable } from "../site-design/design-variables.js";
 import type { CreateNodeId } from "../tree/node-ids.js";
 
 /**
@@ -18,6 +20,10 @@ export interface StarterTheme {
   fontPairing: string;
   /** square, soft or round. */
   cornerStyle: string;
+  /** A family from the included fonts for headings ("Archivo"); left out follows the pairing. */
+  headingFont?: string;
+  /** The same for body text. */
+  bodyFont?: string;
 }
 
 export interface StarterPage {
@@ -40,9 +46,26 @@ export interface StarterSite {
   /** The illustration shown on its card in the library. */
   coverIllustration: string;
   theme: StarterTheme;
+  /**
+   * Motion across the whole site that comes with the look: smooth scrolling, the cursor, the
+   * page transition and the first-visit intro. Each part changes only what it names; applied
+   * with the theme.
+   */
+  siteMotion?: StarterSiteMotion;
+  /**
+   * Named colours, sizes or fonts the template's styles use (`var(--lintel-var-cobalt)`),
+   * such as an accent with its own dark-mode value. Applied with the theme: added to the
+   * site's design variables, replacing one with the same id.
+   */
+  designVariables?: readonly DesignVariable[];
   /** Home first; the menu lists them in this order. */
   pages: readonly StarterPage[];
 }
+
+/** Some of the site's motion settings, each part only the values it changes. */
+export type StarterSiteMotion = {
+  [Part in keyof SiteEffectSettings]?: Partial<SiteEffectSettings[Part]>;
+};
 
 /** A starter page as a page design, with fresh ids for every element. */
 /**

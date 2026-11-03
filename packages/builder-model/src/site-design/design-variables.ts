@@ -22,6 +22,11 @@ export interface DesignVariable {
   name: string;
   kind: DesignVariableKind;
   value: string;
+  /**
+   * For a colour: its value under the site's dark colour scheme (the visitor's dark mode
+   * with an automatic theme, or always with a dark one). Left out, it's the same in both.
+   */
+  darkValue?: string;
 }
 
 export const maxDesignVariables = 100;
@@ -49,11 +54,18 @@ export const designVariableSchema = z
       .max(40, { error: "Variable names can be at most 40 characters" }),
     kind: z.enum(designVariableKinds, { error: "A variable is a colour, a size or a font" }),
     value: z.string({ error: "A variable needs a value" }),
+    darkValue: z.string().optional(),
   })
   .refine((variable) => isDesignVariableValue(variable.kind, variable.value), {
     error: "That value can’t be used for this variable",
     path: ["value"],
-  });
+  })
+  .refine(
+    (variable) =>
+      variable.darkValue === undefined ||
+      (variable.kind === "colour" && isDesignVariableValue("colour", variable.darkValue)),
+    { error: "A dark-mode value must be a colour, for a colour", path: ["darkValue"] },
+  );
 
 /** The custom property a variable sets, without the leading dashes. */
 export function variablePropertyName(variable: Pick<DesignVariable, "id">): string {
@@ -91,12 +103,38 @@ export function variablesAsTokens(
     }));
 }
 
-/** The variables as a `:root` rule for the website's stylesheet; empty for none. */
+/** A colour variable's dark-mode value, when it has one that can be used. */
+export function darkValueOf(variable: DesignVariable): string | undefined {
+  return variable.kind === "colour" &&
+    variable.darkValue !== undefined &&
+    isDesignVariableValue("colour", variable.darkValue)
+    ? variable.darkValue.trim()
+    : undefined;
+}
+
+/**
+ * The variables as a `:root` rule for the website's stylesheet; empty for none.
+ *
+ * A colour with a dark-mode value is written as `light-dark(light, dark)`, which follows the
+ * `color-scheme` the theme's stylesheet sets on the page: the visitor's own choice with an
+ * automatic theme, always light or always dark with a fixed one. Browsers too old for
+ * `light-dark()` get the light value.
+ */
 export function designVariablesStylesheet(variables: readonly DesignVariable[]): string {
   const safe = variables.filter((variable) => isDesignVariableValue(variable.kind, variable.value));
   if (safe.length === 0) return "";
-  const lines = safe.map(
-    (variable) => `  --${variablePropertyName(variable)}: ${variable.value.trim()};`,
-  );
-  return `:root {\n${lines.join("\n")}\n}\n`;
+  const lines = safe.map((variable) => {
+    const dark = darkValueOf(variable);
+    const light = variable.value.trim();
+    const value = dark ? `light-dark(${light}, ${dark})` : light;
+    return `  --${variablePropertyName(variable)}: ${value};`;
+  });
+  const withDark = safe.filter((variable) => darkValueOf(variable) !== undefined);
+  const fallback =
+    withDark.length === 0
+      ? ""
+      : `@supports not (color: light-dark(#000, #fff)) {\n  :root {\n${withDark
+          .map((variable) => `    --${variablePropertyName(variable)}: ${variable.value.trim()};`)
+          .join("\n")}\n  }\n}\n`;
+  return `:root {\n${lines.join("\n")}\n}\n${fallback}`;
 }

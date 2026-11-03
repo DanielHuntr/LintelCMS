@@ -274,8 +274,15 @@ describe("the Style panel's groups", () => {
     expect(screen.queryByRole("radiogroup", { name: /What has to be/ })).toBeNull();
     const looks = screen.getByRole("radiogroup", { name: "Which look you're changing" });
     await person.click(within(looks).getByRole("radio", { name: "Hovered" }));
+    // Most people mean the element itself, so what's around it waits behind a link.
+    expect(screen.queryByRole("radiogroup", { name: /What has to be/ })).toBeNull();
+    await person.click(
+      screen.getByRole("button", { name: "Change it when something around it is hovered…" }),
+    );
     const whose = screen.getByRole("radiogroup", { name: "What has to be hovered" });
     expect(within(whose).getByRole("radio", { name: "This element" })).toBeChecked();
+    // Only things people recognise are offered: no plain layout boxes.
+    expect(within(whose).queryByRole("radio", { name: /^Container/ })).toBeNull();
     const ownerChoice = within(whose)
       .getAllByRole("radio")
       .find((choice) => choice.textContent?.endsWith(", around it"));

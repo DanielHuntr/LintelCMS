@@ -32,6 +32,8 @@ import { type FormTemplateId, formTemplateIds } from "../forms/form-templates.js
 import { findEnabledPluginIds } from "../plugins/plugins.service.js";
 import { moveToRecycleBin } from "../recycle-bin/recycle-bin.service.js";
 import { hasPermission } from "../roles/permissions.js";
+import { readSiteDesign, saveSiteDesign } from "../site-design/site-design.service.js";
+import { readSiteEffects, updateSiteEffects } from "../site-effects/site-effects.service.js";
 import { siteOrDefault } from "../sites/sites.service.js";
 import type { Site } from "../sites/sites.table.js";
 import { updateWebsiteRequestSchema } from "../website/website.schema.js";
@@ -285,13 +287,50 @@ async function applyTheme(
   context: StarterSiteContext,
 ): Promise<boolean> {
   // The template's theme is checked like any other change to the website's look.
-  const changes = updateWebsiteRequestSchema.parse(site.theme);
+  // A template without fonts of its own goes back to its pairing's fonts.
+  const changes = updateWebsiteRequestSchema.parse({
+    headingFont: null,
+    bodyFont: null,
+    ...site.theme,
+  });
   await updateWebsite(database, changes, {
     templates: context.templates,
     builtInSiteUrl: context.builtInSiteUrl,
     assetExists: context.assetExists,
   });
+  if (site.siteMotion) await applySiteMotion(database, site.siteMotion);
+  if (site.designVariables?.length) await addDesignVariables(database, site.designVariables);
   return true;
+}
+
+/** The template's design variables, added to the site's; one with the same id is replaced. */
+async function addDesignVariables(
+  database: DatabaseOrTransaction,
+  variables: NonNullable<StarterSite["designVariables"]>,
+): Promise<void> {
+  const design = await readSiteDesign(database);
+  const ids = new Set(variables.map((variable) => variable.id));
+  await saveSiteDesign(database, {
+    ...design,
+    variables: [
+      ...design.variables.filter((variable) => !ids.has(variable.id)),
+      ...variables.map((variable) => ({ ...variable })),
+    ],
+  });
+}
+
+/** The template's site-wide motion, part by part over what the site has now. */
+async function applySiteMotion(
+  database: DatabaseOrTransaction,
+  motion: NonNullable<StarterSite["siteMotion"]>,
+): Promise<void> {
+  const current = await readSiteEffects(database);
+  await updateSiteEffects(database, {
+    pageTransition: { ...current.pageTransition, ...motion.pageTransition },
+    cursor: { ...current.cursor, ...motion.cursor },
+    intro: { ...current.intro, ...motion.intro },
+    smoothScroll: { ...current.smoothScroll, ...motion.smoothScroll },
+  });
 }
 
 /**

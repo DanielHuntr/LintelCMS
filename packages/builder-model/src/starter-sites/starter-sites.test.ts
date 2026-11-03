@@ -56,6 +56,41 @@ describe("starter sites", () => {
     }
   });
 
+  it("gives Folio a drag gallery, a live clock, hover pictures and its own motion", () => {
+    const folio = findStarterSite("folio");
+    expect(folio?.siteMotion).toMatchObject({
+      smoothScroll: { strength: "gentle" },
+      cursor: { style: "dot" },
+      pageTransition: { style: "fade" },
+      intro: { style: "counter" },
+    });
+    expect(folio?.theme).toMatchObject({ headingFont: "Archivo", bodyFont: "Archivo" });
+    const nodes = (slug: string) => {
+      const page = folio?.pages.find((candidate) => candidate.slug === slug);
+      if (!page) throw new Error(`Folio has no ${slug} page`);
+      return listNodes(buildStarterPage(page, standardCatalogue, createCountingNodeIds()).root);
+    };
+    const home = nodes("home");
+    const gallery = home.find((node) => node.type === "carousel");
+    expect(gallery?.props).toMatchObject({ freeDrag: true, showDots: false });
+    expect(gallery?.effects).toEqual([{ effect: "cursor-word", params: { text: "Drag" } }]);
+    expect(home.find((node) => node.type === "clock")?.props.zone).toBe("Europe/Lisbon");
+    expect(home.some((node) => node.placedGrid?.columns === 12)).toBe(true);
+    // Every page has the same header and footer, one section each.
+    for (const slug of ["home", "projects", "about", "contact"]) {
+      const top = nodes(slug).filter((node) => node.type === "section");
+      expect(top[0]?.props.element, slug).toBe("header");
+      expect(top.at(-1)?.props.element, slug).toBe("footer");
+    }
+    const rows = nodes("projects").filter((node) => node.name === "Project");
+    expect(rows).toHaveLength(8);
+    for (const row of rows) {
+      const src = row.effects?.find((effect) => effect.effect === "hover-picture")?.params.src;
+      const name = /^\/_lintel\/illustrations\/([a-z-]+)\.svg$/.exec(String(src))?.[1] ?? "";
+      expect(findIllustration(name), String(src)).toBeDefined();
+    }
+  });
+
   it("finds a starter site by its id", () => {
     expect(findStarterSite("bakery")?.name).toBe("Bakery and café");
     expect(findStarterSite("nope")).toBeUndefined();

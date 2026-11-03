@@ -4,7 +4,13 @@ import {
   designVariableSchema,
   maxDesignVariables,
 } from "./design-variables.js";
-import { maxSharedStyles, type SharedStyle, sharedStyleSchema } from "./shared-styles.js";
+import {
+  maxSharedStyles,
+  resolveSharedStyles,
+  type SharedStyle,
+  sharedStyleSchema,
+} from "./shared-styles.js";
+import { countVariablesInStyles, inlineVariableInStyles } from "./variable-uses.js";
 
 /**
  * The site's design system as the builder edits it: its design variables and its shared
@@ -33,7 +39,51 @@ export const siteDesignSchema = z.object({
     .default([]),
 });
 
-/** Shared styles by id, as pages are drawn with them. */
+/** Shared styles by id, as pages are drawn with them: a variant has its base's look under it. */
 export function sharedStylesById(design: SiteDesign): Record<string, SharedStyle> {
-  return Object.fromEntries(design.sharedStyles.map((style) => [style.id, style]));
+  return resolveSharedStyles(design.sharedStyles);
+}
+
+/**
+ * The design without one shared style. Its variants become shared styles of their own, with
+ * the look they had.
+ */
+export function withoutSharedStyle(design: SiteDesign, id: string): SiteDesign {
+  const resolved = resolveSharedStyles(design.sharedStyles);
+  return {
+    ...design,
+    sharedStyles: design.sharedStyles.flatMap((each) => {
+      if (each.id === id) return [];
+      if (each.variantOf !== id) return [each];
+      const rest: SharedStyle = { ...each, styles: resolved[each.id]?.styles ?? each.styles };
+      delete rest.variantOf;
+      return [rest];
+    }),
+  };
+}
+
+/** How many styles in the site's design (its shared styles) name each variable. */
+export function countVariableUsesInDesign(
+  design: SiteDesign,
+  into = new Map<string, number>(),
+): Map<string, number> {
+  for (const sharedStyle of design.sharedStyles) countVariablesInStyles(sharedStyle.styles, into);
+  return into;
+}
+
+/**
+ * The design without one variable. Shared styles that used it get its value written out, so
+ * they look as they did.
+ */
+export function withoutVariable(design: SiteDesign, id: string): SiteDesign {
+  const variable = design.variables.find((each) => each.id === id);
+  if (!variable) return design;
+  return {
+    ...design,
+    variables: design.variables.filter((each) => each.id !== id),
+    sharedStyles: design.sharedStyles.map((sharedStyle) => {
+      const styles = inlineVariableInStyles(sharedStyle.styles, variable);
+      return styles === sharedStyle.styles ? sharedStyle : { ...sharedStyle, styles };
+    }),
+  };
 }

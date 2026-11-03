@@ -21,6 +21,12 @@ export interface SharedStyle {
   id: string;
   name: string;
   styles: SharedStyles;
+  /**
+   * A variant ("Outline" of "Button") names the shared style it's a variant of. It looks
+   * like that one, with its own styles over it, so changing the button changes the outline
+   * button too. Only one level: a variant of a variant is a variant of the first.
+   */
+  variantOf?: string;
 }
 
 /** A node's styles without styles that follow another element ("while the card is hovered"). */
@@ -40,6 +46,7 @@ export const sharedStyleSchema = z.object({
     .min(1, { error: "Please give the shared style a name" })
     .max(40, { error: "Shared style names can be at most 40 characters" }),
   styles: nodeStylesSchema.omit({ owners: true }).default({ base: {} }),
+  variantOf: sharedStyleIdSchema.optional(),
 });
 
 /** Where an element sits, which stays with the element when its look is shared. */
@@ -186,4 +193,48 @@ export function countSharedStyleUses(root: PageNode): Map<string, number> {
   };
   visit(root);
   return counts;
+}
+
+/**
+ * The shared styles as pages are drawn with them, by id: a variant's look is its base's with
+ * its own over it. A variant whose base is gone keeps only its own look.
+ */
+export function resolveSharedStyles(
+  sharedStyles: readonly SharedStyle[],
+): Record<string, SharedStyle> {
+  const byId = new Map(sharedStyles.map((each) => [each.id, each]));
+  return Object.fromEntries(
+    sharedStyles.map((each) => {
+      const base = each.variantOf ? byId.get(each.variantOf) : undefined;
+      if (!base || base.variantOf) return [each.id, each];
+      const styles = layerStyles(base.styles, each.styles);
+      return [each.id, { ...each, styles }];
+    }),
+  );
+}
+
+/** The shared style a variant belongs to, or the style itself when it isn't a variant. */
+export function baseSharedStyleOf(
+  sharedStyle: SharedStyle,
+  sharedStyles: readonly SharedStyle[],
+): SharedStyle {
+  if (!sharedStyle.variantOf) return sharedStyle;
+  return sharedStyles.find((each) => each.id === sharedStyle.variantOf) ?? sharedStyle;
+}
+
+/** A shared style's variants, in the order they were made. */
+export function variantsOf(
+  sharedStyle: SharedStyle,
+  sharedStyles: readonly SharedStyle[],
+): SharedStyle[] {
+  return sharedStyles.filter((each) => each.variantOf === sharedStyle.id);
+}
+
+/** "Button · Outline" for a variant, "Button" for a shared style that isn't one. */
+export function sharedStyleTitle(
+  sharedStyle: SharedStyle,
+  sharedStyles: readonly SharedStyle[],
+): string {
+  const base = baseSharedStyleOf(sharedStyle, sharedStyles);
+  return base === sharedStyle ? sharedStyle.name : `${base.name} · ${sharedStyle.name}`;
 }

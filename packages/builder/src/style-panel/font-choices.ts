@@ -49,7 +49,7 @@ export interface FontChoiceGroup {
 
 /**
  * Every font an element can use, grouped as the font list shows them: the theme's two
- * (with the site's font variables), the site's own, any this page added by itself, and the ones that come with Lintel. A font
+ * (after the site's font variables), the site's own, any this page added by itself, and the ones that come with Lintel. A font
  * appears once, in the first group that has it.
  */
 export function fontChoiceGroups(
@@ -69,10 +69,11 @@ export function fontChoiceGroups(
   const groups: FontChoiceGroup[] = [
     {
       id: "theme",
+      // The site's named fonts first, then the theme's two.
       choices: [
+        ...variables.map((token) => ({ value: tokenValue(token), label: token.label })),
         ...(heading ? [{ value: tokenValue(heading), label: themeLabels.heading }] : []),
         ...(body ? [{ value: tokenValue(body), label: themeLabels.body }] : []),
-        ...variables.map((token) => ({ value: tokenValue(token), label: token.label })),
       ],
     },
     {

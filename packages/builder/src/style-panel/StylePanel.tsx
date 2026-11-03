@@ -8,11 +8,13 @@ import {
   type PageNode,
   readOwnerStateTarget,
   setStyles,
+  sharedStylesById,
   type StateTransition,
   type StylePropertyName,
   type StyleState,
   type StyleTarget,
 } from "@lintel/builder-model";
+import { ChevronRight, Palette } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { type SharedScope, SharedStyleBar } from "../site-design/SharedStyleBar.js";
 import { useSiteDesign, withSharedStyle } from "../site-design/site-design-context.js";
@@ -50,7 +52,14 @@ export type StateChoice = "none" | StyleState | OwnerStateTarget;
 export interface StateOwner {
   id: string;
   name: string;
+  /** Where it is ("2 levels up"), when another element around has the same name. */
+  place?: string;
   stateTransition?: StateTransition;
+}
+
+/** An owner's name, told apart from another with the same name: "Container (2 levels up)". */
+function ownerName(owner: StateOwner): string {
+  return owner.place ? `${owner.name} (${owner.place})` : owner.name;
 }
 
 interface StylePanelProps {
@@ -75,12 +84,16 @@ interface StylePanelProps {
   design: DesignTools;
   /** The elements around this one, whose states it can follow ("while the card is hovered"). */
   owners?: readonly StateOwner[];
+  /** Outlines an element around this one while the pointer is on its name; null clears. */
+  onPointAtOwner?: (nodeId: string | null) => void;
   /** Sets how an element, and what follows its states, moves between them. */
   onTransitionChange?: (nodeId: string, transition: StateTransition | null) => void;
   /** How many elements on this page use each shared style. */
   sharedStyleUses?: ReadonlyMap<string, number>;
   /** The element's name in Layers, offered as the name of a shared style made from it. */
   nodeName?: string;
+  /** Opens Site styles: the site's named colours, sizes, fonts and shared styles. */
+  onOpenSiteStyles?: () => void;
 }
 
 const textTypes = new Set(["heading", "text", "quote", "list", "button", "link", "navigation"]);
@@ -116,9 +129,11 @@ export function StylePanel({
   onChange,
   design,
   owners = [],
+  onPointAtOwner,
   onTransitionChange,
   sharedStyleUses,
   nodeName = "",
+  onOpenSiteStyles,
 }: StylePanelProps) {
   const text = useBuilderText();
   const advanced = allowsAdvanced && mode === "advanced";
@@ -136,6 +151,11 @@ export function StylePanel({
   const shared = node.sharedStyle
     ? site.design.sharedStyles.find((each) => each.id === node.sharedStyle)
     : undefined;
+  // The look it has: a variant's is its base's with its own over it.
+  const sharedLook = useMemo(
+    () => (node.sharedStyle ? sharedStylesById(site.design)[node.sharedStyle] : undefined),
+    [node.sharedStyle, site.design],
+  );
   const [scope, setScope] = useState<{ nodeId: string; scope: SharedScope }>({
     nodeId: node.id,
     scope: "every",
@@ -150,7 +170,7 @@ export function StylePanel({
     if (shared && editsShared && changeSite) {
       return {
         // What shows is the look in effect; where it sits (its place) is always its own.
-        styles: layerStyles(shared.styles, node.styles),
+        styles: layerStyles((sharedLook ?? shared).styles, node.styles),
         target,
         change: (values, label) => {
           const entries = Object.entries(values) as Array<[StylePropertyName, string | undefined]>;
@@ -165,11 +185,11 @@ export function StylePanel({
       };
     }
     return {
-      styles: shared ? layerStyles(shared.styles, node.styles) : node.styles,
+      styles: sharedLook ? layerStyles(sharedLook.styles, node.styles) : node.styles,
       target,
       change: (values, label) => onChange(target, values, label),
     };
-  }, [shared, editsShared, changeSite, site.design, node.styles, target, onChange]);
+  }, [shared, sharedLook, editsShared, changeSite, site.design, node.styles, target, onChange]);
   const store = usePreferenceStore();
   const simpleSections = useRememberedOpenSections(store, "style.simple.open", simpleOpenAtFirst);
   const advancedSections = useLastUsedOpenSections(store, "style.advanced.lastUsed");
@@ -209,7 +229,30 @@ export function StylePanel({
           defaultName={nodeName}
           isLocked={isLocked}
         />
-        <LookPicker value={validState} owners={owners} onChange={onStateChange} />
+        {onOpenSiteStyles && (
+          <button
+            type="button"
+            onClick={onOpenSiteStyles}
+            className="-mx-1 flex min-h-9 items-center gap-2 rounded-control px-1 text-start hover:bg-fill/60 focus-visible:focus-ring"
+          >
+            <Palette aria-hidden="true" className="size-4 shrink-0 text-label-secondary" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-footnote font-medium text-label">
+                {text("pageBuilder.siteStyles.open")}
+              </span>
+              <span className="block truncate text-caption text-label-tertiary">
+                {text("pageBuilder.siteStyles.openHint")}
+              </span>
+            </span>
+            <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-label-tertiary" />
+          </button>
+        )}
+        <LookPicker
+          value={validState}
+          owners={owners}
+          onChange={onStateChange}
+          onPointAtOwner={onPointAtOwner}
+        />
         {validState === "none" && (
           <p className="text-caption text-label-secondary">{text(breakpointNotes[breakpoint])}</p>
         )}
@@ -294,12 +337,15 @@ function LookPicker({
   value,
   owners,
   onChange,
+  onPointAtOwner,
 }: {
   value: StateChoice;
   owners: readonly StateOwner[];
   onChange: (state: StateChoice) => void;
+  onPointAtOwner?: (nodeId: string | null) => void;
 }) {
   const text = useBuilderText();
+  const [isFollowing, setIsFollowing] = useState(false);
   const ownerTarget = readOwnerStateTarget(value === "none" ? "base" : value);
   const look: "none" | StyleState = ownerTarget
     ? ownerTarget.state
@@ -329,19 +375,39 @@ function LookPicker({
           label: text(choice.label),
         }))}
       />
-      {canFollow && (
+      {canFollow && !ownerId && !isFollowing && (
+        <button
+          type="button"
+          onClick={() => setIsFollowing(true)}
+          className="self-start text-caption font-medium text-accent hover:underline focus-visible:focus-ring"
+        >
+          {text("pageBuilder.style.followSomethingAround", {
+            look: text(lookChoices.find((choice) => choice.value === look)!.label).toLowerCase(),
+          })}
+        </button>
+      )}
+      {canFollow && (ownerId || isFollowing) && (
         <ChoiceGroup<string>
           label={text("pageBuilder.style.whoseLabel", {
             look: text(lookChoices.find((choice) => choice.value === look)!.label).toLowerCase(),
           })}
           value={ownerId ?? "self"}
           onChange={(next) => onChange(next === "self" ? look : `${look}@${next}`)}
+          onPointAt={
+            onPointAtOwner &&
+            ((choice) => onPointAtOwner(choice && choice !== "self" ? choice : null))
+          }
           stacked
           choices={[
             { value: "self", label: text("pageBuilder.style.whoseSelf") },
             ...owners.map((candidate) => ({
               value: candidate.id,
-              label: text("pageBuilder.style.whoseOwner", { name: candidate.name }),
+              label: candidate.place
+                ? text("pageBuilder.style.whoseOwnerPlace", {
+                    name: candidate.name,
+                    place: candidate.place,
+                  })
+                : text("pageBuilder.style.whoseOwner", { name: candidate.name }),
             })),
           ]}
         />
@@ -351,7 +417,9 @@ function LookPicker({
           className="rounded-control bg-accent/10 px-3 py-2 text-caption text-label"
           aria-live="polite"
         >
-          {owner ? text(ownerLookMeanings[look], { name: owner.name }) : text(lookMeanings[look])}
+          {owner
+            ? text(ownerLookMeanings[look], { name: ownerName(owner) })
+            : text(lookMeanings[look])}
         </p>
       )}
     </div>
@@ -407,7 +475,7 @@ function TransitionControls({
         />
       )}
       <p className="text-caption text-label-secondary">
-        {text("pageBuilder.style.transitionFor", { name: owner.name })}
+        {text("pageBuilder.style.transitionFor", { name: ownerName(owner) })}
       </p>
     </div>
   );

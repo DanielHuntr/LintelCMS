@@ -252,6 +252,8 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   });
   const [breakpoint, setBreakpoint] = useState<Breakpoint>("base");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  // "Select them" in Site styles: the elements outlined together, while one of them is selected.
+  const [highlight, setHighlight] = useState<readonly string[]>([]);
   const [revealId, setRevealId] = useState<string | null>(null);
   const [leftTab, setLeftTab] = useState<LeftTab>("layers");
   const [insertFocusRequest, setInsertFocusRequest] = useState<InsertFocusRequest>();
@@ -917,6 +919,9 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                         breakpoint={breakpoint}
                         selectedId={selectedId}
                         hoveredId={hoveredId}
+                        highlightIds={
+                          selectedId && highlight.includes(selectedId) ? highlight : undefined
+                        }
                         labels={labels}
                         revealId={revealId}
                         canTransform={selectedNode !== undefined && !selectedIsLocked}
@@ -979,6 +984,16 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                       onPreviewMotion={previewMotion}
                       onPreviewEffect={previewEffect}
                       onStyleStateChange={reportStylingState}
+                      onPointAtElement={setHoveredId}
+                      onSelectMany={(nodeIds) => {
+                        const first = nodeIds[0];
+                        if (!first) return;
+                        setHighlight(nodeIds);
+                        selectFromPanel(first);
+                        announce(
+                          text("pageBuilder.siteStyles.selected", { count: nodeIds.length }),
+                        );
+                      }}
                       effectModules={props.effectModules}
                       pageWeight={pageWeight}
                       pageSettings={

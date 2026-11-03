@@ -22,12 +22,15 @@ const poster: NodeBlueprint = {
   ],
 };
 
-function renderBuilder(skillLevel: "beginner" | "designer" = "designer") {
+function renderBuilder(
+  skillLevel: "beginner" | "designer" = "designer",
+  section: NodeBlueprint = poster,
+) {
   const page = createEmptyPage();
   const ids = createCountingNodeIds();
   const document: PageDocument = {
     ...page,
-    root: { ...page.root, children: [createNode(poster, standardCatalogue, ids)] },
+    root: { ...page.root, children: [createNode(section, standardCatalogue, ids)] },
   };
   const onChange = vi.fn<(document: PageDocument) => void>();
   const pickImage = vi.fn(async () => ({ assetId: "a1", src: "/media/field.jpg", alt: "" }));
@@ -75,6 +78,38 @@ async function open(person: ReturnType<typeof userEvent.setup>, title: string) {
 }
 
 describe("advanced styling in the Style panel", () => {
+  // A size set elsewhere that no chip matches showed as "1.125rem" with no chip pressed.
+  it("shows a size no chip matches as Custom, in pixels", async () => {
+    const person = userEvent.setup();
+    renderBuilder("beginner", {
+      type: "section",
+      name: "Intro",
+      children: [
+        {
+          type: "text",
+          name: "Lead",
+          props: { text: "Fresh every morning." },
+          styles: { base: { fontSize: "1.125rem" } },
+        },
+      ],
+    });
+    await select(person, "Lead");
+    const group = await open(person, "Text");
+    expect(within(group).getByText("Custom · 18px")).toBeInTheDocument();
+    for (const size of ["Normal", "Small", "Large", "Huge", "Giant"]) {
+      expect(within(group).getByRole("button", { name: size })).toHaveAttribute(
+        "aria-pressed",
+        "false",
+      );
+    }
+    await person.click(within(group).getByRole("button", { name: "Large" }));
+    expect(within(group).queryByText(/^Custom · /)).toBeNull();
+    expect(within(group).getByRole("button", { name: "Large" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
   it("turns and resizes in Simple, and slants in Advanced, per screen size", async () => {
     const person = userEvent.setup();
     const { node } = renderBuilder();

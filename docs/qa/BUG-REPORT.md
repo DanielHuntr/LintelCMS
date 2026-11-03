@@ -775,6 +775,8 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-035   | P2       | Fixed  | Builder: adding motion shows a wall of choices ("26 choices", tall cards with paragraphs); "Always" is cut off at panel width  |
 | LINTEL-UX-037   | P2       | Fixed  | Site cursor: clicking makes the circle jump far from the pointer (further the further from the window's corner)                |
 | LINTEL-UX-038   | P2       | Fixed  | Every page gets the site's automatic header and footer, even one whose first row is its own menu; navigation can't be designed |
+| LINTEL-UX-039   | P2       | Fixed  | Style: "What has to be hovered" always shows and lists plain layout boxes ("Container, 2 levels up") nobody recognises         |
+| LINTEL-UX-040   | P3       | Fixed  | Style → Text says "1.125rem" but no size chip is pressed: a size no chip matches isn't shown, and rem means nothing to people  |
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 

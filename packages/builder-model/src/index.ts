@@ -67,6 +67,7 @@ export * from "./placed-grid/placed-grid.js";
 export * from "./site-design/design-variables.js";
 export * from "./site-design/shared-styles.js";
 export * from "./site-design/site-design.js";
+export * from "./site-design/variable-uses.js";
 export * from "./backgrounds/background-video.js";
 export * from "./fonts/font-catalogue.js";
 export * from "./fonts/page-fonts.js";
@@ -108,6 +109,7 @@ export {
   type StarterPageOptions,
   type StarterPage,
   type StarterSite,
+  type StarterSiteMotion,
   type StarterTheme,
 } from "./starter-sites/starter-site.js";
 export { findStarterSite, starterSites } from "./starter-sites/starter-sites.js";

@@ -1,3 +1,4 @@
+import { builderSiteStylesStrings } from "./site-styles-strings.js";
 import { builderBlockStrings } from "./block-strings.js";
 import { builderDesignStrings } from "./design-strings.js";
 import { builderElementStrings } from "./element-strings.js";
@@ -107,6 +108,7 @@ export const builderStrings = {
   "pageBuilder.style.lookSelected": "Current",
   "pageBuilder.style.whoseLabel": "What has to be {look}",
   "pageBuilder.style.whoseSelf": "This element",
+  "pageBuilder.style.followSomethingAround": "Change it when something around it is {look}…",
   "pageBuilder.style.whoseOwner": "{name}, around it",
   "pageBuilder.style.meansHover":
     "You're changing how it looks while a mouse pointer is over it. Its normal look stays as it is. The page shows it now.",
@@ -159,6 +161,8 @@ export const builderStrings = {
   "pageBuilder.style.changedForHover": "Changed for pointer over",
   "pageBuilder.style.changedForFocus": "Changed for keyboard focus",
   "pageBuilder.style.reset": "Reset",
+  "pageBuilder.style.custom": "Custom",
+  "pageBuilder.style.customValue": "Custom · {value}",
   "pageBuilder.style.auto": "Auto",
   "pageBuilder.style.notSet": "Not set",
   "pageBuilder.style.none": "None",
@@ -365,6 +369,7 @@ export const builderStrings = {
   ...builderSiteSectionStrings,
   ...builderBlockStrings,
   ...builderLayoutStrings,
+  ...builderSiteStylesStrings,
 } as const;
 
 export type BuilderStringKey = keyof typeof builderStrings;

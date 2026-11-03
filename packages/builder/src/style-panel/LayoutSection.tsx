@@ -4,9 +4,10 @@ import { type KeyboardEvent, useRef } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { ChoiceGroup, classNames, Labelled, PanelSection } from "../ui/controls.js";
 import { useDesignTools } from "./design-tools.js";
-import { useStyleEditing, useStyleField, useStyleReader } from "./style-field.js";
+import { useStyleEditing, useStyleField } from "./style-field.js";
 import { layoutSummary } from "./style-summaries.js";
 import { StyleChips, StyleSelect, StyleTextInput, useSizeChips } from "./StyleInputs.js";
+import { useStyleSummary } from "./summary-names.js";
 
 type Arrangement = "stack" | "row" | "grid" | "normal";
 
@@ -21,13 +22,16 @@ export function LayoutSection({ advanced }: { advanced: boolean }) {
 
 function PlacedGridSpacing() {
   const text = useBuilderText();
-  const read = useStyleReader();
+  const summary = useStyleSummary(
+    (read) => findTokenByValue(read("gap"))?.label ?? read("gap") ?? "",
+  );
   const gapChips = useSizeChips(spacingTokens.slice(1, 8), text("pageBuilder.style.none"));
   return (
     <PanelSection
       title={text("pageBuilder.style.layout")}
       sectionId="layout"
-      summary={findTokenByValue(read("gap"))?.label ?? read("gap") ?? ""}
+      summary={summary.summary}
+      linked={summary.linked}
     >
       <StyleChips properties={["gap"]} label={text("pageBuilder.style.gap")} choices={gapChips} />
     </PanelSection>
@@ -38,7 +42,7 @@ function FlowLayout({ advanced }: { advanced: boolean }) {
   const text = useBuilderText();
   const gapChips = useSizeChips(spacingTokens.slice(1, 8), text("pageBuilder.style.none"));
   const { change } = useStyleEditing();
-  const read = useStyleReader();
+  const summary = useStyleSummary((reader) => layoutSummary(reader, text));
   const display = useStyleField("display", text("pageBuilder.style.arrange"));
   const direction = useStyleField("flexDirection", text("pageBuilder.style.arrange"));
   const columns = useStyleField("gridTemplateColumns", text("pageBuilder.style.columns"));
@@ -68,7 +72,8 @@ function FlowLayout({ advanced }: { advanced: boolean }) {
     <PanelSection
       title={text("pageBuilder.style.layout")}
       sectionId="layout"
-      summary={layoutSummary(read, text)}
+      summary={summary.summary}
+      linked={summary.linked}
     >
       <ChoiceGroup<Arrangement>
         label={label}

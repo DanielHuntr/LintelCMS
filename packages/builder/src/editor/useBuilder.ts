@@ -1,5 +1,7 @@
 import {
   type BackgroundVideo,
+  type DesignVariable,
+  type SharedStyle,
   buildStarterPage,
   type CreateNodeId,
   type FreeLayout,
@@ -332,6 +334,19 @@ export function useBuilder({
       },
       changeSharedStyle: (nodeId: string, change: designCommands.SharedStyleChange) =>
         run(designCommands.changeSharedStyle(context(), nodeId, change)),
+      /** Before a site variable goes: this page's elements keep its value as their own. */
+      writeOutVariable: (variable: DesignVariable) => {
+        const result = designCommands.writeOutVariable(context(), variable);
+        if (result) run(result);
+      },
+      /** Before a shared style goes: this page's elements keep its look as their own. */
+      detachEverything: (
+        sharedStyle: SharedStyle,
+        looks: Readonly<Record<string, SharedStyle>>,
+      ) => {
+        const result = designCommands.detachEverything(context(), sharedStyle, looks);
+        if (result) run(result);
+      },
       restack: (nodeId: string, move: StackingMove) =>
         run(designCommands.restackNode(context(), nodeId, move)),
       setBackgroundVideo: (nodeId: string, video: BackgroundVideo | null) =>

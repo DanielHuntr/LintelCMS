@@ -931,6 +931,147 @@ Decision record: `docs/decisions/0037-site-fonts.md`. New table `site_fonts` (mi
 
 **Test:** `motion/src/browser-tests/site-motion.browser.test.ts`, "stays on the pointer while pressed, wherever the pointer is". It fails without the fix (595, 425 instead of 700, 500) and passes with it.
 
+## LINTEL-UX-039: following what's around an element, only when asked (3 November 2026)
+
+**Reported by Daniel:** "this seems weird, whats the point of it", about "What has to be hovered" listing "This element", "Container, just around it", "Container, 2 levels up" and "Hero, around it".
+
+**What it's for:** making an element change when something around it is hovered, pressed, opened or current, such as a picture that grows when its card is hovered. The problems were that it was always on show, though nearly everyone means the element itself, and that it named layout boxes people never think about.
+
+**Fix:**
+
+- Choosing Hovered (or Pressed, Open, Current) now just changes the element itself. Underneath, a quiet link, "Change it when something around it is hovered…", opens the list. It stays open while the element follows something around it.
+- The list only offers what people recognise: cards, links, buttons, slides, tabs, accordion items, pop-ups and the like, plus anything with a name of its own ("Hero", "Two halves"). Plain containers and boxes are left out. It shows at most three, nearest first.
+- Pointing at a name, or moving to it with the keyboard, outlines that element on the page.
+
+**Tests:** `builder/src/panels/panels.test.tsx` (the list waits behind the link, and has no plain containers) and `builder/src/site-design/site-styles.test.tsx` (two cards with the same name are told apart, and the container between them isn't offered).
+
+**Screenshots** (in `screenshots/looks/`): `follow-hidden-desktop-light`, `follow-list-desktop-light` (pointing at "Two halves" outlines it) and `follow-list-desktop-dark`.
+
+## Starter site: Folio (3 November 2026)
+
+**What:** a new starter site, Folio, a spare personal site for a fictional photographer and art director, Ilse Moreau, in Lisbon. It is in the template library after the others (Design → "Use this template").
+
+- **Pages:** Home, Projects, About and Contact. Each starts with the same Header section (her name linking home, a live Clock showing Lisbon time in the monospace, and the menu) and ends with the same Footer section (email, social links, small print), one section each, so they can be switched to the new header and footer sections later.
+- **Home:** a large statement on the twelve-column grid, stepped labels and a short line about her, then a drag gallery of six works (Slider with "Let visitors drag it freely", no dots, the cursor says "Drag"), then a short statement with links to About and Contact.
+- **Projects:** eight rows (number, title, client, year); pointing at a row shows a frame from the project beside the pointer (hover picture).
+- **About:** an original portrait drawing, a two-paragraph biography, clients and awards on the grid.
+- **Contact:** the email address very large (the cursor says "Write"), how to write, and social links.
+- **Look:** off-white paper and near-black ink, swapped in dark mode (`light-dark()` colours, so they follow the visitor's setting), Archivo for headings and text with Space Mono for the small details, square corners. The theme now takes an optional heading and body font from the included fonts.
+- **Motion:** smooth scrolling Gentle, a small dot cursor in the text colour, the Fade page transition and the counter intro; word reveals on titles, a mask reveal on the portrait and email, quick fades elsewhere.
+- **Pictures:** nine original SVG studies in warm greys (`illustrations-folio.ts`, each under 5 KB), and a contact-sheet cover for the library card. Every picture's alt text says what it shows.
+
+**Judgement calls:** the header links are written into the page ("Projects", "About", "Contact") rather than following the site menu, so the header stays one simple row. The Contact section is at least as tall as the window so the footer sits at the bottom. Applying another template afterwards keeps Folio's heading and body fonts, because those templates don't name fonts.
+
+**Tests:** builder-model `starter-sites/starter-sites.test.ts`, "gives Folio a drag gallery, a live clock, hover pictures and its own motion" (plus the existing checks every page now runs on Folio: valid design, one main heading, animations, illustrations that exist). core `starter-sites/starter-sites.test.ts`, "makes Folio with its fonts, its motion and a home page that says who it is for" (applies it, checks the fonts, the motion settings, the home page's words, clock, drag gallery and pictures, and that the site's own header is left out).
+
+**Checked in a browser:** applied with `existingPages: "replace"` and `publish: true` to a copy of the test data, then looked at every page at 1440px and 390px in light and dark with reduced motion (no sideways scrolling at 390px), and with full motion on desktop: the intro counter, the smooth scroll, the "Drag" word over the gallery and a drag, the Fade transition to Projects and the hover picture on a project row.
+
+**Screenshots** (in `screenshots/starter-folio/`): `{home,projects,about,contact}-{desktop,phone}-{light,dark}`, `intro-desktop-{light,dark}`, `home-midscroll-desktop-{light,dark}`, `home-drag-desktop-{light,dark}`, `transition-desktop-{light,dark}`, `projects-hover-desktop-{light,dark}` and `library-desktop-{light,dark}`.
+
+## LINTEL-UX-040: a size no chip matches (3 November 2026)
+
+**Reported by Daniel:** the Text group's summary said "1.125rem", but none of Normal, Small, Large, Huge or Giant was pressed.
+
+**Reproduced:** an element whose text size was set elsewhere (in Advanced, or by a template) to a value no chip has showed its raw CSS value in the summary and no chip pressed.
+
+**Fix:**
+
+- Chips now show a pressed **"Custom · 18px"** after the choices when the value set matches none of them. Picking a chip replaces it. With nothing set, the chip nearest how it looks is still pressed. This works for every chip group, not just text size.
+- Summaries give rem and em sizes in pixels ("18px"), which people know. Sizes that grow with the screen still read as written.
+
+**Tests:** `builder/src/style-panel/advanced-styling.test.tsx` ("shows a size no chip matches as Custom, in pixels") and `style-summaries.test.ts` ("gives lengths in pixels").
+
+## Starter site: Atelier (3 November 2026)
+
+**Asked for by Daniel:** new starter sites that reach the level of sites featured for their design, using the editorial grid, site motion, the pointer touches and the included fonts.
+
+**Now:** "Atelier" is in the template library: an editorial site for Wrenfold, a fictional four-person furniture workshop in Frome. Original words and original line drawings (warm paper, dark ink and one walnut tone, 14 SVGs of 1 to 3 kB each in `illustrations-atelier.ts`).
+
+- **Home:** the headline "Made slowly, kept for good" arrives letter by letter; a full-width drawing of the workshop is uncovered and drifts with the scroll; a statement in large serif; the collection on the twelve-column grid with deliberate offsets, the title running over the first picture, small-capital captions and a "View" word on the cursor; a held scene, "How a Hollin chair is made", where the page stops while three steps slide past; a visit invitation with a magnetic button.
+- **Collection:** six pieces on the grid, one cut out over its neighbour; "Up close", a Slider visitors drag freely (with "Drag" on the cursor); an index where each row shows the piece's drawing beside the pointer.
+- **Craft:** a long read in a narrow column with chapter labels, two large italic pull quotes and drawings that move at different speeds.
+- **Visit:** address, hours with a live Clock, getting here, a drawn map and a booking band.
+- **Theme:** ochre walnut `#86602f`, square corners, Instrument Serif for headings and Work Sans for text. Warm bands are mixed from the brand colour and the page background, so they follow light and dark.
+- **Site motion:** smooth scrolling Strong, the slide page transition, the "name" intro (Wrenfold) and a ring-and-dot cursor in the text colour.
+
+**Change outside the site file:** a template without `headingFont` and `bodyFont` now goes back to its pairing's fonts when applied, instead of keeping the last template's.
+
+**Tests:** builder-model `starter-sites/atelier.test.ts` (7: offered with its fonts and motion, every page accepted, the letter-by-letter headline, grid places and the overlap, the held scene, cursor words, hover pictures, the drag Slider and the Clock, alt text and drawing sizes). The shared starter-site tests cover it as well. Core `starter-sites.test.ts`, "applies Atelier with its fonts and motion": the theme fonts, the site motion, the published home and collection pages and a drawing, and fonts going back to the pairing when the bakery is applied afterwards.
+
+**Checked in a browser:** applied with `POST /starter-sites/atelier/apply` (`existingPages: replace`, `publish: true`) to a copy of the test data, then opened the published site in Chromium at 1440px and 390px, light and dark, with reduced motion, mid-scroll in the held scene, with the cursor over a piece and over an index row, and on a first visit (intro).
+
+**Judgement calls and limits:**
+
+- The held scene uses the "Sideways scrolling section" preset (pinned, three panels). With reduced motion, or without scripts, it isn't held: the three steps sit side by side in a box that scrolls sideways, so step 1 shows and steps 2 and 3 need a sideways scroll. Showing them one under another would need the motion runtime to mark reduced motion on the page; worth a small follow-up.
+- On a first visit the headline's letter reveal plays under the intro, so it has finished when the intro lifts. Letting page animations wait for the intro would be a runtime change, also left as a follow-up.
+- The header and footer of the website template stay as they are (they show the site's own name); each page ends with one "Footer" section, ready for the header and footer sections work.
+
+**Screenshots** (in `screenshots/starter-atelier/`): `{home,collection,craft,visit}-{desktop,phone}-{light,dark}`, `home-scene-mid-scroll-desktop-light`, `home-scene-mid-scroll-phone-dark`, `home-reduced-motion-desktop-light`, `home-cursor-word-desktop-light`, `collection-hover-picture-desktop-light` and `home-intro-desktop`.
+
+## Starter site: Studio (3 November 2026)
+
+**What:** a new starter site, "Studio", for architects, interior designers and design studios. The fictional practice is Corran Wade, eleven people in a former tile workshop in Lisbon. It has four pages:
+
+- **Home:** the studio's name in very large type on the twelve-column grid, beside a drawing. Below it, an index of six projects as large rows: hovering over a row shows the project's drawing under the pointer, the word "View" on the cursor, and the row in the accent colour. Then a short statement, and a recognition list in Space Mono.
+- **Work:** a large "Work" title, then the project index with Place, Discipline and Year columns, and a drag gallery of drawings (Slider with "Let visitors drag it freely", "Drag" on the cursor).
+- **Studio:** the story of the workshop, "How we work" as four steps set alternately one column in, and a list of the people.
+- **Contact:** a large email address, the address, a telephone number, opening hours, the Lisbon Clock, and how to find the door.
+
+**Look:** ink and paper with one warm red (`#c8441f`, the brand colour). Archivo for headings and Inter for body text are set as the theme's fonts; Space Mono is used for captions. Corners are square. The site motion is Gentle smooth scrolling, the Ring cursor in the text colour (28px), the Fade page transition and no intro. Every band is a section placed on twelve columns (`placedGrid`), so people can drag things across the columns. On phones everything stacks, the middle index columns fold away, and each project row shows its drawing, since there is no pointer to follow.
+
+**Pictures:** nine original line drawings in `illustrations-studio.ts`: elevations, plans and sections, a saw-tooth workshop and a site plan, plus the library cover `studio-cover`. Each is 0.8 to 2.7 KB, and every picture has alt text that says what it shows.
+
+**Changes outside the site file:**
+
+- `StarterTheme` gains optional `headingFont` and `bodyFont`, which go through the website's theme settings as they are.
+- `illustrations.ts` has one import and one spread.
+- `starter-sites.ts` has one import and one entry.
+
+**Judgement calls:**
+
+- On the Work page the project names are level-2 headings, because the index follows the page title. The new heading-order test caught level 3 there.
+- The home page's opening drawing is hidden on phones, because the first project row shows the same drawing just below it.
+- The Work page's rows are not links, because there are no project pages yet. The home page's rows link to Work.
+
+**Tests:**
+
+- builder-model `starter-sites/studio.test.ts` (5): pages, fonts and motion; every band on the grid; the hover picture and "View" on each home row, with drawings that exist; the drag gallery and the Lisbon clock; alt text and heading order.
+- core `starter-sites.test.ts`: "applies Studio": its fonts, its motion, and a home page with the studio's name, the index and its drawing, plus the drawing served from `/_lintel/illustrations/`.
+- Results: builder-model 237 passed; core `src/website` and `src/starter-sites` 60 passed.
+
+**Checked in a browser:** applied with `POST /starter-sites/studio/apply` (`existingPages: "replace"`, `publish: true`) to a copy of the test data. For the screenshots, the test site's name was set to Corran Wade and its main menu to Work, Studio and Contact. Checked at 1440px and 390px, light and dark, with reduced motion, and while hovering over a project row.
+
+**Screenshots** (in `screenshots/starter-studio/`):
+
+- `{home,work,studio,contact}-{desktop,phone}-{light,dark}`
+- `home-midscroll-desktop-{light,dark}`
+- `home-hover-desktop-{light,dark}`
+- `reduced-motion-{home,contact}-*`
+
+## Starter site: Studio, its own identity (3 November 2026)
+
+**Why:** Folio, merged at the same time, is also set in Lisbon, also uses Archivo with Space Mono, and also has a red accent. Side by side in the template library, the two looked the same.
+
+**Changes to Studio:**
+
+- **Place:** the practice is now in Rotterdam, in a former rope works in the Merwe-Vierhavens. The Clock uses Europe/Amsterdam.
+- **Names:** project, place and people names are Dutch-flavoured: Huis aan de Dijk, Maasbad, Kade Reading Room, Polder Pavilion, Mieke Corran and others. No Lisbon references are left.
+- **Fonts:** headings are Space Grotesk (700). Body text is still Inter, and captions are still Space Mono.
+- **Accent:**
+  - The accent is cobalt `#2447d6` in place of red: 7.1:1 on white and 5.8:1 on the drawings' paper.
+  - The template adds a **Cobalt** design variable with a dark-mode value of `#7d95ff` (7.6:1 on black). The hovered row, the step numbers and link hovers use it, so they read on ink in dark mode. The theme's automatic dark link colour would have been `#506cde`, which is only 4.5:1.
+  - The drawings use cobalt too, with a lighter `#5a78f0` on the two dark drawings.
+- **New template option:** a starter site can now bring design variables (`designVariables` on `StarterSite`). They are applied with the theme, and one with the same id is replaced.
+
+**Merge:** `release/1.0.0-rc` (with Folio) was merged in first. `StarterTheme` keeps one copy of `headingFont` and `bodyFont`. `illustrations.ts` and `starter-sites.ts` list both sites.
+
+**Tests:**
+
+- builder-model: 247 passed. `studio.test.ts` now also checks Space Grotesk, the Cobalt variable and its dark value, the hover colour, and the Amsterdam clock.
+- core `src/starter-sites`, `src/website`, `src/site-design` and `src/site-effects`: 77 passed. The Studio test now also checks the variable saved to `/website/design`.
+
+**Screenshots:** every file in `screenshots/starter-studio/` was retaken with the new identity.
+
 ## LINTEL-UX-038: navigation and footer as sections you add (3 November 2026)
 
 **Reported by Daniel, with screenshots:** every published page gets the site's header ("Sam's Bakery · Home · Ref 2 · Shop") and footer bolted on, even a page whose top row is its own logo and menu. The UX-023 fix only stepped aside for a page with a header section, not for a menu row in an ordinary section. Daniel decided: make Navigation (and Footer) sections people add, not something automatic.

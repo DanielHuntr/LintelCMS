@@ -17,6 +17,8 @@ interface CollapsibleSectionProps {
   title: string;
   /** What's set inside, shown beside the title while closed: "Row · gap M". */
   summary?: string;
+  /** The summary names one of the site's styles: a small dot says it's linked. */
+  linked?: boolean;
   isOpen: boolean;
   onToggle: () => void;
   /** Called when focus moves into the section, so the panel can remember it was used. */
@@ -34,6 +36,7 @@ interface CollapsibleSectionProps {
 export function CollapsibleSection({
   title,
   summary,
+  linked = false,
   isOpen,
   onToggle,
   onUse,
@@ -80,8 +83,14 @@ export function CollapsibleSection({
             {title}
           </span>
           {!isOpen && summary && (
-            <span className="ms-auto min-w-0 truncate ps-2 text-caption text-label-secondary">
-              {summary}
+            <span className="ms-auto flex min-w-0 items-center gap-1.5 ps-2 text-caption text-label-secondary">
+              {linked && (
+                <span
+                  aria-hidden="true"
+                  className="size-1.5 shrink-0 rounded-full bg-accent-fill"
+                />
+              )}
+              <span className="min-w-0 truncate">{summary}</span>
             </span>
           )}
         </button>
