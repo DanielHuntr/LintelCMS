@@ -44,6 +44,7 @@ import { useBuilderData, useCanvasSite, useViewPageSite } from "../website/websi
 import { useEffectModules } from "./useEffectModules.js";
 import { useBuilderBlocks } from "../blocks/useBuilderBlocks.js";
 import { usePageDesignSaving } from "./usePageDesignSaving.js";
+import { type SitePartProblem, SitePartProblems } from "./SitePartProblems.js";
 import { useSiteDesign } from "./useSiteDesign.js";
 import { useSiteMotion } from "./useSiteMotion.js";
 import { useSiteSections } from "./useSiteSections.js";
@@ -98,6 +99,7 @@ export function PageDesignPage({ collectionHandle, entryId, fieldHandle }: PageD
       fieldHandle={fieldHandle}
       site={canvasSite.data}
       siteSections={siteSections.source}
+      siteSectionsProblem={siteSections.problem}
     />
   );
 }
@@ -108,12 +110,14 @@ function PageDesigner({
   fieldHandle,
   site,
   siteSections,
+  siteSectionsProblem,
 }: {
   entry: Entry;
   collectionHandle: string;
   fieldHandle: string;
   site: CanvasSite | undefined;
   siteSections: SiteSectionsSource | undefined;
+  siteSectionsProblem: SitePartProblem | null;
 }) {
   const field = loadedEntry.blueprint.fields.find(
     (candidate) => candidate.handle === fieldHandle && candidate.type === "page",
@@ -252,7 +256,7 @@ function PageDesigner({
         frameScripts={canvasFrameScripts}
         effectModules={effectModules}
         siteEffects={siteMotion}
-        siteDesign={siteDesign}
+        siteDesign={siteDesign.source}
         siteSections={siteSections}
         toolbarStart={
           <Link
@@ -319,6 +323,7 @@ function PageDesigner({
           {saving.errorMessage}
         </p>
       )}
+      <SitePartProblems problems={[siteDesign.problem, siteSectionsProblem]} />
       {imagePicker.dialog}
       {fonts.dialogs}
       {pagePicker.dialog}

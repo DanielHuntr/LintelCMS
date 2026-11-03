@@ -37,7 +37,39 @@ describe("the site's design system", () => {
 
   it("starts empty", async () => {
     const response = await writer("GET", "/website/design");
-    expect(response.json()).toEqual({ variables: [], sharedStyles: [] });
+    expect(response.json()).toEqual({ variables: [], sharedStyles: [], revision: null });
+  });
+
+  it("refuses a change made from an older copy, so nobody undoes someone else's", async () => {
+    const sand = { id: "sand", name: "Sand", kind: "colour", value: "#efe6d6" };
+    const first = await owner("PUT", "/website/design", {
+      variables: [sand],
+      sharedStyles: [],
+      revision: null,
+    });
+    expect(first.statusCode, first.body).toBe(200);
+    const read = first.json().revision as string;
+    expect(read).toEqual(expect.any(String));
+    expect((await owner("GET", "/website/design")).json().revision).toBe(read);
+
+    // Someone else saves; a copy read before that can't overwrite it.
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const other = await owner("PUT", "/website/design", {
+      variables: [sand, { ...sand, id: "ink", name: "Ink", value: "#222222" }],
+      sharedStyles: [],
+      revision: read,
+    });
+    expect(other.statusCode, other.body).toBe(200);
+    const stale = await owner("PUT", "/website/design", {
+      variables: [],
+      sharedStyles: [],
+      revision: read,
+    });
+    expect(stale.statusCode).toBe(409);
+    expect(stale.json().code).toBe("SITE_DESIGN_CHANGED");
+    expect((await owner("GET", "/website/design")).json().variables).toHaveLength(2);
+    // Saving without a revision (as starter templates do) still works.
+    expect((await owner("PUT", "/website/design", { variables: [] })).statusCode).toBe(200);
   });
 
   it("draws every page with the variables and shared styles saved", async () => {

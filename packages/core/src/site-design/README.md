@@ -7,7 +7,10 @@ such as "Card", used by many elements). Both start empty.
 - `site-design.routes.ts`: `GET` and `PUT /website/design`. Changing it needs
   `builder:blocks`, since, like a block, it changes every page.
 - `site-design.service.ts`: reading (an empty design when nothing readable is saved) and
-  saving, checked by `siteDesignSchema`.
+  saving, checked by `siteDesignSchema`. Each save has a `revision` (when it was saved); a
+  PUT that sends the revision it read is refused with 409 `SITE_DESIGN_CHANGED` when someone
+  saved since, so a builder left open on an older copy can't undo another person's change.
+  The builder then shows the latest styles and says so. A PUT without one always saves.
 - `site-design.repository.ts`: the one `siteDesign` row in the settings table.
 
 What variables and shared styles are, and how a page is drawn with them, lives in

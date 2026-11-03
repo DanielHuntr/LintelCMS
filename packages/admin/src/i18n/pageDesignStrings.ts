@@ -38,4 +38,9 @@ export const pageDesignStrings = {
     "Build the page from a form instead of designing it. The website shows these only while the page has no design.",
   "pageDesign.simpleSections.unused": "Not used",
   "pageDesign.simpleSections.count": "{count, plural, one {# section} other {# sections}}",
+  "pageDesign.siteStyles.changedElsewhere":
+    "Someone else changed the site's styles while you were working, so your last change wasn't saved. You're now seeing their version.",
+  "pageDesign.siteStyles.notSaved": "The site's styles weren't saved: {message}",
+  "pageDesign.siteSections.notSaved": "The navigation and footer weren't saved: {message}",
+  "pageDesign.sitePartsRetry": "Try again",
 } as const;

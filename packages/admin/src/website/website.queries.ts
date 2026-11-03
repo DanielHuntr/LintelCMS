@@ -7,7 +7,6 @@ import {
   getSiteEffects,
   getSiteSections,
   getWebsite,
-  updateSiteDesign,
   updateSiteEffects,
   updateWebsite,
 } from "./website.api.js";
@@ -30,14 +29,6 @@ export function useSiteSectionsQuery() {
 /** The site's design variables and shared styles. */
 export function useSiteDesignQuery() {
   return useQuery({ queryKey: websiteKeys.design(), queryFn: getSiteDesign, retry: false });
-}
-
-export function useUpdateSiteDesign() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: updateSiteDesign,
-    onSuccess: (design) => queryClient.setQueryData(websiteKeys.design(), design),
-  });
 }
 
 /** The site-wide motion settings. */

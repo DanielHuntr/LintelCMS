@@ -33,6 +33,7 @@ import {
   useImagePicker,
 } from "../page-design/PageDesignPage.js";
 import { useEffectModules } from "../page-design/useEffectModules.js";
+import { SitePartProblems } from "../page-design/SitePartProblems.js";
 import { useSiteDesign } from "../page-design/useSiteDesign.js";
 import { useCan, useSession } from "../session/SessionContext.js";
 import { useCanvasSite } from "../website/website.queries.js";
@@ -181,7 +182,7 @@ function BlockDesigner({ block, site }: { block: SiteBlock; site: CanvasSite | u
         site={site}
         blocks={{ library: [], canManage: false }}
         blockMaster={master}
-        siteDesign={siteDesign}
+        siteDesign={siteDesign.source}
         enabledPlugins={session.enabledPlugins}
         themeStylesheet={themeStylesheet(defaultTheme)}
         baseStylesheet={siteStylesheet}
@@ -234,6 +235,7 @@ function BlockDesigner({ block, site }: { block: SiteBlock; site: CanvasSite | u
           {t("blocks.designFailed", { message: problem })}
         </p>
       )}
+      <SitePartProblems problems={[siteDesign.problem]} />
       {imagePicker.dialog}
       {fonts.dialogs}
       <ConfirmDialog
