@@ -1,3 +1,4 @@
+import { pluginRegistry } from "../plugins/plugins.registry.js";
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { setEnabledPlugins } from "../plugins/plugins.service.js";
@@ -75,9 +76,13 @@ describe("roles", () => {
   });
 
   it("only gives built-in roles permissions the catalog describes", () => {
-    const described = corePermissionGroups.flatMap((group) =>
-      group.permissions.map((p) => p.permission),
-    );
+    // Built-in plugins' own permissions count too (Editors may see Visitors).
+    const described = [
+      ...corePermissionGroups.flatMap((group) => group.permissions.map((p) => p.permission)),
+      ...pluginRegistry.flatMap((plugin) =>
+        (plugin.permissions ?? []).map((p: { permission: string }) => p.permission),
+      ),
+    ];
     for (const role of builtInRoles.filter((role) => role.handle !== "owner")) {
       for (const permission of role.permissions.filter((p) => !p.endsWith(":*"))) {
         expect(described, `${role.name}: ${permission}`).toContain(permission);

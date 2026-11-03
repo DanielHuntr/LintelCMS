@@ -14,6 +14,7 @@ import {
   readIllustration,
   readMotionRuntime,
 } from "./site-assets.js";
+import { withAnalyticsTag } from "../analytics/page-tag.js";
 import { STYLESHEET_FOLDER } from "./site-context.service.js";
 import { findSiteForAddress } from "./site-for-address.js";
 import { loadRunningTests, visitTests } from "../experiments/experiment-pages.js";
@@ -29,7 +30,7 @@ import { readSiteContext, respondToSitePath, type SiteDependencies } from "./sit
  *   GET /_lintel/elements-<fingerprint>.js the elements script, for sliders, forms, the shop
  *   GET /_lintel/cookie-notice-<fingerprint>.js the cookie notice, on sites that show one
  *   GET /_lintel/effects/<module>-<fingerprint>.js an effect module or a chunk they share
- *   ALL /_lintel/api/shop/*, /_lintel/api/forms/*  the storefront and forms APIs (site-api.routes.ts)
+ *   ALL /_lintel/api/shop/*, /forms/*, /analytics/*  the storefront, forms and Visitors APIs (site-api.routes.ts)
  *   GET /_lintel/illustrations/<name>.svg the starter sites' illustrations
  *   GET /_lintel/fonts/<file>.woff2       the fonts that come with Lintel
  *   GET /*                                 a page, a redirect, sitemap.xml, robots.txt or 404
@@ -57,6 +58,8 @@ export async function siteRoutes(
   options: {
     database: () => DatabaseOrTransaction;
     dependencies: (site: Site) => SiteDependencies;
+    /** A line for public pages' `<head>`, added as they are sent (the Visitors beacon). */
+    pageTag?: (site: Site) => Promise<string>;
   },
 ) {
   const visit = async (request: FastifyRequest) => {
@@ -146,7 +149,8 @@ export async function siteRoutes(
     });
     // Shared caches must keep each site's pages apart.
     reply.header("vary", "Host, X-Forwarded-Host");
-    return send(request, reply, response);
+    const tag = options.pageTag ? await options.pageTag(dependencies.site) : "";
+    return send(request, reply, withAnalyticsTag(response, tag));
   });
 }
 

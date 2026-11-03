@@ -125,7 +125,7 @@ describe("SetupWizard", () => {
       undefined,
     );
     expect(await screen.findByRole("heading", { name: "You’re all set, Daniel" })).toBeVisible();
-    expect(screen.getByText("Built-in database · Blog, Forms, SEO tools")).toBeVisible();
+    expect(screen.getByText("Built-in database · Blog, Forms, SEO tools, Visitors")).toBeVisible();
     await press("Go to your dashboard");
     expect(onFinished).toHaveBeenCalledWith(session);
   });
@@ -445,7 +445,7 @@ describe("SetupWizard", () => {
       expect(screen.getByText("daniel@gmail.com")).toBeVisible();
       expect(screen.queryByText(STRONG_PASSWORD)).toBeNull();
       expect(screen.getByText("Brightside Bakery")).toBeVisible();
-      expect(screen.getByText("Blog, Forms, SEO tools")).toBeVisible();
+      expect(screen.getByText("Blog, Forms, SEO tools, Visitors")).toBeVisible();
 
       const account = screen.getByRole("region", { name: "Your account" });
       await userEvent.click(within(account).getByRole("button", { name: "Show password" }));

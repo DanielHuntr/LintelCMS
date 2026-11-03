@@ -10,8 +10,8 @@ describe("site presets", () => {
   });
 
   it("switch on forms and SEO tools for every kind of site", () => {
-    expect(pluginsForSiteType("blank")).toEqual(["forms", "seo"]);
-    expect(pluginsForSiteType("blog")).toEqual(["blog", "forms", "seo"]);
-    expect(pluginsForSiteType("shop")).toEqual(["commerce", "forms", "seo"]);
+    expect(pluginsForSiteType("blank")).toEqual(["forms", "seo", "analytics"]);
+    expect(pluginsForSiteType("blog")).toEqual(["blog", "forms", "seo", "analytics"]);
+    expect(pluginsForSiteType("shop")).toEqual(["commerce", "forms", "seo", "analytics"]);
   });
 });

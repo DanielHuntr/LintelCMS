@@ -1,5 +1,8 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import { experimentSiteRoutes } from "../experiments/experiment-site.routes.js";
+import { analyticsPlugin } from "../analytics/analytics.plugin.js";
+import { readAnalyticsTag } from "../analytics/page-tag.js";
+import { type TrustProxy, trustProxyOption } from "../production/production.config.js";
 import { siteApiRoutes } from "./site-api.routes.js";
 import { siteRoutes } from "./site.routes.js";
 import { type SiteSources, storefrontSources } from "./site-sources.js";
@@ -16,9 +19,17 @@ export function buildSiteServer(options: {
   logger?: boolean;
   /** Where the shop's products and the forms come from; their APIs by default. */
   sources?: SiteSources;
+  /**
+   * Which proxies to believe about the visitor's address, as for the API (TRUST_PROXY), so
+   * forms, the shop and visitor counts tell visitors behind one proxy apart.
+   */
+  trustProxy?: TrustProxy;
 }) {
   const { api } = options;
-  const server = Fastify({ logger: options.logger ?? false });
+  const server = Fastify({
+    logger: options.logger ?? false,
+    trustProxy: trustProxyOption(options.trustProxy ?? false),
+  });
 
   server.setErrorHandler((error, request, reply) => {
     request.log.error(error, "Showing a page of the website failed");
@@ -41,6 +52,8 @@ export function buildSiteServer(options: {
   });
   server.register(siteRoutes, {
     database: () => api.database,
+    // The Visitors plugin's beacon, while it is on (see src/analytics/page-tag.ts).
+    pageTag: (site) => readAnalyticsTag(api.database, analyticsPlugin, site),
     // Each site has its own pages, so each reads and caches its own (see site-for-address.ts).
     dependencies: (site) => ({
       sources,

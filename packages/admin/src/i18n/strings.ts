@@ -36,6 +36,7 @@ import { richTextPictureStrings } from "../fields/richTextPictureStrings.js";
 import { blockStrings } from "./blockStrings.js";
 import { pageFlowStrings } from "../website/pageFlowStrings.js";
 import { cookieNoticeStrings } from "../website/cookieNoticeStrings.js";
+import { analyticsStrings } from "../analytics/analyticsStrings.js";
 
 /**
  * Every word the admin shows lives here, in English: the source every translation in
@@ -79,6 +80,7 @@ const english = {
   ...updatesStrings,
   ...freePhotosStrings,
   ...pageDraftsStrings,
+  ...analyticsStrings,
   ...siteFontsStrings,
   ...compareLiveStrings,
   ...scheduleStrings,

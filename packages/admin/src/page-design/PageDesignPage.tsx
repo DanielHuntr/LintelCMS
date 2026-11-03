@@ -52,6 +52,7 @@ import { InlineMenuEditor } from "../menus/InlineMenuEditor.js";
 import { useBuilderFonts } from "../site-fonts/useBuilderFonts.js";
 import { usePageDrafting } from "../page-drafts/usePageDrafting.js";
 import { useExperimentsInDesigner } from "../experiments/useExperimentsInDesigner.js";
+import { BuilderVisitorsLine } from "../analytics/BuilderVisitorsLine.js";
 
 /**
  * The canvas frame's scripts, served beside the admin (see vite.config.ts), because the
@@ -301,6 +302,7 @@ function PageDesigner({
                     )}
                   </span>
                 )}
+                <BuilderVisitorsLine entryId={saving.entry.id} />
                 <span role="status" className="sr-only">
                   {saving.justPublished ? t("pageDesign.publishedAnnouncement") : ""}
                 </span>

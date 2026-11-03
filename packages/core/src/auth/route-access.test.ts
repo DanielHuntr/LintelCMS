@@ -95,9 +95,12 @@ const SIGNED_IN_ROUTES = new Set([
 
 /**
  * Delivery routes that stay open even when delivery needs a token: a form on a public
- * website can't keep a token secret (see src/forms).
+ * website can't keep a token secret (see src/forms), and nor can its visitor beacon
+ * (see src/analytics).
  */
 const ALWAYS_OPEN_DELIVERY_ROUTES = new Set([
+  "GET /delivery/analytics/script.js",
+  "POST /delivery/analytics/collect",
   "GET /delivery/forms.js",
   "GET /delivery/forms/:handle",
   "POST /delivery/forms/:handle/submissions",

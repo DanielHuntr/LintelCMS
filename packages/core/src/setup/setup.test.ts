@@ -76,7 +76,7 @@ describe("first-run setup", () => {
     expect(body).toEqual({
       user: { id: expect.any(String), email: "ana@example.com", name: "Ana Lopez" },
       permissions: ["*"],
-      enabledPlugins: ["blog", "forms", "seo"],
+      enabledPlugins: ["blog", "forms", "seo", "analytics"],
       siteName: "Brightside Bakery",
       siteIds: null,
     });

@@ -1282,3 +1282,26 @@ Decision record: `docs/decisions/0043-page-drafting.md` (the model's exact files
 **Checked in a browser** (Chromium, on a copy of the styles test data with the private reference pages unpublished and out of the menu): the designer at desktop (Try another version, then Original | B), the test screen at desktop light and dark and at 390px light and dark (not started, too early, a clear result), the list, and the published home page at 390px as Version B for a phone browser (the headless browser itself got the original with no script, as a bot should).
 
 **Screenshots** (in `screenshots/ab-testing/`): `designer-try`, `designer-version-b`, `experiment-draft-light`, `experiment-early-desktop-light`, `experiment-strong-desktop-{light,dark}`, `experiment-strong-phone-{light,dark}`, `experiments-list-light`, `site-version-b-390`.
+
+## Built-in visitor counts
+
+**Asked for:** visitor counts built into Lintel, private by design and with no third party: a calm Visitors screen, a dashboard card, per-page figures in the editor and the builder, goals from forms and the shop, and a way for strict sites to count only after consent.
+
+**Now:**
+
+- **Visitors plugin** (`analytics`, Build → Features), on for new sites. Published pages get a small beacon while it is on; it keeps nothing in the browser. Views (path without query), where people came from (referring domain or `utm_source`), `utm_campaign`, phone/tablet/computer, country from the browser's language, time on page (one "leave" event), links to other sites and named events (`lintelAnalytics.track("name")`).
+- **Privacy:** no cookies or storage; the address and browser only make a daily hash with a random salt that is deleted each day, so visitors can't be identified or followed from one day to the next. Do Not Track, Global Privacy Control and robots aren't counted; reloads and floods are limited. Single visits are kept 30 days by default (a setting), daily totals for good.
+- **Goals:** forms sent and orders paid, recorded by the server from `form.submitted` and `order.paid`; conversion rate is goals per 100 visitors.
+- **Visitors screen:** Today / 7 days / 30 days / Custom, four figures compared with the period before in words ("Up 28% on the previous period"), visitors each day as bars or a table, top pages ("Home page" for `/`), where people came from ("Typed in or bookmarked"), devices, countries, goals, and campaigns, events and outside links only when there are any. Export as CSV. Settings: "Count visitors only after they accept" and how long single visits are kept.
+- **Elsewhere:** a Visitors card on new dashboards, a Visitors panel in the entry editor (the page's last 7 days), and "128 visitors this week" in the builder's toolbar.
+- **Permission** `analytics:read`: Owners, Admins and Editors.
+- **Consent hook:** with the strict setting the beacon waits for `window.lintelConsent.allows("plugin:analytics")`, the `lintel:consent` event listing `plugin:analytics`, or `lintelAnalytics.consent()`.
+- Also: the website now passes the visitor's real address to its forms and shop APIs (so per-address limits and the visitor hash tell visitors apart), and follows `TRUST_PROXY` like the API.
+
+Decision record: `docs/decisions/0042-built-in-visitor-counts.md`. Migration: `0030_analytics` (three tables, each with `tenant_id` and `site_id` where it applies).
+
+**Tests:** core `analytics/analytics.test.ts` (16: off means 404, the script, counting every dimension, nothing identifying stored, DNT/GPC/robots, no linking across days and old salts deleted, form and order goals with conversion rate, no goals while off, comparison and custom ranges, retention keeps daily totals, permissions, CSV without formulas, an entry's page, the beacon on public pages only and with the consent flag, counting through the website's address per visitor, the experiments seam), `analytics/visitor-signals.test.ts` (14); updated plugin, roles and setup tests for the new plugin. Admin `analytics/Visitors.test.tsx` (6).
+
+**Checked in a browser** (Chromium): real visits to the published site from four browsers (desktop, phone, tablet; referrers, a campaign link, three languages) showed up on the Visitors screen; a click to another page sent the time on page.
+
+**Screenshots** (in `screenshots/analytics/`): `visitors-desktop-light`, `visitors-desktop-dark`, `visitors-390-light`.

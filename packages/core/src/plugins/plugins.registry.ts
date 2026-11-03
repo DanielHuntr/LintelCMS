@@ -1,3 +1,4 @@
+import { analyticsPlugin } from "../analytics/analytics.plugin.js";
 import { blogPlugin } from "../blog/blog.plugin.js";
 import { commercePlugin } from "../commerce/commerce.plugin.js";
 import { experimentsPlugin } from "../experiments/experiments.plugin.js";
@@ -22,6 +23,7 @@ export const pluginRegistry = [
   freePhotosPlugin,
   pageDraftsPlugin,
   experimentsPlugin,
+  analyticsPlugin,
 ] as const;
 
 export type PluginId = (typeof pluginRegistry)[number]["id"];

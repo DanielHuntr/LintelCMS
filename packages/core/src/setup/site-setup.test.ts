@@ -24,7 +24,12 @@ describe("the site's name and kind", () => {
     expect(await readSetting(testDatabase.database, "siteName")).toBe("Brightside Bakery");
     expect(await readSetting(testDatabase.database, "siteType")).toBe("shop");
     expect(await readSetting(testDatabase.database, "siteSetupCompleted")).toBe(true);
-    expect(await findEnabledPluginIds(testDatabase.database)).toEqual(["commerce", "forms", "seo"]);
+    expect(await findEnabledPluginIds(testDatabase.database)).toEqual([
+      "commerce",
+      "forms",
+      "seo",
+      "analytics",
+    ]);
   });
 
   it("gives every site a Site settings global set and an empty main menu", async () => {
@@ -63,17 +68,22 @@ describe("the site's name and kind", () => {
       siteType: "blog",
     });
 
-    expect(await findEnabledPluginIds(testDatabase.database)).toEqual(["blog", "forms", "seo"]);
+    expect(await findEnabledPluginIds(testDatabase.database)).toEqual([
+      "blog",
+      "forms",
+      "seo",
+      "analytics",
+    ]);
   });
 });
 
 describe("pluginsForSiteType", () => {
   it.each([
-    ["business", ["forms", "seo"]],
-    ["blog", ["blog", "forms", "seo"]],
-    ["shop", ["commerce", "forms", "seo"]],
-    ["portfolio", ["forms", "seo"]],
-    ["blank", ["forms", "seo"]],
+    ["business", ["forms", "seo", "analytics"]],
+    ["blog", ["blog", "forms", "seo", "analytics"]],
+    ["shop", ["commerce", "forms", "seo", "analytics"]],
+    ["portfolio", ["forms", "seo", "analytics"]],
+    ["blank", ["forms", "seo", "analytics"]],
   ] as const)("switches on forms, SEO tools and the extras for a %s site", (siteType, expected) => {
     expect(pluginsForSiteType(siteType)).toEqual(expected);
   });

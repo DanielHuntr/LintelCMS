@@ -56,3 +56,8 @@ export {
   experimentVersionsTable,
   experimentCountsTable,
 } from "../experiments/experiments.table.js";
+export {
+  analyticsEventsTable,
+  analyticsDailyTable,
+  analyticsSaltsTable,
+} from "../analytics/analytics.table.js";
