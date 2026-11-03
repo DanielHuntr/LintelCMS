@@ -14,6 +14,22 @@ in `packages/core/src/media`.
   Documents filter go to the API, so they cover the whole library, not just what's loaded.
 - An empty library shows only a guide with an Upload button; an empty search says so.
 
+## Pasting and dropping pictures elsewhere
+
+- **The library:** pasting files anywhere on the page (Cmd/Ctrl+V after copying a picture or
+  taking a screenshot) uploads them, as dropping does (`usePasteFiles`). Pastes into text
+  areas and rich text are left alone.
+- **The image picker dialog:** pasting works as dropping does; the picture is chosen when it
+  arrives.
+- **An image field:** a picture dropped on the field, or pasted while it has focus, is
+  uploaded and chosen straight away. "Choose image" says "or drop or paste one here", and
+  "Drop to use this picture" while files are dragged over. Progress and problems show under
+  the field (`usePictureUpload` and `PictureUploadStatus`).
+- Clipboard pictures without a usable name are called "Pasted picture 14.03.22.png"
+  (`pastedFiles.ts`), so the upload rules can judge them.
+- Markdown fields, rich text and the page builder's canvas are described in `src/fields` and
+  `src/page-design`.
+
 ## The detail sheet
 
 Opens from a tile. Changes save as they're made, with "Saved" in the header:
@@ -51,30 +67,36 @@ arrives.
 
 ## Files
 
-| File                     | What it does                                                      |
-| ------------------------ | ----------------------------------------------------------------- |
-| `MediaLibraryPage.tsx`   | The `/media` screen                                               |
-| `AssetGrid.tsx`          | The keyboard-friendly thumbnail grid, and its loading placeholder |
-| `AssetTile.tsx`          | One thumbnail with its name and size                              |
-| `AssetDetailSheet.tsx`   | The detail sheet and saving                                       |
-| `AssetPreview.tsx`       | The big preview: the focal point picker, or a document icon       |
-| `FocalPointPicker.tsx`   | Click, drag or arrow keys to set the focal point                  |
-| `CropPreviews.tsx`       | The three crop shapes                                             |
-| `AltTextField.tsx`       | A labelled multi-line field with guidance                         |
-| `AssetDetailsList.tsx`   | Type, size, dimensions, uploader and date                         |
-| `AssetActions.tsx`       | Copy URL, Download, Delete                                        |
-| `DeleteAssetDialog.tsx`  | Confirming a delete, and "Used in" when it's refused              |
-| `MediaPicker.tsx`        | The image field                                                   |
-| `MediaPickerDialog.tsx`  | Choosing or uploading an image                                    |
-| `UploadTray.tsx`         | The floating uploads list on the library                          |
-| `UploadProgressList.tsx` | Rows of upload progress, results and problems                     |
-| `DropOverlay.tsx`        | "Drop to upload"                                                  |
-| `Modal.tsx`              | Dialogs with a focus trap                                         |
-| `useUploadQueue.ts`      | Checking and uploading files, and tracking each one               |
-| `useFileDrop.ts`         | Drag and drop of files onto the window or an element              |
-| `useFittedSize.ts`       | Sizing the preview to the image's shape                           |
-| `useDebouncedValue.ts`   | One search per pause in typing                                    |
-| `upload-rules.ts`        | The size limit and allowed kinds of file                          |
-| `media.api.ts`           | Requests, including uploads with progress (XMLHttpRequest)        |
-| `media.queries.ts`       | TanStack Query hooks and cache keys                               |
-| `formatting.ts`          | File sizes, dates and dimensions for people                       |
+| File                      | What it does                                                      |
+| ------------------------- | ----------------------------------------------------------------- |
+| `MediaLibraryPage.tsx`    | The `/media` screen                                               |
+| `AssetGrid.tsx`           | The keyboard-friendly thumbnail grid, and its loading placeholder |
+| `AssetTile.tsx`           | One thumbnail with its name and size                              |
+| `AssetDetailSheet.tsx`    | The detail sheet and saving                                       |
+| `AssetPreview.tsx`        | The big preview: the focal point picker, or a document icon       |
+| `FocalPointPicker.tsx`    | Click, drag or arrow keys to set the focal point                  |
+| `CropPreviews.tsx`        | The three crop shapes                                             |
+| `AltTextField.tsx`        | A labelled multi-line field with guidance                         |
+| `AssetDetailsList.tsx`    | Type, size, dimensions, uploader and date                         |
+| `AssetActions.tsx`        | Copy URL, Download, Delete                                        |
+| `DeleteAssetDialog.tsx`   | Confirming a delete, and "Used in" when it's refused              |
+| `MediaPicker.tsx`         | The image field                                                   |
+| `MediaPickerDialog.tsx`   | Choosing or uploading an image                                    |
+| `UploadTray.tsx`          | The floating uploads list on the library                          |
+| `UploadProgressList.tsx`  | Rows of upload progress, results and problems                     |
+| `DropOverlay.tsx`         | "Drop to upload"                                                  |
+| `Modal.tsx`               | Dialogs with a focus trap                                         |
+| `useUploadQueue.ts`       | Checking and uploading files, and tracking each one               |
+| `useFileDrop.ts`          | Drag and drop of files onto the window or an element              |
+| `useFittedSize.ts`        | Sizing the preview to the image's shape                           |
+| `useDebouncedValue.ts`    | One search per pause in typing                                    |
+| `upload-rules.ts`         | The size limit and allowed kinds of file                          |
+| `usePasteFiles.ts`        | Pasting files anywhere on a page                                  |
+| `usePictureUpload.ts`     | One picture dropped or pasted into a field, with its status       |
+| `PictureUploadStatus.tsx` | The progress or problem line under such a field                   |
+| `uploadPicture.ts`        | One picture for the page builder, with plain-word errors          |
+| `pastedFiles.ts`          | Files from a paste or drop, named when the clipboard gives none   |
+| `quickUploadStrings.ts`   | Words for the above                                               |
+| `media.api.ts`            | Requests, including uploads with progress (XMLHttpRequest)        |
+| `media.queries.ts`        | TanStack Query hooks and cache keys                               |
+| `formatting.ts`           | File sizes, dates and dimensions for people                       |

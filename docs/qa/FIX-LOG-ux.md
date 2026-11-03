@@ -396,3 +396,40 @@ Each name now starts with what's shown:
 - `admin/src/free-photos/FreePhotosDialog.test.tsx`: searching, adding, a gone photo left out, a failed search, and the button showing only while the feature is on.
 
 **Screenshots** (in `screenshots/qol-b/`): `photos-features-desktop-light`, `photos-start-desktop-light`, `photos-results-*` (desktop and 390px, light and dark), `photos-added-desktop-light`, `photos-credit-desktop-light`.
+
+## LINTEL-UX-025: paste or drop pictures where they're used (3 November 2026)
+
+**Asked for:** pictures pasted from the clipboard or dropped from the computer should work wherever a picture belongs, not only in the media library.
+
+**What works now:**
+
+- **Media library:** pasting anywhere on the page uploads, as dropping already did. Pastes into text areas and rich text are left alone.
+- **Image picker:** pasting works there too, and the picture is chosen when it arrives.
+- **Image fields:**
+  - A picture dropped on the field, or pasted while it has focus, is uploaded and chosen.
+  - The field says "or drop or paste one here", and "Drop to use this picture" while a file is over it.
+  - Progress ("Uploading harbour.jpg… 40%") and problems ("“menu.pdf” isn't a picture…") show under the field.
+- **Markdown fields:** a dropped or pasted picture is uploaded and written in as `![](address)` where the cursor was, with a note to describe it between the brackets.
+- **Page builder:**
+  - A picture dropped on a Picture element on the canvas becomes its picture (one Undo step), keeping its description.
+  - Pasting with a Picture element selected does the same.
+  - Dropped anywhere else, a note says pictures go into a Picture element.
+  - Before, the frame let the browser open a dropped file in place of the page.
+- Screenshots pasted without a usable name are called "Pasted picture 14.03.22.png".
+
+Every upload uses the media library's upload and checks, and its plain messages.
+
+**Left out: pictures inside rich text.** Rich text holds words, lists and links only. That's a choice recorded in `richTextExtensions.ts`, and core renders and checks the same list. A picture dropped or pasted there is now caught, rather than left to the browser, and a note says to use an image field or the page design. Adding pictures to rich text would change what rich text is, and what websites receive, so it's Daniel's call.
+
+**Tests:**
+
+- `admin/src/media/quickUpload.test.tsx`: the image field (drop with progress, paste, a non-picture), library paste, Markdown insertion, rich text's note, naming pasted files, and the builder's uploader refusing non-pictures.
+- `builder/src/canvas/picture-drop.test.tsx`: dropping on a Picture element, elsewhere, pasting with nothing selected, a failed upload, no uploader, and checking the frame's file messages.
+
+**Screenshots** (in `screenshots/qol-b/`):
+
+- `drop-image-field-over-desktop-*`;
+- `drop-image-field-after-*` (desktop and 390px, light and dark);
+- `paste-markdown-*` and `paste-rich-text-*` (desktop and 390px, light);
+- `paste-media-library-*` (all four);
+- `drop-builder-wrong-place-desktop-*` and `drop-builder-picture-desktop-*`.

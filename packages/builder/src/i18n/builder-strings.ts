@@ -247,6 +247,15 @@ export const builderStrings = {
     "Start the link with https://, http://, mailto:, tel:, / or #.",
   "pageBuilder.content.noPicture": "No picture yet",
   "pageBuilder.content.choosePicture": "Choose a picture",
+  "pageBuilder.pictureDrop.uploading": "Uploading {name}…",
+  "pageBuilder.pictureDrop.done": "Picture added to the page and to your media.",
+  "pageBuilder.pictureDrop.failed": "Couldn’t use {name}. {reason}",
+  "pageBuilder.pictureDrop.notPicture":
+    "Pictures go into a Picture element. Drop it onto one, or add one from Insert first.",
+  "pageBuilder.pictureDrop.selectFirst":
+    "To paste a picture, select a Picture element on the page first.",
+  "pageBuilder.pictureDrop.change": "Change picture",
+  "pageBuilder.pictureDrop.dismiss": "Dismiss",
   "pageBuilder.content.changePicture": "Change picture",
   "pageBuilder.content.pictureAddress": "Or the picture’s address",
   "pageBuilder.content.pictureAddressPlaceholder": "Or paste a picture’s address",

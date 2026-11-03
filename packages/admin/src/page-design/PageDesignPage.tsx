@@ -1,4 +1,10 @@
-import { type CanvasSite, type FileUploader, PageBuilder, type PickedImage } from "@lintel/builder";
+import {
+  type CanvasSite,
+  type FileUploader,
+  PageBuilder,
+  type PickedImage,
+  type PictureUploader,
+} from "@lintel/builder";
 import {
   createEmptyPage,
   type PageDocument,
@@ -28,6 +34,7 @@ import { Skeleton } from "../design/Skeleton.js";
 import { type StringKey, t } from "../i18n/strings.js";
 import { getAsset, uploadAsset } from "../media/media.api.js";
 import { MediaPickerDialog } from "../media/MediaPickerDialog.js";
+import { uploadPicture } from "../media/uploadPicture.js";
 import { useCan, useSession } from "../session/SessionContext.js";
 import { runtimeSettings } from "../runtime-settings.js";
 import { useBuilderData, useCanvasSite, useViewPageSite } from "../website/website.queries.js";
@@ -203,6 +210,7 @@ function PageDesigner({
         motionText={motionText}
         pickImage={imagePicker.pick}
         uploadFile={uploadToMediaLibrary}
+        uploadPicture={uploadPictureToMediaLibrary}
         onSaveNow={saving.saveNow}
         frameScripts={canvasFrameScripts}
         effectModules={effectModules}
@@ -303,6 +311,12 @@ const uploadToMediaLibrary: FileUploader = async (file) => {
   return asset
     ? { assetId: asset.id, src: asset.url, mimeType: asset.mimeType, filename: asset.filename }
     : null;
+};
+
+/** Pictures dropped on, or pasted into, a Picture element on the canvas. */
+const uploadPictureToMediaLibrary: PictureUploader = async (file) => {
+  const asset = await uploadPicture(file);
+  return { assetId: asset.id, src: asset.url, alt: asset.alt };
 };
 
 function useImagePicker() {

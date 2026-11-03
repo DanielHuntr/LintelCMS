@@ -14,6 +14,7 @@ import { useDebouncedValue } from "./useDebouncedValue.js";
 import { FreePhotosDialog } from "../free-photos/FreePhotosDialog.js";
 import { useCanAddFreePhotos } from "../free-photos/useFreePhotos.js";
 import { useFileDrop } from "./useFileDrop.js";
+import { usePasteFiles } from "./usePasteFiles.js";
 import { useUploadQueue } from "./useUploadQueue.js";
 
 interface MediaPickerDialogProps {
@@ -51,6 +52,7 @@ export function MediaPickerDialog({
     },
   });
   const isDraggingFiles = useFileDrop(uploads.addFiles, { target: dropArea });
+  usePasteFiles(uploads.addFiles, { enabled: !isFindingFreePhotos });
   const assets = images.data?.pages.flatMap((page) => page.assets) ?? [];
   const visibleUploads = uploads.items.filter((item) => item.status !== "done");
 

@@ -18,6 +18,7 @@ import { acceptedFileTypes } from "./upload-rules.js";
 import { UploadTray } from "./UploadTray.js";
 import { useDebouncedValue } from "./useDebouncedValue.js";
 import { useFileDrop } from "./useFileDrop.js";
+import { usePasteFiles } from "./usePasteFiles.js";
 import { useUploadQueue } from "./useUploadQueue.js";
 import { Page } from "../design/Page.js";
 import { FreePhotosDialog } from "../free-photos/FreePhotosDialog.js";
@@ -60,6 +61,7 @@ export function MediaLibraryPage({
       uploadAsset(file, onProgress, signal, folder.uploadFolder),
   });
   const isDraggingFiles = useFileDrop(uploads.addFiles, { enabled: canUpload });
+  usePasteFiles(uploads.addFiles, { enabled: canUpload });
 
   const assets = assetList.data?.pages.flatMap((page) => page.assets) ?? [];
   const total = assetList.data?.pages[0]?.total;

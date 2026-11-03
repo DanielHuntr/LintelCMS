@@ -23,6 +23,7 @@ import { updatesStrings } from "./updatesStrings.js";
 import { treeSelectionStrings } from "./treeSelectionStrings.js";
 import { pageMenuStrings } from "./pageMenuStrings.js";
 import { freePhotosStrings } from "../free-photos/freePhotosStrings.js";
+import { quickUploadStrings } from "../media/quickUploadStrings.js";
 
 /**
  * Every word the admin shows lives here, in English: the source every translation in
@@ -57,6 +58,7 @@ const english = {
   ...dataToolsStrings,
   ...updatesStrings,
   ...freePhotosStrings,
+  ...quickUploadStrings,
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",
   "nav.openMenu": "Open the menu",

@@ -41,7 +41,9 @@ What the admin hands the builder:
 - **Words**: the admin's `t()`. The builder's strings (`builderStrings`) are spread into
   `src/i18n/strings.ts` through `pageDesignStrings.ts`, so they translate with the rest.
 - **Pictures**: `pickImage` opens the media library (`MediaPickerDialog`) and resolves with
-  the chosen asset's address and alt text.
+  the chosen asset's address and alt text. `uploadPicture` uploads a picture dropped on (or
+  pasted into) a Picture element on the canvas, with the library's checks
+  (`media/uploadPicture.ts`); its errors are the library's plain messages.
 - **Code**: Developer mode and code blocks only appear with `builder:code` (`useCan`). The
   API checks it again when saving (see `packages/core/src/pages`).
 

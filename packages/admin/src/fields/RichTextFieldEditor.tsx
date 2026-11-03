@@ -1,6 +1,10 @@
 import { EditorContent, useEditor } from "@tiptap/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { classNames } from "../design/classNames.js";
+import { t } from "../i18n/strings.js";
+import { picturesFrom } from "../media/pastedFiles.js";
+import { PictureUploadStatus } from "../media/PictureUploadStatus.js";
+import { usePictureUpload } from "../media/usePictureUpload.js";
 import type { FieldEditorProps } from "./fieldEditorProps.js";
 import type { RichTextDocument } from "./field.types.js";
 import { richTextValue } from "./fieldValues.js";
@@ -21,20 +25,39 @@ export function RichTextFieldEditor({
   hasError,
 }: FieldEditorProps) {
   const [isLinkFormOpen, setIsLinkFormOpen] = useState(false);
+  const pictureNote = usePictureUpload();
+  const { showProblem } = pictureNote;
+  const pictureHandlers = useMemo(() => {
+    const refusePictures = (list: DataTransfer | null) => {
+      if (picturesFrom(list).length === 0) return false;
+      showProblem(t("media.quickUpload.richTextNotHere"));
+      return true;
+    };
+    return {
+      handleDrop: (_view: unknown, event: DragEvent) => refusePictures(event.dataTransfer),
+      handlePaste: (_view: unknown, event: ClipboardEvent) => refusePictures(event.clipboardData),
+    };
+  }, [showProblem]);
 
   const editor = useEditor({
     extensions: richTextExtensions,
     content: richTextValue(value),
     onUpdate: ({ editor: updated }) => onChange(updated.getJSON() as RichTextDocument),
-    editorProps: { attributes: editableAttributes(controlId, labelId, describedBy, hasError) },
+    editorProps: {
+      attributes: editableAttributes(controlId, labelId, describedBy, hasError),
+      ...pictureHandlers,
+    },
   });
 
   // TipTap reads attributes once; keep them current as errors come and go.
   useEffect(() => {
     editor.setOptions({
-      editorProps: { attributes: editableAttributes(controlId, labelId, describedBy, hasError) },
+      editorProps: {
+        attributes: editableAttributes(controlId, labelId, describedBy, hasError),
+        ...pictureHandlers,
+      },
     });
-  }, [editor, controlId, labelId, describedBy, hasError]);
+  }, [editor, controlId, labelId, describedBy, hasError, pictureHandlers]);
 
   return (
     <div
@@ -54,6 +77,11 @@ export function RichTextFieldEditor({
         <RichTextLinkForm editor={editor} onDone={() => setIsLinkFormOpen(false)} />
       )}
       <EditorContent editor={editor} />
+      {pictureNote.status.state !== "idle" && (
+        <div className="px-4 pb-2">
+          <PictureUploadStatus status={pictureNote.status} onDismiss={pictureNote.clear} />
+        </div>
+      )}
     </div>
   );
 }
