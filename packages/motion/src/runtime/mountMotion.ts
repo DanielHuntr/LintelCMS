@@ -74,6 +74,7 @@ function mountOnce(root: HTMLElement, spec: MotionSpec, options: Required<MountO
       root,
       elements: targets.elements,
       spec: effective,
+      nodeAttribute: options.nodeAttribute,
       createPlayback: (scroll) => {
         const playback = createAnimations(targets.elements, effective, scroll);
         playbacks.push(playback);

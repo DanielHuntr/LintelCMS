@@ -172,6 +172,8 @@ function motionMarks(
     mark(nodeId, spec.trigger.type === "load" || spec.trigger.type === "inView");
     if (spec.targets.type === "nodes")
       spec.targets.nodeIds.forEach((target) => mark(target, false));
+    // A scene step finds the element it follows by its id, so that one carries it too.
+    if (spec.trigger.type === "scroll" && spec.trigger.follows) mark(spec.trigger.follows, false);
   }
   effects.forEach(({ nodeId }) => mark(nodeId, false));
   return marks;

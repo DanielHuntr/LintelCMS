@@ -83,6 +83,20 @@ export const scrollTriggerSchema = z.object({
    * their scrolling.
    */
   snap: z.array(z.number().min(0).max(1)).min(1).max(20).optional(),
+  /**
+   * Follows another element's scroll instead of its own, by node id: a step in a scene, such
+   * as a title sliding in while the section around it is held on screen. Its `start` and `end`
+   * markers are read on that element.
+   */
+  follows: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{1,64}$/, { error: "Follow an element by its id" })
+    .optional(),
+  /** Plays over only this part of the scene (0 to 1): `{ from: 0.4, to: 1 }`, a later step. */
+  range: z
+    .object({ from: z.number().min(0).max(1), to: z.number().min(0).max(1) })
+    .refine((range) => range.to > range.from, { error: "A step should end after it starts" })
+    .optional(),
 });
 
 export const hoverTriggerSchema = z.object({

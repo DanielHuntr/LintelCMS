@@ -49,8 +49,25 @@ function canRunNatively(context: TriggerContext, trigger: ScrollTrigger, manual:
     typeof CSS.px === "function" &&
     context.spec.stagger.each === 0 &&
     trigger.smooth === 0 &&
-    !trigger.snap
+    !trigger.snap &&
+    !trigger.follows &&
+    !trigger.range
   );
+}
+
+/** The element whose scroll the scene follows: another, by node id, or the element itself. */
+function sceneElement(context: TriggerContext, trigger: ScrollTrigger): HTMLElement {
+  if (!trigger.follows) return context.root;
+  const attribute = context.nodeAttribute ?? "data-node-id";
+  const escaped = trigger.follows.replace(/["\\]/g, "\\$&");
+  const found = context.root.ownerDocument.querySelector(`[${attribute}="${escaped}"]`);
+  return found instanceof HTMLElement ? found : context.root;
+}
+
+/** Progress through the whole scene, mapped onto this step's part of it. */
+export function stepProgress(progress: number, range: ScrollTrigger["range"]): number {
+  if (!range) return progress;
+  return Math.min(1, Math.max(0, (progress - range.from) / (range.to - range.from)));
 }
 
 /** How long scrolling has to stop before a scene settles on a snap point. */
@@ -106,8 +123,13 @@ export function attachScroll(
 ): AttachedTrigger {
   const { root } = context;
   const window = root.ownerDocument.defaultView;
+  // A step follows its scene's element; the element being followed holds itself on screen.
+  const measured = sceneElement(context, trigger);
   // Previews show the scene in a small box, where pinning to the screen would make no sense.
-  const unpin = trigger.pin && !manual ? pinScene(root, trigger.pin.length) : () => undefined;
+  const unpin =
+    trigger.pin && !manual && !trigger.follows
+      ? pinScene(root, trigger.pin.length)
+      : () => undefined;
 
   if (canRunNatively(context, trigger, manual) && window) {
     let playback: Playback = context.createPlayback(nativeBinding(root, trigger));
@@ -135,12 +157,13 @@ export function attachScroll(
   const playback = context.createPlayback();
   if (manual || !window) return { playback, detach: unpin };
   let frame = 0;
-  let shown = progressNow(root, trigger);
+  const progressOfStep = () => stepProgress(progressNow(measured, trigger), trigger.range);
+  let shown = progressOfStep();
   let lastTime = 0;
   let lastScroll = window.performance.now();
   const update = (now: number) => {
     frame = 0;
-    let target = progressNow(root, trigger);
+    let target = progressOfStep();
     const settled = now - lastScroll >= SNAP_AFTER_MILLISECONDS;
     if (trigger.snap && settled) target = nearestSnapPoint(trigger.snap, target);
     const elapsed = lastTime === 0 ? 16 : Math.min(now - lastTime, 100);
