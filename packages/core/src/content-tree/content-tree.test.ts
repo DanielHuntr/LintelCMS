@@ -228,6 +228,33 @@ describe("the content tree", () => {
     expect(response.json().message).toBe("An entry can't be moved under one of its own children.");
   });
 
+  // LINTEL-FUNC-017: a move put a page under a page on another site.
+  it("won't move a page under a page on another site", async () => {
+    const site = await api("POST", "/sites", {
+      handle: "shop",
+      name: "Shop",
+      hostnames: ["shop.example.com"],
+      defaultLocale: "en-GB",
+    });
+    expect(site.statusCode, site.body).toBe(201);
+    const shop = requestsAs(server, await signInAndGetCookies(server, "ana@example.com"), {
+      "lintel-site": "shop",
+    });
+    const shopHome = await shop("POST", "/collections/pages/entries", {
+      data: { title: "Shop home" },
+    });
+    const about = await create("pages", "About");
+
+    const response = await api("POST", "/content-tree/move", {
+      entryId: about,
+      parentId: shopHome.json().id,
+      index: 0,
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json().message).toMatch(/same site/);
+  });
+
   it("sorts children, keeping any left out after the ones listed", async () => {
     const home = await create("pages", "Home");
     const [first, second, third] = [

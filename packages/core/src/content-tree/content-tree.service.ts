@@ -272,7 +272,8 @@ export async function moveEntry(
     throw new ReorderNotAllowedError(collection.name);
   }
   if (request.parentId !== entry.parentId) {
-    await checkParent(database, collection, request.parentId, entry.id, entry.locale);
+    // The site too: a move used to put a page under one on another site (LINTEL-FUNC-017).
+    await checkParent(database, collection, request.parentId, entry.id, entry.locale, entry.siteId);
   }
 
   const previousPlace = placeOf(entry);
