@@ -30,6 +30,20 @@ export interface PaymentProviders {
   }>;
 }
 
+export interface WayToPay {
+  id: string;
+  name: string;
+  /** Switched on, but the provider hasn't approved it yet. */
+  waiting: boolean;
+}
+
+export interface ProviderWaysToPay {
+  provider: PaymentProviderId;
+  mode: "test" | "live" | null;
+  /** Null when the provider can't say. */
+  methods: WayToPay[] | null;
+}
+
 export interface PayPalCredentialsInput {
   clientId: string;
   clientSecret: string;
@@ -39,6 +53,10 @@ export interface PayPalCredentialsInput {
 
 export function getPaymentProviders() {
   return apiRequest<PaymentProviders>("/shop/settings/payment-providers");
+}
+
+export function getWaysToPay() {
+  return apiRequest<{ providers: ProviderWaysToPay[] }>("/shop/settings/ways-to-pay");
 }
 
 export function connectPayPal(credentials: PayPalCredentialsInput) {

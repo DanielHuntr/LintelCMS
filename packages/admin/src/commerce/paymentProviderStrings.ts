@@ -12,6 +12,24 @@ export const paymentProviderStrings = {
   "shop.providers.marketsBody":
     "Each market's shoppers pay with one provider. Stripe is used unless you choose another. Shoppers always pay on the provider's own secure page, so card details never reach your site.",
 
+  "shop.waysToPay.title": "Ways to pay",
+  "shop.waysToPay.availability":
+    "What shoppers see depends on their country, your shop's currency and the provider's approval.",
+  "shop.waysToPay.none": "Nothing is switched on yet.",
+  "shop.waysToPay.waiting": "{method}: waiting for approval",
+  "shop.waysToPay.suggestion":
+    "Want {method}? Switch it on in {name} and it'll appear at checkout.",
+  "shop.waysToPay.testNote": "These are your test settings. Live ones can differ.",
+  "shop.waysToPay.unknown":
+    "{name} didn't tell us what's switched on just now. You can see it in {name} itself.",
+  "shop.waysToPay.paypal":
+    "PayPal doesn't share what it offers each shopper, so we can't list it here. Shoppers pay on PayPal's own page.",
+  "shop.waysToPay.openStripe": "Open payment methods in Stripe",
+  "shop.waysToPay.openMollie": "Open Mollie, then your website profile's Payment methods",
+  "shop.waysToPay.lastMessage": "Last message from Stripe: {time}",
+  "shop.waysToPay.noMessage":
+    "Nothing has arrived from Stripe since the webhook was saved. That's normal until your first payment.",
+
   "shop.paypal.stepsLabel": "Steps to connect PayPal",
   "shop.paypal.step1Title": "Make an app in PayPal",
   "shop.paypal.step1Body":

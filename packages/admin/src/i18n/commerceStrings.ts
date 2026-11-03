@@ -35,7 +35,8 @@ export const commerceStrings = {
   "shop.setup.shipping": "Set your delivery prices",
   "shop.setup.shippingDescription": "Say what delivery costs, and where you deliver.",
   "shop.setup.payments": "Connect Stripe",
-  "shop.setup.paymentsDescription": "So customers can pay you by card, Apple Pay and Google Pay.",
+  "shop.setup.paymentsDescription":
+    "So customers can pay you by card, wallets like Apple Pay, and whatever else you switch on with your provider, such as Klarna or iDEAL.",
   "shop.setup.product": "Add your first product",
   "shop.setup.productDescription": "Give it a name, a photo and a price.",
 
@@ -408,7 +409,8 @@ export const commerceStrings = {
   "shop.payments.hosted": "Stripe’s checkout page",
   "shop.payments.embedded": "Payment form on my site",
   "shop.payments.hostedHint": "Customers pay on a page run by Stripe, then come back to your site.",
-  "shop.payments.embeddedHint": "Stripe’s secure card form sits inside your site’s checkout.",
+  "shop.payments.embeddedHint":
+    "For a custom-built storefront only: your developer places Stripe’s secure form in its checkout. The cart on a site built here can’t show it, so shoppers there couldn’t pay.",
   "shop.payments.cardSafety":
     "Either way, card numbers go straight to Stripe and never touch your site.",
   "shop.payments.disconnect": "Disconnect Stripe",
