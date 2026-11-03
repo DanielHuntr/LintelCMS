@@ -25,6 +25,12 @@ interface ConditionsEditorProps {
   conditions: FieldConditionsInput | undefined;
   targets: readonly ConditionTarget[];
   onChange: (conditions: FieldConditionsInput | undefined) => void;
+  /**
+   * The field is already saved, so entries may hold values in it. A new condition then keeps
+   * them while hidden: the default, clearing them, silently lost them on the next save of
+   * each entry (LINTEL-DATA-005).
+   */
+  isExistingField?: boolean;
 }
 
 /**
@@ -33,7 +39,12 @@ interface ConditionsEditorProps {
  * choices, On and Off for a switch, a number box for a number. A sentence at the top says
  * what the rules do in plain words.
  */
-export function ConditionsEditor({ conditions, targets, onChange }: ConditionsEditorProps) {
+export function ConditionsEditor({
+  conditions,
+  targets,
+  onChange,
+  isExistingField = false,
+}: ConditionsEditorProps) {
   const isOn = conditions !== undefined;
 
   if (targets.length === 0) {
@@ -58,7 +69,16 @@ export function ConditionsEditor({ conditions, targets, onChange }: ConditionsEd
         label={t("conditions.enable")}
         checked={isOn}
         onCheckedChange={(on) =>
-          onChange(on ? { action: "show", match: "all", rules: [newRule()] } : undefined)
+          onChange(
+            on
+              ? {
+                  action: "show",
+                  match: "all",
+                  rules: [newRule()],
+                  ...(isExistingField ? { keepHiddenValues: true } : {}),
+                }
+              : undefined,
+          )
         }
       />
       {isOn && (
@@ -116,7 +136,9 @@ export function ConditionsEditor({ conditions, targets, onChange }: ConditionsEd
             onCheckedChange={(keepHiddenValues) => onChange({ ...conditions, keepHiddenValues })}
           />
           <p className="-mt-3 text-footnote text-label-secondary">
-            {t("conditions.keepHiddenValuesHint")}
+            {isExistingField && conditions.keepHiddenValues === true
+              ? t("conditions.keepHiddenValuesExistingHint")
+              : t("conditions.keepHiddenValuesHint")}
           </p>
         </>
       )}

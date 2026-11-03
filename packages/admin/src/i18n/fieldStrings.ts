@@ -71,6 +71,8 @@ export const fieldStrings = {
   "conditions.keepHiddenValues": "Keep what’s typed when hidden",
   "conditions.keepHiddenValuesHint":
     "Off: a hidden field is emptied when the entry is saved. On: its value is kept for when it shows again.",
+  "conditions.keepHiddenValuesExistingHint":
+    "On, because entries may already have something typed here: turning it off clears it from any entry where this field is hidden, the next time the entry is saved.",
   "conditions.operator.is": "is",
   "conditions.operator.isNot": "is not",
   "conditions.operator.contains": "contains",

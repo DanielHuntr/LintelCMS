@@ -55,6 +55,7 @@ export function FieldSettingsSheet({
       isHandleLocked={isTitle}
       isRequiredLocked={isTitle}
       canShowInList={canShowInList && !isTitle}
+      isSaved={field.isSaved}
       onChange={(changes) => dispatch({ type: "fieldChanged", key, changes })}
       onOptionsChange={(options) => dispatch({ type: "fieldOptionsChanged", key, options })}
       onHandleChange={(handle) => dispatch({ type: "handleEdited", key, handle })}

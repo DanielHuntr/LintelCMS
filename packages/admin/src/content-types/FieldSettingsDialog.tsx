@@ -38,6 +38,8 @@ export interface FieldSettingsDialogProps {
   isRequiredLocked?: boolean;
   /** Only an entry's own fields can be columns in the list of entries. */
   canShowInList: boolean;
+  /** Saved before, so entries may already hold values in it. */
+  isSaved?: boolean;
   onChange: (changes: FieldChanges) => void;
   onOptionsChange: (options: FieldOptions) => void;
   onHandleChange: (typed: string) => void;
@@ -96,6 +98,7 @@ export function FieldSettingsDialog(props: FieldSettingsDialogProps) {
         conditions={field.conditions}
         targets={targets}
         onChange={(conditions) => onChange({ conditions })}
+        isExistingField={props.isSaved === true}
       />
     ),
     validation: () => (
