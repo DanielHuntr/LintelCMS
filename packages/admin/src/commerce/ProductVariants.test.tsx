@@ -300,7 +300,7 @@ describe("a variant's other details", () => {
 describe("groups", () => {
   it("folds rows under the first option", async () => {
     open(twoOptions);
-    const show = await screen.findByRole("button", { name: "Show S" });
+    const show = await screen.findByRole("button", { name: /^S ?\d/ });
     expect(show).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByLabelText("Price for S / Oat")).not.toBeInTheDocument();
     expect(screen.getByText("2 variants, 3 in stock")).toBeInTheDocument();
@@ -314,10 +314,10 @@ describe("groups", () => {
     open(twoOptions);
     const groupBy = await screen.findByLabelText("Group by");
     await userEvent.selectOptions(groupBy, "Colour");
-    expect(screen.getByRole("button", { name: "Show Ink" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Show S" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Ink ?\d/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^S ?\d/ })).not.toBeInTheDocument();
     await userEvent.selectOptions(groupBy, "Don’t group");
-    expect(screen.queryByRole("button", { name: /^Show/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /\d variants/ })).not.toBeInTheDocument();
     expect(screen.getByLabelText("Price for M / Ink")).toBeInTheDocument();
   });
 
@@ -364,7 +364,7 @@ describe("groups", () => {
 
   it("stays open after saving", async () => {
     const api = open(twoOptions);
-    await userEvent.click(await screen.findByRole("button", { name: "Show M" }));
+    await userEvent.click(await screen.findByRole("button", { name: /^M ?\d/ }));
     const before = screen.getByLabelText("Price for M / Oat");
     await save(api);
     // Saving redraws the form, so the old box goes.
@@ -379,10 +379,10 @@ describe("groups", () => {
           "variants.3.sku": "Two variants can't share a SKU",
         }),
     });
-    await screen.findByRole("button", { name: "Show M" });
+    await screen.findByRole("button", { name: /^M ?\d/ });
     await save(api);
     const message = await screen.findByText("Two variants can't share a SKU");
-    expect(screen.getByRole("button", { name: "Show M" })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("button", { name: /^M ?\d/ })).toHaveAttribute("aria-expanded", "true");
     const box = screen.getByLabelText("SKU for M / Ink");
     expect(box).toHaveAttribute("aria-invalid", "true");
     expect(box).toHaveAttribute("aria-describedby", message.id);
@@ -423,7 +423,7 @@ describe("tick boxes", () => {
 
   it("shows part of a group or the whole list as partly ticked", async () => {
     open(twoOptions);
-    await userEvent.click(await screen.findByRole("button", { name: "Show S" }));
+    await userEvent.click(await screen.findByRole("button", { name: /^S ?\d/ }));
     await userEvent.click(screen.getByRole("checkbox", { name: "Select S / Oat" }));
     const group = screen.getByRole<HTMLInputElement>("checkbox", { name: "Select all S variants" });
     expect(group.indeterminate).toBe(true);

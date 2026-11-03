@@ -20,7 +20,7 @@ import {
  * their roles outright.
  */
 const stackedRowClasses =
-  "@max-lg:grid @max-lg:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)_auto] @max-lg:items-center @max-lg:gap-x-2 @max-lg:gap-y-2 @max-lg:px-4 @max-lg:py-3";
+  "@max-lg:grid @max-lg:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)] @max-lg:items-center @max-lg:gap-x-2 @max-lg:gap-y-2 @max-lg:px-4 @max-lg:py-3";
 const cellClasses = "px-1.5 py-2 align-middle @max-lg:p-0";
 export const tickCellClasses = classNames(
   cellClasses,
@@ -33,7 +33,7 @@ const stockCellClasses = classNames(cellClasses, "@max-lg:col-start-3 @max-lg:ro
 export const skuCellClasses = classNames(cellClasses, "@max-2xl:hidden");
 const editCellClasses = classNames(
   cellClasses,
-  "pe-4 text-end @max-lg:col-start-4 @max-lg:row-start-1 @max-lg:pe-0",
+  "pe-4 text-end @max-lg:col-start-3 @max-lg:row-start-1 @max-lg:justify-self-end @max-lg:pe-0",
 );
 
 /** Rows open with a click anywhere that isn't already a control. Keyboards use the Edit button. */
@@ -75,6 +75,8 @@ interface CellBoxProps {
   shortLabel?: string;
   value: string;
   placeholder?: string;
+  /** For when the short label already says what the placeholder does, and both won't fit. */
+  hidesPlaceholderWhenStacked?: boolean;
   inputMode?: "decimal" | "numeric";
   isInvalid?: boolean;
   describedBy?: string;
@@ -90,6 +92,7 @@ function CellBox({
   shortLabel,
   value,
   placeholder,
+  hidesPlaceholderWhenStacked = false,
   inputMode,
   isInvalid = false,
   describedBy,
@@ -122,6 +125,7 @@ function CellBox({
           controlClasses({ hasError: isInvalid }),
           "h-9 tabular-nums placeholder:text-footnote",
           align === "end" && "text-end",
+          hidesPlaceholderWhenStacked && "@max-lg:placeholder:text-transparent",
         )}
       />
     </div>
@@ -197,6 +201,7 @@ export function VariantTableRow({
         scope="row"
         className={classNames(
           nameCellClasses,
+          "@max-lg:pe-14",
           groupedBy !== null && "ps-7 @max-lg:ps-0",
           !canSelect && "ps-5 @max-lg:ps-0",
         )}
@@ -230,9 +235,14 @@ export function VariantTableRow({
                 ? t("shop.variants.stockAtFor", { location: locationName, name })
                 : t("shop.variants.stockFor", { name })
             }
-            shortLabel={t("shop.variants.column.stock")}
+            shortLabel={
+              variant.inventoryTracked
+                ? t("shop.variants.column.stock")
+                : t("shop.variants.notCounted")
+            }
             inputMode="numeric"
             placeholder={variant.inventoryTracked ? "0" : t("shop.variants.notCounted")}
+            hidesPlaceholderWhenStacked={!variant.inventoryTracked}
             value={stockText(variant, locationId)}
             isInvalid={hasStockProblem}
             describedBy={describedBy}
@@ -362,7 +372,6 @@ export function VariantGroupRow({
         <button
           type="button"
           aria-expanded={isOpen}
-          aria-label={t("shop.variants.showGroup", { name })}
           onClick={onToggleOpen}
           className="flex max-w-full items-center gap-1.5 rounded-control text-start focus-visible:focus-ring"
         >

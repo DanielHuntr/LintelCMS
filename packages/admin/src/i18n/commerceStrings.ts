@@ -142,7 +142,6 @@ export const commerceStrings = {
   "shop.variants.noGrouping": "Don’t group",
   "shop.variants.unnamedOption": "Option {number}",
   "shop.variants.stockLocation": "Stock at",
-  "shop.variants.showGroup": "Show {name}",
   "shop.variants.groupSummary":
     "{count, plural, one {# variant} other {# variants}}, {stock, number} in stock",
   "shop.variants.groupSummaryNotCounted":
