@@ -140,18 +140,14 @@ describe("the content tree", () => {
     expect(document.activeElement).toBe(homeRow);
     await userEvent.keyboard("{ArrowRight}");
 
-    expect(await screen.findByRole("treeitem", { name: "About, Published" })).toBeTruthy();
-    expect(
-      screen.getByRole("treeitem", { name: "Contact, Published, with changes not yet published" }),
-    ).toBeTruthy();
+    expect(await screen.findByRole("treeitem", { name: "About, Live" })).toBeTruthy();
+    expect(screen.getByRole("treeitem", { name: "Contact, Changes not published" })).toBeTruthy();
     expect(
       JSON.parse(window.localStorage.getItem("lintel.contentTree.expanded.main") ?? "[]"),
     ).toEqual(["root:pages", "home"]);
 
     await userEvent.keyboard("{ArrowLeft}");
-    await waitFor(() =>
-      expect(screen.queryByRole("treeitem", { name: "About, Published" })).toBeNull(),
-    );
+    await waitFor(() => expect(screen.queryByRole("treeitem", { name: "About, Live" })).toBeNull());
   });
 
   it("creates under a page from its menu, offering only the allowed content types", async () => {
@@ -186,7 +182,7 @@ describe("the content tree", () => {
     renderScreen(<ContentSection />, editor);
 
     const contactRow = await screen.findByRole("treeitem", { name: /^Contact/ });
-    const aboutRow = await screen.findByRole("treeitem", { name: "About, Published" });
+    const aboutRow = await screen.findByRole("treeitem", { name: "About, Live" });
     const dataTransfer = { setData: () => undefined, effectAllowed: "", dropEffect: "" };
     fireEvent.dragStart(contactRow.firstElementChild as Element, { dataTransfer });
     // jsdom rows have no height, so a drop lands in the middle: inside About.
@@ -257,7 +253,7 @@ describe("the content tree", () => {
     const api = answerTree();
     renderScreen(<ContentSection />, editor);
 
-    const aboutRow = await screen.findByRole("treeitem", { name: "About, Published" });
+    const aboutRow = await screen.findByRole("treeitem", { name: "About, Live" });
     const pages = screen.getByRole("treeitem", { name: "Pages" });
     const dataTransfer = { setData: () => undefined, effectAllowed: "", dropEffect: "" };
     fireEvent.dragStart(aboutRow.firstElementChild as Element, { dataTransfer });
@@ -279,7 +275,7 @@ describe("the content tree", () => {
     const api = answerTree({ addressChanges: [change] });
     renderScreen(<ContentSection />, { initialPath: "/content", enabledPlugins: ["seo"] });
 
-    const aboutRow = await screen.findByRole("treeitem", { name: "About, Published" });
+    const aboutRow = await screen.findByRole("treeitem", { name: "About, Live" });
     const pages = screen.getByRole("treeitem", { name: "Pages" });
     const dataTransfer = { setData: () => undefined, effectAllowed: "", dropEffect: "" };
     fireEvent.dragStart(aboutRow.firstElementChild as Element, { dataTransfer });
@@ -307,7 +303,7 @@ describe("the content tree", () => {
     answerTree({ addressChanges: [change] });
     renderScreen(<ContentSection />, { initialPath: "/content", enabledPlugins: [] });
 
-    const aboutRow = await screen.findByRole("treeitem", { name: "About, Published" });
+    const aboutRow = await screen.findByRole("treeitem", { name: "About, Live" });
     const pages = screen.getByRole("treeitem", { name: "Pages" });
     const dataTransfer = { setData: () => undefined, effectAllowed: "", dropEffect: "" };
     fireEvent.dragStart(aboutRow.firstElementChild as Element, { dataTransfer });
@@ -325,6 +321,7 @@ describe("the content tree", () => {
 
     const homeRow = await screen.findByRole("treeitem", { name: "Home, Draft" });
     fireEvent.contextMenu(homeRow.firstElementChild ?? homeRow);
+    await userEvent.click(await screen.findByRole("menuitem", { name: "More" }));
     await userEvent.click(await screen.findByRole("menuitem", { name: "Hostnames…" }));
 
     const dialog = await screen.findByRole("dialog", { name: "Hostnames for “Home”" });
@@ -373,7 +370,7 @@ describe("the content tree (QA sweep)", () => {
     renderScreen(<ContentSection />, { ...editor, initialPath: "/content/pages" });
 
     expect(await screen.findByRole("treeitem", { name: "Home, Draft" })).toBeTruthy();
-    expect(await screen.findByRole("treeitem", { name: "About, Published" })).toBeTruthy();
+    expect(await screen.findByRole("treeitem", { name: "About, Live" })).toBeTruthy();
   });
 
   it("lists the tree's pages in Move… before anything is typed", async () => {
@@ -381,8 +378,9 @@ describe("the content tree (QA sweep)", () => {
     answerWithEdits();
     renderScreen(<ContentSection />, editor);
 
-    const aboutRow = await screen.findByRole("treeitem", { name: "About, Published" });
+    const aboutRow = await screen.findByRole("treeitem", { name: "About, Live" });
     fireEvent.contextMenu(aboutRow.firstElementChild ?? aboutRow);
+    await userEvent.click(await screen.findByRole("menuitem", { name: "More" }));
     await userEvent.click(await screen.findByRole("menuitem", { name: "Move…" }));
     const dialog = await screen.findByRole("dialog", { name: "Move “About”" });
     await within(dialog).findByRole("radio", { name: /^Home/ });
@@ -396,7 +394,7 @@ describe("the content tree (QA sweep)", () => {
     const api = answerWithEdits();
     renderScreen(<ContentSection />, editor);
 
-    const aboutRow = await screen.findByRole("treeitem", { name: "About, Published" });
+    const aboutRow = await screen.findByRole("treeitem", { name: "About, Live" });
     fireEvent.contextMenu(aboutRow.firstElementChild ?? aboutRow);
     await userEvent.click(await screen.findByRole("menuitem", { name: "Rename…" }));
     const dialog = await screen.findByRole("dialog", { name: "Rename “About”" });

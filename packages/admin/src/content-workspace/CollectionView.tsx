@@ -14,7 +14,7 @@ import type {
   TreeRoot,
 } from "../content-tree/contentTree.types.js";
 import { COLLECTION_PAGE_SIZE, useCollectionItems } from "../content-tree/contentTree.queries.js";
-import { StatusDot } from "../content-tree/StatusDot.js";
+import { StatusMark } from "../content-tree/StatusMark.js";
 import { nodeState } from "../content-tree/treeActions.js";
 import { Button } from "../design/Button.js";
 import { classNames } from "../design/classNames.js";
@@ -301,7 +301,7 @@ export function CollectionView({
                   )}
                   <td className="px-3 py-2">
                     <span className="flex items-center gap-2 text-footnote text-label-secondary">
-                      <StatusDot state={nodeState(row)} />
+                      <StatusMark state={nodeState(row)} isDecorative />
                       {t(`tree.status.${nodeState(row)}`)}
                     </span>
                   </td>
@@ -321,7 +321,7 @@ export function CollectionView({
             <li key={row.id} className="flex flex-col gap-2 rounded-card bg-surface p-4">
               <div className="flex items-center gap-2">
                 <SelectBox row={row} selected={selected} onChange={setSelected} />
-                <StatusDot state={nodeState(row)} />
+                <StatusMark state={nodeState(row)} scheduledFor={row.scheduledFor} />
                 <span className="flex-1" />
                 <span className="text-caption text-label-tertiary">
                   {formatRelativeTime(row.updatedAt, now)}

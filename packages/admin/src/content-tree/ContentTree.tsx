@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { CalendarDays, House, Plus, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState, type DragEvent, type MouseEvent } from "react";
+import { CalendarDays, House, Info, Plus, Trash2 } from "lucide-react";
+import { useEffect, useId, useRef, useState, type DragEvent, type MouseEvent } from "react";
 import { LoadError } from "../api/LoadError.js";
 import { Button } from "../design/Button.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
@@ -13,9 +13,11 @@ import { useContentTree } from "./ContentTreeContext.js";
 import type { TreeRoot } from "./contentTree.types.js";
 import { useTreeChildren, useTreeRoots, useTreeSearch } from "./contentTree.queries.js";
 import { SiteWideSection } from "./SiteWideSection.js";
+import { StatusKey } from "./StatusKey.js";
 import { nodeState } from "./treeActions.js";
 import { TreeActionsMenu } from "./TreeActionsMenu.js";
 import { TreeBranch } from "./TreeBranch.js";
+import { TreeHint } from "./TreeHint.js";
 import { type DropPosition, rootKey, type TreeKey } from "./treeState.js";
 import { iconForContent } from "./typeIcons.js";
 import { TreeRow } from "./TreeRow.js";
@@ -34,6 +36,8 @@ export function ContentTree({ beside }: { beside?: ReactNode } = {}) {
   const topActions = useActionItems({ kind: "top" });
   const canCreate = topActions.length > 0;
   const [topMenuAt, setTopMenuAt] = useState<{ x: number; y: number } | null>(null);
+  const [isKeyOpen, setIsKeyOpen] = useState(false);
+  const keyId = useId();
   const [filter, setFilter] = useState("");
   const search = useDebouncedValue(filter.trim(), 250);
   const [focusedKey, setFocusedKey] = useState<TreeKey | undefined>();
@@ -80,18 +84,33 @@ export function ContentTree({ beside }: { beside?: ReactNode } = {}) {
               <h2 className="px-2 pt-1 pb-1 text-caption font-semibold text-label-secondary uppercase">
                 {t("tree.contentHeading")}
               </h2>
-              {canCreate && (
+              <div className="flex items-center">
                 <button
                   type="button"
-                  aria-label={t("tree.createAtTop")}
-                  title={t("tree.createAtTop")}
-                  onClick={() => tree.runAction("create", { kind: "top" })}
+                  aria-label={t("tree.key.open")}
+                  title={t("tree.key.open")}
+                  aria-expanded={isKeyOpen}
+                  aria-controls={isKeyOpen ? keyId : undefined}
+                  onClick={() => setIsKeyOpen(!isKeyOpen)}
                   className="flex size-6 items-center justify-center rounded-full text-label-secondary hover:bg-fill hover:text-label focus-visible:focus-ring"
                 >
-                  <Plus aria-hidden="true" strokeWidth={2} className="size-4" />
+                  <Info aria-hidden="true" strokeWidth={2} className="size-3.5" />
                 </button>
-              )}
+                {canCreate && (
+                  <button
+                    type="button"
+                    aria-label={t("tree.createAtTop")}
+                    title={t("tree.createAtTop")}
+                    onClick={() => tree.runAction("create", { kind: "top" })}
+                    className="flex size-6 items-center justify-center rounded-full text-label-secondary hover:bg-fill hover:text-label focus-visible:focus-ring"
+                  >
+                    <Plus aria-hidden="true" strokeWidth={2} className="size-4" />
+                  </button>
+                )}
+              </div>
             </div>
+            {isKeyOpen && <StatusKey id={keyId} />}
+            {roots.data.siteStartCount > 0 && <TreeHint canMovePages={tree.canUpdate} />}
             {canCreate &&
               roots.data.siteStartCount === 0 &&
               roots.data.roots.some((root) => root.structure === "tree") && (
@@ -339,6 +358,7 @@ function FilterResults({ search }: { search: string }) {
             isExpandable={false}
             isExpanded={false}
             state={nodeState(node)}
+            scheduledFor={node.scheduledFor}
           />
         ))}
       </ul>

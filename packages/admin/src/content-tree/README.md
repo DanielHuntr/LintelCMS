@@ -17,9 +17,17 @@ is `packages/core/src/content-tree` and `packages/core/src/recycle-bin`.
 - **Sections**: one per collection allowed at the top (page trees first), then "Site-wide"
   (Global settings, Menus, Taxonomies, each a folder) and the Recycle bin at the bottom.
   With more than one site there is a site switcher at the top.
-- **Rows** (`TreeRow.tsx`) show an icon per content type (`typeIcons.ts`), the name and a
-  status dot (`StatusDot.tsx`): solid green published, amber ringed green published with
-  newer changes, hollow draft, accent-coloured scheduled. Rows also say the state to screen readers.
+- **Rows** (`TreeRow.tsx`) show an icon per content type (`typeIcons.ts`), the name and, only
+  for pages that need a second look, a status mark (`StatusMark.tsx`): a pencil for **Changes
+  not published** (live, with newer saved changes), a dashed circle for **Draft**, a clock for
+  **Scheduled**. Live pages have no mark, because that's the usual state. Each mark has its own
+  shape as well as colour, its words as a tooltip and an accessible name, and every row says
+  its state to screen readers, Live included. `nodeState` in `treeActions.ts` decides the state.
+- **The key** (`StatusKey.tsx`): the "i" beside Content opens the four states in words, in the
+  pane, so it can't be cut off.
+- **The first-time hint** (`TreeHint.tsx`): why pages sit under Home and what that does to
+  their addresses, until dismissed in this browser. It leaves out dragging for people who can't
+  move pages. The full story is the help page `using/content-tree`.
 - **Loading**: a branch loads only when opened, 100 rows at a time with "Show more"
   (`TreeBranch.tsx`). Collections and entries whose children are listed in the workspace
   (`childrenAsCollection`) show a count instead of opening.
@@ -33,7 +41,17 @@ is `packages/core/src/content-tree` and `packages/core/src/recycle-bin`.
 ## Actions
 
 The "…" button, a right-click or Shift+F10 opens a row's menu (`TreeActionsMenu.tsx`);
-`treeActions.ts` decides what it offers from the person's permissions and the row.
+`treeActions.ts` decides what it offers from the person's permissions and the row
+(`actionsFor`), and how it's grouped (`menuFor`):
+
+- **Make**: Create, Rename, Duplicate.
+- **Publish**: the one publishing action that applies to the page (Publish, Publish changes or
+  Unpublish), and View page for a live page or Preview for one that isn't.
+- **More** (opens in place): everything else, including the other publishing action, which can
+  still apply to the pages under this one. A lone item isn't folded.
+- **Delete**.
+
+That's seven rows at most before opening More, whatever the page.
 
 | Action                 | What happens                                                                                                               |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |

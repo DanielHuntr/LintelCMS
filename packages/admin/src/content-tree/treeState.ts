@@ -87,6 +87,17 @@ export function useExpandedBranches(siteKey: string) {
   };
 }
 
+const treeHintKey = "lintel.contentTree.hintDismissed";
+
+/** Whether this browser has already closed the first-time note on how the tree works. */
+export function isTreeHintDismissed(): boolean {
+  return readStorage(treeHintKey) === "yes";
+}
+
+export function rememberTreeHintDismissed(): void {
+  writeStorage(treeHintKey, "yes");
+}
+
 /** The pane's width, remembered in this browser. */
 export function useTreeWidth() {
   const storageKey = "lintel.contentTree.width";
