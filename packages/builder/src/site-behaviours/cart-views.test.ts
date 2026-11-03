@@ -108,11 +108,11 @@ describe("the basket page's delivery details", () => {
     expect(choice?.checked).toBe(true);
     expect(choice?.parentElement?.textContent).toBe("Standard, £4.95 (2 to 3 working days)");
     expect(form.querySelector("button[type=submit]")?.textContent).toBe("Pay now");
-    // Said aloud by screen readers, and focus is on the choice (LINTEL-A11Y-002).
+    // Said aloud by screen readers (LINTEL-A11Y-002); focus is checked in a real browser, in
+    // browser-tests/shop-cart-focus.test.ts.
     expect(form.querySelector(".lintel-cart__message")?.textContent).toBe(
       "1 way to deliver. Check it, then choose Pay now.",
     );
-    expect(document.activeElement).toBe(choice);
   });
 
   it("shows the shop's own message when the API refuses", async () => {
