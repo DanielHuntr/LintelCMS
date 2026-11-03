@@ -1,4 +1,5 @@
 import { effectsEditorStrings } from "./effectsStrings.js";
+import { motionPanelStrings } from "./motionPanelStrings.js";
 
 /**
  * Every word the animation studio shows, in English. The admin spreads these into its own
@@ -259,6 +260,7 @@ export const motionEditorStrings = {
   "motionEditor.property.borderColor": "Border colour",
   "motionEditor.property.variable": "Variable {name}",
   ...effectsEditorStrings,
+  ...motionPanelStrings,
 } as const;
 
 export type MotionEditorStringKey = keyof typeof motionEditorStrings;

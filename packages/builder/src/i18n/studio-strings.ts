@@ -6,21 +6,12 @@ export const builderStudioStrings = {
   "pageBuilder.panels.animate": "Animate",
   "pageBuilder.animate.selectSomething":
     "Select something on the page to make it move: a heading, a picture, a whole section.",
-  "pageBuilder.animate.heading": "Animation for {name}",
-  "pageBuilder.animate.remove": "Remove animation",
-  "pageBuilder.animate.playOnPage": "Play on the page",
   "pageBuilder.animate.lockedNote": "This element is locked. Unlock it in Layers to animate it.",
-  "pageBuilder.animate.tip":
-    "Animations play on your published site, when visitors scroll to them, hover or click. People who ask their device for less motion see a gentle fade or nothing at all.",
   "pageBuilder.animate.timelineInDesigner":
     "Want to fine-tune every moment? Switch to Designer to open the timeline.",
   "pageBuilder.history.animated": "Animated {name}",
   "pageBuilder.history.removedAnimation": "Removed the animation from {name}",
   "pageBuilder.history.changedEffects": "Changed the effects on {name}",
-  "pageBuilder.animate.tabs": "Animation or effects",
-  "pageBuilder.animate.tab.animation": "Animation",
-  "pageBuilder.animate.tab.effects": "Effects",
-  "pageBuilder.animate.effectsHeading": "Effects for {name}",
 
   "pageBuilder.skill.label": "Tools to show",
   "pageBuilder.skill.button": "Tools: {level}",

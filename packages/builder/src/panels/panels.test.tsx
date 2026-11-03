@@ -307,6 +307,7 @@ describe("collapsible Content and Animate groups", () => {
     const { preferences } = renderBuilder();
     await select(person, "Hero title");
     await person.click(screen.getByRole("tab", { name: "Animate" }));
+    await person.click(screen.getByRole("button", { name: "Add motion" }));
     await person.click(screen.getByRole("button", { name: /^Fade up/ }));
 
     expect(disclosure("When it plays")).toHaveAttribute("aria-expanded", "true");
