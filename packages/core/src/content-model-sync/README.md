@@ -35,6 +35,15 @@ with their own `fields`, and `fieldset({ fieldset: "seo" })` for a fieldset defi
 `fieldsets/seo.ts`. Fieldset files are read first, and each Fieldset field gets a copy of the
 fieldset's fields, as the admin stores it; the copy is never written back to a file.
 
+Blocks written in code are files in `content-model/blocks/`, named `<handle>.block.ts`
+(`.block.tsx` for a React component, `.block.yaml` for a template in YAML), made with
+`defineBlock` (see src/blocks/README.md). They are read with the fieldsets, before content
+types, so a blocks field's `{ block: "team_card" }` block type gets the block's properties as
+its fields. In the database they are blocks with `source: "code"`, read-only in the admin;
+blocks made in the builder are content and never written to files. A React block's component
+lives only in its file: it is registered when the folder is read, and `pull` leaves its file
+alone. `model types` adds `<Block>BlockProperties` for each, what its component is given.
+
 ## How it fits together
 
 ```text

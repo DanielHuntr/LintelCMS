@@ -118,13 +118,25 @@ function copyIds(node: PageNode, createId: CreateNodeId, newIds: Map<string, str
 
 function retargetAnimations(node: PageNode, newIds: ReadonlyMap<string, string>): PageNode {
   const children = node.children.map((child) => retargetAnimations(child, newIds));
-  const targets = node.animation?.spec.targets;
-  if (!node.animation || targets?.type !== "nodes") return { ...node, children };
-  const spec = {
-    ...node.animation.spec,
-    targets: { ...targets, nodeIds: targets.nodeIds.map((id) => newIds.get(id) ?? id) },
-  };
-  return { ...node, children, animation: { ...node.animation, spec } };
+  node = retargetOwnerStates(node, newIds);
+  if (!node.animations) return { ...node, children };
+  const animations = node.animations.map((animation) => {
+    const targets = animation.spec.targets;
+    const trigger = animation.spec.trigger;
+    let spec = animation.spec;
+    if (targets.type === "nodes") {
+      spec = {
+        ...spec,
+        targets: { ...targets, nodeIds: targets.nodeIds.map((id) => newIds.get(id) ?? id) },
+      };
+    }
+    // A scene step inside the copy follows the copied section, too.
+    if (trigger.type === "scroll" && trigger.follows && newIds.has(trigger.follows)) {
+      spec = { ...spec, trigger: { ...trigger, follows: newIds.get(trigger.follows) } };
+    }
+    return { ...animation, spec };
+  });
+  return { ...node, children, animations };
 }
 
 /** Puts a copy straight after the original and gives back the copy's id. */
@@ -141,4 +153,20 @@ export function duplicateNode(
 
 function clamp(value: number, lowest: number, highest: number): number {
   return Math.min(Math.max(value, lowest), highest);
+}
+
+/**
+ * Styles that follow an owner's state ("while the card is hovered") follow the copied owner
+ * when both are copied, so a copied card's picture grows with the copy, not the original.
+ */
+function retargetOwnerStates(node: PageNode, newIds: ReadonlyMap<string, string>): PageNode {
+  const owners = node.styles.owners;
+  if (!owners) return node;
+  const moved = Object.fromEntries(
+    Object.entries(owners).map(([target, declarations]) => {
+      const [state, ownerId = ""] = target.split("@");
+      return [`${state}@${newIds.get(ownerId) ?? ownerId}`, declarations];
+    }),
+  );
+  return { ...node, styles: { ...node.styles, owners: moved } };
 }

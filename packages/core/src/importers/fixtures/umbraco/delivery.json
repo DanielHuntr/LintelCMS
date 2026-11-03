@@ -1,0 +1,27 @@
+{
+  "total": 2,
+  "items": [
+    {
+      "id": "a0000000-0000-4000-8000-000000000001",
+      "name": "Home",
+      "contentType": "home",
+      "createDate": "2024-01-05T10:00:00Z",
+      "route": {
+        "path": "/",
+        "startItem": { "id": "a0000000-0000-4000-8000-000000000001", "path": "home" }
+      },
+      "properties": { "welcomeText": { "markup": "<p>Hello from the mill.</p>", "blocks": [] } }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000002",
+      "name": "Opening times",
+      "contentType": "contentPage",
+      "createDate": "2024-01-06T10:00:00Z",
+      "route": { "path": "/opening-times/" },
+      "properties": {
+        "bodyText": { "markup": "<p>Daily, nine to five.</p>" },
+        "umbracoNaviHide": false
+      }
+    }
+  ]
+}

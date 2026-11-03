@@ -80,17 +80,17 @@ describe("changing a page tree", () => {
         },
       ],
     });
-    const animated = updateNode(page, "n1", (node) => ({ ...node, animation: { spec } }));
+    const animated = updateNode(page, "n1", (node) => ({ ...node, animations: [{ spec }] }));
 
     const { root } = duplicateNode(animated, "n1", createCountingNodeIds("copy"));
 
     const original = root.children[0] as PageNode;
     const copy = root.children[1] as PageNode;
-    expect(original.animation?.spec.targets).toEqual({
+    expect(original.animations?.[0]?.spec.targets).toEqual({
       type: "nodes",
       nodeIds: ["n2", "n4", "elsewhere"],
     });
-    expect(copy.animation?.spec.targets).toEqual({
+    expect(copy.animations?.[0]?.spec.targets).toEqual({
       type: "nodes",
       nodeIds: ["copy2", "copy4", "elsewhere"],
     });

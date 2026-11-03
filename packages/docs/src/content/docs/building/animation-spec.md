@@ -53,6 +53,11 @@ arrives they show after two seconds anyway.
 
 ## The spec
 
+In a page design, an element keeps its animations as a list, up to six:
+`"animations": [{ "spec": {...}, "presetId": "fade-up" }]`. It can fade up as it appears
+and lift on hover. Pages saved before page version 2 had one, `animation`; they're
+migrated when read.
+
 Times are in milliseconds. Every field except `trigger` and `tracks` has a default, filled
 in by the schema, so a stored spec is always complete.
 
@@ -103,19 +108,23 @@ every time, so previews and pages match).
 
 ### Triggers
 
-| `type`     | Options (defaults)                                           | Plays                                                       |
-| ---------- | ------------------------------------------------------------ | ----------------------------------------------------------- |
-| `load`     |                                                              | As soon as it mounts                                        |
-| `inView`   | `threshold` (0.25), `rootMargin` ("0px"), `onLeave` ("stay") | When that share of it (or of the screen, if taller) shows   |
-| `scroll`   | `scope` ("element"), `start`, `end`, `pin`                   | Follows the scroll position                                 |
-| `hover`    | `onLeave` ("reverse")                                        | While the pointer is over it                                |
-| `click`    | `toggle` (false)                                             | On each click; with `toggle`, alternately forwards and back |
-| `focus`    | `onLeave` ("reverse")                                        | While focus is inside it                                    |
-| `pointer`  | `smoothing` (0.85)                                           | Follows the pointer across the element                      |
-| `event`    | `name` (required), `listenOn` ("document")                   | When `new CustomEvent(name)` is dispatched                  |
-| `pageExit` |                                                              | When `controller.exit()` or `page.exitPage()` is called     |
+| `type`     | Options (defaults)                                                               | Plays                                                       |
+| ---------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `load`     |                                                                                  | As soon as it mounts                                        |
+| `inView`   | `threshold` (0.25), `rootMargin` ("0px"), `onLeave` ("stay")                     | When that share of it (or of the screen, if taller) shows   |
+| `scroll`   | `scope` ("element"), `start`, `end`, `pin`, `smooth`, `snap`, `follows`, `range` | Follows the scroll position                                 |
+| `hover`    | `onLeave` ("reverse")                                                            | While the pointer is over it                                |
+| `click`    | `toggle` (false)                                                                 | On each click; with `toggle`, alternately forwards and back |
+| `focus`    | `onLeave` ("reverse")                                                            | While focus is inside it                                    |
+| `pointer`  | `smoothing` (0.85)                                                               | Follows the pointer across the element                      |
+| `event`    | `name` (required), `listenOn` ("document")                                       | When `new CustomEvent(name)` is dispatched                  |
+| `pageExit` |                                                                                  | When `controller.exit()` or `page.exitPage()` is called     |
 
-`onLeave` is `stay`, `reverse` or `reset`. An `inView` animation only counts as left once
+`onLeave` is `stay`, `reverse` or `reset`. For an action per direction, as on long scroll
+stories, give `actions` instead: `{ "enter": "play", "leave": "none", "enterBack": "none",
+"leaveBack": "reverse" }` plays on the way down and reverses when people scroll back up
+above it. Each is `play`, `reverse`, `restart`, `reset`, `pause`, `resume`, `finish` or
+`none`. An `inView` animation only counts as left once
 it is fully off screen, so it doesn't flicker at the edge.
 
 **Scroll scenes.** `start` and `end` are markers: `{ "element": 0, "viewport": 1 }` means
@@ -124,6 +133,20 @@ element entering at the bottom to leaving at the top. With `scope: "page"` the s
 the whole page, top to bottom. `pin: { "length": 2 }` makes the element two screens taller
 and keeps its first child stuck to the top while the page scrolls through it; the scene
 then runs while it is stuck. Scroll scenes can't repeat.
+
+`smooth` (0 to 2 seconds, 0 by default) makes the scene follow a moment behind the
+scrolling and ease after it, rather than tracking it exactly. `snap` is a list of points in
+the scene, such as `[0, 0.5, 1]`: when scrolling stops, the scene settles on the nearest one,
+so it rests on a step rather than halfway through. Snapping moves the scene, never the page.
+Scenes with either are run by Lintel rather than the browser's own scroll timelines.
+
+**Steps in a scene.** `follows` makes a scroll animation follow another element's scroll,
+by node id, instead of its own: a step in that element's scene. `range` plays it over only
+part of the scene, so several elements can take turns: `{ "follows": "story", "range":
+{ "from": 0.5, "to": 1 } }` plays in the second half of the Story section's scene. The
+markers are read on the followed element, and the followed element holds itself on screen
+if it's pinned. On the website the followed element carries its `data-node-id`, so the step
+can find it.
 
 **Pointer.** Each track says which way it follows with `"input": "x"` or `"y"`: offset 0
 is the element's left (or top) edge and 1 its right (or bottom). When the pointer leaves,

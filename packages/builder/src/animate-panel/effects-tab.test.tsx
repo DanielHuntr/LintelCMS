@@ -106,7 +106,7 @@ describe("the Motion panel", () => {
     await openMotion(user);
     await user.click(screen.getByRole("button", { name: "Add motion" }));
     await user.click(screen.getByRole("button", { name: /^Letters rise/ }));
-    const animation = findNode(latest().root, "n2")?.animation;
+    const animation = findNode(latest().root, "n2")?.animations?.[0];
     expect(animation?.presetId).toBe("letters-rise");
     expect(animation?.spec.targets).toEqual({ type: "text", split: "letters" });
     expect(screen.getByRole("heading", { name: "Letters rise" })).toBeInTheDocument();
@@ -117,6 +117,33 @@ describe("the Motion panel", () => {
         name: "Edit Letters rise",
       }),
     ).toBeInTheDocument();
+  });
+
+  it("keeps several animations on one element: one as it appears, one on hover", async () => {
+    const user = userEvent.setup();
+    const { latest } = renderBuilder();
+    await openMotion(user);
+    await user.click(screen.getByRole("button", { name: "Add motion" }));
+    await user.click(screen.getByRole("button", { name: /^Fade up/ }));
+    await user.click(screen.getByRole("button", { name: "Motion" }));
+    await user.click(screen.getByRole("button", { name: "Add motion" }));
+    await user.click(screen.getByRole("radio", { name: "Hover" }));
+    const hoverGroup = screen.getByRole("region", { name: "Pictures and buttons" });
+    await user.click(within(hoverGroup).getAllByRole("button")[0]!);
+
+    const animations = findNode(latest().root, "n2")?.animations ?? [];
+    expect(animations.map((animation) => animation.spec.trigger.type)).toEqual(["inView", "hover"]);
+    await user.click(screen.getByRole("button", { name: "Motion" }));
+    const list = screen.getByRole("list", { name: "What moves" });
+    expect(within(list).getByRole("button", { name: "Edit Fade up" })).toBeInTheDocument();
+    expect(within(list).getAllByRole("button")).toHaveLength(2);
+
+    // Removing one keeps the other.
+    await user.click(within(list).getByRole("button", { name: "Edit Fade up" }));
+    await user.click(screen.getByRole("button", { name: "Remove “Fade up”" }));
+    expect(findNode(latest().root, "n2")?.animations?.map((a) => a.spec.trigger.type)).toEqual([
+      "hover",
+    ]);
   });
 
   it("offers the site-wide motion settings when nothing is selected", async () => {

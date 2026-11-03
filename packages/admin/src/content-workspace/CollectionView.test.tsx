@@ -136,6 +136,8 @@ describe("the collection view", () => {
       "/recycle-bin/b1/restore",
       "/recycle-bin/b2/restore",
     ]);
+    // Undo puts them back as they were: in their places, and live if they were.
+    expect(restored.map((call) => call.body)).toEqual([{ asBefore: true }, { asBefore: true }]);
   });
 
   it("lists every level with addresses and filters by type", async () => {

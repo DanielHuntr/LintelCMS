@@ -3,6 +3,7 @@ import {
   assignClassNames,
   bindProps,
   compileStylesheet,
+  expandBlockInstances,
   findNode,
   fontPreloads,
   type PageData,
@@ -74,8 +75,10 @@ export function renderPage(
   registry: ComponentRegistry,
   { mode = "site", nodeId, withMotion = false, data = {} }: RenderOptions = {},
 ): RenderedPage {
-  const classNames = assignClassNames(document.root, registry.catalogue);
-  const start = nodeId ? findNode(document.root, nodeId) : document.root;
+  // The site's own blocks are drawn as their design, filled in (see custom-blocks/ in the model).
+  const root = expandBlockInstances(document.root, data);
+  const classNames = assignClassNames(root, registry.catalogue);
+  const start = nodeId ? findNode(root, nodeId) : root;
   if (!start || start.hidden) {
     return {
       html: "",
@@ -105,7 +108,7 @@ export function renderPage(
       />
     </PageDataProvider>,
   );
-  const isWholePage = start.id === document.root.id;
+  const isWholePage = start.id === root.id;
   return {
     html,
     css: [compileStylesheet(start, classNames), effects.css].filter(Boolean).join("\n"),
@@ -169,6 +172,8 @@ function motionMarks(
     mark(nodeId, spec.trigger.type === "load" || spec.trigger.type === "inView");
     if (spec.targets.type === "nodes")
       spec.targets.nodeIds.forEach((target) => mark(target, false));
+    // A scene step finds the element it follows by its id, so that one carries it too.
+    if (spec.trigger.type === "scroll" && spec.trigger.follows) mark(spec.trigger.follows, false);
   }
   effects.forEach(({ nodeId }) => mark(nodeId, false));
   return marks;

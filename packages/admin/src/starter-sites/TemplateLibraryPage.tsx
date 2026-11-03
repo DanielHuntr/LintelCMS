@@ -8,6 +8,7 @@ import { Button, buttonClasses } from "../design/Button.js";
 import { classNames } from "../design/classNames.js";
 import { Dialog } from "../design/Dialog.js";
 import { LargeTitle } from "../design/LargeTitle.js";
+import { LinkButton } from "../design/LinkButton.js";
 import { Toggle } from "../design/Toggle.js";
 import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
@@ -37,7 +38,15 @@ export function TemplateLibraryPage() {
 
   return (
     <>
-      <LargeTitle title={t("templates.title")} subtitle={t("templates.subtitle")} />
+      <LargeTitle
+        title={t("templates.title")}
+        subtitle={t("templates.subtitle")}
+        actions={
+          <LinkButton variant="tinted" to="/design/blocks">
+            {t("blocks.blocksLink")}
+          </LinkButton>
+        }
+      />
       {applied && (
         <AppliedSummary site={applied.site} result={applied.result} siteAddress={siteAddress} />
       )}

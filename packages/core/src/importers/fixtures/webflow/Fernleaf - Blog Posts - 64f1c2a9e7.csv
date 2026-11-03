@@ -1,0 +1,5 @@
+Name,Slug,Collection ID,Item ID,Archived,Draft,Created On,Updated On,Published On,Post body,Main image,Featured,Reading minutes,Category
+Spring sowing,spring-sowing,64f1c2a9e7,item-1,false,false,2024-03-01T09:00:00.000Z,2024-03-01T09:00:00.000Z,2024-03-02T10:00:00.000Z,"<h2>Start small</h2><p>Sow a few seeds <strong>every week</strong>.</p>",{{pictures}}/sowing.png,true,4,Guides
+Tool care,tool-care,64f1c2a9e7,item-2,false,false,2024-04-01T09:00:00.000Z,2024-04-01T09:00:00.000Z,2024-04-02T10:00:00.000Z,<p>Oil your shears.</p>,,false,2,Guides
+Summer plans,summer-plans,64f1c2a9e7,item-3,false,true,2024-05-01T09:00:00.000Z,2024-05-01T09:00:00.000Z,,<p>Coming soon.</p>,,false,3,News
+Old offer,old-offer,64f1c2a9e7,item-4,true,false,2023-01-01T09:00:00.000Z,2023-01-01T09:00:00.000Z,2023-01-02T10:00:00.000Z,<p>Gone.</p>,,false,1,Guides

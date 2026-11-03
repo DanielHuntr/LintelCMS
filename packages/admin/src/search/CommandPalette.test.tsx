@@ -70,6 +70,12 @@ describe("the command palette", () => {
       "true",
     );
 
+    // Next is the action "New entry in Blog posts", then the entry.
+    await userEvent.keyboard("{ArrowDown}");
+    expect(screen.getByRole("option", { name: /New entry in Blog posts/ })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
     await userEvent.keyboard("{ArrowDown}{Enter}");
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/content/posts/p1"));
@@ -86,5 +92,48 @@ describe("the command palette", () => {
     await userEvent.type(await screen.findByRole("combobox"), "zzz");
 
     expect(await screen.findByText("Nothing matches “zzz”.")).toBeInTheDocument();
+  });
+
+  it("offers actions that match, and runs one with Enter", async () => {
+    answerSearches();
+    const { router } = renderScreen(<PaletteWithShortcut />);
+
+    await userEvent.keyboard("{Control>}k{/Control}");
+    const input = await screen.findByRole("combobox", { name: "Search Lintel" });
+    await userEvent.type(input, "new");
+
+    const action = await screen.findByRole("option", { name: "Actions, New entry in Blog posts" });
+    expect(action).toHaveAttribute("aria-selected", "true");
+    expect(input).toHaveAttribute("aria-activedescendant", action.id);
+    await userEvent.keyboard("{Enter}");
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/content/posts/new"));
+  });
+
+  it("switches to dark mode and signs out from the palette", async () => {
+    answerSearches();
+    const signOut = vi.fn();
+    function Palette() {
+      const palette = useCommandPalette();
+      return <CommandPalette open={palette.isOpen} onClose={palette.close} onSignOut={signOut} />;
+    }
+    renderScreen(<Palette />);
+
+    await userEvent.keyboard("{Control>}k{/Control}");
+    await userEvent.type(await screen.findByRole("combobox"), "dark");
+    await userEvent.click(await screen.findByRole("option", { name: /Switch to dark mode/ }));
+    expect(document.documentElement.dataset.colorScheme).toBe("dark");
+
+    await userEvent.keyboard("{Control>}k{/Control}");
+    await userEvent.type(await screen.findByRole("combobox"), "theme");
+    expect(await screen.findByRole("option", { name: /Switch to light mode/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /Match my device/ })).toBeInTheDocument();
+    await userEvent.clear(screen.getByRole("combobox"));
+    await userEvent.type(screen.getByRole("combobox"), "log out");
+    await userEvent.keyboard("{Enter}");
+    expect(signOut).toHaveBeenCalledOnce();
+
+    window.localStorage.clear();
+    delete document.documentElement.dataset.colorScheme;
   });
 });

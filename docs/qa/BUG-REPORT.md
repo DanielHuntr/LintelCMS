@@ -767,6 +767,9 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-022   | P2       | Fixed  | Creating a page and opening one show two different editors; sparkle icons; Publish on an empty new page             |
 | LINTEL-UX-023   | P2       | Fixed  | A page's own header section doesn't replace the site's header (a footer section does), so two navs show             |
 | LINTEL-UX-024   | P2       | Fixed  | Builder: the Animation and Effects tabs feel clunky; people must know which is which                                |     |
+| LINTEL-UX-025   | P2       | Fixed  | Builder: no states like Framer's: a card can't animate its picture on hover; no pressed state; no scroll steps      |
+| LINTEL-UX-026   | P3       | Fixed  | The content tree's note goes after 8 seconds even while hovered or focused, and restarts when the tree re-renders   |
+| LINTEL-UX-027   | P3       | Fixed  | The dashboard's "Add images and files" checks a permission no role has, so Authors who may upload never see it      |
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 

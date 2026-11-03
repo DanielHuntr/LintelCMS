@@ -1,0 +1,6 @@
+# A made-up Statamic site for Lintel's importer tests.
+title: Pages
+route: "{parent_uri}/{slug}"
+structure:
+  root: true
+  max_depth: 3

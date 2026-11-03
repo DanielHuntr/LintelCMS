@@ -12,6 +12,8 @@ describe("pages with new addresses", () => {
     expect(newAddressFor("/settings/content-types")).toBe("/build/content-types");
     expect(newAddressFor("/settings/webhooks/abc")).toBe("/build/webhooks/abc");
     expect(newAddressFor("/settings/security-log")).toBe("/users/activity");
+    // The importers' screens were first made under Settings.
+    expect(newAddressFor("/settings/import/webflow/abc")).toBe("/build/import/webflow/abc");
     // "/settings/site" stays; it isn't "/settings/sites".
     expect(newAddressFor("/settings/site")).toBeNull();
     expect(newAddressFor("/settings/sitesmap")).toBeNull();

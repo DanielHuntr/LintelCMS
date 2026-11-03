@@ -233,4 +233,47 @@ describe("the canvas in a real browser", () => {
     });
     await page.close();
   });
+
+  it("draws a scroll scene's Start and End lines, and moves them by dragging or with the keys", async () => {
+    const { design, photoId } = stage();
+    const page = await openCanvas(design, photoId);
+    await page.evaluate(() =>
+      window.postMessage(
+        {
+          type: "sceneMarkers",
+          markers: { start: 0.8, end: 0.3, startLabel: "Start", endLabel: "End", dragHint: "Drag" },
+        },
+        "*",
+      ),
+    );
+    await page.waitForTimeout(50);
+    const start = page.getByRole("slider", { name: "Start" });
+    expect(await start.boundingBox()).toMatchObject({ y: 640 });
+
+    // Dragged from 80% to 50% of the 800px screen.
+    await page.mouse.move(500, 641);
+    await page.mouse.down();
+    await page.mouse.move(500, 400, { steps: 4 });
+    await page.mouse.up();
+    expect(await lastMessage(page, "sceneMarker")).toEqual({
+      type: "sceneMarker",
+      which: "start",
+      viewport: 0.5,
+    });
+
+    // The arrow keys move a line 1% at a time.
+    await page.getByRole("slider", { name: "End" }).focus();
+    await page.keyboard.press("ArrowDown");
+    expect(await lastMessage(page, "sceneMarker")).toEqual({
+      type: "sceneMarker",
+      which: "end",
+      viewport: 0.31,
+    });
+
+    // Null takes them away.
+    await page.evaluate(() => window.postMessage({ type: "sceneMarkers", markers: null }, "*"));
+    await page.waitForTimeout(50);
+    expect(await page.getByRole("slider").count()).toBe(0);
+    await page.close();
+  });
 });

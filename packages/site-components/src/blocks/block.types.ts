@@ -46,9 +46,21 @@ export interface FaqBlock {
   answer: string;
 }
 
-export type SiteBlock = HeroBlock | TextBlock | ImageBlock | CallToActionBlock | FaqBlock;
+/**
+ * One of the site's own blocks (made in the builder or in code), already drawn by the
+ * builder's renderer on the server, with the stylesheet its design needs.
+ */
+export interface DesignedBlock {
+  type: "design";
+  id: string;
+  html: string;
+  css: string;
+}
 
-export type SiteBlockType = SiteBlock["type"];
+export type SiteBlock =
+  HeroBlock | TextBlock | ImageBlock | CallToActionBlock | FaqBlock | DesignedBlock;
+
+export type SiteBlockType = Exclude<SiteBlock, DesignedBlock>["type"];
 
 export const siteBlockTypes: readonly SiteBlockType[] = [
   "hero",

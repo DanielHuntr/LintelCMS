@@ -1,0 +1,13 @@
+@import url("https://fonts.example/fernleaf.css");
+.hero {
+  padding: 64px 24px;
+  background: #eef5e9;
+}
+.hero-heading {
+  font-size: 48px;
+}
+.button {
+  background: #2f6b3a;
+  color: #fff;
+  padding: 12px 20px;
+}

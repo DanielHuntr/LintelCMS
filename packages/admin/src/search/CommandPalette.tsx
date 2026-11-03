@@ -1,12 +1,18 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Search, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type RefObject } from "react";
+import {
+  chooseColorScheme,
+  currentColorScheme,
+  readColorSchemeChoice,
+} from "../appearance/colorScheme.js";
 import { useCollections } from "../content/content.queries.js";
 import { classNames } from "../design/classNames.js";
 import { useBackdropClose } from "../design/useBackdropClose.js";
 import { t } from "../i18n/strings.js";
 import { useDebouncedValue } from "../media/useDebouncedValue.js";
 import { useSession } from "../session/SessionContext.js";
+import { inPaletteOrder, matchingActions, type PaletteAction } from "./paletteActions.js";
 import {
   matchingPages,
   resultItems,
@@ -20,6 +26,7 @@ import { useSearchResults } from "./search.queries.js";
 const SEARCH_DELAY_MILLISECONDS = 150;
 
 const groupLabels: Record<PaletteGroup, Parameters<typeof t>[0]> = {
+  actions: "search.group.actions",
   pages: "search.group.pages",
   entries: "search.group.entries",
   media: "search.group.media",
@@ -28,17 +35,20 @@ const groupLabels: Record<PaletteGroup, Parameters<typeof t>[0]> = {
 interface CommandPaletteProps {
   open: boolean;
   onClose: () => void;
+  /** For the "Sign out" action; without it, the action isn't offered. */
+  onSignOut?: () => void;
 }
 
 /**
  * One search for the whole admin, opened with Cmd/Ctrl+K or the sidebar's Search button,
- * like Spotlight. It lists the admin's own pages straight away and entries and media from
- * the API as they arrive, only ever what the signed-in person may see.
+ * like Spotlight. It lists actions ("New page", "Sign out") and the admin's own pages
+ * straight away, and entries and media from the API as they arrive, only ever what the
+ * signed-in person may see and do.
  *
  * It follows the ARIA combobox pattern: focus stays in the text box, the arrow keys move
  * through the options (`aria-activedescendant`), Enter opens one and Escape closes.
  */
-export function CommandPalette({ open, onClose }: CommandPaletteProps) {
+export function CommandPalette({ open, onClose, onSignOut }: CommandPaletteProps) {
   const dialogElement = useRef<HTMLDialogElement>(null);
   const backdrop = useBackdropClose(onClose);
   const input = useRef<HTMLInputElement>(null);
@@ -71,7 +81,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
         "motion-safe:transition-[opacity,scale] motion-safe:duration-150 motion-safe:ease-standard motion-safe:starting:scale-[0.98] starting:opacity-0",
       )}
     >
-      <PaletteContents inputRef={input} onClose={onClose} />
+      <PaletteContents inputRef={input} onClose={onClose} onSignOut={onSignOut} />
     </dialog>
   );
 }
@@ -79,9 +89,11 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 function PaletteContents({
   inputRef,
   onClose,
+  onSignOut,
 }: {
   inputRef: RefObject<HTMLInputElement | null>;
   onClose: () => void;
+  onSignOut: (() => void) | undefined;
 }) {
   const session = useSession();
   const navigate = useNavigate();
@@ -95,16 +107,25 @@ function PaletteContents({
   const optionId = (index: number) => `${listboxId}-option-${index}`;
 
   const hasQuery = query.trim() !== "";
+  const context = {
+    permissions: session.permissions,
+    enabledPlugins: session.enabledPlugins,
+    collections: collections.data ?? [],
+  };
+  const schemeChoice = readColorSchemeChoice();
+  const actions = hasQuery
+    ? matchingActions(query, {
+        ...context,
+        colorScheme: { choice: schemeChoice, current: currentColorScheme(schemeChoice) },
+      }).filter((item) => onSignOut || !isSignOut(item))
+    : [];
   const items: PaletteItem[] = hasQuery
-    ? [
-        ...matchingPages(query, {
-          permissions: session.permissions,
-          enabledPlugins: session.enabledPlugins,
-          collections: collections.data ?? [],
-        }),
+    ? inPaletteOrder(
+        matchingPages(query, context),
+        actions,
         // Results for an older query stay until the new ones arrive, but only while typing on.
-        ...(search.data && settledQuery.trim() !== "" ? resultItems(search.data) : []),
-      ]
+        search.data && settledQuery.trim() !== "" ? resultItems(search.data) : [],
+      )
     : [];
   const active = Math.min(activeIndex, Math.max(items.length - 1, 0));
   const isSearching = hasQuery && (search.isFetching || settledQuery !== query);
@@ -118,6 +139,8 @@ function PaletteContents({
         to: "/content/$collection",
         params: { collection: target.collectionHandle },
       });
+    } else if (target.kind === "action") {
+      run(target.action);
     } else if (target.kind === "entry") {
       void navigate({
         to: "/content/$collection/$entryId",
@@ -125,6 +148,24 @@ function PaletteContents({
       });
     } else {
       void navigate({ to: "/media", search: { asset: target.assetId, search: target.filename } });
+    }
+  }
+
+  function run(action: PaletteAction) {
+    if (action.kind === "newEntry") {
+      void navigate({
+        to: "/content/$collection/$entryId",
+        params: { collection: action.collectionHandle, entryId: "new" },
+        search: {},
+      });
+    } else if (action.kind === "upload") {
+      void navigate({ to: "/media", search: { upload: true } });
+    } else if (action.kind === "invite") {
+      void navigate({ to: "/users", search: { invite: true } });
+    } else if (action.kind === "colorScheme") {
+      chooseColorScheme(action.choice);
+    } else {
+      onSignOut?.();
     }
   }
 
@@ -310,4 +351,8 @@ function PaletteOption({
       </li>
     </>
   );
+}
+
+function isSignOut(item: PaletteItem): boolean {
+  return item.target.kind === "action" && item.target.action.kind === "signOut";
 }

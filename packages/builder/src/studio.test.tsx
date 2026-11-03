@@ -68,12 +68,12 @@ describe("animating in the builder", () => {
     await user.click(screen.getByRole("button", { name: "Add motion" }));
     await user.click(screen.getByRole("button", { name: /^Fade up/ }));
     const animated = findNode(latest().root, "n2");
-    expect(animated?.animation?.presetId).toBe("fade-up");
-    expect(animated?.animation?.spec.trigger.type).toBe("inView");
+    expect(animated?.animations?.[0]?.presetId).toBe("fade-up");
+    expect(animated?.animations?.[0]?.spec.trigger.type).toBe("inView");
     expect(screen.getByRole("status")).toHaveTextContent("");
 
     await user.click(screen.getByRole("button", { name: "Remove “Fade up”" }));
-    expect(findNode(latest().root, "n2")?.animation).toBeUndefined();
+    expect(findNode(latest().root, "n2")?.animations).toBeUndefined();
     expect(screen.getByRole("status")).toHaveTextContent("Removed the animation from Title");
   });
 
@@ -84,9 +84,9 @@ describe("animating in the builder", () => {
     await user.click(screen.getByRole("tab", { name: "Animate" }));
     await user.click(screen.getByRole("button", { name: "Add motion" }));
     await user.click(screen.getByRole("button", { name: /^Pop in/ }));
-    expect(findNode(latest().root, "n2")?.animation?.presetId).toBe("pop-in");
+    expect(findNode(latest().root, "n2")?.animations?.[0]?.presetId).toBe("pop-in");
     await user.click(screen.getByRole("button", { name: "Undo: Animated Title" }));
-    expect(findNode(latest().root, "n2")?.animation).toBeUndefined();
+    expect(findNode(latest().root, "n2")?.animations).toBeUndefined();
   });
 
   // Ctrl+Z did nothing with focus on a tab, or on the page after clicking empty space.
@@ -100,12 +100,12 @@ describe("animating in the builder", () => {
 
     screen.getByRole("tab", { name: "Animate" }).focus();
     await user.keyboard("{Control>}z{/Control}");
-    expect(findNode(latest().root, "n2")?.animation).toBeUndefined();
+    expect(findNode(latest().root, "n2")?.animations).toBeUndefined();
 
     (document.activeElement as HTMLElement | null)?.blur();
     expect(document.activeElement).toBe(document.body);
     await user.keyboard("{Control>}{Shift>}z{/Shift}{/Control}");
-    expect(findNode(latest().root, "n2")?.animation?.presetId).toBe("pop-in");
+    expect(findNode(latest().root, "n2")?.animations?.[0]?.presetId).toBe("pop-in");
   });
 });
 

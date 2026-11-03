@@ -43,6 +43,14 @@ export interface BinnedEntry {
   slug: string;
   data: Record<string, unknown>;
   sortOrder: number;
+  /**
+   * Whether it was live, and what was, so Undo can put it back exactly as it was. Missing in
+   * items binned before; those come back as drafts.
+   */
+  status?: "draft" | "published" | "scheduled";
+  publishedAt?: string | null;
+  publishedData?: Record<string, unknown> | null;
+  scheduledFor?: string | null;
   createdBy: string | null;
   updatedBy: string | null;
   createdAt: string;

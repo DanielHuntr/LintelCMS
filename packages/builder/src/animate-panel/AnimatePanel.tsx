@@ -18,7 +18,7 @@ interface AnimatePanelProps {
   showsTimeline: boolean;
   /** The app's words for the studio; English when left out. */
   motionText?: MotionText;
-  onChange: (animation: NodeAnimation | null) => void;
+  onChange: (animations: NodeAnimation[]) => void;
   onChangeEffects: (effects: NodeEffect[]) => void;
   /** Plays a spec on the element on the canvas. */
   onPreview: (spec: MotionSpec) => void;
@@ -29,6 +29,8 @@ interface AnimatePanelProps {
   /** The whole page's effects added up. */
   pageWeight?: PageWeight;
   tips: { isDismissed: (tip: string) => boolean; dismiss: (tip: string) => void };
+  /** Elements around this one whose scroll scenes it can be a step of, nearest first. */
+  sceneElements?: ReadonlyArray<{ id: string; name: string }>;
 }
 
 /**
@@ -48,6 +50,7 @@ export function AnimatePanel({
   onPreview,
   onPreviewEffect,
   pageWeight,
+  sceneElements,
 }: AnimatePanelProps) {
   const text = useBuilderText();
   // Simple's groups (when it plays, timing, less motion), remembered like the Style panel's.
@@ -69,10 +72,10 @@ export function AnimatePanel({
       <MotionPanel
         key={node.id}
         name={name}
-        animation={node.animation ?? null}
+        animations={node.animations ?? []}
         effects={node.effects ?? []}
         elementKind={elementKindOf(node.type)}
-        onChangeAnimation={onChange}
+        onChangeAnimations={onChange}
         onChangeEffects={onChangeEffects}
         onPreviewSpec={onPreview}
         onPreviewEffect={(definition, props) => {
@@ -88,6 +91,7 @@ export function AnimatePanel({
         showsTimeline={showsTimeline}
         timelineNote={text("pageBuilder.animate.timelineInDesigner")}
         pageWeight={pageWeight}
+        sceneElements={sceneElements}
         openGroups={openGroups}
         translate={motionText}
       />

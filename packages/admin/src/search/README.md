@@ -8,6 +8,15 @@ and Linux) or the Search button at the top of the sidebar. It is mounted once, i
   person may see (`visibleSections`), settings screens that aren't in the sidebar, and each
   collection. `paletteItems.ts` holds that list and the matching (every word typed has to
   start a word: "con ty" finds "Content types").
+- "Actions" lists things to do that match what was typed (`paletteActions.ts`): "New page",
+  "New entry in <collection>", "Upload media", "Open Settings", "Open Build", "Invite
+  someone", "Switch to dark mode" (or light, and "Match my device’s light or dark setting"
+  once someone chose) and "Sign out". Each has a few other words it answers to ("log out",
+  "theme"), and shows only when the person may do it, by the same permissions as the screens
+  it leads to. Upload and Invite open their screens with `?upload=true` and `?invite=true`,
+  which open the file chooser and the invitation straight away. The scheme is
+  `src/appearance`. Rows come in this order: places to go, actions, then content and media;
+  a "Go to" row that leads where an action does ("Settings") is left out.
 - Content and Media come from `GET /search` (core's `src/search`), asked for 150ms after
   typing pauses. The API only searches what the person may see.
 - Picking an entry opens the editor; picking a file opens it in the media library

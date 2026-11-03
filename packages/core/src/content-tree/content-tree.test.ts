@@ -331,6 +331,11 @@ describe("the content tree", () => {
       "Our team",
       "About us",
     ]);
+    // Each with its address, for the admin's page picker.
+    expect(search.json().items.map((item: { url: string | null }) => item.url)).toEqual([
+      "/about-us/our-team",
+      "/about-us",
+    ]);
     expect(path.json().path.map((step: { title: string }) => step.title)).toEqual([
       "Home",
       "About us",

@@ -10,6 +10,32 @@ export const leaveBehaviourSchema = z.enum(["stay", "reverse", "reset"]);
 
 export const loadTriggerSchema = z.object({ type: z.literal("load") });
 
+/** What an animation does at one moment of scrolling past it. */
+export const scrollActionSchema = z.enum([
+  "play",
+  "reverse",
+  "restart",
+  "reset",
+  "pause",
+  "resume",
+  "finish",
+  "none",
+]);
+export type ScrollAction = z.infer<typeof scrollActionSchema>;
+
+/**
+ * An action for each moment: scrolling down into view (`enter`), on past it (`leave`), back
+ * up into view (`enterBack`) and back up past it (`leaveBack`). Like `onLeave`, but telling
+ * the directions apart: "play on the way down, reverse on the way back up".
+ */
+export const scrollActionsSchema = z.object({
+  enter: scrollActionSchema.default("play"),
+  leave: scrollActionSchema.default("none"),
+  enterBack: scrollActionSchema.default("none"),
+  leaveBack: scrollActionSchema.default("none"),
+});
+export type ScrollActions = z.infer<typeof scrollActionsSchema>;
+
 export const inViewTriggerSchema = z.object({
   type: z.literal("inView"),
   /** How much of the element (or of the screen, for tall elements) must show: 0 to 1. */
@@ -21,6 +47,8 @@ export const inViewTriggerSchema = z.object({
     .default("0px"),
   /** "stay" plays once; "reverse" plays backwards when it scrolls away; "reset" rewinds. */
   onLeave: leaveBehaviourSchema.default("stay"),
+  /** An action per direction; when set, it's used instead of `onLeave`. */
+  actions: scrollActionsSchema.optional(),
 });
 
 /**
@@ -44,6 +72,31 @@ export const scrollTriggerSchema = z.object({
    * and sideways-scrolling sections. `length` is how long the hold lasts, in screen heights.
    */
   pin: z.object({ length: z.number().min(0.25).max(10) }).optional(),
+  /**
+   * How far behind the scrolling the scene follows, in seconds: 0 follows exactly, 0.5 eases
+   * after it softly. Smoothed scenes are run by Lintel rather than the browser's timelines.
+   */
+  smooth: z.number().min(0).max(2).default(0),
+  /**
+   * Points in the scene (0 to 1) it settles on when scrolling stops, so it rests on a step,
+   * not halfway through one. It moves the scene, never the page, so people keep control of
+   * their scrolling.
+   */
+  snap: z.array(z.number().min(0).max(1)).min(1).max(20).optional(),
+  /**
+   * Follows another element's scroll instead of its own, by node id: a step in a scene, such
+   * as a title sliding in while the section around it is held on screen. Its `start` and `end`
+   * markers are read on that element.
+   */
+  follows: z
+    .string()
+    .regex(/^[A-Za-z0-9_-]{1,64}$/, { error: "Follow an element by its id" })
+    .optional(),
+  /** Plays over only this part of the scene (0 to 1): `{ from: 0.4, to: 1 }`, a later step. */
+  range: z
+    .object({ from: z.number().min(0).max(1), to: z.number().min(0).max(1) })
+    .refine((range) => range.to > range.from, { error: "A step should end after it starts" })
+    .optional(),
 });
 
 export const hoverTriggerSchema = z.object({

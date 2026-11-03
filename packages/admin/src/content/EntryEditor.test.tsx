@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { apiErrorResponse, mockApi } from "../testing/mockApi.js";
 import { renderScreen } from "../testing/renderScreen.js";
+import { ToastProvider } from "../design/Toast.js";
 import { EntryEditor } from "./EntryEditor.js";
 import { postBlueprint, postsCollection, samplePost } from "./testEntries.js";
 
@@ -207,6 +208,47 @@ describe("EntryEditor", () => {
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/content/posts/p2"));
     expect(api.calls.some(({ url }) => url.pathname === "/entries/p1/duplicate")).toBe(true);
+  });
+
+  it("moves the entry to the recycle bin, back to the list, and reopens it on Undo", async () => {
+    const api = mockApi(({ method, url }) => {
+      if (method === "POST" && url.pathname === "/content-tree/entries/p1/recycle") {
+        return { itemId: "b1", entryIds: ["p1"] };
+      }
+      if (method === "POST" && url.pathname === "/recycle-bin/b1/restore") {
+        return { entryId: "p1", parentId: null, restoredCount: 1 };
+      }
+      if (url.pathname === "/collections") return { collections: [] };
+      return { revisions: [] };
+    });
+    const { router } = renderScreen(
+      <ToastProvider>
+        <EntryEditor
+          collection={postsCollection}
+          blueprint={postBlueprint}
+          initialEntry={samplePost()}
+          onCreated={() => undefined}
+        />
+      </ToastProvider>,
+      { initialPath: "/content/posts/p1" },
+    );
+    await screen.findByRole("textbox", { name: "Title" });
+
+    await userEvent.click(screen.getByRole("button", { name: "More actions" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Delete" }));
+    const confirm = screen.getByRole("alertdialog", { name: "Delete “Hello world”?" });
+    expect(confirm).toHaveAccessibleDescription(/goes to the recycle bin/);
+    await userEvent.click(within(confirm).getByRole("button", { name: "Move to recycle bin" }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/content/posts"));
+    await screen.findByText("Moved “Hello world” to the recycle bin.");
+    expect(api.calls.some(({ method }) => method === "DELETE")).toBe(false);
+    await userEvent.click(screen.getByRole("button", { name: "Undo" }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/content/posts/p1"));
+    expect(api.calls.find(({ url }) => url.pathname.endsWith("/restore"))?.body).toEqual({
+      asBefore: true,
+    });
   });
 
   it("leaves Duplicate out for people who can't create entries", async () => {

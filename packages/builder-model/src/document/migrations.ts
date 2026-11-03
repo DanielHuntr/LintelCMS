@@ -6,11 +6,7 @@ import { pageDocumentVersion } from "./page-document.schema.js";
  * the new one. Pages are migrated when they are read, so nothing has to rewrite the database,
  * and a page saved again is stored in the newest shape.
  *
- * Version 1 is the first shape, so there is nothing to migrate yet. A future migration looks
- * like this:
- *
- *   { from: 1, to: 2, describe: "Spacing moved from props into styles",
- *     migrate: (page) => ({ ...page, version: 2, root: moveSpacing(page.root) }) }
+ * Version 2: an element can have several animations, so `animation` became `animations`.
  */
 export interface DocumentMigration {
   from: number;
@@ -20,7 +16,25 @@ export interface DocumentMigration {
   migrate: (document: Record<string, unknown>) => Record<string, unknown>;
 }
 
-export const documentMigrations: readonly DocumentMigration[] = [];
+export const documentMigrations: readonly DocumentMigration[] = [
+  {
+    from: 1,
+    to: 2,
+    describe: "An element's one animation became a list of animations",
+    migrate: (page) => ({ ...page, version: 2, root: listAnimations(page.root) }),
+  },
+];
+
+/** `animation: {...}` on every node becomes `animations: [{...}]`. */
+function listAnimations(node: unknown): unknown {
+  if (!isRecord(node)) return node;
+  const { animation, children, ...rest } = node;
+  return {
+    ...rest,
+    ...(animation !== undefined ? { animations: [animation] } : {}),
+    ...(Array.isArray(children) ? { children: children.map(listAnimations) } : {}),
+  };
+}
 
 export class UnknownPageVersionError extends Error {
   constructor(version: unknown) {

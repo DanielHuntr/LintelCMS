@@ -1,6 +1,8 @@
 import { XMLParser, XMLValidator } from "fast-xml-parser";
 import { decodeEntities } from "./wordpress-content.js";
 import { NotAWordPressExportError } from "./wordpress-import.errors.js";
+import { readWooCommerceProducts, type WooCommerceProduct } from "./woocommerce-reader.js";
+import { nodes, readMeta, termSlugsIn, text, type XmlNode } from "./wxr-nodes.js";
 
 /**
  * Reads a WordPress export file (WXR: "WordPress eXtended RSS", made by Tools → Export in
@@ -43,6 +45,34 @@ export interface WordPressItem {
   attachmentUrl: string | null;
   /** An attachment's alternative text, for people who can't see the image. */
   altText: string;
+  /**
+   * The post's own custom fields (from plugins such as Advanced Custom Fields), by key.
+   * WordPress's hidden ones, whose keys start with "_", are left out.
+   */
+  customFields: Record<string, string>;
+  /** The custom fields Advanced Custom Fields made (it keeps a "_key" twin for each). */
+  acfKeys: string[];
+}
+
+/** One link in a WordPress menu (Appearance → Menus). */
+export interface WordPressMenuLink {
+  id: string;
+  /** The link this one sits under in the menu, or "0" at the top. */
+  parentId: string;
+  order: number;
+  /** Empty when the link uses the linked page's own title. */
+  label: string;
+  /** "post_type" for a page or post, "custom" for a typed address, "taxonomy" for a category. */
+  linkType: string;
+  /** The id of the page or post it links to, for "post_type" links. */
+  linkedId: string;
+  url: string;
+}
+
+export interface WordPressMenu {
+  slug: string;
+  name: string;
+  links: WordPressMenuLink[];
 }
 
 export interface WordPressSite {
@@ -53,11 +83,11 @@ export interface WordPressSite {
   categories: WordPressTerm[];
   tags: WordPressTerm[];
   items: WordPressItem[];
-  /** Menus, revisions, custom post types and the like: counted, not imported. */
+  menus: WordPressMenu[];
+  products: WooCommerceProduct[];
+  /** Revisions, custom post types and the like: counted, not imported. */
   ignoredItemTypes: Record<string, number>;
 }
-
-type XmlNode = Record<string, unknown>;
 
 const parser = new XMLParser({
   ignoreAttributes: false,
@@ -68,7 +98,9 @@ const parser = new XMLParser({
   processEntities: true,
   htmlEntities: true,
   isArray: (name) =>
-    ["item", "wp:author", "wp:category", "wp:tag", "category", "wp:postmeta"].includes(name),
+    ["item", "wp:author", "wp:category", "wp:tag", "wp:term", "category", "wp:postmeta"].includes(
+      name,
+    ),
 });
 
 export function parseWordPressExport(xml: string): WordPressSite {
@@ -83,10 +115,19 @@ export function parseWordPressExport(xml: string): WordPressSite {
 
   const ignoredItemTypes: Record<string, number> = {};
   const items: WordPressItem[] = [];
+  const menuLinks: XmlNode[] = [];
+  const productNodes: XmlNode[] = [];
+  const variationNodes: XmlNode[] = [];
   for (const node of nodes(channel.item)) {
     const type = text(node["wp:post_type"]);
     if ((wordpressItemTypes as readonly string[]).includes(type)) {
       items.push(readItem(node, type as WordPressItemType));
+    } else if (type === "nav_menu_item") {
+      menuLinks.push(node);
+    } else if (type === "product") {
+      productNodes.push(node);
+    } else if (type === "product_variation") {
+      variationNodes.push(node);
     } else {
       ignoredItemTypes[type || "unknown"] = (ignoredItemTypes[type || "unknown"] ?? 0) + 1;
     }
@@ -113,22 +154,15 @@ export function parseWordPressExport(xml: string): WordPressSite {
       parentSlug: "",
     })),
     items,
+    menus: readMenus(nodes(channel["wp:term"]), menuLinks),
+    products: readWooCommerceProducts(productNodes, variationNodes),
     ignoredItemTypes,
   };
 }
 
 function readItem(node: XmlNode, type: WordPressItemType): WordPressItem {
-  const categories = nodes(node.category);
-  const meta = new Map(
-    nodes(node["wp:postmeta"]).map((entry) => [
-      text(entry["wp:meta_key"]),
-      text(entry["wp:meta_value"]),
-    ]),
-  );
-  const slugsIn = (domain: string) =>
-    categories
-      .filter((category) => category["@_domain"] === domain)
-      .map((category) => text(category["@_nicename"]));
+  const meta = readMeta(node);
+  const slugsIn = (domain: string) => termSlugsIn(node, domain);
 
   return {
     id: text(node["wp:post_id"]),
@@ -148,7 +182,45 @@ function readItem(node: XmlNode, type: WordPressItemType): WordPressItem {
     featuredImageId: meta.get("_thumbnail_id") || null,
     attachmentUrl: text(node["wp:attachment_url"]) || null,
     altText: meta.get("_wp_attachment_image_alt") ?? "",
+    customFields: Object.fromEntries(
+      [...meta].filter(([key]) => key !== "" && !key.startsWith("_")),
+    ),
+    acfKeys: [...meta]
+      .filter(([key, value]) => key.startsWith("_") && value.startsWith("field_"))
+      .map(([key]) => key.slice(1)),
   };
+}
+
+/**
+ * Menus are "nav_menu" terms; each link is a nav_menu_item post that names its menu the
+ * way a post names its category, with what it links to in its hidden fields.
+ */
+function readMenus(terms: XmlNode[], links: XmlNode[]): WordPressMenu[] {
+  const menus = new Map<string, WordPressMenu>();
+  for (const term of terms) {
+    if (text(term["wp:term_taxonomy"]) !== "nav_menu") {
+      continue;
+    }
+    const slug = text(term["wp:term_slug"]);
+    menus.set(slug, { slug, name: decodeEntities(text(term["wp:term_name"])) || slug, links: [] });
+  }
+  for (const node of links) {
+    const meta = readMeta(node);
+    for (const slug of termSlugsIn(node, "nav_menu")) {
+      const menu = menus.get(slug) ?? { slug, name: slug, links: [] };
+      menus.set(slug, menu);
+      menu.links.push({
+        id: text(node["wp:post_id"]),
+        parentId: meta.get("_menu_item_menu_item_parent") || "0",
+        order: Number.parseInt(text(node["wp:menu_order"]) || "0", 10) || 0,
+        label: decodeEntities(text(node.title)),
+        linkType: meta.get("_menu_item_type") ?? "custom",
+        linkedId: meta.get("_menu_item_object_id") ?? "",
+        url: meta.get("_menu_item_url") ?? "",
+      });
+    }
+  }
+  return [...menus.values()];
 }
 
 /** "2024-03-02 10:30:00" in UTC; WordPress writes "0000-00-00 00:00:00" for never. */
@@ -158,23 +230,4 @@ function readDate(value: string): string | null {
   }
   const date = new Date(`${value.replace(" ", "T")}Z`);
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
-}
-
-function nodes(value: unknown): XmlNode[] {
-  return Array.isArray(value)
-    ? value.filter((item): item is XmlNode => typeof item === "object" && item !== null)
-    : [];
-}
-
-function text(value: unknown): string {
-  if (typeof value === "string") {
-    return value;
-  }
-  if (typeof value === "number") {
-    return String(value);
-  }
-  if (typeof value === "object" && value !== null && "#text" in value) {
-    return text((value as XmlNode)["#text"]);
-  }
-  return "";
 }

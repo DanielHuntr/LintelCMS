@@ -420,6 +420,90 @@ export function runCanvasFrame(snap: typeof snapBox): void {
     send({ type: "insertDrop" });
   });
 
+  // A scroll scene's Start and End lines: fixed to the screen, dragged up and down (or moved
+  // with the arrow keys), each move sent to the builder once per frame.
+  const sceneLayer = document.createElement("div");
+  sceneLayer.id = "lintel-scene";
+  document.body.appendChild(sceneLayer);
+  // While a line is dragged, the builder's echo of each move doesn't redraw it.
+  let sceneDragging = false;
+  function drawSceneMarkers(
+    markers: {
+      start: number;
+      end: number;
+      startLabel: string;
+      endLabel: string;
+      dragHint: string;
+    } | null,
+  ) {
+    const focused = sceneLayer.contains(document.activeElement)
+      ? (document.activeElement as HTMLElement).dataset.which
+      : undefined;
+    sceneLayer.replaceChildren();
+    if (!markers) return;
+    for (const which of ["start", "end"] as const) {
+      const line = document.createElement("div");
+      line.className = "lintel-scene-line lintel-scene-line--" + which;
+      line.tabIndex = 0;
+      line.dataset.which = which;
+      line.setAttribute("role", "slider");
+      line.setAttribute("aria-orientation", "vertical");
+      const label = which === "start" ? markers.startLabel : markers.endLabel;
+      line.setAttribute("aria-label", label);
+      line.setAttribute("aria-description", markers.dragHint);
+      let at = markers[which];
+      const place = () => {
+        line.style.top = (at * 100).toFixed(2) + "%";
+        line.setAttribute("aria-valuenow", String(Math.round(at * 100)));
+        line.setAttribute("aria-valuetext", Math.round(at * 100) + "%");
+      };
+      place();
+      const tag = document.createElement("span");
+      tag.textContent = label;
+      line.appendChild(tag);
+      let frame = 0;
+      const report = () => {
+        if (frame) return;
+        frame = requestAnimationFrame(() => {
+          frame = 0;
+          send({ type: "sceneMarker", which, viewport: Math.round(at * 1000) / 1000 });
+        });
+      };
+      const moveTo = (value: number) => {
+        at = Math.min(0.98, Math.max(0.02, value));
+        place();
+        report();
+      };
+      line.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        line.setPointerCapture(event.pointerId);
+        sceneDragging = true;
+        const move = (moved: PointerEvent) => moveTo(moved.clientY / window.innerHeight);
+        line.addEventListener("pointermove", move);
+        line.addEventListener(
+          "pointerup",
+          () => {
+            line.removeEventListener("pointermove", move);
+            sceneDragging = false;
+          },
+          { once: true },
+        );
+      });
+      line.addEventListener("click", (event) => event.stopPropagation());
+      line.addEventListener("keydown", (event) => {
+        const step = event.shiftKey ? 0.1 : 0.01;
+        if (event.key === "ArrowUp") moveTo(at - step);
+        else if (event.key === "ArrowDown") moveTo(at + step);
+        else return;
+        event.preventDefault();
+        event.stopPropagation();
+      });
+      sceneLayer.appendChild(line);
+      if (focused === which) line.focus();
+    }
+  }
+
   window.addEventListener("message", (event) => {
     if (event.source !== builder) return;
     const message = event.data as {
@@ -489,6 +573,12 @@ export function runCanvasFrame(snap: typeof snapBox): void {
         if (stopped) cleanup();
         else undo = cleanup;
       });
+    } else if (message.type === "sceneMarkers") {
+      if (!sceneDragging) {
+        drawSceneMarkers(
+          (message as { markers?: Parameters<typeof drawSceneMarkers>[0] }).markers ?? null,
+        );
+      }
     } else if (message.type === "stopMotion") {
       stopPreview();
     }
@@ -759,6 +849,11 @@ export function runCanvasFrame(snap: typeof snapBox): void {
 /** Styles only the canvas has: the outlines, and placeholders for empty things. */
 const canvasStyles = `
 #lintel-overlay { position: absolute; inset: 0 auto auto 0; pointer-events: none; z-index: 2147483647; }
+#lintel-scene { position: fixed; inset: 0; pointer-events: none; z-index: 2147483646; }
+.lintel-scene-line { position: absolute; left: 0; right: 0; height: 0; border-top: 1.5px dashed #0071e3; pointer-events: auto; cursor: ns-resize; outline: none; }
+.lintel-scene-line::before { content: ""; position: absolute; left: 0; right: 0; top: -9px; height: 18px; }
+.lintel-scene-line span { position: absolute; left: 8px; top: -11px; padding: 1px 7px; border-radius: 4px; background: #0071e3; color: #fff; font: 600 11px/18px -apple-system, "Segoe UI", system-ui, sans-serif; }
+.lintel-scene-line:focus-visible span { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #0071e3; }
 .lintel-outline { position: absolute; box-sizing: border-box; }
 .lintel-drop { position: absolute; box-sizing: border-box; pointer-events: none; }
 .lintel-drop--line { background: #0071e3; border-radius: 2px; box-shadow: 0 0 0 1px #fff; }
@@ -769,6 +864,7 @@ const canvasStyles = `
 .lintel-outline--hover .lintel-outline__label { opacity: 0.9; }
 [data-lintel-placeholder="image"] { min-height: 12rem; background: repeating-linear-gradient(135deg, #ececf1 0 12px, #f5f5f7 12px 24px); border-radius: 12px; }
 [data-lintel-placeholder="unknown"] { min-height: 3rem; background: #fff4e5; }
+[data-lintel-placeholder="block"] { min-height: 4rem; background: repeating-linear-gradient(135deg, #f3edff 0 12px, #faf7ff 12px 24px); border-radius: 12px; }
 [data-lintel-node]:empty:not(img, hr, br, [data-lintel-placeholder]) { min-height: 4rem; outline: 1px dashed #c7c7cc; outline-offset: -1px; }
 [contenteditable] { outline: 2px solid #0071e3; outline-offset: 2px; cursor: text; }
 .lintel-rotate-handle { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border: 2px solid #0071e3; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 0.3); pointer-events: auto; cursor: grab; }

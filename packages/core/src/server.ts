@@ -51,6 +51,7 @@ import { addSecurityHeaders } from "./http/security-headers.js";
 import { type AssetUsageFinder, createAssetLookup } from "./media/asset-lookup.js";
 import { LocalDiskStorage } from "./media/local-disk-storage.js";
 import { type MediaRoutesOptions, mediaRoutes } from "./media/media.routes.js";
+import { mediaBinRoutes } from "./media/media-bin.routes.js";
 import type { StorageDriver } from "./media/storage-driver.js";
 import { DEFAULT_TRANSFORM_CACHE_FOLDER } from "./media/transform-cache.js";
 import { openApiRoutes } from "./openapi/openapi.routes.js";
@@ -73,6 +74,7 @@ import { sitesRoutes } from "./sites/sites.routes.js";
 import { taxonomiesRoutes } from "./taxonomies/taxonomies.routes.js";
 import { globalsRoutes } from "./globals/globals.routes.js";
 import { fieldsetsRoutes } from "./fieldsets/fieldsets.routes.js";
+import { blocksRoutes } from "./blocks/blocks.routes.js";
 import { navigationRoutes } from "./navigation/navigation.routes.js";
 import { translationsRoutes } from "./entries/translations.routes.js";
 import { WebhookDispatcher } from "./webhooks/webhook-dispatcher.js";
@@ -100,6 +102,7 @@ import { EventBus } from "./events/event-bus.js";
 import { subscribeEventListeners } from "./events/event-listeners.js";
 import { registerWorkflows, type WorkflowOptions } from "./workflows/register-workflows.js";
 import { wordpressImportRoutes } from "./wordpress-import/wordpress-import.routes.js";
+import { siteImportRoutes } from "./importers/site-import.routes.js";
 import { updatesRoutes } from "./updates/updates.routes.js";
 import { type UpdatesOptions, UpdatesRuntime } from "./updates/updates-runtime.js";
 
@@ -439,6 +442,7 @@ function registerApiRoutes(
   server.register(taxonomiesRoutes);
   server.register(globalsRoutes);
   server.register(fieldsetsRoutes);
+  server.register(blocksRoutes);
   server.register(navigationRoutes);
   server.register(previewRoutes);
   server.register(searchRoutes);
@@ -470,9 +474,11 @@ function registerApiRoutes(
   server.register(starterSitesRoutes);
   registerContentModelSyncRoutes(server);
   server.register(mediaRoutes, media);
+  server.register(mediaBinRoutes, media);
   server.register(backupsRoutes);
   server.register(contentTransferRoutes);
   server.register(wordpressImportRoutes);
+  server.register(siteImportRoutes);
   server.register(updatesRoutes);
 }
 

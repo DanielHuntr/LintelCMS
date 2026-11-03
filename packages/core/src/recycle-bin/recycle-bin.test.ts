@@ -92,6 +92,48 @@ describe("the recycle bin", () => {
     expect((await api("GET", "/recycle-bin")).json().items).toEqual([]);
   });
 
+  it("puts an entry back in its old place, live as it was, on Undo", async () => {
+    const home = await create("Home");
+    const [first, about, last] = [
+      await create("First", home),
+      await create("About", home),
+      await create("Last", home),
+    ];
+    await api("POST", `/content-tree/entries/${home}/publish`, { includeDescendants: true });
+    await api("PATCH", `/entries/${about}`, { data: { title: "About", summary: "Not yet" } });
+    const { itemId } = await recycle(about);
+    const published: string[] = [];
+    server.events.onEvery("test listener", (event) => {
+      if (event.name === "entry.published") published.push(event.name);
+    });
+
+    const restored = await api("POST", `/recycle-bin/${itemId}/restore`, { asBefore: true });
+
+    expect(restored.json()).toEqual({ entryId: about, parentId: home, restoredCount: 1 });
+    const order = (await api("GET", `/content-tree/children?parentId=${home}`)).json().items;
+    expect(order.map((node: { id: string }) => node.id)).toEqual([first, about, last]);
+    expect((await api("GET", `/entries/${about}`)).json()).toMatchObject({ status: "published" });
+    const live = await api("GET", "/delivery/pages/about");
+    expect(live.statusCode).toBe(200);
+    expect(live.body).not.toContain("Not yet");
+    expect(published).toHaveLength(1);
+  });
+
+  it("brings an entry back as a draft on Undo for someone who can't publish", async () => {
+    await createTestUser(testDatabase.database, "sam@example.com", [
+      ["entries:read", "entries:create", "entries:delete"],
+    ]);
+    const sam = requestsAs(server, await signInAndGetCookies(server, "sam@example.com"));
+    const about = await create("About");
+    await api("POST", `/entries/${about}/publish`);
+    const { itemId } = await recycle(about);
+
+    const restored = await sam("POST", `/recycle-bin/${itemId}/restore`, { asBefore: true });
+
+    expect(restored.statusCode, restored.body).toBe(200);
+    expect((await api("GET", `/entries/${about}`)).json().status).toBe("draft");
+  });
+
   it("restores at the top when the old parent is gone, renumbering a slug taken meanwhile", async () => {
     const home = await create("Home");
     const about = await create("About", home);

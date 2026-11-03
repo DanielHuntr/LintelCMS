@@ -16,7 +16,7 @@ export function greetingFor(hour: number, name: string): string {
 export function WelcomeWidget({ size }: WidgetProps) {
   const session = useSession();
   const canWrite = useCan("entries:create");
-  const canUpload = useCan("media:create");
+  const canUpload = useCan("media:upload");
   const canSeeSettings = useCan("settings:read");
   const firstName = session.user.name.split(" ")[0] ?? session.user.name;
 

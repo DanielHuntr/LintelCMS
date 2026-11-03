@@ -84,7 +84,7 @@ describe("the media library", () => {
     expect(response.json()).toMatchObject({ code: "INVALID_REQUEST" });
   });
 
-  it("deletes an unused asset with its file and resized copies", async () => {
+  it("moves an unused asset to the recycle bin, keeping its file until it's deleted for good", async () => {
     const asset = await uploadImage("old-logo.png", 1);
     await media.server.inject({ url: `/media/${asset.id}/file?w=10` });
 
@@ -92,8 +92,12 @@ describe("the media library", () => {
 
     expect(response.statusCode).toBe(204);
     expect((await request("GET", `/media/${asset.id}`)).statusCode).toBe(404);
-    expect(await readdir(`${media.uploadsFolder}/default`)).toEqual([]);
+    expect((await media.server.inject({ url: `/media/${asset.id}/file` })).statusCode).toBe(404);
+    expect(await readdir(`${media.uploadsFolder}/default`)).toHaveLength(1);
     expect(await readdir(media.cacheFolder)).toEqual([]);
+
+    expect((await request("DELETE", `/media-bin/${asset.id}`)).statusCode).toBe(204);
+    expect(await readdir(`${media.uploadsFolder}/default`)).toEqual([]);
   });
 
   it("refuses to delete an asset that entries use, and says which", async () => {

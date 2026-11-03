@@ -10,6 +10,8 @@ export const wordpressItemKinds = [
   "image",
   "page",
   "post",
+  "product",
+  "menu",
 ] as const;
 
 export type WordPressImportStatus = (typeof wordpressImportStatuses)[number];
@@ -23,8 +25,24 @@ export interface WordPressImportFound {
   authors: number;
   categories: number;
   tags: number;
-  /** Things the importer doesn't bring in, such as menus or a shop's products, by type. */
+  /** WordPress menus (Appearance → Menus). Left out of imports made before menus came in. */
+  menus?: number;
+  /** WooCommerce products. */
+  products?: number;
+  /** Custom fields on posts and pages (Advanced Custom Fields and the like). */
+  customFields?: { post: WordPressCustomField[]; page: WordPressCustomField[] };
+  /** Things the importer doesn't bring in, such as revisions or custom post types, by type. */
   ignored: Record<string, number>;
+}
+
+/** One custom field key found on posts or pages, with an example value for the mapping screen. */
+export interface WordPressCustomField {
+  key: string;
+  example: string;
+  /** Made with Advanced Custom Fields, which marks each field it owns. */
+  fromAcf: boolean;
+  /** How many posts or pages have it. */
+  count: number;
 }
 
 export interface WordPressImportProgress {
@@ -70,6 +88,16 @@ export const wordpressImportMappingSchema = z.object({
   drafts: z.enum(["import", "skip"]).default("import"),
   /** Suggest a redirect from each old address to the new one. */
   redirects: z.boolean().default(true),
+  /**
+   * Custom fields (by key) and the field of the posts' or pages' content type each goes
+   * into; a key left out, or null, isn't brought in.
+   */
+  postFields: z.record(z.string(), handleOrNull).default({}),
+  pageFields: z.record(z.string(), handleOrNull).default({}),
+  /** Bring the old site's menus in as menus here. */
+  menus: z.boolean().default(true),
+  /** Bring WooCommerce products into the shop (it has to be switched on). */
+  products: z.enum(["import", "skip"]).default("import"),
 });
 
 export type WordPressImportMapping = z.infer<typeof wordpressImportMappingSchema>;
@@ -88,5 +116,7 @@ export interface WordPressImportReport {
   entriesWithHtml: Array<{ title: string; kinds: string[] }>;
   renamedSlugs: Array<{ title: string; from: string; to: string }>;
   redirectsSuggested: number;
+  /** Custom field values that couldn't go into their field, so were left out. */
+  fieldsLeftOut: Array<{ title: string; fields: string[] }>;
   problems: Array<{ kind: WordPressItemKind; title: string; message: string }>;
 }

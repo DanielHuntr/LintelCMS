@@ -1,3 +1,4 @@
+import { builderBlockStrings } from "./block-strings.js";
 import { builderDesignStrings } from "./design-strings.js";
 import { builderElementStrings } from "./element-strings.js";
 import { builderMenuStrings } from "./menu-strings.js";
@@ -99,12 +100,37 @@ export const builderStrings = {
   "pageBuilder.style.stateNone": "Always",
   "pageBuilder.style.stateHover": "Pointer over",
   "pageBuilder.style.stateFocus": "Keyboard focus",
+  "pageBuilder.style.statePressed": "Pressed",
+  "pageBuilder.scene.start": "Start",
+  "pageBuilder.scene.end": "End",
+  "pageBuilder.scene.dragHint":
+    "Where on the screen the scroll scene starts or ends. Drag it, or use the up and down arrow keys.",
+  "pageBuilder.style.stateOwnHeading": "This element",
+  "pageBuilder.style.stateOwnerHeading": "With what's around it",
+  "pageBuilder.style.stateOwnerHover": "{name}: pointer over",
+  "pageBuilder.style.stateOwnerPressed": "{name}: pressed",
+  "pageBuilder.style.editingOwnerState":
+    "Changes here apply while {name} is in this state, so they move together. The page shows it now.",
+  "pageBuilder.style.transitionLabel": "Moving between states",
+  "pageBuilder.style.transitionFor": "For {name}, and everything that changes with it.",
+  "pageBuilder.style.transitionFeel": "Feel",
+  "pageBuilder.style.feelSmooth": "Smooth",
+  "pageBuilder.style.feelSpringy": "Springy",
+  "pageBuilder.style.feelInstant": "Instant",
+  "pageBuilder.style.transitionSpeed": "Speed",
+  "pageBuilder.style.speedQuick": "Quick",
+  "pageBuilder.style.speedSteady": "Steady",
+  "pageBuilder.style.speedSlow": "Slow",
+  "pageBuilder.style.changedForPressed": "Changed for pressed",
+  "pageBuilder.style.changedForOwnerState": "Changed while what's around it is in this state",
+  "pageBuilder.history.changedStateTransition": "Changed how {name} moves between states",
   "pageBuilder.style.editingDesktop":
     "Changes here apply on every screen size, unless a smaller size changes them.",
   "pageBuilder.style.editingTablet":
     "Changes here apply to tablets and phones. Desktop stays as it is.",
   "pageBuilder.style.editingPhone": "Changes here apply to phones only.",
-  "pageBuilder.style.editingState": "Changes here apply only in this state, on every screen size.",
+  "pageBuilder.style.editingState":
+    "Changes here apply only in this state, on every screen size. The page shows it now.",
   "pageBuilder.style.lockedNote": "This element is locked. Unlock it in Layers to change it.",
   "pageBuilder.style.legend": "Style of the selected element",
   "pageBuilder.style.changedHere": "Changed here",
@@ -255,6 +281,8 @@ export const builderStrings = {
   "pageBuilder.content.remove": "Remove {name}",
   "pageBuilder.content.addItem": "Add a {name}",
   "pageBuilder.content.addLink": "Add a link",
+  "pageBuilder.content.choosePage": "Choose a page…",
+  "pageBuilder.content.choosePageFor": "Choose a page for link {number}",
   "pageBuilder.content.linkWords": "Link {number} words",
   "pageBuilder.content.linkAddress": "Link {number} address",
   "pageBuilder.content.codeHint":
@@ -295,6 +323,7 @@ export const builderStrings = {
   ...builderDesignStrings,
   ...builderElementStrings,
   ...builderMenuStrings,
+  ...builderBlockStrings,
 } as const;
 
 export type BuilderStringKey = keyof typeof builderStrings;

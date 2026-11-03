@@ -5,7 +5,8 @@
  */
 export const dataToolsStrings = {
   "settings.backupsDescription": "Copies of everything, made by you or on a schedule",
-  "settings.importDescription": "Bring content in from another {product} or from WordPress",
+  "settings.importDescription":
+    "Move your site from WordPress, Webflow, Framer, Statamic or Umbraco, or from another {product}",
 
   "backups.title": "Backups",
   "backups.subtitle":
@@ -82,9 +83,11 @@ export const dataToolsStrings = {
   "restore.signIn": "Sign in",
 
   "import.title": "Import and export",
-  "import.subtitle": "Move content between {product} sites, or bring it in from WordPress.",
-  "import.wordpressTitle": "Import from WordPress",
-  "import.wordpressDescription": "Posts, pages, categories, tags, images and authors",
+  "import.subtitle":
+    "Move your site to {product} from another system, or move content between {product} sites.",
+  "import.wordpressTitle": "WordPress",
+  "import.wordpressDescription":
+    "Posts, pages, menus, custom fields, images, authors and WooCommerce products",
   "import.lintelTitle": "Import an export from {product}",
   "import.lintelDescription":
     "Upload an export from another {product} site. You’ll see what will be added or updated before anything changes.",

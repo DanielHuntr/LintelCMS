@@ -162,6 +162,27 @@
       "when": 1793682872689,
       "tag": "0022_form_submission_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793701399520,
+      "tag": "0023_add_custom_blocks",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793705744837,
+      "tag": "0024_add_site_importers",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793706693411,
+      "tag": "0025_media_recycle_bin",
+      "breakpoints": true
     }
   ]
 }
