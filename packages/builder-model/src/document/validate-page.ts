@@ -27,7 +27,16 @@ export interface PageProblem {
 }
 
 export type PageCheckResult =
-  { ok: true; document: PageDocument } | { ok: false; problems: PageProblem[] };
+  | { ok: true; document: PageDocument }
+  | {
+      ok: false;
+      problems: PageProblem[];
+      /**
+       * The page as read, when it got as far as its elements: every problem then names one.
+       * The website uses it to leave those elements out rather than the whole design.
+       */
+      document?: PageDocument;
+    };
 
 export function validatePageDocument(
   stored: unknown,
@@ -108,7 +117,7 @@ export function validatePageDocument(
 
   const root = checkNode(document.root, null);
   return problems.length > 0
-    ? { ok: false, problems }
+    ? { ok: false, problems, document: { ...document, root } }
     : { ok: true, document: { ...document, root } };
 }
 

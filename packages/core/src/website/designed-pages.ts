@@ -1,7 +1,9 @@
 import {
+  findPlace,
   ownSiteChrome,
   type PageData,
   type PageDocument,
+  removeNode,
   validatePageDocument,
 } from "@lintel/builder-model";
 import { renderPage, standardRegistry } from "@lintel/builder/render";
@@ -15,14 +17,25 @@ import { pageComponentCatalogue } from "../pages/page-components.js";
  * runtime, and the page lists its animations so only pages that move load it.
  *
  * Stored designs were checked when they were saved; they are checked again here, because a
- * design saved by an older version may hold something this version doesn't know. A design
- * that can't be read, or has nothing on it, counts as no design.
+ * design saved by an older version may hold something this version doesn't know. An element
+ * that no longer checks out is left out, with what's inside it; one such element used to
+ * hide the whole design (LINTEL-FUNC-023). The editor still names it when the page is
+ * opened. A design that can't be read at all, or has nothing on it, counts as no design.
  */
 export function checkPageDesign(value: unknown): PageDocument | null {
   if (value === null || value === undefined) {
     return null;
   }
-  const checked = validatePageDocument(value, pageComponentCatalogue);
+  let checked = validatePageDocument(value, pageComponentCatalogue);
+  // Each round takes out the elements named; a few rounds cover anything uncovered by that.
+  for (let round = 0; !checked.ok && round < 3; round += 1) {
+    if (!checked.document || checked.problems.some((problem) => !problem.nodeId)) return null;
+    let root = checked.document.root;
+    for (const { nodeId } of checked.problems) {
+      if (nodeId && nodeId !== root.id && findPlace(root, nodeId)) root = removeNode(root, nodeId);
+    }
+    checked = validatePageDocument({ ...checked.document, root }, pageComponentCatalogue);
+  }
   if (!checked.ok || checked.document.root.children.length === 0) {
     return null;
   }
