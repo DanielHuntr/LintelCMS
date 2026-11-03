@@ -20,8 +20,10 @@ their own stylesheet (`adminStyles` in their package.json), which is loaded with
 
 `/build/addons` (`AddonsPage.tsx`): installed add-ons with whether each is on, and those
 that can't run with why. Choosing one opens `AddonDetailsDialog.tsx`: its switch (saved
-through `PUT /plugins`), what it adds and can reach in plain words, its settings and how
-to remove it. Settings get a form drawn from their JSON Schema (`settingsForm.ts`,
+through `PUT /plugins`), the honest line about full access, then folded sections from
+`GET /addons/:id/details`, stored data first and open (`AddonAbout.tsx`). Each item is
+marked "Checked by Lintel" or "Says the add-on". `AddonRemoval.tsx` exports its data, and
+keeps or deletes it before the remove command. Settings get a form drawn from their JSON Schema (`settingsForm.ts`,
 `AddonSettingsForm.tsx`) when they are simple enough; otherwise the add-on brings its own
 screen.
 
@@ -31,7 +33,9 @@ screen.
 | `loadAddonAdminHalves.ts` | Loading add-ons' admin halves at start               |
 | `sharedAddonModules.ts`   | The modules add-ons share with the admin             |
 | `AddonsPage.tsx`          | The Add-ons screen                                   |
-| `AddonDetailsDialog.tsx`  | One add-on: switch, parts, access, settings, removal |
+| `AddonDetailsDialog.tsx`  | One add-on: switch, details, settings, removal       |
+| `AddonAbout.tsx`          | What it stores, adds, runs, talks to, comes from     |
+| `AddonRemoval.tsx`        | Export, keep or delete its data, and removing it     |
 | `AddonSettingsForm.tsx`   | A settings form drawn from a schema                  |
 | `settingsForm.ts`         | Reading that schema into fields                      |
 | `addonStrings.ts`         | The words, spread into i18n/strings.ts               |

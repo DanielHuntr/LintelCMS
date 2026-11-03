@@ -1,16 +1,17 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
-import type { ReactNode } from "react";
 import { describeError } from "../api/describeError.js";
 import { Button } from "../design/Button.js";
 import { Dialog } from "../design/Dialog.js";
 import { Toggle } from "../design/Toggle.js";
 import { enabledAfterToggle } from "../features/featureContent.js";
 import { listFeatures, saveEnabledFeatures } from "../features/features.api.js";
-import { type StringKey, t } from "../i18n/strings.js";
+import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
+import { AddonAbout, Fold } from "./AddonAbout.js";
+import { AddonRemoval } from "./AddonRemoval.js";
 import { AddonSettingsForm } from "./AddonSettingsForm.js";
-import { type Addon, addonKeys } from "./addons.api.js";
+import { type Addon, addonKeys, getAddonDetails } from "./addons.api.js";
 import { failedAddonAdminHalves } from "./loadAddonAdminHalves.js";
 import { readSettingsForm } from "./settingsForm.js";
 
@@ -20,9 +21,9 @@ interface AddonDetailsDialogProps {
 }
 
 /**
- * One add-on: its switch first, then what it adds and can reach, its settings, and how it
- * is removed. Switching saves straight away and reloads who is signed in, so its sidebar
- * items and widgets appear or go at once.
+ * One add-on: its switch first, then what it keeps and does in folded sections (stored data
+ * first), its settings, what it can reach, and how it is removed. Switching saves straight
+ * away and reloads who is signed in, so its sidebar items and widgets appear or go at once.
  */
 export function AddonDetailsDialog({ addon, onClose }: AddonDetailsDialogProps) {
   const canChange = useCan("settings:update");
@@ -51,10 +52,15 @@ export function AddonDetailsDialog({ addon, onClose }: AddonDetailsDialogProps) 
     },
   });
 
+  const details = useQuery({
+    queryKey: [...addonKeys.all(), addonId, "details"],
+    queryFn: () => getAddonDetails(addonId ?? ""),
+    enabled: addonId !== null,
+    retry: false,
+  });
+
   const formFields = readSettingsForm(addon.settingsSchema);
   const hasSettings = addon.adds.includes("settings");
-  // Settings have a section of their own below, so the list doesn't repeat them.
-  const parts = addon.adds.filter((part) => part !== "settings");
 
   return (
     <Dialog
@@ -68,7 +74,7 @@ export function AddonDetailsDialog({ addon, onClose }: AddonDetailsDialogProps) 
         </Button>
       }
     >
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
           <Toggle
             label={t("addons.switch", { name: addon.name })}
@@ -86,60 +92,48 @@ export function AddonDetailsDialog({ addon, onClose }: AddonDetailsDialogProps) 
           )}
         </div>
 
-        {parts.length > 0 && (
-          <Section title={t("addons.adds")}>
-            <ul className="list-disc ps-5 text-body text-label">
-              {parts.map((part) => (
-                <li key={part}>{t(`addons.part.${part}` as StringKey)}</li>
-              ))}
-            </ul>
-          </Section>
-        )}
+        <p className="text-footnote text-label-secondary">
+          {t("addons.accessText")} {t("addons.untrusted")}
+        </p>
 
-        <Section title={t("addons.access")}>
-          <p className="text-body text-label">{t("addons.accessText")}</p>
+        <div className="flex flex-col gap-2">
+          {details.isPending && addonId && (
+            <p role="status" className="text-footnote text-label-secondary">
+              {t("addons.loadingDetails")}
+            </p>
+          )}
+          {details.isError && (
+            <p className="text-footnote text-danger">
+              {t("addons.detailsFailed", { reason: describeError(details.error) })}
+            </p>
+          )}
+          {details.data && <AddonAbout addon={addon} details={details.data} />}
+
+          {hasSettings && addonId && (
+            <Fold title={t("addons.settings")}>
+              {formFields ? (
+                <AddonSettingsForm addonId={addonId} fields={formFields} canChange={canChange} />
+              ) : (
+                <p className="text-body text-label-secondary">{t("addons.settingsOwnScreen")}</p>
+              )}
+            </Fold>
+          )}
+
           {addon.permissions.length > 0 && (
-            <>
+            <Fold title={t("addons.access")}>
               <p className="text-footnote text-label-secondary">{t("addons.permissions")}</p>
               <ul className="list-disc ps-5 text-footnote text-label-secondary">
                 {addon.permissions.map(({ permission, description }) => (
                   <li key={permission}>{description}</li>
                 ))}
               </ul>
-            </>
+            </Fold>
           )}
-        </Section>
 
-        {hasSettings && addonId && (
-          <Section title={t("addons.settings")}>
-            {formFields ? (
-              <AddonSettingsForm addonId={addonId} fields={formFields} canChange={canChange} />
-            ) : (
-              <p className="text-body text-label-secondary">{t("addons.settingsOwnScreen")}</p>
-            )}
-          </Section>
-        )}
-
-        {addon.from === "npm" && addon.packageName && (
-          <Section title={t("addons.remove")}>
-            <p className="text-body text-label-secondary">{t("addons.removeText")}</p>
-            <p className="text-footnote text-label-secondary">{t("addons.removeCommand")}</p>
-            <code className="block rounded-control bg-fill px-3 py-2 font-mono text-footnote text-label select-all">
-              pnpm lintel addons remove {addon.packageName}
-            </code>
-          </Section>
-        )}
+          <AddonRemoval addon={addon} details={details.data} canChange={canChange} />
+        </div>
       </div>
     </Dialog>
-  );
-}
-
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="flex flex-col gap-2">
-      <h3 className="text-headline text-label">{title}</h3>
-      {children}
-    </section>
   );
 }
 
