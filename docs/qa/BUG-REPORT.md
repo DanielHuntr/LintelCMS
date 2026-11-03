@@ -778,6 +778,9 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-038   | P2       | Fixed  | Every page gets the site's automatic header and footer, even one whose first row is its own menu; navigation can't be designed |
 | LINTEL-UX-039   | P2       | Fixed  | Style: "What has to be hovered" always shows and lists plain layout boxes ("Container, 2 levels up") nobody recognises         |
 | LINTEL-UX-040   | P3       | Fixed  | Style → Text says "1.125rem" but no size chip is pressed: a size no chip matches isn't shown, and rem means nothing to people  |
+| LINTEL-UX-042   | P2       | Fixed  | Site cursor: the cursor, its word ("Play") and hover pictures freeze on top of a YouTube or Vimeo video                        |
+| LINTEL-UX-043   | P2       | Fixed  | Motion timeline: the Trigger settings are squeezed into a narrow column in the side panel; labels overlap, selects unreadable  |
+| LINTEL-UX-044   | P2       | Fixed  | Grow while scrolling can't start smaller than 60%: a video can't grow from a tenth of its size to full as the page scrolls     |
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 
