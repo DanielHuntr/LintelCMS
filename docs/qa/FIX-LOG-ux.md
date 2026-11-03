@@ -1711,6 +1711,49 @@ Decision record: `docs/decisions/0053-content-only-editing-for-clients.md`. Migr
 
 **Left for later:** rich text extensions (the editor's buttons and the HTML renderer are one fixed list; documented as next); an add-on's own tables aren't in backups yet (backups cover Lintel's schema; the same was already true of plugins from lintel.config.ts); Lintel's packages aren't on npm, so new add-ons link to a local copy of Lintel for types and tests.
 
+## Starter sites: six more (batch A) (3 November 2026)
+
+**Asked by Daniel:** six new, original starter sites for common kinds of client, each with its own city, fonts, colours and layout, sharing a navigation and footer across their pages, with site motion, original drawings, light and dark, and 390px.
+
+**What was built** (`packages/builder-model/src/starter-sites`):
+
+- **LINTEL-UX-150 Tollbooth**, a restaurant in an old toll house in Leith, Edinburgh. Fraunces and Work Sans, cream and brown-black, one claret. Home, Menu (courses with dishes and prices, like the card on the table), Our story and Visit (book by phone or email, a form for bigger tables while Forms is on, opening hours). The name intro and a fade between pages.
+- **LINTEL-UX-151 Hollis**, a hair and skin salon in Fitzroy, Melbourne. Syne and DM Sans, plaster pink, one rosewood, round buttons and arched pictures. Home, Services (prices in three groups), Team (four portraits) and Visit, with "Book online" in the navigation.
+- **LINTEL-UX-152 Verveine**, a wedding and events planner in Aix-en-Provence. Playfair Display in italics and Manrope, ivory and one sage. Home (a gallery to drag through, how we work, a couple's words), Weddings (three ways to help, with prices), Stories and Enquire (a form). Strong smooth scrolling and the curtain intro.
+- **LINTEL-UX-153 Lind**, a homewares shop in Aarhus. Unbounded and Inter, off-white, black and one signal yellow. Home, Shop and Visit. With the Shop plugin on, the home and Shop pages show the shop's products; without it those sections are left out and the lookbook (six things with makers and prices, and how to order by email) does the job alone.
+- **LINTEL-UX-154 Halyard**, a strength and yoga studio in Woodstock, Cape Town. Big Shoulders Display and Archivo, chalk and charcoal with a lime used only as a fill. Home (numbers that count up, class rows that show a picture under the pointer), Timetable (a table a day, readable on a phone), Classes and Memberships.
+- **LINTEL-UX-155 Northside Commons**, a community charity in Phibsborough, Dublin. DM Serif Display and DM Sans with a handwritten note in Caveat, warm paper and one harbour teal. Home (last year in numbers, what we do, what's coming up, a donate band), About us, Events and Get involved (give money, time or food, with a volunteer form while Forms is on).
+- Each brings its own navigation and footer (`siteSections`, with the city's clock and the cookie settings link), a design variable for its accent, fonts from the included fonts, and its own drawings in `illustrations-<id>.ts`. No section library entries were added.
+- **LINTEL-UX-156** `starter-parts.ts`: the bands, grid placement, labels, buttons, price lists, figures and navigation the six share, each in a site's own colours and type. `starter-site-checks.ts`: `checkStarterSite` says in words what's wrong with a template (pages the server would refuse, a missing or second main heading, skipped heading levels, nothing moving, too many effects, a header or footer inside a page, pictures without alt text, missing illustrations or ones whose markup repeats an attribute and so won't draw).
+
+**Still open:**
+
+- **LINTEL-UX-157** the theme's soft grey (#6e6e73) falls just short of AA on tinted paper in light mode: 4.25 to 4.43:1 on the clock's place name, table headings and form hints, on Tollbooth, Hollis, Halyard and Northside. Those three parts take the theme's colour directly, so a template can't change them. The grey is set in several places and every site uses it, so it wants one decision rather than a change from this track. Dark mode passes.
+- **LINTEL-UX-158** the clock offers Sydney but not Melbourne, so Hollis uses the Sydney time zone with the label "Fitzroy" (the same time). A template footer with a zone that isn't on the list is replaced by the standard footer without a word.
+- **LINTEL-UX-159** run against the older templates, the new checks find Atelier's collection page skipping from h1 to h3 ("Hollin chair") and a heading in its footer; Magazine, Portfolio and Product launch keep a header or footer inside a page; and Magazine has pictures without alt text. None of these were changed.
+
+**Tests:** builder-model has a test file for each site (`tollbooth.test.ts`, `hollis.test.ts`, `verveine.test.ts`, `lind.test.ts`, `halyard.test.ts`, `northside.test.ts`): the checks with plugins on and off; pages, fonts, accent and motion; navigation and footer shared and in no page; and what each site is for, such as a price on every dish, seven days of timetable, products only while Shop is on, events on the weekdays they name. Also `starter-site-checks.test.ts` (2). Core `starter-sites/business-starter-sites.test.ts` (6) applies each template and checks its heading font, its home page's title, drawing and own footer, an inner page and its cover.
+
+**Checked in a browser** (Chromium; each template applied with its pages replaced and published on a copy of the styles test data, so the private reference pages went to the recycle bin). A script read all 23 pages in four modes, 92 checks in all (1440px light, 1440px dark, 390px dark, and 390px light with reduced motion), for sideways overflow, broken pictures, alt text, one main heading, heading order, text left hidden after scrolling, script errors and text contrast. 60 were clean; the other 32 show only LINTEL-UX-157. Screenshots of pages were looked at by eye for the home pages and most inner pages. Not checked: keyboard use and a real screen reader, the hover and cursor frames, and Lind with the Shop plugin off in a browser (that case is covered by tests).
+
+**Fixed on the way:**
+
+- A Verveine drawing set `fill` twice on one tag and showed as a broken picture.
+- The band padding asked for spacing step 10, which doesn't exist, so the restaurant's quote band had none.
+- Headings on coloured bands kept the theme's text colour; they now follow the band.
+- Counters styled as a whole set the label as large as the number; the figures are now a number with a count-up and a line under it.
+- Parallax pictures slid out of their bands (over Hollis's ticker on phones, above Northside's hall band), so they now use mask reveals.
+- Narrow bands left white either side of them; a band can now keep its content narrow with `measure` while its colour runs edge to edge.
+- The restaurant's course notes and opening hours drifted down beside taller neighbours.
+- The restaurant and salon menus said "Book" twice beside the button, so those pages are now called Visit.
+- Tollbooth's timeline dates took the brand colour, 2.18:1 on the dark paper, so the years are now rows in the claret variable.
+- Lind's "95 kr each" pushed the Shop page 12px past a phone's edge; a name and price now wrap. Its opening shows one picture on phones.
+- Facts that didn't add up: Halyard's class count now matches its timetable, Northside's events fall on the days they name, Tollbooth's history reaches 2019, and its drawing's alt text no longer says six-sided.
+
+**Screenshots** (in `screenshots/starters-a/`): `<site>-home-{desktop,phone}-{light,dark}.png` for tollbooth, hollis, verveine, lind, halyard and northside.
+
+**Left for later:** the product grid shows whatever products the site has (in the test data, the bakery's), and Lind's lookbook prices are words, not products, so with Shop on the Shop page shows both. On phones the navigation's button folds away with the menu, so Hollis's "Book online" and Northside's "Donate" are reached from the page rather than the header.
+
 ## Creative pack: shader backgrounds and picture effects (3 November 2026)
 
 Decision: [0057](../decisions/0057-shader-backgrounds.md). IDs LINTEL-UX-110 to LINTEL-UX-119.

@@ -5,14 +5,16 @@ page and two or three others, original words and illustrations, a theme (colours
 corners) and gentle animations. Pages are built from the section library (`src/sections`),
 so a template's sections are the same ones people can insert later.
 
-| File                    | What it holds                                                                                             |
-| ----------------------- | --------------------------------------------------------------------------------------------------------- |
-| `starter-site.ts`       | The `StarterSite` shape and `buildStarterPage` (a page design)                                            |
-| `starter-sites.ts`      | The list the template library shows, and `findStarterSite`                                                |
-| `illustrations.ts`      | The flat SVG illustrations, served at `/_lintel/illustrations/`                                           |
-| one file per site       | `bakery.ts`, `consultant.ts`, `portfolio.ts`, `magazine.ts`, ...                                          |
-| `<id>.test.ts`          | A showcase site's own checks (`studio.test.ts`, `relay.test.ts`, `threshold.test.ts`, ...)                |
-| `illustrations-<id>.ts` | A site's own pictures, added to `illustrations.ts` (`illustrations-folio.ts`, `illustrations-atelier.ts`) |
+| File                     | What it holds                                                                                             |
+| ------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `starter-site.ts`        | The `StarterSite` shape and `buildStarterPage` (a page design)                                            |
+| `starter-sites.ts`       | The list the template library shows, and `findStarterSite`                                                |
+| `illustrations.ts`       | The flat SVG illustrations, served at `/_lintel/illustrations/`                                           |
+| one file per site        | `bakery.ts`, `consultant.ts`, `portfolio.ts`, `magazine.ts`, ...                                          |
+| `illustrations-<id>.ts`  | A site's own pictures, added to `illustrations.ts` (`illustrations-folio.ts`, `illustrations-atelier.ts`) |
+| `starter-parts.ts`       | Bands, the grid, labels, links, price lists and the navigation, in a site's own colours and type          |
+| `starter-site-checks.ts` | `checkStarterSite`: what's wrong with a template, in words (headings, pictures, effects, shared sections) |
+| `<id>.test.ts`           | A showcase site's own checks (`studio.test.ts`, `relay.test.ts`, `threshold.test.ts`, ...)                |
 
 The server makes the pages (`packages/core/src/starter-sites`); the builder offers a single
 starter page on an empty page. To add a starter site, write one file like `bakery.ts` and add
@@ -24,9 +26,14 @@ first-visit intro); both are applied with its theme. Folio (`folio.ts`) and Atel
 
 A starter site can bring its own navigation and footer (`siteSections`), shown on every page
 of the site (see `site-sections/`) rather than repeated in each page. Studio, Atelier and
-Folio do, as do Relay (a software product), Chambers (a law and accountancy practice),
-Longplay (a band), Threshold (an estate and letting agent) and Longwave (a podcast); the
-others get the standard Logo and menu navigation and Centred footer. Applying a
+Folio do, and so do the six for common kinds of business: Tollbooth (a restaurant), Hollis
+(a hair and beauty salon), Verveine (a wedding and events planner), Lind (an independent shop,
+showing Shop's products when the plugin is on and a lookbook either way), Halyard (a strength
+and yoga studio) and Northside Commons (a charity or community group). These six are built from
+`starter-parts.ts`, and each has a test that runs `checkStarterSite` with the plugins on and
+off. Relay (a software product), Chambers (a law and accountancy practice), Longplay (a band),
+Threshold (an estate and letting agent) and Longwave (a podcast) have their own too. The others
+get the standard Logo and menu navigation and Centred footer. Applying a
 template with its look replaces the site's navigation and footer with the template's;
 without the look, a site keeps the ones it has.
 
