@@ -66,7 +66,8 @@ describe("animating in the builder", () => {
     await user.click(screen.getByRole("tab", { name: "Animate" }));
     expect(screen.getByRole("heading", { name: /^Motion.*Title$/ })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Add motion" }));
-    await user.click(screen.getByRole("button", { name: /^Fade up/ }));
+    await user.click(screen.getByRole("radio", { name: "Appears" }));
+    await user.click(screen.getByRole("button", { name: "More settings" }));
     const animated = findNode(latest().root, "n2");
     expect(animated?.animations?.[0]?.presetId).toBe("fade-up");
     expect(animated?.animations?.[0]?.spec.trigger.type).toBe("inView");
@@ -83,8 +84,12 @@ describe("animating in the builder", () => {
     await selectTitle(user);
     await user.click(screen.getByRole("tab", { name: "Animate" }));
     await user.click(screen.getByRole("button", { name: "Add motion" }));
-    await user.click(screen.getByRole("button", { name: /^Pop in/ }));
+    await user.click(screen.getByRole("radio", { name: "Appears" }));
+    await user.click(screen.getByRole("radio", { name: "Pop in" }));
     expect(findNode(latest().root, "n2")?.animations?.[0]?.presetId).toBe("pop-in");
+    // Each choice is a step: back to the default, then to nothing.
+    await user.click(screen.getByRole("button", { name: "Undo: Animated Title" }));
+    expect(findNode(latest().root, "n2")?.animations?.[0]?.presetId).toBe("fade-up");
     await user.click(screen.getByRole("button", { name: "Undo: Animated Title" }));
     expect(findNode(latest().root, "n2")?.animations).toBeUndefined();
   });
@@ -96,7 +101,7 @@ describe("animating in the builder", () => {
     await selectTitle(user);
     await user.click(screen.getByRole("tab", { name: "Animate" }));
     await user.click(screen.getByRole("button", { name: "Add motion" }));
-    await user.click(screen.getByRole("button", { name: /^Pop in/ }));
+    await user.click(screen.getByRole("radio", { name: "Appears" }));
 
     screen.getByRole("tab", { name: "Animate" }).focus();
     await user.keyboard("{Control>}z{/Control}");
@@ -105,7 +110,7 @@ describe("animating in the builder", () => {
     (document.activeElement as HTMLElement | null)?.blur();
     expect(document.activeElement).toBe(document.body);
     await user.keyboard("{Control>}{Shift>}z{/Shift}{/Control}");
-    expect(findNode(latest().root, "n2")?.animations?.[0]?.presetId).toBe("pop-in");
+    expect(findNode(latest().root, "n2")?.animations?.[0]?.presetId).toBe("fade-up");
   });
 });
 
@@ -119,7 +124,8 @@ describe("skill levels", () => {
     expect(screen.getByText(/Choose Designer in Tools/)).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Animate" }));
     await user.click(screen.getByRole("button", { name: "Add motion" }));
-    await user.click(screen.getByRole("button", { name: /^Fade up/ }));
+    await user.click(screen.getByRole("radio", { name: "Appears" }));
+    await user.click(screen.getByRole("button", { name: "More settings" }));
     expect(screen.queryByRole("radio", { name: "Advanced" })).not.toBeInTheDocument();
     expect(screen.getByText(/Switch to Designer to open the timeline/)).toBeInTheDocument();
   });
@@ -136,7 +142,8 @@ describe("skill levels", () => {
     expect(screen.getByRole("radio", { name: "Advanced" })).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Animate" }));
     await user.click(screen.getByRole("button", { name: "Add motion" }));
-    await user.click(screen.getByRole("button", { name: /^Fade up/ }));
+    await user.click(screen.getByRole("radio", { name: "Appears" }));
+    await user.click(screen.getByRole("button", { name: "More settings" }));
     expect(screen.getByRole("radio", { name: "Advanced" })).toBeInTheDocument();
   });
 

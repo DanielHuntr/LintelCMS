@@ -62,7 +62,9 @@ describe("the Motion panel", () => {
     expect(screen.getByText("Nothing moves yet")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Add motion" }));
     expect(screen.getByRole("heading", { name: "When should it move?" })).toBeInTheDocument();
-    // A heading is text, so Appears offers word effects, and no 3D galleries anywhere.
+    // Every preset and effect is under More effects. A heading is text, so Appears offers
+    // word effects, and no 3D galleries anywhere.
+    await user.click(screen.getByRole("button", { name: "More effects…" }));
     expect(screen.getByRole("region", { name: "Words" })).toBeInTheDocument();
     // Choosing a moment shows its groups; the arrow keys move between moments.
     await user.click(screen.getByRole("radio", { name: "Hover" }));
@@ -92,6 +94,7 @@ describe("the Motion panel", () => {
     renderBuilder();
     await openMotion(user);
     await user.click(screen.getByRole("button", { name: "Add motion" }));
+    await user.click(screen.getByRole("button", { name: "More effects…" }));
     await user.type(screen.getByRole("searchbox", { name: "Search all motion" }), "scramble");
     expect(screen.getByRole("button", { name: /^Scramble/ })).toBeInTheDocument();
     expect(screen.getByText(/^[0-9]+ match/)).toBeInTheDocument();
@@ -105,6 +108,7 @@ describe("the Motion panel", () => {
     const { latest } = renderBuilder();
     await openMotion(user);
     await user.click(screen.getByRole("button", { name: "Add motion" }));
+    await user.click(screen.getByRole("button", { name: "More effects…" }));
     await user.click(screen.getByRole("button", { name: /^Letters rise/ }));
     const animation = findNode(latest().root, "n2")?.animations?.[0];
     expect(animation?.presetId).toBe("letters-rise");
@@ -123,17 +127,16 @@ describe("the Motion panel", () => {
     const user = userEvent.setup();
     const { latest } = renderBuilder();
     await openMotion(user);
+    // Choosing when puts a default on at once; Done goes back to the list.
     await user.click(screen.getByRole("button", { name: "Add motion" }));
-    await user.click(screen.getByRole("button", { name: /^Fade up/ }));
-    await user.click(screen.getByRole("button", { name: "Motion" }));
+    await user.click(screen.getByRole("radio", { name: "Appears" }));
+    await user.click(screen.getByRole("button", { name: "Done" }));
     await user.click(screen.getByRole("button", { name: "Add motion" }));
     await user.click(screen.getByRole("radio", { name: "Hover" }));
-    const hoverGroup = screen.getByRole("region", { name: "Pictures and buttons" });
-    await user.click(within(hoverGroup).getAllByRole("button")[0]!);
 
     const animations = findNode(latest().root, "n2")?.animations ?? [];
     expect(animations.map((animation) => animation.spec.trigger.type)).toEqual(["inView", "hover"]);
-    await user.click(screen.getByRole("button", { name: "Motion" }));
+    await user.click(screen.getByRole("button", { name: "Done" }));
     const list = screen.getByRole("list", { name: "What moves" });
     expect(within(list).getByRole("button", { name: "Edit Fade up" })).toBeInTheDocument();
     expect(within(list).getAllByRole("button")).toHaveLength(2);

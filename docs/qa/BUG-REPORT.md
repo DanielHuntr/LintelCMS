@@ -772,6 +772,7 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-027   | P3       | Fixed  | The dashboard's "Add images and files" checks a permission no role has, so Authors who may upload never see it                 |
 | LINTEL-UX-033   | P2       | Fixed  | Builder: the "Style for" dropdown makes no sense; its labels ("Lookbook: pointer over") don't say what they do                 |
 | LINTEL-UX-034   | P2       | Fixed  | Insert search finds no element by other common names: "carousel" finds nothing (it's called Slider), nor "popup" or "lightbox" |
+| LINTEL-UX-035   | P2       | Fixed  | Builder: adding motion shows a wall of choices ("26 choices", tall cards with paragraphs); "Always" is cut off at panel width  |
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 

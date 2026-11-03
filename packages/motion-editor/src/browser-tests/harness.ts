@@ -13,10 +13,10 @@ import { chromium, type Browser, type Page } from "playwright";
 const sourceFolder = fileURLToPath(new URL("..", import.meta.url));
 
 const entry = `
-  import { createElement } from "react";
+  import { createElement, useState } from "react";
   import { createRoot } from "react-dom/client";
   import { findPreset } from "@lintel/motion/presets";
-  import { MotionStudio } from "./index.js";
+  import { MotionPanel, MotionStudio } from "./index.js";
 
   window.studioChanges = [];
   window.openStudio = (presetId) => {
@@ -29,6 +29,30 @@ const entry = `
         onChange: (spec) => window.studioChanges.push(spec),
       }),
     );
+  };
+
+  function PanelHost() {
+    const [animations, setAnimations] = useState([]);
+    const [effects, setEffects] = useState([]);
+    return createElement(MotionPanel, {
+      name: "Title",
+      animations,
+      effects,
+      elementKind: "text",
+      onChangeAnimations: (next) => {
+        window.studioChanges.push(next.at(-1)?.spec);
+        setAnimations(next);
+      },
+      onChangeEffects: setEffects,
+      onPreviewSpec: () => undefined,
+      onPreviewEffect: () => undefined,
+      onStopPreview: () => undefined,
+      showsTimeline: false,
+    });
+  }
+
+  window.openMotionPanel = () => {
+    createRoot(document.getElementById("root")).render(createElement(PanelHost));
   };
 `;
 
@@ -64,6 +88,26 @@ function buildStylesheet(): Promise<string> {
 
 export async function launchBrowser(): Promise<Browser> {
   return chromium.launch();
+}
+
+/**
+ * A fresh page with the Motion panel open for a heading, in a column as narrow as the
+ * builder's side panel. `reducedMotion` stands in for the device setting.
+ */
+export async function openMotionPanel(
+  browser: Browser,
+  options: { width: number; reducedMotion: "reduce" | "no-preference" },
+): Promise<Page> {
+  const page = await browser.newPage({
+    viewport: { width: 800, height: 900 },
+    reducedMotion: options.reducedMotion,
+  });
+  await page.setContent(
+    `<!doctype html><html><head><style>${await buildStylesheet()}</style></head><body><div id="root" style="width:${options.width}px;font:13px system-ui,sans-serif"></div></body></html>`,
+  );
+  await page.addScriptTag({ content: await bundleStudio() });
+  await page.evaluate(() => window.openMotionPanel());
+  return page;
 }
 
 /** A fresh page with the studio open on the timeline, editing the named preset. */
