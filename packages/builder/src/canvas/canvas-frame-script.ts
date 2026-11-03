@@ -53,6 +53,7 @@ export function runCanvasFrame(snap: typeof snapBox, fitGrid: typeof fitToGrid):
     highlightIds?: readonly string[];
     labels: { selected: string | null; hovered: string | null };
     canTransform: boolean;
+    canMove?: boolean;
     rotateLabel: string;
   } = {
     selectedId: null,
@@ -840,6 +841,8 @@ export function runCanvasFrame(snap: typeof snapBox, fitGrid: typeof fitToGrid):
 
   document.addEventListener("pointerdown", (event) => {
     if (editing || event.button !== 0 || !(event.target instanceof Element)) return;
+    // Where only content may change, nothing is dragged anywhere.
+    if (outline.canMove === false) return;
     if (event.target.closest(".lintel-rotate-handle")) {
       const element = nodeElement(outline.selectedId);
       if (!element || !outline.selectedId) return;

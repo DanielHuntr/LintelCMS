@@ -33,6 +33,7 @@ import {
   instanceBlockHandle,
   type BoundPicture,
   type SiteSectionSlot,
+  type ClientContentKind,
 } from "@lintel/builder-model";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { Translate } from "../i18n/builder-text.js";
@@ -244,6 +245,11 @@ export function useBuilder({
       goToStep: (index: number) => dispatch({ type: "goToStep", index }),
       remove: () => run(commands.removeSelected(context())),
       duplicate: () => run(commands.duplicateSelected(context())),
+      /** Removes or copies this element, whatever is selected (a client's list items). */
+      removeById: (nodeId: string) =>
+        run(commands.removeSelected({ ...context(), selectedId: nodeId })),
+      duplicateById: (nodeId: string) =>
+        run(commands.duplicateSelected({ ...context(), selectedId: nodeId })),
       move: (direction: commands.MoveDirection) => run(commands.moveSelected(context(), direction)),
       moveTo: (nodeId: string, parentId: string, index: number) =>
         run(commands.moveTo(context(), nodeId, parentId, index)),
@@ -287,6 +293,30 @@ export function useBuilder({
             nodeId,
             text("pageBuilder.history.renamed", { name: newName || name({ ...node, name: "" }) }),
             (current) => ({ ...current, name: newName }),
+          ),
+        );
+      },
+      /** What clients may change here (see client-editing/ in the model); undefined clears it. */
+      setClientAccess: (
+        nodeId: string,
+        access: { clientEdits?: ClientContentKind[] | null; clientRepeats?: boolean },
+      ) => {
+        const node = nodeById(nodeId);
+        if (!node) return;
+        run(
+          commands.changeNode(
+            context(),
+            nodeId,
+            text("pageBuilder.clientAccess.history", { name: name(node) }),
+            (current) => {
+              const next = { ...current };
+              if (access.clientEdits === null) delete next.clientEdits;
+              else if (access.clientEdits) next.clientEdits = access.clientEdits;
+              if (access.clientRepeats === false) delete next.clientRepeats;
+              else if (access.clientRepeats) next.clientRepeats = true;
+              return next;
+            },
+            { evenIfLocked: true },
           ),
         );
       },

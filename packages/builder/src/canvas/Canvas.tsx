@@ -67,6 +67,8 @@ interface CanvasProps {
   revealId: string | null;
   /** Whether the selected element can be turned and dragged (it isn't locked). */
   canTransform: boolean;
+  /** Whether elements can be dragged to new places; false where only content may change. */
+  canMove?: boolean;
   site?: CanvasSite;
   /** Where the frame's scripts are served (see `canvasFrameScript`); inline when left out. */
   scripts?: CanvasScriptAddresses;
@@ -95,6 +97,7 @@ export function Canvas({
   labels,
   revealId,
   canTransform,
+  canMove = true,
   site,
   scripts,
   motionPreview = null,
@@ -225,6 +228,7 @@ export function Canvas({
         highlightIds,
         labels,
         canTransform,
+        canMove,
         rotateLabel,
       });
     }
@@ -237,6 +241,7 @@ export function Canvas({
     html,
     breakpoint,
     canTransform,
+    canMove,
     rotateLabel,
   ]);
 

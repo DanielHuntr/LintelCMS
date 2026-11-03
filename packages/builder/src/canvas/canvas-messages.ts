@@ -25,6 +25,8 @@ export type MessageToFrame =
       labels: OutlineLabels;
       /** Shows the turning handle and allows dragging and nudging: false when locked. */
       canTransform: boolean;
+      /** Allows dragging elements to new places: false where only content may change. */
+      canMove?: boolean;
       rotateLabel: string;
     }
   | { type: "reveal"; nodeId: string }

@@ -3,11 +3,15 @@ import { type KeyboardEvent, useEffect, useLayoutEffect, useRef, useState } from
 import { useBuilderText } from "../i18n/builder-text.js";
 import { classNames } from "../ui/classNames.js";
 import { keepFocusInside } from "../ui/focus-trap.js";
-import { type Box, boxAround, placeCard, tourSteps } from "./tour-steps.js";
+import { type Box, boxAround, placeCard, type TourStep, tourSteps } from "./tour-steps.js";
 
 interface GuidedTourProps {
   /** Called when the tour ends, finished or skipped. */
   onClose: () => void;
+  /** The stops, the builder's own by default. */
+  steps?: readonly TourStep[];
+  /** Where focus goes when the tour ends, if it had nowhere to go back to. */
+  fallbackFocusId?: string;
 }
 
 const cardWidth = 340;
@@ -31,9 +35,12 @@ function measure(targets: readonly string[]): Box | null {
  * step's title and stays inside the card, Escape or Skip ends the tour, and focus goes back
  * where it was. Movement only happens for people who haven't asked for less.
  */
-export function GuidedTour({ onClose }: GuidedTourProps) {
+export function GuidedTour({
+  onClose,
+  steps = tourSteps,
+  fallbackFocusId = "lintel-left-tab-insert",
+}: GuidedTourProps) {
   const text = useBuilderText();
-  const steps = tourSteps;
   const [index, setIndex] = useState(0);
   const [target, setTarget] = useState<Box | null>(null);
   const [cardHeight, setCardHeight] = useState(220);
@@ -49,9 +56,9 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
     return () => {
       const hadPlace =
         before instanceof HTMLElement && before !== document.body && before.isConnected;
-      (hadPlace ? before : document.getElementById("lintel-left-tab-insert"))?.focus();
+      (hadPlace ? before : document.getElementById(fallbackFocusId))?.focus();
     };
-  }, []);
+  }, [fallbackFocusId]);
 
   useLayoutEffect(() => {
     const update = () => setTarget(measure(step.targets));

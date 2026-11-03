@@ -124,6 +124,7 @@ import {
 import { type SiteSectionsSource, useSiteSections } from "./site-sections/useSiteSections.js";
 import { DraftPageButton } from "./page-drafts/DraftPageButton.js";
 import { type PageDrafting, PageDraftingContext } from "./page-drafts/page-drafting.js";
+import { ContentEditingScreen } from "./client-editing/ContentEditingScreen.js";
 
 export interface PageBuilderProps {
   /** The page as stored. Read once; the builder owns it from then on. */
@@ -223,6 +224,11 @@ export interface PageBuilderProps {
   pageDrafting?: PageDrafting;
   /** Told which element is selected (null for none), such as for trying another version of it. */
   onSelectionChange?: (nodeId: string | null) => void;
+  /**
+   * For people who may change content but not the design (clients): the page opens in
+   * "Edit content", where only the words, pictures and links the designer opened up change.
+   */
+  contentOnly?: boolean;
 }
 
 /** The site's default theme, until the app passes the site's own. */
@@ -247,7 +253,11 @@ export function PageBuilder({ text = englishText, ...props }: PageBuilderProps) 
         <PageFinderContext value={props.findPage}>
           <SiteFontsContext value={siteFonts}>
             <PageDraftingContext value={props.pageDrafting}>
-              <PageBuilderScreen {...props} text={text} />
+              {props.contentOnly ? (
+                <ContentEditingScreen {...props} text={text} />
+              ) : (
+                <PageBuilderScreen {...props} text={text} />
+              )}
             </PageDraftingContext>
           </SiteFontsContext>
         </PageFinderContext>
