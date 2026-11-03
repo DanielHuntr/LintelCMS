@@ -14,7 +14,12 @@ import { describe, expect, it } from "vitest";
 const CORE_FOLDER = fileURLToPath(new URL("..", import.meta.url));
 const PACKAGES_FOLDER = resolve(CORE_FOLDER, "..");
 /** Folders whose code runs in the browser and may import core. */
-const BROWSER_FOLDERS = ["admin/src", "plugin-example-bookings/src/admin", "builder/src"];
+const BROWSER_FOLDERS = [
+  "admin/src",
+  "plugin-example-bookings/src/admin",
+  "addon-example/src/admin",
+  "builder/src",
+];
 const SERVER_ONLY = [
   /^node:/,
   /^fastify$/,

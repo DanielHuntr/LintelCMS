@@ -135,7 +135,7 @@ export function AddonDetailsDialog({ addon, onClose }: AddonDetailsDialogProps) 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="text-subheadline font-semibold text-label">{title}</h3>
+      <h3 className="text-headline text-label">{title}</h3>
       {children}
     </section>
   );

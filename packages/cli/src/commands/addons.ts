@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
   addonsFolderIn,
   lintelPaths,
@@ -101,13 +103,25 @@ export function makeAddonsCommand(options: AddonsCommandOptions = {}): Command {
 export const addonsCommand = makeAddonsCommand();
 
 async function build(terminal: Terminal, watch: boolean): Promise<number> {
-  const built = await buildAddon(terminal.workingFolder, { watch, terminal });
+  const built = await buildAddon(addonFolderToBuild(terminal), { watch, terminal });
   if (watch) {
     // Keeps going until the person stops it.
     await new Promise<void>((resolve) => process.once("SIGINT", resolve));
     await built.stop();
   }
   return 0;
+}
+
+/**
+ * The add-on to build: the folder npm or pnpm runs the add-on's own script in, else where
+ * the person ran the command (`pnpm lintel` itself runs in packages/cli).
+ */
+function addonFolderToBuild(terminal: Terminal): string {
+  const packageFile = join(process.cwd(), "package.json");
+  if (existsSync(packageFile) && readFileSync(packageFile, "utf8").includes('"lintel-addon"')) {
+    return process.cwd();
+  }
+  return terminal.workingFolder;
 }
 
 function required(value: string | undefined, shape: string): string {
