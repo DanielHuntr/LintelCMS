@@ -810,6 +810,14 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-076   | P3       | Fixed  | Style chips ignore the real look: a 600 button shows Weight Custom, a 1fr 1fr grid no Columns chip, a 17px button no size      |
 | LINTEL-UX-077   | P2       | Fixed  | The pointer can't be designed: the word has one look, no own cursor picture, few per-element choices                           |
 | LINTEL-UX-079   | P2       | Fixed  | The site cursor, its word and hover pictures are hidden behind the open phone menu drawer                                      |
+| LINTEL-UX-081   | P2       | Fixed  | With less motion or no scripts, Atelier's "How a Hollin chair is made" sits in a sideways box showing only step 1              |
+| LINTEL-UX-082   | P2       | Fixed  | The first-visit intro covers the page's own entrances: Atelier's letter-by-letter headline finishes under it                   |
+| LINTEL-UX-083   | P3       | Fixed  | On phones a slider shows one slide with no sign of the next                                                                    |
+| LINTEL-UX-084   | P3       | Fixed  | Slider arrow buttons are plain white and black whatever the site's colours                                                     |
+| LINTEL-UX-085   | P3       | Fixed  | The intro counter starts in the device's own font, not the site's heading font                                                 |
+| LINTEL-UX-086   | P2       | Fixed  | Site styles "N uses" counts only the open page; the delete warning doesn't say which other pages change                        |
+| LINTEL-UX-087   | P2       | Fixed  | Deleting a downloaded Google Fonts file in the media library breaks that font with no warning                                  |
+| LINTEL-UX-088   | P3       | Fixed  | Two command line tests fail on Windows because they expect Linux-style paths                                                   |
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 
