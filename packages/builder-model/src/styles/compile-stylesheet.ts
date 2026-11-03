@@ -151,13 +151,37 @@ export function compileStatePreview(
   return compact(rules).join("\n\n");
 }
 
-const stateOrder: readonly StyleState[] = ["hover", "pressed", "focus"];
+const stateOrder: readonly StyleState[] = ["hover", "pressed", "focus", "open", "selected"];
 
 const stateSelectors: Record<StyleState, string> = {
   hover: ":hover",
   pressed: ":active",
   focus: ":focus-visible",
+  // Set by the site's elements script when the element's button opens it.
+  open: "[data-open]",
+  // What's already marked as current or chosen: no script needed.
+  selected: ':is([aria-current="page"], [aria-selected="true"], [aria-pressed="true"])',
 };
+
+/**
+ * The elements that open and close: those with open styles of their own, or that others
+ * follow ("while the card is open"). On the website they carry `data-lintel-opens`, and the
+ * elements script makes their button toggle them.
+ */
+export function listOpeningNodes(root: PageNode): Set<string> {
+  const opening = new Set<string>();
+  const visit = (node: PageNode) => {
+    if (node.hidden) return;
+    if (node.styles.open) opening.add(node.id);
+    for (const target of Object.keys(node.styles.owners ?? {})) {
+      const [state, ownerId] = target.split("@");
+      if (state === "open" && ownerId) opening.add(ownerId);
+    }
+    node.children.forEach(visit);
+  };
+  visit(root);
+  return opening;
+}
 
 function ownerTargets(node: PageNode) {
   return (Object.keys(node.styles.owners ?? {}) as OwnerStateTarget[]).flatMap((target) => {

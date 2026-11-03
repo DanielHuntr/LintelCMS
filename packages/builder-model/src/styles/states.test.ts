@@ -9,7 +9,7 @@ import { createNode } from "../tree/create-node.js";
 import { createCountingNodeIds } from "../tree/node-ids.js";
 import { duplicateNode } from "../tree/tree-changes.js";
 import { assignClassNames } from "./class-names.js";
-import { compileStatePreview, compileStylesheet } from "./compile-stylesheet.js";
+import { compileStatePreview, compileStylesheet, listOpeningNodes } from "./compile-stylesheet.js";
 import { resolveStyle, setStyle } from "./style-cascade.js";
 
 /** A card (box) holding a picture: the card owns the states, the picture follows them. */
@@ -81,5 +81,18 @@ describe("states", () => {
     expect(copied.children[1]!.children[0]!.styles.owners).toEqual({
       "hover@copy1": { scale: "1.06" },
     });
+  });
+
+  it("writes open and selected states, and knows which elements open", () => {
+    const root = cardPage();
+    const card = root.children[0]!;
+    card.styles = { ...card.styles, selected: { borderColor: "#1f1d1a" } };
+    card.children[0]!.styles.owners = { "open@c1": { opacity: "1" } };
+    const css = compileStylesheet(root, assignClassNames(root, standardCatalogue));
+    expect(css).toContain(
+      '.card:is([aria-current="page"], [aria-selected="true"], [aria-pressed="true"]) {',
+    );
+    expect(css).toContain(".card[data-open] .picture {\n  opacity: 1;\n}");
+    expect([...listOpeningNodes(root)]).toEqual(["c1"]);
   });
 });

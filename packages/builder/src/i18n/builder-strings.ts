@@ -101,6 +101,12 @@ export const builderStrings = {
   "pageBuilder.style.stateHover": "Pointer over",
   "pageBuilder.style.stateFocus": "Keyboard focus",
   "pageBuilder.style.statePressed": "Pressed",
+  "pageBuilder.style.stateOpen": "Open (its button opens it)",
+  "pageBuilder.style.stateSelected": "Selected (current page, chosen tab)",
+  "pageBuilder.style.stateOwnerOpen": "{name}: open",
+  "pageBuilder.style.stateOwnerSelected": "{name}: selected",
+  "pageBuilder.style.changedForOpen": "Changed for open",
+  "pageBuilder.style.changedForSelected": "Changed for selected",
   "pageBuilder.scene.start": "Start",
   "pageBuilder.scene.end": "End",
   "pageBuilder.scene.dragHint":

@@ -1,4 +1,4 @@
-import { setUpAccordions, setUpDialogs, setUpTabs } from "./layout-behaviours.js";
+import { setUpAccordions, setUpDialogs, setUpOpenStates, setUpTabs } from "./layout-behaviours.js";
 import { setUpForms } from "./form-behaviours.js";
 import {
   setUpBackToTop,
@@ -32,6 +32,7 @@ function setUpElements(root: ParentNode): void {
   setUpTabs(root);
   setUpAccordions(root);
   setUpDialogs(root);
+  setUpOpenStates(root);
   setUpCarousels(root);
   setUpProductGalleries(root);
   setUpLightboxes(root);

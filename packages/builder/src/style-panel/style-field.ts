@@ -63,6 +63,8 @@ const overrideNotes: Record<Breakpoint | StyleState, BuilderStringKey> = {
   hover: "pageBuilder.style.changedForHover",
   pressed: "pageBuilder.style.changedForPressed",
   focus: "pageBuilder.style.changedForFocus",
+  open: "pageBuilder.style.changedForOpen",
+  selected: "pageBuilder.style.changedForSelected",
 };
 
 /** Where the dot's note comes from: "Changed for tablet" and the like. */
