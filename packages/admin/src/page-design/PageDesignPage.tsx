@@ -18,7 +18,7 @@ import { defaultTheme, themeStylesheet } from "@lintel/site-components";
 // The site's component styles, so the canvas shows blocks exactly as the site does.
 import siteStylesheet from "@lintel/site-components/styles.css?raw";
 import type { MotionEditorStringKey } from "@lintel/motion-editor";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, MonitorSmartphone, SquareArrowOutUpRight } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { LoadError } from "../api/LoadError.js";
@@ -55,6 +55,15 @@ import { useBuilderFonts } from "../site-fonts/useBuilderFonts.js";
 import { usePageDrafting } from "../page-drafts/usePageDrafting.js";
 import { useExperimentsInDesigner } from "../experiments/useExperimentsInDesigner.js";
 import { BuilderVisitorsLine } from "../analytics/BuilderVisitorsLine.js";
+import { PageStatus, pageStateOf } from "../content-workspace/PageStatus.js";
+import {
+  PagePreviewButton,
+  PagePublishButton,
+  PageViewLink,
+  PageViewSwitch,
+} from "../page-home/PageBarParts.js";
+import { pageViews, publishState, type PageView } from "../page-home/pageViews.js";
+import { createEntryPreview } from "../preview/preview.api.js";
 
 /**
  * The canvas frame's scripts, served beside the admin (see vite.config.ts), because the
@@ -88,9 +97,18 @@ export function PageDesignPage({ collectionHandle, entryId, fieldHandle }: PageD
   if (!entry.data || canvasSite.isPending || siteSections.isLoading) {
     return (
       <LoadingRegion label={t("pageDesign.loading")}>
-        <div className="flex h-dvh flex-col gap-3 p-3">
-          <Skeleton className="h-10" />
-          <Skeleton className="flex-1" />
+        {/* The shape of what's coming, so the switch from the page's Content view doesn't jump. */}
+        <div className="flex h-dvh flex-col bg-background">
+          <div className="flex h-12 shrink-0 items-center gap-3 hairline-bottom bg-surface px-3">
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="ms-auto h-8 w-24" />
+          </div>
+          <div className="flex min-h-0 flex-1">
+            <div className="w-72 shrink-0 border-e border-separator bg-surface" />
+            <div className="flex-1 p-4">
+              <Skeleton className="size-full" />
+            </div>
+          </div>
         </div>
       </LoadingRegion>
     );
@@ -196,6 +214,39 @@ function PageDesigner({
   const pagePicker = usePagePicker();
   const findPage = usePageFinder();
   const isNarrowScreen = useIsNarrowScreen();
+  const navigate = useNavigate();
+  const views = pageViews({
+    canOpenDesign: true,
+    isNarrowScreen,
+    listsChildren:
+      (entryInfo.data?.childCount ?? 0) > 0 && (entryInfo.data?.childrenAsCollection ?? false),
+  });
+
+  /** The other views are the page screen. What's unsaved goes first, so nothing asks. */
+  async function openView(view: PageView) {
+    if (view === "design") return;
+    const isSafeToLeave = experiments.isEditingVersion ? false : await saving.saveBeforeLeaving();
+    await navigate({
+      to: "/content/$collection/$entryId",
+      params: { collection: collectionHandle, entryId: saving.entry.id },
+      search: { locale: undefined, tab: view === "children" ? view : undefined },
+      ignoreBlocker: isSafeToLeave,
+    });
+  }
+
+  /** The saved draft as the website draws it, in a new tab, or else beside the page's fields. */
+  async function openPreview() {
+    await saving.saveNow();
+    const preview = await createEntryPreview(saving.entry.id).catch(() => null);
+    const opened = preview?.previewUrl ? window.open(preview.previewUrl, "_blank") : null;
+    if (opened) return;
+    await navigate({
+      to: "/content/$collection/$entryId",
+      params: { collection: collectionHandle, entryId: saving.entry.id },
+      search: { locale: undefined, preview: true },
+    });
+  }
+
   const title = String(saving.entry.data.title ?? "") || t("pageDesign.untitled");
   const text = useCallback(
     (key: string, values?: Readonly<Record<string, string | number>>) =>
@@ -207,6 +258,14 @@ function PageDesigner({
       t(key, values),
     [],
   );
+
+  // Shared menus and footers go live with the page, for those allowed to change them.
+  const showsSitePartsNote =
+    canPublish &&
+    canPublishShared &&
+    shared.unpublished &&
+    !saving.justPublished &&
+    saving.liveness === "live";
 
   if (!field)
     return (
@@ -259,6 +318,22 @@ function PageDesigner({
         onChange={changeDesign}
         onSelectionChange={experiments.select}
         title={title}
+        toolbarTitleNote={
+          <PageStatus
+            entry={saving.entry}
+            state={pageStateOf(saving.entry, saving.hasUnsavedChanges)}
+            note={showsSitePartsNote ? t("pageDesign.siteSections.notLive") : undefined}
+          />
+        }
+        toolbarAfterTitle={
+          <PageViewSwitch
+            pageTitle={title}
+            views={views}
+            view="design"
+            canDesign={!contentOnly}
+            onChange={(view) => void openView(view)}
+          />
+        }
         canEditCode={canEditCode}
         contentOnly={contentOnly}
         site={site}
@@ -308,42 +383,12 @@ function PageDesigner({
                   errorMessage={saving.errorMessage}
                   onRetry={saving.saveNow}
                 />
-                {canPublish &&
-                  !mustSendForReview &&
-                  !saving.justPublished &&
-                  saving.liveness !== "live" && (
-                    <span className="hidden text-footnote whitespace-nowrap text-label-secondary sm:inline">
-                      {t(
-                        saving.liveness === "notLiveYet"
-                          ? "pageDesign.notLiveYet"
-                          : "pageDesign.changesNotLive",
-                      )}
-                    </span>
-                  )}
                 <BuilderVisitorsLine entryId={saving.entry.id} />
-                {/* One note at a time: the page's own when it has changes waiting, else the
-                    navigation and footer's. */}
-                {canPublish &&
-                  canPublishShared &&
-                  shared.unpublished &&
-                  !saving.justPublished &&
-                  saving.liveness === "live" && (
-                    <span className="hidden text-footnote text-label-secondary sm:inline">
-                      {t("pageDesign.siteSections.notLive")}
-                    </span>
-                  )}
                 <span role="status" className="sr-only">
                   {saving.justPublished ? t("pageDesign.publishedAnnouncement") : ""}
                 </span>
-                {viewPage && (
-                  <ViewPageLink
-                    target={viewPage}
-                    className="flex h-8 items-center gap-1.5 rounded-control px-2 text-footnote font-medium text-accent hover:bg-fill focus-visible:focus-ring"
-                  >
-                    <SquareArrowOutUpRight aria-hidden="true" className="size-3.5" />
-                    {t("editor.viewPage")}
-                  </ViewPageLink>
-                )}
+                {viewPage && <PageViewLink target={viewPage} />}
+                <PagePreviewButton onClick={() => void openPreview()} />
                 {canPublish && mustSendForReview && reviewState.data && (
                   <SendForReviewButton
                     entryId={saving.entry.id}
@@ -353,18 +398,15 @@ function PageDesigner({
                   />
                 )}
                 {canPublish && !mustSendForReview && (
-                  <button
-                    type="button"
-                    onClick={() => void saving.publish()}
-                    disabled={saving.isPublishing}
-                    className="h-8 rounded-control bg-accent-fill px-3 text-footnote font-semibold text-on-accent focus-visible:focus-ring disabled:opacity-50"
-                  >
-                    {saving.isPublishing
-                      ? t("pageDesign.publishing")
-                      : saving.justPublished
-                        ? t("pageDesign.published")
-                        : t("pageDesign.publish")}
-                  </button>
+                  <PagePublishButton
+                    state={publishState({
+                      isLive: saving.entry.status === "published",
+                      hasNewerChanges: saving.liveness !== "live" || showsSitePartsNote,
+                      isPublishing: saving.isPublishing,
+                      justPublished: saving.justPublished,
+                    })}
+                    onPublish={() => void saving.publish()}
+                  />
                 )}
               </>
             )}

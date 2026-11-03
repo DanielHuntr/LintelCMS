@@ -61,7 +61,7 @@ export function TranslationsSection({ collectionHandle, entry, locale }: Transla
   }
 
   return (
-    <PanelSection title={t("translations.title")}>
+    <PanelSection title={t("translations.title")} value={nameOf(current)}>
       <p className="flex items-center gap-2 text-body text-label">
         <Languages aria-hidden="true" strokeWidth={1.75} className="size-4 text-label-secondary" />
         {t("translations.writtenIn", { language: nameOf(current) })}

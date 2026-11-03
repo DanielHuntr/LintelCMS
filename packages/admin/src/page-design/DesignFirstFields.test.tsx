@@ -88,7 +88,10 @@ function samplePage(data: Record<string, unknown>): Entry {
   });
 }
 
-function renderPageEditor(entry: Entry | undefined) {
+function renderPageEditor(
+  entry: Entry | undefined,
+  options: Parameters<typeof renderScreen>[1] = { initialPath: "/content/pages/p1" },
+) {
   return renderScreen(
     <EntryEditor
       collection={pagesCollection}
@@ -96,10 +99,24 @@ function renderPageEditor(entry: Entry | undefined) {
       initialEntry={entry}
       onCreated={() => undefined}
     />,
+    options,
   );
 }
 
 afterEach(() => vi.restoreAllMocks());
+
+function designedPageAnswers({ url }: { url: URL }) {
+  if (url.pathname.startsWith("/navigation/")) return notInMenu;
+  if (url.pathname !== "/website/canvas") return { revisions: [] };
+  return {
+    stylesheet: "",
+    bodyClassName: "lintel-site",
+    headerHtml: "",
+    footerHtml: "",
+    baseUrl: "http://localhost:3000",
+    motionScript: "",
+  };
+}
 
 // A saved page's side panel asks whether it's in the main menu.
 const notInMenu = {
@@ -144,8 +161,62 @@ describe("a page's editor", () => {
     expect(picture.getAttribute("sandbox")).toBe("");
     expect(picture.getAttribute("srcdoc")).toContain("Corner Bakery");
     expect(picture.getAttribute("srcdoc")).toContain('<section class="welcome"></section>');
-    const fields = screen.getAllByText(/^(Design|Summary)$/);
+    const fields = screen
+      .getAllByText(/^(Design|Summary)$/)
+      .filter((element) => !element.closest("[role=radiogroup]"));
     expect(fields.map((element) => element.textContent)).toEqual(["Design", "Summary"]);
+  });
+
+  it("says what the Summary is for, in plain words", async () => {
+    mockApi(({ url }) => (url.pathname.startsWith("/navigation/") ? notInMenu : { revisions: [] }));
+    renderPageEditor(samplePage({}));
+
+    expect(
+      await screen.findByText(/It shows in search results, link previews and lists of pages/),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps the guided start to one row, with no picture pushing the fields down", async () => {
+    mockApi(({ url }) => (url.pathname.startsWith("/navigation/") ? notInMenu : { revisions: [] }));
+    renderPageEditor(samplePage({}));
+
+    const card = await screen.findByRole("region", { name: "This page has no design yet" });
+    expect(card.querySelector(".aspect-\\[16\\/9\\]")).toBeNull();
+  });
+
+  it("switches to the designer from the top bar", async () => {
+    const user = userEvent.setup();
+    mockApi(designedPageAnswers);
+    const { router } = renderPageEditor(samplePage({ design: designWithOneSection() }));
+
+    const views = await screen.findByRole("radiogroup", { name: /^Sections of/ });
+    expect(within(views).getByRole("radio", { name: "Content" })).toBeChecked();
+    await user.click(within(views).getByRole("radio", { name: "Design" }));
+
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe("/content/pages/p1/design/design"),
+    );
+  });
+
+  it("calls Design 'On the page' for someone who can only change the content", async () => {
+    mockApi(designedPageAnswers);
+    renderPageEditor(samplePage({ design: designWithOneSection() }), {
+      permissions: ["entries:*", "navigation:read"],
+      initialPath: "/content/pages/p1",
+    });
+
+    const card = await screen.findByRole("region", { name: "Design" });
+    expect(within(card).getByRole("link", { name: "Edit on the page" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "On the page" })).toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "Design" })).toBeNull();
+  });
+
+  it("offers no Design view until a new page exists", async () => {
+    mockApi(({ url }) => (url.pathname.startsWith("/navigation/") ? notInMenu : { revisions: [] }));
+    renderPageEditor(undefined);
+
+    await screen.findByRole("button", { name: "Start designing" });
+    expect(screen.queryByRole("radio", { name: "Design" })).toBeNull();
   });
 
   it("offers templates and sections for an empty design, with simple sections folded away", async () => {

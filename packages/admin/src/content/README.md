@@ -37,8 +37,14 @@ remounted when that happens (see `useEditorKey` in `EntryEditorPage.tsx`), so no
 in the meantime is lost.
 
 Each field is drawn by `src/fields`. A `page` field shows a summary and **Edit design**, which
-opens the visual builder full screen (`src/page-design`). The side panel (`EntrySidePanel.tsx`) holds status and
-publishing, the parent page for tree collections, and the revision history with restore.
+opens the visual builder full screen (`src/page-design`). The top bar (`EntryEditorBar.tsx`) has
+the parts it shares with the designer (`src/page-home`).
+
+The side panel (`EntrySidePanel.tsx`) keeps Status open at the top. Every other group is a
+`PanelSection`, which folds there to one row with its setting on the right ("Parent page: Home"):
+language, parent page, template, menu, plugin panels such as Search engines, and history.
+Groups someone opens stay open for them in this browser, and a group opens by itself when it
+needs attention (`needsAttention`, such as a review waiting). Folded contents stay mounted.
 
 Preview (in the toolbar and the More menu) opens a split view: the document on the left and
 the page as the site renders it on the right (`src/preview`), in place of the side panel. It

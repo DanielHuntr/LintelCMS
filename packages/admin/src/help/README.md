@@ -12,7 +12,7 @@ connection and never disagrees with the docs.
 | `HelpArticle.tsx`       | One page's HTML; links to other help pages open in place            |
 | `HelpTopicList.tsx`     | Every help page, in the docs' order                                 |
 | `HelpPage.tsx`          | The Help section; the open topic is in the address (`?topic=`)      |
-| `helpTopics.ts`         | Which page each screen opens                                        |
+| `helpTopics.ts`         | Which page each screen opens (the tree has `using/content-tree`)    |
 | `renderHelpMarkdown.ts` | Markdown to HTML: in-panel links, bundled screenshots, heading ids  |
 | `docsLinks.ts`          | Links to the full docs (`VITE_DOCS_URL`, or the Markdown on GitHub) |
 | `helpArticle.css`       | Reading styles for the rendered Markdown, from the design tokens    |

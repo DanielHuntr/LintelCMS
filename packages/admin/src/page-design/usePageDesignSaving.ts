@@ -90,6 +90,12 @@ export function usePageDesignSaving(
     errorMessage,
     hasUnsavedChanges,
     saveNow: () => saveNow().catch(() => undefined),
+    /** Saves anything waiting, and says whether it's all safe to leave. */
+    saveBeforeLeaving: () =>
+      saveNow().then(
+        () => true,
+        () => false,
+      ),
     publish,
     isPublishing,
     justPublished,

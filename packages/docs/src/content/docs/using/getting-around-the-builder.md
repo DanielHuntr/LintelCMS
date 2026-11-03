@@ -28,7 +28,7 @@ CSS and JavaScript in **Content**.
 
 ## The guided tour
 
-The first time you open the builder, a short tour of eight steps shows you around:
+The first time you open the builder, a short tour of nine steps shows you around:
 
 1. **Add sections and elements:** **Insert** has ready-made sections, including a
    navigation and a footer, and single elements. **Layers** lists everything on the page.
@@ -42,7 +42,9 @@ The first time you open the builder, a short tour of eight steps shows you aroun
 6. **Make it move:** **Animate** and **Add motion**.
 7. **Every screen size, and every step:** desktop, tablet and phone, **Undo** and
    **History**.
-8. **Publish and view your page:** **Publish** and **View page**.
+8. **Design and Content:** the switch at the top moves between the builder and the page's
+   fields and settings. See [The content tree](/using/content-tree/#one-page-two-views).
+9. **Publish and view your page:** **Publish** and **View page**.
 
 Each step dims the rest of the screen so the part it's about stands out. Press **Next** to
 go on, **Back** to look again, or **Skip the tour** (or Escape) to start straight away.

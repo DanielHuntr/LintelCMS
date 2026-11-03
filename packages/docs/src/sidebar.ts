@@ -7,6 +7,7 @@ export const usingPages = [
   "using/setup",
   "using/getting-around",
   "using/writing",
+  "using/content-tree",
   "using/publishing",
   "using/website",
   "using/designing-pages",

@@ -42,7 +42,14 @@ export function ParentPagePicker({
   const options = pages.filter((page) => !excluded.has(page.id));
 
   return (
-    <PanelSection title={t("editor.panel.parent")}>
+    <PanelSection
+      title={t("editor.panel.parent")}
+      value={
+        parentId === null
+          ? t("pageHome.panel.topLevel")
+          : pages.find((page) => page.id === parentId)?.title
+      }
+    >
       <div className="flex flex-col gap-1.5">
         <label htmlFor={selectId} className="sr-only">
           {t("editor.parentLabel")}

@@ -5,6 +5,8 @@
  */
 const helpTopics: ReadonlyArray<{ path: RegExp; slug: string }> = [
   { path: /^\/$/, slug: "using/getting-around" },
+  { path: /^\/content$/, slug: "using/content-tree" },
+  { path: /^\/content\/pages$/, slug: "using/content-tree" },
   { path: /^\/content(\/|$)/, slug: "using/writing" },
   { path: /^\/media(\/|$)/, slug: "using/media" },
   { path: /^\/users\/activity(\/|$)/, slug: "using/users" },

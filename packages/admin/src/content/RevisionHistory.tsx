@@ -35,7 +35,10 @@ export function RevisionHistory({ entryId, isWorking, onRestore }: RevisionHisto
   const latestId = revisions?.[0]?.id;
 
   return (
-    <PanelSection title={t("editor.panel.history")}>
+    <PanelSection
+      title={t("editor.panel.history")}
+      value={revisions ? t("pageHome.panel.versions", { count: revisions.length }) : undefined}
+    >
       {!entryId && <p className="text-footnote text-label-secondary">{t("revisions.none")}</p>}
 
       {entryId && isPending && (

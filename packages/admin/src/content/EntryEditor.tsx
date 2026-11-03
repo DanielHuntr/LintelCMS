@@ -47,13 +47,17 @@ import { useEntryInfo, useRefreshContent } from "../content-tree/contentTree.que
 import { CollectionView } from "../content-workspace/CollectionView.js";
 import { entryAddressPattern } from "../content-workspace/entryAddressPattern.js";
 import { InfoTab } from "../content-workspace/InfoTab.js";
-import { PageStatus } from "../content-workspace/PageStatus.js";
+import { PageStatus, pageStateOf } from "../content-workspace/PageStatus.js";
 import { PublishWithParentDialog } from "../content-workspace/PublishWithParentDialog.js";
 import type { WorkspaceTab } from "../content-workspace/workspaceTabs.js";
 import { Dialog } from "../design/Dialog.js";
 import { useToast } from "../design/Toast.js";
 import { useRecycleWithUndo } from "../content-tree/useRecycleWithUndo.js";
-import { SegmentedControl } from "../design/SegmentedControl.js";
+import { useIsNarrowScreen } from "../design/useIsNarrowScreen.js";
+import { preloadDesigner, preloadDesignerWhenIdle } from "../page-design/preloadDesigner.js";
+import { PagePublishButton, PageViewSwitch } from "../page-home/PageBarParts.js";
+import { pageViews, publishState, type PageView } from "../page-home/pageViews.js";
+import { useIsBarTight } from "../page-home/useIsBarTight.js";
 import { PageMenuSection } from "../menus/PageMenuSection.js";
 import {
   TEMPLATE_CHOICE_KEY,
@@ -152,6 +156,9 @@ export function EntryEditor({
     (info.data?.childCount ?? 0) > 0 &&
     (info.data?.childrenAsCollection ?? false);
   const showsChildren = listsChildren && tab === "children";
+  const isNarrowScreen = useIsNarrowScreen();
+  const [editorElement, setEditorElement] = useState<HTMLDivElement | null>(null);
+  const isBarTight = useIsBarTight(editorElement);
   const canDelete = useCan("entries:delete");
   const canCreate = useCan("entries:create");
   const canSave = useCan(entry ? "entries:update" : "entries:create");
@@ -161,6 +168,16 @@ export function EntryEditor({
   const titleField = blueprint.fields.find((field) => field.handle === titleFieldHandle);
   // Pages are designed visually: a blueprint with a page field leads with its design.
   const designField = blueprint.fields.find((field) => field.type === "page");
+  const views = pageViews({
+    canOpenDesign: designField !== undefined && entry !== undefined,
+    isNarrowScreen,
+    listsChildren,
+  });
+  const entryId = entry?.id;
+  // The designer is ready by the time someone reaches for it.
+  useEffect(() => {
+    if (designField && entryId && !isNarrowScreen) return preloadDesignerWhenIdle();
+  }, [designField, entryId, isNarrowScreen]);
   const handlesInOrder = [
     titleFieldHandle,
     "slug",
@@ -221,6 +238,20 @@ export function EntryEditor({
     await navigate({
       to: "/content/$collection/$entryId/design/$field",
       params: { collection: collection.handle, entryId, field: designField.handle },
+      ignoreBlocker: true,
+    });
+  }
+
+  /** Design is its own screen, so anything unsaved goes first; the rest are in this one. */
+  async function openView(view: PageView) {
+    if (view !== "design") {
+      onTabChange?.(view);
+      return;
+    }
+    if (!designField || !entry || (isUnsaved && !(await saveExplicitly()))) return;
+    await navigate({
+      to: "/content/$collection/$entryId/design/$field",
+      params: { collection: collection.handle, entryId: entry.id, field: designField.handle },
       ignoreBlocker: true,
     });
   }
@@ -336,12 +367,27 @@ export function EntryEditor({
   const unplacedErrors = errorsWithoutAField(handlesInOrder, state.fieldErrors);
   const bannerMessage = actions.actionError ?? unplacedErrors[0] ?? null;
 
+  const viewSwitch = (
+    <PageViewSwitch
+      pageTitle={title || t("editor.untitled")}
+      views={views}
+      view={showsChildren ? "children" : "content"}
+      canDesign={canDesign}
+      onChange={(view) => void openView(view)}
+      onApproach={designField ? preloadDesigner : undefined}
+    />
+  );
+
   return (
-    <div className={classNames("w-full", editorWidths[companion])}>
+    <div ref={setEditorElement} className={classNames("w-full", editorWidths[companion])}>
       <h1 className="sr-only">{title || t("editor.untitled")}</h1>
 
       <EntryEditorBar
         breadcrumbs={<EntryBreadcrumbs collection={collection} entryId={entry?.id} title={title} />}
+        status={
+          <PageStatus entry={entry} state={entry ? pageStateOf(entry, isUnsaved) : "draft"} />
+        }
+        viewSwitch={views.length > 1 && !isBarTight && !isNarrowScreen ? viewSwitch : undefined}
         onShowDetails={entry ? () => setIsShowingDetails(true) : undefined}
         isPanelOpen={isPanelOpen}
         panelId={panelId}
@@ -376,11 +422,14 @@ export function EntryEditor({
               state={reviewState.data}
               disabled={actions.isWorking}
               beforeSending={() => (isUnsaved ? saveExplicitly() : undefined)}
+              look="toolbar"
             />
           ) : canPublish ? (
-            <PublishButton
-              entry={entry}
-              hasUnsavedChanges={isUnsaved}
+            <PagePublishButton
+              state={publishState({
+                isLive: entry?.status === "published",
+                hasNewerChanges: isUnsaved || entry?.hasUnpublishedChanges === true,
+              })}
               // A new entry has nothing to publish until it has a title.
               disabled={actions.isWorking || (entry === undefined && title.trim() === "")}
               onPublish={() => void publish()}
@@ -421,18 +470,8 @@ export function EntryEditor({
         </div>
       )}
 
-      {listsChildren && (
-        <div className="mb-5">
-          <SegmentedControl
-            label={t("workspace.tabs", { title: title || t("editor.untitled") })}
-            options={[
-              { value: "content", label: t("workspace.tab.content") },
-              { value: "children", label: t("workspace.tab.children") },
-            ]}
-            value={showsChildren ? "children" : "content"}
-            onChange={(next) => onTabChange?.(next)}
-          />
-        </div>
+      {views.length > 1 && (isBarTight || isNarrowScreen) && (
+        <div className="mb-5">{viewSwitch}</div>
       )}
 
       {showsChildren && entry ? (
@@ -621,28 +660,5 @@ export function EntryEditor({
         onConfirm={leaveWarning.leave}
       />
     </div>
-  );
-}
-
-interface PublishButtonProps {
-  entry: Entry | undefined;
-  hasUnsavedChanges: boolean;
-  disabled: boolean;
-  onPublish: () => void;
-}
-
-/** "Publish", or "Publish changes" for a live entry with newer edits, or a quiet "Published". */
-function PublishButton({ entry, hasUnsavedChanges, disabled, onPublish }: PublishButtonProps) {
-  const isLive = entry?.status === "published";
-  const hasNewerEdits = hasUnsavedChanges || entry?.hasUnpublishedChanges === true;
-
-  if (entry && isLive && !hasNewerEdits) {
-    return <PageStatus entry={entry} state="live" />;
-  }
-
-  return (
-    <Button onClick={onPublish} disabled={disabled}>
-      {isLive ? t("editor.publishChanges") : t("editor.publish")}
-    </Button>
   );
 }

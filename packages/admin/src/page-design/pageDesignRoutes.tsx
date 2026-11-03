@@ -9,10 +9,11 @@ import { lazy } from "react";
 import { fetchCurrentSession, type Session } from "../session/session.api.js";
 import { SessionProvider } from "../session/SessionContext.js";
 import { ServerUnreachablePage } from "../setup/ServerUnreachablePage.js";
+import { loadPageDesignPage } from "./preloadDesigner.js";
 
-// The builder is large, so it loads only when someone opens a design.
+// The builder is large, so it loads only when someone is about to open a design.
 const PageDesignPage = lazy(async () => ({
-  default: (await import("./PageDesignPage.js")).PageDesignPage,
+  default: (await loadPageDesignPage()).PageDesignPage,
 }));
 
 /**

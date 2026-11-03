@@ -94,9 +94,13 @@ See [History](/using/history/) for going back to an earlier version.
 
 ## Pages inside pages
 
-Pages can sit under other pages, like folders: "Our team" under "About us". Choose the
-**Parent page** in the details panel on the right. Use **Show or hide details** at the
-top to open or close that panel.
+Pages can sit under other pages, like folders: "Our team" under "About us". Open
+**Parent page** in the details panel on the right and choose one. Use **Show or hide
+details** at the top to open or close that panel. See
+[The content tree](/using/content-tree/) for what this does to a page's address.
+
+Apart from **Status**, the panel's groups start folded, each saying what's set. Press one to
+open it; Lintel remembers the ones you keep open.
 
 ## Deleting an entry
 
