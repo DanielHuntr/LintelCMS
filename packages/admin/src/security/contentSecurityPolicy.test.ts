@@ -13,6 +13,16 @@ describe("the admin's Content-Security-Policy", () => {
     expect(policy).not.toContain("frame-ancestors");
   });
 
+  it("loads a site's fonts on the builder's canvas, from the API and Adobe Fonts only", () => {
+    const policy = contentSecurityPolicy("https://api.example.com/");
+
+    expect(policy).toContain(
+      "font-src 'self' data: https://api.example.com https://use.typekit.net",
+    );
+    expect(policy).toContain("https://p.typekit.net");
+    expect(policy).not.toContain("fonts.googleapis.com");
+  });
+
   it("keeps the admin out of other sites' frames when sent as a header", () => {
     const headers = securityHeaders("http://localhost:4000");
 

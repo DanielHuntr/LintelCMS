@@ -50,3 +50,4 @@ export {
   wordpressImportItemsTable,
 } from "../wordpress-import/wordpress-import.table.js";
 export { siteImportsTable, siteImportItemsTable } from "../importers/site-import.table.js";
+export { siteFontsTable } from "../site-fonts/site-fonts.table.js";

@@ -9,10 +9,13 @@ export function HeadTags({
   head,
   locale,
   stylesheetUrl,
+  fontStylesheetUrls = [],
 }: {
   head: PageHead;
   locale: string;
   stylesheetUrl: string;
+  /** Font services' stylesheets (an Adobe Fonts project's), linked as their licences ask. */
+  fontStylesheetUrls?: readonly string[];
 }) {
   return (
     <>
@@ -46,6 +49,9 @@ export function HeadTags({
         <meta property="article:published_time" content={head.publishedAt} />
       )}
       <meta name="twitter:card" content={head.image ? "summary_large_image" : "summary"} />
+      {fontStylesheetUrls.map((href) => (
+        <link key={href} rel="stylesheet" href={href} />
+      ))}
       <link rel="stylesheet" href={stylesheetUrl} />
     </>
   );

@@ -15,6 +15,7 @@ import { MediaPicker } from "../media/MediaPicker.js";
 import { useCan } from "../session/SessionContext.js";
 import { ColourChoice } from "./ColourChoice.js";
 import { FontPairingChoice } from "./FontPairingChoice.js";
+import { ThemeFontChoice } from "../site-fonts/ThemeFontChoice.js";
 import type { ColourScheme, CornerStyle, SiteTheme, SpacingScale, Website } from "./website.api.js";
 import { useUpdateWebsite, useWebsite } from "./website.queries.js";
 
@@ -43,6 +44,8 @@ interface FormValues {
   template: string;
   theme: SiteTheme;
   logoAssetId: string | null;
+  headingFont: string | null;
+  bodyFont: string | null;
   siteAddress: string;
 }
 
@@ -53,6 +56,8 @@ function SiteSettingsForm({ initial }: { initial: Website }) {
     template: initial.template,
     theme: initial.theme,
     logoAssetId: initial.logoAssetId,
+    headingFont: initial.headingFont,
+    bodyFont: initial.bodyFont,
     siteAddress: initial.siteAddress,
   });
   const update = useUpdateWebsite();
@@ -83,6 +88,8 @@ function SiteSettingsForm({ initial }: { initial: Website }) {
       template: values.template,
       ...values.theme,
       logoAssetId: values.logoAssetId,
+      headingFont: values.headingFont,
+      bodyFont: values.bodyFont,
       siteAddress: values.siteAddress,
     });
   }
@@ -136,6 +143,12 @@ function SiteSettingsForm({ initial }: { initial: Website }) {
           value={values.theme.fontPairing}
           disabled={!canChange}
           onChange={(fontPairing) => changeTheme({ fontPairing })}
+        />
+        <ThemeFontChoice
+          headingFont={values.headingFont}
+          bodyFont={values.bodyFont}
+          disabled={!canChange}
+          onChange={change}
         />
         <LabelledSegments label={t("website.appearance")}>
           <SegmentedControl<ColourScheme>

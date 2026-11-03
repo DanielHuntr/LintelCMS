@@ -19,6 +19,8 @@ export interface DocumentPartsProps {
   template: SiteTemplate;
   labels: SiteLabels;
   stylesheetUrl: string;
+  /** Font services' stylesheets (an Adobe Fonts project's), linked before the site's own. */
+  fontStylesheetUrls?: readonly string[];
   year: number;
   /** The design (or designs, merged) the page shows, for their styles and scripts. */
   design: PageDesign | null;
@@ -53,7 +55,12 @@ export function renderDocumentParts(props: DocumentPartsProps): DocumentParts {
     language: chrome.locale,
     head: renderComponentHtml(
       <>
-        <HeadTags head={head} locale={chrome.locale} stylesheetUrl={props.stylesheetUrl} />
+        <HeadTags
+          head={head}
+          locale={chrome.locale}
+          stylesheetUrl={props.stylesheetUrl}
+          fontStylesheetUrls={props.fontStylesheetUrls}
+        />
         {design && (
           <DesignHead
             design={design}

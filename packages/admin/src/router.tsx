@@ -62,6 +62,7 @@ import { FeaturesSettingsPage } from "./features/FeaturesSettingsPage.js";
 import { SignInPage } from "./sign-in/SignInPage.js";
 import { WebhookDetailPage } from "./webhooks/WebhookDetailPage.js";
 import { SiteSettingsPage } from "./website/SiteSettingsPage.js";
+import { SiteFontsPage } from "./site-fonts/SiteFontsPage.js";
 import { WebhooksPage } from "./webhooks/WebhooksPage.js";
 import { runtimeSettings } from "./runtime-settings.js";
 import { workflowsRoutes } from "./workflows/workflowsRoutes.js";
@@ -399,6 +400,13 @@ const siteSettingsRoute = createRoute({
   component: SiteSettingsPage,
 });
 
+/** The site's fonts: uploaded, from Google Fonts and from Adobe Fonts. */
+const siteFontsRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/settings/site/fonts",
+  component: SiteFontsPage,
+});
+
 /** Build → Features: switching plugins on and off. */
 const featuresRoute = createRoute({
   getParentRoute: () => adminRoute,
@@ -421,6 +429,7 @@ const interfaceLanguageRoute = createRoute({
 /** API access, webhooks and the website. (The SEO plugin's settings are plugin screens.) */
 const integrationRoutes = [
   siteSettingsRoute,
+  siteFontsRoute,
   apiAccessRoute,
   apiReferenceRoute,
   webhooksRoute,

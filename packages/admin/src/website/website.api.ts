@@ -1,6 +1,7 @@
 import type { SiteEffectSettings } from "@lintel/motion";
 import type { BuilderDataSources } from "@lintel/builder";
 import { apiRequest } from "../api/client.js";
+import type { FontCategory } from "../site-fonts/siteFonts.api.js";
 
 /** Calls to the built-in website's settings (see packages/core/src/website). */
 
@@ -28,6 +29,9 @@ export interface Website {
   template: string;
   theme: SiteTheme;
   logoAssetId: string | null;
+  /** A font family for headings or body text in place of the pairing's; null follows the pairing. */
+  headingFont: string | null;
+  bodyFont: string | null;
   /** What was typed; empty means the built-in site's address. */
   siteAddress: string;
   effectiveSiteAddress: string | null;
@@ -39,6 +43,8 @@ export interface Website {
 export type WebsiteChanges = Partial<SiteTheme> & {
   template?: string;
   logoAssetId?: string | null;
+  headingFont?: string | null;
+  bodyFont?: string | null;
   siteAddress?: string;
 };
 
@@ -81,6 +87,10 @@ export interface CanvasSite {
   logo: { src: string; alt: string; width: number | null; height: number | null } | null;
   socialLinks: string[];
   footerText: string;
+  /** The site's own fonts, for the builder's font list. */
+  fonts: Array<{ family: string; category: FontCategory; source: "upload" | "google" | "adobe" }>;
+  /** Adobe Fonts' stylesheet, linked on the canvas as on the website. */
+  fontStylesheets: string[];
 }
 
 export function getCanvasSite() {

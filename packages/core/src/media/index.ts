@@ -14,6 +14,7 @@ export {
 export type { AssetUsage } from "./media.errors.js";
 export { AssetInUseError, AssetNotFoundError } from "./media.errors.js";
 export { detectFileType } from "./file-types.js";
+export { findAssetFile } from "./media-file.service.js";
 export {
   deleteAsset,
   setAssetCredit,

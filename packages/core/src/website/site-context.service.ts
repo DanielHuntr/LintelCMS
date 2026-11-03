@@ -22,6 +22,9 @@ import { readSiteEffects, siteEffectsHead } from "../site-effects/site-effects.s
 import { choiceLabelsOf } from "./bound-entries.js";
 import type { CustomScriptRule } from "@lintel/builder-model";
 import { readSetting } from "../settings/settings.service.js";
+import { readWebsiteFonts } from "../site-fonts/site-fonts.service.js";
+import { websiteFontsStylesheet } from "../site-fonts/website-fonts.js";
+import type { SiteFontChoice } from "@lintel/builder-model";
 
 /**
  * What every page of the built-in site needs, whatever its address: languages, which
@@ -43,6 +46,10 @@ export interface SiteContext {
   /** The site's path prefix ("/fr"), or "" when it has the whole domain. */
   pathPrefix: string;
   stylesheet: { css: string; path: string };
+  /** The site's own fonts, for the builder's font list. */
+  fonts: SiteFontChoice[];
+  /** Stylesheets font services ask to be linked to (an Adobe Fonts project's). */
+  fontStylesheetUrls: string[];
   /** Page transitions, cursor and intro, or undefined when the site has none switched on. */
   effects: SiteEffectsHead | undefined;
   /** Whether Code elements may run scripts: applied each time a design is drawn. */
@@ -63,6 +70,7 @@ export async function loadSiteContext(
 ): Promise<SiteContext> {
   const { site } = options;
   const effects = readSiteEffects(database);
+  const websiteFonts = readWebsiteFonts(database, site, options.assetLookup);
   const scriptRule = readSetting(database, "builderCustomScripts");
   const [locales, collections, look, seoEnabled, seoDefaults, siteAddress, plugins] =
     await Promise.all([
@@ -79,7 +87,13 @@ export async function loadSiteContext(
       null)
     : null;
   // Pages designed in the builder need a few element defaults; the canvas draws with this same file.
-  const css = `${siteStylesheet(look.theme, look.template)}\n\n${designBaseStylesheet}`;
+  // Site fonts follow the theme, so the theme's heading and body choices can name them.
+  const { fonts, stylesheetUrls } = await websiteFonts;
+  const css = [
+    siteStylesheet(look.theme, look.template),
+    websiteFontsStylesheet(fonts, look),
+    designBaseStylesheet,
+  ].join("\n\n");
   const fingerprint = createHash("sha256").update(css).digest("hex").slice(0, 12);
   return {
     defaultLocale: locales.defaultLocale,
@@ -93,6 +107,8 @@ export async function loadSiteContext(
     siteAddress,
     pathPrefix: site.pathPrefix,
     stylesheet: { css, path: `${STYLESHEET_FOLDER}/site-${fingerprint}.css` },
+    fonts: fonts.map(({ family, category, source }) => ({ family, category, source })),
+    fontStylesheetUrls: stylesheetUrls,
     effects: siteEffectsHead(await effects, { skip: "Skip intro", loading: "Loading" }),
     scriptRule: await scriptRule,
   };

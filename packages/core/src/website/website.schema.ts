@@ -38,6 +38,12 @@ function isWebAddress(value: string): boolean {
   }
 }
 
+/** A family name, as site fonts and the included fonts have them ("Studio Sans"). */
+const themeFontSchema = z
+  .string({ error: "Choose a font" })
+  .trim()
+  .regex(/^[A-Za-z0-9][A-Za-z0-9 -]{0,59}$/, { error: "Choose one of the site's fonts" });
+
 export const templateIdSchema = z
   .string({ error: "Please choose a template" })
   .regex(/^[a-z][a-z0-9-]*$/, { error: "That isn't one of the templates" });
@@ -64,6 +70,10 @@ export const websiteSettingsSchema = z.object({
     .uuid({ error: "The logo should be an image from the media library" })
     .nullable()
     .default(null),
+  /** A font family for headings, from the site's fonts or the included ones; null follows the pairing. */
+  headingFont: themeFontSchema.nullable().default(null),
+  /** The same for body text. */
+  bodyFont: themeFontSchema.nullable().default(null),
 });
 
 export type WebsiteSettings = z.output<typeof websiteSettingsSchema>;
@@ -92,6 +102,8 @@ export const updateWebsiteRequestSchema = z.object({
     .uuid({ error: "The logo should be an image from the media library" })
     .nullable()
     .optional(),
+  headingFont: themeFontSchema.nullable().optional(),
+  bodyFont: themeFontSchema.nullable().optional(),
   /** Saved as the `siteAddress` setting. Empty means the built-in site's address. */
   siteAddress: siteAddressSchema.optional(),
 });
@@ -103,6 +115,9 @@ export interface WebsiteResponse {
   template: string;
   theme: SiteTheme;
   logoAssetId: string | null;
+  /** The family headings and body text use instead of the pairing's; null follows the pairing. */
+  headingFont: string | null;
+  bodyFont: string | null;
   /** What was typed in Settings → Your website; empty uses the built-in site's. */
   siteAddress: string;
   /** Where the site is reached: the address above, or the built-in site's. Null if neither. */

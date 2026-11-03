@@ -26,6 +26,8 @@ const website: Website = {
   template: "clean",
   theme: cleanTheme,
   logoAssetId: null,
+  headingFont: null,
+  bodyFont: null,
   siteAddress: "",
   effectiveSiteAddress: "http://localhost:3000",
   builtInSiteUrl: "http://localhost:3000",
@@ -57,6 +59,22 @@ describe("Settings, Your website", () => {
           theme: { ...journalTheme, brandColour: "#ff2d55" },
         };
       }
+      if (url.pathname === "/site-fonts")
+        return {
+          fonts: [
+            {
+              id: "f1",
+              family: "Studio Sans",
+              category: "sans",
+              source: "upload",
+              sourceId: null,
+              files: [],
+              weights: ["400"],
+              hasItalic: false,
+            },
+          ],
+          adobeProjects: [],
+        };
       if (url.pathname === "/website/address")
         return { siteAddress: "http://localhost:3000", defaultLocale: "en-GB" };
       throw new Error(`Unexpected request: ${method} ${url.pathname} ${JSON.stringify(body)}`);
@@ -96,12 +114,33 @@ describe("Settings, Your website", () => {
         brandColour: "#ff2d55",
         colourScheme: "dark",
         logoAssetId: null,
+        headingFont: null,
+        bodyFont: null,
         siteAddress: "",
       }),
     );
     expect(
       await screen.findByText("Saved. Your website shows the changes now."),
     ).toBeInTheDocument();
+  });
+
+  it("uses one of the site's fonts for headings", async () => {
+    const { calls } = serve();
+    renderScreen(<SiteSettingsPage />);
+    const headings = await screen.findByLabelText("Headings");
+    expect(screen.getByLabelText("Body text")).toHaveValue("");
+    await waitFor(() =>
+      expect(screen.getAllByRole("option", { name: "Studio Sans" })).toHaveLength(2),
+    );
+    await userEvent.selectOptions(headings, "Studio Sans");
+    await userEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await waitFor(() =>
+      expect(calls.find((call) => call.method === "PUT")?.body).toMatchObject({
+        headingFont: "Studio Sans",
+        bodyFont: null,
+      }),
+    );
+    expect(screen.getByRole("link", { name: /Manage fonts/ })).toBeInTheDocument();
   });
 
   it("is read-only without permission to change settings", async () => {

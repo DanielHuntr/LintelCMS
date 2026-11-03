@@ -45,6 +45,7 @@ export function renderPage(
     template: context.look.template,
     labels: englishLabels,
     stylesheetUrl: context.stylesheet.path,
+    fontStylesheetUrls: context.fontStylesheetUrls,
     year: now.getUTCFullYear(),
     motionScriptUrl: readMotionRuntime()?.path,
     elementsScriptUrl: readElementsScript()?.path,

@@ -18,6 +18,8 @@ export interface SiteDocumentProps {
   labels: SiteLabels;
   /** The address of the site's stylesheet (theme tokens and component styles). */
   stylesheetUrl: string;
+  /** Font services' stylesheets (an Adobe Fonts project's), linked before the site's own. */
+  fontStylesheetUrls?: readonly string[];
   /** For the footer's copyright line. */
   year: number;
   /**
@@ -45,6 +47,7 @@ export function SiteDocument({
   template,
   labels,
   stylesheetUrl,
+  fontStylesheetUrls,
   year,
   motionScriptUrl,
   elementsScriptUrl,
@@ -55,7 +58,12 @@ export function SiteDocument({
   return (
     <html lang={chrome.locale}>
       <head>
-        <HeadTags head={head} locale={chrome.locale} stylesheetUrl={stylesheetUrl} />
+        <HeadTags
+          head={head}
+          locale={chrome.locale}
+          stylesheetUrl={stylesheetUrl}
+          fontStylesheetUrls={fontStylesheetUrls}
+        />
         {design && (
           <DesignHead
             design={design}

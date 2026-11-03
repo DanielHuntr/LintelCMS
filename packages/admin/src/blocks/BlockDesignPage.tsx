@@ -38,6 +38,7 @@ import { useCanvasSite } from "../website/website.queries.js";
 import { withoutBindingsTo } from "./blockChanges.js";
 import { asCustomBlock, fieldsAsProperties, type SiteBlock, updateBlock } from "./blocks.api.js";
 import { blockKeys, useBlock } from "./blocks.queries.js";
+import { useBuilderFonts } from "../site-fonts/useBuilderFonts.js";
 
 /**
  * A block's design in the visual builder, full screen: the page is the design, elements can
@@ -70,6 +71,7 @@ function BlockDesigner({ block, site }: { block: SiteBlock; site: CanvasSite | u
   const canEdit = useCan("builder:blocks") && block.editable;
   const canEditCode = useCan("builder:code");
   const imagePicker = useImagePicker();
+  const fonts = useBuilderFonts();
   const effectModules = useEffectModules(besideTheAdmin);
   const isNarrowScreen = useIsNarrowScreen();
   const initial = useMemo(() => designAsPage(block.design as PageNode), [block.design]);
@@ -184,6 +186,8 @@ function BlockDesigner({ block, site }: { block: SiteBlock; site: CanvasSite | u
         motionText={motionText}
         pickImage={imagePicker.pick}
         uploadFile={uploadToMediaLibrary}
+        onAddFont={fonts.onAddFont}
+        onMoveFontToSite={fonts.onMoveFontToSite}
         onSaveNow={() => void save()}
         frameScripts={canvasFrameScripts}
         effectModules={effectModules}
@@ -228,6 +232,7 @@ function BlockDesigner({ block, site }: { block: SiteBlock; site: CanvasSite | u
         </p>
       )}
       {imagePicker.dialog}
+      {fonts.dialogs}
       <ConfirmDialog
         open={removal !== null}
         title={t("blocks.removalTitle")}

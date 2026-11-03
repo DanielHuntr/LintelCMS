@@ -1,4 +1,5 @@
 import {
+  familyValue,
   fontFamilyValue,
   fontTokens,
   isSafeLinkAddress,
@@ -13,6 +14,7 @@ import {
 import { Bold, Eraser, Italic, Link, Type } from "lucide-react";
 import { type FormEvent, type ReactNode, useId, useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
+import { useSiteFonts } from "../style-panel/font-choices.js";
 import { classNames } from "../ui/controls.js";
 import { isToggleOn, toggleChange } from "./markToggles.js";
 
@@ -65,10 +67,12 @@ export function TextStyleBar({
     setSeenLinkRequest(linkRequest);
     if (!disabled) setIsLinking(true);
   }
+  const siteFonts = useSiteFonts().fonts;
   const fonts = [
     ...fontTokens.map((token) => ({ value: tokenValue(token), label: token.label })),
+    ...siteFonts.map((font) => ({ value: familyValue(font), label: font.family })),
     ...pageFonts.map((font) => ({ value: fontFamilyValue(font), label: pageFontFamily(font) })),
-  ];
+  ].filter((font, index, all) => all.findIndex((other) => other.value === font.value) === index);
   const isItalic = isToggleOn(marks, start, end, "italic");
   const isBold = isToggleOn(marks, start, end, "bold");
   const isOutlined = shared.textStroke !== undefined;

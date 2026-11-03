@@ -71,6 +71,7 @@ export async function renderEntryWithLiquid(
       template: context.look.template,
       labels: englishLabels,
       stylesheetUrl: context.stylesheet.path,
+      fontStylesheetUrls: context.fontStylesheetUrls,
       year,
       design,
       motionScriptUrl: readMotionRuntime()?.path,

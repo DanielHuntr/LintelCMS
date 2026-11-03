@@ -1,3 +1,4 @@
+import type { SiteFontChoice } from "@lintel/builder-model";
 import { snapBox } from "../free-layout/snapping.js";
 
 /**
@@ -927,6 +928,10 @@ export interface CanvasSite {
   logo?: { src: string; alt: string; width: number | null; height: number | null } | null;
   socialLinks?: readonly string[];
   footerText?: string;
+  /** The site's own fonts, for the font list (the stylesheet above declares their files). */
+  fonts?: readonly SiteFontChoice[];
+  /** Font services' stylesheets the website links to (an Adobe Fonts project's). */
+  fontStylesheets?: readonly string[];
 }
 
 const escapeAttribute = (value: string) => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
@@ -956,6 +961,11 @@ export interface CanvasScriptAddresses {
 /** The frame's whole document; the page itself arrives by message, inside `.lintel-design`. */
 export function canvasFrameSource(site?: CanvasSite, scripts?: CanvasScriptAddresses): string {
   const base = site?.baseUrl ? `<base href="${escapeAttribute(site.baseUrl)}">` : "";
+  // Only https stylesheets, as the website links them; anything else is left out.
+  const fontLinks = (site?.fontStylesheets ?? [])
+    .filter((href) => href.startsWith("https://"))
+    .map((href) => `<link rel="stylesheet" href="${escapeAttribute(href)}">`)
+    .join("");
   const bodyClass = site ? ` class="${escapeAttribute(site.bodyClassName)}"` : "";
   // Marked, so a page with its own header or footer can hide the site's (see PageBuilder).
   const header = site?.headerHtml
@@ -972,5 +982,5 @@ export function canvasFrameSource(site?: CanvasSite, scripts?: CanvasScriptAddre
   const frame = scripts
     ? `<script src="${escapeAttribute(scripts.frame)}"></script>`
     : `<script>${canvasFrameScript()}</script>`;
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">${base}<style id="lintel-page-style"></style><style>${canvasStyles}</style></head><body${bodyClass}>${header}<main class="lintel-main"><div id="lintel-page" class="lintel-design"></div></main>${footer}<div id="lintel-overlay"></div>${motion}${frame}</body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">${base}${fontLinks}<style id="lintel-page-style"></style><style>${canvasStyles}</style></head><body${bodyClass}>${header}<main class="lintel-main"><div id="lintel-page" class="lintel-design"></div></main>${footer}<div id="lintel-overlay"></div>${motion}${frame}</body></html>`;
 }

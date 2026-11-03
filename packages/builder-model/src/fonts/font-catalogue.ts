@@ -100,6 +100,21 @@ export interface FontFace {
   style: "normal" | "italic";
   src: string;
   format: FontFormat;
+  /** Which characters the file covers, for fonts split by alphabet: "U+0000-00FF, U+0131". */
+  unicodeRange?: string;
+}
+
+/** One `@font-face` rule. `font-display: swap` shows the text straight away in the fallback. */
+export function fontFaceRule(face: FontFace): string {
+  const lines = [
+    `  font-family: '${face.family}';`,
+    `  src: url("${face.src}") format("${face.format}");`,
+    `  font-weight: ${face.weight};`,
+    `  font-style: ${face.style};`,
+    "  font-display: swap;",
+    ...(face.unicodeRange ? [`  unicode-range: ${face.unicodeRange};`] : []),
+  ];
+  return `@font-face {\n${lines.join("\n")}\n}`;
 }
 
 export type FontFormat = "woff2" | "woff" | "truetype" | "opentype";

@@ -4,6 +4,7 @@ import {
   catalogueFontFaces,
   fallbackFamilies,
   findCatalogueFont,
+  fontFaceRule,
   type FontCategory,
   type FontFace,
   type FontFormat,
@@ -111,13 +112,7 @@ export function pageFontFaces(font: PageFont): FontFace[] {
  *   }
  */
 export function compileFontFaces(fonts: readonly PageFont[]): string {
-  return fonts
-    .flatMap(pageFontFaces)
-    .map(
-      (face) =>
-        `@font-face {\n  font-family: '${face.family}';\n  src: url("${face.src}") format("${face.format}");\n  font-weight: ${face.weight};\n  font-style: ${face.style};\n  font-display: swap;\n}`,
-    )
-    .join("\n\n");
+  return fonts.flatMap(pageFontFaces).map(fontFaceRule).join("\n\n");
 }
 
 /** The files worth preloading: each family's regular (or first) face, WOFF2 only. */
