@@ -1,3 +1,4 @@
+import { refuseWhenReviewNeeded } from "../client-editing/client-editing.service.js";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { PermissionDeniedError } from "../auth/auth.errors.js";
 import { getSignedIn, requirePermission } from "../auth/require-permission.js";
@@ -235,6 +236,7 @@ async function publishAndAnnounce(request: FastifyRequest, ids: string[]): Promi
 
 async function unpublishAndAnnounce(request: FastifyRequest, ids: string[]): Promise<BatchResult> {
   const { database } = request.server;
+  await refuseWhenReviewNeeded(database, getSignedIn(request).permissions);
   const result = await unpublishEntries(database, ids, getSignedIn(request).user.id);
   for (const entryId of result.changed) {
     const entry = await describeEntryForEvent(database, entryId);

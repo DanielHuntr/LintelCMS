@@ -4,6 +4,7 @@ import {
   type EditableField,
   type ListOfItemsField,
 } from "@lintel/builder-model";
+import { createContext, useContext } from "react";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { IconButton, inputClassName, Labelled } from "../ui/controls.js";
@@ -28,6 +29,12 @@ function valueAt(item: Item, path: string): unknown {
  * open (a native disclosure, so it works by keyboard and screen reader), and can be moved
  * up and down or removed.
  */
+/**
+ * Whether items can be added, removed and reordered. Off in a client's view of a list their
+ * designer didn't open up ("Clients can add more of these"): they fill in the items there.
+ */
+export const ItemsCanChangeContext = createContext(true);
+
 export function ItemListField({
   field,
   value,
@@ -40,6 +47,7 @@ export function ItemListField({
   pickImage: ImagePicker | undefined;
 }) {
   const text = useBuilderText();
+  const canChangeItems = useContext(ItemsCanChangeContext);
   const items = value.slice();
   const replace = (index: number, item: Item) =>
     onChange(items.map((current, at) => (at === index ? item : current)));
@@ -60,28 +68,30 @@ export function ItemListField({
           text("pageBuilder.content.untitledItem", { name: field.itemLabel, number: index + 1 });
         return (
           <div key={index} className="relative rounded-control bg-fill">
-            <div className="absolute top-1.5 inset-e-1 flex items-center">
-              <IconButton
-                size="small"
-                icon={ArrowUp}
-                label={text("pageBuilder.content.moveUp", { name })}
-                disabled={index === 0}
-                onClick={() => move(index, -1)}
-              />
-              <IconButton
-                size="small"
-                icon={ArrowDown}
-                label={text("pageBuilder.content.moveDown", { name })}
-                disabled={index === items.length - 1}
-                onClick={() => move(index, 1)}
-              />
-              <IconButton
-                size="small"
-                icon={Trash2}
-                label={text("pageBuilder.content.remove", { name })}
-                onClick={() => onChange(items.filter((_, at) => at !== index))}
-              />
-            </div>
+            {canChangeItems && (
+              <div className="absolute top-1.5 inset-e-1 flex items-center">
+                <IconButton
+                  size="small"
+                  icon={ArrowUp}
+                  label={text("pageBuilder.content.moveUp", { name })}
+                  disabled={index === 0}
+                  onClick={() => move(index, -1)}
+                />
+                <IconButton
+                  size="small"
+                  icon={ArrowDown}
+                  label={text("pageBuilder.content.moveDown", { name })}
+                  disabled={index === items.length - 1}
+                  onClick={() => move(index, 1)}
+                />
+                <IconButton
+                  size="small"
+                  icon={Trash2}
+                  label={text("pageBuilder.content.remove", { name })}
+                  onClick={() => onChange(items.filter((_, at) => at !== index))}
+                />
+              </div>
+            )}
             <details>
               <summary className="flex h-9 cursor-pointer list-none items-center pe-24 ps-2 text-footnote font-medium text-label focus-visible:focus-ring">
                 <span className="min-w-0 flex-1 truncate">{name}</span>
@@ -101,15 +111,17 @@ export function ItemListField({
           </div>
         );
       })}
-      <button
-        type="button"
-        disabled={atLimit}
-        onClick={() => onChange([...items, structuredClone({ ...field.newItem })])}
-        className="flex h-7 items-center gap-1 self-start rounded-control px-2 text-footnote font-medium text-accent hover:bg-fill focus-visible:focus-ring disabled:opacity-40"
-      >
-        <Plus aria-hidden="true" className="size-3.5" />
-        {text("pageBuilder.content.addItem", { name: field.itemLabel.toLowerCase() })}
-      </button>
+      {canChangeItems && (
+        <button
+          type="button"
+          disabled={atLimit}
+          onClick={() => onChange([...items, structuredClone({ ...field.newItem })])}
+          className="flex h-7 items-center gap-1 self-start rounded-control px-2 text-footnote font-medium text-accent hover:bg-fill focus-visible:focus-ring disabled:opacity-40"
+        >
+          <Plus aria-hidden="true" className="size-3.5" />
+          {text("pageBuilder.content.addItem", { name: field.itemLabel.toLowerCase() })}
+        </button>
+      )}
     </fieldset>
   );
 }

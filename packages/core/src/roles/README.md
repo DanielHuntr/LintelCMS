@@ -6,15 +6,16 @@ gives each person one role.
 
 ## Built-in and custom roles
 
-Every site has five built-in roles (`built-in-roles.ts`), made by `ensureBuiltInRoles`:
+Every site has six built-in roles (`built-in-roles.ts`), made by `ensureBuiltInRoles`:
 
-| Role   | What it can do                                                       |
-| ------ | -------------------------------------------------------------------- |
-| Owner  | Everything (`*`), including managing other owners                    |
-| Admin  | Everything except changing owners                                    |
-| Editor | All content, media, menus and tags; sees the content model           |
-| Author | Sees all content; creates, edits, publishes and deletes only its own |
-| Viewer | Sees content, media, menus and site-wide content; changes nothing    |
+| Role                  | What it can do                                                                                                  |
+| --------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Owner                 | Everything (`*`), including managing other owners                                                               |
+| Admin                 | Everything except changing owners                                                                               |
+| Editor                | All content, media, menus and tags; sees the content model                                                      |
+| Author                | Sees all content; creates, edits, publishes and deletes only its own                                            |
+| Client (content only) | Edits content and the words, pictures and links a designer opened up; never the design (see src/client-editing) |
+| Viewer                | Sees content, media, menus and site-wide content; changes nothing                                               |
 
 Their permissions are fixed (a new Lintel version can improve them); only "requires
 two-factor" can be changed. Custom roles can hold any permission in the catalog.
@@ -63,5 +64,7 @@ allow the action only on entries the person created; see `src/entries/entry-acce
 Routes don't call `hasPermission` themselves; they use `requirePermission` from
 `src/auth/require-permission.ts`, which also handles "not signed in".
 
-Features may check permissions of their own. `builder:code` lets someone write code in the
+Features may check permissions of their own. `builder:design` lets someone change how pages
+look; without it, they change only the content the designer allows (src/client-editing).
+`builder:code` lets someone write code in the
 page builder (Code elements); see src/pages.

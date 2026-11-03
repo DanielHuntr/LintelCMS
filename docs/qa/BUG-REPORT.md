@@ -819,6 +819,7 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-086   | P2       | Fixed  | Site styles "N uses" counts only the open page; the delete warning doesn't say which other pages change                        |
 | LINTEL-UX-087   | P2       | Fixed  | Deleting a downloaded Google Fonts file in the media library breaks that font with no warning                                  |
 | LINTEL-UX-088   | P3       | Fixed  | Two command line tests fail on Windows because they expect Linux-style paths                                                   |
+| LINTEL-UX-080   | P2       | Fixed  | Clients can't be given content-only access: anyone who edits a page can change its design                                      |
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 

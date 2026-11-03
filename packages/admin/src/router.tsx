@@ -250,6 +250,7 @@ const entriesRoute = createRoute({
     status: entryStatuses.includes(String(search.status))
       ? (search.status as EntryStatus)
       : undefined,
+    review: search.review === "waiting" ? "waiting" : undefined,
     search: typeof search.search === "string" && search.search !== "" ? search.search : undefined,
     sort: typeof search.sort === "string" && search.sort !== "" ? search.sort : undefined,
     direction:

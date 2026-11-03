@@ -116,6 +116,8 @@ import { siteSectionsRoutes } from "./site-sections/site-sections.routes.js";
 import { EventBus } from "./events/event-bus.js";
 import { subscribeEventListeners } from "./events/event-listeners.js";
 import { registerWorkflows, type WorkflowOptions } from "./workflows/register-workflows.js";
+import { registerClientEditing } from "./client-editing/register-client-editing.js";
+import { clientEditingRoutes } from "./client-editing/client-editing.routes.js";
 import { wordpressImportRoutes } from "./wordpress-import/wordpress-import.routes.js";
 import { siteImportRoutes } from "./importers/site-import.routes.js";
 import { updatesRoutes } from "./updates/updates.routes.js";
@@ -402,6 +404,8 @@ export function buildServer(options: ServerOptions) {
     runScheduledJobs: options.runScheduledJobs ?? true,
     adminOrigin: options.adminOrigin,
   });
+  // Clients whose changes wait for approval send them for review instead of publishing.
+  registerClientEditing(server);
   const media: MediaRoutesOptions = {
     storage,
     signedUrlSeconds: options.media?.signedUrlSeconds,
@@ -485,6 +489,7 @@ function registerApiRoutes(
   server.register(pluginsRoutes);
   server.register(fieldtypesRoutes);
   server.register(blueprintsRoutes);
+  server.register(clientEditingRoutes);
   server.register(collectionsRoutes);
   server.register(entriesRoutes);
   server.register(revisionsRoutes);

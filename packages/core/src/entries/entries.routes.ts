@@ -10,6 +10,7 @@ import {
   resolveEditingSite,
 } from "../sites/request-site.js";
 import { findSiteOrFail } from "../sites/sites.service.js";
+import { refuseWhenReviewNeeded } from "../client-editing/client-editing.service.js";
 import { EntryNotFoundError } from "./entries.errors.js";
 import { requireEntryPermission } from "./entry-access.js";
 import { duplicateEntry } from "./entry-duplication.service.js";
@@ -130,6 +131,7 @@ export async function entriesRoutes(server: FastifyInstance) {
 
   server.post("/entries/:id/unpublish", canOnThisEntry("publish"), async (request) => {
     const id = readEntryId(request.params);
+    await refuseWhenReviewNeeded(server.database, getSignedIn(request).permissions);
     const unpublished = await unpublishEntry(server.database, id, getSignedIn(request).user.id);
     const entry = await describeEntryForEvent(server.database, id);
     await announceContentEvent(server, { name: "entry.unpublished", entry }, actorOf(request));

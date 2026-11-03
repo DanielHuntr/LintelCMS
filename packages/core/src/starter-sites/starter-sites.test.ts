@@ -372,7 +372,7 @@ describe("starting from a template", () => {
 
   it("only does what the person may: an editor's pages stay drafts in the house style", async () => {
     await createTestUser(testDatabase.database, "editor@example.com", [
-      ["entries:read", "entries:create", "entries:update"],
+      ["entries:read", "entries:create", "entries:update", "builder:design"],
     ]);
     const editor = requestsAs(api, await signInAndGetCookies(api, "editor@example.com"));
     const response = await editor("POST", "/starter-sites/portfolio/apply", { publish: true });

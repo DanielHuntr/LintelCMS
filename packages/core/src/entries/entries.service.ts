@@ -14,6 +14,7 @@ import { removeReferencesFromGlobalValues } from "../globals/global-references.j
 import type { AssetExists } from "../fieldtypes/image-assets.js";
 import { InvalidFieldsError } from "../http/http-errors.js";
 import { findPageCodeContext } from "../pages/page-code.service.js";
+import { checkContentOnlyChange } from "../client-editing/client-editing.service.js";
 import { resolveLocale } from "../sites/locales.service.js";
 import type { Site } from "../sites/sites.table.js";
 import { checkParent } from "./entry-ordering.service.js";
@@ -286,7 +287,17 @@ export async function validateForCollection(
       : undefined,
   });
   // The page's template choice isn't a field, but is kept with the values (see template-choice.ts).
-  return keepTemplateChoice(data, await validate(data));
+  const checked = keepTemplateChoice(data, await validate(data));
+  // People without builder:design change only the content their designer opened up.
+  if (personChange) {
+    checkContentOnlyChange(
+      blueprint.fields,
+      personChange.previousData,
+      checked,
+      context.permissions,
+    );
+  }
+  return checked;
 }
 
 /**

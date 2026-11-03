@@ -23,7 +23,7 @@ describe("roles", () => {
 
   afterEach(() => server.close());
 
-  it("has the five built-in roles, with how many people have each", async () => {
+  it("has the six built-in roles, with how many people have each", async () => {
     const response = await asOwner("GET", "/roles");
 
     expect(response.json().roles.map((role: { name: string }) => role.name)).toEqual([
@@ -31,6 +31,7 @@ describe("roles", () => {
       "Admin",
       "Editor",
       "Author",
+      "Client (content only)",
       "Viewer",
     ]);
     expect(response.json().roles[0]).toMatchObject({
@@ -53,6 +54,7 @@ describe("roles", () => {
       "Admin",
       "Editor",
       "Author",
+      "Client (content only)",
       "Viewer",
     ]);
   });

@@ -57,7 +57,15 @@ export interface RenderOptions {
    * website loads it for each page; the canvas passes samples.
    */
   data?: PageData;
+  /**
+   * On the canvas, which text can be typed into (all of it when left out). Where only
+   * content may change, just the words a client may change.
+   */
+  mayEditText?: TextEditFilter;
 }
+
+/** Whether a prop of an element can be typed into on the canvas. */
+export type TextEditFilter = (node: PageNode, prop: string) => boolean;
 
 export interface RenderedPage {
   html: string;
@@ -76,7 +84,7 @@ export interface RenderedPage {
 export function renderPage(
   document: PageDocument,
   registry: ComponentRegistry,
-  { mode = "site", nodeId, withMotion = false, data = {} }: RenderOptions = {},
+  { mode = "site", nodeId, withMotion = false, data = {}, mayEditText }: RenderOptions = {},
 ): RenderedPage {
   // The site's own blocks are drawn as their design, filled in (see custom-blocks/ in the model).
   // Then the site's shared styles go under each element's own (see site-design/ in the model).
@@ -136,6 +144,7 @@ export function renderPage(
         classNames={classNames}
         mode={mode}
         motionMarks={marked}
+        mayEditText={mayEditText}
       />
     </PageDataProvider>,
   );
@@ -216,6 +225,7 @@ interface NodeViewProps {
   classNames: ReadonlyMap<string, string>;
   mode: RenderMode;
   motionMarks: ReadonlyMap<string, ElementAttributes>;
+  mayEditText?: TextEditFilter;
 }
 
 function NodeView({
@@ -224,6 +234,7 @@ function NodeView({
   classNames,
   mode,
   motionMarks,
+  mayEditText,
 }: NodeViewProps): ReactElement | null {
   const item = useCurrentItem();
   const isCopy = useIsRepeatedCopy();
@@ -254,7 +265,9 @@ function NodeView({
       mode={mode}
       attributes={attributes}
       editableText={(prop): Record<string, string> =>
-        isSelectable && !node.bindings?.[prop] ? { "data-lintel-text": prop } : {}
+        isSelectable && !node.bindings?.[prop] && (mayEditText?.(node, prop) ?? true)
+          ? { "data-lintel-text": prop }
+          : {}
       }
     >
       {node.backgroundVideo && <BackgroundVideo video={node.backgroundVideo} mode={mode} />}
@@ -266,6 +279,7 @@ function NodeView({
           classNames={classNames}
           mode={mode}
           motionMarks={motionMarks}
+          mayEditText={mayEditText}
         />
       ))}
     </Render>

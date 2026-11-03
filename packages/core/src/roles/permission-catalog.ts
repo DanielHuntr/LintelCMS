@@ -122,16 +122,21 @@ export const corePermissionGroups: readonly PermissionGroup[] = [
     description: "Pages laid out in the visual page builder.",
     permissions: [
       {
+        permission: "builder:design",
+        name: "Design pages",
+        description:
+          "Change how pages look and are laid out in the page builder. Without it, people change only the words, pictures and links the designer opened up.",
+      },
+      {
         permission: "builder:code",
         name: "Write code in page designs",
-        description:
-          "Code elements: adding them and editing their HTML, CSS and JavaScript. Anyone who can edit a page can design it.",
+        description: "Code elements: adding them and editing their HTML, CSS and JavaScript.",
       },
       {
         permission: "builder:blocks",
         name: "Make and change the site’s blocks and shared styles",
         description:
-          "Make designs into blocks, change their design and properties, and delete them. Make and change shared styles and the site’s colour, size and font variables. Anyone who can edit a page can use them.",
+          "Make designs into blocks, change their design and properties, and delete them. Make and change shared styles and the site’s colour, size and font variables. Anyone who can design a page can use them.",
       },
     ],
   },

@@ -122,7 +122,22 @@ export interface PageNode {
    * entry instead of typed in: `{ "text": "title", "src": "image" }`. Left out when unbound.
    */
   bindings?: NodeBindings;
+  /**
+   * What people who may only change content (clients) can change here: its words, its
+   * pictures, its links, or nothing (an empty list). Left out, the element's own defaults
+   * apply (see client-editing/).
+   */
+  clientEdits?: ClientContentKind[];
+  /**
+   * Clients may add more of its items (copies of the ones there) and remove some: the
+   * points of a list, a gallery's pictures, the cards of a grid. Left out for no.
+   */
+  clientRepeats?: boolean;
 }
+
+/** The kinds of content a client may be allowed to change (see client-editing/). */
+export const clientContentKinds = ["words", "pictures", "links"] as const;
+export type ClientContentKind = (typeof clientContentKinds)[number];
 
 /** A prop name to the entry field it shows ("title", "image", "data.price"...). */
 export type NodeBindings = Record<string, string>;
@@ -252,6 +267,11 @@ export const pageNodeSchema: z.ZodType<PageNode> = z.lazy(() =>
       })
       .optional(),
     bindings: nodeBindingsSchema.optional(),
+    clientEdits: z
+      .array(z.enum(clientContentKinds, { error: "Clients can change words, pictures or links" }))
+      .max(clientContentKinds.length)
+      .optional(),
+    clientRepeats: z.boolean({ error: "clientRepeats should be true or false" }).optional(),
   }),
 );
 

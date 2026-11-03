@@ -11,6 +11,7 @@ import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import type { Role } from "./people.api.js";
 import { useRoles } from "./people.queries.js";
+import { ClientChangesSetting } from "../client-editing/ClientChangesSetting.js";
 
 /** /users/roles: Lintel's own roles, then the site's custom ones. */
 export function RolesPage() {
@@ -85,6 +86,7 @@ export function RolesPage() {
                 />
               ))}
             </GroupedList>
+            <ClientChangesSetting />
           </>
         )}
       </div>
