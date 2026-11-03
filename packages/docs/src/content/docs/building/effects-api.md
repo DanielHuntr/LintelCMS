@@ -19,7 +19,7 @@ code it uses, are in decision record 26 (`docs/decisions/0026-effects-library.md
 
 ## How a page runs its effects
 
-An element saves its effects beside its animation: `effects: [{ effect: "tilt-glare",
+An element saves its effects beside its animations: `effects: [{ effect: "tilt-glare",
 params: { angle: 14 } }]`. When the page is drawn, the renderer looks each one up, cleans
 its settings (clamping numbers, keeping choices to their lists) and writes:
 
@@ -88,8 +88,9 @@ There are three kinds:
 
 - **`behaviour`** runs a function. Lintel's own live in the modules above; `module:
 "custom"` runs one registered in the browser (below).
-- **`animation`** returns an ordinary animation spec from its settings. Adding it sets the
-  element's animation, so it opens on the timeline and composes with presets.
+- **`animation`** returns an ordinary animation spec from its settings. Adding it adds one
+  of the element's animations (`animations`, up to six), so it opens on the timeline and
+  composes with presets.
 - **`style`** only writes `staticCss(selector, props)` into the page.
 
 Any kind can also have `staticCss`, for a look that should not wait for scripts.

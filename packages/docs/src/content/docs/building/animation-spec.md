@@ -53,6 +53,11 @@ arrives they show after two seconds anyway.
 
 ## The spec
 
+In a page design, an element keeps its animations as a list, up to six:
+`"animations": [{ "spec": {...}, "presetId": "fade-up" }]`. It can fade up as it appears
+and lift on hover. Pages saved before page version 2 had one, `animation`; they're
+migrated when read.
+
 Times are in milliseconds. Every field except `trigger` and `tracks` has a default, filled
 in by the schema, so a stored spec is always complete.
 

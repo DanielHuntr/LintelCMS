@@ -19,8 +19,8 @@ export const motionPanelStrings = {
   "motionEditor.panel.matchesOne": "1 match",
   "motionEditor.panel.matchesOther": "{count} matches",
   "motionEditor.panel.noMatches": "Nothing matches. Try another word, like “fade” or “tilt”.",
-  "motionEditor.panel.replaces":
-    "An element has one animation for now. Choosing another replaces “{name}”.",
+  "motionEditor.panel.animationsFull":
+    "This element has as many animations as it can take. Remove one to add another.",
   "motionEditor.panel.added": "Added",
   "motionEditor.panel.full": "This element has as many effects as it can take.",
   "motionEditor.panel.remove": "Remove “{name}”",

@@ -18,7 +18,7 @@ interface AnimatePanelProps {
   showsTimeline: boolean;
   /** The app's words for the studio; English when left out. */
   motionText?: MotionText;
-  onChange: (animation: NodeAnimation | null) => void;
+  onChange: (animations: NodeAnimation[]) => void;
   onChangeEffects: (effects: NodeEffect[]) => void;
   /** Plays a spec on the element on the canvas. */
   onPreview: (spec: MotionSpec) => void;
@@ -72,10 +72,10 @@ export function AnimatePanel({
       <MotionPanel
         key={node.id}
         name={name}
-        animation={node.animation ?? null}
+        animations={node.animations ?? []}
         effects={node.effects ?? []}
         elementKind={elementKindOf(node.type)}
-        onChangeAnimation={onChange}
+        onChangeAnimations={onChange}
         onChangeEffects={onChangeEffects}
         onPreviewSpec={onPreview}
         onPreviewEffect={(definition, props) => {

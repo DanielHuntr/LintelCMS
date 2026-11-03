@@ -259,7 +259,11 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   );
   // The selected element's scroll scene, as Start and End lines on the canvas to drag. A held
   // (pinned) scene runs while it's held, so it has no lines of its own.
-  const selectedTrigger = selectedNode?.animation?.spec.trigger;
+  // The first scroll scene on the selected element, if it has one.
+  const selectedScene = selectedNode?.animations?.find(
+    (animation) => animation.spec.trigger.type === "scroll",
+  );
+  const selectedTrigger = selectedScene?.spec.trigger;
   const sceneStart =
     selectedTrigger?.type === "scroll" &&
     selectedTrigger.scope === "element" &&
@@ -523,10 +527,12 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
       }
       if (message.type === "sceneMarker") {
         const node = state.selectedId ? findNode(state.document.root, state.selectedId) : undefined;
-        const animation = node?.animation;
+        const animations = node?.animations ?? [];
+        const index = animations.findIndex((animation) => animation.spec.trigger.type === "scroll");
+        const animation = animations[index];
         const trigger = animation?.spec.trigger;
         if (node && animation && trigger?.type === "scroll") {
-          actions.animate(node.id, {
+          const moved = {
             ...animation,
             spec: {
               ...animation.spec,
@@ -535,7 +541,11 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                 [message.which]: { ...trigger[message.which], viewport: message.viewport },
               },
             },
-          });
+          };
+          actions.animate(
+            node.id,
+            animations.map((saved, at) => (at === index ? moved : saved)),
+          );
         }
       }
       if (message.type === "openMenu") {
@@ -778,9 +788,9 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                     showCode={skillLevel === "developer"}
                     actions={{
                       ...actions,
-                      animate: (nodeId, animation) => {
-                        actions.animate(nodeId, animation);
-                        if (!animation) setMotionPreview(null);
+                      animate: (nodeId, animations) => {
+                        actions.animate(nodeId, animations);
+                        if (animations.length === 0) setMotionPreview(null);
                       },
                     }}
                     onPreviewMotion={previewMotion}

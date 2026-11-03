@@ -13,6 +13,9 @@ export interface PageAnimation {
  */
 export function collectAnimations(node: PageNode): PageAnimation[] {
   if (node.hidden) return [];
-  const own = node.animation ? [{ nodeId: node.id, spec: node.animation.spec }] : [];
+  const own = (node.animations ?? []).map((animation) => ({
+    nodeId: node.id,
+    spec: animation.spec,
+  }));
   return [...own, ...node.children.flatMap(collectAnimations)];
 }

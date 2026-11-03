@@ -374,8 +374,11 @@ export function useBuilder({
             (node) => ({ ...node, props: { ...node.props, ...code } }),
           ),
         ),
-      animate: (nodeId: string, animation: NodeAnimation | null) =>
-        run(commands.changeAnimation(context(), nodeId, animation), animation ? "" : undefined),
+      animate: (nodeId: string, animations: NodeAnimation[]) =>
+        run(
+          commands.changeAnimations(context(), nodeId, animations),
+          animations.length > 0 ? "" : undefined,
+        ),
       setEffects: (nodeId: string, effects: NodeEffect[]) =>
         run(commands.changeEffects(context(), nodeId, effects), ""),
       setStateTransition: (nodeId: string, transition: StateTransition | null) =>

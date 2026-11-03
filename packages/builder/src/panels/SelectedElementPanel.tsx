@@ -69,7 +69,7 @@ interface SelectedElementPanelProps {
     changeStyles: (nodeId: string, target: StyleTarget, values: StyleValues, label: string) => void;
     changeProps: (nodeId: string, props: Record<string, unknown>, label: string) => void;
     changeBinding: (nodeId: string, prop: string, fieldPath: string | null, label: string) => void;
-    animate: (nodeId: string, animation: NodeAnimation | null) => void;
+    animate: (nodeId: string, animations: NodeAnimation[]) => void;
     setEffects: (nodeId: string, effects: NodeEffect[]) => void;
     setStateTransition: (nodeId: string, transition: StateTransition | null) => void;
     applyHtml: (nodeId: string, html: string) => void;

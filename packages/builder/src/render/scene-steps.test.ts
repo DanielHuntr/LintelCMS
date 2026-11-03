@@ -18,16 +18,18 @@ describe("scroll scene steps on the website", () => {
       createCountingNodeIds("s"),
     );
     const base = findPreset("parallax-slow")!.spec;
-    section.children[0]!.animation = {
-      spec: {
-        ...base,
-        trigger: {
-          ...base.trigger,
-          follows: section.id,
-          range: { from: 0.5, to: 1 },
-        } as typeof base.trigger,
+    section.children[0]!.animations = [
+      {
+        spec: {
+          ...base,
+          trigger: {
+            ...base.trigger,
+            follows: section.id,
+            range: { from: 0.5, to: 1 },
+          } as typeof base.trigger,
+        },
       },
-    };
+    ];
     const page = createEmptyPage();
     const document: PageDocument = { ...page, root: { ...page.root, children: [section] } };
 

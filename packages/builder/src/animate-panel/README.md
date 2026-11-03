@@ -21,6 +21,6 @@ element's effects (`node.effects`, saved by `changeEffects` in `editor/commands.
 their settings, and the gallery. `element-kinds.ts` says what kind each component is, for
 "Suits this element". Trying an effect posts `previewEffect` to the canvas, which imports
 the module from the addresses the host passes as `effectModules`. "Animation" effects are
-saved as the element's animation instead. With nothing selected, the tab shows the
+saved as one of the element's animations instead. With nothing selected, the tab shows the
 site-wide `SiteMotionSettings` when the host passes `siteEffects`. The meter adds up every
 effect on the page with `measurePageWeight`.
