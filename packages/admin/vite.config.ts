@@ -60,11 +60,8 @@ function canvasFrameScriptFiles(): Plugin {
         if (!folder || !effectFiles().includes(fileName)) return next();
         // The canvas frame has no origin of its own, and module imports need this header.
         response.setHeader("access-control-allow-origin", "*");
-        response.setHeader(
-          "content-type",
-          fileName.endsWith(".json") ? "application/json" : "text/javascript; charset=utf-8",
-        );
-        response.end(readFileSync(join(folder, fileName), "utf8"));
+        response.setHeader("content-type", effectFileType(fileName));
+        response.end(readFileSync(join(folder, fileName)));
       });
     },
     generateBundle() {
@@ -76,11 +73,20 @@ function canvasFrameScriptFiles(): Plugin {
         this.emitFile({
           type: "asset",
           fileName: `canvas-effects/${fileName}`,
-          source: readFileSync(join(folder ?? "", fileName), "utf8"),
+          // Read as bytes: Rive's WebAssembly and the sample .riv aren't text.
+          source: readFileSync(join(folder ?? "", fileName)),
         });
       }
     },
   };
+}
+
+/** What a file beside the effect modules is served as (players, WebAssembly, samples). */
+function effectFileType(fileName: string): string {
+  if (fileName.endsWith(".json")) return "application/json";
+  if (fileName.endsWith(".wasm")) return "application/wasm";
+  if (fileName.endsWith(".riv")) return "application/octet-stream";
+  return "text/javascript; charset=utf-8";
 }
 
 /** Writes the Content-Security-Policy into the built index.html (see src/security). */

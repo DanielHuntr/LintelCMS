@@ -122,13 +122,26 @@ export function readEffectModules(): EffectModuleFiles | null {
   return effectModules;
 }
 
-/** One effect module or shared chunk by file name, or undefined. File names have fingerprints. */
-export function readEffectFile(fileName: string): string | undefined {
+/** What each kind of file beside the effect modules is served as. */
+const effectFileTypes: Record<string, string> = {
+  js: "text/javascript; charset=utf-8",
+  json: "application/json",
+  wasm: "application/wasm",
+  riv: "application/octet-stream",
+};
+
+/**
+ * One effect module, shared chunk or file beside them (the animation players, Rive's
+ * WebAssembly, the sample animations) by name, with its type, or undefined. Names have
+ * fingerprints.
+ */
+export function readEffectFile(fileName: string): { contents: Buffer; type: string } | undefined {
   const modules = readEffectModules();
-  if (!modules?.files.has(fileName)) {
+  const type = effectFileTypes[fileName.split(".").pop() ?? ""];
+  if (!modules?.files.has(fileName) || !type) {
     return undefined;
   }
-  return readFileSync(`${modules.folder}/${fileName}`, "utf8");
+  return { contents: readFileSync(`${modules.folder}/${fileName}`), type };
 }
 
 export const ILLUSTRATIONS_FOLDER = `${STYLESHEET_FOLDER}/illustrations`;

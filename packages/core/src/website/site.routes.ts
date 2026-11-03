@@ -29,7 +29,8 @@ import { readSiteContext, respondToSitePath, type SiteDependencies } from "./sit
  *   GET /_lintel/motion-<fingerprint>.js  the motion runtime, for pages with animations
  *   GET /_lintel/elements-<fingerprint>.js the elements script, for sliders, forms, the shop
  *   GET /_lintel/cookie-notice-<fingerprint>.js the cookie notice, on sites that show one
- *   GET /_lintel/effects/<module>-<fingerprint>.js an effect module or a chunk they share
+ *   GET /_lintel/effects/<module>-<fingerprint>.js an effect module, a chunk they share, or a file
+ *                                         beside them (players, Rive's WebAssembly, samples)
  *   ALL /_lintel/api/shop/*, /forms/*, /analytics/*  the storefront, forms and Visitors APIs (site-api.routes.ts)
  *   GET /_lintel/illustrations/<name>.svg the starter sites' illustrations
  *   GET /_lintel/fonts/<file>.woff2       the fonts that come with Lintel
@@ -84,16 +85,16 @@ export async function siteRoutes(
 
   server.get(`${EFFECTS_FOLDER}/:file`, async (request, reply) => {
     const { file } = request.params as { file: string };
-    const code = readEffectFile(file);
-    if (code === undefined) {
+    const effectFile = readEffectFile(file);
+    if (effectFile === undefined) {
       return reply.code(404).type("text/plain; charset=utf-8").send("Not found");
     }
     // Modules are imported across origins by the builder's canvas, so anyone may load them.
     return reply
-      .type("text/javascript; charset=utf-8")
+      .type(effectFile.type)
       .header("cache-control", "public, max-age=31536000, immutable")
       .header("access-control-allow-origin", "*")
-      .send(code);
+      .send(effectFile.contents);
   });
 
   server.get(`${FONTS_FOLDER}/:file`, async (request, reply) => {

@@ -26,6 +26,10 @@ const allowedExtensions = [
   "otf",
   "mp4",
   "webm",
+  // Animations for the page builder's Lottie and Rive elements.
+  "json",
+  "lottie",
+  "riv",
 ] as const;
 
 const imageExtensions = ["jpg", "jpeg", "png", "webp", "avif", "gif", "svg"] as const;

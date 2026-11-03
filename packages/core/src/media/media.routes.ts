@@ -6,6 +6,7 @@ import { actorOf } from "../events/event-actor.js";
 import { parseRequest } from "../http/http-errors.js";
 import type { AssetUsageFinder } from "./asset-lookup.js";
 import { contentDisposition } from "./content-disposition.js";
+import { findAllowedFileType } from "./file-types.js";
 import { findAssetFile } from "./media-file.service.js";
 import {
   AssetInUseError,
@@ -184,8 +185,12 @@ export async function mediaRoutes(server: FastifyInstance, options: MediaRoutesO
       .header("cross-origin-resource-policy", "cross-origin");
 
     // Browsers only use a font from another address when it says they may (the canvas and
-    // the website both load fonts uploaded here).
-    if (file.mimeType.startsWith("font/")) {
+    // the website both load fonts uploaded here). Lottie and Rive animations are fetched
+    // by script the same way.
+    if (
+      file.mimeType.startsWith("font/") ||
+      findAllowedFileType(file.mimeType)?.kind === "animation"
+    ) {
       reply.header("access-control-allow-origin", "*");
     }
 

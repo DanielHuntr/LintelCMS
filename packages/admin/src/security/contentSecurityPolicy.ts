@@ -8,7 +8,9 @@
  *   - live preview frames the website's own pages, which can be anywhere;
  *   - inline styles are allowed, because React sets `style` attributes for layout;
  *   - fonts may come from the API (a site's own fonts, on the builder's canvas), and
- *     Adobe Fonts' stylesheet and files may load, for sites that use an Adobe project.
+ *     Adobe Fonts' stylesheet and files may load, for sites that use an Adobe project;
+ *   - WebAssembly may be compiled ('wasm-unsafe-eval'), so the canvas can preview a Rive
+ *     animation with Rive's runtime. It allows WebAssembly only: `eval` stays refused.
  *
  * `frame-ancestors` (who may put the admin in a frame) only works as an HTTP header, so
  * `securityHeaders` gives the full set for whatever serves the built files.
@@ -20,7 +22,7 @@ export function contentSecurityPolicy(apiUrl: string, { forHeader = false } = {}
   const api = new URL(apiUrl).origin;
   const directives = [
     "default-src 'self'",
-    "script-src 'self'",
+    "script-src 'self' 'wasm-unsafe-eval'",
     `style-src 'self' 'unsafe-inline' ${adobeFonts}`,
     `img-src 'self' data: blob: ${api}`,
     `font-src 'self' data: ${api} https://use.typekit.net`,

@@ -5,8 +5,9 @@ describe("the admin's Content-Security-Policy", () => {
   it("runs only the admin's own scripts and talks only to itself and the API", () => {
     const policy = contentSecurityPolicy("https://api.example.com/");
 
-    expect(policy).toContain("script-src 'self'");
-    expect(policy).not.toContain("unsafe-eval");
+    expect(policy).toContain("script-src 'self' 'wasm-unsafe-eval'");
+    // WebAssembly only (for previewing Rive animations): JavaScript's eval stays refused.
+    expect(policy).not.toContain("'unsafe-eval'");
     expect(policy).toContain("connect-src 'self' https://api.example.com");
     expect(policy).toContain("object-src 'none'");
     // A <meta> policy can't say who may frame the page; the header does.

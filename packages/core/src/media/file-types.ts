@@ -10,13 +10,17 @@ import { FileTypeNotAllowedError } from "./media.errors.js";
  * Binary formats are recognised by their first bytes. Text formats have no signature, so a
  * file that is readable text is treated as SVG when it is one, and otherwise as plain text
  * or CSV according to its extension, which is the only thing that tells those two apart.
+ *
+ * Animations for the page builder's Lottie and Rive elements are recognised by their
+ * contents too: a Rive file starts with "RIVE", a .lottie is a zip with an animations
+ * folder, and a Lottie .json is JSON with a frame rate and layers (see decision 0055).
  */
 
 export interface AllowedFileType {
   mimeType: string;
   /** The extension Lintel gives the file, whatever it was called before. */
   extension: string;
-  kind: "image" | "document" | "font" | "video";
+  kind: "image" | "document" | "font" | "video" | "animation";
 }
 
 const allowedFileTypes = [
@@ -50,6 +54,10 @@ const allowedFileTypes = [
   { mimeType: "font/otf", extension: "otf", kind: "font" },
   { mimeType: "video/mp4", extension: "mp4", kind: "video" },
   { mimeType: "video/webm", extension: "webm", kind: "video" },
+  // Animations for the Lottie and Rive elements.
+  { mimeType: "application/json", extension: "json", kind: "animation" },
+  { mimeType: "application/zip+dotlottie", extension: "lottie", kind: "animation" },
+  { mimeType: "application/x-rive", extension: "riv", kind: "animation" },
 ] as const satisfies readonly AllowedFileType[];
 
 export type AllowedMimeType = (typeof allowedFileTypes)[number]["mimeType"];
@@ -71,7 +79,13 @@ export async function detectFileType(
   contents: Buffer,
   originalFilename: string,
 ): Promise<AllowedFileType> {
+  if (isRiveFile(contents)) {
+    return allowedFileTypeFor("application/x-rive");
+  }
   const signature = await fileTypeFromBuffer(contents);
+  if (signature?.mime === "application/zip" && isDotLottie(contents)) {
+    return allowedFileTypeFor("application/zip+dotlottie");
+  }
   // An SVG with an <?xml ...?> declaration is reported as generic XML; the text checks below
   // decide whether it is an SVG.
   if (signature && !isXmlMimeType(signature.mime)) {
@@ -88,6 +102,9 @@ export async function detectFileType(
   }
   if (looksLikeSvg(text)) {
     return allowedFileTypeFor("image/svg+xml");
+  }
+  if (isLottieJson(text)) {
+    return allowedFileTypeFor("application/json");
   }
 
   const extension = extname(originalFilename).slice(1).toLowerCase();
@@ -122,6 +139,53 @@ function looksLikeSvg(text: string): boolean {
     .replace(/^\s*<!DOCTYPE[^>[]*(\[[\s\S]*?\])?\s*>/i, "")
     .replace(/^(\s*<!--[\s\S]*?-->)*/, "");
   return /^\s*<svg[\s>]/i.test(withoutPreamble);
+}
+
+/** A Rive file: "RIVE", then its format's version number. */
+export function isRiveFile(contents: Buffer): boolean {
+  return contents.length > 8 && contents.subarray(0, 4).toString("latin1") === "RIVE";
+}
+
+/** The file names in a zip's directory, read without unpacking anything. */
+export function zipEntryNames(contents: Buffer): string[] {
+  const endSignature = 0x06054b50;
+  let end = contents.length - 22;
+  while (end >= 0 && contents.readUInt32LE(end) !== endSignature) end -= 1;
+  if (end < 0) return [];
+  const count = contents.readUInt16LE(end + 10);
+  let offset = contents.readUInt32LE(end + 16);
+  const names: string[] = [];
+  for (let index = 0; index < count && offset + 46 <= contents.length; index += 1) {
+    if (contents.readUInt32LE(offset) !== 0x02014b50) break;
+    const nameLength = contents.readUInt16LE(offset + 28);
+    const extraLength = contents.readUInt16LE(offset + 30);
+    const commentLength = contents.readUInt16LE(offset + 32);
+    names.push(contents.subarray(offset + 46, offset + 46 + nameLength).toString("utf8"));
+    offset += 46 + nameLength + extraLength + commentLength;
+  }
+  return names;
+}
+
+/** A .lottie: a zip holding at least one animation's JSON in its animations folder. */
+export function isDotLottie(contents: Buffer): boolean {
+  return zipEntryNames(contents).some((name) => /^animations\/[^/]+\.json$/.test(name));
+}
+
+/** A Lottie animation's JSON: an object with a version, a frame rate, a length and layers. */
+export function isLottieJson(text: string): boolean {
+  try {
+    const data = JSON.parse(text) as Record<string, unknown> | null;
+    return (
+      typeof data === "object" &&
+      data !== null &&
+      typeof data.v === "string" &&
+      typeof data.fr === "number" &&
+      typeof data.op === "number" &&
+      Array.isArray(data.layers)
+    );
+  } catch {
+    return false;
+  }
 }
 
 function isXmlMimeType(mimeType: string): boolean {
