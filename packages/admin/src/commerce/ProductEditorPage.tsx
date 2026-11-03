@@ -28,6 +28,7 @@ import { ProductVariantsSection } from "./ProductVariantsSection.js";
 import type { InventoryLocation, Product } from "./products.api.js";
 import { useDeleteProduct, useLocations, useProduct, useSaveProduct } from "./shop.queries.js";
 import { useMarkets } from "./shopSettings.queries.js";
+import { defaultVariantTableView, type VariantTableView } from "./variantTableState.js";
 
 /** /commerce/products/:id (or /new): everything about one product, saved in one go. */
 export function ProductEditorPage({ productId }: { productId: string }) {
@@ -37,6 +38,9 @@ export function ProductEditorPage({ productId }: { productId: string }) {
   const markets = useMarkets();
   const currency =
     markets.data?.find((market) => market.isPrimary)?.currency ?? markets.data?.[0]?.currency;
+
+  // Kept here because saving redraws the form: open groups shouldn't fold up on every save.
+  const [variantTableView, setVariantTableView] = useState(defaultVariantTableView);
 
   const isLoading = (!isNew && product.isPending) || locations.isPending || markets.isPending;
   const failed = [product, locations, markets].find((query) => query.isError);
@@ -58,6 +62,8 @@ export function ProductEditorPage({ productId }: { productId: string }) {
           product={isNew ? null : (product.data ?? null)}
           currency={currency}
           locations={locations.data}
+          variantTableView={variantTableView}
+          onVariantTableViewChange={setVariantTableView}
         />
       )}
     </>
@@ -86,9 +92,17 @@ interface ProductFormProps {
   product: Product | null;
   currency: string;
   locations: InventoryLocation[];
+  variantTableView: VariantTableView;
+  onVariantTableViewChange: (view: VariantTableView) => void;
 }
 
-function ProductForm({ product, currency, locations }: ProductFormProps) {
+function ProductForm({
+  product,
+  currency,
+  locations,
+  variantTableView,
+  onVariantTableViewChange,
+}: ProductFormProps) {
   const [draft, setDraft] = useState<ProductDraft>(() =>
     product ? draftFromProduct(product, currency) : emptyProductDraft(),
   );
@@ -199,6 +213,8 @@ function ProductForm({ product, currency, locations }: ProductFormProps) {
           currency={currency}
           locations={locations}
           errors={fieldErrors}
+          tableView={variantTableView}
+          onTableViewChange={onVariantTableViewChange}
         />
         <ProductOrganisationSection draft={draft} onChange={change} errors={fieldErrors} />
         <ProductCollectionsCard

@@ -39,6 +39,7 @@ export function VariantFields({
           }
           inputMode="decimal"
           placeholder={`${currencySymbol}0`}
+          data-autofocus
           value={variant.price}
           onChange={(event) => onChange({ price: event.target.value })}
           error={field("price") ?? field("prices")}
