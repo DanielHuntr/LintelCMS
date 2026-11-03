@@ -96,6 +96,8 @@ export type MessageFromFrame =
   | { type: "rotate"; nodeId: string; degrees: number }
   /** An element was dragged or nudged in its free layout, to this place in percent. */
   | { type: "place"; nodeId: string; left: number; top: number }
+  /** Ctrl (or ⌘) and the wheel, or a pinch, over the page: zoom the canvas. */
+  | { type: "zoomWheel"; deltaY: number }
   /** An element was dragged, resized or nudged on its placed grid, to these lines. */
   | {
       type: "gridPlace";
@@ -157,6 +159,7 @@ const frameMessageTypes = new Set([
   "rotate",
   "place",
   "gridPlace",
+  "zoomWheel",
   "textSelection",
   "openMenu",
   "look",
@@ -240,6 +243,8 @@ export function readFrameMessage(data: unknown): MessageFromFrame | null {
       return isText(message.nodeId) && isFiniteNumber(message.left) && isFiniteNumber(message.top)
         ? (message as MessageFromFrame)
         : null;
+    case "zoomWheel":
+      return isFiniteNumber(message.deltaY) ? { type: "zoomWheel", deltaY: message.deltaY } : null;
     case "gridPlace":
       return isText(message.nodeId) &&
         [message.column, message.columnSpan, message.row, message.rowSpan].every(isGridLine)

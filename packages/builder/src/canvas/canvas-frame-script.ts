@@ -1121,6 +1121,16 @@ export function runCanvasFrame(snap: typeof snapBox, fitGrid: typeof fitToGrid):
   });
 
   window.addEventListener("resize", drawOutlines);
+  // Ctrl (or ⌘) and the wheel, and trackpad pinches, zoom the canvas rather than the page.
+  window.addEventListener(
+    "wheel",
+    (event) => {
+      if (!event.ctrlKey && !event.metaKey) return;
+      event.preventDefault();
+      send({ type: "zoomWheel", deltaY: event.deltaY });
+    },
+    { passive: false },
+  );
   window.addEventListener("scroll", drawOutlines, { passive: true });
   new ResizeObserver(drawOutlines).observe(root);
   send({ type: "ready" });

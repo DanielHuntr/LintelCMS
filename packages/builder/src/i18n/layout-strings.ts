@@ -85,4 +85,12 @@ export const builderLayoutStrings = {
   "pageBuilder.site.readOnly": "You can use these, but not change them.",
   "pageBuilder.site.saveColour": "Save as a site colour",
   "pageBuilder.site.colourName": "Name for this colour",
+
+  "pageBuilder.zoom.label": "Zoom",
+  "pageBuilder.zoom.in": "Zoom in (Ctrl +)",
+  "pageBuilder.zoom.out": "Zoom out (Ctrl −)",
+  "pageBuilder.zoom.actual": "Zoom {percent}%. Press for actual size (Ctrl 0)",
+  "pageBuilder.zoom.fit": "Fit",
+  "pageBuilder.zoom.fitHint": "Fit the page to the space (Shift 1)",
+  "pageBuilder.zoom.panHint": "Drag to move around the page. Let go of Space to stop.",
 } as const;

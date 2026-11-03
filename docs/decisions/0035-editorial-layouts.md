@@ -75,5 +75,6 @@ making, using and detaching a shared style on an element are.
 
 ## Not done here
 
-Canvas zoom and pan, side-by-side screen sizes and a right-click menu (from the same
-mock-up) come separately. Variables don't yet change with a dark colour scheme.
+Canvas zoom and pan came in a commit of their own: the frame is scaled while the page keeps
+its width, so zooming never changes the layout being designed. Side-by-side screen sizes
+and a right-click menu (from the same mock-up) are still to come. Variables don't yet change with a dark colour scheme.
