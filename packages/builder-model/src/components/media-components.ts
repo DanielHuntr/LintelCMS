@@ -206,6 +206,8 @@ const sliderProps = {
   loop: z.boolean().default(true),
   showDots: z.boolean().default(true),
   freeDrag: z.boolean().default(false),
+  /** On phones, the next slide shows at the edge, so people see there's more to swipe to. */
+  phonePeek: z.boolean().default(true),
 };
 
 const sliderFields = [
@@ -229,6 +231,12 @@ const sliderFields = [
     advanced: true,
   },
   { kind: "toggle", prop: "loop", label: "Go back to the start after the last", advanced: true },
+  {
+    kind: "toggle",
+    prop: "phonePeek",
+    label: "Show the edge of the next slide on phones",
+    advanced: true,
+  },
 ] as const;
 
 export const carouselComponent = defineComponent({
@@ -248,6 +256,7 @@ export const carouselComponent = defineComponent({
     loop: true,
     showDots: true,
     freeDrag: false,
+    phonePeek: true,
   },
   defaultChildren: [
     { type: "slide", props: { label: "" } },

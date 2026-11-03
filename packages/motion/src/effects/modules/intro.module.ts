@@ -6,6 +6,7 @@ import {
   INTRO_LONGEST_MILLISECONDS,
   INTRO_SHORTEST_MILLISECONDS,
   introCount,
+  introEndEvent,
   introLeavingKeyframes,
 } from "../../effects-catalogue/site-intro.js";
 
@@ -16,7 +17,8 @@ import {
  * @lintel/motion/effects), with CSS that shows it only with scripts on and for people happy
  * with motion, and hides it after four seconds whatever happens, so it can never trap
  * anyone. This plays it once per visit: it counts or reveals, then lifts away. "Skip intro",
- * a click or any key ends it at once.
+ * a click or any key ends it at once. When it has gone it fires `introEndEvent`, which the
+ * page's entrances wait for, so they play where people can see them.
  */
 
 export const introSeenKey = "lintel-intro-seen";
@@ -27,6 +29,11 @@ function markSeen() {
   } catch {
     // Without storage it may show again on the next page; the failsafe still hides it.
   }
+}
+
+/** Lets the page's entrances start: they wait under the intro until it has gone. */
+function announceEnd() {
+  document.dispatchEvent(new Event(introEndEvent));
 }
 
 function seenThisVisit(): boolean {
@@ -43,6 +50,7 @@ const siteIntro: EffectBehaviour = (_body, params, context) => {
   // Less motion means no intro at all (its CSS never shows it either).
   if (seenThisVisit() || context.reduced) {
     intro.remove();
+    announceEnd();
     return;
   }
   markSeen();
@@ -67,21 +75,38 @@ const siteIntro: EffectBehaviour = (_body, params, context) => {
           fill: "forwards",
         },
       )
-      .finished.then(() => intro.remove());
+      .finished.then(() => {
+        intro.remove();
+        announceEnd();
+      });
   };
-  const started = performance.now();
-  if (counter) {
-    timer = window.setInterval(() => {
-      counter.textContent = `${introCount((performance.now() - started) / INTRO_SHORTEST_MILLISECONDS)}`;
-    }, 32);
-  }
-  const whenLoaded =
-    document.readyState === "complete"
-      ? Promise.resolve()
-      : new Promise((resolve) => window.addEventListener("load", resolve, { once: true }));
-  const atLeast = new Promise((resolve) => setTimeout(resolve, INTRO_SHORTEST_MILLISECONDS));
   const atMost = new Promise((resolve) => setTimeout(resolve, INTRO_LONGEST_MILLISECONDS));
-  void Promise.race([Promise.all([whenLoaded, atLeast]), atMost]).then(finish);
+  // The middle waits, hidden, for the site's heading font (briefly at most), so the count
+  // or name doesn't start in the device's own font and change part way through.
+  const begin = () => {
+    if (finished || intro.hasAttribute("data-ready")) return;
+    intro.setAttribute("data-ready", "");
+    const started = performance.now();
+    if (counter) {
+      timer = window.setInterval(() => {
+        counter.textContent = `${introCount((performance.now() - started) / INTRO_SHORTEST_MILLISECONDS)}`;
+      }, 32);
+    }
+    const whenLoaded =
+      document.readyState === "complete"
+        ? Promise.resolve()
+        : new Promise((resolve) => window.addEventListener("load", resolve, { once: true }));
+    const atLeast = new Promise((resolve) => setTimeout(resolve, INTRO_SHORTEST_MILLISECONDS));
+    void Promise.race([Promise.all([whenLoaded, atLeast]), atMost]).then(finish);
+  };
+  // The site's heading font is the one its headings really show: the theme's, unless Site
+  // styles give headings another.
+  const heading = document.querySelector(".lintel-design h1") ?? document.querySelector("h1, h2");
+  if (heading) intro.style.fontFamily = getComputedStyle(heading).fontFamily;
+  const fontReady =
+    document.fonts?.load(`600 1em ${getComputedStyle(intro).fontFamily}`).catch(() => []) ??
+    Promise.resolve();
+  void Promise.race([fontReady, new Promise((resolve) => setTimeout(resolve, 600))]).then(begin);
   return combine(
     listen(intro, { click: finish }),
     // Any key skips it, except Tab, which moves to the Skip button.

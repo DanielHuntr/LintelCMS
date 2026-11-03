@@ -1,16 +1,22 @@
-import type { SiteDesign } from "@lintel/builder-model";
+import type { SiteDesign, SiteDesignUses } from "@lintel/builder-model";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "../api/client.js";
 import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
 import { getSiteDesign, type SavedSiteDesign, updateSiteDesign } from "../website/website.api.js";
-import { useSiteDesignQuery, websiteKeys } from "../website/website.queries.js";
+import {
+  useSiteDesignQuery,
+  useSiteDesignUsesQuery,
+  websiteKeys,
+} from "../website/website.queries.js";
 import type { SitePartProblem } from "./SitePartProblems.js";
 
 export interface SiteDesignSource {
   /** For the builder: undefined until it has loaded. */
-  source: { value: SiteDesign; onChange?: (value: SiteDesign) => void } | undefined;
+  source:
+    | { value: SiteDesign; onChange?: (value: SiteDesign) => void; uses?: SiteDesignUses }
+    | undefined;
   /** What went wrong with the last save, to show the person; null when nothing did. */
   problem: SitePartProblem | null;
 }
@@ -19,15 +25,19 @@ export interface SiteDesignSource {
  * The site's design variables and shared styles for the page builder: the saved value,
  * changed at once on screen and saved a moment after the last change (so dragging a colour
  * is one save), and straight away when the builder closes. People without `builder:blocks`
- * can use them but not change them.
+ * can use them but not change them. With them comes where each is used on the rest of the site.
  *
  * Each save sends the revision it started from. When someone else saved in between, the API
  * refuses it; the builder then shows their version and says so, rather than undoing their
  * change. Any other failure is shown with Try again, and the change waits to be sent again.
  */
-export function useSiteDesign(): SiteDesignSource {
+export function useSiteDesign(
+  /** The page (`entry`) or block (`block`) being designed: the builder counts its uses itself. */
+  designing: { entry?: string; block?: string } = {},
+): SiteDesignSource {
   const canChange = useCan("builder:blocks");
   const saved = useSiteDesignQuery();
+  const uses = useSiteDesignUsesQuery(designing).data;
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<SiteDesign | null>(null);
   const [problem, setProblem] = useState<SitePartProblem | null>(null);
@@ -108,7 +118,7 @@ export function useSiteDesign(): SiteDesignSource {
 
   const value = draft ?? withoutRevision(saved.data);
   if (!value) return { source: undefined, problem };
-  return { source: canChange ? { value, onChange } : { value }, problem };
+  return { source: canChange ? { value, onChange, uses } : { value, uses }, problem };
 }
 
 function withoutRevision(saved: SavedSiteDesign | undefined): SiteDesign | undefined {

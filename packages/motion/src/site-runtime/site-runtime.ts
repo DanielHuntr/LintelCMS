@@ -6,6 +6,7 @@ import {
   startEffects,
 } from "../effects/loadEffects.js";
 import type { PageEffects } from "../effects/effect-types.js";
+import { introEndEvent } from "../effects-catalogue/site-intro.js";
 import { isTransitionableClick } from "../runtime/sameSiteClick.js";
 import {
   mountMotionList,
@@ -70,8 +71,53 @@ export function readPageEffects(document: Document): PageEffects {
   };
 }
 
+/** Whether an animation plays as its element arrives: on load, or when it comes into view. */
+const isEntrance = ({ spec }: MotionBinding) =>
+  spec.trigger.type === "load" || spec.trigger.type === "inView";
+
+/**
+ * Starts the page's animations. Entrances wait for the site intro to lift (`afterIntro`), so
+ * a headline that builds letter by letter isn't finished underneath it; everything else
+ * (scroll scenes, hovers, page exits) starts at once.
+ */
 export function startPageMotion(document: Document): PageMotion {
-  return mountMotionList(readPageAnimations(document), { document });
+  const animations = readPageAnimations(document);
+  const page = mountMotionList(
+    animations.filter((binding) => !isEntrance(binding)),
+    { document },
+  );
+  afterIntro(document, () =>
+    mountMotionList(
+      animations.filter((binding) => isEntrance(binding)),
+      { document },
+    ),
+  );
+  return page;
+}
+
+/** Longest entrances wait for the intro; its own CSS hides it after four seconds whatever happens. */
+const LONGEST_INTRO_WAIT_MILLISECONDS = 4500;
+
+/**
+ * Runs `start` once the site intro has gone (`introEndEvent`), or at once when there's no
+ * intro on screen: none on the page, seen already this visit, or less motion asked for.
+ */
+export function afterIntro(document: Document, start: () => void): void {
+  const window = document.defaultView;
+  const showing =
+    window &&
+    document.querySelector(".lintel-intro") &&
+    !document.documentElement.classList.contains("lintel-intro-seen") &&
+    !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  if (!showing) return start();
+  let started = false;
+  const go = () => {
+    if (started) return;
+    started = true;
+    start();
+  };
+  document.addEventListener(introEndEvent, go, { once: true });
+  window.setTimeout(go, LONGEST_INTRO_WAIT_MILLISECONDS);
 }
 
 /** Longest a visitor waits on a click for exit animations, however long they are set to run. */

@@ -11,6 +11,7 @@ import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import { findErrorCode } from "../database/database-errors.js";
 import {
   AssetNotFoundError,
+  type AssetUsage,
   createAssetLookup,
   deleteAsset,
   findAssetFile,
@@ -269,6 +270,19 @@ export async function deleteUnusedFontFiles(
     if (stillUsed.has(assetId)) continue;
     await deleteAsset(context.media, assetId).catch(() => undefined);
   }
+}
+
+/**
+ * The site fonts (on any site) made from a file, so the media library won't delete a file a
+ * font needs: the font would stop showing on every page with no warning.
+ */
+export async function findSiteFontsUsingAsset(
+  database: DatabaseOrTransaction,
+  assetId: string,
+): Promise<AssetUsage[]> {
+  return (await listAllSiteFontRows(database, DEFAULT_TENANT_ID))
+    .filter((row) => row.files.some((file) => file.assetId === assetId))
+    .map((row) => ({ entryId: row.id, title: row.family, place: "siteFonts" as const }));
 }
 
 /** Later files win for the same weight and style; the list is kept tidy, lightest first. */

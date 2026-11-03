@@ -12,6 +12,12 @@ such as "Card", used by many elements). Both start empty.
   PUT that sends the revision it read is refused with 409 `SITE_DESIGN_CHANGED` when someone
   saved since, so a builder left open on an older copy can't undo another person's change.
   The builder then shows the latest styles and says so. A PUT without one always saves.
+- `GET /website/design/uses` (`entries:read`): where each variable and shared style is used
+  across the site, `{ uses, pages }` by id, so the builder's Site styles can say "12 uses"
+  and a delete can name the other pages it changes. It counts the latest saved values of the
+  site's pages, its navigation and footer (the builder's draft) and every block.
+  `?entry=<page id>` leaves out the page being designed and its navigation and footer, and
+  `?block=<handle>` the block being designed, since the builder counts those as they change.
 - `site-design.repository.ts`: one `siteDesign:<site id>` row per site in the settings
   table. A site without one reads the single `siteDesign` row kept before sites had their
   own (decision 0045). The revision is the site's own row's save time.

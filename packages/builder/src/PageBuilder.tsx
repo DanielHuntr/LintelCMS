@@ -15,6 +15,7 @@ import {
   compileTagStyles,
   withoutTagStyles,
   type SiteDesign,
+  type SiteDesignUses,
   findNode,
   ownSiteChrome,
   assignClassNames,
@@ -211,7 +212,12 @@ export interface PageBuilderProps {
    * The site's design variables and shared styles, and how to save a change to them (left
    * out for people who may only use them). Without it, the site has none.
    */
-  siteDesign?: { value: SiteDesign; onChange?: (value: SiteDesign) => void };
+  siteDesign?: {
+    value: SiteDesign;
+    onChange?: (value: SiteDesign) => void;
+    /** Where they're used on the rest of the site, for "12 uses" (see SiteDesignTools). */
+    uses?: SiteDesignUses;
+  };
   /**
    * The site's navigation and footer, shown on every page and edited from any of them (see
    * site-sections/). Without it, Navigation and Footer sections belong to the page alone.
@@ -342,8 +348,13 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     [props.site?.stylesheet, props.themeStylesheet],
   );
   const siteDesignTools = useMemo(
-    () => ({ design: siteDesign, change: props.siteDesign?.onChange, themeValues }),
-    [siteDesign, props.siteDesign?.onChange, themeValues],
+    () => ({
+      design: siteDesign,
+      change: props.siteDesign?.onChange,
+      themeValues,
+      uses: props.siteDesign?.uses,
+    }),
+    [siteDesign, props.siteDesign?.onChange, themeValues, props.siteDesign?.uses],
   );
   const sharedStyles = useMemo(() => sharedStylesById(siteDesign), [siteDesign]);
   const rendered = useMemo(

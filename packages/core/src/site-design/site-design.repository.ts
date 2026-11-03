@@ -1,5 +1,7 @@
+import { and, eq, or, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
+import { entriesTable } from "../entries/entries.table.js";
 import {
   findSettingUpdatedAt,
   findSettingValue,
@@ -46,4 +48,27 @@ export function saveStoredSiteDesign(
   value: unknown,
 ): Promise<void> {
   return upsertSettingValue(database, DEFAULT_TENANT_ID, settingKey(siteId), value);
+}
+
+/**
+ * The site's entries whose saved values may use a variable or shared style (their text names
+ * one), with those values, for counting where each is used.
+ */
+export async function listEntriesUsingSiteDesign(
+  database: DatabaseOrTransaction,
+  siteId: string,
+): Promise<{ id: string; data: unknown }[]> {
+  return database
+    .select({ id: entriesTable.id, data: entriesTable.data })
+    .from(entriesTable)
+    .where(
+      and(
+        eq(entriesTable.tenantId, DEFAULT_TENANT_ID),
+        eq(entriesTable.siteId, siteId),
+        or(
+          sql`${entriesTable.data}::text like '%"sharedStyle"%'`,
+          sql`${entriesTable.data}::text like '%--lintel-var-%'`,
+        ),
+      ),
+    );
 }

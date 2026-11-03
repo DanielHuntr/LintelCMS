@@ -417,6 +417,23 @@ describe("site fonts", () => {
       expect((await api("GET", `/media/${assetId}`)).statusCode).toBe(404);
       expect((await visitHome()).css).not.toContain(assetId);
     });
+    it("won't let the media library delete a file a font is made of, and names the font", async () => {
+      const added = (
+        await api("POST", "/site-fonts/google", { id: "lora", weights: ["400"] })
+      ).json();
+      const assetId = added.files[0].assetId;
+
+      const refused = await api("DELETE", `/media/${assetId}`);
+
+      expect(refused.statusCode).toBe(409);
+      expect(refused.json()).toMatchObject({
+        code: "ASSET_IN_USE",
+        message: "This file is used in 1 place. Remove it from there first, then delete it.",
+        usedBy: [{ entryId: added.id, title: "Lora", place: "siteFonts" }],
+      });
+      expect((await api("GET", `/media/${assetId}`)).statusCode).toBe(200);
+      expect((await visitHome()).css).toContain(assetId);
+    });
   });
 
   describe("Adobe Fonts", () => {

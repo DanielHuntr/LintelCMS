@@ -184,7 +184,7 @@ function PageDesigner({
     : undefined;
   const effectModules = useEffectModules(besideTheAdmin);
   const siteMotion = useSiteMotion();
-  const siteDesign = useSiteDesign();
+  const siteDesign = useSiteDesign({ entry: saving.entry.id });
   const imagePicker = useImagePicker();
   const fonts = useBuilderFonts();
   const pagePicker = usePagePicker();

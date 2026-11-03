@@ -1,5 +1,6 @@
 import {
   type Breakpoint,
+  type DesignUse,
   type DesignVariable,
   type DesignVariableKind,
   isDesignVariableValue,
@@ -115,7 +116,7 @@ export function SiteStylesPanel({
   showsValues = true,
 }: SiteStylesPanelProps) {
   const text = useBuilderText();
-  const { design, change } = useSiteDesign();
+  const { design, change, uses: siteUses } = useSiteDesign();
   const looks = sharedStylesById(design);
   const [openId, setOpenId] = useState<string | null>(null);
   // "All headings" and the like open over the list, with Back.
@@ -199,6 +200,11 @@ export function SiteStylesPanel({
                       key={variable.id}
                       variable={variable}
                       uses={variableUses.get(variable.id) ?? 0}
+                      elsewhere={
+                        siteUses
+                          ? (siteUses.variables[variable.id] ?? { uses: 0, pages: 0 })
+                          : undefined
+                      }
                       isOpen={openId === `variable:${variable.id}`}
                       onToggle={change ? () => toggle(`variable:${variable.id}`) : undefined}
                       onChange={replaceVariable}
@@ -228,6 +234,11 @@ export function SiteStylesPanel({
                     sharedStyle={sharedStyle}
                     look={looks[sharedStyle.id] ?? sharedStyle}
                     uses={sharedStyleUses.get(sharedStyle.id) ?? 0}
+                    elsewhere={
+                      siteUses
+                        ? (siteUses.sharedStyles[sharedStyle.id] ?? { uses: 0, pages: 0 })
+                        : undefined
+                    }
                     isOpen={openId === `shared:${sharedStyle.id}`}
                     onToggle={() => toggle(`shared:${sharedStyle.id}`)}
                     canChange={change !== undefined}
@@ -473,14 +484,18 @@ function Row({
 
 function VariableRow({
   variable,
-  uses,
+  uses: usesHere,
+  elsewhere,
   isOpen,
   onToggle,
   onChange,
   onDelete,
 }: {
   variable: DesignVariable;
+  /** Uses on this page and in the site's styles. */
   uses: number;
+  /** Uses on the rest of the site; undefined until they have loaded. */
+  elsewhere: DesignUse | undefined;
   isOpen: boolean;
   onToggle?: () => void;
   onChange: (next: DesignVariable) => void;
@@ -488,6 +503,7 @@ function VariableRow({
 }) {
   const text = useBuilderText();
   const showsValues = useContext(ShowsValuesContext);
+  const uses = usesHere + (elsewhere?.uses ?? 0);
   return (
     <Row
       preview={<VariablePreview variable={variable} />}
@@ -499,13 +515,7 @@ function VariableRow({
             ? `${variable.value} · ${variable.darkValue}`
             : variable.value
       }
-      uses={
-        uses === 0
-          ? null
-          : uses === 1
-            ? text("pageBuilder.siteStyles.usesOne")
-            : text("pageBuilder.siteStyles.uses", { count: uses })
-      }
+      uses={usesLabel(text, uses)}
       isOpen={isOpen}
       onToggle={onToggle}
     >
@@ -520,11 +530,7 @@ function VariableRow({
       {variable.kind === "colour" && <DarkValue variable={variable} onChange={onChange} />}
       <DeleteAction
         name={variable.name}
-        note={
-          uses > 0
-            ? text("pageBuilder.siteStyles.deleteUsed", { count: uses })
-            : text("pageBuilder.siteStyles.deleteUnused")
-        }
+        note={variableDeleteNote(text, uses, elsewhere)}
         onDelete={onDelete}
       />
     </Row>
@@ -735,6 +741,7 @@ function SharedStyleRow({
   sharedStyle,
   look,
   uses,
+  elsewhere,
   isOpen,
   onToggle,
   canChange,
@@ -745,7 +752,10 @@ function SharedStyleRow({
   sharedStyle: SharedStyle;
   /** How it looks: for a variant, its base's look with its own over it. */
   look: SharedStyle;
+  /** Uses on this page. */
   uses: number;
+  /** Uses on the rest of the site; undefined until they have loaded. */
+  elsewhere: DesignUse | undefined;
   isOpen: boolean;
   onToggle: () => void;
   canChange: boolean;
@@ -764,7 +774,13 @@ function SharedStyleRow({
         </span>
       }
       name={sharedStyle.name}
-      uses={uses > 0 ? text("pageBuilder.shared.uses", { count: uses }) : null}
+      uses={
+        elsewhere
+          ? usesLabel(text, uses + elsewhere.uses)
+          : uses > 0
+            ? text("pageBuilder.shared.uses", { count: uses })
+            : null
+      }
       isOpen={isOpen}
       onToggle={showsEditor ? onToggle : undefined}
     >
@@ -782,10 +798,42 @@ function SharedStyleRow({
       {canChange && (
         <DeleteAction
           name={sharedStyle.name}
-          note={text("pageBuilder.siteStyles.deleteShared")}
+          note={
+            !elsewhere
+              ? text("pageBuilder.siteStyles.deleteShared")
+              : elsewhere.pages === 0
+                ? text("pageBuilder.siteStyles.deleteSharedHere")
+                : elsewhere.pages === 1
+                  ? text("pageBuilder.siteStyles.deleteSharedPagesOne")
+                  : text("pageBuilder.siteStyles.deleteSharedPages", { pages: elsewhere.pages })
+          }
           onDelete={onDelete}
         />
       )}
     </Row>
   );
+}
+
+type BuilderText = ReturnType<typeof useBuilderText>;
+
+/** "12 uses", "1 use", or nothing for none. */
+function usesLabel(text: BuilderText, uses: number): string | null {
+  if (uses === 0) return null;
+  return uses === 1
+    ? text("pageBuilder.siteStyles.usesOne")
+    : text("pageBuilder.siteStyles.uses", { count: uses });
+}
+
+/** What deleting a variable does, naming the other pages that would lose it. */
+function variableDeleteNote(text: BuilderText, uses: number, elsewhere: DesignUse | undefined) {
+  if (!elsewhere) {
+    return uses > 0
+      ? text("pageBuilder.siteStyles.deleteUsed", { count: uses })
+      : text("pageBuilder.siteStyles.deleteUnused");
+  }
+  if (uses === 0) return text("pageBuilder.siteStyles.deleteNothing");
+  if (elsewhere.pages === 0) return text("pageBuilder.siteStyles.deleteUsedHere", { count: uses });
+  return elsewhere.pages === 1
+    ? text("pageBuilder.siteStyles.deleteUsedPagesOne", { count: uses })
+    : text("pageBuilder.siteStyles.deleteUsedPages", { count: uses, pages: elsewhere.pages });
 }

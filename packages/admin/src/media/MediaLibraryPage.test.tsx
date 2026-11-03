@@ -121,6 +121,38 @@ describe("MediaLibraryPage", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("names the site font a downloaded font file belongs to when deleting is refused", async () => {
+    mockApi((path, init) => {
+      if (init?.method === "DELETE") {
+        return new Response(
+          JSON.stringify({
+            statusCode: 409,
+            code: "ASSET_IN_USE",
+            error: "Conflict",
+            message: "This file is used in 1 place.",
+            usedBy: [{ entryId: "f1", title: "Playfair Display", place: "siteFonts" }],
+          }),
+          { status: 409 },
+        );
+      }
+      return { assets: [beach], total: 1 };
+    });
+    renderWithQueries(<MediaLibraryPage permissions={["*"]} />);
+
+    await userEvent.click(await screen.findByRole("button", { name: /beach\.jpg/ }));
+    const sheet = screen.getByRole("dialog", { name: "beach.jpg" });
+    await userEvent.click(within(sheet).getByRole("button", { name: "Delete" }));
+    const confirm = screen.getByRole("alertdialog", { name: "Delete “beach.jpg”?" });
+    await userEvent.click(within(confirm).getByRole("button", { name: "Move to recycle bin" }));
+
+    const inUse = await screen.findByRole("alertdialog", { name: "This file is still in use" });
+    expect(within(inUse).getByText("Site fonts → Playfair Display")).toBeInTheDocument();
+    expect(inUse).toHaveAccessibleDescription(/A font your site uses is made from this file/);
+    expect(
+      within(inUse).queryByRole("button", { name: "Move to recycle bin" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("moves a file to the recycle bin and brings it back with Undo", async () => {
     let isBinned = false;
     const requested = mockApi((path, init) => {

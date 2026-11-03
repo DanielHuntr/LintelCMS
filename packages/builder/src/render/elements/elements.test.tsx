@@ -11,6 +11,7 @@ import {
 import { describe, expect, it } from "vitest";
 import { renderPage } from "../render-page.js";
 import { standardRegistry } from "../stand-in-components.js";
+import { elementStylesheet } from "./element-stylesheet.js";
 import { markdownToHtml } from "./markdown.js";
 import { inSentence, openStreetMapAddresses, videoEmbed } from "./media-addresses.js";
 import { sampleProduct } from "./shop.js";
@@ -57,6 +58,34 @@ describe("drawing the element library", () => {
     ).html;
     expect(moving).toContain('data-autoplay="5"');
     expect(moving).toContain("Pause");
+  });
+
+  it("lets the next slide peek in on phones, unless switched off or there's only one", () => {
+    expect(draw(page({ type: "carousel" })).html).toContain("lintel-carousel--peek");
+    expect(draw(page({ type: "carousel", props: { phonePeek: false } })).html).not.toContain(
+      "lintel-carousel--peek",
+    );
+    expect(draw(page({ type: "carousel", children: [{ type: "slide" }] })).html).not.toContain(
+      "lintel-carousel--peek",
+    );
+    expect(draw(page({ type: "testimonialSlider" })).html).not.toContain("lintel-carousel--peek");
+    const css = elementStylesheet;
+    // After the track's own columns, so it wins on phones.
+    expect(css.indexOf("lintel-carousel--peek")).toBeGreaterThan(
+      css.indexOf(":where(.lintel-carousel__track) {"),
+    );
+    expect(css).toMatch(
+      /max-width: 767px\) \{ :where\(\.lintel-carousel--peek \.lintel-carousel__track\) \{ grid-auto-columns: 88%; \} \}/,
+    );
+  });
+
+  it("colours the slider's arrows from the site's own colours, not plain black and white", () => {
+    const rule = elementStylesheet.match(
+      /:where\(\.lintel-carousel__button, \.lintel-carousel__pause\) \{[^}]*\}/,
+    )?.[0];
+    expect(rule).toContain("color: var(--lintel-color-link)");
+    expect(rule).not.toContain("color: var(--lintel-color-text)");
+    expect(elementStylesheet).toContain("background: var(--lintel-color-brand)");
   });
 
   it("draws tabs with only the first panel showing, and accordions as disclosures", () => {
