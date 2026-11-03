@@ -1,11 +1,15 @@
 import type {
   BackgroundVideo,
+  Breakpoint,
   FreeLayout,
+  GridPlace,
+  PlacedGrid,
   PageFont,
   PageNode,
   StackingMove,
 } from "@lintel/builder-model";
 import { createContext, useContext } from "react";
+import type { SharedStyleChange } from "../editor/design-commands.js";
 import type { ImagePicker } from "../panels/content-fields.js";
 
 /** A file uploaded to the media library: a font or a video. */
@@ -32,6 +36,11 @@ export interface DesignTools {
   pageFonts: readonly PageFont[];
   changePageFonts: (fonts: PageFont[], label: string) => void;
   setFreeLayout: (freeLayout: FreeLayout | null) => void;
+  setPlacedGrid: (placedGrid: PlacedGrid | null) => void;
+  /** Puts the element on its parent's placed grid at one screen size. */
+  placeOnGrid: (target: Breakpoint, place: GridPlace) => void;
+  /** Makes, uses or detaches a shared style on the element (the page side of it). */
+  changeSharedStyle: (change: SharedStyleChange) => void;
   setBackgroundVideo: (video: BackgroundVideo | null) => void;
   restack: (move: StackingMove) => void;
   pickImage?: ImagePicker;

@@ -12,6 +12,7 @@ import {
 import { makeCssSafeToEmbed } from "../code/sanitise-code.js";
 import { compileFontFaces, readPageFonts } from "../fonts/page-fonts.js";
 import { impliedFreeLayoutStyles } from "../free-layout/free-layout.js";
+import { impliedPlacedGridStyles } from "../placed-grid/placed-grid.js";
 import { planMarkDrawings, type TextMark } from "../text-marks/text-marks.js";
 import { breakpointWidths } from "./style-cascade.js";
 import { stylePropertyNames, styleProperties } from "./style-properties.js";
@@ -33,10 +34,11 @@ import { stylePropertyNames, styleProperties } from "./style-properties.js";
  *   }
  *
  * A few rules come from settings rather than styles: a free layout's `position`s (and its
- * stacking on phones), a background video's overlay, and the classes for styled parts of
- * text (`.title-mark-1`). Hidden nodes (and everything inside them) are left out, as they are
- * from the HTML. Declarations are always printed in the same order, so the same page gives
- * the same CSS. Code blocks' own CSS follows at the end, after a comment saying whose it is.
+ * stacking on phones), a placed grid's columns (and its stacking on phones), a background
+ * video's overlay, and the classes for styled parts of text (`.title-mark-1`). Hidden nodes
+ * (and everything inside them) are left out, as they are from the HTML. Declarations are
+ * always printed in the same order, so the same page gives the same CSS. Code blocks' own
+ * CSS follows at the end, after a comment saying whose it is.
  *
  * States: a node's own hover, pressed and focus styles, and styles it takes while an element
  * around it (its owner, such as a card) is in a state: `.card:hover .picture`. An owner with a
@@ -322,7 +324,10 @@ function listVisibleNodes(root: PageNode): VisibleNode[] {
   const nodes: VisibleNode[] = [];
   const visit = (node: PageNode, parent: PageNode | null) => {
     if (node.hidden) return;
-    const implied = impliedFreeLayoutStyles(node, parent);
+    const implied = mergeImplied(
+      impliedFreeLayoutStyles(node, parent),
+      impliedPlacedGridStyles(node, parent),
+    );
     if (node.backgroundVideo) {
       implied.base = { position: "relative", isolation: "isolate", ...implied.base };
     }
@@ -331,6 +336,19 @@ function listVisibleNodes(root: PageNode): VisibleNode[] {
   };
   visit(root, null);
   return nodes;
+}
+
+/** Two sets of implied styles as one; the second wins where both set a property. */
+function mergeImplied(
+  first: Partial<NodeStyles>,
+  second: Partial<NodeStyles>,
+): Partial<NodeStyles> {
+  const merged: Partial<NodeStyles> = { ...first };
+  for (const breakpoint of ["base", "tablet", "phone"] as const) {
+    const declarations = second[breakpoint];
+    if (declarations) merged[breakpoint] = { ...merged[breakpoint], ...declarations };
+  }
+  return merged;
 }
 
 function compact<Value>(values: ReadonlyArray<Value | null>): Value[] {

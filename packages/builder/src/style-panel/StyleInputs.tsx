@@ -3,10 +3,12 @@ import {
   findTokenByValue,
   type StylePropertyName,
   tokenValue,
+  variableValue,
 } from "@lintel/builder-model";
 import { Check } from "lucide-react";
 import { useId, useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
+import { addVariable, useSiteDesign, useSiteTokens } from "../site-design/site-design-context.js";
 import { classNames, inputClassName, Labelled } from "../ui/controls.js";
 import {
   normaliseTypedValue,
@@ -207,6 +209,11 @@ export function StyleChips({
 }
 
 /** Chips made from design tokens (spacing steps, radii), with "None" first. */
+/** The theme's spacing steps given, then the site's own sizes, as chips. */
+export function useSizeChips(tokens: readonly DesignToken[], noneLabel: string): ChipChoice[] {
+  return tokenChips([...tokens, ...useSiteTokens("size")], noneLabel);
+}
+
 export function tokenChips(
   tokens: readonly DesignToken[],
   noneLabel: string,
@@ -222,11 +229,14 @@ export function tokenChips(
 export function ColourPicker({
   property,
   label,
-  tokens,
+  tokens: themeTokens,
 }: StyleControlProps & { tokens: readonly DesignToken[] }) {
   const text = useBuilderText();
   const field = useStyleField(property, label);
   const labelId = useId();
+  // The theme's colours, then the site's own (see site-design/).
+  const siteColours = useSiteTokens("colour");
+  const tokens = [...themeTokens, ...siteColours];
   const current = findTokenByValue(field.value, tokens);
   const custom =
     field.value && !current && /^#[0-9a-f]{6}$/i.test(field.value) ? field.value : "#000000";
@@ -277,9 +287,71 @@ export function ColourPicker({
               {current.label}
             </span>
           )}
+          {!current && field.value && /^#[0-9a-f]{6}$/i.test(field.value) && (
+            <SaveAsSiteColour value={field.value} onSaved={field.set} />
+          )}
         </div>
       )}
     </Labelled>
+  );
+}
+
+/**
+ * "Save as a site colour" under a colour picked by hand: names it, adds it to the site's
+ * colours and uses it here, so it can be picked anywhere and changed in one place.
+ */
+function SaveAsSiteColour({ value, onSaved }: { value: string; onSaved: (value: string) => void }) {
+  const text = useBuilderText();
+  const site = useSiteDesign();
+  const [naming, setNaming] = useState(false);
+  const [name, setName] = useState("");
+  if (!site.change) return null;
+  const change = site.change;
+  if (!naming) {
+    return (
+      <button
+        type="button"
+        onClick={() => setNaming(true)}
+        className="basis-full self-start text-start text-caption font-medium text-accent hover:underline focus-visible:focus-ring"
+      >
+        {text("pageBuilder.site.saveColour")}
+      </button>
+    );
+  }
+  const save = () => {
+    if (!name.trim()) return;
+    const added = addVariable(site.design, "colour", name.trim().slice(0, 40), value);
+    change(added.design);
+    onSaved(variableValue(added.variable));
+    setNaming(false);
+    setName("");
+  };
+  return (
+    <span className="flex basis-full items-center gap-1">
+      <input
+        aria-label={text("pageBuilder.site.colourName")}
+        placeholder={text("pageBuilder.site.colourName")}
+        value={name}
+        maxLength={40}
+        onChange={(event) => setName(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            save();
+          }
+          if (event.key === "Escape") setNaming(false);
+        }}
+        autoFocus
+        className={`${inputClassName} min-w-0 flex-1`}
+      />
+      <button
+        type="button"
+        onClick={save}
+        className="rounded-control bg-accent-fill px-2.5 py-1 text-caption font-medium text-white focus-visible:focus-ring"
+      >
+        {text("pageBuilder.shared.save")}
+      </button>
+    </span>
   );
 }
 

@@ -1,15 +1,20 @@
 import {
   type AnyComponentDefinition,
   type Breakpoint,
+  isOwnerStateTarget,
+  layerStyles,
   type OwnerStateTarget,
   type PageNode,
   readOwnerStateTarget,
+  setStyles,
   type StateTransition,
   type StylePropertyName,
   type StyleState,
   type StyleTarget,
 } from "@lintel/builder-model";
-import { type ReactNode, useMemo } from "react";
+import { type ReactNode, useMemo, useState } from "react";
+import { type SharedScope, SharedStyleBar } from "../site-design/SharedStyleBar.js";
+import { useSiteDesign, withSharedStyle } from "../site-design/site-design-context.js";
 import { CanvasLookContext, useCanvasLook } from "./canvas-look.js";
 import type { BuilderStringKey } from "../i18n/builder-strings.js";
 import { useBuilderText } from "../i18n/builder-text.js";
@@ -71,6 +76,10 @@ interface StylePanelProps {
   owners?: readonly StateOwner[];
   /** Sets how an element, and what follows its states, moves between them. */
   onTransitionChange?: (nodeId: string, transition: StateTransition | null) => void;
+  /** How many elements on this page use each shared style. */
+  sharedStyleUses?: ReadonlyMap<string, number>;
+  /** The element's name in Layers, offered as the name of a shared style made from it. */
+  nodeName?: string;
 }
 
 const textTypes = new Set(["heading", "text", "quote", "list", "button", "link", "navigation"]);
@@ -107,6 +116,8 @@ export function StylePanel({
   design,
   owners = [],
   onTransitionChange,
+  sharedStyleUses,
+  nodeName = "",
 }: StylePanelProps) {
   const text = useBuilderText();
   const advanced = allowsAdvanced && mode === "advanced";
@@ -117,14 +128,41 @@ export function StylePanel({
     : undefined;
   const validState: StateChoice = ownerTarget && !owner ? "none" : state;
   const target: StyleTarget = validState !== "none" ? validState : breakpoint;
-  const editing = useMemo<StyleEditing>(
-    () => ({
-      styles: node.styles,
+  // With a shared style, changes go to it (every element that uses it) unless "Only this
+  // one" is chosen; styles that follow another element's state are always this one's own.
+  const site = useSiteDesign();
+  const changeSite = site.change;
+  const shared = node.sharedStyle
+    ? site.design.sharedStyles.find((each) => each.id === node.sharedStyle)
+    : undefined;
+  const [scope, setScope] = useState<{ nodeId: string; scope: SharedScope }>({
+    nodeId: node.id,
+    scope: "every",
+  });
+  const sharedScope = scope.nodeId === node.id ? scope.scope : "every";
+  const editsShared =
+    shared !== undefined &&
+    changeSite !== undefined &&
+    sharedScope === "every" &&
+    !isOwnerStateTarget(target);
+  const editing = useMemo<StyleEditing>(() => {
+    if (shared && editsShared && changeSite) {
+      return {
+        styles: shared.styles,
+        target,
+        change: (values) => {
+          const styles = setStyles(shared.styles, target, values);
+          delete styles.owners;
+          changeSite(withSharedStyle(site.design, { ...shared, styles }));
+        },
+      };
+    }
+    return {
+      styles: shared ? layerStyles(shared.styles, node.styles) : node.styles,
       target,
       change: (values, label) => onChange(target, values, label),
-    }),
-    [node.styles, target, onChange],
-  );
+    };
+  }, [shared, editsShared, changeSite, site.design, node.styles, target, onChange]);
   const store = usePreferenceStore();
   const simpleSections = useRememberedOpenSections(store, "style.simple.open", simpleOpenAtFirst);
   const advancedSections = useLastUsedOpenSections(store, "style.advanced.lastUsed");
@@ -155,6 +193,15 @@ export function StylePanel({
         ) : (
           note
         )}
+        <SharedStyleBar
+          node={node}
+          design={design}
+          uses={node.sharedStyle ? (sharedStyleUses?.get(node.sharedStyle) ?? 1) : 0}
+          scope={sharedScope}
+          onScopeChange={(next) => setScope({ nodeId: node.id, scope: next })}
+          defaultName={nodeName}
+          isLocked={isLocked}
+        />
         <LookPicker value={validState} owners={owners} onChange={onStateChange} />
         {validState === "none" && (
           <p className="text-caption text-label-secondary">{text(breakpointNotes[breakpoint])}</p>

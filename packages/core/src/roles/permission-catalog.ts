@@ -128,9 +128,9 @@ export const corePermissionGroups: readonly PermissionGroup[] = [
       },
       {
         permission: "builder:blocks",
-        name: "Make and change the site’s blocks",
+        name: "Make and change the site’s blocks and shared styles",
         description:
-          "Make designs into blocks, change their design and properties, and delete them. Anyone who can edit a page can use them.",
+          "Make designs into blocks, change their design and properties, and delete them. Make and change shared styles and the site’s colour, size and font variables. Anyone who can edit a page can use them.",
       },
     ],
   },

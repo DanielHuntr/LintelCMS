@@ -3,6 +3,7 @@ import { motionSpecSchema, type MotionSpec } from "@lintel/motion/schema";
 import { z } from "zod";
 import { type BackgroundVideo, backgroundVideoSchema } from "../backgrounds/background-video.js";
 import { type FreeLayout, freeLayoutSchema } from "../free-layout/free-layout.js";
+import { type PlacedGrid, placedGridSchema } from "../placed-grid/placed-grid.js";
 import { isStylePropertyName, type StylePropertyName } from "../styles/style-properties.js";
 import { isSafeValueFor } from "../styles/style-values.js";
 
@@ -104,8 +105,18 @@ export interface PageNode {
   stateTransition?: StateTransition;
   /** Its children are placed anywhere in it (see free-layout/). Left out for normal flow. */
   freeLayout?: FreeLayout;
+  /**
+   * Its children are placed on its columns and rows, magazine style (see placed-grid/). Left
+   * out for normal flow. A container has a free layout or a placed grid, not both.
+   */
+  placedGrid?: PlacedGrid;
   /** A muted, looping video behind its content (see backgrounds/). */
   backgroundVideo?: BackgroundVideo;
+  /**
+   * The id of the site's shared style it uses (see site-design/shared-styles.ts): that look
+   * goes under its own styles when the page is drawn. Left out for none.
+   */
+  sharedStyle?: string;
   /**
    * Inside a collection list (or on a collection's item page), props filled from the current
    * entry instead of typed in: `{ "text": "title", "src": "image" }`. Left out when unbound.
@@ -232,7 +243,14 @@ export const pageNodeSchema: z.ZodType<PageNode> = z.lazy(() =>
     effects: nodeEffectsSchema.optional(),
     stateTransition: stateTransitionSchema.optional(),
     freeLayout: freeLayoutSchema.optional(),
+    placedGrid: placedGridSchema.optional(),
     backgroundVideo: backgroundVideoSchema.optional(),
+    sharedStyle: z
+      .string()
+      .regex(/^[a-z][a-z0-9-]{0,39}$/, {
+        error: "A shared style’s id should be a short name like “card”",
+      })
+      .optional(),
     bindings: nodeBindingsSchema.optional(),
   }),
 );

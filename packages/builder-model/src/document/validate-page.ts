@@ -1,6 +1,7 @@
 import { backgroundVideoTypes } from "../backgrounds/background-video.js";
 import type { ComponentCatalogue } from "../components/component-catalogue.js";
 import { freeLayoutTypes } from "../free-layout/free-layout.js";
+import { placedGridTypes } from "../placed-grid/placed-grid.js";
 import { migrateDocument, UnknownPageVersionError } from "./migrations.js";
 import {
   maxNodeCount,
@@ -97,6 +98,15 @@ export function validatePageDocument(
     }
     if (node.freeLayout && !freeLayoutTypes.includes(node.type)) {
       problems.push({ nodeId: node.id, message: `${where} can’t have a free layout` });
+    }
+    if (node.placedGrid && !placedGridTypes.includes(node.type)) {
+      problems.push({ nodeId: node.id, message: `${where} can’t be a placed grid` });
+    }
+    if (node.placedGrid && node.freeLayout) {
+      problems.push({
+        nodeId: node.id,
+        message: `${where} can have a free layout or a placed grid, not both`,
+      });
     }
     if (node.backgroundVideo && !backgroundVideoTypes.includes(node.type)) {
       problems.push({ nodeId: node.id, message: `${where} can’t have a background video` });

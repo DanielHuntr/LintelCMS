@@ -1,4 +1,17 @@
 import {
+  detachSharedStyle,
+  giveSharedStyle,
+  makeSharedStyle,
+  type SharedStyle,
+  type Breakpoint,
+  breakpoints,
+  clampGridPlace,
+  type GridPlace,
+  gridPlaceStyles,
+  type NodeStyles,
+  type PlacedGrid,
+  readGridLine,
+  type StylePropertyName,
   applyMark,
   type BackgroundVideo,
   clearMarks,
@@ -40,7 +53,9 @@ export function setFreeLayout(
       ? "pageBuilder.design.history.freeLayoutOn"
       : "pageBuilder.design.history.freeLayoutOff",
   );
-  return changeNode(context, nodeId, label, (node) => {
+  return changeNode(context, nodeId, label, (current) => {
+    // A container has a free layout or a placed grid, not both.
+    const node = freeLayout && current.placedGrid ? withoutPlacedGrid(current, context) : current;
     if (!freeLayout) {
       const rest: PageNode = { ...node };
       delete rest.freeLayout;
@@ -64,6 +79,162 @@ export function setFreeLayout(
       return { ...child, styles: setStyles(child.styles, "base", freePlaceStyles(place)) };
     });
     return { ...node, freeLayout, styles, children };
+  });
+}
+
+/** The layout styles a placed grid replaces, taken off its container when it is switched on. */
+const flowLayoutProperties: readonly StylePropertyName[] = [
+  "display",
+  "flexDirection",
+  "flexWrap",
+  "justifyContent",
+  "alignItems",
+  "gridTemplateColumns",
+  "gridTemplateRows",
+  "gridTemplateAreas",
+];
+
+/** The places on a grid each element has, at every screen size. */
+const placeProperties: readonly StylePropertyName[] = ["gridColumn", "gridRow"];
+
+function clearAtEverySize(
+  styles: NodeStyles,
+  properties: readonly StylePropertyName[],
+): NodeStyles {
+  const cleared = Object.fromEntries(properties.map((property) => [property, undefined]));
+  return breakpoints.reduce((next, breakpoint) => setStyles(next, breakpoint, cleared), styles);
+}
+
+/**
+ * Turns a section's placed grid on, changes it, or turns it off. Turning it on takes away
+ * the container's own flow (a stack or a row) and any free layout; elements without a place
+ * take the whole width until they're dragged somewhere. Fewer columns pull places back onto
+ * the grid. Turning it off takes the places away and gives the container its usual layout.
+ */
+export function setPlacedGrid(
+  context: CommandContext,
+  nodeId: string,
+  placedGrid: PlacedGrid | null,
+): CommandResult {
+  const label = context.text(
+    placedGrid ? "pageBuilder.grid.history.on" : "pageBuilder.grid.history.off",
+  );
+  return changeNode(context, nodeId, label, (node) => {
+    if (!placedGrid) return withoutPlacedGrid(node, context);
+    let next: PageNode = node;
+    if (node.freeLayout) {
+      next = { ...node };
+      delete next.freeLayout;
+      next.children = node.children.map((child) => ({
+        ...child,
+        styles: setStyles(child.styles, "base", { left: undefined, top: undefined }),
+      }));
+    }
+    const styles = node.placedGrid
+      ? next.styles
+      : clearAtEverySize(next.styles, flowLayoutProperties);
+    const children = next.children.map((child) => ({
+      ...child,
+      styles: clampPlaces(child.styles, placedGrid.columns),
+    }));
+    return { ...next, placedGrid: { ...placedGrid }, styles, children };
+  });
+}
+
+/** Places that would spill past the last column, pulled back onto a grid of `columns`. */
+function clampPlaces(styles: NodeStyles, columns: number): NodeStyles {
+  let next = styles;
+  for (const breakpoint of breakpoints) {
+    const line = readGridLine(styles[breakpoint]?.gridColumn);
+    if (!line || line.start + line.span - 1 <= columns) continue;
+    const place = clampGridPlace(
+      { column: line.start, columnSpan: line.span, row: 1, rowSpan: 1 },
+      columns,
+    );
+    next = setStyles(next, breakpoint, {
+      gridColumn: gridPlaceStyles(place).gridColumn,
+    });
+  }
+  return next;
+}
+
+function withoutPlacedGrid(node: PageNode, context: CommandContext): PageNode {
+  if (!node.placedGrid) return node;
+  const rest: PageNode = { ...node };
+  delete rest.placedGrid;
+  // Back to the element's usual layout (a box stacks its contents, for example).
+  const usual = context.catalogue.find(node.type)?.defaultStyles?.base ?? {};
+  const restored = Object.fromEntries(
+    flowLayoutProperties.flatMap((property) =>
+      usual[property] !== undefined && node.styles.base[property] === undefined
+        ? [[property, usual[property]]]
+        : [],
+    ),
+  );
+  return {
+    ...rest,
+    styles: setStyles(node.styles, "base", restored),
+    children: node.children.map((child) => ({
+      ...child,
+      styles: clearAtEverySize(child.styles, placeProperties),
+    })),
+  };
+}
+
+/**
+ * Puts an element on its placed grid, at one screen size: from dragging, resizing, nudging
+ * or the style panel. Kept on the grid, so it never spills past the last column.
+ */
+export function placeOnGrid(
+  context: CommandContext,
+  nodeId: string,
+  target: Breakpoint,
+  place: GridPlace,
+  label: string,
+): CommandResult {
+  const parent = findPath(context.document.root, nodeId).at(-2);
+  const columns = parent?.placedGrid?.columns;
+  if (!columns) return { refused: context.text("pageBuilder.grid.notOnGrid") };
+  return changeNode(
+    context,
+    nodeId,
+    label,
+    (node) => ({
+      ...node,
+      styles: setStyles(node.styles, target, gridPlaceStyles(clampGridPlace(place, columns))),
+    }),
+    { coalesceKey: `grid:${nodeId}:${target}` },
+  );
+}
+
+/**
+ * Shared styles on an element: "make" moves its look into a new shared style (which the app
+ * adds to the site), "use" gives it an existing one in place of its own look, and "detach"
+ * gives it the shared look as its own again. Its place on a grid or in a free layout stays.
+ */
+export type SharedStyleChange =
+  | { kind: "make"; id: string; name: string }
+  | { kind: "use"; id: string; name: string }
+  | { kind: "detach"; sharedStyle: SharedStyle | undefined };
+
+export function changeSharedStyle(
+  context: CommandContext,
+  nodeId: string,
+  change: SharedStyleChange,
+): CommandResult {
+  const label =
+    change.kind === "detach"
+      ? context.text("pageBuilder.shared.history.detached")
+      : context.text(
+          change.kind === "make"
+            ? "pageBuilder.shared.history.made"
+            : "pageBuilder.shared.history.used",
+          { name: change.name },
+        );
+  return changeNode(context, nodeId, label, (node) => {
+    if (change.kind === "make") return makeSharedStyle(node, change.id, change.name).node;
+    if (change.kind === "use") return giveSharedStyle(node, change.id);
+    return detachSharedStyle(node, change.sharedStyle);
   });
 }
 

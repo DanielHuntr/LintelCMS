@@ -1,3 +1,4 @@
+import type { SiteDesign } from "@lintel/builder-model";
 import type { SiteEffectSettings } from "@lintel/motion";
 import type { BuilderDataSources } from "@lintel/builder";
 import { apiRequest } from "../api/client.js";
@@ -66,6 +67,15 @@ export function getSiteEffects() {
 
 export function updateSiteEffects(changes: Partial<SiteEffectSettings>) {
   return apiRequest<SiteEffectSettings>("/website/effects", { method: "PUT", body: changes });
+}
+
+/** The site's design variables and shared styles, made in the page builder. */
+export function getSiteDesign() {
+  return apiRequest<SiteDesign>("/website/design");
+}
+
+export function updateSiteDesign(design: SiteDesign) {
+  return apiRequest<SiteDesign>("/website/design", { method: "PUT", body: design });
 }
 
 /** What the page builder draws its canvas with, so pages look exactly as on the website. */

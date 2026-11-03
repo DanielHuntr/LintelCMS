@@ -1,17 +1,42 @@
-import { spacingTokens } from "@lintel/builder-model";
+import { findTokenByValue, spacingTokens } from "@lintel/builder-model";
 import { ArrowDown, ArrowRight, Grid3x3, Square } from "lucide-react";
 import { type KeyboardEvent, useRef } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { ChoiceGroup, classNames, Labelled, PanelSection } from "../ui/controls.js";
+import { useDesignTools } from "./design-tools.js";
 import { useStyleEditing, useStyleField, useStyleReader } from "./style-field.js";
 import { layoutSummary } from "./style-summaries.js";
-import { StyleChips, StyleSelect, StyleTextInput, tokenChips } from "./StyleInputs.js";
+import { StyleChips, StyleSelect, StyleTextInput, useSizeChips } from "./StyleInputs.js";
 
 type Arrangement = "stack" | "row" | "grid" | "normal";
 
-/** How the elements inside are arranged: one under another, side by side, or in a grid. */
+/**
+ * How the elements inside are arranged: one under another, side by side, or in a grid. A
+ * placed grid is set up in Arrange, so here it only has the space between things.
+ */
 export function LayoutSection({ advanced }: { advanced: boolean }) {
+  const isPlacedGrid = useDesignTools().node.placedGrid !== undefined;
+  return isPlacedGrid ? <PlacedGridSpacing /> : <FlowLayout advanced={advanced} />;
+}
+
+function PlacedGridSpacing() {
   const text = useBuilderText();
+  const read = useStyleReader();
+  const gapChips = useSizeChips(spacingTokens.slice(1, 8), text("pageBuilder.style.none"));
+  return (
+    <PanelSection
+      title={text("pageBuilder.style.layout")}
+      sectionId="layout"
+      summary={findTokenByValue(read("gap"))?.label ?? read("gap") ?? ""}
+    >
+      <StyleChips properties={["gap"]} label={text("pageBuilder.style.gap")} choices={gapChips} />
+    </PanelSection>
+  );
+}
+
+function FlowLayout({ advanced }: { advanced: boolean }) {
+  const text = useBuilderText();
+  const gapChips = useSizeChips(spacingTokens.slice(1, 8), text("pageBuilder.style.none"));
   const { change } = useStyleEditing();
   const read = useStyleReader();
   const display = useStyleField("display", text("pageBuilder.style.arrange"));
@@ -66,11 +91,7 @@ export function LayoutSection({ advanced }: { advanced: boolean }) {
       )}
       {arrangement !== "normal" && <AlignmentPad isRow={arrangement === "row"} />}
       {arrangement !== "normal" && (
-        <StyleChips
-          properties={["gap"]}
-          label={text("pageBuilder.style.gap")}
-          choices={tokenChips(spacingTokens.slice(1, 8), text("pageBuilder.style.none"))}
-        />
+        <StyleChips properties={["gap"]} label={text("pageBuilder.style.gap")} choices={gapChips} />
       )}
       {advanced && (
         <div className="grid grid-cols-2 gap-2">

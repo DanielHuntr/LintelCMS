@@ -2,9 +2,12 @@ import {
   type AnyComponentDefinition,
   type BackgroundVideo,
   type BoundPicture,
+  countSharedStyleUses,
   type Breakpoint,
   findPath,
   type FreeLayout,
+  type GridPlace,
+  type PlacedGrid,
   type NodeAnimation,
   type NodeEffect,
   type PageDocument,
@@ -40,6 +43,8 @@ import {
   type StylePanelMode,
 } from "../style-panel/StylePanel.js";
 import { layerName } from "../editor/commands.js";
+import { SiteStylesPanel } from "../site-design/SiteStylesPanel.js";
+import type { SharedStyleChange } from "../editor/design-commands.js";
 import { Tip } from "../tour/Tip.js";
 import { Tabs } from "../ui/controls.js";
 import type { ImagePicker } from "./content-fields.js";
@@ -77,6 +82,9 @@ interface SelectedElementPanelProps {
     changeCode: (nodeId: string, code: { html: string; css: string; js: string }) => void;
     pasteHtml: (html: string) => void;
     setFreeLayout: (nodeId: string, freeLayout: FreeLayout | null) => void;
+    setPlacedGrid: (nodeId: string, placedGrid: PlacedGrid | null) => void;
+    placeOnGrid: (nodeId: string, target: Breakpoint, place: GridPlace) => void;
+    changeSharedStyle: (nodeId: string, change: SharedStyleChange) => void;
     setBackgroundVideo: (nodeId: string, video: BackgroundVideo | null) => void;
     changePageFonts: (fonts: PageFont[], label: string) => void;
     restack: (nodeId: string, move: StackingMove) => void;
@@ -129,6 +137,7 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
   }
   const tab = chosenTab === "code" && !tools.codeTools ? "style" : chosenTab;
   const { document, pickImage, uploadFile } = props;
+  const sharedStyleUses = useMemo(() => countSharedStyleUses(document.root), [document.root]);
   // The elements around the selected one, nearest first, whose states it can follow.
   const stateOwners = useMemo<StateOwner[]>(() => {
     if (!node) return [];
@@ -157,6 +166,9 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
       pageFonts: readPageFonts(document.root.props),
       changePageFonts: actions.changePageFonts,
       setFreeLayout: (freeLayout) => actions.setFreeLayout(node.id, freeLayout),
+      setPlacedGrid: (placedGrid) => actions.setPlacedGrid(node.id, placedGrid),
+      placeOnGrid: (target, place) => actions.placeOnGrid(node.id, target, place),
+      changeSharedStyle: (change) => actions.changeSharedStyle(node.id, change),
       setBackgroundVideo: (video) => actions.setBackgroundVideo(node.id, video),
       restack: (move) => actions.restack(node.id, move),
       pickImage,
@@ -247,6 +259,7 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
             {tab === "animate" && props.siteMotion && (
               <div className="px-4 pb-6">{props.siteMotion}</div>
             )}
+            {tab === "style" && <SiteStylesPanel uses={sharedStyleUses} />}
           </>
         ) : tab === "style" && design ? (
           <StylePanel
@@ -270,6 +283,8 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
             }
             owners={stateOwners}
             onTransitionChange={actions.setStateTransition}
+            sharedStyleUses={sharedStyleUses}
+            nodeName={props.nodeName}
           />
         ) : tab === "animate" ? (
           <AnimatePanel

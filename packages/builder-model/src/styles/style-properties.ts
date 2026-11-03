@@ -52,6 +52,7 @@ export const styleProperties = {
   columnGap: property("column-gap", "layout"),
   gridTemplateColumns: property("grid-template-columns", "layout"),
   gridTemplateRows: property("grid-template-rows", "layout"),
+  gridAutoRows: property("grid-auto-rows", "layout"),
   gridColumn: property("grid-column", "layout"),
   gridRow: property("grid-row", "layout"),
   gridArea: property("grid-area", "layout"),

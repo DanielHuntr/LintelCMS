@@ -1,5 +1,6 @@
 import {
   type AnyComponentDefinition,
+  applySharedStyles,
   assignClassNames,
   bindProps,
   compileStylesheet,
@@ -77,7 +78,8 @@ export function renderPage(
   { mode = "site", nodeId, withMotion = false, data = {} }: RenderOptions = {},
 ): RenderedPage {
   // The site's own blocks are drawn as their design, filled in (see custom-blocks/ in the model).
-  const root = expandBlockInstances(document.root, data);
+  // Then the site's shared styles go under each element's own (see site-design/ in the model).
+  const root = applySharedStyles(expandBlockInstances(document.root, data), data.sharedStyles);
   const classNames = assignClassNames(root, registry.catalogue);
   const start = nodeId ? findNode(root, nodeId) : root;
   if (!start || start.hidden) {
@@ -220,7 +222,7 @@ function NodeView({
   const motion = motionMarks.get(node.id);
   const isSelectable = mode === "canvas" && !isCopy;
   const attributes: ElementAttributes = isSelectable
-    ? { className, "data-lintel-node": node.id, ...freeLayoutMark(node) }
+    ? { className, "data-lintel-node": node.id, ...freeLayoutMark(node), ...placedGridMark(node) }
     : mode === "canvas"
       ? { className }
       : { ...motion, className };
@@ -247,6 +249,10 @@ function NodeView({
       ))}
     </Render>
   );
+}
+
+function placedGridMark(node: PageNode): Pick<ElementAttributes, "data-lintel-grid"> {
+  return node.placedGrid ? { "data-lintel-grid": String(node.placedGrid.columns) } : {};
 }
 
 function freeLayoutMark(node: PageNode): Pick<ElementAttributes, "data-lintel-free"> {

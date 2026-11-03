@@ -3,7 +3,10 @@ import {
   buildStarterPage,
   type CreateNodeId,
   type FreeLayout,
+  type Breakpoint,
   type FreePlace,
+  type GridPlace,
+  type PlacedGrid,
   type MarkChange,
   type PageFont,
   type StackingMove,
@@ -294,6 +297,23 @@ export function useBuilder({
           ),
         );
       },
+      setPlacedGrid: (nodeId: string, placedGrid: PlacedGrid | null) =>
+        run(designCommands.setPlacedGrid(context(), nodeId, placedGrid)),
+      placeOnGrid: (nodeId: string, target: Breakpoint, place: GridPlace) => {
+        const node = nodeById(nodeId);
+        if (!node) return;
+        run(
+          designCommands.placeOnGrid(
+            context(),
+            nodeId,
+            target,
+            place,
+            text("pageBuilder.design.history.moved", { name: name(node) }),
+          ),
+        );
+      },
+      changeSharedStyle: (nodeId: string, change: designCommands.SharedStyleChange) =>
+        run(designCommands.changeSharedStyle(context(), nodeId, change)),
       restack: (nodeId: string, move: StackingMove) =>
         run(designCommands.restackNode(context(), nodeId, move)),
       setBackgroundVideo: (nodeId: string, video: BackgroundVideo | null) =>

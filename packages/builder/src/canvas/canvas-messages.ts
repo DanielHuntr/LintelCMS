@@ -96,6 +96,15 @@ export type MessageFromFrame =
   | { type: "rotate"; nodeId: string; degrees: number }
   /** An element was dragged or nudged in its free layout, to this place in percent. */
   | { type: "place"; nodeId: string; left: number; top: number }
+  /** An element was dragged, resized or nudged on its placed grid, to these lines. */
+  | {
+      type: "gridPlace";
+      nodeId: string;
+      column: number;
+      columnSpan: number;
+      row: number;
+      rowSpan: number;
+    }
   /**
    * Something from Insert is dragged over the page: where the pointer is in the element under
    * it and in each one around it (empty: over the page itself, below everything).
@@ -147,6 +156,7 @@ const frameMessageTypes = new Set([
   "pasteFiles",
   "rotate",
   "place",
+  "gridPlace",
   "textSelection",
   "openMenu",
   "look",
@@ -230,6 +240,11 @@ export function readFrameMessage(data: unknown): MessageFromFrame | null {
       return isText(message.nodeId) && isFiniteNumber(message.left) && isFiniteNumber(message.top)
         ? (message as MessageFromFrame)
         : null;
+    case "gridPlace":
+      return isText(message.nodeId) &&
+        [message.column, message.columnSpan, message.row, message.rowSpan].every(isGridLine)
+        ? (message as MessageFromFrame)
+        : null;
     case "look":
       return isText(message.nodeId) &&
         isText(message.textAlign) &&
@@ -260,6 +275,11 @@ function areFiles(value: unknown): value is File[] {
     value.length <= 10 &&
     value.every((file) => file instanceof File)
   );
+}
+
+/** A line or span on a grid: a whole number from 1, and never an absurd one. */
+function isGridLine(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 500;
 }
 
 function isFiniteNumber(value: unknown): value is number {

@@ -7,6 +7,7 @@ import type {
   NodeStyles,
 } from "../document/page-document.schema.js";
 import type { FreeLayout } from "../free-layout/free-layout.js";
+import type { PlacedGrid } from "../placed-grid/placed-grid.js";
 
 /**
  * What the builder knows about one kind of element, apart from how it draws: its name and
@@ -78,6 +79,7 @@ export interface NodeBlueprint {
   animation?: NodeAnimation;
   effects?: readonly NodeEffect[];
   freeLayout?: FreeLayout;
+  placedGrid?: PlacedGrid;
   backgroundVideo?: BackgroundVideo;
   bindings?: NodeBindings;
 }
