@@ -393,6 +393,9 @@ const english = {
   "media.delete.inUseTitle": "This file is still in use",
   "media.delete.inUseDescription": "Remove it from these entries first, then delete it.",
   "media.delete.usedIn": "Used in",
+  "media.delete.siteFont": "Site fonts → {family}",
+  "media.delete.inUseFontDescription":
+    "A font your site uses is made from this file. Remove the font in Site settings first, then delete the file.",
   "media.picker.choose": "Choose image",
   "media.picker.replace": "Replace",
   "media.picker.remove": "Remove",

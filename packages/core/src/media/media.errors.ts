@@ -73,8 +73,12 @@ export class AssetNotFoundError extends HttpError {
 }
 
 export interface AssetUsage {
+  /** The entry's id, or for a site font the font's. */
   entryId: string;
+  /** The entry's title, or the font's family. */
   title: string;
+  /** Set when it isn't an entry: "siteFonts" for a file one of the site's fonts is made of. */
+  place?: "siteFonts";
 }
 
 /**
@@ -86,11 +90,18 @@ export class AssetInUseError extends HttpError {
 
   constructor(usedBy: AssetUsage[]) {
     const count = usedBy.length;
+    const onlyEntries = usedBy.every((usage) => usage.place === undefined);
+    const places = onlyEntries
+      ? count === 1
+        ? "entry"
+        : "entries"
+      : count === 1
+        ? "place"
+        : "places";
     super(
       409,
       "ASSET_IN_USE",
-      `This file is used in ${count} ${count === 1 ? "entry" : "entries"}. ` +
-        "Remove it from there first, then delete it.",
+      `This file is used in ${count} ${places}. Remove it from there first, then delete it.`,
     );
     this.usedBy = usedBy;
   }

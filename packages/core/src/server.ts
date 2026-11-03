@@ -30,6 +30,7 @@ import { contentTreeRoutes } from "./content-tree/content-tree.routes.js";
 import { recycleBinRoutes } from "./recycle-bin/recycle-bin.routes.js";
 import { contentRootsRoutes } from "./content-roots/content-roots.routes.js";
 import { findEntriesUsingAsset } from "./entries/entries.service.js";
+import { findSiteFontsUsingAsset } from "./site-fonts/site-fonts.service.js";
 import { revisionsRoutes } from "./entries/revisions.routes.js";
 import { scheduledEntriesRoutes } from "./entries/scheduled-entries.routes.js";
 import { fieldtypesRoutes } from "./fieldtypes/fieldtypes.routes.js";
@@ -405,9 +406,13 @@ export function buildServer(options: ServerOptions) {
     storage,
     signedUrlSeconds: options.media?.signedUrlSeconds,
     cacheFolder: options.media?.transformCacheFolder ?? DEFAULT_TRANSFORM_CACHE_FOLDER,
-    // An asset still used by an entry can't be deleted.
+    // An asset still used by an entry, or a file one of the site's fonts is made of, can't
+    // be deleted.
     usageFinder: options.media?.usageFinder ?? {
-      findEntriesUsingAsset: (assetId) => findEntriesUsingAsset(server.database, assetId),
+      findEntriesUsingAsset: async (assetId) => [
+        ...(await findEntriesUsingAsset(server.database, assetId)),
+        ...(await findSiteFontsUsingAsset(server.database, assetId)),
+      ],
     },
   };
   // What the Forms and Online shop plugins' routes need, and their timed jobs; their routes
