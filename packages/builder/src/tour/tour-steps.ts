@@ -1,7 +1,7 @@
 import type { BuilderStringKey } from "../i18n/builder-strings.js";
 
 /**
- * The first-time tour: eight short stops, in the order people meet them, the same for
+ * The first-time tour: nine short stops, in the order people meet them, the same for
  * everyone. Each step points at the part of the screen it's about (CSS selectors; with more
  * than one, the spotlight covers them all). A step whose target isn't on screen (no Publish
  * button without permission) sits in the middle instead. Deeper help waits in the panels as
@@ -56,6 +56,12 @@ export const tourSteps: readonly TourStep[] = [
     targets: ['[data-tour="screen-size"]', '[data-tour="history"]'],
     title: "pageBuilder.tour.screens.title",
     text: "pageBuilder.tour.screens.text",
+  },
+  {
+    id: "views",
+    targets: ['[data-tour="page-views"]'],
+    title: "pageBuilder.tour.views.title",
+    text: "pageBuilder.tour.views.text",
   },
   {
     id: "publish",

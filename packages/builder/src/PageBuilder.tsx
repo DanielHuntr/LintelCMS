@@ -166,6 +166,9 @@ export interface PageBuilderProps {
   /** Before the title: usually a back link. After the toolbar's controls: save state, Publish. */
   toolbarStart?: ReactNode;
   toolbarEnd?: ReactNode;
+  /** Under the page's name in the toolbar, and after it. */
+  toolbarTitleNote?: ReactNode;
+  toolbarAfterTitle?: ReactNode;
   onSaveNow?: () => void;
   createId?: CreateNodeId;
   /**
@@ -896,6 +899,8 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
               >
                 <Toolbar
                   title={props.title}
+                  titleNote={props.toolbarTitleNote}
+                  afterTitle={props.toolbarAfterTitle}
                   start={props.toolbarStart}
                   end={props.toolbarEnd}
                   breakpoint={breakpoint}

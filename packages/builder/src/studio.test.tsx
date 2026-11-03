@@ -157,6 +157,27 @@ describe("one builder for everyone", () => {
   });
 });
 
+describe("the toolbar", () => {
+  it("shows what the app puts under the page's name and after it", () => {
+    render(
+      <PageBuilder
+        initialDocument={headingPage()}
+        onChange={() => undefined}
+        title="Home"
+        canEditCode={false}
+        preferences={createMemoryPreferenceStore({ tourSeen: "yes" })}
+        toolbarTitleNote={<span>Live on your site</span>}
+        toolbarAfterTitle={<span>Design or Content</span>}
+      />,
+    );
+
+    const banner = screen.getByRole("banner");
+    expect(within(banner).getByRole("heading", { name: "Home" })).toBeInTheDocument();
+    expect(within(banner).getByText("Live on your site")).toBeInTheDocument();
+    expect(within(banner).getByText("Design or Content")).toBeInTheDocument();
+  });
+});
+
 describe("the guided tour", () => {
   it("shows itself the first time, step by step, and can be skipped with Escape", async () => {
     const user = userEvent.setup();
@@ -165,11 +186,11 @@ describe("the guided tour", () => {
     const tour = screen.getByRole("dialog", { name: "Add sections and elements" });
     expect(tour).toHaveAttribute("aria-modal", "true");
     expect(within(tour).getByRole("heading", { name: "Add sections and elements" })).toHaveFocus();
-    expect(tour).toHaveTextContent("Step 1 of 8");
+    expect(tour).toHaveTextContent("Step 1 of 9");
     await user.click(within(tour).getByRole("button", { name: "Next" }));
     expect(
       screen.getByRole("dialog", { name: "Click to select, double-click to type" }),
-    ).toHaveTextContent("Step 2 of 8");
+    ).toHaveTextContent("Step 2 of 9");
     await user.click(screen.getByRole("button", { name: "Back" }));
     expect(screen.getByRole("dialog", { name: "Add sections and elements" })).toBeInTheDocument();
     await user.keyboard("{Escape}");
@@ -214,9 +235,9 @@ describe("the guided tour", () => {
     const user = userEvent.setup();
     renderBuilder(headingPage(), createMemoryPreferenceStore({ skillLevel: "beginner" }));
     const titles: string[] = [];
-    for (let step = 1; step <= 8; step += 1) {
+    for (let step = 1; step <= 9; step += 1) {
       titles.push(within(screen.getByRole("dialog")).getByRole("heading").textContent ?? "");
-      if (step < 8) await user.click(screen.getByRole("button", { name: "Next" }));
+      if (step < 9) await user.click(screen.getByRole("button", { name: "Next" }));
     }
     expect(titles).toEqual([
       "Add sections and elements",
@@ -226,6 +247,7 @@ describe("the guided tour", () => {
       "Arrange what’s inside",
       "Make it move",
       "Every screen size, and every step",
+      "One page, two views",
       "Publish and view your page",
     ]);
     expect(screen.getByRole("dialog")).not.toHaveTextContent("Tools");
@@ -235,11 +257,11 @@ describe("the guided tour", () => {
     const user = userEvent.setup();
     const preferences = createMemoryPreferenceStore();
     renderBuilder(headingPage(), preferences);
-    for (let step = 1; step < 8; step += 1) {
+    for (let step = 1; step < 9; step += 1) {
       await user.click(screen.getByRole("button", { name: "Next" }));
     }
     expect(screen.getByRole("dialog", { name: "Publish and view your page" })).toHaveTextContent(
-      "Step 8 of 8",
+      "Step 9 of 9",
     );
     await user.click(screen.getByRole("button", { name: "Start building" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
