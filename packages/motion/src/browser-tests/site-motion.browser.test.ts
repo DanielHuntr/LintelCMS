@@ -248,11 +248,41 @@ describe("the site cursor", () => {
     await page.mouse.move(300, 250);
     await page.waitForTimeout(50);
     expect(
-      await page.$eval(".lintel-cursor", (node) => ({
-        transform: (node as HTMLElement).style.transform,
-        transition: getComputedStyle(node).transitionDuration,
-      })),
-    ).toEqual({ transform: "translate(300px, 250px)", transition: "0s" });
+      await page.$eval(".lintel-cursor", (node) => {
+        const box = node.getBoundingClientRect();
+        return {
+          centre: [Math.round(box.x + box.width / 2), Math.round(box.y + box.height / 2)],
+          transition: getComputedStyle(node).transitionDuration,
+        };
+      }),
+    ).toEqual({ centre: [300, 250], transition: "0s" });
+    await page.close();
+  });
+
+  // Shrinking on a click once scaled the ring's position too, so far from the window's corner
+  // it jumped a long way from the pointer.
+  it("stays on the pointer while pressed, wherever the pointer is", async () => {
+    const { page } = await openEffectsPage(browser, `<p>Hello</p>`, [], {
+      site: withCursor("ring"),
+      reducedMotion: "reduce",
+    });
+    await page.mouse.move(100, 100);
+    await waitFor(page, () => document.querySelector(".lintel-cursor") !== null);
+    await page.mouse.move(700, 500);
+    await page.waitForTimeout(50);
+    const centre = () =>
+      page.$eval(".lintel-cursor", (node) => {
+        const box = node.getBoundingClientRect();
+        return { x: Math.round(box.x + box.width / 2), y: Math.round(box.y + box.height / 2) };
+      });
+    expect(await centre()).toEqual({ x: 700, y: 500 });
+    await page.mouse.down();
+    await page.waitForTimeout(50);
+    expect(await page.$eval(".lintel-cursor", (node) => (node as HTMLElement).style.scale)).toBe(
+      "0.85",
+    );
+    expect(await centre()).toEqual({ x: 700, y: 500 });
+    await page.mouse.up();
     await page.close();
   });
 });

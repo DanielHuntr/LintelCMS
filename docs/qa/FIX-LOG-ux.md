@@ -918,3 +918,15 @@ Decision record: `docs/decisions/0037-site-fonts.md`. New table `site_fonts` (mi
 **Checked in a browser:** added Playfair Display from Google Fonts and two uploaded files as "Hand Note", set them as heading and body fonts, and opened the published site at desktop and 390px: the browser loaded Playfair Display 700 and Hand Note 400 and 700 from the site's own server.
 
 **Screenshots** (in `screenshots/fonts/`): `fonts-empty-desktop-light`, `google-popular-desktop-light`, `google-search-desktop-light`, `google-chosen-desktop-light`, `upload-desktop-light`, `adobe-desktop-light`, `theme-fonts-desktop-light`, `fonts-list-{desktop,phone}-{light,dark}`, `add-dialog-phone-{light,dark}`, `site-desktop` and `site-phone`.
+
+## LINTEL-UX-037: the cursor circle jumps away on a click (3 November 2026)
+
+**Reported by Daniel:** with the site cursor on, clicking sent the circle "miles away" from where he clicked.
+
+**Reproduced:** with the pointer at (695, 457) and the mouse held down, the ring's centre moved to (591, 388), which is 0.85 × the position.
+
+**Cause:** a press shrinks the ring with the `scale` property, and its position was a `transform`. Browsers apply `scale` before `transform`, so the shrink also shrank the distance from the window's corner. The word label had the same problem as it popped in.
+
+**Fix:** the cursor's parts are now placed with the `translate` property (`calc(x - 50%) calc(y - 50%)`), which browsers apply after `scale`, so they shrink in place (`cursor.module.ts`).
+
+**Test:** `motion/src/browser-tests/site-motion.browser.test.ts`, "stays on the pointer while pressed, wherever the pointer is". It fails without the fix (595, 425 instead of 700, 500) and passes with it.

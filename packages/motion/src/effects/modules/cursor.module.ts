@@ -50,8 +50,8 @@ function cursorStyles() {
     "lintel-cursor-style",
     `.${hiddenCursorClass},.${hiddenCursorClass} *{cursor:none!important}
 .${hiddenCursorClass} :is(input,textarea,select,[contenteditable]){cursor:auto!important}
-.lintel-cursor{position:fixed;left:0;top:0;pointer-events:none;z-index:2147483646;border-radius:50%;translate:-50% -50%;transition:width .2s,height .2s,opacity .2s,background-color .2s}
-.lintel-cursor-label{position:fixed;left:0;top:0;pointer-events:none;z-index:2147483646;padding:.5em .9em;border-radius:999px;font:600 .8rem/1 system-ui,sans-serif;translate:-50% -50%;opacity:0;scale:.6;transition:opacity .2s,scale .2s}
+.lintel-cursor{position:fixed;left:0;top:0;pointer-events:none;z-index:2147483646;border-radius:50%;transition:width .2s,height .2s,opacity .2s,background-color .2s}
+.lintel-cursor-label{position:fixed;left:0;top:0;pointer-events:none;z-index:2147483646;padding:.5em .9em;border-radius:999px;font:600 .8rem/1 system-ui,sans-serif;opacity:0;scale:.6;transition:opacity .2s,scale .2s}
 .lintel-cursor-label[data-shown]{opacity:1;scale:1}
 .lintel-cursor[data-hidden]{opacity:0!important}
 @media (prefers-reduced-motion:reduce){.lintel-cursor,.lintel-cursor-label{transition:none}}`,
@@ -114,6 +114,15 @@ function drawTrail(
   context.globalAlpha = 1;
 }
 
+/**
+ * Where a cursor part goes: centred on the point. It's set with `translate`, which the
+ * browser applies after `scale`, so a part shrinking on a click (or a word popping in)
+ * shrinks in place instead of sliding towards the corner of the window.
+ */
+function centredAt(point: { x: number; y: number }): string {
+  return `calc(${point.x}px - 50%) calc(${point.y}px - 50%)`;
+}
+
 const siteCursor: EffectBehaviour = (_body, params, context) => {
   cursorStyles();
   const style = readText(params, "style", "ring-and-dot");
@@ -162,10 +171,10 @@ const siteCursor: EffectBehaviour = (_body, params, context) => {
   const loop = createFrameLoop(document.documentElement, (elapsed) => {
     eased.x = approach(eased.x, target.x, smoothing, elapsed);
     eased.y = approach(eased.y, target.y, smoothing, elapsed);
-    if (dot) dot.style.transform = `translate(${target.x}px, ${target.y}px)`;
-    word.style.transform = `translate(${eased.x}px, ${eased.y}px)`;
+    if (dot) dot.style.translate = centredAt(target);
+    word.style.translate = centredAt(eased);
     if (ring) {
-      ring.style.transform = `translate(${eased.x}px, ${eased.y}px)`;
+      ring.style.translate = centredAt(eased);
       const grown = hovering ? size * 1.8 : size;
       ring.style.width = ring.style.height = `${grown}px`;
     }
@@ -241,7 +250,7 @@ const cursorLabel: EffectBehaviour = (element, params, context) => {
   const loop = createFrameLoop(element, (elapsed) => {
     eased.x = approach(eased.x, target.x, smoothing, elapsed);
     eased.y = approach(eased.y, target.y, smoothing, elapsed);
-    label.style.transform = `translate(${eased.x}px, ${eased.y}px)`;
+    label.style.translate = centredAt(eased);
     return eased.x !== target.x || eased.y !== target.y;
   });
   const hideNative = readText(params, "native", "hide") === "hide";
