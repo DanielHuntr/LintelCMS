@@ -56,6 +56,8 @@ export const paymentSettingsSchema = z.object({
   secretKey: z.object({ hint: z.string(), source: keySourceSchema }).nullable(),
   publishableKey: z.object({ value: z.string(), source: keySourceSchema }).nullable(),
   webhookSecret: z.object({ source: keySourceSchema }).nullable(),
+  /** When Stripe's webhook last reached the shop since its signing secret was saved. */
+  lastWebhookAt: z.iso.datetime().nullable(),
   /** The address to give Stripe for webhooks. */
   webhookUrl: z.string(),
   /** The events to tick when adding the webhook in Stripe. */

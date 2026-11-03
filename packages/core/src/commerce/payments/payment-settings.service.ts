@@ -29,6 +29,7 @@ export async function readPaymentSettings(shop: ShopContext): Promise<PaymentSet
     secretKey: secret ? { hint: hintFor(secret.value), source: secret.source } : null,
     publishableKey: keys.publishableKey,
     webhookSecret: keys.webhookSecret ? { source: keys.webhookSecret.source } : null,
+    lastWebhookAt: settings.stripeLastWebhookAt?.toISOString() ?? null,
     webhookUrl: `${shop.publicApiUrl.replace(/\/+$/, "")}${STRIPE_WEBHOOK_PATH}`,
     webhookEvents: [...STRIPE_WEBHOOK_EVENTS],
     checkoutMode: settings.checkoutMode,
@@ -56,7 +57,10 @@ export async function updatePaymentSettings(
   await updateShopSettingsRow(shop.database, DEFAULT_TENANT_ID, {
     ...(changes.secretKey && { stripeSecretKey: changes.secretKey }),
     ...(changes.publishableKey && { stripePublishableKey: changes.publishableKey }),
-    ...(changes.webhookSecret && { stripeWebhookSecret: changes.webhookSecret }),
+    ...(changes.webhookSecret && {
+      stripeWebhookSecret: changes.webhookSecret,
+      stripeLastWebhookAt: null,
+    }),
     ...(changes.checkoutMode && { checkoutMode: changes.checkoutMode }),
   });
   return readPaymentSettings(shop);
@@ -68,6 +72,7 @@ export async function disconnectStripe(shop: ShopContext): Promise<PaymentSettin
     stripeSecretKey: null,
     stripePublishableKey: null,
     stripeWebhookSecret: null,
+    stripeLastWebhookAt: null,
   });
   return readPaymentSettings(shop);
 }

@@ -1,4 +1,5 @@
 import type { Transaction } from "../../database/client.js";
+import { DEFAULT_TENANT_ID } from "../../database/columns.js";
 import type { CheckoutRow } from "../checkouts/checkouts.table.js";
 import { HttpError } from "../../http/http-errors.js";
 import { abandonCheckout } from "../checkouts/checkout-expiry.js";
@@ -6,6 +7,7 @@ import type { ShopContext } from "../commerce.context.js";
 import { ShopNotReadyError } from "../commerce.errors.js";
 import { placeOrderForPayment } from "../orders/order-placement.service.js";
 import { announceIfRefunded, recordStripeRefund } from "../orders/refunds.service.js";
+import { updateShopSettingsRow } from "../settings/shop-settings.repository.js";
 import { type AfterCommit, followUpPlacement, runAfterCommit } from "./payment-follow-up.js";
 import {
   retrieveStripeCheckoutSession,
@@ -66,6 +68,10 @@ export async function handleStripeWebhook(
   if (!parsed.success) {
     throw new HttpError(400, "INVALID_REQUEST", "The webhook body isn't a Stripe event.");
   }
+  // Any signed message counts, repeats too: it shows the webhook works (Shop → Payments).
+  await updateShopSettingsRow(shop.database, DEFAULT_TENANT_ID, {
+    stripeLastWebhookAt: shop.now(),
+  });
   return applyStripeEvent(shop, parsed.data);
 }
 
