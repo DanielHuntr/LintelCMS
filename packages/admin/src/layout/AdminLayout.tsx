@@ -50,6 +50,17 @@ export function AdminLayout({
   const isMenuOpen = menuOpenOn === pathname;
   const setIsMenuOpen = (open: boolean) => setMenuOpenOn(open ? pathname : null);
   const menuButton = useRef<HTMLButtonElement>(null);
+  // The menu button is inert while the menu is open, so focus goes back to it once it's closed.
+  const focusMenuButtonOnClose = useRef(false);
+  const closeMenuToButton = () => {
+    focusMenuButtonOnClose.current = true;
+    setMenuOpenOn(null);
+  };
+  useEffect(() => {
+    if (isMenuOpen || !focusMenuButtonOnClose.current) return;
+    focusMenuButtonOnClose.current = false;
+    menuButton.current?.focus();
+  }, [isMenuOpen]);
 
   useEffect(() => {
     document.title = documentTitleFor(pathname, siteName);
@@ -69,8 +80,8 @@ export function AdminLayout({
     if (!isMenuOpen) return;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      focusMenuButtonOnClose.current = true;
       setMenuOpenOn(null);
-      menuButton.current?.focus();
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
@@ -83,8 +94,13 @@ export function AdminLayout({
   return (
     <ToastProvider>
       <div className="min-h-screen bg-background text-label">
+        {/*
+          While the menu is open on a phone it is a modal dialog: everything else, these fixed
+          buttons included, is inert, so Tab and screen readers stay in the menu (LINTEL-A11Y-023).
+        */}
         <a
           href="#main"
+          inert={isMenuOpen}
           className="fixed top-3 inset-s-3 z-20 -translate-y-16 rounded-control bg-surface px-3 py-2 text-body font-medium text-accent shadow-float focus:translate-y-0 focus:focus-ring"
         >
           {t("nav.skipToContent")}
@@ -92,6 +108,7 @@ export function AdminLayout({
         <button
           ref={menuButton}
           type="button"
+          inert={isMenuOpen}
           onClick={() => setIsMenuOpen(true)}
           aria-label={t("nav.openMenu")}
           aria-expanded={isMenuOpen}
@@ -110,10 +127,7 @@ export function AdminLayout({
         <Sidebar
           id="admin-sidebar"
           isOpenOnNarrowScreens={isMenuOpen}
-          onCloseOnNarrowScreens={() => {
-            setIsMenuOpen(false);
-            menuButton.current?.focus();
-          }}
+          onCloseOnNarrowScreens={closeMenuToButton}
           permissions={permissions}
           enabledPlugins={enabledPlugins}
           siteName={siteName}
@@ -124,8 +138,10 @@ export function AdminLayout({
         />
         <UpdatingBanner />
         <CommandPalette open={palette.isOpen} onClose={palette.close} onSignOut={onSignOut} />
-        {!hideLintelHelp && <HelpLauncher />}
-        {enabledPlugins.includes("automations") && <NotificationsButton />}
+        <div inert={isMenuOpen} className="contents">
+          {!hideLintelHelp && <HelpLauncher />}
+          {enabledPlugins.includes("automations") && <NotificationsButton />}
+        </div>
         {/*
         Leaves room for the 240px sidebar and its 12px margin. The gutters grow with the
         window; how wide each screen goes is its own choice (design/Page.tsx). The right

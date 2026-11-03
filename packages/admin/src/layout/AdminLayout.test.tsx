@@ -43,6 +43,26 @@ describe("the admin's frame on a phone", () => {
     expect(screen.getByRole("button", { name: "Close the menu" })).toHaveFocus();
   });
 
+  it("is a modal dialog while open: the fixed buttons are inert too (LINTEL-A11Y-023)", async () => {
+    renderLayout();
+    const menu = await screen.findByRole("button", { name: "Open the menu" });
+    const help = screen.getByRole("button", { name: /help/i });
+    const skipLink = document.querySelector('a[href="#main"]');
+    await userEvent.click(menu);
+    const sidebar = document.getElementById("admin-sidebar");
+    expect(sidebar).toHaveAttribute("role", "dialog");
+    expect(sidebar).toHaveAttribute("aria-modal", "true");
+    expect(sidebar).toHaveAccessibleName();
+    expect(menu).toHaveAttribute("inert");
+    expect(skipLink).toHaveAttribute("inert");
+    expect(help.closest("[inert]")).not.toBeNull();
+
+    await userEvent.keyboard("{Escape}");
+    expect(sidebar).not.toHaveAttribute("role");
+    expect(menu).not.toHaveAttribute("inert");
+    expect(help.closest("[inert]")).toBeNull();
+  });
+
   it("closes with Escape or its close button, and gives focus back to the menu button", async () => {
     renderLayout();
     const menu = await screen.findByRole("button", { name: "Open the menu" });

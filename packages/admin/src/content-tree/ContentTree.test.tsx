@@ -216,7 +216,10 @@ describe("the content tree", () => {
 
     await userEvent.click(await screen.findByRole("button", { name: "Create a page at the top" }));
     const dialog = await screen.findByRole("dialog", { name: "Create something new" });
-    await userEvent.type(within(dialog).getByRole("textbox", { name: "Name" }), "Shop");
+    // Focus starts in Name once the content types have loaded (LINTEL-A11Y-031).
+    const nameField = await within(dialog).findByRole("textbox", { name: "Name" });
+    await waitFor(() => expect(nameField).toHaveFocus());
+    await userEvent.type(nameField, "Shop");
     await userEvent.click(within(dialog).getByRole("button", { name: "Create" }));
 
     await waitFor(() =>

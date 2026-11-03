@@ -7,17 +7,21 @@ import { SegmentedControl } from "../design/SegmentedControl.js";
 import { t } from "../i18n/strings.js";
 import type { WidgetSize } from "../plugins/adminPlugin.js";
 
-/** How many of the grid's six columns each size takes, once there is room for columns. */
-const sizeColumns: Record<WidgetSize, string> = {
-  small: "@2xl:col-span-2",
-  medium: "@2xl:col-span-3",
-  large: "@2xl:col-span-6",
+/** The grid columns a widget takes once there is room for six (see `columnSpans`). */
+const spanClasses: Record<number, string> = {
+  2: "@2xl:col-span-2",
+  3: "@2xl:col-span-3",
+  4: "@2xl:col-span-4",
+  5: "@2xl:col-span-5",
+  6: "@2xl:col-span-6",
 };
 
 interface WidgetFrameProps {
   widgetId: string;
   title: string;
   size: WidgetSize;
+  /** The columns it takes of six: its size's, or more when it ends a row. */
+  columns: number;
   position: number;
   count: number;
   isEditing: boolean;
@@ -36,6 +40,7 @@ export function WidgetFrame({
   widgetId,
   title,
   size,
+  columns,
   position,
   count,
   isEditing,
@@ -52,7 +57,7 @@ export function WidgetFrame({
       ref={setNodeRef}
       data-widget={widgetId}
       style={{ transform: CSS.Translate.toString(transform), transition }}
-      className={classNames("col-span-6 min-w-0", sizeColumns[size], isDragging && "z-10")}
+      className={classNames("col-span-6 min-w-0", spanClasses[columns], isDragging && "z-10")}
     >
       <section
         aria-label={t("dashboard.widgetLabel", { title, position, count })}

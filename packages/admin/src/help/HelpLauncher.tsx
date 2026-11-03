@@ -31,10 +31,18 @@ export function HelpLauncher() {
     return () => window.clearTimeout(timer);
   }, []);
 
+  // On a phone the panel makes this button inert while it's open, so focus comes back to it
+  // once the panel has gone rather than straight away.
+  const focusButtonOnClose = useRef(false);
   function close() {
+    focusButtonOnClose.current = true;
     setIsOpen(false);
-    button.current?.focus();
   }
+  useEffect(() => {
+    if (isOpen || !focusButtonOnClose.current) return;
+    focusButtonOnClose.current = false;
+    button.current?.focus();
+  }, [isOpen]);
 
   return (
     <>

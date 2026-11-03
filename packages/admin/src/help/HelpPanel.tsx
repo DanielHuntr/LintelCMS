@@ -1,6 +1,8 @@
 import { findHelpPage } from "@lintel/docs/help";
 import { ArrowUpRight, ChevronLeft, X } from "lucide-react";
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useEffectEvent, useId, useRef, useState, type KeyboardEvent } from "react";
+import { inertOutside } from "../design/inertOutside.js";
+import { useIsNarrowScreen } from "../design/useIsNarrowScreen.js";
 import { t } from "../i18n/strings.js";
 import { fullDocsUrl } from "./docsLinks.js";
 import { HelpArticle } from "./HelpArticle.js";
@@ -21,9 +23,11 @@ const iconButtonClasses =
   "flex size-8 shrink-0 items-center justify-center rounded-full bg-fill text-label-secondary transition-colors duration-150 ease-standard hover:text-label focus-visible:focus-ring";
 
 /**
- * The help beside the page. It isn't modal: people can read and keep working, so the page
- * behind stays usable. Escape closes it; focus moves to its heading on open and on each new
- * page, so screen readers announce where they are. Loaded lazily (see HelpLauncher).
+ * The help beside the page. On a laptop it isn't modal: people can read and keep working, so
+ * the page behind stays usable. On a phone it covers the page, so there it is a modal dialog:
+ * the page behind is inert and Escape closes it from anywhere (LINTEL-A11Y-030). Focus moves
+ * to its heading on open and on each new page, so screen readers announce where they are.
+ * Loaded lazily (see HelpLauncher).
  */
 export function HelpPanel({ id, slug, onClose }: HelpPanelProps) {
   const [history, setHistory] = useState<HelpView[]>([{ kind: "page", slug }]);
@@ -31,6 +35,22 @@ export function HelpPanel({ id, slug, onClose }: HelpPanelProps) {
   const heading = useRef<HTMLHeadingElement>(null);
   const body = useRef<HTMLDivElement>(null);
   const headingId = useId();
+  const panel = useRef<HTMLElement>(null);
+  const isModal = useIsNarrowScreen();
+  const close = useEffectEvent(onClose);
+
+  useEffect(() => {
+    if (!isModal || !panel.current) return;
+    const restorePage = inertOutside(panel.current);
+    const closeOnEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") close();
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      window.removeEventListener("keydown", closeOnEscape);
+      restorePage();
+    };
+  }, [isModal]);
 
   // A new screen starts the panel again from that screen's page.
   if (slug !== screenSlug) {
@@ -62,8 +82,10 @@ export function HelpPanel({ id, slug, onClose }: HelpPanelProps) {
 
   return (
     <aside
+      ref={panel}
       id={id}
       aria-labelledby={headingId}
+      {...(isModal ? { role: "dialog", "aria-modal": true } : {})}
       onKeyDown={handleKeyDown}
       className="fixed inset-y-3 inset-e-3 z-30 flex w-[min(400px,calc(100vw-24px))] flex-col rounded-panel bg-surface text-label shadow-float hairline-ring motion-safe:transition-[opacity,translate] motion-safe:duration-200 motion-safe:ease-standard motion-safe:starting:translate-x-4 motion-safe:rtl:starting:-translate-x-4 starting:opacity-0"
     >
@@ -116,7 +138,10 @@ export function HelpPanel({ id, slug, onClose }: HelpPanelProps) {
             {view.kind === "page" && (
               <p className="text-body text-label-secondary">{t("help.missingDescription")}</p>
             )}
-            <HelpTopicList onOpenPage={(nextSlug) => open({ kind: "page", slug: nextSlug })} />
+            <HelpTopicList
+              headingLevel={3}
+              onOpenPage={(nextSlug) => open({ kind: "page", slug: nextSlug })}
+            />
           </div>
         )}
       </div>

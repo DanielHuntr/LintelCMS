@@ -3,10 +3,16 @@ import { GroupedList } from "../design/GroupedList.js";
 import { GroupedListRow } from "../design/GroupedListRow.js";
 import { t } from "../i18n/strings.js";
 
+interface HelpTopicListProps {
+  onOpenPage: (slug: string) => void;
+  /** 3 inside the help panel, under its own h2. */
+  headingLevel?: 2 | 3;
+}
+
 /** Every "Using Lintel" page, in the docs' order. */
-export function HelpTopicList({ onOpenPage }: { onOpenPage: (slug: string) => void }) {
+export function HelpTopicList({ onOpenPage, headingLevel = 2 }: HelpTopicListProps) {
   return (
-    <GroupedList header={t("help.topicsTitle")}>
+    <GroupedList header={t("help.topicsTitle")} headingLevel={headingLevel}>
       {helpPages.map((page) => (
         <GroupedListRow
           key={page.slug}

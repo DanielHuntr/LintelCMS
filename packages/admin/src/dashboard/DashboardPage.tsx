@@ -25,10 +25,12 @@ import { useCan, useSession } from "../session/SessionContext.js";
 import { type AvailableWidget, availableWidgets } from "./availableWidgets.js";
 import {
   addWidget,
+  columnSpans,
   defaultLayout,
   moveWidget,
   removeWidget,
   resizeWidget,
+  sizeColumnCount,
   splitLayout,
   type WidgetPlacement,
 } from "./dashboardLayout.js";
@@ -67,6 +69,7 @@ export function DashboardPage() {
   const layout = draft ?? visible;
   const byId = new Map(available.map((widget) => [widget.fullId, widget]));
   const titleOf = (widgetId: string) => byId.get(widgetId)?.title ?? widgetId;
+  const spans = columnSpans(layout.map((placement) => placement.size));
 
   function change(next: WidgetPlacement[], message: string) {
     setDraft(next);
@@ -225,6 +228,8 @@ export function DashboardPage() {
                     key={placement.widget}
                     widget={widget}
                     size={placement.size}
+                    // Edit mode shows each widget at its own size, so the size control matches.
+                    columns={isEditing ? sizeColumnCount[placement.size] : (spans[index] ?? 6)}
                     position={index + 1}
                     count={layout.length}
                     isEditing={isEditing}
@@ -288,6 +293,7 @@ export function DashboardPage() {
 interface PlacedWidgetProps {
   widget: AvailableWidget;
   size: WidgetSize;
+  columns: number;
   position: number;
   count: number;
   isEditing: boolean;

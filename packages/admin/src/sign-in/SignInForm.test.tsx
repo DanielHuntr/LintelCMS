@@ -48,6 +48,10 @@ describe("SignInForm", () => {
     await fillInAndSubmit();
 
     expect(screen.getByRole("status")).toHaveTextContent("That email and password don't match");
+    // By the fields, before the Sign in button, not under the passkey button (LINTEL-A11Y-037).
+    const message = screen.getByRole("status");
+    const submit = screen.getByRole("button", { name: "Sign in" });
+    expect(message.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
   });
 
