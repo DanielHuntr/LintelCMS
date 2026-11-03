@@ -9,7 +9,8 @@ import { requestsAs, type SendRequest, startTestServer } from "../testing/test-s
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
 import { defaultSiteEffectSettings } from "@lintel/motion/effects";
 import { readPageDesign } from "../website/designed-pages.js";
-import { isHomePage, siteEffectsHead } from "./site-effects.service.js";
+import { englishLabels } from "@lintel/site-components";
+import { isHomePage, siteEffectsHead, updateSiteEffects } from "./site-effects.service.js";
 import { readEffectModules } from "../website/site-assets.js";
 import { buildSiteServer } from "../website/site-server.js";
 
@@ -110,16 +111,18 @@ describe("site-wide effects for one page", () => {
   });
 
   it("give nothing at all when everything is off", () => {
-    expect(siteEffectsHead(defaultSiteEffectSettings, { path: "/", chrome })).toBeUndefined();
+    expect(
+      siteEffectsHead(defaultSiteEffectSettings, { path: "/", chrome }, englishLabels),
+    ).toBeUndefined();
   });
 
   it("draw the intro on the home page only, with the site's name when there's no logo", () => {
-    const home = siteEffectsHead(introAndTransition, { path: "/", chrome });
+    const home = siteEffectsHead(introAndTransition, { path: "/", chrome }, englishLabels);
     expect(home?.bodyStartHtml).toContain("Rye &amp; Crumb");
     expect(home?.modules).toEqual(["transitions", "intro"]);
     expect(home?.headScript).toContain("lintel-intro-seen");
 
-    const about = siteEffectsHead(introAndTransition, { path: "/about", chrome });
+    const about = siteEffectsHead(introAndTransition, { path: "/about", chrome }, englishLabels);
     expect(about?.bodyStartHtml).toBe("");
     expect(about?.modules).toEqual(["transitions"]);
     expect(about?.headScript).not.toContain("lintel-intro-seen");
@@ -127,14 +130,31 @@ describe("site-wide effects for one page", () => {
   });
 
   it("use the logo when the site has one", () => {
-    const head = siteEffectsHead(introAndTransition, {
-      path: "/",
-      chrome: {
-        ...chrome,
-        logo: { url: "/media/logo.png", alt: "Rye", width: 200, height: 80, focalPoint: null },
+    const head = siteEffectsHead(
+      introAndTransition,
+      {
+        path: "/",
+        chrome: {
+          ...chrome,
+          logo: { url: "/media/logo.png", alt: "Rye", width: 200, height: 80, focalPoint: null },
+        },
       },
-    });
+      englishLabels,
+    );
     expect(head?.bodyStartHtml).toContain('src="/media/logo.png"');
+  });
+
+  it("word the Skip button as the site's labels do", () => {
+    const head = siteEffectsHead(
+      introAndTransition,
+      { path: "/", chrome },
+      {
+        skipIntro: "Passer l’intro",
+      },
+    );
+    expect(head?.bodyStartHtml).toContain("Passer l’intro");
+    expect(head?.bodyStartHtml).not.toContain("Skip intro");
+    expect(englishLabels.skipIntro).toBe("Skip intro");
   });
 
   it("send the intro alone on the home page, and nothing on others", () => {
@@ -142,8 +162,10 @@ describe("site-wide effects for one page", () => {
       ...introAndTransition,
       pageTransition: { style: "none" as const, duration: 500 },
     };
-    expect(siteEffectsHead(introOnly, { path: "/about", chrome })).toBeUndefined();
-    expect(siteEffectsHead(introOnly, { path: "/", chrome })?.headScript).not.toContain("pageswap");
+    expect(siteEffectsHead(introOnly, { path: "/about", chrome }, englishLabels)).toBeUndefined();
+    expect(
+      siteEffectsHead(introOnly, { path: "/", chrome }, englishLabels)?.headScript,
+    ).not.toContain("pageswap");
   });
 });
 
@@ -247,5 +269,26 @@ describe("site-wide effects", () => {
     expect(response.body).toContain("magnetic");
     const missing = await site.inject({ method: "GET", url: "/_lintel/effects/manifest.json" });
     expect(missing.statusCode).toBe(404);
+  });
+});
+
+describe("changing the site-wide effects", () => {
+  const testDatabase = useTestDatabase();
+
+  it("changes only the parts sent, without filling the others with defaults", async () => {
+    await updateSiteEffects(testDatabase.database, {
+      pageTransition: { style: "fade", duration: 400 },
+    });
+    const next = await updateSiteEffects(testDatabase.database, {
+      smoothScroll: { strength: "gentle" },
+    });
+    expect(next.pageTransition).toEqual({ style: "fade", duration: 400 });
+    expect(next.smoothScroll.strength).toBe("gentle");
+  });
+
+  it("refuses a change it can't read, plainly", async () => {
+    await expect(
+      updateSiteEffects(testDatabase.database, { smoothScroll: { strength: "wild" } }),
+    ).rejects.toMatchObject({ statusCode: 400 });
   });
 });

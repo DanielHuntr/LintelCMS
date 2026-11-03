@@ -51,10 +51,11 @@ export function renderPage(
     year: now.getUTCFullYear(),
     motionScriptUrl: readMotionRuntime()?.path,
     elementsScriptUrl: readElementsScript()?.path,
-    siteEffects: siteEffectsHead(context.effectSettings, {
-      path: page.path,
-      chrome: thisPageChrome,
-    }),
+    siteEffects: siteEffectsHead(
+      context.effectSettings,
+      { path: page.path, chrome: thisPageChrome },
+      englishLabels,
+    ),
     effectModuleUrls: readEffectModules()?.urls,
   });
   return htmlResponse(body, page);

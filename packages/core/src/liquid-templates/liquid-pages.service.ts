@@ -82,7 +82,11 @@ export async function renderEntryWithLiquid(
       design,
       motionScriptUrl: readMotionRuntime()?.path,
       elementsScriptUrl: readElementsScript()?.path,
-      siteEffects: siteEffectsHead(context.effectSettings, { path: request.path, chrome }),
+      siteEffects: siteEffectsHead(
+        context.effectSettings,
+        { path: request.path, chrome },
+        englishLabels,
+      ),
       effectModuleUrls: readEffectModules()?.urls,
     });
 

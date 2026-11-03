@@ -121,6 +121,8 @@ export interface SiteLabels {
   emptySiteText: string;
   socialLinks: string;
   contact: string;
+  /** The button that skips the first-visit intro (see site-effects in @lintel/core). */
+  skipIntro: string;
 }
 
 export const englishLabels: SiteLabels = {
@@ -143,4 +145,5 @@ export const englishLabels: SiteLabels = {
     "In Lintel, publish the first page at the top of the page tree. It becomes the home page, at this address.",
   socialLinks: "Elsewhere",
   contact: "Contact",
+  skipIntro: "Skip intro",
 };
