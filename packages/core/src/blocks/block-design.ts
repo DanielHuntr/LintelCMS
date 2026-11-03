@@ -1,5 +1,8 @@
 import {
   type BlockProperty,
+  type ComponentVariants,
+  componentVariantsSchema,
+  variantProblems,
   createEmptyPage,
   customBlockType,
   isPropBinding,
@@ -37,6 +40,27 @@ export function checkBlockDesign(
   const problem = findDesignProblem(design, properties);
   if (problem) throw new InvalidFieldsError({ design: problem });
   return design;
+}
+
+/**
+ * A component's variants: their shape, and that they fit the design (choices used once, a
+ * default that is one of them, looks only for elements the design has). Problems come back
+ * under `variants`. Left out, a component has none.
+ */
+export function checkComponentVariants(
+  candidate: unknown,
+  design: PageNode | null,
+): ComponentVariants {
+  const parsed = componentVariantsSchema.safeParse(candidate ?? {});
+  if (!parsed.success) {
+    throw new InvalidFieldsError({
+      variants: parsed.error.issues[0]?.message ?? "The variants aren’t right",
+    });
+  }
+  const variants = parsed.data as ComponentVariants;
+  const [problem] = variantProblems(variants, design);
+  if (problem) throw new InvalidFieldsError({ variants: problem });
+  return variants;
 }
 
 function findDesignProblem(node: PageNode, properties: readonly BlockProperty[]): string | null {

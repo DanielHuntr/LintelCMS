@@ -1,32 +1,44 @@
 import {
   type BlockProperty,
+  componentVariantsOf,
   currentValues,
   type CustomBlock,
   instanceValues,
+  instanceVariant,
   type PageNode,
+  storedSelection,
 } from "@lintel/builder-model";
 import { useEffect, useId, useRef, useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { ComponentIcon } from "../ui/component-icons.js";
 import { inputClassName } from "../ui/controls.js";
 import { useBuilderBlocks } from "./blocks-context.js";
+import { VariantChoices } from "./VariantChoices.js";
 
 /**
- * The right-hand side for an instance of one of the site's blocks: its name, its properties'
- * form (the app's field editors, so it is the same form editors know from content), and,
- * for people who may change blocks, **Edit block design**. **Detach from block** turns it
- * into ordinary elements after asking.
+ * The right-hand side for an instance of one of the site's components: its name, its
+ * variants (a row of choices each), its properties' form (the app's field editors, so it is
+ * the same form editors know from content), and, for people who may change components,
+ * **Edit component design**. **Detach from component** turns it into ordinary elements after
+ * asking.
+ *
+ * For clients (`isClient`), only the properties, and the variants where the component's
+ * designer allows clients to choose them.
  */
 export function BlockInstancePanel({
   node,
   isLocked,
+  isClient = false,
   onChange,
+  onChangeVariant,
   onDetach,
 }: {
   node: PageNode;
   isLocked: boolean;
+  isClient?: boolean;
   onChange: (values: Record<string, unknown>, blockName: string) => void;
-  onDetach: () => void;
+  onChangeVariant?: (variant: Record<string, string>, blockName: string) => void;
+  onDetach?: () => void;
 }) {
   const text = useBuilderText();
   const blocks = useBuilderBlocks();
@@ -47,6 +59,11 @@ export function BlockInstancePanel({
     block.properties,
   );
   const change = (next: Record<string, unknown>) => onChange(next, block.name);
+  const variants = componentVariantsOf(block);
+  const showsVariants =
+    variants.properties.length > 0 &&
+    onChangeVariant !== undefined &&
+    (!isClient || variants.clientsMayChoose);
 
   return (
     <div className="flex flex-col" data-block-instance={block.handle}>
@@ -72,6 +89,22 @@ export function BlockInstancePanel({
           )}
         </div>
       </div>
+      {showsVariants && (
+        <fieldset
+          disabled={isLocked}
+          data-component-variants
+          className="m-0 flex min-w-0 flex-col gap-3 border-0 hairline-bottom px-4 py-4"
+        >
+          <legend className="float-left mb-1 text-footnote font-semibold text-label">
+            {text("pageBuilder.components.variants")}
+          </legend>
+          <VariantChoices
+            variants={variants}
+            selection={instanceVariant(node)}
+            onChange={(next) => onChangeVariant?.(storedSelection(variants, next), block.name)}
+          />
+        </fieldset>
+      )}
       <fieldset disabled={isLocked} className="m-0 min-w-0 border-0 px-4 py-4">
         <legend className="sr-only">{text("pageBuilder.content.legend")}</legend>
         {isLocked && (
@@ -87,37 +120,39 @@ export function BlockInstancePanel({
           <SimplePropertyForm block={block} values={values} onChange={change} />
         )}
       </fieldset>
-      <div className="flex flex-col gap-2 hairline-top px-4 py-4">
-        {blocks.canManage && block.source === "site" && blocks.editDesign && (
-          <>
+      {!isClient && (
+        <div className="flex flex-col gap-2 hairline-top px-4 py-4">
+          {blocks.canManage && block.source === "site" && blocks.editDesign && (
+            <>
+              <button
+                type="button"
+                onClick={() => blocks.editDesign?.(block.handle)}
+                className="h-8 rounded-control bg-fill px-3 text-footnote font-medium text-accent hover:bg-fill-secondary focus-visible:focus-ring"
+              >
+                {text("pageBuilder.blocks.editDesign")}
+              </button>
+              <p className="text-caption text-label-tertiary">
+                {text("pageBuilder.blocks.editDesignHint")}
+              </p>
+            </>
+          )}
+          {block.design && !isLocked && onDetach && (
             <button
               type="button"
-              onClick={() => blocks.editDesign?.(block.handle)}
-              className="h-8 rounded-control bg-fill px-3 text-footnote font-medium text-accent hover:bg-fill-secondary focus-visible:focus-ring"
+              onClick={() => setConfirmingDetach(true)}
+              className="h-8 rounded-control px-3 text-footnote font-medium text-label-secondary hover:bg-fill focus-visible:focus-ring"
             >
-              {text("pageBuilder.blocks.editDesign")}
+              {text("pageBuilder.blocks.detach")}
             </button>
-            <p className="text-caption text-label-tertiary">
-              {text("pageBuilder.blocks.editDesignHint")}
-            </p>
-          </>
-        )}
-        {block.design && !isLocked && (
-          <button
-            type="button"
-            onClick={() => setConfirmingDetach(true)}
-            className="h-8 rounded-control px-3 text-footnote font-medium text-label-secondary hover:bg-fill focus-visible:focus-ring"
-          >
-            {text("pageBuilder.blocks.detach")}
-          </button>
-        )}
-      </div>
+          )}
+        </div>
+      )}
       {isConfirmingDetach && (
         <DetachConfirm
           blockName={block.name}
           onConfirm={() => {
             setConfirmingDetach(false);
-            onDetach();
+            onDetach?.();
           }}
           onCancel={() => setConfirmingDetach(false)}
         />

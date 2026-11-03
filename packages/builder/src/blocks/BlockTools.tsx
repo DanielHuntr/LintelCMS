@@ -3,8 +3,12 @@ import {
   cannotMakeBlockFrom,
   type ComponentCatalogue,
   type CustomBlock,
+  findNode,
+  findSimilarElements,
   type PageDocument,
   type PageNode,
+  planComponentFromSimilar,
+  shapeOf,
 } from "@lintel/builder-model";
 import { Component } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -12,10 +16,13 @@ import { useBuilderText } from "../i18n/builder-text.js";
 import { currentChoices, remapBlockDesign } from "./block-commands.js";
 import { useBlockMaster, useBuilderBlocks } from "./blocks-context.js";
 import { MakeBlockDialog } from "./MakeBlockDialog.js";
+import { MakeSimilarDialog } from "./MakeSimilarDialog.js";
 
 /**
- * Under the selected element's panel: **Make into a block** for people who may make blocks,
- * and, while editing a block's design, **Choose what editors can change**.
+ * Under the selected element's panel: **Make into a component** for people who may make
+ * components, **Make these N one component** when the element has others built the same way
+ * (with its shared style, or beside it), and, while editing a component's design, **Choose
+ * what editors can change**.
  */
 export function BlockTools({
   document,
@@ -23,6 +30,9 @@ export function BlockTools({
   nodeName,
   catalogue,
   onMadeBlock,
+  onMadeFromSimilar,
+  similarRequest = 0,
+  selectedIds,
   onReplaceDesign,
 }: {
   document: PageDocument;
@@ -30,18 +40,51 @@ export function BlockTools({
   nodeName: string;
   catalogue: ComponentCatalogue;
   onMadeBlock: (nodeId: string, block: CustomBlock) => void;
+  onMadeFromSimilar?: (
+    block: CustomBlock,
+    values: Readonly<Record<string, Record<string, unknown>>>,
+  ) => void;
   onReplaceDesign: (nodeId: string, design: PageNode) => void;
+  /** Raised to open "Make these one component" from elsewhere (Style's hint). */
+  similarRequest?: number;
+  /** Several selected: only "Make these one component", for them, when they're built alike. */
+  selectedIds?: readonly string[];
 }) {
   const text = useBuilderText();
   const blocks = useBuilderBlocks();
   const master = useBlockMaster();
-  const [dialog, setDialog] = useState<"make" | "map" | null>(null);
+  const [dialog, setDialog] = useState<"make" | "map" | "similar" | null>(null);
   const [refusal, setRefusal] = useState<string | null>(null);
   const categories = useMemo(
     () => [...new Set(blocks.library.map((block) => block.category).filter(Boolean))],
     [blocks.library],
   );
   const design = master ? document.root.children[0] : undefined;
+  const [answeredRequest, setAnsweredRequest] = useState(similarRequest);
+  if (similarRequest !== answeredRequest) {
+    setAnsweredRequest(similarRequest);
+    setDialog("similar");
+  }
+  const isMany = (selectedIds?.length ?? 0) > 1;
+  const similar = useMemo(() => {
+    if (master) return [];
+    if (selectedIds && selectedIds.length > 1) {
+      const nodes = selectedIds.flatMap((id) => {
+        const found = findNode(document.root, id);
+        return found ? [found] : [];
+      });
+      const shape = nodes[0] ? shapeOf(nodes[0]) : "";
+      const alike = nodes.every(
+        (each) => shapeOf(each) === shape && cannotMakeBlockFrom(each) === null,
+      );
+      return alike ? nodes : [];
+    }
+    return node ? findSimilarElements(document.root, node.id) : [];
+  }, [document.root, node, master, selectedIds]);
+  const plan = useMemo(
+    () => (dialog === "similar" ? planComponentFromSimilar(similar, catalogue) : null),
+    [dialog, similar, catalogue],
+  );
 
   if (master) {
     if (master.isReadOnly || !design) return null;
@@ -100,15 +143,52 @@ export function BlockTools({
   };
 
   return (
-    <div className="flex flex-col gap-1.5 hairline-top px-4 py-3">
-      <button
-        type="button"
-        onClick={open}
-        className="flex h-8 w-full items-center justify-center gap-2 rounded-control bg-fill px-3 text-footnote font-medium text-accent hover:bg-fill-secondary focus-visible:focus-ring"
-      >
-        <Component aria-hidden="true" className="size-4" />
-        {text("pageBuilder.blocks.make")}
-      </button>
+    <div
+      className={isMany ? "flex flex-col gap-1.5" : "flex flex-col gap-1.5 hairline-top px-4 py-3"}
+    >
+      {isMany && similar.length === 0 && (
+        <p className="text-caption text-label-tertiary">{text("pageBuilder.multi.notAlike")}</p>
+      )}
+      {!isMany && (
+        <button
+          type="button"
+          onClick={open}
+          className="flex h-8 w-full items-center justify-center gap-2 rounded-control bg-fill px-3 text-footnote font-medium text-accent hover:bg-fill-secondary focus-visible:focus-ring"
+        >
+          <Component aria-hidden="true" className="size-4" />
+          {text("pageBuilder.blocks.make")}
+        </button>
+      )}
+      {similar.length >= 2 && onMadeFromSimilar && (
+        <button
+          type="button"
+          onClick={() => setDialog("similar")}
+          className="flex h-8 w-full items-center justify-center gap-2 rounded-control px-3 text-footnote font-medium text-accent hover:bg-fill focus-visible:focus-ring"
+        >
+          {text("pageBuilder.components.makeSimilar", { count: similar.length })}
+        </button>
+      )}
+      {dialog === "similar" && plan && onMadeFromSimilar && (
+        <MakeSimilarDialog
+          count={similar.length}
+          suggestedName={nodeName}
+          plan={plan}
+          onCancel={() => setDialog(null)}
+          onSubmit={async (name) => {
+            const made = await create({
+              name,
+              icon: "square",
+              category: "",
+              design: plan.design,
+              properties: plan.properties,
+            });
+            if ("problem" in made) return made.problem;
+            onMadeFromSimilar(made, plan.values);
+            setDialog(null);
+            return null;
+          }}
+        />
+      )}
       {refusal && (
         <p role="alert" className="text-caption text-warning">
           {refusal}

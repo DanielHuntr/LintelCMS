@@ -63,8 +63,8 @@ describe("Your site's blocks", () => {
   it("tells a new site how to make its first block", async () => {
     mockApi(() => ({ blocks: [] }));
     renderScreen(<BlocksPage />);
-    expect(await screen.findByText("No blocks yet")).toBeInTheDocument();
-    expect(screen.getByText(/choose Make into a block/)).toBeInTheDocument();
+    expect(await screen.findByText("No components yet")).toBeInTheDocument();
+    expect(screen.getByText(/choose Make into a component/)).toBeInTheDocument();
   });
 
   it("knows which properties were renamed, and drops bindings to removed ones", () => {
@@ -108,7 +108,9 @@ describe("site blocks in blocks fields", () => {
     );
     const onChange = vi.fn<(blockTypes: BlockType[]) => void>();
     renderScreen(<BlockTypesEditor blockTypes={[]} onChange={onChange} problem={undefined} />);
-    const picker = await screen.findByRole("combobox", { name: "Add one of your site’s blocks" });
+    const picker = await screen.findByRole("combobox", {
+      name: "Add one of your site’s components",
+    });
     await userEvent.selectOptions(picker, "team_card");
     const [added] = onChange.mock.lastCall?.[0] ?? [];
     expect(added).toMatchObject({ handle: "team_card", name: "Team card", block: "team_card" });
@@ -133,7 +135,7 @@ describe("site blocks in blocks fields", () => {
         problem={undefined}
       />,
     );
-    const card = await screen.findByText("Your block: Team card");
+    const card = await screen.findByText("Your component: Team card");
     const item = card.closest("li") as HTMLElement;
     expect(within(item).getByText("Name, Role")).toBeInTheDocument();
     expect(within(item).queryByRole("textbox")).not.toBeInTheDocument();

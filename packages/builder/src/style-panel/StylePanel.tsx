@@ -105,6 +105,13 @@ interface StylePanelProps {
   looks?: RelevantLooks;
   /** Changes the element's props: a menu link's own look is kept there (see menu-links/). */
   onChangeProps?: (props: Record<string, unknown>, label: string) => void;
+  /** Under the shared-style row: a quiet suggestion, such as making similar elements one component. */
+  sharedStyleHint?: ReactNode;
+  /**
+   * Several elements selected: `node` stands for them all (the styles they share), these are
+   * the properties they differ in, and there's no shared-style row (Actions has one).
+   */
+  mixedStyles?: ReadonlySet<StylePropertyName>;
 }
 
 const textTypes = new Set([
@@ -155,6 +162,8 @@ export function StylePanel({
   onOpenSiteStyles,
   looks,
   onChangeProps,
+  sharedStyleHint,
+  mixedStyles,
 }: StylePanelProps) {
   const text = useBuilderText();
   const advanced = mode === "advanced";
@@ -231,8 +240,10 @@ export function StylePanel({
       styles: sharedLook ? layerStyles(sharedLook.styles, node.styles) : node.styles,
       target,
       change: (values, label) => onChange(target, values, label),
+      mixed: mixedStyles,
     };
   }, [
+    mixedStyles,
     editsItem,
     menuItem,
     onChangeProps,
@@ -290,7 +301,7 @@ export function StylePanel({
             }}
             isLocked={isLocked}
           />
-        ) : (
+        ) : mixedStyles ? null : (
           <SharedStyleBar
             node={node}
             design={design}
@@ -301,6 +312,7 @@ export function StylePanel({
             isLocked={isLocked}
           />
         )}
+        {sharedStyleHint}
         {onOpenSiteStyles && (
           <button
             type="button"
@@ -351,7 +363,7 @@ export function StylePanel({
           <OpenSectionsContext.Provider value={openSections}>
             <StyleEditingContext.Provider value={editing}>
               <DesignToolsContext.Provider value={design}>
-                <ArrangeSection advanced={advanced} />
+                {!mixedStyles && <ArrangeSection advanced={advanced} />}
                 {holdsElements && <LayoutSection advanced={advanced} />}
                 <SpacingSection advanced={advanced} />
                 {advanced && <SizeSection />}

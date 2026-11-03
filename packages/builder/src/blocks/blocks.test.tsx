@@ -150,7 +150,7 @@ describe("the site's blocks in the builder", () => {
     expect(added).toMatchObject({ type: "customBlock", props: { block: "team_card", values: {} } });
 
     const panel = screen.getByRole("complementary", { name: "Selected element" });
-    expect(within(panel).getByRole("heading", { name: "Team card block" })).toBeInTheDocument();
+    expect(within(panel).getByRole("heading", { name: "Team card component" })).toBeInTheDocument();
     expect(within(panel).queryByRole("tab", { name: "Style" })).not.toBeInTheDocument();
     await user.type(within(panel).getByLabelText("Name"), "Ada");
     expect(latest().root.children[0]?.props.values).toEqual({ name: "Ada" });
@@ -168,15 +168,15 @@ describe("the site's blocks in the builder", () => {
         name: "Team card",
       }),
     );
-    expect(screen.getByRole("button", { name: "Edit block design" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Detach from block" }));
+    expect(screen.getByRole("button", { name: "Edit component design" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Detach from component" }));
     await user.click(
       within(screen.getByRole("alertdialog")).getByRole("button", { name: "Detach" }),
     );
     const plain = latest().root.children[0];
     expect(plain?.type).toBe("box");
     expect(plain?.children[0]?.props.text).toBe("Ada");
-    expect(screen.getByRole("status")).toHaveTextContent("Detached Team card from its block");
+    expect(screen.getByRole("status")).toHaveTextContent("Detached Team card from its component");
   });
 
   it("makes a selection into a block and puts an instance in its place", async () => {
@@ -197,11 +197,11 @@ describe("the site's blocks in the builder", () => {
         name: "Team card",
       }),
     );
-    await user.click(screen.getByRole("button", { name: "Make into a block" }));
-    const dialog = screen.getByRole("dialog", { name: "Make “Team card” into a block" });
+    await user.click(screen.getByRole("button", { name: "Make into a component" }));
+    const dialog = screen.getByRole("dialog", { name: "Make “Team card” into a component" });
     const nameParts = within(dialog).getAllByRole("checkbox", { name: /Words/ });
     await user.click(nameParts[0] as HTMLElement);
-    await user.click(within(dialog).getByRole("button", { name: "Make block" }));
+    await user.click(within(dialog).getByRole("button", { name: "Make component" }));
     expect(create).toHaveBeenCalledOnce();
     const draft = create.mock.calls[0]?.[0];
     expect(draft?.name).toBe("Team card");

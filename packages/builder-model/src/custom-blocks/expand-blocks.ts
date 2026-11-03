@@ -2,7 +2,7 @@ import { bindProps, type BoundPicture } from "../data/bound-items.js";
 import type { NodeStyles, PageNode } from "../document/page-document.schema.js";
 import { isSafeValueFor } from "../styles/style-values.js";
 import type { CreateNodeId } from "../tree/node-ids.js";
-import { copyWithNewIds } from "../tree/tree-changes.js";
+import { copyWithNewIds, retargetAnimations } from "../tree/tree-changes.js";
 import {
   bindableColourStyles,
   type BindableColourStyle,
@@ -23,6 +23,7 @@ import {
   instanceBlockHandle,
   instanceValues,
 } from "./custom-block.js";
+import { designForVariant, instanceVariant, componentVariantsOf } from "./component-variants.js";
 
 /**
  * Draws instances as their block's design: before a page is drawn, each instance gets the
@@ -49,7 +50,12 @@ export function expandBlockInstances(root: PageNode, library: BlockLibrary): Pag
       const block = library.blocks?.[handle];
       if (!block?.design) return node;
       const values = currentValues(instanceValues(node), block.renamedProperties);
-      const design = expandDesign(block.design, values, block.properties, node.id, library);
+      const look = designForVariant(
+        block.design,
+        componentVariantsOf(block),
+        instanceVariant(node),
+      );
+      const design = expandCopy(look, values, block.properties, node.id, library);
       return { ...node, children: design ? [design] : [] };
     }
     if (node.children.length === 0) return node;
@@ -70,9 +76,37 @@ export function detachBlockInstance(
 ): PageNode | null {
   if (!block.design) return null;
   const values = currentValues(instanceValues(instance), block.renamedProperties);
-  const expanded = expandDesign(block.design, values, block.properties, instance.id, { pictures });
+  const look = designForVariant(
+    block.design,
+    componentVariantsOf(block),
+    instanceVariant(instance),
+  );
+  const expanded = expandCopy(look, values, block.properties, instance.id, { pictures });
   if (!expanded) return null;
   return copyWithNewIds(expanded, createId);
+}
+
+/**
+ * The design filled in, with what refers to its elements (an animation that plays on the
+ * title, a picture that grows while the card is hovered) pointed at the copies, so each
+ * instance animates its own parts.
+ */
+function expandCopy(
+  design: PageNode,
+  values: Readonly<Record<string, unknown>>,
+  properties: readonly BlockProperty[],
+  prefix: string,
+  library: BlockLibrary,
+): PageNode | null {
+  const expanded = expandDesign(design, values, properties, prefix, library);
+  if (!expanded) return null;
+  const newIds = new Map<string, string>();
+  const collect = (node: PageNode) => {
+    newIds.set(node.id, `${prefix}-${node.id}`);
+    node.children.forEach(collect);
+  };
+  collect(design);
+  return retargetAnimations(expanded, newIds);
 }
 
 function hasInstance(node: PageNode): boolean {

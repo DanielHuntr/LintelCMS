@@ -113,7 +113,11 @@ export function StyleTextInput({
               <input
                 id={id}
                 value={draft}
-                placeholder={placeholder ?? text("pageBuilder.style.auto")}
+                placeholder={
+                  field.isMixed
+                    ? text("pageBuilder.multi.mixed")
+                    : (placeholder ?? text("pageBuilder.style.auto"))
+                }
                 aria-invalid={problem !== null}
                 aria-describedby={problem ? errorId : undefined}
                 onChange={(event) => setDraft(event.target.value)}
@@ -210,7 +214,9 @@ export function StyleSelect({
           onChange={(event) => field.set(event.target.value || undefined)}
           className={inputClassName}
         >
-          <option value="">{text("pageBuilder.style.notSet")}</option>
+          <option value="">
+            {text(field.isMixed ? "pageBuilder.multi.mixed" : "pageBuilder.style.notSet")}
+          </option>
           {!known && field.value && <option value={field.value}>{field.value}</option>}
           {choices.map((choice) => (
             <option key={choice.value} value={choice.value}>

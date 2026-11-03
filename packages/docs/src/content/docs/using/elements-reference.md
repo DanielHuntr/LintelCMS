@@ -30,7 +30,7 @@ All elements:
 The **Forms** elements appear when the Forms plugin is on, and the **Shop** elements when the
 Online shop plugin is on (Settings → Plugins).
 
-## Your site’s blocks
+## Your components
 
 | Element                 | What it’s for                                                                  | You fill in                                                                                                                             | More options |
 | ----------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- | ------------ |

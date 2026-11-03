@@ -1,4 +1,5 @@
 import { findDesignChanges, sameValue, validatePageDocument } from "@lintel/builder-model";
+import type { BlockCheckLibrary } from "../fieldtypes/fieldtype.js";
 import type { SignedIn } from "../auth/auth.schema.js";
 import { findCollectionByIdOrFail } from "../collections/collections.service.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
@@ -83,8 +84,14 @@ export function checkContentOnlyChange(
   previousData: Readonly<EntryData>,
   data: Readonly<EntryData>,
   permissions: readonly string[] | undefined,
+  /** The site's components, for whether clients may choose their variants. */
+  components?: BlockCheckLibrary,
 ): void {
   if (!permissions || !isContentOnly(permissions)) return;
+  const rules = {
+    mayChooseVariant: (component: string) =>
+      components?.find(component)?.variants?.clientsMayChoose === true,
+  };
   for (const field of fields) {
     if (field.type !== "page") continue;
     const before = previousData[field.handle] ?? null;
@@ -100,6 +107,7 @@ export function checkContentOnlyChange(
       previous?.ok ? previous.document : null,
       next.document,
       pageComponentCatalogue,
+      rules,
     );
     const first = changes[0];
     if (first) throw new DesignChangeNotAllowedError(first.where);

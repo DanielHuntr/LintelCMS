@@ -1,5 +1,8 @@
 import {
+  componentVariantsOf,
   currentValues,
+  instanceVariant,
+  storedSelection,
   customBlockType,
   instanceBlockHandle,
   instanceValues,
@@ -50,7 +53,13 @@ export async function checkBlockInstances(
     const result = await checkFieldValues(block.properties, values);
     const [first] = Object.entries(result.messages);
     if (first) messages[`${node.id}.${first[0]}`] = `${where}: ${first[1]}`;
-    return { ...checked, props: { ...checked.props, values: result.values } };
+    // Variant choices the component no longer offers fall back to its defaults, as values of
+    // removed properties are dropped; defaults themselves aren't stored.
+    const variant = storedSelection(componentVariantsOf(block), instanceVariant(node));
+    const props: Record<string, unknown> = { ...checked.props, values: result.values };
+    delete props.variant;
+    if (Object.keys(variant).length > 0) props.variant = variant;
+    return { ...checked, props };
   };
 
   const root = await visit(document.root);

@@ -2,6 +2,7 @@ import { builderClientEditingStrings } from "./client-editing-strings.js";
 import { builderSiteStylesStrings } from "./site-styles-strings.js";
 import { builderBlockStrings } from "./block-strings.js";
 import { builderCreativeStrings } from "./creative-strings.js";
+import { multiSelectStrings } from "./multi-select-strings.js";
 import { builderDraftStrings } from "./draft-strings.js";
 import { builderDesignStrings } from "./design-strings.js";
 import { builderElementStrings } from "./element-strings.js";
@@ -42,7 +43,7 @@ export const builderStrings = {
   "pageBuilder.layers.title": "Layers",
   "pageBuilder.layers.empty": "Nothing on this page yet. Add a section from Insert.",
   "pageBuilder.layers.keyboardHelp":
-    "Up and down arrows choose a layer, right and left open and close it, Enter renames it. Alt with the arrows moves it. Delete removes it.",
+    "Up and down arrows choose a layer, right and left open and close it, Enter renames it. Alt with the arrows moves it. Delete removes it. Shift with the arrows, or Ctrl or Cmd with a click, selects several; Ctrl or Cmd with A selects everything beside it.",
   "pageBuilder.layers.renameLabel": "Layer name",
   "pageBuilder.layers.hide": "Hide {name}",
   "pageBuilder.layers.show": "Show {name}",
@@ -54,7 +55,7 @@ export const builderStrings = {
   "pageBuilder.insert.hint":
     "Press something to add it after what’s selected, or drag it onto the page or into Layers to put it exactly where you want.",
   "pageBuilder.insert.sections": "Ready-made sections",
-  "pageBuilder.insert.category.blocks": "Your site’s blocks",
+  "pageBuilder.insert.category.blocks": "Your components",
   "pageBuilder.insert.category.layout": "Layout",
   "pageBuilder.insert.category.text": "Text and information",
   "pageBuilder.insert.category.media": "Pictures and media",
@@ -346,6 +347,7 @@ export const builderStrings = {
   ...builderMenuStrings,
   ...builderSiteSectionStrings,
   ...builderBlockStrings,
+  ...multiSelectStrings,
   ...builderLayoutStrings,
   ...builderSiteStylesStrings,
   ...builderDraftStrings,

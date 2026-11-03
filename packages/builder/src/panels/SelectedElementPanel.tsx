@@ -9,6 +9,7 @@ import {
   type SharedStyle,
   sharedStylesById,
   type Breakpoint,
+  findNode,
   findPath,
   type FreeLayout,
   type GridPlace,
@@ -26,6 +27,7 @@ import {
   type StyleTarget,
   type CustomBlock,
   customBlockType,
+  findSimilarElements,
 } from "@lintel/builder-model";
 import type { MotionSpec } from "@lintel/motion";
 import type { Translate as MotionText } from "@lintel/motion-editor";
@@ -34,6 +36,7 @@ import { AnimatePanel, type EffectPreview } from "../animate-panel/AnimatePanel.
 import type { PageWeight } from "@lintel/motion/effects";
 import { BlockInstancePanel } from "../blocks/BlockInstancePanel.js";
 import { BlockTools } from "../blocks/BlockTools.js";
+import { type ManyActions, MultiSelectionPanel } from "./MultiSelectionPanel.js";
 import { useBlockMaster, useBuilderBlocks } from "../blocks/blocks-context.js";
 import { useBuilderText } from "../i18n/builder-text.js";
 import type { ComponentRegistry } from "../render/component-registry.js";
@@ -103,7 +106,17 @@ interface SelectedElementPanelProps {
     replaceWithBlock: (nodeId: string, block: CustomBlock) => void;
     detachBlock: (nodeId: string, pictures?: Readonly<Record<string, BoundPicture>>) => void;
     changeBlockValues: (nodeId: string, values: Record<string, unknown>, blockName: string) => void;
+    changeBlockVariant: (
+      nodeId: string,
+      variant: Record<string, string>,
+      blockName: string,
+    ) => void;
+    replaceWithInstances: (
+      block: CustomBlock,
+      values: Readonly<Record<string, Record<string, unknown>>>,
+    ) => void;
     replaceDesign: (nodeId: string, design: PageNode) => void;
+    many: ManyActions;
     markText: (
       selection: { nodeId: string; prop: string; from: number; to: number; text: string },
       styles: MarkChange | null,
@@ -129,6 +142,10 @@ interface SelectedElementPanelProps {
   onStyleStateChange?: (nodeId: string, target: StyleTarget | null) => void;
   /** Outlines an element on the page while the pointer is on its name in a list; null clears. */
   onPointAtElement?: (nodeId: string | null) => void;
+  /** Several elements selected (the first is `node`): the panel works on all of them. */
+  selectedIds?: readonly string[];
+  /** Back to just the first of several selected. */
+  onSelectOne?: () => void;
 }
 
 /** The elements on a page that use a shared style, in page order. */
@@ -298,6 +315,16 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
 
   const blocks = useBuilderBlocks();
   const master = useBlockMaster();
+  // Elements sharing this one's style and built the same way: changes inside them only
+  // follow each other as a component, so Style suggests it (and Make these... opens).
+  const [similarRequest, setSimilarRequest] = useState(0);
+  const similarWithSharedStyle = useMemo(
+    () =>
+      node?.sharedStyle && blocks.canManage && blocks.create && !master
+        ? findSimilarElements(document.root, node.id).length
+        : 0,
+    [node, document.root, blocks.canManage, blocks.create, master],
+  );
   const blockTools = (
     <BlockTools
       document={document}
@@ -305,9 +332,38 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
       nodeName={props.nodeName}
       catalogue={props.registry.catalogue}
       onMadeBlock={actions.replaceWithBlock}
+      onMadeFromSimilar={actions.replaceWithInstances}
+      similarRequest={similarRequest}
+      selectedIds={props.selectedIds}
       onReplaceDesign={actions.replaceDesign}
     />
   );
+
+  const selectedNodes = useMemo(
+    () =>
+      (props.selectedIds ?? []).flatMap((id) => {
+        const found = findNode(document.root, id);
+        return found ? [found] : [];
+      }),
+    [props.selectedIds, document.root],
+  );
+  if (selectedNodes.length > 1 && design) {
+    return (
+      <MultiSelectionPanel
+        nodes={selectedNodes}
+        catalogue={props.registry.catalogue}
+        breakpoint={props.breakpoint}
+        design={design}
+        isLocked={props.isLocked}
+        actions={actions.many}
+        componentTools={blockTools}
+        motionText={props.motionText}
+        tips={props.tips}
+        onPreviewMotion={props.onPreviewMotion}
+        onSelectOne={() => props.onSelectOne?.()}
+      />
+    );
+  }
 
   // An instance of one of the site's blocks: its design is the block's, so only its details
   // can be changed here.
@@ -322,6 +378,9 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
           node={node}
           isLocked={props.isLocked}
           onChange={(values, blockName) => actions.changeBlockValues(node.id, values, blockName)}
+          onChangeVariant={(variant, blockName) =>
+            actions.changeBlockVariant(node.id, variant, blockName)
+          }
           onDetach={() => actions.detachBlock(node.id, blocks.pictures)}
         />
       </aside>
@@ -394,6 +453,20 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
             nodeName={props.nodeName}
             onOpenSiteStyles={() => setShowsSiteStyles(true)}
             onChangeProps={(changed, label) => actions.changeProps(node.id, changed, label)}
+            sharedStyleHint={
+              similarWithSharedStyle >= 2 && (
+                <p data-component-hint className="text-caption text-label-secondary">
+                  {text("pageBuilder.components.sharedStyleHint")}{" "}
+                  <button
+                    type="button"
+                    onClick={() => setSimilarRequest((count) => count + 1)}
+                    className="rounded-sm font-medium text-accent hover:underline focus-visible:focus-ring"
+                  >
+                    {text("pageBuilder.components.sharedStyleHintAction")}
+                  </button>
+                </p>
+              )
+            }
           />
         ) : tab === "animate" ? (
           <AnimatePanel

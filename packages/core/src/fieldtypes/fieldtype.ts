@@ -1,3 +1,4 @@
+import type { ComponentVariants } from "@lintel/builder-model";
 import type { z } from "zod";
 import type { FieldMessages } from "../http/http-errors.js";
 import type { ContentReferences } from "./content-references.js";
@@ -42,6 +43,8 @@ export interface BlockCheckLibrary {
         name: string;
         properties: readonly FieldDefinition[];
         renamedProperties: Readonly<Record<string, string>>;
+        /** Its variants, so an instance's choices can be checked. None when left out. */
+        variants?: ComponentVariants;
       }
     | undefined;
 }

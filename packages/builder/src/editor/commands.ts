@@ -450,6 +450,41 @@ export function replaceNode(
   };
 }
 
+/**
+ * Puts each replacement where its element is, as one change (one Undo), as making several
+ * similar elements one component does. Refused when any of them is locked.
+ */
+export function replaceNodes(
+  context: CommandContext,
+  replacements: ReadonlyArray<{ nodeId: string; node: PageNode }>,
+  label: string,
+): CommandResult {
+  for (const { nodeId } of replacements) {
+    const node = findNode(context.document.root, nodeId);
+    if (!node) return { refused: context.text("pageBuilder.refused.nothingSelected") };
+    if (isLocked(context.document, nodeId)) {
+      return {
+        refused: context.text("pageBuilder.refused.locked", {
+          name: layerName(node, context.catalogue),
+        }),
+      };
+    }
+  }
+  return {
+    change: {
+      label,
+      update: withRoot((root) =>
+        replacements.reduce((current, { nodeId, node }) => {
+          const place = findPlace(current, nodeId);
+          if (!place) return current;
+          return insertNode(removeNode(current, nodeId), place.parent.id, place.index, node);
+        }, root),
+      ),
+      select: replacements[0]?.node.id ?? null,
+    },
+  };
+}
+
 /** Gives an element an animation, changes it, or (with null) takes it away. */
 export function changeAnimations(
   context: CommandContext,

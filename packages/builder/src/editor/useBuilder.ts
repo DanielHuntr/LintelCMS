@@ -45,6 +45,7 @@ import { type BuilderClipboard, choosePasteSource, writeToSystemClipboard } from
 import { instanceBlueprint } from "../blocks/block-commands.js";
 import * as commands from "./commands.js";
 import * as designCommands from "./design-commands.js";
+import * as multi from "./multi-selection.js";
 import { insertDraftedSections } from "./draft-commands.js";
 import * as siteSectionCommands from "./site-section-commands.js";
 import { createEditorState, describeUndo, editorReducer } from "./editor-state.js";
@@ -493,6 +494,46 @@ export function useBuilder({
           ),
         );
       },
+      /** An instance's variant: the choices that differ from the component's defaults. */
+      changeBlockVariant: (nodeId: string, variant: Record<string, string>, blockName: string) =>
+        run(
+          commands.changeNode(
+            context(),
+            nodeId,
+            text("pageBuilder.history.changedVariant", { name: blockName }),
+            (node) => {
+              const props: Record<string, unknown> = { ...node.props, variant };
+              if (Object.keys(variant).length === 0) delete props.variant;
+              return { ...node, props };
+            },
+          ),
+        ),
+      /**
+       * Several similar elements, made one component: each becomes an instance of it with
+       * its own values, in one change.
+       */
+      replaceWithInstances: (
+        block: CustomBlock,
+        values: Readonly<Record<string, Record<string, unknown>>>,
+      ) => {
+        const replacements = Object.entries(values).map(([nodeId, instanceValues]) => {
+          const instance = createNode(instanceBlueprint(block), registry.catalogue, createId);
+          return {
+            nodeId,
+            node: { ...instance, props: { ...instance.props, values: instanceValues } },
+          };
+        });
+        run(
+          commands.replaceNodes(
+            context(),
+            replacements,
+            text("pageBuilder.history.madeSimilar", {
+              count: replacements.length,
+              name: block.name,
+            }),
+          ),
+        );
+      },
       changeBlockValues: (nodeId: string, values: Record<string, unknown>, blockName: string) =>
         run(
           commands.changeNode(
@@ -522,6 +563,53 @@ export function useBuilder({
         run(siteSectionCommands.setSiteSectionHidden(context(), slot, hidden)),
       removeSiteSectionFromSite: (slot: SiteSectionSlot) =>
         run(siteSectionCommands.removeSiteSectionFromSite(context(), slot)),
+      /** Several selected elements, each change one step in Undo (see multi-selection.ts). */
+      many: {
+        changeStyles: (
+          ids: readonly string[],
+          target: StyleTarget,
+          values: StyleValues,
+          label: string,
+        ) => run(multi.changeStylesOfMany(context(), ids, target, values, label), ""),
+        animate: (ids: readonly string[], animations: NodeAnimation[]) =>
+          run(multi.animateMany(context(), ids, animations), ""),
+        setEffects: (ids: readonly string[], effects: NodeEffect[]) =>
+          run(
+            multi.allAsOne(
+              ids.map((id) => commands.changeEffects(context(), id, effects)),
+              text("pageBuilder.history.animatedMany", { count: ids.length }),
+            ),
+            "",
+          ),
+        setFreeLayout: (ids: readonly string[], freeLayout: FreeLayout | null) =>
+          run(
+            multi.allAsOne(
+              ids.map((id) => designCommands.setFreeLayout(context(), id, freeLayout)),
+              text("pageBuilder.history.layoutMany", { count: ids.length }),
+            ),
+          ),
+        setPlacedGrid: (ids: readonly string[], placedGrid: PlacedGrid | null) =>
+          run(
+            multi.allAsOne(
+              ids.map((id) => designCommands.setPlacedGrid(context(), id, placedGrid)),
+              text("pageBuilder.history.layoutMany", { count: ids.length }),
+            ),
+          ),
+        setBackgroundVideo: (ids: readonly string[], video: BackgroundVideo | null) =>
+          run(
+            multi.allAsOne(
+              ids.map((id) => designCommands.setBackgroundVideo(context(), id, video)),
+              text("pageBuilder.history.videoMany", { count: ids.length }),
+            ),
+          ),
+        useSharedStyle: (ids: readonly string[], sharedStyleId: string | null) =>
+          run(multi.applySharedStyleToMany(context(), ids, sharedStyleId)),
+        remove: (ids: readonly string[]) => run(multi.removeMany(context(), ids)),
+        duplicate: (ids: readonly string[]) => run(multi.duplicateMany(context(), ids)),
+        group: (ids: readonly string[]) => run(multi.groupIntoBox(context(), ids)),
+        move: (ids: readonly string[], direction: "up" | "down") =>
+          run(multi.moveManyTogether(context(), ids, direction)),
+      },
       selectAdjacent: adjacent,
       selectParent: () => {
         const selected = latest.current.selectedId;

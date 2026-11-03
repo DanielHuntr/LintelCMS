@@ -146,7 +146,7 @@ blocks: [
 ],
 ```
 
-It is offered in the builder's Insert menu under "Your site's blocks" while the add-on is on,
+It is offered in the builder's Insert menu under "Your components" while the add-on is on,
 and edited with its properties like any block, by the same people. `render` can also be a
 React component, drawn on the server. See [Blocks in code](/building/blocks-in-code/).
 

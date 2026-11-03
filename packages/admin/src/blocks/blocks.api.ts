@@ -1,4 +1,9 @@
-import type { BlockProperty, CustomBlock, PageNode } from "@lintel/builder-model";
+import type {
+  BlockProperty,
+  ComponentVariants,
+  CustomBlock,
+  PageNode,
+} from "@lintel/builder-model";
 import { apiRequest } from "../api/client.js";
 import type { Field } from "../fields/field.types.js";
 
@@ -15,6 +20,8 @@ export interface SiteBlock {
   design: PageNode | null;
   template: string | null;
   renamedProperties: Record<string, string>;
+  /** Variants and their looks; none for blocks saved before them. */
+  variants?: ComponentVariants;
   version: number;
   /** Made in the builder, so it can be changed here. */
   editable: boolean;
@@ -36,6 +43,8 @@ export interface BlockChanges {
   description: string;
   properties: Field[];
   design: PageNode;
+  /** Left out, the component keeps the variants it has. */
+  variants?: ComponentVariants;
   renamedProperties?: Record<string, string>;
   confirmRemovals?: boolean;
 }
@@ -97,6 +106,7 @@ export function asCustomBlock(block: SiteBlock): CustomBlock {
     design: block.design,
     template: block.template,
     renamedProperties: block.renamedProperties,
+    ...(block.variants ? { variants: block.variants } : {}),
   };
 }
 

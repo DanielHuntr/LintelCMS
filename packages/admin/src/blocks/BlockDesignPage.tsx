@@ -1,10 +1,15 @@
 import { type CanvasSite, PageBuilder } from "@lintel/builder";
 import {
   type BlockProperty,
+  type ComponentVariants,
+  componentVariantsOf,
+  designForVariant,
   createEmptyPage,
   createRandomNodeId,
   type PageDocument,
   type PageNode,
+  recordVariantEdit,
+  withoutMissingElements,
 } from "@lintel/builder-model";
 import { defaultTheme, themeStylesheet } from "@lintel/site-components";
 import siteStylesheet from "@lintel/site-components/styles.css?raw";
@@ -43,9 +48,11 @@ import { blockKeys, useBlock } from "./blocks.queries.js";
 import { useBuilderFonts } from "../site-fonts/useBuilderFonts.js";
 
 /**
- * A block's design in the visual builder, full screen: the page is the design, elements can
- * show the block's properties (their Shows pickers list them), and **Choose what editors can
- * change** marks parts as properties. Saving changes every page that uses the block.
+ * A component's design in the visual builder, full screen: the page is the design, elements
+ * can show the component's properties (their Shows pickers list them), and **Choose what
+ * editors can change** marks parts as properties. The bar over the canvas picks a variant:
+ * the canvas shows it, and changes made there are kept as that variant's look
+ * (`recordVariantEdit`). Saving changes every page that uses the component.
  */
 export function BlockDesignPage({ handle }: { handle: string }) {
   const block = useBlock(handle);
@@ -77,8 +84,22 @@ function BlockDesigner({ block, site }: { block: SiteBlock; site: CanvasSite | u
   const effectModules = useEffectModules(besideTheAdmin);
   const isNarrowScreen = useIsNarrowScreen();
   const siteDesign = useSiteDesign({ block: block.handle });
-  const initial = useMemo(() => designAsPage(block.design as PageNode), [block.design]);
-  const [document, setDocument] = useState<PageDocument>(initial);
+  // The design (every variant at its default) and the variants' looks, kept apart from the
+  // page the builder shows, which is the variant chosen in the bar.
+  const [kept, setKept] = useState<{ design: PageNode; variants: ComponentVariants }>(() => ({
+    design: block.design as PageNode,
+    variants: componentVariantsOf(block),
+  }));
+  const { design, variants } = kept;
+  const [selection, setSelection] = useState<Record<string, string>>({});
+  // A new page for the builder each time the variant shown changes.
+  const [shownKey, setShownKey] = useState(0);
+  const initial = useMemo(
+    () => designAsPage(designForVariant(design, variants, selection)),
+    // Only when a different variant is shown; edits flow the other way.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [shownKey],
+  );
   const [properties, setProperties] = useState<BlockProperty[]>(() =>
     fieldsAsProperties(block.properties),
   );
@@ -89,14 +110,24 @@ function BlockDesigner({ block, site }: { block: SiteBlock; site: CanvasSite | u
 
   const master = useMemo(
     () => ({
-      block: { ...asCustomBlock(block), properties },
+      block: { ...asCustomBlock(block), properties, variants },
       isReadOnly: !canEdit,
       onPropertiesChange: (next: BlockProperty[]) => {
         setProperties(next);
         setStatus("unsaved");
       },
+      variants,
+      selection,
+      onSelectionChange: (next: Record<string, string>) => {
+        setSelection(next);
+        setShownKey((key) => key + 1);
+      },
+      onVariantsChange: (next: ComponentVariants) => {
+        setKept((current) => ({ ...current, variants: next }));
+        setStatus("unsaved");
+      },
     }),
-    [block, properties, canEdit],
+    [block, properties, canEdit, variants, selection],
   );
   const text = useCallback(
     (key: string, values?: Readonly<Record<string, string | number>>) =>
@@ -110,8 +141,6 @@ function BlockDesigner({ block, site }: { block: SiteBlock; site: CanvasSite | u
   );
 
   async function save(confirmRemovals = false) {
-    const design = designOf(document, block.name);
-    if (!design) return;
     setStatus("saving");
     setProblem(null);
     const kept = new Set(properties.map((property) => property.handle));
@@ -126,6 +155,7 @@ function BlockDesigner({ block, site }: { block: SiteBlock; site: CanvasSite | u
         description: block.description,
         properties: properties as unknown as Field[],
         design: withoutBindingsTo(design, removed),
+        variants: withoutMissingElements(variants, design),
         confirmRemovals,
       });
       queryClient.setQueryData(blockKeys.block(updated.handle), updated);
@@ -172,9 +202,14 @@ function BlockDesigner({ block, site }: { block: SiteBlock; site: CanvasSite | u
   return (
     <>
       <PageBuilder
+        key={shownKey}
         initialDocument={initial}
         onChange={(next) => {
-          setDocument(next);
+          const edited = designOf(next, block.name);
+          if (!edited) return;
+          setKept((current) =>
+            recordVariantEdit(current.design, current.variants, selection, edited),
+          );
           setStatus("unsaved");
         }}
         title={title}

@@ -116,7 +116,11 @@ function copyIds(node: PageNode, createId: CreateNodeId, newIds: Map<string, str
   };
 }
 
-function retargetAnimations(node: PageNode, newIds: ReadonlyMap<string, string>): PageNode {
+/**
+ * Points what refers to elements inside a node (animations' targets, scene steps, styles
+ * that follow an owner's state) at their new ids, after the ids were changed.
+ */
+export function retargetAnimations(node: PageNode, newIds: ReadonlyMap<string, string>): PageNode {
   const children = node.children.map((child) => retargetAnimations(child, newIds));
   node = retargetOwnerStates(node, newIds);
   if (!node.animations) return { ...node, children };

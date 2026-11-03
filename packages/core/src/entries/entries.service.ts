@@ -256,15 +256,16 @@ export async function validateForCollection(
   personChange?: { previousData: EntryData; entryId: string | null; locale: string },
 ): Promise<EntryData> {
   const blueprint = await findBlueprintByIdOrFail(database, collection.blueprintId);
+  // Instances of the site's blocks in page designs are checked against their properties.
+  const blockLibrary = blueprint.fields.some((field) => field.type === "page")
+    ? await loadBlockCheckLibrary(database)
+    : undefined;
   const validate = buildEntryDataValidator(blueprint.fields, {
     previousData: personChange?.previousData,
     pageCode: personChange
       ? await findPageCodeContext(database, blueprint.fields, context.permissions)
       : undefined,
-    // Instances of the site's blocks in page designs are checked against their properties.
-    blockLibrary: blueprint.fields.some((field) => field.type === "page")
-      ? await loadBlockCheckLibrary(database)
-      : undefined,
+    blockLibrary,
     assetExists: context.assetExists,
     references: createContentReferences(database),
     requiredFields: when === "saving" ? "allowEmpty" : "enforce",
@@ -295,6 +296,7 @@ export async function validateForCollection(
       personChange.previousData,
       checked,
       context.permissions,
+      blockLibrary,
     );
   }
   return checked;
