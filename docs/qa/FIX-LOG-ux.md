@@ -724,3 +724,29 @@ What's saved is unchanged, so existing pages keep their states.
 **Fix:** element definitions can now carry `keywords`, the other names people know them by, and Insert's search reads them, as it already did for sections. 55 elements have them. For example: Slider has carousel and slideshow; Pop-up has popup, modal and dialog; Gallery has lightbox; Ticker and Logo strip have marquee; Accordion has faq; Embed has iframe; Menu drawer has hamburger.
 
 **Tests:** `builder/src/panels/insert-library.test.ts` searches each of those words and expects the right element.
+
+## LINTEL-UX-035: adding motion without a wall of choices (3 November 2026)
+
+**Reported by Daniel**, with a screenshot: after choosing a moment in the Motion panel (Appears, Hover, Click, Scroll, Always), the panel showed a long list ("26 choices") of tall cards, each with the same icon and a two-line paragraph. "This is very overwhelming." The moment tabs were also squeezed at panel width, so "Always" was cut off.
+
+**Reproduced:** select a heading, open Animate, press Add motion and choose Hover. The panel lists every preset and effect for that moment in groups, each card with a paragraph; at the builder's side panel width the five moment tabs are truncated.
+
+**Fix:** adding motion now starts with a good default and offers a few choices, with the full list one step away.
+
+- **Choosing a moment puts motion on the element at once** and plays it on the page: Appears gives a fade up, Hover a gentle lift, Click a press, Scroll a slow parallax and Always a gentle pulse. Nothing is added until a moment is chosen.
+- **Up to six small tiles** for the main alternatives of that moment. Each shows the movement itself as a tiny looping drawing (plain CSS, still for people who ask for less motion) with a one- or two-word name. The sentence that used to be on the card is now the tooltip and what screen readers hear. Choosing another tile, or another moment, swaps the motion rather than adding more. Only what suits the element is offered: "Word by word" for text, "Underline" for text and buttons.
+- **A few plain controls** under the tiles: how much, speed, feel (smooth or springy) and, for entrances, when it starts. Only those that mean something show, so a scroll scene has just "How much" and a loop has no feel.
+- **More settings** opens the existing full settings (Simple, and the timeline for designers). **More effects…** opens the full catalogue with its search, unchanged: every preset and effect is still there. A choice made there takes the place of the default. **Done** goes back to the list.
+- **The moments fit the panel:** five buttons with the icon above the word, so no word is cut short. They and the tiles are radio groups; the arrow keys, Home and End move between them.
+- Under Click, eye-catchers (Pulse, Bounce, Shake, Wiggle, Flash) play when the element is clicked, rather than waiting for a page event as they do from the catalogue. Something that starts with the page and never stops is now listed as "Always" rather than "When it appears".
+
+What's saved is unchanged: the element's `animations` array (at most six) with ordinary preset specs and ids. Several animations per element, scroll scenes and their follows, range and snap settings all work as before.
+
+**Tests:**
+
+- `motion-editor/src/motion-panel/quickPicks.test.ts`: every tile is an existing preset or animation effect, there are at most six per moment, and the defaults are the gentle ones. It also checks that tiles suit the element, that Click tiles get a click trigger, and that the controls change the spec and keep it valid. Each control shows only when it applies.
+- `motion-editor/src/motion-panel/MotionPanel.test.tsx`: nothing is added before a moment is chosen. Choosing one adds and plays its default, and tiles and moments swap rather than add. It also covers arrow keys, the controls, More settings, Done and the list's labels, and the catalogue with search, where a choice replaces the default and Back keeps it. An element that is full gets nothing added.
+- `motion-editor/src/browser-tests/motionPanel.browser.test.ts` (Chromium): at side panel width no moment's word is clipped. The tiles' drawings play, and with reduced motion they are still and in view.
+- `builder/src/animate-panel/effects-tab.test.tsx`, `builder/src/studio.test.tsx` and `builder/src/panels/panels.test.tsx` follow the new flow. Undo now steps back through each choice.
+
+**Screenshots** (in `screenshots/motion-picker/`): `before-hover-desktop-light` and `before-hover-desktop-dark`, then `after-hover-desktop-light` and `after-hover-desktop-dark`. At 390px wide the designer shows its "needs a bigger screen" page, as before.

@@ -11,20 +11,8 @@ import {
   type PageWeight,
 } from "@lintel/motion/effects";
 import { findPreset, motionPresets, type MotionPreset } from "@lintel/motion/presets";
-import {
-  ArrowDownUp,
-  ArrowUp,
-  ChevronLeft,
-  ChevronRight,
-  Infinity as Endless,
-  MousePointer2,
-  Play,
-  Plus,
-  Pointer,
-  Search,
-  type LucideIcon,
-} from "lucide-react";
-import { useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
+import { ChevronLeft, ChevronRight, Play, Plus, Search } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
 import type { OpenGroups } from "../controls/CollapsibleGroup.js";
 import { classNames } from "../controls/classNames.js";
 import { AppliedEffect } from "../effects/AppliedEffect.js";
@@ -33,15 +21,25 @@ import type { MotionEditorStringKey } from "../strings/motionEditorStrings.js";
 import { TranslateProvider, useTranslate, type Translate } from "../strings/translate.js";
 import { MotionStudio, type StudioView } from "../studio/MotionStudio.js";
 import { type SceneElement, SceneElementsContext } from "../trigger/sceneElements.js";
+import { MomentPicker, momentColours, momentIcons } from "./MomentPicker.js";
 import {
   listMotionChoices,
   momentOfEffect,
   momentOfSpec,
-  motionMoments,
   searchMotionChoices,
   type MotionChoice,
   type MotionMoment,
 } from "./motionChoices.js";
+import { QuickMotion, type QuickAdded } from "./QuickMotion.js";
+import {
+  animationSpecOf,
+  quickChoicesFor,
+  quickResult,
+  quickSpec,
+  settingsOf,
+  type QuickChoice,
+  type QuickSettings,
+} from "./quickPicks.js";
 
 export interface SavedAnimation {
   spec: MotionSpec;
@@ -84,26 +82,12 @@ export interface MotionPanelProps {
 
 type View =
   | { name: "list" }
+  /** Adding: choose when, and a default goes on at once, with a few alternatives. */
   | { name: "add" }
+  /** Every preset and effect, with search: "More effects…". */
+  | { name: "catalogue" }
   | { name: "animation"; index: number }
   | { name: "effect"; index: number };
-
-/** Each moment's colour, for the small tile beside a row (as iOS Settings colours rows). */
-const momentIcons: Record<MotionMoment, LucideIcon> = {
-  appears: ArrowUp,
-  hover: MousePointer2,
-  click: Pointer,
-  scroll: ArrowDownUp,
-  always: Endless,
-};
-
-const momentColours: Record<MotionMoment, string> = {
-  appears: "#0a84ff",
-  hover: "#ff9f0a",
-  click: "#bf5af2",
-  scroll: "#30b0c7",
-  always: "#34c759",
-};
 
 /**
  * Everything that makes the selected element move, in one place: what it has (its animations
@@ -142,6 +126,14 @@ function Panel({
 }: MotionPanelProps) {
   const t = useTranslate();
   const [view, setView] = useState<View>({ name: "list" });
+  const [moment, setMoment] = useState<MotionMoment | null>(null);
+  const [addedHere, setAdded] = useState<QuickAdded | null>(null);
+  // Undo can take away what this screen added; then the next choice adds afresh.
+  const added = addedHere && animations[addedHere.index] ? addedHere : null;
+  const choices = useMemo(
+    () => listMotionChoices(presets, registry, elementKind),
+    [presets, registry, elementKind],
+  );
   const known = effects.flatMap((saved, index) => {
     const definition = registry.find(saved.effect);
     return definition ? [{ saved, definition, index }] : [];
@@ -151,53 +143,125 @@ function Panel({
     t("motionEditor.panel.yourAnimation");
   const animationsFull = animations.length >= maxAnimations;
 
-  /** Adds an animation (rather than replacing), and opens it. */
-  function addAnimation(animation: SavedAnimation) {
-    if (animationsFull) return;
-    onChangeAnimations([...animations, animation]);
-    onPreviewSpec(animation.spec);
-    onCommit?.();
-    setView({ name: "animation", index: animations.length });
-  }
-
   function go(next: View) {
     onStopPreview();
+    setMoment(null);
+    setAdded(null);
     setView(next);
   }
 
+  /** The element's animations without the one this screen added, which a new choice replaces. */
+  const withoutAdded = added ? animations.filter((_, at) => at !== added.index) : animations;
+
+  /** Puts a tile's motion on the element (in place of the one added here) and plays it. */
+  function applyTile(tile: QuickChoice, inMoment: MotionMoment) {
+    if (!added && animationsFull) return;
+    const base = quickSpec(tile.choice, inMoment);
+    const settings = settingsOf(base);
+    const spec = quickResult(base, settings);
+    const index = added ? added.index : animations.length;
+    const saved: SavedAnimation = { spec, presetId: tile.choice.id };
+    onChangeAnimations(
+      added
+        ? animations.map((animation, at) => (at === index ? saved : animation))
+        : [...animations, saved],
+    );
+    setAdded({ index, choice: tile.choice, base, settings });
+    onPreviewSpec(spec);
+    onCommit?.();
+  }
+
+  function chooseMoment(next: MotionMoment) {
+    setMoment(next);
+    const first = quickChoicesFor(next, choices, elementKind)[0];
+    if (first) applyTile(first, next);
+  }
+
+  function changeSettings(settings: QuickSettings, preview: boolean) {
+    if (!added) return;
+    const spec = quickResult(added.base, settings);
+    onChangeAnimations(
+      animations.map((animation, at) =>
+        at === added.index ? { spec, presetId: added.choice.id } : animation,
+      ),
+    );
+    setAdded({ ...added, settings });
+    if (preview) onPreviewSpec(spec);
+  }
+
+  /** A choice from the full catalogue: it takes the place of anything added just before. */
   function choose(choice: MotionChoice) {
     onStopPreview();
-    if (choice.kind === "preset") {
-      addAnimation({ spec: choice.preset.spec, presetId: choice.preset.id });
+    const replacing = added !== null;
+    setAdded(null);
+    setMoment(null);
+    const spec = animationSpecOf(choice);
+    if (spec) {
+      if (withoutAdded.length >= maxAnimations) return;
+      onChangeAnimations([...withoutAdded, { spec, presetId: choice.id }]);
+      onPreviewSpec(spec);
+      onCommit?.();
+      setView({ name: "animation", index: withoutAdded.length });
       return;
     }
+    if (choice.kind === "preset") return;
+    if (replacing) onChangeAnimations([...withoutAdded]);
     const { definition } = choice;
-    const props = defaultProps(definition.params);
-    if (definition.kind === "animation") {
-      addAnimation({ spec: effectAnimation(definition, props), presetId: definition.id });
-      return;
-    }
     const existing = effects.findIndex((saved) => saved.effect === definition.id);
-    if (existing !== -1) {
-      setView({ name: "effect", index: existing });
+    if (existing !== -1 || effects.length >= maxEffectsPerElement) {
+      if (replacing) onCommit?.();
+      setView(existing !== -1 ? { name: "effect", index: existing } : { name: "list" });
       return;
     }
-    if (effects.length >= maxEffectsPerElement) return;
-    onChangeEffects([...effects, { effect: definition.id, params: props }]);
+    onChangeEffects([
+      ...effects,
+      { effect: definition.id, params: defaultProps(definition.params) },
+    ]);
     onCommit?.();
     setView({ name: "effect", index: effects.length });
   }
 
   if (view.name === "add") {
     return (
+      <div className="flex flex-col gap-2.5">
+        <PanelBar onBack={() => go({ name: "list" })} />
+        <h2 className="text-headline text-label">{t("motionEditor.panel.chooseTitle")}</h2>
+        <QuickMotion
+          moment={moment}
+          tiles={moment ? quickChoicesFor(moment, choices, elementKind) : []}
+          added={added}
+          animationsFull={animationsFull}
+          onMoment={chooseMoment}
+          onTile={(tile) => {
+            if (moment) applyTile(tile, moment);
+          }}
+          onSettings={changeSettings}
+          onCommit={() => onCommit?.()}
+          onMoreSettings={() => {
+            if (added) go({ name: "animation", index: added.index });
+          }}
+          onMoreEffects={() => {
+            onStopPreview();
+            setView({ name: "catalogue" });
+          }}
+          onDone={() => go({ name: "list" })}
+        />
+      </div>
+    );
+  }
+
+  if (view.name === "catalogue") {
+    return (
       <AddMotion
-        presets={presets}
-        registry={registry}
-        elementKind={elementKind}
+        choices={choices}
+        initialMoment={moment ?? "appears"}
         addedEffects={new Set(effects.map((saved) => saved.effect))}
-        animationsFull={animationsFull}
+        animationsFull={withoutAdded.length >= maxAnimations}
         isFull={effects.length >= maxEffectsPerElement}
-        onBack={() => go({ name: "list" })}
+        onBack={() => {
+          onStopPreview();
+          setView({ name: "add" });
+        }}
         onChoose={choose}
         onTry={(choice) => {
           if (!choice) return onStopPreview();
@@ -425,7 +489,16 @@ function MomentTile({ moment }: { moment: MotionMoment }) {
   );
 }
 
-function PanelBar({ onBack, children }: { onBack: () => void; children?: ReactNode }) {
+function PanelBar({
+  onBack,
+  backLabel,
+  children,
+}: {
+  onBack: () => void;
+  /** What the back button says; "Motion" (the list) when left out. */
+  backLabel?: string;
+  children?: ReactNode;
+}) {
   const t = useTranslate();
   return (
     <div className="flex min-h-8 items-center">
@@ -435,7 +508,7 @@ function PanelBar({ onBack, children }: { onBack: () => void; children?: ReactNo
         className="-ms-1.5 flex h-8 items-center gap-0.5 rounded-control pe-2 text-body font-medium text-label-secondary hover:bg-fill focus-visible:focus-ring"
       >
         <ChevronLeft aria-hidden="true" className="size-4" />
-        {t("motionEditor.panel.back")}
+        {backLabel ?? t("motionEditor.panel.back")}
       </button>
       <div className="ms-auto">{children}</div>
     </div>
@@ -469,9 +542,8 @@ function RemoveRow({ label, onRemove }: { label: string; onRemove: () => void })
 }
 
 interface AddMotionProps {
-  presets: readonly MotionPreset[];
-  registry: EffectRegistry;
-  elementKind: ElementKind;
+  choices: readonly MotionChoice[];
+  initialMoment: MotionMoment;
   addedEffects: ReadonlySet<string>;
   animationsFull: boolean;
   isFull: boolean;
@@ -480,11 +552,13 @@ interface AddMotionProps {
   onTry: (choice: MotionChoice | null) => void;
 }
 
-/** Choosing by when it should move, with every preset and effect sorted into plain groups. */
+/**
+ * The full catalogue ("More effects…"): every preset and effect sorted into plain groups by
+ * when it moves, with search across all of them.
+ */
 function AddMotion({
-  presets,
-  registry,
-  elementKind,
+  choices: all,
+  initialMoment,
   addedEffects,
   animationsFull,
   isFull,
@@ -493,12 +567,8 @@ function AddMotion({
   onTry,
 }: AddMotionProps) {
   const t = useTranslate();
-  const [moment, setMoment] = useState<MotionMoment>("appears");
+  const [moment, setMoment] = useState<MotionMoment>(initialMoment);
   const [search, setSearch] = useState("");
-  const all = useMemo(
-    () => listMotionChoices(presets, registry, elementKind),
-    [presets, registry, elementKind],
-  );
   const searching = search.trim() !== "";
   const shown = searching
     ? searchMotionChoices(all, search)
@@ -522,8 +592,8 @@ function AddMotion({
 
   return (
     <div className="flex flex-col gap-2">
-      <PanelBar onBack={onBack} />
-      <h2 className="text-headline text-label">{t("motionEditor.panel.chooseTitle")}</h2>
+      <PanelBar onBack={onBack} backLabel={t("motionEditor.panel.backToAdd")} />
+      <h2 className="text-headline text-label">{t("motionEditor.panel.allTitle")}</h2>
       <label className="flex h-9 items-center gap-2 rounded-control bg-fill px-2.5">
         <Search aria-hidden="true" className="size-4 shrink-0 text-label-secondary" />
         <input
@@ -601,53 +671,6 @@ function AddMotion({
             })}
           </ul>
         </section>
-      ))}
-    </div>
-  );
-}
-
-/**
- * The five moments as one compact row of radio buttons (a segmented control), small enough
- * to fit the side panel without wrapping. Arrow keys move between them.
- */
-function MomentPicker({
-  value,
-  onChange,
-}: {
-  value: MotionMoment;
-  onChange: (moment: MotionMoment) => void;
-}) {
-  const t = useTranslate();
-  function move(event: KeyboardEvent<HTMLDivElement>) {
-    const step = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 }[event.key];
-    if (!step) return;
-    event.preventDefault();
-    const at = motionMoments.indexOf(value);
-    const next = motionMoments[(at + step + motionMoments.length) % motionMoments.length];
-    if (!next) return;
-    onChange(next);
-    event.currentTarget.querySelector<HTMLButtonElement>(`[data-moment="${next}"]`)?.focus();
-  }
-  return (
-    <div
-      role="radiogroup"
-      aria-label={t("motionEditor.panel.moments")}
-      onKeyDown={move}
-      className="grid grid-cols-5 rounded-control bg-fill p-0.5"
-    >
-      {motionMoments.map((moment) => (
-        <button
-          key={moment}
-          type="button"
-          role="radio"
-          data-moment={moment}
-          aria-checked={moment === value}
-          tabIndex={moment === value ? 0 : -1}
-          onClick={() => onChange(moment)}
-          className="h-7 min-w-0 truncate rounded-[calc(var(--radius-control)-2px)] px-1 text-caption font-medium text-label-secondary focus-visible:focus-ring aria-checked:bg-surface aria-checked:text-label aria-checked:shadow-float"
-        >
-          {t(`motionEditor.moment.${moment}` as MotionEditorStringKey)}
-        </button>
       ))}
     </div>
   );

@@ -5,6 +5,7 @@ declare global {
     /** Every spec the studio has reported through onChange, oldest first. */
     studioChanges: MotionSpec[];
     openStudio: (presetId: string) => void;
+    openMotionPanel: () => void;
   }
 }
 

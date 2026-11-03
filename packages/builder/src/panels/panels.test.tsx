@@ -371,7 +371,8 @@ describe("collapsible Content and Animate groups", () => {
     await select(person, "Hero title");
     await person.click(screen.getByRole("tab", { name: "Animate" }));
     await person.click(screen.getByRole("button", { name: "Add motion" }));
-    await person.click(screen.getByRole("button", { name: /^Fade up/ }));
+    await person.click(screen.getByRole("radio", { name: "Appears" }));
+    await person.click(screen.getByRole("button", { name: "More settings" }));
 
     expect(disclosure("When it plays")).toHaveAttribute("aria-expanded", "true");
     expect(disclosure("Speed and timing")).toHaveAttribute("aria-expanded", "true");

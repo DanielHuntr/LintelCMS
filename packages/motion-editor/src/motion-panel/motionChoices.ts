@@ -70,12 +70,15 @@ const groupOrder: readonly MotionGroup[] = [
   "loading",
 ];
 
-/** When a preset plays, from its trigger. Page exits belong to the site, not one element. */
+/**
+ * When a preset plays, from its trigger. Page exits belong to the site, not one element.
+ * Something that starts with the page and never stops (a pulse, a spinner) moves "always".
+ */
 export function momentOfSpec(spec: MotionSpec): MotionMoment | null {
   switch (spec.trigger.type) {
     case "load":
     case "inView":
-      return "appears";
+      return spec.repeat.times === "forever" ? "always" : "appears";
     case "hover":
     case "pointer":
       return "hover";
