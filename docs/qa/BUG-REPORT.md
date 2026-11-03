@@ -454,7 +454,7 @@ Viewport is 1440x900 unless stated.
 
 **Environment for batch 2:**
 
-- Linux, 8 GB, shared with one fix agent;
+- Linux, 8 GB, shared with one other fix run;
 - dev servers: API :4770, site :3770, admin :5770; data folder `/tmp/qa2-data`; built-in database;
 - set up through `POST /setup/finish` as "QA Two" with the shop;
 - default email settings (no `EMAIL_DRIVER`, so the outbox);
@@ -496,7 +496,7 @@ Logs referred to below are in `screenshots/batch-2/logs/`. Throwaway reset and i
 
 **Counts (batch 2):** P0 1, P1 2, P2 8, P3 15 (26 in all; SPEC-004 is counted as P2).
 
-**Not filed, by instruction:** the other agent's leftovers were seen again and not re-filed: B/I/Link and Ctrl+B in rich text (Ctrl+B in the Body field made no `<strong>`), sidebar Search and Ctrl K contrast (4.45:1 and 2.86:1 on every admin screen in axe), the shopper-facing payments message, and the others in the brief.
+**Not filed, by instruction:** the other fix run's leftovers were seen again and not re-filed: B/I/Link and Ctrl+B in rich text (Ctrl+B in the Body field made no `<strong>`), sidebar Search and Ctrl K contrast (4.45:1 and 2.86:1 on every admin screen in axe), the shopper-facing payments message, and the others in the brief.
 
 ---
 
@@ -756,7 +756,7 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-011   | P2       | Fixed  | Builder: Publish gives no confirmation and the builder never shows unpublished changes                              |
 | LINTEL-UX-012   | P2       | Fixed  | No "View website" link anywhere in the admin                                                                        |
 | LINTEL-UX-013   | P2       | Fixed  | Builder spills off the screen at 390px; the tour still runs                                                         |
-| LINTEL-UX-014   | P2       | Fixed  | A menu with a link to a deleted page can't be saved, and the error shows the link's id                              |
+| LINTEL-UX-014   | P2       | Part   | A menu with a link to a deleted page can't be saved, and the error shows the link's id                              |
 | LINTEL-UX-015   | P2       | Fixed  | Settings: logo and colour in two places; build-time settings where clients look first; unclear group names          |
 | LINTEL-UX-016   | P2       | Fixed  | Account is titled "Create your account"; three other strings show another screen's words                            |
 | LINTEL-UX-017   | P2       | Fixed  | Settings is a catch-all: logs, tools and the agency's build settings beside the owner's website details             |
@@ -766,6 +766,7 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-021   | P2       | Fixed  | Builder: elements can't be dragged to a new place on the page, only in Layers                                       |
 | LINTEL-UX-022   | P2       | Fixed  | Creating a page and opening one show two different editors; sparkle icons; Publish on an empty new page             |
 | LINTEL-UX-023   | P2       | Fixed  | A page's own header section doesn't replace the site's header (a footer section does), so two navs show             |
+| LINTEL-UX-024   | P2       | Fixed  | Builder: the Animation and Effects tabs feel clunky; people must know which is which                                |     |
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 

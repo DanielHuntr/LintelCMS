@@ -123,3 +123,80 @@ The fixes from the first round removed the three discovery P0s (FIX-LOG-shop.md,
 3. Rerun TC-SEC-001b, TC-MODEL-001/002 and TC-E2E-E.
 4. Run the `admin/e2e` journeys and a production build.
 5. Then **CONDITIONALLY READY** is reasonable if the P2s are accepted.
+
+---
+
+# Release candidate verdict (4 November 2026, `60c5010`, after the fix batches)
+
+## Decision: **CONDITIONALLY READY** as the next release candidate (1.0.0-rc.x)
+
+No P0 is open. Every security, data, shop, builder, content tree and accessibility defect in the fix logs is fixed, each with a regression test that fails without it. The full run is clean apart from the known Windows failures (TEST-RESULTS.md, 4 November 2026).
+
+Two P1s are still open, and both are in one-click updates. They don't touch content, the website or the shop day to day, but they can hurt a live site at the moment it updates. So the condition is about updates: either fix them, or accept them for this candidate and say plainly that one-click updates aren't safe yet.
+
+This is a verdict on the release candidate only. Whether and when to call anything 1.0 is Daniel's decision, and nothing here makes it.
+
+## What is still open
+
+From BUG-REPORT.md, with the batch 3 status column and the fix logs.
+
+**P0:** none.
+
+**P1 (2, both blocking one-click updates):**
+
+- **LINTEL-DATA-011:** rolling back an update puts the rows back but not the old schema, so the old version runs on the new tables. A rollback is the moment someone is already in trouble, and this can make it worse.
+- **LINTEL-FUNC-016:** on Windows, every one-click update after the first fails with EPERM when a junction is renamed over another. Windows sites can update once and then can't.
+
+**P2 (5):**
+
+- **LINTEL-DATA-013:** a failed update restores a backup taken before the download, so orders placed during the download are lost. Not blocking alone, but it belongs with the two P1s.
+- **LINTEL-FUNC-027:** the update supervisor doesn't recover if it dies mid-switch. Same area.
+- **LINTEL-FUNC-018 (part):** "/" no longer depends on content type names, but a draft Home still holds "/". Waiting for Daniel's decision.
+- **LINTEL-UX-014 (part):** adding Shop to the menu now drops a link to a deleted page, but the menu editor itself still shows the error with the link's id.
+- **LINTEL-DATA-003 (what's left):** renamed handles now move values, except for fields inside groups, repeaters or blocks, fieldsets inside those or in global sets, and `data.<old>` bindings in page designs, which still need changing by hand. The batch 2 entry has no status column, so this is recorded here.
+
+**P3 (2):**
+
+- **LINTEL-UX-005:** an empty .png is refused as "looks like a .png file", and a safe SVG with an outside link is called "damaged".
+- **LINTEL-SPEC-005:** the guide's role examples ("design pages", "manage updates") have no matching permission, and Admin carries `orders:*` and `automations:*`, which aren't in the catalogue.
+
+**Not filed as defects, still worth tracking:** the ten designer-test findings (FIX-LOG-ux.md), the dark-mode text swatch in the style panel, and the admin's delivery-rate form, which wasn't checked in a browser after FUNC-012.
+
+## Criteria
+
+| Item                       | Status                                                                                          |
+| -------------------------- | ----------------------------------------------------------------------------------------------- |
+| Format, lint, typecheck    | Pass                                                                                            |
+| Production build           | Pass (12 of 12 tasks)                                                                           |
+| Package tests              | 2,413 passed, 25 failed, 5 skipped; all 25 are the known Windows failures; nothing new or flaky |
+| Regression tests for fixes | One per fix, failing without it (fix logs); TEST-CASES.md batch 4 maps each fix to its test     |
+| Manual and browser checks  | Done per fix in the fix logs, at desktop and 390px, light and dark; not repeated in this pass   |
+| Open P0                    | 0                                                                                               |
+| Open P1                    | 2: LINTEL-DATA-011, LINTEL-FUNC-016                                                             |
+| Open P2 / P3               | 5 / 2                                                                                           |
+
+## Risks
+
+- **Security:** every filed security defect is fixed, SEC-001 to SEC-014. Still not tested by hand: DNS-based SSRF at send time and session expiry by time.
+- **Data integrity:** the content-model and two-editor losses are fixed (DATA-003, DATA-004, DATA-005, FUNC-008). What's left is the DATA-003 gaps above and the update path (DATA-011, DATA-013).
+- **Updates:** the weakest area. Its tests can't run on Windows, so this run says nothing about it either way.
+- **Shop:** paying has only been checked against a faked Stripe. No real payment has gone through in any pass.
+- **Accessibility:** A11Y-001 to A11Y-007 are fixed. Still not done: screen-reader testing and real browser zoom.
+- **Performance:** not measured beyond the 5,000-paragraph page in batch 2.
+
+## What would make it READY as a release candidate
+
+1. Fix DATA-011 and FUNC-016, or accept them for this candidate in writing, with one-click updates marked as not safe yet and the manual update steps in the guide.
+2. Run the update tests on Linux (CI) and confirm them green.
+3. Run the `admin/e2e` journeys against a production build.
+
+## What a 1.0 decision still needs
+
+This is Daniel's call. Before it can be made:
+
+1. The update P1s and P2s fixed, not just accepted (DATA-011, FUNC-016, DATA-013, FUNC-027), and a real update and rollback tried on Linux and Windows.
+2. Daniel's decision on FUNC-018 (does a draft Home keep "/"?).
+3. The DATA-003 gaps closed, or written up as a known limit.
+4. A real payment, refund and webhook round trip with Stripe in test mode.
+5. A manual pass over the batch 4 cases in TEST-CASES.md in a browser.
+6. A screen-reader pass on the admin's everyday screens and on checkout.
