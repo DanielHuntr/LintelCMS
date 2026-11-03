@@ -156,6 +156,8 @@ export interface ProductListData {
 
 /** A link of the site's menu, with the links under it. */
 export interface DataMenuLink {
+  /** The menu item's id (Content → Menus), for links styled on their own. */
+  id?: string;
   label: string;
   url: string | null;
   current: boolean;

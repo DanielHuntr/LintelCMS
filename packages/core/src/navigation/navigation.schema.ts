@@ -155,6 +155,8 @@ export const navigationSchema = navigationSummarySchema.extend({
 
 /** A menu item as websites get it: a label and an address, ready to print. */
 export interface DeliveredNavigationItem {
+  /** The item's id: the page's for menus that follow the page tree. */
+  id: string;
   label: string;
   url: string | null;
   newTab: boolean;

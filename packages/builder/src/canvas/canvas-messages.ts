@@ -83,9 +83,16 @@ export interface ForwardedKey {
   altKey: boolean;
 }
 
+/** One link of a menu, picked on the canvas: its menu item's id and its words. */
+export interface CanvasMenuItem {
+  id: string;
+  label: string;
+}
+
 export type MessageFromFrame =
   | { type: "ready" }
-  | { type: "select"; nodeId: string | null }
+  /** `menuItem`: the link clicked, when it was one of a menu's links (see menu-links/). */
+  | { type: "select"; nodeId: string | null; menuItem?: CanvasMenuItem }
   | { type: "hover"; nodeId: string | null }
   | { type: "editText"; nodeId: string; prop: string; text: string }
   | { type: "key"; key: ForwardedKey }
@@ -184,7 +191,18 @@ export function readFrameMessage(data: unknown): MessageFromFrame | null {
   const isOptionalId = (value: unknown) =>
     value === null || (typeof value === "string" && value.length <= 64);
   switch (type) {
-    case "select":
+    case "select": {
+      const item = message.menuItem as Partial<CanvasMenuItem> | undefined;
+      const itemIsFine =
+        item === undefined ||
+        (typeof item === "object" &&
+          item !== null &&
+          typeof item.id === "string" &&
+          /^[A-Za-z0-9_-]{1,64}$/.test(item.id) &&
+          typeof item.label === "string" &&
+          item.label.length <= 200);
+      return isOptionalId(message.nodeId) && itemIsFine ? (message as MessageFromFrame) : null;
+    }
     case "hover":
       return isOptionalId(message.nodeId) ? (message as MessageFromFrame) : null;
     case "editText":

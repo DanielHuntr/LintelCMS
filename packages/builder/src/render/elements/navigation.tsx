@@ -6,6 +6,7 @@ import {
   languageSwitcherComponent,
   type LinkProp,
   type MegaMenuItem,
+  menuItemKey,
   mobileMenuComponent,
   searchBoxComponent,
   siteFooterComponent,
@@ -31,9 +32,9 @@ export const sampleSite: DataSite = {
   homeUrl: "/",
   logo: null,
   menu: [
-    { label: "Home", url: "/", current: true, children: [] },
-    { label: "About", url: "/about", current: false, children: [] },
-    { label: "Contact", url: "/contact", current: false, children: [] },
+    { id: "home", label: "Home", url: "/", current: true, children: [] },
+    { id: "about", label: "About", url: "/about", current: false, children: [] },
+    { id: "contact", label: "Contact", url: "/contact", current: false, children: [] },
   ],
   socialLinks: [],
   footerText: "",
@@ -66,6 +67,8 @@ export function EmptyMenuButton({ nodeId }: { nodeId: string }) {
 }
 
 interface MenuEntry {
+  /** The menu item's id (see `menuItemKey`). */
+  id: string;
   label: string;
   href: string;
   current: boolean;
@@ -75,7 +78,7 @@ interface MenuEntry {
 }
 
 function fromSiteMenu(menu: readonly DataMenuLink[]): MenuEntry[] {
-  return menu.map((link) => {
+  return menu.map((link, index) => {
     const hasGroups = link.children.some((child) => child.children.length > 0);
     const asLink = (child: DataMenuLink): LinkProp => ({
       label: child.label,
@@ -87,6 +90,7 @@ function fromSiteMenu(menu: readonly DataMenuLink[]): MenuEntry[] {
         ? [{ title: "", links: link.children.map(asLink) }]
         : [];
     return {
+      id: menuItemKey(link.id, index),
       label: link.label,
       href: link.url ?? "",
       current: link.current,
@@ -98,7 +102,8 @@ function fromSiteMenu(menu: readonly DataMenuLink[]): MenuEntry[] {
 }
 
 function fromCustomMenu(items: readonly MegaMenuItem[]): MenuEntry[] {
-  return items.map((item) => ({
+  return items.map((item, index) => ({
+    id: menuItemKey(undefined, index),
     label: item.label,
     href: item.href,
     current: false,
@@ -209,6 +214,7 @@ function Drawer({
   buttonLabel: string;
   side: string;
   links: {
+    id: string;
     label: string;
     href: string;
     current?: boolean;
@@ -244,7 +250,11 @@ function Drawer({
             <ul className="lintel-drawer__links">
               {links.map((link, index) => (
                 <li key={index}>
-                  <a href={href(link.href, mode)} aria-current={link.current ? "page" : undefined}>
+                  <a
+                    href={href(link.href, mode)}
+                    aria-current={link.current ? "page" : undefined}
+                    data-menu-item={link.id}
+                  >
                     {link.label}
                   </a>
                   {link.children && link.children.length > 0 && (
@@ -269,6 +279,7 @@ function Drawer({
 
 function drawerLinks(entries: MenuEntry[]) {
   return entries.map((entry) => ({
+    id: entry.id,
     label: entry.label,
     href: entry.href,
     current: entry.current,
@@ -372,7 +383,11 @@ const MobileMenu = drawsProps(mobileMenuComponent, ({ props, attributes, node, m
   const links =
     props.menuSource === "site"
       ? drawerLinks(fromSiteMenu(menuOf(site, props.menuHandle)))
-      : props.links.map((link) => ({ label: link.label, href: link.href }));
+      : props.links.map((link, index) => ({
+          id: menuItemKey(undefined, index),
+          label: link.label,
+          href: link.href,
+        }));
   if (props.menuSource === "site" && links.length === 0 && mode === "canvas") {
     return (
       <div {...attributes} className={cx(attributes.className, "lintel-mobile-menu")}>

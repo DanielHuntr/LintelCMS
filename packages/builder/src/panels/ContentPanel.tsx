@@ -25,6 +25,7 @@ import { type BindingScope, findBindingScope, useDataSources } from "./data-sour
 import { FieldControl, SourceField } from "./field-controls.js";
 import { BindingPicker, ItemListField } from "./item-list-field.js";
 import { MenuSection } from "../menus/menu-editing.js";
+import { MenuLookColourField } from "../menus/menu-link-panel.js";
 import { RewriteText } from "../page-drafts/RewriteText.js";
 import { CodeBlockEditor } from "../code-block/CodeBlockEditor.js";
 
@@ -217,6 +218,16 @@ function ContentField({
       />
     ) : null;
   if (boundTo && binding) return binding;
+  if (node.type === "menuLink") {
+    // The colour and "keep it on the current page" only mean something for the looks that
+    // draw something; the scramble and roll up have neither.
+    const look = String(node.props.hoverLook ?? "none");
+    const draws = look === "underline" || look === "circle" || look === "colour";
+    if ((field.prop === "lookColour" || field.prop === "keepOnCurrent") && !draws) return null;
+    if (field.prop === "lookColour") {
+      return <MenuLookColourField label={field.label} value={String(value ?? "")} onChange={set} />;
+    }
+  }
   if (node.type === "image" && field.prop === "showCredit") {
     return <PhotoCreditSwitch node={node} label={field.label} onChange={set} />;
   }

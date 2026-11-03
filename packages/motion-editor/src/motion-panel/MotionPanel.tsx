@@ -33,6 +33,7 @@ import {
 import { QuickMotion, type QuickAdded } from "./QuickMotion.js";
 import {
   animationSpecOf,
+  isAnimationChoice,
   quickChoicesFor,
   quickResult,
   quickSpec,
@@ -130,6 +131,15 @@ function Panel({
   const [addedHere, setAdded] = useState<QuickAdded | null>(null);
   // Undo can take away what this screen added; then the next choice adds afresh.
   const added = addedHere && animations[addedHere.index] ? addedHere : null;
+  // A tile that is an effect (roll up, scramble on hover) is added as one, the same way.
+  const [effectAddedHere, setEffectAdded] = useState<{
+    index: number;
+    choice: MotionChoice;
+  } | null>(null);
+  const effectAdded =
+    effectAddedHere && effects[effectAddedHere.index]?.effect === effectAddedHere.choice.id
+      ? effectAddedHere
+      : null;
   const choices = useMemo(
     () => listMotionChoices(presets, registry, elementKind),
     [presets, registry, elementKind],
@@ -147,14 +157,43 @@ function Panel({
     onStopPreview();
     setMoment(null);
     setAdded(null);
+    setEffectAdded(null);
     setView(next);
   }
 
   /** The element's animations without the one this screen added, which a new choice replaces. */
   const withoutAdded = added ? animations.filter((_, at) => at !== added.index) : animations;
 
+  /** Puts a tile's effect on the element, in place of whatever this screen added. */
+  function applyEffectTile(tile: QuickChoice) {
+    if (tile.choice.kind !== "effect") return;
+    const { definition } = tile.choice;
+    onStopPreview();
+    if (added) {
+      onChangeAnimations([...withoutAdded]);
+      setAdded(null);
+    }
+    const others = effectAdded ? effects.filter((_, at) => at !== effectAdded.index) : effects;
+    const existing = others.findIndex((saved) => saved.effect === definition.id);
+    const props = defaultProps(definition.params);
+    if (existing === -1 && others.length >= maxEffectsPerElement) return;
+    if (existing === -1) {
+      onChangeEffects([...others, { effect: definition.id, params: props }]);
+    } else if (effectAdded) {
+      onChangeEffects([...others]);
+    }
+    setEffectAdded({ index: existing === -1 ? others.length : existing, choice: tile.choice });
+    onPreviewEffect(definition, props);
+    onCommit?.();
+  }
+
   /** Puts a tile's motion on the element (in place of the one added here) and plays it. */
   function applyTile(tile: QuickChoice, inMoment: MotionMoment) {
+    if (!isAnimationChoice(tile.choice)) return applyEffectTile(tile);
+    if (effectAdded) {
+      onChangeEffects(effects.filter((_, at) => at !== effectAdded.index));
+      setEffectAdded(null);
+    }
     if (!added && animationsFull) return;
     const base = quickSpec(tile.choice, inMoment);
     const settings = settingsOf(base);
@@ -230,6 +269,7 @@ function Panel({
           moment={moment}
           tiles={moment ? quickChoicesFor(moment, choices, elementKind) : []}
           added={added}
+          addedEffectId={effectAdded?.choice.id}
           animationsFull={animationsFull}
           onMoment={chooseMoment}
           onTile={(tile) => {

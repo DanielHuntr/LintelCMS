@@ -101,6 +101,85 @@ describe("text", () => {
   });
 });
 
+describe("text on hover", () => {
+  const rollTransform = (page: Page, selector: string) =>
+    page.$eval(selector, (element) => getComputedStyle(element).transform);
+  const menu = `<nav style="padding:40px"><a href="#" data-node-id="r">Studio</a> <a href="#" data-node-id="r">Contact</a></nav>`;
+  const roll = [{ nodeId: "r", module: "text", behaviour: "rollUp", params: { duration: 150 } }];
+  const rolledUp = /matrix\(1, 0, 0, 1, 0, -\d+/;
+
+  it("rolls every link up on hover and on keyboard focus, read once by screen readers", async () => {
+    const { page } = await openEffectsPage(browser, menu, roll);
+    await waitFor(page, () => document.querySelectorAll("[data-lintel-roll]").length === 2);
+    const first = "a:first-child [data-lintel-roll] > span:first-child";
+    expect(await rollTransform(page, first)).toBe("none");
+    await page.hover("a:first-child");
+    await pause(300);
+    expect(await rollTransform(page, first)).toMatch(rolledUp);
+    await page.mouse.move(0, 400);
+    await pause(300);
+    expect(await rollTransform(page, first)).not.toMatch(rolledUp);
+    // Keyboard focus rolls the second link too.
+    await page.focus("a:last-child");
+    await pause(300);
+    expect(await rollTransform(page, "a:last-child [data-lintel-roll] > span:first-child")).toMatch(
+      rolledUp,
+    );
+    // The copy is hidden from screen readers; the words they hear are unchanged.
+    const parts = await page.$eval("a:first-child", (link) => ({
+      hidden: link.querySelector("[aria-hidden]")?.textContent,
+      spoken: link.querySelector("[data-lintel-roll] > span:first-child")?.textContent,
+    }));
+    expect(parts).toEqual({ hidden: "Studio", spoken: "Studio" });
+    await page.close();
+  });
+
+  it("leaves the words still for people who ask for less motion", async () => {
+    const { page } = await openEffectsPage(browser, menu, roll, { reducedMotion: "reduce" });
+    await pause(400);
+    await page.hover("a:first-child");
+    await pause(200);
+    expect(await page.locator("[data-lintel-roll]").count()).toBe(0);
+    expect(await page.textContent("a:first-child")).toBe("Studio");
+    await page.close();
+  });
+
+  it("scrambles on hover and on focus, then settles on the real words", async () => {
+    const effect = [
+      {
+        nodeId: "s",
+        module: "text",
+        behaviour: "scramble",
+        params: { duration: 400, trigger: "hover" },
+      },
+    ];
+    const html = `<nav style="padding:40px"><a href="#" data-node-id="s">Work</a> <a href="#" data-node-id="s">Studio</a></nav>`;
+    const { page } = await openEffectsPage(browser, html, effect);
+    await waitFor(page, () => document.querySelectorAll("a [aria-hidden]").length === 2);
+    const shown = "a:first-child [aria-hidden]";
+    expect(await page.textContent(shown)).toBe("Work");
+    // Moved by hand: Playwright's hover waits for the scrambling letters to stand still.
+    const box = (await page.locator("a").first().boundingBox())!;
+    await page.mouse.move(box.x + 5, box.y + box.height / 2);
+    await pause(60);
+    expect(await page.textContent(shown)).not.toBe("Work");
+    await pause(600);
+    expect(await page.textContent(shown)).toBe("Work");
+    await page.focus("a:last-child");
+    await pause(60);
+    expect(await page.textContent("a:last-child [aria-hidden]")).not.toBe("Studio");
+    await pause(600);
+    expect(await page.textContent("a:last-child [aria-hidden]")).toBe("Studio");
+    const reduced = await openEffectsPage(browser, html, effect, { reducedMotion: "reduce" });
+    await pause(300);
+    await reduced.page.hover("a:first-child");
+    await pause(60);
+    expect(await reduced.page.textContent("a:first-child")).toBe("Work");
+    await page.close();
+    await reduced.page.close();
+  });
+});
+
 describe("pointer", () => {
   it("pulls a magnetic button towards the pointer, and leaves it still for less motion", async () => {
     const html = `<div style="padding:200px"><button data-node-id="m" style="width:120px;height:40px">Book</button></div>`;

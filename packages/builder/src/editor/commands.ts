@@ -188,9 +188,16 @@ function selectedNode(context: CommandContext): PageNode | { refused: string } {
   return node;
 }
 
+/** A Menu link belongs to its Menu: it moves, copies and goes with it, never on its own. */
+function partOfMenu(context: Pick<CommandContext, "text">, node: PageNode): CommandResult | null {
+  return node.type === "menuLink" ? { refused: context.text("pageBuilder.menu.partOfMenu") } : null;
+}
+
 export function removeSelected(context: CommandContext): CommandResult {
   const node = selectedNode(context);
   if ("refused" in node) return node;
+  const fixed = partOfMenu(context, node);
+  if (fixed) return fixed;
   // The site's navigation and footer are on every page: deleting one here hides it here.
   const slot = siteSectionSlotOf(node.id);
   if (slot) return setSiteSectionHidden(context, slot, true);
@@ -213,6 +220,8 @@ export function removeSelected(context: CommandContext): CommandResult {
 export function duplicateSelected(context: CommandContext): CommandResult {
   const node = selectedNode(context);
   if ("refused" in node) return node;
+  const fixed = partOfMenu(context, node);
+  if (fixed) return fixed;
   const duplicated = duplicateNode(context.document.root, node.id, context.createId);
   return {
     change: {
@@ -234,6 +243,8 @@ export type MoveDirection = "up" | "down" | "in" | "out";
 export function moveSelected(context: CommandContext, direction: MoveDirection): CommandResult {
   const node = selectedNode(context);
   if ("refused" in node) return node;
+  const fixed = partOfMenu(context, node);
+  if (fixed) return fixed;
   const place = findPlace(context.document.root, node.id);
   if (!place) return { refused: context.text("pageBuilder.refused.nothingSelected") };
   const target = moveTarget(context, node, place, direction);
@@ -284,6 +295,8 @@ export function moveTo(
   const node = findNode(document.root, nodeId);
   const parent = findNode(document.root, parentId);
   if (!node || !parent) return { refused: text("pageBuilder.refused.nothingSelected") };
+  const fixed = partOfMenu(context, node);
+  if (fixed) return fixed;
   if (isLocked(document, nodeId) || isLocked(document, parentId)) {
     return { refused: text("pageBuilder.refused.locked", { name: layerName(node, catalogue) }) };
   }

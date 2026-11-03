@@ -120,6 +120,7 @@ async function loadMainMenu(
 
 function toMenuItem(item: DeliveredNavigationItem, localise: (url: string) => string): MenuItem {
   return {
+    id: item.id,
     label: item.label,
     url: item.url === null ? null : localise(item.url),
     newTab: item.newTab,

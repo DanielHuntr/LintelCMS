@@ -147,7 +147,10 @@ describe("the site's navigation and footer sections", () => {
     });
     await owner("PUT", "/website/sections", starterSiteSections());
     const body = await visit("/about");
-    expect(body).toMatch(/<a href="\/about" aria-current="page">About<\/a>/);
+    // The link carries its Menu link's class and its menu item's id (LINTEL-UX-078).
+    expect(body).toMatch(
+      /<a class="[^"]*menu-link" href="\/about" aria-current="page" data-menu-item="5b0e1c52-3f4a-4c55-9d2e-6c1f0a7b8e91">About<\/a>/,
+    );
   });
 
   it("goes back to the automatic header when the navigation is taken off the site", async () => {

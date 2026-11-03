@@ -78,3 +78,18 @@ describe("messages from the canvas about dragging from Insert", () => {
     expect(readFrameMessage({ type: "zoomWheel", deltaY: "lots" })).toBeNull();
   });
 });
+
+describe("messages from the canvas about a menu's links", () => {
+  it("accepts the link clicked, and refuses one that isn't a menu item", () => {
+    const picked = { type: "select", nodeId: "n4", menuItem: { id: "contact", label: "Contact" } };
+    expect(readFrameMessage(picked)).toEqual(picked);
+    expect(readFrameMessage({ type: "select", nodeId: "n4" })).toEqual({
+      type: "select",
+      nodeId: "n4",
+    });
+    expect(
+      readFrameMessage({ type: "select", nodeId: "n4", menuItem: { id: 'x"]', label: "X" } }),
+    ).toBeNull();
+    expect(readFrameMessage({ type: "select", nodeId: "n4", menuItem: "contact" })).toBeNull();
+  });
+});

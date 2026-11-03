@@ -111,6 +111,7 @@ async function loadPictureCredits(
 
 function menuLinks(items: readonly MenuItem[]): DataSite["menu"] {
   return items.map((item) => ({
+    ...(item.id ? { id: item.id } : {}),
     label: item.label,
     url: item.url,
     current: item.current,
@@ -154,7 +155,8 @@ function siteData(request: PageRequest): DataSite {
           height: chrome.logo.height,
         }
       : null,
-    menu: menuLinks(chrome.menu),
+    // The current page's link is marked, so a Menu can hold its Current look on it.
+    menu: menuLinks(markCurrent(chrome.menu, request.path)),
     socialLinks: chrome.socialLinks,
     footerText: chrome.footerText,
     languages: context.locales.map((language) => ({

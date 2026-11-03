@@ -122,10 +122,18 @@ export function runCanvasFrame(snap: typeof snapBox, fitGrid: typeof fitToGrid):
     preview = null;
   };
 
-  const nodeElement = (nodeId: string | null) =>
-    nodeId
-      ? (root.querySelector(`[data-lintel-node="${CSS.escape(nodeId)}"]`) as HTMLElement | null)
-      : null;
+  // The menu link last clicked: a Menu link draws every link of its menu, so the one clicked
+  // is the one outlined while its Menu link is selected.
+  let pickedMenuItem: { nodeId: string; id: string } | null = null;
+  const nodeElement = (nodeId: string | null) => {
+    if (!nodeId) return null;
+    const selector = `[data-lintel-node="${CSS.escape(nodeId)}"]`;
+    const picked =
+      pickedMenuItem && pickedMenuItem.nodeId === nodeId
+        ? root.querySelector(`${selector}[data-menu-item="${CSS.escape(pickedMenuItem.id)}"]`)
+        : null;
+    return (picked ?? root.querySelector(selector)) as HTMLElement | null;
+  };
   const nodeIdAt = (target: EventTarget | null) => {
     const element = target instanceof Element ? target.closest("[data-lintel-node]") : null;
     return element ? element.getAttribute("data-lintel-node") : null;
@@ -752,7 +760,23 @@ export function runCanvasFrame(snap: typeof snapBox, fitGrid: typeof fitToGrid):
       return;
     if (editing && editing.contains(event.target as Node)) return;
     finishEditing(true);
-    send({ type: "select", nodeId: nodeIdAt(event.target) });
+    const nodeId = nodeIdAt(event.target);
+    const menuLink =
+      event.target instanceof Element
+        ? event.target.closest("[data-lintel-node][data-menu-item]")
+        : null;
+    const menuItem =
+      menuLink && nodeId && menuLink.getAttribute("data-lintel-node") === nodeId
+        ? {
+            id: menuLink.getAttribute("data-menu-item") ?? "",
+            // A link that rolls up has its words twice; the first are the real ones.
+            label: ((menuLink.querySelector(".lintel-roll__words") ?? menuLink).textContent ?? "")
+              .trim()
+              .slice(0, 200),
+          }
+        : null;
+    pickedMenuItem = menuItem && nodeId ? { nodeId, id: menuItem.id } : null;
+    send({ type: "select", nodeId, ...(menuItem ? { menuItem } : {}) });
     const openMenu =
       event.target instanceof Element ? event.target.closest("[data-lintel-open-menu]") : null;
     if (openMenu)
@@ -849,6 +873,8 @@ export function runCanvasFrame(snap: typeof snapBox, fitGrid: typeof fitToGrid):
     }
     const nodeId = nodeIdAt(event.target);
     const free = freeElement(nodeId);
+    // A menu's links belong to their menu, so they aren't dragged on their own.
+    if (event.target.closest("[data-menu-item]")) return;
     if (!free && nodeId) {
       // Anywhere else, pressing and dragging moves it to a new place in the page.
       const element = nodeElement(nodeId);

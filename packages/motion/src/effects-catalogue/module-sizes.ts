@@ -19,6 +19,6 @@ export const effectModuleBytes: Record<EffectModuleName, number> = {
   scroll: 4650,
   "smooth-scroll": 1826,
   svg: 4879,
-  text: 5070,
+  text: 5371,
   transitions: 1682,
 };

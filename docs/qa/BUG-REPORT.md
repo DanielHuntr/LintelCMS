@@ -786,6 +786,7 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-041   | P1       | Fixed  | No site-wide cookie notice: videos, maps, embeds and Adobe Fonts each asked alone (Adobe Fonts not at all), with no way back   |
 | LINTEL-UX-060   | P2       | Fixed  | Builder: Tools: Beginner / Designer / Developer hides settings per person; the tour differs per level; a Code tab for few      |
 | LINTEL-UX-061   | P2       | Fixed  | Style: two stacked controls for one question (Arrange → Place things, Layout → Arrange what's inside); "Normal" means nothing  |
+| LINTEL-UX-078   | P2       | Fixed  | No text effects on hover for menus: a Menu's links can't be selected, styled one by one or given a look like a circle          |
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 

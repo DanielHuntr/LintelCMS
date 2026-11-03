@@ -12,6 +12,8 @@ import {
   linkComponent,
   listComponent,
   makeScriptSafeToEmbed,
+  menuItemKey,
+  menuLinkOf,
   navigationComponent,
   pageComponent,
   quoteComponent,
@@ -25,6 +27,7 @@ import { CustomBlockElement } from "./custom-block.js";
 import { usePageData } from "./data-context.js";
 import { MarkedText, withLineBreaks } from "./marked-text.js";
 import { elementRenders } from "./elements/index.js";
+import { MenuLink, type MenuLinkEntry, MenuLinksContext } from "./elements/menu-link.js";
 import { EmptyMenuButton, menuOf, useSite } from "./elements/navigation.js";
 import { siteBlockRenders } from "./site-blocks.js";
 
@@ -157,40 +160,58 @@ const Link = drawsProps(linkComponent, ({ props, attributes, editableText }) => 
   </a>
 ));
 
-/** A row of links: its own, or one of the site's menus (top level only). */
-const Navigation = drawsProps(navigationComponent, ({ props, attributes, node, mode }) => {
-  const site = useSite();
-  const links =
-    props.menuSource === "site"
-      ? menuOf(site, props.menuHandle).map((link) => ({
-          label: link.label,
-          href: link.url ?? "",
-          isButton: link.style === "button",
-          current: link.current,
-        }))
-      : props.links.map((link) => ({ ...link, isButton: false, current: false }));
-  return (
-    <nav {...attributes} aria-label={props.label || undefined}>
-      {links.length === 0 && props.menuSource === "site" && mode === "canvas" ? (
-        <EmptyMenuButton nodeId={node.id} />
-      ) : (
-        <ul>
-          {links.map((link, index) => (
-            <li key={index}>
-              <a
-                href={link.href || undefined}
-                className={link.isButton ? "lintel-button" : undefined}
-                aria-current={link.current ? "page" : undefined}
-              >
-                {link.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      )}
-    </nav>
-  );
-});
+/**
+ * A row of links: its own, or one of the site's menus (top level only). With a Menu link
+ * inside (every Menu has one now), the Menu link draws the links in its look; menus made
+ * before then draw them as they always did.
+ */
+const Navigation = drawsProps(
+  navigationComponent,
+  ({ props, attributes, node, mode, children }) => {
+    const site = useSite();
+    const links: MenuLinkEntry[] =
+      props.menuSource === "site"
+        ? menuOf(site, props.menuHandle).map((link, index) => ({
+            id: menuItemKey(link.id, index),
+            label: link.label,
+            href: link.url ?? "",
+            isButton: link.style === "button",
+            current: link.current,
+          }))
+        : props.links.map((link, index) => ({
+            ...link,
+            id: menuItemKey(undefined, index),
+            isButton: false,
+            current: false,
+          }));
+    const drawnByMenuLink = menuLinkOf(node) !== undefined;
+    return (
+      <nav {...attributes} aria-label={props.label || undefined}>
+        {links.length === 0 && props.menuSource === "site" && mode === "canvas" ? (
+          <EmptyMenuButton nodeId={node.id} />
+        ) : drawnByMenuLink ? (
+          <ul>
+            <MenuLinksContext value={links}>{children}</MenuLinksContext>
+          </ul>
+        ) : (
+          <ul>
+            {links.map((link, index) => (
+              <li key={index}>
+                <a
+                  href={link.href || undefined}
+                  className={link.isButton ? "lintel-button" : undefined}
+                  aria-current={link.current ? "page" : undefined}
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </nav>
+    );
+  },
+);
 
 /**
  * The block's own HTML with the marked parts filled in. On the canvas scripts are always
@@ -225,6 +246,7 @@ export const standInRenders: Readonly<Record<string, ComponentRender>> = {
   button: Button,
   link: Link,
   navigation: Navigation,
+  menuLink: MenuLink,
   codeBlock: CodeBlock,
   customBlock: CustomBlockElement,
 };

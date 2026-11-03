@@ -234,7 +234,48 @@ describe("adding motion", () => {
     await user.click(screen.getByRole("radio", { name: "Hover" }));
     expect(screen.getByText(/as many animations as it can take/)).toBeInTheDocument();
     expect(saved.animations).toHaveLength(6);
-    for (const tile of within(tiles()).getAllByRole("radio")) expect(tile).toBeDisabled();
+    expect(within(tiles()).getByRole("radio", { name: "Lift" })).toBeDisabled();
+    expect(within(tiles()).getByRole("radio", { name: "Underline" })).toBeDisabled();
+    // Effects for words aren't animations, so they can still be added.
+    expect(within(tiles()).getByRole("radio", { name: "Roll up" })).toBeEnabled();
+  });
+
+  it.each([
+    ["text", ["Lift", "Roll up", "Underline", "Scramble", "Wave", "Bolder"]],
+    ["button", ["Lift", "Grow", "Roll up", "Underline", "Scramble", "Wave"]],
+    ["image", ["Lift", "Grow", "Brighten", "Tilt", "Magnetic", "Swing"]],
+    ["container", ["Lift", "Grow", "Brighten", "Tilt", "Magnetic", "Swing"]],
+  ] as const)("offers %s the best six hover tiles", async (elementKind, names) => {
+    const { user } = renderPanel({ elementKind });
+    await user.click(screen.getByRole("button", { name: "Add motion" }));
+    await user.click(screen.getByRole("radio", { name: "Hover" }));
+    const shown = within(tiles())
+      .getAllByRole("radio")
+      .map((tile) => names.find((name) => tile.textContent?.startsWith(name)) ?? "");
+    expect(shown).toEqual(names);
+  });
+
+  it("adds a word effect from its tile as an effect, swapping it for the next tile", async () => {
+    const { saved, user } = renderPanel({ elementKind: "button" });
+    await user.click(screen.getByRole("button", { name: "Add motion" }));
+    await user.click(screen.getByRole("radio", { name: "Hover" }));
+    expect(saved.animations.map((animation) => animation.presetId)).toEqual(["hover-lift"]);
+    await user.click(within(tiles()).getByRole("radio", { name: "Roll up" }));
+    expect(saved.animations).toEqual([]);
+    expect(saved.effects).toEqual([{ effect: "roll-up", params: { duration: 420 } }]);
+    expect(within(tiles()).getByRole("radio", { name: "Roll up" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    await user.click(within(tiles()).getByRole("radio", { name: "Scramble" }));
+    expect(saved.effects).toEqual([{ effect: "scramble-on-hover", params: { duration: 500 } }]);
+    await user.click(within(tiles()).getByRole("radio", { name: "Grow" }));
+    expect(saved.effects).toEqual([]);
+    expect(saved.animations.map((animation) => animation.presetId)).toEqual(["hover-grow"]);
+    await user.click(within(tiles()).getByRole("radio", { name: "Wave" }));
+    await user.click(screen.getByRole("button", { name: "Done" }));
+    expect(saved.effects.map((effect) => effect.effect)).toEqual(["wave-on-hover"]);
+    expect(saved.animations).toEqual([]);
   });
 
   it("adds afresh when undo has taken away what it added", async () => {

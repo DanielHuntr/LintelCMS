@@ -8,6 +8,8 @@ const shape = "motion-demo-shape block rounded-[4px] bg-label";
 function DemoDrawing({ demo }: { demo: MotionDemo }) {
   switch (demo) {
     case "words":
+    case "scramble":
+    case "wave":
       return (
         <span className="flex items-end gap-0.5">
           <span className={classNames(shape, "h-1.5 w-2.5")} />
@@ -30,6 +32,17 @@ function DemoDrawing({ demo }: { demo: MotionDemo }) {
           <span className="motion-demo-extra block h-0.5 w-8 origin-left rounded-full bg-label" />
         </span>
       );
+    case "roll":
+      return (
+        <span className="block h-1.5 w-8 overflow-hidden">
+          <span className="motion-demo-shape flex flex-col gap-1">
+            <span className="block h-1.5 w-8 rounded-[2px] bg-label" />
+            <span className="block h-1.5 w-8 rounded-[2px] bg-label" />
+          </span>
+        </span>
+      );
+    case "bolder":
+      return <span className={classNames(shape, "h-1 w-8 rounded-[2px]")} />;
     case "fill":
       return (
         <span className="block h-1.5 w-9 overflow-hidden rounded-full bg-fill-strong">

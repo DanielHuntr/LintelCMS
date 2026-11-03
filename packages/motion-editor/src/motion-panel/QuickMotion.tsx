@@ -11,6 +11,7 @@ import { motionDemoCss } from "./motionDemos.js";
 import { MotionTile } from "./MotionTile.js";
 import {
   distanceForStartSize,
+  isAnimationChoice,
   growRange,
   quickControls,
   startSizeFor,
@@ -33,6 +34,8 @@ interface QuickMotionProps {
   moment: MotionMoment | null;
   tiles: readonly QuickChoice[];
   added: QuickAdded | null;
+  /** The id of the effect a tile added here (roll up, scramble on hover), if one did. */
+  addedEffectId?: string;
   /** The element has as many animations as it can take, so nothing can be added. */
   animationsFull: boolean;
   onMoment: (moment: MotionMoment) => void;
@@ -57,6 +60,7 @@ export function QuickMotion({
   moment,
   tiles,
   added,
+  addedEffectId,
   animationsFull,
   onMoment,
   onTile,
@@ -68,7 +72,8 @@ export function QuickMotion({
 }: QuickMotionProps) {
   const t = useTranslate();
   const tileButtons = useRef<Array<HTMLButtonElement | null>>([]);
-  const checkedAt = tiles.findIndex((tile) => added?.choice.id === tile.choice.id);
+  const checkedId = added?.choice.id ?? addedEffectId;
+  const checkedAt = tiles.findIndex((tile) => checkedId === tile.choice.id);
 
   function moveBetweenTiles(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     const step = { ArrowLeft: -1, ArrowUp: -3, ArrowRight: 1, ArrowDown: 3 }[event.key];
@@ -120,7 +125,7 @@ export function QuickMotion({
               name={t(`motionEditor.quick.${tile.pick.id}` as MotionEditorStringKey)}
               description={tile.choice.description}
               checked={index === checkedAt}
-              disabled={animationsFull && !added}
+              disabled={animationsFull && !added && isAnimationChoice(tile.choice)}
               focusable={checkedAt === -1 ? index === 0 : index === checkedAt}
               onChoose={() => onTile(tile)}
               onKeyDown={(event) => moveBetweenTiles(event, index)}
@@ -144,7 +149,7 @@ export function QuickMotion({
         </LinkRow>
       </div>
 
-      {added && (
+      {(added || addedEffectId) && (
         <button
           type="button"
           onClick={onDone}

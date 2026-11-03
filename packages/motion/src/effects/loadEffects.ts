@@ -118,11 +118,14 @@ export function startEffects(
     element: HTMLElement,
     binding: Pick<EffectBinding, "module" | "behaviour" | "params">,
   ) => void mountEffect(element, binding, context).then((cleanup) => stops.push(cleanup));
+  // An element drawn more than once (each link of a menu, from its one Menu link) gets the
+  // effect on every copy.
   for (const binding of effects.bindings) {
     const escaped = binding.nodeId.replace(/["\\]/g, "\\$&");
-    const element = document.querySelector(`[${nodeAttribute}="${escaped}"]`);
-    if (element instanceof HTMLElement) {
-      stops.push(whenNearScreen(element, () => run(element, binding)));
+    for (const element of document.querySelectorAll(`[${nodeAttribute}="${escaped}"]`)) {
+      if (element instanceof HTMLElement) {
+        stops.push(whenNearScreen(element, () => run(element, binding)));
+      }
     }
   }
   const site = effects.site;

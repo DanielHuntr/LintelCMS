@@ -377,6 +377,7 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
             sharedStyleUses={sharedStyleUses}
             nodeName={props.nodeName}
             onOpenSiteStyles={() => setShowsSiteStyles(true)}
+            onChangeProps={(changed, label) => actions.changeProps(node.id, changed, label)}
           />
         ) : tab === "animate" ? (
           <AnimatePanel

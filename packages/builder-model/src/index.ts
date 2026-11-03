@@ -35,6 +35,7 @@ export * from "./components/media-components.js";
 export * from "./components/info-components.js";
 export * from "./components/clock-component.js";
 export * from "./components/site-navigation-components.js";
+export * from "./menu-links/menu-links.js";
 export * from "./components/form-components.js";
 export * from "./components/collection-components.js";
 export * from "./components/shop-components.js";

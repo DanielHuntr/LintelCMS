@@ -15,6 +15,7 @@ const kinds: Readonly<Record<string, ElementKind>> = {
   clock: "text",
   button: "button",
   link: "button",
+  menuLink: "button",
   image: "image",
   video: "image",
   beforeAfter: "image",

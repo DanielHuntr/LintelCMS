@@ -4,8 +4,12 @@ import type { LinkedEntry, MenuItem } from "./menus.types.js";
 
 /** A menu link as the page builder's canvas draws it (`DataMenuLink`). */
 export interface CanvasMenuLink {
+  /** The menu item's id, so a link can be styled on its own. */
+  id: string;
   label: string;
   url: string | null;
+  /** The page the item links to, so the page being designed can show as the current one. */
+  entryId: string | null;
   current: boolean;
   style?: "link" | "button";
   children: CanvasMenuLink[];
@@ -17,12 +21,28 @@ export function canvasMenuLinks(
   linkedEntries: Record<string, LinkedEntry>,
 ): CanvasMenuLink[] {
   return items.map((item) => ({
+    id: item.id,
+    entryId: item.entryId,
     label: item.label || (item.entryId ? (linkedEntries[item.entryId]?.title ?? "") : ""),
     url: item.url,
     current: false,
     style: item.style,
     children: canvasMenuLinks(item.children, linkedEntries),
   }));
+}
+
+/** The menus with the page being designed marked as the current page, as the website marks it. */
+export function markCurrentPage<Menu extends { links: readonly CanvasMenuLink[] }>(
+  menus: readonly Menu[],
+  entryId: string,
+): Menu[] {
+  const mark = (links: readonly CanvasMenuLink[]): CanvasMenuLink[] =>
+    links.map((link) => ({
+      ...link,
+      current: link.entryId === entryId,
+      children: mark(link.children),
+    }));
+  return menus.map((menu) => ({ ...menu, links: mark(menu.links) }));
 }
 
 /**

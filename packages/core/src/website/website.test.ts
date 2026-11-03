@@ -227,6 +227,26 @@ describe("the built-in website", () => {
     expect(plain).toContain('class="lintel-footer"');
   });
 
+  it("draws a Menu's links with its Menu link's look, each marked with its menu item", async () => {
+    const design = createEmptyPage();
+    let next = 0;
+    const menu = createNode({ type: "navigation" }, standardCatalogue, () => `menu${(next += 1)}`);
+    menu.children[0]!.props = { ...menu.children[0]!.props, hoverLook: "circle" };
+    design.root.children = [menu];
+    await publishHome();
+    const id = await publish("pages", { title: "Studio", design }, "studio");
+    const itemId = "4f1c2b8e-0d1a-4c55-9a3e-1b2c3d4e5f60";
+    const menuItem = { id: itemId, label: "", entryId: id, url: null, newTab: false, children: [] };
+    expect((await admin("PUT", "/navigation/main", { items: [menuItem] })).statusCode).toBe(200);
+
+    const body = (await visit("/studio")).body;
+    // The current page's link is marked, and every link carries its menu item's id.
+    expect(body).toContain(
+      `<a class="menu-link" href="/studio" aria-current="page" data-menu-item="${itemId}">Studio</a>`,
+    );
+    expect(body).toContain('.menu-link[aria-current="page"]::before');
+  });
+
   it("answers again from its cache, with 304 for an unchanged page, and refreshes on publish", async () => {
     await publishHome();
     const id = await publish("pages", { title: "About us", summary: "Who we are." });

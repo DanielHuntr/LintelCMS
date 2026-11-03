@@ -1346,3 +1346,39 @@ Files: `packages/builder/src/PageBuilder.tsx`, `frame/Toolbar.tsx`, `panels/Sele
 **Screenshots** (`screenshots/one-builder/`): `before-{light,dark}-{1-tour,2-style,3-panel}`, `after-{light,dark}-{1-tour,1b-tour-arrange,2-style,3-panel,4-grid,5-animate}`.
 
 Commit: ffa3dd8.
+
+## LINTEL-UX-078: text and menu effects on hover (3 November 2026)
+
+Decision: [0050](../decisions/0050-menu-links.md).
+
+**Asked (Daniel):** "anyway to do text effects on hover at the moment?", with a mono-type menu (SHOP HOME WORK STUDIO CONTACT) whose current item has a thin circle around it. Then: "What if I want to style them differently? Should it be Menu > Link?"
+
+**Reproduced:** a Menu draws its links itself, so they can't be selected, styled or given an effect; only Site styles → All links → Hovered reached them, for every link on the site. Wave on hover, Bolder on hover and Scramble (set to "When the pointer is over it") existed but were listed under Appears, and Add motion → Hover offered only Lift, Grow and the like. In page designs the Menu never marked the current page (`aria-current`), because the page data passed the main menu unmarked.
+
+**Now:**
+
+- **Menu → Menu link.** Every Menu holds one Menu link in Layers: the look of every link, styled like any element, with its Hovered and Current looks. Its Content sets **When a link is hovered**: only its Hovered look, a line draws in under it, the words roll up, the letters scramble, a circle draws around it, or its colour fades, with a colour from the site's or theme's colours and **Keep it on the current page's link** (on by default). A circle kept on the current page is Daniel's screenshot.
+- **One link on its own.** Clicking a link on the canvas selects the Menu link with that link in hand (it is the one outlined); Style then asks **Changes apply to: Every menu link / Only “Contact”**. Only keeps just the changed properties on the Menu link, by menu item id, over the shared look; **Use the shared look** takes them away. Menu items now carry their ids to the page as `data-menu-item`.
+- **CSS, no script, except the scramble.** The looks are written with the page; hover rules only apply where the device can hover, keyboard focus gets the same look, and with less motion the change is instant and the words don't roll. The roll up draws a copy of the words with `aria-hidden`. The scramble runs the `scramble-on-hover` effect, so the effects runtime loads only then.
+- **Drawer.** A Menu button's drawer in the same part of the page takes the Menu link's look; its links are whole rows, so instead of a circle its current (and focused) link is underlined. Touch shows nothing extra.
+- **Roll up and Scramble on hover** are new effects for any text, link or button. Text effects that play under the pointer are now offered under Hover. Add motion → Hover shows six tiles: Lift, Roll up, Underline, Scramble, Wave, Bolder for text; Lift, Grow, Roll up, Underline, Scramble, Wave for links and buttons; others keep Lift, Grow, Brighten, Tilt, Magnetic, Swing. The rest are under More effects…. Effect tiles still work when the element has as many animations as it can take.
+- The canvas marks the page being designed as current in its menus, as the website does, and the website now marks it in page designs too.
+- An effect or animation on an element drawn more than once (each link of a menu) runs on every copy.
+
+**Old menus:** a Menu without a Menu link draws exactly as before (same HTML, no CSS). The builder adds one when the page is opened without marking it changed; with nothing set it adds no CSS. Menu links can't be deleted, copied or moved on their own.
+
+Judgement calls: the hover look lives in the Menu link's Content (one choice, plus colour and the current-page switch only for the looks that draw something), not as a new Style group. Kept "Keep it on the current page's link" beside the look, since the circle is a drawn look rather than a style; the Current look in Style still does the rest. The Header element still draws its own links (the Navigation sections use the Menu element). Lift stays the first (default) hover tile for text, so existing behaviour is unchanged.
+
+Files: `packages/builder-model/src/menu-links/` (new, with README), `components/site-navigation-components.ts` (Menu link), `components/content-components.ts` (Menu holds it), `styles/compile-stylesheet.ts`, `data/bound-items.ts`; `packages/builder/src/render/elements/menu-link.tsx` (new), `render/stand-in-components.tsx`, `render/elements/navigation.tsx`, `render/page-effects.ts`, `menus/menu-link-panel.tsx` (new), `style-panel/StylePanel.tsx`, `panels/ContentPanel.tsx`, `panels/SelectedElementPanel.tsx`, `canvas/canvas-frame-script.ts`, `canvas/canvas-messages.ts`, `editor/commands.ts`, `editor/useBuilder.ts`, `PageBuilder.tsx`, `i18n/menu-strings.ts`; `packages/motion/src/effects/modules/text.module.ts` (roll up), `effects-catalogue/catalogue/text-effects.ts`, `effects/loadEffects.ts`, `runtime/mountMotionList.ts`, `module-sizes.ts`; `packages/motion-editor/src/motion-panel/*`; `packages/core/src/navigation/*`, `website/page-data.service.ts`, `website/site-chrome.service.ts`; `packages/site-components/src/site.types.ts`; `packages/admin/src/menus/builderMenus.ts`, `page-design/PageDesignPage.tsx`.
+
+**Tests:**
+
+- builder-model `menu-links/menu-links.test.ts` (11): Menu links in new menus and the navigation sections; added to older menus; ids; careful reading; old and untouched menus give no CSS; shared, Hovered and Current looks; one link's own look, ordered under the shared states; each hover look for hover, focus and the current page, and for less motion; not keeping it on the current page; the drawer's look; the scramble effect.
+- builder `menus/menu-links.test.tsx` (9): old menus' exact HTML; links with class and `data-menu-item`; roll-up markup with the hidden copy; the scramble effect binding on every link, and no script otherwise; drawer links; delete, copy and move refused; the selection flow (click Contact on the canvas → Only “Contact” → change kept by id → Every → shared → Use the shared look); the note without a link in hand. `canvas/canvas-messages.test.ts` (+1). Browser `menu-link-looks.test.ts` (4): circle held on the current link, on hover and on keyboard focus; not kept; less motion (instant, no roll); roll up.
+- motion browser `effects.browser.test.ts` "text on hover" (3): roll up on hover and focus on every link, read once; still for less motion; scramble on hover and focus, then the real words.
+- motion-editor `MotionPanel.test.tsx` (+6): hover tiles for text, buttons, pictures and containers; a word effect added from its tile and swapped; effect tiles usable when animations are full.
+- core `website.test.ts` (+1): a Menu's links with the Menu link's class, the menu item's id and the current page marked; `navigation.test.ts` delivers item ids; `site-sections.test.ts` expects the Menu link's class and id on the navigation's current link. admin `menus/builderMenus.test.ts` (1): the page being designed is marked current on the canvas.
+
+**Screenshots** (`screenshots/text-hover/`): `after-builder-{light,dark}-1-hover-look`, `after-builder-{light,dark}-2-only-contact`, `after-site-desktop-current`, `after-site-desktop-hover-{1-mid,2-end}`, `after-site-390`, `after-site-390-drawer`.
+
+**Runs:** builder-model 27 files / 313 tests; builder unit 46 / 377, browser 12 / 39; motion unit 19 / 156, browser 4 / 69; motion-editor 9 / 63 and browser 2 / 7; site-components 10 / 44; admin 144 / 770; core 193 files / 1,309 passed, 6 skipped (the one failure in the full run, `site-sections.test.ts`, was the navigation's link gaining its Menu link's class; updated and passing).

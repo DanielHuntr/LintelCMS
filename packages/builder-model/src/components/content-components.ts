@@ -190,7 +190,9 @@ export const navigationComponent = defineComponent({
       { label: "Contact", href: "/contact" },
     ],
   },
-  allowedChildren: "none",
+  // Its one Menu link is the look of every link in it (see menu-links/).
+  allowedChildren: ["menuLink"],
+  defaultChildren: [{ type: "menuLink" }],
   editableFields: [
     menuSourceField,
     { kind: "text", prop: "label", label: "Name for screen readers" },

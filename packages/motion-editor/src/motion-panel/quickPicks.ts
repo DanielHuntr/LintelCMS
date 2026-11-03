@@ -41,10 +41,14 @@ export type MotionDemo =
   | "breathe"
   | "spin"
   | "dots"
-  | "fill";
+  | "fill"
+  | "roll"
+  | "scramble"
+  | "wave"
+  | "bolder";
 
 export interface QuickPick {
-  /** The preset's or animation effect's id. */
+  /** The preset's or effect's id. */
   id: string;
   demo: MotionDemo;
   /** Offered only for these kinds of element; for every kind when left out. */
@@ -101,6 +105,29 @@ export const quickPicks: Record<MotionMoment, readonly QuickPick[]> = {
   ],
 };
 
+/**
+ * On hover, words (text, links and buttons) get the effects made for words instead: the
+ * best six for each kind, the rest under "More effects…". The first is the default.
+ */
+export const wordHoverPicks: Partial<Record<ElementKind, readonly QuickPick[]>> = {
+  text: [
+    { id: "hover-lift", demo: "lift" },
+    { id: "roll-up", demo: "roll" },
+    { id: "hover-underline", demo: "underline" },
+    { id: "scramble-on-hover", demo: "scramble" },
+    { id: "wave-on-hover", demo: "wave" },
+    { id: "weight-on-hover", demo: "bolder" },
+  ],
+  button: [
+    { id: "hover-lift", demo: "lift" },
+    { id: "hover-grow", demo: "grow" },
+    { id: "roll-up", demo: "roll" },
+    { id: "hover-underline", demo: "underline" },
+    { id: "scramble-on-hover", demo: "scramble" },
+    { id: "wave-on-hover", demo: "wave" },
+  ],
+};
+
 export interface QuickChoice {
   pick: QuickPick;
   choice: MotionChoice;
@@ -113,7 +140,8 @@ export function isAnimationChoice(choice: MotionChoice): boolean {
 
 /**
  * A moment's tiles for this element: the picks that exist among its choices (which already
- * leave out effects that don't suit it), are animations, and suit the element.
+ * leave out effects that don't suit it) and suit the element. Most tiles are animations;
+ * words on hover also get effects made for words (see `wordHoverPicks`).
  */
 export function quickChoicesFor(
   moment: MotionMoment,
@@ -121,13 +149,14 @@ export function quickChoicesFor(
   elementKind: ElementKind,
 ): QuickChoice[] {
   const found: QuickChoice[] = [];
-  for (const pick of quickPicks[moment]) {
+  const picks = (moment === "hover" && wordHoverPicks[elementKind]) || quickPicks[moment];
+  for (const pick of picks) {
     if (pick.onlyFor && !pick.onlyFor.includes(elementKind)) continue;
     // An id can be both a preset and an effect ("parallax-slow"); the animation is the tile.
-    const choice = choices.find(
-      (candidate) =>
-        candidate.id === pick.id && candidate.moment === moment && isAnimationChoice(candidate),
+    const matching = choices.filter(
+      (candidate) => candidate.id === pick.id && candidate.moment === moment,
     );
+    const choice = matching.find(isAnimationChoice) ?? matching[0];
     if (!choice) continue;
     found.push({ pick, choice });
     if (found.length === quickPickLimit) break;

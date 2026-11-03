@@ -138,7 +138,7 @@ export function listMotionChoices(
     });
   }
   for (const definition of registry.suiting(elementKind)) {
-    const place = effectPlaces[definition.category];
+    const place = effectPlace(definition);
     if (!place) continue;
     choices.push({
       kind: "effect",
@@ -171,7 +171,20 @@ export function searchMotionChoices(
   });
 }
 
+/**
+ * Where an effect is offered. Text effects that play while the pointer is over the words
+ * (roll up, scramble on hover, the wave) are offered on hover; the rest of the text effects
+ * when the words appear.
+ */
+function effectPlace(definition: EffectDefinition): [MotionMoment, MotionGroup] | undefined {
+  const trigger = definition.kind === "behaviour" ? definition.fixed?.trigger : undefined;
+  if (definition.category === "text" && (trigger === "hover" || trigger === "pointer")) {
+    return ["hover", "words"];
+  }
+  return effectPlaces[definition.category];
+}
+
 /** The moment an effect on an element plays in, for the list ("Tilts · On hover"). */
 export function momentOfEffect(definition: EffectDefinition): MotionMoment {
-  return effectPlaces[definition.category]?.[0] ?? "always";
+  return effectPlace(definition)?.[0] ?? "always";
 }
