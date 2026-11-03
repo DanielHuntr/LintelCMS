@@ -69,7 +69,7 @@ describe("plugins", () => {
     const disabled = await updatePlugins(["seo"]);
     expect(
       disabled.json().plugins.map((plugin: { id: string; enabled: boolean }) => plugin.enabled),
-    ).toEqual([false, false, false, false, true, false, false]);
+    ).toEqual([false, false, false, false, true, false, false, false]);
     const signIn = await server.inject({
       method: "POST",
       url: "/auth/sign-in",

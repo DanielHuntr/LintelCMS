@@ -20,6 +20,7 @@ export const builtInFeatures: readonly { id: PluginId; name: string }[] = [
   { id: "automations", name: "Automations" },
   { id: "seo", name: "SEO tools" },
   { id: "free-photos", name: "Free photos" },
+  { id: "drafts", name: "Page drafting" },
   { id: "experiments", name: "A/B testing" },
 ];
 export const pluginsForEverySite: readonly PluginId[] = ["forms", "seo"];
