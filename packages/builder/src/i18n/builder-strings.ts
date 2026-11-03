@@ -255,6 +255,8 @@ export const builderStrings = {
   "pageBuilder.content.remove": "Remove {name}",
   "pageBuilder.content.addItem": "Add a {name}",
   "pageBuilder.content.addLink": "Add a link",
+  "pageBuilder.content.choosePage": "Choose a page…",
+  "pageBuilder.content.choosePageFor": "Choose a page for link {number}",
   "pageBuilder.content.linkWords": "Link {number} words",
   "pageBuilder.content.linkAddress": "Link {number} address",
   "pageBuilder.content.codeHint":

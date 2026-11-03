@@ -418,3 +418,35 @@ Each name now starts with what's shown:
 
 - before: `f2-before-palette-new`;
 - after: `f2-after-palette-new-*` (desktop and 390px, light and dark), `f2-after-palette-dark-mode`, `f2-after-palette-theme-when-dark`, `f2-after-palette-settings`, `f2-after-invite-opened`, `f2-after-palette-sign-out`.
+
+## QOL-A-3: choose a page for a link (3 November 2026)
+
+**Asked for by Daniel:** wherever a link's address is typed, offer a page picker that finds pages by title.
+
+**The format it inserts:** the page's address on the site, such as `/about`. Outside menus, Lintel has no link-by-id format, so nothing new was invented. An address starting with `/` is the form these places already take for a page on the site: the builder's hint says "a page on your site such as /about", and Link fields and rich text accept it. The cost is that a link doesn't follow the page if its address changes later. With the SEO tools on, Lintel offers a redirect when an address changes. A by-id format (resolved when the site is drawn, as menus are) would need a decision record; see the report.
+
+**What changed:**
+
+- **"Choose a page…"**, a plain text action, opens a dialog (`admin/src/page-links`) that searches pages by title. Each result shows its address on the right. Entries without a page of their own aren't offered.
+- **Where it appears:**
+  - the rich text link form, which links the selected words or inserts the page's title, linked;
+  - Link fields, which fill in the address, and the link text when there is none;
+  - the builder's Content panel, for every element with a link (buttons, links, cards, pricing, social links and the rest) and for each address in a list of links.
+- **Unchanged:** typing a full web address still works everywhere. Menus already link to pages by id ("Choose page") and are left as they are.
+- **API:** `GET /content-tree/search` now gives each result its `url`.
+
+**Not covered:** the builder's inline text links (the small bar over selected words on the canvas), because a dialog takes focus from the text being edited; URL fields, which are for web addresses; and the redirect target in SEO tools.
+
+**Tests:**
+
+- `admin/src/page-links/PagePicker.test.tsx`: Link fields and rich text, end to end against a mocked API.
+- `builder/src/panels/page-picker.test.tsx`.
+- `core/src/content-tree/content-tree.test.ts`: addresses in search results.
+
+**Checked in Chromium:** picked pages fill `/about/our-story` in a Link field, `/opening-hours` in rich text and `/contact` on a builder button.
+
+**Screenshots** (`screenshots/qol-a/`):
+
+- before: `f3-before-link-field`, `f3-before-richtext-link`, `f3-before-builder-button-link`, `f3-before-menu`;
+- after, at desktop and 390px, light and dark: `f3-after-picker-*`, `f3-after-link-field-*`, `f3-after-richtext-link-form-*`, `f3-after-richtext-linked-*`;
+- after, desktop light and dark only (the builder is desktop-only, LINTEL-UX-013): `f3-after-builder-picker-*`, `f3-after-builder-button-link-*`.

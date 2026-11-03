@@ -47,7 +47,11 @@ export function getTreeChildren(
   );
 }
 
-export function searchTree(search: string, siteId?: string): Promise<{ items: TreeNode[] }> {
+/** Entries whose titles contain `search`, each with its address on the site (null: no page). */
+export function searchTree(
+  search: string,
+  siteId?: string,
+): Promise<{ items: (TreeNode & { url: string | null })[] }> {
   return apiRequest(`/content-tree/search${query({ search, siteId })}`);
 }
 

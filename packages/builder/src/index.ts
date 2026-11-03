@@ -1,6 +1,7 @@
 // The public surface of @lintel/builder: the editor. The renderer alone is `@lintel/builder/render`.
 export { PageBuilder, type PageBuilderProps } from "./PageBuilder.js";
 export type { ImagePicker, PickedImage } from "./panels/content-fields.js";
+export type { PagePicker, PickedPage } from "./panels/page-picker.js";
 export type { FileUploader, UploadedFile } from "./style-panel/design-tools.js";
 export type { BuilderDataSources } from "./panels/data-sources.js";
 export type { MenuEditorProps, RenderMenuEditor } from "./menus/menu-editing.js";

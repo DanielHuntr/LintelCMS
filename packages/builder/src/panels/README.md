@@ -33,3 +33,8 @@ forms), `item-list-field.tsx` lists of items with fields of their own (slides, p
 and the **Shows** picker that binds a prop to a field of the current entry. `data-sources.ts`
 holds what the app says the site has (`BuilderDataSources`) and finds the list or item page
 an element is in; `canvas-data.ts` turns it into sample data for the canvas.
+
+Link fields (and each address in a list of links) offer **Choose a page…** when the app
+gives `PageBuilder` a `pickPage` (`page-picker.ts`, read through context rather than passed
+down every panel). It fills in the page's address, such as `/about`, the form a typed page
+link takes; in a list of links it fills in the words too when there are none.

@@ -1,4 +1,5 @@
 import { type CanvasSite, type FileUploader, PageBuilder, type PickedImage } from "@lintel/builder";
+import { usePagePicker } from "../page-links/usePagePicker.js";
 import {
   createEmptyPage,
   type PageDocument,
@@ -130,6 +131,7 @@ function PageDesigner({
   const effectModules = useEffectModules(besideTheAdmin);
   const siteMotion = useSiteMotion();
   const imagePicker = useImagePicker();
+  const pagePicker = usePagePicker();
   const isNarrowScreen = useIsNarrowScreen();
   const title = String(saving.entry.data.title ?? "") || t("pageDesign.untitled");
   const text = useCallback(
@@ -202,6 +204,7 @@ function PageDesigner({
         text={text}
         motionText={motionText}
         pickImage={imagePicker.pick}
+        pickPage={pagePicker.pick}
         uploadFile={uploadToMediaLibrary}
         onSaveNow={saving.saveNow}
         frameScripts={canvasFrameScripts}
@@ -273,6 +276,7 @@ function PageDesigner({
         </p>
       )}
       {imagePicker.dialog}
+      {pagePicker.dialog}
       <ConfirmDialog
         open={leave.isAsking}
         title={t("editor.leaveTitle")}

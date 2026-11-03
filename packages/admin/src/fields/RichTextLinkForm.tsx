@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { Button } from "../design/Button.js";
 import { TextField } from "../design/TextField.js";
 import { t } from "../i18n/strings.js";
+import { ChoosePageButton } from "../page-links/ChoosePageButton.js";
 
 interface RichTextLinkFormProps {
   editor: Editor;
@@ -12,6 +13,7 @@ interface RichTextLinkFormProps {
 /**
  * Adds, changes or removes a link on the selected words. It opens under the toolbar instead
  * of in a browser prompt, so it looks like the rest of the admin and works with screen readers.
+ * "Choose a page…" links to a page of the site by its address ("/about"), as typing it would.
  */
 export function RichTextLinkForm({ editor, onDone }: RichTextLinkFormProps) {
   const existingAddress = (editor.getAttributes("link") as { href?: string }).href ?? "";
@@ -24,10 +26,14 @@ export function RichTextLinkForm({ editor, onDone }: RichTextLinkFormProps) {
       removeLink();
       return;
     }
+    linkTo(href, href);
+  }
+
+  /** `text` is what to link when nothing is selected: the address, or a picked page's title. */
+  function linkTo(href: string, text: string) {
     const chain = editor.chain().focus().extendMarkRange("link");
-    // With nothing selected, the address itself becomes the linked text.
     if (editor.state.selection.empty && !editor.isActive("link")) {
-      chain.insertContent({ type: "text", text: href, marks: [{ type: "link", attrs: { href } }] });
+      chain.insertContent({ type: "text", text, marks: [{ type: "link", attrs: { href } }] });
     } else {
       chain.setLink({ href });
     }
@@ -61,6 +67,10 @@ export function RichTextLinkForm({ editor, onDone }: RichTextLinkFormProps) {
         onChange={(event) => setAddress(event.target.value)}
         autoFocus
         className="min-w-56 flex-1"
+      />
+      <ChoosePageButton
+        className="self-center"
+        onChoose={(page) => linkTo(page.url, page.title || page.url)}
       />
       {existingAddress && (
         <Button variant="plain" onClick={removeLink}>

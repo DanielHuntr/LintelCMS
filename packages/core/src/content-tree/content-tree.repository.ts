@@ -32,6 +32,9 @@ export interface TreeNodeRow {
   childrenAsCollection: boolean;
   /** At the top of a page tree, so a site start: its site's "/", or a "/shop" of its own. */
   isSiteStart: boolean;
+  /** For its address: its collection's route, and when it went live (for dated routes). */
+  routePattern: string | null;
+  publishedAt: Date | null;
 }
 
 const titleColumn = sql<string | null>`${entriesTable.data}->>'title'`;
@@ -52,6 +55,8 @@ const nodeColumns = {
   collectionName: collectionsTable.name,
   childrenAsCollection: collectionsTable.childrenAsCollection,
   isSiteStart: sql<boolean>`(${entriesTable.parentId} is null and ${collectionsTable.structure} = 'tree' and ${collectionsTable.routePattern} is not null)`,
+  routePattern: collectionsTable.routePattern,
+  publishedAt: entriesTable.publishedAt,
 };
 
 function placeCondition(place: NodePlace): SQL | undefined {
