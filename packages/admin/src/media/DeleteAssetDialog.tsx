@@ -55,9 +55,11 @@ export function DeleteAssetDialog({ asset, onCancel, onDeleted }: DeleteAssetDia
               ? t("media.delete.confirmDescription")
               : usedBy.some((usage) => usage.place === "siteFonts")
                 ? t("media.delete.inUseFontDescription")
-                : usedBy.some((usage) => usage.place === "siteCursor")
+                : usedBy.every((usage) => usage.place === "siteCursor")
                   ? t("media.delete.inUseCursorDescription")
-                  : t("media.delete.inUseDescription")}
+                  : usedBy.some((usage) => usage.place === "siteCursor")
+                    ? t("media.delete.inUsePlacesDescription")
+                    : t("media.delete.inUseDescription")}
           </p>
         </div>
 

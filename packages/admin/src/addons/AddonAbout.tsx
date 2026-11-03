@@ -132,7 +132,7 @@ function StoresSection({ details }: { details: AddonDetails }) {
                     <li key={column.name} className="text-caption text-label-secondary">
                       <span className="font-mono text-label">{column.name}</span> {column.purpose}
                       {column.personalData && (
-                        <span className="ms-1.5 rounded-full bg-accent/14 px-1.5 py-px font-semibold text-accent">
+                        <span className="ms-1.5 inline-block rounded-full bg-accent/14 px-1.5 py-px font-semibold whitespace-nowrap text-accent">
                           {t("addons.stores.personal")}
                         </span>
                       )}

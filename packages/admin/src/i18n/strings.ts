@@ -399,6 +399,7 @@ const english = {
   "media.delete.usedIn": "Used in",
   "media.delete.siteFont": "Site fonts → {family}",
   "media.delete.siteCursor": "Site cursor → {site}",
+  "media.delete.inUsePlacesDescription": "Remove it from these places first, then delete it.",
   "media.delete.inUseCursorDescription":
     "Your site’s cursor shows this picture. Choose another cursor in the page builder’s Animate tab first, then delete the file.",
   "media.delete.inUseFontDescription":
