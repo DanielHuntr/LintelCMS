@@ -82,6 +82,22 @@ describe("webhooks", () => {
     return created.json().id as string;
   }
 
+  // LINTEL-SEC-012: anyone who could see settings could read the signing secret, and forge
+  // deliveries the receiving app would trust.
+  it("shows the signing secret only to people who can change webhooks", async () => {
+    const webhook = await addWebhook(["entry.published"]);
+    expect(webhook.secret).toMatch(/^whsec_/);
+    await createTestUser(testDatabase.database, "reader@example.com", [["settings:read"]]);
+    const reader = requestsAs(server, await signInAndGetCookies(server, "reader@example.com"));
+
+    const listed = (await reader("GET", "/webhooks")).json();
+    const opened = (await reader("GET", `/webhooks/${webhook.id}`)).json();
+
+    expect(listed.webhooks[0]).toMatchObject({ id: webhook.id, secret: null });
+    expect(opened).toMatchObject({ id: webhook.id, secret: null });
+    expect((await api("GET", `/webhooks/${webhook.id}`)).json().secret).toBe(webhook.secret);
+  });
+
   it("sends a signed request when an entry is published, and logs it", async () => {
     await createHomePage(api);
     const webhook = await addWebhook(["entry.published"]);

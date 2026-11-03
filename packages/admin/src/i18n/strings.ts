@@ -847,6 +847,7 @@ const english = {
   "webhooks.settingsHeader": "Sending",
   "webhooks.sendEvents": "Send events",
   "webhooks.secretHeader": "Signing secret",
+  "webhooks.secretHidden": "Only people who can change webhooks can see the signing secret.",
   "webhooks.secretFooter":
     "The receiver uses this to check the Lintel-Signature header on each request. Keep it private.",
   "webhooks.showSecret": "Show",

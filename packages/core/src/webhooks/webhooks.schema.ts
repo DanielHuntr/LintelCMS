@@ -64,8 +64,11 @@ export const webhookSchema = z.object({
   url: z.string(),
   events: z.array(z.enum(webhookEventNames)),
   enabled: z.boolean(),
-  /** For checking the `Lintel-Signature` header; see the webhooks README. */
-  secret: z.string(),
+  /**
+   * For checking the `Lintel-Signature` header; see the webhooks README. Null for people who
+   * can see settings but not change them.
+   */
+  secret: z.string().nullable(),
   createdAt: z.iso.datetime(),
   /** How the most recent delivery went, if there has been one. */
   lastDelivery: z

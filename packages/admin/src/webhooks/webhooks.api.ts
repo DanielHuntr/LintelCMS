@@ -32,7 +32,8 @@ export interface Webhook {
   url: string;
   events: WebhookEvent[];
   enabled: boolean;
-  secret: string;
+  /** Null for people who can see settings but not change them. */
+  secret: string | null;
   createdAt: string;
   lastDelivery: { status: DeliveryStatus; createdAt: string } | null;
 }

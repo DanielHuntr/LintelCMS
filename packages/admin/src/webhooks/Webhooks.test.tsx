@@ -5,6 +5,7 @@ import { apiErrorResponse, mockApi } from "../testing/mockApi.js";
 import { renderScreen } from "../testing/renderScreen.js";
 import { DeliveryLog } from "./DeliveryLog.js";
 import type { Webhook, WebhookDelivery } from "./webhooks.api.js";
+import { WebhookDetailPage } from "./WebhookDetailPage.js";
 import { WebhooksPage } from "./WebhooksPage.js";
 
 const siteBuilder: Webhook = {
@@ -117,5 +118,20 @@ describe("the delivery log", () => {
     expect(calls.some((call) => call.url.pathname === "/webhooks/w1/deliveries/d1/resend")).toBe(
       true,
     );
+  });
+
+  // LINTEL-SEC-012: the API now leaves the secret out for people who can only see settings.
+  it("says who can see the signing secret when it isn't sent", async () => {
+    mockApi(({ url }) =>
+      url.pathname.endsWith("/deliveries")
+        ? { deliveries: [], total: 0, page: 1, perPage: 25 }
+        : { ...siteBuilder, secret: null },
+    );
+    renderScreen(<WebhookDetailPage webhookId="w1" />, { permissions: ["settings:read"] });
+
+    expect(
+      await screen.findByText("Only people who can change webhooks can see the signing secret."),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Copy/ })).not.toBeInTheDocument();
   });
 });

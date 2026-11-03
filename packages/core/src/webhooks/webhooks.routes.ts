@@ -1,6 +1,8 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import { getSignedIn, requirePermission } from "../auth/require-permission.js";
 import { parseRequest } from "../http/http-errors.js";
+import { hasPermission } from "../roles/permissions.js";
+import type { WebhookResponse } from "./webhooks.schema.js";
 import { listWebhookDeliveries, resendWebhookDelivery } from "./webhook-deliveries.service.js";
 import { WebhookDeliveryNotFoundError, WebhookNotFoundError } from "./webhooks.errors.js";
 import {
@@ -33,7 +35,17 @@ export async function webhooksRoutes(server: FastifyInstance) {
   const read = { preHandler: requirePermission("settings:read") };
   const update = { preHandler: requirePermission("settings:update") };
 
-  server.get("/webhooks", read, async () => listWebhooks(server.database));
+  // The signing secret lets an app trust a delivery, so only people who can change webhooks
+  // see it (LINTEL-SEC-012); everyone else gets null.
+  const secretFor = (request: FastifyRequest) => (webhook: WebhookResponse) =>
+    hasPermission(getSignedIn(request).permissions, "settings:update")
+      ? webhook
+      : { ...webhook, secret: null };
+
+  server.get("/webhooks", read, async (request) => {
+    const { webhooks } = await listWebhooks(server.database);
+    return { webhooks: webhooks.map(secretFor(request)) };
+  });
 
   server.post("/webhooks", update, async (request, reply) => {
     const webhook = parseRequest(createWebhookRequestSchema, request.body);
@@ -47,7 +59,7 @@ export async function webhooksRoutes(server: FastifyInstance) {
   });
 
   server.get("/webhooks/:id", read, async (request) =>
-    findWebhook(server.database, readWebhookId(request.params)),
+    secretFor(request)(await findWebhook(server.database, readWebhookId(request.params))),
   );
 
   server.patch("/webhooks/:id", update, async (request) => {

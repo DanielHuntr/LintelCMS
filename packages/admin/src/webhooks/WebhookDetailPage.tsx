@@ -97,35 +97,41 @@ export function WebhookDetailPage({ webhookId }: { webhookId: string }) {
           />
         </GroupedList>
 
-        <GroupedList header={t("webhooks.secretHeader")} footer={t("webhooks.secretFooter")}>
-          <GroupedListRow
-            label={showsSecret ? current.secret : "whsec_••••••••••••••••"}
-            accessory={
-              <>
-                <Button
-                  variant="plain"
-                  size="small"
-                  aria-pressed={showsSecret}
-                  icon={
-                    showsSecret ? (
-                      <EyeOff aria-hidden="true" strokeWidth={2} className="size-3.5" />
-                    ) : (
-                      <Eye aria-hidden="true" strokeWidth={2} className="size-3.5" />
-                    )
-                  }
-                  onClick={() => setShowsSecret((shown) => !shown)}
-                >
-                  {t("webhooks.showSecret")}
-                </Button>
-                <CopyButton
-                  value={current.secret}
-                  label={t("webhooks.copySecret")}
-                  variant="plain"
-                />
-              </>
-            }
-          />
-        </GroupedList>
+        {current.secret === null ? (
+          <GroupedList header={t("webhooks.secretHeader")}>
+            <GroupedListRow label={t("webhooks.secretHidden")} wrapsText />
+          </GroupedList>
+        ) : (
+          <GroupedList header={t("webhooks.secretHeader")} footer={t("webhooks.secretFooter")}>
+            <GroupedListRow
+              label={showsSecret ? current.secret : "whsec_••••••••••••••••"}
+              accessory={
+                <>
+                  <Button
+                    variant="plain"
+                    size="small"
+                    aria-pressed={showsSecret}
+                    icon={
+                      showsSecret ? (
+                        <EyeOff aria-hidden="true" strokeWidth={2} className="size-3.5" />
+                      ) : (
+                        <Eye aria-hidden="true" strokeWidth={2} className="size-3.5" />
+                      )
+                    }
+                    onClick={() => setShowsSecret((shown) => !shown)}
+                  >
+                    {t("webhooks.showSecret")}
+                  </Button>
+                  <CopyButton
+                    value={current.secret}
+                    label={t("webhooks.copySecret")}
+                    variant="plain"
+                  />
+                </>
+              }
+            />
+          </GroupedList>
+        )}
 
         <DeliveryLog webhookId={webhookId} canResend={canChange} />
       </div>
