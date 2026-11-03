@@ -1,5 +1,6 @@
 import { setUpAccordions, setUpDialogs, setUpOpenStates, setUpTabs } from "./layout-behaviours.js";
 import { setUpForms } from "./form-behaviours.js";
+import { setUpClocks } from "./clock-behaviours.js";
 import {
   setUpBackToTop,
   setUpCounters,
@@ -41,6 +42,7 @@ function setUpElements(root: ParentNode): void {
   setUpQuietVideos(root);
   setUpCounters(root);
   setUpCountdowns(root);
+  setUpClocks(root);
   setUpHeaders(root);
   setUpBackToTop(root);
   setUpMenus(root);

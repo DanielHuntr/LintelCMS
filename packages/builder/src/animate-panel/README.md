@@ -24,3 +24,12 @@ the module from the addresses the host passes as `effectModules`. "Animation" ef
 saved as one of the element's animations instead. With nothing selected, the tab shows the
 site-wide `SiteMotionSettings` when the host passes `siteEffects`. The meter adds up every
 effect on the page with `measurePageWeight`.
+
+## When the pointer is over it
+
+Below the Motion panel, `PointerFields` offers two touches as plain fields rather than
+gallery cards: **Word on the cursor** (No word, View, Open, Drag, Play, Read or your own)
+and **Show a picture when hovered** with a picture picker. They are saved as the element's
+`cursor-word` and `hover-picture` effects (`listed: false` in `@lintel/motion/effects`, so
+the gallery and the Motion panel's list leave them out), which means a page loads their
+code only when one of its elements uses them. Both are for a mouse or trackpad only.

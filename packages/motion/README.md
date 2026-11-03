@@ -40,6 +40,7 @@ const controller = mountMotion(element, findPreset("fade-up")!.spec);
 | `src/site-runtime`      | The script published pages load, and `window.lintelMotion` for the canvas     |
 | `src/effects`           | The effects runtime: the loader in the core, and the lazily loaded modules    |
 | `src/effects-catalogue` | The Effects library's definitions, registry and page weight meter             |
+| `src/smooth-scroll`     | The site's smooth scrolling: the wheel glides the page's real scroll position |
 | `src/browser-tests`     | Tests in real Chromium through Playwright                                     |
 
 ## Tests

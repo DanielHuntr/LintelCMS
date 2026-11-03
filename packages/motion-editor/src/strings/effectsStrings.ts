@@ -60,6 +60,12 @@ export const effectsEditorStrings = {
   "motionEditor.site.title": "Motion across the site",
   "motionEditor.site.description":
     "These apply to every page. People who ask their device for less motion get calmer versions.",
+  "motionEditor.site.smoothScroll": "Smooth scrolling",
+  "motionEditor.site.smoothScroll.off": "Off",
+  "motionEditor.site.smoothScroll.gentle": "Gentle",
+  "motionEditor.site.smoothScroll.strong": "Strong",
+  "motionEditor.site.smoothScroll.note":
+    "The mouse wheel glides to a stop. Touch screens and keys scroll as usual.",
   "motionEditor.site.transition": "Page transition",
   "motionEditor.site.transition.none": "None",
   "motionEditor.site.transition.fade": "Fade",
@@ -79,9 +85,13 @@ export const effectsEditorStrings = {
   "motionEditor.site.cursor.trail.line": "Line",
   "motionEditor.site.cursor.trail.comet": "Comet",
   "motionEditor.site.cursor.colour": "Cursor colour",
+  "motionEditor.site.cursor.colour.text": "Text colour",
+  "motionEditor.site.cursor.colour.brand": "Brand colour",
+  "motionEditor.site.cursor.colour.own": "Pick a colour",
+  "motionEditor.site.cursor.ownColour": "Your colour",
   "motionEditor.site.cursor.size": "Cursor size",
   "motionEditor.site.cursor.note":
-    "Shown only with a mouse or trackpad. Typing in fields keeps the normal cursor.",
+    "Shown only with a mouse or trackpad. It grows over links, and shows the word you give an element on its Animate tab.",
   "motionEditor.site.intro": "Intro",
   "motionEditor.site.intro.none": "None",
   "motionEditor.site.intro.curtain": "Curtain",

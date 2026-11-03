@@ -1,9 +1,9 @@
 import type { EffectBehaviour, EffectModule } from "../effect-types.js";
 import { createFrameLoop } from "../kit/frames.js";
 import { combine, listen } from "../kit/listen.js";
-import { readColour, readNumber, readSwitch } from "../kit/params.js";
+import { readColour, readNumber, readSwitch, readText } from "../kit/params.js";
 import { pointerWithin } from "../kit/pointer.js";
-import { addOverlay, setStyles } from "../kit/styles.js";
+import { addOverlay, addStyleOnce, setStyles } from "../kit/styles.js";
 import { approach } from "../maths/smoothing.js";
 
 /**
@@ -192,5 +192,117 @@ const glowEdge: EffectBehaviour = (element, params, context) => {
   );
 };
 
-export const behaviours = { magnetic, tilt, follow, spotlight, pointerParallax, glowEdge };
+/**
+ * "Show a picture when hovered": while a mouse is over the element, its picture appears and
+ * follows the pointer, like the project lists of design studios. One picture layer serves
+ * every element on the page, so moving down a list swaps the picture in place. It is
+ * decorative (hidden from screen readers, and clicks go straight through it), and touch
+ * screens never see it. With less motion asked for, it appears and moves without easing.
+ */
+const pictureWidths: Record<string, string> = {
+  small: "clamp(140px, 16vw, 200px)",
+  medium: "clamp(200px, 22vw, 300px)",
+  large: "clamp(260px, 30vw, 420px)",
+};
+
+let pictureLayer:
+  | { box: HTMLDivElement; image: HTMLImageElement; target: Eased; eased: Eased; users: number }
+  | undefined;
+let pictureLoop: ReturnType<typeof createFrameLoop> | undefined;
+
+function sharedPictureLayer(smoothing: number) {
+  if (pictureLayer) {
+    pictureLayer.users += 1;
+    return pictureLayer;
+  }
+  addStyleOnce(
+    "lintel-hover-picture-style",
+    `.lintel-hover-picture{position:fixed;left:0;top:0;z-index:2147483640;pointer-events:none;translate:-50% -50%;opacity:0;scale:.85;transition:opacity .25s,scale .35s cubic-bezier(.2,.8,.2,1)}
+.lintel-hover-picture[data-shown]{opacity:1;scale:1}
+.lintel-hover-picture img{display:block;width:100%;height:auto;border-radius:var(--lintel-radius-medium,12px);box-shadow:0 18px 40px rgb(0 0 0/.18)}
+@media (prefers-reduced-motion:reduce){.lintel-hover-picture{transition:none;scale:1}}`,
+  );
+  const box = document.createElement("div");
+  box.className = "lintel-hover-picture";
+  box.setAttribute("aria-hidden", "true");
+  const image = document.createElement("img");
+  image.alt = "";
+  image.decoding = "async";
+  box.append(image);
+  document.body.append(box);
+  const layer = { box, image, target: { x: 0, y: 0 }, eased: { x: 0, y: 0 }, users: 1 };
+  pictureLayer = layer;
+  pictureLoop = createFrameLoop(document.documentElement, (elapsed) => {
+    layer.eased.x = approach(layer.eased.x, layer.target.x, smoothing, elapsed);
+    layer.eased.y = approach(layer.eased.y, layer.target.y, smoothing, elapsed);
+    box.style.transform = `translate(${layer.eased.x}px, ${layer.eased.y}px)`;
+    return layer.eased.x !== layer.target.x || layer.eased.y !== layer.target.y;
+  });
+  return layer;
+}
+
+function releasePictureLayer() {
+  if (!pictureLayer) return;
+  pictureLayer.users -= 1;
+  if (pictureLayer.users > 0) return;
+  pictureLoop?.destroy();
+  pictureLayer.box.remove();
+  pictureLayer = undefined;
+  pictureLoop = undefined;
+}
+
+/** Only addresses on this site or on the web: never `javascript:` or other schemes. */
+export function safePictureAddress(address: string): string {
+  const trimmed = address.trim();
+  return /^https?:/i.test(trimmed) || !/^[a-z][\w+.-]*:/i.test(trimmed) ? trimmed : "";
+}
+
+const hoverPicture: EffectBehaviour = (element, params, context) => {
+  const src = safePictureAddress(readText(params, "src", ""));
+  if (!src || !context.finePointer) return;
+  const width = pictureWidths[readText(params, "size", "medium")] ?? pictureWidths.medium ?? "";
+  const layer = sharedPictureLayer(context.reduced ? 0 : 0.82);
+  // Fetched ahead, so it's there the moment the pointer arrives.
+  const preload = new Image();
+  preload.src = src;
+  const place = (event: PointerEvent) => {
+    layer.target.x = event.clientX;
+    layer.target.y = event.clientY;
+    pictureLoop?.wake();
+  };
+  return combine(
+    listen(element, {
+      pointerenter: (event: PointerEvent) => {
+        if (event.pointerType !== "mouse" && event.pointerType !== "pen") return;
+        const wasShown = layer.box.hasAttribute("data-shown");
+        layer.image.src = src;
+        layer.box.style.width = width;
+        if (!wasShown) {
+          layer.eased.x = event.clientX;
+          layer.eased.y = event.clientY;
+        }
+        place(event);
+        layer.box.toggleAttribute("data-shown", true);
+      },
+      pointermove: (event: PointerEvent) => {
+        if (event.pointerType === "mouse" || event.pointerType === "pen") place(event);
+      },
+      pointerleave: () => layer.box.removeAttribute("data-shown"),
+    }),
+    () => {
+      if (layer.image.getAttribute("src") === src) layer.box.removeAttribute("data-shown");
+      releasePictureLayer();
+    },
+  );
+};
+
+export const behaviours = {
+  magnetic,
+  tilt,
+  follow,
+  spotlight,
+  pointerParallax,
+  glowEdge,
+  hoverPicture,
+};
 export default { behaviours } satisfies EffectModule;

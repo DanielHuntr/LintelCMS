@@ -214,6 +214,8 @@ interface SliderProps {
   autoplaySeconds: number;
   loop: boolean;
   showDots: boolean;
+  /** Dragged freely with momentum, without snapping to each slide (the Slider only). */
+  freeDrag?: boolean;
 }
 
 /**
@@ -241,13 +243,15 @@ function Slider({
         attributes.className,
         "lintel-carousel",
         `lintel-carousel--per-view-${props.perView}`,
+        props.freeDrag && "lintel-carousel--free",
         extraClass,
       )}
       aria-roledescription="carousel"
       aria-label={props.label || undefined}
       data-behaviour="carousel"
       data-autoplay={props.autoplay ? String(props.autoplaySeconds) : undefined}
-      data-loop={props.loop ? "" : undefined}
+      data-loop={props.loop && !props.freeDrag ? "" : undefined}
+      data-free-drag={props.freeDrag ? "" : undefined}
     >
       <div className="lintel-carousel__controls">
         {props.autoplay && (

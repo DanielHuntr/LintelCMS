@@ -205,6 +205,7 @@ const sliderProps = {
   autoplaySeconds: wholeNumber(3, 20, 6),
   loop: z.boolean().default(true),
   showDots: z.boolean().default(true),
+  freeDrag: z.boolean().default(false),
 };
 
 const sliderFields = [
@@ -216,6 +217,7 @@ const sliderFields = [
     choices: [1, 2, 3, 4].map((count) => ({ value: String(count), label: String(count) })),
   },
   { kind: "toggle", prop: "showDots", label: "Show a dot for each slide" },
+  { kind: "toggle", prop: "freeDrag", label: "Let visitors drag it freely" },
   { kind: "toggle", prop: "autoplay", label: "Move on by itself", advanced: true },
   {
     kind: "number",
@@ -232,7 +234,7 @@ const sliderFields = [
 export const carouselComponent = defineComponent({
   type: "carousel",
   label: "Slider",
-  keywords: ["carousel", "slideshow", "slides", "swipe"],
+  keywords: ["carousel", "slideshow", "slides", "swipe", "drag gallery", "draggable", "momentum"],
   description:
     "Slides visitors move through with arrows, a swipe or the keyboard. It only moves by itself if you ask it to.",
   icon: "gallery-horizontal",
@@ -245,6 +247,7 @@ export const carouselComponent = defineComponent({
     autoplaySeconds: 6,
     loop: true,
     showDots: true,
+    freeDrag: false,
   },
   defaultChildren: [
     { type: "slide", props: { label: "" } },

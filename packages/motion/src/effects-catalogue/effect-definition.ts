@@ -86,6 +86,12 @@ interface DefinitionBase<Parameters extends EffectParameters> {
   params: Parameters;
   /** Extra words people might search for. */
   keywords?: readonly string[];
+  /**
+   * False for effects set with a field of their own rather than from the gallery (the word
+   * on the cursor, the picture shown on hover): the gallery and the element's list leave
+   * them out.
+   */
+  listed?: boolean;
   /** What people who ask for less motion get instead, in plain words. */
   reducedMotion: string;
   weight?: EffectWeight;

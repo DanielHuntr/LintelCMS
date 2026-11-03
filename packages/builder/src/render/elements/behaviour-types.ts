@@ -17,6 +17,7 @@ export const behaviourTypes: ReadonlySet<string> = new Set([
   "beforeAfter",
   "counter",
   "countdown",
+  "clock",
   "siteHeader",
   "mobileMenu",
   "backToTop",

@@ -1,3 +1,4 @@
+import { clockStylesheet } from "./clock.js";
 import { effectElementsStylesheet } from "./effects.js";
 
 /**
@@ -169,6 +170,9 @@ ${phone} { :where(.lintel-carousel) { --lintel-per-view: 1; } }
   gap: var(--lintel-space-4); overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; overscroll-behavior-x: contain; scrollbar-width: none;
 }
 :where(.lintel-carousel__track)::-webkit-scrollbar { display: none; }
+:where(.lintel-carousel--free .lintel-carousel__track) { scroll-snap-type: none; scroll-behavior: auto; cursor: grab; }
+:where(.lintel-carousel--free .lintel-carousel__track[data-dragging]) { cursor: grabbing; user-select: none; }
+:where(.lintel-carousel--free .lintel-carousel__slide) { translate: var(--lintel-drag-offset, 0) 0; }
 :where(.lintel-carousel__slide) { scroll-snap-align: start; display: flex; flex-direction: column; gap: var(--lintel-space-3); min-inline-size: 0; }
 :where(.lintel-carousel__controls) { display: flex; justify-content: flex-end; gap: var(--lintel-space-2); order: 2; }
 :where(.lintel-carousel__button, .lintel-carousel__pause) {
@@ -484,6 +488,7 @@ const reducedMotion = `
 export const elementStylesheet = [
   layout,
   effectElementsStylesheet,
+  clockStylesheet,
   media,
   text,
   navigation,

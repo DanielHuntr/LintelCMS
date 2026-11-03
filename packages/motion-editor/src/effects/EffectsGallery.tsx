@@ -60,6 +60,7 @@ export function EffectsGallery({
     const candidates = suitsOnly ? registry.suiting(elementKind) : registry.all();
     return candidates.filter(
       (definition) =>
+        definition.listed !== false &&
         (category === "all" || definition.category === category) &&
         (words === "" ||
           `${definition.name} ${definition.description} ${(definition.keywords ?? []).join(" ")}`

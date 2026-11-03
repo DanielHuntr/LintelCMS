@@ -5,6 +5,7 @@ import {
   questionBlockComponent,
   textBlockComponent,
 } from "./block-components.js";
+import { clockComponent } from "./clock-component.js";
 import { codeBlockComponent } from "./code-block-component.js";
 import { effectComponents } from "./effect-components.js";
 import { customBlockComponent } from "../custom-blocks/custom-block.js";
@@ -71,6 +72,7 @@ export const standardComponents: readonly AnyComponentDefinition[] = [
   eraseProps(info.pricingTableComponent),
   eraseProps(info.teamMemberComponent),
   eraseProps(info.countdownComponent),
+  eraseProps(clockComponent),
   eraseProps(imageComponent),
   eraseProps(media.galleryComponent),
   eraseProps(media.carouselComponent),

@@ -286,6 +286,7 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
             onPreviewEffect={(effect) => props.onPreviewEffect(node.id, effect)}
             effectModules={props.effectModules}
             pageWeight={props.pageWeight}
+            pickImage={props.pickImage}
           />
         ) : (
           <ContentPanel

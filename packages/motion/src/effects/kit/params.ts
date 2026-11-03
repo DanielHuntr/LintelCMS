@@ -20,10 +20,10 @@ export function readSwitch(params: EffectParams, name: string, fallback: boolean
   return typeof value === "boolean" ? value : fallback;
 }
 
-/** A colour safe to put in a style: hex, rgb(), hsl() or a theme variable. */
+/** A colour safe to put in a style: hex, rgb(), hsl() or a theme variable (with a hex fallback). */
 export function readColour(params: EffectParams, name: string, fallback: string): string {
   const value = readText(params, name, fallback);
-  return /^(#[0-9a-f]{3,8}|(rgb|hsl)a?\([\d\s.,%/-]+\)|var\(--[\w-]+\)|currentColor|transparent)$/i.test(
+  return /^(#[0-9a-f]{3,8}|(rgb|hsl)a?\([\d\s.,%/-]+\)|var\(--[\w-]+(,\s*#[0-9a-f]{3,8})?\)|currentColor|transparent)$/i.test(
     value,
   )
     ? value

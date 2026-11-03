@@ -3,7 +3,7 @@ import type { SiteEffectSettings } from "../effects/effect-types.js";
 
 /**
  * Motion across the whole site, set once in the builder's site settings: the page
- * transition, the cursor and the intro. Everything starts off ("none"), so a new site
+ * transition, the cursor, the intro and smooth scrolling. Everything starts off ("none"), so a new site
  * ships no effect code at all. The CSS and markup here are written into every page by
  * the server; the runtime only adds what CSS can't do.
  */
@@ -11,6 +11,9 @@ import type { SiteEffectSettings } from "../effects/effect-types.js";
 const hexColour = z
   .string()
   .regex(/^#[0-9a-f]{6}$/i, { error: "Colours should be written like #7539fd" });
+
+/** The theme's text or brand colour (so it follows light and dark), or one picked by hand. */
+const cursorColour = z.union([z.enum(["text", "brand"]), hexColour]);
 
 export const siteEffectSettingsSchema = z.object({
   pageTransition: z
@@ -23,10 +26,10 @@ export const siteEffectSettingsSchema = z.object({
     .object({
       style: z.enum(["none", "dot", "ring", "ring-and-dot", "blend"]).default("none"),
       trail: z.enum(["none", "dots", "line", "comet"]).default("none"),
-      colour: hexColour.default("#111111"),
+      colour: cursorColour.default("text"),
       size: z.number().min(8).max(96).default(32),
     })
-    .default({ style: "none", trail: "none", colour: "#111111", size: 32 }),
+    .default({ style: "none", trail: "none", colour: "text", size: 32 }),
   intro: z
     .object({
       style: z.enum(["none", "curtain", "counter", "name"]).default("none"),
@@ -35,6 +38,9 @@ export const siteEffectSettingsSchema = z.object({
       colour: hexColour.default("#ffffff"),
     })
     .default({ style: "none", text: "", background: "#111111", colour: "#ffffff" }),
+  smoothScroll: z
+    .object({ strength: z.enum(["off", "gentle", "strong"]).default("off") })
+    .default({ strength: "off" }),
 }) satisfies z.ZodType<SiteEffectSettings>;
 
 export const defaultSiteEffectSettings: SiteEffectSettings = siteEffectSettingsSchema.parse({});
@@ -44,7 +50,8 @@ export function hasSiteEffects(settings: SiteEffectSettings): boolean {
   return (
     settings.pageTransition.style !== "none" ||
     settings.cursor.style !== "none" ||
-    settings.intro.style !== "none"
+    settings.intro.style !== "none" ||
+    settings.smoothScroll.strength !== "off"
   );
 }
 

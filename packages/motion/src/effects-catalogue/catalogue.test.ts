@@ -12,7 +12,13 @@ import { createEffectRegistry } from "./effect-registry.js";
 import { measurePageWeight } from "./page-weight.js";
 import { number, toggle } from "./parameters.js";
 import { resolveNodeEffects } from "./resolve-effects.js";
-import { defaultSiteEffectSettings, introMarkup, pageTransitionCss } from "./site-effects.js";
+import {
+  defaultSiteEffectSettings,
+  hasSiteEffects,
+  introMarkup,
+  pageTransitionCss,
+  siteEffectSettingsSchema,
+} from "./site-effects.js";
 
 const loadedModules: Record<string, EffectModule> = Object.fromEntries(
   await Promise.all(
@@ -183,3 +189,63 @@ describe("site-wide effects", () => {
     );
   });
 });
+
+describe("smooth scrolling, the cursor's colour and the pointer fields", () => {
+  it("starts with smooth scrolling off, and counts it as a site effect once it is on", () => {
+    expect(defaultSiteEffectSettings.smoothScroll.strength).toBe("off");
+    expect(defaultSiteEffectSettings.cursor.colour).toBe("text");
+    const gentle = { ...defaultSiteEffectSettings, smoothScroll: { strength: "gentle" as const } };
+    expect(hasSiteEffects(defaultSiteEffectSettings)).toBe(false);
+    expect(hasSiteEffects(gentle)).toBe(true);
+    expect(measurePageWeight([], gentle).modules).toEqual(["smooth-scroll"]);
+  });
+
+  it("reads settings saved before smooth scrolling existed, and keeps a hand-picked colour", () => {
+    const older = siteEffectSettingsSchema.parse({
+      cursor: { style: "dot", trail: "none", colour: "#ff0000", size: 24 },
+    });
+    expect(older.smoothScroll.strength).toBe("off");
+    expect(older.cursor.colour).toBe("#ff0000");
+    expect(siteEffectSettingsSchema.safeParse({ cursor: { colour: "red" } }).success).toBe(false);
+    expect(siteEffectSettingsSchema.parse({ cursor: { colour: "brand" } }).cursor.colour).toBe(
+      "brand",
+    );
+  });
+
+  it("keeps the word on the cursor and the hover picture out of the gallery, but still runs them", () => {
+    const registry = createEffectRegistry();
+    const offered = registry.suiting("any").map((effect) => effect.id);
+    expect(offered).not.toContain("cursor-word");
+    expect(offered).not.toContain("hover-picture");
+    const resolved = resolveNodeEffects(
+      [
+        {
+          nodeId: "row",
+          effects: [
+            { effect: "hover-picture", params: { src: "/media/cake.jpg" } },
+            { effect: "cursor-word", params: { text: "View" } },
+          ],
+        },
+      ],
+      registry,
+    );
+    expect(resolved.bindings.map((binding) => binding.behaviour)).toEqual([
+      "hoverPicture",
+      "cursorWord",
+    ]);
+    expect(resolved.bindings[0]?.params).toMatchObject({ src: "/media/cake.jpg", size: "medium" });
+  });
+
+  it("doesn't warn about two cursors when an element only has a word for the site cursor", () => {
+    const word = registry().find("cursor-word");
+    const site = {
+      ...defaultSiteEffectSettings,
+      cursor: { ...defaultSiteEffectSettings.cursor, style: "ring" as const },
+    };
+    expect(measurePageWeight(word ? [word] : [], site).warnings).not.toContain("cursorAndTrails");
+  });
+});
+
+function registry() {
+  return createEffectRegistry();
+}

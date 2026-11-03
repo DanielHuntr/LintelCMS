@@ -27,6 +27,7 @@ export type {
 } from "./effect-definition.js";
 export { number, choice, colour, toggle, text } from "./parameters.js";
 export { standardEffects } from "./catalogue/index.js";
+export { cursorWordEffectId, hoverPictureEffectId } from "./catalogue/cursor-effects.js";
 export { createEffectRegistry, effectRegistry, registerEffect } from "./effect-registry.js";
 export type { EffectRegistry } from "./effect-registry.js";
 export { nodeEffectSchema, nodeEffectsSchema, maxEffectsPerElement } from "./node-effect.schema.js";

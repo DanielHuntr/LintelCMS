@@ -13,7 +13,8 @@ import type { DatabaseOrTransaction } from "../database/client.js";
 import { findStoredSiteEffects, saveStoredSiteEffects } from "./site-effects.repository.js";
 
 /**
- * Motion across the whole website: the page transition, the cursor and the intro, chosen
+ * Motion across the whole website: the page transition, the cursor, the intro and smooth
+ * scrolling, chosen
  * in the page builder's site settings. Everything is off until someone switches it on, so
  * a site that never touches this ships no effect code at all.
  */
@@ -26,7 +27,7 @@ export async function readSiteEffects(
   return parsed.success ? parsed.data : defaultSiteEffectSettings;
 }
 
-/** Saves a change to any of the three; the rest stay as they were. */
+/** Saves a change to any of them; the rest stay as they were. */
 export async function updateSiteEffects(
   database: DatabaseOrTransaction,
   changes: Partial<SiteEffectSettings>,
@@ -47,6 +48,7 @@ export function siteEffectsHead(
     settings.cursor.style !== "none" ? "cursor" : "",
     settings.pageTransition.style !== "none" ? "transitions" : "",
     settings.intro.style !== "none" ? "intro" : "",
+    settings.smoothScroll.strength !== "off" ? "smooth-scroll" : "",
   ].filter(Boolean);
   const introOn = settings.intro.style !== "none";
   return {
