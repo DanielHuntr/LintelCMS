@@ -31,6 +31,7 @@ import { type FormTemplateId, formTemplateIds } from "../forms/form-templates.js
 import { findEnabledPluginIds } from "../plugins/plugins.service.js";
 import { moveToRecycleBin } from "../recycle-bin/recycle-bin.service.js";
 import { hasPermission } from "../roles/permissions.js";
+import { readSiteDesign, saveSiteDesign } from "../site-design/site-design.service.js";
 import { readSiteEffects, updateSiteEffects } from "../site-effects/site-effects.service.js";
 import { siteOrDefault } from "../sites/sites.service.js";
 import type { Site } from "../sites/sites.table.js";
@@ -294,7 +295,24 @@ async function applyTheme(
     assetExists: context.assetExists,
   });
   if (site.siteMotion) await applySiteMotion(database, site.siteMotion);
+  if (site.designVariables?.length) await addDesignVariables(database, site.designVariables);
   return true;
+}
+
+/** The template's design variables, added to the site's; one with the same id is replaced. */
+async function addDesignVariables(
+  database: DatabaseOrTransaction,
+  variables: NonNullable<StarterSite["designVariables"]>,
+): Promise<void> {
+  const design = await readSiteDesign(database);
+  const ids = new Set(variables.map((variable) => variable.id));
+  await saveSiteDesign(database, {
+    ...design,
+    variables: [
+      ...design.variables.filter((variable) => !ids.has(variable.id)),
+      ...variables.map((variable) => ({ ...variable })),
+    ],
+  });
 }
 
 /** The template's site-wide motion, part by part over what the site has now. */

@@ -7,6 +7,7 @@
 
 import { atelierIllustrations } from "./illustrations-atelier.js";
 import { folioIllustrations } from "./illustrations-folio.js";
+import { studioIllustrations } from "./illustrations-studio.js";
 
 const frame = (background: string, body: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" role="img"><rect width="600" height="450" fill="${background}"/>${body}</svg>`;
@@ -94,6 +95,7 @@ const illustrationList: Record<string, string> = {
   ),
   ...folioIllustrations,
   ...atelierIllustrations,
+  ...studioIllustrations,
 };
 
 export const illustrationNames: readonly string[] = Object.keys(illustrationList);

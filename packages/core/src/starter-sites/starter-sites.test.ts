@@ -143,6 +143,41 @@ describe("starting from a template", () => {
     });
   });
 
+  it("applies Studio: its fonts, motion and a home page led by the studio's name", async () => {
+    const response = await owner("POST", "/starter-sites/studio/apply", { publish: true });
+    expect(response.statusCode, response.body).toBe(201);
+    expect(response.json().pages.map((page: { slug: string }) => page.slug)).toEqual([
+      "home",
+      "work",
+      "studio",
+      "contact",
+    ]);
+    expect((await owner("GET", "/website")).json()).toMatchObject({
+      headingFont: "Space Grotesk",
+      bodyFont: "Inter",
+      theme: { brandColour: "#2447d6", cornerStyle: "square" },
+    });
+    expect((await owner("GET", "/website/effects")).json()).toMatchObject({
+      smoothScroll: { strength: "gentle" },
+      cursor: { style: "ring", colour: "text" },
+      pageTransition: { style: "fade" },
+    });
+    const home = await visit("/");
+    expect(home.statusCode).toBe(200);
+    expect(home.body).toContain("Corran Wade");
+    expect(home.body).toContain("Selected work");
+    expect(home.body).toContain("Maasbad");
+    expect(home.body).toContain("--lintel-var-cobalt");
+    const design = (await owner("GET", "/website/design")).json();
+    expect(design.variables).toContainEqual(
+      expect.objectContaining({ id: "cobalt", value: "#2447d6", darkValue: "#7d95ff" }),
+    );
+    expect(home.body).toContain('href="/work"');
+    expect(home.body).toContain('src="/_lintel/illustrations/studio-house.svg"');
+    const drawing = await visit("/_lintel/illustrations/studio-workshop.svg");
+    expect(drawing.statusCode).toBe(200);
+  });
+
   it("plays animations with the motion runtime, only on pages that have them", async () => {
     await owner("POST", "/starter-sites/consultant/apply", { publish: true });
     const home = await visit("/");
