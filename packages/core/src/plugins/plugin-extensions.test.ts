@@ -181,8 +181,15 @@ describe("what plugins add beyond routes", () => {
 
   it("delivers a plugin fieldtype's values its own way", () => {
     const fields = [
-      { handle: "ink", label: "Ink", type: "rubber-stamps.ink", options: {}, required: false },
-      { handle: "plain", label: "Plain", type: "text", options: {}, required: false },
+      {
+        handle: "ink",
+        label: "Ink",
+        type: "rubber-stamps.ink",
+        options: {},
+        required: false,
+        helpText: "",
+      },
+      { handle: "plain", label: "Plain", type: "text", options: {}, required: false, helpText: "" },
     ];
     const delivered = deliverValues(
       fields as Parameters<typeof deliverValues>[0],

@@ -62,6 +62,9 @@ import type { StorageDriver } from "./media/storage-driver.js";
 import { DEFAULT_TRANSFORM_CACHE_FOLDER } from "./media/transform-cache.js";
 import { openApiRoutes } from "./openapi/openapi.routes.js";
 import { PluginCatalogue } from "./plugins/plugin-catalogue.js";
+import { addonsRoutes } from "./addons/addons.routes.js";
+import { enableAddonsAskedFor } from "./addons/addons.service.js";
+import { type AddonsState, noAddons } from "./addons/load-addons.js";
 import type { LintelPlugin } from "./plugins/plugin-definition.js";
 import { registerPluginRoutes } from "./plugins/plugin-routes.js";
 import { connectPluginExtensions } from "./plugins/plugin-extensions.js";
@@ -147,6 +150,8 @@ declare module "fastify" {
     webhooks: WebhookDispatcher;
     /** The built-in plugins and the installed ones (see src/plugins). */
     plugins: PluginCatalogue;
+    /** The site's add-ons as found at start, and any that couldn't load (see src/addons). */
+    addons: AddonsState;
     /** The admin app's address, for links in emails and as the passkeys' site. */
     adminOrigin: string;
     /** Sends email: `await server.email.send({ to, subject, text })` (see src/email). */
@@ -252,6 +257,11 @@ export interface ServerOptions {
    * lintel.config.ts; tests pass the ones they test. Defaults to none.
    */
   plugins?: readonly LintelPlugin[];
+  /**
+   * The site's add-ons, loaded from its Lintel folder by main.ts (see src/addons). Their
+   * plugins are added after `plugins`. Defaults to none.
+   */
+  addons?: AddonsState;
   /** The built-in website: its address and any templates of your own. Off by default. */
   website?: WebsiteOptions;
   /** Content model as code (see src/content-model-sync). Off when left out, as in tests. */
@@ -331,12 +341,26 @@ export function buildServer(options: ServerOptions) {
     onError: (error) => server.log.error(error, "Sending webhooks failed"),
   });
   server.decorate("webhooks", webhooks);
-  const plugins = new PluginCatalogue(pluginRegistry, options.plugins);
+  const addons = options.addons ?? noAddons;
+  const plugins = new PluginCatalogue(pluginRegistry, [
+    ...(options.plugins ?? []),
+    ...addons.loaded.map((addon) => addon.plugin),
+  ]);
   server.decorate("plugins", plugins);
+  server.decorate("addons", addons);
   // Before the website's Liquid engine is made, so it has plugins' tags and filters.
   for (const plugin of plugins.plugins) registerPluginLiquid(plugin, server.log);
   // Plugins' own tables are brought up to date before the server takes requests.
   server.addHook("onReady", () => activeDatabase.applyPluginMigrations(plugins.migrations));
+  // Add-ons `lintel addons add` asked to switch on, now that they have loaded.
+  server.addHook("onReady", async () => {
+    try {
+      const enabled = await enableAddonsAskedFor(server.database, plugins, addons);
+      if (enabled.length > 0) server.log.info({ addons: enabled }, "Switched on new add-ons");
+    } catch (error) {
+      server.log.error(error, "Switching on new add-ons failed");
+    }
+  });
   server.decorate("adminOrigin", options.adminOrigin.replace(/\/+$/, ""));
   const email =
     options.email ??
@@ -484,6 +508,7 @@ function registerApiRoutes(
   server.register(authRoutes);
   server.register(setupRoutes);
   server.register(pluginsRoutes);
+  server.register(addonsRoutes);
   server.register(fieldtypesRoutes);
   server.register(blueprintsRoutes);
   server.register(collectionsRoutes);

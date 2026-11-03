@@ -81,13 +81,14 @@ export class PluginCatalogue {
 }
 
 function checkPlugin(plugin: LintelPlugin): void {
-  const problem = findProblem(plugin);
+  const problem = findPluginProblem(plugin);
   if (problem) {
     throw new InvalidPluginError(plugin.id, problem);
   }
 }
 
-function findProblem(plugin: LintelPlugin): string | undefined {
+/** What is wrong with a plugin, in a sentence, or undefined when nothing is. */
+export function findPluginProblem(plugin: LintelPlugin): string | undefined {
   if (!PLUGIN_ID_PATTERN.test(plugin.id)) {
     return "ids use lowercase letters, numbers and dashes, and start with a letter.";
   }
