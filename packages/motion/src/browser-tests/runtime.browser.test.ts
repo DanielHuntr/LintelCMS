@@ -63,6 +63,29 @@ describe("playing presets in a real browser", () => {
     );
   });
 
+  // Chrome counts an element clipped to nothing as out of view, so "Mask reveal up", which
+  // starts fully clipped, waited for a view it could never be in: the words stayed hidden.
+  it("plays a reveal that starts fully clipped, once it's in view", async () => {
+    const page = await openPage(
+      browser,
+      `<div style="height:1500px"></div><h2 id="title">Freedom</h2><div style="height:800px"></div>`,
+    );
+    await page.evaluate(() => {
+      const spec = { ...window.presets.findPreset("mask-reveal-up")!.spec, duration: 100 };
+      window.motion.mountMotion(document.getElementById("title")!, spec);
+    });
+    await nextFrames(page);
+    expect(await style(page, "#title", "clip-path")).toBe("inset(100% 0% 0%)");
+    await page.evaluate(() =>
+      document.getElementById("title")!.scrollIntoView({ block: "center" }),
+    );
+    await page.waitForFunction(
+      () => getComputedStyle(document.getElementById("title")!).clipPath.startsWith("inset(0%"),
+      undefined,
+      { timeout: 3000 },
+    );
+  });
+
   it("follows the scroll position with the browser's view timeline", async () => {
     const page = await openPage(
       browser,
