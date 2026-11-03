@@ -4,7 +4,12 @@ import {
   designVariableSchema,
   maxDesignVariables,
 } from "./design-variables.js";
-import { maxSharedStyles, type SharedStyle, sharedStyleSchema } from "./shared-styles.js";
+import {
+  maxSharedStyles,
+  resolveSharedStyles,
+  type SharedStyle,
+  sharedStyleSchema,
+} from "./shared-styles.js";
 import { countVariablesInStyles, inlineVariableInStyles } from "./variable-uses.js";
 
 /**
@@ -34,9 +39,27 @@ export const siteDesignSchema = z.object({
     .default([]),
 });
 
-/** Shared styles by id, as pages are drawn with them. */
+/** Shared styles by id, as pages are drawn with them: a variant has its base's look under it. */
 export function sharedStylesById(design: SiteDesign): Record<string, SharedStyle> {
-  return Object.fromEntries(design.sharedStyles.map((style) => [style.id, style]));
+  return resolveSharedStyles(design.sharedStyles);
+}
+
+/**
+ * The design without one shared style. Its variants become shared styles of their own, with
+ * the look they had.
+ */
+export function withoutSharedStyle(design: SiteDesign, id: string): SiteDesign {
+  const resolved = resolveSharedStyles(design.sharedStyles);
+  return {
+    ...design,
+    sharedStyles: design.sharedStyles.flatMap((each) => {
+      if (each.id === id) return [];
+      if (each.variantOf !== id) return [each];
+      const rest: SharedStyle = { ...each, styles: resolved[each.id]?.styles ?? each.styles };
+      delete rest.variantOf;
+      return [rest];
+    }),
+  };
 }
 
 /** How many styles in the site's design (its shared styles) name each variable. */

@@ -116,8 +116,21 @@ interface SelectedElementPanelProps {
   pageWeight?: PageWeight;
   /** Site-wide motion settings, shown when nothing is selected on the Animate tab. */
   siteMotion?: ReactNode;
+  /** Selects the first of these elements and outlines them all ("Select them"). */
+  onSelectMany?: (nodeIds: string[]) => void;
   /** Told which state is being styled, so the canvas can show it; null for none. */
   onStyleStateChange?: (nodeId: string, target: StyleTarget | null) => void;
+}
+
+/** The elements on a page that use a shared style, in page order. */
+function findSharedStyleUsers(root: PageNode, sharedStyleId: string): string[] {
+  const found: string[] = [];
+  const visit = (node: PageNode) => {
+    if (node.sharedStyle === sharedStyleId) found.push(node.id);
+    node.children.forEach(visit);
+  };
+  visit(root);
+  return found;
 }
 
 /** How many elements around the selected one are offered as owners of its states. */
@@ -162,8 +175,14 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
       variableUses={variableUses}
       onBack={onBack}
       onDeleteVariable={actions.writeOutVariable}
-      onDeleteSharedStyle={(sharedStyle) =>
-        actions.detachEverything(sharedStyle, sharedStylesById(site.design))
+      onDeleteSharedStyle={(sharedStyle) => {
+        const look = sharedStylesById(site.design)[sharedStyle.id];
+        if (look) actions.detachEverything(sharedStyle, { [sharedStyle.id]: look });
+      }}
+      onSelectUsers={
+        props.onSelectMany
+          ? (id) => props.onSelectMany?.(findSharedStyleUsers(document.root, id))
+          : undefined
       }
     />
   );

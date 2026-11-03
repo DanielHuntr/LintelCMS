@@ -50,6 +50,7 @@ export function runCanvasFrame(snap: typeof snapBox, fitGrid: typeof fitToGrid):
   let outline: {
     selectedId: string | null;
     hoveredId: string | null;
+    highlightIds?: readonly string[];
     labels: { selected: string | null; hovered: string | null };
     canTransform: boolean;
     rotateLabel: string;
@@ -152,6 +153,9 @@ export function runCanvasFrame(snap: typeof snapBox, fitGrid: typeof fitToGrid):
   function drawOutlines() {
     if (rotating || dragging?.moved || gridDragging?.moved) return;
     overlay.replaceChildren();
+    for (const nodeId of outline.highlightIds ?? []) {
+      if (nodeId !== outline.selectedId) drawBox(nodeId, "match", null);
+    }
     if (outline.hoveredId && outline.hoveredId !== outline.selectedId) {
       drawBox(outline.hoveredId, "hover", outline.labels.hovered);
     }
@@ -1151,6 +1155,7 @@ const canvasStyles = `
 .lintel-drop--inside { outline: 2px dashed #0071e3; outline-offset: -2px; background: rgb(0 113 227 / 0.06); }
 .lintel-outline--selected { outline: 2px solid #0071e3; outline-offset: -1px; }
 .lintel-outline--hover { outline: 1px solid #0071e3; outline-offset: -1px; opacity: 0.8; }
+.lintel-outline--match { outline: 2px dashed #0071e3; outline-offset: -1px; }
 .lintel-outline__label { position: absolute; left: -1px; bottom: 100%; padding: 1px 6px; font: 600 11px/16px -apple-system, system-ui, sans-serif; color: #fff; background: #0071e3; border-radius: 4px 4px 0 0; white-space: nowrap; }
 .lintel-outline--hover .lintel-outline__label { opacity: 0.9; }
 [data-lintel-placeholder="image"] { min-height: 12rem; background: repeating-linear-gradient(135deg, #ececf1 0 12px, #f5f5f7 12px 24px); border-radius: 12px; }

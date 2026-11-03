@@ -47,6 +47,25 @@ second copy of the theme's rules. Browsers without `light-dark()` get the light 
 `@supports not` block. In Site styles, "Add a dark-mode colour" offers a starting value (the
 light one's brightness turned round), and "Use the same colour in dark mode" takes it off.
 
+### The shared-style row, and variants
+
+The bare "Shared style: None" dropdown is now one row at the top of Style. Without a shared
+style it says "No shared style · Save this look to reuse it" and opens to "Save this look…"
+or a list of the site's. With one it names it with a small preview ("Button · 1 on this
+page"), says where changes go ("Every Button" or "Only this one", as before) and offers
+Rename, Make a variant and Detach.
+
+**Variants** are shared styles with `variantOf` naming their base: "Outline" of "Button".
+A variant starts empty and takes its base's look under its own, so changing Button changes
+Outline too, and it overrides only what's different. One level only. `sharedStylesById`
+resolves variants, so pages, the canvas and the website draw them with no other change, and
+designs saved before have no `variantOf` and read as they did. With variants, the row shows
+"Main · Outline" to switch between them; switching keeps what's set on the element. Deleting
+a base turns its variants into shared styles of their own with the look they had.
+
+In Site styles, shared styles list their variants under them, and **Select them** selects
+the first element on this page that uses one and outlines the others on the canvas.
+
 ## Not done here
 
 Usage counts cover this page and the site's shared styles, not every page: counting every

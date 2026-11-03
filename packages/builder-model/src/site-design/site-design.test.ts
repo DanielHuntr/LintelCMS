@@ -19,8 +19,15 @@ import {
   giveSharedStyle,
   makeSharedStyle,
   type SharedStyle,
+  sharedStyleTitle,
 } from "./shared-styles.js";
-import { countVariableUsesInDesign, siteDesignSchema, withoutVariable } from "./site-design.js";
+import {
+  countVariableUsesInDesign,
+  sharedStylesById,
+  siteDesignSchema,
+  withoutSharedStyle,
+  withoutVariable,
+} from "./site-design.js";
 import { countVariableUses, inlineVariableOnPage } from "./variable-uses.js";
 
 function cards(): PageNode {
@@ -305,5 +312,81 @@ describe("colours with a dark-mode value", () => {
     expect(parse({ id: "a", name: "A", kind: "size", value: "2rem", darkValue: "#000" })).toBe(
       false,
     );
+  });
+});
+
+describe("variants of a shared style", () => {
+  const button: SharedStyle = {
+    id: "button",
+    name: "Button",
+    styles: {
+      base: { backgroundColor: "var(--lintel-var-ink)", color: "#fff", borderRadius: "999px" },
+      hover: { opacity: "0.9" },
+    },
+  };
+  const outline: SharedStyle = {
+    id: "button-outline",
+    name: "Outline",
+    variantOf: "button",
+    styles: { base: { backgroundColor: "transparent", color: "var(--lintel-var-ink)" } },
+  };
+
+  it("draws a variant with its base's look under its own", () => {
+    const resolved = sharedStylesById({ variables: [], sharedStyles: [button, outline] });
+    expect(resolved["button-outline"]?.styles).toEqual({
+      base: {
+        backgroundColor: "transparent",
+        color: "var(--lintel-var-ink)",
+        borderRadius: "999px",
+      },
+      hover: { opacity: "0.9" },
+    });
+    expect(resolved.button).toBe(button);
+  });
+
+  it("compiles an element using a variant, and follows changes to the base", () => {
+    const page = createNode(
+      { type: "page", children: [{ type: "box", name: "Call" }] },
+      standardCatalogue,
+      createCountingNodeIds(),
+    );
+    const root = { ...page, children: [{ ...page.children[0]!, sharedStyle: "button-outline" }] };
+    const draw = (base: SharedStyle) => {
+      const drawn = applySharedStyles(
+        root,
+        sharedStylesById({ variables: [], sharedStyles: [base, outline] }),
+      );
+      return compileStylesheet(drawn, assignClassNames(drawn, standardCatalogue));
+    };
+    expect(draw(button)).toContain("border-radius: 999px;");
+    expect(draw(button)).toContain("background-color: transparent;");
+    const squarer = { ...button, styles: { base: { ...button.styles.base, borderRadius: "4px" } } };
+    expect(draw(squarer)).toContain("border-radius: 4px;");
+  });
+
+  it("keeps a variant's look when its base is deleted", () => {
+    const design = withoutSharedStyle({ variables: [], sharedStyles: [button, outline] }, "button");
+    expect(design.sharedStyles).toEqual([
+      {
+        id: "button-outline",
+        name: "Outline",
+        styles: {
+          base: {
+            backgroundColor: "transparent",
+            color: "var(--lintel-var-ink)",
+            borderRadius: "999px",
+          },
+          hover: { opacity: "0.9" },
+        },
+      },
+    ]);
+  });
+
+  it("reads designs saved before variants, and names a variant with its base", () => {
+    expect(
+      siteDesignSchema.parse({ sharedStyles: [{ id: "card", name: "Card", styles: { base: {} } }] })
+        .sharedStyles[0],
+    ).toEqual({ id: "card", name: "Card", styles: { base: {} } });
+    expect(sharedStyleTitle(outline, [button, outline])).toBe("Button · Outline");
   });
 });

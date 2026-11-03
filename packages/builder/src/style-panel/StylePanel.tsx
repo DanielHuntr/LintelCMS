@@ -8,6 +8,7 @@ import {
   type PageNode,
   readOwnerStateTarget,
   setStyles,
+  sharedStylesById,
   type StateTransition,
   type StylePropertyName,
   type StyleState,
@@ -147,6 +148,11 @@ export function StylePanel({
   const shared = node.sharedStyle
     ? site.design.sharedStyles.find((each) => each.id === node.sharedStyle)
     : undefined;
+  // The look it has: a variant's is its base's with its own over it.
+  const sharedLook = useMemo(
+    () => (node.sharedStyle ? sharedStylesById(site.design)[node.sharedStyle] : undefined),
+    [node.sharedStyle, site.design],
+  );
   const [scope, setScope] = useState<{ nodeId: string; scope: SharedScope }>({
     nodeId: node.id,
     scope: "every",
@@ -161,7 +167,7 @@ export function StylePanel({
     if (shared && editsShared && changeSite) {
       return {
         // What shows is the look in effect; where it sits (its place) is always its own.
-        styles: layerStyles(shared.styles, node.styles),
+        styles: layerStyles((sharedLook ?? shared).styles, node.styles),
         target,
         change: (values, label) => {
           const entries = Object.entries(values) as Array<[StylePropertyName, string | undefined]>;
@@ -176,11 +182,11 @@ export function StylePanel({
       };
     }
     return {
-      styles: shared ? layerStyles(shared.styles, node.styles) : node.styles,
+      styles: sharedLook ? layerStyles(sharedLook.styles, node.styles) : node.styles,
       target,
       change: (values, label) => onChange(target, values, label),
     };
-  }, [shared, editsShared, changeSite, site.design, node.styles, target, onChange]);
+  }, [shared, sharedLook, editsShared, changeSite, site.design, node.styles, target, onChange]);
   const store = usePreferenceStore();
   const simpleSections = useRememberedOpenSections(store, "style.simple.open", simpleOpenAtFirst);
   const advancedSections = useLastUsedOpenSections(store, "style.advanced.lastUsed");
