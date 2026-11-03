@@ -532,3 +532,41 @@ Daniel compared the motion with Framer and Webflow: Framer animates between stat
 - before: `f3-before-link-field`, `f3-before-richtext-link`, `f3-before-builder-button-link`, `f3-before-menu`;
 - after, at desktop and 390px, light and dark: `f3-after-picker-*`, `f3-after-link-field-*`, `f3-after-richtext-link-form-*`, `f3-after-richtext-linked-*`;
 - after, desktop light and dark only (the builder is desktop-only, LINTEL-UX-013): `f3-after-builder-picker-*`, `f3-after-builder-button-link-*`.
+
+## LINKS-1: links to pages follow the page (3 November 2026)
+
+**Asked for by Daniel:** a link made with "Choose a page…" should keep working when the page's address changes. QOL-A-3 stored the address (`/about`), so renaming or moving the page broke the link.
+
+**Why it broke:** QOL-A-3 says so itself ("if the page's address changes later, the link doesn't follow"). On this branch, the check in Chromium did exactly that: "Our story" was the first page (`/`), a Home page was put above it, and its address became `/our-story`; the links on "Welcome" followed it.
+
+**What changed** (decision record 0032):
+
+- **Stored form:** `lintel:page/<entry id>`, in the place the address already went: a rich text link's `href`, a Link field's `url`, and the builder's link props. Helpers are in `builder-model/src/page-links`.
+- **Resolved everywhere a link is drawn:** `deliverValues` swaps each for the page's address now, so the built-in site, previews, Liquid templates (`rich_text` and Link field values), the REST delivery API and GraphQL only ever see ordinary addresses. Rich text JSON and Link fields also carry `entryId`; GraphQL's `Link` has `entryId`.
+- **A page that is gone** (deleted, in the bin, or unpublished): rich text keeps the words without a link, a Link field is delivered as `null`, and a builder button keeps its words without an address. Where the link is edited, the admin says "This page no longer exists. Choose another page, or type an address."
+- **In the admin and the builder:** a link to a page shows the page's title in a read-only **Page** box instead of the address, with **Type an address instead** to go back to typing one.
+- **Unchanged:** typed addresses and old `/about` links, which are not migrated.
+
+**Tests:** `core/src/delivery/page-links.test.ts` (delivery API, built-in site, preview, an address that changes, a page in the bin, a page design), `core/src/fieldtypes/rich-text-pictures.test.ts`, a Liquid test in `liquid-pages.test.ts`, `builder-model/src/page-links/page-links.test.ts`, `builder/src/panels/page-picker.test.tsx`, `admin/src/page-links/PagePicker.test.tsx`.
+
+**Screenshots** (`screenshots/links-pictures/`): before, the address stored by QOL-A-3: `qol-a/f3-after-link-field-*` and `qol-a/f3-after-richtext-link-form-*`. After, at desktop and 390px, light and dark: `link-field-page-*`, `richtext-link-page-*`, `richtext-link-gone-*`, `site-welcome-*`; the builder, desktop only (LINTEL-UX-013): `builder-button-page-*` and `builder-button-gone-*`.
+
+## PICTURES-1: pictures inside rich text (3 November 2026)
+
+**Asked for by Daniel:** people paste or drop a picture into their writing and expect it to appear. Rich text was words only.
+
+**What changed:**
+
+- **An `image` node** in rich text: a media library asset id, a description (alt text), an optional caption and where it sits (`full`, `left`, `right`). The node is defined once in core (`fieldtypes/rich-text-picture.ts`, exported as `@lintel/core/rich-text-picture`) and shared with the admin's editor.
+- **Core checks it:** the asset must be in the media library, the description is at most 1,000 characters and the caption 500, and the position is one of the three.
+- **Drawn on the site** as `<figure class="lintel-picture lintel-picture--right">` with the site's responsive `<img>` (`renderResponsiveImageHtml`) and a `<figcaption>`; left and right float beside the text from 40rem up. A picture whose image has been deleted is left out.
+- **Delivery API:** in the JSON each picture carries its `image`, as image fields are delivered; Liquid's `rich_text` draws the same HTML.
+- **The editor:** **Add picture** in the toolbar opens the image picker; a picture pasted or dropped into the text is uploaded and put where it landed (the upload helpers come from the paste-and-drop work on `feature/qol-photos-compare-schedule`, copied unchanged so the two merge cleanly). A new picture opens its settings straight away with **Describe the picture** focused and the library's description filled in; clicking a picture later opens them again, with Replace and Remove picture.
+
+**Merging note:** `feature/qol-photos-compare-schedule` makes rich text refuse a dropped picture ("Pictures can’t go inside this text"). When both are merged, `RichTextFieldEditor.tsx` should keep this branch's behaviour, and `media.quickUpload.richTextNotHere` is then unused.
+
+**Tests:** `core/src/fieldtypes/rich-text-pictures.test.ts` (rendering, validation, the JSON), `core/src/delivery/page-links.test.ts` (delivered shape and the built-in site), the Liquid test, `admin/src/fields/RichTextPictures.test.tsx` (Add picture, paste, settings, Remove).
+
+**Checked in Chromium:** Add picture, a dropped file uploaded and inserted with its description focused, and the site at desktop and 390px.
+
+**Screenshots** (`screenshots/links-pictures/`): before, the toolbar without pictures: `qol-a/f3-after-richtext-link-form-*`. After, at desktop and 390px, light and dark: `richtext-add-picture-*`, `richtext-dropped-*`, `richtext-picture-settings-*`, `site-welcome-*`.
