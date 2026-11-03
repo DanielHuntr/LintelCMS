@@ -3,7 +3,7 @@ import { createFrameLoop } from "../kit/frames.js";
 import { combine, listen } from "../kit/listen.js";
 import { readColour, readNumber } from "../kit/params.js";
 import { createSurface } from "../kit/surface.js";
-import { loaded } from "../kit/webgl.js";
+import { loaded } from "../kit/loaded.js";
 
 /**
  * Frosted glass over a picture (or the element) that the pointer or a finger wipes clear,

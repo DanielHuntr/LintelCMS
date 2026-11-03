@@ -465,19 +465,22 @@ describe("canvas and WebGL", () => {
     await page.close();
   });
 
-  it("paints the liquid gradient with WebGL", async () => {
+  it("paints the liquid gradient with WebGL, through the page's shared context", async () => {
     const { page } = await openEffectsPage(
       browser,
       `<section data-node-id="l" style="height:200px"></section>`,
       [{ nodeId: "l", module: "liquid-gradient", behaviour: "liquidGradient" }],
     );
     await waitFor(page, () => document.querySelector("[data-node-id=l] canvas") !== null);
-    expect(
-      await page.$eval(
-        "[data-node-id=l] canvas",
-        (canvas) => (canvas as HTMLCanvasElement).getContext("webgl") !== null,
-      ),
-    ).toBe(true);
+    // The shader draws on the page's one hidden WebGL canvas and is copied onto this one.
+    const opaque = await page.$eval("[data-node-id=l] canvas", (canvas) => {
+      const element = canvas as HTMLCanvasElement;
+      const data = element.getContext("2d")!.getImageData(0, 0, element.width, element.height).data;
+      let count = 0;
+      for (let index = 3; index < data.length; index += 4) if (data[index] === 255) count += 1;
+      return count / (data.length / 4);
+    });
+    expect(opaque).toBeGreaterThan(0.9);
     await page.close();
   });
 });
