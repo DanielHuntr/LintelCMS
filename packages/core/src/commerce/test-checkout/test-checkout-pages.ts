@@ -44,7 +44,7 @@ export function testPaymentPage(checkout: CheckoutRow): string {
     "Test payment",
     `<h1>Test payment</h1>
 <p>This stands in for the payment page. No money is taken, and no card is needed.</p>
-<ul>${lines.join("")}<li class="total"><span>Total</span><span>${escapeHtml(money(checkout.totalAmount))}</span></li></ul>
+<ul>${lines.join("")}<li><span>Delivery: ${escapeHtml(checkout.shippingLine.name)}</span><span>${escapeHtml(money(checkout.shippingAmount))}</span></li><li class="total"><span>Total</span><span>${escapeHtml(money(checkout.totalAmount))}</span></li></ul>
 <form method="post" action="${TEST_PAYMENT_PATH}">
 <input type="hidden" name="checkout" value="${escapeHtml(checkout.id)}">
 <button class="pay" type="submit" name="outcome" value="paid">Pay (test)</button>

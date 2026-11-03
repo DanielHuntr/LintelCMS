@@ -6,7 +6,7 @@ export const testCheckoutStrings = {
   "shop.tryShop.title": "Try your shop",
   "shop.tryShop.body":
     "Place a test order on your website. You don't need a payment account, and no money is taken.",
-  "shop.tryShop.action": "Try your shop",
+  "shop.tryShop.action": "Place a test order",
   "shop.tryShop.opening": "Opening…",
   "shop.tryShop.notReady": "To try it, you need a market, a delivery price and an active product.",
   "shop.testOrders.badge": "Test",

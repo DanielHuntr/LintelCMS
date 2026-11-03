@@ -100,7 +100,7 @@ it after the discount.
 Before you open, place a test order. You don't need a payment account, and it works on your
 own computer.
 
-1. In **Shop**, or in **Shop → Settings → Payments**, choose **Try your shop**. Your website
+1. In **Shop**, or in **Shop → Settings → Payments**, choose **Place a test order**. Your website
    opens in a new tab, with a bar at the bottom saying no money is taken.
 2. Buy something as a shopper would. Discount codes, delivery and tax all work.
 3. On the test payment page, choose **Pay (test)**, or **Make the payment fail** to see what

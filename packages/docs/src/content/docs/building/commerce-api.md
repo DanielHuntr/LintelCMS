@@ -195,7 +195,9 @@ Errors use the same shape as the rest of the API, `{ statusCode, code, message }
 
 Stripe sends events to `POST /shop/stripe/webhook`. Lintel checks each event's signature with
 the signing secret and records its id, so an event Stripe sends twice is only acted on once.
-For local testing:
+
+On a local address nothing needs setting up: Lintel reads Stripe's events itself, through the
+same handler. To try the webhook route itself on your own computer, use the Stripe CLI:
 
 ```bash
 stripe listen --forward-to localhost:4000/shop/stripe/webhook

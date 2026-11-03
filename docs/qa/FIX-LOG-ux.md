@@ -1785,3 +1785,34 @@ Files: `packages/motion/src/effects/kit/{shader-renderer,layers,css-colour,pictu
 - Relay's sign-up page uses the standard contact form.
 - A form section added from Insert shows an empty panel or a title without an email box on the website until someone chooses its form, as the existing contact form section does.
 - Intro with video shows only its words until someone adds a link.
+
+## Shop test checkout
+
+Daniel showed Stripe refusing `http://localhost:4100/shop/stripe/webhook` with "The URL must be publicly accessible". Orders were only placed when a webhook arrived, so nobody setting up on their own computer could get a test order.
+
+- **LINTEL-UX-200:** There was no way to try the shop without a payment account. **Try your shop**, on the Shop home and the Payments page, opens the website in a signed test session for that browser only, with a test payment page offering a success and a failure.
+- **LINTEL-UX-201:** Nothing showed that a browser was in test mode. Every page of a test session has a bar saying no money is taken, with **End test**. After paying it links to the order; after a failed payment it says no order was placed.
+- **LINTEL-UX-202:** Test orders needed to look and count differently. They have a Test badge in Orders, their emails say they're a test, and they're left out of sales, the dashboard and customers' totals. They publish no events, so Visitors and automations never see them, and their tax isn't reported to Stripe.
+- **LINTEL-UX-203:** **Delete test orders** on the Orders page clears them in one action. Stock and discount uses go back, and so do customers and order numbers only a test used.
+- **LINTEL-UX-204:** A shopper coming back from paying now gets their order at once. Lintel fetches the payment from the provider with the shop's own key, through the same placement as the webhook. This covers Stripe, PayPal and Mollie.
+- **LINTEL-UX-205:** A shopper who closed the tab, delayed payments and refunds were lost on a shop no webhook can reach. Lintel now checks with the provider itself every few seconds while something is happening, and backs off otherwise. A public shop with its webhook set up makes no calls.
+- **LINTEL-UX-206:** The Stripe and PayPal steps showed a webhook step that could only fail on a local address. It's gone there, with a plain note that the webhook can wait. A local shop counts as connected without one.
+- **LINTEL-UX-207:** The Payments page now says when a provider is on test keys and when Lintel is checking for payments, and warns when a live site is still on test keys.
+- **LINTEL-UX-208:** Shoppers came back to the success page with nothing in the address to say which checkout it was, so one returning in another browser, as banking apps can do, saw no confirmation. The checkout's id now goes in the address.
+- **LINTEL-UX-209:** A delayed Stripe payment that failed kept its stock until the checkout timed out. `checkout.session.async_payment_failed` now releases it straight away, by webhook or by Lintel's own checks.
+
+**Tests:** `core/src/commerce/test-checkout/test-checkout.test.ts` (10) and `core/src/commerce/payments/payment-checks.test.ts` (18), and `admin/src/commerce/TestCheckoutScreens.test.tsx` (3). They cover ordinary visitors, forged and expired tokens, test orders never counting as sales, and return confirmation against the webhook, including a race, all against fake providers.
+
+**Checked in a browser** (Chromium, 1280px and 390px, light and dark, no payment account connected): the whole test order from the admin to the order screen, four times. Also, at desktop light: an ordinary visitor's view and a failed payment; at 390px dark: deleting test orders. The cookie can't be read from a script. The Payments page with Stripe connected was shown with a stood-in settings answer, because there were no Stripe keys.
+
+**Not checked:** nothing here has been run against real Stripe, PayPal or Mollie accounts, only fakes. The Stripe, PayPal and Mollie paths need a run with real test keys.
+
+**Screenshots** (in `screenshots/shop-test/`): `shop-home`, `website-banner`, `test-payment`, `confirmation`, `order-detail`, `orders`, `payments`, `payments-stripe-on-computer` and `payments-live-on-test-keys`, each `-{desktop,390}-{light,dark}`, plus `payment-failed-desktop-light`, `visitor-refused-desktop-light` and `delete-dialog-390-dark`.
+
+**Left for later:**
+
+- Orders paid with a provider's test keys aren't marked as test, so they count as sales.
+- A refund made in PayPal's dashboard isn't seen without PayPal's webhook.
+- A PayPal or Mollie payment that finishes after its checkout has closed isn't seen without the webhook.
+- A test session needs the built-in website; a site built separately can't start one.
+- A test session lasts two hours even if the person who started it loses access.
