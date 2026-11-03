@@ -118,6 +118,38 @@ describe("site starts: pages at the top of the tree", () => {
     expect(delivered.url).toBe("/shop/boots");
   });
 
+  // LINTEL-FUNC-018: sections went by name, so a page tree called "Archive" took "/".
+  it("keeps / on the first page tree made, whatever the content types are called", async () => {
+    await api("POST", "/blueprints", {
+      handle: "archive_page",
+      name: "Archive page",
+      fields: [{ handle: "title", label: "Title", type: "text" }],
+    });
+    const archives = await api("POST", "/collections", {
+      handle: "archive",
+      name: "Archive",
+      blueprintHandle: "archive_page",
+      structure: "tree",
+      routePattern: "/{slug}",
+      allowedAtRoot: true,
+      allowedChildren: [],
+    });
+    expect(archives.statusCode, archives.body).toBe(201);
+    const home = await create("pages", "Home");
+    const old = await create("archive", "Old news");
+
+    expect(await addressOf(home)).toBe("/");
+    expect(await addressOf(old)).toBe("/old-news");
+
+    await api("PUT", "/collections/pages", { name: "Website" });
+    expect(await addressOf(home)).toBe("/");
+    const sections = (await api("GET", "/content-tree")).json().roots;
+    expect(sections.map((section: { name: string }) => section.name).slice(0, 2)).toEqual([
+      "Website",
+      "Archive",
+    ]);
+  });
+
   it("uses a domain or path prefix from Hostnames, and refuses one already in use", async () => {
     const home = await create("pages", "Home");
     const shop = await create("pages", "Shop");

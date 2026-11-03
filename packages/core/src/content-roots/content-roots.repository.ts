@@ -14,6 +14,7 @@ export interface SiteStartRow {
   createdAt: Date;
   collectionHandle: string;
   collectionName: string;
+  collectionCreatedAt: Date;
   hostname: string | null;
   pathPrefix: string | null;
 }
@@ -37,6 +38,7 @@ export async function listSiteStartRows(
       createdAt: entriesTable.createdAt,
       collectionHandle: collectionsTable.handle,
       collectionName: collectionsTable.name,
+      collectionCreatedAt: collectionsTable.createdAt,
       hostname: contentRootAddressesTable.hostname,
       pathPrefix: contentRootAddressesTable.pathPrefix,
     })

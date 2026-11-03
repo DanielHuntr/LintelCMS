@@ -41,9 +41,14 @@ export interface SiteStartSummary extends PlacedRoot {
   url: string;
 }
 
-/** The tree's order: sections by name (they are all page trees), then the order set by hand. */
+/**
+ * The tree's order: page trees in the order they were made, then the order set by hand.
+ * Sections used to go by name, so renaming a content type could change which page is "/"
+ * (LINTEL-FUNC-018).
+ */
 function compareSiteStarts(first: SiteStartRow, second: SiteStartRow): number {
   return (
+    first.collectionCreatedAt.getTime() - second.collectionCreatedAt.getTime() ||
     first.collectionName.localeCompare(second.collectionName) ||
     first.sortOrder - second.sortOrder ||
     first.createdAt.getTime() - second.createdAt.getTime()

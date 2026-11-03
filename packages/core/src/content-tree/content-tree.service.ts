@@ -88,10 +88,15 @@ export async function listTreeRoots(
   const counts = await countTopLevelByCollection(database, site.id, locale);
   const roots: TreeRoot[] = collections
     .filter((collection) => collection.allowedAtRoot)
-    // Page trees first, as the site's own structure, then the rest by name.
+    // Page trees first, as the site's own structure, in the order they were made: the first
+    // page at the top is "/", and renaming a content type mustn't change which that is. The
+    // rest by name.
     .sort(
       (first, second) =>
         Number(second.structure === "tree") - Number(first.structure === "tree") ||
+        (first.structure === "tree" && second.structure === "tree"
+          ? first.createdAt.getTime() - second.createdAt.getTime()
+          : 0) ||
         first.name.localeCompare(second.name),
     )
     .map((collection) => ({
