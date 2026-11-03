@@ -75,6 +75,8 @@ export const siteFontsStrings = {
   "siteFonts.adobe.connected": "Connected {count} fonts from Adobe Fonts",
   "siteFonts.adobe.note":
     "Adobe serves these fonts. Add your website’s address to the project in Adobe Fonts, or they won’t show.",
+  "siteFonts.adobe.consent":
+    "Because they come from Adobe, your cookie notice asks visitors first. Until they accept, your site shows your theme’s fonts instead.",
 
   "siteFonts.category.sans": "Sans serif",
   "siteFonts.category.serif": "Serif",

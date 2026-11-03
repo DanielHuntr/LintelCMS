@@ -17,19 +17,31 @@ import { useCan, useSession } from "../session/SessionContext.js";
 import { ColourChoice } from "./ColourChoice.js";
 import { FontPairingChoice } from "./FontPairingChoice.js";
 import { ThemeFontChoice } from "../site-fonts/ThemeFontChoice.js";
-import type { ColourScheme, CornerStyle, SiteTheme, SpacingScale, Website } from "./website.api.js";
+import type {
+  ColourScheme,
+  CookieNotice,
+  CookieNoticeSettings as NoticeSettings,
+  CornerStyle,
+  SiteTheme,
+  SpacingScale,
+  Website,
+} from "./website.api.js";
 import {
+  useCookieNotice,
   useSiteEffects,
+  useUpdateCookieNotice,
   useUpdateSiteEffects,
   useUpdateWebsite,
   useWebsite,
 } from "./website.queries.js";
 import { PageFlowSettings, type PageFlow } from "./PageFlowSettings.js";
+import { CookieNoticeSettings } from "./CookieNoticeSettings.js";
 
 /** /settings/site: the built-in website's template, theme, logo, page transitions and address. */
 export function SiteSettingsPage() {
   const website = useWebsite();
   const effects = useSiteEffects();
+  const cookieNotice = useCookieNotice();
 
   return (
     <>
@@ -43,8 +55,12 @@ export function SiteSettingsPage() {
           <Skeleton className="h-96 max-w-2xl rounded-card" />
         </LoadingRegion>
       )}
-      {website.data && !effects.isPending && (
-        <SiteSettingsForm initial={website.data} initialFlow={effects.data} />
+      {website.data && !effects.isPending && !cookieNotice.isPending && (
+        <SiteSettingsForm
+          initial={website.data}
+          initialFlow={effects.data}
+          initialNotice={cookieNotice.data}
+        />
       )}
     </>
   );
@@ -64,10 +80,13 @@ const templateIcons: Record<string, LucideIcon> = { clean: LayoutTemplate, journ
 function SiteSettingsForm({
   initial,
   initialFlow,
+  initialNotice,
 }: {
   initial: Website;
   /** Undefined when the site's motion settings couldn't be read: the section is left out. */
   initialFlow: PageFlow | undefined;
+  /** The same for the cookie notice. */
+  initialNotice: CookieNotice | undefined;
 }) {
   const [values, setValues] = useState<FormValues>({
     template: initial.template,
@@ -80,23 +99,35 @@ function SiteSettingsForm({
   const [flow, setFlow] = useState<PageFlow | undefined>(
     initialFlow && { pageTransition: initialFlow.pageTransition, intro: initialFlow.intro },
   );
+  const [notice, setNotice] = useState<NoticeSettings | undefined>(initialNotice?.settings);
   const update = useUpdateWebsite();
   const updateFlow = useUpdateSiteEffects();
+  const updateNotice = useUpdateCookieNotice();
+  const services = (updateNotice.data ?? initialNotice)?.services ?? [];
   const canChange = useCan("settings:update");
   const siteName = useSession().siteName ?? "";
   const logo = useAsset(values.logoAssetId);
   const saved = update.data ?? initial;
 
-  const change = (changes: Partial<FormValues>) => {
+  const resetSaves = () => {
     update.reset();
     updateFlow.reset();
+    updateNotice.reset();
+  };
+  const change = (changes: Partial<FormValues>) => {
+    resetSaves();
     setValues((current) => ({ ...current, ...changes }));
   };
   const changeFlow = (next: PageFlow) => {
-    update.reset();
-    updateFlow.reset();
+    resetSaves();
     setFlow(next);
   };
+  const changeNotice = (next: NoticeSettings) => {
+    resetSaves();
+    setNotice(next);
+  };
+  const saving = update.isPending || updateFlow.isPending || updateNotice.isPending;
+  const failed = [update, updateFlow, updateNotice].find((mutation) => mutation.isError);
   const changeTheme = (changes: Partial<SiteTheme>) =>
     change({ theme: { ...values.theme, ...changes } });
 
@@ -114,6 +145,7 @@ function SiteSettingsForm({
   function submit(event: FormEvent) {
     event.preventDefault();
     if (flow) updateFlow.mutate(flow);
+    if (notice) updateNotice.mutate(notice);
     update.mutate({
       template: values.template,
       ...values.theme,
@@ -236,6 +268,15 @@ function SiteSettingsForm({
         />
       )}
 
+      {notice && (
+        <CookieNoticeSettings
+          value={notice}
+          onChange={changeNotice}
+          disabled={!canChange}
+          serviceNames={services.map((service) => service.name)}
+        />
+      )}
+
       <section className="flex flex-col gap-5 rounded-card bg-surface p-6">
         <TextField
           label={t("website.siteAddress")}
@@ -252,18 +293,18 @@ function SiteSettingsForm({
       {canChange && (
         <div className="flex items-center justify-end gap-3">
           <p role="status" className="text-footnote text-label-secondary">
-            {update.isError || updateFlow.isError ? (
-              <span className="text-danger">
-                {describeError(update.isError ? update.error : updateFlow.error)}
-              </span>
-            ) : update.isSuccess && (!flow || updateFlow.isSuccess) ? (
+            {failed ? (
+              <span className="text-danger">{describeError(failed.error)}</span>
+            ) : update.isSuccess &&
+              (!flow || updateFlow.isSuccess) &&
+              (!notice || updateNotice.isSuccess) ? (
               t("website.saved")
             ) : (
               ""
             )}
           </p>
-          <Button type="submit" disabled={update.isPending || updateFlow.isPending}>
-            {update.isPending || updateFlow.isPending ? t("website.saving") : t("website.save")}
+          <Button type="submit" disabled={saving}>
+            {saving ? t("website.saving") : t("website.save")}
           </Button>
         </div>
       )}

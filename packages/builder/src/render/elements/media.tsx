@@ -2,11 +2,15 @@ import {
   audioComponent,
   beforeAfterComponent,
   carouselComponent,
+  consentServiceForEmbed,
+  consentServiceForVideo,
+  type ConsentService,
   embedComponent,
   galleryComponent,
   iconComponent,
   logoStripComponent,
   mapComponent,
+  openStreetMapService,
   slideComponent,
   testimonialSliderComponent,
   videoComponent,
@@ -28,7 +32,8 @@ import { openStreetMapAddresses, videoEmbed } from "./media-addresses.js";
 /**
  * Media elements. Nothing from another site loads until a visitor asks for it: videos,
  * maps and embeds start as a placeholder with a button (and a plain link that works without
- * script), and the elements script swaps in the real frame.
+ * script), and the elements script swaps in the real frame, by itself once the visitor has
+ * accepted that service in the site's cookie notice.
  */
 
 /** An icon of the site's set as inline SVG, decorative: the words beside it say what it is. */
@@ -37,11 +42,15 @@ export function SiteIcon({ name, className }: { name: string; className?: string
   return icon ? createElement(icon, { "aria-hidden": true, focusable: "false", className }) : null;
 }
 
-/** A placeholder that becomes an iframe when the visitor presses its button. */
+/**
+ * A placeholder that becomes an iframe when the visitor presses its button, or as soon as
+ * they have accepted its service (`data-consent-service`) in the cookie notice.
+ */
 function ConsentFrame({
   frameUrl,
   frameTitle,
   provider,
+  service,
   linkUrl,
   linkLabel,
   mode,
@@ -50,6 +59,7 @@ function ConsentFrame({
   frameUrl: string;
   frameTitle: string;
   provider: string;
+  service: ConsentService | null;
   linkUrl: string;
   linkLabel: string;
   mode: RenderMode;
@@ -61,6 +71,7 @@ function ConsentFrame({
       data-behaviour="consent-frame"
       data-frame-src={mode === "site" ? frameUrl : undefined}
       data-frame-title={frameTitle}
+      data-consent-service={service?.id}
     >
       {children}
       <div className="lintel-consent__notice">
@@ -118,6 +129,7 @@ const Video = drawsProps(videoComponent, ({ props, attributes, mode }) => {
         frameUrl={embed.embedUrl}
         frameTitle={props.title}
         provider={embed.provider === "youtube" ? "YouTube" : "Vimeo"}
+        service={consentServiceForVideo(embed.provider)}
         linkUrl={embed.watchUrl}
         linkLabel={`Watch on ${embed.provider === "youtube" ? "YouTube" : "Vimeo"}`}
         mode={mode}
@@ -456,6 +468,7 @@ const MapElement = drawsProps(mapComponent, ({ props, attributes, mode }) => {
         frameUrl={embedUrl}
         frameTitle={`a map of ${props.placeName}`}
         provider="OpenStreetMap"
+        service={openStreetMapService}
         linkUrl={linkUrl}
         linkLabel="Open the map on OpenStreetMap"
         mode={mode}
@@ -493,6 +506,7 @@ const Embed = drawsProps(embedComponent, ({ props, attributes, mode }) => {
           frameUrl={props.url}
           frameTitle={props.title}
           provider={host}
+          service={consentServiceForEmbed(props.url)}
           linkUrl={props.url}
           linkLabel={`Open it on ${host}`}
           mode={mode}

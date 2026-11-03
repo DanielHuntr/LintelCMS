@@ -1,5 +1,6 @@
 import {
   backToTopComponent,
+  cookieSettingsComponent,
   type DataMenuLink,
   type DataSite,
   languageSwitcherComponent,
@@ -433,6 +434,18 @@ const SiteFooter = drawsProps(siteFooterComponent, ({ props, attributes, mode })
       <div className="lintel-site-footer__bottom">
         <p className="lintel-site-footer__small-print">
           {props.smallPrint || `© ${year} ${site.siteName}`}
+          {site.cookieNotice && (
+            <>
+              {" "}
+              <button
+                type="button"
+                className="lintel-cookie-settings"
+                data-lintel-cookie-settings=""
+              >
+                Cookie settings
+              </button>
+            </>
+          )}
         </p>
         {props.showLanguages && otherLanguages.length > 0 && (
           <ul className="lintel-language-links" aria-label="Languages">
@@ -576,6 +589,28 @@ const BackToTop = drawsProps(backToTopComponent, ({ props, attributes, editableT
   </a>
 ));
 
+/**
+ * "Cookie settings": a button the cookie notice's script listens for, to open the notice
+ * again. On the website it shows only on a site that has the notice; the canvas always shows it.
+ */
+const CookieSettings = drawsProps(
+  cookieSettingsComponent,
+  ({ props, attributes, editableText, mode }) => {
+    const site = useSite();
+    if (mode === "site" && !site.cookieNotice) return null;
+    return (
+      <button
+        {...attributes}
+        type="button"
+        className={cx(attributes.className, "lintel-cookie-settings")}
+        data-lintel-cookie-settings=""
+      >
+        <span {...editableText("label")}>{props.label}</span>
+      </button>
+    );
+  },
+);
+
 export const navigationRenders = {
   siteHeader: SiteHeader,
   siteLogo: SiteLogo,
@@ -584,4 +619,5 @@ export const navigationRenders = {
   languageSwitcher: LanguageSwitcher,
   searchBox: SearchBox,
   backToTop: BackToTop,
+  cookieSettings: CookieSettings,
 };

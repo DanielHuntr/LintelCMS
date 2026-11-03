@@ -55,6 +55,7 @@ describe("snippets for Lintel's tags and filters", () => {
       "{% lintel_head %}",
       "{% site_header %}",
       "{% site_footer %}",
+      "{% cookie_settings %}",
       "| rich_text",
       "| image_url",
     ]) {

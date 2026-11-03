@@ -367,6 +367,8 @@ ${tablet} { :where(.lintel-mobile-menu--small-screens) { display: block; } }
 ${phone} { :where(.lintel-search-box__row span) { display: none; } :where(.lintel-search-box__row span.lintel-search-box__icon) { display: inline; } }
 :where(.lintel-back-to-top) { display: inline-flex; align-items: center; gap: var(--lintel-space-2); min-block-size: 2.75rem; padding: 0 var(--lintel-space-4); border-radius: 999px; background: var(--lintel-color-surface); color: inherit; text-decoration: none; font-weight: 600; }
 :where(.lintel-back-to-top svg) { inline-size: 1.1rem; block-size: 1.1rem; }
+:where(.lintel-cookie-settings) { display: inline; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: start; text-decoration: underline; text-underline-offset: 0.2em; cursor: pointer; }
+:where(.lintel-cookie-settings:focus-visible) { outline: 2px solid currentColor; outline-offset: 2px; }
 :where(.lintel-back-to-top--floats) { position: fixed; inset-inline-end: var(--lintel-space-5); inset-block-end: var(--lintel-space-5); z-index: 30; box-shadow: 0 6px 20px rgb(0 0 0 / 0.15); transition: opacity 0.2s, translate 0.2s; }
 :where(.lintel-back-to-top--floats[data-hidden]) { opacity: 0; translate: 0 1rem; pointer-events: none; }
 `;

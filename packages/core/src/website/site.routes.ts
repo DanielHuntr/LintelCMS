@@ -7,6 +7,7 @@ import {
   EFFECTS_FOLDER,
   FONTS_FOLDER,
   ILLUSTRATIONS_FOLDER,
+  readCookieNoticeScript,
   readEffectFile,
   readElementsScript,
   readFontFile,
@@ -23,6 +24,7 @@ import { readSiteContext, respondToSitePath, type SiteDependencies } from "./sit
  *   GET /_lintel/site-<fingerprint>.css   the theme and component styles, cached for a year
  *   GET /_lintel/motion-<fingerprint>.js  the motion runtime, for pages with animations
  *   GET /_lintel/elements-<fingerprint>.js the elements script, for sliders, forms, the shop
+ *   GET /_lintel/cookie-notice-<fingerprint>.js the cookie notice, on sites that show one
  *   GET /_lintel/effects/<module>-<fingerprint>.js an effect module or a chunk they share
  *   ALL /_lintel/api/shop/*, /_lintel/api/forms/*  the storefront and forms APIs (site-api.routes.ts)
  *   GET /_lintel/illustrations/<name>.svg the starter sites' illustrations
@@ -104,7 +106,7 @@ export async function siteRoutes(
 
   server.get(`${STYLESHEET_FOLDER}/:file`, async (request, reply) => {
     const path = request.url.split("?")[0];
-    const script = [readMotionRuntime(), readElementsScript()].find(
+    const script = [readMotionRuntime(), readElementsScript(), readCookieNoticeScript()].find(
       (candidate) => candidate?.path === path,
     );
     if (script) {

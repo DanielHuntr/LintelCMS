@@ -21,7 +21,7 @@ import {
   readMotionRuntime,
 } from "../website/site-assets.js";
 import { loadOtherMenu, localiseUrl, markCurrent } from "../website/site-chrome.service.js";
-import { htmlResponse, pageChrome } from "../website/site-documents.js";
+import { cookieNoticeHead, htmlResponse, pageChrome } from "../website/site-documents.js";
 import { withSiteSections } from "../website/site-sections-drawing.js";
 import { buildPageHead, type HeadSubject } from "../website/site-head.service.js";
 import type { PageRequest } from "../website/site-pages.service.js";
@@ -84,6 +84,7 @@ export async function renderEntryWithLiquid(
       elementsScriptUrl: readElementsScript()?.path,
       siteEffects: siteEffectsHead(context.effectSettings, { path: request.path, chrome }),
       effectModuleUrls: readEffectModules()?.urls,
+      cookieNotice: cookieNoticeHead(context, locale),
     });
 
   const drawn: PageDesign[] = [];
@@ -109,6 +110,9 @@ export async function renderEntryWithLiquid(
     headMarker: `<!--lintel-head-${randomUUID()}-->`,
     header: plainParts.header,
     footer: plainParts.footer,
+    cookieSettings: context.cookieNotice
+      ? `<button type="button" class="lintel-cookie-settings" data-lintel-cookie-settings="">${escapeHtml(englishLabels.cookieSettings)}</button>`
+      : "",
   };
 
   let output: string;

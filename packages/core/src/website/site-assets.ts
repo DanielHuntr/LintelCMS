@@ -57,6 +57,27 @@ export function readElementsScript(): SiteScript | null {
   return elementsScript;
 }
 
+let cookieNoticeScript: SiteScript | null | undefined;
+
+/**
+ * The cookie notice's script, read once. Only sites that ask visitors about cookies load it
+ * (see src/cookie-notice). Null if `@lintel/builder` hasn't been built.
+ */
+export function readCookieNoticeScript(): SiteScript | null {
+  if (cookieNoticeScript !== undefined) {
+    return cookieNoticeScript;
+  }
+  try {
+    const file = createRequire(import.meta.url).resolve("@lintel/builder/cookie-notice.js");
+    const code = readFileSync(file, "utf8");
+    const fingerprint = createHash("sha256").update(code).digest("hex").slice(0, 12);
+    cookieNoticeScript = { code, path: `${STYLESHEET_FOLDER}/cookie-notice-${fingerprint}.js` };
+  } catch {
+    cookieNoticeScript = null;
+  }
+  return cookieNoticeScript;
+}
+
 export const EFFECTS_FOLDER = `${STYLESHEET_FOLDER}/effects`;
 
 export interface EffectModuleFiles {

@@ -58,6 +58,10 @@ export async function readCanvasSite(
     socialLinks: chrome.socialLinks,
     footerText: chrome.footerText,
     fonts: context.fonts,
-    fontStylesheets: context.fontStylesheetUrls,
+    // The people designing the site see its Adobe Fonts even while visitors wait to allow them.
+    fontStylesheets: [
+      ...context.fontStylesheetUrls,
+      ...(context.cookieNotice?.page.fontStylesheets ?? []),
+    ],
   };
 }

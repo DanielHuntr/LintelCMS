@@ -12,6 +12,10 @@ import {
   updatePreferencesSchema,
 } from "../updates/updates.schema.js";
 import { defaultWebsiteSettings, websiteSettingsSchema } from "../website/website.schema.js";
+import {
+  cookieNoticeSettingsSchema,
+  defaultCookieNoticeSettings,
+} from "../cookie-notice/cookie-notice.schema.js";
 
 /**
  * Every setting, with the shape its value must have. Reading a key that has never been
@@ -81,6 +85,8 @@ export const settingSchemas = {
   updatePreferences: updatePreferencesSchema,
   /** Page transitions, cursor and intro across the website (see src/site-effects). */
   siteEffects: siteEffectSettingsSchema,
+  /** Whether and how the website asks visitors about cookies (see src/cookie-notice). */
+  cookieNotice: cookieNoticeSettingsSchema,
 };
 
 export type SettingKey = keyof typeof settingSchemas;
@@ -107,4 +113,5 @@ export const settingDefaults: { [Key in SettingKey]: SettingValue<Key> } = {
   updateCheck: emptyUpdateCheck,
   updatePreferences: defaultUpdatePreferences,
   siteEffects: defaultSiteEffectSettings,
+  cookieNotice: defaultCookieNoticeSettings,
 };

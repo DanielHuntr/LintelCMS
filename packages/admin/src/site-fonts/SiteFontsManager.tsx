@@ -199,7 +199,9 @@ function AdobeProjects({ fonts, canChange }: { fonts: SiteFonts; canChange: bool
           </li>
         ))}
       </ul>
-      <p className="px-4 text-footnote text-label-secondary">{t("siteFonts.adobe.note")}</p>
+      <p className="px-4 text-footnote text-label-secondary">
+        {t("siteFonts.adobe.note")} {t("siteFonts.adobe.consent")}
+      </p>
     </div>
   );
 }

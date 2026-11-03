@@ -433,6 +433,8 @@ function footer(): NodeBlueprint {
           textLink("Collection", "/collection"),
           textLink("Craft", "/craft"),
           textLink("Visit", "/visit"),
+          // Shows only once the site asks visitors about cookies.
+          { ...textLink("", ""), type: "cookieSettings", props: {} },
         ],
       },
     ],

@@ -1,4 +1,5 @@
 import { clamp, eachBehaviour, prefersReducedMotion } from "./behaviour-helpers.js";
+import { allowedServices, onConsentChange } from "./consent-choice.js";
 import { enableDragScroll } from "./drag-scroll.js";
 
 /** Sliders, the gallery's lightbox, frames that load on request, and before-and-after. */
@@ -169,15 +170,44 @@ export function setUpLightboxes(root: ParentNode): void {
   });
 }
 
-/** Videos, maps and embeds from other sites: the frame only loads when asked for. */
+/** Placeholders not loaded yet, by the service they are from, for when a visitor allows it. */
+const waitingFrames = new Map<HTMLElement, (byChoice: boolean) => void>();
+let listeningForConsent = false;
+
+/**
+ * A frame's address for loading by itself after the visitor allowed its service: a video
+ * plays only when it was set to play muted by itself, never with sound before anyone asks.
+ */
+export function addressWithoutAutoplay(source: string): string {
+  let address: URL;
+  try {
+    address = new URL(source);
+  } catch {
+    return source;
+  }
+  const muted =
+    address.searchParams.get("mute") === "1" || address.searchParams.get("muted") === "1";
+  if (address.searchParams.get("autoplay") === "1" && !muted) {
+    address.searchParams.delete("autoplay");
+  }
+  return address.toString();
+}
+
+/**
+ * Videos, maps and embeds from other sites: the frame only loads when asked for, with its
+ * own button, or straight away once the visitor has allowed its service in the site's
+ * cookie notice (now, or on an earlier visit).
+ */
 export function setUpConsentFrames(root: ParentNode): void {
+  const allowed = allowedServices(document);
   eachBehaviour(root, "consent-frame", (placeholder) => {
     const source = placeholder.dataset.frameSrc;
     const button = placeholder.querySelector<HTMLButtonElement>(".lintel-consent__load");
     if (!source || !button) return;
-    button.addEventListener("click", () => {
+    const load = (byChoice: boolean) => {
+      waitingFrames.delete(placeholder);
       const frame = document.createElement("iframe");
-      frame.src = source;
+      frame.src = byChoice ? addressWithoutAutoplay(source) : source;
       frame.title = placeholder.dataset.frameTitle ?? "";
       frame.allow = "autoplay; fullscreen; picture-in-picture; encrypted-media";
       frame.referrerPolicy = "strict-origin-when-cross-origin";
@@ -188,9 +218,24 @@ export function setUpConsentFrames(root: ParentNode): void {
       const height = placeholder.closest<HTMLElement>("[data-height]")?.dataset.height;
       if (height) frame.height = height;
       placeholder.replaceChildren(frame);
-      frame.focus();
-    });
+      placeholder.dataset.loaded = "";
+      // Focus follows the visitor's own press, never a choice made in the notice.
+      if (!byChoice) frame.focus();
+    };
+    button.addEventListener("click", () => load(false));
+    const service = placeholder.dataset.consentService;
+    if (service && allowed.has(service)) load(true);
+    else waitingFrames.set(placeholder, load);
   });
+  if (!listeningForConsent) {
+    listeningForConsent = true;
+    onConsentChange((nowAllowed) => {
+      for (const [placeholder, load] of [...waitingFrames]) {
+        const service = placeholder.dataset.consentService;
+        if (service && nowAllowed.has(service)) load(true);
+      }
+    });
+  }
 }
 
 export function setUpBeforeAfter(root: ParentNode): void {

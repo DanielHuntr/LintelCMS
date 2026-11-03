@@ -238,6 +238,12 @@ function footerBand(
 
 const smallPrintStyles: StyleDeclarations = { fontSize: "0.875rem", opacity: "0.75" };
 
+/** "Cookie settings", beside the small print: it shows only on a site that asks about cookies. */
+const cookieSettingsLink: NodeBlueprint = {
+  type: "cookieSettings",
+  styles: { base: smallPrintStyles },
+};
+
 /** Logo, the menu and a line of small print, all centred. */
 export function footerCentred(copy: { smallPrint: string }): NodeBlueprint {
   return footerBand(
@@ -264,6 +270,7 @@ export function footerCentred(copy: { smallPrint: string }): NodeBlueprint {
           // Shows only on a site in more than one language.
           { type: "languageSwitcher", props: { look: "links", label: "Language" } },
           text(copy.smallPrint, { name: "Small print", styles: { base: smallPrintStyles } }),
+          cookieSettingsLink,
         ],
       },
     ],
@@ -285,6 +292,7 @@ export function footerOneLine(copy: { smallPrint: string }): NodeBlueprint {
             children: [
               siteLogo("both", { fontSize: "1.125rem" }),
               text(copy.smallPrint, { name: "Small print", styles: { base: smallPrintStyles } }),
+              cookieSettingsLink,
             ],
           },
           siteMenuRow({ label: "Footer", always: true }),
@@ -325,7 +333,15 @@ export function footerBigName(copy: { smallPrint: string }): NodeBlueprint {
           row(
             "Footer row",
             [
-              text(copy.smallPrint, { name: "Small print", styles: { base: smallPrintStyles } }),
+              {
+                type: "box",
+                name: "Small print",
+                styles: { base: { display: "flex", flexWrap: "wrap", gap: space(4) } },
+                children: [
+                  text(copy.smallPrint, { styles: { base: smallPrintStyles } }),
+                  cookieSettingsLink,
+                ],
+              },
               siteMenuRow({ label: "Footer", always: true }),
             ],
             {},

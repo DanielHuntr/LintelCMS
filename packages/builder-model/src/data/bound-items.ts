@@ -178,6 +178,8 @@ export interface DataSite {
   locale: string;
   /** Where the shop's storefront API is reached from the page: "/_lintel/api". */
   apiBase: string;
+  /** The site asks visitors about cookies, so Cookie settings links show (src/consent). */
+  cookieNotice?: boolean;
 }
 
 /** Everything a page's dynamic elements show, by the id of the element that shows it. */

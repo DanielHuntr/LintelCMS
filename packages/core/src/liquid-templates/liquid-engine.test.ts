@@ -36,6 +36,7 @@ function helpers(overrides: Partial<LiquidPageHelpers> = {}): LiquidPageHelpers 
     headMarker: "<!--head-->",
     header: "<header>site header</header>",
     footer: "<footer>site footer</footer>",
+    cookieSettings: "",
     ...overrides,
   };
 }

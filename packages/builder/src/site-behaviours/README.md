@@ -12,6 +12,10 @@ of these elements (`render/elements/behaviour-types.ts`).
 | File                       | What it does                                                          |
 | -------------------------- | --------------------------------------------------------------------- |
 | `site-behaviours-entry.ts` | Sets every behaviour up once the page is read                         |
+| `consent-choice.ts`        | A visitor's cookie choice: read, kept, and announced to the page      |
+| `cookie-notice.ts`         | The cookie notice (its own bundle, `dist/cookie-notice.js`)           |
+| `cookie-notice-styles.ts`  | The notice's CSS, added by its script                                 |
+| `cookie-notice-entry.ts`   | The cookie notice bundle's entry                                      |
 | `behaviour-helpers.ts`     | Finding elements by `data-behaviour`, reduced motion                  |
 | `layout-behaviours.ts`     | Tabs, one-open accordions, pop-ups in older browsers                  |
 | `media-behaviours.ts`      | Sliders, product pictures, lightbox, consent frames, comparisons      |
@@ -22,6 +26,10 @@ of these elements (`render/elements/behaviour-types.ts`).
 | `shop-api.ts`              | The storefront API through `/_lintel/api/shop`, the cart token        |
 | `shop-behaviours.ts`       | Options picker, Add to basket, basket count, order confirmation       |
 | `cart-views.ts`            | The basket drawn into the drawer and the basket page, and checkout    |
+
+The cookie notice is a separate bundle, `dist/cookie-notice.js`, loaded only by sites that
+ask visitors about cookies (core's `src/cookie-notice`). Consent frames load by themselves
+once their service (`data-consent-service`) is allowed.
 
 Every behaviour enhances HTML that already works as far as it can, follows
 `prefers-reduced-motion`, and keeps focus where people expect it.

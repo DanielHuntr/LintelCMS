@@ -1131,3 +1131,33 @@ Decision record: `docs/decisions/0039-navigation-and-footer-sections.md`. No mig
 
 - A new site under a path prefix lost the automatic header's prefixed home link once it started with its own navigation (`website-sites.test.ts` expected `lintel-header__brand`). The Site logo already links to the prefixed home; links typed into the site's navigation and footer ("/work") are now drawn with the site's path prefix and language too. New test: "keeps the path prefix in the links of a site's own navigation and footer".
 - Studio, Atelier and Folio no longer repeat a header and footer on each page. Each brings its own shared navigation and footer (`siteSections` on the starter site), in its own look: Folio's navigation keeps the Lisbon clock (its menu now follows the site's menu, its name the site's name), Studio's footer keeps the Rotterdam clock and the cobalt hover, Atelier's footer is the big "Wrenfold" one. Studio and Atelier, which had only a footer, gain a navigation in their type (Studio's mono captions, Atelier's serif name and small caps). Applying a template with its look replaces the site's sections with the template's. Tests: `studio.test.ts`, `atelier.test.ts`, `starter-sites.test.ts` (Folio) and core `site-sections.test.ts` ("uses a starter template's own navigation and footer").
+
+## LINTEL-UX-041: a cookie notice by default when the site needs one (3 November 2026)
+
+Daniel: "if videos, or google maps or anything, we will need to add a cookie acceptance by default." Before, each YouTube or Vimeo video, map and Embed element showed its own "Load …" placeholder, Adobe Fonts loaded from Adobe without asking, and there was no site-wide notice or way to change a choice.
+
+**Reproduced:** a page with a YouTube video and a map showed two separate placeholders and nothing else; a site with Adobe Fonts linked `use.typekit.net` on every page before any choice.
+
+**Fixed:**
+
+- **On by default, only when needed.** Core (`src/cookie-notice`) reads what the published site uses: page designs in every collection with pages and every language, the site's navigation and footer, the site's blocks they use, Adobe Fonts, and services plugins declare (`consentServices` in `definePlugin`). Sites using none of these show nothing and load no notice code. The notice's script (`/_lintel/cookie-notice-<fingerprint>.js`, its CSS inside) is a separate bundle; no third-party script is involved.
+- **The notice** names the services ("This site uses OpenStreetMap and YouTube, which may set cookies. Nothing from them loads until you say so."), with **Accept all** and **Only necessary** looking the same, and **Choose** (a switch per service). It is a non-modal region with a heading, placed after the skip link, never takes focus, keeps room at the end of the page, follows the theme's fonts, colours, corners and light/dark, slides in only without reduced motion, and stacks at 390px.
+- **The choice** is kept in localStorage (no cookie) per site for about six months, and only while the services list is the same; a changed list asks again. Accepting loads the allowed embeds in place without a reload (videos don't start playing by themselves). Only necessary keeps each placeholder, which still loads just that one. Withdrawing a service that already loaded reloads the page.
+- **Adobe Fonts** waits for consent; until then the heading and body fall back to the theme's pairing fonts. The font settings say so. The builder's canvas still shows them.
+- **A way back:** "Cookie settings" in the automatic footer, the Site footer element, the section library's footers, the Studio, Atelier and Folio footers, a new **Cookie settings** element, and `{% cookie_settings %}` for Liquid. Each shows only on sites with the notice.
+- **Settings → Your website → Cookie notice:** Automatic (recommended), Always, Off; bar or corner card; heading, message (`{services}` is filled in) and a privacy page from the page picker. Off shows a plain warning and says it is general guidance, not legal advice.
+- **Plugins:** `window.lintelConsent.allows("plugin:<id>:<handle>")` and the `lintel:consent` event.
+
+Decision record: `docs/decisions/0040-cookie-notice.md`. No migration: the settings are one settings row.
+
+**Judgement calls:** Embeds set to "Load without asking" and Code elements are not counted (the maker's own call; Always covers them). The Map element uses OpenStreetMap, so the notice names OpenStreetMap rather than Google Maps. Settings are shared by every site of an install, like the rest of the website's look; choices are kept per site.
+
+**Tests:**
+
+- builder-model `consent/consent-services.test.ts` (2): services found in designs and the site's blocks, embeds named, stable version.
+- builder `site-behaviours/cookie-notice.test.ts` (8): asks first without taking focus; Accept all loads embeds without a reload and is remembered; Only necessary keeps placeholders, each still loads; Choose and Cookie settings; a changed list or six months asks again; no notice, no change; autoplay. `render/elements/cookie-settings.test.tsx` (2). Browser test `browser-tests/cookie-notice.test.ts` (2): with the real bundles, nothing is requested from YouTube or OpenStreetMap before consent; keyboard order; Only necessary then Cookie settings.
+- core `cookie-notice/cookie-notice.test.ts` (8): nothing on a site without services; on by itself with a YouTube video and a map, naming both, script served, footer link; Off, Always, position, words and privacy page; Adobe Fonts waits; footer section, blocks and plugin services; the message; the font fallback.
+
+**Checked in a browser** (Chromium) on the published site with a YouTube video and a map: desktop and 390px in light, desktop in dark, Choose at 390px, after Accept all, and the settings at desktop.
+
+**Screenshots** (in `screenshots/cookie-consent/`): `site-desktop-light`, `site-390-light`, `site-390-choose`, `site-desktop-dark`, `site-desktop-accepted`, `settings-desktop`, `settings-off-warning`.

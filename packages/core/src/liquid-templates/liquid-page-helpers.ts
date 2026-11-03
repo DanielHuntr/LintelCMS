@@ -16,6 +16,8 @@ export interface LiquidPageHelpers {
   headMarker: string;
   header: string;
   footer: string;
+  /** A "Cookie settings" button, on sites with the cookie notice; "" on others. */
+  cookieSettings: string;
 }
 
 const helpersByGlobal = new WeakMap<object, LiquidPageHelpers>();

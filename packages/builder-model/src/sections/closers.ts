@@ -173,7 +173,11 @@ export function simpleFooter(copy: {
                 justifyContent: "center",
               },
             },
-            children: copy.links.map((item) => link(item.label, item.href)),
+            children: [
+              ...copy.links.map((item) => link(item.label, item.href)),
+              // Shows only on a site that asks visitors about cookies.
+              { type: "cookieSettings" },
+            ],
           },
         ],
         { centred: true, gap: 3 },
@@ -206,16 +210,25 @@ export function columnsFooter(copy: { about: string; columns: FooterColumn[] }):
             phone: { gridTemplateColumns: "minmax(0, 1fr)" },
           },
           children: [
-            stack("About", [colourBlock("Mark", "brand", "1 / 1", "3rem"), text(copy.about)], 3, {
-              styles: {
-                base: {
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "var(--lintel-space-3)",
-                  maxWidth: "20rem",
+            stack(
+              "About",
+              [
+                colourBlock("Mark", "brand", "1 / 1", "3rem"),
+                text(copy.about),
+                { type: "cookieSettings" },
+              ],
+              3,
+              {
+                styles: {
+                  base: {
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "var(--lintel-space-3)",
+                    maxWidth: "20rem",
+                  },
                 },
               },
-            }),
+            ),
             ...copy.columns.map((column) =>
               stack(
                 column.heading,

@@ -343,6 +343,24 @@ export const backToTopComponent = defineComponent({
 });
 
 /**
+ * A "Cookie settings" link that opens the site's cookie notice again, so visitors can change
+ * their mind. It shows only on sites that have the notice (see core's src/cookie-notice).
+ */
+export const cookieSettingsComponent = defineComponent({
+  type: "cookieSettings",
+  label: "Cookie settings",
+  keywords: ["cookies", "privacy", "consent", "gdpr"],
+  description:
+    "A link that lets visitors change their cookie choices. It only shows when your site asks about cookies.",
+  icon: "cookie",
+  category: "navigation",
+  propsSchema: z.object({ label: plainText(60, "Cookie settings") }),
+  defaultProps: { label: "Cookie settings" },
+  allowedChildren: "none",
+  editableFields: [{ kind: "text", prop: "label", label: "Words" }],
+});
+
+/**
  * Where an element belongs on a page when it's added from Insert, whatever is selected:
  * the Header, and sections drawn as the page's header, at the very top; the Footer, and
  * sections drawn as the page's footer (the footer templates), at the very bottom. Null for

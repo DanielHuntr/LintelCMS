@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import {
+  type CookieNoticeHead,
   englishLabels,
   type LanguageLink,
   type PageHead,
@@ -9,7 +10,12 @@ import {
 import { renderSiteDocument } from "@lintel/site-components/server";
 import { siteEffectsHead } from "../site-effects/site-effects.service.js";
 import type { SiteResponse } from "./rendered-pages-cache.js";
-import { readEffectModules, readElementsScript, readMotionRuntime } from "./site-assets.js";
+import {
+  readCookieNoticeScript,
+  readEffectModules,
+  readElementsScript,
+  readMotionRuntime,
+} from "./site-assets.js";
 import type { SiteContext } from "./site-context.service.js";
 import { localiseUrl, markCurrent } from "./site-chrome.service.js";
 
@@ -56,8 +62,25 @@ export function renderPage(
       chrome: thisPageChrome,
     }),
     effectModuleUrls: readEffectModules()?.urls,
+    cookieNotice: cookieNoticeHead(context, chrome.locale),
   });
   return htmlResponse(body, page);
+}
+
+/**
+ * What a page in a language gets for the site's cookie notice: its settings, with the
+ * privacy page's address in that language, and the script. Nothing on sites without one.
+ */
+export function cookieNoticeHead(
+  context: Pick<SiteContext, "cookieNotice" | "defaultLocale">,
+  locale: string,
+): CookieNoticeHead | undefined {
+  const notice = context.cookieNotice;
+  const script = readCookieNoticeScript();
+  if (!notice || !script) return undefined;
+  const privacyUrl =
+    notice.privacyUrls[locale] ?? notice.privacyUrls[context.defaultLocale] ?? null;
+  return { settings: { ...notice.page, privacyUrl }, scriptUrl: script.path };
 }
 
 /** The header and footer for one page: its menu item marked, its languages linked. */

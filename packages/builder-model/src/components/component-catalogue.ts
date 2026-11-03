@@ -96,6 +96,7 @@ export const standardComponents: readonly AnyComponentDefinition[] = [
   eraseProps(navigation.languageSwitcherComponent),
   eraseProps(navigation.searchBoxComponent),
   eraseProps(navigation.backToTopComponent),
+  eraseProps(navigation.cookieSettingsComponent),
   eraseProps(collectionListComponent),
   eraseProps(formEmbedComponent),
   eraseProps(newsletterSignupComponent),

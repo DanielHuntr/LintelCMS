@@ -400,6 +400,14 @@ function studioFooter(): NodeBlueprint {
               hover: { color: cobaltColour },
             }),
           ),
+          // Shows only once the site asks visitors about cookies.
+          {
+            type: "cookieSettings",
+            styles: {
+              base: { color: "inherit", textDecoration: "none", width: "fit-content" },
+              hover: { color: cobaltColour },
+            },
+          },
         ],
       },
       words("Address", "Keileweg 48, first floor\n3029 BS Rotterdam, Netherlands", {

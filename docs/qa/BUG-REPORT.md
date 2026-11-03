@@ -778,6 +778,7 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-038   | P2       | Fixed  | Every page gets the site's automatic header and footer, even one whose first row is its own menu; navigation can't be designed |
 | LINTEL-UX-039   | P2       | Fixed  | Style: "What has to be hovered" always shows and lists plain layout boxes ("Container, 2 levels up") nobody recognises         |
 | LINTEL-UX-040   | P3       | Fixed  | Style → Text says "1.125rem" but no size chip is pressed: a size no chip matches isn't shown, and rem means nothing to people  |
+| LINTEL-UX-041   | P1       | Fixed  | No site-wide cookie notice: videos, maps, embeds and Adobe Fonts each asked alone (Adobe Fonts not at all), with no way back   |
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 

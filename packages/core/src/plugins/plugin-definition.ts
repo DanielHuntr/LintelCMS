@@ -4,6 +4,7 @@ import type { z } from "zod";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import type { BlockDefinition } from "../blocks/block-definition.js";
 import type { Fieldtype } from "../fieldtypes/fieldtype.js";
+import type { PluginConsentService } from "../cookie-notice/plugin-consent-services.js";
 
 /**
  * What a plugin is, on the server. Every plugin, built in or installed from a package, is
@@ -88,6 +89,14 @@ export interface PluginDefinition<
    * and an underscore ("bookings_slot_picker"). See src/blocks.
    */
   blocks?: readonly BlockDefinition<never>[];
+  /**
+   * Other companies the plugin's pages load something from (a booking calendar, a chat
+   * window), which may set cookies. While the plugin is on, the site's cookie notice names
+   * each and asks visitors first. The plugin's script checks before loading:
+   * `window.lintelConsent?.allows("plugin:<id>:<handle>")`, and listens for the `lintel:consent`
+   * event on `document` for a choice made later. See src/cookie-notice.
+   */
+  consentServices?: readonly PluginConsentService[];
   /**
    * Makes the content the plugin needs (a collection, say) each time it is switched on.
    * It must only create what is missing: it runs again after every switch off and on.

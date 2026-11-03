@@ -59,6 +59,7 @@ describe("the starter templates", () => {
       headMarker: "<!--head-->",
       header: "<header>site header</header>",
       footer: "<footer>site footer</footer>",
+      cookieSettings: "",
     });
     const html = (await engine.renderFile(
       "pages",

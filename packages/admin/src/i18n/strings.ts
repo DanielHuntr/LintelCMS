@@ -33,6 +33,7 @@ import { pageLinkStrings } from "../page-links/pageLinkStrings.js";
 import { richTextPictureStrings } from "../fields/richTextPictureStrings.js";
 import { blockStrings } from "./blockStrings.js";
 import { pageFlowStrings } from "../website/pageFlowStrings.js";
+import { cookieNoticeStrings } from "../website/cookieNoticeStrings.js";
 
 /**
  * Every word the admin shows lives here, in English: the source every translation in
@@ -54,6 +55,7 @@ const english = {
   ...peopleStrings,
   ...pageDesignStrings,
   ...pageFlowStrings,
+  ...cookieNoticeStrings,
   ...contentModelSyncStrings,
   ...workflowStrings,
   ...buildStrings,

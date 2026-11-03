@@ -2,11 +2,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getBuilderData,
   getCanvasSite,
+  getCookieNotice,
   getSiteAddress,
   getSiteDesign,
   getSiteEffects,
   getSiteSections,
   getWebsite,
+  updateCookieNotice,
   updateSiteDesign,
   updateSiteEffects,
   updateWebsite,
@@ -20,7 +22,21 @@ export const websiteKeys = {
   effects: () => ["website", "effects"] as const,
   design: () => ["website", "design"] as const,
   sections: () => ["website", "sections"] as const,
+  cookieNotice: () => ["website", "cookie-notice"] as const,
 };
+
+/** The cookie notice's settings, and what the site uses that it names. */
+export function useCookieNotice() {
+  return useQuery({ queryKey: websiteKeys.cookieNotice(), queryFn: getCookieNotice, retry: false });
+}
+
+export function useUpdateCookieNotice() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateCookieNotice,
+    onSuccess: (notice) => queryClient.setQueryData(websiteKeys.cookieNotice(), notice),
+  });
+}
 
 /** The site's navigation and footer sections. */
 export function useSiteSectionsQuery() {
