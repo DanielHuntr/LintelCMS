@@ -1,3 +1,4 @@
+import type { SiteFontChoice } from "@lintel/builder-model";
 import { englishLabels } from "@lintel/site-components";
 import { renderSiteChrome } from "@lintel/site-components/server";
 import { readMotionRuntime } from "./site-assets.js";
@@ -21,6 +22,10 @@ export interface CanvasSiteResponse {
   logo: { src: string; alt: string; width: number | null; height: number | null } | null;
   socialLinks: string[];
   footerText: string;
+  /** The site's own fonts, for the builder's font list (the included ones it knows already). */
+  fonts: SiteFontChoice[];
+  /** Font services' stylesheets the canvas links to, as the website does (Adobe Fonts'). */
+  fontStylesheets: string[];
 }
 
 export async function readCanvasSite(
@@ -52,5 +57,7 @@ export async function readCanvasSite(
       : null,
     socialLinks: chrome.socialLinks,
     footerText: chrome.footerText,
+    fonts: context.fonts,
+    fontStylesheets: context.fontStylesheetUrls,
   };
 }

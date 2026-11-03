@@ -173,9 +173,12 @@ describe("advanced styling in the Style panel", () => {
     const { latest, node } = renderBuilder("beginner");
     await select(person, "Big word");
     const group = await open(person, "Text");
-    await person.click(within(group).getByRole("button", { name: "Add a font" }));
-    await person.type(within(group).getByRole("searchbox", { name: "Find a font" }), "bebas");
-    await person.click(within(group).getByRole("button", { name: /Bebas Neue/ }));
+    // The fonts that come with Lintel are in the list; no "Add a font" without a host for it.
+    expect(within(group).queryByRole("button", { name: "Add a font" })).toBeNull();
+    await person.selectOptions(
+      within(group).getByRole("combobox", { name: "Font" }),
+      "'Bebas Neue', Impact, 'Arial Narrow', sans-serif",
+    );
     expect(latest().root.props.fonts).toEqual([{ source: "catalogue", id: "bebas-neue" }]);
     expect(node("Big word")?.styles.base.fontFamily).toBe(
       "'Bebas Neue', Impact, 'Arial Narrow', sans-serif",

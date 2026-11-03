@@ -47,6 +47,7 @@ import { useSiteDesign } from "./useSiteDesign.js";
 import { useSiteMotion } from "./useSiteMotion.js";
 import { useBuilderMenus } from "../menus/builderMenus.js";
 import { InlineMenuEditor } from "../menus/InlineMenuEditor.js";
+import { useBuilderFonts } from "../site-fonts/useBuilderFonts.js";
 
 /**
  * The canvas frame's scripts, served beside the admin (see vite.config.ts), because the
@@ -158,6 +159,7 @@ function PageDesigner({
   const siteMotion = useSiteMotion();
   const siteDesign = useSiteDesign();
   const imagePicker = useImagePicker();
+  const fonts = useBuilderFonts();
   const pagePicker = usePagePicker();
   const findPage = usePageFinder();
   const isNarrowScreen = useIsNarrowScreen();
@@ -236,6 +238,8 @@ function PageDesigner({
         pickPage={pagePicker.pick}
         findPage={findPage}
         uploadFile={uploadToMediaLibrary}
+        onAddFont={fonts.onAddFont}
+        onMoveFontToSite={fonts.onMoveFontToSite}
         uploadPicture={uploadPictureToMediaLibrary}
         onSaveNow={saving.saveNow}
         frameScripts={canvasFrameScripts}
@@ -308,6 +312,7 @@ function PageDesigner({
         </p>
       )}
       {imagePicker.dialog}
+      {fonts.dialogs}
       {pagePicker.dialog}
       <ConfirmDialog
         open={leave.isAsking}

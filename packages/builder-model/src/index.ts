@@ -70,6 +70,7 @@ export * from "./site-design/site-design.js";
 export * from "./backgrounds/background-video.js";
 export * from "./fonts/font-catalogue.js";
 export * from "./fonts/page-fonts.js";
+export * from "./fonts/site-fonts.js";
 export * from "./text-marks/text-marks.js";
 export * from "./countries/country-codes.js";
 

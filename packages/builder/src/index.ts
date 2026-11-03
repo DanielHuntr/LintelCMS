@@ -3,6 +3,7 @@ export { PageBuilder, type PageBuilderProps } from "./PageBuilder.js";
 export type { ImagePicker, PickedImage } from "./panels/content-fields.js";
 export type { PageFinder, PagePicker, PickedPage } from "./panels/page-picker.js";
 export type { FileUploader, UploadedFile } from "./style-panel/design-tools.js";
+export type { UploadedPageFont } from "./style-panel/font-choices.js";
 export type { PictureUploader } from "./canvas/usePictureDrop.js";
 export type { BuilderDataSources } from "./panels/data-sources.js";
 export type { MenuEditorProps, RenderMenuEditor } from "./menus/menu-editing.js";

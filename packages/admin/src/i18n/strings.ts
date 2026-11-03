@@ -24,6 +24,7 @@ import { updatesStrings } from "./updatesStrings.js";
 import { treeSelectionStrings } from "./treeSelectionStrings.js";
 import { pageMenuStrings } from "./pageMenuStrings.js";
 import { freePhotosStrings } from "../free-photos/freePhotosStrings.js";
+import { siteFontsStrings } from "../site-fonts/siteFontsStrings.js";
 import { quickUploadStrings } from "../media/quickUploadStrings.js";
 import { compareLiveStrings } from "../compare-live/compareLiveStrings.js";
 import { scheduleStrings } from "../schedule-calendar/scheduleStrings.js";
@@ -72,6 +73,7 @@ const english = {
   ...importersStrings,
   ...updatesStrings,
   ...freePhotosStrings,
+  ...siteFontsStrings,
   ...compareLiveStrings,
   ...scheduleStrings,
   ...blockStrings,

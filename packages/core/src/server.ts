@@ -61,6 +61,8 @@ import type { LintelPlugin } from "./plugins/plugin-definition.js";
 import { registerPluginRoutes } from "./plugins/plugin-routes.js";
 import { pluginRegistry } from "./plugins/plugins.registry.js";
 import { type FreePhotosOptions, registerFreePhotos } from "./free-photos/register-free-photos.js";
+import { registerSiteFonts, type SiteFontsOptions } from "./site-fonts/register-site-fonts.js";
+import { siteFontsRoutes } from "./site-fonts/site-fonts.routes.js";
 import { pagesRoutes } from "./pages/pages.routes.js";
 import { pluginsRoutes } from "./plugins/plugins.routes.js";
 import { previewRoutes } from "./preview/preview.routes.js";
@@ -259,6 +261,8 @@ export interface ServerOptions {
   updates?: UpdatesOptions;
   /** The Free photos plugin's Openverse address and download rules. Every part has a default. */
   freePhotos?: FreePhotosOptions;
+  /** How site fonts reach Google Fonts and Adobe Fonts. Defaults to the real services. */
+  siteFonts?: SiteFontsOptions;
 }
 
 export interface WebhookOptions {
@@ -423,6 +427,14 @@ export function buildServer(options: ServerOptions) {
       usageFinder: media.usageFinder,
     }),
   );
+  // The Google Fonts and Adobe Fonts clients the site fonts routes use.
+  registerSiteFonts(server, options.siteFonts ?? {}, () => ({
+    database: server.database,
+    storage: media.storage,
+    cacheFolder: media.cacheFolder,
+    publicApiUrl: server.publicApiUrl,
+    usageFinder: media.usageFinder,
+  }));
   server.register(async (api) => registerApiRoutes(api, options, media), { prefix: apiPrefix });
 
   if (options.runScheduledJobs ?? true) {
@@ -494,6 +506,7 @@ function registerApiRoutes(
   server.register(liquidTemplatesRoutes);
   server.register(siteEffectsRoutes);
   server.register(siteDesignRoutes);
+  server.register(siteFontsRoutes);
   server.register(pagesRoutes);
   server.register(starterSitesRoutes);
   registerContentModelSyncRoutes(server);

@@ -883,3 +883,25 @@ What's saved is unchanged: the element's `animations` array (at most six) with o
 - Canvas zoom, pan and the right-click menu come separately.
 
 **Screenshots** (in `screenshots/designer-layout/`): `site-desktop`, `site-phone-390`, `builder-grid-place-light`, `builder-grid-place-dark`, `builder-grid-dragging-light`, `builder-shared-style-light`, `builder-site-styles-light` and `builder-site-styles-dark`. At 390px wide the designer shows its "needs a bigger screen" page, as before.
+
+## Site fonts: your own, Google Fonts and Adobe Fonts (3 November 2026)
+
+**Asked for by Daniel:** "We should also be able to add our own fonts, connect adobe, and google fonts."
+
+**Before:** a page could add one of the 23 included fonts, or upload a font file for that page alone, one weight at a time, with the name typed by hand. Nothing was shared between pages, the theme could only use its five system-font pairings, and there was no way to use Google Fonts beyond the included ones, or Adobe Fonts at all.
+
+**Now:** each site has one list of fonts, in Settings → Your website → Manage fonts (`/settings/site/fonts`), and from "Add a font" in the builder's font list. "Add a font" has three tabs:
+
+- **Google Fonts:** the whole library (about 2,000 families), searchable by name and kind, each shown in its own font, with popular ones first. Choose weights (Regular and Bold to start) and italics. Lintel downloads the files on the server and the website serves them itself, so visitors never contact Google (one line says so). Families that come with Lintel are marked.
+- **Your files:** drop several files at once. Lintel reads each file's family, weight and style from inside it, or guesses from the file name ("Guessed from the file name"), and everything can be changed. One tick: "My licence lets me use this font on a website."
+- **Adobe Fonts:** paste a web project ID. Lintel lists its fonts and links Adobe's stylesheet on every page; one line says Adobe serves them and the site's address must be added to the project. Wrong, unknown and empty projects are explained plainly.
+
+The theme can use any site font or included font for **Headings** and **Body text**, in place of the pairing's. The builder's font list is grouped: Theme, Site fonts, This page only, Included fonts. A font a page uploaded for itself still works, and offers "Use it on every page". When the server is offline, the Google and Adobe tabs say so, and the included fonts still work.
+
+Decision record: `docs/decisions/0037-site-fonts.md`. New table `site_fonts` (migration `0032_site_fonts`, checked on a fresh database in tests and on an older data folder at start-up).
+
+**Tests:** core `site-fonts/site-fonts.test.ts` (16: uploads and the licence, reading names, Google search, download, preview, offline, removal, Adobe connect and errors, theme fonts, canvas, per-site, permissions; services mocked) and `font-file-names.test.ts` (7: WOFF2, TTF, WOFF, unreadable files, host allow-list, size cap, timeout). builder-model `fonts/site-fonts.test.ts` (`@font-face` output, unsafe values left out, Adobe IDs, file-name guesses). builder `style-panel/font-picker.test.tsx` (groups, Add a font, moving a page font, Adobe link on the canvas). admin `site-fonts/SiteFontsPage.test.tsx` (7) and `website/SiteSettingsPage.test.tsx` (heading font), and the Content-Security-Policy test.
+
+**Checked in a browser:** added Playfair Display from Google Fonts and two uploaded files as "Hand Note", set them as heading and body fonts, and opened the published site at desktop and 390px: the browser loaded Playfair Display 700 and Hand Note 400 and 700 from the site's own server.
+
+**Screenshots** (in `screenshots/fonts/`): `fonts-empty-desktop-light`, `google-popular-desktop-light`, `google-search-desktop-light`, `google-chosen-desktop-light`, `upload-desktop-light`, `adobe-desktop-light`, `theme-fonts-desktop-light`, `fonts-list-{desktop,phone}-{light,dark}`, `add-dialog-phone-{light,dark}`, `site-desktop` and `site-phone`.

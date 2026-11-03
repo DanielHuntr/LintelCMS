@@ -28,6 +28,9 @@ export interface WebsiteLook {
   template: SiteTemplate;
   theme: SiteTheme;
   logoAssetId: string | null;
+  /** Families chosen for headings and body text over the pairing's; null follows the pairing. */
+  headingFont: string | null;
+  bodyFont: string | null;
 }
 
 /** A blog gets the Journal template; every other kind of site starts with Clean. */
@@ -59,6 +62,8 @@ export function resolveLook(
     template,
     theme: completeTheme({ ...template.defaultTheme, ...chosen }, template.defaultTheme),
     logoAssetId: settings.logoAssetId,
+    headingFont: settings.headingFont,
+    bodyFont: settings.bodyFont,
   };
 }
 
@@ -100,6 +105,8 @@ export async function readWebsite(
     template: look.template.id,
     theme: look.theme,
     logoAssetId: look.logoAssetId,
+    headingFont: look.headingFont,
+    bodyFont: look.bodyFont,
     siteAddress,
     effectiveSiteAddress: siteAddress || context.builtInSiteUrl,
     builtInSiteUrl: context.builtInSiteUrl,

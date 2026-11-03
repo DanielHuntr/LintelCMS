@@ -27,6 +27,9 @@ import {
 } from "@lintel/builder-model";
 import { readSiteDesign } from "../site-design/site-design.service.js";
 import { readSetting } from "../settings/settings.service.js";
+import { readWebsiteFonts } from "../site-fonts/site-fonts.service.js";
+import { websiteFontsStylesheet } from "../site-fonts/website-fonts.js";
+import type { SiteFontChoice } from "@lintel/builder-model";
 
 /**
  * What every page of the built-in site needs, whatever its address: languages, which
@@ -48,6 +51,10 @@ export interface SiteContext {
   /** The site's path prefix ("/fr"), or "" when it has the whole domain. */
   pathPrefix: string;
   stylesheet: { css: string; path: string };
+  /** The site's own fonts, for the builder's font list. */
+  fonts: SiteFontChoice[];
+  /** Stylesheets font services ask to be linked to (an Adobe Fonts project's). */
+  fontStylesheetUrls: string[];
   /** Page transitions, cursor and intro; drawn per page by siteEffectsHead. */
   effectSettings: SiteEffectSettings;
   /** Whether Code elements may run scripts: applied each time a design is drawn. */
@@ -70,6 +77,7 @@ export async function loadSiteContext(
 ): Promise<SiteContext> {
   const { site } = options;
   const effects = readSiteEffects(database);
+  const websiteFonts = readWebsiteFonts(database, site, options.assetLookup);
   const scriptRule = readSetting(database, "builderCustomScripts");
   const design = await readSiteDesign(database);
   const [locales, collections, look, seoEnabled, seoDefaults, siteAddress, plugins] =
@@ -87,9 +95,12 @@ export async function loadSiteContext(
       null)
     : null;
   // Pages designed in the builder need a few element defaults; the canvas draws with this same file.
-  // The site's own design variables come last, beside the theme's tokens they add to.
+  // Site fonts follow the theme, so the theme's heading and body choices can name them. The
+  // site's own design variables come last, beside the theme's tokens they add to.
+  const { fonts, stylesheetUrls } = await websiteFonts;
   const css = [
     siteStylesheet(look.theme, look.template),
+    websiteFontsStylesheet(fonts, look),
     designBaseStylesheet,
     designVariablesStylesheet(design.variables),
   ]
@@ -108,6 +119,8 @@ export async function loadSiteContext(
     siteAddress,
     pathPrefix: site.pathPrefix,
     stylesheet: { css, path: `${STYLESHEET_FOLDER}/site-${fingerprint}.css` },
+    fonts: fonts.map(({ family, category, source }) => ({ family, category, source })),
+    fontStylesheetUrls: stylesheetUrls,
     effectSettings: await effects,
     scriptRule: await scriptRule,
     design,

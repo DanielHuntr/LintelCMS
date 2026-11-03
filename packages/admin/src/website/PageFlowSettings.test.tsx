@@ -18,6 +18,8 @@ const website: Website = {
     colourScheme: "auto",
   },
   logoAssetId: null,
+  headingFont: null,
+  bodyFont: null,
   siteAddress: "",
   effectiveSiteAddress: "http://localhost:3000",
   builtInSiteUrl: "http://localhost:3000",

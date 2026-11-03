@@ -47,6 +47,11 @@ import {
 import { Canvas, type MotionPreview } from "./canvas/Canvas.js";
 import { canvasDropTarget, type CanvasDropTarget } from "./canvas/canvas-drop.js";
 import type { CanvasScriptAddresses, CanvasSite } from "./canvas/canvas-frame-script.js";
+import {
+  SiteFontsContext,
+  type SiteFontTools,
+  type UploadedPageFont,
+} from "./style-panel/font-choices.js";
 import type {
   ForwardedKey,
   MessageFromFrame,
@@ -123,6 +128,10 @@ export interface PageBuilderProps {
   findPage?: PageFinder;
   /** Uploads a font or video file to the media library, for custom fonts and video backgrounds. */
   uploadFile?: FileUploader;
+  /** Opens the site's fonts, from "Add a font". Left out, the button isn't shown. */
+  onAddFont?: () => void;
+  /** Makes a font uploaded to this page alone a site font; resolves true when it did. */
+  onMoveFontToSite?: (font: UploadedPageFont) => Promise<boolean>;
   /** The admin's `t()`, so the builder's words can be translated with the admin's. */
   text?: Translate;
   /** Before the title: usually a back link. After the toolbar's controls: save state, Publish. */
@@ -189,11 +198,18 @@ type LeftTab = "layers" | "insert";
  * The first time someone opens it, a short tour shows them around.
  */
 export function PageBuilder({ text = englishText, ...props }: PageBuilderProps) {
+  const { site, onAddFont, onMoveFontToSite } = props;
+  const siteFonts = useMemo<SiteFontTools>(
+    () => ({ fonts: site?.fonts ?? [], addFont: onAddFont, moveToSite: onMoveFontToSite }),
+    [site?.fonts, onAddFont, onMoveFontToSite],
+  );
   return (
     <BuilderTextProvider text={text}>
       <PagePickerContext value={props.pickPage}>
         <PageFinderContext value={props.findPage}>
-          <PageBuilderScreen {...props} text={text} />
+          <SiteFontsContext value={siteFonts}>
+            <PageBuilderScreen {...props} text={text} />
+          </SiteFontsContext>
         </PageFinderContext>
       </PagePickerContext>
     </BuilderTextProvider>
