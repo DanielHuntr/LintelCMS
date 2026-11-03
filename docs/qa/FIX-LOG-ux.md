@@ -426,4 +426,14 @@ Daniel compared the motion with Framer and Webflow: Framer animates between stat
 - **Start and End lines:** drawn on the canvas for the selected element's scene. Drag them, or move them with the arrow keys.
 - **Tests:** browser tests for smoothing, snapping and directions (`motion/src/browser-tests/runtime.browser.test.ts`) and for the lines (`builder/src/browser-tests/canvas-free-layout.test.ts`). Each fails without its change. There are unit tests for the maths and the settings, and the animation spec reference is updated.
 
-**Next:** one scene with steps across several elements, open and selected states, and several animations on one element.
+**Scene steps (4 November 2026):**
+
+- A scroll animation can follow another element's scroll (`follows`, by node id) over part of its scene (`range`). The title, picture and numbers in a held section can each play their own step.
+- In the settings: "Plays as this scrolls past" offers this element or the elements around it, with "Starts at" and "Ends at" as percentages of the scene.
+- On the website, the followed element carries its id.
+- Tests:
+  - a browser test of a step in the second half of a section's scene;
+  - unit tests for the maths and the settings;
+  - a render test for the id.
+
+**Next:** open and selected states, and several animations on one element.
