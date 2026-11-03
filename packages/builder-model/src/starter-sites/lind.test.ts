@@ -58,6 +58,12 @@ describe("the Lind starter site", () => {
     }
   });
 
+  it("lets a long name and price wrap rather than push past a phone's edge", () => {
+    const rows = pageNodes("shop").filter((node) => node.name === "Name and price");
+    expect(rows).toHaveLength(6);
+    for (const row of rows) expect(row.styles.base.flexWrap).toBe("wrap");
+  });
+
   it("shows the shop's products while Shop is on, and the lookbook either way", () => {
     for (const slug of ["home", "shop"]) {
       expect(

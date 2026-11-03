@@ -219,12 +219,7 @@ function footer(): NodeBlueprint {
         at(10, 3, 1, { gap: space(2) }),
       ),
       label("© 2026 Hollis Hair & Skin Pty Ltd", "Small print", at(1, 6, 2)),
-      {
-        type: "clock",
-        name: "Time in Melbourne",
-        props: { zone: "Australia/Sydney", hours: "12", label: "Fitzroy" },
-        styles: at(7, 3, 2, { ...parts.look.detail, color: parts.look.quiet }),
-      },
+      parts.localTime("Fitzroy", "Australia/Sydney", at(7, 3, 2), "12"),
     ],
     { element: "footer", top: 8, bottom: 6 },
   );

@@ -146,9 +146,11 @@ function thing(item: Thing, level: number | null): NodeBlueprint {
         {
           base: {
             flexDirection: "row",
+            flexWrap: "wrap",
             justifyContent: "space-between",
             alignItems: "baseline",
-            gap: space(3),
+            columnGap: space(3),
+            rowGap: "0",
             marginTop: space(2),
           },
         },
@@ -235,12 +237,7 @@ function footer(): NodeBlueprint {
         at(10, 3, 1, { gap: space(2) }),
       ),
       label("© 2026 Lind ApS · CVR 12 34 56 78", "Small print", at(1, 6, 2)),
-      {
-        type: "clock",
-        name: "Time in Aarhus",
-        props: { zone: "Europe/Berlin", hours: "24", label: "Aarhus" },
-        styles: at(7, 3, 2, { ...parts.look.detail, color: parts.look.quiet }),
-      },
+      parts.localTime("Aarhus", "Europe/Berlin", at(7, 3, 2)),
     ],
     {
       element: "footer",

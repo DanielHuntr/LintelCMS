@@ -267,12 +267,7 @@ function footer(): NodeBlueprint {
         at(9, 4, 2, { gap: space(2) }),
       ),
       label("© 2026 Halyard Studio (Pty) Ltd", "Small print", at(1, 4, 3)),
-      {
-        type: "clock",
-        name: "Time in Cape Town",
-        props: { zone: "Africa/Johannesburg", hours: "24", label: "Cape Town" },
-        styles: at(5, 4, 3, { ...parts.look.detail, color: parts.look.quiet }),
-      },
+      parts.localTime("Cape Town", "Africa/Johannesburg", at(5, 4, 3)),
     ],
     {
       element: "footer",
@@ -287,7 +282,7 @@ const homePage = {
   slug: "home",
   title: "Home",
   summary:
-    "Halyard is a strength and yoga studio in Woodstock, Cape Town: small coached classes from 6am, seven days a week.",
+    "Halyard is a strength and yoga studio in Woodstock, Cape Town: small coached classes seven days a week, from 6am on weekdays.",
   sections: [
     gridBand(
       "Opening",
@@ -353,7 +348,7 @@ const homePage = {
       "In numbers",
       [
         ...[
-          { number: "26", counts: "Classes a week" },
+          { number: "20", counts: "Classes a week" },
           { number: "8", counts: "People to a class, at most" },
           { number: "6am", counts: "First class, every weekday" },
         ].map((item, index) =>

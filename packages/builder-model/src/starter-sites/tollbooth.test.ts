@@ -75,6 +75,14 @@ describe("the Tollbooth starter site", () => {
     for (const price of prices) expect(String(price.props.text)).toMatch(/^£\d+$/);
   });
 
+  it("draws the years in the claret that reads in light and dark, with dates that add up", () => {
+    const nodes = pageNodes("story");
+    expect(nodes.some((node) => node.type === "timeline")).toBe(false);
+    const years = nodes.filter((node) => node.name === "When");
+    expect(years.map((node) => node.props.text)).toEqual(["1820", "1924", "2019", "Today"]);
+    for (const year of years) expect(year.styles.base.color).toBe("var(--lintel-var-claret)");
+  });
+
   it("shows opening hours and a way to book, keeping the phone number when Forms is off", () => {
     expect(pageNodes("home").some((node) => node.type === "table")).toBe(true);
     expect(pageNodes("visit").find((node) => node.type === "formEmbed")?.props.form).toBe(

@@ -66,6 +66,14 @@ describe("the Halyard starter site", () => {
     }
   });
 
+  it("counts as many classes on the home page as the timetable shows", () => {
+    const sessions = pageNodes("timetable")
+      .filter((node) => node.type === "table")
+      .flatMap((node) => node.props.rows as unknown[]);
+    const figure = pageNodes("home").find((node) => node.name === "Figure");
+    expect(String(sessions.length)).toBe(figure?.props.text);
+  });
+
   it("has a timetable for every day, classes with pictures on hover and three memberships", () => {
     const days = pageNodes("timetable").filter((node) => node.type === "table");
     expect(days).toHaveLength(7);

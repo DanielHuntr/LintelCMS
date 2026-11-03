@@ -124,6 +124,47 @@ function course(name: string, note: string, dishes: readonly PriceItem[]): NodeB
   );
 }
 
+const years = [
+  { when: "1820", title: "The toll house", text: "Built at the foot of Leith Walk." },
+  {
+    when: "1924",
+    title: "Lennie’s sweet shop",
+    text: "Boiled sweets and tablet for eighty-five years.",
+  },
+  {
+    when: "2019",
+    title: "Tollbooth opens",
+    text: "Twelve chairs, a second-hand grill and a lot of borrowed plates.",
+  },
+  { when: "Today", title: "Twenty-eight seats", text: "And a waiting list for Friday nights." },
+];
+
+/** One moment in the house's life: the year in claret, then what happened. */
+function yearRow(year: (typeof years)[number]): NodeBlueprint {
+  return group(
+    "Year",
+    [
+      words("When", year.when, { base: { ...parts.look.detail, color: claret } }),
+      group(
+        "What happened",
+        [
+          heading("Title", year.title, 3, { base: { ...serif, fontSize: "1.375rem" } }),
+          words("About it", year.text, { base: { color: parts.look.quiet } }),
+        ],
+        { base: { gap: space(1) } },
+      ),
+    ],
+    {
+      base: {
+        display: "grid",
+        gridTemplateColumns: "5rem minmax(0, 1fr)",
+        alignItems: "baseline",
+        gap: space(4),
+      },
+    },
+  );
+}
+
 function navigation(): NodeBlueprint {
   return parts.navigation({
     logo: { ...serif, fontSize: "1.5rem", fontWeight: "400", letterSpacing: "-0.01em" },
@@ -169,12 +210,7 @@ function footer(): NodeBlueprint {
         ],
         at(7, 3, 2, { gap: space(2) }),
       ),
-      {
-        type: "clock",
-        name: "Time in Edinburgh",
-        props: { zone: "Europe/London", hours: "24", label: "Edinburgh" },
-        styles: at(10, 3, 2, { ...parts.look.detail, color: parts.look.quiet }),
-      },
+      parts.localTime("Edinburgh", "Europe/London", at(10, 3, 2)),
     ],
     {
       element: "footer",
@@ -247,7 +283,7 @@ const homePage = {
         image(
           "The toll house",
           "tollbooth-house",
-          "Drawing of a small six-sided stone house with a chimney and a red arched door",
+          "Drawing of a small stone house with a chimney and a red arched door",
           at(7, 6, 3),
           animate("mask-reveal-up", { delay: 150 }),
         ),
@@ -465,7 +501,7 @@ const storyPage = {
         ),
         words(
           "About the room",
-          "The house was built in 1820 to take tolls from carts coming up from the docks. After the tolls stopped it was a sweet shop for ninety years, then empty for ten. We kept the stone, the shutters and the bend in the floor, put a wood grill where the counter was, and built one long oak table down the middle.\n\nMairi runs the kitchen; Tom runs the room and the wine. Most nights you’ll meet both of us.",
+          "The house was built in 1820 to take tolls from carts coming up from the docks. After the tolls stopped it was a sweet shop for eighty-five years, then empty for ten. We kept the stone, the shutters and the bend in the floor, put a wood grill where the counter was, and built one long oak table down the middle.\n\nMairi runs the kitchen; Tom runs the room and the wine. Most nights you’ll meet both of us.",
           at(9, 4, 1, { whiteSpace: "pre-line", lineHeight: "1.65", alignSelf: "end" }),
           animate("fade-up", { delay: 150 }),
         ),
@@ -478,32 +514,12 @@ const storyPage = {
         heading("Timeline title", "Over the years", 2, {
           base: { ...serif, fontSize: "clamp(1.75rem, 3vw, 2.5rem)", fontWeight: "400" },
         }),
-        {
-          type: "timeline",
-          name: "Our years",
-          props: {
-            numbered: false,
-            items: [
-              { when: "1820", title: "The toll house", text: "Built at the foot of Leith Walk." },
-              {
-                when: "1883",
-                title: "Lennie’s sweet shop",
-                text: "Boiled sweets and tablet for ninety years.",
-              },
-              {
-                when: "2019",
-                title: "Tollbooth opens",
-                text: "Twelve chairs, a second-hand grill and a lot of borrowed plates.",
-              },
-              {
-                when: "Today",
-                title: "Twenty-eight seats",
-                text: "And a waiting list for Friday nights.",
-              },
-            ],
-          },
-          animation: animate("stagger-up", { stagger: 80 }),
-        },
+        group(
+          "Our years",
+          years.map(yearRow),
+          { base: { gap: space(5) } },
+          animate("stagger-up", { stagger: 80 }),
+        ),
       ],
       {
         top: 6,

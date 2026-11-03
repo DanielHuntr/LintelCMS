@@ -234,12 +234,7 @@ function footer(): NodeBlueprint {
         "Small print",
         [
           label("12 rue Cardinale, 13100 Aix-en-Provence", "Address"),
-          {
-            type: "clock",
-            name: "Time in Aix",
-            props: { zone: "Europe/Paris", hours: "24", label: "Aix" },
-            styles: { base: { ...parts.look.detail, color: parts.look.quiet } },
-          },
+          parts.localTime("Aix", "Europe/Paris"),
           label("© 2026 Verveine Événements", "Copyright"),
         ],
         {

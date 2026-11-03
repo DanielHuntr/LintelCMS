@@ -132,25 +132,25 @@ const gatherings: readonly Gathering[] = [
     details: "Saturday, 11am to 2pm, in the hall. Bring a coat, take a coat.",
   },
   {
-    day: "20",
+    day: "19",
     month: "Nov",
     title: "Thursday lunch: Irish stew night",
     details: "Thursday, 6pm. An evening lunch, for once. Pay what you like.",
   },
   {
-    day: "29",
+    day: "28",
     month: "Nov",
     title: "Garden put-to-bed day",
     details: "Saturday, 10am. Mulching, mending and soup afterwards.",
   },
   {
-    day: "06",
+    day: "05",
     month: "Dec",
     title: "Christmas hampers: packing day",
     details: "Saturday, 10am to 4pm. Come for an hour or all day.",
   },
   {
-    day: "07",
+    day: "06",
     month: "Dec",
     title: "Bike workshop: lights and brakes",
     details: "Sunday, 11am. Get your bike ready for the dark evenings.",
@@ -252,12 +252,7 @@ function footer(): NodeBlueprint {
         "Small print",
         at(1, 8, 2, { color: parts.look.quiet }),
       ),
-      {
-        type: "clock",
-        name: "Time in Dublin",
-        props: { zone: "Europe/Dublin", hours: "24", label: "Dublin" },
-        styles: at(9, 4, 2, { ...parts.look.detail, color: parts.look.quiet }),
-      },
+      parts.localTime("Dublin", "Europe/Dublin", at(9, 4, 2)),
     ],
     {
       element: "footer",

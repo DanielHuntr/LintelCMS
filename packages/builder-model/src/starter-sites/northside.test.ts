@@ -63,6 +63,19 @@ describe("the Northside Commons starter site", () => {
     }
   });
 
+  it("puts every event on the weekday it names", () => {
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const nodes = pageNodes("events");
+    const dates = nodes.filter((node) => node.name === "Day").map((node) => node.props.text);
+    const months = nodes.filter((node) => node.name === "Month").map((node) => node.props.text);
+    const details = nodes.filter((node) => node.name === "Details");
+    expect(details).toHaveLength(5);
+    details.forEach((node, index) => {
+      const date = new Date(`${String(dates[index])} ${String(months[index])} 2026 12:00 UTC`);
+      expect(String(node.props.text).startsWith(days[date.getUTCDay()] ?? "")).toBe(true);
+    });
+  });
+
   it("says what it does, what's on and how to give money, time or food", () => {
     expect(pageNodes("events").filter((node) => node.name === "Event")).toHaveLength(5);
     const giving = pageNodes("get-involved");
