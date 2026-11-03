@@ -47,6 +47,29 @@ There are also ready-made animated elements in the Insert panel: **Magnetic butt
 **Card stack**, **3D gallery**, **Scrolling row**, **Counter row**, **Switch**, **Round
 menu** and **Notification**. They start with their effects, which you can change or remove.
 
+## Playful elements
+
+- **Text on a path** puts words around a circle, like a sticker, or along an arc or a
+  wave. It takes its font, colour and size from the text's style, so it follows your site's
+  text styles; a bigger text size makes a bigger badge. A circle badge can turn slowly or as
+  people scroll, and stays still for people who ask for less motion. Screen readers read the
+  words once, as ordinary text.
+- **Lottie animation** and **Rive animation** play a file from your media library: a
+  Lottie `.json` or `.lottie`, or a Rive `.riv`. Upload one in the element's Content panel;
+  until you do, it plays a small sample so you can see how it works. Choose when it plays
+  (when it comes into view, as soon as the page opens, and for Lottie also while the pointer
+  is over it or as people scroll). A Rive animation can respond to the pointer or a click by
+  switching its state machine's input. Add a still picture under More options: it shows
+  before the animation loads and, instead of the animation, for people who ask for less
+  motion. Describe what it shows for screen readers, or leave it empty if it's decoration.
+- **Sticker playground** is a box of stickers and badges visitors can pick up and throw;
+  they bump into each other and stay inside the box. Put anything inside it. Its **Drag and
+  throw these** effect (also in the gallery for any container) chooses how things move:
+  float and drift, fall into a pile, or bouncy, and can show a **Tidy up** button. People
+  using a keyboard move the focused sticker with the arrow keys. A finger swipe on the
+  box's empty space still scrolls the page. Everything goes back to its place when the page
+  is opened again, and stays where you put it for people who ask for less motion.
+
 ## Motion across the whole site
 
 Smooth scrolling, the site's cursor, page transitions and an intro on the first visit are

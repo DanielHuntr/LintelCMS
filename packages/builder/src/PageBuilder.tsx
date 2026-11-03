@@ -41,6 +41,7 @@ import {
   type SiteEffectSettings,
 } from "@lintel/motion/effects";
 import type { EffectPreview } from "./animate-panel/AnimatePanel.js";
+import { useAnimationElementPreview } from "./canvas/animation-preview.js";
 import { collectNodeEffects } from "./render/page-effects.js";
 import {
   type ReactNode,
@@ -85,6 +86,7 @@ import {
   usePreference,
 } from "./preferences/builder-preferences.js";
 import { type ImagePicker, PictureBaseUrlContext } from "./panels/content-fields.js";
+import { FileUploaderContext } from "./panels/file-field.js";
 import { PictureDropStatus } from "./canvas/PictureDropStatus.js";
 import { type PictureUploader, usePictureDrop } from "./canvas/usePictureDrop.js";
 import { canvasPageData } from "./panels/canvas-data.js";
@@ -487,6 +489,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
       ),
     [effectModules],
   );
+  useAnimationElementPreview(selectedNode, previewEffect);
   const pageWeight = useMemo(() => {
     const used = collectNodeEffects(root).flatMap(({ effects }) =>
       effects.flatMap((saved) => effectRegistry.find(saved.effect) ?? []),
@@ -1058,78 +1061,80 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                   </main>
                   <CanvasLookContext value={canvasLook}>
                     <PictureBaseUrlContext value={site?.baseUrl ?? null}>
-                      <SelectedElementPanel
-                        document={state.document}
-                        node={selectedNode ?? null}
-                        nodeName={labels.selected ?? ""}
-                        definition={definition}
-                        isLocked={selectedIsLocked}
-                        breakpoint={breakpoint}
-                        registry={registry}
-                        canEditCode={canEditCode}
-                        tips={tips}
-                        pickImage={props.pickImage}
-                        uploadFile={props.uploadFile}
-                        motionText={props.motionText}
-                        siteCursorOn={cursorIsOn(props.siteEffects?.value.cursor)}
-                        actions={{
-                          ...actions,
-                          animate: (nodeId, animations) => {
-                            actions.animate(nodeId, animations);
-                            if (animations.length === 0) setMotionPreview(null);
-                          },
-                        }}
-                        onPreviewMotion={previewMotion}
-                        onPreviewEffect={previewEffect}
-                        onStyleStateChange={reportStylingState}
-                        onPointAtElement={setHoveredId}
-                        onSelectMany={(nodeIds) => {
-                          const first = nodeIds[0];
-                          if (!first) return;
-                          setHighlight(nodeIds);
-                          selectFromPanel(first);
-                          announce(
-                            text("pageBuilder.siteStyles.selected", { count: nodeIds.length }),
-                          );
-                        }}
-                        effectModules={props.effectModules}
-                        pageWeight={pageWeight}
-                        pageSettings={
-                          props.siteSections && (
-                            <PageSiteSections
-                              page={root}
-                              onChange={(slot, hidden) =>
-                                actions.setSiteSectionHidden(slot, hidden)
-                              }
-                            />
-                          )
-                        }
-                        sectionTools={
-                          props.siteSections?.onChange && (
-                            <SectionSiteTools
-                              root={root}
-                              node={selectedNode ?? null}
-                              onUseAsSite={(slot) => {
-                                if (selectedNode) actions.useAsSiteSection(selectedNode.id, slot);
-                              }}
-                              onUseAsOwn={() => {
-                                if (selectedNode)
-                                  actions.markAsPageOwn(selectedNode.id, "navigation");
-                              }}
-                            />
-                          )
-                        }
-                        siteMotion={
-                          props.siteEffects && (
-                            <SiteMotionSettingsWithColours
-                              value={props.siteEffects.value}
-                              onChange={props.siteEffects.onChange}
-                              translate={props.motionText}
-                              pickPicture={props.pickImage}
-                            />
-                          )
-                        }
-                      />
+                      <FileUploaderContext value={props.uploadFile ?? null}>
+                        <SelectedElementPanel
+                          document={state.document}
+                          node={selectedNode ?? null}
+                          nodeName={labels.selected ?? ""}
+                          definition={definition}
+                          isLocked={selectedIsLocked}
+                          breakpoint={breakpoint}
+                          registry={registry}
+                          canEditCode={canEditCode}
+                          tips={tips}
+                          pickImage={props.pickImage}
+                          uploadFile={props.uploadFile}
+                          motionText={props.motionText}
+                          siteCursorOn={cursorIsOn(props.siteEffects?.value.cursor)}
+                          actions={{
+                            ...actions,
+                            animate: (nodeId, animations) => {
+                              actions.animate(nodeId, animations);
+                              if (animations.length === 0) setMotionPreview(null);
+                            },
+                          }}
+                          onPreviewMotion={previewMotion}
+                          onPreviewEffect={previewEffect}
+                          onStyleStateChange={reportStylingState}
+                          onPointAtElement={setHoveredId}
+                          onSelectMany={(nodeIds) => {
+                            const first = nodeIds[0];
+                            if (!first) return;
+                            setHighlight(nodeIds);
+                            selectFromPanel(first);
+                            announce(
+                              text("pageBuilder.siteStyles.selected", { count: nodeIds.length }),
+                            );
+                          }}
+                          effectModules={props.effectModules}
+                          pageWeight={pageWeight}
+                          pageSettings={
+                            props.siteSections && (
+                              <PageSiteSections
+                                page={root}
+                                onChange={(slot, hidden) =>
+                                  actions.setSiteSectionHidden(slot, hidden)
+                                }
+                              />
+                            )
+                          }
+                          sectionTools={
+                            props.siteSections?.onChange && (
+                              <SectionSiteTools
+                                root={root}
+                                node={selectedNode ?? null}
+                                onUseAsSite={(slot) => {
+                                  if (selectedNode) actions.useAsSiteSection(selectedNode.id, slot);
+                                }}
+                                onUseAsOwn={() => {
+                                  if (selectedNode)
+                                    actions.markAsPageOwn(selectedNode.id, "navigation");
+                                }}
+                              />
+                            )
+                          }
+                          siteMotion={
+                            props.siteEffects && (
+                              <SiteMotionSettingsWithColours
+                                value={props.siteEffects.value}
+                                onChange={props.siteEffects.onChange}
+                                translate={props.motionText}
+                                pickPicture={props.pickImage}
+                              />
+                            )
+                          }
+                        />
+                      </FileUploaderContext>
                     </PictureBaseUrlContext>
                   </CanvasLookContext>
                 </div>

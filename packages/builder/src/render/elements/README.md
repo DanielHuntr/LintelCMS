@@ -2,8 +2,9 @@
 
 How each element of the library (`@lintel/builder-model`'s `*-components.ts`) prints its HTML,
 one file per Insert group: `layout.tsx`, `media.tsx`, `info.tsx`, `navigation.tsx`,
-`forms.tsx`, `collections.tsx` and `shop.tsx`. `index.ts` is the one list of them that
-`standardRenders` spreads in.
+`forms.tsx`, `collections.tsx` and `shop.tsx`, plus `effects.tsx` (the ready-made animated
+elements) and `creative.tsx` (text on a path, Lottie, Rive and the sticker playground; see
+decision 0055). `index.ts` is the one list of them that `standardRenders` spreads in.
 
 - **Semantic HTML, no inline styles.** The element's outer tag gets its builder class; its
   parts use fixed `lintel-<element>__<part>` classes styled in `element-stylesheet.ts`, every

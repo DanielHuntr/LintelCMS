@@ -184,7 +184,12 @@ const dragPlayground: EffectBehaviour = (container, params, context) => {
       // Everything wakes on the first touch: floating and tidied items move again.
       for (const { body } of items) body.pinned = false;
       Object.assign(item.body, { held: true, velocityX: 0, velocityY: 0 });
-      item.element.setPointerCapture?.(event.pointerId);
+      // A pointer the browser has already let go of can't be captured; the drag still works.
+      try {
+        item.element.setPointerCapture?.(event.pointerId);
+      } catch {
+        // Nothing to do.
+      }
       item.element.style.cursor = "grabbing";
       item.element.style.zIndex = "2";
       trackers.x.reset();

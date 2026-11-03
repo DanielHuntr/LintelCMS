@@ -22,7 +22,11 @@ subject is (the focal point) so every crop keeps it in view.
    The filename is cleaned (`filenames.ts`) and given the extension of its real type.
 
 Allowed: JPEG, PNG, WebP, AVIF, GIF and SVG images; PDF, Word (`.docx`), Excel (`.xlsx`),
-PowerPoint (`.pptx`), plain text and CSV documents.
+PowerPoint (`.pptx`), plain text and CSV documents. Animations for the builder's Lottie and Rive
+elements are recognised by their bytes too: a Lottie `.json` (JSON with a version, frame
+rate, length and layers), a `.lottie` (a zip holding `animations/*.json`) and a Rive `.riv`
+(starting `RIVE`). They are served with `access-control-allow-origin: *`, like fonts,
+because pages fetch them by script (decision 0055).
 
 ## Endpoints
 

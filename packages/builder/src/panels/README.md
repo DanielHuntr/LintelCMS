@@ -29,7 +29,8 @@ kind, show them in collapsible groups (Words, Link, Picture, Options; see
 
 The element library's Content fields: `field-controls.tsx` draws any simple field (numbers,
 dates, icons, pictures kept with their description, a choice of the site's collections or
-forms), `item-list-field.tsx` lists of items with fields of their own (slides, plans, people)
+forms), `file-field.tsx` a file from the media library (the Lottie and Rive elements'
+animation: uploaded, or by address), `item-list-field.tsx` lists of items with fields of their own (slides, plans, people)
 and the **Shows** picker that binds a prop to a field of the current entry. `data-sources.ts`
 holds what the app says the site has (`BuilderDataSources`) and finds the list or item page
 an element is in; `canvas-data.ts` turns it into sample data for the canvas.
