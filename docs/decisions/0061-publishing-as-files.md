@@ -34,3 +34,21 @@ publishes the website as files to the hosting they have (`src/static-site`,
   stock under a file lock and counts its own orders until Lintel's next catalogue includes them.
 - Shop features that need Lintel's full rules (automatic and buy-X-get-Y discounts, Stripe
   Tax) only work on a live server.
+
+## Brought up to date (3 November 2026)
+
+This was built on an older branch and merged after sites, the page builder, the cookie notice,
+visitor counts and A/B tests arrived.
+
+- Each destination publishes one site, under its path prefix, with addresses from the content
+  tree. A page under a site start with a domain of its own is left out.
+- Whatever every page shows is fingerprinted from the drawn "page not found" page, so a new
+  navigation, footer, font or style redraws every page without the export having to know each
+  feature. A page with a collection list follows the collections.
+- Forms made in the page builder are pointed at the companion as the page is saved, and fetch a
+  fresh token: a token drawn at publish time would be stale.
+- Visitor counts and A/B tests are left out, not faked. Both need something to answer each
+  visitor. Published pages show the original version, and the admin says why.
+- Shop buttons in designs talk to the storefront API, which the companion doesn't speak, so they
+  need a running Lintel. The export names the pages that have them; the companion's own shop
+  pages keep working.

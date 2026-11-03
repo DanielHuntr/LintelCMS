@@ -1710,3 +1710,29 @@ Decision record: `docs/decisions/0053-content-only-editing-for-clients.md`. Migr
 **Screenshots** (in `screenshots/addon-kit/`): `addons-list-{desktop,390}-{light,dark}`, `addon-details-{desktop,390}-{light,dark}`, `opening-hours-screen-{desktop,390}-{light,dark}`.
 
 **Left for later:** rich text extensions (the editor's buttons and the HTML renderer are one fixed list; documented as next); an add-on's own tables aren't in backups yet (backups cover Lintel's schema; the same was already true of plugins from lintel.config.ts); Lintel's packages aren't on npm, so new add-ons link to a local copy of Lintel for types and tests.
+
+## Static publishing and deploy recipes (3 November 2026)
+
+**Asked by Daniel:** bring the two older branches (publishing as files, with a PHP companion; the shared-hosting package, checkers and VPS installer) up to today's Lintel, say plainly what a static host can't do, and make "needs a server" a ten-minute job.
+
+**What changed:**
+
+- **Merged** `phase-6/hosting` and `phase-6/static-publish`. The cron request now also runs backups, update checks and visitor counts. One command line: `lintel cron`, `doctor`, `check`, `publish`, `export`. Decision records became 0054 and 0061; the tables are migration 0032.
+- **Publishing covers today's website:** each destination publishes one site, under its path prefix, with content tree addresses. Navigation and footer sections, site styles, fonts, the cookie notice, animations and effects are copied in as files. Forms made in the builder post to the companion with a fresh token. A change to anything every page shows redraws every page.
+- **Settings → Publishing says what doesn't work and why:** visitor counts, A/B tests and shop buttons in designs (which need a running Lintel), and member logins. The export names the pages with shop buttons.
+- **Deploy recipes:** `render.yaml`, `railway.json`, `fly.toml` and `deploy/digitalocean/user-data.sh`, with new or shorter guides. Lintel takes its address from Railway, Render or Fly.io until `PUBLIC_URL` is set.
+- **Check this server:** `lintel check` and Settings → This server report Node.js, the database, memory, folders, image resizing and internet access, and gather what to ask the host into one message.
+- **The Docker image builds again** (LINTEL-UX-120, 121).
+
+**Checked for real:**
+
+- **Docker:** `docker build`, then `deploy/docker-compose.yml` with Postgres 17 on a fresh volume: `/ready`, the website, the admin and the setup status all answer, and `lintel check` passes in the container. Containers and volumes were removed afterwards.
+- **Publishing:** on a copy of the styles test data (an older database, so migration 0032 ran on it), a publish to a folder wrote 100 files. A plain file server showed the home page, a page, search and the shop with no failed requests at 1280px and 390px, the intro effect included.
+- **PHP companion:** under PHP 8.3 in a container, a form was refused with its field's message, then accepted, and the next publish collected it into Forms.
+- **Migration:** fresh database through the test suite, older database as above; `db:generate` reports no changes.
+
+**Not tested for real:** the recipes on Railway, Render, Fly.io and DigitalOcean themselves (no accounts here); their files are parsed and checked by `deploy-recipes.test.ts`, and they all run the image above. The `bridge.test.ts` tests that need PHP on the computer are skipped here (no PHP on this machine); they run in CI.
+
+**Screenshots** (in `screenshots/static-and-deploy/`): `publishing-{desktop,390}-{light,dark}`, `this-server-{desktop,390}-{light,dark}`, `published-home-{desktop,390}`.
+
+**Left for later:** shop elements in designs on a file host (the companion would need to speak the storefront API); `?sort=` and further pages of designed lists on a file host; file upload questions through the companion; the image is 1.8 GB and could be smaller.

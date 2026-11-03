@@ -877,3 +877,15 @@ Found by a code review of the newer website, builder, fonts and motion work, and
 | LINTEL-CODE-016 | P2       | Fixed  | Navigation and footer changes made in the builder go live at once, before the page is published                                              |
 
 Not in scope: making site styles and site motion per site (a separate track, Daniel's decision).
+
+## Static publishing and deploy recipes (3 November 2026)
+
+| ID            | Severity | Status | Defect                                                                                                                                              |
+| ------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| LINTEL-UX-120 | P1       | Fixed  | The production Docker image doesn't build: packages the API needs aren't installed or built, so Docker, Railway, Render and Fly.io deploys all stop |
+| LINTEL-UX-121 | P1       | Fixed  | `pnpm deploy` in the Dockerfile looks for `@lintel/core` on npm and stops, through the Bookings example's peer dependency                           |
+| LINTEL-UX-122 | P2       | Fixed  | `lintel doctor --hosting` can't find the hosting checker in a built copy, and says sharp isn't installed in the Docker image                        |
+| LINTEL-UX-123 | P2       | Fixed  | Publishing to a folder fails on Windows: the temporary file's name is built from the full path                                                      |
+| LINTEL-UX-124 | P2       | Fixed  | Forms on the website drawn from Form sections posted to the API's own address, not the website's                                                    |
+| LINTEL-UX-125 | P2       | Fixed  | Timed jobs added since the cron request was written (backups, update checks, visitor counts) wouldn't have run from cron                            |
+| LINTEL-UX-126 | P3       | Fixed  | A message from the PHP companion isn't shown under a builder form, and only the last ticked box of a question reaches it                            |
