@@ -17,6 +17,7 @@ import { useRememberedOpenSections } from "../preferences/open-sections.js";
 import { CollapsibleSection } from "../ui/CollapsibleSection.js";
 import { classNames } from "../ui/classNames.js";
 import { ChoiceGroup, inputClassName } from "../ui/controls.js";
+import { insertGroupIcons } from "./insert-group-icons.js";
 import {
   groupInsertItems,
   type InsertItem,
@@ -260,6 +261,7 @@ export function InsertPanel({
                 key={group.id}
                 variant="group"
                 title={text(group.title)}
+                icon={insertGroupIcons[group.id]}
                 summary={String(group.items.length)}
                 isOpen={openGroups.isOpen(group.id)}
                 onToggle={() => openGroups.toggle(group.id)}

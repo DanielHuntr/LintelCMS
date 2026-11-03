@@ -1,4 +1,4 @@
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, type LucideIcon } from "lucide-react";
 import { createContext, type ReactNode, useContext, useId } from "react";
 import type { OpenSections } from "../preferences/open-sections.js";
 import { classNames } from "./classNames.js";
@@ -27,6 +27,8 @@ interface CollapsibleSectionProps {
   isContentDisabled?: boolean;
   /** For sections inside sections, such as the categories in Insert. */
   variant?: "panel" | "group";
+  /** A small picture before the title, so a long list can be scanned without reading it. */
+  icon?: LucideIcon;
 }
 
 /**
@@ -43,6 +45,7 @@ export function CollapsibleSection({
   children,
   isContentDisabled = false,
   variant = "panel",
+  icon: Icon,
 }: CollapsibleSectionProps) {
   const buttonId = useId();
   const contentId = useId();
@@ -72,6 +75,7 @@ export function CollapsibleSection({
               isOpen && "rotate-90",
             )}
           />
+          {Icon && <Icon aria-hidden="true" className="size-4 shrink-0 text-label-secondary" />}
           <span
             className={classNames(
               "shrink-0 font-semibold text-label",

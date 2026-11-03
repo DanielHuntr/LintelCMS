@@ -96,6 +96,10 @@ describe("the Insert panel", () => {
       "Shop2",
       "Footer8",
     ]);
+    // Each category has a picture beside its name, hidden from screen readers.
+    for (const group of groups) {
+      expect(group.querySelectorAll("svg[aria-hidden='true']")).toHaveLength(2);
+    }
     expect(screen.queryByRole("button", { name: "Hero" })).not.toBeInTheDocument();
 
     await person.click(disclosure("Intro and banners"));

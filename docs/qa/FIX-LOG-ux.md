@@ -2186,3 +2186,7 @@ Daniel showed Stripe refusing `http://localhost:4100/shop/stripe/webhook` with "
 - A test session lasts two hours even if the person who started it loses access.
 
 **Follow-up:** orders paid with a provider's test keys now count as test orders, which closes the first item above. Stripe's `livemode: false` (on the webhook, polled events and the return), a Mollie payment in `mode: "test"` and PayPal's sandbox set `isTest`. If Stripe says nothing, the payment counts as live. Delete test orders now removes each order's checkout too, so a late provider message can't place the order again. Covered by seven new tests in `payment-checks.test.ts`, with the fake providers only.
+
+## Insert category icons
+
+- **LINTEL-UX-240:** the categories in Insert were a long list of words in capitals, which people had to read one by one. Each category in Sections and Elements now has a small picture beside its name, hidden from screen readers. `panels/insert-group-icons.ts` holds the list, and `CollapsibleSection` takes an optional `icon`. A test checks every category has one.
