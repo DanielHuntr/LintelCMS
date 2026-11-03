@@ -184,8 +184,9 @@ export async function mediaRoutes(server: FastifyInstance, options: MediaRoutesO
       .header("cross-origin-resource-policy", "cross-origin");
 
     // Browsers only use a font from another address when it says they may (the canvas and
-    // the website both load fonts uploaded here).
-    if (file.mimeType.startsWith("font/")) {
+    // the website both load fonts uploaded here). Pictures say so too, so the builder's canvas
+    // can draw them with WebGL for picture effects; they are public files either way.
+    if (file.mimeType.startsWith("font/") || file.mimeType.startsWith("image/")) {
       reply.header("access-control-allow-origin", "*");
     }
 
