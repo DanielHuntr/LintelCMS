@@ -2,6 +2,7 @@ import type { EffectBehaviour, EffectModule } from "../effect-types.js";
 import { createFrameLoop } from "../kit/frames.js";
 import { combine, listen } from "../kit/listen.js";
 import { readColour, readNumber, readText } from "../kit/params.js";
+import { isEmbeddedFrame, pointerOnFrame, watchEmbeddedFrames } from "../kit/pointer.js";
 import { addStyleOnce } from "../kit/styles.js";
 import { approach } from "../maths/smoothing.js";
 
@@ -17,6 +18,10 @@ import { approach } from "../maths/smoothing.js";
  * Elements given a word on the Animate tab carry `data-lintel-cursor-word`: the site
  * cursor turns into a small pill with that word over them, and without a site cursor the
  * word follows the pointer on its own.
+ *
+ * Over an embedded frame (a YouTube or Vimeo player) the page can't tell where the pointer
+ * is, so the cursor and its word step aside for the frame's own cursor and come back when
+ * the pointer returns to the page.
  */
 
 const hiddenCursorClass = "lintel-custom-cursor";
@@ -188,14 +193,34 @@ const siteCursor: EffectBehaviour = (_body, params, context) => {
   });
   const show = (shown: boolean) =>
     [ring, dot].forEach((node) => node && (node.style.opacity = shown ? "1" : "0"));
+  const hideWord = () => {
+    word.removeAttribute("data-shown");
+    [ring, dot].forEach((node) => node?.removeAttribute("data-hidden"));
+    shownWord = "";
+  };
+  // Back from a frame, the cursor appears where the pointer is instead of gliding over.
+  let jumpToPointer = false;
   return combine(
+    watchEmbeddedFrames({
+      onEnter: () => {
+        show(false);
+        hideWord();
+        points.length = 0;
+        jumpToPointer = true;
+      },
+    }),
     listen(
       document,
       {
         pointermove: (event: PointerEvent) => {
-          if (event.pointerType !== "mouse") return;
+          if (event.pointerType !== "mouse" || isEmbeddedFrame(event.target)) return;
           target.x = event.clientX;
           target.y = event.clientY;
+          if (jumpToPointer) {
+            jumpToPointer = false;
+            eased.x = target.x;
+            eased.y = target.y;
+          }
           if (drawing) points.push({ x: target.x, y: target.y, age: 0 });
           const over = event.target instanceof Element ? event.target : null;
           hovering = over?.closest("a, button, [role='button'], label, summary") != null;
@@ -218,8 +243,7 @@ const siteCursor: EffectBehaviour = (_body, params, context) => {
     listen(document.documentElement, {
       pointerleave: () => {
         show(false);
-        word.removeAttribute("data-shown");
-        shownWord = "";
+        hideWord();
       },
     }),
     () => {
@@ -256,18 +280,28 @@ const cursorLabel: EffectBehaviour = (element, params, context) => {
   const hideNative = readText(params, "native", "hide") === "hide";
   // A word set on the element defers to the site cursor, which shows it itself.
   const deferToSiteCursor = params.onlyWithoutSiteCursor === true;
+  const showAt = (event: PointerEvent) => {
+    if (event.pointerType !== "mouse" && event.pointerType !== "pen") return;
+    if (deferToSiteCursor && document.documentElement.classList.contains(hiddenCursorClass)) {
+      return;
+    }
+    eased.x = target.x = event.clientX;
+    eased.y = target.y = event.clientY;
+    label.toggleAttribute("data-shown", true);
+    if (hideNative) element.style.cursor = "none";
+    loop.wake();
+  };
   return combine(
+    // Over a video's frame the label would freeze where the pointer crossed onto it.
+    watchEmbeddedFrames({
+      onEnter: () => label.removeAttribute("data-shown"),
+      onReturn: (event) => {
+        if (event.target instanceof Node && element.contains(event.target)) showAt(event);
+      },
+    }),
     listen(element, {
       pointerenter: (event: PointerEvent) => {
-        if (event.pointerType !== "mouse" && event.pointerType !== "pen") return;
-        if (deferToSiteCursor && document.documentElement.classList.contains(hiddenCursorClass)) {
-          return;
-        }
-        eased.x = target.x = event.clientX;
-        eased.y = target.y = event.clientY;
-        label.toggleAttribute("data-shown", true);
-        if (hideNative) element.style.cursor = "none";
-        loop.wake();
+        if (!pointerOnFrame(event)) showAt(event);
       },
       pointermove: (event: PointerEvent) => {
         target.x = event.clientX;

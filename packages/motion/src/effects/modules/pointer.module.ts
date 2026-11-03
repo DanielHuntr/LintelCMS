@@ -2,7 +2,7 @@ import type { EffectBehaviour, EffectModule } from "../effect-types.js";
 import { createFrameLoop } from "../kit/frames.js";
 import { combine, listen } from "../kit/listen.js";
 import { readColour, readNumber, readSwitch, readText } from "../kit/params.js";
-import { pointerWithin } from "../kit/pointer.js";
+import { pointerOnFrame, pointerWithin, watchEmbeddedFrames } from "../kit/pointer.js";
 import { addOverlay, addStyleOnce, setStyles } from "../kit/styles.js";
 import { approach } from "../maths/smoothing.js";
 
@@ -270,19 +270,31 @@ const hoverPicture: EffectBehaviour = (element, params, context) => {
     layer.target.y = event.clientY;
     pictureLoop?.wake();
   };
+  const showAt = (event: PointerEvent) => {
+    if (event.pointerType !== "mouse" && event.pointerType !== "pen") return;
+    const wasShown = layer.box.hasAttribute("data-shown");
+    layer.image.src = src;
+    layer.box.style.width = width;
+    if (!wasShown) {
+      layer.eased.x = event.clientX;
+      layer.eased.y = event.clientY;
+    }
+    place(event);
+    layer.box.toggleAttribute("data-shown", true);
+  };
   return combine(
+    // Over a video's frame the picture would freeze where the pointer crossed onto it.
+    watchEmbeddedFrames({
+      onEnter: () => {
+        if (layer.image.getAttribute("src") === src) layer.box.removeAttribute("data-shown");
+      },
+      onReturn: (event) => {
+        if (event.target instanceof Node && element.contains(event.target)) showAt(event);
+      },
+    }),
     listen(element, {
       pointerenter: (event: PointerEvent) => {
-        if (event.pointerType !== "mouse" && event.pointerType !== "pen") return;
-        const wasShown = layer.box.hasAttribute("data-shown");
-        layer.image.src = src;
-        layer.box.style.width = width;
-        if (!wasShown) {
-          layer.eased.x = event.clientX;
-          layer.eased.y = event.clientY;
-        }
-        place(event);
-        layer.box.toggleAttribute("data-shown", true);
+        if (!pointerOnFrame(event)) showAt(event);
       },
       pointermove: (event: PointerEvent) => {
         if (event.pointerType === "mouse" || event.pointerType === "pen") place(event);

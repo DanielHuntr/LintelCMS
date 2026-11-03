@@ -324,3 +324,150 @@ describe("the hover picture", () => {
     await page.close();
   });
 });
+
+/*
+ * A video from YouTube or Vimeo plays in an iframe, which keeps the pointer's events to
+ * itself: the page stops hearing where the pointer is the moment it crosses onto the
+ * video. The cursor, its word and any hover picture once froze there, on top of the
+ * player's own controls.
+ */
+describe("over an embedded video", () => {
+  const frame = `<!doctype html><html><body style="margin:0;background:#222;height:100vh"></body></html>`;
+  // A frame on the video element, with a 40px margin of the element around it.
+  const video = `<figure data-node-id="video" style="margin:100px 0 0;padding:40px;width:600px;height:340px;box-sizing:border-box;background:#ccc">
+    <iframe src="/frame" title="Video" style="display:block;width:100%;height:100%;border:0"></iframe>
+  </figure><div style="height:800px"></div>`;
+  const pages = { "/frame": frame };
+  const css =
+    ":root{--lintel-color-text:rgb(10, 20, 30);--lintel-color-background:rgb(250, 250, 250)}";
+  const shownWords = (page: Page) =>
+    page.$$eval(".lintel-cursor-label[data-shown]", (nodes) => nodes.length);
+  const cursorOpacity = (page: Page) =>
+    page.$$eval(".lintel-cursor", (nodes) =>
+      nodes.map((node) => getComputedStyle(node).opacity).join(","),
+    );
+
+  it("hides the site cursor and its word over the frame, and brings them back after", async () => {
+    const { page } = await openEffectsPage(
+      browser,
+      video,
+      [{ nodeId: "video", module: "cursor", behaviour: "cursorWord", params: { text: "Play" } }],
+      {
+        site: {
+          ...off,
+          cursor: { style: "ring-and-dot", trail: "none", colour: "text", size: 32 },
+        },
+        css,
+        pages,
+      },
+    );
+    await page.mouse.move(300, 20);
+    await waitFor(page, () => document.querySelectorAll(".lintel-cursor").length === 2);
+    await waitFor(page, () => document.querySelector("[data-lintel-cursor-word]") !== null);
+    // On the element, beside the frame: the word shows.
+    await page.mouse.move(300, 120, { steps: 4 });
+    await waitFor(page, () => document.querySelector(".lintel-cursor-label[data-shown]") !== null);
+    // Onto the video itself: nothing of ours is left on top of it.
+    await page.mouse.move(300, 270, { steps: 6 });
+    await waitFor(page, () => document.querySelector(".lintel-cursor-label[data-shown]") === null);
+    await page.waitForTimeout(300);
+    expect(await shownWords(page)).toBe(0);
+    expect(await cursorOpacity(page)).toBe("0,0");
+    // Back off the video: the word returns, and then the cursor once off the element.
+    await page.mouse.move(300, 120, { steps: 6 });
+    await waitFor(page, () => document.querySelector(".lintel-cursor-label[data-shown]") !== null);
+    await page.mouse.move(300, 20, { steps: 4 });
+    await waitFor(page, () => document.querySelector(".lintel-cursor-label[data-shown]") === null);
+    await page.waitForTimeout(300);
+    expect(await cursorOpacity(page)).toBe("1,1");
+    await page.close();
+  });
+
+  it("hides the word on its own over the frame when there's no site cursor", async () => {
+    const { page } = await openEffectsPage(
+      browser,
+      video,
+      [{ nodeId: "video", module: "cursor", behaviour: "cursorWord", params: { text: "Play" } }],
+      { site: off, css, pages },
+    );
+    await waitFor(page, () => document.querySelector("[data-lintel-cursor-word]") !== null);
+    await page.mouse.move(300, 20);
+    await page.mouse.move(300, 120, { steps: 4 });
+    await waitFor(page, () => document.querySelector(".lintel-cursor-label[data-shown]") !== null);
+    await page.mouse.move(300, 270, { steps: 6 });
+    await waitFor(page, () => document.querySelector(".lintel-cursor-label[data-shown]") === null);
+    await page.mouse.move(300, 120, { steps: 6 });
+    await waitFor(page, () => document.querySelector(".lintel-cursor-label[data-shown]") !== null);
+    await page.close();
+  });
+
+  it("doesn't show the word when the pointer lands straight on the frame", async () => {
+    const { page } = await openEffectsPage(
+      browser,
+      video,
+      [{ nodeId: "video", module: "cursor", behaviour: "cursorWord", params: { text: "Play" } }],
+      { site: off, css, pages },
+    );
+    await waitFor(page, () => document.querySelector("[data-lintel-cursor-word]") !== null);
+    await page.mouse.move(300, 20);
+    await page.mouse.move(300, 270);
+    await page.waitForTimeout(300);
+    expect(await shownWords(page)).toBe(0);
+    await page.close();
+  });
+
+  it("hides a hover picture over the frame", async () => {
+    const { page } = await openEffectsPage(
+      browser,
+      video,
+      [
+        {
+          nodeId: "video",
+          module: "pointer",
+          behaviour: "hoverPicture",
+          params: { src: "/cake.svg" },
+        },
+      ],
+      {
+        pages: {
+          ...pages,
+          "/cake.svg": '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"/>',
+        },
+      },
+    );
+    await page.mouse.move(300, 20);
+    await waitFor(page, () => document.querySelector(".lintel-hover-picture") !== null);
+    await page.mouse.move(300, 120, { steps: 4 });
+    await waitFor(page, () => document.querySelector(".lintel-hover-picture[data-shown]") !== null);
+    await page.mouse.move(300, 270, { steps: 6 });
+    await waitFor(page, () => document.querySelector(".lintel-hover-picture[data-shown]") === null);
+    await page.mouse.move(300, 120, { steps: 6 });
+    await waitFor(page, () => document.querySelector(".lintel-hover-picture[data-shown]") !== null);
+    await page.close();
+  });
+
+  it("shows the word over a video file, and clicks still reach the player", async () => {
+    const { page } = await openEffectsPage(
+      browser,
+      `<figure data-node-id="video" style="margin:100px 0 0;width:600px"><video controls style="display:block;width:600px;height:340px;background:#222"></video></figure>
+       <button id="load" style="margin-top:20px" onclick="this.dataset.pressed=''">Load video</button>`,
+      [{ nodeId: "video", module: "cursor", behaviour: "cursorWord", params: { text: "Play" } }],
+      {
+        site: {
+          ...off,
+          cursor: { style: "ring-and-dot", trail: "none", colour: "text", size: 32 },
+        },
+        css,
+      },
+    );
+    await page.mouse.move(300, 20);
+    await waitFor(page, () => document.querySelector("[data-lintel-cursor-word]") !== null);
+    await page.mouse.move(300, 270, { steps: 4 });
+    await waitFor(page, () => document.querySelector(".lintel-cursor-label[data-shown]") !== null);
+    expect(await page.evaluate(() => document.elementFromPoint(300, 270)?.tagName)).toBe("VIDEO");
+    expect(
+      await page.$eval(".lintel-cursor-label", (node) => getComputedStyle(node).pointerEvents),
+    ).toBe("none");
+    await page.close();
+  });
+});
