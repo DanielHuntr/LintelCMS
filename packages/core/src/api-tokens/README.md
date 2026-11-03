@@ -18,6 +18,8 @@ them in Build → API access.
   session cookie, so every management route works with one. The delivery and GraphQL APIs
   accept them too (see src/delivery). A token that is sent but unknown is a 401
   `INVALID_API_TOKEN`, never a quiet fall back to public access.
+- **Apps use the same door.** An installed app's client secret (`lintelapp_...`) is read by
+  `api-token-auth.ts` too, and checked by `src/apps` against the scopes the app was given.
 
 ## Endpoints
 

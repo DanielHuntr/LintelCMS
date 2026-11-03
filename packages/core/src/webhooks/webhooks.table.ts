@@ -8,6 +8,7 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
+import { appsTable } from "../apps/apps.table.js";
 import { id, tenantId, timestamps } from "../database/columns.js";
 import { usersTable } from "../users/users.table.js";
 import type { WebhookEventName } from "./webhook-events.js";
@@ -28,9 +29,17 @@ export const webhooksTable = pgTable(
     secret: text("secret").notNull(),
     enabled: boolean("enabled").notNull().default(true),
     createdBy: uuid("created_by").references(() => usersTable.id, { onDelete: "set null" }),
+    /**
+     * Set for an app's webhook subscriptions. They are listed with the app rather than in
+     * Settings → Webhooks, are signed with the app's client secret, and go when it does.
+     */
+    appId: uuid("app_id").references(() => appsTable.id, { onDelete: "cascade" }),
     ...timestamps(),
   },
-  (table) => [index("webhooks_tenant_idx").on(table.tenantId)],
+  (table) => [
+    index("webhooks_tenant_idx").on(table.tenantId),
+    index("webhooks_app_idx").on(table.appId),
+  ],
 );
 
 export const webhookDeliveryStatuses = ["pending", "delivered", "failed"] as const;

@@ -1,5 +1,9 @@
 import type { FastifyInstance } from "fastify";
-import { getSignedIn, requirePermission } from "../../auth/require-permission.js";
+import {
+  getSignedIn,
+  requireAnyPermission,
+  requirePermission,
+} from "../../auth/require-permission.js";
 import { parseRequest } from "../../http/http-errors.js";
 import { readIdParam } from "../commerce-params.js";
 import type { ShopContext } from "../commerce.context.js";
@@ -16,7 +20,9 @@ import { refundOrder } from "./refunds.service.js";
 
 /**
  * HTTP only. Orders are made by the Stripe webhook, never by a request here. Refunds and
- * cancelling move money, so they need `commerce:refund`.
+ * cancelling move money, so they need `commerce:refund`. Reading and handling orders also
+ * accept the narrower `commerce:read-orders` and `commerce:handle-orders`, which is all an
+ * app with the read_orders or write_orders scope gets (see src/apps/app-scopes.ts).
  *
  *   GET  /shop/orders                   (commerce:read)    ?search&paymentStatus&fulfilmentStatus&cancelled&customerId&page&perPage
  *   GET  /shop/orders/:id               (commerce:read)    with lines, refunds, fulfilments and timeline
@@ -26,8 +32,10 @@ import { refundOrder } from "./refunds.service.js";
  *   POST /shop/orders/:id/notes         (commerce:update)  { message } -> 201 the order
  */
 export async function ordersRoutes(server: FastifyInstance, { shop }: { shop: ShopContext }) {
-  const read = { preHandler: requirePermission("commerce:read") };
-  const update = { preHandler: requirePermission("commerce:update") };
+  const read = { preHandler: requireAnyPermission(["commerce:read", "commerce:read-orders"]) };
+  const update = {
+    preHandler: requireAnyPermission(["commerce:update", "commerce:handle-orders"]),
+  };
   const refund = { preHandler: requirePermission("commerce:refund") };
 
   server.get("/shop/orders", read, async (request) => {

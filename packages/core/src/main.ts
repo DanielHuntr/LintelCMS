@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { loadConfig, loadProjectEnvFile } from "./config.js";
+import { appDevelopmentModeAvailable, loadConfig, loadProjectEnvFile } from "./config.js";
 import {
   contentModelOptionsFromConfig,
   resolveFromRepository,
@@ -54,6 +54,7 @@ await runWithFriendlyErrors(async () => {
     publicApiUrl: config.API_PUBLIC_URL ?? `http://localhost:${config.API_PORT}`,
     graphiql: config.NODE_ENV === "development",
     webhooks: { allowPrivateAddresses: config.WEBHOOKS_ALLOW_PRIVATE_ADDRESSES },
+    appDevelopmentModeAvailable: appDevelopmentModeAvailable(config),
     trustProxy: config.TRUST_PROXY,
     plugins: installedPlugins,
     addons,

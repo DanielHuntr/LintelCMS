@@ -2,7 +2,7 @@
 export const addonStrings = {
   "addons.title": "Add-ons",
   "addons.subtitle": "Extra features made by other developers and installed into this site.",
-  "addons.buildDescription": "Extras installed into this site",
+  "addons.buildDescription": "Extras that run inside this site, with full access",
   "addons.loading": "Loading add-ons",
   "addons.empty.title": "No add-ons yet",
   "addons.empty.description":

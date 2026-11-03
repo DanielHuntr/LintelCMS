@@ -62,3 +62,4 @@ export {
   analyticsSaltsTable,
 } from "../analytics/analytics.table.js";
 export { clientReviewsTable } from "../client-editing/client-reviews.table.js";
+export { appsTable } from "../apps/apps.table.js";

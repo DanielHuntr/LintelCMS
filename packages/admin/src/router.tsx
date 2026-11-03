@@ -11,6 +11,9 @@ import { SchedulePage } from "./schedule-calendar/SchedulePage.js";
 import { useCallback } from "react";
 import { ApiAccessPage } from "./api-access/ApiAccessPage.js";
 import { ApiReferencePage } from "./api-access/ApiReferencePage.js";
+import { AppDetailPage } from "./apps/AppDetailPage.js";
+import { AppsPage } from "./apps/AppsPage.js";
+import { InstalledAppsProvider } from "./apps/InstalledAppsContext.js";
 import { adminQueryClient } from "./api/queryClient.js";
 import type { EntryStatus } from "./content/content.types.js";
 import type { CollectionQuery } from "./content-tree/contentTree.types.js";
@@ -164,13 +167,15 @@ function SignedInAdmin() {
   return (
     <SessionProvider session={session}>
       <CurrentSiteProvider initialSites={sites}>
-        <AdminLayout
-          permissions={session.permissions}
-          enabledPlugins={session.enabledPlugins}
-          siteName={session.siteName}
-          signedInUser={session.user}
-          onSignOut={handleSignOut}
-        />
+        <InstalledAppsProvider>
+          <AdminLayout
+            permissions={session.permissions}
+            enabledPlugins={session.enabledPlugins}
+            siteName={session.siteName}
+            signedInUser={session.user}
+            onSignOut={handleSignOut}
+          />
+        </InstalledAppsProvider>
       </CurrentSiteProvider>
     </SessionProvider>
   );
@@ -417,6 +422,22 @@ const addonsRoute = createRoute({
   component: AddonsPage,
 });
 
+/** Build → Apps: installing and removing external apps, beside Build → Add-ons. */
+const appsRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/build/apps",
+  component: AppsPage,
+});
+
+const appRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/build/apps/$appId",
+  component: function AppRoute() {
+    const { appId } = appRoute.useParams();
+    return <AppDetailPage appId={appId} />;
+  },
+});
+
 /** Build → Features: switching plugins on and off. */
 const featuresRoute = createRoute({
   getParentRoute: () => adminRoute,
@@ -444,6 +465,8 @@ const integrationRoutes = [
   apiReferenceRoute,
   webhooksRoute,
   webhookRoute,
+  appsRoute,
+  appRoute,
 ];
 
 /**

@@ -138,6 +138,11 @@ async function attemptDelivery(
   now: Date,
 ): Promise<void> {
   const body = JSON.stringify(delivery.payload);
+  // An app being built on this computer gets its webhooks while apps' development mode is on.
+  const options =
+    webhook.appId !== null && (await sender.appsMayUseLoopback?.())
+      ? { ...sender, allowLoopbackAddresses: true }
+      : sender;
   try {
     const response = await sendWebhookRequest(
       {
@@ -151,7 +156,7 @@ async function attemptDelivery(
           [SIGNATURE_HEADER]: signWebhookBody(webhook.secret, body, now),
         },
       },
-      sender,
+      options,
     );
     const succeeded = response.status >= 200 && response.status < 300;
     await recordDeliveryAttempt(database, delivery.id, {

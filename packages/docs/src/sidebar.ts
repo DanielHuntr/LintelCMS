@@ -47,6 +47,7 @@ export const usingPages = [
   "using/interface-languages",
   "using/backups",
   "using/updating",
+  "using/apps",
   "using/troubleshooting",
 ] as const;
 
@@ -78,6 +79,7 @@ export const buildingPages = [
   "building/branding",
   "building/translating",
   "building/releases",
+  "building/building-an-app",
   "building/contributing",
 ] as const;
 

@@ -19,6 +19,7 @@ import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { t } from "../i18n/strings.js";
 import { Page } from "../design/Page.js";
+import { useInstalledApps } from "../apps/InstalledAppsContext.js";
 import { useAdminPlugins } from "../plugins/AdminPluginsContext.js";
 import type { WidgetSize } from "../plugins/adminPlugin.js";
 import { useCan, useSession } from "../session/SessionContext.js";
@@ -53,8 +54,12 @@ type OpenDialog = "gallery" | "reset" | "roleDefault" | null;
 export function DashboardPage() {
   const session = useSession();
   const plugins = useAdminPlugins();
+  const apps = useInstalledApps();
   const canSetRoleDefaults = useCan("settings:update");
-  const available = useMemo(() => availableWidgets(plugins, session), [plugins, session]);
+  const available = useMemo(
+    () => availableWidgets(plugins, session, apps),
+    [plugins, session, apps],
+  );
   const stored = useDashboardLayout();
   const save = useSaveDashboardLayout();
   const reset = useResetDashboardLayout();

@@ -94,6 +94,10 @@ const SIGNED_IN_ROUTES = new Set([
   "GET /dashboard/layout",
   "PUT /dashboard/layout",
   "DELETE /dashboard/layout",
+  // Installed apps' pages, widgets and panels, and a session token for the person looking
+  // at one (each frame cuts the app's access down to what that person may do).
+  "GET /apps/extensions",
+  "POST /apps/:id/session-token",
 ]);
 
 /**

@@ -15,6 +15,7 @@ describe("Build", () => {
       "/build/content-types",
       "/build/features",
       "/build/addons",
+      "/build/apps",
       "/build/sites",
       "/build/branding",
       "/build/api",
