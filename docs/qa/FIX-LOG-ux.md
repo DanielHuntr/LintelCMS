@@ -1210,3 +1210,5 @@ Files: `packages/builder/src/PageBuilder.tsx`, `frame/Toolbar.tsx`, `panels/Sele
 **Tests:** builder `style-panel/layout-section.test.tsx` (new, 7: stored values map onto the four choices; no Place things or Normal; block layout untouched until a detail changes, then a stack; side by side with wrapping; Anywhere and back; grid columns and placing by hand on and off; no Anywhere on a card); `studio.test.tsx` (no Tools menu, a stored level ignored, every style and the timeline for everyone; no Code tab even with permission; first-time tips; the eight-step tour); `PageBuilder.test.tsx` (Code element edited in Content with permission, not without); updated `advanced-styling`, `panels`, `site-design`, `style-summaries` tests. Builder unit 41 files / 346 tests, browser 10 files / 33 tests; admin 140 files / 746 tests (one timing test passes on its own); core roles 14.
 
 **Screenshots** (`screenshots/one-builder/`): `before-{light,dark}-{1-tour,2-style,3-panel}`, `after-{light,dark}-{1-tour,1b-tour-arrange,2-style,3-panel,4-grid,5-animate}`.
+
+Commit: ffa3dd8.
