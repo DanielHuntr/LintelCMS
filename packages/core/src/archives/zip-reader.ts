@@ -68,9 +68,7 @@ export class ZipArchiveReader {
 
   async readBuffer(name: string): Promise<Buffer> {
     const chunks: Buffer[] = [];
-    for await (const chunk of await this.openStream(name)) {
-      chunks.push(chunk as Buffer);
-    }
+    await this.eachChunk(name, (chunk) => chunks.push(chunk));
     return Buffer.concat(chunks);
   }
 
@@ -86,10 +84,24 @@ export class ZipArchiveReader {
   /** The SHA-256 of one entry, read as a stream. */
   async hashOf(name: string): Promise<string> {
     const hash = createHash("sha256");
-    for await (const chunk of await this.openStream(name)) {
-      hash.update(chunk as Buffer);
-    }
+    await this.eachChunk(name, (chunk) => hash.update(chunk));
     return hash.digest("hex");
+  }
+
+  /**
+   * Damage inside an entry only shows while it's read: zlib's "invalid block type", a wrong
+   * checksum. Those are reported as an unreadable archive, not a server error
+   * (LINTEL-FUNC-011).
+   */
+  private async eachChunk(name: string, onChunk: (chunk: Buffer) => void): Promise<void> {
+    const stream = await this.openStream(name);
+    try {
+      for await (const chunk of stream) {
+        onChunk(chunk as Buffer);
+      }
+    } catch (error) {
+      throw new UnreadableArchiveError(`${name} inside it is damaged: ${describeReason(error)}`);
+    }
   }
 
   close(): void {
