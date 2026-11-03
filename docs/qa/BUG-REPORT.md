@@ -877,3 +877,13 @@ Found by a code review of the newer website, builder, fonts and motion work, and
 | LINTEL-CODE-016 | P2       | Fixed  | Navigation and footer changes made in the builder go live at once, before the page is published                                              |
 
 Not in scope: making site styles and site motion per site (a separate track, Daniel's decision).
+
+## Starter sites: six more (batch A) (3 November 2026)
+
+Found while building six new starter sites; see "Starter sites: six more (batch A)" in `FIX-LOG-ux.md` (LINTEL-UX-150 to 156 are the sites and their checks).
+
+| ID            | Severity | Status | Summary                                                                                                                            |
+| ------------- | -------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| LINTEL-UX-157 | P3       | Open   | The theme's soft grey is 4.25 to 4.43:1 on tinted paper in light mode: clock place names, table headings and form hints            |
+| LINTEL-UX-158 | P3       | Open   | A template footer with a clock zone not on the list is silently replaced by the standard footer; Melbourne isn't listed            |
+| LINTEL-UX-159 | P3       | Open   | Older templates fail the new checks: Atelier skips a heading level, Magazine lacks alt text, three keep header or footer in a page |
