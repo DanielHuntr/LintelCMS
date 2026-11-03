@@ -318,3 +318,17 @@ The script rule is applied only when a page is saved. The fix is to apply the cu
 **Fix:** routed collections carry their choice fields' labels (`choiceLabelsOf`), and list items use them, on the website and in the builder's samples: "web" shows as "Web", lists of choices as "Online, Paper". **Test:** `bound-entries.test.ts`.
 
 Still to do in this batch: DATA-005 (a new condition clears existing values), FUNC-008 (type changes and removed choices make entries unsaveable), SPEC-003 (slugs unique across a whole tree).
+
+## Content and fields batch, part 2 (4 November)
+
+### LINTEL-FUNC-008: type changes and removed choices made entries unsaveable
+
+**Reproduced:** changing Price from Number to Text was accepted, then saving a change to the entry's title answered 400 "Price should be text"; removing a choice an entry used was accepted silently. **Fix:** saving a content type checks every stored value of a changed field against the field as it will be (`entries/field-changes.service.ts`). Values that convert without loss (450 into "450", "450" into 450, one choice into a list of one) are converted, in the saved and published values. If any still wouldn't fit, the change is refused: "1 entry has a value Category can't hold any more, such as "print". Change it first, or keep the field as it was." Top-level fields only; values inside groups and blocks are still caught by the editor's own check. **Tests:** `blueprints.test.ts`, "changing a field that entries already use" (both fail without the fix).
+
+### LINTEL-DATA-005: a new condition cleared existing values
+
+**Fix:** turning on "Only show this field sometimes" for a field that was saved before also turns on "Keep what's typed when hidden", with a note saying why (entries may already hold values). New fields keep the documented default. **Tests:** `ConditionsEditor.test.tsx`.
+
+### LINTEL-SPEC-003: slugs unique across a whole tree (decided: kept)
+
+Kept on purpose: the website finds a page by its last address part when an old address is followed, which only works when each name is unique, and changing it would need a migration and riskier routing. The message now uses the editor's words: "Another entry in Pages already uses this address. Each one needs its own, even under a different parent page." (and the same for taxonomy terms).
