@@ -20,7 +20,11 @@ const ink: SiteDesign = {
   sharedStyles: [],
 };
 
-function renderBuilder(start: SiteDesign = emptySiteDesign, children?: PageNode[]) {
+function renderBuilder(
+  start: SiteDesign = emptySiteDesign,
+  children?: PageNode[],
+  skillLevel = "designer",
+) {
   const page = createEmptyPage();
   const ids = createCountingNodeIds();
   const section = children ?? [
@@ -53,7 +57,7 @@ function renderBuilder(start: SiteDesign = emptySiteDesign, children?: PageNode[
         title="Home"
         canEditCode={false}
         createId={createCountingNodeIds("new")}
-        preferences={createMemoryPreferenceStore({ tourSeen: "yes", skillLevel: "designer" })}
+        preferences={createMemoryPreferenceStore({ tourSeen: "yes", skillLevel })}
         siteDesign={{
           value: design,
           onChange: (next) => {
@@ -296,5 +300,30 @@ describe("Site styles in the right panel", () => {
     }
     // The plain container between the cards isn't offered.
     expect(screen.queryByRole("radio", { name: /^Container/ })).toBeNull();
+  });
+});
+
+describe("Site styles for beginners (QA sweep)", () => {
+  it("shows colours as swatches, without their codes, and calls the side space plainly", async () => {
+    const person = userEvent.setup();
+    renderBuilder(
+      { ...ink, variables: [{ ...ink.variables[0]!, darkValue: "#e6e1d8" }] },
+      undefined,
+      "beginner",
+    );
+    const row = screen.getByRole("button", { name: /^Ink/ });
+    expect(row).not.toHaveTextContent("#1f2328");
+    await person.click(row);
+    expect(screen.getByLabelText("Ink: Value (Colour)")).toBeInTheDocument();
+    const code = document.querySelector<HTMLInputElement>('input[aria-label="Ink: Value"]');
+    expect(code).not.toBeNull();
+    expect(code).not.toBeVisible();
+    expect(screen.getByText("In light mode")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Side space" })).toBeInTheDocument();
+  });
+
+  it("still shows the codes in Designer", () => {
+    renderBuilder(ink);
+    expect(screen.getByRole("button", { name: /^Ink/ })).toHaveTextContent("#1f2328");
   });
 });

@@ -15,4 +15,8 @@ from any page.
   of the canvas (the automatic header has gone; this page starts with its own menu).
 
 The commands are in `editor/site-section-commands.ts`. Insert's Navigation and Footer
-groups go through `insertSiteSection`; deleting one of them hides it on this page instead.
+groups go through `insertSiteSection`. Deleting one asks where (`SiteSectionRemoveDialog`):
+"Hide on this page" (`setSiteSectionHidden`), or "Remove from every page"
+(`removeSiteSectionFromSite`), which takes it out of the page so the site's slot is saved as
+null and every page goes back to the automatic header or footer. The note after a first
+navigation or footer says it is live on every page, and its Undo removes it the same way.

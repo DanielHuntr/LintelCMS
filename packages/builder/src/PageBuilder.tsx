@@ -28,6 +28,7 @@ import {
   hasSiteSection,
   isHiddenOnPage,
   siteSectionSlotOf,
+  type SiteSectionSlot,
   unmarkedOwnNavigation,
 } from "@lintel/builder-model";
 import type { MotionSpec } from "@lintel/motion";
@@ -77,7 +78,7 @@ import {
   type PreferenceStore,
   usePreference,
 } from "./preferences/builder-preferences.js";
-import type { ImagePicker } from "./panels/content-fields.js";
+import { type ImagePicker, PictureBaseUrlContext } from "./panels/content-fields.js";
 import { PictureDropStatus } from "./canvas/PictureDropStatus.js";
 import { type PictureUploader, usePictureDrop } from "./canvas/usePictureDrop.js";
 import { canvasPageData } from "./panels/canvas-data.js";
@@ -109,6 +110,7 @@ import {
   PageSiteSections,
   SectionSiteTools,
   SiteSectionNote,
+  SiteSectionRemoveDialog,
   SiteSectionStrip,
   siteSectionAround,
 } from "./site-sections/SiteSectionControls.js";
@@ -468,6 +470,8 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     [actions],
   );
 
+  // Deleting the site's navigation or footer asks first: this page, or every page.
+  const [removingSlot, setRemovingSlot] = useState<SiteSectionSlot | null>(null);
   const runShortcut = useCallback(
     (key: ForwardedKey) => {
       const command = shortcutFor(key);
@@ -489,9 +493,13 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
         case "duplicate":
           actions.duplicate();
           break;
-        case "remove":
-          actions.remove();
+        case "remove": {
+          // The site's navigation or footer: ask whether it goes from this page or every page.
+          const slot = selected ? siteSectionSlotOf(selected) : null;
+          if (slot && !isLocked(state.document, selected ?? "")) setRemovingSlot(slot);
+          else actions.remove();
           break;
+        }
         case "save":
           onSaveNow?.();
           break;
@@ -630,6 +638,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
           fontSize: message.fontSize,
           fontWeight: message.fontWeight,
           color: message.color,
+          gridColumns: message.gridColumns ?? 0,
         });
       }
       if (message.type === "paste") actions.paste(message);
@@ -763,6 +772,9 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
 
   const definition = selectedNode ? catalogue.find(selectedNode.type) : undefined;
   const selectedIsLocked = selectedNode ? isLocked(state.document, selectedNode.id) : false;
+  // A page with nothing at all shows only the start card; one with just the site's navigation
+  // (or footer) shows it on the canvas, with the start card below it.
+  const isBlank = root.children.length === 0;
   const showsStart = !hasOwnContent(root);
   const labels = useMemo(() => {
     const nameOf = (nodeId: string | null) => {
@@ -908,13 +920,18 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                       selectedId={selectedId}
                       onSelect={selectFromPanel}
                     />
-                    {!showsStart && selectedSiteSection && (
+                    {!isBlank && selectedSiteSection && (
                       <SiteSectionStrip
                         slot={selectedSiteSection}
                         onHide={() => actions.setSiteSectionHidden(selectedSiteSection, true)}
+                        onRemove={
+                          props.siteSections?.onChange
+                            ? () => setRemovingSlot(selectedSiteSection)
+                            : undefined
+                        }
                       />
                     )}
-                    {!showsStart && textSelection && (
+                    {!isBlank && textSelection && (
                       <SelectedWordsBar
                         document={state.document}
                         selection={textSelection}
@@ -922,15 +939,17 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                         linkRequest={linkRequest}
                       />
                     )}
-                    {showsStart ? (
+                    {showsStart && (
                       <EmptyPage
                         starterSites={props.starterSites ?? allStarterSites}
                         onAddSection={() => openInsert("sections")}
                         onAddElements={() => openInsert("elements")}
                         onChooseStarterPage={actions.useStarterPage}
                         takesFocus={!showsTour}
+                        belowSiteSections={!isBlank}
                       />
-                    ) : (
+                    )}
+                    {!isBlank && (
                       <Canvas
                         html={rendered.html}
                         css={canvasCss}
@@ -952,10 +971,32 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                         onMessage={handleFrameMessage}
                       />
                     )}
+                    {removingSlot && (
+                      <SiteSectionRemoveDialog
+                        slot={removingSlot}
+                        onHideHere={() => {
+                          actions.setSiteSectionHidden(removingSlot, true);
+                          setRemovingSlot(null);
+                        }}
+                        onRemoveEverywhere={
+                          props.siteSections?.onChange
+                            ? () => {
+                                actions.removeSiteSectionFromSite(removingSlot);
+                                setRemovingSlot(null);
+                              }
+                            : undefined
+                        }
+                        onCancel={() => setRemovingSlot(null)}
+                      />
+                    )}
                     <PictureDropStatus status={pictures.status} onDismiss={pictures.dismiss} />
                     {!pictures.status && switchedSlot && (
                       <SiteSectionNote
                         message={text(`pageBuilder.siteSection.switched.${switchedSlot}`)}
+                        action={{
+                          label: text("pageBuilder.siteSection.switched.undo"),
+                          onClick: () => actions.removeSiteSectionFromSite(switchedSlot),
+                        }}
                         onDismiss={() => setSwitchNoteDismissed(true)}
                       />
                     )}
@@ -978,75 +1019,79 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                     )}
                   </main>
                   <CanvasLookContext value={canvasLook}>
-                    <SelectedElementPanel
-                      document={state.document}
-                      node={selectedNode ?? null}
-                      nodeName={labels.selected ?? ""}
-                      definition={definition}
-                      isLocked={selectedIsLocked}
-                      breakpoint={breakpoint}
-                      registry={registry}
-                      tools={tools}
-                      tips={tips}
-                      pickImage={props.pickImage}
-                      uploadFile={props.uploadFile}
-                      motionText={props.motionText}
-                      showCode={skillLevel === "developer"}
-                      actions={{
-                        ...actions,
-                        animate: (nodeId, animations) => {
-                          actions.animate(nodeId, animations);
-                          if (animations.length === 0) setMotionPreview(null);
-                        },
-                      }}
-                      onPreviewMotion={previewMotion}
-                      onPreviewEffect={previewEffect}
-                      onStyleStateChange={reportStylingState}
-                      onPointAtElement={setHoveredId}
-                      onSelectMany={(nodeIds) => {
-                        const first = nodeIds[0];
-                        if (!first) return;
-                        setHighlight(nodeIds);
-                        selectFromPanel(first);
-                        announce(
-                          text("pageBuilder.siteStyles.selected", { count: nodeIds.length }),
-                        );
-                      }}
-                      effectModules={props.effectModules}
-                      pageWeight={pageWeight}
-                      pageSettings={
-                        props.siteSections && (
-                          <PageSiteSections
-                            page={root}
-                            onChange={(slot, hidden) => actions.setSiteSectionHidden(slot, hidden)}
-                          />
-                        )
-                      }
-                      sectionTools={
-                        props.siteSections?.onChange && (
-                          <SectionSiteTools
-                            root={root}
-                            node={selectedNode ?? null}
-                            onUseAsSite={(slot) => {
-                              if (selectedNode) actions.useAsSiteSection(selectedNode.id, slot);
-                            }}
-                            onUseAsOwn={() => {
-                              if (selectedNode)
-                                actions.markAsPageOwn(selectedNode.id, "navigation");
-                            }}
-                          />
-                        )
-                      }
-                      siteMotion={
-                        props.siteEffects && (
-                          <SiteMotionSettings
-                            value={props.siteEffects.value}
-                            onChange={props.siteEffects.onChange}
-                            translate={props.motionText}
-                          />
-                        )
-                      }
-                    />
+                    <PictureBaseUrlContext value={site?.baseUrl ?? null}>
+                      <SelectedElementPanel
+                        document={state.document}
+                        node={selectedNode ?? null}
+                        nodeName={labels.selected ?? ""}
+                        definition={definition}
+                        isLocked={selectedIsLocked}
+                        breakpoint={breakpoint}
+                        registry={registry}
+                        tools={tools}
+                        tips={tips}
+                        pickImage={props.pickImage}
+                        uploadFile={props.uploadFile}
+                        motionText={props.motionText}
+                        showCode={skillLevel === "developer"}
+                        actions={{
+                          ...actions,
+                          animate: (nodeId, animations) => {
+                            actions.animate(nodeId, animations);
+                            if (animations.length === 0) setMotionPreview(null);
+                          },
+                        }}
+                        onPreviewMotion={previewMotion}
+                        onPreviewEffect={previewEffect}
+                        onStyleStateChange={reportStylingState}
+                        onPointAtElement={setHoveredId}
+                        onSelectMany={(nodeIds) => {
+                          const first = nodeIds[0];
+                          if (!first) return;
+                          setHighlight(nodeIds);
+                          selectFromPanel(first);
+                          announce(
+                            text("pageBuilder.siteStyles.selected", { count: nodeIds.length }),
+                          );
+                        }}
+                        effectModules={props.effectModules}
+                        pageWeight={pageWeight}
+                        pageSettings={
+                          props.siteSections && (
+                            <PageSiteSections
+                              page={root}
+                              onChange={(slot, hidden) =>
+                                actions.setSiteSectionHidden(slot, hidden)
+                              }
+                            />
+                          )
+                        }
+                        sectionTools={
+                          props.siteSections?.onChange && (
+                            <SectionSiteTools
+                              root={root}
+                              node={selectedNode ?? null}
+                              onUseAsSite={(slot) => {
+                                if (selectedNode) actions.useAsSiteSection(selectedNode.id, slot);
+                              }}
+                              onUseAsOwn={() => {
+                                if (selectedNode)
+                                  actions.markAsPageOwn(selectedNode.id, "navigation");
+                              }}
+                            />
+                          )
+                        }
+                        siteMotion={
+                          props.siteEffects && (
+                            <SiteMotionSettings
+                              value={props.siteEffects.value}
+                              onChange={props.siteEffects.onChange}
+                              translate={props.motionText}
+                            />
+                          )
+                        }
+                      />
+                    </PictureBaseUrlContext>
                   </CanvasLookContext>
                 </div>
                 {showsTour && <GuidedTour skillLevel={skillLevel} onClose={closeTour} />}

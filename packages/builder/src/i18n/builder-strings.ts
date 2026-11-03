@@ -296,6 +296,8 @@ export const builderStrings = {
   "pageBuilder.content.linkInvalid":
     "Start the link with https://, http://, mailto:, tel:, / or #.",
   "pageBuilder.content.noPicture": "No picture yet",
+  "pageBuilder.content.builtInPicture":
+    "A built-in illustration. Change it for a photo of your own.",
   "pageBuilder.content.choosePicture": "Choose a picture",
   "pageBuilder.content.creditShown": "Shown under the picture: {credit}",
   "pageBuilder.content.creditHidden":

@@ -6,7 +6,7 @@ import {
   readPageLinkId,
 } from "@lintel/builder-model";
 import { ArrowDown, ArrowUp, ImagePlus, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { useLinkedPage, usePickPage } from "./page-picker.js";
 import { IconButton, inputClassName, Labelled } from "../ui/controls.js";
@@ -219,21 +219,41 @@ export function ToggleField({ label, value, onChange }: FieldProps<boolean>) {
   );
 }
 
+/**
+ * The website's address, so a picture with a site path (the built-in illustrations, at
+ * /_lintel/...) shows in the panel as it does on the canvas. Null where there is none.
+ */
+export const PictureBaseUrlContext = createContext<string | null>(null);
+
+/** Lintel's own pictures (the starter illustrations): served by the website, not uploaded. */
+export function isBuiltInPicture(src: string): boolean {
+  return src.startsWith("/_lintel/");
+}
+
+/** Where the panel loads a picture from: built-in ones from the website's address. */
+export function picturePreviewSrc(src: string, baseUrl: string | null): string {
+  return isBuiltInPicture(src) && baseUrl ? `${baseUrl.replace(/\/+$/, "")}${src}` : src;
+}
+
 export function ImageField({
   label,
   value,
   onChange,
   pickImage,
-}: FieldProps<PickedImage> & { pickImage: ImagePicker | undefined }) {
+  labelHidden = false,
+}: FieldProps<PickedImage> & { pickImage: ImagePicker | undefined; labelHidden?: boolean }) {
   const text = useBuilderText();
+  const baseUrl = useContext(PictureBaseUrlContext);
   const [address, setAddress] = useState(value.src);
+  // A built-in illustration's path means nothing to people: they change it with the button.
+  const isBuiltIn = isBuiltInPicture(value.src) && address === value.src;
   return (
-    <Labelled label={label}>
+    <Labelled label={label} labelHidden={labelHidden}>
       {(id) => (
         <div className="flex flex-col gap-2">
           {value.src ? (
             <img
-              src={value.src}
+              src={picturePreviewSrc(value.src, baseUrl)}
               alt=""
               className="h-28 w-full rounded-control bg-fill object-cover"
             />
@@ -260,8 +280,14 @@ export function ImageField({
                 : text("pageBuilder.content.choosePicture")}
             </button>
           )}
+          {isBuiltIn && (
+            <p className="text-caption text-label-secondary">
+              {text("pageBuilder.content.builtInPicture")}
+            </p>
+          )}
           <input
             id={id}
+            hidden={isBuiltIn}
             aria-label={text("pageBuilder.content.pictureAddress")}
             placeholder={text("pageBuilder.content.pictureAddressPlaceholder")}
             value={address}

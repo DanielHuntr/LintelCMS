@@ -3,6 +3,7 @@ import { ArrowDown, ArrowRight, Grid3x3, Square } from "lucide-react";
 import { type KeyboardEvent, useRef } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { ChoiceGroup, classNames, Labelled, PanelSection } from "../ui/controls.js";
+import { countGridColumns, useSelectedLook } from "./canvas-look.js";
 import { useDesignTools } from "./design-tools.js";
 import { useStyleEditing, useStyleField } from "./style-field.js";
 import { layoutSummary } from "./style-summaries.js";
@@ -66,7 +67,10 @@ function FlowLayout({ advanced }: { advanced: boolean }) {
       );
     if (next === "normal") change({ display: undefined, flexDirection: undefined }, label);
   };
-  const columnCount = Number(/^repeat\((\d+)/.exec(columns.value ?? "")?.[1] ?? 0);
+  // Counted from the template however it's written, or as the canvas draws it when unset.
+  const look = useSelectedLook();
+  const columnCount =
+    columns.value !== undefined ? countGridColumns(columns.value) : (look?.gridColumns ?? 0);
 
   return (
     <PanelSection

@@ -73,7 +73,7 @@ export const builderSiteStylesStrings = {
   "pageBuilder.siteStyles.suggest.ink": "Ink",
   "pageBuilder.siteStyles.suggest.paper": "Paper",
   "pageBuilder.siteStyles.suggest.accent": "Accent",
-  "pageBuilder.siteStyles.suggest.gutter": "Gutter",
+  "pageBuilder.siteStyles.suggest.gutter": "Side space",
   "pageBuilder.siteStyles.suggest.sectionSpace": "Section space",
   "pageBuilder.siteStyles.suggest.readingWidth": "Reading width",
   "pageBuilder.siteStyles.suggest.display": "Display",

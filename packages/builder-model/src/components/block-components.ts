@@ -17,7 +17,7 @@ const pictureProps = {
 
 const pictureFields: readonly EditableField[] = [
   { kind: "image", prop: "src", label: "Picture" },
-  { kind: "multilineText", prop: "alt", label: "Describe the picture" },
+  { kind: "multilineText", prop: "alt", label: "Picture description" },
 ];
 
 const buttonFields: readonly EditableField[] = [

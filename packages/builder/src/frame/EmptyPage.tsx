@@ -12,6 +12,8 @@ interface EmptyPageProps {
   onChooseStarterPage: (page: StarterPage, name: string) => void;
   /** Focus goes to the heading when the page opens empty, unless something else wants it. */
   takesFocus: boolean;
+  /** The page has only the site's navigation or footer: the card sits over the canvas, below it. */
+  belowSiteSections?: boolean;
 }
 
 /**
@@ -25,6 +27,7 @@ export function EmptyPage({
   onAddElements,
   onChooseStarterPage,
   takesFocus,
+  belowSiteSections = false,
 }: EmptyPageProps) {
   const text = useBuilderText();
   const heading = useRef<HTMLHeadingElement>(null);
@@ -43,10 +46,14 @@ export function EmptyPage({
 
   return (
     <div
-      data-tour="canvas"
-      className="flex flex-1 items-center justify-center overflow-auto bg-background p-8"
+      data-tour={belowSiteSections ? undefined : "canvas"}
+      className={
+        belowSiteSections
+          ? "pointer-events-none absolute inset-x-0 top-48 bottom-0 z-10 flex items-start justify-center overflow-auto p-8"
+          : "flex flex-1 items-center justify-center overflow-auto bg-background p-8"
+      }
     >
-      <div className="flex w-full max-w-md flex-col items-center gap-5 rounded-panel bg-surface px-8 py-10 text-center shadow-float">
+      <div className="pointer-events-auto flex w-full max-w-md flex-col items-center gap-5 rounded-panel bg-surface px-8 py-10 text-center shadow-float">
         <div className="flex flex-col gap-1.5">
           <h2 ref={heading} tabIndex={-1} className="text-title text-label outline-none">
             {text("pageBuilder.start.title")}

@@ -224,7 +224,7 @@ export const imageComponent = defineComponent({
     {
       kind: "multilineText",
       prop: "alt",
-      label: "Describe the picture",
+      label: "Picture description",
       placeholder: "A smiling barista pouring coffee",
     },
     { kind: "text", prop: "caption", label: "Caption (shown under it)" },

@@ -129,8 +129,21 @@ describe("placed grids on the canvas", () => {
       row: 2,
       rowSpan: 2,
     });
-    expect(await page.locator(".lintel-grid-column").count()).toBe(0);
+    expect(await page.locator(".lintel-guide.lintel-grid-column").count()).toBe(0);
     await page.close();
+  });
+
+  it("shows the grid's columns while the grid or something on it is selected", async () => {
+    const { design, photoId } = story();
+    const sectionId = design.root.children[0]?.id ?? "";
+    const page = await openCanvas(design, sectionId);
+    const columns = page.locator(".lintel-grid-column--quiet");
+    expect(await columns.count()).toBe(10);
+    expect(await columns.nth(3).boundingBox()).toMatchObject({ x: 300, width: 100 });
+    await page.close();
+    const onIt = await openCanvas(design, photoId);
+    expect(await onIt.locator(".lintel-grid-column--quiet").count()).toBe(10);
+    await onIt.close();
   });
 
   it("makes the selected element wider and taller with its corner handle", async () => {

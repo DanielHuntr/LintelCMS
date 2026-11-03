@@ -38,3 +38,9 @@ Colour swatches, size chips, the font list and size boxes offer the site's own n
 sizes and fonts first, then the theme's. A size box using one shows its name with Unlink;
 a colour or size picked by hand can be saved as one ("Save as a colour", "Save as a size").
 "Site styles" under the shared style opens the whole list (`site-design/SiteStylesPanel.tsx`).
+
+"Which look you're changing" offers Open only for elements that can open (or are inside one
+that does) and Current only for links, menus and tabs (or what's inside them), in the simple
+panel (`relevant-looks.ts`); Advanced offers all six. Chips follow the element's real look:
+the size and weight the canvas measures when nothing is set, a set weight near a chip (600
+reads Bold), and a grid's columns however its template is written (`canvas-look.ts`).

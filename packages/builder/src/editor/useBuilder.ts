@@ -501,6 +501,8 @@ export function useBuilder({
         run(siteSectionCommands.markAsPageOwn(context(), nodeId, slot)),
       setSiteSectionHidden: (slot: SiteSectionSlot, hidden: boolean) =>
         run(siteSectionCommands.setSiteSectionHidden(context(), slot, hidden)),
+      removeSiteSectionFromSite: (slot: SiteSectionSlot) =>
+        run(siteSectionCommands.removeSiteSectionFromSite(context(), slot)),
       selectAdjacent: adjacent,
       selectParent: () => {
         const selected = latest.current.selectedId;

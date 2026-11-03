@@ -12,7 +12,7 @@ import {
   withoutVariable,
 } from "@lintel/builder-model";
 import { ChevronLeft, ChevronRight, Moon, MousePointerClick, Plus } from "lucide-react";
-import { type ReactNode, useId, useState } from "react";
+import { createContext, type ReactNode, useContext, useId, useState } from "react";
 import type { BuilderStringKey } from "../i18n/builder-strings.js";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { classNames, inputClassName } from "../ui/controls.js";
@@ -90,7 +90,12 @@ export interface SiteStylesPanelProps {
   onSelectUsers?: (sharedStyleId: string) => void;
   /** The screen size being designed, where changes to "All headings" and the like go. */
   breakpoint?: Breakpoint;
+  /** Codes like "#1f2328" and "1.5rem" beside each one; left out for beginners (swatches only). */
+  showsValues?: boolean;
 }
+
+/** Whether colours and sizes show their codes, or only their swatches (for beginners). */
+const ShowsValuesContext = createContext(true);
 
 /**
  * Site styles: the site's named colours, sizes and fonts, and its shared styles, in the right
@@ -107,6 +112,7 @@ export function SiteStylesPanel({
   onDeleteSharedStyle,
   onSelectUsers,
   breakpoint = "base",
+  showsValues = true,
 }: SiteStylesPanelProps) {
   const text = useBuilderText();
   const { design, change } = useSiteDesign();
@@ -138,138 +144,140 @@ export function SiteStylesPanel({
   }
 
   return (
-    <section aria-labelledby="site-styles-title" className="flex flex-col gap-5 px-4 pt-3 pb-6">
-      {onBack && (
-        <button
-          type="button"
-          onClick={onBack}
-          className="-ms-1.5 flex h-8 items-center gap-0.5 self-start rounded-control pe-2 text-body font-medium text-label-secondary hover:bg-fill focus-visible:focus-ring"
-        >
-          <ChevronLeft aria-hidden="true" className="size-4" />
-          {text("pageBuilder.siteStyles.back")}
-        </button>
-      )}
-      <div className="flex flex-col gap-0.5">
-        <h2 id="site-styles-title" className="text-headline font-semibold text-label">
-          {text("pageBuilder.siteStyles.title")}
-        </h2>
-        <p className="text-caption text-label-secondary">
-          {text(change ? "pageBuilder.siteStyles.intro" : "pageBuilder.site.readOnly")}
-        </p>
-        {!onBack && (
-          <p className="text-caption text-label-tertiary">
-            {text("pageBuilder.siteStyles.selectHint")}
-          </p>
-        )}
-      </div>
-      {kinds.map((group) => {
-        const variables = design.variables.filter((each) => each.kind === group.kind);
-        const taken = new Set(variables.map((each) => each.name));
-        return (
-          <Group
-            key={group.kind}
-            title={text(group.title)}
-            addLabel={change ? text(group.add) : undefined}
-            onAdd={() => add(group.kind, text(group.newName), group.start)}
+    <ShowsValuesContext value={showsValues}>
+      <section aria-labelledby="site-styles-title" className="flex flex-col gap-5 px-4 pt-3 pb-6">
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="-ms-1.5 flex h-8 items-center gap-0.5 self-start rounded-control pe-2 text-body font-medium text-label-secondary hover:bg-fill focus-visible:focus-ring"
           >
-            {variables.length === 0 ? (
-              <EmptyGroup
-                note={text(group.empty)}
-                suggestions={
-                  change
-                    ? group.suggestions
-                        .map((each) => ({ name: text(each.name), value: each.value }))
-                        .filter((each) => !taken.has(each.name))
-                    : []
-                }
-                kind={group.kind}
-                onPick={(name, value) => add(group.kind, name, value)}
-              />
-            ) : (
-              <List>
-                {variables.map((variable) => (
-                  <VariableRow
-                    key={variable.id}
-                    variable={variable}
-                    uses={variableUses.get(variable.id) ?? 0}
-                    isOpen={openId === `variable:${variable.id}`}
-                    onToggle={change ? () => toggle(`variable:${variable.id}`) : undefined}
-                    onChange={replaceVariable}
+            <ChevronLeft aria-hidden="true" className="size-4" />
+            {text("pageBuilder.siteStyles.back")}
+          </button>
+        )}
+        <div className="flex flex-col gap-0.5">
+          <h2 id="site-styles-title" className="text-headline font-semibold text-label">
+            {text("pageBuilder.siteStyles.title")}
+          </h2>
+          <p className="text-caption text-label-secondary">
+            {text(change ? "pageBuilder.siteStyles.intro" : "pageBuilder.site.readOnly")}
+          </p>
+          {!onBack && (
+            <p className="text-caption text-label-tertiary">
+              {text("pageBuilder.siteStyles.selectHint")}
+            </p>
+          )}
+        </div>
+        {kinds.map((group) => {
+          const variables = design.variables.filter((each) => each.kind === group.kind);
+          const taken = new Set(variables.map((each) => each.name));
+          return (
+            <Group
+              key={group.kind}
+              title={text(group.title)}
+              addLabel={change ? text(group.add) : undefined}
+              onAdd={() => add(group.kind, text(group.newName), group.start)}
+            >
+              {variables.length === 0 ? (
+                <EmptyGroup
+                  note={text(group.empty)}
+                  suggestions={
+                    change
+                      ? group.suggestions
+                          .map((each) => ({ name: text(each.name), value: each.value }))
+                          .filter((each) => !taken.has(each.name))
+                      : []
+                  }
+                  kind={group.kind}
+                  onPick={(name, value) => add(group.kind, name, value)}
+                />
+              ) : (
+                <List>
+                  {variables.map((variable) => (
+                    <VariableRow
+                      key={variable.id}
+                      variable={variable}
+                      uses={variableUses.get(variable.id) ?? 0}
+                      isOpen={openId === `variable:${variable.id}`}
+                      onToggle={change ? () => toggle(`variable:${variable.id}`) : undefined}
+                      onChange={replaceVariable}
+                      onDelete={() => {
+                        onDeleteVariable?.(variable);
+                        change?.(withoutVariable(design, variable.id));
+                        setOpenId(null);
+                      }}
+                    />
+                  ))}
+                </List>
+              )}
+            </Group>
+          );
+        })}
+        <Group title={text("pageBuilder.site.sharedStyles")}>
+          {design.sharedStyles.length === 0 ? (
+            <EmptyGroup note={text("pageBuilder.siteStyles.sharedEmpty")} suggestions={[]} />
+          ) : (
+            <List>
+              {design.sharedStyles
+                .filter((each) => !each.variantOf || !looks[each.variantOf])
+                .flatMap((each) => [each, ...variantsOf(each, design.sharedStyles)])
+                .map((sharedStyle) => (
+                  <SharedStyleRow
+                    key={sharedStyle.id}
+                    sharedStyle={sharedStyle}
+                    look={looks[sharedStyle.id] ?? sharedStyle}
+                    uses={sharedStyleUses.get(sharedStyle.id) ?? 0}
+                    isOpen={openId === `shared:${sharedStyle.id}`}
+                    onToggle={() => toggle(`shared:${sharedStyle.id}`)}
+                    canChange={change !== undefined}
+                    onSelect={onSelectUsers ? () => onSelectUsers(sharedStyle.id) : undefined}
+                    onRename={(name) => change?.(withSharedStyle(design, { ...sharedStyle, name }))}
                     onDelete={() => {
-                      onDeleteVariable?.(variable);
-                      change?.(withoutVariable(design, variable.id));
+                      onDeleteSharedStyle?.(sharedStyle);
+                      change?.(withoutSharedStyle(design, sharedStyle.id));
                       setOpenId(null);
                     }}
                   />
                 ))}
-              </List>
-            )}
-          </Group>
-        );
-      })}
-      <Group title={text("pageBuilder.site.sharedStyles")}>
-        {design.sharedStyles.length === 0 ? (
-          <EmptyGroup note={text("pageBuilder.siteStyles.sharedEmpty")} suggestions={[]} />
-        ) : (
+            </List>
+          )}
+        </Group>
+        <Group title={text("pageBuilder.tagStyles.group")}>
           <List>
-            {design.sharedStyles
-              .filter((each) => !each.variantOf || !looks[each.variantOf])
-              .flatMap((each) => [each, ...variantsOf(each, design.sharedStyles)])
-              .map((sharedStyle) => (
-                <SharedStyleRow
-                  key={sharedStyle.id}
-                  sharedStyle={sharedStyle}
-                  look={looks[sharedStyle.id] ?? sharedStyle}
-                  uses={sharedStyleUses.get(sharedStyle.id) ?? 0}
-                  isOpen={openId === `shared:${sharedStyle.id}`}
-                  onToggle={() => toggle(`shared:${sharedStyle.id}`)}
-                  canChange={change !== undefined}
-                  onSelect={onSelectUsers ? () => onSelectUsers(sharedStyle.id) : undefined}
-                  onRename={(name) => change?.(withSharedStyle(design, { ...sharedStyle, name }))}
-                  onDelete={() => {
-                    onDeleteSharedStyle?.(sharedStyle);
-                    change?.(withoutSharedStyle(design, sharedStyle.id));
-                    setOpenId(null);
-                  }}
-                />
-              ))}
-          </List>
-        )}
-      </Group>
-      <Group title={text("pageBuilder.tagStyles.group")}>
-        <List>
-          {tagStyleKinds.map((kind) => {
-            const isSet = design.tagStyles?.[kind] !== undefined;
-            return (
-              <li key={kind}>
-                <button
-                  type="button"
-                  onClick={() => setEditingKind(kind)}
-                  className="flex min-h-11 w-full items-center gap-2.5 px-3 py-1.5 text-start hover:bg-fill/60 focus-visible:focus-ring"
-                >
-                  <span className="min-w-0 flex-1 truncate text-footnote font-medium text-label">
-                    {text(tagStyleKindDetails[kind].title)}
-                  </span>
-                  {isSet && (
-                    <span className="flex shrink-0 items-center gap-1.5 text-caption text-label-tertiary">
-                      <span aria-hidden="true" className="size-1.5 rounded-full bg-accent-fill" />
-                      {text("pageBuilder.tagStyles.set")}
+            {tagStyleKinds.map((kind) => {
+              const isSet = design.tagStyles?.[kind] !== undefined;
+              return (
+                <li key={kind}>
+                  <button
+                    type="button"
+                    onClick={() => setEditingKind(kind)}
+                    className="flex min-h-11 w-full items-center gap-2.5 px-3 py-1.5 text-start hover:bg-fill/60 focus-visible:focus-ring"
+                  >
+                    <span className="min-w-0 flex-1 truncate text-footnote font-medium text-label">
+                      {text(tagStyleKindDetails[kind].title)}
                     </span>
-                  )}
-                  <ChevronRight
-                    aria-hidden="true"
-                    className="size-3.5 shrink-0 text-label-tertiary"
-                  />
-                </button>
-              </li>
-            );
-          })}
-        </List>
-        <p className="px-1 text-caption text-label-tertiary">
-          {text("pageBuilder.tagStyles.groupNote")}
-        </p>
-      </Group>
-    </section>
+                    {isSet && (
+                      <span className="flex shrink-0 items-center gap-1.5 text-caption text-label-tertiary">
+                        <span aria-hidden="true" className="size-1.5 rounded-full bg-accent-fill" />
+                        {text("pageBuilder.tagStyles.set")}
+                      </span>
+                    )}
+                    <ChevronRight
+                      aria-hidden="true"
+                      className="size-3.5 shrink-0 text-label-tertiary"
+                    />
+                  </button>
+                </li>
+              );
+            })}
+          </List>
+          <p className="px-1 text-caption text-label-tertiary">
+            {text("pageBuilder.tagStyles.groupNote")}
+          </p>
+        </Group>
+      </section>
+    </ShowsValuesContext>
   );
 }
 
@@ -479,11 +487,18 @@ function VariableRow({
   onDelete: () => void;
 }) {
   const text = useBuilderText();
+  const showsValues = useContext(ShowsValuesContext);
   return (
     <Row
       preview={<VariablePreview variable={variable} />}
       name={variable.name}
-      detail={variable.darkValue ? `${variable.value} · ${variable.darkValue}` : variable.value}
+      detail={
+        !showsValues
+          ? undefined
+          : variable.darkValue
+            ? `${variable.value} · ${variable.darkValue}`
+            : variable.value
+      }
       uses={
         uses === 0
           ? null
@@ -624,6 +639,8 @@ export function ValueInput({
   }
   const isValid = isDesignVariableValue(kind, typed);
   const isHex = /^#[0-9a-f]{6}$/i.test(value);
+  // Beginners pick a colour from its swatch; the code is for people who want it.
+  const showsCode = useContext(ShowsValuesContext) || kind !== "colour" || !isHex;
   const commit = () => {
     if (isValid && typed.trim() !== value) onChange(typed.trim());
   };
@@ -643,6 +660,7 @@ export function ValueInput({
           />
         )}
         <input
+          hidden={!showsCode}
           aria-label={label}
           aria-invalid={!isValid}
           aria-describedby={isValid ? undefined : errorId}
