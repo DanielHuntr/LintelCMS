@@ -231,6 +231,42 @@ describe("playing presets in a real browser", () => {
     expect(await opacity()).toBeCloseTo(0, 1);
   });
 
+  it("plays a step over part of another element's scene", async () => {
+    const page = await openPage(
+      browser,
+      `<div style="height:600px"></div><section data-node-id="scene" style="height:200px"><h2 id="title">Title</h2></section><div style="height:1200px"></div>`,
+    );
+    await page.evaluate(() => {
+      const base = window.presets.findPreset("scroll-fade-through")!.spec;
+      window.motion.mountMotion(document.getElementById("title")!, {
+        ...base,
+        stagger: { each: 0, from: "first" },
+        trigger: {
+          ...base.trigger,
+          follows: "scene",
+          range: { from: 0.5, to: 1 },
+        } as typeof base.trigger,
+        tracks: [
+          {
+            property: "opacity",
+            keyframes: [
+              { offset: 0, value: 0 },
+              { offset: 1, value: 1 },
+            ],
+          },
+        ],
+      });
+    });
+    // The section's scene runs from 0 to 800px of scrolling: a quarter in, the second-half
+    // step hasn't started; three quarters in, it's halfway.
+    await page.evaluate(() => window.scrollTo(0, 200));
+    await nextFrames(page);
+    expect(Number(await style(page, "#title", "opacity"))).toBeCloseTo(0, 1);
+    await page.evaluate(() => window.scrollTo(0, 600));
+    await nextFrames(page);
+    expect(Number(await style(page, "#title", "opacity"))).toBeCloseTo(0.5, 1);
+  });
+
   it("pins a sideways scrolling section and moves its row", async () => {
     const page = await openPage(
       browser,

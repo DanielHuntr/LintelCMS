@@ -8,6 +8,8 @@ export interface TriggerContext {
   root: HTMLElement;
   elements: HTMLElement[];
   spec: MotionSpec;
+  /** The attribute elements are found by, by node id (`data-node-id` on websites). */
+  nodeAttribute?: string;
   createPlayback(scroll?: ScrollTimelineBinding): Playback;
 }
 

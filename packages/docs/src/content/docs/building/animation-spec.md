@@ -103,17 +103,17 @@ every time, so previews and pages match).
 
 ### Triggers
 
-| `type`     | Options (defaults)                                           | Plays                                                       |
-| ---------- | ------------------------------------------------------------ | ----------------------------------------------------------- |
-| `load`     |                                                              | As soon as it mounts                                        |
-| `inView`   | `threshold` (0.25), `rootMargin` ("0px"), `onLeave` ("stay") | When that share of it (or of the screen, if taller) shows   |
-| `scroll`   | `scope` ("element"), `start`, `end`, `pin`, `smooth`, `snap` | Follows the scroll position                                 |
-| `hover`    | `onLeave` ("reverse")                                        | While the pointer is over it                                |
-| `click`    | `toggle` (false)                                             | On each click; with `toggle`, alternately forwards and back |
-| `focus`    | `onLeave` ("reverse")                                        | While focus is inside it                                    |
-| `pointer`  | `smoothing` (0.85)                                           | Follows the pointer across the element                      |
-| `event`    | `name` (required), `listenOn` ("document")                   | When `new CustomEvent(name)` is dispatched                  |
-| `pageExit` |                                                              | When `controller.exit()` or `page.exitPage()` is called     |
+| `type`     | Options (defaults)                                                               | Plays                                                       |
+| ---------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `load`     |                                                                                  | As soon as it mounts                                        |
+| `inView`   | `threshold` (0.25), `rootMargin` ("0px"), `onLeave` ("stay")                     | When that share of it (or of the screen, if taller) shows   |
+| `scroll`   | `scope` ("element"), `start`, `end`, `pin`, `smooth`, `snap`, `follows`, `range` | Follows the scroll position                                 |
+| `hover`    | `onLeave` ("reverse")                                                            | While the pointer is over it                                |
+| `click`    | `toggle` (false)                                                                 | On each click; with `toggle`, alternately forwards and back |
+| `focus`    | `onLeave` ("reverse")                                                            | While focus is inside it                                    |
+| `pointer`  | `smoothing` (0.85)                                                               | Follows the pointer across the element                      |
+| `event`    | `name` (required), `listenOn` ("document")                                       | When `new CustomEvent(name)` is dispatched                  |
+| `pageExit` |                                                                                  | When `controller.exit()` or `page.exitPage()` is called     |
 
 `onLeave` is `stay`, `reverse` or `reset`. For an action per direction, as on long scroll
 stories, give `actions` instead: `{ "enter": "play", "leave": "none", "enterBack": "none",
@@ -134,6 +134,14 @@ scrolling and ease after it, rather than tracking it exactly. `snap` is a list o
 the scene, such as `[0, 0.5, 1]`: when scrolling stops, the scene settles on the nearest one,
 so it rests on a step rather than halfway through. Snapping moves the scene, never the page.
 Scenes with either are run by Lintel rather than the browser's own scroll timelines.
+
+**Steps in a scene.** `follows` makes a scroll animation follow another element's scroll,
+by node id, instead of its own: a step in that element's scene. `range` plays it over only
+part of the scene, so several elements can take turns: `{ "follows": "story", "range":
+{ "from": 0.5, "to": 1 } }` plays in the second half of the Story section's scene. The
+markers are read on the followed element, and the followed element holds itself on screen
+if it's pinned. On the website the followed element carries its `data-node-id`, so the step
+can find it.
 
 **Pointer.** Each track says which way it follows with `"input": "x"` or `"y"`: offset 0
 is the element's left (or top) edge and 1 its right (or bottom). When the pointer leaves,

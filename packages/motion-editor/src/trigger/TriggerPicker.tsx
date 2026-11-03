@@ -7,6 +7,7 @@ import type { MotionEditorStringKey } from "../strings/motionEditorStrings.js";
 import { useTranslate } from "../strings/translate.js";
 import { changeTriggerType, withTrigger } from "./changeTrigger.js";
 import { ScrollSceneEditor } from "./ScrollSceneEditor.js";
+import { useSceneElements } from "./sceneElements.js";
 
 /** What starts the animation, in plain words, with the few options each trigger has. */
 
@@ -109,6 +110,7 @@ function withBackUp(
 
 function TriggerOptions({ spec, onChange, onCommit }: TriggerPickerProps) {
   const t = useTranslate();
+  const sceneElements = useSceneElements();
   const { trigger } = spec;
   const set = (next: Trigger, mergeKey?: string) => onChange(withTrigger(spec, next), mergeKey);
   switch (trigger.type) {
@@ -188,6 +190,62 @@ function TriggerOptions({ spec, onChange, onCommit }: TriggerPickerProps) {
                 onCommit={onCommit}
               />
             </>
+          )}
+          {sceneElements.length > 0 && trigger.scope === "element" && (
+            <Select
+              label={t("motionEditor.trigger.follows")}
+              hint={t("motionEditor.trigger.followsHint")}
+              value={trigger.follows ?? ""}
+              onChange={(event) => {
+                const rest = { ...trigger };
+                delete rest.follows;
+                delete rest.range;
+                const follows = event.target.value;
+                set(follows ? { ...rest, follows, range: { from: 0, to: 1 } } : rest);
+              }}
+              options={[
+                { value: "", label: t("motionEditor.trigger.followsSelf") },
+                ...sceneElements.map((element) => ({ value: element.id, label: element.name })),
+              ]}
+            />
+          )}
+          {trigger.follows && trigger.range && (
+            <div className="grid grid-cols-2 gap-4">
+              <Slider
+                label={t("motionEditor.trigger.rangeFrom")}
+                min={0}
+                max={0.95}
+                step={0.05}
+                value={trigger.range.from}
+                displayValue={t("motionEditor.trigger.rangeValue", {
+                  percent: Math.round(trigger.range.from * 100),
+                })}
+                onChange={(from) =>
+                  set(
+                    { ...trigger, range: { from, to: Math.max(trigger.range!.to, from + 0.05) } },
+                    "range",
+                  )
+                }
+                onCommit={onCommit}
+              />
+              <Slider
+                label={t("motionEditor.trigger.rangeTo")}
+                min={0.05}
+                max={1}
+                step={0.05}
+                value={trigger.range.to}
+                displayValue={t("motionEditor.trigger.rangeValue", {
+                  percent: Math.round(trigger.range.to * 100),
+                })}
+                onChange={(to) =>
+                  set(
+                    { ...trigger, range: { from: Math.min(trigger.range!.from, to - 0.05), to } },
+                    "range",
+                  )
+                }
+                onCommit={onCommit}
+              />
+            </div>
           )}
           <Slider
             label={t("motionEditor.trigger.smooth")}
