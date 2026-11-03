@@ -1,4 +1,5 @@
 import Fastify, { type FastifyInstance } from "fastify";
+import { experimentSiteRoutes } from "../experiments/experiment-site.routes.js";
 import { siteApiRoutes } from "./site-api.routes.js";
 import { siteRoutes } from "./site.routes.js";
 import { type SiteSources, storefrontSources } from "./site-sources.js";
@@ -33,6 +34,11 @@ export function buildSiteServer(options: {
 
   const sources = options.sources ?? storefrontSources(api);
   server.register(siteApiRoutes, { api });
+  // What tested pages' script reports while an A/B test runs (see src/experiments).
+  server.register(experimentSiteRoutes, {
+    database: () => api.database,
+    measurement: () => api.experiments.measurement,
+  });
   server.register(siteRoutes, {
     database: () => api.database,
     // Each site has its own pages, so each reads and caches its own (see site-for-address.ts).

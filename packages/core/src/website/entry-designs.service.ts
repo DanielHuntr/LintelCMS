@@ -7,6 +7,7 @@ import { checkPageDesign, drawPageDesign } from "./designed-pages.js";
 import { findItemDesign } from "./item-designs.service.js";
 import { loadPageData } from "./page-data.service.js";
 import { localiseUrl } from "./site-chrome.service.js";
+import { designForVisit } from "../experiments/experiment-pages.js";
 import type { PageRequest } from "./site-pages.service.js";
 
 /**
@@ -28,7 +29,17 @@ export async function designEntryView(
 ): Promise<PageView | PostView> {
   const { locale, context } = request;
   const url = localiseUrl(entry.url ?? `/${entry.slug}`, locale, context);
-  const own = view.kind === "page" ? checkPageDesign(entry.data.design, context.scriptRule) : null;
+  const checked =
+    view.kind === "page" ? checkPageDesign(entry.data.design, context.scriptRule) : null;
+  // While an A/B test of this page runs, a visitor may see another version of it.
+  const tested = checked
+    ? designForVisit(request.dependencies.experiments, entry.id, checked)
+    : null;
+  // Another version is checked as the page is, with the site's script rule applied.
+  const own =
+    tested && tested.design !== checked
+      ? checkPageDesign(tested.design, context.scriptRule)
+      : checked;
   if (view.kind === "page" && own) {
     const designFor = String(own.root.props.itemDesignFor ?? "");
     const sampleData = designFor ? await loadSample(request, designFor) : undefined;
@@ -36,7 +47,8 @@ export async function designEntryView(
       item: sampleData ?? entryAsItem(entry, url, locale),
       currentEntry: { id: entry.id, collection: collectionHandle },
     });
-    return { ...view, design: drawPageDesign(own, data) };
+    const drawn = drawPageDesign(own, data);
+    return { ...view, design: { ...drawn, html: `${tested?.marker ?? ""}${drawn.html}` } };
   }
   const itemDesign = await findItemDesign(request, collectionHandle);
   if (!itemDesign) return view.kind === "page" ? withDesignedBlocks(request, entry, view) : view;

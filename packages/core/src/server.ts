@@ -34,6 +34,10 @@ import { revisionsRoutes } from "./entries/revisions.routes.js";
 import { scheduledEntriesRoutes } from "./entries/scheduled-entries.routes.js";
 import { fieldtypesRoutes } from "./fieldtypes/fieldtypes.routes.js";
 import { registerForms } from "./forms/register-forms.js";
+import {
+  type ExperimentsOptions,
+  registerExperiments,
+} from "./experiments/register-experiments.js";
 import type { TurnstileVerifier } from "./forms/spam-protection.js";
 import { graphqlRoutes } from "./graphql/graphql.routes.js";
 import type { AssetExists, AssetLookup } from "./fieldtypes/image-assets.js";
@@ -255,6 +259,8 @@ export interface ServerOptions {
   formsTurnstileVerifier?: TurnstileVerifier;
   /** How the online shop reaches payment services. Every part has a default. */
   commerce?: CommerceOptions;
+  /** Where A/B tests count visitors and conversions. The built-in counts by default. */
+  experiments?: ExperimentsOptions;
   /** Branding from lintel.config.json and LINTEL_BRAND_*. Defaults to Lintel's own. */
   branding?: DeploymentBranding;
   /** The admin's language when the site hasn't chosen one. Defaults to English. */
@@ -410,6 +416,7 @@ export function buildServer(options: ServerOptions) {
     runScheduledJobs: options.runScheduledJobs ?? true,
     verifyTurnstile: options.formsTurnstileVerifier,
   });
+  registerExperiments(server, options.experiments);
   registerCommerce(server, {
     ...options.commerce,
     // The Shopify importer saves product photos into the media library.

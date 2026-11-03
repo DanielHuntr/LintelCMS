@@ -83,6 +83,7 @@ describe("the plugin system", () => {
       "seo",
       "free-photos",
       "drafts",
+      "experiments",
       "greetings",
     ]);
     expect(plugins[7]).toEqual({

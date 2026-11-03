@@ -38,6 +38,7 @@ describe("plugins", () => {
       "seo",
       "free-photos",
       "drafts",
+      "experiments",
     ]);
     expect(plugins[0]).toEqual({
       id: "blog",

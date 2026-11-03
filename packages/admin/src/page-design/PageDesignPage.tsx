@@ -51,6 +51,7 @@ import { useBuilderMenus } from "../menus/builderMenus.js";
 import { InlineMenuEditor } from "../menus/InlineMenuEditor.js";
 import { useBuilderFonts } from "../site-fonts/useBuilderFonts.js";
 import { usePageDrafting } from "../page-drafts/usePageDrafting.js";
+import { useExperimentsInDesigner } from "../experiments/useExperimentsInDesigner.js";
 
 /**
  * The canvas frame's scripts, served beside the admin (see vite.config.ts), because the
@@ -124,22 +125,30 @@ function PageDesigner({
     [loadedEntry, fieldHandle],
   );
   const saving = usePageDesignSaving(loadedEntry, fieldHandle);
+  const session = useSession();
+  // A/B tests: Version B and C of the page open on the same canvas (see src/experiments).
+  const experiments = useExperimentsInDesigner({
+    entryId: loadedEntry.id,
+    fieldHandle,
+    original: "document" in opened ? opened.document : null,
+    saveOriginal: saving.saveNow,
+  });
   // The page as it is now, for the pictures and server-drawn HTML its blocks need.
   const [currentRoot, setCurrentRoot] = useState<PageDocument["root"] | null>(
     "document" in opened ? opened.document.root : null,
   );
   const changeSavedDesign = saving.change;
+  const changeExperimentDesign = experiments.change;
   const changeDesign = useCallback(
     (document: PageDocument) => {
       setCurrentRoot(document.root);
-      changeSavedDesign(document);
+      if (!changeExperimentDesign(document)) changeSavedDesign(document);
     },
-    [changeSavedDesign],
+    [changeSavedDesign, changeExperimentDesign],
   );
   const blocks = useBuilderBlocks({ root: currentRoot, beforeLeaving: saving.saveNow });
   const pageDrafting = usePageDrafting();
-  const leave = useLeaveWarning(saving.hasUnsavedChanges);
-  const session = useSession();
+  const leave = useLeaveWarning(saving.hasUnsavedChanges || experiments.hasUnsavedChanges);
   // Collection lists and shop elements show real entries on the canvas once this arrives.
   const builderData = useBuilderData();
   // Headers and menus on the canvas show the site's real menus, and edit them in place.
@@ -230,8 +239,10 @@ function PageDesigner({
   return (
     <>
       <PageBuilder
-        initialDocument={opened.document}
+        key={experiments.editing}
+        initialDocument={experiments.initialDocument ?? opened.document}
         onChange={changeDesign}
+        onSelectionChange={experiments.select}
         title={title}
         canEditCode={canEditCode}
         site={site}
@@ -250,7 +261,7 @@ function PageDesigner({
         onAddFont={fonts.onAddFont}
         onMoveFontToSite={fonts.onMoveFontToSite}
         uploadPicture={uploadPictureToMediaLibrary}
-        onSaveNow={saving.saveNow}
+        onSaveNow={experiments.isEditingVersion ? experiments.saveNow : saving.saveNow}
         frameScripts={canvasFrameScripts}
         effectModules={effectModules}
         siteEffects={siteMotion}
@@ -270,46 +281,53 @@ function PageDesigner({
         }
         toolbarEnd={
           <div className="ms-2 flex items-center gap-3" data-tour="publish">
-            <SaveIndicator
-              status={saving.status}
-              hasUnsavedChanges={saving.hasUnsavedChanges}
-              errorMessage={saving.errorMessage}
-              onRetry={saving.saveNow}
-            />
-            {canPublish && !saving.justPublished && saving.liveness !== "live" && (
-              <span className="hidden text-footnote text-label-secondary sm:inline">
-                {t(
-                  saving.liveness === "notLiveYet"
-                    ? "pageDesign.notLiveYet"
-                    : "pageDesign.changesNotLive",
+            {experiments.switcher}
+            {experiments.isEditingVersion ? (
+              experiments.saveState
+            ) : (
+              <>
+                <SaveIndicator
+                  status={saving.status}
+                  hasUnsavedChanges={saving.hasUnsavedChanges}
+                  errorMessage={saving.errorMessage}
+                  onRetry={saving.saveNow}
+                />
+                {canPublish && !saving.justPublished && saving.liveness !== "live" && (
+                  <span className="hidden text-footnote whitespace-nowrap text-label-secondary sm:inline">
+                    {t(
+                      saving.liveness === "notLiveYet"
+                        ? "pageDesign.notLiveYet"
+                        : "pageDesign.changesNotLive",
+                    )}
+                  </span>
                 )}
-              </span>
-            )}
-            <span role="status" className="sr-only">
-              {saving.justPublished ? t("pageDesign.publishedAnnouncement") : ""}
-            </span>
-            {viewPage && (
-              <ViewPageLink
-                target={viewPage}
-                className="flex h-8 items-center gap-1.5 rounded-control px-2 text-footnote font-medium text-accent hover:bg-fill focus-visible:focus-ring"
-              >
-                <SquareArrowOutUpRight aria-hidden="true" className="size-3.5" />
-                {t("editor.viewPage")}
-              </ViewPageLink>
-            )}
-            {canPublish && (
-              <button
-                type="button"
-                onClick={() => void saving.publish()}
-                disabled={saving.isPublishing}
-                className="h-8 rounded-control bg-accent-fill px-3 text-footnote font-semibold text-on-accent focus-visible:focus-ring disabled:opacity-50"
-              >
-                {saving.isPublishing
-                  ? t("pageDesign.publishing")
-                  : saving.justPublished
-                    ? t("pageDesign.published")
-                    : t("pageDesign.publish")}
-              </button>
+                <span role="status" className="sr-only">
+                  {saving.justPublished ? t("pageDesign.publishedAnnouncement") : ""}
+                </span>
+                {viewPage && (
+                  <ViewPageLink
+                    target={viewPage}
+                    className="flex h-8 items-center gap-1.5 rounded-control px-2 text-footnote font-medium text-accent hover:bg-fill focus-visible:focus-ring"
+                  >
+                    <SquareArrowOutUpRight aria-hidden="true" className="size-3.5" />
+                    {t("editor.viewPage")}
+                  </ViewPageLink>
+                )}
+                {canPublish && (
+                  <button
+                    type="button"
+                    onClick={() => void saving.publish()}
+                    disabled={saving.isPublishing}
+                    className="h-8 rounded-control bg-accent-fill px-3 text-footnote font-semibold text-on-accent focus-visible:focus-ring disabled:opacity-50"
+                  >
+                    {saving.isPublishing
+                      ? t("pageDesign.publishing")
+                      : saving.justPublished
+                        ? t("pageDesign.published")
+                        : t("pageDesign.publish")}
+                  </button>
+                )}
+              </>
             )}
           </div>
         }
@@ -322,6 +340,7 @@ function PageDesigner({
           {saving.errorMessage}
         </p>
       )}
+      {experiments.dialogs}
       {imagePicker.dialog}
       {fonts.dialogs}
       {pagePicker.dialog}

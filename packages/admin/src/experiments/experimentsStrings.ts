@@ -1,0 +1,134 @@
+/**
+ * The words for A/B testing: its screens and the designer's version switcher. Kept in their
+ * own list so the main one stays readable; `src/i18n/strings.ts` spreads them in.
+ */
+export const experimentsStrings = {
+  "nav.experiments": "A/B tests",
+
+  "experiments.version.original": "Original",
+  "experiments.version.b": "Version B",
+  "experiments.version.c": "Version C",
+
+  "experiments.status.draft": "Not started",
+  "experiments.status.running": "Running",
+  "experiments.status.stopped": "Paused",
+  "experiments.status.ended": "Ended",
+
+  "experiments.list.title": "A/B tests",
+  "experiments.list.subtitle":
+    "Show visitors different versions of a page and see which works better.",
+  "experiments.list.loading": "Loading tests",
+  "experiments.list.emptyTitle": "No tests yet",
+  "experiments.list.emptyDescription":
+    "Open a page in the designer and choose “Try another version”. Change what you like, then come back here to start the test.",
+  "experiments.list.versions": "{count, plural, one {# version} other {# versions}}",
+  "experiments.list.section": "One section",
+  "experiments.list.footer":
+    "Visitors are never tracked across sites, and anyone who asks not to be tracked always sees the original.",
+  "experiments.list.untitled": "Untitled page",
+
+  "experiments.detail.loading": "Loading the test",
+  "experiments.detail.back": "A/B tests",
+  "experiments.detail.subtitle.draft": "Choose what counts as success, then start the test.",
+  "experiments.detail.subtitle.running":
+    "Running since {date}. Visitors are split between the versions.",
+  "experiments.detail.subtitle.stopped":
+    "Paused. Everyone sees the original until you start it again.",
+  "experiments.detail.subtitle.ended": "Ended {date}. {winner}",
+  "experiments.detail.endedWith.original": "The original was kept.",
+  "experiments.detail.endedWith.version": "{version} became the page.",
+  "experiments.detail.start": "Start test",
+  "experiments.detail.resume": "Start again",
+  "experiments.detail.pause": "Pause",
+  "experiments.detail.editVersions": "Edit versions",
+  "experiments.detail.delete": "Delete test",
+  "experiments.detail.deleteTitle": "Delete this test?",
+  "experiments.detail.deleteMessage":
+    "Its versions and results go too. The page itself stays exactly as it is.",
+  "experiments.detail.started": "The test is running.",
+  "experiments.detail.paused": "The test is paused.",
+
+  "experiments.versions.title": "Versions",
+  "experiments.versions.share": "{share}% of visitors",
+  "experiments.versions.wholePage": "The whole page",
+  "experiments.versions.oneSection": "One section of the page",
+  "experiments.versions.changeSplit": "Change how visitors are split",
+  "experiments.versions.splitLabel": "Share of visitors for {version}",
+  "experiments.versions.splitTotal": "Adds up to {total}%. It needs to be 100%.",
+  "experiments.versions.saveSplit": "Save split",
+  "experiments.versions.cancel": "Cancel",
+  "experiments.versions.pauseToChange": "Pause the test to change this.",
+
+  "experiments.goal.title": "What counts as success",
+  "experiments.goal.label": "Count a success when someone…",
+  "experiments.goal.choose": "Choose…",
+  "experiments.goal.form": "sends a form",
+  "experiments.goal.order": "places an order",
+  "experiments.goal.click": "clicks a button or link",
+  "experiments.goal.page": "reaches a page",
+  "experiments.goal.whichLink": "Which button or link?",
+  "experiments.goal.noLinks": "This page has no buttons or links yet.",
+  "experiments.goal.whichPage": "Which page?",
+  "experiments.goal.choosePage": "Choose a page…",
+  "experiments.goal.changePage": "Change",
+  "experiments.goal.none": "Not chosen yet",
+  "experiments.goal.aPage": "a page",
+  "experiments.goal.formSummary": "Someone sends a form",
+  "experiments.goal.orderSummary": "Someone places an order",
+  "experiments.goal.clickSummary": "Someone clicks “{link}”",
+  "experiments.goal.pageSummary": "Someone reaches {page}",
+  "experiments.goal.hint": "Only visitors who saw one of the versions first are counted.",
+
+  "experiments.results.title": "Results",
+  "experiments.results.loading": "Loading results",
+  "experiments.results.notStarted": "Results appear here once the test is running.",
+  "experiments.results.visitors": "{count, plural, one {# visitor} other {# visitors}}",
+  "experiments.results.did.form": "{count, plural, one {# sent a form} other {# sent a form}}",
+  "experiments.results.did.order": "{count, plural, one {# ordered} other {# ordered}}",
+  "experiments.results.did.click": "{count, plural, one {# clicked} other {# clicked}}",
+  "experiments.results.did.page":
+    "{count, plural, one {# reached the page} other {# reached the page}}",
+  "experiments.results.rateLabel": "succeeded",
+  "experiments.results.same": "about the same",
+  "experiments.results.againstOriginal": "{difference} against the original",
+  "experiments.results.tooFew":
+    "Too early to be sure: wait for at least {visitors} visitors on each version and {conversions} successes in all.",
+  "experiments.results.makePage": "Make {version} the page",
+  "experiments.results.keepOriginal": "Keep the original",
+  "experiments.results.makePageTitle": "Make {version} the page?",
+  "experiments.results.makePageMessage":
+    "{version} replaces the page’s design and is published straight away. The test ends, and everyone sees {version} from now on.",
+  "experiments.results.makePageEarly":
+    "It’s too early to be sure {version} is better. You can still make it the page if you like it more.",
+  "experiments.results.keepTitle": "Keep the original and end the test?",
+  "experiments.results.keepMessage":
+    "The page stays as it is, and the other versions are put away.",
+  "experiments.results.endConfirm": "End test",
+  "experiments.results.publishConfirm": "Make it the page",
+  "experiments.results.cancel": "Cancel",
+
+  "experiments.verdict.noData": "No visitors yet.",
+  "experiments.verdict.aheadTooEarly": "{version} is ahead, but it’s too early to be sure.",
+  "experiments.verdict.behindTooEarly": "{version} is behind, but it’s too early to be sure.",
+  "experiments.verdict.tooClose": "{version} and the original are about the same so far.",
+  "experiments.verdict.better": "{version} is better: about {sure}% sure.",
+  "experiments.verdict.worse": "{version} is worse: about {sure}% sure.",
+
+  "experiments.designer.try": "Try another version",
+  "experiments.designer.tryPage": "Of the whole page",
+  "experiments.designer.trySection": "Of the selected section only",
+  "experiments.designer.add": "Add another version",
+  "experiments.designer.addFromOriginal": "Copy the original",
+  "experiments.designer.addFromB": "Copy Version B",
+  "experiments.designer.switcher": "Version to edit",
+  "experiments.designer.settings": "Test settings",
+  "experiments.designer.running": "Test running",
+  "experiments.designer.sectionNote": "Only the tried section changes in this version.",
+  "experiments.designer.versionSaved": "Saved to {version}",
+  "experiments.designer.creating": "Making Version B…",
+  "experiments.designer.removeVersion": "Remove {version}",
+  "experiments.designer.removeTitle": "Remove {version}?",
+  "experiments.designer.removeMessage": "Its design goes. The original and other versions stay.",
+  "experiments.designer.remove": "Remove",
+  "experiments.designer.cancel": "Cancel",
+};
