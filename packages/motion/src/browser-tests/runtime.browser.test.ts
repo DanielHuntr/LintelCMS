@@ -199,6 +199,38 @@ describe("playing presets in a real browser", () => {
     expect(Number(await style(page, "#box", "opacity"))).toBeCloseTo(0.5, 1);
   });
 
+  it("plays on the way down and reverses on the way back up, with an action per direction", async () => {
+    const page = await openPage(
+      browser,
+      `<div style="height:1200px"></div><div id="card" style="height:200px">Card</div><div style="height:1200px"></div>`,
+    );
+    await page.evaluate(() => {
+      const base = window.presets.findPreset("fade-in")!.spec;
+      window.motion.mountMotion(document.getElementById("card")!, {
+        ...base,
+        duration: 200,
+        trigger: {
+          ...base.trigger,
+          actions: { enter: "play", leave: "none", enterBack: "none", leaveBack: "reverse" },
+        } as typeof base.trigger,
+      });
+    });
+    const opacity = () => style(page, "#card", "opacity").then(Number);
+    await page.evaluate(() => document.getElementById("card")!.scrollIntoView({ block: "center" }));
+    await page.waitForTimeout(500);
+    expect(await opacity()).toBeCloseTo(1, 1);
+    // Past it and back down into view: nothing changes.
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(300);
+    await page.evaluate(() => document.getElementById("card")!.scrollIntoView({ block: "center" }));
+    await page.waitForTimeout(300);
+    expect(await opacity()).toBeCloseTo(1, 1);
+    // Back up above it: it plays backwards.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(500);
+    expect(await opacity()).toBeCloseTo(0, 1);
+  });
+
   it("pins a sideways scrolling section and moves its row", async () => {
     const page = await openPage(
       browser,

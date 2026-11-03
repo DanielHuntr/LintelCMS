@@ -115,7 +115,11 @@ every time, so previews and pages match).
 | `event`    | `name` (required), `listenOn` ("document")                   | When `new CustomEvent(name)` is dispatched                  |
 | `pageExit` |                                                              | When `controller.exit()` or `page.exitPage()` is called     |
 
-`onLeave` is `stay`, `reverse` or `reset`. An `inView` animation only counts as left once
+`onLeave` is `stay`, `reverse` or `reset`. For an action per direction, as on long scroll
+stories, give `actions` instead: `{ "enter": "play", "leave": "none", "enterBack": "none",
+"leaveBack": "reverse" }` plays on the way down and reverses when people scroll back up
+above it. Each is `play`, `reverse`, `restart`, `reset`, `pause`, `resume`, `finish` or
+`none`. An `inView` animation only counts as left once
 it is fully off screen, so it doesn't flicker at the edge.
 
 **Scroll scenes.** `start` and `end` are markers: `{ "element": 0, "viewport": 1 }` means
