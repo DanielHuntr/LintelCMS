@@ -563,16 +563,16 @@ export function runCanvasFrame(snap: typeof snapBox): void {
 const canvasStyles = `
 #lintel-overlay { position: absolute; inset: 0 auto auto 0; pointer-events: none; z-index: 2147483647; }
 .lintel-outline { position: absolute; box-sizing: border-box; }
-.lintel-outline--selected { outline: 2px solid #7539fd; outline-offset: -1px; }
-.lintel-outline--hover { outline: 1px solid #7539fd; outline-offset: -1px; opacity: 0.8; }
-.lintel-outline__label { position: absolute; left: -1px; bottom: 100%; padding: 1px 6px; font: 600 11px/16px -apple-system, system-ui, sans-serif; color: #fff; background: #7539fd; border-radius: 4px 4px 0 0; white-space: nowrap; }
+.lintel-outline--selected { outline: 2px solid #0071e3; outline-offset: -1px; }
+.lintel-outline--hover { outline: 1px solid #0071e3; outline-offset: -1px; opacity: 0.8; }
+.lintel-outline__label { position: absolute; left: -1px; bottom: 100%; padding: 1px 6px; font: 600 11px/16px -apple-system, system-ui, sans-serif; color: #fff; background: #0071e3; border-radius: 4px 4px 0 0; white-space: nowrap; }
 .lintel-outline--hover .lintel-outline__label { opacity: 0.9; }
 [data-lintel-placeholder="image"] { min-height: 12rem; background: repeating-linear-gradient(135deg, #ececf1 0 12px, #f5f5f7 12px 24px); border-radius: 12px; }
 [data-lintel-placeholder="unknown"] { min-height: 3rem; background: #fff4e5; }
 [data-lintel-node]:empty:not(img, hr, br, [data-lintel-placeholder]) { min-height: 4rem; outline: 1px dashed #c7c7cc; outline-offset: -1px; }
-[contenteditable] { outline: 2px solid #7539fd; outline-offset: 2px; cursor: text; }
-.lintel-rotate-handle { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border: 2px solid #7539fd; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 0.3); pointer-events: auto; cursor: grab; }
-.lintel-rotate-handle::after { content: ""; position: absolute; left: 50%; top: 100%; width: 1px; height: 12px; background: #7539fd; }
+[contenteditable] { outline: 2px solid #0071e3; outline-offset: 2px; cursor: text; }
+.lintel-rotate-handle { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border: 2px solid #0071e3; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 0.3); pointer-events: auto; cursor: grab; }
+.lintel-rotate-handle::after { content: ""; position: absolute; left: 50%; top: 100%; width: 1px; height: 12px; background: #0071e3; }
 .lintel-guide { position: absolute; background: #ff2d87; pointer-events: none; }
 .lintel-guide--x { width: 1px; }
 .lintel-guide--y { height: 1px; }

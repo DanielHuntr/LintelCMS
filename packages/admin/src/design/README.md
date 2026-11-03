@@ -43,10 +43,10 @@ follows the device's setting, which would stop the review page showing both sche
 
 ### Contrast
 
-The accent is Lintel violet, split in two. `accent-fill` (`#7539fd`, the brand colour) sits
-behind white text on buttons (5.6:1). `accent` is used for text: a shade deeper in light mode
-(`#6a2cf0`, 6:1 on the grey background) and lighter in dark mode (`#a68aff`, 5.1:1 even on
-raised panels), so links pass WCAG AA everywhere. The mark (`AppMark`) is the bird from
+The accent is Lintel blue, split in two. `accent-fill` (`#0071e3`, the brand colour) sits
+behind white text on buttons (4.6:1). `accent` is used for text: a shade deeper in light mode
+(`#0066cc` on the grey background) and lighter in dark mode (`#4aa3ff` on raised panels), so
+links pass WCAG AA everywhere (`accent-colours.test.ts` in core checks all three). The mark (`AppMark`) is the bird from
 `brand/` at the repository root.
 
 ## Rebranding for a client

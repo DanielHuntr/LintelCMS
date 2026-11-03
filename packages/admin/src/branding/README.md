@@ -18,4 +18,4 @@ deployment, Settings) live in `packages/core/src/branding`; this folder shows th
 
 The product name reaches every message through `{product}` (see `src/i18n`). The last
 branding seen is remembered in localStorage, so a branded admin doesn't flash Lintel's
-violet while it loads.
+blue while it loads.

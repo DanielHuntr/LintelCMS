@@ -48,7 +48,7 @@ export function useBranding(): PublicBranding {
 }
 
 /**
- * Remembered between visits, so a branded admin doesn't flash Lintel's violet while the
+ * Remembered between visits, so a branded admin doesn't flash Lintel's blue while the
  * branding loads.
  */
 function remember(branding: PublicBranding): void {

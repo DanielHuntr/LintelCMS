@@ -41,7 +41,7 @@ describe("branding the admin", () => {
       productName: "Acme Studio",
       supportEmail: "help@acme.example",
       isLintelDefault: false,
-      accent: { fill: "#7539fd", onFill: "#ffffff" },
+      accent: { fill: "#0071e3", onFill: "#ffffff" },
     });
   });
 

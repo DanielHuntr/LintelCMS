@@ -6,7 +6,7 @@
  * Branding screen and the colours the server hands out are always the same.
  */
 
-export const LINTEL_ACCENT_COLOUR = "#7539fd";
+export const LINTEL_ACCENT_COLOUR = "#0071e3";
 
 /** WCAG AA for normal-sized text. */
 export const MINIMUM_TEXT_CONTRAST = 4.5;
@@ -34,14 +34,14 @@ export interface AccentShades {
   fillIsReadable: boolean;
 }
 
-/** Lintel violet's shades are hand-tuned (see the admin's styles.css), so they are kept. */
+/** Lintel blue's shades are hand-tuned (see the admin's styles.css), so they are kept. */
 const lintelShades: AccentShades = {
   fill: LINTEL_ACCENT_COLOUR,
-  fillHover: "#6a2cf0",
+  fillHover: "#0066cc",
   onFill: WHITE,
-  text: "#6a2cf0",
-  textDark: "#a68aff",
-  fillContrast: 5.6,
+  text: "#0066cc",
+  textDark: "#4aa3ff",
+  fillContrast: 4.6,
   fillIsReadable: true,
 };
 

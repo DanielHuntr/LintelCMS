@@ -19,7 +19,7 @@ is `packages/core/src/content-tree` and `packages/core/src/recycle-bin`.
   With more than one site there is a site switcher at the top.
 - **Rows** (`TreeRow.tsx`) show an icon per content type (`typeIcons.ts`), the name and a
   status dot (`StatusDot.tsx`): solid green published, amber ringed green published with
-  newer changes, hollow draft, violet scheduled. Rows also say the state to screen readers.
+  newer changes, hollow draft, accent-coloured scheduled. Rows also say the state to screen readers.
 - **Loading**: a branch loads only when opened, 100 rows at a time with "Show more"
   (`TreeBranch.tsx`). Collections and entries whose children are listed in the workspace
   (`childrenAsCollection`) show a count instead of opening.

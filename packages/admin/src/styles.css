@@ -74,9 +74,9 @@
   --color-label: #1d1d1f;
   --color-label-secondary: #6e6e73;
   --color-label-tertiary: #8e8e93;
-  --color-accent: #6a2cf0;
-  --color-accent-fill: #7539fd;
-  --color-accent-fill-hover: #6a2cf0;
+  --color-accent: #0066cc;
+  --color-accent-fill: #0071e3;
+  --color-accent-fill-hover: #0066cc;
   --color-on-accent: #ffffff;
   --color-success: #248a3d;
   --color-warning: #b25000;
@@ -117,13 +117,13 @@
     --color-label-secondary: #6e6e73;
     --color-label-tertiary: #8e8e93;
     /*
-     * Lintel violet (#7539FD) fills buttons; white on it is 5.6:1. Accent text is a shade
-     * deeper so links pass WCAG AA on the light grey background too (6:1).
+     * Lintel blue (#0071E3) fills buttons; white on it is 4.6:1. Accent text is a shade
+     * deeper so links pass WCAG AA on the light grey background too.
      */
-    --color-accent: #6a2cf0;
-    --color-accent-fill: #7539fd;
+    --color-accent: #0066cc;
+    --color-accent-fill: #0071e3;
     /* Filled buttons on hover: a step further from their text, so hovering never fades it. */
-    --color-accent-fill-hover: #6a2cf0;
+    --color-accent-fill-hover: #0066cc;
     --color-on-accent: #ffffff;
     --color-success: #248a3d;
     --color-warning: #b25000;
@@ -145,10 +145,10 @@
       --color-label: #f5f5f7;
       --color-label-secondary: #98989d;
       --color-label-tertiary: #6e6e73;
-      /* Lighter violet for text on dark surfaces: 5.1:1 even on raised panels. */
-      --color-accent: #a68aff;
-      --color-accent-fill: #7539fd;
-      --color-accent-fill-hover: #6a2cf0;
+      /* Lighter blue for text on dark surfaces, so it passes AA on raised panels. */
+      --color-accent: #4aa3ff;
+      --color-accent-fill: #0071e3;
+      --color-accent-fill-hover: #0066cc;
       --color-on-accent: #ffffff;
       --color-success: #30d158;
       --color-warning: #ff9f0a;

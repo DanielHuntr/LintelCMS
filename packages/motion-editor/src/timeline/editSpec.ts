@@ -134,9 +134,9 @@ const startingValues: Partial<Record<AnimatableProperty, [Value, Value]>> = {
   saturate: [0, 1],
   grayscale: [1, 0],
   clipPath: ["inset(0% 100% 0% 0%)", "inset(0% 0% 0% 0%)"],
-  color: ["#6e6e73", "#7539fd"],
+  color: ["#6e6e73", "#0071e3"],
   backgroundColor: ["#ffffff", "#f1ebff"],
-  borderColor: ["#d1d1d6", "#7539fd"],
+  borderColor: ["#d1d1d6", "#0071e3"],
 };
 
 export function addTrack(spec: MotionSpec, property: AnimatableProperty): MotionSpec {
