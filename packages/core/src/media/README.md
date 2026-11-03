@@ -37,6 +37,11 @@ PowerPoint (`.pptx`), plain text and CSV documents.
 
 `credit` holds who made a file and its licence, for files that must be credited, such as
 photos added by the Free photos plugin (`src/free-photos`). It is empty for most files.
+`credit_details` keeps its parts when Lintel wrote it; editing the credit clears them.
+`photo-credit.ts` decides what websites show under the picture: nothing for CC0 and Public
+Domain Mark photos, the parts (so the creator and licence can link) for other free photos,
+and a typed credit as typed. Delivered images carry it as `credit`, and the admin's `Asset`
+as `photoCredit`.
 
 ## The recycle bin
 

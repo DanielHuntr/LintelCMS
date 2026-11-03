@@ -1,11 +1,15 @@
 import { Container } from "../layout/Container.js";
 import { Section } from "../layout/Section.js";
+import { FigureCaption } from "../media/PhotoCredit.js";
 import { ResponsiveImage } from "../media/ResponsiveImage.js";
 import type { ImageBlock } from "./block.types.js";
 
 export type ImageSectionProps = Omit<ImageBlock, "type">;
 
-/** A picture across the page in its own shape, with an optional caption below. */
+/**
+ * A picture across the page in its own shape, with an optional caption below and the
+ * photo's credit when its licence asks for one.
+ */
 export function ImageSection({ image, caption }: ImageSectionProps) {
   if (!image) {
     return null;
@@ -20,11 +24,12 @@ export function ImageSection({ image, caption }: ImageSectionProps) {
             className="lintel-figure__image"
             field="image"
           />
-          {caption && (
-            <figcaption className="lintel-figure__caption" data-lintel-field="caption">
-              {caption}
-            </figcaption>
-          )}
+          <FigureCaption
+            caption={caption}
+            credit={image.credit}
+            className="lintel-figure__caption"
+            captionProps={{ "data-lintel-field": "caption" }}
+          />
         </figure>
       </Container>
     </Section>

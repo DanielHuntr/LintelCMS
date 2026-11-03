@@ -38,7 +38,28 @@ is its own kind of information, which other files (a photographer's own work, sa
   thumbnails a day when this was written). Searches are kept for 10 minutes and thumbnails
   for an hour, and "too many" is explained in plain words. A busy agency server could reach
   the daily limit; registering for a key is the way on if that happens.
-- The credit is stored, but sites don't show it on their own yet. Showing credits (under a
-  picture, or on a credits page) is a separate piece of work.
+- Sites show the credit under the picture where the licence asks for one (see below).
 - Some photos Openverse lists have gone from the site they came from. Their thumbnail
   fails, and the admin leaves them out.
+
+## Update, 3 November 2026: credits on the website
+
+Visitors and photographers expect to see who took a photo, and CC BY and CC BY-SA require it.
+So the website now shows the credit under a picture:
+
+- **Where:** the builder's Picture element, image fields drawn by the site's components (the
+  image section), and Liquid's `{% image %}`. Each is drawn as a `<figure>` with
+  `<figcaption class="lintel-credit">`, small and quiet, in the theme's own colours, such as
+  "Photo: Ian Sane, CC BY 2.0". The creator links to where the photo was found, and the
+  licence to its terms.
+- **Which pictures:** a CC0 or Public Domain Mark photo shows nothing, because those
+  licences ask for nothing. A credit typed by hand counts as wanted and is shown as typed.
+- **What is stored:** free photos keep the credit's parts (licence code and name, its link,
+  creator, source) beside the text, in `assets.credit_details` (migration
+  `0027_asset_credit_details`). Editing the credit by hand clears the parts, so what shows is
+  what was typed. The delivery API gives each image its `credit`, so headless sites can show
+  it too.
+- **Switching it off:** the Picture element has "Show the photo credit", on by default and
+  only offered when there is a credit to show. Turned off, it says the licence asks for a
+  credit. Liquid's `{% image %}` takes `credit: false`. Both are for pages that credit photos
+  somewhere else; hiding a required credit without that breaks the licence.

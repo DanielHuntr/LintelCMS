@@ -142,7 +142,10 @@ Liquid's standard tags and filters all work (`for`, `if`, `assign`, `capture`, `
 
 `{% image %}` also takes `ratio` (`"16/9"`, `"4:5"` or a number), `sizes` (instead of the
 one made from `width`), `class`, `alt` (instead of the picture's own) and `priority: true`
-for the first picture on the page. Menus take `label: "Footer links"` for their accessible
+for the first picture on the page. When the photo's licence asks for a credit (CC BY, CC
+BY-SA, or a credit typed in the media library), it is drawn under the picture as
+`<figure><img><figcaption class="lintel-credit">`. `credit: false` leaves it off, for pages
+that credit their photos somewhere else. Menus take `label: "Footer links"` for their accessible
 name. Forms take `show_title: true`.
 
 ## Choosing a template per page

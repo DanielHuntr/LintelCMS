@@ -16,6 +16,7 @@ export { AssetInUseError, AssetNotFoundError } from "./media.errors.js";
 export { detectFileType } from "./file-types.js";
 export {
   deleteAsset,
+  setAssetCredit,
   updateAsset,
   uploadAsset,
   type MediaContext,
@@ -24,3 +25,10 @@ export {
 export { assetSchema, focalPointSchema, type Asset, type FocalPoint } from "./media.schema.js";
 export { LocalDiskStorage } from "./local-disk-storage.js";
 export { StoredFileMissingError, type StorageDriver } from "./storage-driver.js";
+export {
+  creditDetailsSchema,
+  photoCreditFor,
+  photoCreditSchema,
+  type CreditDetails,
+  type PhotoCredit,
+} from "./photo-credit.js";

@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { isImageMimeType } from "./file-types.js";
 import type { AssetRow } from "./media.table.js";
 import type { Asset } from "./media.schema.js";
+import { photoCreditFor } from "./photo-credit.js";
 
 /** Thumbnails in the admin grid and picker: wide enough for a sharp 200px tile on a retina screen. */
 const THUMBNAIL_WIDTH = 400;
@@ -43,6 +44,7 @@ export function toAssetResponse(
     height: asset.height,
     alt: asset.alt,
     credit: asset.credit,
+    photoCredit: photoCreditFor(asset),
     focalPoint: { x: asset.focalX, y: asset.focalY },
     url: assetFileUrl(publicApiUrl, asset),
     thumbnailUrl: isImageMimeType(asset.mimeType)

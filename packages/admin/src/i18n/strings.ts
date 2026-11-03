@@ -349,7 +349,7 @@ const english = {
   "media.detail.filename.label": "Filename",
   "media.detail.credit.label": "Credit",
   "media.detail.credit.hint":
-    "Who made it and its licence, if your site should credit them. Free photos fill this in.",
+    "Who made it and its licence. Pictures on your website show it underneath, unless its licence asks for no credit. Free photos fill this in.",
   "media.detail.details": "Details",
   "media.detail.size": "Size",
   "media.detail.dimensions": "Dimensions",

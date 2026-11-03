@@ -17,6 +17,7 @@ export { Container } from "./layout/Container.js";
 export { Section } from "./layout/Section.js";
 export { Stack } from "./layout/Stack.js";
 export { ResponsiveImage } from "./media/ResponsiveImage.js";
+export { FigureCaption, PhotoCreditText } from "./media/PhotoCredit.js";
 export { VideoEmbed, type SiteVideo, type VideoEmbedProps } from "./media/VideoEmbed.js";
 export { imageSources, resizedImageUrl, IMAGE_WIDTHS } from "./media/image-urls.js";
 export { Header, type HeaderLayout } from "./chrome/Header.js";

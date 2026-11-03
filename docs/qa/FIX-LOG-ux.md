@@ -657,3 +657,34 @@ Every upload uses the media library's upload and checks, and its plain messages.
 - `schedule-tree-link-desktop-light`;
 - `schedule-*` (desktop and 390px, light and dark);
 - `schedule-empty-month-desktop-light` and `schedule-empty-month-phone-light`.
+
+## LINTEL-UX-032: photo credits on the website (3 November 2026)
+
+**Asked for (decided with Daniel):** show a photo's credit where its licence asks for one. CC BY and CC BY-SA require it, and visitors and photographers expect it.
+
+**What it does:**
+
+- **Where it shows:** a picture whose media item has a credit gets a small line under it, such as "Photo: JeepersMedia, CC BY 2.0". The creator links to where the photo was found, and the licence to its terms. This covers the builder's Picture element, the image section that draws image fields, and Liquid's `{% image %}`.
+- **Markup and styling:** it's drawn as `<figure>` with `<figcaption class="lintel-credit">`. When there's also a caption, the credit follows it in the same figcaption. It's small and in the theme's secondary text colour, so it follows light and dark themes.
+- **Which photos:** CC0 and Public Domain Mark photos show nothing. A credit typed by hand counts as needed and shows as typed.
+- **Switching it off:** the Picture element's Content settings have **Show the photo credit**. It's on by default, offered only when there's a credit to show, and says the licence asks for a credit when it's turned off. Liquid's `{% image %}` takes `credit: false`.
+- **The canvas** shows the credit as the website will.
+- **The delivery API** gives each image its `credit`, so headless sites can show it too.
+
+**What's stored:**
+
+- **Migration:** `0027_asset_credit_details` adds `assets.credit_details` (jsonb, null for existing files).
+- **Free photos** keep the credit's parts there: licence code and name, licence link, creator and source.
+- **Typing a credit by hand** clears the parts, so the site shows exactly what was typed.
+- **Checked** on a fresh database and on one built with release da8e1ac's migrations with a file already in it.
+
+**Tests:**
+
+- `core/src/media/photo-credit.test.ts`: BY in parts, CC0 and PDM show nothing, typed credits.
+- `core/src/free-photos/free-photos.test.ts`: added photos carry the website credit, and a PDM photo carries none.
+- `core/src/media/media-library.test.ts`: a typed credit, and delivered assets carrying `credit`.
+- `core/src/liquid-templates/liquid-engine.test.ts`: `{% image %}` with a credit, with `credit: false`, and without a credit.
+- `builder/src/render/photo-credit.test.tsx`: Picture with a BY credit, with a CC0 photo, with the switch off and with a caption. Also the switch: on, its note when off, and hidden without a credit.
+- `site-components/src/media/photo-credit.test.tsx`: the image section with a credit, a typed credit with a caption, and none.
+
+**Screenshots** (in `screenshots/qol-b/`): `credits-site-desktop-light`, `credits-site-desktop-dark`, `credits-site-phone-light`, `credits-builder-on-desktop-light` and `credits-builder-off-desktop-light`.

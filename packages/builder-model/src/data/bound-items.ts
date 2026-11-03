@@ -17,6 +17,15 @@ export interface BoundPicture {
   height: number | null;
 }
 
+/** A photo's credit: its parts for free photos, or only `text` for one typed by hand. */
+export interface PhotoCreditData {
+  text: string;
+  creator: string | null;
+  sourceUrl: string | null;
+  licenceName: string | null;
+  licenceUrl: string | null;
+}
+
 /** Formatted text from the rich text editor, already cleaned when it was saved. */
 export interface BoundHtml {
   html: string;
@@ -185,6 +194,11 @@ export interface PageData {
   blocks?: Readonly<Record<string, CustomBlock>>;
   /** Pictures image properties point at, by asset id. */
   pictures?: Readonly<Record<string, BoundPicture>>;
+  /**
+   * Credits to show under Picture elements, by asset id: only for pictures whose licence
+   * asks for one (or whose credit was typed by hand). See core's media/photo-credit.ts.
+   */
+  credits?: Readonly<Record<string, PhotoCreditData>>;
   /** Blocks drawn by the server (React blocks in code), by the instance's id. */
   renderedBlocks?: Readonly<Record<string, string>>;
 }

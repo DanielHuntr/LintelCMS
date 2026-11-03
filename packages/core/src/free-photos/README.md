@@ -24,8 +24,11 @@ CC0, the Public Domain Mark, CC BY and CC BY-SA (`allowedLicences` in `free-phot
 Non-commercial (NC) and no-derivatives (ND) licences are left out. They are asked for in the
 search and checked again on every result and before every download.
 
-The credit is written as the licences ask: title, creator, licence with its link, and
-where the photo was found, for example:
+The credit's parts (licence code and name, its link, creator, source) are kept beside it
+in `credit_details`, so the website can show "Photo: InfoMofo, CC BY-SA 2.0" under the
+picture with links (see `src/media/photo-credit.ts`). CC0 and Public Domain Mark photos show
+nothing there. The credit text itself is written as the licences ask: title, creator,
+licence with its link, and where the photo was found, for example:
 
 > “Bakery” by InfoMofo, CC BY-SA 2.0 (https://creativecommons.org/licenses/by-sa/2.0/).
 > Source: https://www.flickr.com/photos/40689227@N00/141332285

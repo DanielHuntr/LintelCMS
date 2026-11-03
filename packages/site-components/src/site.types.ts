@@ -21,6 +21,20 @@ export interface SiteImage {
   width: number | null;
   height: number | null;
   focalPoint: FocalPoint | null;
+  /** Shown under the picture when its licence asks for one; left out or null for none. */
+  credit?: PhotoCredit | null;
+}
+
+/**
+ * A photo's credit, as the media library gives it: the parts (creator and the page it came
+ * from, licence and its terms) for free photos, or just `text` for one typed by hand.
+ */
+export interface PhotoCredit {
+  text: string;
+  creator: string | null;
+  sourceUrl: string | null;
+  licenceName: string | null;
+  licenceUrl: string | null;
 }
 
 /** A link with a visible label, such as a button. */

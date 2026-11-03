@@ -2,7 +2,7 @@ import {
   type Asset,
   detectFileType,
   type MediaContext,
-  updateAsset,
+  setAssetCredit,
   uploadAsset,
 } from "../media/index.js";
 import { FreePhotoDownloadError, FreePhotoLicenceNotAllowedError } from "./free-photos.errors.js";
@@ -80,8 +80,12 @@ export async function addFreePhoto(
   );
   // The same photo added again keeps any credit someone has since written by hand.
   if (uploaded.asset.credit !== "") return uploaded;
-  const asset = await updateAsset(context.media, uploaded.asset.id, {
-    credit: describeCredit(photo),
+  const asset = await setAssetCredit(context.media, uploaded.asset.id, describeCredit(photo), {
+    licence: photo.licence,
+    licenceName: photo.licenceName,
+    licenceUrl: photo.licenceUrl,
+    creator: photo.creator,
+    sourceUrl: photo.pageUrl || null,
   });
   return { asset, created: uploaded.created };
 }

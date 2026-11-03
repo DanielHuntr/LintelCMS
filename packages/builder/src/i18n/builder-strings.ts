@@ -273,6 +273,9 @@ export const builderStrings = {
     "Start the link with https://, http://, mailto:, tel:, / or #.",
   "pageBuilder.content.noPicture": "No picture yet",
   "pageBuilder.content.choosePicture": "Choose a picture",
+  "pageBuilder.content.creditShown": "Shown under the picture: {credit}",
+  "pageBuilder.content.creditHidden":
+    "This photo’s licence asks for a credit. Keep it hidden only if you credit the photographer somewhere else on the page.",
   "pageBuilder.pictureDrop.uploading": "Uploading {name}…",
   "pageBuilder.pictureDrop.done": "Picture added to the page and to your media.",
   "pageBuilder.pictureDrop.failed": "Couldn’t use {name}. {reason}",

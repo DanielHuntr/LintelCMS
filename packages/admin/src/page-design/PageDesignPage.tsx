@@ -36,6 +36,7 @@ import { type StringKey, t } from "../i18n/strings.js";
 import { getAsset, uploadAsset } from "../media/media.api.js";
 import { MediaPickerDialog } from "../media/MediaPickerDialog.js";
 import { uploadPicture } from "../media/uploadPicture.js";
+import { usePhotoCredits } from "./usePhotoCredits.js";
 import { useCan, useSession } from "../session/SessionContext.js";
 import { runtimeSettings } from "../runtime-settings.js";
 import { useBuilderData, useCanvasSite, useViewPageSite } from "../website/website.queries.js";
@@ -132,14 +133,17 @@ function PageDesigner({
   const builderData = useBuilderData();
   // Headers and menus on the canvas show the site's real menus, and edit them in place.
   const builderMenus = useBuilderMenus();
+  // Credits under Picture elements, as the website shows them.
+  const photoCredits = usePhotoCredits(currentRoot);
   const dataSources = useMemo(() => {
     const menus = builderMenus.data;
-    if (!builderData.data && !menus) return undefined;
+    if (!builderData.data && !menus && !photoCredits) return undefined;
     return {
       ...(builderData.data ?? { collections: [], forms: [], products: [], productCollections: [] }),
       menus,
+      photoCredits,
     };
-  }, [builderData.data, builderMenus.data]);
+  }, [builderData.data, builderMenus.data, photoCredits]);
   const canEditCode = useCan("builder:code");
   const canPublish = useCan("entries:publish");
   const collection = useCollection(collectionHandle);

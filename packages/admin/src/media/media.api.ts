@@ -13,6 +13,14 @@ export interface Asset {
   alt: string;
   /** Who made it and under what licence, such as a free photo's credit. Often empty. */
   credit: string;
+  /** The credit as the website shows it under the picture; null when none is shown. */
+  photoCredit?: {
+    text: string;
+    creator: string | null;
+    sourceUrl: string | null;
+    licenceName: string | null;
+    licenceUrl: string | null;
+  } | null;
   focalPoint: FocalPoint;
   /** Absolute and public: the original file. */
   url: string;

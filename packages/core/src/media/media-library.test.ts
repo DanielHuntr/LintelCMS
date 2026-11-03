@@ -86,6 +86,11 @@ describe("the media library", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.json().credit).toBe("Photo by Ana Ruiz, CC BY 4.0");
+    // A credit typed by hand is shown on the website as typed.
+    expect(response.json().photoCredit).toMatchObject({
+      text: "Photo by Ana Ruiz, CC BY 4.0",
+      licenceName: null,
+    });
   });
 
   it("refuses a focal point outside the image", async () => {
@@ -180,6 +185,7 @@ describe("looking up assets from other features", () => {
       width: 40,
       height: 20,
       focalPoint: { x: 0.5, y: 0.5 },
+      credit: null,
     });
     expect(found.get(asset.id)?.url.startsWith(TEST_API_URL)).toBe(true);
     expect(await lookup.assetExists(asset.id)).toBe(true);

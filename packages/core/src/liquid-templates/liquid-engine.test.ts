@@ -144,6 +144,35 @@ describe("the Liquid engine", () => {
     expect(html.endsWith("|")).toBe(true);
   });
 
+  it("credits a photo under {% image %} when its licence asks, unless credit: false", async () => {
+    const credited = {
+      ...photo,
+      credit: {
+        text: "“Bakery” by Ian Sane, CC BY 2.0",
+        creator: "Ian Sane",
+        sourceUrl: "https://www.flickr.com/photos/31246066@N04/4253556720",
+        licenceName: "CC BY 2.0",
+        licenceUrl: "https://creativecommons.org/licenses/by/2.0/",
+      },
+    };
+    await file(
+      "templates/page.liquid",
+      "{% image entry.hero %}|{% image entry.hero credit: false %}|{% image entry.plain %}",
+    );
+
+    const [shown, hidden, plain] = (
+      await render("page", { entry: { hero: credited, plain: photo } })
+    ).split("|");
+
+    expect(shown).toMatch(/^<figure class="lintel-credited-image"><img /);
+    expect(shown).toContain(
+      '<figcaption class="lintel-credit">Photo: <a href="https://www.flickr.com/photos/31246066@N04/4253556720" rel="noopener">Ian Sane</a>, <a href="https://creativecommons.org/licenses/by/2.0/" rel="license noopener">CC BY 2.0</a></figcaption></figure>',
+    );
+    expect(hidden).toMatch(/^<img /);
+    expect(hidden).not.toContain("lintel-credit");
+    expect(plain).toMatch(/^<img /);
+  });
+
   it("gives a resized copy's address with | image_url", async () => {
     await file("templates/page.liquid", "{{ entry.hero | image_url: 800 }}");
     expect(await render("page", { entry: { hero: photo } })).toBe(

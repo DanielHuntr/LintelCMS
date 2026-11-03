@@ -239,6 +239,14 @@ describe("free photos", () => {
         "Source: https://www.flickr.com/photos/example/141332285",
       uploadedBy: { name: "Ana Editor" },
     });
+    // The website shows the credit in parts: the creator links to the source, the licence to its terms.
+    expect(response.json().photoCredit).toEqual({
+      text: response.json().credit,
+      creator: "InfoMofo",
+      sourceUrl: "https://www.flickr.com/photos/example/141332285",
+      licenceName: "CC BY-SA 2.0",
+      licenceUrl: "https://creativecommons.org/licenses/by-sa/2.0/",
+    });
     const stored = await readdir(join(folder, "uploads", "default"));
     expect(stored).toHaveLength(1);
 
@@ -246,6 +254,13 @@ describe("free photos", () => {
     const again = await add({ id: BAKERY_ID });
     expect(again.statusCode).toBe(200);
     expect(again.json().id).toBe(response.json().id);
+  });
+
+  it("keeps a public domain photo's credit, but asks the website to show none", async () => {
+    const response = await add({ id: PUBLIC_DOMAIN_ID });
+
+    expect(response.json().credit).toContain("Public Domain Mark");
+    expect(response.json().photoCredit).toBeNull();
   });
 
   it("never adds a photo whose licence isn't offered", async () => {
