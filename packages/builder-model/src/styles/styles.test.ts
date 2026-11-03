@@ -66,6 +66,29 @@ describe("class names", () => {
     expect(slugifyClassName("3 columns")).toBe("el-3-columns");
     expect(slugifyClassName("✨")).toBe("element");
   });
+
+  // LINTEL-FUNC-022: a layer named "Heading 2" and the second unnamed heading shared a class.
+  it("never gives two elements the same class, whatever the layers are called", () => {
+    const createId = createCountingNodeIds();
+    const heading = (name = "") => ({
+      ...createNode({ type: "heading" }, standardCatalogue, createId),
+      name,
+    });
+    const root: PageNode = {
+      ...createEmptyPage().root,
+      children: [heading("Heading 2"), heading(), heading(), heading("Heading 3"), heading()],
+    };
+    const names = [...assignClassNames(root, standardCatalogue).values()];
+    expect(names).toEqual([
+      "page",
+      "heading-2",
+      "heading",
+      "heading-3",
+      "heading-3-2",
+      "heading-4",
+    ]);
+    expect(new Set(names).size).toBe(names.length);
+  });
 });
 
 describe("the stylesheet", () => {

@@ -5,7 +5,9 @@ import { walkNodes } from "../tree/tree-queries.js";
 /**
  * Every node gets one class, named after its layer: a node called "Hero" is `.hero`, an
  * unnamed heading is `.heading`. When names repeat, the later ones get a number in page order
- * (`.heading-2`, `.heading-3`), so the same page always gets the same names.
+ * (`.heading-2`, `.heading-3`), so the same page always gets the same names. A number is
+ * skipped when a layer's own name already took it: a layer called "Heading 2" and a second
+ * unnamed heading used to share `.heading-2`, so styles bled between them (LINTEL-FUNC-022).
  *
  * Names are worked out when the page is drawn rather than stored. Renaming a layer is the way
  * to give an element a class name that stays put while things around it change.
@@ -15,13 +17,20 @@ export function assignClassNames(
   catalogue: ComponentCatalogue,
 ): Map<string, string> {
   const classNames = new Map<string, string>();
-  const used = new Map<string, number>();
+  const counts = new Map<string, number>();
+  const taken = new Set<string>();
 
   walkNodes(root, (node) => {
     const base = classNameBase(node, catalogue);
-    const count = (used.get(base) ?? 0) + 1;
-    used.set(base, count);
-    classNames.set(node.id, count === 1 ? base : `${base}-${count}`);
+    let count = counts.get(base) ?? 0;
+    let className: string;
+    do {
+      count += 1;
+      className = count === 1 ? base : `${base}-${count}`;
+    } while (taken.has(className));
+    counts.set(base, count);
+    taken.add(className);
+    classNames.set(node.id, className);
   });
   return classNames;
 }
