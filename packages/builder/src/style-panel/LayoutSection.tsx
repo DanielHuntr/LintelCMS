@@ -1,72 +1,118 @@
-import { findTokenByValue, spacingTokens } from "@lintel/builder-model";
-import { ArrowDown, ArrowRight, Grid3x3, Square } from "lucide-react";
-import { type KeyboardEvent, useRef } from "react";
+import { canUseFreeLayout, canUsePlacedGrid, spacingTokens } from "@lintel/builder-model";
+import { ArrowDown, ArrowRight, LayoutGrid, Move } from "lucide-react";
+import { type KeyboardEvent, useMemo, useRef } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { ChoiceGroup, classNames, Labelled, PanelSection } from "../ui/controls.js";
 import { useDesignTools } from "./design-tools.js";
-import { useStyleEditing, useStyleField } from "./style-field.js";
+import { GridSettings, selfAlignments } from "./GridPlaceControls.js";
+import {
+  type StyleEditing,
+  StyleEditingContext,
+  useStyleEditing,
+  useStyleField,
+  useStyleReader,
+} from "./style-field.js";
 import { layoutSummary } from "./style-summaries.js";
 import { StyleChips, StyleSelect, StyleTextInput, useSizeChips } from "./StyleInputs.js";
 import { useStyleSummary } from "./summary-names.js";
 
-type Arrangement = "stack" | "row" | "grid" | "normal";
+/** The four ways things inside a section, box or container can be arranged. */
+export type Arrangement = "stack" | "row" | "grid" | "free";
 
 /**
- * How the elements inside are arranged: one under another, side by side, or in a grid. A
- * placed grid is set up in Arrange, so here it only has the space between things.
+ * How what's inside is arranged now. "flow" is plain block layout, the browser's own one
+ * under another: it shows as One under another, and only becomes a stack when one of its
+ * details is changed, so pages saved before look exactly the same. "other" is anything else
+ * set by hand in Advanced (hidden, inline and so on), which none of the four choices
+ * describe.
+ */
+export type ArrangementReading = Arrangement | "flow" | "other";
+
+export function readArrangement(
+  node: { freeLayout?: unknown; placedGrid?: unknown },
+  display: string | undefined,
+  direction: string | undefined,
+): ArrangementReading {
+  if (node.freeLayout) return "free";
+  if (node.placedGrid) return "grid";
+  if (display === "grid" || display === "inline-grid") return "grid";
+  if (display === "flex" || display === "inline-flex") {
+    return direction === "row" || direction === "row-reverse" ? "row" : "stack";
+  }
+  return display === undefined || display === "block" ? "flow" : "other";
+}
+
+const twoColumns = "repeat(2, minmax(0, 1fr))";
+
+/**
+ * How the elements inside are arranged: one under another, side by side, on a grid, or
+ * anywhere (sections, boxes and containers only), with the details for the chosen one under
+ * it: alignment and the space between things, wrapping, columns, and placing things on the
+ * grid by hand. One control for what used to be two (Arrange and Layout); see
+ * docs/decisions/0046-one-builder-for-everyone.md.
  */
 export function LayoutSection({ advanced }: { advanced: boolean }) {
-  const isPlacedGrid = useDesignTools().node.placedGrid !== undefined;
-  return isPlacedGrid ? <PlacedGridSpacing /> : <FlowLayout advanced={advanced} />;
-}
-
-function PlacedGridSpacing() {
   const text = useBuilderText();
-  const summary = useStyleSummary(
-    (read) => findTokenByValue(read("gap"))?.label ?? read("gap") ?? "",
-  );
-  const gapChips = useSizeChips(spacingTokens.slice(1, 8), text("pageBuilder.style.none"));
-  return (
-    <PanelSection
-      title={text("pageBuilder.style.layout")}
-      sectionId="layout"
-      summary={summary.summary}
-      linked={summary.linked}
-    >
-      <StyleChips properties={["gap"]} label={text("pageBuilder.style.gap")} choices={gapChips} />
-    </PanelSection>
-  );
-}
-
-function FlowLayout({ advanced }: { advanced: boolean }) {
-  const text = useBuilderText();
-  const gapChips = useSizeChips(spacingTokens.slice(1, 8), text("pageBuilder.style.none"));
-  const { change } = useStyleEditing();
-  const summary = useStyleSummary((reader) => layoutSummary(reader, text));
-  const display = useStyleField("display", text("pageBuilder.style.arrange"));
-  const direction = useStyleField("flexDirection", text("pageBuilder.style.arrange"));
-  const columns = useStyleField("gridTemplateColumns", text("pageBuilder.style.columns"));
-  const arrangement: Arrangement =
-    display.value === "grid"
-      ? "grid"
-      : display.value === "flex"
-        ? direction.value === "row"
-          ? "row"
-          : "stack"
-        : "normal";
+  const tools = useDesignTools();
+  const editing = useStyleEditing();
+  const read = useStyleReader();
+  const { node } = tools;
+  const reading = readArrangement(node, read("display"), read("flexDirection"));
+  const shown: Arrangement | undefined =
+    reading === "flow" ? "stack" : reading === "other" ? undefined : reading;
+  const canPlaceOnGrid = canUsePlacedGrid(node);
   const label = text("pageBuilder.style.arrange");
+  const placedGrid = node.placedGrid;
+  const isFree = node.freeLayout !== undefined;
+  const summary = useStyleSummary((reader) =>
+    isFree
+      ? text("pageBuilder.layout.free")
+      : placedGrid
+        ? text("pageBuilder.grid.summary", { count: placedGrid.columns })
+        : layoutSummary(reader, text),
+  );
 
-  const arrange = (next: Arrangement) => {
-    if (next === "stack") change({ display: "flex", flexDirection: "column" }, label);
-    if (next === "row") change({ display: "flex", flexDirection: "row", flexWrap: "wrap" }, label);
-    if (next === "grid")
-      change(
-        { display: "grid", gridTemplateColumns: columns.value ?? "repeat(2, minmax(0, 1fr))" },
+  // Plain block layout becomes a stack the moment one of its details is changed.
+  const detailsEditing = useMemo<StyleEditing>(
+    () =>
+      reading === "flow"
+        ? {
+            ...editing,
+            change: (values, changeLabel) =>
+              editing.change({ display: "flex", flexDirection: "column", ...values }, changeLabel),
+          }
+        : editing,
+    [reading, editing],
+  );
+
+  const choose = (next: Arrangement) => {
+    if (next === shown) return;
+    if (next === "free") {
+      tools.setFreeLayout({ stackOnPhone: true });
+      return;
+    }
+    if (node.freeLayout) tools.setFreeLayout(null);
+    if (node.placedGrid) tools.setPlacedGrid(null);
+    if (next === "stack") editing.change({ display: "flex", flexDirection: "column" }, label);
+    if (next === "row") {
+      editing.change({ display: "flex", flexDirection: "row", flexWrap: "wrap" }, label);
+    }
+    if (next === "grid") {
+      editing.change(
+        { display: "grid", gridTemplateColumns: read("gridTemplateColumns") ?? twoColumns },
         label,
       );
-    if (next === "normal") change({ display: undefined, flexDirection: undefined }, label);
+    }
   };
-  const columnCount = Number(/^repeat\((\d+)/.exec(columns.value ?? "")?.[1] ?? 0);
+
+  const choices = [
+    { value: "stack" as const, label: text("pageBuilder.layout.stack"), icon: ArrowDown },
+    { value: "row" as const, label: text("pageBuilder.layout.row"), icon: ArrowRight },
+    { value: "grid" as const, label: text("pageBuilder.layout.grid"), icon: LayoutGrid },
+    ...(canUseFreeLayout(node)
+      ? [{ value: "free" as const, label: text("pageBuilder.layout.free"), icon: Move }]
+      : []),
+  ];
 
   return (
     <PanelSection
@@ -76,70 +122,192 @@ function FlowLayout({ advanced }: { advanced: boolean }) {
       linked={summary.linked}
     >
       <ChoiceGroup<Arrangement>
-        label={label}
-        value={arrangement}
-        onChange={arrange}
-        choices={[
-          { value: "stack", label: text("pageBuilder.style.stack"), icon: ArrowDown },
-          { value: "row", label: text("pageBuilder.style.row"), icon: ArrowRight },
-          { value: "grid", label: text("pageBuilder.style.grid"), icon: Grid3x3 },
-          { value: "normal", label: text("pageBuilder.style.normal"), icon: Square },
-        ]}
+        label={text("pageBuilder.layout.howArranged")}
+        value={shown}
+        onChange={choose}
+        twoColumns={choices.length === 4}
+        choices={choices}
       />
-      {arrangement === "grid" && (
-        <ChoiceGroup
-          label={text("pageBuilder.style.columns")}
-          value={String(columnCount)}
-          onChange={(count) => columns.set(`repeat(${count}, minmax(0, 1fr))`)}
-          choices={["1", "2", "3", "4", "6"].map((count) => ({ value: count, label: count }))}
+      <StyleEditingContext.Provider value={detailsEditing}>
+        {(shown === "stack" || shown === "row") && <FlowDetails isRow={shown === "row"} />}
+        {shown === "grid" && !placedGrid && <GridDetails canPlaceOnGrid={canPlaceOnGrid} />}
+        {shown === "grid" && placedGrid && <PlacedGridDetails />}
+        {shown === "free" && <FreeLayoutDetails />}
+        {advanced && !isFree && !placedGrid && <AdvancedLayout isGrid={shown === "grid"} />}
+      </StyleEditingContext.Provider>
+    </PanelSection>
+  );
+}
+
+function GapChips() {
+  const text = useBuilderText();
+  const gapChips = useSizeChips(spacingTokens.slice(1, 8), text("pageBuilder.style.none"));
+  return (
+    <StyleChips properties={["gap"]} label={text("pageBuilder.style.gap")} choices={gapChips} />
+  );
+}
+
+function Checkbox({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="flex items-center gap-2 text-footnote text-label">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="size-4 accent-[var(--color-accent-fill)]"
+      />
+      {label}
+    </label>
+  );
+}
+
+/** One under another or side by side: where things sit, the space between, and wrapping. */
+function FlowDetails({ isRow }: { isRow: boolean }) {
+  const text = useBuilderText();
+  const wrap = useStyleField("flexWrap", text("pageBuilder.style.wrap"));
+  return (
+    <>
+      <AlignmentPad isRow={isRow} />
+      <GapChips />
+      {isRow && (
+        <Checkbox
+          label={text("pageBuilder.style.wrap")}
+          checked={wrap.value === "wrap"}
+          onChange={(checked) => wrap.set(checked ? "wrap" : "nowrap")}
         />
       )}
-      {arrangement !== "normal" && <AlignmentPad isRow={arrangement === "row"} />}
-      {arrangement !== "normal" && (
-        <StyleChips properties={["gap"]} label={text("pageBuilder.style.gap")} choices={gapChips} />
+    </>
+  );
+}
+
+/** A grid that fills itself in order: how many columns, alignment and the space between. */
+function GridDetails({ canPlaceOnGrid }: { canPlaceOnGrid: boolean }) {
+  const text = useBuilderText();
+  const tools = useDesignTools();
+  const columns = useStyleField("gridTemplateColumns", text("pageBuilder.style.columns"));
+  const columnCount = Number(/^repeat\((\d+)/.exec(columns.value ?? "")?.[1] ?? 0);
+  return (
+    <>
+      <ChoiceGroup
+        label={text("pageBuilder.style.columns")}
+        value={String(columnCount)}
+        onChange={(count) => columns.set(`repeat(${count}, minmax(0, 1fr))`)}
+        choices={["1", "2", "3", "4", "6"].map((count) => ({ value: count, label: count }))}
+      />
+      <AlignmentPad isRow={false} />
+      <GapChips />
+      {canPlaceOnGrid && (
+        <Checkbox
+          label={text("pageBuilder.layout.placeYourself")}
+          checked={false}
+          onChange={() => tools.setPlacedGrid({ columns: 12, stackOnPhone: true })}
+        />
       )}
-      {advanced && (
-        <div className="grid grid-cols-2 gap-2">
+    </>
+  );
+}
+
+/** A grid where each thing is placed by hand: its columns, phones, and the space between. */
+function PlacedGridDetails() {
+  const text = useBuilderText();
+  const tools = useDesignTools();
+  const { change } = useStyleEditing();
+  return (
+    <>
+      <Checkbox
+        label={text("pageBuilder.layout.placeYourself")}
+        checked
+        onChange={() => {
+          // Still a grid, filled in order again.
+          tools.setPlacedGrid(null);
+          change(
+            { display: "grid", gridTemplateColumns: twoColumns },
+            text("pageBuilder.style.arrange"),
+          );
+        }}
+      />
+      <GridSettings />
+      <GapChips />
+    </>
+  );
+}
+
+/** Anywhere: drag things where they go, and whether phones put them one under another. */
+function FreeLayoutDetails() {
+  const text = useBuilderText();
+  const tools = useDesignTools();
+  const freeLayout = tools.node.freeLayout;
+  if (!freeLayout) return null;
+  return (
+    <>
+      <p className="text-caption text-label-tertiary">
+        {text("pageBuilder.design.freeLayoutHint")}
+      </p>
+      <Checkbox
+        label={text("pageBuilder.design.stackOnPhone")}
+        checked={freeLayout.stackOnPhone}
+        onChange={(checked) => tools.setFreeLayout({ stackOnPhone: checked })}
+      />
+    </>
+  );
+}
+
+/** The exact CSS, in Advanced. */
+function AdvancedLayout({ isGrid }: { isGrid: boolean }) {
+  const text = useBuilderText();
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      <StyleSelect
+        property="display"
+        label={text("pageBuilder.style.display")}
+        choices={["block", "flex", "grid", "inline", "inline-block", "inline-flex", "none"].map(
+          (value) => ({ value, label: value }),
+        )}
+      />
+      <StyleTextInput property="gap" label={text("pageBuilder.style.gapExact")} />
+      <StyleTextInput
+        property="gridTemplateColumns"
+        label={text("pageBuilder.style.gridColumns")}
+        placeholder="1fr 1fr"
+      />
+      <StyleTextInput
+        property="gridColumn"
+        label={text("pageBuilder.style.gridColumn")}
+        placeholder="span 2"
+      />
+      <StyleTextInput property="order" label={text("pageBuilder.style.order")} placeholder="0" />
+      <StyleTextInput property="flexGrow" label={text("pageBuilder.style.grow")} placeholder="0" />
+      <StyleTextInput property="flexBasis" label={text("pageBuilder.style.basis")} />
+      {isGrid && (
+        <>
+          <StyleTextInput
+            property="gridTemplateRows"
+            label={text("pageBuilder.design.gridRows")}
+            placeholder="auto 1fr"
+          />
           <StyleSelect
-            property="display"
-            label={text("pageBuilder.style.display")}
-            choices={["block", "flex", "grid", "inline", "inline-block", "inline-flex", "none"].map(
-              (value) => ({ value, label: value }),
-            )}
+            property="justifyItems"
+            label={text("pageBuilder.design.justifyItems")}
+            choices={selfAlignments(text)}
           />
-          <StyleSelect
-            property="flexWrap"
-            label={text("pageBuilder.style.wrap")}
-            choices={[
-              { value: "wrap", label: text("pageBuilder.style.wrapYes") },
-              { value: "nowrap", label: text("pageBuilder.style.wrapNo") },
-            ]}
-          />
-          <StyleTextInput property="gap" label={text("pageBuilder.style.gapExact")} />
-          <StyleTextInput
-            property="gridTemplateColumns"
-            label={text("pageBuilder.style.gridColumns")}
-            placeholder="1fr 1fr"
-          />
-          <StyleTextInput
-            property="gridColumn"
-            label={text("pageBuilder.style.gridColumn")}
-            placeholder="span 2"
-          />
-          <StyleTextInput
-            property="order"
-            label={text("pageBuilder.style.order")}
-            placeholder="0"
-          />
-          <StyleTextInput
-            property="flexGrow"
-            label={text("pageBuilder.style.grow")}
-            placeholder="0"
-          />
-          <StyleTextInput property="flexBasis" label={text("pageBuilder.style.basis")} />
-        </div>
+          <div className="col-span-2">
+            <StyleTextInput
+              property="gridTemplateAreas"
+              label={text("pageBuilder.design.gridAreas")}
+              placeholder={'"title photo" "text photo"'}
+            />
+          </div>
+        </>
       )}
-    </PanelSection>
+    </div>
   );
 }
 

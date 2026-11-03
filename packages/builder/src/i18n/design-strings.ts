@@ -172,7 +172,7 @@ export const builderDesignStrings = {
   "pageBuilder.design.objectFocus": "The part of the picture to keep in its frame",
 
   "pageBuilder.design.arrange": "Arrange",
-  "pageBuilder.design.freeLayout": "Free layout",
+  "pageBuilder.design.whereItSits": "Where it sits",
   "pageBuilder.design.freeLayoutOn": "Free layout: place things anywhere",
   "pageBuilder.design.freeLayoutHint":
     "Drag what’s inside anywhere in this section, even over each other. The order in Layers is still the order it’s read in.",

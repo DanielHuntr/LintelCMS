@@ -35,10 +35,8 @@ import type { PageWeight } from "@lintel/motion/effects";
 import { BlockInstancePanel } from "../blocks/BlockInstancePanel.js";
 import { BlockTools } from "../blocks/BlockTools.js";
 import { useBlockMaster, useBuilderBlocks } from "../blocks/blocks-context.js";
-import { CodePanel } from "../developer/CodePanel.js";
 import { useBuilderText } from "../i18n/builder-text.js";
 import type { ComponentRegistry } from "../render/component-registry.js";
-import type { SkillLevelTools } from "../skill-level/skill-levels.js";
 import type { MarkChange } from "../inline-text/TextStyleBar.js";
 import type { DesignTools, FileUploader } from "../style-panel/design-tools.js";
 import {
@@ -57,7 +55,7 @@ import type { ImagePicker } from "./content-fields.js";
 import { ContentPanel } from "./ContentPanel.js";
 import { MenuEditingContext } from "../menus/menu-editing.js";
 
-type RightTab = "style" | "content" | "animate" | "code";
+type RightTab = "style" | "content" | "animate";
 
 type StyleValues = Partial<Record<StylePropertyName, string | undefined>>;
 
@@ -69,13 +67,12 @@ interface SelectedElementPanelProps {
   isLocked: boolean;
   breakpoint: Breakpoint;
   registry: ComponentRegistry;
-  tools: SkillLevelTools;
+  /** Whether this person may write code: the HTML, CSS and JavaScript of a Code element. */
+  canEditCode: boolean;
   tips: { isDismissed: (tip: string) => boolean; dismiss: (tip: string) => void };
   pickImage?: ImagePicker;
   uploadFile?: FileUploader;
   motionText?: MotionText;
-  /** Opens the Code tab, as switching to Developer does. */
-  showCode: boolean;
   actions: {
     changeStyles: (nodeId: string, target: StyleTarget, values: StyleValues, label: string) => void;
     changeProps: (nodeId: string, props: Record<string, unknown>, label: string) => void;
@@ -83,10 +80,7 @@ interface SelectedElementPanelProps {
     animate: (nodeId: string, animations: NodeAnimation[]) => void;
     setEffects: (nodeId: string, effects: NodeEffect[]) => void;
     setStateTransition: (nodeId: string, transition: StateTransition | null) => void;
-    applyHtml: (nodeId: string, html: string) => void;
-    convertToCode: (nodeId: string) => void;
     changeCode: (nodeId: string, code: { html: string; css: string; js: string }) => void;
-    pasteHtml: (html: string) => void;
     setFreeLayout: (nodeId: string, freeLayout: FreeLayout | null) => void;
     setPlacedGrid: (nodeId: string, placedGrid: PlacedGrid | null) => void;
     placeOnGrid: (nodeId: string, target: Breakpoint, place: GridPlace) => void;
@@ -157,23 +151,17 @@ const recognisableOwnerTypes = new Set([
 ]);
 
 /**
- * The right-hand side: Style, Content and Animate for the selected element, and Code for
- * developers. Which controls each shows follows the skill level.
+ * The right-hand side: Style, Content and Animate for the selected element. Everyone gets the
+ * same panel; the less common settings are folded away until they're wanted.
  */
 export function SelectedElementPanel(props: SelectedElementPanelProps) {
   const text = useBuilderText();
-  const { node, tools, actions } = props;
-  const [chosenTab, setTab] = useState<RightTab>("style");
+  const { node, actions } = props;
+  const [tab, setTab] = useState<RightTab>("style");
   const [styleMode, setStyleMode] = useState<StylePanelMode>("simple");
   const [styleState, setStyleState] = useState<StateChoice>("none");
   // "Site styles" opens over the element's Style, with Back.
   const [showsSiteStyles, setShowsSiteStyles] = useState(false);
-  const wantsCode = props.showCode && tools.codeTools;
-  const [lastShowCode, setLastShowCode] = useState(wantsCode);
-  if (wantsCode !== lastShowCode) {
-    setLastShowCode(wantsCode);
-    if (wantsCode) setTab("code");
-  }
   // "Add pages to your menu" on the canvas opens the menu editor, which is in Content.
   const { editingFor: editingMenuFor } = useContext(MenuEditingContext);
   const [lastEditingMenuFor, setLastEditingMenuFor] = useState(editingMenuFor);
@@ -181,7 +169,6 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
     setLastEditingMenuFor(editingMenuFor);
     if (editingMenuFor !== null) setTab("content");
   }
-  const tab = chosenTab === "code" && !tools.codeTools ? "style" : chosenTab;
   const { document, pickImage, uploadFile } = props;
   const sharedStyleUses = useMemo(() => countSharedStyleUses(document.root), [document.root]);
   const site = useSiteDesign();
@@ -292,9 +279,6 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
     { value: "style", label: text("pageBuilder.panels.style") },
     { value: "content", label: text("pageBuilder.panels.content") },
     { value: "animate", label: text("pageBuilder.panels.animate") },
-    ...(tools.codeTools
-      ? [{ value: "code" as const, label: text("pageBuilder.panels.code") }]
-      : []),
   ];
 
   const blocks = useBuilderBlocks();
@@ -348,18 +332,7 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
         aria-labelledby={`lintel-right-tab-${tab}`}
         className="min-h-0 flex-1 overflow-auto"
       >
-        {tab === "code" ? (
-          <CodePanel
-            document={props.document}
-            node={node}
-            registry={props.registry}
-            isLocked={props.isLocked}
-            onApplyHtml={actions.applyHtml}
-            onConvertToCode={actions.convertToCode}
-            onChangeCode={actions.changeCode}
-            onPasteHtml={actions.pasteHtml}
-          />
-        ) : !node ? (
+        {!node ? (
           tab === "style" ? (
             siteStyles()
           ) : (
@@ -390,10 +363,9 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
             state={styleState}
             onStateChange={setStyleState}
             isLocked={props.isLocked}
-            allowsAdvanced={tools.advancedStyles}
             note={
-              <Tip id="moreStyles" tips={props.tips}>
-                {text("pageBuilder.style.moreInDesigner")}
+              <Tip id="styleHowTo" tips={props.tips}>
+                {text("pageBuilder.style.howTo")}
               </Tip>
             }
             onChange={(target, values, label) =>
@@ -412,7 +384,6 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
             name={props.nodeName}
             sceneElements={stateOwners}
             isLocked={props.isLocked}
-            showsTimeline={tools.animationTimeline}
             motionText={props.motionText}
             tips={props.tips}
             onChange={(animation) => actions.animate(node.id, animation)}
@@ -430,6 +401,9 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
             isLocked={props.isLocked}
             pickImage={props.pickImage}
             onChange={(changed, label) => actions.changeProps(node.id, changed, label)}
+            onChangeCode={
+              props.canEditCode ? (code) => actions.changeCode(node.id, code) : undefined
+            }
             pageFonts={design?.pageFonts}
             onMarkText={(range, styles, label) =>
               actions.markText({ ...range, nodeId: node.id, prop: "text" }, styles, label)

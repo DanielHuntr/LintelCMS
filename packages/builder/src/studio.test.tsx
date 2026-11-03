@@ -114,30 +114,15 @@ describe("animating in the builder", () => {
   });
 });
 
-describe("skill levels", () => {
-  it("keeps things simple for beginners", async () => {
+describe("one builder for everyone", () => {
+  it("has no skill levels, and gives everyone every style and the timeline", async () => {
     const user = userEvent.setup();
-    renderBuilder(headingPage());
-    expect(screen.getByRole("button", { name: "Tools: Beginner" })).toBeInTheDocument();
-    await selectTitle(user);
-    expect(screen.queryByRole("radio", { name: "Advanced" })).not.toBeInTheDocument();
-    expect(screen.getByText(/Choose Designer in Tools/)).toBeInTheDocument();
-    await user.click(screen.getByRole("tab", { name: "Animate" }));
-    await user.click(screen.getByRole("button", { name: "Add motion" }));
-    await user.click(screen.getByRole("radio", { name: "Appears" }));
-    await user.click(screen.getByRole("button", { name: "More settings" }));
-    expect(screen.queryByRole("radio", { name: "Advanced" })).not.toBeInTheDocument();
-    expect(screen.getByText(/Switch to Designer to open the timeline/)).toBeInTheDocument();
-  });
-
-  it("shows every style and the timeline to designers, and remembers the choice", async () => {
-    const user = userEvent.setup();
-    const preferences = createMemoryPreferenceStore({ tourSeen: "yes" });
-    renderBuilder(headingPage(), preferences);
-    await user.click(screen.getByRole("button", { name: "Tools: Beginner" }));
-    await user.click(screen.getByRole("radio", { name: /Designer/ }));
-    expect(screen.getByRole("status")).toHaveTextContent("Showing the Designer tools");
-    expect(preferences.read("skillLevel")).toBe("designer");
+    // A level stored by an older version is simply ignored.
+    renderBuilder(
+      headingPage(),
+      createMemoryPreferenceStore({ tourSeen: "yes", skillLevel: "beginner" }),
+    );
+    expect(screen.queryByRole("button", { name: /^Tools/ })).not.toBeInTheDocument();
     await selectTitle(user);
     expect(screen.getByRole("radio", { name: "Advanced" })).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Animate" }));
@@ -147,22 +132,28 @@ describe("skill levels", () => {
     expect(screen.getByRole("radio", { name: "Advanced" })).toBeInTheDocument();
   });
 
-  it("adds the Code panel for developers who may edit code", () => {
+  it("has no Code tab, even for people who may write code", async () => {
+    const user = userEvent.setup();
     renderBuilder(
       headingPage(),
       createMemoryPreferenceStore({ tourSeen: "yes", skillLevel: "developer" }),
       true,
     );
-    expect(screen.getByRole("tab", { name: "Code" })).toBeInTheDocument();
+    await selectTitle(user);
+    expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).not.toContain("Code");
   });
 
-  it("never shows developer tools without the permission, whatever was stored", () => {
-    renderBuilder(
-      headingPage(),
-      createMemoryPreferenceStore({ tourSeen: "yes", skillLevel: "developer" }),
-    );
-    expect(screen.getByRole("button", { name: "Tools: Designer" })).toBeInTheDocument();
-    expect(screen.queryByRole("tab", { name: "Code" })).not.toBeInTheDocument();
+  it("shows a first-time tip in Style and Animate, closed for good with Got it", async () => {
+    const user = userEvent.setup();
+    const preferences = createMemoryPreferenceStore({ tourSeen: "yes" });
+    renderBuilder(headingPage(), preferences);
+    await selectTitle(user);
+    expect(screen.getByText(/Pick Hovered or Pressed above/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Got it" }));
+    expect(screen.queryByText(/Pick Hovered or Pressed above/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "Animate" }));
+    expect(screen.getByText(/Advanced opens the timeline/)).toBeInTheDocument();
+    expect(preferences.read("dismissedTips")).toBe("styleHowTo");
   });
 });
 
@@ -174,11 +165,11 @@ describe("the guided tour", () => {
     const tour = screen.getByRole("dialog", { name: "Add sections and elements" });
     expect(tour).toHaveAttribute("aria-modal", "true");
     expect(within(tour).getByRole("heading", { name: "Add sections and elements" })).toHaveFocus();
-    expect(tour).toHaveTextContent("Step 1 of 6");
+    expect(tour).toHaveTextContent("Step 1 of 8");
     await user.click(within(tour).getByRole("button", { name: "Next" }));
     expect(
-      screen.getByRole("dialog", { name: "Everything on the page, in order" }),
-    ).toHaveTextContent("Step 2 of 6");
+      screen.getByRole("dialog", { name: "Click to select, double-click to type" }),
+    ).toHaveTextContent("Step 2 of 8");
     await user.click(screen.getByRole("button", { name: "Back" }));
     expect(screen.getByRole("dialog", { name: "Add sections and elements" })).toBeInTheDocument();
     await user.keyboard("{Escape}");
@@ -217,39 +208,36 @@ describe("the guided tour", () => {
     expect(screen.getByRole("button", { name: "Add a section" })).toBeInTheDocument();
   });
 
-  it("says more about the right panel for Designers than for Beginners", async () => {
+  it("is the same for everyone and covers Style, Site styles, Layout and Animate", async () => {
     const user = userEvent.setup();
     renderBuilder(headingPage(), createMemoryPreferenceStore({ skillLevel: "beginner" }));
-    for (let step = 1; step < 4; step += 1) {
-      await user.click(screen.getByRole("button", { name: "Next" }));
+    const titles: string[] = [];
+    for (let step = 1; step <= 8; step += 1) {
+      titles.push(within(screen.getByRole("dialog")).getByRole("heading").textContent ?? "");
+      if (step < 8) await user.click(screen.getByRole("button", { name: "Next" }));
     }
-    const beginner = screen.getByRole("dialog", { name: "Change what you’ve selected" });
-    expect(beginner).not.toHaveTextContent("Hovered");
-    await user.click(screen.getByRole("button", { name: "Next" }));
-    expect(screen.getByRole("dialog")).toHaveTextContent("Tools, beside them");
-    await user.keyboard("{Escape}");
-
-    await user.click(screen.getByRole("button", { name: "Tools: Beginner" }));
-    await user.click(screen.getByRole("radio", { name: /Designer/ }));
-    await user.click(screen.getByRole("button", { name: "Help and tips" }));
-    await user.click(screen.getByRole("button", { name: "Replay the tour" }));
-    for (let step = 1; step < 4; step += 1) {
-      await user.click(screen.getByRole("button", { name: "Next" }));
-    }
-    expect(screen.getByRole("dialog", { name: "Change what you’ve selected" })).toHaveTextContent(
-      "Hovered",
-    );
+    expect(titles).toEqual([
+      "Add sections and elements",
+      "Click to select, double-click to type",
+      "Change how it looks",
+      "Styles for the whole site",
+      "Arrange what’s inside",
+      "Make it move",
+      "Every screen size, and every step",
+      "Publish and view your page",
+    ]);
+    expect(screen.getByRole("dialog")).not.toHaveTextContent("Tools");
   });
 
   it("walks through to Publish and can be replayed from Help and tips", async () => {
     const user = userEvent.setup();
     const preferences = createMemoryPreferenceStore();
     renderBuilder(headingPage(), preferences);
-    for (let step = 1; step < 6; step += 1) {
+    for (let step = 1; step < 8; step += 1) {
       await user.click(screen.getByRole("button", { name: "Next" }));
     }
     expect(screen.getByRole("dialog", { name: "Publish and view your page" })).toHaveTextContent(
-      "Step 6 of 6",
+      "Step 8 of 8",
     );
     await user.click(screen.getByRole("button", { name: "Start building" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -267,10 +255,10 @@ describe("the guided tour", () => {
     renderBuilder(headingPage());
     await selectTitle(user);
     await user.click(screen.getByRole("button", { name: "Got it" }));
-    expect(screen.queryByText(/Choose Designer in Tools/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Pick Hovered or Pressed above/)).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Help and tips" }));
     await user.click(screen.getByRole("button", { name: "Show tips again" }));
-    expect(screen.getByText(/Choose Designer in Tools/)).toBeInTheDocument();
+    expect(screen.getByText(/Pick Hovered or Pressed above/)).toBeInTheDocument();
   });
 });
 

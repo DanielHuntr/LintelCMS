@@ -31,10 +31,10 @@ including what starts an animation (scrolling to it, hovering, clicking and more
 
 ## The timeline
 
-People using the **Designer** or **Developer** tools also get **Advanced**: a timeline
-where you can drag keyframes, change the easing curve and build scroll scenes. Choose
-**Tools** at the top of the builder to switch (see [Builder skill levels](/using/builder-skill-levels/)).
-Beginners keep the presets and sliders, which are enough for almost everything.
+Open an animation and choose **Advanced** for the timeline, where you can drag keyframes,
+change the easing curve and build scroll scenes (see
+[Getting around the builder](/using/getting-around-the-builder/)). The presets and sliders
+in **Simple** are enough for almost everything.
 
 ## On your website
 

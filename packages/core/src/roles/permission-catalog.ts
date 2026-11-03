@@ -124,7 +124,8 @@ export const corePermissionGroups: readonly PermissionGroup[] = [
       {
         permission: "builder:code",
         name: "Write code in page designs",
-        description: "Code blocks and Developer mode. Anyone who can edit a page can design it.",
+        description:
+          "Code elements: adding them and editing their HTML, CSS and JavaScript. Anyone who can edit a page can design it.",
       },
       {
         permission: "builder:blocks",

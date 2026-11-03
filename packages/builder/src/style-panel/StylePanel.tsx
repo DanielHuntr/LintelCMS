@@ -71,9 +71,7 @@ interface StylePanelProps {
   state: StateChoice;
   onStateChange: (state: StateChoice) => void;
   isLocked: boolean;
-  /** False for beginners: only the simple choices, and no Simple/Advanced switch. */
-  allowsAdvanced?: boolean;
-  /** Shown to beginners above the styles, such as a tip about more control. */
+  /** Shown under the Simple/Advanced switch, such as a first-time tip. */
   note?: ReactNode;
   onChange: (
     target: StyleTarget,
@@ -98,7 +96,7 @@ interface StylePanelProps {
 
 const textTypes = new Set(["heading", "text", "quote", "list", "button", "link", "navigation"]);
 
-/** What a beginner sees open the first time: the groups people change most. */
+/** What Simple shows open the first time: the groups people change most. */
 const simpleOpenAtFirst = ["layout", "spacing", "text"];
 
 const breakpointNotes: Record<Breakpoint, BuilderStringKey> = {
@@ -124,7 +122,6 @@ export function StylePanel({
   state,
   onStateChange,
   isLocked,
-  allowsAdvanced = true,
   note,
   onChange,
   design,
@@ -136,7 +133,7 @@ export function StylePanel({
   onOpenSiteStyles,
 }: StylePanelProps) {
   const text = useBuilderText();
-  const advanced = allowsAdvanced && mode === "advanced";
+  const advanced = mode === "advanced";
   // An owner's state only counts while that owner is still around the selected element.
   const ownerTarget = readOwnerStateTarget(state === "none" ? "base" : state);
   const owner = ownerTarget
@@ -206,20 +203,17 @@ export function StylePanel({
   return (
     <div className="flex flex-col">
       <div className="flex flex-col gap-3 hairline-bottom px-4 py-3">
-        {allowsAdvanced ? (
-          <ChoiceGroup<StylePanelMode>
-            label={text("pageBuilder.style.modeLabel")}
-            hideLabel
-            value={mode}
-            onChange={onModeChange}
-            choices={[
-              { value: "simple", label: text("pageBuilder.style.simple") },
-              { value: "advanced", label: text("pageBuilder.style.advanced") },
-            ]}
-          />
-        ) : (
-          note
-        )}
+        <ChoiceGroup<StylePanelMode>
+          label={text("pageBuilder.style.modeLabel")}
+          hideLabel
+          value={mode}
+          onChange={onModeChange}
+          choices={[
+            { value: "simple", label: text("pageBuilder.style.simple") },
+            { value: "advanced", label: text("pageBuilder.style.advanced") },
+          ]}
+        />
+        {note}
         <SharedStyleBar
           node={node}
           design={design}

@@ -1,11 +1,11 @@
 import type { BuilderStringKey } from "../i18n/builder-strings.js";
-import type { SkillLevel } from "../skill-level/skill-levels.js";
 
 /**
- * The first-time tour: six stops, in the order people meet them. Each step points at the
- * part of the screen it's about (CSS selectors; with more than one, the spotlight covers them
- * all). A step whose target isn't on screen (no Publish button without permission) sits in
- * the middle instead. Some steps say a little more, or less, for each skill level.
+ * The first-time tour: eight short stops, in the order people meet them, the same for
+ * everyone. Each step points at the part of the screen it's about (CSS selectors; with more
+ * than one, the spotlight covers them all). A step whose target isn't on screen (no Publish
+ * button without permission) sits in the middle instead. Deeper help waits in the panels as
+ * tips, shown the first time each one opens.
  */
 export interface TourStep {
   id: string;
@@ -14,25 +14,12 @@ export interface TourStep {
   text: BuilderStringKey;
 }
 
-interface TourStepDefinition {
-  id: string;
-  targets: readonly string[];
-  title: BuilderStringKey;
-  text: BuilderStringKey | Record<SkillLevel, BuilderStringKey>;
-}
-
-const tourStepDefinitions: readonly TourStepDefinition[] = [
+export const tourSteps: readonly TourStep[] = [
   {
     id: "insert",
-    targets: ["#lintel-left-tab-insert"],
+    targets: ["#lintel-left-tab-insert", "#lintel-left-tab-layers"],
     title: "pageBuilder.tour.insert.title",
     text: "pageBuilder.tour.insert.text",
-  },
-  {
-    id: "layers",
-    targets: ["#lintel-left-tab-layers"],
-    title: "pageBuilder.tour.layers.title",
-    text: "pageBuilder.tour.layers.text",
   },
   {
     id: "canvas",
@@ -41,24 +28,34 @@ const tourStepDefinitions: readonly TourStepDefinition[] = [
     text: "pageBuilder.tour.canvas.text",
   },
   {
-    id: "panel",
+    id: "style",
     targets: ['[data-tour="selected-element"]'],
-    title: "pageBuilder.tour.panel.title",
-    text: {
-      beginner: "pageBuilder.tour.panel.beginnerText",
-      designer: "pageBuilder.tour.panel.designerText",
-      developer: "pageBuilder.tour.panel.developerText",
-    },
+    title: "pageBuilder.tour.style.title",
+    text: "pageBuilder.tour.style.text",
+  },
+  {
+    id: "siteStyles",
+    targets: ['[data-tour="selected-element"]'],
+    title: "pageBuilder.tour.siteStyles.title",
+    text: "pageBuilder.tour.siteStyles.text",
+  },
+  {
+    id: "arrange",
+    targets: ['[data-tour="selected-element"]'],
+    title: "pageBuilder.tour.arrange.title",
+    text: "pageBuilder.tour.arrange.text",
+  },
+  {
+    id: "animate",
+    targets: ["#lintel-right-tab-animate"],
+    title: "pageBuilder.tour.animate.title",
+    text: "pageBuilder.tour.animate.text",
   },
   {
     id: "screens",
     targets: ['[data-tour="screen-size"]', '[data-tour="history"]'],
     title: "pageBuilder.tour.screens.title",
-    text: {
-      beginner: "pageBuilder.tour.screens.beginnerText",
-      designer: "pageBuilder.tour.screens.text",
-      developer: "pageBuilder.tour.screens.text",
-    },
+    text: "pageBuilder.tour.screens.text",
   },
   {
     id: "publish",
@@ -67,16 +64,6 @@ const tourStepDefinitions: readonly TourStepDefinition[] = [
     text: "pageBuilder.tour.publish.text",
   },
 ];
-
-/** The tour as someone at this skill level sees it. */
-export function tourStepsFor(level: SkillLevel): TourStep[] {
-  return tourStepDefinitions.map((step) => ({
-    id: step.id,
-    targets: step.targets,
-    title: step.title,
-    text: typeof step.text === "string" ? step.text : step.text[level],
-  }));
-}
 
 export interface Box {
   top: number;

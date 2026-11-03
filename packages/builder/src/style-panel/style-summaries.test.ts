@@ -25,13 +25,13 @@ describe("what a closed style group says", () => {
         reading({ display: "flex", flexDirection: "row", gap: "var(--lintel-space-4)" }),
         englishText,
       ),
-    ).toBe("Row · gap M");
+    ).toBe("Side by side · gap M");
     expect(
       layoutSummary(
         reading({ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }),
         englishText,
       ),
-    ).toBe("Grid · 3 columns");
+    ).toBe("On a grid · 3 columns");
     expect(layoutSummary(reading({}), englishText)).toBe("");
   });
 

@@ -31,9 +31,7 @@ function renderBuilder(
       title="Home"
       canEditCode={options.canEditCode ?? false}
       createId={createCountingNodeIds("new")}
-      preferences={createMemoryPreferenceStore(
-        options.preferences ?? { tourSeen: "yes", skillLevel: "designer" },
-      )}
+      preferences={createMemoryPreferenceStore(options.preferences ?? { tourSeen: "yes" })}
     />,
   );
   const latest = () => onChange.mock.lastCall?.[0] as PageDocument;
@@ -180,30 +178,51 @@ describe("the page builder", () => {
     expect(findNode(latest().root, "n5")?.props.label).toBe("Book now");
   });
 
-  it("offers the Developer tools and code only with the code permission", async () => {
+  it("offers the Code element only with the code permission", async () => {
     const user = userEvent.setup();
     renderBuilder(heroPage());
-    await user.click(screen.getByRole("button", { name: "Tools: Designer" }));
-    expect(screen.getByRole("radio", { name: /Developer/ })).toBeDisabled();
-    expect(screen.getByText(/Needs permission to edit code/)).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Insert" }));
     expect(screen.queryByRole("button", { name: /^Code/ })).not.toBeInTheDocument();
   });
 
-  it("shows a selected element’s HTML and CSS to developers", async () => {
+  it("edits a Code element's HTML in Content for people who may write code", async () => {
     const user = userEvent.setup();
-    renderBuilder(heroPage(), { canEditCode: true });
-    await user.click(screen.getByRole("button", { name: "Tools: Designer" }));
-    await user.click(screen.getByRole("radio", { name: /Developer/ }));
-    await user.click(within(screen.getByRole("tree")).getByRole("treeitem", { name: "Button" }));
-    expect(screen.getByRole("tab", { name: "Code", selected: true })).toBeInTheDocument();
-    const html = screen.getByRole("region", { name: "HTML" });
-    expect(
-      within(html)
-        .getByText(/Get in touch/)
-        .closest("pre"),
-    ).toHaveTextContent('<a class="button" href="/contact">Get in touch</a>');
-    expect(screen.getByRole("region", { name: "CSS" })).toHaveTextContent(".button:hover");
+    const page = createEmptyPage();
+    const code = createNode(
+      { type: "codeBlock", name: "Opening times" },
+      standardCatalogue,
+      createCountingNodeIds("code"),
+    );
+    const { latest } = renderBuilder(
+      { ...page, root: { ...page.root, children: [code] } },
+      { canEditCode: true },
+    );
+    await user.click(
+      within(screen.getByRole("tree")).getByRole("treeitem", { name: "Opening times" }),
+    );
+    await user.click(screen.getByRole("tab", { name: "Content" }));
+    const html = screen.getByRole("textbox", { name: "HTML" });
+    await user.clear(html);
+    await user.type(html, "<p>Open every day</p>");
+    await user.click(screen.getByRole("button", { name: "Save code" }));
+    expect(latest().root.children[0]?.props.html).toBe("<p>Open every day</p>");
+  });
+
+  it("doesn't show a Code element's code to people who may not write code", async () => {
+    const user = userEvent.setup();
+    const page = createEmptyPage();
+    const code = createNode(
+      { type: "codeBlock", name: "Opening times" },
+      standardCatalogue,
+      createCountingNodeIds("code"),
+    );
+    renderBuilder({ ...page, root: { ...page.root, children: [code] } });
+    await user.click(
+      within(screen.getByRole("tree")).getByRole("treeitem", { name: "Opening times" }),
+    );
+    await user.click(screen.getByRole("tab", { name: "Content" }));
+    expect(screen.queryByRole("textbox", { name: "HTML" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save code" })).not.toBeInTheDocument();
   });
 
   it("pastes HTML from another app as elements", async () => {

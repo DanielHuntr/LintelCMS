@@ -44,7 +44,7 @@ What the admin hands the builder:
   the chosen asset's address and alt text. `uploadPicture` uploads a picture dropped on (or
   pasted into) a Picture element on the canvas, with the library's checks
   (`media/uploadPicture.ts`); its errors are the library's plain messages.
-- **Code**: Developer mode and code blocks only appear with `builder:code` (`useCan`). The
+- **Code**: Code elements (adding them and editing their code) only appear with `builder:code` (`useCan`). The
   API checks it again when saving (see `packages/core/src/pages`).
 
 Saving works like the entry editor: about 1.5 seconds after changes stop, one save at a time,

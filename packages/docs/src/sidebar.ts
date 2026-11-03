@@ -32,7 +32,7 @@ export const usingPages = [
   "using/moving-from-umbraco",
   "using/animating-in-the-builder",
   "using/effects",
-  "using/builder-skill-levels",
+  "using/getting-around-the-builder",
   "using/users",
   "using/automations",
   "using/interface-languages",

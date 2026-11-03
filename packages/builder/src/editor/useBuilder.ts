@@ -34,8 +34,6 @@ import {
   type SiteSectionSlot,
 } from "@lintel/builder-model";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { convertToCode } from "../developer/convert-to-code.js";
-import { replaceWithHtml } from "../developer/html-editing.js";
 import type { Translate } from "../i18n/builder-text.js";
 import type { InsertKey } from "../panels/InsertPanel.js";
 import type { ComponentRegistry } from "../render/component-registry.js";
@@ -398,25 +396,6 @@ export function useBuilder({
             text("pageBuilder.history.pasted", { count: source.nodes.length }),
           );
         else if (source.kind === "html") importAndPaste(source.html);
-      },
-      pasteHtml: importAndPaste,
-      applyHtml: (nodeId: string, html: string) => {
-        const edit = replaceWithHtml(context(), nodeId, html, canEditCode);
-        if (run(edit.result) && edit.codeBlocks > 0)
-          announce(text("pageBuilder.code.someAsCode", { count: edit.codeBlocks }));
-      },
-      convertToCode: (nodeId: string) => {
-        const node = nodeById(nodeId);
-        const block = convertToCode(latest.current.document, nodeId, registry, createId);
-        if (!node || !block) return;
-        run(
-          commands.replaceNode(
-            context(),
-            nodeId,
-            block,
-            text("pageBuilder.history.converted", { name: name(node) }),
-          ),
-        );
       },
       changeCode: (nodeId: string, code: { html: string; css: string; js: string }) =>
         run(

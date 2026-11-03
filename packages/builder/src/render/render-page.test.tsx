@@ -11,6 +11,7 @@ import {
 import { describe, expect, it } from "vitest";
 import { renderPage } from "./render-page.js";
 import { standardRegistry } from "./stand-in-components.js";
+import { simpleHero } from "../testing/simple-hero.js";
 
 function pageOf(...children: PageNode[]): PageDocument {
   const page = createEmptyPage();
@@ -155,5 +156,32 @@ describe("rendering a page", () => {
     const createId = createCountingNodeIds();
     const hero = createNode(findSectionTemplate("hero")!.blueprint, standardCatalogue, createId);
     expect(renderPage(pageOf({ ...hero, hidden: true }), standardRegistry).animations).toEqual([]);
+  });
+});
+
+describe("a large page", () => {
+  it("renders 300 elements quickly", () => {
+    const createId = createCountingNodeIds();
+    const sections = Array.from({ length: 34 }, (_, index) =>
+      createNode(
+        index % 2 ? findSectionTemplate("features")!.blueprint : simpleHero,
+        standardCatalogue,
+        createId,
+      ),
+    );
+    const page = { ...createEmptyPage(), root: { ...createEmptyPage().root, children: sections } };
+    const { html } = renderPage(page, standardRegistry, { mode: "canvas" });
+    expect(html.match(/data-lintel-node=/g)?.length).toBeGreaterThan(300);
+    // A change to one element redraws the page; it takes a few milliseconds on a quiet machine; the limit leaves room for a busy test runner.
+    const changed = {
+      ...page,
+      root: {
+        ...page.root,
+        children: [{ ...sections[0]!, name: "Changed" }, ...sections.slice(1)],
+      },
+    };
+    const started = performance.now();
+    renderPage(changed, standardRegistry, { mode: "canvas" });
+    expect(performance.now() - started).toBeLessThan(400);
   });
 });

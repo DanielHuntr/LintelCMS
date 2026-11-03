@@ -45,7 +45,7 @@ function renderBuilder(start: SiteDesign = emptySiteDesign, canChange = true) {
         title="Home"
         canEditCode={false}
         createId={createCountingNodeIds("new")}
-        preferences={createMemoryPreferenceStore({ tourSeen: "yes", skillLevel: "designer" })}
+        preferences={createMemoryPreferenceStore({ tourSeen: "yes" })}
         siteDesign={{
           value: design,
           onChange: canChange
@@ -119,7 +119,7 @@ describe("shared styles in the Style panel", () => {
     expect(screen.getByText("2 on this page")).toBeInTheDocument();
 
     // Where it sits stays its own, even while changes go to the shared style.
-    const arrange = await open(person, "Arrange");
+    const arrange = await open(person, "Where it sits");
     await person.selectOptions(within(arrange).getByRole("combobox", { name: "Last column" }), "4");
     expect(node("Second card")?.styles.base.gridColumn).toBe("1 / span 4");
     expect(design().sharedStyles[0]?.styles.base.gridColumn).toBeUndefined();
