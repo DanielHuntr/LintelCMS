@@ -1,13 +1,14 @@
 import { existsSync } from "node:fs";
 import {
+  lstat,
   mkdir,
   readdir,
   readFile,
   realpath,
   rename,
-  rm,
   stat,
   symlink,
+  unlink,
   writeFile,
 } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
@@ -32,8 +33,11 @@ import {
  *     versions/update-history.json   every switch, newest last
  *     current -> versions/1.1.0      the version that runs
  *
- * Switching versions repoints `current` in one step (a new link renamed over the old), so
- * there is never a moment without one.
+ * Switching versions repoints `current`. On Linux and macOS a new link is renamed over the
+ * old one, so there is never a moment without one. Windows won't rename a junction over
+ * another, so there the old one is removed first and the new one, already made as
+ * `current.next`, renamed into place; if Lintel stops between the two, `current.next` is
+ * still there and `repairCurrentLink` finishes the job on the next start.
  */
 
 export const RELEASE_MANIFEST_FILE = "release.json";
@@ -83,19 +87,68 @@ export async function readReleaseManifest(
 
 /** The folder `current` points at, or `fallback` before the first update. */
 export async function currentTarget(home: string, fallback: string): Promise<string> {
+  await repairCurrentLink(home);
   const link = currentLink(home);
   return existsSync(link) ? realpath(link) : resolve(fallback);
 }
 
-/** Points `current` at `target` in one step. */
-export async function pointCurrentAt(home: string, target: string): Promise<void> {
+/**
+ * Points `current` at `target`. `platform` is only for tests, so both ways are tried on
+ * any computer.
+ */
+export async function pointCurrentAt(
+  home: string,
+  target: string,
+  platform: NodeJS.Platform = process.platform,
+): Promise<void> {
   const link = currentLink(home);
-  const temporary = `${link}.next`;
-  await rm(temporary, { force: true });
+  const temporary = nextLink(home);
+  await removeLink(temporary);
   // Relative, so the whole home folder can be moved; Windows junctions need the full path.
-  const pointsAt = process.platform === "win32" ? target : relative(home, target) || ".";
+  const pointsAt = platform === "win32" ? resolve(target) : relative(home, target) || ".";
   await symlink(pointsAt, temporary, "junction");
+  if (platform === "win32") {
+    // Renaming a junction over another fails with EPERM, so the old one goes first.
+    await removeLink(link);
+  }
   await rename(temporary, link);
+}
+
+/**
+ * Finishes a switch of `current` cut off between removing the old link and renaming the
+ * new one into place (Windows only does it in two steps). Returns true if it did.
+ */
+export async function repairCurrentLink(home: string): Promise<boolean> {
+  const link = currentLink(home);
+  const temporary = nextLink(home);
+  if ((await isLink(link)) || !(await isLink(temporary))) {
+    return false;
+  }
+  await rename(temporary, link);
+  return true;
+}
+
+function nextLink(home: string): string {
+  return `${currentLink(home)}.next`;
+}
+
+async function isLink(path: string): Promise<boolean> {
+  try {
+    return (await lstat(path)).isSymbolicLink();
+  } catch {
+    return false;
+  }
+}
+
+/** Removes a link (or junction) without touching the folder it points at. */
+async function removeLink(path: string): Promise<void> {
+  try {
+    await unlink(path);
+  } catch (error) {
+    if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) {
+      throw error;
+    }
+  }
 }
 
 /** Every unpacked version, newest first, saying which one `runningFolder` (usually `current`) is. */
