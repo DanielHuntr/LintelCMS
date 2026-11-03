@@ -45,7 +45,7 @@ export const tollboothIllustrations: Record<string, string> = {
   // The dining room: one long table under a round-headed window, three candles lit.
   "tollbooth-room": landscape(
     cream,
-    `<path d="M220 300V140a80 80 0 0 1 160 0V300Z" fill="#e5d8c1" stroke="${ink}" stroke-width="3"/><path d="M300 60V300M220 180H380" ${stroke(ink, 2)}/><path d="M90 320H510" ${stroke(ink, 5)}/><path d="M120 320V400M480 320V400" ${stroke(ink, 4)}/><path d="M190 320v-38M300 320v-44M410 320v-38" ${stroke(ink, 6)}/><path d="M190 270c-6-8 0-16 0-20c0 4 6 12 0 20ZM300 264c-6-8 0-16 0-20c0 4 6 12 0 20ZM410 270c-6-8 0-16 0-20c0 4 6 12 0 20Z" fill="${claret}"/><circle cx="240" cy="312" r="9" ${stroke(ink, 2)}/><circle cx="360" cy="312" r="9" ${stroke(ink, 2)}/><path d="M60 400H540" ${stroke(ink, 2)} opacity="0.5"/>`,
+    `<path d="M220 250V130a80 80 0 0 1 160 0V250Z" fill="#e5d8c1" stroke="${ink}" stroke-width="3"/><path d="M300 50V250M220 170H380" ${stroke(ink, 2)}/><path d="M90 320H510" ${stroke(ink, 5)}/><path d="M120 320V400M480 320V400" ${stroke(ink, 4)}/><path d="M190 320v-38M300 320v-44M410 320v-38" ${stroke(ink, 6)}/><path d="M190 270c-6-8 0-16 0-20c0 4 6 12 0 20ZM300 264c-6-8 0-16 0-20c0 4 6 12 0 20ZM410 270c-6-8 0-16 0-20c0 4 6 12 0 20Z" fill="${claret}"/><circle cx="240" cy="312" r="9" ${stroke(ink, 2)}/><circle cx="360" cy="312" r="9" ${stroke(ink, 2)}/><path d="M60 400H540" ${stroke(ink, 2)} opacity="0.5"/>`,
   ),
   // A plate seen from above: scallops in their shells on greens.
   "tollbooth-plate": portrait(

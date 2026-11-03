@@ -55,11 +55,15 @@ const email = "hello@northsidecommons.example";
 const address = "St Peter’s Hall, 8 Cabra Road\nPhibsborough, Dublin 7";
 const donateHref = "https://northsidecommons.example/donate";
 
-function donateButton(text = "Donate", styles: StyleDeclarations = {}): NodeBlueprint {
+function donateButton(
+  text = "Donate",
+  styles: StyleDeclarations = {},
+  amount?: number,
+): NodeBlueprint {
   return action(
     "Donate button",
     text,
-    donateHref,
+    amount ? `${donateHref}?amount=${amount}` : donateHref,
     { background: harbour, text: onHarbour },
     {
       fontWeight: "700",
@@ -260,6 +264,9 @@ function footer(): NodeBlueprint {
       top: 7,
       bottom: 6,
       colours: { background: mist, text: ink },
+      styles: {
+        base: { borderStyle: "solid", borderColor: parts.look.rule, borderWidth: "1px 0 0 0" },
+      },
     },
   );
 }
@@ -543,7 +550,7 @@ const eventsPage = {
           "northside-hall",
           "A small hall with a round window over open orange doors",
           at(1, 6, 1, { borderRadius: "1.5rem" }),
-          animate("parallax-slow"),
+          animate("mask-reveal-up"),
         ),
         group(
           "About the hall",
@@ -592,9 +599,9 @@ const getInvolvedPage = {
             group(
               "Amounts",
               [
-                donateButton("Give €5"),
-                donateButton("Give €10"),
-                donateButton("Give €25"),
+                donateButton("Give €5", {}, 5),
+                donateButton("Give €10", {}, 10),
+                donateButton("Give €25", {}, 25),
                 outlineButton("Another amount", donateHref),
               ],
               { base: { flexDirection: "row", flexWrap: "wrap", gap: space(3) } },

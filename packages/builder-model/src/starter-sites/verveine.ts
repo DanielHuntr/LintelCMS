@@ -596,7 +596,7 @@ const weddingsPage = {
           "verveine-lanterns",
           "Paper lanterns glowing from an olive branch at night",
           at(1, 5, 1),
-          animate("parallax-slow"),
+          animate("mask-reveal-up"),
         ),
         group(
           "About other celebrations",
@@ -672,7 +672,7 @@ const enquirePage = {
       {
         top: 2,
         bottom: 7,
-        styles: { base: { maxWidth: "40rem", marginLeft: "auto", marginRight: "auto" } },
+        measure: "40rem",
       },
     ),
     gridBand(

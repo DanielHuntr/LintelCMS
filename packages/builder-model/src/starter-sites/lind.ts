@@ -62,6 +62,8 @@ const sectionTitle: StyleDeclarations = {
 function tag(text: string, name = "Tag"): NodeBlueprint {
   return words(name, text, {
     base: {
+      alignSelf: "start",
+      justifySelf: "start",
       ...parts.look.detail,
       backgroundColor: signal,
       color: onSignal,
@@ -285,7 +287,7 @@ const homePage = {
           "Mug",
           "lind-mug",
           "A black stoneware mug with a yellow glaze inside, steam rising",
-          { ...at(5, 4, 2, { marginTop: space(9) }), phone: { marginTop: "0" } },
+          { ...at(5, 4, 2, { marginTop: space(9) }), phone: { display: "none" } },
           animate("mask-reveal-up", { delay: 120 }),
         ),
         group(
@@ -402,7 +404,7 @@ const homePage = {
           "lind-shopfront",
           "Drawing of a corner shop with LIND in yellow over a window full of vases and a grey door",
           at(1, 7, 1),
-          animate("parallax-slow"),
+          animate("mask-reveal-up"),
         ),
         group(
           "About the shop",

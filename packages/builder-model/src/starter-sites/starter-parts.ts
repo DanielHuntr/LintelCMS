@@ -35,6 +35,8 @@ export interface BandOptions {
   /** Spacing steps above and below (8 by default, 9 at most). */
   top?: number;
   bottom?: number;
+  /** How wide the content may be ("40rem"); the band's colour still runs edge to edge. */
+  measure?: string;
   /** Background and text colours, when the band isn't on the paper. */
   colours?: { background: string; text: string };
   styles?: NodeStyles;
@@ -84,6 +86,7 @@ export function starterParts(look: StarterLook) {
   function band(name: string, children: NodeBlueprint[], options: BandOptions = {}): NodeBlueprint {
     const top = options.top ?? 8;
     const bottom = options.bottom ?? 8;
+    const side = options.measure ? `max(${margin}, calc((100% - ${options.measure}) / 2))` : margin;
     return {
       type: "section",
       name,
@@ -95,8 +98,8 @@ export function starterParts(look: StarterLook) {
           color: options.colours?.text ?? look.ink,
           paddingTop: space(Math.min(top, 9)),
           paddingBottom: space(Math.min(bottom, 9)),
-          paddingLeft: margin,
-          paddingRight: margin,
+          paddingLeft: side,
+          paddingRight: side,
           ...options.styles?.base,
         },
         phone: {
