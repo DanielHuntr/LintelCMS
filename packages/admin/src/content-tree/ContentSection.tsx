@@ -1,6 +1,7 @@
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { describeError } from "../api/describeError.js";
+import { classNames } from "../design/classNames.js";
 import { t } from "../i18n/strings.js";
 import { useCan, useSession } from "../session/SessionContext.js";
 import { useCurrentSite } from "../sites/SiteContext.js";
@@ -171,10 +172,15 @@ export function ContentSection() {
             aria-expanded={false}
             aria-controls="content-tree"
             onClick={() => tree.choose(true)}
-            className="mb-4 flex h-8 items-center gap-1.5 rounded-control bg-fill/70 px-2.5 text-footnote font-medium text-label hover:bg-fill focus-visible:focus-ring"
+            className={classNames(
+              "mb-4 flex h-8 items-center gap-1.5 rounded-control bg-fill/70 px-2.5 text-footnote font-medium text-label hover:bg-fill focus-visible:focus-ring",
+              // On a phone a page's top bar covers this spot, so the button sits in the bar's
+              // row and stays there, as an icon beside the bar's own (LINTEL-UX-236).
+              isEntry && "max-md:sticky max-md:top-[3.75rem] max-md:z-20 max-md:w-fit",
+            )}
           >
             <PanelLeftOpen aria-hidden="true" className="size-4" />
-            {t("tree.show")}
+            <span className={isEntry ? "max-md:sr-only" : undefined}>{t("tree.show")}</span>
           </button>
         )}
         <nav
@@ -189,7 +195,11 @@ export function ContentSection() {
             event.preventDefault();
             selection.clear();
           }}
-          className="relative mb-6 flex h-[min(60dvh,28rem)] flex-col rounded-panel bg-sidebar shadow-float hairline-ring backdrop-blur-2xl backdrop-saturate-150 md:fixed md:inset-y-3 md:inset-s-[264px] md:z-10 md:mb-0 md:h-auto md:w-(--tree-width)"
+          className={classNames(
+            "relative mb-6 flex h-[min(60dvh,28rem)] flex-col rounded-panel bg-sidebar shadow-float hairline-ring backdrop-blur-2xl backdrop-saturate-150 md:fixed md:inset-y-3 md:inset-s-[264px] md:z-10 md:mb-0 md:h-auto md:w-(--tree-width)",
+            // A page's top bar pulls itself up on a phone; this keeps it off the tree's foot.
+            isEntry && "max-md:mb-26",
+          )}
         >
           <ContentTree
             beside={

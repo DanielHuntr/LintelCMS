@@ -110,6 +110,51 @@ describe("the content tree", () => {
     expect(screen.getByRole("link", { name: "Recycle bin, 2 items" })).toBeTruthy();
   });
 
+  it("opens a key to the marks, and shows the first-time hint once there's a home page", async () => {
+    answerTree();
+    renderScreen(<ContentSection />, editor);
+
+    await screen.findByRole("tree", { name: "Content tree" });
+    expect(screen.queryByRole("region", { name: "What the marks mean" })).toBeNull();
+    const openKey = screen.getByRole("button", { name: "What the marks mean" });
+    await userEvent.click(openKey);
+
+    expect(openKey.getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByRole("region", { name: "What the marks mean" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "How your pages fit together" })).toBeTruthy();
+  });
+
+  it("marks only the pages that need a second look, and still says Live in words", async () => {
+    answerTree();
+    renderScreen(<ContentSection />, editor);
+
+    const pages = await screen.findByRole("treeitem", { name: "Pages" });
+    pages.focus();
+    await userEvent.keyboard("{ArrowRight}");
+    const homeRow = await screen.findByRole("treeitem", { name: "Home, Draft" });
+    expect(within(homeRow).getByRole("img", { name: "Draft" })).toBeTruthy();
+    await userEvent.keyboard("{ArrowDown}{ArrowRight}");
+
+    const aboutRow = await screen.findByRole("treeitem", { name: "About, Live" });
+    expect(within(aboutRow).queryByRole("img")).toBeNull();
+  });
+
+  // On a phone a page's top bar covered "Show pages", so the tree couldn't be reached from a
+  // page, and covered the foot of the tree once it was open (LINTEL-UX-236).
+  it("keeps Show pages above a page's top bar on a phone", async () => {
+    answerTree();
+    window.localStorage.setItem("lintel.contentTree.shown", "no");
+    renderScreen(<ContentSection />, { ...editor, initialPath: "/content/pages/e1" });
+
+    const show = await screen.findByRole("button", { name: "Show pages" });
+    expect(show.className).toContain("max-md:sticky");
+    expect(show.className).toContain("max-md:z-20");
+    await userEvent.click(show);
+
+    const tree = document.querySelector("[data-content-tree]");
+    expect(tree?.className).toContain("max-md:mb-26");
+  });
+
   // The tree always took a column beside the page, and the top of every Content screen on a
   // phone; now it folds away and stays folded.
   it("folds away to give the page room, and remembers it", async () => {
