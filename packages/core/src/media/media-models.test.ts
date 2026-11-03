@@ -72,6 +72,15 @@ describe("3D model files", () => {
     expect((await list("image")).json().assets).toEqual([]);
   });
 
+  it("serves the sample models to the builder, and nothing else from their folder", async () => {
+    const sample = await media.server.inject({ url: "/media/sample-models/vase.glb" });
+    expect(sample.statusCode).toBe(200);
+    expect(sample.headers["access-control-allow-origin"]).toBe("*");
+    expect(sample.rawPayload.equals(vase)).toBe(true);
+    const other = await media.server.inject({ url: "/media/sample-models/..%2Fpackage.json" });
+    expect(other.statusCode).toBe(404);
+  });
+
   it("packs a self-contained .gltf into a .glb", async () => {
     const response = await media.upload("triangle.gltf", Buffer.from(triangleGltf("")));
 

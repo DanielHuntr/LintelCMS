@@ -24,13 +24,20 @@ import { type ImagePicker, PictureBaseUrlContext, picturePreviewSrc } from "./co
 /** How the field saves the poster it takes: the app's picture upload (see PageBuilder). */
 export const ModelPosterUploadContext = createContext<PictureUploader | undefined>(undefined);
 
+/**
+ * Where this window can fetch the samples from, when the app says: a site can be on an
+ * address its security policy doesn't allow. Without it, they come from the website.
+ */
+export const SampleModelsUrlContext = createContext<string | undefined>(undefined);
+
 type PosterState = "idle" | "taking" | "taken" | "failed";
 
 const megabytes = (bytes: number) => (bytes / (1024 * 1024)).toFixed(1);
 
-/** The model's address as this window can fetch it: samples live on the website. */
-function fetchableAddress(src: string, baseUrl: string | null): string {
-  return picturePreviewSrc(src, baseUrl);
+/** The model's address as this window can fetch it. */
+function fetchableAddress(src: string, baseUrl: string | null, samplesUrl?: string): string {
+  const sample = findSampleModel(src);
+  return sample && samplesUrl ? `${samplesUrl}/${sample.file}` : picturePreviewSrc(src, baseUrl);
 }
 
 async function takePoster(
@@ -57,6 +64,7 @@ export function ModelField({
   const text = useBuilderText();
   const baseUrl = useContext(PictureBaseUrlContext);
   const upload = useContext(ModelPosterUploadContext);
+  const samplesUrl = useContext(SampleModelsUrlContext);
   const props = readModelProps(node.props);
   const [poster, setPoster] = useState<PosterState>("idle");
   const latest = useRef(0);
@@ -67,7 +75,7 @@ export function ModelField({
     const attempt = (latest.current += 1);
     setPoster("taking");
     try {
-      const file = await takePoster(fetchableAddress(model.src, baseUrl), {
+      const file = await takePoster(fetchableAddress(model.src, baseUrl, samplesUrl), {
         light: props.light,
         background: props.background === "colour" ? props.backgroundColour : "transparent",
       });

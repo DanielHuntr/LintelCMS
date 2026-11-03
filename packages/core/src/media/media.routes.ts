@@ -8,6 +8,7 @@ import type { AssetUsageFinder } from "./asset-lookup.js";
 import { contentDisposition } from "./content-disposition.js";
 import { findAssetFile } from "./media-file.service.js";
 import { isModelMimeType } from "./file-types.js";
+import { readSampleModel } from "./sample-models.js";
 import {
   AssetInUseError,
   AssetNotFoundError,
@@ -79,6 +80,7 @@ const RESIZED_IMAGES_PER_MINUTE = 300;
  *   PATCH  /media/:id       (media:update)  { alt?, credit?, focalPoint?, filename?, folder? } -> Asset
  *   DELETE /media/:id       (media:delete)  -> 204 (to the recycle bin), or 409 ASSET_IN_USE with usedBy
  *   GET    /media/:id/file  (public)        ?w=&h=&fit=cover|contain&format=webp|avif|jpeg|png
+ *   GET    /media/sample-models/:file (public) a sample 3D model, for the builder's posters
  */
 export async function mediaRoutes(server: FastifyInstance, options: MediaRoutesOptions) {
   // Registered here rather than on the whole server, so only uploads accept multipart bodies.
@@ -155,6 +157,18 @@ export async function mediaRoutes(server: FastifyInstance, options: MediaRoutesO
       return reply.code(204).send();
     },
   );
+
+  server.get("/media/sample-models/:file", async (request, reply) => {
+    const model = readSampleModel((request.params as { file: string }).file);
+    if (!model) {
+      throw new AssetNotFoundError();
+    }
+    return reply
+      .type("model/gltf-binary")
+      .header("cache-control", "public, max-age=604800")
+      .header("access-control-allow-origin", "*")
+      .send(model);
+  });
 
   // Public on purpose: these URLs go into the website's <img> tags. See the README.
   const resizeLimit = {

@@ -316,7 +316,7 @@ const depthOnScroll: EffectBehaviour = (element, params, context) => {
   }
   const layers = Array.from(parent.children) as HTMLElement[];
   if (!layers.length) return;
-  const look = readText(params, "look", "deep") as DepthLook;
+  const look = readText(params, "look", "gentle") as DepthLook;
   const strength = readNumber(params, "strength", 1);
   const depths = layerDepths(layers.length, readText(params, "order", "front-first") as LayerOrder);
   return combine(

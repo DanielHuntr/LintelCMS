@@ -2,12 +2,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { createRequire } from "node:module";
-import {
-  findIllustration,
-  fontFilesFolder,
-  isCatalogueFontFile,
-  sampleModels,
-} from "@lintel/builder-model";
+import { findIllustration, fontFilesFolder, isCatalogueFontFile } from "@lintel/builder-model";
 import { STYLESHEET_FOLDER } from "./site-context.service.js";
 
 /**
@@ -145,27 +140,6 @@ export function readIllustration(fileName: string): string | undefined {
 }
 
 export { SAMPLE_MODELS_FOLDER } from "@lintel/builder-model";
-
-const sampleModelFiles = new Map<string, Buffer>();
-
-/** One of Lintel's sample 3D models by file name ("vase.glb"), or undefined. */
-export function readSampleModel(fileName: string): Buffer | undefined {
-  if (!sampleModels.some((sample) => sample.file === fileName)) {
-    return undefined;
-  }
-  const cached = sampleModelFiles.get(fileName);
-  if (cached) {
-    return cached;
-  }
-  try {
-    const path = createRequire(import.meta.url).resolve(`@lintel/motion/sample-models/${fileName}`);
-    const contents = readFileSync(path);
-    sampleModelFiles.set(fileName, contents);
-    return contents;
-  } catch {
-    return undefined;
-  }
-}
 
 export const FONTS_FOLDER = fontFilesFolder;
 

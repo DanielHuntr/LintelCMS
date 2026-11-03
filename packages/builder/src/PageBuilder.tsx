@@ -85,7 +85,7 @@ import {
   usePreference,
 } from "./preferences/builder-preferences.js";
 import { type ImagePicker, PictureBaseUrlContext } from "./panels/content-fields.js";
-import { ModelPosterUploadContext } from "./panels/model-field.js";
+import { ModelPosterUploadContext, SampleModelsUrlContext } from "./panels/model-field.js";
 import { PictureDropStatus } from "./canvas/PictureDropStatus.js";
 import { type PictureUploader, usePictureDrop } from "./canvas/usePictureDrop.js";
 import { canvasPageData } from "./panels/canvas-data.js";
@@ -150,6 +150,8 @@ export interface PageBuilderProps {
    * it, dropped and pasted files are ignored.
    */
   uploadPicture?: PictureUploader;
+  /** Where the app fetches the sample 3D models from, to take their posters. */
+  sampleModelsUrl?: string;
   /** Finds a page of the site for a link ("Choose a page…" beside link inputs). */
   pickPage?: PagePicker;
   /** Finds a linked page's title by its id, so links to pages show "About", not a reference. */
@@ -1059,80 +1061,83 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                   </main>
                   <CanvasLookContext value={canvasLook}>
                     <PictureBaseUrlContext value={site?.baseUrl ?? null}>
-                      <ModelPosterUploadContext value={props.uploadPicture}>
-                        <SelectedElementPanel
-                          document={state.document}
-                          node={selectedNode ?? null}
-                          nodeName={labels.selected ?? ""}
-                          definition={definition}
-                          isLocked={selectedIsLocked}
-                          breakpoint={breakpoint}
-                          registry={registry}
-                          canEditCode={canEditCode}
-                          tips={tips}
-                          pickImage={props.pickImage}
-                          uploadFile={props.uploadFile}
-                          motionText={props.motionText}
-                          siteCursorOn={cursorIsOn(props.siteEffects?.value.cursor)}
-                          actions={{
-                            ...actions,
-                            animate: (nodeId, animations) => {
-                              actions.animate(nodeId, animations);
-                              if (animations.length === 0) setMotionPreview(null);
-                            },
-                          }}
-                          onPreviewMotion={previewMotion}
-                          onPreviewEffect={previewEffect}
-                          onStyleStateChange={reportStylingState}
-                          onPointAtElement={setHoveredId}
-                          onSelectMany={(nodeIds) => {
-                            const first = nodeIds[0];
-                            if (!first) return;
-                            setHighlight(nodeIds);
-                            selectFromPanel(first);
-                            announce(
-                              text("pageBuilder.siteStyles.selected", { count: nodeIds.length }),
-                            );
-                          }}
-                          effectModules={props.effectModules}
-                          pageWeight={pageWeight}
-                          pageSettings={
-                            props.siteSections && (
-                              <PageSiteSections
-                                page={root}
-                                onChange={(slot, hidden) =>
-                                  actions.setSiteSectionHidden(slot, hidden)
-                                }
-                              />
-                            )
-                          }
-                          sectionTools={
-                            props.siteSections?.onChange && (
-                              <SectionSiteTools
-                                root={root}
-                                node={selectedNode ?? null}
-                                onUseAsSite={(slot) => {
-                                  if (selectedNode) actions.useAsSiteSection(selectedNode.id, slot);
-                                }}
-                                onUseAsOwn={() => {
-                                  if (selectedNode)
-                                    actions.markAsPageOwn(selectedNode.id, "navigation");
-                                }}
-                              />
-                            )
-                          }
-                          siteMotion={
-                            props.siteEffects && (
-                              <SiteMotionSettingsWithColours
-                                value={props.siteEffects.value}
-                                onChange={props.siteEffects.onChange}
-                                translate={props.motionText}
-                                pickPicture={props.pickImage}
-                              />
-                            )
-                          }
-                        />
-                      </ModelPosterUploadContext>
+                      <SampleModelsUrlContext value={props.sampleModelsUrl}>
+                        <ModelPosterUploadContext value={props.uploadPicture}>
+                          <SelectedElementPanel
+                            document={state.document}
+                            node={selectedNode ?? null}
+                            nodeName={labels.selected ?? ""}
+                            definition={definition}
+                            isLocked={selectedIsLocked}
+                            breakpoint={breakpoint}
+                            registry={registry}
+                            canEditCode={canEditCode}
+                            tips={tips}
+                            pickImage={props.pickImage}
+                            uploadFile={props.uploadFile}
+                            motionText={props.motionText}
+                            siteCursorOn={cursorIsOn(props.siteEffects?.value.cursor)}
+                            actions={{
+                              ...actions,
+                              animate: (nodeId, animations) => {
+                                actions.animate(nodeId, animations);
+                                if (animations.length === 0) setMotionPreview(null);
+                              },
+                            }}
+                            onPreviewMotion={previewMotion}
+                            onPreviewEffect={previewEffect}
+                            onStyleStateChange={reportStylingState}
+                            onPointAtElement={setHoveredId}
+                            onSelectMany={(nodeIds) => {
+                              const first = nodeIds[0];
+                              if (!first) return;
+                              setHighlight(nodeIds);
+                              selectFromPanel(first);
+                              announce(
+                                text("pageBuilder.siteStyles.selected", { count: nodeIds.length }),
+                              );
+                            }}
+                            effectModules={props.effectModules}
+                            pageWeight={pageWeight}
+                            pageSettings={
+                              props.siteSections && (
+                                <PageSiteSections
+                                  page={root}
+                                  onChange={(slot, hidden) =>
+                                    actions.setSiteSectionHidden(slot, hidden)
+                                  }
+                                />
+                              )
+                            }
+                            sectionTools={
+                              props.siteSections?.onChange && (
+                                <SectionSiteTools
+                                  root={root}
+                                  node={selectedNode ?? null}
+                                  onUseAsSite={(slot) => {
+                                    if (selectedNode)
+                                      actions.useAsSiteSection(selectedNode.id, slot);
+                                  }}
+                                  onUseAsOwn={() => {
+                                    if (selectedNode)
+                                      actions.markAsPageOwn(selectedNode.id, "navigation");
+                                  }}
+                                />
+                              )
+                            }
+                            siteMotion={
+                              props.siteEffects && (
+                                <SiteMotionSettingsWithColours
+                                  value={props.siteEffects.value}
+                                  onChange={props.siteEffects.onChange}
+                                  translate={props.motionText}
+                                  pickPicture={props.pickImage}
+                                />
+                              )
+                            }
+                          />
+                        </ModelPosterUploadContext>
+                      </SampleModelsUrlContext>
                     </PictureBaseUrlContext>
                   </CanvasLookContext>
                 </div>

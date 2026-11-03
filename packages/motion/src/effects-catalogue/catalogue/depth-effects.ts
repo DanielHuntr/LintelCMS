@@ -226,7 +226,7 @@ export const depthEffects = [
     behaviour: "depthOnScroll",
     suits: ["container"],
     params: {
-      look: choice("Look", "deep", [
+      look: choice("Look", "gentle", [
         ["gentle", "Gentle"],
         ["deep", "Deep"],
         ["floating", "Floating"],

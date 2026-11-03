@@ -15,7 +15,7 @@ import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { ContentPanel } from "../../panels/ContentPanel.js";
 import { PictureBaseUrlContext } from "../../panels/content-fields.js";
-import { ModelPosterUploadContext } from "../../panels/model-field.js";
+import { ModelPosterUploadContext, SampleModelsUrlContext } from "../../panels/model-field.js";
 import { renderPage } from "../render-page.js";
 import { standardRegistry } from "../stand-in-components.js";
 
@@ -149,6 +149,24 @@ describe("the 3D model's Content panel", () => {
     expect(upload.mock.calls[0]?.[0]).toBeInstanceOf(File);
     expect(screen.getByText("Visitors see this picture while the model loads.")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Vase", pressed: true })).toBeTruthy();
+  });
+
+  it("fetches a sample from where the app says it can", async () => {
+    const node = page({ type: "model3d" }).root.children[0]!;
+    render(
+      <SampleModelsUrlContext value="https://api.test/media/sample-models">
+        <EditedModel
+          start={node}
+          upload={vi.fn(async () => ({ assetId: "p", src: "/p", alt: "" }))}
+        />
+      </SampleModelsUrlContext>,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Disc" }));
+    await waitFor(() => expect(state().poster).toBe("/p"));
+    expect(captureModelPoster).toHaveBeenLastCalledWith(
+      "https://api.test/media/sample-models/disc.glb",
+      expect.anything(),
+    );
   });
 
   it("says when the poster can't be taken, and asks for a description", async () => {

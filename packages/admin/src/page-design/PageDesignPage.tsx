@@ -20,6 +20,7 @@ import type { MotionEditorStringKey } from "@lintel/motion-editor";
 import { Link } from "@tanstack/react-router";
 import { ChevronLeft, MonitorSmartphone, SquareArrowOutUpRight } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
+import { apiUrl } from "../api/client.js";
 import { LoadError } from "../api/LoadError.js";
 import { useCollection, useEntry } from "../content/content.queries.js";
 import type { Entry } from "../content/content.types.js";
@@ -271,6 +272,7 @@ function PageDesigner({
         onAddFont={fonts.onAddFont}
         onMoveFontToSite={fonts.onMoveFontToSite}
         uploadPicture={uploadPictureToMediaLibrary}
+        sampleModelsUrl={`${apiUrl}/media/sample-models`}
         onSaveNow={experiments.isEditingVersion ? experiments.saveNow : saving.saveNow}
         frameScripts={canvasFrameScripts}
         effectModules={effectModules}

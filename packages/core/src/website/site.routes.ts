@@ -12,11 +12,11 @@ import {
   readElementsScript,
   readFontFile,
   readIllustration,
-  readSampleModel,
   SAMPLE_MODELS_FOLDER,
   readMotionRuntime,
 } from "./site-assets.js";
 import { withAnalyticsTag } from "../analytics/page-tag.js";
+import { readSampleModel } from "../media/sample-models.js";
 import { STYLESHEET_FOLDER } from "./site-context.service.js";
 import { findSiteForAddress } from "./site-for-address.js";
 import { loadRunningTests, visitTests } from "../experiments/experiment-pages.js";

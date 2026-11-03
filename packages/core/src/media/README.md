@@ -27,7 +27,8 @@ and 3D models for the 3D model element. Models are kept as `.glb` (`model-files.
 `.gltf` is packed into one as it is uploaded when everything it needs is inside it, and is
 refused, with a note to export a `.glb`, when it points to other files. `GET /media?type=model`
 lists them, and model files (like fonts) are served with `Access-Control-Allow-Origin: *`,
-since pages fetch them by script. The builder warns about models over 10 MB.
+since pages fetch them by script. The builder warns about models over 10 MB. Form file
+fields refuse models. `GET /media/sample-models/:file` gives the builder the sample models.
 
 ## Endpoints
 

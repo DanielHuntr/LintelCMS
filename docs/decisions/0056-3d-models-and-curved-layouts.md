@@ -57,14 +57,19 @@ keys.
 (JSON) is packed into a `.glb` as it is uploaded when everything it needs is inside it as
 `data:` addresses, and refused with a plain note otherwise, so a page always loads a model
 in one request. Uploads stay at 25 MB; the builder warns above 10 MB. Model files are
-served with `Access-Control-Allow-Origin: *`, as pages fetch them by script.
+served with `Access-Control-Allow-Origin: *`, as pages fetch them by script. Website
+visitors can't send a model through a form's file field. With storage that redirects to
+signed links, the bucket must allow cross-origin reads, or pages keep showing the poster.
 
 ### Samples are Lintel's own
 
 Three small samples (a vase, a disc, a knot, 72 to 98 kB) are made by
 `packages/motion/scripts/make-sample-models.mjs` from three.js's geometry, so there is no
 asset licence to carry. They are served at `/_lintel/models/` like the starter sites'
-illustrations, and offered as "Try a sample".
+illustrations, and offered as "Try a sample". The API serves them too, at
+`/media/sample-models/`, because the admin's Content-Security-Policy only lets the builder
+fetch from itself and the API, and a site can be on any address; the builder takes sample
+posters from there.
 
 ### The layouts extend the 3D family
 
@@ -77,7 +82,10 @@ illustrations, and offered as "Try a sample".
   scroll" entry that steps through the cards as the stack passes through the screen.
 - **Depth on scroll** is a new behaviour in the `scroll` module: a section's children at
   different depths, the nearer moving further. Layers only step back from where they are
-  laid out, so nothing grows past the section. Less motion leaves them flat. It sits beside
+  laid out, so nothing grows past the section, and each has its own perspective, so they
+  don't crowd towards the section's middle. It starts on Gentle: the stronger looks suit
+  pictures and shapes better than lines of text, which they can bring close together. Less
+  motion leaves them flat. It sits beside
   "Exploded view", which spreads layers apart once rather than parallaxing them.
 
 The Animate panel offers 3D effects that follow the scroll under Scroll, and the arc
@@ -90,5 +98,6 @@ carousel under Always, instead of under Hover with the rest of the family.
   include a model yet.
 - The canvas shows a model's poster; it doesn't run the model, as it doesn't run other
   continuous effects outside previews.
+- In a block's design there is no picture upload, so a model there gets no automatic poster.
 - Draco files show their poster only. Supporting them later means shipping the decoder as
   its own lazily loaded files.
