@@ -195,3 +195,18 @@ Reported by Daniel from screenshots.
 **Kept blue on purpose:** the builder's selection outline on the website canvas. It's a tool colour that has to show on any website, dark sections included.
 
 **Tests:** `accent-colours.test.ts` (Lintel ink's shades), `branding.test.ts`.
+
+## LINTEL-FUNC-028: dragging from Insert onto the page
+
+Reported by Daniel: "I can't drag and drop the block."
+
+**Reproduced:** dragging Product grid from Insert onto the canvas left the page unchanged (20 elements before and after, `canvas-drop-before.png`). Insert tiles only ever dropped into Layers; the canvas frame had no drop handling at all, and the hint said "drag it into Layers".
+
+**Fix:**
+
+- While an Insert tile is dragged over the page, the canvas frame reports where the pointer is in the element under it and in each one around it (`insertOver`, checked like every other frame message).
+- The builder works out where it would land with the same rules as Layers (`canvas/canvas-drop.ts`), and the frame draws a line there: across the page, or upright beside an element in a row, or a dashed box for "inside" (`canvas-drop-line.png`).
+- An element that can't take what's dragged hands the drop to the one around it. A whole section always goes between the page's sections. Below everything, it goes at the end.
+- On release it's inserted there and selected (`canvas-drop-after.png`). The hint now says "drag it onto the page or into Layers".
+
+**Tests:** `canvas-drop.test.ts` (inside, before and after, sections between sections, handing up, the end of the page), `canvas-messages.test.ts`. In the browser, Playwright's mouse can't carry an HTML drag into a frame, so the check starts a real drag on the tile and sends the frame the browser's own drag events: 20 elements, then 22 after one drop, then 24.
