@@ -884,6 +884,19 @@ What's saved is unchanged: the element's `animations` array (at most six) with o
 
 **Screenshots** (in `screenshots/designer-layout/`): `site-desktop`, `site-phone-390`, `builder-grid-place-light`, `builder-grid-place-dark`, `builder-grid-dragging-light`, `builder-shared-style-light`, `builder-site-styles-light` and `builder-site-styles-dark`. At 390px wide the designer shows its "needs a bigger screen" page, as before.
 
+### Designer: canvas zoom and pan (3 November 2026)
+
+**Built:** a small pill in the canvas's corner: zoom out, the zoom as a percentage (press it for actual size), zoom in and Fit.
+
+- Ctrl (or ⌘) with the wheel, or a trackpad pinch, zooms, including over the page itself.
+- Ctrl +, Ctrl − and Ctrl 0 step in, out and back to actual size, and Shift 1 fits. They work whether the page or the builder has focus, but not while typing in a field.
+- When zoomed in past the space, holding Space and dragging moves around the page.
+- The page keeps its own width, so zooming never changes its layout. Dropping from Insert still lands where the pointer is.
+
+**Tests:** `builder/src/canvas/canvas-zoom.test.ts` (steps, wheel, keys, fit), `Canvas.test.tsx` (the buttons, the keys, Ctrl and the wheel, keys in fields left alone) and `canvas-messages.test.ts` (`zoomWheel`). Checked in Chromium in the admin: Ctrl and the wheel over the page zoom out to 55%, the buttons zoom in to 200%, and Space-drag scrolls the canvas.
+
+**Screenshots:** `builder-zoomed-out-light` and `builder-zoomed-out-dark` in `screenshots/designer-layout/`.
+
 ## Site fonts: your own, Google Fonts and Adobe Fonts (3 November 2026)
 
 **Asked for by Daniel:** "We should also be able to add our own fonts, connect adobe, and google fonts."
@@ -898,7 +911,7 @@ What's saved is unchanged: the element's `animations` array (at most six) with o
 
 The theme can use any site font or included font for **Headings** and **Body text**, in place of the pairing's. The builder's font list is grouped: Theme, Site fonts, This page only, Included fonts. A font a page uploaded for itself still works, and offers "Use it on every page". When the server is offline, the Google and Adobe tabs say so, and the included fonts still work.
 
-Decision record: `docs/decisions/0037-site-fonts.md`. New table `site_fonts` (migration `0032_site_fonts`, checked on a fresh database in tests and on an older data folder at start-up).
+Decision record: `docs/decisions/0037-site-fonts.md`. New table `site_fonts` (migration `0028_site_fonts`, checked on a fresh database in tests and on an older data folder at start-up).
 
 **Tests:** core `site-fonts/site-fonts.test.ts` (16: uploads and the licence, reading names, Google search, download, preview, offline, removal, Adobe connect and errors, theme fonts, canvas, per-site, permissions; services mocked) and `font-file-names.test.ts` (7: WOFF2, TTF, WOFF, unreadable files, host allow-list, size cap, timeout). builder-model `fonts/site-fonts.test.ts` (`@font-face` output, unsafe values left out, Adobe IDs, file-name guesses). builder `style-panel/font-picker.test.tsx` (groups, Add a font, moving a page font, Adobe link on the canvas). admin `site-fonts/SiteFontsPage.test.tsx` (7) and `website/SiteSettingsPage.test.tsx` (heading font), and the Content-Security-Policy test.
 

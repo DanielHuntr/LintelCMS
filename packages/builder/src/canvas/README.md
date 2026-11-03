@@ -18,6 +18,15 @@ uses it (the frame runs the page's own code, so nothing it sends is trusted).
   the foot of the canvas ("Uploading harbour.jpg…", then "Picture added…" or the problem in
   the media library's own words), and the builder's announcer reads the same words out.
 
+## Zoom and pan
+
+The page is drawn at its own width (so its layout never changes) and its frame is scaled.
+Ctrl (or ⌘) with the wheel, or a trackpad pinch, zooms; the frame passes those on as
+`zoomWheel`. Ctrl + and Ctrl − step in and out, Ctrl 0 is actual size and Shift 1 fits the
+page to the space. The same keys work with the page focused. When zoomed in past the space,
+holding Space and dragging moves around the page. The pill in the canvas's corner does the
+same with buttons. `canvas-zoom.ts` holds the steps and the keys.
+
 ## Files
 
 | File                     | What it does                                         |
@@ -26,5 +35,6 @@ uses it (the frame runs the page's own code, so nothing it sends is trusted).
 | `canvas-frame-script.ts` | The script inside the frame                          |
 | `canvas-messages.ts`     | Messages to and from the frame, checked              |
 | `canvas-drop.ts`         | Where something dragged from Insert would land       |
+| `canvas-zoom.ts`         | Zoom steps, the wheel and the zoom keys              |
 | `usePictureDrop.ts`      | Pictures dropped on or pasted into a Picture element |
 | `PictureDropStatus.tsx`  | The note while a picture uploads, and afterwards     |

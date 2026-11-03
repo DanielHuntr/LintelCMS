@@ -69,4 +69,12 @@ describe("messages from the canvas about dragging from Insert", () => {
     expect(readFrameMessage({ ...placed, rowSpan: 1.5 })).toBeNull();
     expect(readFrameMessage({ ...placed, nodeId: undefined })).toBeNull();
   });
+
+  it("reads a zoom from the wheel, and nothing that isn't a number", () => {
+    expect(readFrameMessage({ type: "zoomWheel", deltaY: -12 })).toEqual({
+      type: "zoomWheel",
+      deltaY: -12,
+    });
+    expect(readFrameMessage({ type: "zoomWheel", deltaY: "lots" })).toBeNull();
+  });
 });

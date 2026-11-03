@@ -42,3 +42,30 @@ describe("dropping from Insert onto the canvas", () => {
     expect(screen.queryByTestId("canvas-drop-layer")).not.toBeInTheDocument();
   });
 });
+
+describe("zooming the canvas", () => {
+  it("zooms out and in with its buttons and the keys, and back to actual size", () => {
+    renderCanvas(false);
+    const actual = () => screen.getByRole("button", { name: /^Zoom \d+%/ });
+    expect(actual()).toHaveTextContent("100%");
+    fireEvent.click(screen.getByRole("button", { name: "Zoom out (Ctrl −)" }));
+    expect(actual()).toHaveTextContent("90%");
+    fireEvent.keyDown(window, { key: "-", ctrlKey: true });
+    expect(actual()).toHaveTextContent("75%");
+    fireEvent.keyDown(window, { key: "=", ctrlKey: true });
+    expect(actual()).toHaveTextContent("90%");
+    fireEvent.click(actual());
+    expect(actual()).toHaveTextContent("100%");
+  });
+
+  it("zooms with Ctrl and the wheel, but leaves keys typed into a field alone", () => {
+    renderCanvas(false);
+    fireEvent.wheel(screen.getByTestId("canvas-area"), { deltaY: 60, ctrlKey: true });
+    expect(screen.getByRole("button", { name: /^Zoom \d+%/ })).toHaveTextContent("86%");
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    fireEvent.keyDown(input, { key: "-", ctrlKey: true });
+    expect(screen.getByRole("button", { name: /^Zoom \d+%/ })).toHaveTextContent("86%");
+    input.remove();
+  });
+});
