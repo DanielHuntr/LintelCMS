@@ -12,6 +12,8 @@ import { PluginCatalogue } from "./plugin-catalogue.js";
 import { definePlugin, type LintelPlugin } from "./plugin-definition.js";
 import { InvalidPluginError } from "./plugins.errors.js";
 import { pluginRegistry } from "./plugins.registry.js";
+import { ADDON_PUBLIC_PREFIX } from "../website/site-api.routes.js";
+import { buildSiteServer } from "../website/site-server.js";
 
 /**
  * The plugin system, through a small plugin of the kind a developer would write: a
@@ -34,6 +36,12 @@ const greetingsPlugin = definePlugin({
       const settings = await readSettings(server.database);
       return { message: `${settings.greeting}, visitor` };
     });
+    server.post(`${ADDON_PUBLIC_PREFIX}/greetings/wave`, async (request) => ({
+      waved: (request.body as { name?: string }).name ?? "nobody",
+    }));
+    server.get(`${ADDON_PUBLIC_PREFIX}/greetings/badge.svg`, async (_request, reply) =>
+      reply.type("image/svg+xml").header("cache-control", "public, max-age=3600").send("<svg/>"),
+    );
   },
   fieldtypes: [
     defineFieldtype({
@@ -111,6 +119,33 @@ describe("the plugin system", () => {
     const whileOn = await request("GET", "/greetings");
     expect(whileOn.statusCode).toBe(200);
     expect(whileOn.json()).toEqual({ message: "Hello, visitor" });
+  });
+
+  it("answers a plugin's routes for visitors at the website's own address", async () => {
+    const website = buildSiteServer({ api: server });
+    await request("PUT", "/plugins", { enabled: ["greetings"] });
+    const response = await website.inject({
+      method: "POST",
+      url: "/_lintel/api/addons/greetings/wave",
+      payload: { name: "Ada" },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ waved: "Ada" });
+    expect(response.headers["cache-control"]).toBe("no-store");
+    const badge = await website.inject({
+      method: "GET",
+      url: "/_lintel/api/addons/greetings/badge.svg",
+    });
+    expect(badge.headers["cache-control"]).toBe("public, max-age=3600");
+
+    await request("PUT", "/plugins", { enabled: [] });
+    const whileOff = await website.inject({
+      method: "POST",
+      url: "/_lintel/api/addons/greetings/wave",
+      payload: { name: "Ada" },
+    });
+    expect(whileOff.statusCode).toBe(404);
+    await website.close();
   });
 
   it("checks the plugin is on before checking permissions, so it looks the same to everyone", async () => {

@@ -6,8 +6,9 @@ import { localiseUrl } from "./site-chrome.service.js";
 import { type PageRequest, renderWithHead } from "./site-pages.service.js";
 
 /**
- * `/search?q=bread`: what the Search box element sends visitors to. Published entries of the
- * collections that have pages whose title or summary has every word searched for, best
+ * `/search?q=bread`: what the Search box element (and `{% search_box %}` in Liquid templates)
+ * sends visitors to. Published entries of the collections that have pages whose words
+ * (title, summary, body and the text of their design) have every word searched for, best
  * matches (in the title) first. A small site's search: the newest entries of each
  * collection are looked through, so nothing needs indexing.
  */
@@ -34,7 +35,7 @@ export async function renderSearch(request: PageRequest): Promise<SiteResponse> 
       );
       for (const entry of list.items) {
         const title = entryTitle(entry).toLowerCase();
-        const text = `${title} ${entrySummary(entry).toLowerCase()}`;
+        const text = `${title} ${entrySummary(entry)} ${entryWords(entry.data)}`.toLowerCase();
         if (!words.every((word) => text.includes(word))) continue;
         const url = localiseUrl(entry.url ?? `/${entry.slug}`, locale, context);
         found.push({
@@ -76,4 +77,74 @@ export async function renderSearch(request: PageRequest): Promise<SiteResponse> 
       noindex: true,
     },
   );
+}
+
+/** Keys whose text is an address, a name for code or a setting rather than words to find. */
+const technicalKeys = new Set([
+  "id",
+  "url",
+  "href",
+  "src",
+  "slug",
+  "type",
+  "handle",
+  "locale",
+  "class",
+  "className",
+  "style",
+  "styles",
+  "json",
+  "focalPoint",
+  "collection",
+  "taxonomy",
+  "variant",
+  "icon",
+]);
+
+const MOST_WORDS_READ = 20_000;
+
+/**
+ * The words in an entry's published data, wherever they are: text fields, rich text and
+ * Markdown (as their HTML, tags taken out), blocks and a page design's text. Addresses,
+ * colours and other settings are skipped, so searching "https" or "flex" finds nothing.
+ */
+export function entryWords(data: unknown): string {
+  const parts: string[] = [];
+  let length = 0;
+  const visit = (value: unknown, key: string, depth: number) => {
+    if (length > MOST_WORDS_READ || depth > 30 || technicalKeys.has(key)) return;
+    if (typeof value === "string") {
+      if (!looksLikeWords(value)) return;
+      const words = key === "html" ? textOfHtml(value) : value;
+      parts.push(words);
+      length += words.length;
+    } else if (Array.isArray(value)) {
+      for (const item of value) visit(item, key, depth + 1);
+    } else if (typeof value === "object" && value !== null) {
+      for (const [innerKey, inner] of Object.entries(value)) visit(inner, innerKey, depth + 1);
+    }
+  };
+  visit(data, "", 0);
+  return parts.join(" ").slice(0, MOST_WORDS_READ);
+}
+
+function looksLikeWords(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  // Addresses, colours and sizes.
+  if (/^(https?:|mailto:|tel:|\/|#|lintel:|[\d.]+(px|rem|em|%)?$)/i.test(trimmed)) return false;
+  // A design's settings ("center", "flex", "newest", "buttonLabel"): one lowercase token.
+  return !/^[a-z][a-zA-Z0-9-]*$/.test(trimmed);
+}
+
+function textOfHtml(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&rsquo;/g, "’")
+    .replace(/\s+/g, " ");
 }

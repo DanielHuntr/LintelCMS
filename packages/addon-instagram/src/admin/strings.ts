@@ -1,0 +1,52 @@
+import { createTranslator } from "@lintel/admin/plugin";
+
+/** Every word the Instagram add-on shows in the admin, in one place so it can be translated. */
+export const t = createTranslator({
+  "instagram.title": "Instagram",
+  "instagram.subtitle": "Your latest posts on your website, copied to your own server.",
+  "instagram.loading": "Loading your Instagram connection",
+  "connect.title": "Connect your Instagram",
+  "connect.description":
+    "Paste an access token from Meta and your newest posts appear on your website. Visitors never load anything from Instagram.",
+  "connect.stepsTitle": "Getting an access token",
+  "connect.step1": "Your Instagram account needs to be a Business or Creator account.",
+  "connect.step2":
+    "At developers.facebook.com, make an app and add the “Instagram API with Instagram login” product.",
+  "connect.step3":
+    "Under “Generate access tokens”, add your Instagram account and generate a token.",
+  "connect.step4": "Copy the token and paste it below.",
+  "connect.tokenLabel": "Access token",
+  "connect.tokenHint": "It's kept on your server and only used to fetch your posts.",
+  "connect.button": "Connect",
+  "connect.working": "Connecting…",
+  "account.username": "@{username}",
+  "account.syncedAgo": "Updated {when}",
+  "account.notSynced": "Not updated yet",
+  "account.everyHour": "Checked for new posts every hour.",
+  "account.syncNow": "Check now",
+  "account.syncing": "Checking…",
+  "account.disconnect": "Disconnect",
+  "account.problem": "Last try didn't work",
+  "account.token": "Access token",
+  "account.tokenDetail": "Ends {hint}",
+  "disconnect.title": "Disconnect Instagram?",
+  "disconnect.message":
+    "Your posts come off your website, and the copies and access token are deleted from this server.",
+  "disconnect.confirm": "Disconnect",
+  "disconnect.cancel": "Cancel",
+  "posts.title": "On your website",
+  "posts.footer": "Choose a post to describe its picture for people who can't see it.",
+  "posts.empty": "No posts yet",
+  "posts.emptyDescription": "Posts appear here after the next check.",
+  "posts.describe": "Describe this picture: {caption}",
+  "posts.video": "Video",
+  "alt.title": "Describe the picture",
+  "alt.description": "Screen readers read this out. Say what's in the picture in a sentence.",
+  "alt.label": "Description",
+  "alt.placeholder": "Three sourdough loaves cooling on a rack",
+  "alt.caption": "Caption on Instagram",
+  "alt.openOnInstagram": "Open on Instagram",
+  "alt.save": "Save",
+  "alt.saving": "Saving…",
+  "alt.cancel": "Cancel",
+});

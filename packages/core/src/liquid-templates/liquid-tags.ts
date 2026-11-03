@@ -28,6 +28,8 @@ import { findPageHelpers, type LiquidPageHelpers } from "./liquid-page-helpers.j
  *   {% cookie_settings %}                                  "Cookie settings", which opens the
  *                                                          cookie notice again (only on sites
  *                                                          that show one)
+ *   {% search_box label: "Search", button: "Go" %}         a search box sending visitors to the
+ *                                                          site's /search results page
  *   {{ entry.data.body | rich_text }}                      rich text, already made safe
  *   {{ entry.data.hero | image_url: 800 }}                 the address of a resized copy
  *
@@ -58,6 +60,7 @@ export function registerLintelTags(engine: Liquid): void {
     "cookie_settings",
     PartTag("cookie_settings", (helpers) => helpers.cookieSettings),
   );
+  engine.registerTag("search_box", SearchBoxTag);
   // Rich text arrives as finished, cleaned HTML; anything else is printed as plain text.
   engine.registerFilter("rich_text", {
     raw: true,
@@ -71,6 +74,40 @@ export function registerLintelTags(engine: Liquid): void {
     if (!image) return "";
     return resizedImageUrl(image, readWidth(width) ?? 1440, readRatio(ratio));
   });
+}
+
+/** `{% search_box %}`: the Search box element's form, with optional words of the template's own. */
+class SearchBoxTag extends Tag {
+  private readonly options: Hash;
+
+  constructor(token: TagToken, remainTokens: TopLevelToken[], liquid: Liquid) {
+    super(token, remainTokens, liquid);
+    this.options = new Hash(this.tokenizer);
+  }
+
+  *render(ctx: Context, emitter: Emitter): Generator<unknown, void, unknown> {
+    const options = (yield this.options.render(ctx)) as Record<string, unknown>;
+    emitter.write(renderSearchBox(options));
+  }
+}
+
+let searchBoxesDrawn = 0;
+
+/** The search form, as the builder's Search box draws it, so the site's styles apply. */
+export function renderSearchBox(options: Record<string, unknown>): string {
+  const words = (key: string, fallback: string) => {
+    const value = options[key];
+    return escapeHtml(typeof value === "string" && value ? value : fallback);
+  };
+  searchBoxesDrawn = (searchBoxesDrawn + 1) % 1_000_000;
+  const id = `search-box-${searchBoxesDrawn}`;
+  return (
+    '<div class="lintel-search-box"><form action="/search" method="get" role="search">' +
+    `<label for="${id}" class="lintel-search-box__label">${words("label", "Search this site")}</label>` +
+    `<span class="lintel-search-box__row"><input id="${id}" type="search" name="q" placeholder="${words("placeholder", "")}" autocomplete="off">` +
+    `<button type="submit" class="lintel-button"><span>${words("button", "Search")}</span></button>` +
+    "</span></form></div>"
+  );
 }
 
 /** A tag with one value and then `name: value` options: `{% image entry.data.hero width: 800 %}`. */

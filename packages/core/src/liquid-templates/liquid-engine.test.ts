@@ -183,6 +183,21 @@ describe("the Liquid engine", () => {
     );
   });
 
+  it("draws a search box sending visitors to the results page, with its words escaped", async () => {
+    await file(
+      "templates/page.liquid",
+      '{% search_box %}|{% search_box label: "Find <it>", button: "Go", placeholder: "Bread" %}',
+    );
+    const [plain, worded] = (await render("page")).split("|") as [string, string];
+    expect(plain).toContain('<form action="/search" method="get" role="search">');
+    expect(plain).toContain('name="q"');
+    expect(plain).toContain(">Search this site</label>");
+    expect(plain).toContain("<span>Search</span>");
+    expect(worded).toContain(">Find &lt;it&gt;</label>");
+    expect(worded).toContain('placeholder="Bread"');
+    expect(worded).toContain("<span>Go</span>");
+  });
+
   it("draws a menu as a list of links, escaped, with the current page marked", async () => {
     await file("templates/page.liquid", '{% menu "main" %}|{% menu "footer" %}');
     expect(await render("page")).toBe(

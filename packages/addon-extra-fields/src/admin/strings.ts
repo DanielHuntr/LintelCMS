@@ -1,0 +1,35 @@
+import { createTranslator } from "@lintel/admin/plugin";
+
+/** Every word the Extra fields add-on shows in the admin, in one place so it can be translated. */
+export const t = createTranslator({
+  "location.link": "Map link",
+  "location.linkPlaceholder": "Paste a link from OpenStreetMap, Google Maps or Apple Maps",
+  "location.linkFound": "Found {coordinates}.",
+  "location.linkNotFound":
+    "There's no place in that link. Copy the link from the map's Share button.",
+  "location.name": "Name of the place",
+  "location.namePlaceholder": "e.g. The Corner Bakery",
+  "location.address": "Address",
+  "location.latitude": "Latitude",
+  "location.longitude": "Longitude",
+  "location.latitudePlaceholder": "e.g. 51.5072",
+  "location.longitudePlaceholder": "e.g. -0.1276",
+  "location.open": "Open in OpenStreetMap",
+  "location.showPreview": "Show map preview",
+  "location.hidePreview": "Hide map preview",
+  "location.previewNote": "The preview loads from OpenStreetMap.",
+  "location.previewTitle": "Map of {place}",
+  "location.clear": "Clear location",
+  "location.empty": "No place yet. Paste a map link or type the coordinates.",
+  "palette.name": "Name",
+  "palette.colour": "Colour for {name}",
+  "palette.moveUp": "Move {name} up",
+  "palette.moveDown": "Move {name} down",
+  "palette.remove": "Remove {name}",
+  "palette.add": "Add a colour",
+  "palette.newName": "Colour {number}",
+  "palette.full": "That's the most colours this palette can have.",
+  "palette.empty": "No colours yet.",
+  "palette.choose": "Choose from these colours",
+  "palette.choice": "{name}, {hex}",
+});

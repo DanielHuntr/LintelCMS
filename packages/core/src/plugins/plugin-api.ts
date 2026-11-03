@@ -24,6 +24,11 @@ export type { PluginCommand, PluginCommandContext } from "./plugin-commands.js";
 export type { PluginLiquid, PluginLiquidFilter, PluginLiquidTag } from "./plugin-liquid.js";
 export { escapeHtml } from "../liquid-templates/liquid-tags.js";
 export { packageFolder } from "./package-folder.js";
+/**
+ * Where routes for a site's visitors go: `${ADDON_PUBLIC_PREFIX}/<plugin id>/...` on the API,
+ * which the website answers at its own address as `/_lintel/api/addons/<plugin id>/...`.
+ */
+export { ADDON_PUBLIC_PREFIX } from "../website/site-api.routes.js";
 
 // Events: what handlers are told, and the catalogue a plugin extends with its own.
 export type { PublishedEvent } from "../events/event-bus.js";

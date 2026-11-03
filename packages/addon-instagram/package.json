@@ -1,0 +1,41 @@
+{
+  "name": "@lintel/addon-instagram",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Instagram feed: your latest posts on your website, kept on your own server.",
+  "type": "module",
+  "lintel-addon": {
+    "id": "instagram",
+    "lintel": ">=1.0.0-rc.1",
+    "server": "dist/server.js",
+    "admin": "dist/admin.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "migrations"
+  ],
+  "scripts": {
+    "build": "tsx --conditions=development ../cli/src/main.ts addons build",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.admin.json",
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate"
+  },
+  "devDependencies": {
+    "@lintel/admin": "workspace:*",
+    "@lintel/cli": "workspace:*",
+    "@lintel/core": "workspace:*",
+    "@tanstack/react-query": "^5.105.0",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "drizzle-kit": "^0.31.11",
+    "drizzle-orm": "^0.45.4",
+    "lucide-react": "^1.66.0",
+    "react": "^19.3.1",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5",
+    "zod": "^4.6.7"
+  }
+}
