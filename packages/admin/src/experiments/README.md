@@ -10,9 +10,12 @@ The admin half of the A/B testing plugin (`experiments`; the server half is
   between Original, B and C, adds a version (up to three), and links to the test's settings.
   B and C save to the test as the page saves, shortly after changes stop. A section version
   is drawn in the page as it is now, with the other sections locked.
-- **A/B tests** (`ExperimentsPage.tsx`): every test with its state and goal.
+- **A/B tests** (`ExperimentsPage.tsx`): every test with its state and goal. Settings
+  (`ExperimentsSettingsDialog.tsx`, for `settings:update`): count test visitors only after
+  they accept in the cookie notice.
 - **One test** (`ExperimentPage.tsx`): the results (`ResultsCard.tsx`), what counts as
-  success (`GoalCard.tsx`), the versions and their split (`VersionsCard.tsx`), start, pause,
+  success (`GoalCard.tsx`; while Visitors is on, also a form or event Visitors counts), the
+  versions and their split (`VersionsCard.tsx`), start, pause,
   "Make B the page", "Keep the original" and delete.
 
 Words are in `experimentsStrings.ts`; `experimentText.ts` turns results into sentences

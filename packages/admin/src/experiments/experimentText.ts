@@ -25,7 +25,17 @@ export function describeGoal(goal: ExperimentGoal | null, pageTitle?: string): s
       return t("experiments.goal.clickSummary", { link: goal.label || goal.target });
     case "page":
       return t("experiments.goal.pageSummary", { page: pageTitle || t("experiments.goal.aPage") });
+    case "analytics":
+      return describeAnalyticsGoal(goal.name);
   }
+}
+
+/** A goal Visitors counts, by its name there: "form:contact", "order" or "signup". */
+export function describeAnalyticsGoal(name: string): string {
+  if (name === "order") return t("experiments.goal.orderSummary");
+  if (name.startsWith("form:"))
+    return t("experiments.goal.namedFormSummary", { form: name.slice(5) });
+  return t("experiments.goal.eventSummary", { event: name });
 }
 
 /** What was counted, in words: "12 sent a form", "3 ordered". */

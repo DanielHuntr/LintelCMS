@@ -1,4 +1,9 @@
-import type { AnalyticsEventKind, DeviceClass, RollupDimension } from "./analytics-events.js";
+import type {
+  AnalyticsEventKind,
+  DeviceClass,
+  EventProperties,
+  RollupDimension,
+} from "./analytics-events.js";
 
 /**
  * Turning one day's events for one site into its daily figures. Pure, so the counting rules
@@ -24,6 +29,8 @@ export interface EventForRollup {
   durationMs: number | null;
   name: string;
   value: number;
+  /** For views of a page running an A/B test: `{ experiment, variant }`. */
+  properties?: EventProperties;
 }
 
 export interface DailyFigures {
@@ -68,6 +75,7 @@ function placesFor(event: EventForRollup): { dimension: RollupDimension; key: st
         ...(event.campaign ? [{ dimension: "campaign" as const, key: event.campaign }] : []),
         ...(event.device ? [{ dimension: "device" as const, key: event.device }] : []),
         { dimension: "country", key: event.country },
+        ...versionPlace(event),
       ];
     case "leave":
       return [
@@ -85,6 +93,14 @@ function placesFor(event: EventForRollup): { dimension: RollupDimension; key: st
     case "custom":
       return [{ dimension: "event", key: event.name }];
   }
+}
+
+/** The A/B test version a page view was tagged with, if any. */
+function versionPlace(event: EventForRollup): { dimension: "version"; key: string }[] {
+  const experiment = event.properties?.experiment;
+  const variant = event.properties?.variant;
+  if (typeof experiment !== "string" || typeof variant !== "string") return [];
+  return [{ dimension: "version", key: `${experiment}:${variant}` }];
 }
 
 function addTo(tally: Tally, event: EventForRollup, dimension: RollupDimension): void {

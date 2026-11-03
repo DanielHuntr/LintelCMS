@@ -67,6 +67,7 @@ export async function listEventsForDay(
       durationMs: analyticsEventsTable.durationMs,
       name: analyticsEventsTable.name,
       value: analyticsEventsTable.value,
+      properties: analyticsEventsTable.properties,
     })
     .from(analyticsEventsTable)
     .where(

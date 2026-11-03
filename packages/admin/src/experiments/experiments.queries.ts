@@ -6,9 +6,11 @@ import {
   endExperiment,
   getExperiment,
   getExperimentForPage,
+  getExperimentsSettings,
   getResults,
   listExperiments,
   removeVersion,
+  saveExperimentsSettings,
   startExperiment,
   stopExperiment,
   updateExperiment,
@@ -21,10 +23,27 @@ export const experimentKeys = {
   experiment: (experimentId: string) => ["experiments", experimentId] as const,
   results: (experimentId: string) => ["experiments", experimentId, "results"] as const,
   forPage: (entryId: string) => ["experiments", "for-page", entryId] as const,
+  settings: () => ["experiments-settings"] as const,
 };
 
-export function useExperiments() {
-  return useQuery({ queryKey: experimentKeys.list(), queryFn: listExperiments });
+export function useExperiments(enabled = true) {
+  return useQuery({ queryKey: experimentKeys.list(), queryFn: listExperiments, enabled });
+}
+
+export function useExperimentsSettings(enabled: boolean) {
+  return useQuery({
+    queryKey: experimentKeys.settings(),
+    queryFn: getExperimentsSettings,
+    enabled,
+  });
+}
+
+export function useSaveExperimentsSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: saveExperimentsSettings,
+    onSuccess: (settings) => queryClient.setQueryData(experimentKeys.settings(), settings),
+  });
 }
 
 export function useExperiment(experimentId: string) {

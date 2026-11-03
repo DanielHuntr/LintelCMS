@@ -10,7 +10,14 @@ export type ExperimentGoal =
   | { kind: "form" }
   | { kind: "order" }
   | { kind: "click"; target: string; label?: string }
-  | { kind: "page"; entryId: string };
+  | { kind: "page"; entryId: string }
+  /** Something Visitors counts: "form:contact", "order" or an event the site names. */
+  | { kind: "analytics"; name: string };
+
+/** The A/B testing plugin's settings. */
+export interface ExperimentsSettings {
+  countOnlyAfterConsent: boolean;
+}
 
 export interface ExperimentVersion {
   key: ChallengerKey;

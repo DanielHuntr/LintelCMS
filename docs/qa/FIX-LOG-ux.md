@@ -1532,3 +1532,32 @@ Decision record: `docs/decisions/0047-designing-the-cursor.md`. No migration: th
 **Fix:** a small helper, `motion/src/effects/kit/top-layer.ts` (`attachAboveDialogs`), adds each of them to the page and moves them inside whichever modal dialog is open, then back out when it closes. It watches for dialogs opening and closing, and forgets anything taken off the page. `cursor.module.ts` and `pointer.module.ts` use it everywhere they add something that follows the pointer.
 
 **Test:** `motion/src/browser-tests/cursor-design.browser.test.ts`, "moves the cursor into the open dialog, and back out when it closes", which uses a real modal dialog.
+
+## Visitors, A/B tests and the cookie notice working together (3 November 2026)
+
+**Asked for:** connect the three plugins that landed apart: Visitors (0042), A/B testing (0044) and the cookie notice (0040).
+
+**What changed:**
+
+- **The cookie notice lists "Visitor counts"** (`plugin:analytics`) while Visitors' "Count visitors only after they accept" is on, so visitors can accept it; with the setting off, counting stays cookieless and the notice doesn't mention it. Plugins can now name services from their settings (`consentServicesFromSettings` in `definePlugin`), read each time the notice is worked out; a service without a handle stands for the plugin itself.
+- **A/B tests get the same switch.** Decided that the `lintel-tests` key (a test id and a version letter, first-party) doesn't need consent by default, with the reasons in the decision record. Sites that want every visitor to agree first turn on **Count test visitors only after they accept** (A/B tests → Settings): the notice lists "A/B test counts" (`plugin:experiments`), and the counting script stores and sends nothing until it is allowed, removing an earlier visit's key if it is turned down. Everyone taking part still sees a version, chosen on the server.
+- **Goals Visitors counts.** While Visitors is on, a test's goal can be "does something Visitors counts": a particular form, an order, or an event the site sends with `lintelAnalytics.track(...)` (listed once Visitors has counted one in the last 30 days). The page's script spots these in the browser; the beacon now fires `lintel:track` for named events.
+- **Page views carry the version shown.** The beacon reads the page's test marker and tags its page view with `{ experiment, variant }`; the daily figures gain a `version` row, and the Visitors screen shows **A/B tests running** (visitors per version of each running test) to people who run tests.
+- **A/B keeps its own counts** as the results' source, with or without Visitors: Visitors' single events are deleted after 30 days, its visitor hash changes daily, and goals the server records carry no visitor, so it can't give a test's per-browser numbers. Visitors' version rows are a second view.
+- **Privacy on both sides is unchanged:** no cookies, nothing identifying; Do Not Track, Global Privacy Control and robots are excluded by both scripts and both servers, so no version tag is recorded for them.
+
+Decision record: `docs/decisions/0051-visitors-tests-and-the-cookie-notice.md`. No migration: the new setting is plugin settings JSON with defaults, and the new rollup dimension is a value in an existing column.
+
+**Tests:**
+
+- core `experiments/experiments-with-visitors.test.ts` (6, new): "Visitor counts" is in the notice (page and admin) only while Visitors waits for consent, and not once the plugin is off; A/B's setting adds `"consent": "required"` to the page's script settings and "A/B test counts" to the notice, with the version still chosen; both services listed together; a goal Visitors counts is checked and passed to the page's script; tagged page views become per-version rows on the Visitors stats while A/B's own counts stay untouched, and a made-up version is refused; nothing is kept for a browser sending Global Privacy Control.
+- core `experiments/tests-script.test.ts` (7, new, jsdom): counts at once without consent; a particular form (not another) and a named event as goals; with consent required, nothing stored or sent until `lintel:consent` allows `plugin:experiments`; counts at once with an earlier choice; an earlier key removed when turned down; nothing for Do Not Track.
+- core `analytics/analytics-script.test.ts` (5, new, jsdom): the page view carries the test and version; no tag without a test; `track()` fires `lintel:track`; waits for `plugin:analytics` (not another service); nothing for Do Not Track.
+- admin `Experiments.test.tsx` (+3): a form or event Visitors counts as the goal; not offered with Visitors off; the A/B settings dialog saves the consent switch. `Visitors.test.tsx` (+1): the "A/B tests running" card names only running tests' versions, and isn't shown (or fetched) without the A/B permission.
+- Full suites: core 1354 passed, 6 skipped (198 files); admin 807 passed (148 files). Lint, typecheck and build clean for core and admin.
+
+**Checked in a browser** (Chromium, desktop, light; on a copy of the styles test data with the private reference pages unpublished and out of the menu): the Visitors screen with the new card, the A/B settings dialog, a test's goal set to a Visitors form, and the website's cookie notice listing "Visitor counts".
+
+**Screenshots** (in `screenshots/measure-wiring/`): `visitors-test-versions-desktop-light`, `experiments-settings-desktop-light`, `experiment-goal-visitors-desktop-light`, `site-cookie-notice-choices-desktop-light`.
+
+**Left for later:** the notice's default sentence says each service "may set cookies", which isn't true of Visitor counts or A/B test counts; a plugin that waits for consent while the notice is Off counts nobody, and the admin doesn't warn about that combination yet.

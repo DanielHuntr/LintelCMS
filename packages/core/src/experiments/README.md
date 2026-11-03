@@ -12,7 +12,8 @@ reasoning is in `docs/decisions/0044-ab-testing.md`.
    original, B and C. B and C are kept in `experiment_versions`, never in the page itself. A
    section version is stored as a page holding only that section, with the original section's
    id, so it is put in the live page's place however the rest of the page changes.
-2. **The test.** A goal (`form`, `order`, `click` on a link or button, or reaching a `page`),
+2. **The test.** A goal (`form`, `order`, `click` on a link or button, reaching a `page`, or
+   while Visitors is on, `analytics`: something Visitors counts, such as "form:contact"),
    a split (whole percent per version, even by default) and a status: `draft`, `running`,
    `stopped` (paused) or `ended`. A page has at most one test that hasn't ended.
 3. **On the website** (`experiment-pages.ts`). While a test runs, each visit's version is
@@ -38,8 +39,19 @@ reasoning is in `docs/decisions/0044-ab-testing.md`.
 
 `ExperimentMeasurement` (`experiment-measurement.ts`) is where visits and conversions are
 recorded and read back. The built-in one keeps daily counts in `experiment_counts`. Pass
-another to `buildServer({ experiments: { measurement } })` to count elsewhere, such as the
-first-party analytics plugin.
+another to `buildServer({ experiments: { measurement } })` to count elsewhere. The built-in
+counts stay the results' source even with Visitors on; why is in
+`docs/decisions/0051-visitors-tests-and-the-cookie-notice.md`.
+
+## With Visitors and the cookie notice
+
+- Visitors' beacon tags its page view with the version from the page's marker, so the
+  Visitors screen can show visitors per version of running tests.
+- A goal of kind `analytics` is reached in the browser: a sent form with that handle, the
+  order confirmation page, or the `lintel:track` event Visitors' beacon fires.
+- The plugin's one setting (`experiments-settings.schema.ts`), **Count test visitors only
+  after they accept**, lists "A/B test counts" (`plugin:experiments`) in the cookie notice
+  and makes the script wait for it before storing or sending anything.
 
 ## Endpoints
 
@@ -63,7 +75,8 @@ On the website's server: `POST /_lintel/tests` (always 204) and `GET /_lintel/te
 
 | File                             | What it does                                          |
 | -------------------------------- | ----------------------------------------------------- |
-| `experiments.plugin.ts`          | The plugin: its permission and routes                 |
+| `experiments.plugin.ts`          | The plugin: its permission, settings and routes       |
+| `experiments-settings.schema.ts` | Its setting: count only after visitors accept         |
 | `register-experiments.ts`        | `server.experiments`: the measurement in use          |
 | `experiments.table.ts`           | Tests, versions and daily counts                      |
 | `experiments.schema.ts`          | Request and response shapes                           |

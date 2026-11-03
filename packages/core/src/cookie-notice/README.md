@@ -5,7 +5,9 @@ may set cookies or contact another company, and only then. Decision 0040 explain
 
 What counts (`@lintel/builder-model`'s `consent/consent-services.ts`): YouTube and Vimeo
 videos, maps (OpenStreetMap), Embed elements (named by their service, such as Calendly),
-Adobe Fonts, and the services plugins declare with `consentServices` in `definePlugin`.
+Adobe Fonts, and the services plugins declare with `consentServices` in `definePlugin`, or
+name from their settings with `consentServicesFromSettings` ("Visitor counts" and "A/B test
+counts" while those plugins wait for visitors to accept; decision 0051).
 Embeds set to load without asking, and Code elements, are the site maker's own call.
 
 - `cookie-notice.schema.ts`: the `cookieNotice` setting: Automatic (default), Always or Off,
@@ -17,7 +19,7 @@ Embeds set to load without asking, and Code elements, are the site maker's own c
   notice's script (`buildCookieNoticePage`). `website/site-context.service.ts` works it out
   once per cache life; pages carry it as JSON with the script
   (`/_lintel/cookie-notice-<fingerprint>.js`), which only sites with the notice load.
-- `plugin-consent-services.ts`: plugins' declared services.
+- `plugin-consent-services.ts`: plugins' declared services, and those their settings name.
 - `cookie-notice.routes.ts`: `GET` and `PUT /website/cookie-notice`
   (`settings:read`, `settings:update`), answering `{ settings, services, shown }`.
 - `cookie-notice.repository.ts`: the settings row, and published designs.

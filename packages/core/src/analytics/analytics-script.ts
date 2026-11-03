@@ -3,10 +3,12 @@
  * about 1.5 KB. It keeps nothing in the browser (no cookies, no storage) and sends:
  *
  *   - "view" when the page opens: its path, the other site that sent the visitor, the
- *     window's width and any utm_source / utm_campaign;
+ *     window's width, any utm_source / utm_campaign, and the A/B test version the page shows
+ *     (from its `<template data-lintel-test>` marker, see src/experiments);
  *   - "leave" once, when the page is hidden, closed or left, with how long it was in view;
  *   - "outbound" when a link to another website is followed;
- *   - "custom" for `lintelAnalytics.track("name")`, which a site's own code can call.
+ *   - "custom" for `lintelAnalytics.track("name")`, which a site's own code can call. It
+ *     also fires `lintel:track` on document, so an A/B test can use the event as its goal.
  *
  * It sends nothing when the browser asks not to be tracked (Do Not Track, Global Privacy
  * Control) or is driven by a robot. With "Count visitors only after they accept" on
@@ -47,12 +49,16 @@ export const analyticsScript = `(function () {
     if (started || optedOut || !allowed) return;
     started = true;
     var query = new URLSearchParams(location.search);
+    // The A/B test version the server chose for this page, if one runs here (one per page).
+    var test = document.querySelector("template[data-lintel-test]");
     send({
       kind: "view",
       referrer: document.referrer || undefined,
       width: window.innerWidth,
       source: query.get("utm_source") || undefined,
       campaign: query.get("utm_campaign") || undefined,
+      experiment: (test && test.getAttribute("data-lintel-test")) || undefined,
+      version: (test && test.getAttribute("data-lintel-version")) || undefined,
     });
   }
 
@@ -111,7 +117,12 @@ export const analyticsScript = `(function () {
 
   window.lintelAnalytics = {
     track: function (name) {
-      if (typeof name === "string" && name) send({ kind: "custom", name: name.slice(0, 60) });
+      if (typeof name !== "string" || !name) return;
+      send({ kind: "custom", name: name.slice(0, 60) });
+      // Lets the page's other scripts know, such as an A/B test whose goal is this event.
+      try {
+        document.dispatchEvent(new CustomEvent("lintel:track", { detail: { name: name.slice(0, 60) } }));
+      } catch (error) {}
     },
     consent: function () {
       allowed = true;

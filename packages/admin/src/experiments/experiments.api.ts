@@ -5,10 +5,22 @@ import type {
   Experiment,
   ExperimentGoal,
   ExperimentResults,
+  ExperimentsSettings,
   VersionKey,
 } from "./experiments.types.js";
 
 /** Calls to the API's A/B testing routes (see packages/core/src/experiments). */
+
+export function getExperimentsSettings() {
+  return apiRequest<ExperimentsSettings>("/plugins/experiments/settings");
+}
+
+export function saveExperimentsSettings(settings: ExperimentsSettings) {
+  return apiRequest<ExperimentsSettings>("/plugins/experiments/settings", {
+    method: "PUT",
+    body: settings,
+  });
+}
 
 const experimentPath = (experimentId: string) => `/experiments/${encodeURIComponent(experimentId)}`;
 

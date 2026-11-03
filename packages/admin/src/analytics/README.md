@@ -7,7 +7,8 @@ is on and to people with `analytics:read`.
   range; four headline figures compared with the period before (`StatTiles.tsx`); visitors
   each day as bars or a table (`VisitorsChart.tsx`); top pages, where people came from,
   devices, countries, goals, and campaigns, events and links to other sites when there are
-  any (`BreakdownCard.tsx`, real tables). Export downloads a CSV. Settings
+  any (`BreakdownCard.tsx`, real tables). "A/B tests running" (`TestVersionsCard.tsx`) shows
+  visitors per version of each running test, for people who run tests. Export downloads a CSV. Settings
   (`VisitorSettingsDialog.tsx`, for `settings:update`): count only after consent, and how
   long single visits are kept.
 - **A dashboard card** (`VisitorsWidget.tsx`) on new dashboards: this week's visitors.

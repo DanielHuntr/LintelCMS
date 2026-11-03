@@ -25,7 +25,10 @@ export type EventProperties = Record<string, string | number | boolean>;
 export const ORDER_GOAL = "order";
 export const formGoalName = (formHandle: string) => `form:${formHandle}`;
 
-/** What the rollups count, one row per day, site, dimension and key. */
+/**
+ * What the rollups count, one row per day, site, dimension and key. "version" is an A/B
+ * test's version that page views were tagged with, keyed "<test id>:<version>".
+ */
 export const rollupDimensions = [
   "total",
   "page",
@@ -36,5 +39,6 @@ export const rollupDimensions = [
   "goal",
   "outbound",
   "event",
+  "version",
 ] as const;
 export type RollupDimension = (typeof rollupDimensions)[number];

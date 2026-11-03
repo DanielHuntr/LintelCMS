@@ -1,9 +1,11 @@
 import { getTableName } from "drizzle-orm";
 import { pluginBlockPrefix, registerPluginBlocks } from "../blocks/define-block.js";
+import type { DatabaseOrTransaction } from "../database/client.js";
 import { registerPluginConsentServices } from "../cookie-notice/plugin-consent-services.js";
 import { registerPluginFieldtypes } from "../fieldtypes/fieldtypes.registry.js";
 import { registerPluginPermissions } from "../roles/permission-catalog.js";
 import type { LintelPlugin } from "./plugin-definition.js";
+import { readPluginSettings } from "./plugin-settings.service.js";
 import { InvalidPluginError } from "./plugins.errors.js";
 
 /** "built-in" plugins ship with Lintel; "installed" ones come from lintel.config.ts. */
@@ -48,7 +50,11 @@ export class PluginCatalogue {
       checkPlugin(plugin);
       registerPluginFieldtypes(plugin.id, plugin.fieldtypes ?? []);
       registerPluginBlocks(plugin.id, plugin.blocks ?? []);
-      registerPluginConsentServices(plugin.id, plugin.consentServices ?? []);
+      registerPluginConsentServices(
+        plugin.id,
+        plugin.consentServices ?? [],
+        settingsConsentServicesReader(plugin),
+      );
       registerPluginPermissions(plugin);
     }
   }
@@ -126,6 +132,17 @@ function findProblem(plugin: LintelPlugin): string | undefined {
     return "its default settings don't pass its own settings schema.";
   }
   return undefined;
+}
+
+/** Reads the services a plugin's settings name, for plugins that have both. */
+function settingsConsentServicesReader(plugin: LintelPlugin) {
+  const fromSettings = plugin.consentServicesFromSettings?.bind(plugin);
+  if (!fromSettings || !plugin.settings) return undefined;
+  return async (database: DatabaseOrTransaction) =>
+    fromSettings(await readPluginSettings(database, plugin)).filter(
+      ({ handle, name }) =>
+        (handle === undefined || CONSENT_HANDLE_PATTERN.test(handle)) && name.trim() !== "",
+    );
 }
 
 /** Table names use underscores, so "gift-cards" owns "gift_cards_…". */

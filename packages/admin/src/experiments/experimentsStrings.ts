@@ -78,6 +78,15 @@ export const experimentsStrings = {
   "experiments.goal.clickSummary": "Someone clicks “{link}”",
   "experiments.goal.pageSummary": "Someone reaches {page}",
   "experiments.goal.hint": "Only visitors who saw one of the versions first are counted.",
+  "experiments.goal.analytics": "does something Visitors counts",
+  "experiments.goal.whichOne": "Which one?",
+  "experiments.goal.namedForm": "Sends the “{form}” form",
+  "experiments.goal.placesOrder": "Places an order",
+  "experiments.goal.namedEvent": "“{event}” (an event your site sends)",
+  "experiments.goal.nothingCounted":
+    "Visitors hasn’t counted any forms or events yet. Events your site sends appear here once one is counted.",
+  "experiments.goal.namedFormSummary": "Someone sends the “{form}” form",
+  "experiments.goal.eventSummary": "Someone does “{event}”",
 
   "experiments.results.title": "Results",
   "experiments.results.loading": "Loading results",
@@ -85,6 +94,7 @@ export const experimentsStrings = {
   "experiments.results.visitors": "{count, plural, one {# visitor} other {# visitors}}",
   "experiments.results.did.form": "{count, plural, one {# sent a form} other {# sent a form}}",
   "experiments.results.did.order": "{count, plural, one {# ordered} other {# ordered}}",
+  "experiments.results.did.analytics": "{count, plural, one {# did it} other {# did it}}",
   "experiments.results.did.click": "{count, plural, one {# clicked} other {# clicked}}",
   "experiments.results.did.page":
     "{count, plural, one {# reached the page} other {# reached the page}}",
@@ -131,4 +141,12 @@ export const experimentsStrings = {
   "experiments.designer.removeMessage": "Its design goes. The original and other versions stay.",
   "experiments.designer.remove": "Remove",
   "experiments.designer.cancel": "Cancel",
+
+  "experiments.settings": "Settings",
+  "experiments.settings.title": "A/B test settings",
+  "experiments.settings.consent": "Count test visitors only after they accept",
+  "experiments.settings.consentHint":
+    "Tests keep a small note of which version a browser saw, so most sites don’t need to ask. Turn this on if yours must: your cookie notice will list it, and nobody is counted until they accept.",
+  "experiments.settings.save": "Save",
+  "experiments.settings.cancel": "Cancel",
 };

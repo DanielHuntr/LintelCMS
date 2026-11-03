@@ -82,4 +82,8 @@ export const analyticsStrings = {
     "{visitors, plural, one {# visitor} other {# visitors}} in the last 7 days",
   "visitors.panel.views": "{views, plural, one {# page view} other {# page views}}",
   "visitors.builder.week": "{visitors, plural, one {# visitor} other {# visitors}} this week",
+  "visitors.tests": "A/B tests running",
+  "visitors.tests.version": "{page}: {version}",
+  "visitors.tests.hint": "Visitors who saw each version. Results are under A/B tests.",
+  "visitors.column.version": "Version",
 } as const;
