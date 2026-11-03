@@ -55,22 +55,24 @@ export const SIGN_UP_SCRIPT = [
  * passes markers, the Liquid tag passes escaped text.
  */
 function formMarkup(text: SignUpFormText, textSection: string): string {
+  // The website's own Newsletter element's classes, so the site's styles draw it the same way.
   return [
-    '<section class="newsletter-signup">',
-    `<h2 class="newsletter-heading">${text.heading}</h2>`,
+    '<section class="lintel-newsletter newsletter-signup">',
+    `<h2 class="lintel-newsletter__title newsletter-heading">${text.heading}</h2>`,
     textSection,
-    `<form class="newsletter-form" method="post" action="${SIGN_UP_ACTION}" style="display:flex;flex-direction:column;gap:0.75rem;max-width:32rem">`,
-    '<label class="newsletter-label" style="display:flex;flex-direction:column;gap:0.25rem">',
-    '<span>Email address</span><input class="newsletter-email" name="email" type="email" autocomplete="email" required>',
-    "</label>",
-    '<div aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden">',
+    `<form class="lintel-newsletter__form newsletter-form" method="post" action="${SIGN_UP_ACTION}">`,
+    '<label class="lintel-newsletter__label newsletter-label">Email address',
+    '<span class="lintel-newsletter__row">',
+    '<input class="newsletter-email" name="email" type="email" autocomplete="email" required>',
+    `<button class="lintel-button newsletter-button" type="submit">${text.buttonLabel}</button>`,
+    "</span></label>",
+    '<div class="lintel-form__trap" aria-hidden="true">',
     '<label>Leave this empty <input name="website" type="text" tabindex="-1" autocomplete="off"></label>',
     "</div>",
-    '<label class="newsletter-consent" style="display:flex;gap:0.5rem;align-items:flex-start">',
+    '<label class="lintel-form__choice newsletter-consent">',
     `<input name="consent" type="checkbox" required> <span>${text.consentLabel}</span>`,
     "</label>",
-    `<button class="newsletter-button" type="submit">${text.buttonLabel}</button>`,
-    '<p class="newsletter-status" role="status" aria-live="polite"></p>',
+    '<p class="lintel-form__status newsletter-status" role="status" aria-live="polite"></p>',
     "</form>",
     `<script>${SIGN_UP_SCRIPT}</script>`,
     "</section>",
@@ -85,7 +87,7 @@ export const signUpBlockTemplate = formMarkup(
     buttonLabel: "{{button_label}}",
     consentLabel: "{{consent_label}}",
   },
-  '{{#text}}<p class="newsletter-text">{{text}}</p>{{/text}}',
+  '{{#text}}<p class="lintel-newsletter__text newsletter-text">{{text}}</p>{{/text}}',
 );
 
 /** `{% newsletter_signup heading: "…", button: "…" %}`: the form, its text escaped. */
@@ -98,7 +100,9 @@ export function renderSignUpForm(options: Record<string, unknown>): string {
     buttonLabel: read("button", defaultSignUpFormText.buttonLabel),
     consentLabel: read("consent", defaultSignUpFormText.consentLabel),
   };
-  const textSection = text.text ? `<p class="newsletter-text">${text.text}</p>` : "";
+  const textSection = text.text
+    ? `<p class="lintel-newsletter__text newsletter-text">${text.text}</p>`
+    : "";
   return formMarkup(text, textSection);
 }
 

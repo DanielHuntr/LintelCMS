@@ -70,7 +70,7 @@ export const instagramFeedBlock = defineBlock({
   render: [
     '<section class="instagram-feed" style="--instagram-columns:{{columns}}">',
     '{{#heading}}<h2 class="instagram-feed__heading">{{heading}}</h2>{{/heading}}',
-    `<div class="instagram-feed__grid" style="${GRID_STYLE}"><p>Our latest posts are on Instagram.</p></div>`,
+    `<div class="instagram-feed__grid" style="${GRID_STYLE}"><p style="grid-column:1/-1;margin:0">Our latest posts are on Instagram.</p></div>`,
     '{{#show_profile_link}}<p class="instagram-feed__profile" hidden><a href="https://www.instagram.com/"></a></p>{{/show_profile_link}}',
     `<script>${FILL_SCRIPT}</script>`,
     "</section>",

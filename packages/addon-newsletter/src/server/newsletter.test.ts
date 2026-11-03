@@ -347,6 +347,20 @@ describe("the Newsletter sign-up add-on", () => {
       expect(calls).toEqual([]);
     });
 
+    it("signs up everyone who sends the site's Newsletter element's form", async () => {
+      await connectMailchimp();
+      calls.length = 0;
+      await lintel.server.events.publish("form.submitted", {
+        form: { id: "form-2", handle: "newsletter", name: "Newsletter" },
+        submission: {
+          id: "submission-3",
+          fields: { email: "cy@example.com" },
+          submitterEmail: "cy@example.com",
+        },
+      });
+      expect(calls[0]?.body).toMatchObject({ email_address: "cy@example.com" });
+    });
+
     it("isn't there while the add-on is switched off", async () => {
       await connectMailchimp();
       await lintel.setEnabledPlugins([]);
@@ -359,10 +373,14 @@ describe("the Newsletter sign-up add-on", () => {
       const html = await lintel.renderLiquid(
         '{% newsletter_signup heading: "Fresh <bread>", button: "Join" %}',
       );
-      expect(html).toContain('<h2 class="newsletter-heading">Fresh &lt;bread&gt;</h2>');
+      expect(html).toContain(
+        '<h2 class="lintel-newsletter__title newsletter-heading">Fresh &lt;bread&gt;</h2>',
+      );
       expect(html).toContain('action="/_lintel/api/addons/newsletter/subscribe"');
       expect(html).toContain('name="consent" type="checkbox" required');
-      expect(html).toContain('<button class="newsletter-button" type="submit">Join</button>');
+      expect(html).toContain(
+        '<button class="lintel-button newsletter-button" type="submit">Join</button>',
+      );
       expect(html).toContain('role="status" aria-live="polite"');
     });
 

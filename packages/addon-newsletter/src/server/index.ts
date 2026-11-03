@@ -68,7 +68,11 @@ export function createNewsletterAddon(options: NewsletterAddonOptions = {}) {
     events: {
       "form.submitted": async (event, { database, log }) => {
         const { fields, submitterEmail } = event.data.submission;
-        if (!isTicked(fields.newsletter) || !submitterEmail) return;
+        // The site's own Newsletter element sends its form ("newsletter"); any other form signs
+        // people up when they tick a box with the handle "newsletter".
+        const wantsNewsletter =
+          event.data.form.handle === "newsletter" || isTicked(fields.newsletter);
+        if (!wantsNewsletter || !submitterEmail) return;
         const firstName = typeof fields.name === "string" ? fields.name.trim().slice(0, 100) : "";
         try {
           await signUp(database, fetcher, { email: submitterEmail, firstName });
