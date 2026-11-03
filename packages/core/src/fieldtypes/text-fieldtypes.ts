@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { defineFieldtype } from "./fieldtype.js";
-import { isEmptyRichText, isReadableRichText, type RichTextDocument } from "./rich-text.js";
+import {
+  isEmptyRichText,
+  isReadableRichText,
+  isShallowEnoughRichText,
+  MAX_RICH_TEXT_DEPTH,
+  type RichTextDocument,
+} from "./rich-text.js";
 
 /** Fieldtypes for words: a line of text, a paragraph or two, and formatted rich text. */
 
@@ -56,6 +62,11 @@ export const richTextFieldtype = defineFieldtype({
         { type: z.literal("doc"), content: z.array(richTextNodeSchema).optional() },
         { error: `${label} should be a rich text document` },
       )
+      // Depth first: a document nested deeply enough overflows the editor's own check.
+      .refine((document: RichTextDocument) => isShallowEnoughRichText(document), {
+        error: `${label} is nested too deeply: at most ${MAX_RICH_TEXT_DEPTH} levels, such as quotes inside quotes`,
+        abort: true,
+      })
       .refine((document: RichTextDocument) => isReadableRichText(document), {
         error: `${label} has formatting the editor doesn't recognise`,
       }),

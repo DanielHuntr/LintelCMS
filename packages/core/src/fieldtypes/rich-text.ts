@@ -23,6 +23,27 @@ export function isReadableRichText(document: RichTextDocument): boolean {
   }
 }
 
+/**
+ * How deep rich text may nest (quotes inside quotes, lists inside lists). Real writing stays
+ * well inside this; 2,000 nested quotes saved, then broke the entry with a stack overflow
+ * when it was opened (LINTEL-FUNC-009).
+ */
+export const MAX_RICH_TEXT_DEPTH = 50;
+
+/**
+ * True when no node is nested deeper than the limit. It walks without recursion, so the check
+ * can't overflow either.
+ */
+export function isShallowEnoughRichText(document: RichTextDocument): boolean {
+  const waiting: Array<{ node: JSONContent; depth: number }> = [{ node: document, depth: 0 }];
+  while (waiting.length > 0) {
+    const { node, depth } = waiting.pop()!;
+    if (depth > MAX_RICH_TEXT_DEPTH) return false;
+    for (const child of node.content ?? []) waiting.push({ node: child, depth: depth + 1 });
+  }
+  return true;
+}
+
 /** True when there is nothing in the document but empty paragraphs. */
 export function isEmptyRichText(document: RichTextDocument): boolean {
   return (document.content ?? []).every(

@@ -182,6 +182,24 @@ describe("checking an entry's values against its blueprint", () => {
     ).toEqual({});
   });
 
+  // LINTEL-FUNC-009: 2,000 nested quotes saved, then the entry couldn't be opened or published.
+  it("refuses rich text nested too deeply to open", async () => {
+    const fields = [field({ handle: "body", type: "richText" })];
+    const nested = (depth: number) => {
+      let node: Record<string, unknown> = {
+        type: "paragraph",
+        content: [{ type: "text", text: "Deep" }],
+      };
+      for (let level = 0; level < depth; level++) node = { type: "blockquote", content: [node] };
+      return { type: "doc", content: [node] };
+    };
+
+    expect(await messagesFor(fields, { body: nested(2000) })).toEqual({
+      body: "Body is nested too deeply: at most 50 levels, such as quotes inside quotes",
+    });
+    expect(await messagesFor(fields, { body: nested(10) })).toEqual({});
+  });
+
   it("checks that an image is a media library id that still exists", async () => {
     const fields = [field({ handle: "hero_image", type: "image" })];
     const onlyKnownImage = async (assetId: string) => assetId === IMAGE_ID;
