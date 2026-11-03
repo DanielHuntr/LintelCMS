@@ -74,6 +74,8 @@ interface SelectedElementPanelProps {
   pickImage?: ImagePicker;
   uploadFile?: FileUploader;
   motionText?: MotionText;
+  /** Whether the site has a custom cursor, for the Animate tab's pointer choices. */
+  siteCursorOn?: boolean;
   /** Opens the Code tab, as switching to Developer does. */
   showCode: boolean;
   actions: {
@@ -422,6 +424,7 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
             effectModules={props.effectModules}
             pageWeight={props.pageWeight}
             pickImage={props.pickImage}
+            siteCursorOn={props.siteCursorOn}
           />
         ) : (
           <ContentPanel

@@ -27,7 +27,11 @@ export type {
 } from "./effect-definition.js";
 export { number, choice, colour, toggle, text } from "./parameters.js";
 export { standardEffects } from "./catalogue/index.js";
-export { cursorWordEffectId, hoverPictureEffectId } from "./catalogue/cursor-effects.js";
+export {
+  cursorOverEffectId,
+  cursorWordEffectId,
+  hoverPictureEffectId,
+} from "./catalogue/cursor-effects.js";
 export { createEffectRegistry, effectRegistry, registerEffect } from "./effect-registry.js";
 export type { EffectRegistry } from "./effect-registry.js";
 export { nodeEffectSchema, nodeEffectsSchema, maxEffectsPerElement } from "./node-effect.schema.js";
@@ -75,4 +79,20 @@ export type {
   EffectParams,
   PageEffects,
   SiteEffectSettings,
+  CursorSettings,
+  CursorWordLook,
+  CursorPicture,
 } from "../effects/effect-types.js";
+export {
+  cursorColourCss,
+  cursorIsOn,
+  cursorPictureAddress,
+  cursorWordColourPattern,
+  cursorWordCss,
+  cursorWordVariables,
+  defaultCursorPicture,
+  defaultCursorWordLook,
+  largeCursorPictureBytes,
+  lettersOnHex,
+  safePictureAddress,
+} from "../effects/kit/cursor-look.js";

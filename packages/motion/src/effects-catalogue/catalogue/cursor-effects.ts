@@ -76,12 +76,32 @@ export const cursorEffects = [
 ];
 
 /**
- * Two pointer touches set with fields of their own on the Animate tab rather than from the
- * gallery (`listed: false`): a short word the cursor shows over the element, and a picture
- * that follows the pointer while it is over the element.
+ * What the pointer does over an element, set with fields of their own on the Animate tab
+ * rather than from the gallery (`listed: false`): a short word the cursor shows, a picture
+ * that follows the pointer, or a change to the site's cursor (`cursor-over`: grow, show a
+ * different picture, hide, or step aside for the normal pointer).
  */
 export const cursorWordEffectId = "cursor-word";
 export const hoverPictureEffectId = "hover-picture";
+export const cursorOverEffectId = "cursor-over";
+
+/** An element's own look for its word; empty means the site's choice. */
+const wordLookParams = {
+  background: text("Background", "", 80),
+  colour: text("Letters", "", 80),
+  size: choice("Size", "", [
+    ["", "The site's choice"],
+    ["small", "Small"],
+    ["medium", "Medium"],
+    ["large", "Large"],
+  ]),
+  shape: choice("Shape", "", [
+    ["", "The site's choice"],
+    ["pill", "Pill"],
+    ["square", "Square"],
+    ["circle", "Circle"],
+  ]),
+};
 
 export const pointerFieldEffects = [
   defineEffect({
@@ -93,7 +113,7 @@ export const pointerFieldEffects = [
     module: "cursor",
     behaviour: "cursorWord",
     suits: ["any"],
-    params: { text: text("Word", "View", 16) },
+    params: { text: text("Word", "View", 16), ...wordLookParams },
     reducedMotion: "The word follows the pointer exactly.",
     preview: "card",
     listed: false,
@@ -116,6 +136,35 @@ export const pointerFieldEffects = [
       ]),
     },
     reducedMotion: "The picture appears without fading or trailing behind the pointer.",
+    preview: "card",
+    listed: false,
+  }),
+  defineEffect({
+    id: cursorOverEffectId,
+    name: "Cursor over this element",
+    description:
+      "Changes the cursor over this element: it grows, becomes a different picture, hides, or gives way to the normal pointer.",
+    category: "cursor",
+    kind: "behaviour",
+    module: "cursor",
+    behaviour: "cursorOver",
+    suits: ["any"],
+    params: {
+      mode: choice("What the cursor does", "grow", [
+        ["grow", "Grows"],
+        ["picture", "Becomes a different picture"],
+        ["hide", "Hides"],
+        ["normal", "Normal pointer"],
+      ]),
+      src: text("Picture", "", 400),
+      size: number("Picture size", 32, 16, 96, { unit: "px" }),
+      point: choice("Where it points", "centre", [
+        ["centre", "The middle"],
+        ["top-left", "The top-left corner"],
+      ]),
+      bytes: number("File size", 0, 0, 1_000_000_000),
+    },
+    reducedMotion: "The cursor changes at once, without growing smoothly.",
     preview: "card",
     listed: false,
   }),

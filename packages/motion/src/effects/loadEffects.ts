@@ -127,11 +127,20 @@ export function startEffects(
   }
   const site = effects.site;
   const body = document.body;
-  if (site && site.cursor.style !== "none" && context.finePointer) {
+  const cursor = site?.cursor;
+  if (cursor && cursor.style !== "none" && context.finePointer) {
+    // "Your own picture" brings its address (sized by the server), its size and its point.
+    const { style, trail, size, colour, picture } = cursor;
     run(body, {
       module: "cursor",
       behaviour: "siteCursor",
-      params: { ...site.cursor, colour: themeColour(site.cursor.colour) },
+      params: {
+        style,
+        trail,
+        size,
+        colour: themeColour(colour),
+        ...(style === "picture" && picture),
+      },
     });
   }
   // Older pages' settings have no smooth scrolling: read it carefully.

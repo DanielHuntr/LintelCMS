@@ -86,7 +86,11 @@ export async function openEffectsPage(
     const body = path === "/" ? document(html, effects, options) : options.pages?.[path];
     return body === undefined
       ? route.fulfill({ status: 404, body: "" })
-      : route.fulfill({ contentType: "text/html", body });
+      : route.fulfill({
+          // Pictures are served as pictures, so they load and have a size.
+          contentType: path.endsWith(".svg") ? "image/svg+xml" : "text/html",
+          body,
+        });
   });
   await page.goto(`${origin}/`);
   return { page, requested };

@@ -20,6 +20,8 @@ export interface PickedImage {
   assetId: string | null;
   src: string;
   alt: string;
+  /** The file's size in bytes, when known: for "this picture is large" notes. */
+  bytes?: number;
 }
 
 /** Opens the app's media library and resolves with the chosen picture, or null if cancelled. */

@@ -408,7 +408,7 @@ export function useImagePicker() {
       onClose={() => finish(null)}
       onChoose={async (assetId) => {
         const asset = await getAsset(assetId).catch(() => null);
-        finish(asset ? { assetId, src: asset.url, alt: asset.alt } : null);
+        finish(asset ? { assetId, src: asset.url, alt: asset.alt, bytes: asset.size } : null);
       }}
     />
   ) : null;

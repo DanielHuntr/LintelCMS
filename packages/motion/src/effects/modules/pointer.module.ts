@@ -1,4 +1,5 @@
 import type { EffectBehaviour, EffectModule } from "../effect-types.js";
+import { safePictureAddress } from "../kit/addresses.js";
 import { createFrameLoop } from "../kit/frames.js";
 import { combine, listen } from "../kit/listen.js";
 import { readColour, readNumber, readSwitch, readText } from "../kit/params.js";
@@ -251,11 +252,7 @@ function releasePictureLayer() {
   pictureLoop = undefined;
 }
 
-/** Only addresses on this site or on the web: never `javascript:` or other schemes. */
-export function safePictureAddress(address: string): string {
-  const trimmed = address.trim();
-  return /^https?:/i.test(trimmed) || !/^[a-z][\w+.-]*:/i.test(trimmed) ? trimmed : "";
-}
+export { safePictureAddress };
 
 const hoverPicture: EffectBehaviour = (element, params, context) => {
   const src = safePictureAddress(readText(params, "src", ""));
