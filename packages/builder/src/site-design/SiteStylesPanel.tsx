@@ -185,18 +185,6 @@ function VariableRow({
               }}
               className={`${inputClassName} min-w-0 flex-1`}
             />
-            <input
-              aria-label={`${variable.name}: ${text("pageBuilder.site.value")}`}
-              aria-invalid={!isValid}
-              aria-describedby={isValid ? undefined : errorId}
-              value={typed}
-              onChange={(event) => setTyped(event.target.value)}
-              onBlur={commit}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") commit();
-              }}
-              className={`${inputClassName} w-24 shrink-0 font-mono`}
-            />
             <button
               type="button"
               onClick={onRemove}
@@ -213,6 +201,20 @@ function VariableRow({
           </span>
         )}
       </div>
+      {canChange && (
+        <input
+          aria-label={`${variable.name}: ${text("pageBuilder.site.value")}`}
+          aria-invalid={!isValid}
+          aria-describedby={isValid ? undefined : errorId}
+          value={typed}
+          onChange={(event) => setTyped(event.target.value)}
+          onBlur={commit}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") commit();
+          }}
+          className={`${inputClassName} font-mono`}
+        />
+      )}
       {!isValid && (
         <p id={errorId} className="text-caption text-warning">
           {text("pageBuilder.site.badValue", {

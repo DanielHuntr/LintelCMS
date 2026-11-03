@@ -8,7 +8,7 @@ import {
   resolveStyle,
 } from "@lintel/builder-model";
 import { useBuilderText } from "../i18n/builder-text.js";
-import { ChoiceGroup, inputClassName } from "../ui/controls.js";
+import { ChoiceGroup } from "../ui/controls.js";
 import { useDesignTools } from "./design-tools.js";
 import { useStyleEditing } from "./style-field.js";
 import { StyleSelect, StyleTextInput } from "./StyleInputs.js";
@@ -204,7 +204,9 @@ function LineChooser({
   const start = line?.start ?? 0;
   const last = line ? lastOf(line) : 0;
   const isColumns = axis === "columns";
-  const select = "h-8 w-16 shrink-0";
+  // Short lists side by side, so not the full-width input style.
+  const select =
+    "h-8 w-16 shrink-0 rounded-control bg-fill px-2 text-footnote text-label focus-visible:focus-ring";
   return (
     <div
       role="group"
@@ -223,7 +225,7 @@ function LineChooser({
           const span = line?.span ?? 1;
           onChange({ start: from, span: isColumns ? Math.min(span, count - from + 1) : span });
         }}
-        className={`${inputClassName} ${select}`}
+        className={select}
       >
         {!line && <option value="">–</option>}
         {numbers.map((number) => (
@@ -241,7 +243,7 @@ function LineChooser({
           const from = Math.min(start || 1, to);
           onChange({ start: from, span: to - from + 1 });
         }}
-        className={`${inputClassName} ${select}`}
+        className={select}
       >
         {!line && <option value="">–</option>}
         {numbers.map((number) => (

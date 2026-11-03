@@ -724,3 +724,49 @@ What's saved is unchanged, so existing pages keep their states.
 **Fix:** element definitions can now carry `keywords`, the other names people know them by, and Insert's search reads them, as it already did for sections. 55 elements have them. For example: Slider has carousel and slideshow; Pop-up has popup, modal and dialog; Gallery has lightbox; Ticker and Logo strip have marquee; Accordion has faq; Embed has iframe; Menu drawer has hamburger.
 
 **Tests:** `builder/src/panels/insert-library.test.ts` searches each of those words and expects the right element.
+
+## Designer: editorial grid, shared styles, variables (3 November 2026)
+
+**Asked for by Daniel** (designer part 2, from the approved mock-up): the layout freedom of editorial sites (offset, overlapping, magazine-like grids, different on phones) while staying easy to use and uncluttered. The reasoning is in `docs/decisions/0035-editorial-layouts.md`.
+
+**Before:** a section could only lay things out in order, or in a free layout placed by percentages. The Grid layout auto-flowed its items, and placing one meant typing `grid-column` in Advanced. A look had to be copied element by element, and the only named colours were the theme's eight.
+
+**Built:**
+
+- **Editorial grid.** Arrange now asks "Place things: In order / On a grid / Anywhere".
+  - On a grid there are 4, 6, 8 or 12 columns. Drag an element onto them: the columns show while dragging, the target cells are shaded and labelled ("5–7").
+  - The corner handle resizes an element. The arrow keys move it a column or a row, and Shift with an arrow resizes it.
+  - Elements can overlap and be stacked.
+  - Places are per screen size. On phones elements stack unless given a phone place: "Place it on phones too", and "Back to one under another" to undo that.
+  - The panel shows "Columns [9] to [11]" and "Rows [5] to [5]", with the exact values folded away.
+- **Shared styles.** At the top of Style there's a "Shared style" list: None, the site's shared styles, and "Make one from this look…". With one in use, it shows its name, "N on this page", "Changes apply to: Every "Card" / Only this one", Rename and Detach. Where an element sits always stays its own.
+- **Design variables.** With nothing selected, Style shows "This site's styles": colours, sizes, fonts and shared styles, each with a name, a value and Delete.
+  - Swatches, font choices and spacing chips offer the site's own after the theme's.
+  - "Save as a site colour" appears under a colour picked by hand.
+  - Values are checked by kind.
+
+**Tests:**
+
+- `builder-model`: `placed-grid/placed-grid.test.ts` (compiled CSS, phone stacking, reading places, validation) and `site-design/site-design.test.ts` (making, applying, overriding and detaching shared styles, the variables stylesheet, unsafe values, ids).
+- `builder`:
+  - `placed-grid/grid-fit.test.ts` (snapping maths);
+  - `editor/placed-grid-commands.test.ts` (on, off, clamping, free layout or grid);
+  - `canvas/canvas-messages.test.ts` (the `gridPlace` message);
+  - `style-panel/advanced-styling.test.tsx` (the Arrange choices and the column and row lists, per screen size);
+  - `site-design/site-design.test.tsx` (making, using, editing every or only this one, places staying own, detaching, adding and saving colours, refusing bad values);
+  - `browser-tests/canvas-placed-grid.test.ts` (real Chromium: drawing, dragging with guides, the corner handle, arrow keys).
+- `core`: `site-design/site-design.test.ts` (empty start, variables in the site stylesheet, a page drawn with a shared style, unsafe values refused, permission).
+
+**Fixed while checking in the browser:**
+
+- The column and row lists overflowed the panel, because the full-width input style was on short lists.
+- The site styles rows squeezed the name to nothing. The value now has its own line.
+- With a shared style in use, Arrange showed "1 to 12" because it read the shared look rather than the element's own place. Place changes now always go to the element.
+
+**Known limits:**
+
+- Changes to the site's design (variables, the shared look itself) aren't in the page's Undo.
+- Variables don't change with a dark colour scheme.
+- Canvas zoom, pan and the right-click menu come separately.
+
+**Screenshots** (in `screenshots/designer-layout/`): `site-desktop`, `site-phone-390`, `builder-grid-place-light`, `builder-grid-place-dark`, `builder-grid-dragging-light`, `builder-shared-style-light`, `builder-site-styles-light` and `builder-site-styles-dark`. At 390px wide the designer shows its "needs a bigger screen" page, as before.

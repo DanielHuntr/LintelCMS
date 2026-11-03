@@ -20,6 +20,7 @@ function renderBuilder(start: SiteDesign = emptySiteDesign, canChange = true) {
     {
       type: "section",
       name: "Cards",
+      placedGrid: { columns: 12, stackOnPhone: true },
       children: [
         {
           type: "box",
@@ -113,6 +114,12 @@ describe("shared styles in the Style panel", () => {
     await person.selectOptions(screen.getByRole("combobox", { name: "Shared style" }), "Card");
     expect(node("Second card")).toMatchObject({ sharedStyle: "card", styles: { base: {} } });
     expect(screen.getByText("2 on this page")).toBeInTheDocument();
+
+    // Where it sits stays its own, even while changes go to the shared style.
+    const arrange = await open(person, "Arrange");
+    await person.selectOptions(within(arrange).getByRole("combobox", { name: "Last column" }), "4");
+    expect(node("Second card")?.styles.base.gridColumn).toBe("1 / span 4");
+    expect(design().sharedStyles[0]?.styles.base.gridColumn).toBeUndefined();
 
     // Every "Card" by default: the change goes to the shared style.
     const spacing = screen.getByRole("group", { name: "Space inside" });
