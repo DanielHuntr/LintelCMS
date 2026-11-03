@@ -116,6 +116,33 @@ describe("starting from a template", () => {
     }
   });
 
+  it("applies Atelier with its fonts and motion, and a later template goes back to its pairing", async () => {
+    const response = await owner("POST", "/starter-sites/atelier/apply", { publish: true });
+    expect(response.statusCode, response.body).toBe(201);
+    const website = (await owner("GET", "/website")).json();
+    expect(website).toMatchObject({ headingFont: "Instrument Serif", bodyFont: "Work Sans" });
+    const effects = (await owner("GET", "/website/effects")).json();
+    expect(effects).toMatchObject({
+      smoothScroll: { strength: "strong" },
+      pageTransition: { style: "slide" },
+      intro: { style: "name", text: "Wrenfold" },
+    });
+
+    const home = await visit("/");
+    expect(home.statusCode).toBe(200);
+    expect(home.body).toContain("Made slowly, kept for good");
+    expect(home.body).toContain('src="/_lintel/illustrations/atelier-workshop.svg"');
+    expect(home.body).toContain("Wrenfold");
+    expect((await visit("/_lintel/illustrations/atelier-chair.svg")).statusCode).toBe(200);
+    expect((await visit("/collection")).body).toContain("Hollin armchair");
+
+    await owner("POST", "/starter-sites/bakery/apply", { existingPages: "replace" });
+    expect((await owner("GET", "/website")).json()).toMatchObject({
+      headingFont: null,
+      bodyFont: null,
+    });
+  });
+
   it("plays animations with the motion runtime, only on pages that have them", async () => {
     await owner("POST", "/starter-sites/consultant/apply", { publish: true });
     const home = await visit("/");

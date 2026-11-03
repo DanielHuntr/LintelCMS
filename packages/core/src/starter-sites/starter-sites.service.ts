@@ -282,7 +282,12 @@ async function applyTheme(
   context: StarterSiteContext,
 ): Promise<boolean> {
   // The template's theme is checked like any other change to the website's look.
-  const changes = updateWebsiteRequestSchema.parse(site.theme);
+  // A template without fonts of its own goes back to its pairing's fonts.
+  const changes = updateWebsiteRequestSchema.parse({
+    headingFont: null,
+    bodyFont: null,
+    ...site.theme,
+  });
   await updateWebsite(database, changes, {
     templates: context.templates,
     builtInSiteUrl: context.builtInSiteUrl,
