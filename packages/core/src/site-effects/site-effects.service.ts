@@ -11,31 +11,37 @@ import {
 } from "@lintel/motion/effects";
 import type { SiteChrome, SiteEffectsHead } from "@lintel/site-components";
 import type { DatabaseOrTransaction } from "../database/client.js";
+import type { Site } from "../sites/sites.table.js";
 import { findStoredSiteEffects, saveStoredSiteEffects } from "./site-effects.repository.js";
 
 /**
  * Motion across the whole website: the page transition and the first-visit intro (chosen
  * in Settings → Your website), and the cursor and smooth scrolling (in the page builder's
  * Animate tab). Everything is off until someone switches it on, so
- * a site that never touches this ships no effect code at all.
+ * a site that never touches this ships no effect code at all. Each site of a multisite
+ * install has its own (see docs/decisions/0045).
  */
 
 /** The saved settings, or the defaults when nothing (or something unreadable) is saved. */
 export async function readSiteEffects(
   database: DatabaseOrTransaction,
+  site: Pick<Site, "id">,
 ): Promise<SiteEffectSettings> {
-  const parsed = siteEffectSettingsSchema.safeParse((await findStoredSiteEffects(database)) ?? {});
+  const parsed = siteEffectSettingsSchema.safeParse(
+    (await findStoredSiteEffects(database, site.id)) ?? {},
+  );
   return parsed.success ? parsed.data : defaultSiteEffectSettings;
 }
 
 /** Saves a change to any of them; the rest stay as they were. */
 export async function updateSiteEffects(
   database: DatabaseOrTransaction,
+  site: Pick<Site, "id">,
   changes: Partial<SiteEffectSettings>,
 ): Promise<SiteEffectSettings> {
-  const current = await readSiteEffects(database);
+  const current = await readSiteEffects(database, site);
   const next = siteEffectSettingsSchema.parse({ ...current, ...changes });
-  await saveStoredSiteEffects(database, next);
+  await saveStoredSiteEffects(database, site.id, next);
   return next;
 }
 

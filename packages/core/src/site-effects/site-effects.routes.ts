@@ -2,10 +2,11 @@ import { siteEffectSettingsSchema } from "@lintel/motion/effects";
 import type { FastifyInstance } from "fastify";
 import { requirePermission } from "../auth/require-permission.js";
 import { parseRequest } from "../http/http-errors.js";
+import { resolveEditingSite } from "../sites/request-site.js";
 import { readSiteEffects, updateSiteEffects } from "./site-effects.service.js";
 
 /**
- * HTTP only:
+ * HTTP only, for the site being edited (the `Lintel-Site` header):
  *
  *   GET /website/effects  (entries:read)    -> { pageTransition, cursor, intro, smoothScroll }
  *   PUT /website/effects  (settings:update) any of those -> all of them
@@ -13,8 +14,10 @@ import { readSiteEffects, updateSiteEffects } from "./site-effects.service.js";
 const updateSiteEffectsRequestSchema = siteEffectSettingsSchema.partial();
 
 export async function siteEffectsRoutes(server: FastifyInstance) {
-  server.get("/website/effects", { preHandler: requirePermission("entries:read") }, async () =>
-    readSiteEffects(server.database),
+  server.get(
+    "/website/effects",
+    { preHandler: requirePermission("entries:read") },
+    async (request) => readSiteEffects(server.database, await resolveEditingSite(request)),
   );
 
   server.put(
@@ -27,7 +30,7 @@ export async function siteEffectsRoutes(server: FastifyInstance) {
       const changes = Object.fromEntries(
         Object.entries(parsed).filter(([key]) => sent.has(key)),
       ) as typeof parsed;
-      return updateSiteEffects(server.database, changes);
+      return updateSiteEffects(server.database, await resolveEditingSite(request), changes);
     },
   );
 }

@@ -12,6 +12,8 @@ import { readPageDesign } from "../website/designed-pages.js";
 import { isHomePage, siteEffectsHead } from "./site-effects.service.js";
 import { readEffectModules } from "../website/site-assets.js";
 import { buildSiteServer } from "../website/site-server.js";
+import { DEFAULT_TENANT_ID } from "../database/columns.js";
+import { upsertSettingValue } from "../settings/settings.repository.js";
 
 function designWithEffects(): PageDocument {
   const page = createEmptyPage();
@@ -247,5 +249,72 @@ describe("site-wide effects", () => {
     expect(response.body).toContain("magnetic");
     const missing = await site.inject({ method: "GET", url: "/_lintel/effects/manifest.json" });
     expect(missing.statusCode).toBe(404);
+  });
+  describe("with several sites", () => {
+    beforeEach(async () => {
+      const created = await owner("POST", "/sites", {
+        handle: "france",
+        name: "Acme France",
+        hostnames: ["acme.fr"],
+        defaultLocale: "fr-FR",
+      });
+      expect(created.statusCode, created.body).toBe(201);
+    });
+
+    /** The effects a site's home page carries, visited at the site's own domain. */
+    async function effectsOn(host?: string): Promise<{ modules?: Record<string, unknown> }> {
+      const home = await site.inject({ method: "GET", url: "/", headers: host ? { host } : {} });
+      expect(home.statusCode).toBe(200);
+      const data = /<script type="application\/json" id="lintel-effects">(.*?)<\/script>/.exec(
+        home.body,
+      );
+      return JSON.parse(data?.[1] ?? "{}");
+    }
+
+    it("give each site its own motion", async () => {
+      await owner("PUT", "/website/effects", { smoothScroll: { strength: "gentle" } });
+      const france = await owner("PUT", "/website/effects?site=france", {
+        cursor: { style: "ring", trail: "none", colour: "brand", size: 32 },
+      });
+      expect(france.statusCode, france.body).toBe(200);
+      expect(france.json()).toMatchObject({ smoothScroll: { strength: "off" } });
+      expect((await owner("GET", "/website/effects")).json()).toMatchObject({
+        smoothScroll: { strength: "gentle" },
+        cursor: { style: "none" },
+      });
+
+      await owner("POST", "/starter-sites/bakery/apply", { publish: true });
+      await owner("POST", "/starter-sites/bakery/apply?site=france", { publish: true });
+      expect(Object.keys((await effectsOn()).modules ?? {})).toEqual(["smooth-scroll"]);
+      expect(Object.keys((await effectsOn("acme.fr")).modules ?? {})).toEqual(["cursor"]);
+    });
+
+    it("show every site the motion saved before sites had their own, until it changes", async () => {
+      await upsertSettingValue(testDatabase.database, DEFAULT_TENANT_ID, "siteEffects", {
+        ...defaultSiteEffectSettings,
+        pageTransition: { style: "fade", duration: 300 },
+      });
+      for (const url of ["/website/effects", "/website/effects?site=france"]) {
+        expect((await owner("GET", url)).json().pageTransition.style).toBe("fade");
+      }
+      await owner("PUT", "/website/effects?site=france", { pageTransition: { style: "none" } });
+      expect((await owner("GET", "/website/effects")).json().pageTransition.style).toBe("fade");
+      expect((await owner("GET", "/website/effects?site=france")).json()).toMatchObject({
+        pageTransition: { style: "none" },
+      });
+    });
+
+    it("need the same permission as before, and the site", async () => {
+      await createTestUser(testDatabase.database, "writer@example.com", [["entries:*"]]);
+      const writer = requestsAs(api, await signInAndGetCookies(api, "writer@example.com"));
+      const refused = await writer("PUT", "/website/effects?site=france", {
+        smoothScroll: { strength: "gentle" },
+      });
+      expect(refused.statusCode).toBe(403);
+      await owner("PUT", "/sites/access/owner@example.com-role-0", { siteHandles: ["france"] });
+      const limited = requestsAs(api, await signInAndGetCookies(api, "owner@example.com"));
+      expect((await limited("PUT", "/website/effects", { cursor: {} })).statusCode).toBe(403);
+      expect((await limited("GET", "/website/effects?site=france")).statusCode).toBe(200);
+    });
   });
 });

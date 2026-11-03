@@ -153,7 +153,8 @@ licence allows use in a site builder.
 ## Site-wide settings
 
 `GET` and `PUT /website/effects` (`settings:update` to change) hold `{ pageTransition,
-cursor, intro }`. Page transitions use cross-document view transitions
+cursor, intro }`. With several sites, each site has its own: send the site's handle as
+`?site=` or the `Lintel-Site` header. Page transitions use cross-document view transitions
 (`@view-transition { navigation: auto }`) where the browser has them, with no script; the
 `transitions` module covers other browsers by covering the page, playing any `pageExit`
 animations, then navigating. Elements given the **Carry across pages** effect share a

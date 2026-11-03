@@ -4,11 +4,14 @@ The site's design system, made in the page builder: design variables (named colo
 and fonts such as "Sand" or "Wide gutter") and shared styles (a look saved under a name,
 such as "Card", used by many elements). Both start empty.
 
-- `site-design.routes.ts`: `GET` and `PUT /website/design`. Changing it needs
-  `builder:blocks`, since, like a block, it changes every page.
+- `site-design.routes.ts`: `GET` and `PUT /website/design`, for the site being edited (the
+  `Lintel-Site` header). Changing it needs `builder:blocks`, since, like a block, it changes
+  every page.
 - `site-design.service.ts`: reading (an empty design when nothing readable is saved) and
   saving, checked by `siteDesignSchema`.
-- `site-design.repository.ts`: the one `siteDesign` row in the settings table.
+- `site-design.repository.ts`: one `siteDesign:<site id>` row per site in the settings
+  table. A site without one reads the single `siteDesign` row kept before sites had their
+  own (decision 0045).
 
 What variables and shared styles are, and how a page is drawn with them, lives in
 `@lintel/builder-model`'s `site-design/` folder. The website gets the variables as custom

@@ -143,6 +143,30 @@ describe("starting from a template", () => {
     });
   });
 
+  it("gives its motion and design variables to the site being edited only", async () => {
+    await owner("POST", "/sites", {
+      handle: "france",
+      name: "Acme France",
+      defaultLocale: "fr-FR",
+    });
+    await owner("PUT", "/website/effects", { cursor: { style: "dot", size: 40 } });
+    const mainDesign = (await owner("GET", "/website/design")).json();
+    const response = await owner("POST", "/starter-sites/studio/apply?site=france", {
+      publish: true,
+    });
+    expect(response.statusCode, response.body).toBe(201);
+
+    const french = (await owner("GET", "/website/effects?site=france")).json();
+    expect(french.smoothScroll.strength).not.toBe("off");
+    expect((await owner("GET", "/website/design?site=france")).json().variables).not.toEqual([]);
+    expect((await owner("GET", "/website/effects")).json()).toMatchObject({
+      cursor: { style: "dot", size: 40 },
+      smoothScroll: { strength: "off" },
+      pageTransition: { style: "none" },
+    });
+    expect((await owner("GET", "/website/design")).json()).toEqual(mainDesign);
+  });
+
   it("applies Studio: its fonts, motion and a home page led by the studio's name", async () => {
     const response = await owner("POST", "/starter-sites/studio/apply", { publish: true });
     expect(response.statusCode, response.body).toBe(201);

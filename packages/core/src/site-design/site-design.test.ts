@@ -9,6 +9,9 @@ import { requestsAs, type SendRequest, startTestServer } from "../testing/test-s
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
 import { drawPageDesign } from "../website/designed-pages.js";
 import { buildSiteServer } from "../website/site-server.js";
+import { DEFAULT_TENANT_ID } from "../database/columns.js";
+import { upsertSettingValue } from "../settings/settings.repository.js";
+import { findOrCreateDefaultSite } from "../sites/sites.service.js";
 import { readSiteDesign } from "./site-design.service.js";
 
 describe("the site's design system", () => {
@@ -75,7 +78,12 @@ describe("the site's design system", () => {
         sharedStyle: "roomy",
       },
     ];
-    const sharedStyles = sharedStylesById(await readSiteDesign(testDatabase.database));
+    const sharedStyles = sharedStylesById(
+      await readSiteDesign(
+        testDatabase.database,
+        await findOrCreateDefaultSite(testDatabase.database),
+      ),
+    );
     const drawn = drawPageDesign(design, { sharedStyles });
     expect(drawn.css).toContain(
       ".hero {\n  padding-top: 7rem;\n  padding-bottom: 1rem;\n  background-color: var(--lintel-var-sand);\n}",
@@ -128,7 +136,12 @@ describe("the site's design system", () => {
       },
     ];
     const drawn = drawPageDesign(design, {
-      tagStyles: (await readSiteDesign(testDatabase.database)).tagStyles,
+      tagStyles: (
+        await readSiteDesign(
+          testDatabase.database,
+          await findOrCreateDefaultSite(testDatabase.database),
+        )
+      ).tagStyles,
     });
     expect(drawn.css).toContain("border-radius: 999px;");
     expect(drawn.css).toContain("color: red;");
@@ -141,5 +154,74 @@ describe("the site's design system", () => {
     expect(unsafe.statusCode).toBe(400);
     const refused = await writer("PUT", "/website/design", { variables: [], sharedStyles: [] });
     expect(refused.statusCode).toBe(403);
+  });
+  describe("with several sites", () => {
+    const sand = { id: "sand", name: "Sand", kind: "colour", value: "#efe6d6" };
+    const slate = { id: "slate", name: "Slate", kind: "colour", value: "#3b4252" };
+
+    beforeEach(async () => {
+      const created = await owner("POST", "/sites", {
+        handle: "france",
+        name: "Acme France",
+        hostnames: ["acme.fr"],
+        defaultLocale: "fr-FR",
+      });
+      expect(created.statusCode, created.body).toBe(201);
+    });
+
+    /** The stylesheet a site's home page links to, visited at the site's own domain. */
+    async function stylesheetOf(host?: string): Promise<string> {
+      const headers = host ? { host } : undefined;
+      const home = await site.inject({ method: "GET", url: "/", headers });
+      const path = /href="(\/_lintel\/site-[^"]+\.css)"/.exec(home.body)?.[1];
+      expect(path, home.body.slice(0, 500)).toBeDefined();
+      return (await site.inject({ method: "GET", url: path ?? "", headers })).body;
+    }
+
+    it("keeps each site's variables to itself, on the website too", async () => {
+      await owner("PUT", "/website/design", { variables: [sand], sharedStyles: [] });
+      const france = await owner("PUT", "/website/design?site=france", {
+        variables: [slate],
+        sharedStyles: [],
+      });
+      expect(france.statusCode, france.body).toBe(200);
+
+      expect((await owner("GET", "/website/design")).json().variables).toEqual([sand]);
+      expect((await owner("GET", "/website/design?site=france")).json().variables).toEqual([slate]);
+
+      await owner("POST", "/starter-sites/bakery/apply", { publish: true });
+      await owner("POST", "/starter-sites/bakery/apply?site=france", { publish: true });
+      const main = await stylesheetOf();
+      const french = await stylesheetOf("acme.fr");
+      expect(main).toContain("--lintel-var-sand: #efe6d6;");
+      expect(main).not.toContain("--lintel-var-slate");
+      expect(french).toContain("--lintel-var-slate: #3b4252;");
+      expect(french).not.toContain("--lintel-var-sand");
+    });
+
+    it("shows every site the design saved before sites had their own, until it changes", async () => {
+      await upsertSettingValue(testDatabase.database, DEFAULT_TENANT_ID, "siteDesign", {
+        variables: [sand],
+        sharedStyles: [],
+      });
+      expect((await owner("GET", "/website/design")).json().variables).toEqual([sand]);
+      expect((await owner("GET", "/website/design?site=france")).json().variables).toEqual([sand]);
+
+      await owner("PUT", "/website/design?site=france", { variables: [slate], sharedStyles: [] });
+      expect((await owner("GET", "/website/design")).json().variables).toEqual([sand]);
+      expect((await owner("GET", "/website/design?site=france")).json().variables).toEqual([slate]);
+    });
+
+    it("needs the same permissions as before, and the site", async () => {
+      const refused = await writer("PUT", "/website/design?site=france", {
+        variables: [slate],
+        sharedStyles: [],
+      });
+      expect(refused.statusCode).toBe(403);
+      await owner("PUT", "/sites/access/owner@example.com-role-0", { siteHandles: ["france"] });
+      const limited = requestsAs(api, await signInAndGetCookies(api, "owner@example.com"));
+      expect((await limited("GET", "/website/design")).statusCode).toBe(403);
+      expect((await limited("GET", "/website/design?site=france")).statusCode).toBe(200);
+    });
   });
 });
