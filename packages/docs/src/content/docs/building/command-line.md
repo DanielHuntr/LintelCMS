@@ -196,6 +196,22 @@ Help for writing [Liquid templates](/building/liquid-templates/#editor-support) 
   come from the content model files when there are some, so this works while `pnpm dev`
   runs; otherwise from the database. While `pnpm dev` runs it keeps them up to date itself.
 
+## addons
+
+```bash
+pnpm lintel addons add <package> [--off]
+pnpm lintel addons remove <package or id>
+pnpm lintel addons list
+pnpm lintel addons new <name> [--folder <path>]
+pnpm lintel addons build [--watch]
+pnpm lintel addons link <folder>
+pnpm lintel addons unlink <folder or id>
+```
+
+Installs and removes add-ons in the site's Lintel folder, and helps you build your own. Add-ons'
+own commands run as `pnpm lintel <add-on id>:<command>`. See
+[Building add-ons](/building/building-addons/).
+
 ## create-admin
 
 ```bash

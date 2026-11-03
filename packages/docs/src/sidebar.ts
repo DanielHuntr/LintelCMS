@@ -63,6 +63,7 @@ export const buildingPages = [
   "building/plugins",
   "building/writing-a-plugin",
   "building/plugin-api",
+  "building/building-addons",
   "building/dashboards",
   "building/workflows",
   "building/branding",
