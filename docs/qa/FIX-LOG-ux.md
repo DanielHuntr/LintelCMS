@@ -1193,3 +1193,11 @@ Commit: 3ea18b0.
 **Found in the UI sweep, approved by Daniel:** the moment tiles (Appears, Hover, Click, Scroll, Always) used the iOS system blue, orange, purple, teal and green. That is the generic look removed elsewhere (UX-018, UX-020), and it clashed with the admin's warm neutrals.
 
 **Fix:** the tiles now use quiet, earthy tones: slate, ochre, plum, sage and olive (`#4f6b78`, `#93652b`, `#76586f`, `#3f7466`, `#66733a`). A white icon on each passes 5:1 or better, in light and dark mode. The chosen moment's icon in the picker now uses the normal text colour instead of its tile colour, so it reads in both modes (`motion-editor/src/motion-panel/MomentPicker.tsx`).
+
+## LINTEL-UX-063: Start and End lines you can see (3 November 2026)
+
+**Asked by Daniel:** "if its on page scrolls, should they see the scrubs so they can set when it starts / ends?" They should, and the builder draws them for a selected element's scroll scene.
+
+**Found:** in Daniel's case no lines showed at all, because the admin dev server was serving a canvas script from before the lines existed (it reads it once at start). Restarting it brought them back, and a built copy of Lintel was never affected. What remained was that a default scene runs from the bottom of the screen (Start, 100%) to the top (End, 0%), so the lines sat exactly on the canvas's edges, with End's label above the top.
+
+**Fix:** the lines are drawn just inside the canvas (1.5% to 98.5%), and a line near the top shows its label below it (`canvas-frame-script.ts`). The scene's saved positions are unchanged.

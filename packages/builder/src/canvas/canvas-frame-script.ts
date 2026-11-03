@@ -605,7 +605,10 @@ export function runCanvasFrame(snap: typeof snapBox, fitGrid: typeof fitToGrid):
       line.setAttribute("aria-description", markers.dragHint);
       let at = markers[which];
       const place = () => {
-        line.style.top = (at * 100).toFixed(2) + "%";
+        // A scene usually runs from the bottom edge to the top edge, so the lines are kept
+        // just inside the screen, with the top one's label below it, to stay visible.
+        line.style.top = (Math.min(0.985, Math.max(0.015, at)) * 100).toFixed(2) + "%";
+        line.classList.toggle("lintel-scene-line--near-top", at < 0.06);
         line.setAttribute("aria-valuenow", String(Math.round(at * 100)));
         line.setAttribute("aria-valuetext", Math.round(at * 100) + "%");
       };
@@ -1148,6 +1151,7 @@ const canvasStyles = `
 .lintel-scene-line { position: absolute; left: 0; right: 0; height: 0; border-top: 1.5px dashed #0071e3; pointer-events: auto; cursor: ns-resize; outline: none; }
 .lintel-scene-line::before { content: ""; position: absolute; left: 0; right: 0; top: -9px; height: 18px; }
 .lintel-scene-line span { position: absolute; left: 8px; top: -11px; padding: 1px 7px; border-radius: 4px; background: #0071e3; color: #fff; font: 600 11px/18px -apple-system, "Segoe UI", system-ui, sans-serif; }
+.lintel-scene-line--near-top span { top: 4px; }
 .lintel-scene-line:focus-visible span { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #0071e3; }
 .lintel-outline { position: absolute; box-sizing: border-box; }
 .lintel-drop { position: absolute; box-sizing: border-box; pointer-events: none; }
