@@ -307,14 +307,16 @@ export const backToTopComponent = defineComponent({
 
 /**
  * Where an element belongs on a page when it's added from Insert, whatever is selected:
- * the Header at the very top; the Footer, and sections drawn as the page's footer (the
- * footer templates), at the very bottom. Null for everything else.
+ * the Header, and sections drawn as the page's header, at the very top; the Footer, and
+ * sections drawn as the page's footer (the footer templates), at the very bottom. Null for
+ * everything else.
  */
 export function pageEdgeFor(element: {
   type: string;
   props?: Readonly<Record<string, unknown>>;
 }): "top" | "bottom" | null {
   if (element.type === "siteHeader") return "top";
+  if (element.type === "section" && element.props?.element === "header") return "top";
   if (element.type === "siteFooter") return "bottom";
   if (element.type === "section" && element.props?.element === "footer") return "bottom";
   return null;
@@ -322,11 +324,12 @@ export function pageEdgeFor(element: {
 
 /**
  * Whether a page brings its own header and footer, so the website (and the canvas) leaves
- * out the site's own: a visible Header or Footer element anywhere, or a footer section at
- * the top level of the page.
+ * out the site's own: a visible Header or Footer element anywhere, or a header or footer
+ * section at the top level of the page. A header section used to be ignored, so a page
+ * with its own nav showed the site's above it as well.
  */
 export function ownSiteChrome(root: PageNode): { header: boolean; footer: boolean } {
-  let header = false;
+  let header = root.children.some((child) => !child.hidden && pageEdgeFor(child) === "top");
   let footer = root.children.some((child) => !child.hidden && pageEdgeFor(child) === "bottom");
   const visit = (node: PageNode) => {
     if (node.hidden) return;
