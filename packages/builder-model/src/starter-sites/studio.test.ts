@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { standardCatalogue } from "../components/component-catalogue.js";
 import { createCountingNodeIds } from "../tree/node-ids.js";
+import { createNode } from "../tree/create-node.js";
 import { listNodes } from "../tree/tree-queries.js";
 import { findIllustration } from "./illustrations.js";
 import { buildStarterPage } from "./starter-site.js";
@@ -51,6 +52,25 @@ describe("the Studio starter site", () => {
       expect(row.styles.hover?.color).toBe("var(--lintel-var-cobalt)");
       const name = /illustrations\/([a-z-]+)\.svg$/.exec(String(picture?.params.src))?.[1] ?? "";
       expect(findIllustration(name), name).toBeDefined();
+    }
+  });
+
+  it("shows its navigation and its footer (with the Rotterdam clock and cobalt) on every page", () => {
+    const shared = (section: Parameters<typeof createNode>[0] | undefined) =>
+      section ? listNodes(createNode(section, standardCatalogue, createCountingNodeIds("s"))) : [];
+    const navigation = shared(studio?.siteSections?.navigation);
+    const footer = shared(studio?.siteSections?.footer);
+    expect(navigation[0]?.props.element).toBe("header");
+    expect(navigation.map((node) => node.type)).toEqual(
+      expect.arrayContaining(["siteLogo", "navigation", "mobileMenu"]),
+    );
+    expect(footer[0]?.props.element).toBe("footer");
+    expect(footer.find((node) => node.type === "clock")?.props.label).toBe("Rotterdam");
+    expect(JSON.stringify(footer)).toContain("var(--lintel-var-cobalt)");
+    for (const page of ["home", "work", "studio", "contact"]) {
+      const elements = pageNodes(page).map((node) => node.props.element);
+      expect(elements, page).not.toContain("header");
+      expect(elements, page).not.toContain("footer");
     }
   });
 

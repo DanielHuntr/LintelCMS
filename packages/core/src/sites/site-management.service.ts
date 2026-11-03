@@ -1,4 +1,5 @@
 import { removeSiteFromCollections } from "../collections/collections.repository.js";
+import { ensureStarterSiteSections } from "../site-sections/site-sections.service.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import { copyMenusToSite } from "../navigation/navigation.service.js";
@@ -162,6 +163,8 @@ export async function createSite(
       });
     }
     await copyMenusToSite(transaction, defaultSite, inserted);
+    // A new site starts with a navigation and a footer, so it never goes live without a menu.
+    await ensureStarterSiteSections(transaction, inserted);
     return inserted;
   });
   return describeSite(database, site, 0);

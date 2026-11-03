@@ -5,6 +5,8 @@ import { PluginCatalogue } from "../plugins/plugin-catalogue.js";
 import { pluginRegistry } from "../plugins/plugins.registry.js";
 import { findEnabledPluginIds } from "../plugins/plugins.service.js";
 import { readSetting } from "../settings/settings.service.js";
+import { readSiteSections } from "../site-sections/site-sections.service.js";
+import { findOrCreateDefaultSite } from "../sites/sites.service.js";
 import { useTestDatabase } from "../testing/test-database.js";
 import { saveSiteChoices } from "./site-setup.service.js";
 import { pluginsForSiteType } from "./site-presets.js";
@@ -35,6 +37,19 @@ describe("the site's name and kind", () => {
       "site_settings",
     );
     expect((await findNavigationOrFail(testDatabase.database, "main")).handle).toBe("main");
+  });
+
+  it("gives a new site a navigation and a footer, so it never goes live without a menu", async () => {
+    await saveSiteChoices(testDatabase.database, builtInPlugins, {
+      siteName: "Brightside",
+      siteType: "blank",
+    });
+    const sections = await readSiteSections(
+      testDatabase.database,
+      await findOrCreateDefaultSite(testDatabase.database),
+    );
+    expect(sections.navigation?.id).toBe("site-navigation");
+    expect(sections.footer?.id).toBe("site-footer");
   });
 
   it("can be saved again to change the choice", async () => {

@@ -6,6 +6,7 @@ import {
   createRandomNodeId,
   findChangedCode,
   findSectionTemplate,
+  type NodeBlueprint,
   noSiteSections,
   type PageDocument,
   type PageNode,
@@ -106,21 +107,43 @@ export async function changeSiteSections(
   return next;
 }
 
-/** The sections a new site starts with, so nobody publishes a site with no menu. */
-export function starterSiteSections(): SiteSections {
-  const make = (templateId: string, slot: SiteSectionSlot): PageNode | null => {
-    const template = findSectionTemplate(templateId);
-    return template
-      ? asSiteSection(
-          createNode(template.blueprint, pageComponentCatalogue, createRandomNodeId),
-          slot,
-        )
-      : null;
-  };
+/** A section made from a blueprint, with fresh ids, as one of the site's. */
+function makeSection(blueprint: NodeBlueprint | undefined, slot: SiteSectionSlot): PageNode | null {
+  return blueprint
+    ? asSiteSection(createNode(blueprint, pageComponentCatalogue, createRandomNodeId), slot)
+    : null;
+}
+
+/**
+ * The sections a new site starts with, so nobody publishes a site with no menu: a starter
+ * template's own, where it has them, else Logo and menu and the Centred footer.
+ */
+export function starterSiteSections(
+  own: { navigation?: NodeBlueprint; footer?: NodeBlueprint } = {},
+): SiteSections {
   return {
-    navigation: make("navigation-logo-left", "navigation"),
-    footer: make("footer-centred", "footer"),
+    navigation: makeSection(
+      own.navigation ?? findSectionTemplate("navigation-logo-left")?.blueprint,
+      "navigation",
+    ),
+    footer: makeSection(own.footer ?? findSectionTemplate("footer-centred")?.blueprint, "footer"),
   };
+}
+
+/**
+ * A starter template's navigation and footer for a site: when the template's look is applied
+ * they replace the site's (they are part of that look); otherwise the site gets them only
+ * if it has never had sections of its own.
+ */
+export async function applyStarterSiteSections(
+  database: DatabaseOrTransaction,
+  site: Site,
+  own: { navigation?: NodeBlueprint; footer?: NodeBlueprint } | undefined,
+  replace: boolean,
+): Promise<void> {
+  const sections = starterSiteSections(own);
+  if (replace) await saveStoredSiteSections(database, site.id, sections);
+  else await saveStoredSiteSectionsIfMissing(database, site.id, sections);
 }
 
 /**

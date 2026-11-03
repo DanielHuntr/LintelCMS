@@ -1,14 +1,15 @@
 import type { NodeBlueprint } from "../components/component-definition.js";
 import type { NodeStyles, StyleDeclarations } from "../document/page-document.schema.js";
 import { animate, space } from "../sections/section-parts.js";
+import { siteLogo, siteMenuRow } from "../sections/site-navigation.js";
 import type { StarterSite } from "./starter-site.js";
 
 /**
  * Folio: a personal site for a photographer and art director. Off-white paper and
  * near-black ink in light mode, the other way round in dark, one grotesque (Archivo) with a
  * monospace (Space Mono) for the small details, and a strict twelve-column grid that the
- * big pieces step across. The header and footer are one section each, the same on every
- * page.
+ * big pieces step across. The navigation and footer are the site's own (site-sections/),
+ * shown on every page.
  */
 
 // Colours follow the visitor's light or dark setting (CSS light-dark), so they are only set here.
@@ -121,31 +122,28 @@ function link(words: string, href: string, styles: StyleDeclarations = {}): Node
   };
 }
 
-/** The top of every page: the name, the time where she is and the menu. */
+/** The site's navigation, on every page: the name, the time where she is and the menu. */
 function header(): NodeBlueprint {
   return band(
     "Header",
     [
-      link(name, "/", { fontWeight: "700", fontSize: "1rem", letterSpacing: "-0.01em" }),
+      // The site's name, linking home, so it follows Site settings and the site's address.
+      siteLogo("name", {
+        ...plainLink,
+        fontFamily: "inherit",
+        fontWeight: "700",
+        fontSize: "1rem",
+        letterSpacing: "-0.01em",
+        minHeight: "0",
+      }),
       {
         type: "clock",
         name: "Local time",
         props: { zone: "Europe/Lisbon", hours: "24", label: "Lisbon" },
         styles: { base: { ...detail }, phone: { order: "3", width: "100%" } },
       },
-      {
-        type: "box",
-        name: "Menu",
-        props: { element: "nav" },
-        styles: {
-          base: { display: "flex", flexDirection: "row", gap: "clamp(1rem, 2.5vw, 2rem)" },
-        },
-        children: [
-          link("Projects", "/projects"),
-          link("About", "/about"),
-          link("Contact", "/contact"),
-        ],
-      },
+      // The site's main menu (Content → Menus), which the template fills with its pages.
+      siteMenuRow({ always: true, styles: { fontWeight: "400", color: ink } }),
     ],
     {
       element: "header",
@@ -166,7 +164,7 @@ function header(): NodeBlueprint {
   );
 }
 
-/** The bottom of every page: how to write, where to follow, and the small print. */
+/** The site's footer, on every page: how to write, where to follow, and the small print. */
 function footer(): NodeBlueprint {
   return band(
     "Footer",
@@ -449,13 +447,13 @@ export const folioSite: StarterSite = {
     pageTransition: { style: "fade", duration: 400 },
     intro: { style: "counter", text: name, background: "#121211", colour: "#f2f0eb" },
   },
+  siteSections: { navigation: header(), footer: footer() },
   pages: [
     {
       slug: "home",
       title: "Home",
       summary: `${name}: photographs of rooms, objects and the people who make them.`,
       sections: [
-        header(),
         gridBand(
           "Introduction",
           [
@@ -581,7 +579,6 @@ export const folioSite: StarterSite = {
           ],
           { top: 6, bottom: 9 },
         ),
-        footer(),
       ],
     },
     {
@@ -589,7 +586,6 @@ export const folioSite: StarterSite = {
       title: "Projects",
       summary: "Commissions and personal work, from 2021 to now.",
       sections: [
-        header(),
         pageTop({
           label: `Index, ${works.at(-1)?.year} – ${works[0]?.year}`,
           title: "Projects",
@@ -617,7 +613,6 @@ export const folioSite: StarterSite = {
           ],
           { top: 2, bottom: 9 },
         ),
-        footer(),
       ],
     },
     {
@@ -625,7 +620,6 @@ export const folioSite: StarterSite = {
       title: "About",
       summary: `Who ${name} is, who she has worked with and what she has won.`,
       sections: [
-        header(),
         gridBand(
           "About",
           [
@@ -720,7 +714,6 @@ export const folioSite: StarterSite = {
           ],
           { top: 6, bottom: 9 },
         ),
-        footer(),
       ],
     },
     {
@@ -728,7 +721,6 @@ export const folioSite: StarterSite = {
       title: "Contact",
       summary: "Commissions, prints and press: how to get in touch.",
       sections: [
-        header(),
         withStyles(
           gridBand(
             "Contact",
@@ -809,7 +801,6 @@ export const folioSite: StarterSite = {
             },
           },
         ),
-        footer(),
       ],
     },
   ],

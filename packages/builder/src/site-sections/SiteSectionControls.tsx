@@ -6,7 +6,7 @@ import {
   siteSectionSlotOf,
   type SiteSectionSlot,
 } from "@lintel/builder-model";
-import { EyeOff, PanelBottom, PanelTop, X } from "lucide-react";
+import { ChevronRight, EyeOff, PanelBottom, PanelTop, X } from "lucide-react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { ToggleField } from "../panels/content-fields.js";
 
@@ -106,7 +106,11 @@ export function SectionSiteTools({
   const isOwnHeader = node.props.element === "header";
   return (
     <details className="group hairline-top px-4 py-3">
-      <summary className="cursor-pointer list-none text-footnote font-medium text-label-secondary hover:text-label focus-visible:focus-ring">
+      <summary className="flex cursor-pointer list-none items-center gap-1 text-footnote font-medium text-label-secondary hover:text-label focus-visible:focus-ring">
+        <ChevronRight
+          aria-hidden="true"
+          className="size-3.5 transition-transform group-open:rotate-90 motion-reduce:transition-none"
+        />
         {text("pageBuilder.siteSection.tools")}
       </summary>
       <div className="mt-2 flex flex-col gap-1.5">
@@ -149,7 +153,7 @@ export function SiteSectionNote({
 }) {
   const text = useBuilderText();
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-4 z-10 flex justify-center px-4">
+    <div className="pointer-events-none absolute inset-x-0 bottom-16 z-10 flex justify-center px-4">
       <div
         role="status"
         className="pointer-events-auto flex max-w-xl flex-wrap items-center gap-x-3 gap-y-2 rounded-card bg-surface px-3 py-2 text-footnote text-label shadow-float hairline-ring"

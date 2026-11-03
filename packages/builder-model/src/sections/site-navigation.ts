@@ -261,6 +261,8 @@ export function footerCentred(copy: { smallPrint: string }): NodeBlueprint {
         children: [
           siteLogo(),
           siteMenuRow({ label: "Footer", always: true }),
+          // Shows only on a site in more than one language.
+          { type: "languageSwitcher", props: { look: "links", label: "Language" } },
           text(copy.smallPrint, { name: "Small print", styles: { base: smallPrintStyles } }),
         ],
       },

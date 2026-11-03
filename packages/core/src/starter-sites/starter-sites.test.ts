@@ -192,7 +192,8 @@ describe("starting from a template", () => {
     expect(runtime.headers["content-type"]).toContain("text/javascript");
     expect(runtime.body).toContain("lintelMotion");
 
-    // A page with no design at all ships no script.
+    // A page with no design at all ships no motion; its only script is the elements script
+    // the site's navigation needs for its Menu button on phones.
     const created = await owner("POST", "/collections/pages/entries", {
       data: { title: "Plain" },
       slug: "plain",
@@ -200,7 +201,10 @@ describe("starting from a template", () => {
     await owner("POST", `/entries/${created.json().id}/publish`);
     const plain = await visit("/plain");
     expect(plain.statusCode).toBe(200);
-    expect(plain.body).not.toContain("<script");
+    const scripts = plain.body.match(/<script[^>]*>/g) ?? [];
+    expect(scripts).toEqual([
+      expect.stringMatching(/^<script src="\/_lintel\/elements-[^"]+" defer="">$/),
+    ]);
   });
 
   it("keeps the website's cloak in step with the motion runtime's", () => {

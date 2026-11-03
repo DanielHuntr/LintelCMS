@@ -60,6 +60,11 @@ export interface StarterSite {
   designVariables?: readonly DesignVariable[];
   /** Home first; the menu lists them in this order. */
   pages: readonly StarterPage[];
+  /**
+   * The template's own navigation and footer, shown on every page (see site-sections/).
+   * Pages don't repeat them. Left out, a site gets the standard ones.
+   */
+  siteSections?: { navigation?: NodeBlueprint; footer?: NodeBlueprint };
 }
 
 /** Some of the site's motion settings, each part only the values it changes. */

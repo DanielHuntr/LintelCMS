@@ -80,6 +80,28 @@ describe("the built-in website with several sites", () => {
     expect((await visit("/about-us", "localhost:3999")).statusCode).toBe(200);
   });
 
+  it("keeps the path prefix in the links of a site's own navigation and footer", async () => {
+    await uk("PATCH", "/sites/france", { hostnames: ["acme.co.uk"], pathPrefix: "/fr" });
+    await publish(france, "À propos");
+    const footer = {
+      id: "f",
+      type: "section",
+      props: { element: "footer" },
+      children: [
+        { id: "l", type: "link", props: { label: "À propos", href: "/a-propos" } },
+        { id: "o", type: "link", props: { label: "Ailleurs", href: "https://example.com/x" } },
+      ],
+    };
+    const saved = await france("PUT", "/website/sections", { footer });
+    expect(saved.statusCode, saved.body).toBe(200);
+
+    const page = (await visit("/fr/a-propos", "acme.co.uk")).body;
+    // The starter navigation's logo and the footer's typed link both stay under /fr.
+    expect(page).toMatch(/<a class="[^"]*lintel-site-logo" href="\/fr"/);
+    expect(page).toContain('href="/fr/a-propos"');
+    expect(page).toContain('href="https://example.com/x"');
+  });
+
   it("serves a site under its path prefix on a shared domain", async () => {
     await uk("PATCH", "/sites/france", { hostnames: ["acme.co.uk"], pathPrefix: "/fr" });
     await publish(france, "À propos");
@@ -87,11 +109,12 @@ describe("the built-in website with several sites", () => {
     const french = await visit("/fr/a-propos", "acme.co.uk");
     expect(french.statusCode).toBe(200);
     expect(french.body).toContain("Acme France");
-    // The website's own links keep the prefix: home, and the site's other languages.
-    expect(french.body).toContain('class="lintel-header__brand" href="/fr"');
+    // The website's own links keep the prefix: home, and the site's other languages. A new
+    // site starts with its own navigation and footer (see src/site-sections).
+    expect(french.body).toMatch(/<a class="[^"]*lintel-site-logo" href="\/fr"/);
     await france("POST", "/locales", { code: "en-GB" });
     const withLanguages = await visit("/fr/a-propos", "acme.co.uk");
-    expect(withLanguages.body).toContain('href="/fr/en-GB" lang="en-GB" hreflang="en-GB"');
+    expect(withLanguages.body).toContain('<a href="/fr/en-GB" hreflang="en-GB" lang="en-GB">');
     expect(withLanguages.body).not.toMatch(/href="\/en-GB/);
     // A home page address redirects to the site's own root, not the domain's.
     await france("POST", `/entries/${franceHome}/publish`);

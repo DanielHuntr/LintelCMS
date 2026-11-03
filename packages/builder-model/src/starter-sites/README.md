@@ -20,3 +20,9 @@ it to `starterSites`; the tests check every page against the standard components
 A starter site can also bring its own heading and body fonts (from the included fonts) and
 its site-wide motion (`siteMotion`: smooth scrolling, the cursor, the page transition and the
 first-visit intro); both are applied with its theme. Folio (`folio.ts`) and Atelier (`atelier.ts`) use both.
+
+A starter site can bring its own navigation and footer (`siteSections`), shown on every page
+of the site (see `site-sections/`) rather than repeated in each page. Studio, Atelier and
+Folio do; the others get the standard Logo and menu navigation and Centred footer. Applying a
+template with its look replaces the site's navigation and footer with the template's;
+without the look, a site keeps the ones it has.

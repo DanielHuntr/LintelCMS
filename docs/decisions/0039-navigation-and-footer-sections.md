@@ -57,7 +57,14 @@ back, so a site is never left without a menu. The builder offers Hide on this pa
 replacing it, not removing it from every page, so nobody takes it away by accident.
 
 Setup and starter templates give a site that has never had sections the "Logo and menu"
-navigation and the "Centred footer", so nobody publishes a site with no menu.
+navigation and the "Centred footer", so nobody publishes a site with no menu. A template can
+bring its own (Studio, Atelier and Folio do, in their own look); applied with its look, they
+replace the site's, since they are part of it.
+
+Links typed into the site's sections ("/work") are drawn with the site's path prefix and
+language, as the menu's and the logo's are, so a site served under "/fr" keeps it. The Centred
+footer has a Language switcher, which shows only on a site in more than one language, so
+such sites keep the language links the automatic footer gave them.
 
 ## Not done
 

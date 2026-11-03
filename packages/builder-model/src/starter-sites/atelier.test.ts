@@ -3,6 +3,7 @@ import { standardCatalogue } from "../components/component-catalogue.js";
 import type { PageNode } from "../document/page-document.schema.js";
 import { validatePageDocument } from "../document/validate-page.js";
 import { createCountingNodeIds } from "../tree/node-ids.js";
+import { createNode } from "../tree/create-node.js";
 import { listNodes } from "../tree/tree-queries.js";
 import { findIllustration } from "./illustrations.js";
 import { buildStarterPage } from "./starter-site.js";
@@ -19,6 +20,23 @@ function build(slug: string) {
 const textOf = (node: PageNode) => String(node.props.text ?? node.props.label ?? "");
 
 describe("the Atelier starter site", () => {
+  it("shows its navigation and the big Wrenfold footer on every page, not on each", () => {
+    const shared = (section: Parameters<typeof createNode>[0] | undefined) =>
+      section ? listNodes(createNode(section, standardCatalogue, createCountingNodeIds("s"))) : [];
+    const navigation = shared(atelier?.siteSections?.navigation);
+    const footer = shared(atelier?.siteSections?.footer);
+    expect(navigation[0]?.props.element).toBe("header");
+    expect(navigation.find((node) => node.type === "navigation")?.props.menuSource).toBe("site");
+    expect(footer[0]?.props.element).toBe("footer");
+    expect(footer.some((node) => node.type === "heading" && textOf(node) === "Wrenfold")).toBe(
+      true,
+    );
+    for (const slug of ["home", "collection", "craft", "visit"]) {
+      const elements = listNodes(build(slug).root).map((node) => node.props.element);
+      expect(elements, slug).not.toContain("footer");
+    }
+  });
+
   it("is offered, with its own fonts and site-wide motion", () => {
     expect(atelier?.name).toBe("Atelier");
     expect(atelier?.pages.map((page) => page.slug)).toEqual([

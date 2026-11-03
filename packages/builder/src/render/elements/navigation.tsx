@@ -478,6 +478,8 @@ const LanguageSwitcher = drawsProps(
   languageSwitcherComponent,
   ({ props, attributes, node, mode }) => {
     const site = useSite();
+    // On the website, a site in one language has nothing to switch to.
+    if (mode === "site" && site.languages.length <= 1) return null;
     const languages =
       site.languages.length > 0
         ? site.languages
