@@ -24,7 +24,13 @@ export interface PageWeight {
   warnings: PageWeightWarning[];
 }
 
-const shaderModules: readonly EffectModuleName[] = ["liquid-gradient", "image-distort", "ripple"];
+const shaderModules: readonly EffectModuleName[] = [
+  "liquid-gradient",
+  "image-distort",
+  "ripple",
+  "shader-backgrounds",
+  "picture-effects",
+];
 
 export function measurePageWeight(
   effects: readonly EffectDefinition[],
