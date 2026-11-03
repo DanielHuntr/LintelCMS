@@ -1,3 +1,4 @@
+import { builderSiteStylesStrings } from "./site-styles-strings.js";
 import { builderBlockStrings } from "./block-strings.js";
 import { builderDesignStrings } from "./design-strings.js";
 import { builderElementStrings } from "./element-strings.js";
@@ -363,6 +364,7 @@ export const builderStrings = {
   ...builderMenuStrings,
   ...builderBlockStrings,
   ...builderLayoutStrings,
+  ...builderSiteStylesStrings,
 } as const;
 
 export type BuilderStringKey = keyof typeof builderStrings;

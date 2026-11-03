@@ -1,5 +1,7 @@
 import {
+  type DesignVariable,
   detachSharedStyle,
+  inlineVariableOnPage,
   giveSharedStyle,
   makeSharedStyle,
   type SharedStyle,
@@ -236,6 +238,55 @@ export function changeSharedStyle(
     if (change.kind === "use") return giveSharedStyle(node, change.id);
     return detachSharedStyle(node, change.sharedStyle);
   });
+}
+
+/**
+ * Before a site variable is deleted: every element on the page that uses it gets its value
+ * written out, so it looks as it did. One step in Undo; nothing when nothing uses it.
+ */
+export function writeOutVariable(
+  context: CommandContext,
+  variable: DesignVariable,
+): CommandResult | null {
+  const root = inlineVariableOnPage(context.document.root, variable);
+  if (root === context.document.root) return null;
+  return {
+    change: {
+      label: context.text("pageBuilder.siteStyles.history.variableWritten", {
+        name: variable.name,
+      }),
+      update: (document) => ({ ...document, root: inlineVariableOnPage(document.root, variable) }),
+    },
+  };
+}
+
+/**
+ * Before a shared style is deleted: every element on the page that uses it (or one of its
+ * variants) takes the look as its own. One step in Undo; nothing when nothing uses it.
+ */
+export function detachEverything(
+  context: CommandContext,
+  sharedStyle: SharedStyle,
+  /** The look each style id gave, for the shared style and its variants. */
+  looks: Readonly<Record<string, SharedStyle>>,
+): CommandResult | null {
+  const detach = (node: PageNode): PageNode => {
+    const children = node.children.map(detach);
+    const changedChildren = children.some((child, index) => child !== node.children[index]);
+    const look = node.sharedStyle ? looks[node.sharedStyle] : undefined;
+    if (!look && !changedChildren) return node;
+    const withChildren = changedChildren ? { ...node, children } : node;
+    return look ? detachSharedStyle(withChildren, look) : withChildren;
+  };
+  if (detach(context.document.root) === context.document.root) return null;
+  return {
+    change: {
+      label: context.text("pageBuilder.siteStyles.history.detachedAll", {
+        name: sharedStyle.name,
+      }),
+      update: (document) => ({ ...document, root: detach(document.root) }),
+    },
+  };
 }
 
 /** Moves an element in its free layout, at one screen size: from dragging or nudging. */

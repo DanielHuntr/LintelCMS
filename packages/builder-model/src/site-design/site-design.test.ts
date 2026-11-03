@@ -20,7 +20,8 @@ import {
   makeSharedStyle,
   type SharedStyle,
 } from "./shared-styles.js";
-import { siteDesignSchema } from "./site-design.js";
+import { countVariableUsesInDesign, siteDesignSchema, withoutVariable } from "./site-design.js";
+import { countVariableUses, inlineVariableOnPage } from "./variable-uses.js";
 
 function cards(): PageNode {
   return createNode(
@@ -195,5 +196,71 @@ describe("a site's design", () => {
         sharedStyles: [{ id: "card", name: "Card", styles: { base: { colour: "red" } } }],
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("where variables are used", () => {
+  const sand = { id: "sand", name: "Sand", kind: "colour" as const, value: "#efe6d6" };
+
+  it("counts each variable's uses on a page and in shared styles, telling sand from sand-2", () => {
+    const root = createNode(
+      {
+        type: "page",
+        children: [
+          {
+            type: "box",
+            styles: {
+              base: {
+                backgroundColor: "var(--lintel-var-sand)",
+                color: "var(--lintel-var-sand-2)",
+              },
+              hover: { borderColor: "var(--lintel-var-sand)" },
+            },
+          },
+        ],
+      },
+      standardCatalogue,
+      createCountingNodeIds(),
+    );
+    const onPage = countVariableUses(root);
+    expect(onPage.get("sand")).toBe(2);
+    expect(onPage.get("sand-2")).toBe(1);
+    const design = {
+      variables: [sand],
+      sharedStyles: [
+        { id: "card", name: "Card", styles: { base: { color: "var(--lintel-var-sand)" } } },
+      ],
+    };
+    expect(countVariableUsesInDesign(design, onPage).get("sand")).toBe(3);
+  });
+
+  it("writes a deleted variable's value out, on the page and in shared styles", () => {
+    const root = createNode(
+      {
+        type: "page",
+        children: [
+          { type: "box", styles: { base: { backgroundColor: "var(--lintel-var-sand)" } } },
+          { type: "box", styles: { base: { backgroundColor: "red" } } },
+        ],
+      },
+      standardCatalogue,
+      createCountingNodeIds(),
+    );
+    const written = inlineVariableOnPage(root, sand);
+    expect(written.children[0]?.styles.base.backgroundColor).toBe("#efe6d6");
+    expect(written.children[1]).toBe(root.children[1]);
+    expect(inlineVariableOnPage(written, sand)).toBe(written);
+
+    const design = withoutVariable(
+      {
+        variables: [sand],
+        sharedStyles: [
+          { id: "card", name: "Card", styles: { base: { color: "var(--lintel-var-sand)" } } },
+        ],
+      },
+      "sand",
+    );
+    expect(design.variables).toEqual([]);
+    expect(design.sharedStyles[0]?.styles.base.color).toBe("#efe6d6");
   });
 });

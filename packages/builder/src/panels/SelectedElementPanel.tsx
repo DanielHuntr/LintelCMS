@@ -3,6 +3,11 @@ import {
   type BackgroundVideo,
   type BoundPicture,
   countSharedStyleUses,
+  countVariableUses,
+  countVariableUsesInDesign,
+  type DesignVariable,
+  type SharedStyle,
+  sharedStylesById,
   type Breakpoint,
   findPath,
   type FreeLayout,
@@ -44,6 +49,7 @@ import {
 } from "../style-panel/StylePanel.js";
 import { layerName } from "../editor/commands.js";
 import { SiteStylesPanel } from "../site-design/SiteStylesPanel.js";
+import { useSiteDesign } from "../site-design/site-design-context.js";
 import type { SharedStyleChange } from "../editor/design-commands.js";
 import { Tip } from "../tour/Tip.js";
 import { Tabs } from "../ui/controls.js";
@@ -85,6 +91,11 @@ interface SelectedElementPanelProps {
     setPlacedGrid: (nodeId: string, placedGrid: PlacedGrid | null) => void;
     placeOnGrid: (nodeId: string, target: Breakpoint, place: GridPlace) => void;
     changeSharedStyle: (nodeId: string, change: SharedStyleChange) => void;
+    writeOutVariable: (variable: DesignVariable) => void;
+    detachEverything: (
+      sharedStyle: SharedStyle,
+      looks: Readonly<Record<string, SharedStyle>>,
+    ) => void;
     setBackgroundVideo: (nodeId: string, video: BackgroundVideo | null) => void;
     changePageFonts: (fonts: PageFont[], label: string) => void;
     restack: (nodeId: string, move: StackingMove) => void;
@@ -122,6 +133,8 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
   const [chosenTab, setTab] = useState<RightTab>("style");
   const [styleMode, setStyleMode] = useState<StylePanelMode>("simple");
   const [styleState, setStyleState] = useState<StateChoice>("none");
+  // "Site styles" opens over the element's Style, with Back.
+  const [showsSiteStyles, setShowsSiteStyles] = useState(false);
   const wantsCode = props.showCode && tools.codeTools;
   const [lastShowCode, setLastShowCode] = useState(wantsCode);
   if (wantsCode !== lastShowCode) {
@@ -138,6 +151,22 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
   const tab = chosenTab === "code" && !tools.codeTools ? "style" : chosenTab;
   const { document, pickImage, uploadFile } = props;
   const sharedStyleUses = useMemo(() => countSharedStyleUses(document.root), [document.root]);
+  const site = useSiteDesign();
+  const variableUses = useMemo(
+    () => countVariableUsesInDesign(site.design, countVariableUses(document.root)),
+    [document.root, site.design],
+  );
+  const siteStyles = (onBack?: () => void) => (
+    <SiteStylesPanel
+      sharedStyleUses={sharedStyleUses}
+      variableUses={variableUses}
+      onBack={onBack}
+      onDeleteVariable={actions.writeOutVariable}
+      onDeleteSharedStyle={(sharedStyle) =>
+        actions.detachEverything(sharedStyle, sharedStylesById(site.design))
+      }
+    />
+  );
   // The elements around the selected one, nearest first, whose states it can follow.
   const stateOwners = useMemo<StateOwner[]>(() => {
     if (!node) return [];
@@ -145,12 +174,25 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
       .slice(1, -1)
       .reverse()
       .slice(0, maxStateOwners)
-      .map((around) => ({
-        id: around.id,
-        name: layerName(around, props.registry.catalogue),
-        stateTransition: around.stateTransition,
-      }));
-  }, [node, document, props.registry]);
+      .map((around, index, all) => {
+        const name = layerName(around, props.registry.catalogue);
+        // Two elements around it with the same name ("Container") are told apart by how far
+        // up they are.
+        const isShared = all.some(
+          (other) => other !== around && layerName(other, props.registry.catalogue) === name,
+        );
+        return {
+          id: around.id,
+          name,
+          place: isShared
+            ? index === 0
+              ? text("pageBuilder.style.ownerPlaceParent")
+              : text("pageBuilder.style.ownerPlaceLevels", { count: index + 1 })
+            : undefined,
+          stateTransition: around.stateTransition,
+        };
+      });
+  }, [node, document, props.registry, text]);
   const onStyleStateChange = props.onStyleStateChange;
   const showsStyleState = tab === "style" && styleState !== "none";
   useEffect(() => {
@@ -248,19 +290,29 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
             onPasteHtml={actions.pasteHtml}
           />
         ) : !node ? (
-          <>
-            <p className="px-4 py-6 text-footnote text-label-secondary">
-              {text(
-                tab === "animate"
-                  ? "pageBuilder.animate.selectSomething"
-                  : "pageBuilder.panels.selectSomething",
+          tab === "style" ? (
+            <>
+              <p className="px-4 pt-4 text-caption text-label-tertiary">
+                {text("pageBuilder.siteStyles.selectHint")}
+              </p>
+              {siteStyles()}
+            </>
+          ) : (
+            <>
+              <p className="px-4 py-6 text-footnote text-label-secondary">
+                {text(
+                  tab === "animate"
+                    ? "pageBuilder.animate.selectSomething"
+                    : "pageBuilder.panels.selectSomething",
+                )}
+              </p>
+              {tab === "animate" && props.siteMotion && (
+                <div className="px-4 pb-6">{props.siteMotion}</div>
               )}
-            </p>
-            {tab === "animate" && props.siteMotion && (
-              <div className="px-4 pb-6">{props.siteMotion}</div>
-            )}
-            {tab === "style" && <SiteStylesPanel uses={sharedStyleUses} />}
-          </>
+            </>
+          )
+        ) : tab === "style" && showsSiteStyles ? (
+          siteStyles(() => setShowsSiteStyles(false))
         ) : tab === "style" && design ? (
           <StylePanel
             design={design}
@@ -285,6 +337,7 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
             onTransitionChange={actions.setStateTransition}
             sharedStyleUses={sharedStyleUses}
             nodeName={props.nodeName}
+            onOpenSiteStyles={() => setShowsSiteStyles(true)}
           />
         ) : tab === "animate" ? (
           <AnimatePanel

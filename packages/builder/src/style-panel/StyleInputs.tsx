@@ -1,12 +1,13 @@
 import {
   type DesignToken,
   findTokenByValue,
+  isDesignVariableValue,
   type StylePropertyName,
   tokenValue,
   variableValue,
 } from "@lintel/builder-model";
 import { Check } from "lucide-react";
-import { useId, useState } from "react";
+import { Fragment, useId, useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { addVariable, useSiteDesign, useSiteTokens } from "../site-design/site-design-context.js";
 import { classNames, inputClassName, Labelled } from "../ui/controls.js";
@@ -31,7 +32,40 @@ function useOverrideNote(isOverridden: boolean) {
   return isOverridden ? text(overrideNoteFor(target)) : undefined;
 }
 
-/** Free text, applied on Enter or when leaving the box. Bare numbers become pixels. */
+/** Properties that take a size, so the site's named sizes are offered for them. */
+const sizeProperties = new Set<StylePropertyName>([
+  "width",
+  "height",
+  "minWidth",
+  "minHeight",
+  "maxWidth",
+  "maxHeight",
+  "paddingTop",
+  "paddingRight",
+  "paddingBottom",
+  "paddingLeft",
+  "marginTop",
+  "marginRight",
+  "marginBottom",
+  "marginLeft",
+  "gap",
+  "rowGap",
+  "columnGap",
+  "top",
+  "right",
+  "bottom",
+  "left",
+  "fontSize",
+  "letterSpacing",
+  "borderRadius",
+  "borderWidth",
+]);
+
+/**
+ * Free text, applied on Enter or when leaving the box. Bare numbers become pixels. For sizes,
+ * the site's named sizes are offered first: one in use shows as its name, linked, and a size
+ * typed by hand can be saved as one.
+ */
 export function StyleTextInput({
   property,
   label,
@@ -42,6 +76,9 @@ export function StyleTextInput({
   const [draft, setDraft] = useState(field.value ?? "");
   const [problem, setProblem] = useState<string | null>(null);
   const errorId = useId();
+  const siteSizes = useSiteTokens("size");
+  const takesSize = sizeProperties.has(property);
+  const linked = takesSize ? findTokenByValue(field.value, siteSizes) : undefined;
   // When the value changes from outside (undo, another screen size), show the new one.
   const [shownValue, setShownValue] = useState(field.value);
   if (shownValue !== field.value) {
@@ -66,30 +103,86 @@ export function StyleTextInput({
       onReset={field.reset}
       resetLabel={text("pageBuilder.style.reset")}
     >
-      {(id) => (
-        <>
-          <input
-            id={id}
-            value={draft}
-            placeholder={placeholder ?? text("pageBuilder.style.auto")}
-            aria-invalid={problem !== null}
-            aria-describedby={problem ? errorId : undefined}
-            onChange={(event) => setDraft(event.target.value)}
-            onBlur={commit}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") commit();
-              if (event.key === "Escape") setDraft(field.value ?? "");
-            }}
-            className={classNames(inputClassName, problem && "focus-ring-danger")}
-          />
-          {problem && (
-            <span id={errorId} className="text-caption text-danger">
-              {problem}
-            </span>
-          )}
-        </>
-      )}
+      {(id) =>
+        linked ? (
+          <LinkedValue id={id} name={linked.label} onUnlink={() => field.set(linked.fallback)} />
+        ) : (
+          <div className="group flex flex-col gap-1">
+            <div className="flex items-center gap-1">
+              <input
+                id={id}
+                value={draft}
+                placeholder={placeholder ?? text("pageBuilder.style.auto")}
+                aria-invalid={problem !== null}
+                aria-describedby={problem ? errorId : undefined}
+                onChange={(event) => setDraft(event.target.value)}
+                onBlur={commit}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") commit();
+                  if (event.key === "Escape") setDraft(field.value ?? "");
+                }}
+                className={classNames(
+                  inputClassName,
+                  "min-w-0 flex-1",
+                  problem && "focus-ring-danger",
+                )}
+              />
+              {takesSize && siteSizes.length > 0 && (
+                <select
+                  aria-label={text("pageBuilder.siteStyles.useSize", { label })}
+                  value=""
+                  onChange={(event) => {
+                    const token = siteSizes.find((each) => each.name === event.target.value);
+                    if (token) field.set(tokenValue(token));
+                  }}
+                  className={`${inputClassName} w-16 shrink-0 cursor-pointer`}
+                >
+                  <option value="">{text("pageBuilder.siteStyles.sizesMenu")}</option>
+                  {siteSizes.map((token) => (
+                    <option key={token.name} value={token.name}>
+                      {token.label} ({token.fallback})
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+            {problem && (
+              <span id={errorId} className="text-caption text-danger">
+                {problem}
+              </span>
+            )}
+            {takesSize && field.value && !problem && isDesignVariableValue("size", field.value) && (
+              <SaveAsVariable
+                kind="size"
+                value={field.value}
+                onSaved={field.set}
+                className="hidden group-focus-within:block group-hover:block"
+              />
+            )}
+          </div>
+        )
+      }
     </Labelled>
+  );
+}
+
+/** A value that is one of the site's named styles: its name, and a way to unlink it. */
+function LinkedValue({ id, name, onUnlink }: { id: string; name: string; onUnlink: () => void }) {
+  const text = useBuilderText();
+  return (
+    <div className="flex h-8 items-center gap-1.5 rounded-control bg-fill px-2">
+      <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-accent-fill" />
+      <output id={id} className="min-w-0 flex-1 truncate text-footnote text-label">
+        {name}
+      </output>
+      <button
+        type="button"
+        onClick={onUnlink}
+        className="rounded px-1 text-caption text-accent hover:underline focus-visible:focus-ring"
+      >
+        {text("pageBuilder.siteStyles.unlink")}
+      </button>
+    </div>
   );
 }
 
@@ -208,10 +301,9 @@ export function StyleChips({
   );
 }
 
-/** Chips made from design tokens (spacing steps, radii), with "None" first. */
-/** The theme's spacing steps given, then the site's own sizes, as chips. */
+/** The site's own sizes, then the theme's spacing steps given, as chips. */
 export function useSizeChips(tokens: readonly DesignToken[], noneLabel: string): ChipChoice[] {
-  return tokenChips([...tokens, ...useSiteTokens("size")], noneLabel);
+  return tokenChips([...useSiteTokens("size"), ...tokens], noneLabel);
 }
 
 export function tokenChips(
@@ -234,9 +326,9 @@ export function ColourPicker({
   const text = useBuilderText();
   const field = useStyleField(property, label);
   const labelId = useId();
-  // The theme's colours, then the site's own (see site-design/).
+  // The site's own colours first (see site-design/), then the theme's.
   const siteColours = useSiteTokens("colour");
-  const tokens = [...themeTokens, ...siteColours];
+  const tokens = [...siteColours, ...themeTokens];
   const current = findTokenByValue(field.value, tokens);
   const custom =
     field.value && !current && /^#[0-9a-f]{6}$/i.test(field.value) ? field.value : "#000000";
@@ -252,23 +344,31 @@ export function ColourPicker({
           <span id={labelId} className="sr-only">
             {label}
           </span>
-          {tokens.map((token) => {
+          {tokens.map((token, index) => {
             const isCurrent = current?.name === token.name;
+            const startsTheme = index === siteColours.length && index > 0;
             return (
-              <button
-                key={token.name}
-                type="button"
-                title={token.label}
-                aria-label={token.label}
-                aria-pressed={isCurrent}
-                onClick={() => field.set(tokenValue(token))}
-                style={{ backgroundColor: token.fallback }}
-                className="flex size-6 items-center justify-center rounded-full hairline-ring focus-visible:focus-ring"
-              >
-                {isCurrent && (
-                  <Check aria-hidden="true" className="size-3.5 text-white mix-blend-difference" />
+              <Fragment key={token.name}>
+                {startsTheme && (
+                  <span aria-hidden="true" className="mx-0.5 h-4 w-px bg-separator" />
                 )}
-              </button>
+                <button
+                  type="button"
+                  title={token.label}
+                  aria-label={token.label}
+                  aria-pressed={isCurrent}
+                  onClick={() => field.set(tokenValue(token))}
+                  style={{ backgroundColor: token.fallback }}
+                  className="flex size-6 items-center justify-center rounded-full hairline-ring focus-visible:focus-ring"
+                >
+                  {isCurrent && (
+                    <Check
+                      aria-hidden="true"
+                      className="size-3.5 text-white mix-blend-difference"
+                    />
+                  )}
+                </button>
+              </Fragment>
             );
           })}
           <label className="flex items-center gap-1 text-caption text-label-secondary">
@@ -283,12 +383,18 @@ export function ColourPicker({
           </label>
           {current && (
             // The swatches' names are only in tooltips, so the chosen one is named here too.
-            <span aria-hidden="true" className="basis-full text-caption text-label-secondary">
+            <span
+              aria-hidden="true"
+              className="flex basis-full items-center gap-1.5 text-caption text-label-secondary"
+            >
+              {siteColours.includes(current) && (
+                <span className="size-1.5 shrink-0 rounded-full bg-accent-fill" />
+              )}
               {current.label}
             </span>
           )}
-          {!current && field.value && /^#[0-9a-f]{6}$/i.test(field.value) && (
-            <SaveAsSiteColour value={field.value} onSaved={field.set} />
+          {!current && field.value && isDesignVariableValue("colour", field.value) && (
+            <SaveAsVariable kind="colour" value={field.value} onSaved={field.set} />
           )}
         </div>
       )}
@@ -297,10 +403,20 @@ export function ColourPicker({
 }
 
 /**
- * "Save as a site colour" under a colour picked by hand: names it, adds it to the site's
- * colours and uses it here, so it can be picked anywhere and changed in one place.
+ * "Save as a site colour" (or a size) under a value picked by hand: names it, adds it to the
+ * site's styles and uses it here, so it can be picked anywhere and changed in one place.
  */
-function SaveAsSiteColour({ value, onSaved }: { value: string; onSaved: (value: string) => void }) {
+function SaveAsVariable({
+  kind,
+  value,
+  onSaved,
+  className,
+}: {
+  kind: "colour" | "size";
+  value: string;
+  onSaved: (value: string) => void;
+  className?: string;
+}) {
   const text = useBuilderText();
   const site = useSiteDesign();
   const [naming, setNaming] = useState(false);
@@ -312,25 +428,33 @@ function SaveAsSiteColour({ value, onSaved }: { value: string; onSaved: (value: 
       <button
         type="button"
         onClick={() => setNaming(true)}
-        className="basis-full self-start text-start text-caption font-medium text-accent hover:underline focus-visible:focus-ring"
+        className={classNames(
+          "basis-full self-start text-start text-caption font-medium text-accent hover:underline focus-visible:focus-ring",
+          className,
+        )}
       >
-        {text("pageBuilder.site.saveColour")}
+        {text(
+          kind === "colour" ? "pageBuilder.site.saveColour" : "pageBuilder.siteStyles.saveSize",
+        )}
       </button>
     );
   }
   const save = () => {
     if (!name.trim()) return;
-    const added = addVariable(site.design, "colour", name.trim().slice(0, 40), value);
+    const added = addVariable(site.design, kind, name.trim().slice(0, 40), value);
     change(added.design);
     onSaved(variableValue(added.variable));
     setNaming(false);
     setName("");
   };
+  const nameLabel = text(
+    kind === "colour" ? "pageBuilder.site.colourName" : "pageBuilder.siteStyles.sizeName",
+  );
   return (
     <span className="flex basis-full items-center gap-1">
       <input
-        aria-label={text("pageBuilder.site.colourName")}
-        placeholder={text("pageBuilder.site.colourName")}
+        aria-label={nameLabel}
+        placeholder={nameLabel}
         value={name}
         maxLength={40}
         onChange={(event) => setName(event.target.value)}

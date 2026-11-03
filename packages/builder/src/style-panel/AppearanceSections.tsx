@@ -18,6 +18,7 @@ import {
   StyleTextInput,
   tokenChips,
 } from "./StyleInputs.js";
+import { useStyleSummary } from "./summary-names.js";
 
 /** Size, position, borders and effects. */
 
@@ -126,12 +127,13 @@ export function PositionSection() {
 
 export function BordersSection({ advanced }: { advanced: boolean }) {
   const text = useBuilderText();
-  const read = useStyleReader();
+  const borders = useStyleSummary((read) => bordersSummary(read, text));
   return (
     <PanelSection
       title={text("pageBuilder.style.borders")}
       sectionId="borders"
-      summary={bordersSummary(read, text)}
+      summary={borders.summary}
+      linked={borders.linked}
     >
       <StyleChips
         properties={["borderRadius"]}

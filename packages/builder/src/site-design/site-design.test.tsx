@@ -166,7 +166,7 @@ describe("the site's design variables", () => {
   it("adds a colour with nothing selected, which elements can then use", async () => {
     const person = userEvent.setup();
     const { node, design } = renderBuilder();
-    expect(screen.getByRole("heading", { name: "This site’s styles" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Site styles" })).toBeInTheDocument();
     await person.click(screen.getByRole("button", { name: "Add a colour" }));
     expect(design().variables).toEqual([
       { id: "new-colour", name: "New colour", kind: "colour", value: "#8e8e93" },

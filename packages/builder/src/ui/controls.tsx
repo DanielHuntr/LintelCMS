@@ -218,10 +218,12 @@ interface PanelSectionProps {
   sectionId?: string;
   /** What's set inside, shown while the section is closed. */
   summary?: string;
+  /** Whether the summary names one of the site's styles (a named colour, say). */
+  linked?: boolean;
 }
 
 /** A titled group of controls in a panel, collapsible when the panel says so. */
-export function PanelSection({ title, children, sectionId, summary }: PanelSectionProps) {
+export function PanelSection({ title, children, sectionId, summary, linked }: PanelSectionProps) {
   const headingId = useId();
   const openSections = useOpenSections();
   if (openSections && sectionId) {
@@ -229,6 +231,7 @@ export function PanelSection({ title, children, sectionId, summary }: PanelSecti
       <CollapsibleSection
         title={title}
         summary={summary}
+        linked={linked}
         isOpen={openSections.isOpen(sectionId)}
         onToggle={() => openSections.toggle(sectionId)}
         onUse={() => openSections.markUsed(sectionId)}
