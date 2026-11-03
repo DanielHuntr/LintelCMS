@@ -2,6 +2,7 @@ import type { EditableField } from "../components/component-definition.js";
 import type { CustomBlock } from "../custom-blocks/custom-block.js";
 import type { PageNode } from "../document/page-document.schema.js";
 import type { SharedStyle } from "../site-design/shared-styles.js";
+import type { TagStyles } from "../site-design/tag-styles.js";
 
 /**
  * The data a page can show besides what is typed into it: the entries a collection list
@@ -202,6 +203,8 @@ export interface PageData {
   credits?: Readonly<Record<string, PhotoCreditData>>;
   /** The site's shared styles, by id, for elements that use one (see site-design/). */
   sharedStyles?: Readonly<Record<string, SharedStyle>>;
+  /** The site's looks for every button and picture, drawn in place of their starting styles. */
+  tagStyles?: TagStyles;
   /** Blocks drawn by the server (React blocks in code), by the instance's id. */
   renderedBlocks?: Readonly<Record<string, string>>;
 }

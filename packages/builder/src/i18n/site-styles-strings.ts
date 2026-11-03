@@ -21,6 +21,24 @@ export const builderSiteStylesStrings = {
     "It’s used {count} times on this page. Those keep how they look now; other pages that use it won’t.",
   "pageBuilder.siteStyles.deleteUnused": "Other pages that use it will lose it.",
   "pageBuilder.siteStyles.keep": "Keep it",
+  "pageBuilder.tagStyles.group": "Every element of a kind",
+  "pageBuilder.tagStyles.groupNote": "Element and shared styles still win.",
+  "pageBuilder.tagStyles.set": "Changed",
+  "pageBuilder.tagStyles.headings": "All headings",
+  "pageBuilder.tagStyles.paragraphs": "All paragraphs",
+  "pageBuilder.tagStyles.links": "All links",
+  "pageBuilder.tagStyles.buttons": "All buttons",
+  "pageBuilder.tagStyles.pictures": "All pictures",
+  "pageBuilder.tagStyles.headingsNote":
+    "Every heading on your designed pages, H1 to H6, unless it has a style of its own.",
+  "pageBuilder.tagStyles.paragraphsNote":
+    "Every paragraph on your designed pages, unless it has a style of its own.",
+  "pageBuilder.tagStyles.linksNote":
+    "Links in text and Link elements. Buttons and menus keep their own look.",
+  "pageBuilder.tagStyles.buttonsNote":
+    "Every button, in place of the look buttons start with. Changes made to one button stay.",
+  "pageBuilder.tagStyles.picturesNote":
+    "Every picture, in place of the look pictures start with. Changes made to one picture stay.",
   "pageBuilder.shared.noneTitle": "No shared style",
   "pageBuilder.shared.noneHint": "Save this look to reuse it",
   "pageBuilder.shared.useHint": "Use a look saved for the site",

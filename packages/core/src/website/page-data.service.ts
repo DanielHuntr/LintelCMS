@@ -78,6 +78,7 @@ export async function loadPageData(
     forms: await loadForms(request, document),
     credits: await loadPictureCredits(request, document),
     sharedStyles: sharedStylesById(request.context.design),
+    tagStyles: request.context.design.tagStyles,
     // The site's own blocks the page uses, their pictures, and those the server draws.
     ...(await loadBlockPageData(
       request.dependencies.database,

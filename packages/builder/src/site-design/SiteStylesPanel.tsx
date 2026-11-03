@@ -1,9 +1,12 @@
 import {
+  type Breakpoint,
   type DesignVariable,
   type DesignVariableKind,
   isDesignVariableValue,
   type SharedStyle,
   sharedStylesById,
+  tagStyleKinds,
+  type TagStyleKind,
   variantsOf,
   withoutSharedStyle,
   withoutVariable,
@@ -15,6 +18,7 @@ import { useBuilderText } from "../i18n/builder-text.js";
 import { classNames, inputClassName } from "../ui/controls.js";
 import { addVariable, useSiteDesign, withSharedStyle } from "./site-design-context.js";
 import { SharedStylePreview } from "./SharedStylePreview.js";
+import { TagStyleEditor, tagStyleKindDetails } from "./TagStyleEditor.js";
 
 /** A starting point offered while a group is empty: tap it and it's added. */
 interface Suggestion {
@@ -84,6 +88,8 @@ export interface SiteStylesPanelProps {
   onDeleteSharedStyle?: (sharedStyle: SharedStyle) => void;
   /** Selects the elements on this page that use a shared style, and outlines them all. */
   onSelectUsers?: (sharedStyleId: string) => void;
+  /** The screen size being designed, where changes to "All headings" and the like go. */
+  breakpoint?: Breakpoint;
 }
 
 /**
@@ -100,11 +106,14 @@ export function SiteStylesPanel({
   onDeleteVariable,
   onDeleteSharedStyle,
   onSelectUsers,
+  breakpoint = "base",
 }: SiteStylesPanelProps) {
   const text = useBuilderText();
   const { design, change } = useSiteDesign();
   const looks = sharedStylesById(design);
   const [openId, setOpenId] = useState<string | null>(null);
+  // "All headings" and the like open over the list, with Back.
+  const [editingKind, setEditingKind] = useState<TagStyleKind | null>(null);
   const toggle = (id: string) => setOpenId((current) => (current === id ? null : id));
   const replaceVariable = (next: DesignVariable) =>
     change?.({
@@ -117,6 +126,16 @@ export function SiteStylesPanel({
     change(added.design);
     setOpenId(`variable:${added.variable.id}`);
   };
+
+  if (editingKind) {
+    return (
+      <TagStyleEditor
+        kind={editingKind}
+        breakpoint={breakpoint}
+        onBack={() => setEditingKind(null)}
+      />
+    );
+  }
 
   return (
     <section aria-labelledby="site-styles-title" className="flex flex-col gap-5 px-4 pt-3 pb-6">
@@ -137,6 +156,11 @@ export function SiteStylesPanel({
         <p className="text-caption text-label-secondary">
           {text(change ? "pageBuilder.siteStyles.intro" : "pageBuilder.site.readOnly")}
         </p>
+        {!onBack && (
+          <p className="text-caption text-label-tertiary">
+            {text("pageBuilder.siteStyles.selectHint")}
+          </p>
+        )}
       </div>
       {kinds.map((group) => {
         const variables = design.variables.filter((each) => each.kind === group.kind);
@@ -211,6 +235,39 @@ export function SiteStylesPanel({
               ))}
           </List>
         )}
+      </Group>
+      <Group title={text("pageBuilder.tagStyles.group")}>
+        <List>
+          {tagStyleKinds.map((kind) => {
+            const isSet = design.tagStyles?.[kind] !== undefined;
+            return (
+              <li key={kind}>
+                <button
+                  type="button"
+                  onClick={() => setEditingKind(kind)}
+                  className="flex min-h-11 w-full items-center gap-2.5 px-3 py-1.5 text-start hover:bg-fill/60 focus-visible:focus-ring"
+                >
+                  <span className="min-w-0 flex-1 truncate text-footnote font-medium text-label">
+                    {text(tagStyleKindDetails[kind].title)}
+                  </span>
+                  {isSet && (
+                    <span className="flex shrink-0 items-center gap-1.5 text-caption text-label-tertiary">
+                      <span aria-hidden="true" className="size-1.5 rounded-full bg-accent-fill" />
+                      {text("pageBuilder.tagStyles.set")}
+                    </span>
+                  )}
+                  <ChevronRight
+                    aria-hidden="true"
+                    className="size-3.5 shrink-0 text-label-tertiary"
+                  />
+                </button>
+              </li>
+            );
+          })}
+        </List>
+        <p className="px-1 text-caption text-label-tertiary">
+          {text("pageBuilder.tagStyles.groupNote")}
+        </p>
       </Group>
     </section>
   );

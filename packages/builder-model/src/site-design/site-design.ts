@@ -10,6 +10,7 @@ import {
   type SharedStyle,
   sharedStyleSchema,
 } from "./shared-styles.js";
+import { type TagStyles, tagStylesSchema } from "./tag-styles.js";
 import { countVariablesInStyles, inlineVariableInStyles } from "./variable-uses.js";
 
 /**
@@ -19,6 +20,8 @@ import { countVariablesInStyles, inlineVariableInStyles } from "./variable-uses.
 export interface SiteDesign {
   variables: DesignVariable[];
   sharedStyles: SharedStyle[];
+  /** How every heading, paragraph, link, button and picture looks unless it says otherwise. */
+  tagStyles?: TagStyles;
 }
 
 export const emptySiteDesign: SiteDesign = { variables: [], sharedStyles: [] };
@@ -37,6 +40,7 @@ export const siteDesignSchema = z.object({
     .max(maxSharedStyles, { error: `A site can have at most ${maxSharedStyles} shared styles` })
     .refine(uniqueIds, { error: "Two shared styles have the same id" })
     .default([]),
+  tagStyles: tagStylesSchema.optional(),
 });
 
 /** Shared styles by id, as pages are drawn with them: a variant has its base's look under it. */
@@ -62,12 +66,13 @@ export function withoutSharedStyle(design: SiteDesign, id: string): SiteDesign {
   };
 }
 
-/** How many styles in the site's design (its shared styles) name each variable. */
+/** How many styles in the site's design (shared styles and tag styles) name each variable. */
 export function countVariableUsesInDesign(
   design: SiteDesign,
   into = new Map<string, number>(),
 ): Map<string, number> {
   for (const sharedStyle of design.sharedStyles) countVariablesInStyles(sharedStyle.styles, into);
+  for (const styles of Object.values(design.tagStyles ?? {})) countVariablesInStyles(styles, into);
   return into;
 }
 
@@ -85,5 +90,15 @@ export function withoutVariable(design: SiteDesign, id: string): SiteDesign {
       const styles = inlineVariableInStyles(sharedStyle.styles, variable);
       return styles === sharedStyle.styles ? sharedStyle : { ...sharedStyle, styles };
     }),
+    ...(design.tagStyles
+      ? {
+          tagStyles: Object.fromEntries(
+            Object.entries(design.tagStyles).map(([kind, styles]) => [
+              kind,
+              inlineVariableInStyles(styles, variable),
+            ]),
+          ),
+        }
+      : {}),
   };
 }

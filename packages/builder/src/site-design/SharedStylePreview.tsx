@@ -24,12 +24,14 @@ export function SharedStylePreview({ sharedStyle }: { sharedStyle: SharedStyle }
   const { design } = useSiteDesign();
   const base = sharedStyle.styles.base;
   const read = (value: string | undefined) => previewValue(value, design.variables);
+  const background = read(base.backgroundColor);
   return (
     <span
       aria-hidden="true"
       style={{
-        backgroundColor: read(base.backgroundColor),
-        color: read(base.color),
+        backgroundColor: background,
+        // Text colour only on the style's own fill: on the panel it might not be readable.
+        color: background && background !== "transparent" ? read(base.color) : undefined,
         borderColor: read(base.borderColor),
         borderStyle: base.borderWidth ? "solid" : undefined,
         borderWidth: base.borderWidth ? "1px" : undefined,

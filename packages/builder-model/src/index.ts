@@ -67,6 +67,7 @@ export * from "./placed-grid/placed-grid.js";
 export * from "./site-design/design-variables.js";
 export * from "./site-design/shared-styles.js";
 export * from "./site-design/site-design.js";
+export * from "./site-design/tag-styles.js";
 export * from "./site-design/variable-uses.js";
 export * from "./backgrounds/background-video.js";
 export * from "./fonts/font-catalogue.js";

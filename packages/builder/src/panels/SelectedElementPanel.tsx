@@ -193,6 +193,7 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
     <SiteStylesPanel
       sharedStyleUses={sharedStyleUses}
       variableUses={variableUses}
+      breakpoint={props.breakpoint}
       onBack={onBack}
       onDeleteVariable={actions.writeOutVariable}
       onDeleteSharedStyle={(sharedStyle) => {
@@ -360,12 +361,7 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
           />
         ) : !node ? (
           tab === "style" ? (
-            <>
-              <p className="px-4 pt-4 text-caption text-label-tertiary">
-                {text("pageBuilder.siteStyles.selectHint")}
-              </p>
-              {siteStyles()}
-            </>
+            siteStyles()
           ) : (
             <>
               <p className="px-4 py-6 text-footnote text-label-secondary">

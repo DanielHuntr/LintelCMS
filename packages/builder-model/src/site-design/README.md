@@ -8,6 +8,7 @@ sizes and fonts) and its shared styles. Saved once for the whole site by core's
 | --------------------- | ----------------------------------------------------------------------- |
 | `design-variables.ts` | Variables, their checks, and the `:root` rule that sets them            |
 | `shared-styles.ts`    | Making, using, detaching and drawing shared styles                      |
+| `tag-styles.ts`       | Looks for every heading, paragraph, link, button and picture            |
 | `variable-uses.ts`    | Where variables are used, and writing a variable's value out            |
 | `site-design.ts`      | The whole design, its schema, and edits across it (deleting a variable) |
 

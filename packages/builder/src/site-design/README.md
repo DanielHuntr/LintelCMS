@@ -10,6 +10,7 @@ a page is drawn with them is in `@lintel/builder-model`'s `site-design/` folder.
 | `site-design-context.tsx` | The context, the site's variables as tokens, and small design edits |
 | `SharedStyleBar.tsx`      | The top of Style: use, make, rename or detach a shared style        |
 | `SharedStylePreview.tsx`  | A small "Aa" tile drawn with a shared style's colours and border    |
+| `TagStyleEditor.tsx`      | All headings, All links and the like: the style controls for a kind |
 | `SiteStylesPanel.tsx`     | Site styles: the site's colours, sizes, fonts and shared styles     |
 
 - **Site styles** is in the right panel: "Site styles" in Style opens it over the element's
@@ -26,3 +27,6 @@ a page is drawn with them is in `@lintel/builder-model`'s `site-design/` folder.
 - **Variants:** "Make a variant" on the shared-style row makes one ("Button · Outline")
   that follows its base; the row switches between them. "Select them" in Site styles
   selects and outlines this page's elements that use a shared style.
+- **Every element of a kind:** "All headings" and the rest open the usual style controls
+  over Site styles. The canvas draws the latest rules in place of the saved ones in the
+  site's stylesheet (`withoutTagStyles`), before the page's own rules.

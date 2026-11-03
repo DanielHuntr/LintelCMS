@@ -155,7 +155,7 @@ export function compileStatePreview(
 
 const stateOrder: readonly StyleState[] = ["hover", "pressed", "focus", "open", "selected"];
 
-const stateSelectors: Record<StyleState, string> = {
+export const stateSelectors: Record<StyleState, string> = {
   hover: ":hover",
   pressed: ":active",
   focus: ":focus-visible",
