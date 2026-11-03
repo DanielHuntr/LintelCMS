@@ -14,13 +14,14 @@ import {
   rootNodeId,
   type StackingMove,
   type StylePropertyName,
+  type StateTransition,
   type StyleTarget,
   type CustomBlock,
   customBlockType,
 } from "@lintel/builder-model";
 import type { MotionSpec } from "@lintel/motion";
 import type { Translate as MotionText } from "@lintel/motion-editor";
-import { type ReactNode, useContext, useMemo, useState } from "react";
+import { type ReactNode, useContext, useEffect, useMemo, useState } from "react";
 import { AnimatePanel, type EffectPreview } from "../animate-panel/AnimatePanel.js";
 import type { PageWeight } from "@lintel/motion/effects";
 import { BlockInstancePanel } from "../blocks/BlockInstancePanel.js";
@@ -32,7 +33,13 @@ import type { ComponentRegistry } from "../render/component-registry.js";
 import type { SkillLevelTools } from "../skill-level/skill-levels.js";
 import type { MarkChange } from "../inline-text/TextStyleBar.js";
 import type { DesignTools, FileUploader } from "../style-panel/design-tools.js";
-import { type StateChoice, StylePanel, type StylePanelMode } from "../style-panel/StylePanel.js";
+import {
+  type StateChoice,
+  type StateOwner,
+  StylePanel,
+  type StylePanelMode,
+} from "../style-panel/StylePanel.js";
+import { layerName } from "../editor/commands.js";
 import { Tip } from "../tour/Tip.js";
 import { Tabs } from "../ui/controls.js";
 import type { ImagePicker } from "./content-fields.js";
@@ -64,6 +71,7 @@ interface SelectedElementPanelProps {
     changeBinding: (nodeId: string, prop: string, fieldPath: string | null, label: string) => void;
     animate: (nodeId: string, animation: NodeAnimation | null) => void;
     setEffects: (nodeId: string, effects: NodeEffect[]) => void;
+    setStateTransition: (nodeId: string, transition: StateTransition | null) => void;
     applyHtml: (nodeId: string, html: string) => void;
     convertToCode: (nodeId: string) => void;
     changeCode: (nodeId: string, code: { html: string; css: string; js: string }) => void;
@@ -89,7 +97,12 @@ interface SelectedElementPanelProps {
   pageWeight?: PageWeight;
   /** Site-wide motion settings, shown when nothing is selected on the Animate tab. */
   siteMotion?: ReactNode;
+  /** Told which state is being styled, so the canvas can show it; null for none. */
+  onStyleStateChange?: (nodeId: string, target: StyleTarget | null) => void;
 }
+
+/** How many elements around the selected one are offered as owners of its states. */
+const maxStateOwners = 3;
 
 /**
  * The right-hand side: Style, Content and Animate for the selected element, and Code for
@@ -116,6 +129,25 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
   }
   const tab = chosenTab === "code" && !tools.codeTools ? "style" : chosenTab;
   const { document, pickImage, uploadFile } = props;
+  // The elements around the selected one, nearest first, whose states it can follow.
+  const stateOwners = useMemo<StateOwner[]>(() => {
+    if (!node) return [];
+    return findPath(document.root, node.id)
+      .slice(1, -1)
+      .reverse()
+      .slice(0, maxStateOwners)
+      .map((around) => ({
+        id: around.id,
+        name: layerName(around, props.registry.catalogue),
+        stateTransition: around.stateTransition,
+      }));
+  }, [node, document, props.registry]);
+  const onStyleStateChange = props.onStyleStateChange;
+  const showsStyleState = tab === "style" && styleState !== "none";
+  useEffect(() => {
+    if (!onStyleStateChange || !node) return;
+    onStyleStateChange(node.id, showsStyleState ? styleState : null);
+  }, [onStyleStateChange, node, showsStyleState, styleState]);
   const design = useMemo<DesignTools | null>(() => {
     if (!node) return null;
     const parent = findPath(document.root, node.id).at(-2);
@@ -236,6 +268,8 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
             onChange={(target, values, label) =>
               actions.changeStyles(node.id, target, values, label)
             }
+            owners={stateOwners}
+            onTransitionChange={actions.setStateTransition}
           />
         ) : tab === "animate" ? (
           <AnimatePanel

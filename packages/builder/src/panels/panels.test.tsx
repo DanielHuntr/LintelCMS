@@ -258,6 +258,38 @@ describe("the Style panel's groups", () => {
     );
   });
 
+  // States: the button can follow the state of what's around it, and both ease together.
+  it("styles an element for the hover of what's around it, and sets how they move", async () => {
+    const person = user();
+    const { latest } = renderBuilder();
+    await select(person, "Button");
+    const styleFor = screen.getByRole("combobox", { name: "Style for" });
+    const ownerOption = within(styleFor)
+      .getAllByRole("option")
+      .find((option) => option.textContent?.endsWith(": pointer over"));
+    expect(ownerOption).toBeDefined();
+    const target = (ownerOption as HTMLOptionElement).value;
+    const ownerId = target.split("@")[1]!;
+    await person.selectOptions(styleFor, target);
+    expect(screen.getByText(/apply while .* is in this state/)).toBeInTheDocument();
+
+    await person.click(disclosure("Background"));
+    await person.click(within(groupOf("Background")).getByRole("button", { name: "Accent" }));
+    expect(findNode(latest().root, "n5")?.styles.owners).toEqual({
+      [target]: { backgroundColor: "var(--lintel-color-accent)" },
+    });
+
+    // Instant until a feel is chosen; the transition is saved on the owner.
+    expect(screen.getByRole("radio", { name: "Instant" })).toBeChecked();
+    await person.click(screen.getByRole("radio", { name: "Springy" }));
+    expect(findNode(latest().root, ownerId)?.stateTransition).toEqual({
+      feel: "springy",
+      speed: "steady",
+    });
+    await person.click(screen.getByRole("radio", { name: "Quick" }));
+    expect(findNode(latest().root, ownerId)?.stateTransition?.speed).toBe("quick");
+  });
+
   it("still opens groups on a locked element, with the controls disabled", async () => {
     const person = user();
     renderBuilder();

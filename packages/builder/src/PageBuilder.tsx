@@ -5,6 +5,9 @@ import {
   createRandomNodeId,
   findNode,
   ownSiteChrome,
+  assignClassNames,
+  compileStatePreview,
+  type StyleTarget,
   type PageDocument,
   sectionTemplates,
   starterSites as allStarterSites,
@@ -240,6 +243,25 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   const site = props.site;
   // A page with its own header or footer shows it instead of the site's, as the website does.
   const ownChrome = useMemo(() => ownSiteChrome(state.document.root), [state.document.root]);
+  // While a state is being styled (hover, or "while the card is hovered"), the page shows it.
+  const [stylingState, setStylingState] = useState<{ nodeId: string; target: StyleTarget } | null>(
+    null,
+  );
+  const reportStylingState = useCallback(
+    (nodeId: string, target: StyleTarget | null) =>
+      setStylingState(target ? { nodeId, target } : null),
+    [],
+  );
+  const statePreviewCss = useMemo(() => {
+    if (!stylingState || stylingState.nodeId !== selectedId) return "";
+    const root = state.document.root;
+    return compileStatePreview(
+      root,
+      assignClassNames(root, catalogue),
+      stylingState.nodeId,
+      stylingState.target,
+    );
+  }, [stylingState, selectedId, state.document.root, catalogue]);
   const canvasCss = useMemo(
     () =>
       `${
@@ -248,8 +270,8 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
           : `${props.themeStylesheet ?? defaultThemeStylesheet}\n${standInBaseStylesheet}\n${props.baseStylesheet ?? ""}\n${designBaseStylesheet}\n${rendered.css}`
       }${ownChrome.header ? '\n[data-lintel-site-chrome="header"]{display:none}' : ""}${
         ownChrome.footer ? '\n[data-lintel-site-chrome="footer"]{display:none}' : ""
-      }`,
-    [site, props.themeStylesheet, props.baseStylesheet, rendered.css, ownChrome],
+      }${statePreviewCss ? `\n${statePreviewCss}` : ""}`,
+    [site, props.themeStylesheet, props.baseStylesheet, rendered.css, ownChrome, statePreviewCss],
   );
 
   const previewMotion = useCallback(
@@ -707,6 +729,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                     }}
                     onPreviewMotion={previewMotion}
                     onPreviewEffect={previewEffect}
+                    onStyleStateChange={reportStylingState}
                     effectModules={props.effectModules}
                     pageWeight={pageWeight}
                     siteMotion={

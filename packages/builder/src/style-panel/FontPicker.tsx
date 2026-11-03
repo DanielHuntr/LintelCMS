@@ -13,7 +13,7 @@ import { useId, useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { inputClassName, Labelled } from "../ui/controls.js";
 import { useDesignTools } from "./design-tools.js";
-import { overrideNotes, useStyleEditing, useStyleField } from "./style-field.js";
+import { overrideNoteFor, useStyleEditing, useStyleField } from "./style-field.js";
 
 const formats: Record<string, FontFormat> = {
   "font/woff2": "woff2",
@@ -59,7 +59,7 @@ export function FontPicker() {
     <div className="flex flex-col gap-2">
       <Labelled
         label={text("pageBuilder.style.font")}
-        overridden={field.isOverridden ? text(overrideNotes[target]) : undefined}
+        overridden={field.isOverridden ? text(overrideNoteFor(target)) : undefined}
         onReset={field.reset}
         resetLabel={text("pageBuilder.style.reset")}
       >
