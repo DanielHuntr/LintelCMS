@@ -51,6 +51,10 @@ export interface InstalledVersion {
   current: boolean;
   installedAt: string | null;
   backupBeforeLeaving: string | null;
+  /** The copy of the database made as Lintel left this version, if it's still kept. */
+  databaseCopyBeforeLeaving: string | null;
+  /** The running version changed the database since, so going back needs that copy. */
+  databaseDiffers: boolean;
 }
 
 export interface UpdateProgress {
@@ -63,6 +67,7 @@ export interface UpdateProgress {
   startedAt: string;
   finishedAt: string | null;
   backupFilename: string | null;
+  databaseCopy?: string | null;
 }
 
 export interface UpdateSummary {

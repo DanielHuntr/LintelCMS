@@ -13,7 +13,8 @@ import { afterEach, describe, expect, it } from "vitest";
  */
 
 const CORE_FOLDER = fileURLToPath(new URL("..", import.meta.url));
-const TSX = join(CORE_FOLDER, "node_modules", ".bin", "tsx");
+// tsx's own script, run with this Node: .bin/tsx is a shell script, which Windows can't run.
+const TSX_CLI = join(CORE_FOLDER, "node_modules", "tsx", "dist", "cli.mjs");
 // Creating a new built-in database and migrating it takes a while on a busy machine.
 const STARTUP_TIMEOUT = 120_000;
 
@@ -50,7 +51,7 @@ function waitForOutput(child: ChildProcess, text: string, output: string[]): Pro
 
 function waitForExit(child: ChildProcess): Promise<number | null> {
   return new Promise((resolve) => {
-    if (child.exitCode !== null) resolve(child.exitCode);
+    if (child.exitCode !== null || child.signalCode !== null) resolve(child.exitCode);
     else child.once("exit", (code) => resolve(code));
   });
 }
@@ -60,7 +61,8 @@ describe("starting Lintel", () => {
   let dataFolder: string | undefined;
 
   afterEach(async () => {
-    if (child && child.exitCode === null) {
+    // A process ended by a signal has no exit code, only a signal code.
+    if (child && child.exitCode === null && child.signalCode === null) {
       child.kill("SIGKILL");
       await waitForExit(child);
     }
@@ -75,8 +77,9 @@ describe("starting Lintel", () => {
       const output: string[] = [];
       // The same command as `pnpm dev`, without watching for changes.
       child = spawn(
-        TSX,
+        process.execPath,
         [
+          TSX_CLI,
           "--tsconfig",
           "tsconfig.dev.json",
           "--conditions=development",
@@ -108,7 +111,11 @@ describe("starting Lintel", () => {
       expect(await website.text()).toContain("<html");
 
       child.kill("SIGTERM");
-      expect(await waitForExit(child)).toBe(0);
+      const exitCode = await waitForExit(child);
+      // Windows has no SIGTERM to catch: kill() ends the process straight away.
+      if (process.platform !== "win32") {
+        expect(exitCode).toBe(0);
+      }
       expect(output.join("")).not.toMatch(/FST_ERR|Error:/);
     },
     STARTUP_TIMEOUT,

@@ -200,3 +200,28 @@ This is Daniel's call. Before it can be made:
 4. A real payment, refund and webhook round trip with Stripe in test mode.
 5. A manual pass over the batch 4 cases in TEST-CASES.md in a browser.
 6. A screen-reader pass on the admin's everyday screens and on checkout.
+
+## Update, 4 November 2026: the update defects are fixed
+
+Branch `fix/update-blockers` (`FIX-LOG-updates.md`, decision 0041). The text above is
+unchanged; this note supersedes the update items in it.
+
+- **LINTEL-FUNC-016 (P1), fixed:** on Windows the old `current` junction is removed
+  before the new one is renamed in. A switch cut off in between is finished on the next
+  start.
+- **LINTEL-DATA-011 (P1), fixed:** the supervisor copies the built-in database while the
+  site is paused, and a failed update or a roll back puts that exact copy back, tables and
+  rows. A roll back across database changes needs the copy and is refused without it. On a
+  Postgres server, updates that change the database are refused before anything stops.
+- **LINTEL-DATA-013 (P2), fixed:** that copy is taken at the switch, after the download.
+- **LINTEL-FUNC-027 (P2), fixed:** a switch journal lets a restarted supervisor finish or
+  undo a half-done switch.
+- **Windows test runs:** the update, supervisor, release-signature, install-type, main,
+  dev-runtime and model-sync tests now pass on Windows. Core has no failures left on
+  Windows; two CLI path tests still fail there.
+
+With these, **no P1 is open**. Still needed before calling one-click updates safe:
+
+- a real update and roll back of a release build, on Linux and on Windows;
+- the update tests on Linux in CI;
+- a decision on Postgres: updates that change the database are done by hand for now.
