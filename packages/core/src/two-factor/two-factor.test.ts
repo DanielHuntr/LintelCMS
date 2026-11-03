@@ -160,6 +160,25 @@ describe("two-factor authentication", () => {
     expect((await signIn("ed@example.com")).json().user.email).toBe("ed@example.com");
   });
 
+  // LINTEL-SEC-013: someone at an unlocked computer could guess the password here for ever.
+  it("limits password guesses when turning it off or making new recovery codes", async () => {
+    await turnOn(asEd);
+    const answers = { disable: [] as number[], codes: [] as number[] };
+    for (let attempt = 0; attempt < 11; attempt++) {
+      answers.disable.push(
+        (await asEd("POST", "/account/two-factor/disable", { password: "guess" })).statusCode,
+      );
+      answers.codes.push(
+        (await asEd("POST", "/account/two-factor/recovery-codes", { password: "guess" }))
+          .statusCode,
+      );
+    }
+
+    expect(answers.disable.slice(0, 10).every((status) => status === 401)).toBe(true);
+    expect(answers.disable[10]).toBe(429);
+    expect(answers.codes[10]).toBe(429);
+  });
+
   it("makes a new set of recovery codes, replacing the old", async () => {
     const { recoveryCodes } = await turnOn(asEd);
 

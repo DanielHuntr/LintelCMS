@@ -24,8 +24,17 @@ const CODE_ATTEMPTS_PER_MINUTE = 10;
  *   POST /account/two-factor/disable         { password } -> 204
  *   POST /account/two-factor/recovery-codes  { password } -> { recoveryCodes }
  */
+/** Password checks allowed from one address per 15 minutes, as for changing the password. */
+const PASSWORD_ATTEMPTS = 10;
+
 export async function twoFactorRoutes(server: FastifyInstance) {
   const signedIn = { preHandler: requireAccountSession };
+  // Turning it off and making new codes check the password, so guesses are limited as for
+  // changing the password itself (LINTEL-SEC-013).
+  const withPassword = {
+    preHandler: requireAccountSession,
+    config: { rateLimit: { max: PASSWORD_ATTEMPTS, timeWindow: "15 minutes" } },
+  };
 
   server.get("/account/two-factor", signedIn, async (request) =>
     describeTwoFactor(server.database, getSignedIn(request).user.id),
@@ -55,14 +64,14 @@ export async function twoFactorRoutes(server: FastifyInstance) {
     },
   );
 
-  server.post("/account/two-factor/disable", signedIn, async (request, reply) => {
+  server.post("/account/two-factor/disable", withPassword, async (request, reply) => {
     const { password } = parseRequest(passwordConfirmationSchema, request.body);
     await disableTwoFactor(server.database, getSignedIn(request).user.id, password);
     await logOwnEvent(request, "two-factor-disabled");
     return reply.code(204).send();
   });
 
-  server.post("/account/two-factor/recovery-codes", signedIn, async (request, reply) => {
+  server.post("/account/two-factor/recovery-codes", withPassword, async (request, reply) => {
     const { password } = parseRequest(passwordConfirmationSchema, request.body);
     const result = await regenerateRecoveryCodes(
       server.database,
