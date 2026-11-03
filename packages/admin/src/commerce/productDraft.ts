@@ -126,13 +126,33 @@ export function splitList(text: string): string[] {
   ];
 }
 
+/** "Red / Large": what a variant is called on screen. */
+export function variantName(variant: Pick<VariantDraft, "optionValues">): string {
+  return variant.optionValues.join(" / ");
+}
+
+const combinationId = (values: readonly string[]) => values.join("\u0000");
+
+/** Whether one variant became the other by an option being added or taken away. */
+function differsByAnOption(values: readonly string[], combination: readonly string[]): boolean {
+  if (values.length === combination.length) return false;
+  const [shorter, longer] =
+    values.length < combination.length ? [values, combination] : [combination, values];
+  return shorter.every((value) => longer.includes(value));
+}
+
 /**
  * The variants for a set of options: one for every combination of values, keeping what was
  * typed for combinations that were already there. Without options, the one default variant.
+ *
+ * When an option is added or taken away, each variant moves to the first combination that
+ * still fits it, so its id, codes and stock survive. `setAside` holds variants removed earlier
+ * in this edit: a choice removed by mistake and added back returns with all its details.
  */
 export function variantsForOptions(
   options: readonly OptionDraft[],
   existing: readonly VariantDraft[],
+  setAside: readonly VariantDraft[] = [],
 ): VariantDraft[] {
   const lists = options
     .map((option) => splitList(option.values))
@@ -147,26 +167,71 @@ export function variantsForOptions(
     [[]],
   );
   const byValues = new Map(
-    existing.map((variant) => [variant.optionValues.join("\u0000"), variant]),
+    [...setAside, ...existing].map((variant) => [combinationId(variant.optionValues), variant]),
   );
-  // A product gaining its first option keeps the old default variant's details for the first combination.
-  const template =
-    existing.length === 1 && existing[0]?.optionValues.length === 0 ? existing[0] : undefined;
+  // Exact matches go first, so a looser match can't take a variant that still fits as it is.
+  const exactMatches = combinations.map((combination) => byValues.get(combinationId(combination)));
+  const taken = new Set(exactMatches);
+
   return combinations.map((combination, index) => {
-    const kept = byValues.get(combination.join("\u0000"));
+    const kept = exactMatches[index];
     if (kept) return kept;
-    if (template && index === 0)
-      return { ...template, key: combination.join(" / "), optionValues: combination };
-    return { ...emptyVariant(combination), price: template?.price ?? existing[0]?.price ?? "" };
+    const related = existing.filter((variant) =>
+      differsByAnOption(variant.optionValues, combination),
+    );
+    const moved = related.find((variant) => !taken.has(variant));
+    if (moved) {
+      taken.add(moved);
+      return { ...moved, key: moved.id ?? combination.join(" / "), optionValues: combination };
+    }
+    return { ...emptyVariant(combination), price: (related[0] ?? existing[0])?.price ?? "" };
   });
 }
 
+/**
+ * Changes one choice's wording ("S" to "Small") everywhere it's used, so the variants that
+ * have it keep their ids and details instead of being replaced by new, empty ones.
+ */
+export function renameChoice(
+  draft: Pick<ProductDraft, "options" | "variants">,
+  optionIndex: number,
+  from: string,
+  to: string,
+): Pick<ProductDraft, "options" | "variants"> {
+  // Options with no choices yet make no variants, so they don't count towards the position.
+  const position = draft.options
+    .slice(0, optionIndex)
+    .filter((option) => splitList(option.values).length > 0).length;
+  return {
+    options: draft.options.map((option, index) =>
+      index === optionIndex
+        ? {
+            ...option,
+            values: splitList(option.values)
+              .map((value) => (value === from ? to : value))
+              .join(", "),
+          }
+        : option,
+    ),
+    variants: draft.variants.map((variant) => {
+      if (variant.optionValues[position] !== from) return variant;
+      const optionValues = variant.optionValues.map((value, index) =>
+        index === position ? to : value,
+      );
+      return { ...variant, key: variant.id ?? optionValues.join(" / "), optionValues };
+    }),
+  };
+}
+
 /** Why a box can't be saved yet; each has a message under `shop.products.problem`. */
-export type DraftProblemKind = "price" | "weight" | "stock";
+export type DraftProblemKind = "price" | "weight" | "stock" | "optionName" | "tooManyVariants";
 
 export interface DraftProblems {
   [field: string]: DraftProblemKind;
 }
+
+/** The API's limit (`products.schema.ts`). */
+const MAX_VARIANTS = 100;
 
 /** What the API needs, or the boxes that don't hold a number yet. */
 export function productInputFromDraft(
@@ -212,6 +277,12 @@ export function productInputFromDraft(
       stock,
     };
   });
+  // Without its name an option is left out of what's sent, and its variants no longer fit.
+  draft.options.forEach((option, index) => {
+    if (option.name.trim() === "" && splitList(option.values).length > 0)
+      problems[`options.${index}.name`] = "optionName";
+  });
+  if (draft.variants.length > MAX_VARIANTS) problems.variants = "tooManyVariants";
   return {
     problems,
     input: {
