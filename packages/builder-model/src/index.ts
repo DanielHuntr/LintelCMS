@@ -107,6 +107,7 @@ export {
   type StarterPageOptions,
   type StarterPage,
   type StarterSite,
+  type StarterSiteMotion,
   type StarterTheme,
 } from "./starter-sites/starter-site.js";
 export { findStarterSite, starterSites } from "./starter-sites/starter-sites.js";

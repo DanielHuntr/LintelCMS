@@ -1,3 +1,4 @@
+import type { SiteEffectSettings } from "@lintel/motion/effects";
 import type { ComponentCatalogue } from "../components/component-catalogue.js";
 import type { NodeBlueprint } from "../components/component-definition.js";
 import { createEmptyPage, type PageDocument } from "../document/page-document.schema.js";
@@ -40,9 +41,20 @@ export interface StarterSite {
   /** The illustration shown on its card in the library. */
   coverIllustration: string;
   theme: StarterTheme;
+  /**
+   * Motion across the whole site that comes with the look: smooth scrolling, the cursor, the
+   * page transition and the first-visit intro. Each part changes only what it names; applied
+   * with the theme.
+   */
+  siteMotion?: StarterSiteMotion;
   /** Home first; the menu lists them in this order. */
   pages: readonly StarterPage[];
 }
+
+/** Some of the site's motion settings, each part only the values it changes. */
+export type StarterSiteMotion = {
+  [Part in keyof SiteEffectSettings]?: Partial<SiteEffectSettings[Part]>;
+};
 
 /** A starter page as a page design, with fresh ids for every element. */
 /**

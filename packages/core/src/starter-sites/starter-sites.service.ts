@@ -31,6 +31,7 @@ import { type FormTemplateId, formTemplateIds } from "../forms/form-templates.js
 import { findEnabledPluginIds } from "../plugins/plugins.service.js";
 import { moveToRecycleBin } from "../recycle-bin/recycle-bin.service.js";
 import { hasPermission } from "../roles/permissions.js";
+import { readSiteEffects, updateSiteEffects } from "../site-effects/site-effects.service.js";
 import { siteOrDefault } from "../sites/sites.service.js";
 import type { Site } from "../sites/sites.table.js";
 import { updateWebsiteRequestSchema } from "../website/website.schema.js";
@@ -287,7 +288,22 @@ async function applyTheme(
     builtInSiteUrl: context.builtInSiteUrl,
     assetExists: context.assetExists,
   });
+  if (site.siteMotion) await applySiteMotion(database, site.siteMotion);
   return true;
+}
+
+/** The template's site-wide motion, part by part over what the site has now. */
+async function applySiteMotion(
+  database: DatabaseOrTransaction,
+  motion: NonNullable<StarterSite["siteMotion"]>,
+): Promise<void> {
+  const current = await readSiteEffects(database);
+  await updateSiteEffects(database, {
+    pageTransition: { ...current.pageTransition, ...motion.pageTransition },
+    cursor: { ...current.cursor, ...motion.cursor },
+    intro: { ...current.intro, ...motion.intro },
+    smoothScroll: { ...current.smoothScroll, ...motion.smoothScroll },
+  });
 }
 
 /**

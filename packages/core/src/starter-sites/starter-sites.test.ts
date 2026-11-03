@@ -1,5 +1,6 @@
 import { motionCloakCss as runtimeCloakCss } from "@lintel/motion";
 import { motionCloakCss } from "@lintel/site-components";
+import { findStarterSite, type StarterSite } from "@lintel/builder-model";
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ensurePagesCollection } from "../collections/default-collections.js";
@@ -64,6 +65,29 @@ describe("starting from a template", () => {
     expect(home.body).toContain('class="lintel-design"');
     expect(home.body).toContain('src="/_lintel/illustrations/bakery-loaf.svg"');
     expect(home.body).toContain('href="/menu"');
+  });
+
+  it("switches on the template's site-wide motion with its theme, keeping the rest", async () => {
+    const bakery = findStarterSite("bakery") as StarterSite & { siteMotion?: unknown };
+    bakery.siteMotion = {
+      smoothScroll: { strength: "gentle" },
+      cursor: { style: "ring" },
+      pageTransition: { style: "fade" },
+    };
+    try {
+      await owner("PUT", "/website/effects", { cursor: { style: "dot", size: 40 } });
+      const response = await owner("POST", "/starter-sites/bakery/apply", { publish: true });
+      expect(response.statusCode, response.body).toBe(201);
+      const effects = (await owner("GET", "/website/effects")).json();
+      expect(effects).toMatchObject({
+        smoothScroll: { strength: "gentle" },
+        cursor: { style: "ring", size: 40 },
+        pageTransition: { style: "fade" },
+        intro: { style: "none" },
+      });
+    } finally {
+      delete bakery.siteMotion;
+    }
   });
 
   it("plays animations with the motion runtime, only on pages that have them", async () => {
