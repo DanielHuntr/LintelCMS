@@ -1,5 +1,6 @@
 import type { MotionSpec } from "@lintel/motion";
 import {
+  cleanProps,
   defaultProps,
   effectAnimation,
   effectRegistry,
@@ -16,6 +17,8 @@ import { useMemo, useState, type ReactNode } from "react";
 import type { OpenGroups } from "../controls/CollapsibleGroup.js";
 import { classNames } from "../controls/classNames.js";
 import { AppliedEffect } from "../effects/AppliedEffect.js";
+import type { CursorColourSwatch } from "../effects/CursorLookFields.js";
+import { EffectSettings } from "../effects/EffectSettings.js";
 import { PageWeightMeter } from "../effects/PageWeightMeter.js";
 import type { MotionEditorStringKey } from "../strings/motionEditorStrings.js";
 import { TranslateProvider, useTranslate, type Translate } from "../strings/translate.js";
@@ -79,7 +82,16 @@ export interface MotionPanelProps {
   presets?: readonly MotionPreset[];
   registry?: EffectRegistry;
   translate?: Translate;
+  /** The site's colours, offered for effects' colour settings; the theme's when left out. */
+  colours?: readonly CursorColourSwatch[];
 }
+
+/**
+ * Backgrounds and picture effects show each change on the page as it is made, since how
+ * they look is the whole point of their settings.
+ */
+const previewsEachChange = (definition: EffectDefinition) =>
+  definition.kind === "behaviour" && definition.category === "canvas";
 
 type View =
   | { name: "list" }
@@ -124,6 +136,7 @@ function Panel({
   openGroups,
   presets = motionPresets,
   registry = effectRegistry,
+  colours,
 }: MotionPanelProps) {
   const t = useTranslate();
   const [view, setView] = useState<View>({ name: "list" });
@@ -260,6 +273,28 @@ function Panel({
     setView({ name: "effect", index: effects.length });
   }
 
+  /** The settings of a background or picture effect a tile just added, shown under the tiles. */
+  const addedSaved = effectAdded ? effects[effectAdded.index] : undefined;
+  const addedDefinition =
+    effectAdded?.choice.kind === "effect" ? effectAdded.choice.definition : undefined;
+  const effectSettings =
+    addedSaved && addedDefinition && previewsEachChange(addedDefinition) && effectAdded ? (
+      <div className="rounded-card bg-background p-3">
+        <EffectSettings
+          definition={addedDefinition}
+          values={cleanProps(addedDefinition, addedSaved.params)}
+          colours={colours}
+          onChange={(params) => {
+            onChangeEffects(
+              effects.map((saved, at) => (at === effectAdded.index ? { ...saved, params } : saved)),
+            );
+            onPreviewEffect(addedDefinition, params);
+          }}
+          onCommit={onCommit}
+        />
+      </div>
+    ) : undefined;
+
   if (view.name === "add") {
     return (
       <div className="flex flex-col gap-2.5">
@@ -270,6 +305,7 @@ function Panel({
           tiles={moment ? quickChoicesFor(moment, choices, elementKind) : []}
           added={added}
           addedEffectId={effectAdded?.choice.id}
+          effectSettings={effectSettings}
           animationsFull={animationsFull}
           onMoment={chooseMoment}
           onTile={(tile) => {
@@ -371,11 +407,13 @@ function Panel({
           <AppliedEffect
             definition={item.definition}
             saved={item.saved}
-            onChange={(params) =>
+            colours={colours}
+            onChange={(params) => {
               onChangeEffects(
                 effects.map((saved, at) => (at === item.index ? { ...saved, params } : saved)),
-              )
-            }
+              );
+              if (previewsEachChange(item.definition)) onPreviewEffect(item.definition, params);
+            }}
             onRemove={() => {
               onChangeEffects(effects.filter((_, at) => at !== item.index));
               onCommit?.();

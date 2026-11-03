@@ -17,6 +17,7 @@ function renderPanel(options: { animations?: SavedAnimation[]; elementKind?: Ele
   const saved: Saved = { animations: options.animations ?? [], effects: [] };
   const onPreviewSpec = vi.fn<(spec: MotionSpec) => void>();
   const onCommit = vi.fn();
+  const onPreviewEffect = vi.fn();
   function Host() {
     const [animations, setAnimations] = useState(saved.animations);
     const [effects, setEffects] = useState<NodeEffect[]>([]);
@@ -35,7 +36,7 @@ function renderPanel(options: { animations?: SavedAnimation[]; elementKind?: Ele
           setEffects(next);
         }}
         onPreviewSpec={onPreviewSpec}
-        onPreviewEffect={vi.fn()}
+        onPreviewEffect={onPreviewEffect}
         onStopPreview={vi.fn()}
         showsTimeline={false}
         onCommit={onCommit}
@@ -43,7 +44,7 @@ function renderPanel(options: { animations?: SavedAnimation[]; elementKind?: Ele
     );
   }
   render(<Host />);
-  return { saved, onPreviewSpec, onCommit, user: userEvent.setup() };
+  return { saved, onPreviewSpec, onPreviewEffect, onCommit, user: userEvent.setup() };
 }
 
 const moments = () => screen.getByRole("radiogroup", { name: "When it moves" });
@@ -243,7 +244,7 @@ describe("adding motion", () => {
   it.each([
     ["text", ["Lift", "Roll up", "Underline", "Scramble", "Wave", "Bolder"]],
     ["button", ["Lift", "Grow", "Roll up", "Underline", "Scramble", "Wave"]],
-    ["image", ["Lift", "Grow", "Brighten", "Tilt", "Magnetic", "Swing"]],
+    ["image", ["Grow", "Liquid", "Colour split", "Lens", "Lift", "Tilt"]],
     ["container", ["Lift", "Grow", "Brighten", "Tilt", "Magnetic", "Swing"]],
   ] as const)("offers %s the best six hover tiles", async (elementKind, names) => {
     const { user } = renderPanel({ elementKind });
@@ -305,5 +306,53 @@ describe("adding motion", () => {
     expect(onChangeAnimations.mock.lastCall![0].map((animation) => animation.presetId)).toEqual([
       "hover-lift",
     ]);
+  });
+});
+
+/** The tiles' visible names (their descriptions are hidden, for screen readers). */
+const tileNames = () =>
+  within(tiles())
+    .getAllByRole("radio")
+    .map((tile) => tile.querySelector(":scope > span:nth-child(2)")?.textContent);
+
+describe("backgrounds and picture effects", () => {
+  it("offers sections the moving backgrounds under Always, starting with the gradient", async () => {
+    const { saved, onPreviewEffect, user } = renderPanel({ elementKind: "container" });
+    await user.click(screen.getByRole("button", { name: "Add motion" }));
+    await user.click(screen.getByRole("radio", { name: "Always" }));
+    expect(tileNames()).toEqual(["Gradient", "Soft light", "Dust", "Contours", "Grain"]);
+    expect(saved.effects.map((effect) => effect.effect)).toEqual(["moving-gradient"]);
+    expect(onPreviewEffect).toHaveBeenCalled();
+  });
+
+  it("shows a background's few settings under the tiles, with the site's colours", async () => {
+    const { saved, onPreviewEffect, user } = renderPanel({ elementKind: "container" });
+    await user.click(screen.getByRole("button", { name: "Add motion" }));
+    await user.click(screen.getByRole("radio", { name: "Always" }));
+    expect(screen.getByRole("slider", { name: /Speed/ })).toBeInTheDocument();
+    expect(screen.getByRole("slider", { name: /How much colour/ })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Keep words readable" })).toBeChecked();
+    const first = screen.getByRole("group", { name: /First colour/ });
+    await user.click(within(first).getByRole("button", { name: "Brand" }));
+    expect(saved.effects[0]?.params.one).toBe("var(--lintel-color-brand)");
+    // Each change shows on the page straight away.
+    expect(onPreviewEffect.mock.lastCall?.[1]).toMatchObject({ one: "var(--lintel-color-brand)" });
+    await user.click(within(tiles()).getByRole("radio", { name: "Dust" }));
+    const dust = screen.getByRole("group", { name: /Dust colour/ });
+    expect(within(dust).getByRole("button", { name: "Same as the words" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(saved.effects.map((effect) => effect.effect)).toEqual(["floating-dust"]);
+  });
+
+  it("offers pictures reveals as they appear", async () => {
+    const { saved, user } = renderPanel({ elementKind: "image" });
+    await user.click(screen.getByRole("button", { name: "Add motion" }));
+    await user.click(screen.getByRole("radio", { name: "Appears" }));
+    expect(tileNames()).toEqual(["Fade up", "Develop", "Pixelate", "Blur in", "Reveal", "Fade in"]);
+    await user.click(within(tiles()).getByRole("radio", { name: "Develop" }));
+    expect(saved.animations).toEqual([]);
+    expect(saved.effects).toEqual([{ effect: "develop-reveal", params: { speed: 1 } }]);
   });
 });

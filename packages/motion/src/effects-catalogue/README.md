@@ -7,7 +7,7 @@ into what a published page runs. Uses Zod, so it is for the server and the edito
 | -------------------------- | -------------------------------------------------------------------------------------------- |
 | `effect-definition.ts`     | `defineEffect`, the three kinds (behaviour, animation, style), typed settings, `cleanProps`  |
 | `parameters.ts`            | `number`, `choice`, `colour`, `toggle`, `text`: short ways to write settings                 |
-| `catalogue/`               | Lintel's 117 effects, one file per category                                                  |
+| `catalogue/`               | Lintel's effects, one file per category; the creative pack is `creative-effects.ts`          |
 | `effect-registry.ts`       | The shared list; `registerEffect` adds one from a plugin or code                             |
 | `resolve-effects.ts`       | Saved `{ effect, params }` to runtime bindings and static CSS                                |
 | `page-weight.ts`           | The meter: effects, modules and kilobytes, and heavy-combination warnings                    |

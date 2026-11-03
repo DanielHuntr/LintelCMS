@@ -174,13 +174,17 @@ export function searchMotionChoices(
 /**
  * Where an effect is offered. Text effects that play while the pointer is over the words
  * (roll up, scramble on hover, the wave) are offered on hover; the rest of the text effects
- * when the words appear.
+ * when the words appear. Canvas effects are backgrounds that always move, except picture
+ * effects marked to play on hover or as the picture appears.
  */
 function effectPlace(definition: EffectDefinition): [MotionMoment, MotionGroup] | undefined {
   const trigger = definition.kind === "behaviour" ? definition.fixed?.trigger : undefined;
   if (definition.category === "text" && (trigger === "hover" || trigger === "pointer")) {
     return ["hover", "words"];
   }
+  // Picture effects: the ones that play on hover, and the reveals as a picture appears.
+  if (definition.category === "canvas" && trigger === "hover") return ["hover", "pointerEffects"];
+  if (definition.category === "canvas" && trigger === "appear") return ["appears", "blocks"];
   return effectPlaces[definition.category];
 }
 

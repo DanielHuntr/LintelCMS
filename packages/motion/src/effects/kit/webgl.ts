@@ -110,16 +110,6 @@ export function colourToRgb(colour: string): [number, number, number] {
   return [((value >> 16) & 255) / 255, ((value >> 8) & 255) / 255, (value & 255) / 255];
 }
 
-/** Waits for a picture to finish loading. */
-export function loaded(image: HTMLImageElement): Promise<HTMLImageElement> {
-  return image.complete && image.naturalWidth
-    ? Promise.resolve(image)
-    : new Promise((resolve, reject) => {
-        image.addEventListener("load", () => resolve(image), { once: true });
-        image.addEventListener("error", reject, { once: true });
-      });
-}
-
-/** GLSL value noise, shared by the shader effects. */
-export const noiseFunctions = `float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}`;
+// Kept in files of their own so the shared renderer's effects can use them without this file.
+export { loaded } from "./loaded.js";
+export { noiseFunctions } from "./shader-source.js";

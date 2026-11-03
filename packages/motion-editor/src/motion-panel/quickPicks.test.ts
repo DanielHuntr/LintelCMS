@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { listMotionChoices, momentOfSpec, motionMoments } from "./motionChoices.js";
 import {
   distanceForStartSize,
+  elementPicks,
   feelOf,
   growsFrom,
   quickChoicesFor,
@@ -20,6 +21,18 @@ import {
 
 describe("quick picks", () => {
   const any = listMotionChoices(motionPresets, effectRegistry, "any");
+
+  it("finds every section and picture tile among that kind's choices, in its moment", () => {
+    for (const moment of motionMoments) {
+      for (const [kind, picks] of Object.entries(elementPicks[moment] ?? {})) {
+        const elementKind = kind as Parameters<typeof listMotionChoices>[2];
+        const choices = listMotionChoices(motionPresets, effectRegistry, elementKind);
+        expect(quickChoicesFor(moment, choices, elementKind).map((tile) => tile.pick.id)).toEqual(
+          (picks ?? []).map((pick) => pick.id),
+        );
+      }
+    }
+  });
 
   it("finds every pick among the existing presets and animation effects", () => {
     const text = listMotionChoices(motionPresets, effectRegistry, "text");

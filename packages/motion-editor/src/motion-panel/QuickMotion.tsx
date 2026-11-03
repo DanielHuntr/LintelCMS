@@ -36,6 +36,8 @@ interface QuickMotionProps {
   added: QuickAdded | null;
   /** The id of the effect a tile added here (roll up, scramble on hover), if one did. */
   addedEffectId?: string;
+  /** The settings of the background or picture effect a tile added, if one did. */
+  effectSettings?: ReactNode;
   /** The element has as many animations as it can take, so nothing can be added. */
   animationsFull: boolean;
   onMoment: (moment: MotionMoment) => void;
@@ -61,6 +63,7 @@ export function QuickMotion({
   tiles,
   added,
   addedEffectId,
+  effectSettings,
   animationsFull,
   onMoment,
   onTile,
@@ -133,6 +136,8 @@ export function QuickMotion({
           ))}
         </div>
       )}
+
+      {effectSettings}
 
       {added && moment && (
         <QuickControls added={added} moment={moment} onSettings={onSettings} onCommit={onCommit} />
