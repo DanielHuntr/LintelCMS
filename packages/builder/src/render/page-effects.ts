@@ -1,6 +1,7 @@
 import {
   impliedAnimationEffect,
   impliedMenuLinkEffect,
+  impliedModelEffect,
   type PageNode,
 } from "@lintel/builder-model";
 import {
@@ -29,8 +30,9 @@ export function collectNodeEffects(
 ): Array<{ nodeId: string; effects: NodeEffect[] }> {
   if (node.hidden) return [];
   // A Menu link that scrambles on hover runs the scramble effect on every link; a Lottie or
-  // Rive element runs its player.
-  const implied = impliedMenuLinkEffect(node) ?? impliedAnimationEffect(node);
+  // Rive element runs its player, and a 3D model is drawn by an effect of its own.
+  const implied =
+    impliedMenuLinkEffect(node) ?? impliedAnimationEffect(node) ?? impliedModelEffect(node);
   const effects = implied ? [...(node.effects ?? []), implied] : (node.effects ?? []);
   const own = effects.length ? [{ nodeId: node.id, effects }] : [];
   return [...own, ...node.children.flatMap(collectNodeEffects)];

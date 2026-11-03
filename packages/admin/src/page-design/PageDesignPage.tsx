@@ -4,6 +4,7 @@ import {
   type CanvasSite,
   type FileUploader,
   PageBuilder,
+  type ImagePicker,
   type PickedImage,
   type PictureUploader,
 } from "@lintel/builder";
@@ -21,6 +22,7 @@ import type { MotionEditorStringKey } from "@lintel/motion-editor";
 import { Link } from "@tanstack/react-router";
 import { ChevronLeft, MonitorSmartphone, SquareArrowOutUpRight } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
+import { apiUrl } from "../api/client.js";
 import { LoadError } from "../api/LoadError.js";
 import { useCollection, useEntry } from "../content/content.queries.js";
 import type { Entry } from "../content/content.types.js";
@@ -277,6 +279,7 @@ function PageDesigner({
         onAddFont={fonts.onAddFont}
         onMoveFontToSite={fonts.onMoveFontToSite}
         uploadPicture={uploadPictureToMediaLibrary}
+        sampleModelsUrl={`${apiUrl}/media/sample-models`}
         onSaveNow={experiments.isEditingVersion ? experiments.saveNow : saving.saveNow}
         frameScripts={canvasFrameScripts}
         effectModules={effectModules}
@@ -427,9 +430,7 @@ const uploadPictureToMediaLibrary: PictureUploader = async (file) => {
 };
 
 export function useImagePicker() {
-  const [request, setRequest] = useState<{ label: string; currentAssetId: string | null } | null>(
-    null,
-  );
+  const [request, setRequest] = useState<Parameters<ImagePicker>[0] | null>(null);
   const resolver = useRef<((picked: PickedImage | null) => void) | null>(null);
 
   const finish = (picked: PickedImage | null) => {
@@ -438,7 +439,7 @@ export function useImagePicker() {
     setRequest(null);
   };
 
-  const pick = useCallback((next: { label: string; currentAssetId: string | null }) => {
+  const pick = useCallback((next: Parameters<ImagePicker>[0]) => {
     setRequest(next);
     return new Promise<PickedImage | null>((resolve) => {
       resolver.current = resolve;
@@ -449,6 +450,7 @@ export function useImagePicker() {
     <MediaPickerDialog
       fieldLabel={request.label}
       currentAssetId={request.currentAssetId}
+      kind={request.kind}
       onClose={() => finish(null)}
       onChoose={async (assetId) => {
         const asset = await getAsset(assetId).catch(() => null);

@@ -28,6 +28,8 @@ export interface PickedImage {
 export type ImagePicker = (request: {
   label: string;
   currentAssetId: string | null;
+  /** What to choose: a picture (the default) or a 3D model file. */
+  kind?: "picture" | "model";
 }) => Promise<PickedImage | null>;
 
 interface FieldProps<Value> {

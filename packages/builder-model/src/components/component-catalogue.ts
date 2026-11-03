@@ -9,6 +9,7 @@ import { clockComponent } from "./clock-component.js";
 import { codeBlockComponent } from "./code-block-component.js";
 import { creativeComponents } from "./creative-components.js";
 import { effectComponents } from "./effect-components.js";
+import { model3dComponent } from "./model-component.js";
 import { customBlockComponent } from "../custom-blocks/custom-block.js";
 import type { AnyComponentDefinition, ComponentDefinition } from "./component-definition.js";
 import {
@@ -85,6 +86,7 @@ export const standardComponents: readonly AnyComponentDefinition[] = [
   eraseProps(media.logoStripComponent),
   eraseProps(media.mapComponent),
   eraseProps(media.embedComponent),
+  eraseProps(model3dComponent),
   eraseProps(buttonComponent),
   eraseProps(linkComponent),
   eraseProps(navigationComponent),

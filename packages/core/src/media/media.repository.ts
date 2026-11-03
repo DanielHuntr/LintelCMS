@@ -160,7 +160,13 @@ function listConditions(filter: AssetListFilter): SQL[] {
     conditions.push(eq(assetsTable.siteId, filter.siteId));
   }
   if (filter.kind === "document") {
-    conditions.push(not(ilike(assetsTable.mimeType, "image/%")));
+    conditions.push(
+      not(ilike(assetsTable.mimeType, "image/%")),
+      not(ilike(assetsTable.mimeType, "model/%")),
+    );
+  }
+  if (filter.kind === "model") {
+    conditions.push(ilike(assetsTable.mimeType, "model/%"));
   }
   if (filter.missingAlt) {
     conditions.push(ilike(assetsTable.mimeType, "image/%"), sql`trim(${assetsTable.alt}) = ''`);

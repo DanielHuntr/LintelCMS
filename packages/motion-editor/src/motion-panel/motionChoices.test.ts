@@ -49,4 +49,15 @@ describe("motion choices", () => {
     expect(found.every((choice) => /fade/i.test(choice.name + choice.description))).toBe(true);
     expect(searchMotionChoices(all, "zzzz")).toEqual([]);
   });
+
+  it("offers 3D layouts at the moment they move: with scrolling, always, or on hover", () => {
+    const container = listMotionChoices(motionPresets, effectRegistry, "container");
+    const momentOf = (id: string) => container.find((choice) => choice.id === id)?.moment;
+    expect(momentOf("depth-on-scroll")).toBe("scroll");
+    expect(momentOf("card-stack-scroll")).toBe("scroll");
+    expect(momentOf("arc-carousel")).toBe("always");
+    expect(momentOf("card-stack")).toBe("hover");
+    // The 3D model's own effect is set from its element, not offered here.
+    expect(momentOf("model-viewer")).toBeUndefined();
+  });
 });

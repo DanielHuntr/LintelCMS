@@ -28,6 +28,7 @@ const PUBLIC_ROUTES: Record<string, string> = {
   "POST /setup/finish": "first run only, needs the setup code from another computer",
   "GET /preview": "needs a signed preview token",
   "GET /media/:id/file": "image URLs go straight into websites' <img> tags",
+  "GET /media/sample-models/:file": "Lintel's own sample 3D models, the same for everyone",
   "GET /openapi.json": "describes the public API",
   "GET /sitemap.xml": "for search engines",
   "GET /robots.txt": "for search engines",

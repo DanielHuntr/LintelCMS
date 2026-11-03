@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { makeTestPng } from "../testing/test-media.js";
@@ -335,6 +337,32 @@ describe("forms on websites", () => {
     ]);
     const asset = await forms.api("GET", `/media/${stored?.assetIds[0]}`);
     expect(asset.json().uploadedBy).toBeNull();
+  });
+
+  it("refuses a 3D model in a field that takes documents", async () => {
+    const form = await forms.createForm("Jobs");
+    await forms.api("PATCH", `/forms/${form.id}`, {
+      fields: [
+        {
+          id: "c",
+          type: "file",
+          handle: "cv",
+          label: "CV",
+          options: { allowedKinds: ["documents"], maxMegabytes: 1, maxFiles: 1 },
+        },
+      ],
+    });
+    const token = await forms.tokenFor(form);
+    const contents = readFileSync(
+      createRequire(import.meta.url).resolve("@lintel/motion/sample-models/vase.glb"),
+    );
+    const sent = await forms.server.inject({
+      method: "POST",
+      url: `/delivery/forms/${form.handle}/submissions`,
+      ...multipartBody({ _token: token }, [{ name: "cv", filename: "vase.glb", contents }]),
+    });
+    expect(sent.statusCode).toBe(400);
+    expect(sent.json().fields.cv).toContain("CV accepts");
   });
 
   // Sending the bytes of a library image used to attach that image to the submission, and

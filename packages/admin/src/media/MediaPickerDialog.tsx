@@ -1,4 +1,4 @@
-import { ImagePlus, Images, Search, Upload, X } from "lucide-react";
+import { Box, ImagePlus, Images, Search, Upload, X } from "lucide-react";
 import { useId, useRef, useState } from "react";
 import { Button } from "../design/Button.js";
 import { EmptyState } from "../design/EmptyState.js";
@@ -9,7 +9,7 @@ import { DropOverlay } from "./DropOverlay.js";
 import { useAssetList, useRefreshAssetLists } from "./media.queries.js";
 import { Modal } from "./Modal.js";
 import { UploadProgressList } from "./UploadProgressList.js";
-import { acceptedImageTypes } from "./upload-rules.js";
+import { acceptedImageTypes, acceptedModelTypes } from "./upload-rules.js";
 import { useDebouncedValue } from "./useDebouncedValue.js";
 import { FreePhotosDialog } from "../free-photos/FreePhotosDialog.js";
 import { useCanAddFreePhotos } from "../free-photos/useFreePhotos.js";
@@ -23,29 +23,34 @@ interface MediaPickerDialogProps {
   currentAssetId: string | null;
   onChoose: (assetId: string) => void;
   onClose: () => void;
+  /** What to choose: a picture (the default) or a 3D model for the 3D model element. */
+  kind?: "picture" | "model";
 }
 
 /**
- * The library's images in a dialog. Click or press Enter on one to choose it; upload a new
- * one (button or drop) and it's chosen as soon as it arrives.
+ * The library's images (or 3D models) in a dialog. Click or press Enter on one to choose it;
+ * upload a new one (button or drop) and it's chosen as soon as it arrives.
  */
 export function MediaPickerDialog({
   fieldLabel,
   currentAssetId,
   onChoose,
   onClose,
+  kind = "picture",
 }: MediaPickerDialogProps) {
+  const isModel = kind === "model";
   const titleId = useId();
   const fileInput = useRef<HTMLInputElement>(null);
   const dropArea = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState("");
   const [isFindingFreePhotos, setIsFindingFreePhotos] = useState(false);
-  const canAddFreePhotos = useCanAddFreePhotos();
+  const canAddFreePhotos = useCanAddFreePhotos() && !isModel;
   const debouncedSearch = useDebouncedValue(search, 250);
-  const images = useAssetList(debouncedSearch, "image");
+  const images = useAssetList(debouncedSearch, isModel ? "model" : "image");
   const refreshLists = useRefreshAssetLists();
   const uploads = useUploadQueue({
-    imagesOnly: true,
+    imagesOnly: !isModel,
+    modelsOnly: isModel,
     onUploaded: (asset) => {
       void refreshLists();
       onChoose(asset.id);
@@ -62,7 +67,7 @@ export function MediaPickerDialog({
         <header className="flex shrink-0 items-start gap-4 px-6 pt-5 pb-4">
           <div className="min-w-0 flex-1">
             <h2 id={titleId} className="text-title text-label">
-              {t("media.picker.dialogTitle")}
+              {t(isModel ? "media.picker.model.dialogTitle" : "media.picker.dialogTitle")}
             </h2>
             <p className="truncate text-footnote text-label-secondary">{fieldLabel}</p>
           </div>
@@ -113,7 +118,7 @@ export function MediaPickerDialog({
           <input
             ref={fileInput}
             type="file"
-            accept={acceptedImageTypes}
+            accept={isModel ? acceptedModelTypes : acceptedImageTypes}
             className="hidden"
             tabIndex={-1}
             aria-hidden="true"
@@ -136,21 +141,27 @@ export function MediaPickerDialog({
           ) : assets.length === 0 ? (
             <EmptyState
               size="page"
-              icon={debouncedSearch.trim() ? Search : ImagePlus}
+              icon={debouncedSearch.trim() ? Search : isModel ? Box : ImagePlus}
               title={
-                debouncedSearch.trim() ? t("media.noResults.title") : t("media.picker.empty.title")
+                debouncedSearch.trim()
+                  ? t("media.noResults.title")
+                  : t(isModel ? "media.picker.model.empty.title" : "media.picker.empty.title")
               }
               description={
                 debouncedSearch.trim()
                   ? t("media.noResults.description", { search: debouncedSearch.trim() })
-                  : t("media.picker.empty.description")
+                  : t(
+                      isModel
+                        ? "media.picker.model.empty.description"
+                        : "media.picker.empty.description",
+                    )
               }
             />
           ) : (
             <>
               <AssetGrid
                 assets={assets}
-                label={t("media.picker.gridLabel")}
+                label={t(isModel ? "media.picker.model.gridLabel" : "media.picker.gridLabel")}
                 currentAssetId={currentAssetId}
                 onActivate={(asset) => onChoose(asset.id)}
               />

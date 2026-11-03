@@ -41,6 +41,7 @@ export * from "./components/collection-components.js";
 export * from "./components/shop-components.js";
 export * from "./components/effect-components.js";
 export * from "./components/creative-components.js";
+export * from "./components/model-component.js";
 export * from "./data/bound-items.js";
 export * from "./custom-blocks/custom-block.js";
 export * from "./custom-blocks/block-bindings.js";

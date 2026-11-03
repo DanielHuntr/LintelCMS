@@ -1,6 +1,7 @@
 import { extname } from "node:path";
 import { fileTypeFromBuffer } from "file-type";
 import { FileTypeNotAllowedError } from "./media.errors.js";
+import { looksLikeGltf } from "./model-files.js";
 
 /**
  * Which files Lintel accepts, and how it tells what a file really is.
@@ -20,7 +21,7 @@ export interface AllowedFileType {
   mimeType: string;
   /** The extension Lintel gives the file, whatever it was called before. */
   extension: string;
-  kind: "image" | "document" | "font" | "video" | "animation";
+  kind: "image" | "document" | "font" | "video" | "animation" | "model";
 }
 
 const allowedFileTypes = [
@@ -58,9 +59,16 @@ const allowedFileTypes = [
   { mimeType: "application/json", extension: "json", kind: "animation" },
   { mimeType: "application/zip+dotlottie", extension: "lottie", kind: "animation" },
   { mimeType: "application/x-rive", extension: "riv", kind: "animation" },
+  // 3D models for the 3D model element. A .gltf is packed into a .glb (see model-files.ts).
+  { mimeType: "model/gltf-binary", extension: "glb", kind: "model" },
 ] as const satisfies readonly AllowedFileType[];
 
 export type AllowedMimeType = (typeof allowedFileTypes)[number]["mimeType"];
+
+/** 3D models: .glb files (a .gltf is packed into one as it is uploaded). */
+export function isModelMimeType(mimeType: string): boolean {
+  return mimeType.startsWith("model/");
+}
 
 /** Images sharp can resize. SVG is included: sharp draws it before resizing. */
 export function isImageMimeType(mimeType: string): boolean {
@@ -108,6 +116,9 @@ export async function detectFileType(
   }
 
   const extension = extname(originalFilename).slice(1).toLowerCase();
+  if (extension === "gltf" && looksLikeGltf(text)) {
+    return allowedFileTypeFor("model/gltf-binary");
+  }
   if (extension === "csv") {
     return allowedFileTypeFor("text/csv");
   }

@@ -29,9 +29,22 @@ export class FileTypeNotAllowedError extends HttpError {
       415,
       "FILE_TYPE_NOT_ALLOWED",
       `"${filename}" isn't a kind of file Lintel accepts.${whatItIs} ` +
-        "Upload an image (JPEG, PNG, WebP, AVIF, GIF or SVG) or a document " +
-        "(PDF, Word, Excel, PowerPoint, text or CSV).",
+        "Upload an image (JPEG, PNG, WebP, AVIF, GIF or SVG), a document " +
+        "(PDF, Word, Excel, PowerPoint, text or CSV) or a 3D model (.glb or .gltf).",
     );
+  }
+}
+
+const modelProblems = {
+  unreadable: "can’t be read as a 3D model. Export it again as a .glb file.",
+  version: "is an older kind of glTF file. Export it again as glTF 2.0 (a .glb file).",
+  outside:
+    "points to other files (a .bin or pictures) that weren’t uploaded with it. Export it as a single .glb file instead.",
+} as const;
+
+export class UnreadableModelError extends HttpError {
+  constructor(filename: string, problem: keyof typeof modelProblems) {
+    super(422, "UNREADABLE_MODEL", `"${filename}" ${modelProblems[problem]}`);
   }
 }
 

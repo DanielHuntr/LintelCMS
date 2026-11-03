@@ -27,6 +27,7 @@ export const effectModuleNames = [
   "playground",
   "lottie",
   "rive",
+  "model",
 ] as const;
 
 export type EffectModuleName = (typeof effectModuleNames)[number];

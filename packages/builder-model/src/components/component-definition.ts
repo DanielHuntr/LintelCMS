@@ -106,6 +106,8 @@ export type SimpleField = FieldBase &
     | { kind: "toggle" }
     | { kind: "link" }
     | { kind: "image" }
+    /** A 3D model file from the media library, or a sample (see model-component.ts). */
+    | { kind: "model" }
     | { kind: "textList"; itemLabel: string }
     | { kind: "linkList" }
     | { kind: "number"; min?: number; max?: number; step?: number; unit?: string }

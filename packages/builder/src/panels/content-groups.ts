@@ -1,4 +1,9 @@
-import type { EditableField, EditableFieldKind, PageNode } from "@lintel/builder-model";
+import {
+  type EditableField,
+  type EditableFieldKind,
+  findSampleModel,
+  type PageNode,
+} from "@lintel/builder-model";
 import type { BuilderStringKey } from "../i18n/builder-strings.js";
 import type { Translate } from "../i18n/builder-text.js";
 
@@ -26,6 +31,7 @@ const groupOfKind: Record<EditableFieldKind, ContentGroupId> = {
   link: "link",
   linkList: "link",
   image: "picture",
+  model: "source",
   choice: "options",
   toggle: "options",
   number: "options",
@@ -48,13 +54,15 @@ const groupTitles: Record<ContentGroupId, BuilderStringKey> = {
 /** The fields in groups, in the order their first field appears. */
 export function groupContentFields(fields: readonly EditableField[]): ContentGroup[] {
   const groups = new Map<ContentGroupId, ContentGroup>();
+  // A 3D model is what its element shows, and its description goes with it.
+  const descriptionGroup = fields.some((field) => field.kind === "model") ? "source" : "picture";
   for (const field of fields) {
     // A picture's description belongs with the picture, not with the words on the page.
     // Advanced options are folded away together, after everything else.
     const id = field.advanced
       ? "more"
       : field.prop === "alt" || field.prop === "showCredit"
-        ? "picture"
+        ? descriptionGroup
         : groupOfKind[field.kind];
     const group = groups.get(id) ?? { id, title: groupTitles[id], fields: [] };
     group.fields.push(field);
@@ -88,6 +96,14 @@ function fieldSummary(field: EditableField, node: PageNode, text: Translate): st
       if (typeof value !== "string" || value === "") return undefined;
       const alt = typeof node.props.alt === "string" ? node.props.alt : "";
       return alt ? shortened(alt) : text("pageBuilder.content.summary.pictureChosen");
+    }
+    case "model": {
+      const src = (value as { src?: unknown } | undefined)?.src;
+      if (typeof src !== "string" || src === "") return undefined;
+      const sample = findSampleModel(src);
+      return sample
+        ? text(`pageBuilder.model.sample.${sample.id}`)
+        : text("pageBuilder.model.fromLibrary");
     }
     case "choice":
       return field.choices.find((choice) => choice.value === String(value ?? ""))?.label;

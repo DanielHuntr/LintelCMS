@@ -25,11 +25,18 @@ subject is (the focal point) so every crop keeps it in view.
    The filename is cleaned (`filenames.ts`) and given the extension of its real type.
 
 Allowed: JPEG, PNG, WebP, AVIF, GIF and SVG images; PDF, Word (`.docx`), Excel (`.xlsx`),
-PowerPoint (`.pptx`), plain text and CSV documents. Animations for the builder's Lottie and Rive
+PowerPoint (`.pptx`), plain text and CSV documents; fonts and videos for the page builder;
+and 3D models for the 3D model element. Animations for the builder's Lottie and Rive
 elements are recognised by their bytes too: a Lottie `.json` (JSON with a version, frame
 rate, length and layers), a `.lottie` (a zip holding `animations/*.json`) and a Rive `.riv`
 (starting `RIVE`). They are served with `access-control-allow-origin: *`, like fonts,
-because pages fetch them by script (decision 0055).
+because pages fetch them by script (decision 0055). Models are kept as `.glb`
+(`model-files.ts`): a `.gltf` is packed into one as it is uploaded when everything it needs
+is inside it, and is refused, with a note to export a `.glb`, when it points to other files.
+`GET /media?type=model` lists them, and model files (like fonts) are served with
+`Access-Control-Allow-Origin: *`, since pages fetch them by script. The builder warns about
+models over 10 MB. Form file fields refuse models. `GET /media/sample-models/:file` gives the
+builder the sample models.
 
 ## Endpoints
 

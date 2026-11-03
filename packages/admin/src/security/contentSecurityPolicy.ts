@@ -5,6 +5,7 @@
  * and the page talks only to itself and the API.
  *
  *   - images may also come from the API (the media library) and be data: or blob: URLs;
+ *   - blob: URLs may be fetched: a 3D model's pictures are unpacked into them as it loads;
  *   - live preview frames the website's own pages, which can be anywhere;
  *   - inline styles are allowed, because React sets `style` attributes for layout;
  *   - fonts may come from the API (a site's own fonts, on the builder's canvas), and
@@ -26,7 +27,7 @@ export function contentSecurityPolicy(apiUrl: string, { forHeader = false } = {}
     `style-src 'self' 'unsafe-inline' ${adobeFonts}`,
     `img-src 'self' data: blob: ${api}`,
     `font-src 'self' data: ${api} https://use.typekit.net`,
-    `connect-src 'self' ${api}`,
+    `connect-src 'self' ${api} blob:`,
     "frame-src 'self' https: http:",
     "object-src 'none'",
     "base-uri 'self'",

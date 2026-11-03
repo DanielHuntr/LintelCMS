@@ -9,6 +9,8 @@ import { contentDisposition } from "./content-disposition.js";
 import { findAllowedFileType } from "./file-types.js";
 import { findImageResizingStatus } from "./image-resizing.service.js";
 import { findAssetFile } from "./media-file.service.js";
+import { isModelMimeType } from "./file-types.js";
+import { readSampleModel } from "./sample-models.js";
 import {
   AssetInUseError,
   AssetNotFoundError,
@@ -81,6 +83,7 @@ const RESIZED_IMAGES_PER_MINUTE = 300;
  *   PATCH  /media/:id       (media:update)  { alt?, credit?, focalPoint?, filename?, folder? } -> Asset
  *   DELETE /media/:id       (media:delete)  -> 204 (to the recycle bin), or 409 ASSET_IN_USE with usedBy
  *   GET    /media/:id/file  (public)        ?w=&h=&fit=cover|contain&format=webp|avif|jpeg|png
+ *   GET    /media/sample-models/:file (public) a sample 3D model, for the builder's posters
  */
 export async function mediaRoutes(server: FastifyInstance, options: MediaRoutesOptions) {
   // Registered here rather than on the whole server, so only uploads accept multipart bodies.
@@ -162,6 +165,18 @@ export async function mediaRoutes(server: FastifyInstance, options: MediaRoutesO
     },
   );
 
+  server.get("/media/sample-models/:file", async (request, reply) => {
+    const model = readSampleModel((request.params as { file: string }).file);
+    if (!model) {
+      throw new AssetNotFoundError();
+    }
+    return reply
+      .type("model/gltf-binary")
+      .header("cache-control", "public, max-age=604800")
+      .header("access-control-allow-origin", "*")
+      .send(model);
+  });
+
   // Public on purpose: these URLs go into the website's <img> tags. See the README.
   const resizeLimit = {
     config: {
@@ -192,12 +207,13 @@ export async function mediaRoutes(server: FastifyInstance, options: MediaRoutesO
 
     // Browsers only use a font from another address when it says they may (the canvas and
     // the website both load fonts uploaded here). Pictures say so too, so the builder's canvas
-    // can draw them with WebGL for picture effects, and Lottie and Rive animations are fetched
-    // by script the same way; they are public files either way.
+    // can draw them with WebGL for picture effects, and Lottie and Rive animations and 3D models
+    // are fetched by script the same way; they are public files either way.
     if (
       file.mimeType.startsWith("font/") ||
       file.mimeType.startsWith("image/") ||
-      findAllowedFileType(file.mimeType)?.kind === "animation"
+      findAllowedFileType(file.mimeType)?.kind === "animation" ||
+      isModelMimeType(file.mimeType)
     ) {
       reply.header("access-control-allow-origin", "*");
     }

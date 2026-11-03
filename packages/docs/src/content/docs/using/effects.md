@@ -29,23 +29,39 @@ in **More settings**, with the timeline under **Advanced**.
 
 ## The kinds of effect
 
-| Kind         | What it does                                                         | Try                       |
-| ------------ | -------------------------------------------------------------------- | ------------------------- |
-| Hover        | Responds to the pointer: pull, tilt, spotlight, glowing edges        | Magnetic pull, Tilt       |
-| Text         | Scramble, typewriter, rotating words, counting up, marker highlights | Typing phrases, Count up  |
-| Scroll       | Follows the scroll: lean with speed, reveals, parallax, sideways     | Circle reveal             |
-| 3D           | Card stacks, a cylinder gallery, cover flow, flip cards              | Card stack, Flip on hover |
-| Backgrounds  | Particles and flowing WebGL gradients, liquid pictures, frost, water | Liquid gradient           |
-| Physics      | Drag and throw, springy switches and presses, pull to reveal         | Squishy press             |
-| Shapes       | SVG line drawing, shape morphing, blobs and waves                    | Draw the lines            |
-| Cursor       | A "View" label or a trail of sparkles over one element               | “View” cursor             |
-| Marquee      | Endless rows that speed up when people scroll                        | Scroll-powered row        |
-| Loaders      | Shimmers, spinners and notifications                                 | Loading shimmer           |
-| Page changes | Carrying a picture from one page to the next                         | Carry across pages        |
+| Kind         | What it does                                                         | Try                      |
+| ------------ | -------------------------------------------------------------------- | ------------------------ |
+| Hover        | Responds to the pointer: pull, tilt, spotlight, glowing edges        | Magnetic pull, Tilt      |
+| Text         | Scramble, typewriter, rotating words, counting up, marker highlights | Typing phrases, Count up |
+| Scroll       | Follows the scroll: lean with speed, reveals, parallax, sideways     | Circle reveal            |
+| 3D           | Card stacks, galleries on a curve, depth on scroll, flip cards       | Arc carousel, Card stack |
+| Backgrounds  | Particles and flowing WebGL gradients, liquid pictures, frost, water | Liquid gradient          |
+| Physics      | Drag and throw, springy switches and presses, pull to reveal         | Squishy press            |
+| Shapes       | SVG line drawing, shape morphing, blobs and waves                    | Draw the lines           |
+| Cursor       | A "View" label or a trail of sparkles over one element               | “View” cursor            |
+| Marquee      | Endless rows that speed up when people scroll                        | Scroll-powered row       |
+| Loaders      | Shimmers, spinners and notifications                                 | Loading shimmer          |
+| Page changes | Carrying a picture from one page to the next                         | Carry across pages       |
 
 There are also ready-made animated elements in the Insert panel: **Magnetic button**,
-**Card stack**, **3D gallery**, **Scrolling row**, **Counter row**, **Switch**, **Round
-menu** and **Notification**. They start with their effects, which you can change or remove.
+**Card stack**, **3D gallery**, **Arc carousel**, **Scrolling row**, **Counter row**,
+**Switch**, **Round menu** and **Notification**. They start with their effects, which you
+can change or remove.
+
+## 3D models
+
+The **3D model** element in Insert shows a model like a picture. Choose a `.glb` file from
+your media, or try one of the samples, then pick how it moves (it can spin, follow the
+pointer, turn as people scroll or turn when dragged) and how it is lit. Describe it for
+people who can't see it. Keep files under 10 MB so they load quickly on phones; 25 MB is the
+most you can upload. A `.gltf` works if everything it needs is inside the one file. Models
+compressed with Draco aren't supported, so export those without it.
+
+Lintel takes a picture of the model for you. That picture is what the canvas shows, and what
+visitors see while the model loads, if they ask for less motion, or if their device can't
+draw 3D. If you change the light or background, press **Take a new picture**.
+
+A page with a model downloads about 160 kB more, only when the model comes near the screen.
 
 ## Moving backgrounds and picture effects
 

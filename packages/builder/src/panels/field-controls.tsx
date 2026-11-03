@@ -118,6 +118,9 @@ export function FieldControl({
           onChange={(address) => onChange(address)}
         />
       );
+    case "model":
+      // Only the 3D model element has one, and the Content panel draws it (ModelField).
+      return null;
   }
 }
 

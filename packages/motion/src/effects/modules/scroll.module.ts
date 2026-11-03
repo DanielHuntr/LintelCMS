@@ -1,9 +1,14 @@
 import type { EffectBehaviour, EffectModule } from "../effect-types.js";
-import { createFrameLoop } from "../kit/frames.js";
 import { combine, listen } from "../kit/listen.js";
 import { readColour, readNumber, readText } from "../kit/params.js";
-import { progressThroughScreen } from "../kit/pointer.js";
+import { onScrollProgress } from "../kit/scroll-progress.js";
 import { setStyles } from "../kit/styles.js";
+import {
+  type DepthLook,
+  depthLayerTransform,
+  type LayerOrder,
+  layerDepths,
+} from "../maths/layouts-3d.js";
 import { approach, clamp, mix } from "../maths/smoothing.js";
 import { VelocityTracker, velocityStrength } from "../maths/velocity.js";
 
@@ -16,20 +21,7 @@ import { VelocityTracker, velocityStrength } from "../maths/velocity.js";
  * while the element is on screen. People who ask for less motion see the finished state.
  */
 
-/** Calls `draw` with the element's progress through the screen whenever the page scrolls. */
-function onScroll(
-  element: HTMLElement,
-  draw: (progress: number, elapsed: number, now: number) => boolean | void,
-) {
-  const loop = createFrameLoop(
-    element,
-    (elapsed, now) => draw(progressThroughScreen(element), elapsed, now) === true,
-  );
-  return combine(
-    listen(window, { scroll: () => loop.wake(), resize: () => loop.wake() }, { passive: true }),
-    () => loop.destroy(),
-  );
-}
+const onScroll = onScrollProgress;
 
 /** Scroll speed, eased, from -1 to 1. */
 function scrollSpeed(element: HTMLElement, fullAt: number, draw: (strength: number) => void) {
@@ -312,7 +304,38 @@ const zoomOnScroll: EffectBehaviour = (element, params, context) => {
   );
 };
 
+/**
+ * The layers of a section (its children, or its one wrapper's children) at different depths,
+ * the nearer ones moving further as the page scrolls, like the view from a train window.
+ */
+const depthOnScroll: EffectBehaviour = (element, params, context) => {
+  if (context.reduced) return;
+  let parent: HTMLElement = element;
+  for (let level = 0; level < 2 && parent.children.length === 1; level++) {
+    parent = parent.children[0] as HTMLElement;
+  }
+  const layers = Array.from(parent.children) as HTMLElement[];
+  if (!layers.length) return;
+  const look = readText(params, "look", "gentle") as DepthLook;
+  const strength = readNumber(params, "strength", 1);
+  const depths = layerDepths(layers.length, readText(params, "order", "front-first") as LayerOrder);
+  return combine(
+    onScroll(element, (progress) => {
+      const screenHeight = window.innerHeight;
+      layers.forEach((layer, index) => {
+        layer.style.transform = depthLayerTransform(depths[index] ?? 0, progress, {
+          look,
+          strength,
+          screenHeight,
+        });
+      });
+    }),
+    () => layers.forEach((layer) => layer.style.removeProperty("transform")),
+  );
+};
+
 export const behaviours = {
+  depthOnScroll,
   velocitySkew,
   velocityStretch,
   pathDraw,

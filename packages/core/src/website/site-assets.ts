@@ -152,6 +152,8 @@ export function readIllustration(fileName: string): string | undefined {
   return name ? findIllustration(name) : undefined;
 }
 
+export { SAMPLE_MODELS_FOLDER } from "@lintel/builder-model";
+
 export const FONTS_FOLDER = fontFilesFolder;
 
 const fontFiles = new Map<string, Buffer>();

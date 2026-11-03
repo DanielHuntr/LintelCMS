@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import type { Browser, Page } from "playwright";
 
@@ -9,6 +9,7 @@ import type { Browser, Page } from "playwright";
  */
 
 const dist = fileURLToPath(new URL("../../dist/", import.meta.url));
+const sampleModels = fileURLToPath(new URL("../../sample-models/", import.meta.url));
 export const origin = "http://effects.test";
 
 interface Manifest {
@@ -105,6 +106,14 @@ export async function openEffectsPage(
     }
     const file = options.files?.[path];
     if (file) return route.fulfill({ contentType: file.type, body: file.body });
+    if (path.startsWith("/sample-models/")) {
+      const file = `${sampleModels}${path.split("/").pop()}`;
+      if (!existsSync(file)) return route.fulfill({ status: 404, body: "" });
+      return route.fulfill({
+        contentType: "model/gltf-binary",
+        body: readFileSync(file),
+      });
+    }
     const body = path === "/" ? document(html, effects, options) : options.pages?.[path];
     return body === undefined
       ? route.fulfill({ status: 404, body: "" })

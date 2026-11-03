@@ -1,6 +1,7 @@
 import { clockStylesheet } from "./clock.js";
 import { creativeElementsStylesheet } from "./creative.js";
 import { effectElementsStylesheet } from "./effects.js";
+import { modelElementStylesheet } from "./model.js";
 
 /**
  * The element library's own look, in one stylesheet the website and the canvas both load
@@ -501,6 +502,7 @@ const reducedMotion = `
 export const elementStylesheet = [
   layout,
   effectElementsStylesheet,
+  modelElementStylesheet,
   clockStylesheet,
   creativeElementsStylesheet,
   media,

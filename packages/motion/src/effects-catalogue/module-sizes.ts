@@ -19,6 +19,7 @@ export const effectModuleBytes: Record<EffectModuleName, number> = {
   "picture-effects": 7617,
   playground: 4698,
   pointer: 5178,
+  model: 4768,
   ripple: 4319,
   rive: 2495,
   scroll: 4759,

@@ -1,10 +1,14 @@
 import type { EffectBehaviour, EffectModule } from "../effect-types.js";
 import { createFrameLoop } from "../kit/frames.js";
 import { combine, listen } from "../kit/listen.js";
+import { describeAsGroup } from "../kit/group.js";
 import { readNumber, readText } from "../kit/params.js";
 import { pointerWithin } from "../kit/pointer.js";
+import { onScrollProgress } from "../kit/scroll-progress.js";
 import { setStyles } from "../kit/styles.js";
+import { cardForProgress, stackTransform, type StackLook } from "../maths/layouts-3d.js";
 import { approach, clamp } from "../maths/smoothing.js";
+import { arcCarousel } from "./arc-carousel.js";
 import { VelocityTracker } from "../maths/velocity.js";
 
 /**
@@ -52,33 +56,26 @@ const perspectiveScene: EffectBehaviour = (element, params, context) => {
   );
 };
 
-function describeAsGroup(element: HTMLElement, label: string) {
-  const before = {
-    tabIndex: element.getAttribute("tabindex"),
-    role: element.getAttribute("role"),
-    description: element.getAttribute("aria-roledescription"),
-  };
-  if (!element.hasAttribute("tabindex")) element.tabIndex = 0;
-  if (!before.role) element.setAttribute("role", "group");
-  element.setAttribute("aria-roledescription", label);
-  return () => {
-    if (before.tabIndex === null) element.removeAttribute("tabindex");
-    if (!before.role) element.removeAttribute("role");
-    if (before.description === null) element.removeAttribute("aria-roledescription");
-    else element.setAttribute("aria-roledescription", before.description);
-  };
-}
-
 /**
- * Cards piled one on another. Click, swipe or press the arrow keys to send the top card to
- * the back; it can also turn by itself every few seconds (paused while hovered or focused).
+ * Cards piled one on another, fanned like a hand of cards or tilted back in 3D. Click,
+ * swipe or press the arrow keys to send the top card to the back; it can also turn by itself
+ * every few seconds (paused while hovered or focused), or step through the cards as the
+ * page scrolls past.
  */
 const cardStack: EffectBehaviour = (element, params, context) => {
   const cards = Array.from(element.children) as HTMLElement[];
   if (cards.length < 2) return;
   const spread = readNumber(params, "spread", 14);
   const every = readNumber(params, "autoplay", 0) * 1000;
-  const restore = setStyles(element, { display: "grid", perspective: "1000px" });
+  const look = readText(params, "look", "pile") as StackLook;
+  const byScroll = readText(params, "advance", "tap") === "scroll";
+  const restore = setStyles(element, {
+    display: "grid",
+    perspective: "1000px",
+    // Room for the cards that fan out to the sides, or rise behind a tilted stack.
+    ...(look === "fan" && { "padding-inline": `${spread * 4}px` }),
+    ...(look === "tilted" && !context.reduced && { "padding-top": `${spread * 4}px` }),
+  });
   let order = cards.map((_, index) => index);
   const draw = () => {
     order.forEach((cardIndex, position) => {
@@ -89,7 +86,7 @@ const cardStack: EffectBehaviour = (element, params, context) => {
         transition: context.reduced
           ? "opacity 200ms"
           : "transform 500ms cubic-bezier(.2,.8,.2,1), opacity 300ms",
-        transform: `translate3d(0, ${position * spread}px, ${-position * spread * 3}px) rotate(${context.reduced ? 0 : (position % 2 ? 1 : -1) * position * 1.5}deg)`,
+        transform: stackTransform(position, { look, spread, reduced: context.reduced }),
         opacity: position > 3 ? "0" : "1",
       });
       card.inert = position !== 0;
@@ -102,6 +99,12 @@ const cardStack: EffectBehaviour = (element, params, context) => {
         : [order[order.length - 1]!, ...order.slice(0, -1)];
     draw();
   };
+  /** Puts card `index` (in page order) on top, keeping the rest in turn behind it. */
+  const show = (index: number) => {
+    if (order[0] === index) return;
+    order = cards.map((_, position) => (index + position) % cards.length);
+    draw();
+  };
   draw();
   let pointerStart: number | undefined;
   let paused = false;
@@ -109,6 +112,9 @@ const cardStack: EffectBehaviour = (element, params, context) => {
     every > 0 && !context.reduced ? window.setInterval(() => !paused && turn(), every) : 0;
   return combine(
     describeAsGroup(element, "card stack"),
+    byScroll && !context.reduced
+      ? onScrollProgress(element, (progress) => show(cardForProgress(progress, cards.length)))
+      : undefined,
     listen(element, {
       keydown: (event: KeyboardEvent) => {
         if (event.key === "ArrowRight" || event.key === "ArrowDown") turn(1);
@@ -338,5 +344,12 @@ const flipCard: EffectBehaviour = (element, params) => {
   );
 };
 
-export const behaviours = { perspectiveScene, cardStack, cylinderGallery, coverFlow, flipCard };
+export const behaviours = {
+  perspectiveScene,
+  cardStack,
+  cylinderGallery,
+  coverFlow,
+  flipCard,
+  arcCarousel,
+};
 export default { behaviours } satisfies EffectModule;

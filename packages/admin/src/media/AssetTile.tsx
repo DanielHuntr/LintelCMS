@@ -1,4 +1,5 @@
 import {
+  Box,
   Check,
   FileSpreadsheet,
   FileText,
@@ -31,6 +32,7 @@ const documentIcons: Partial<Record<string, LucideIcon>> = {
   "application/json": Film,
   "application/zip+dotlottie": Film,
   "application/x-rive": Film,
+  "model/gltf-binary": Box,
 };
 
 /** A square thumbnail with the filename underneath, like a photo in a Photos grid. */

@@ -60,6 +60,8 @@ async function checkFileField(
 async function detectKind(file: IncomingFile): Promise<"images" | "documents" | undefined> {
   try {
     const type = await detectFileType(file.contents, file.filename);
+    // 3D models are for editors; a form's file field only takes pictures and documents.
+    if (type.kind === "model") return undefined;
     return type.kind === "image" ? "images" : "documents";
   } catch (error) {
     if (error instanceof HttpError) return undefined;

@@ -172,6 +172,7 @@ export function MediaLibraryPage({
                 { value: "all", label: t("media.filter.all") },
                 { value: "image", label: t("media.filter.images") },
                 { value: "document", label: t("media.filter.documents") },
+                { value: "model", label: t("media.filter.models") },
                 { value: "needsDescription", label: t("media.filter.needsDescription") },
               ]}
             />
@@ -326,7 +327,13 @@ function LibraryEmptyState({
       <EmptyState
         size="page"
         icon={ImagePlus}
-        title={filter === "image" ? t("media.noImages.title") : t("media.noDocuments.title")}
+        title={
+          filter === "image"
+            ? t("media.noImages.title")
+            : filter === "model"
+              ? t("media.picker.model.empty.title")
+              : t("media.noDocuments.title")
+        }
         description={t("media.noKind.description")}
       />
     );

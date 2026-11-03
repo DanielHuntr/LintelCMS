@@ -7,6 +7,7 @@ import {
   File,
   Film,
   Hand,
+  GalleryHorizontalEnd,
   Heading,
   Image,
   Link,
@@ -49,6 +50,8 @@ const componentIcons: Record<string, LucideIcon> = {
   film: Film,
   shapes: Shapes,
   hand: Hand,
+  "gallery-horizontal-end": GalleryHorizontalEnd,
+  box: Box,
 };
 
 export function componentIcon(name: string | undefined): LucideIcon {
