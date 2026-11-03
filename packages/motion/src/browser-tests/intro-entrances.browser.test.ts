@@ -79,20 +79,39 @@ describe("entrances under the site intro", () => {
       site: { ...site },
       // The theme says one font; Site styles give headings another, which is what shows.
       css: `:root { --lintel-font-heading: "Courier New", monospace; } .lintel-design h1 { font-family: Georgia, serif; } ${introCss(site)}`,
+      // On a busy machine the intro can be over before the test looks, so the page notes
+      // how the middle looked before and as it became ready.
+      beforePageLoads: () => {
+        const seen: { before?: string; ready?: { visibility: string; font: string } } = {};
+        Object.assign(window, { introSeen: seen });
+        new MutationObserver(() => {
+          const intro = document.querySelector(".lintel-intro");
+          const middle = intro?.querySelector(".lintel-intro__middle");
+          const count = intro?.querySelector(".lintel-intro__count");
+          if (!intro || !middle || !count || seen.ready) return;
+          if (!intro.hasAttribute("data-ready")) {
+            seen.before ??= getComputedStyle(middle).visibility;
+            return;
+          }
+          seen.ready = {
+            visibility: getComputedStyle(middle).visibility,
+            font: getComputedStyle(count).fontFamily,
+          };
+        }).observe(document, { subtree: true, childList: true, attributes: true });
+      },
     });
-    const middle = () =>
-      getComputedStyle(document.querySelector(".lintel-intro__middle")!).visibility;
+    type Seen = { before?: string; ready?: { visibility: string; font: string } };
+    await waitFor(
+      page,
+      () => (window as unknown as { introSeen: Seen }).introSeen.ready !== undefined,
+    );
+    const { before, ready } = await page.evaluate(
+      () => (window as unknown as { introSeen: Seen }).introSeen,
+    );
     // Hidden until the module has the font, so it never counts in the device's own font.
-    if (!(await page.evaluate(() => document.querySelector(".lintel-intro[data-ready]")))) {
-      expect(await page.evaluate(middle)).toBe("hidden");
-    }
-    await waitFor(page, () => document.querySelector(".lintel-intro[data-ready]") !== null);
-    expect(await page.evaluate(middle)).toBe("visible");
-    expect(
-      await page.evaluate(
-        () => getComputedStyle(document.querySelector(".lintel-intro__count")!).fontFamily,
-      ),
-    ).toMatch(/^Georgia/);
+    expect(before).toBe("hidden");
+    expect(ready?.visibility).toBe("visible");
+    expect(ready?.font).toMatch(/^Georgia/);
     await page.close();
   });
 });

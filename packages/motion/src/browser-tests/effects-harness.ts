@@ -34,6 +34,8 @@ export interface OpenOptions {
   pages?: Record<string, string>;
   /** Pretends the browser has no cross-document view transitions, to test the fallback. */
   withoutViewTransitions?: boolean;
+  /** Runs in the page before anything else, to watch for something that may pass quickly. */
+  beforePageLoads?: () => void;
 }
 
 function document(html: string, effects: readonly EffectOnTest[], options: OpenOptions) {
@@ -67,6 +69,7 @@ export async function openEffectsPage(
       delete (window as Partial<Window & { CSSViewTransitionRule: unknown }>).CSSViewTransitionRule;
     });
   }
+  if (options.beforePageLoads) await page.addInitScript(options.beforePageLoads);
   const requested: string[] = [];
   await page.route(`${origin}/**`, async (route) => {
     const path = new URL(route.request().url()).pathname;

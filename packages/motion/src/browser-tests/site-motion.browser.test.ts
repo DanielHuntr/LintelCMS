@@ -35,6 +35,28 @@ const longPage = `
 
 const scrollY = (page: Page) => page.evaluate(() => window.scrollY);
 
+/**
+ * Waits until the page has stopped moving: no glide running and the same scroll position
+ * for several frames in a row, however slowly frames come on a busy machine.
+ */
+function settled(page: Page) {
+  return page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        let last = window.scrollY;
+        let still = 0;
+        const check = () => {
+          const gliding = document.documentElement.hasAttribute("data-lintel-gliding");
+          still = !gliding && window.scrollY === last ? still + 1 : 0;
+          last = window.scrollY;
+          if (still >= 5) resolve();
+          else requestAnimationFrame(check);
+        };
+        requestAnimationFrame(check);
+      }),
+  );
+}
+
 async function smoothPage(strength: "gentle" | "strong", options: OpenOptions = {}) {
   const { page } = await openEffectsPage(browser, longPage, [], {
     site: { ...off, smoothScroll: { strength } },
@@ -94,12 +116,14 @@ describe("smooth scrolling", () => {
       page,
       () => Math.abs(document.getElementById("far")!.getBoundingClientRect().top) < 2,
     );
-    await page.waitForTimeout(200);
+    // Nothing pulls it back afterwards.
+    await settled(page);
     expect(
       await page.$eval("#far", (heading) => Math.abs(heading.getBoundingClientRect().top)),
     ).toBeLessThan(1);
     await page.evaluate(() => window.scrollTo(0, 120));
-    await page.waitForTimeout(100);
+    await waitFor(page, () => window.scrollY === 120);
+    await settled(page);
     await page.mouse.wheel(0, 100);
     await waitFor(page, () => Math.abs(window.scrollY - 220) < 1);
     await page.close();
