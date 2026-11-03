@@ -454,7 +454,7 @@ Viewport is 1440x900 unless stated.
 
 **Environment for batch 2:**
 
-- Linux, 8 GB, shared with one fix agent;
+- Linux, 8 GB, shared with one other fix run;
 - dev servers: API :4770, site :3770, admin :5770; data folder `/tmp/qa2-data`; built-in database;
 - set up through `POST /setup/finish` as "QA Two" with the shop;
 - default email settings (no `EMAIL_DRIVER`, so the outbox);
@@ -496,7 +496,7 @@ Logs referred to below are in `screenshots/batch-2/logs/`. Throwaway reset and i
 
 **Counts (batch 2):** P0 1, P1 2, P2 8, P3 15 (26 in all; SPEC-004 is counted as P2).
 
-**Not filed, by instruction:** the other agent's leftovers were seen again and not re-filed: B/I/Link and Ctrl+B in rich text (Ctrl+B in the Body field made no `<strong>`), sidebar Search and Ctrl K contrast (4.45:1 and 2.86:1 on every admin screen in axe), the shopper-facing payments message, and the others in the brief.
+**Not filed, by instruction:** the other fix run's leftovers were seen again and not re-filed: B/I/Link and Ctrl+B in rich text (Ctrl+B in the Body field made no `<strong>`), sidebar Search and Ctrl K contrast (4.45:1 and 2.86:1 on every admin screen in axe), the shopper-facing payments message, and the others in the brief.
 
 ---
 
