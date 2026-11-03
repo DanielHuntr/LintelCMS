@@ -82,6 +82,15 @@ describe("the site's navigation and footer sections", () => {
     return created.json().id as string;
   }
 
+  /** Changes the sections and publishes them, as the builder and a page's Publish do. */
+  async function putLive(change: unknown) {
+    const saved = await owner("PUT", "/website/sections", change);
+    expect(saved.statusCode, saved.body).toBe(200);
+    const published = await owner("POST", "/website/sections/publish");
+    expect(published.statusCode, published.body).toBe(200);
+    return saved;
+  }
+
   async function visit(url: string) {
     const response = await site.inject({ method: "GET", url });
     expect(response.statusCode, response.body).toBe(200);
@@ -92,6 +101,7 @@ describe("the site's navigation and footer sections", () => {
     expect((await writer("GET", "/website/sections")).json()).toEqual({
       navigation: null,
       footer: null,
+      unpublished: false,
     });
     await publish("Home", "home");
     expect(chromeOf(await visit("/"))).toEqual({
@@ -106,7 +116,7 @@ describe("the site's navigation and footer sections", () => {
     await publish("Home", "home");
     await publish("About", "about", designed("questions"));
     const { navigation } = starterSiteSections();
-    const saved = await owner("PUT", "/website/sections", { navigation });
+    const saved = await putLive({ navigation });
     expect(saved.statusCode, saved.body).toBe(200);
     expect(saved.json().navigation.id).toBe("site-navigation");
 
@@ -132,7 +142,7 @@ describe("the site's navigation and footer sections", () => {
     await publish("Home", "home");
     await publish("Hidden", "hidden", designed("questions", { hideSiteNavigation: true }));
     await publish("Own", "own", designed("navigation-centred"));
-    await owner("PUT", "/website/sections", starterSiteSections());
+    await putLive(starterSiteSections());
 
     expect(chromeOf(await visit("/hidden"))).toMatchObject({ siteNavigation: 0, siteFooter: 1 });
     const own = await visit("/own");
@@ -146,7 +156,7 @@ describe("the site's navigation and footer sections", () => {
     await owner("PUT", "/navigation/main", {
       items: [{ id: "5b0e1c52-3f4a-4c55-9d2e-6c1f0a7b8e91", entryId: aboutId, newTab: false }],
     });
-    await owner("PUT", "/website/sections", starterSiteSections());
+    await putLive(starterSiteSections());
     const body = await visit("/about");
     expect(body).toMatch(/<a href="\/about" aria-current="page">About<\/a>/);
   });
@@ -167,7 +177,7 @@ describe("the site's navigation and footer sections", () => {
       styles: { base: {} },
       children: [],
     });
-    await owner("PUT", "/website/sections", {
+    await putLive({
       navigation: {
         ...navigation!,
         children: [...navigation!.children, button("aboutlink", pageLinkHref(aboutId))],
@@ -241,9 +251,46 @@ describe("the site's navigation and footer sections", () => {
 
   it("goes back to the automatic header when the navigation is taken off the site", async () => {
     await publish("Home", "home");
-    await owner("PUT", "/website/sections", starterSiteSections());
-    await owner("PUT", "/website/sections", { navigation: null });
+    await putLive(starterSiteSections());
+    await putLive({ navigation: null });
     expect(chromeOf(await visit("/"))).toMatchObject({ automaticHeader: 1, siteFooter: 1 });
+  });
+
+  it("keeps changes as a draft until they are published, then shows them on every page", async () => {
+    await publish("Home", "home");
+    const saved = await owner("PUT", "/website/sections", starterSiteSections());
+    expect(saved.json()).toMatchObject({ unpublished: true });
+    // The builder sees the change; visitors don't yet.
+    const draft = (await owner("GET", "/website/sections")).json();
+    expect(draft).toMatchObject({ unpublished: true, navigation: { id: "site-navigation" } });
+    expect(chromeOf(await visit("/"))).toMatchObject({ automaticHeader: 1, siteNavigation: 0 });
+
+    const published = await owner("POST", "/website/sections/publish");
+    expect(published.json()).toEqual({ published: true });
+    expect(chromeOf(await visit("/"))).toMatchObject({ automaticHeader: 0, siteNavigation: 1 });
+    expect((await owner("GET", "/website/sections")).json().unpublished).toBe(false);
+    // Nothing left to publish.
+    expect((await owner("POST", "/website/sections/publish")).json()).toEqual({
+      published: false,
+    });
+  });
+
+  it("has nothing to publish once a change is put back as it was", async () => {
+    await putLive(starterSiteSections());
+    const live = (await owner("GET", "/website/sections")).json();
+    await owner("PUT", "/website/sections", { footer: null });
+    const back = await owner("PUT", "/website/sections", { footer: live.footer });
+    expect(back.json().unpublished).toBe(false);
+  });
+
+  it("publishes them only for people who may change blocks and publish", async () => {
+    await createTestUser(testDatabase.database, "builder@example.com", [
+      ["entries:read", "builder:blocks"],
+    ]);
+    const builder = requestsAs(api, await signInAndGetCookies(api, "builder@example.com"));
+    await builder("PUT", "/website/sections", starterSiteSections());
+    expect((await builder("POST", "/website/sections/publish")).statusCode).toBe(403);
+    expect((await writer("POST", "/website/sections/publish")).statusCode).toBe(403);
   });
 
   it("needs the permission to change blocks, and checks what is sent", async () => {
@@ -267,7 +314,7 @@ describe("the site's navigation and footer sections", () => {
   });
 
   it("uses a starter template's own navigation and footer, on every page and not in them", async () => {
-    await owner("PUT", "/website/sections", starterSiteSections());
+    await putLive(starterSiteSections());
     const applied = await owner("POST", "/starter-sites/folio/apply", {
       publish: true,
       useTheme: true,
@@ -287,7 +334,7 @@ describe("the site's navigation and footer sections", () => {
 
   it("never changes the site's own menu and footer when a template is added beside its pages", async () => {
     await publish("Home", "home");
-    await owner("PUT", "/website/sections", {
+    await putLive({
       navigation: designed("navigation-centred").root.children[0],
     });
     const before = (await owner("GET", "/website/sections")).json();
@@ -302,7 +349,7 @@ describe("the site's navigation and footer sections", () => {
 
   it("keeps the site's menu and footer when a template replaces its pages, to bring back", async () => {
     await publish("Home", "home");
-    await owner("PUT", "/website/sections", {
+    await putLive({
       navigation: designed("navigation-centred").root.children[0],
     });
     const before = (await owner("GET", "/website/sections")).json();
@@ -335,7 +382,7 @@ describe("the site's navigation and footer sections", () => {
       ["entries:*", "settings:update", "navigation:update"],
     ]);
     const designer = requestsAs(api, await signInAndGetCookies(api, "designer@example.com"));
-    await owner("PUT", "/website/sections", starterSiteSections());
+    await putLive(starterSiteSections());
     const before = (await owner("GET", "/website/sections")).json();
     const applied = await designer("POST", "/starter-sites/folio/apply", { useTheme: true });
     expect(applied.statusCode, applied.body).toBe(201);
@@ -365,7 +412,7 @@ describe("the site's navigation and footer sections", () => {
     const first = await readSiteSections(database, defaultSite);
     expect(first.navigation?.props.element).toBe("header");
     expect(first.footer?.props.element).toBe("footer");
-    await owner("PUT", "/website/sections", { footer: null });
+    await putLive({ footer: null });
     expect(await ensureStarterSiteSections(database, defaultSite)).toBe(false);
     expect((await readSiteSections(database, defaultSite)).footer).toBeNull();
   });

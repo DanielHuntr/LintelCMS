@@ -231,6 +231,7 @@ describe("pages drawn with Liquid templates", { timeout: 30000 }, () => {
   it("draws the site's own navigation and footer for {% site_header %} and {% site_footer %}", async () => {
     const saved = await admin("PUT", "/website/sections", starterSiteSections());
     expect(saved.statusCode, saved.body).toBe(200);
+    await admin("POST", "/website/sections/publish");
     await file(
       "layouts/main.liquid",
       '<!DOCTYPE html><html lang="{{ site.language }}"><head>{% lintel_head %}</head>' +

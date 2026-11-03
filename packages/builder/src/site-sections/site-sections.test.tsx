@@ -185,7 +185,11 @@ describe("the site's navigation in the builder", () => {
     expect(change?.navigation?.id).toBe("site-navigation");
     expect(change).not.toHaveProperty("footer");
     // A site that had the automatic header is told it has gone.
-    expect(screen.getByText(/automatic header is gone/)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /takes the place of your site’s automatic header on every page when you publish/,
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText("Navigation · on every page")).toBeInTheDocument();
   });
 
@@ -202,7 +206,11 @@ describe("the site's navigation in the builder", () => {
     expect(saved.root.props.hideSiteNavigation).toBe(true);
     expect(ids(saved)).toEqual(["n1"]);
     expect(onSectionsChange).not.toHaveBeenCalled();
-    expect(screen.queryByText(/automatic header is gone/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        /takes the place of your site’s automatic header on every page when you publish/,
+      ),
+    ).not.toBeInTheDocument();
   });
 
   it("shows the page's switches with nothing selected", async () => {

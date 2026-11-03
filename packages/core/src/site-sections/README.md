@@ -15,7 +15,14 @@ site. The reasoning is in docs/decisions/0039-navigation-and-footer-sections.md.
   person may change blocks; beside the site's own pages it never touches them. The ones it
   replaced are kept in a `siteSectionsBeforeTemplate:<site id>` row, and restoring swaps the
   two, so it can be undone the same way.
-- `site-sections.repository.ts`: one `siteSections:<site id>` row in the settings table.
+- Changes wait for Publish (docs/decisions/0042-shared-sections-wait-for-publish.md): `GET`
+  and `PUT` are the builder's draft, with `unpublished` saying it differs from the website;
+  `POST /website/sections/publish` (`builder:blocks` and `entries:publish`) puts it live, and
+  the page builder's Publish sends one. The website and Liquid read the published sections
+  (`readSiteSections`).
+- `site-sections.repository.ts`: the `siteSections:<site id>` row in the settings table (what
+  the website shows), `siteSectionsDraft:<site id>` (changes waiting) and
+  `siteSectionsBeforeTemplate:<site id>` (what a starter template replaced).
 
 A site with no row, or no navigation in it, keeps the website's automatic header (the same
 for the footer), so older sites look the same until they add one. The website draws them in

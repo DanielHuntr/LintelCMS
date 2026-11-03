@@ -28,8 +28,11 @@ import {
   SiteSectionNotValidError,
 } from "./site-sections.errors.js";
 import {
+  deleteDraftSiteSections,
+  findDraftSiteSections,
   findPreviousSiteSections,
   findStoredSiteSections,
+  saveDraftSiteSections,
   savePreviousSiteSections,
   saveStoredSiteSections,
   saveStoredSiteSectionsIfMissing,
@@ -40,6 +43,11 @@ import {
  * of that site (see site-sections/ in @lintel/builder-model and docs/decisions/0039). Saved
  * once per site; pages only say whether they hide them. A site without a navigation keeps
  * the website's automatic header, and the same for the footer.
+ *
+ * Changes made in the builder wait as a draft until a page is published (or they are
+ * published on their own), like a page's own changes: the website, Liquid templates and
+ * everything else visitors see read the published sections (`readSiteSections`); the
+ * builder reads and changes the draft (`readSiteSectionsDraft`, `changeSiteSections`).
  */
 
 /** One section as a page of its own, for checking it as pages are checked. */
@@ -56,12 +64,46 @@ function readSection(value: unknown, slot: SiteSectionSlot): PageNode | null {
   return section ? asSiteSection(section, slot) : null;
 }
 
-/** The site's sections, or none for a site that has never had any. */
+/** The site's published sections, or none for a site that has never had any. */
 export async function readSiteSections(
   database: DatabaseOrTransaction,
   site: Site,
 ): Promise<SiteSections> {
-  const stored = await findStoredSiteSections(database, site.id);
+  return readStoredSections(await findStoredSiteSections(database, site.id));
+}
+
+/** The sections as the builder shows them, with whether that differs from the website. */
+export interface SiteSectionsDraft extends SiteSections {
+  /** There are changes to them that a publish would put on the website. */
+  unpublished: boolean;
+}
+
+/** The sections being worked on: the draft when there is one, else the published ones. */
+export async function readSiteSectionsDraft(
+  database: DatabaseOrTransaction,
+  site: Site,
+): Promise<SiteSectionsDraft> {
+  const draft = await findDraftSiteSections(database, site.id);
+  const hasDraft = typeof draft === "object" && draft !== null;
+  const sections = hasDraft ? readStoredSections(draft) : await readSiteSections(database, site);
+  return { ...sections, unpublished: hasDraft };
+}
+
+/**
+ * Puts the draft on the website. Returns whether there was one; with none, nothing changes.
+ */
+export async function publishSiteSections(
+  database: DatabaseOrTransaction,
+  site: Site,
+): Promise<boolean> {
+  const draft = await findDraftSiteSections(database, site.id);
+  if (typeof draft !== "object" || draft === null) return false;
+  await saveStoredSiteSections(database, site.id, draft);
+  await deleteDraftSiteSections(database, site.id);
+  return true;
+}
+
+function readStoredSections(stored: unknown): SiteSections {
   if (typeof stored !== "object" || stored === null) return noSiteSections;
   const values = stored as Record<string, unknown>;
   return {
@@ -80,8 +122,9 @@ export async function changeSiteSections(
   site: Site,
   change: SiteSectionsChange,
   rules: { mayEditCode: boolean },
-): Promise<SiteSections> {
-  const current = await readSiteSections(database, site);
+): Promise<SiteSectionsDraft> {
+  const draft = await readSiteSectionsDraft(database, site);
+  const current: SiteSections = { navigation: draft.navigation, footer: draft.footer };
   const scriptRule = await readSetting(database, "builderCustomScripts");
   const next: SiteSections = { ...current };
   for (const slot of siteSectionSlots) {
@@ -106,8 +149,15 @@ export async function changeSiteSections(
     const section = page.root.children[0];
     next[slot] = section ? asSiteSection(section, slot) : null;
   }
-  await saveStoredSiteSections(database, site.id, next);
-  return next;
+  // The draft is kept only while it differs from the website: changing a section back
+  // leaves nothing to publish.
+  const published = await readSiteSections(database, site);
+  if (JSON.stringify(next) === JSON.stringify(published)) {
+    await deleteDraftSiteSections(database, site.id);
+    return { ...next, unpublished: false };
+  }
+  await saveDraftSiteSections(database, site.id, next);
+  return { ...next, unpublished: true };
 }
 
 /** A section made from a blueprint, with fresh ids, as one of the site's. */
@@ -156,6 +206,9 @@ export async function applyStarterSiteSections(
   const keptPrevious = typeof stored === "object" && stored !== null;
   if (keptPrevious) await savePreviousSiteSections(database, site.id, stored);
   await saveStoredSiteSections(database, site.id, sections);
+  // The template's look goes on the website at once, so changes waiting to be published
+  // would only bring the old ones back.
+  await deleteDraftSiteSections(database, site.id);
   return keptPrevious;
 }
 
@@ -166,7 +219,7 @@ export async function applyStarterSiteSections(
 export async function restorePreviousSiteSections(
   database: DatabaseOrTransaction,
   site: Site,
-): Promise<SiteSections> {
+): Promise<SiteSectionsDraft> {
   const previous = await findPreviousSiteSections(database, site.id);
   if (typeof previous !== "object" || previous === null) {
     throw new NoPreviousSiteSectionsError();
@@ -176,7 +229,8 @@ export async function restorePreviousSiteSections(
     await savePreviousSiteSections(database, site.id, current);
   }
   await saveStoredSiteSections(database, site.id, previous);
-  return readSiteSections(database, site);
+  await deleteDraftSiteSections(database, site.id);
+  return readSiteSectionsDraft(database, site);
 }
 
 /**

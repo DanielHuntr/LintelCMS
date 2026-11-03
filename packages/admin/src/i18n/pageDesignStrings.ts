@@ -42,5 +42,8 @@ export const pageDesignStrings = {
     "Someone else changed the site's styles while you were working, so your last change wasn't saved. You're now seeing their version.",
   "pageDesign.siteStyles.notSaved": "The site's styles weren't saved: {message}",
   "pageDesign.siteSections.notSaved": "The navigation and footer weren't saved: {message}",
+  "pageDesign.siteSections.notPublished":
+    "The navigation and footer couldn't be saved, so they weren't published. Try again.",
+  "pageDesign.siteSections.notLive": "Navigation and footer changes not live yet",
   "pageDesign.sitePartsRetry": "Try again",
 } as const;

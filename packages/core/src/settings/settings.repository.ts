@@ -46,6 +46,17 @@ export async function insertSettingValueIfMissing(
   return inserted.length > 0;
 }
 
+/** Removes a setting, so it reads as never saved. */
+export async function deleteSettingValue(
+  database: DatabaseOrTransaction,
+  tenantId: string,
+  key: string,
+): Promise<void> {
+  await database
+    .delete(settingsTable)
+    .where(and(eq(settingsTable.tenantId, tenantId), eq(settingsTable.key, key)));
+}
+
 export async function upsertSettingValue(
   database: DatabaseOrTransaction,
   tenantId: string,
