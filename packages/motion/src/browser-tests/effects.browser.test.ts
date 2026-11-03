@@ -570,7 +570,7 @@ describe("intro and page transitions", () => {
 
   it("carries only the picture beside the followed link when a list repeats the name", async () => {
     const card = (slug: string) =>
-      `<article><img data-node-id="pic" alt="" width="80" height="60"><a href="/projects/${slug}">${slug}</a></article>`;
+      `<article><img data-node-id="pic" data-lintel-carried="lintel-hero-picture" alt="" width="80" height="60"><a href="/projects/${slug}">${slug}</a></article>`;
     const { page } = await openEffectsPage(
       browser,
       `<script>${carriedElementsScript}</script>${card("a")}${card("b")}${card("c")}`,
@@ -585,7 +585,17 @@ describe("intro and page transitions", () => {
       );
     // Arriving: only the first of a repeated name keeps it.
     expect(await names()).toEqual(["lintel-hero-picture", "none", "none"]);
-    // Leaving for project b: only b's picture keeps it.
+    // Leaving for project b: only b's picture keeps it, found without reading any element's
+    // styles (a long page has thousands of elements).
+    await page.evaluate(() => {
+      const read = window.getComputedStyle.bind(window);
+      const counted = window as Window & { stylesRead?: number };
+      counted.stylesRead = 0;
+      window.getComputedStyle = (element, pseudo) => {
+        counted.stylesRead = (counted.stylesRead ?? 0) + 1;
+        return read(element, pseudo);
+      };
+    });
     await page.evaluate(() => {
       const leaving = new Event("pageswap");
       Object.defineProperty(leaving, "activation", {
@@ -593,6 +603,9 @@ describe("intro and page transitions", () => {
       });
       dispatchEvent(leaving);
     });
+    expect(await page.evaluate(() => (window as Window & { stylesRead?: number }).stylesRead)).toBe(
+      0,
+    );
     expect(await names()).toEqual(["none", "lintel-hero-picture", "none"]);
     await page.close();
   });

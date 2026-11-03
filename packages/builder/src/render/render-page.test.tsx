@@ -62,6 +62,34 @@ describe("rendering a page", () => {
     });
   });
 
+  it("marks a picture carried across pages with its name, for the page's script", () => {
+    const createId = createCountingNodeIds();
+    const carried = createNode(
+      {
+        type: "image",
+        props: { src: "/a.jpg", alt: "A cat" },
+        effects: [{ effect: "shared-element", params: { name: "Hero picture" } }],
+      },
+      standardCatalogue,
+      createId,
+    );
+    const plain = createNode(
+      { type: "image", props: { src: "/b.jpg", alt: "A dog" } },
+      standardCatalogue,
+      createId,
+    );
+    const { html, css } = renderPage(pageOf(carried, plain), standardRegistry, {
+      withMotion: true,
+    });
+    expect(html).toContain(
+      `<img class="picture" data-node-id="${carried.id}" data-lintel-carried="lintel-hero-picture" src="/a.jpg" alt="A cat"/>`,
+    );
+    expect(html).toContain('<img class="picture-2" src="/b.jpg" alt="A dog"/>');
+    expect(css).toContain(
+      `[data-node-id="${carried.id}"] { view-transition-name: lintel-hero-picture; }`,
+    );
+  });
+
   it("draws pictures with alt text, in a figure when they have a caption", () => {
     const createId = createCountingNodeIds();
     const plain = createNode(

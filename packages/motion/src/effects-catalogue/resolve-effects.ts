@@ -14,6 +14,11 @@ export interface ResolvedEffects {
   css: string;
   /** The definitions used, for the page weight meter. */
   used: EffectDefinition[];
+  /**
+   * Attributes each element with effects carries on the published page, by node id. Every
+   * one is there (empty when its effects add none), as each needs its `data-node-id`.
+   */
+  attributes: Map<string, Record<string, string>>;
 }
 
 export function effectSelector(nodeId: string): string {
@@ -25,7 +30,7 @@ export function resolveNodeEffects(
   registry: EffectRegistry,
   selectorFor: (nodeId: string) => string = effectSelector,
 ): ResolvedEffects {
-  const resolved: ResolvedEffects = { bindings: [], css: "", used: [] };
+  const resolved: ResolvedEffects = { bindings: [], css: "", used: [], attributes: new Map() };
   const css: string[] = [];
   for (const { nodeId, effects } of list) {
     for (const saved of effects) {
@@ -33,6 +38,10 @@ export function resolveNodeEffects(
       if (!definition || definition.kind === "animation") continue;
       const props = cleanProps(definition, saved.params);
       resolved.used.push(definition);
+      resolved.attributes.set(nodeId, {
+        ...resolved.attributes.get(nodeId),
+        ...definition.elementAttributes?.(props as never),
+      });
       if (definition.staticCss) css.push(definition.staticCss(selectorFor(nodeId), props as never));
       if (definition.kind === "behaviour") {
         resolved.bindings.push({
