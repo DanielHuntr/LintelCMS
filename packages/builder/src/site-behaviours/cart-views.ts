@@ -292,6 +292,14 @@ export function setUpCheckoutDetails(onChange: (cart: Cart) => void): void {
         else {
           choosingRate = true;
           next.textContent = "Pay now";
+          // Focus used to be lost here (the button was busy), so keyboard and screen reader
+          // users started again at the top of the page (LINTEL-A11Y-002). Now it moves to the
+          // choice, and the status line says how many there are.
+          message.textContent =
+            offered.length === 1
+              ? "1 way to deliver. Check it, then choose Pay now."
+              : `${offered.length} ways to deliver. Choose one, then choose Pay now.`;
+          rates.querySelector<HTMLInputElement>("input:checked")?.focus();
         }
         return;
       }
@@ -305,6 +313,8 @@ export function setUpCheckoutDetails(onChange: (cart: Cart) => void): void {
       message.textContent = shopperMessage(error, "Something went wrong. Please try again.");
     } finally {
       next.disabled = false;
+      // While it was busy the button lost focus; give it back unless focus moved on purpose.
+      if (!form.contains(document.activeElement)) next.focus();
     }
   });
 }

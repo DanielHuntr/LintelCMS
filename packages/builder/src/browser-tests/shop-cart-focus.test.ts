@@ -27,6 +27,27 @@ const cart = {
   total: money,
 };
 
+const line = {
+  id: "l1",
+  productTitle: "Sourdough loaf",
+  productHandle: "sourdough",
+  variantTitle: "",
+  image: null,
+  quantity: 1,
+  unitPrice: money,
+  subtotal: money,
+  problem: null,
+  quantityAvailable: null,
+};
+
+const basketPage = `<!doctype html><html lang="en-GB"><body>
+<a href="#">Skip to content</a>
+<section data-behaviour="cart" data-cart-view="page" class="lintel-cart lintel-cart--page">
+  <p class="lintel-cart__empty">Your basket is empty.</p>
+</section>
+<script src="/site-behaviours.js" defer></script>
+</body></html>`;
+
 const page = `<!doctype html><html lang="en-GB"><body>
 <form data-behaviour="add-to-cart" data-opens-cart>
   <input type="hidden" name="variantId" value="v1">
@@ -76,6 +97,59 @@ describe("the basket drawer and keyboard focus", () => {
         }),
       )
       .toBe("BUTTON: Add to basket");
+    await tab.close();
+  });
+
+  // LINTEL-A11Y-002: after "Choose delivery" focus was on the page body.
+  it("moves focus to the delivery choice after Choose delivery, and says how many there are", async () => {
+    const tab = await browser.newPage();
+    await tab.addInitScript(() => window.localStorage.setItem("lintel-cart", "t1"));
+    await tab.route(`${origin}/**`, async (route) => {
+      const url = new URL(route.request().url());
+      if (url.pathname === "/")
+        return route.fulfill({ contentType: "text/html", body: basketPage });
+      if (url.pathname === "/site-behaviours.js") {
+        return route.fulfill({ contentType: "text/javascript", body: readFileSync(behaviours) });
+      }
+      if (url.pathname.endsWith("/countries")) {
+        return route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({ countries: [] }),
+        });
+      }
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      const body = url.pathname.endsWith("/shipping-rates")
+        ? {
+            rates: [
+              { rateId: "r1", name: "Standard", deliveryEstimate: "", amount: money },
+              { rateId: "r2", name: "Next day", deliveryEstimate: "", amount: money },
+            ],
+          }
+        : { ...cart, lines: [line] };
+      return route.fulfill({ contentType: "application/json", body: JSON.stringify(body) });
+    });
+    await tab.goto(`${origin}/`);
+
+    const form = tab.locator(".lintel-cart__checkout-form");
+    await form.waitFor();
+    for (const name of ["email", "name", "line1", "city", "postalCode"]) {
+      const field = form.locator(`input[name=${name}]`);
+      if ((await field.count()) > 0) await field.fill(name === "email" ? "ada@example.com" : "A");
+    }
+    await tab.getByRole("button", { name: "Choose delivery" }).focus();
+    await tab.keyboard.press("Enter");
+
+    await expect
+      .poll(() =>
+        tab.evaluate(() => {
+          const focused = document.activeElement as HTMLInputElement | null;
+          return `${focused?.tagName}: ${focused?.name ?? ""} ${focused?.value ?? ""}`;
+        }),
+      )
+      .toBe("INPUT: shippingRateId r1");
+    expect(await tab.locator(".lintel-cart__message").textContent()).toBe(
+      "2 ways to deliver. Choose one, then choose Pay now.",
+    );
     await tab.close();
   });
 });
