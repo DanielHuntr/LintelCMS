@@ -758,6 +758,7 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-017   | P2       | Fixed  | Settings is a catch-all: logs, tools and the agency's build settings beside the owner's website details             |
 | LINTEL-UX-018   | P2       | Fixed  | The bright violet with lavender tints reads as a generic template, not the intended iOS look                        |
 | LINTEL-UX-019   | P2       | Fixed  | Tables capped at 896px with off-centre headings; Users header buttons far from the list; row hover matches the page |
+| LINTEL-UX-020   | P2       | Fixed  | The admin looked like any iOS-style app: nothing of its own                                                         |
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 
