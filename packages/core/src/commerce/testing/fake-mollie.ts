@@ -10,6 +10,8 @@ export const FAKE_MOLLIE_API_KEY = "test_dHar4XY7LxsDOtmnkVtjNVWXLSlXsM";
 interface FakeMolliePayment {
   id: string;
   status: string;
+  /** Set by a test playing the shopper: what they chose on Mollie's page. */
+  method?: string;
   amount: { currency: string; value: string };
   metadata: Record<string, unknown>;
   refunds: Array<{ id: string; status: string; amount: { currency: string; value: string } }>;
@@ -20,6 +22,14 @@ export class FakeMollie {
   readonly payments = new Map<string, FakeMolliePayment>();
   /** The status new refunds come back with; Mollie usually says "pending" first. */
   refundStatus = "pending";
+  /** What the methods call answers with. */
+  methods: Array<{ id: string; description: string; status?: string }> = [
+    { id: "ideal", description: "iDEAL", status: "activated" },
+  ];
+  /** Set to make the methods call fail. */
+  failMethods = false;
+  /** The currency of each methods call, oldest first. */
+  readonly methodCurrencies: Array<string | null> = [];
   private counter = 0;
 
   readonly fetch: typeof fetch = async (input, init) => {
@@ -29,6 +39,9 @@ export class FakeMollie {
     const body = text ? JSON.parse(text) : null;
     const request = { method: init?.method ?? "GET", path: url.pathname, body, headers };
     this.requests.push(request);
+    if (url.pathname === "/v2/methods") {
+      this.methodCurrencies.push(url.searchParams.get("amount[currency]"));
+    }
     if (headers.get("authorization") !== `Bearer ${FAKE_MOLLIE_API_KEY}`) {
       return json(401, {
         status: 401,
@@ -46,7 +59,8 @@ export class FakeMollie {
   private answer(request: RecordedJsonRequest): Response {
     const { method, path, body } = request;
     if (path === "/v2/methods") {
-      return json(200, { _embedded: { methods: [{ id: "ideal", description: "iDEAL" }] } });
+      if (this.failMethods) return json(503, { status: 503, title: "Service Unavailable" });
+      return json(200, { _embedded: { methods: this.methods } });
     }
     if (path === "/v2/payments" && method === "POST" && body) {
       const id = `tr_${this.next()}`;
@@ -59,6 +73,13 @@ export class FakeMollie {
       };
       this.payments.set(id, payment);
       return json(201, this.describe(payment));
+    }
+    const captures = /^\/v2\/payments\/([^/]+)\/captures$/.exec(path);
+    if (captures && method === "POST") {
+      const payment = this.payments.get(captures[1] ?? "");
+      if (!payment) return notFound();
+      payment.status = "paid";
+      return json(201, { id: `cpt_${this.next()}` });
     }
     const refunds = /^\/v2\/payments\/([^/]+)\/refunds$/.exec(path);
     if (refunds) {
@@ -90,6 +111,7 @@ export class FakeMollie {
       resource: "payment",
       id: payment.id,
       status: payment.status,
+      method: payment.method ?? null,
       amount: payment.amount,
       metadata: payment.metadata,
       _links: { checkout: { href: `https://www.mollie.com/checkout/select-method/${payment.id}` } },

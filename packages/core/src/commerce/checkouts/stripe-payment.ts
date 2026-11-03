@@ -81,7 +81,7 @@ export async function startHostedPayment(
       cancel_url: pages.cancelUrl,
       expires_at: Math.floor(checkout.expiresAt.getTime() / 1000),
       metadata,
-      payment_intent_data: { metadata },
+      payment_intent_data: { metadata, shipping: stripeShipping(checkout) },
       line_items: lineItems,
       shipping_options: [
         {
@@ -118,6 +118,7 @@ export async function startEmbeddedPayment(
       currency: checkout.currency.toLowerCase(),
       automatic_payment_methods: { enabled: true },
       receipt_email: checkout.email,
+      shipping: stripeShipping(checkout),
       metadata: { lintel_checkout_id: checkout.id },
     },
     `lintel-checkout-${checkout.id}`,
@@ -127,5 +128,25 @@ export async function startEmbeddedPayment(
     paymentIntentId: intent.id,
     url: null,
     clientSecret: intent.client_secret ?? null,
+  };
+}
+
+/**
+ * Where the order is going. Buy-now-pay-later methods such as Klarna and Clearpay use it to
+ * decide whether to approve the shopper, and Lintel already has it from the cart.
+ */
+function stripeShipping(checkout: CheckoutRow) {
+  const address = checkout.shippingAddress;
+  return {
+    name: address.name,
+    phone: address.phone || undefined,
+    address: {
+      line1: address.line1,
+      line2: address.line2 || undefined,
+      city: address.city,
+      state: address.region || undefined,
+      postal_code: address.postalCode || undefined,
+      country: address.country,
+    },
   };
 }

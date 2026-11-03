@@ -9,6 +9,7 @@ import {
   createMolliePayment,
   createMollieRefund,
   mollieRefundStatus,
+  retrieveMolliePayment,
 } from "./mollie-api.js";
 import { MollieClient } from "./mollie-client.js";
 
@@ -42,6 +43,10 @@ export function molliePaymentProvider(shop: ShopContext): PaymentProvider {
     async closePayment(checkout) {
       if (!checkout.providerPaymentId) return;
       const { client } = await connectMollie(shop);
+      // A bank transfer takes days, far longer than the checkout's window, and the shopper
+      // may already have sent it. Left open, it's honoured when it arrives.
+      const payment = await retrieveMolliePayment(client, checkout.providerPaymentId);
+      if (payment.method === "banktransfer") return;
       await cancelMolliePayment(client, checkout.providerPaymentId);
     },
     async refundPayment(order, refund) {
