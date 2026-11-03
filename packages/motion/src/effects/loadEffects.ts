@@ -123,10 +123,10 @@ export function startEffects(
   // effect on every copy.
   for (const binding of effects.bindings) {
     const escaped = binding.nodeId.replace(/["\\]/g, "\\$&");
-    for (const element of document.querySelectorAll(`[${nodeAttribute}="${escaped}"]`)) {
-      if (element instanceof HTMLElement) {
-        stops.push(whenNearScreen(element, () => run(element, binding)));
-      }
+    for (const element of document.querySelectorAll<HTMLElement>(
+      `[${nodeAttribute}="${escaped}"]`,
+    )) {
+      stops.push(whenNearScreen(element, () => run(element, binding)));
     }
   }
   const site = effects.site;

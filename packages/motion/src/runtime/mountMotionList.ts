@@ -41,11 +41,12 @@ export function mountMotionList(
   // every copy.
   const mounted = bindings.flatMap((binding) => {
     const escaped = binding.nodeId.replace(/["\\]/g, "\\$&");
-    return Array.from(document.querySelectorAll(`[${attribute}="${escaped}"]`)).flatMap(
-      (element) =>
-        element instanceof HTMLElement
-          ? [{ spec: binding.spec, controller: mountMotion(element, binding.spec, options) }]
-          : [],
+    return Array.from(
+      document.querySelectorAll<HTMLElement>(`[${attribute}="${escaped}"]`),
+      (element) => ({
+        spec: binding.spec,
+        controller: mountMotion(element, binding.spec, options),
+      }),
     );
   });
   const exits = mounted.filter(({ spec }) => spec.trigger.type === "pageExit");
