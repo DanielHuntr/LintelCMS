@@ -124,9 +124,18 @@ export interface Submission {
   values: Record<string, SubmissionValue>;
   submitterEmail: string | null;
   sourceUrl: string | null;
+  /** The consent boxes ticked, with the exact words shown, when and on which page. */
+  consents: ConsentRecord[];
   isRead: boolean;
   isStarred: boolean;
   createdAt: string;
+}
+
+export interface ConsentRecord {
+  field: string;
+  wording: string;
+  givenAt: string;
+  page: string | null;
 }
 
 export interface SubmissionDetail extends Submission {

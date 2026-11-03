@@ -23,6 +23,7 @@ describe("Settings", () => {
     expect(screen.getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
       "/settings/site",
       "/settings/languages",
+      "/settings/privacy",
       "/settings/backups",
       "/settings/updates",
       "/settings/about",

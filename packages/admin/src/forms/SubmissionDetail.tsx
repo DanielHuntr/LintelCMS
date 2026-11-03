@@ -163,6 +163,29 @@ function LoadedSubmission({
         </p>
       )}
 
+      {submission.consents.length > 0 && (
+        <section aria-labelledby="consent-heading" className="flex flex-col gap-2">
+          <h3 id="consent-heading" className="text-footnote text-label-secondary">
+            {t("forms.inbox.consentHeading")}
+          </h3>
+          <ul className="flex flex-col gap-2">
+            {submission.consents.map((consent) => (
+              <li key={consent.field} className="rounded-control bg-fill/60 px-3 py-2">
+                <p className="text-body whitespace-pre-wrap text-label">“{consent.wording}”</p>
+                <p className="text-footnote text-label-secondary">
+                  {consent.page
+                    ? t("forms.inbox.consentWhere", {
+                        when: formatDateTime(consent.givenAt),
+                        page: consent.page,
+                      })
+                    : t("forms.inbox.consentWhen", { when: formatDateTime(consent.givenAt) })}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section aria-labelledby="notes-heading" className="flex flex-col gap-3 pt-2 hairline-top">
         <h3 id="notes-heading" className="pt-3 text-headline text-label">
           {t("forms.inbox.notes")}

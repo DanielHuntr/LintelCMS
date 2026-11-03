@@ -6,6 +6,7 @@ import {
   Languages,
   MonitorSmartphone,
   Search,
+  ShieldCheck,
 } from "lucide-react";
 import { useState } from "react";
 import { EmptyState } from "../design/EmptyState.js";
@@ -88,6 +89,7 @@ function useSettingsGroups(): SettingsGroup[] {
   const canSeeSiteSettings = useCan("settings:read");
   const canSeeBackups = useCan("backups:read");
   const canSeeUpdates = useCan("updates:read");
+  const canManagePrivacy = useCan("privacy:manage");
   const pluginRows = useVisibleContributions("settingsRows");
 
   const when = (condition: boolean, entry: SettingsEntry) => (condition ? [entry] : []);
@@ -119,6 +121,14 @@ function useSettingsGroups(): SettingsGroup[] {
       {
         header: t("settings.lookingAfterHeader"),
         entries: [
+          ...when(canManagePrivacy, {
+            key: "privacy",
+            icon: ShieldCheck,
+            iconTone: "success",
+            label: t("privacy.title"),
+            description: t("privacy.settingsDescription"),
+            to: "/settings/privacy",
+          }),
           ...when(canSeeBackups, {
             key: "backups",
             icon: Archive,
