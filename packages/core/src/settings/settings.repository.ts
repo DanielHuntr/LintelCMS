@@ -17,6 +17,20 @@ export async function findSettingValue(
   return setting?.value;
 }
 
+/** When a setting was last saved, or null when it has never been. */
+export async function findSettingUpdatedAt(
+  database: DatabaseOrTransaction,
+  tenantId: string,
+  key: string,
+): Promise<Date | null> {
+  const [setting] = await database
+    .select({ updatedAt: settingsTable.updatedAt })
+    .from(settingsTable)
+    .where(and(eq(settingsTable.tenantId, tenantId), eq(settingsTable.key, key)))
+    .limit(1);
+  return setting?.updatedAt ?? null;
+}
+
 /** Saves a value only if the key has none yet. Returns whether this call saved it. */
 export async function insertSettingValueIfMissing(
   database: DatabaseOrTransaction,
@@ -30,6 +44,17 @@ export async function insertSettingValueIfMissing(
     .onConflictDoNothing({ target: [settingsTable.tenantId, settingsTable.key] })
     .returning({ id: settingsTable.id });
   return inserted.length > 0;
+}
+
+/** Removes a setting, so it reads as never saved. */
+export async function deleteSettingValue(
+  database: DatabaseOrTransaction,
+  tenantId: string,
+  key: string,
+): Promise<void> {
+  await database
+    .delete(settingsTable)
+    .where(and(eq(settingsTable.tenantId, tenantId), eq(settingsTable.key, key)));
 }
 
 export async function upsertSettingValue(

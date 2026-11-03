@@ -23,6 +23,62 @@ const MAX_DETAILS_BYTES = 512 * 1024;
 /** Fontsource's split files are small; a whole family's Latin file is rarely over 200 KB. */
 export const MAX_FONT_FILE_BYTES = 2 * 1024 * 1024;
 
+/** All the font files kept in memory at once, together: enough for a few families. */
+export const MAX_CACHED_FONT_BYTES = 32 * 1024 * 1024;
+const MAX_CACHED_FONT_ENTRIES = 1000;
+
+/**
+ * Font files kept for a while, so previewing and then adding a family downloads each file
+ * once. Bounded by their total size rather than their number (a file can be 2 MB), forgetting
+ * the oldest first. "There is no such file" (null) is kept too, at no cost.
+ */
+export class FontFileCache {
+  private readonly entries = new Map<string, { value: Buffer | null; expiresAt: number }>();
+  private totalBytes = 0;
+
+  constructor(
+    private readonly keepMilliseconds: number,
+    private readonly maxBytes: number,
+    private readonly now: () => number = Date.now,
+  ) {}
+
+  /** The bytes kept now, for tests. */
+  get size(): number {
+    return this.totalBytes;
+  }
+
+  read(key: string): Buffer | null | undefined {
+    const entry = this.entries.get(key);
+    if (!entry) return undefined;
+    if (entry.expiresAt <= this.now()) {
+      this.forget(key);
+      return undefined;
+    }
+    return entry.value;
+  }
+
+  write(key: string, value: Buffer | null): void {
+    this.forget(key);
+    const bytes = value?.length ?? 0;
+    if (bytes > this.maxBytes) return;
+    this.entries.set(key, { value, expiresAt: this.now() + this.keepMilliseconds });
+    this.totalBytes += bytes;
+    // A Map keeps insertion order, so the first key is the oldest.
+    while (this.totalBytes > this.maxBytes || this.entries.size > MAX_CACHED_FONT_ENTRIES) {
+      const oldest = this.entries.keys().next().value;
+      if (oldest === undefined) break;
+      this.forget(oldest);
+    }
+  }
+
+  private forget(key: string): void {
+    const entry = this.entries.get(key);
+    if (!entry) return;
+    this.totalBytes -= entry.value?.length ?? 0;
+    this.entries.delete(key);
+  }
+}
+
 export const googleFontIdSchema = z
   .string({ error: "Choose a font" })
   .regex(/^[a-z0-9][a-z0-9-]{0,79}$/, { error: "That isn't a Google Fonts family" });
@@ -68,7 +124,7 @@ export interface GoogleFontsClient {
 export function createGoogleFontsClient(network: FontNetwork): GoogleFontsClient {
   const lists = new TimedCache<GoogleFont[]>(24 * 60 * 60 * 1000, 1);
   const details = new TimedCache<GoogleFontDetails | null>(60 * 60 * 1000, 200);
-  const files = new TimedCache<Buffer | null>(60 * 60 * 1000, 300);
+  const files = new FontFileCache(60 * 60 * 1000, MAX_CACHED_FONT_BYTES);
 
   return {
     async listFonts() {

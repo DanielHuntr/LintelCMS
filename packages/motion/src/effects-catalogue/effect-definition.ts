@@ -102,6 +102,11 @@ interface DefinitionBase<Parameters extends EffectParameters> {
    * scripts: a fallback colour, a stacked layout. `selector` matches the element.
    */
   staticCss?: (selector: string, props: EffectProps<Parameters>) => string;
+  /**
+   * Attributes the element carries on the published page, for scripts that look for it
+   * without reading every element's styles (see carriedElementsScript).
+   */
+  elementAttributes?: (props: EffectProps<Parameters>) => Readonly<Record<string, string>>;
 }
 
 export type BehaviourEffect<Parameters extends EffectParameters = EffectParameters> =

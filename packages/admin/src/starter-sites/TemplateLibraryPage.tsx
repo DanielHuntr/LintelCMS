@@ -88,7 +88,9 @@ function UseTemplateDialog({
   const canChangeLook = useCan("settings:update");
   const canPublish = useCan("entries:publish");
   const canDelete = useCan("entries:delete");
-  const [useTheme, setUseTheme] = useState(true);
+  // Left alone, the template's look comes with it when it replaces the site's pages (or the
+  // site has none), and not when its pages go beside the site's own.
+  const [themeChoice, setUseTheme] = useState<boolean | null>(null);
   const [publish, setPublish] = useState(false);
   const [choice, setChoice] = useState<ExistingPagesChoice>("alongside");
   const existing = useQuery({
@@ -96,6 +98,9 @@ function UseTemplateDialog({
     queryFn: () => getExistingPages(site.id),
   });
   const hasPages = (existing.data?.pageCount ?? 0) > 0;
+  const useTheme = themeChoice ?? !(hasPages && choice === "alongside");
+  const addingBeside = hasPages && choice === "alongside";
+  const pageCount = addingBeside && existing.data ? existing.data.addedCount : site.pages.length;
   const apply = useMutation({
     mutationFn: () =>
       applyStarterSite(site.id, {
@@ -114,7 +119,7 @@ function UseTemplateDialog({
       open
       onClose={onClose}
       title={t("templates.confirmTitle", { name: site.name })}
-      description={t("templates.confirmText", { count: site.pages.length })}
+      description={t("templates.confirmText", { count: pageCount })}
       footer={
         <>
           <Button variant="plain" onClick={onClose}>
@@ -143,11 +148,17 @@ function UseTemplateDialog({
           />
         )}
         {canChangeLook && (
-          <Toggle
-            label={t("templates.useTheme")}
-            checked={useTheme}
-            onCheckedChange={setUseTheme}
-          />
+          <div className="flex flex-col gap-1">
+            <Toggle
+              label={t("templates.useTheme")}
+              checked={useTheme}
+              onCheckedChange={setUseTheme}
+              describedBy="templates-theme-hint"
+            />
+            <p id="templates-theme-hint" className="text-caption text-label-secondary">
+              {t("templates.useThemeHint")}
+            </p>
+          </div>
         )}
         {canPublish && (
           <div className="flex flex-col gap-1">
@@ -196,6 +207,7 @@ function ExistingPagesChoiceField({
         label: t("templates.existing.alongside"),
         hint: [
           t("templates.existing.alongsideHint"),
+          existing.hasHome ? t("templates.existing.homeSkipped") : "",
           existing.clashes.length > 0
             ? t("templates.existing.alongsideClashes", { count: existing.clashes.length, example })
             : "",

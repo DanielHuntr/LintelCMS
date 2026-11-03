@@ -16,6 +16,8 @@ import {
 export interface PageEffects {
   bindings: EffectBinding[];
   css: string;
+  /** Each element with effects and the attributes they add, such as `data-lintel-carried`. */
+  attributes: Map<string, Record<string, string>>;
 }
 
 export function collectNodeEffects(
@@ -37,12 +39,12 @@ export function collectEffects(
     registry = effectRegistry,
   }: { canvas?: boolean; registry?: EffectRegistry } = {},
 ): PageEffects {
-  const { bindings, css } = resolveNodeEffects(
+  const { bindings, css, attributes } = resolveNodeEffects(
     collectNodeEffects(node),
     registry,
     canvas ? canvasEffectSelector : undefined,
   );
-  return { bindings, css };
+  return { bindings, css, attributes };
 }
 
 /**

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { safePictureAddress } from "../effects/modules/pointer.module.js";
 import {
   smoothingFor,
@@ -40,6 +40,31 @@ describe("smooth scrolling", () => {
     expect(document.documentElement.dataset.lintelSmoothScroll).toBe("gentle");
     smooth.destroy();
     expect(document.documentElement.dataset.lintelSmoothScroll).toBeUndefined();
+  });
+
+  it("reads the page's styles once a glide, not on every wheel step", () => {
+    const root = document.documentElement;
+    Object.defineProperty(root, "scrollHeight", { configurable: true, value: 5000 });
+    Object.defineProperty(root, "clientHeight", { configurable: true, value: 800 });
+    const frames = vi.spyOn(window, "requestAnimationFrame").mockImplementation(() => 1);
+    const smooth = startSmoothScroll(window, { strength: "gentle" });
+    const read = vi.spyOn(window, "getComputedStyle");
+    const wheel = (deltaY: number) => {
+      const event = new WheelEvent("wheel", { deltaY, cancelable: true, bubbles: true });
+      document.body.dispatchEvent(event);
+      return event;
+    };
+    for (let step = 0; step < 5; step += 1) expect(wheel(100).defaultPrevented).toBe(true);
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(smooth.target).toBe(500);
+    // Turning round checks again: something inside may scroll the other way.
+    wheel(-100);
+    expect(read).toHaveBeenCalledTimes(4);
+    read.mockRestore();
+    frames.mockRestore();
+    smooth.destroy();
+    Reflect.deleteProperty(root, "scrollHeight");
+    Reflect.deleteProperty(root, "clientHeight");
   });
 
   it("doesn't take over the wheel while zooming or scrolling sideways", () => {

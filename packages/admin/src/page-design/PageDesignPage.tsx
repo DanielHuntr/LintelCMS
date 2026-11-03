@@ -4,7 +4,6 @@ import {
   PageBuilder,
   type PickedImage,
   type PictureUploader,
-  type SiteSectionsSource,
 } from "@lintel/builder";
 import { usePageFinder, usePagePicker } from "../page-links/usePagePicker.js";
 import {
@@ -44,9 +43,10 @@ import { useBuilderData, useCanvasSite, useViewPageSite } from "../website/websi
 import { useEffectModules } from "./useEffectModules.js";
 import { useBuilderBlocks } from "../blocks/useBuilderBlocks.js";
 import { usePageDesignSaving } from "./usePageDesignSaving.js";
+import { SitePartProblems } from "./SitePartProblems.js";
 import { useSiteDesign } from "./useSiteDesign.js";
 import { useSiteMotion } from "./useSiteMotion.js";
-import { useSiteSections } from "./useSiteSections.js";
+import { type SiteSectionsState, useSiteSections } from "./useSiteSections.js";
 import { useBuilderMenus } from "../menus/builderMenus.js";
 import { InlineMenuEditor } from "../menus/InlineMenuEditor.js";
 import { useBuilderFonts } from "../site-fonts/useBuilderFonts.js";
@@ -100,7 +100,7 @@ export function PageDesignPage({ collectionHandle, entryId, fieldHandle }: PageD
       collectionHandle={collectionHandle}
       fieldHandle={fieldHandle}
       site={canvasSite.data}
-      siteSections={siteSections.source}
+      siteSections={siteSections}
     />
   );
 }
@@ -110,14 +110,15 @@ function PageDesigner({
   collectionHandle,
   fieldHandle,
   site,
-  siteSections,
+  siteSections: shared,
 }: {
   entry: Entry;
   collectionHandle: string;
   fieldHandle: string;
   site: CanvasSite | undefined;
-  siteSections: SiteSectionsSource | undefined;
+  siteSections: SiteSectionsState;
 }) {
+  const siteSections = shared.source;
   const field = loadedEntry.blueprint.fields.find(
     (candidate) => candidate.handle === fieldHandle && candidate.type === "page",
   );
@@ -125,7 +126,14 @@ function PageDesigner({
     () => openDesign(loadedEntry.data[fieldHandle]),
     [loadedEntry, fieldHandle],
   );
-  const saving = usePageDesignSaving(loadedEntry, fieldHandle);
+  // Publishing the page also puts the navigation and footer changes live, for those who
+  // may change them.
+  const canPublishShared = useCan("builder:blocks");
+  const saving = usePageDesignSaving(
+    loadedEntry,
+    fieldHandle,
+    canPublishShared ? shared.publish : undefined,
+  );
   const session = useSession();
   // A/B tests: Version B and C of the page open on the same canvas (see src/experiments).
   const experiments = useExperimentsInDesigner({
@@ -266,7 +274,7 @@ function PageDesigner({
         frameScripts={canvasFrameScripts}
         effectModules={effectModules}
         siteEffects={siteMotion}
-        siteDesign={siteDesign}
+        siteDesign={siteDesign.source}
         siteSections={siteSections}
         pageDrafting={pageDrafting}
         toolbarStart={
@@ -303,6 +311,17 @@ function PageDesigner({
                   </span>
                 )}
                 <BuilderVisitorsLine entryId={saving.entry.id} />
+                {/* One note at a time: the page's own when it has changes waiting, else the
+                    navigation and footer's. */}
+                {canPublish &&
+                  canPublishShared &&
+                  shared.unpublished &&
+                  !saving.justPublished &&
+                  saving.liveness === "live" && (
+                    <span className="hidden text-footnote text-label-secondary sm:inline">
+                      {t("pageDesign.siteSections.notLive")}
+                    </span>
+                  )}
                 <span role="status" className="sr-only">
                   {saving.justPublished ? t("pageDesign.publishedAnnouncement") : ""}
                 </span>
@@ -343,6 +362,7 @@ function PageDesigner({
         </p>
       )}
       {experiments.dialogs}
+      <SitePartProblems problems={[siteDesign.problem, shared.problem]} />
       {imagePicker.dialog}
       {fonts.dialogs}
       {pagePicker.dialog}

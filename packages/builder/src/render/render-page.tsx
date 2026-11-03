@@ -110,6 +110,17 @@ export function renderPage(
     mode === "site" && withMotion
       ? motionMarks(animations, effects.bindings)
       : new Map<string, ElementAttributes>();
+  // Every element with effects carries its id, which their CSS matches, and what they add.
+  if (mode === "site") {
+    for (const [nodeId, attributes] of effects.attributes) {
+      marked.set(nodeId, {
+        className: "",
+        ...marked.get(nodeId),
+        "data-node-id": nodeId,
+        ...attributes,
+      });
+    }
+  }
   // Elements with an open state are marked on the website, so their button can toggle them.
   const opening = listOpeningNodes(start);
   if (mode === "site") {

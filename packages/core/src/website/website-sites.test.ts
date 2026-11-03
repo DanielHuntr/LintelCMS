@@ -94,6 +94,7 @@ describe("the built-in website with several sites", () => {
     };
     const saved = await france("PUT", "/website/sections", { footer });
     expect(saved.statusCode, saved.body).toBe(200);
+    expect((await france("POST", "/website/sections/publish")).json()).toEqual({ published: true });
 
     const page = (await visit("/fr/a-propos", "acme.co.uk")).body;
     // The starter navigation's logo and the footer's typed link both stay under /fr.

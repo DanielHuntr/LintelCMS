@@ -103,23 +103,45 @@ export function updateCookieNotice(changes: Partial<CookieNoticeSettings>) {
   return apiRequest<CookieNotice>("/website/cookie-notice", { method: "PUT", body: changes });
 }
 
-/** The site's design variables and shared styles, made in the page builder. */
+/**
+ * The site's design variables and shared styles, made in the page builder, with which save
+ * they are (`revision`, null before the first).
+ */
+export type SavedSiteDesign = SiteDesign & { revision?: string | null };
+
 export function getSiteDesign() {
-  return apiRequest<SiteDesign>("/website/design");
+  return apiRequest<SavedSiteDesign>("/website/design");
 }
 
-export function updateSiteDesign(design: SiteDesign) {
-  return apiRequest<SiteDesign>("/website/design", { method: "PUT", body: design });
+/**
+ * Saves the design. With the `revision` it was read at, the API refuses with 409
+ * SITE_DESIGN_CHANGED when someone has saved it since.
+ */
+export function updateSiteDesign(design: SiteDesign, revision?: string | null) {
+  return apiRequest<SavedSiteDesign>("/website/design", {
+    method: "PUT",
+    body: { ...design, revision },
+  });
 }
 
-/** The site's navigation and footer sections, shown on every page. */
+/**
+ * The site's navigation and footer sections, shown on every page, as the builder works on
+ * them: `unpublished` says the website still shows the last published ones.
+ */
+export type SiteSectionsDraft = SiteSections & { unpublished?: boolean };
+
 export function getSiteSections() {
-  return apiRequest<SiteSections>("/website/sections");
+  return apiRequest<SiteSectionsDraft>("/website/sections");
 }
 
-/** Changes the slots sent; the others stay as they are. */
+/** Changes the slots sent in the draft; the others stay as they are. */
 export function updateSiteSections(change: SiteSectionsChange) {
-  return apiRequest<SiteSections>("/website/sections", { method: "PUT", body: change });
+  return apiRequest<SiteSectionsDraft>("/website/sections", { method: "PUT", body: change });
+}
+
+/** Puts the draft navigation and footer on the website. */
+export function publishSiteSections() {
+  return apiRequest<{ published: boolean }>("/website/sections/publish", { method: "POST" });
 }
 
 /** What the page builder draws its canvas with, so pages look exactly as on the website. */

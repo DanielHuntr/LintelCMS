@@ -7,6 +7,7 @@ export { renderSiteChrome, type RenderedSiteChrome } from "./document/render-sit
 export {
   renderDocumentParts,
   renderCreditedImageHtml,
+  renderFigureCaptionHtml,
   renderResponsiveImageHtml,
   type DocumentParts,
   type DocumentPartsProps,

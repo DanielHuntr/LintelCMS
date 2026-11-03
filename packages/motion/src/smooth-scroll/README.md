@@ -10,7 +10,10 @@ page all keep working without knowing about it. Only the wheel is taken over: ke
 scrollbar, touch and jumps scroll as usual, and the glide restarts from where they leave
 the page. Areas that scroll by themselves, pop-ups and anything marked
 `data-lintel-native-scroll` keep the browser's own wheel. Off for less motion and for
-touch-only devices.
+touch-only devices. Whether the wheel belongs to such an area, or the page is locked, is
+worked out (from computed styles) at the start of a glide, then not again while the wheel
+keeps turning the same way over the same element, so a fast wheel doesn't read styles on
+every step.
 
 While it glides, `<html>` has `data-lintel-gliding`; while it is on, `data-lintel-smooth-scroll`
 says how strong it is. `smoothScroll.test.ts` covers the maths; the browser tests in

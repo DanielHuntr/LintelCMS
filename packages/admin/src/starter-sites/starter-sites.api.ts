@@ -16,6 +16,8 @@ export interface ApplyStarterSiteOptions {
 export interface ExistingPages {
   pageCount: number;
   hasHome: boolean;
+  /** How many pages adding beside the site's would add (its home page is left out). */
+  addedCount: number;
   clashes: { title: string; slug: string; existingTitle: string }[];
 }
 
@@ -43,6 +45,8 @@ export interface AppliedStarterSite {
   skippedHome: boolean;
   /** Replaced: how many pages went to the recycle bin. */
   replacedCount: number;
+  /** The template's menu and footer took the place of the site's, which were kept. */
+  previousSectionsKept: boolean;
 }
 
 /** Links the pages at the end of the main menu, for when it already had links. */

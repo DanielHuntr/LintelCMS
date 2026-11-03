@@ -8,10 +8,13 @@ such as "Card", used by many elements). Both start empty.
   `Lintel-Site` header). Changing it needs `builder:blocks`, since, like a block, it changes
   every page.
 - `site-design.service.ts`: reading (an empty design when nothing readable is saved) and
-  saving, checked by `siteDesignSchema`.
+  saving, checked by `siteDesignSchema`. Each save has a `revision` (when it was saved); a
+  PUT that sends the revision it read is refused with 409 `SITE_DESIGN_CHANGED` when someone
+  saved since, so a builder left open on an older copy can't undo another person's change.
+  The builder then shows the latest styles and says so. A PUT without one always saves.
 - `site-design.repository.ts`: one `siteDesign:<site id>` row per site in the settings
   table. A site without one reads the single `siteDesign` row kept before sites had their
-  own (decision 0045).
+  own (decision 0045). The revision is the site's own row's save time.
 
 What variables and shared styles are, and how a page is drawn with them, lives in
 `@lintel/builder-model`'s `site-design/` folder. The website gets the variables as custom

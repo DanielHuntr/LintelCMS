@@ -1,6 +1,10 @@
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
-import { findSettingValue, upsertSettingValue } from "../settings/settings.repository.js";
+import {
+  findSettingUpdatedAt,
+  findSettingValue,
+  upsertSettingValue,
+} from "../settings/settings.repository.js";
 
 /**
  * Database reads and writes for a site's design system: one row in the settings table per
@@ -22,6 +26,17 @@ export async function findStoredSiteDesign(
   return (
     (await findSettingValue(database, DEFAULT_TENANT_ID, settingKey(siteId))) ??
     findSettingValue(database, DEFAULT_TENANT_ID, sharedSettingKey)
+  );
+}
+
+/** When the site's design was last saved (or the shared one, before it had its own), or null. */
+export async function findStoredSiteDesignUpdatedAt(
+  database: DatabaseOrTransaction,
+  siteId: string,
+): Promise<Date | null> {
+  return (
+    (await findSettingUpdatedAt(database, DEFAULT_TENANT_ID, settingKey(siteId))) ??
+    findSettingUpdatedAt(database, DEFAULT_TENANT_ID, sharedSettingKey)
   );
 }
 

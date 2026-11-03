@@ -4,22 +4,33 @@ import { getSignedIn, requirePermission } from "../auth/require-permission.js";
 import { parseRequest } from "../http/http-errors.js";
 import { hasPermission } from "../roles/permissions.js";
 import { resolveEditingSite } from "../sites/request-site.js";
-import { changeSiteSections, readSiteSections } from "./site-sections.service.js";
+import { PermissionDeniedError } from "../auth/auth.errors.js";
+import {
+  changeSiteSections,
+  publishSiteSections,
+  readSiteSectionsDraft,
+  restorePreviousSiteSections,
+} from "./site-sections.service.js";
 
 /**
  * HTTP only, for the site being edited (the `Lintel-Site` header):
  *
- *   GET /website/sections  (entries:read)    -> { navigation, footer }
- *   PUT /website/sections  (builder:blocks)  { navigation?, footer? } -> both, as saved
+ *   GET /website/sections  (entries:read)    -> { navigation, footer, unpublished }
+ *   PUT /website/sections  (builder:blocks)  { navigation?, footer? } -> the same, as saved
+ *   POST /website/sections/publish  (builder:blocks and entries:publish) -> { published }
+ *   POST /website/sections/restore-previous  (builder:blocks)  -> both, as brought back
  *
- * A slot left out of a PUT stays as it is; null takes it off the site. Changing them changes
- * every page, like changing a block, so it needs the same permission.
+ * GET and PUT are the builder's draft: a PUT changes what the builder shows, and the website
+ * keeps the published sections until a publish (the page's Publish button sends one too).
+ * `unpublished` says the draft differs from the website. A slot left out of a PUT stays as
+ * it is; null takes it off the site. Changing them changes every page, like changing a
+ * block, so it needs the same permission; publishing them needs both.
  */
 export async function siteSectionsRoutes(server: FastifyInstance) {
   server.get(
     "/website/sections",
     { preHandler: requirePermission("entries:read") },
-    async (request) => readSiteSections(server.database, await resolveEditingSite(request)),
+    async (request) => readSiteSectionsDraft(server.database, await resolveEditingSite(request)),
   );
 
   server.put(
@@ -31,5 +42,29 @@ export async function siteSectionsRoutes(server: FastifyInstance) {
         mayEditCode: hasPermission(getSignedIn(request).permissions, "builder:code"),
       });
     },
+  );
+
+  server.post(
+    "/website/sections/publish",
+    { preHandler: requirePermission("entries:publish") },
+    async (request) => {
+      if (!hasPermission(getSignedIn(request).permissions, "builder:blocks")) {
+        throw new PermissionDeniedError("builder:blocks");
+      }
+      const published = await publishSiteSections(
+        server.database,
+        await resolveEditingSite(request),
+      );
+      return { published };
+    },
+  );
+
+  // A starter template that replaced the site's navigation and footer kept them: this
+  // brings them back (and keeps the template's, so it can be undone the same way).
+  server.post(
+    "/website/sections/restore-previous",
+    { preHandler: requirePermission("builder:blocks") },
+    async (request) =>
+      restorePreviousSiteSections(server.database, await resolveEditingSite(request)),
   );
 }

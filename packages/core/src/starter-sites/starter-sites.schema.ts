@@ -60,12 +60,22 @@ export interface AppliedStarterSiteResponse {
   skippedHome: boolean;
   /** Replacing: how many pages went to the recycle bin (with everything under them). */
   replacedCount: number;
+  /**
+   * The template's navigation and footer took the place of the site's, which were kept:
+   * `POST /website/sections/restore-previous` brings them back.
+   */
+  previousSectionsKept: boolean;
 }
 
 /** `GET /starter-sites/:id/existing-pages`: what applying would meet, for the admin's question. */
 export interface ExistingPagesResponse {
   pageCount: number;
   hasHome: boolean;
-  /** Template pages whose address a page already has. */
+  /**
+   * How many pages adding the template beside the site's would add: all of them, or all but
+   * its home page when the site has one.
+   */
+  addedCount: number;
+  /** Template pages whose address a page already has (never its home page beside a home). */
   clashes: { title: string; slug: string; existingTitle: string }[];
 }

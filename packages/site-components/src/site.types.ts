@@ -124,6 +124,8 @@ export interface SiteLabels {
   socialLinks: string;
   contact: string;
   cookieSettings: string;
+  /** The button that skips the first-visit intro (see site-effects in @lintel/core). */
+  skipIntro: string;
 }
 
 export const englishLabels: SiteLabels = {
@@ -147,4 +149,5 @@ export const englishLabels: SiteLabels = {
   socialLinks: "Elsewhere",
   contact: "Contact",
   cookieSettings: "Cookie settings",
+  skipIntro: "Skip intro",
 };

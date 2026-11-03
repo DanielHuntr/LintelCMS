@@ -14,6 +14,7 @@ import {
 } from "@lintel/builder-model";
 import type { MenuItem } from "@lintel/site-components";
 import { loadBlockPageData } from "../blocks/block-rendering.js";
+import { withPageLinkAddresses } from "./page-link-addresses.js";
 import { listDeliveredEntries } from "../delivery/delivery.service.js";
 import { TaxonomyNotFoundError, TermNotFoundError } from "../taxonomies/taxonomies.errors.js";
 import type { DeliveredEntry } from "../delivery/delivery.schema.js";
@@ -79,11 +80,16 @@ export async function loadPageData(
     credits: await loadPictureCredits(request, document),
     sharedStyles: sharedStylesById(request.context.design),
     tagStyles: request.context.design.tagStyles,
-    // The site's own blocks the page uses, their pictures, and those the server draws.
-    ...(await loadBlockPageData(
+    // The site's own blocks the page uses, their pictures, and those the server draws, with
+    // "Choose a page" links in their designs as the pages' addresses.
+    ...(await withPageLinkAddresses(
       request.dependencies.database,
-      document.root,
-      request.dependencies.assetLookup,
+      await loadBlockPageData(
+        request.dependencies.database,
+        document.root,
+        request.dependencies.assetLookup,
+      ),
+      request.locale,
     )),
   };
 }

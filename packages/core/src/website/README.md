@@ -74,6 +74,15 @@ showing the entry's fields (`item-designs.service.ts`, `entry-designs.service.ts
 shop's products and the forms are read from their own APIs inside the process
 (`site-sources.ts`), so while a plugin is off its elements show their empty states.
 
+Delivery hands a page's design over with its "Choose a page" links (`lintel:page/<id>`)
+already swapped for addresses. The parts it doesn't deliver get the same treatment as they
+are drawn (`page-link-addresses.ts`): the site's navigation and footer
+(`site-sections-drawing.ts`, also used by Liquid's `{% site_header %}` and `{% site_footer %}`)
+and the designs of the site's own blocks (`page-data.service.ts`, `designed-blocks.ts`). Only
+published pages have an address. Typed addresses in the navigation and footer then get the
+site's prefix and language, except Lintel's own files (`/_lintel/…`), files (`/menu.pdf`) and
+addresses that already name a language.
+
 Animated elements get `data-node-id` (and `data-motion-cloak` on entrances); the page lists
 its animations in `<script type="application/json" id="lintel-motion">` and loads the motion
 runtime (`site-assets.ts`). Pages without animations load no script. Reduced motion is

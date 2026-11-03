@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, count, eq, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { type NewSiteFontRow, type SiteFontRow, siteFontsTable } from "./site-fonts.table.js";
 
@@ -62,6 +62,19 @@ export async function findSiteFontRowByFamily(
     )
     .limit(1);
   return row;
+}
+
+/** How many fonts a site has. */
+export async function countSiteFontRows(
+  database: DatabaseOrTransaction,
+  tenantId: string,
+  siteId: string,
+): Promise<number> {
+  const [row] = await database
+    .select({ total: count() })
+    .from(siteFontsTable)
+    .where(and(eq(siteFontsTable.tenantId, tenantId), eq(siteFontsTable.siteId, siteId)));
+  return row?.total ?? 0;
 }
 
 export async function insertSiteFontRow(

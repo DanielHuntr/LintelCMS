@@ -42,6 +42,17 @@ licence, as ready-split WOFF2 files, and has a public API that needs no key:
   the files. Lintel takes the `latin` and `latin-ext` alphabets of each chosen weight, each
   with its `unicode-range`, so browsers fetch the second only for pages that need it.
 
+Files are downloaded four at a time. If any fails, or the family can't be added, the files
+already downloaded for it are deleted again; files a new download replaced (the same weight
+and style) are deleted once no font uses them. Downloaded files are kept in memory for an
+hour, up to 32 MB in all, so previewing and then adding a family fetches each file once.
+
+A site can have up to 40 fonts (`MAX_FONTS_PER_SITE`, 409 `TOO_MANY_SITE_FONTS`); an Adobe
+project with more families adds the first ones. A font is counted and added in one
+transaction, and two people adding the same family at once get "already has a font
+called…" rather than a database error. Uploaded files' formats come from their type, so
+adding them reads no files; reading their names reads them one at a time.
+
 Only families Fontsource marks as Google's (`type: "google"`) are listed. The fonts that come
 with Lintel were fetched from Fontsource's packages too.
 

@@ -21,9 +21,9 @@ export const builderSiteSectionStrings = {
   "pageBuilder.siteSection.useAsSite.footer": "Use as the site’s footer",
   "pageBuilder.siteSection.useAsOwn": "Use as this page’s own navigation",
   "pageBuilder.siteSection.switched.navigation":
-    "This navigation is now live on every page of your website.",
+    "This navigation takes the place of your site’s automatic header on every page when you publish.",
   "pageBuilder.siteSection.switched.footer":
-    "This footer is now live on every page of your website.",
+    "This footer takes the place of your site’s automatic footer on every page when you publish.",
   "pageBuilder.siteSection.switched.undo": "Undo",
   "pageBuilder.siteSection.history.removed": "Removed the {name} from every page",
   "pageBuilder.siteSection.remove": "Remove…",

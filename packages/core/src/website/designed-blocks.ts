@@ -11,6 +11,7 @@ import { loadBlockLibrary } from "../blocks/blocks.service.js";
 import type { DeliveredEntry } from "../delivery/delivery.schema.js";
 import { readBlocks } from "./delivered-to-site.js";
 import { drawPageDesign } from "./designed-pages.js";
+import { withPageLinkAddresses } from "./page-link-addresses.js";
 import type { PageRequest } from "./site-pages.service.js";
 
 /**
@@ -25,8 +26,13 @@ export async function withDesignedBlocks(
 ): Promise<PageView> {
   const items = sectionItems(entry.data);
   if (items.length === 0) return view;
-  const library = Object.fromEntries(
-    (await loadBlockLibrary(request.dependencies.database)).map((block) => [block.handle, block]),
+  // "Choose a page" links in the blocks' designs are drawn as the pages' addresses.
+  const library = await withPageLinkAddresses(
+    request.dependencies.database,
+    Object.fromEntries(
+      (await loadBlockLibrary(request.dependencies.database)).map((block) => [block.handle, block]),
+    ),
+    request.locale,
   );
   if (!items.some((item) => library[item.type])) return view;
 

@@ -257,14 +257,34 @@ export function safePictureAddress(address: string): string {
   return /^https?:/i.test(trimmed) || !/^[a-z][\w+.-]*:/i.test(trimmed) ? trimmed : "";
 }
 
+/**
+ * The picture is at most 420px wide on screen: a picture from the media library is asked for
+ * at 720px (sharp on a high-density screen at its usual size) rather than at its full size.
+ */
+const HOVER_PICTURE_WIDTH = 720;
+
+export function hoverPictureAddress(src: string, fromMediaLibrary: boolean): string {
+  if (!fromMediaLibrary || /[?&]w=/.test(src)) return src;
+  return `${src}${src.includes("?") ? "&" : "?"}w=${HOVER_PICTURE_WIDTH}&format=webp`;
+}
+
 const hoverPicture: EffectBehaviour = (element, params, context) => {
-  const src = safePictureAddress(readText(params, "src", ""));
+  const src = hoverPictureAddress(
+    safePictureAddress(readText(params, "src", "")),
+    readText(params, "assetId", "") !== "",
+  );
   if (!src || !context.finePointer) return;
   const width = pictureWidths[readText(params, "size", "medium")] ?? pictureWidths.medium ?? "";
   const layer = sharedPictureLayer(context.reduced ? 0 : 0.82);
-  // Fetched ahead, so it's there the moment the pointer arrives.
-  const preload = new Image();
-  preload.src = src;
+  // Fetched the first time the pointer comes near, not with the page: most visitors never
+  // hover over most of a list.
+  let fetched = false;
+  const fetchAhead = () => {
+    if (fetched) return;
+    fetched = true;
+    const preload = new Image();
+    preload.src = src;
+  };
   const place = (event: PointerEvent) => {
     layer.target.x = event.clientX;
     layer.target.y = event.clientY;
@@ -294,6 +314,7 @@ const hoverPicture: EffectBehaviour = (element, params, context) => {
     }),
     listen(element, {
       pointerenter: (event: PointerEvent) => {
+        fetchAhead();
         if (!pointerOnFrame(event)) showAt(event);
       },
       pointermove: (event: PointerEvent) => {

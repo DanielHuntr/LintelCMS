@@ -209,9 +209,11 @@ describe("the site's navigation in the builder", () => {
     const change = onSectionsChange.mock.lastCall?.[0];
     expect(change?.navigation?.id).toBe("site-navigation");
     expect(change).not.toHaveProperty("footer");
-    // The site is told it went live everywhere at once.
+    // A site that had the automatic header is told it has gone.
     expect(
-      screen.getByText("This navigation is now live on every page of your website."),
+      screen.getByText(
+        /takes the place of your site’s automatic header on every page when you publish/,
+      ),
     ).toBeInTheDocument();
     expect(screen.getByText("Navigation · on every page")).toBeInTheDocument();
   });
@@ -229,7 +231,11 @@ describe("the site's navigation in the builder", () => {
     expect(saved.root.props.hideSiteNavigation).toBe(true);
     expect(ids(saved)).toEqual(["n1"]);
     expect(onSectionsChange).not.toHaveBeenCalled();
-    expect(screen.queryByText(/now live on every page/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        /takes the place of your site’s automatic header on every page when you publish/,
+      ),
+    ).not.toBeInTheDocument();
   });
 
   it("shows the page's switches with nothing selected", async () => {

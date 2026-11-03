@@ -9,8 +9,11 @@ import type { PageDesign, SiteChrome } from "@lintel/site-components";
 import { pageComponentCatalogue } from "../pages/page-components.js";
 import { readSiteSections } from "../site-sections/site-sections.service.js";
 import { checkPageDesign } from "./designed-pages.js";
+import { withPageLinkAddresses } from "./page-link-addresses.js";
 import { loadPageData } from "./page-data.service.js";
+import { removePathPrefix } from "../sites/site-addresses.js";
 import { localiseUrl, markCurrent } from "./site-chrome.service.js";
+import type { SiteContext } from "./site-context.service.js";
 import type { PageRequest } from "./site-pages.service.js";
 
 /**
@@ -24,12 +27,17 @@ export async function withSiteSections(
   chrome: SiteChrome,
 ): Promise<SiteChrome> {
   const { dependencies } = request;
-  const sections = await dependencies.cache.shareValue("site-sections", () =>
+  const stored = await dependencies.cache.shareValue("site-sections", () =>
     readSiteSections(dependencies.database, dependencies.site),
   );
-  if (!sections.navigation && !sections.footer) return chrome;
+  if (!stored.navigation && !stored.footer) return chrome;
+  // "Choose a page" links become the pages' addresses before they are put on this site.
+  const sections = await dependencies.cache.shareValue(`site-sections:${request.locale}`, () =>
+    withPageLinkAddresses(dependencies.database, stored, request.locale),
+  );
   // Links typed into them ("/work") lead to this site's pages: with its path prefix and language.
-  const localise = (url: string) => localiseUrl(url, request.locale, request.context);
+  const localise = (url: string) =>
+    isPageAddress(url, request.context) ? localiseUrl(url, request.locale, request.context) : url;
   const onThisSite = {
     navigation: sections.navigation && withSiteAddresses(sections.navigation, localise),
     footer: sections.footer && withSiteAddresses(sections.footer, localise),
@@ -62,6 +70,26 @@ export async function withSiteSections(
     navigationDesign: draw(siteSectionNodeIds.navigation),
     footerDesign: draw(siteSectionNodeIds.footer),
   };
+}
+
+/**
+ * Whether a typed address is one of the site's pages, so it should get the site's language:
+ * not Lintel's own files ("/_lintel/…"), not a file ("/menu.pdf"), and not an address that
+ * already names a language ("/fr/about", or "/shop/fr/about" under the site's prefix).
+ */
+export function isPageAddress(
+  url: string,
+  site: Pick<SiteContext, "defaultLocale" | "locales" | "pathPrefix">,
+): boolean {
+  const path = (url.split(/[?#]/)[0] ?? "").toLowerCase();
+  const onSite = removePathPrefix(site.pathPrefix, path);
+  if (onSite === "/_lintel" || onSite.startsWith("/_lintel/")) return false;
+  const lastSegment = onSite.split("/").pop() ?? "";
+  if (/\.[a-z0-9]{1,8}$/.test(lastSegment)) return false;
+  const firstSegment = onSite.split("/")[1] ?? "";
+  return !site.locales.some(
+    (locale) => locale.code !== site.defaultLocale && locale.code.toLowerCase() === firstSegment,
+  );
 }
 
 /** Every address an element links to (`href`, `featuredHref`, links in lists) that is on the site. */

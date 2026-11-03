@@ -218,6 +218,42 @@ describe("the page design screen", () => {
     expect(within(banner).queryByText("Not on your site yet")).not.toBeInTheDocument();
   });
 
+  it("puts navigation and footer changes live with the page, and says when they wait", async () => {
+    const user = userEvent.setup();
+    let unpublished = true;
+    const { calls } = mockApi(({ method, url }) => {
+      if (method === "GET" && url.pathname === "/entries/p1") {
+        return { ...samplePage(), status: "published", hasUnpublishedChanges: false };
+      }
+      if (method === "GET" && url.pathname === "/website/sections") {
+        return { navigation: null, footer: null, unpublished };
+      }
+      if (method === "POST" && url.pathname === "/website/sections/publish") {
+        unpublished = false;
+        return { published: true };
+      }
+      if (method === "POST" && url.pathname === "/entries/p1/publish") {
+        return { ...samplePage(), status: "published", hasUnpublishedChanges: false };
+      }
+      throw apiErrorResponse(404, "NOT_FOUND", "Not found");
+    });
+    renderScreen(<PageDesignPage collectionHandle="pages" entryId="p1" fieldHandle="design" />);
+    const banner = await screen.findByRole("banner");
+    expect(
+      await within(banner).findByText("Navigation and footer changes not live yet"),
+    ).toBeInTheDocument();
+
+    await user.click(within(banner).getByRole("button", { name: "Publish" }));
+
+    expect(await within(banner).findByRole("button", { name: "Published" })).toBeInTheDocument();
+    expect(calls.map((call) => `${call.method} ${call.url.pathname}`)).toContain(
+      "POST /website/sections/publish",
+    );
+    expect(
+      within(banner).queryByText("Navigation and footer changes not live yet"),
+    ).not.toBeInTheDocument();
+  });
+
   // On a phone the builder spilled 640px past the screen and the tour still ran.
   it("says the designer needs a bigger screen on a phone, with ways on", async () => {
     vi.stubGlobal("matchMedia", (query: string) => ({

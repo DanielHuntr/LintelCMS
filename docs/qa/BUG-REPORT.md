@@ -781,13 +781,11 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-042   | P2       | Fixed  | Site cursor: the cursor, its word ("Play") and hover pictures freeze on top of a YouTube or Vimeo video                        |
 | LINTEL-UX-043   | P2       | Fixed  | Motion timeline: the Trigger settings are squeezed into a narrow column in the side panel; labels overlap, selects unreadable  |
 | LINTEL-UX-044   | P2       | Fixed  | Grow while scrolling can't start smaller than 60%: a video can't grow from a tenth of its size to full as the page scrolls     |
-| <<<<<<< HEAD    |
 | LINTEL-UX-062   | P3       | Fixed  | The Motion panel's moment icons use bright stock iOS colours that clash with the warm admin                                    |
 | LINTEL-UX-063   | P3       | Fixed  | A scroll scene's Start and End lines sit on the canvas's very edges by default, so they're hard to see or grab                 |
 | LINTEL-UX-041   | P1       | Fixed  | No site-wide cookie notice: videos, maps, embeds and Adobe Fonts each asked alone (Adobe Fonts not at all), with no way back   |
 | LINTEL-UX-060   | P2       | Fixed  | Builder: Tools: Beginner / Designer / Developer hides settings per person; the tour differs per level; a Code tab for few      |
 | LINTEL-UX-061   | P2       | Fixed  | Style: two stacked controls for one question (Arrange → Place things, Layout → Arrange what's inside); "Normal" means nothing  |
-| =======         |
 | LINTEL-UX-045   | P2       | Fixed  | Adding a Navigation or Footer goes live on every page at once, while the top bar says "Not on your site yet"                   |
 | LINTEL-UX-046   | P2       | Fixed  | A Navigation added to an empty page is hidden behind "This page is empty"                                                      |
 | LINTEL-UX-047   | P2       | Fixed  | Deleting the site's navigation or footer only hides it on that page; nothing removes it from the site                          |
@@ -810,8 +808,6 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-074   | P3       | Fixed  | Create asks "What would you like to make?" with one choice, Pages                                                              |
 | LINTEL-UX-075   | P3       | Fixed  | Users says "It's just you so far" while an invitation is waiting                                                               |
 | LINTEL-UX-076   | P3       | Fixed  | Style chips ignore the real look: a 600 button shows Weight Custom, a 1fr 1fr grid no Columns chip, a 17px button no size      |
-
-> > > > > > > 695eaa4
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 
@@ -842,3 +838,30 @@ Found by the UI and accessibility sweep (desktop and 390px, light and dark, keyb
 | LINTEL-A11Y-036 | P3       | Fixed  | Grouped list names (Settings, Users and the rest) aren't headings; History's "Today" is an h4 under an h2      |
 | LINTEL-A11Y-037 | P3       | Fixed  | Sign in: the error appears under "Sign in with a passkey", away from the fields and the Sign in button         |
 | LINTEL-A11Y-038 | P3       | Fixed  | Builder: "Show a picture when hovered" is a native checkbox, unlike every other on/off control                 |
+
+# Code review (3 Nov 2026, `release/1.0.0-rc`, branch `fix/review-findings`)
+
+Found by a code review of the newer website, builder, fonts and motion work, and by Daniel's checks of Start from a template. Each was checked against the code first. Every fix has a regression test that fails without it. The fixes are logged in `FIX-LOG-ux.md`, "Code review fixes (3 November 2026)".
+
+## Code review summary
+
+| ID              | Severity | Status | Defect                                                                                                                                       |
+| --------------- | -------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| LINTEL-CODE-001 | P1       | Fixed  | Applying a starter template silently replaces the site's own navigation and footer, even when its pages are added beside the site's own      |
+| LINTEL-CODE-002 | P1       | Fixed  | "Choose a page" links in the site's navigation, footer and own blocks are published as `href="lintel:page/<id>"`                             |
+| LINTEL-CODE-003 | P2       | Fixed  | Pictures in rich text leave out the photo credit their licence asks for                                                                      |
+| LINTEL-CODE-004 | P2       | Fixed  | Builder: a site-styles change made just before closing is lost, and failed saves of the site's styles are never shown                        |
+| LINTEL-CODE-005 | P2       | Fixed  | Builder: a failed save of the navigation or footer is swallowed and the change is dropped                                                    |
+| LINTEL-CODE-006 | P2       | Fixed  | Site styles have no version check: a builder left open on an older copy overwrites someone else's newer styles                               |
+| LINTEL-CODE-007 | P2       | Fixed  | The navigation and footer put the site's prefix and language on every "/…" link, breaking `/_lintel/…` files, `/menu.pdf` and `/fr/…`        |
+| LINTEL-CODE-008 | P3       | Fixed  | Fonts: replaced or failed Google Fonts downloads are left in the media library; no limit per site; same-name race gives a database error     |
+| LINTEL-CODE-009 | P3       | Fixed  | Hover picture loads the full-size file for every element as the page opens                                                                   |
+| LINTEL-CODE-010 | P3       | Fixed  | Page transitions read every animated element's computed styles each time a page is left or arrives                                           |
+| LINTEL-CODE-011 | P3       | Fixed  | Smooth scrolling reads computed styles up the element's ancestors on every wheel step                                                        |
+| LINTEL-CODE-012 | P3       | Fixed  | The intro's "Skip intro" button is always in English, whatever the site's labels say                                                         |
+| LINTEL-CODE-013 | P3       | Fixed  | Rules: the site effects route filters the request's keys itself instead of the service                                                       |
+| LINTEL-CODE-014 | P2       | Fixed  | Start from a template, "Add them alongside": says "We'll add 4 pages" and counts Home as a clash, but adds 3 (the home page is skipped)      |
+| LINTEL-CODE-015 | P2       | Fixed  | Start from a template: the look switch changes the live site at once, even with "Publish straight away" off, and is on when adding alongside |
+| LINTEL-CODE-016 | P2       | Fixed  | Navigation and footer changes made in the builder go live at once, before the page is published                                              |
+
+Not in scope: making site styles and site motion per site (a separate track, Daniel's decision).

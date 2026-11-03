@@ -109,6 +109,8 @@ export const pointerFieldEffects = [
     suits: ["any"],
     params: {
       src: text("Picture", "", 400),
+      // Set for a picture from the media library, whose server then sends a smaller copy.
+      assetId: text("Picture in the media library", "", 64),
       size: choice("Size", "medium", [
         ["small", "Small"],
         ["medium", "Medium"],

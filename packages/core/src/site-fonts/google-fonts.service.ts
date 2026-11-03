@@ -4,11 +4,7 @@ import { createAssetLookup, uploadAsset } from "../media/index.js";
 import type { Site } from "../sites/sites.table.js";
 import type { GoogleFont } from "./google-fonts-client.js";
 import { GoogleFontNotFoundError } from "./site-fonts.errors.js";
-import {
-  findSiteFontRowByFamily,
-  insertSiteFontRow,
-  updateSiteFontRow,
-} from "./site-fonts.repository.js";
+import { findSiteFontRowByFamily, updateSiteFontRow } from "./site-fonts.repository.js";
 import type {
   AddGoogleFontRequest,
   GoogleFontSummary,
@@ -17,11 +13,41 @@ import type {
 } from "./site-fonts.schema.js";
 import {
   checkFamilyIsFree,
+  deleteUnusedFontFiles,
   describeSiteFont,
+  insertNewSiteFont,
   mergeFiles,
   type SiteFontsContext,
 } from "./site-fonts.service.js";
-import type { StoredFontFile } from "./site-fonts.table.js";
+import type { SiteFontRow, StoredFontFile } from "./site-fonts.table.js";
+
+/** How many files are downloaded at once when a family is added. */
+const DOWNLOADS_AT_ONCE = 4;
+
+/**
+ * Runs `work` on every item, `limit` at a time, keeping the order. An item whose work fails
+ * gives its error in its place, so the caller can tidy up after the ones that worked.
+ */
+export async function mapWithConcurrency<Item, Result>(
+  items: readonly Item[],
+  limit: number,
+  work: (item: Item) => Promise<Result>,
+): Promise<(Result | Error)[]> {
+  const results: (Result | Error)[] = new Array<Result | Error>(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const index = next;
+      next += 1;
+      const item = items[index] as Item;
+      results[index] = await work(item).catch((error: unknown) =>
+        error instanceof Error ? error : new Error(String(error)),
+      );
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
+}
 
 /**
  * Google Fonts: search the whole library, and add a family by downloading its files into
@@ -137,29 +163,33 @@ export async function addGoogleFont(
   const subsets = wantedSubsets.filter((subset) => font.subsets.includes(subset));
   const alphabets = subsets.length > 0 ? subsets : [font.defaultSubset];
 
-  const files: StoredFontFile[] = [];
-  for (const weight of weights) {
-    for (const style of styles) {
-      for (const subset of alphabets) {
-        const contents = await context.google.downloadFile(font.id, subset, weight, style);
-        if (!contents) continue;
-        const { asset } = await uploadAsset(
-          context.media,
-          { filename: `${font.id}-${subset}-${weight}-${style}.woff2`, contents },
-          addedBy,
-        );
-        const unicodeRange = font.unicodeRanges[subset];
-        files.push({
-          assetId: asset.id,
-          weight,
-          style: style === "italic" ? "italic" : "normal",
-          format: "woff2",
-          ...(unicodeRange ? { unicodeRange } : {}),
-        });
-      }
-    }
-  }
-  if (files.length === 0) throw new GoogleFontNotFoundError();
+  const wanted = weights.flatMap((weight) =>
+    styles.flatMap((style) => alphabets.map((subset) => ({ weight, style, subset }))),
+  );
+  // A few at a time: quicker than one by one, without asking the font service for 50 at once.
+  const downloaded = await mapWithConcurrency(
+    wanted,
+    DOWNLOADS_AT_ONCE,
+    async ({ weight, style, subset }): Promise<StoredFontFile | null> => {
+      const contents = await context.google.downloadFile(font.id, subset, weight, style);
+      if (!contents) return null;
+      const { asset } = await uploadAsset(
+        context.media,
+        { filename: `${font.id}-${subset}-${weight}-${style}.woff2`, contents },
+        addedBy,
+      );
+      const unicodeRange = font.unicodeRanges[subset];
+      return {
+        assetId: asset.id,
+        weight,
+        style: style === "italic" ? "italic" : "normal",
+        format: "woff2",
+        ...(unicodeRange ? { unicodeRange } : {}),
+      };
+    },
+  );
+  const files = downloaded.flatMap((file) => (file && "assetId" in file ? [file] : []));
+  const failure = downloaded.find((file) => file instanceof Error);
 
   const existing = await findSiteFontRowByFamily(
     context.database,
@@ -167,19 +197,39 @@ export async function addGoogleFont(
     site.id,
     font.family,
   );
-  const row = existing
-    ? await updateSiteFontRow(context.database, DEFAULT_TENANT_ID, existing.id, {
-        files: mergeFiles(existing.files, files),
-      })
-    : await insertSiteFontRow(context.database, {
-        tenantId: DEFAULT_TENANT_ID,
-        siteId: site.id,
-        family: font.family,
-        category: font.category,
-        source: "google",
-        sourceId: font.id,
-        files,
-      });
+  let row: SiteFontRow;
+  try {
+    if (failure) throw failure;
+    if (files.length === 0) throw new GoogleFontNotFoundError();
+    row = existing
+      ? await updateSiteFontRow(context.database, DEFAULT_TENANT_ID, existing.id, {
+          files: mergeFiles(existing.files, files),
+        })
+      : await insertNewSiteFont(context.database, {
+          tenantId: DEFAULT_TENANT_ID,
+          siteId: site.id,
+          family: font.family,
+          category: font.category,
+          source: "google",
+          sourceId: font.id,
+          files,
+        });
+  } catch (error) {
+    // Nothing was added, so the files downloaded for it go again.
+    await deleteUnusedFontFiles(
+      context,
+      files.map((file) => file.assetId),
+    );
+    throw error;
+  }
+  // Files the new ones replaced (the same weight and style, downloaded again) go too.
+  if (existing) {
+    const kept = new Set(row.files.map((file) => file.assetId));
+    await deleteUnusedFontFiles(
+      context,
+      existing.files.map((file) => file.assetId).filter((assetId) => !kept.has(assetId)),
+    );
+  }
   const assets = await createAssetLookup(context.media).findAssetsByIds(
     row.files.map((file) => file.assetId),
   );

@@ -7,6 +7,16 @@ import { text } from "../parameters.js";
  * (fade, rise, sweep, settle) is chosen once for the site, in Settings → Your website.
  */
 
+/** The view transition name a carried element gets: "Hero picture" is lintel-hero-picture. */
+export function carriedElementName(name: string): string {
+  const safe =
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, "-")
+      .replace(/^-+|-+$/g, "") || "shared";
+  return `lintel-${safe}`;
+}
+
 export const transitionEffects = [
   defineEffect({
     id: "shared-element",
@@ -17,14 +27,11 @@ export const transitionEffects = [
     kind: "style",
     suits: ["any"],
     params: { name: text("Name to match", "hero-picture", 40) },
-    staticCss: (selector, { name }) => {
-      const safe =
-        name
-          .toLowerCase()
-          .replace(/[^a-z0-9-]/g, "-")
-          .replace(/^-+|-+$/g, "") || "shared";
-      return `@media (prefers-reduced-motion: no-preference) { ${selector} { view-transition-name: lintel-${safe}; } }`;
-    },
+    staticCss: (selector, { name }) =>
+      `@media (prefers-reduced-motion: no-preference) { ${selector} { view-transition-name: ${carriedElementName(name)}; } }`,
+    // Marked with its name, so the page's script finds carried elements without reading
+    // every element's styles.
+    elementAttributes: ({ name }) => ({ "data-lintel-carried": carriedElementName(name) }),
     reducedMotion: "Pages change without the glide.",
     preview: "image",
     keywords: ["view transition", "shared element", "hero", "morph"],

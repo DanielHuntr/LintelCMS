@@ -14,7 +14,12 @@ import { useAutosave } from "../content/useAutosave.js";
  * always do). The entry in the query cache is kept up to date, so going back to the entry
  * editor shows the latest design.
  */
-export function usePageDesignSaving(entry: Entry, fieldHandle: string) {
+export function usePageDesignSaving(
+  entry: Entry,
+  fieldHandle: string,
+  /** Also put live with the page: the site's navigation and footer changes. */
+  publishShared?: () => Promise<void>,
+) {
   const queryClient = useQueryClient();
   const [design, setDesign] = useState<PageDocument | null>(null);
   const [saved, setSaved] = useState<PageDocument | null>(null);
@@ -64,6 +69,7 @@ export function usePageDesignSaving(entry: Entry, fieldHandle: string) {
     try {
       await saveNow();
       const published = await publishEntry(entryRef.current.id);
+      await publishShared?.();
       entryRef.current = published;
       setLatestEntry(published);
       queryClient.setQueryData(contentKeys.entry(published.id), published);
@@ -75,7 +81,7 @@ export function usePageDesignSaving(entry: Entry, fieldHandle: string) {
     } finally {
       setIsPublishing(false);
     }
-  }, [saveNow, queryClient]);
+  }, [saveNow, queryClient, publishShared]);
 
   return {
     entry: latestEntry,

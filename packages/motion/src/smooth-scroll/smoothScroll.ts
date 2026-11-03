@@ -89,12 +89,18 @@ export function startSmoothScroll(view: Window, options: SmoothScrollOptions): S
   let written = current;
   let frame = 0;
   let last = 0;
+  // While a glide runs, the wheel's steps keep landing on the same element: it belongs to
+  // the page until the glide ends, or the wheel moves to another element or turns round. So
+  // the styles of the page and the element's ancestors are read once a glide, not on every
+  // step (a click or key, as when a pop-up opens, ends the glide).
+  let glideTarget: EventTarget | null = null;
 
   const furthest = () => Math.max(0, root.scrollHeight - root.clientHeight);
   const stop = () => {
     if (frame) view.cancelAnimationFrame(frame);
     frame = 0;
     last = 0;
+    glideTarget = null;
     root.removeAttribute("data-lintel-gliding");
   };
   const adoptPagePosition = () => {
@@ -135,7 +141,10 @@ export function startSmoothScroll(view: Window, options: SmoothScrollOptions): S
       return;
     }
     const downwards = event.deltaY > 0;
-    if (wheelBelongsToInnerArea(event.target, downwards) || pageIsLocked(view)) return;
+    const sameAsGlide = frame && glideTarget === event.target && downwards === target > current;
+    if (!sameAsGlide && (wheelBelongsToInnerArea(event.target, downwards) || pageIsLocked(view))) {
+      return;
+    }
     event.preventDefault();
     if (!frame) current = target = written = view.scrollY;
     target = Math.min(
@@ -146,6 +155,7 @@ export function startSmoothScroll(view: Window, options: SmoothScrollOptions): S
       root.setAttribute("data-lintel-gliding", "");
       frame = view.requestAnimationFrame(step);
     }
+    if (frame) glideTarget = event.target;
   };
 
   const onScroll = () => {
