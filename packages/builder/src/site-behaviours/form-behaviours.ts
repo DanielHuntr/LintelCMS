@@ -20,7 +20,11 @@ export function setUpForms(root: ParentNode): void {
         const response = await fetch(form.action, {
           method: "POST",
           headers: { accept: "application/json" },
-          body: new FormData(form),
+          // A site published as files posts to PHP, which needs a plain form post.
+          body:
+            form.dataset.plainPost === undefined
+              ? new FormData(form)
+              : new URLSearchParams(new FormData(form) as unknown as Record<string, string>),
         });
         const answer = (await response.json().catch(() => ({}))) as {
           message?: string;

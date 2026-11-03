@@ -23,8 +23,10 @@ describe("Settings", () => {
     expect(screen.getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
       "/settings/site",
       "/settings/languages",
+      "/settings/publishing",
       "/settings/backups",
       "/settings/updates",
+      "/settings/server",
       "/settings/about",
     ]);
     expect(screen.queryByText(/roadmap/)).not.toBeInTheDocument();

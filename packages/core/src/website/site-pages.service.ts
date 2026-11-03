@@ -24,6 +24,8 @@ import { loadSiteContext, type SiteContext } from "./site-context.service.js";
 import { redirectResponse, renderPage, textResponse } from "./site-documents.js";
 import { buildPageHead, type HeadSubject } from "./site-head.service.js";
 import { findListView, type ListRoute } from "./site-lists.service.js";
+import { findFeedCollection, renderFeed } from "./site-feed.service.js";
+import { attachForms, type FormEndpoints } from "./site-forms.service.js";
 import { renderPreview } from "./site-preview.service.js";
 import {
   HOME_SLUG,
@@ -64,6 +66,10 @@ export interface SiteDependencies {
   liquidTemplates?: LiquidTemplates | null;
   /** The running A/B tests and the versions this visitor sees (see src/experiments). */
   experiments?: ExperimentVisit;
+  /** The API's address as browsers reach it, where forms post by default. */
+  publicApiUrl?: string;
+  /** Where forms post instead, for a site published as files (see src/static-site). */
+  formEndpoints?: FormEndpoints;
 }
 
 /** What the address's query asks of the page's lists: `?page=2&sort=priceLowToHigh`. */
@@ -228,6 +234,10 @@ async function resolveSitePath(
     siteStarts,
     siteStart,
   };
+  const feedCollection = path === null ? undefined : findFeedCollection(request);
+  if (feedCollection) {
+    return renderFeed(request, feedCollection);
+  }
   if (path !== null) {
     const underStart = await respondUnderSiteStart(request);
     if (underStart) {
@@ -402,7 +412,10 @@ export async function renderEntry(
   options: { private?: boolean; draft?: boolean } = {},
 ): Promise<SiteResponse> {
   const { context, locale } = request;
-  const listed = entryView(context, collectionHandle, entry, locale);
+  const listed = await attachForms(
+    request.dependencies,
+    entryView(context, collectionHandle, entry, locale),
+  );
   const subject = headForEntry(context, entry, listed, request.path, locale);
   const view = await designEntryView(request, collectionHandle, entry, listed);
   const translations = new Map(
@@ -535,4 +548,45 @@ async function searchEngineFile(
     pathFor: (row, entryPath) => localiseUrl(entryPath, row.locale, context),
   });
   return textResponse("application/xml; charset=utf-8", xml);
+}
+
+/**
+ * A page of the site's own that isn't an entry, such as the search page of a site
+ * published as files: the given view in the site's layout, header and footer.
+ */
+export async function renderStandalonePage(
+  dependencies: SiteDependencies,
+  path: string,
+  view: SiteView,
+  title: string,
+  description = "",
+): Promise<SiteResponse> {
+  const context = await readSiteContext(dependencies);
+  const { locale, path: localPath } = splitLocale(
+    path,
+    context.defaultLocale,
+    context.locales.map(({ code }) => code),
+  );
+  const chrome = await readSiteChrome(dependencies, context, locale);
+  const siteStarts = await readSiteStarts(dependencies, locale);
+  const request: PageRequest = {
+    dependencies,
+    context,
+    chrome,
+    locale,
+    localPath,
+    path: onSite(dependencies, path),
+    query: { page: 1 },
+    siteStarts,
+  };
+  return renderWithHead(request, view, {
+    entryId: null,
+    title,
+    description,
+    image: null,
+    path,
+    type: "website",
+    publishedAt: null,
+    alternates: [],
+  });
 }

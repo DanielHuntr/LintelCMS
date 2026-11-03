@@ -12,6 +12,7 @@ import { MediaFolderChoice, useMediaFolder } from "../sites/MediaFolderChoice.js
 import { AssetDetailSheet } from "./AssetDetailSheet.js";
 import { AssetGrid, AssetGridPlaceholder } from "./AssetGrid.js";
 import { DropOverlay } from "./DropOverlay.js";
+import { ImageResizingNotice } from "./ImageResizingNotice.js";
 import { type AssetKind, uploadAsset } from "./media.api.js";
 import { useAssetList, useRefreshAssetLists } from "./media.queries.js";
 import { acceptedFileTypes } from "./upload-rules.js";
@@ -124,6 +125,7 @@ export function MediaLibraryPage({
           )
         }
       />
+      <ImageResizingNotice />
       <input
         ref={fileInput}
         type="file"

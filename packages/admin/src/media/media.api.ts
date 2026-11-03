@@ -91,6 +91,16 @@ export function listAssets(query: AssetListQuery) {
   return apiRequest<{ assets: Asset[]; total: number }>(`/media?${parameters}`);
 }
 
+/** Whether the server can resize images (see packages/core/src/media/image-library.ts). */
+export interface ImageResizingStatus {
+  available: boolean;
+  problem: string | null;
+}
+
+export function getImageResizingStatus() {
+  return apiRequest<ImageResizingStatus>("/media/image-resizing");
+}
+
 export function getAsset(assetId: string) {
   return apiRequest<Asset>(`/media/${encodeURIComponent(assetId)}`);
 }

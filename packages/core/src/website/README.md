@@ -29,6 +29,7 @@ untouched; set `SITE_ENABLED=false` when the site is built separately.
 | `/search?q=`                      | What the Search box (or `{% search_box %}`) finds in published pages' words |
 | `/_lintel/illustrations/*.svg`    | The starter sites' illustrations                                            |
 | anything else                     | A friendly 404                                                              |
+| `/blog/feed.xml`                  | The newest posts as RSS, for each dated collection                          |
 
 `/home` and addresses with a trailing slash redirect (301) to their one true address, as
 does a post's address with an old date in it. With the SEO plugin on, its active redirects
@@ -95,6 +96,14 @@ followed by the runtime.
 An entry whose collection has a Liquid template in the project's templates folder
 (`site/templates/<collection>.liquid`), or which chose one in the editor, is drawn with it
 instead (see `src/liquid-templates`). It keeps the same `<head>`, cache and preview.
+
+## Forms
+
+A page's Form section is drawn as a plain HTML form (`site-forms.service.ts`), posting to
+`/_lintel/api/forms/<handle>/submissions`; `/_lintel/forms.js` fetches its anti-spam
+token when the page opens. A site published as files draws exactly the same form, posting
+to the PHP companion instead (see `src/static-site` and `src/bridge`). Without the Forms
+plugin, Form sections are left out.
 
 ## Caching
 
@@ -168,3 +177,5 @@ There is no repository: everything is kept in settings and read through other fe
 | `website.schema.ts`        | The `website` setting and the request                        |
 | `site-templates.ts`        | The templates on offer                                       |
 | `website.errors.ts`        | Named errors with the messages people see                    |
+| `site-forms.service.ts`    | Form sections: the form's questions, and where it posts      |
+| `site-feed.service.ts`     | The RSS feeds                                                |

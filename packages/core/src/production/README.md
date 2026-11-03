@@ -33,6 +33,16 @@ can use every other address, including `/search` or `/media`. See
 - **Graceful shutdown.** On SIGTERM or Ctrl+C new requests get 503, requests in progress
   finish, then the database closes. After `SHUTDOWN_TIMEOUT_SECONDS` (10) it exits anyway.
 - **Storage is checked at start**, so a wrong bucket or key stops the deploy with a reason.
+- **The data folder is checked at start** (`data-folder.ts`): one Lintel can't write to
+  stops with a plain explanation, not a database error later.
+- **The setup code is kept** in `setup-code.txt` in the data folder until setup is done, so
+  restarts and several copies ask for the same one, and people without a terminal can
+  read it with a file manager.
+- **One port.** `SITE_PORT` is for `pnpm dev` only; setting it here logs a warning.
+
+`prepareProductionServer` does all of this without listening, for hosts that hand Lintel
+its requests themselves (Passenger, see `src/hosting`); `startProductionServer` adds the
+listening, the "Lintel is running" line and graceful shutdown.
 
 ## The website hook
 
@@ -59,3 +69,4 @@ A separately hosted site (the Next.js starter) doesn't use the hook; it reads
 | `public-site.ts`             | The website hook and the placeholder page                       |
 | `logging.ts`                 | JSON logs and what they hide                                    |
 | `graceful-shutdown.ts`       | Finishing requests before stopping                              |
+| `data-folder.ts`             | Checking the data folder can be written; the setup code file    |

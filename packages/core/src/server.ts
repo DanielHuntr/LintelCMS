@@ -79,7 +79,12 @@ import { pagesRoutes } from "./pages/pages.routes.js";
 import { pluginsRoutes } from "./plugins/plugins.routes.js";
 import { previewRoutes } from "./preview/preview.routes.js";
 import { BackgroundTasks } from "./scheduler/background-tasks.js";
+import { ScheduledJobList } from "./scheduler/scheduled-job-list.js";
+import type { PublishingOptions } from "./publishing/publishing-context.js";
+import { publishingRoutes } from "./publishing/publishing.routes.js";
+import { registerPublishing } from "./publishing/register-publishing.js";
 import { registerScheduledJobs } from "./scheduler/scheduled-jobs.js";
+import { schedulerRoutes } from "./scheduler/scheduler.routes.js";
 import { searchRoutes } from "./search/search.routes.js";
 import { dashboardRoutes } from "./dashboard/dashboard.routes.js";
 import { generateSetupCode } from "./setup/setup-code.js";
@@ -126,6 +131,7 @@ import { clientEditingRoutes } from "./client-editing/client-editing.routes.js";
 import { wordpressImportRoutes } from "./wordpress-import/wordpress-import.routes.js";
 import { siteImportRoutes } from "./importers/site-import.routes.js";
 import { updatesRoutes } from "./updates/updates.routes.js";
+import { serverCheckRoutes } from "./server-check/server-check.routes.js";
 import { type UpdatesOptions, UpdatesRuntime } from "./updates/updates-runtime.js";
 
 declare module "fastify" {
@@ -173,6 +179,8 @@ declare module "fastify" {
     dataTools: DataTools;
     /** Looking for and installing new versions of Lintel (see src/updates). */
     updates: UpdatesRuntime;
+    /** The timed jobs that are running, so a cron request can run them all (see src/scheduler). */
+    scheduledJobs: ScheduledJobList;
   }
 }
 
@@ -245,6 +253,8 @@ export interface ServerOptions {
    * closes. On by default; tests that drive the jobs themselves turn it off.
    */
   runScheduledJobs?: boolean;
+  /** CRON_SECRET, for POST /system/run-scheduled-jobs. Defaults to one kept in the data folder. */
+  cronSecret?: string | undefined;
   /** How images are checked and expanded. Defaults to the media library. */
   assetExists?: AssetExists;
   assetLookup?: AssetLookup;
@@ -290,6 +300,8 @@ export interface ServerOptions {
   pageDrafts?: PageDraftsOptions;
   /** How site fonts reach Google Fonts and Adobe Fonts. Defaults to the real services. */
   siteFonts?: SiteFontsOptions;
+  /** Publishing the website as files to other hosting (see src/publishing). */
+  publishing?: PublishingOptions & { automaticDelayMilliseconds?: number };
 }
 
 export interface WebhookOptions {
@@ -344,6 +356,7 @@ export function buildServer(options: ServerOptions) {
     onError: (error) => server.log.error(error, "Sending webhooks failed"),
   });
   server.decorate("webhooks", webhooks);
+  server.decorate("scheduledJobs", new ScheduledJobList());
   const addons = options.addons ?? noAddons;
   const plugins = new PluginCatalogue(pluginRegistry, [
     ...(options.plugins ?? []),
@@ -491,6 +504,10 @@ export function buildServer(options: ServerOptions) {
     publicApiUrl: server.publicApiUrl,
     usageFinder: media.usageFinder,
   }));
+  registerPublishing(server, {
+    ...options.publishing,
+    runScheduledJobs: options.runScheduledJobs ?? true,
+  });
   server.register(async (api) => registerApiRoutes(api, options, media), { prefix: apiPrefix });
 
   if (options.runScheduledJobs ?? true) {
@@ -546,6 +563,7 @@ function registerApiRoutes(
   server.register(openApiRoutes);
   server.register(siteAddressRoutes);
   server.register(dashboardRoutes);
+  server.register(schedulerRoutes, { cronSecret: options.cronSecret });
   // Every plugin's routes, built in (SEO) and installed, each guarded for being switched on.
   registerPluginRoutes(server, server.plugins);
   // People and account security.
@@ -569,6 +587,7 @@ function registerApiRoutes(
   server.register(siteFontsRoutes);
   server.register(pagesRoutes);
   server.register(starterSitesRoutes);
+  server.register(publishingRoutes);
   registerContentModelSyncRoutes(server);
   registerFieldSnippetsSync(server);
   server.register(mediaRoutes, media);
@@ -578,6 +597,7 @@ function registerApiRoutes(
   server.register(wordpressImportRoutes);
   server.register(siteImportRoutes);
   server.register(updatesRoutes);
+  server.register(serverCheckRoutes);
 }
 
 /**

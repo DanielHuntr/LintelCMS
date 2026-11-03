@@ -1,0 +1,77 @@
+/* Forms: plain, labelled fields that follow the theme. */
+.lintel-site-form {
+  display: grid;
+  gap: var(--lintel-space-5);
+  margin-top: var(--lintel-space-5);
+}
+
+.lintel-site-form__field {
+  display: grid;
+  gap: var(--lintel-space-2);
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.lintel-site-form__label {
+  font-weight: 600;
+  padding: 0;
+}
+
+.lintel-site-form__required {
+  margin-left: 0.15em;
+  color: var(--lintel-color-accent);
+}
+
+.lintel-site-form__help {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--lintel-color-text-secondary);
+}
+
+.lintel-site-form input:not([type="checkbox"], [type="radio"]),
+.lintel-site-form textarea,
+.lintel-site-form select {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--lintel-color-border);
+  border-radius: var(--lintel-radius-small);
+  background: var(--lintel-color-background);
+  color: inherit;
+  font: inherit;
+}
+
+.lintel-site-form textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+
+.lintel-site-form :focus-visible {
+  outline: 2px solid var(--lintel-color-brand);
+  outline-offset: 2px;
+}
+
+.lintel-site-form__option {
+  display: flex;
+  gap: var(--lintel-space-2);
+  align-items: flex-start;
+}
+
+.lintel-site-form__option input {
+  margin-top: 0.3em;
+  accent-color: var(--lintel-color-brand);
+}
+
+.lintel-site-form__trap {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.lintel-site-form button {
+  justify-self: start;
+}

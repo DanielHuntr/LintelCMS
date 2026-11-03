@@ -72,6 +72,7 @@ function registerWorkflowJob(server: FastifyInstance, engine: WorkflowEngine): v
       },
       onError: (error) => server.log.error(error, "Running workflows failed"),
     });
+    server.scheduledJobs.add("workflows", job);
   });
   server.addHook("onClose", async () => {
     await job?.stop();

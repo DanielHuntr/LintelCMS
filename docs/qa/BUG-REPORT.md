@@ -891,3 +891,14 @@ Found while building six new starter sites; see "Starter sites: six more (batch 
 | LINTEL-UX-157 | P3       | Open   | The theme's soft grey is 4.25 to 4.43:1 on tinted paper in light mode: clock place names, table headings and form hints            |
 | LINTEL-UX-158 | P3       | Open   | A template footer with a clock zone not on the list is silently replaced by the standard footer; Melbourne isn't listed            |
 | LINTEL-UX-159 | P3       | Open   | Older templates fail the new checks: Atelier skips a heading level, Magazine lacks alt text, three keep header or footer in a page |
+## Static publishing and deploy recipes (3 November 2026)
+
+| ID            | Severity | Status | Defect                                                                                                                                              |
+| ------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| LINTEL-UX-120 | P1       | Fixed  | The production Docker image doesn't build: packages the API needs aren't installed or built, so Docker, Railway, Render and Fly.io deploys all stop |
+| LINTEL-UX-121 | P1       | Fixed  | `pnpm deploy` in the Dockerfile looks for `@lintel/core` on npm and stops, through the Bookings example's peer dependency                           |
+| LINTEL-UX-122 | P2       | Fixed  | `lintel doctor --hosting` can't find the hosting checker in a built copy, and says sharp isn't installed in the Docker image                        |
+| LINTEL-UX-123 | P2       | Fixed  | Publishing to a folder fails on Windows: the temporary file's name is built from the full path                                                      |
+| LINTEL-UX-124 | P2       | Fixed  | Forms on the website drawn from Form sections posted to the API's own address, not the website's                                                    |
+| LINTEL-UX-125 | P2       | Fixed  | Timed jobs added since the cron request was written (backups, update checks, visitor counts) wouldn't have run from cron                            |
+| LINTEL-UX-126 | P3       | Fixed  | A message from the PHP companion isn't shown under a builder form, and only the last ticked box of a question reaches it                            |

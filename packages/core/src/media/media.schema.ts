@@ -105,6 +105,14 @@ export const assetIdParamsSchema = z.object({
 });
 
 export type Asset = z.infer<typeof assetSchema>;
+
+/** Whether this server can resize images (sharp loads), and why not when it can't. */
+export const imageResizingStatusSchema = z.object({
+  available: z.boolean(),
+  problem: z.string().nullable(),
+});
+
+export type ImageResizingStatus = z.infer<typeof imageResizingStatusSchema>;
 export type FocalPoint = z.infer<typeof focalPointSchema>;
 export type AssetKind = (typeof assetKinds)[number];
 export type ListAssetsQuery = z.infer<typeof listAssetsQuerySchema>;

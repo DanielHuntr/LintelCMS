@@ -12,6 +12,7 @@ export const stylesheetFiles = [
   "prose.css",
   "sections.css",
   "faq.css",
+  "forms.css",
   "posts.css",
   "templates.css",
 ] as const;

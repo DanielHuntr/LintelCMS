@@ -17,21 +17,32 @@ ENV PNPM_HOME=/pnpm \
 RUN corepack enable
 WORKDIR /repo
 
-# The manifests first, so a code change doesn't reinstall every package.
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# The manifests first, so a code change doesn't reinstall every package. Every workspace
+# package is listed: the API and the admin are built from several of them.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY packages/core/package.json packages/core/
 COPY packages/admin/package.json packages/admin/
+COPY packages/builder/package.json packages/builder/
+COPY packages/builder-model/package.json packages/builder-model/
+COPY packages/cli/package.json packages/cli/
+COPY packages/field-conditions/package.json packages/field-conditions/
+COPY packages/motion/package.json packages/motion/
+COPY packages/motion-editor/package.json packages/motion-editor/
+COPY packages/site-components/package.json packages/site-components/
+COPY packages/addon-example/package.json packages/addon-example/
+COPY packages/plugin-example-bookings/package.json packages/plugin-example-bookings/
 COPY packages/docs/package.json packages/docs/
 COPY starters/nextjs/package.json starters/nextjs/
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm install --frozen-lockfile --filter "@lintel/admin..." --filter "@lintel/core..."
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store     pnpm install --frozen-lockfile --filter "@lintel/admin..." --filter "@lintel/core..."
 
 COPY . .
-RUN pnpm --filter @lintel/core build && pnpm --filter @lintel/admin build
+# The API and the admin, after the packages they are built from (turbo works out the order).
+RUN pnpm turbo run build --filter "@lintel/core..." --filter "@lintel/admin..."
 
-# The API with its production dependencies only, then the built files it runs.
+# The API with its production dependencies only, then the built files it runs. Linking
+# workspace packages keeps pnpm from looking for Lintel's own packages on npm.
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
-    pnpm --filter @lintel/core deploy --prod --legacy /out
+    pnpm --config.link-workspace-packages=true --filter @lintel/core deploy --prod --legacy /out
 RUN cp -r packages/core/dist packages/core/migrations /out/ \
  && cp -r packages/admin/dist /out/admin
 

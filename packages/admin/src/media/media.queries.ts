@@ -11,6 +11,7 @@ import {
   type AssetKind,
   deleteAsset,
   getAsset,
+  getImageResizingStatus,
   listAssets,
   listMediaBin,
   updateAsset,
@@ -26,7 +27,17 @@ export const mediaKeys = {
     [...mediaKeys.lists(), { search: search.trim(), type, folder, missingAlt }] as const,
   asset: (assetId: string) => [...mediaKeys.all, "asset", assetId] as const,
   bin: () => [...mediaKeys.all, "bin"] as const,
+  imageResizing: () => [...mediaKeys.all, "image-resizing"] as const,
 };
+
+/** Changes only when the server is reinstalled, so it is asked once per visit. */
+export function useImageResizingStatus() {
+  return useQuery({
+    queryKey: mediaKeys.imageResizing(),
+    queryFn: getImageResizingStatus,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+}
 
 type AssetPages = InfiniteData<{ assets: Asset[]; total: number }, number>;
 

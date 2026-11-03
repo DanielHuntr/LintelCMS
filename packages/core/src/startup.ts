@@ -13,6 +13,7 @@ import {
   SavedConfigUnreadableError,
 } from "./database/database-choice.js";
 import { PluginPackageError } from "./plugins/installed-plugins.js";
+import { DataFolderNotWritableError } from "./production/data-folder.js";
 import { InvalidPluginError } from "./plugins/plugins.errors.js";
 import { StorageUnreachableError } from "./media/storage-driver.js";
 import { ConfigFileError } from "./lintel-config-file.js";
@@ -79,8 +80,10 @@ export async function runWithFriendlyErrors(task: () => Promise<void>): Promise<
   }
 }
 
-function isExplained(error: unknown): error is Error {
+/** True for the problems Lintel explains in plain English, rather than with a stack trace. */
+export function isExplained(error: unknown): error is Error {
   return (
+    error instanceof DataFolderNotWritableError ||
     error instanceof ConfigError ||
     error instanceof ConfigFileError ||
     error instanceof DatabaseConnectionError ||

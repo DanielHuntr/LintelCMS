@@ -64,6 +64,7 @@ export function buildSiteServer(options: {
       site,
       cache: api.website.renderedPages.forSite(site.id),
       liquidTemplates: api.website.liquidTemplates,
+      publicApiUrl: api.publicApiUrl,
     }),
   });
 

@@ -6,6 +6,7 @@ import type { AssetUsageFinder } from "./asset-lookup.js";
 import { toAssetResponse } from "./asset-response.js";
 import { decodeAsText, detectFileType, findAllowedFileType } from "./file-types.js";
 import { sanitiseFilename } from "./filenames.js";
+import { loadImageLibrary } from "./image-library.js";
 import { MAX_IMAGE_PIXELS, readImageSize } from "./image-transforms.js";
 import {
   AssetInUseError,
@@ -84,8 +85,10 @@ export async function uploadAsset(
   if (fileType.mimeType === "image/svg+xml") {
     assertSvgIsSafe(decodeAsText(file.contents) ?? "", filename);
   }
-  const size = fileType.kind === "image" ? await readImageSize(file.contents) : undefined;
-  if (fileType.kind === "image" && !size) {
+  // Without sharp nothing is decoded, so the size stays unknown and the image is kept as it is.
+  const canMeasure = fileType.kind === "image" && (await loadImageLibrary()).available;
+  const size = canMeasure ? await readImageSize(file.contents) : undefined;
+  if (canMeasure && !size) {
     throw new UnreadableImageError(filename);
   }
   if (size && size.width * size.height > MAX_IMAGE_PIXELS) {

@@ -37,6 +37,8 @@ import { blockStrings } from "./blockStrings.js";
 import { pageFlowStrings } from "../website/pageFlowStrings.js";
 import { cookieNoticeStrings } from "../website/cookieNoticeStrings.js";
 import { analyticsStrings } from "../analytics/analyticsStrings.js";
+import { publishingStrings } from "../publishing/publishingStrings.js";
+import { serverCheckStrings } from "../server-check/serverCheckStrings.js";
 import { clientEditingStrings } from "../client-editing/clientEditingStrings.js";
 import { addonStrings } from "../addons/addonStrings.js";
 
@@ -89,6 +91,8 @@ const english = {
   ...compareLiveStrings,
   ...scheduleStrings,
   ...blockStrings,
+  ...publishingStrings,
+  ...serverCheckStrings,
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",
   "nav.openMenu": "Open the menu",
@@ -410,6 +414,11 @@ const english = {
   "media.picker.empty.description": "Upload one here, or drag it into this window.",
   "media.picker.missing": "This image was deleted from the media library. Choose another.",
   "media.picker.noAlt": "No picture description yet. Add it in Media.",
+  "media.noResizing.title": "Images are shown at full size",
+  "media.noResizing.description":
+    "This server can't run sharp, the program Lintel uses to resize images, so every image is sent at the size it was uploaded. Pages may load slowly; upload images no wider than 2000 pixels until it is fixed.",
+  "media.noResizing.fix":
+    "To fix it, whoever looks after the server can run Run NPM Install again, or ask the host to allow Node.js native modules. The server said:",
   "designReview.title": "Design system",
   "designReview.intro":
     "Every base component, side by side in light and dark. Only built in development.",

@@ -32,6 +32,20 @@ export default tseslint.config(
     },
   },
   {
+    // The files shipped in the shared-hosting package: plain CommonJS that hosting control
+    // panels load directly, and that prints to the terminal.
+    files: ["packages/core/src/hosting/files/*.cjs"],
+    // PhusionPassenger is the global Passenger gives the apps it runs.
+    languageOptions: { sourceType: "commonjs", globals: { PhusionPassenger: "readonly" } },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+      // `catch (error)` with the error unused, for old versions of Node.js.
+      "@typescript-eslint/no-unused-vars": ["error", { caughtErrors: "none" }],
+      "no-console": "off",
+      "no-var": "off",
+    },
+  },
+  {
     files: [
       "packages/admin/**/*.{ts,tsx}",
       "packages/builder/**/*.{ts,tsx}",

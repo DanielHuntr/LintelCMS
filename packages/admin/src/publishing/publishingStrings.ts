@@ -1,0 +1,132 @@
+/**
+ * The words for Settings → Publishing. Kept in their own list so the main one stays
+ * readable; `src/i18n/strings.ts` spreads them in, so they are used through `t()`.
+ */
+export const publishingStrings = {
+  "publishing.title": "Publishing",
+  "publishing.settingsDescription": "Put your website on hosting that doesn’t run Lintel",
+  "publishing.subtitle":
+    "Lintel can publish your website as ordinary files to hosting you already have, such as cPanel or any FTP space. You keep editing here; visitors see the published copy.",
+  "publishing.loading": "Loading publishing destinations",
+  "publishing.emptyTitle": "Publish to your own hosting",
+  "publishing.emptyDescription":
+    "If your host can’t run Lintel (for example PHP-only shared hosting), add it here and Lintel uploads your website to it whenever you like.",
+  "publishing.add": "Add a destination",
+  "publishing.addTitle": "Where should your website go?",
+  "publishing.editTitle": "Change “{name}”",
+  "publishing.save": "Save",
+  "publishing.saving": "Saving…",
+  "publishing.kind.ftp": "FTP or FTPS",
+  "publishing.kind.ftp.description": "Every cPanel and shared hosting account has this.",
+  "publishing.kind.sftp": "SFTP",
+  "publishing.kind.sftp.description": "Files over SSH, for VPS and hosts that offer SSH access.",
+  "publishing.kind.zip": "Download as ZIP",
+  "publishing.kind.zip.description": "Upload it yourself with your host’s File Manager.",
+  "publishing.kind.s3": "S3-compatible bucket",
+  "publishing.kind.s3.description": "Amazon S3, Cloudflare R2, Backblaze B2 or MinIO.",
+  "publishing.kind.folder": "Folder on this server",
+  "publishing.kind.folder.description": "When the web server is on the same machine as Lintel.",
+  "publishing.field.name": "Name",
+  "publishing.field.nameHint": "Just for you, like “My cPanel hosting”.",
+  "publishing.field.site": "Website",
+  "publishing.field.siteHint": "Each of your sites is published on its own.",
+  "publishing.field.siteAddress": "Your website’s address",
+  "publishing.field.siteAddressHint":
+    "Such as https://www.example.com. Used for search engines, and to collect forms and orders.",
+  "publishing.field.host": "Server address",
+  "publishing.field.hostHint":
+    "Your host calls this the FTP server or hostname, like ftp.example.com.",
+  "publishing.field.port": "Port",
+  "publishing.field.username": "Username",
+  "publishing.field.password": "Password",
+  "publishing.field.passwordSaved": "A password is saved. Type a new one to replace it.",
+  "publishing.field.privateKey": "Private key (instead of a password)",
+  "publishing.field.remoteFolder": "Website folder",
+  "publishing.field.remoteFolderHint": "Usually public_html, www or htdocs.",
+  "publishing.field.ftpSecurity": "Security",
+  "publishing.ftpSecurity.explicit": "FTPS: encrypted (recommended)",
+  "publishing.ftpSecurity.implicit": "FTPS with TLS from the start (port 990)",
+  "publishing.ftpSecurity.none": "Plain FTP: not encrypted",
+  "publishing.ftpSecurity.noneWarning":
+    "Plain FTP sends your password and files unencrypted. Only choose it if your host offers nothing else.",
+  "publishing.field.bucket": "Bucket",
+  "publishing.field.region": "Region",
+  "publishing.field.endpoint": "Endpoint (leave empty for Amazon S3)",
+  "publishing.field.prefix": "Folder in the bucket (optional)",
+  "publishing.field.accessKeyId": "Access key id",
+  "publishing.field.secretAccessKey": "Secret access key",
+  "publishing.field.folderPath": "Folder",
+  "publishing.field.folderPathHint": "The full path, like /var/www/html.",
+  "publishing.field.stripeWebhookSecret": "Stripe signing secret for this website",
+  "publishing.field.stripeWebhookSecretHint":
+    "In Stripe, add a webhook for “checkout.session.completed” to {address}/lintel-bridge.php?action=stripe-webhook and paste its signing secret here.",
+  "publishing.field.formDelivery": "Forms on this website",
+  "publishing.formDelivery.bridge":
+    "Through a small PHP file uploaded with the site (works on any PHP hosting)",
+  "publishing.formDelivery.api": "Straight to Lintel (Lintel must be reachable from the internet)",
+  "publishing.formDelivery.none": "Don’t take form submissions",
+  "publishing.field.automatic": "Publish automatically",
+  "publishing.field.automaticHint":
+    "About a minute after you publish a page or a post, including scheduled ones.",
+  "publishing.secretsNote": "Passwords and keys are stored encrypted and never shown again.",
+  "publishing.test": "Test connection",
+  "publishing.testing": "Testing…",
+  "publishing.publish": "Publish website",
+  "publishing.publishing": "Publishing…",
+  "publishing.download": "Download ZIP",
+  "publishing.downloading": "Preparing the ZIP…",
+  "publishing.edit": "Change",
+  "publishing.delete": "Remove",
+  "publishing.deleteTitle": "Remove “{name}”?",
+  "publishing.deleteDescription":
+    "Nothing on your hosting is deleted. Lintel just stops publishing there.",
+  "publishing.lastPublished": "Last published {when}",
+  "publishing.neverPublished": "Not published yet",
+  "publishing.progress.preparing": "Getting ready",
+  "publishing.progress.building": "Preparing pages: {done} of {total}",
+  "publishing.progress.uploading": "Uploading: {done} of {total}",
+  "publishing.progress.finishing": "Finishing up",
+  "publishing.progressLabel": "Publishing progress",
+  "publishing.confirmDeletionsTitle": "Delete {count} files from your website?",
+  "publishing.confirmDeletionsDescription":
+    "These pages and files are no longer part of your site. Lintel holds back when more files than usual would go, in case something was unpublished by mistake.",
+  "publishing.confirmDeletions": "Delete them and publish",
+  "publishing.whatWorks": "What works on this hosting",
+  "publishing.works": "Works",
+  "publishing.doesNotWork": "Doesn’t work",
+  "publishing.feature.pages": "Pages, posts, pictures and menus",
+  "publishing.feature.look": "Navigation, footer, fonts, animations, effects and the cookie notice",
+  "publishing.feature.search": "Search, built into the site",
+  "publishing.feature.formsBridge":
+    "Forms, through the PHP file. Submissions appear in Forms within five minutes.",
+  "publishing.feature.formsApi": "Forms, sent straight to Lintel",
+  "publishing.feature.formsNone": "Forms (switched off for this destination)",
+  "publishing.feature.shopBridge":
+    "Shop: basket and checkout through the PHP file, paid with {provider}. Stock and discount codes sync each time you publish and every five minutes.",
+  "publishing.feature.shopNeedsSetup":
+    "Shop: needs Stripe or Mollie connected in Shop → Settings → Payments, and the Stripe signing secret below.",
+  "publishing.feature.shopBucket":
+    "Shop: product pages only. Buckets can’t run PHP, so checkout needs a live Lintel server.",
+  "publishing.feature.shopInDesigns":
+    "Shop buttons and baskets placed in page designs: they need a live Lintel server. Visitors use the shop pages instead.",
+  "publishing.feature.visitors":
+    "Visitor counts: files can’t count visits, so the published site leaves the counter out. Your host’s own statistics still work.",
+  "publishing.feature.abTests":
+    "A/B tests: each visitor needs a version picked by Lintel, so the published site always shows the original page.",
+  "publishing.feature.members":
+    "Member logins and members-only pages: they need a live Lintel server",
+  "publishing.history": "Publishing history",
+  "publishing.historyEmpty": "Nothing published here yet.",
+  "publishing.run.succeeded": "Published",
+  "publishing.run.failed": "Didn’t publish",
+  "publishing.run.running": "Publishing",
+  "publishing.run.needsConfirmation": "Waiting for you",
+  "publishing.run.summary": "{uploaded} files uploaded, {deleted} deleted, {pages} pages updated",
+  "publishing.run.collected": "{forms} form submissions and {orders} orders collected",
+  "publishing.run.trigger.manual": "by you",
+  "publishing.run.trigger.automatic": "automatically",
+  "publishing.run.trigger.command": "from the command line",
+  "publishing.notice.title": "Not every feature works on published files",
+  "publishing.notice.text":
+    "Pages, search and forms work anywhere. A shop needs the PHP file (or a live Lintel server); member logins, visitor counts and A/B tests always need a live Lintel server.",
+} as const;

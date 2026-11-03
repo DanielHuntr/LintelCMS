@@ -3,6 +3,7 @@ import { html, photo } from "../testing.js";
 import type { SiteBlock } from "./block.types.js";
 import { BlockList, groupBlocks } from "./BlockList.js";
 import { FaqList } from "./FaqList.js";
+import { FormSection } from "./FormSection.js";
 import { Hero } from "./Hero.js";
 
 describe("the hero", () => {
@@ -93,5 +94,64 @@ describe("a list of blocks", () => {
     expect(
       html(<BlockList blocks={[{ type: "image", id: "i", image: null, caption: "" }]} />),
     ).toBe("");
+  });
+});
+
+describe("the form section", () => {
+  const form = {
+    handle: "contact",
+    name: "Contact",
+    submitLabel: "Send message",
+    acceptingSubmissions: true,
+    action: "/lintel-bridge.php?action=form&form=contact",
+    tokenUrl: "/lintel-bridge.php?action=token&form=contact",
+    scriptUrl: "/_lintel/forms.js",
+    honeypotField: "_website",
+    tokenField: "_token",
+    fields: [
+      {
+        handle: "email",
+        type: "email",
+        label: "Email",
+        helpText: "We reply within a day",
+        placeholder: "",
+        required: true,
+        choices: [],
+      },
+      {
+        handle: "topic",
+        type: "choice",
+        label: "Topic",
+        helpText: "",
+        placeholder: "",
+        required: false,
+        choices: ["Bread", "Cakes"],
+      },
+    ],
+  };
+
+  it("is a plain form that posts where it is told, every field labelled", () => {
+    const output = html(<FormSection id="f1" heading="Say hello" handle="contact" form={form} />);
+    expect(output).toContain('action="/lintel-bridge.php?action=form&amp;form=contact"');
+    expect(output).toContain('<label class="lintel-site-form__label" for="f1-email">Email');
+    expect(output).toContain('aria-describedby="f1-email-help"');
+    expect(output).toContain('<legend class="lintel-site-form__label">Topic</legend>');
+    expect(output).toContain('name="_website"');
+    expect(output).toContain('<input type="hidden" name="_token" value=""/>');
+    expect(output).toContain('<script src="/_lintel/forms.js" defer="">');
+  });
+
+  it("says when a form is closed, and draws nothing for a missing one", () => {
+    expect(
+      html(
+        <FormSection
+          id="f1"
+          heading=""
+          handle="contact"
+          form={{ ...form, acceptingSubmissions: false }}
+        />,
+      ),
+    ).toContain("isn’t taking submissions");
+    expect(html(<FormSection id="f1" heading="" handle="gone" form={null} />)).toBe("");
   });
 });

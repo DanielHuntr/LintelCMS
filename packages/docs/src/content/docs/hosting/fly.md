@@ -21,35 +21,14 @@ fly auth login
 
 From your copy of the Lintel repository:
 
+Lintel's repository has a `fly.toml`. Change `app` to a name of your own and `primary_region`
+to [one near your visitors](https://fly.io/docs/reference/regions/), then:
+
 ```bash
-fly launch --no-deploy
+fly launch --copy-config --no-deploy
 ```
 
-Accept the detected `Dockerfile`, and say no to the offers of extra services for now.
-This writes a `fly.toml`. Make sure it contains these parts (change `app` and
-`primary_region` to yours):
-
-```toml
-app = "my-lintel"
-primary_region = "lhr"
-
-[http_service]
-  internal_port = 4000
-  force_https = true
-  auto_stop_machines = "off"
-  min_machines_running = 1
-
-  [[http_service.checks]]
-    method = "GET"
-    path = "/ready"
-    interval = "15s"
-    timeout = "5s"
-    grace_period = "30s"
-
-[mounts]
-  source = "lintel_data"
-  destination = "/data"
-```
+Say no to the offers of extra services for now.
 
 ## 3. Storage and database
 
@@ -69,13 +48,13 @@ drop the `[mounts]` part.
 ## 4. Settings and deploy
 
 ```bash
-fly secrets set PUBLIC_URL=https://my-lintel.fly.dev
 fly deploy
 ```
 
 Open `https://my-lintel.fly.dev/admin`. The setup code is in `fly logs` (search for
-`setupCode`). For your own domain: `fly certs add cms.example.com`, follow the DNS
-instructions, then update `PUBLIC_URL`.
+`setupCode`). Lintel uses its `fly.dev` address by itself. For your own domain:
+`fly certs add cms.example.com`, follow the DNS instructions, then
+`fly secrets set PUBLIC_URL=https://cms.example.com`.
 
 ## Running commands
 

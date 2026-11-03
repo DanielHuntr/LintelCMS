@@ -34,6 +34,7 @@ export function registerCommerce(server: FastifyInstance, options: CommerceOptio
       onError: (error) =>
         server.log.error(error, "Releasing stock from abandoned checkouts failed"),
     });
+    server.scheduledJobs.add("abandoned-checkouts", job);
   });
   server.addHook("onClose", async () => job?.stop());
 }

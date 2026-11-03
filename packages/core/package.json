@@ -91,10 +91,13 @@
       "default": "./dist/liquid-editor-support/liquid-editor-commands.js"
     }
   },
+  "bin": {
+    "lintel": "./dist/cli/lintel.js"
+  },
   "scripts": {
     "dev": "tsx watch --tsconfig tsconfig.dev.json --conditions=development --env-file=development.env src/main.ts",
     "start": "node dist/main.js",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node scripts/copy-bridge.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
@@ -102,7 +105,10 @@
     "reset-password": "tsx src/scripts/reset-password.ts",
     "model": "tsx src/scripts/model.ts",
     "media:move-to-s3": "tsx src/scripts/move-media-to-s3.ts",
-    "send-test-email": "tsx src/scripts/send-test-email.ts"
+    "send-test-email": "tsx src/scripts/send-test-email.ts",
+    "lintel": "tsx src/cli/lintel.ts",
+    "build:hosting": "tsx src/hosting/build-hosting-package.ts",
+    "test:hosting": "LINTEL_HOSTING_E2E=1 vitest run src/hosting/hosting-package.e2e.test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1161.0",
@@ -128,9 +134,11 @@
     "@zxcvbn-ts/language-common": "^4.1.3",
     "@zxcvbn-ts/language-en": "^4.1.1",
     "dompurify": "^3.4.17",
+    "basic-ftp": "^6.2.4",
     "drizzle-orm": "^0.45.4",
     "fast-xml-parser": "^5.11.2",
     "fastify": "^5.12.7",
+    "fflate": "^0.8.3",
     "file-type": "^22.3.0",
     "graphql": "^16.14.2",
     "graphql-yoga": "^6.0.1",
@@ -143,6 +151,7 @@
     "postgres": "^4.0.0",
     "qrcode": "^1.5.4",
     "sharp": "^0.35.5",
+    "ssh2": "^1.17.0",
     "yaml": "^2.9.1",
     "yauzl": "^3.4.0",
     "yazl": "^3.3.1",
@@ -156,7 +165,10 @@
     "@types/qrcode": "^1.5.6",
     "@types/yauzl": "^3.4.0",
     "@types/yazl": "^3.3.1",
+    "@types/ssh2": "^1.15.6",
     "drizzle-kit": "^0.31.11",
+    "ftp-srv": "^4.6.3",
+    "playwright": "1.63.0",
     "tsx": "^4.23.15",
     "vitest": "^5.0.5"
   }

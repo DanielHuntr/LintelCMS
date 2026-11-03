@@ -27,6 +27,7 @@ import { fieldsetRoutes } from "./fieldsets/fieldsetRoutes.js";
 import { dataToolsRoutes } from "./data-tools/dataToolsRoutes.js";
 import { importersRoutes } from "./importers/importersRoutes.js";
 import { updatesRoutes } from "./updates/updatesRoutes.js";
+import { serverCheckRoutes } from "./server-check/serverCheckRoutes.js";
 import { blockDesignRoutes, blockRoutes } from "./blocks/blockRoutes.js";
 import { ContentTypesPage } from "./content-types/ContentTypesPage.js";
 import { NewContentTypePage } from "./content-types/NewContentTypePage.js";
@@ -58,6 +59,7 @@ import { loadSitesForAdmin } from "./sites/loadSitesForAdmin.js";
 import { CurrentSiteProvider } from "./sites/SiteContext.js";
 import { SitesPage } from "./sites/SitesPage.js";
 import { SettingsPage } from "./settings/SettingsPage.js";
+import { PublishingPage } from "./publishing/PublishingPage.js";
 import { PublishedPageView } from "./content/PublishedPageView.js";
 import { FeaturesSettingsPage } from "./features/FeaturesSettingsPage.js";
 import { AddonsPage } from "./addons/AddonsPage.js";
@@ -418,6 +420,14 @@ const addonsRoute = createRoute({
 });
 
 /** Build → Features: switching plugins on and off. */
+/** Settings → Publishing: the website as files, to hosting that can't run Lintel. */
+const publishingRoute = createRoute({
+  getParentRoute: () => adminRoute,
+  path: "/settings/publishing",
+  component: PublishingPage,
+});
+
+/** Settings → Features: switching plugins on and off. */
 const featuresRoute = createRoute({
   getParentRoute: () => adminRoute,
   path: "/build/features",
@@ -440,6 +450,7 @@ const interfaceLanguageRoute = createRoute({
 const integrationRoutes = [
   siteSettingsRoute,
   siteFontsRoute,
+  publishingRoute,
   apiAccessRoute,
   apiReferenceRoute,
   webhooksRoute,
@@ -604,6 +615,7 @@ export const routeTree = rootRoute.addChildren([
       ...dataToolsRoutes(() => adminRoute),
       ...importersRoutes(() => adminRoute),
       ...updatesRoutes(() => adminRoute),
+      ...serverCheckRoutes(() => adminRoute),
       pluginScreensRoute,
     ]),
   ]),

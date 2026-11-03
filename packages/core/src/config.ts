@@ -5,8 +5,10 @@ import { DATABASE_URL_ADVICE } from "./database/database-errors.js";
 import { checkEmailSettings, emailSettings } from "./email/email.config.js";
 import { checkStorageSettings, storageSettings } from "./media/storage.config.js";
 import { updateSettings } from "./updates/updates.config.js";
+import { schedulerSettings } from "./scheduler/scheduler.config.js";
 import {
   checkProductionSettings,
+  DEFAULT_SITE_PORT,
   DEFAULT_TRUST_PROXY,
   parseTrustProxy,
   productionSettings,
@@ -37,10 +39,11 @@ const coreSettingsSchema = z.object({
     (value) => (value === "" ? undefined : value),
     z.string().url().optional(),
   ),
-  // The built-in website (see src/website): its port, its address as visitors reach it
+  // The built-in website (see src/website): its port in development (production serves it
+  // on the one port, beside the admin and the API), its address as visitors reach it
   // (defaults to http://localhost:<SITE_PORT>), and whether to serve it at all. Turn it off
   // when the site is built separately, for example with the Next.js starter.
-  SITE_PORT: z.coerce.number().int().positive().default(3000),
+  SITE_PORT: z.coerce.number().int().positive().default(DEFAULT_SITE_PORT),
   SITE_PUBLIC_URL: z.preprocess(
     (value) => (value === "" ? undefined : value),
     z.string().url().optional(),
@@ -88,6 +91,7 @@ const configSchema = coreSettingsSchema
   .extend(storageSettings)
   .extend(emailSettings)
   .extend(updateSettings)
+  .extend(schedulerSettings)
   .superRefine((config, context) => {
     checkProductionSettings(config, context);
     checkStorageSettings(config, context);
@@ -118,7 +122,7 @@ export function loadProjectEnvFile(envFile = PROJECT_ENV_FILE): void {
 }
 
 export function loadConfig(environment: NodeJS.ProcessEnv = process.env): Config {
-  const result = configSchema.safeParse(environment);
+  const result = configSchema.safeParse(withPlatformAddress(environment));
 
   if (!result.success) {
     const problems = result.error.issues
@@ -128,6 +132,27 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): Config
   }
 
   return result.data;
+}
+
+/**
+ * Railway, Render and Fly.io each say what address they gave the app. When PUBLIC_URL isn't
+ * set, Lintel uses that, so a first deploy works before anyone types its address; setting
+ * PUBLIC_URL (for your own domain) always wins.
+ */
+export function platformPublicUrl(environment: NodeJS.ProcessEnv): string | undefined {
+  const render = environment.RENDER_EXTERNAL_URL?.trim();
+  if (render) return render;
+  const railway = environment.RAILWAY_PUBLIC_DOMAIN?.trim();
+  if (railway) return `https://${railway}`;
+  const fly = environment.FLY_APP_NAME?.trim();
+  if (fly) return `https://${fly}.fly.dev`;
+  return undefined;
+}
+
+function withPlatformAddress(environment: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  if (environment.PUBLIC_URL?.trim()) return environment;
+  const address = platformPublicUrl(environment);
+  return address ? { ...environment, PUBLIC_URL: address } : environment;
 }
 
 /**
