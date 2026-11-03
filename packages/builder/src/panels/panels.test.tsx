@@ -268,6 +268,12 @@ describe("the Style panel's groups", () => {
       .getAllByRole("option")
       .find((option) => option.textContent?.endsWith(": pointer over"));
     expect(ownerOption).toBeDefined();
+    const labels = within(styleFor)
+      .getAllByRole("option")
+      .map((option) => option.textContent ?? "");
+    expect(labels).toContain("Open (its button opens it)");
+    expect(labels).toContain("Selected (current page, chosen tab)");
+    expect(labels.some((label) => label.endsWith(": open"))).toBe(true);
     const target = (ownerOption as HTMLOptionElement).value;
     const ownerId = target.split("@")[1]!;
     await person.selectOptions(styleFor, target);

@@ -1,6 +1,6 @@
 import type { MenuItem } from "@lintel/site-components";
 import { resizedImageUrl } from "@lintel/site-components";
-import { renderResponsiveImageHtml } from "@lintel/site-components/server";
+import { renderCreditedImageHtml } from "@lintel/site-components/server";
 import {
   type Context,
   type Emitter,
@@ -18,7 +18,9 @@ import { findPageHelpers, type LiquidPageHelpers } from "./liquid-page-helpers.j
 /**
  * Lintel's own parts, for Liquid templates:
  *
- *   {% image entry.data.hero width: 800, ratio: "16/9" %}  a responsive, cropped picture
+ *   {% image entry.data.hero width: 800, ratio: "16/9" %}  a responsive, cropped picture,
+ *                                                          with its photo credit when the
+ *                                                          licence asks (credit: false hides it)
  *   {% menu "main" %}                                      a menu as a list of links
  *   {% form "contact" %}                                   a form from Forms
  *   {% design %}                                           the page's visual design
@@ -101,8 +103,11 @@ export function renderImage(value: unknown, options: Record<string, unknown>): s
   if (!image) return "";
   const width = readWidth(options.width);
   const alt = typeof options.alt === "string" ? options.alt : image.alt;
-  return renderResponsiveImageHtml({
-    image: { ...image, alt },
+  // The photo's credit shows under it when its licence asks for one; `credit: false` leaves
+  // it off, for templates that credit photos somewhere else on the page.
+  const credit = options.credit === false ? null : image.credit;
+  return renderCreditedImageHtml({
+    image: { ...image, alt, credit },
     aspectRatio: readRatio(options.ratio),
     sizes:
       typeof options.sizes === "string"

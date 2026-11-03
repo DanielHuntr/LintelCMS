@@ -4,6 +4,7 @@ import { assetFileUrl } from "./asset-response.js";
 import type { AssetUsage } from "./media.errors.js";
 import { findAssetsByIdList } from "./media.repository.js";
 import type { FocalPoint } from "./media.schema.js";
+import { type PhotoCredit, photoCreditFor } from "./photo-credit.js";
 
 /**
  * How other features use media without reaching into its tables: the entries feature
@@ -19,6 +20,11 @@ export interface DeliveredAsset {
   width: number | null;
   height: number | null;
   focalPoint: FocalPoint;
+  /**
+   * The credit to show under the picture, when its licence asks for one or someone typed
+   * one; null otherwise (and for CC0 and Public Domain Mark photos). See photo-credit.ts.
+   */
+  credit: PhotoCredit | null;
 }
 
 export interface AssetLookup {
@@ -62,6 +68,7 @@ export function createAssetLookup(source: AssetLookupSource): AssetLookup & Asse
           width: row.width,
           height: row.height,
           focalPoint: { x: row.focalX, y: row.focalY },
+          credit: photoCreditFor(row),
         },
       ]),
     );

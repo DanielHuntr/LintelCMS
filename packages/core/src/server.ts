@@ -31,6 +31,7 @@ import { recycleBinRoutes } from "./recycle-bin/recycle-bin.routes.js";
 import { contentRootsRoutes } from "./content-roots/content-roots.routes.js";
 import { findEntriesUsingAsset } from "./entries/entries.service.js";
 import { revisionsRoutes } from "./entries/revisions.routes.js";
+import { scheduledEntriesRoutes } from "./entries/scheduled-entries.routes.js";
 import { fieldtypesRoutes } from "./fieldtypes/fieldtypes.routes.js";
 import { registerForms } from "./forms/register-forms.js";
 import type { TurnstileVerifier } from "./forms/spam-protection.js";
@@ -59,6 +60,7 @@ import { PluginCatalogue } from "./plugins/plugin-catalogue.js";
 import type { LintelPlugin } from "./plugins/plugin-definition.js";
 import { registerPluginRoutes } from "./plugins/plugin-routes.js";
 import { pluginRegistry } from "./plugins/plugins.registry.js";
+import { type FreePhotosOptions, registerFreePhotos } from "./free-photos/register-free-photos.js";
 import { pagesRoutes } from "./pages/pages.routes.js";
 import { pluginsRoutes } from "./plugins/plugins.routes.js";
 import { previewRoutes } from "./preview/preview.routes.js";
@@ -254,6 +256,8 @@ export interface ServerOptions {
   dataTools?: DataToolsOptions;
   /** Where updates come from and how they are installed. Every part has a default. */
   updates?: UpdatesOptions;
+  /** The Free photos plugin's Openverse address and download rules. Every part has a default. */
+  freePhotos?: FreePhotosOptions;
 }
 
 export interface WebhookOptions {
@@ -402,6 +406,22 @@ export function buildServer(options: ServerOptions) {
     media,
     runScheduledJobs: options.commerce?.runScheduledJobs ?? options.runScheduledJobs ?? true,
   });
+  // What the Free photos plugin's routes need; its routes are the plugin's own.
+  registerFreePhotos(
+    server,
+    {
+      ...options.freePhotos,
+      allowPrivateDownloads:
+        options.freePhotos?.allowPrivateDownloads ?? options.webhooks?.allowPrivateAddresses,
+    },
+    () => ({
+      database: server.database,
+      storage: media.storage,
+      cacheFolder: media.cacheFolder,
+      publicApiUrl: server.publicApiUrl,
+      usageFinder: media.usageFinder,
+    }),
+  );
   server.register(async (api) => registerApiRoutes(api, options, media), { prefix: apiPrefix });
 
   if (options.runScheduledJobs ?? true) {
@@ -433,6 +453,7 @@ function registerApiRoutes(
   server.register(collectionsRoutes);
   server.register(entriesRoutes);
   server.register(revisionsRoutes);
+  server.register(scheduledEntriesRoutes);
   server.register(contentTreeRoutes);
   server.register(recycleBinRoutes);
   server.register(contentRootsRoutes);

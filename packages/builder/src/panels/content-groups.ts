@@ -50,7 +50,11 @@ export function groupContentFields(fields: readonly EditableField[]): ContentGro
   for (const field of fields) {
     // A picture's description belongs with the picture, not with the words on the page.
     // Advanced options are folded away together, after everything else.
-    const id = field.advanced ? "more" : field.prop === "alt" ? "picture" : groupOfKind[field.kind];
+    const id = field.advanced
+      ? "more"
+      : field.prop === "alt" || field.prop === "showCredit"
+        ? "picture"
+        : groupOfKind[field.kind];
     const group = groups.get(id) ?? { id, title: groupTitles[id], fields: [] };
     group.fields.push(field);
     groups.set(id, group);

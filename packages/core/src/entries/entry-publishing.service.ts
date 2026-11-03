@@ -4,7 +4,7 @@ import { InvalidFieldsError } from "../http/http-errors.js";
 import { NotReadyToPublishError, ScheduleInPastError } from "./entries.errors.js";
 import { updateEntryRow } from "./entries.repository.js";
 import { findDueScheduledEntryIds, publishIfStillDue } from "./entry-publishing.repository.js";
-import type { EntryResponse } from "./entries.schema.js";
+import type { EntryResponse, LiveVersion } from "./entries.schema.js";
 import {
   type EntryChangeContext,
   findEntry,
@@ -19,6 +19,21 @@ import { findLatestRevisionOfKind } from "./revisions.repository.js";
  * delivery API ever serves. Saving afterwards changes only `data`, so the site keeps
  * showing the published version until the next publish.
  */
+
+/**
+ * The values the website shows now (`publishedData`), for "Compare with live". Kept apart
+ * from the entry itself, which every editor screen loads, because it is only needed there.
+ */
+export async function findLiveVersion(
+  database: DatabaseOrTransaction,
+  entryId: string,
+): Promise<LiveVersion> {
+  const entry = await findEntryOrFail(database, entryId);
+  return {
+    publishedAt: entry.publishedData === null ? null : (entry.publishedAt?.toISOString() ?? null),
+    data: entry.publishedData,
+  };
+}
 
 /** Puts the saved values live now, and cancels any schedule. */
 export async function publishEntry(

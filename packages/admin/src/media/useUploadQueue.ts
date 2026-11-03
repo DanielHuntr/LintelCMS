@@ -90,7 +90,8 @@ export function useUploadQueue({
   return { items, addFiles, dismiss, clearFinished };
 }
 
-function describeUploadError(error: unknown): string {
+/** Why an upload failed, in the API's words, or "couldn't reach" when it wasn't reached. */
+export function describeUploadError(error: unknown): string {
   if (error instanceof ApiError) return error.message;
   return t("media.upload.unreachable");
 }

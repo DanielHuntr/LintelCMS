@@ -6,6 +6,7 @@ export { componentStylesheet, siteStylesheet } from "./document/site-stylesheet.
 export { renderSiteChrome, type RenderedSiteChrome } from "./document/render-site-chrome.js";
 export {
   renderDocumentParts,
+  renderCreditedImageHtml,
   renderResponsiveImageHtml,
   type DocumentParts,
   type DocumentPartsProps,

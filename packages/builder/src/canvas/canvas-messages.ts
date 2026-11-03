@@ -88,6 +88,10 @@ export type MessageFromFrame =
   | { type: "editText"; nodeId: string; prop: string; text: string }
   | { type: "key"; key: ForwardedKey }
   | { type: "paste"; html: string; text: string }
+  /** Files dropped on the page, over the element `nodeId` (null: over no element). */
+  | { type: "dropFiles"; nodeId: string | null; files: File[] }
+  /** Files pasted while the page had focus and no text was being typed. */
+  | { type: "pasteFiles"; files: File[] }
   /** The selected element was turned with its handle, to this many degrees. */
   | { type: "rotate"; nodeId: string; degrees: number }
   /** An element was dragged or nudged in its free layout, to this place in percent. */
@@ -139,6 +143,8 @@ const frameMessageTypes = new Set([
   "editText",
   "key",
   "paste",
+  "dropFiles",
+  "pasteFiles",
   "rotate",
   "place",
   "textSelection",
@@ -178,6 +184,12 @@ export function readFrameMessage(data: unknown): MessageFromFrame | null {
         : null;
     case "paste":
       return isText(message.html) && isText(message.text) ? (message as MessageFromFrame) : null;
+    case "dropFiles":
+      return isOptionalId(message.nodeId) && areFiles(message.files)
+        ? (message as MessageFromFrame)
+        : null;
+    case "pasteFiles":
+      return areFiles(message.files) ? (message as MessageFromFrame) : null;
     case "moveOver":
     case "insertOver":
       if (type === "moveOver" && !isText(message.nodeId)) return null;
@@ -238,6 +250,16 @@ export function readFrameMessage(data: unknown): MessageFromFrame | null {
     default:
       return { type: "ready" };
   }
+}
+
+/** A short list of real files: anything else from the frame is ignored. */
+function areFiles(value: unknown): value is File[] {
+  return (
+    Array.isArray(value) &&
+    value.length > 0 &&
+    value.length <= 10 &&
+    value.every((file) => file instanceof File)
+  );
 }
 
 function isFiniteNumber(value: unknown): value is number {

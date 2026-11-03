@@ -21,6 +21,31 @@
   text-align: center;
 }
 
+/* A picture drawn with its credit (Liquid's {% image %}): no browser margins around it. */
+.lintel-credited-image {
+  margin: 0;
+}
+
+/* A photo's credit, under the picture: small and quiet, in the theme's own colours. */
+.lintel-credit {
+  display: block;
+  margin-top: var(--lintel-space-1, 0.25rem);
+  color: var(--lintel-color-text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.lintel-credit a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.lintel-credit a:hover {
+  color: var(--lintel-color-link);
+}
+
 .lintel-call-to-action__content {
   display: flex;
   flex-direction: column;

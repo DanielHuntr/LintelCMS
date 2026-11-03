@@ -6,6 +6,7 @@ import type {
   DataSourceKind,
   PageDocument,
   PageNode,
+  PhotoCreditData,
   ShopProduct,
 } from "@lintel/builder-model";
 import { entryFields, productFields } from "@lintel/builder-model";
@@ -30,6 +31,11 @@ export interface BuilderDataSources {
    * thing (and "Which menu" can offer them). Without them the canvas shows a sample menu.
    */
   menus?: readonly { handle: string; name: string; links: readonly DataMenuLink[] }[];
+  /**
+   * Credits of the media library's pictures that need one, by asset id, so Picture elements
+   * on the canvas show them and offer "Show the photo credit". Pictures not listed have none.
+   */
+  photoCredits?: Readonly<Record<string, PhotoCreditData>>;
 }
 
 export const noDataSources: BuilderDataSources = {

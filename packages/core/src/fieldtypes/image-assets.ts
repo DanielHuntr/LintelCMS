@@ -12,6 +12,17 @@ export interface DeliveredAsset {
   width: number | null;
   height: number | null;
   focalPoint: { x: number; y: number } | null;
+  /**
+   * The credit a website shows under the picture, when its licence asks for one (or one was
+   * typed); null or left out for none. The media library works it out (media/photo-credit.ts).
+   */
+  credit?: {
+    text: string;
+    creator: string | null;
+    sourceUrl: string | null;
+    licenceName: string | null;
+    licenceUrl: string | null;
+  } | null;
 }
 
 /** Looks up several images in one go, for the delivery API. Unknown ids are left out. */

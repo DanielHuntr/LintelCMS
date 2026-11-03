@@ -7,6 +7,7 @@ import {
   type PageData,
   type PageDocument,
   type PageNode,
+  type PhotoCreditData,
   type ProductListData,
   type ShopProduct,
 } from "@lintel/builder-model";
@@ -74,6 +75,7 @@ export async function loadPageData(
     productLists,
     products: await loadChosenProducts(request, document),
     forms: await loadForms(request, document),
+    credits: await loadPictureCredits(request, document),
     // The site's own blocks the page uses, their pictures, and those the server draws.
     ...(await loadBlockPageData(
       request.dependencies.database,
@@ -81,6 +83,27 @@ export async function loadPageData(
       request.dependencies.assetLookup,
     )),
   };
+}
+
+/**
+ * The credits Picture elements show under their photos, by asset id: only pictures whose
+ * licence asks for one (or whose credit was typed), and only those whose switch is on.
+ */
+async function loadPictureCredits(
+  request: PageRequest,
+  document: PageDocument,
+): Promise<Record<string, PhotoCreditData>> {
+  const assetIds = findNodesOfType(document.root, ["image"])
+    .filter((node) => node.props.showCredit !== false)
+    .map((node) => node.props.assetId)
+    .filter((assetId): assetId is string => typeof assetId === "string" && assetId !== "");
+  if (assetIds.length === 0) return {};
+  const assets = await request.dependencies.assetLookup.findAssetsByIds(assetIds);
+  const credits: Record<string, PhotoCreditData> = {};
+  for (const [assetId, asset] of assets) {
+    if (asset.credit) credits[assetId] = asset.credit;
+  }
+  return credits;
 }
 
 function menuLinks(items: readonly MenuItem[]): DataSite["menu"] {

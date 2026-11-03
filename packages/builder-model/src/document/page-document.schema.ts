@@ -26,10 +26,11 @@ export const breakpoints = ["base", "tablet", "phone"] as const;
 export type Breakpoint = (typeof breakpoints)[number];
 
 /**
- * Styles that apply only in a state: while the pointer is over a node, while it's pressed, or
- * while it has keyboard focus.
+ * Styles that apply only in a state: while the pointer is over a node, while it's pressed,
+ * while it has keyboard focus, while it's open (its button toggles it, on the website), or
+ * while it's the selected one (the current page in a menu, the chosen tab, a pressed toggle).
  */
-export const styleStates = ["hover", "pressed", "focus"] as const;
+export const styleStates = ["hover", "pressed", "focus", "open", "selected"] as const;
 export type StyleState = (typeof styleStates)[number];
 
 /**
@@ -57,6 +58,8 @@ export interface NodeStyles {
   hover?: StyleDeclarations;
   pressed?: StyleDeclarations;
   focus?: StyleDeclarations;
+  open?: StyleDeclarations;
+  selected?: StyleDeclarations;
   /** Styles while an element around this one is in a state, keyed `"hover@<owner id>"`. */
   owners?: Partial<Record<OwnerStateTarget, StyleDeclarations>>;
 }
@@ -148,9 +151,11 @@ export const nodeStylesSchema = z.object({
   hover: styleDeclarationsSchema.optional(),
   pressed: styleDeclarationsSchema.optional(),
   focus: styleDeclarationsSchema.optional(),
+  open: styleDeclarationsSchema.optional(),
+  selected: styleDeclarationsSchema.optional(),
   owners: z
     .record(
-      z.string().regex(/^(hover|pressed|focus)@[A-Za-z0-9_-]{1,64}$/, {
+      z.string().regex(/^(hover|pressed|focus|open|selected)@[A-Za-z0-9_-]{1,64}$/, {
         error: "An owner state should look like “hover@n3”",
       }),
       styleDeclarationsSchema,

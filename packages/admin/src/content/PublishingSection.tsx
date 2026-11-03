@@ -15,6 +15,8 @@ interface PublishingSectionProps {
   isWorking: boolean;
   onUnpublish: () => void;
   onSchedule: (publishAt: string) => void;
+  /** Opens "Compare with live"; offered while the site shows an older version. */
+  onCompareWithLive?: () => void;
 }
 
 /**
@@ -27,6 +29,7 @@ export function PublishingSection({
   isWorking,
   onUnpublish,
   onSchedule,
+  onCompareWithLive,
 }: PublishingSectionProps) {
   const [isScheduling, setIsScheduling] = useState(false);
   const status = entry?.status ?? "draft";
@@ -36,13 +39,24 @@ export function PublishingSection({
       <p className="text-footnote text-label-secondary">{statusDescription(entry)}</p>
 
       {entry?.hasUnpublishedChanges && status === "published" && (
-        <p className="flex gap-2 rounded-control bg-warning/12 px-3 py-2 text-footnote text-label">
+        <div className="flex gap-2 rounded-control bg-warning/12 px-3 py-2 text-footnote text-label">
           <span aria-hidden="true" className="mt-1.5 size-1.5 shrink-0 rounded-full bg-warning" />
-          <span>
-            <strong className="font-semibold">{t("editor.unpublishedChanges")}</strong>{" "}
-            {t("editor.unpublishedChangesDescription")}
-          </span>
-        </p>
+          <div className="flex flex-col items-start gap-1">
+            <p>
+              <strong className="font-semibold">{t("editor.unpublishedChanges")}</strong>{" "}
+              {t("editor.unpublishedChangesDescription")}
+            </p>
+            {onCompareWithLive && (
+              <button
+                type="button"
+                onClick={onCompareWithLive}
+                className="font-medium text-accent hover:underline focus-visible:focus-ring"
+              >
+                {t("compareLive.open")}
+              </button>
+            )}
+          </div>
+        </div>
       )}
 
       {!canPublish && (

@@ -10,7 +10,7 @@ The beta, the trust model and the lifecycle are explained in
 ## Where plugins come from
 
 - **Built in**: `plugins.registry.ts` lists Lintel's own, each defined in its feature
-  folder (`src/blog`, `src/forms`, `src/seo`; the online shop is still only a name).
+  folder (`src/blog`, `src/forms`, `src/seo`, `src/free-photos` and the others it lists).
 - **Installed**: packages listed in `lintel.config.ts` at the repository root.
   `installed-plugins.ts` loads each one's `./server` when the API starts (main.ts), and
   `buildServer({ plugins })` adds them after the built-in ones.

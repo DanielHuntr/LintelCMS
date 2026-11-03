@@ -98,6 +98,8 @@ export const RESERVED_COLLECTION_HANDLES = [
   "shop",
   "sites",
   "site",
+  // The admin's schedule calendar is at /content/schedule.
+  "schedule",
 ];
 
 const siteScopeSchema = z.enum(collectionSiteScopes, {

@@ -1,3 +1,4 @@
+import { photoCreditSchema, type PhotoCredit } from "../media/index.js";
 import type {
   PageView,
   PostSummary,
@@ -52,7 +53,14 @@ export function readImage(value: unknown): SiteImage | null {
       focal && typeof focal.x === "number" && typeof focal.y === "number"
         ? { x: focal.x, y: focal.y }
         : null,
+    credit: readCredit(image.credit),
   };
+}
+
+/** A delivered image's credit (see media/photo-credit.ts), checked; null for none. */
+function readCredit(value: unknown): PhotoCredit | null {
+  const parsed = photoCreditSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
 }
 
 export function readLink(value: unknown): SiteLink | null {

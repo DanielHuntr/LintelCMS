@@ -59,6 +59,12 @@ The `form` fieldtype (a form's handle, for the Form section on pages) is edited 
 Rich text uses TipTap's StarterKit, trimmed to headings (two levels), bold, italic, links,
 lists and quotes (`richTextExtensions.ts`). Its toolbar is one tab stop with arrow keys
 between buttons; links are added in a small form under the toolbar, not a browser prompt.
+Rich text holds no pictures: one dropped or pasted into it is caught (so the browser doesn't
+open the file in place of the admin) and a note says to use an image field or the design.
+
+A picture dropped or pasted into a Markdown field is uploaded to the media library and
+written in as `![](address)` on a line of its own, with a note to describe it between the
+brackets (`usePictureUpload` and `PictureUploadStatus` in `src/media`).
 
 Image fields use `MediaPicker` from `src/media`, which the media feature owns.
 

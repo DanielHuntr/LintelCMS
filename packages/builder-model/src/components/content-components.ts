@@ -208,8 +208,10 @@ export const imageComponent = defineComponent({
     alt: plainText(500),
     assetId: z.string().max(100).nullable().default(null),
     caption: plainText(500),
+    /** Show the photo's credit under it, when its licence asks for one (see PageData.credits). */
+    showCredit: z.boolean().default(true),
   }),
-  defaultProps: { src: "", alt: "", assetId: null, caption: "" },
+  defaultProps: { src: "", alt: "", assetId: null, caption: "", showCredit: true },
   defaultStyles: {
     base: { width: "100%", height: "auto", borderRadius: "var(--lintel-radius-medium)" },
   },
@@ -223,6 +225,7 @@ export const imageComponent = defineComponent({
       placeholder: "A smiling barista pouring coffee",
     },
     { kind: "text", prop: "caption", label: "Caption (shown under it)" },
+    { kind: "toggle", prop: "showCredit", label: "Show the photo credit" },
   ],
 });
 

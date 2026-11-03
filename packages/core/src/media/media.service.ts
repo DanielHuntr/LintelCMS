@@ -29,6 +29,7 @@ import {
   SHARED_FOLDER,
   type UpdateAssetRequest,
 } from "./media.schema.js";
+import type { CreditDetails } from "./photo-credit.js";
 import type { StorageDriver } from "./storage-driver.js";
 import { assertSvgIsSafe } from "./svg-safety.js";
 import { removeCachedTransforms } from "./transform-cache.js";
@@ -170,6 +171,11 @@ export async function updateAsset(
   if (changes.alt !== undefined) {
     columns.alt = changes.alt;
   }
+  if (changes.credit !== undefined) {
+    columns.credit = changes.credit;
+    // A credit typed by hand is shown as typed; the parts Lintel wrote no longer match it.
+    columns.creditDetails = null;
+  }
   if (changes.focalPoint) {
     columns.focalX = changes.focalPoint.x;
     columns.focalY = changes.focalPoint.y;
@@ -185,6 +191,20 @@ export async function updateAsset(
   if (Object.keys(columns).length > 0) {
     await updateAssetRow(media.database, DEFAULT_TENANT_ID, assetId, columns);
   }
+  return getAsset(media, assetId);
+}
+
+/** Stores a credit Lintel wrote, with its parts (licence, creator, links) for the website. */
+export async function setAssetCredit(
+  media: MediaContext,
+  assetId: string,
+  credit: string,
+  details: CreditDetails,
+): Promise<Asset> {
+  await updateAssetRow(media.database, DEFAULT_TENANT_ID, assetId, {
+    credit,
+    creditDetails: details,
+  });
   return getAsset(media, assetId);
 }
 

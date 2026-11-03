@@ -25,7 +25,7 @@ export interface AssetRowWithUploader extends AssetRow {
 
 /** The columns editors can change. */
 export type AssetChanges = Partial<
-  Pick<AssetRow, "alt" | "focalX" | "focalY" | "filename" | "siteId">
+  Pick<AssetRow, "alt" | "credit" | "creditDetails" | "focalX" | "focalY" | "filename" | "siteId">
 >;
 
 export interface AssetListFilter {

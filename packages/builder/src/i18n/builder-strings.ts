@@ -101,6 +101,12 @@ export const builderStrings = {
   "pageBuilder.style.stateHover": "Pointer over",
   "pageBuilder.style.stateFocus": "Keyboard focus",
   "pageBuilder.style.statePressed": "Pressed",
+  "pageBuilder.style.stateOpen": "Open (its button opens it)",
+  "pageBuilder.style.stateSelected": "Selected (current page, chosen tab)",
+  "pageBuilder.style.stateOwnerOpen": "{name}: open",
+  "pageBuilder.style.stateOwnerSelected": "{name}: selected",
+  "pageBuilder.style.changedForOpen": "Changed for open",
+  "pageBuilder.style.changedForSelected": "Changed for selected",
   "pageBuilder.scene.start": "Start",
   "pageBuilder.scene.end": "End",
   "pageBuilder.scene.dragHint":
@@ -273,6 +279,18 @@ export const builderStrings = {
     "Start the link with https://, http://, mailto:, tel:, / or #.",
   "pageBuilder.content.noPicture": "No picture yet",
   "pageBuilder.content.choosePicture": "Choose a picture",
+  "pageBuilder.content.creditShown": "Shown under the picture: {credit}",
+  "pageBuilder.content.creditHidden":
+    "This photo’s licence asks for a credit. Keep it hidden only if you credit the photographer somewhere else on the page.",
+  "pageBuilder.pictureDrop.uploading": "Uploading {name}…",
+  "pageBuilder.pictureDrop.done": "Picture added to the page and to your media.",
+  "pageBuilder.pictureDrop.failed": "Couldn’t use {name}. {reason}",
+  "pageBuilder.pictureDrop.notPicture":
+    "Pictures go into a Picture element. Drop it onto one, or add one from Insert first.",
+  "pageBuilder.pictureDrop.selectFirst":
+    "To paste a picture, select a Picture element on the page first.",
+  "pageBuilder.pictureDrop.change": "Change picture",
+  "pageBuilder.pictureDrop.dismiss": "Dismiss",
   "pageBuilder.content.changePicture": "Change picture",
   "pageBuilder.content.pictureAddress": "Or the picture’s address",
   "pageBuilder.content.pictureAddressPlaceholder": "Or paste a picture’s address",

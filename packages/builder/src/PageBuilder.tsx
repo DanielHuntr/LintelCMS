@@ -57,6 +57,8 @@ import {
   usePreference,
 } from "./preferences/builder-preferences.js";
 import type { ImagePicker } from "./panels/content-fields.js";
+import { PictureDropStatus } from "./canvas/PictureDropStatus.js";
+import { type PictureUploader, usePictureDrop } from "./canvas/usePictureDrop.js";
 import { canvasPageData } from "./panels/canvas-data.js";
 import { MenuEditingContext, type RenderMenuEditor } from "./menus/menu-editing.js";
 import {
@@ -100,6 +102,11 @@ export interface PageBuilderProps {
    */
   baseStylesheet?: string;
   pickImage?: ImagePicker;
+  /**
+   * Uploads a picture dropped on, or pasted into, a Picture element on the canvas. Without
+   * it, dropped and pasted files are ignored.
+   */
+  uploadPicture?: PictureUploader;
   /** Finds a page of the site for a link ("Choose a page…" beside link inputs). */
   pickPage?: PagePicker;
   /** Uploads a font or video file to the media library, for custom fonts and video backgrounds. */
@@ -211,6 +218,14 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   const [isTouring, setIsTouring] = useState(false);
   const [editingMenuFor, setEditingMenuFor] = useState<string | null>(null);
   const tips = useTips(preferences);
+  const pictures = usePictureDrop({
+    root: state.document.root,
+    uploadPicture: props.uploadPicture,
+    changeProps: actions.changeProps,
+    select: actions.select,
+    announce,
+    text,
+  });
   const tools = toolsFor(skillLevel, canEditCode);
   const { root } = state.document;
   const catalogue = registry.catalogue;
@@ -511,6 +526,12 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
         });
       }
       if (message.type === "paste") actions.paste(message);
+      if (message.type === "dropFiles") {
+        void pictures.placePictures(message.nodeId, message.files, "drop");
+      }
+      if (message.type === "pasteFiles") {
+        void pictures.placePictures(selectedId, message.files, "paste");
+      }
       if (message.type === "textSelection") {
         setTextSelection(message.nodeId === null ? null : message);
       }
@@ -562,6 +583,8 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
       state.selectedId,
       catalogue,
       showCanvasDrop,
+      pictures,
+      selectedId,
     ],
   );
 
@@ -570,6 +593,11 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     function handlePaste(event: ClipboardEvent) {
       if (isTypingTarget(event.target)) return;
       event.preventDefault();
+      const files = [...(event.clipboardData?.files ?? [])];
+      if (files.length > 0 && pictures.canPlacePictures) {
+        void pictures.placePictures(selectedId, files, "paste");
+        return;
+      }
       actions.paste({
         html: event.clipboardData?.getData("text/html") ?? "",
         text: event.clipboardData?.getData("text/plain") ?? "",
@@ -577,7 +605,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     }
     document.addEventListener("paste", handlePaste);
     return () => document.removeEventListener("paste", handlePaste);
-  }, [actions]);
+  }, [actions, pictures, selectedId]);
 
   const handleKeyDownRef = useRef(handleKeyDown);
   useLayoutEffect(() => {
@@ -726,7 +754,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                   </div>
                 </aside>
                 <main
-                  className="flex min-w-0 flex-1 flex-col"
+                  className="relative flex min-w-0 flex-1 flex-col"
                   aria-label={text("pageBuilder.canvas.regionLabel")}
                 >
                   <Breadcrumbs
@@ -770,6 +798,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                       onMessage={handleFrameMessage}
                     />
                   )}
+                  <PictureDropStatus status={pictures.status} onDismiss={pictures.dismiss} />
                 </main>
                 <CanvasLookContext value={canvasLook}>
                   <SelectedElementPanel
