@@ -76,7 +76,7 @@ export async function findSiteCursorsUsingAsset(
   return sites
     .filter((_, index) => {
       const cursor = effects[index]?.cursor;
-      return cursor?.style === "picture" && cursor.picture.assetId === assetId;
+      return cursor?.style === "picture" && cursor.picture?.assetId === assetId;
     })
     .map((site) => ({ entryId: site.id, title: site.name, place: "siteCursor" as const }));
 }
