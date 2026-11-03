@@ -383,6 +383,53 @@ describe("starting from a template", () => {
     );
   });
 
+  it("makes Threshold's listings collection with its homes, and lists them on its pages", async () => {
+    const response = await owner("POST", "/starter-sites/threshold/apply", { publish: true });
+    expect(response.statusCode, response.body).toBe(201);
+    expect(response.json().collectionsMade).toEqual(["listings"]);
+    const collection = (await owner("GET", "/collections/listings")).json();
+    expect(collection).toMatchObject({ name: "Listings", routePattern: null });
+    const homes = await visit("/homes");
+    expect(homes.statusCode).toBe(200);
+    expect(homes.body).toContain("Raby Row");
+    expect(homes.body).toContain("£865,000");
+    expect(homes.body).toContain('src="/_lintel/illustrations/threshold-terrace.svg"');
+
+    // Applied again, the collection is left as it is: no second set of homes.
+    const again = await owner("POST", "/starter-sites/threshold/apply", {
+      publish: true,
+      existingPages: "replace",
+    });
+    expect(again.json().collectionsMade).toEqual([]);
+    const entries = (await owner("GET", "/collections/listings/entries")).json();
+    expect(entries.entries ?? entries.items ?? entries).toHaveLength(6);
+  });
+
+  it("leaves a template's collections alone for someone who may not change collections", async () => {
+    await createTestUser(testDatabase.database, "writer@example.com", [
+      ["entries:read", "entries:create", "entries:update", "entries:publish", "builder:design"],
+    ]);
+    const writer = requestsAs(api, await signInAndGetCookies(api, "writer@example.com"));
+    const response = await writer("POST", "/starter-sites/longwave/apply", { publish: true });
+    expect(response.statusCode, response.body).toBe(201);
+    expect(response.json().collectionsMade).toEqual([]);
+    expect((await owner("GET", "/collections/episodes")).statusCode).toBe(404);
+  });
+
+  it("gives Longplay's mailing list a working newsletter form while Forms is on", async () => {
+    await owner("PUT", "/plugins", { enabled: ["forms"] });
+    const response = await owner("POST", "/starter-sites/longplay/apply", { publish: true });
+    expect(response.statusCode, response.body).toBe(201);
+    const forms = (await owner("GET", "/forms")).json().forms;
+    expect(forms).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ handle: "newsletter", name: "Newsletter" }),
+      ]),
+    );
+    const page = await visit("/mailing-list");
+    expect(page.body).toContain('type="email"');
+  });
+
   it("says plainly when a template doesn't exist", async () => {
     const response = await owner("POST", "/starter-sites/space-station/apply", {});
     expect(response.statusCode).toBe(404);

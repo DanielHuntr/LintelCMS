@@ -6,8 +6,13 @@
  */
 
 import { atelierIllustrations } from "./illustrations-atelier.js";
+import { chambersIllustrations } from "./illustrations-chambers.js";
 import { folioIllustrations } from "./illustrations-folio.js";
+import { longplayIllustrations } from "./illustrations-longplay.js";
+import { longwaveIllustrations } from "./illustrations-longwave.js";
+import { relayIllustrations } from "./illustrations-relay.js";
 import { studioIllustrations } from "./illustrations-studio.js";
+import { thresholdIllustrations } from "./illustrations-threshold.js";
 
 const frame = (background: string, body: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" role="img"><rect width="600" height="450" fill="${background}"/>${body}</svg>`;
@@ -96,6 +101,11 @@ const illustrationList: Record<string, string> = {
   ...folioIllustrations,
   ...atelierIllustrations,
   ...studioIllustrations,
+  ...relayIllustrations,
+  ...chambersIllustrations,
+  ...longplayIllustrations,
+  ...thresholdIllustrations,
+  ...longwaveIllustrations,
 };
 
 export const illustrationNames: readonly string[] = Object.keys(illustrationList);

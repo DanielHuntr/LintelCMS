@@ -25,6 +25,14 @@ export interface RoutedCollection {
   choiceLabels?: ChoiceLabels;
 }
 
+/**
+ * A collection a Collection list can show: those with pages of their own, and those without
+ * (testimonials, listings shown only on other pages), whose `routePattern` is null.
+ */
+export type ListedCollection = Omit<RoutedCollection, "routePattern"> & {
+  routePattern: string | null;
+};
+
 export type SiteRoute =
   | { kind: "home" }
   | {

@@ -173,9 +173,9 @@ describe("the Navigation and Footer groups", () => {
     (template) => template.category === "navigation" || template.category === "footer",
   );
 
-  it("offers five layouts in each", () => {
+  it("offers five navigation layouts and eight footers", () => {
     expect(groups.filter((template) => template.category === "navigation")).toHaveLength(5);
-    expect(groups.filter((template) => template.category === "footer")).toHaveLength(5);
+    expect(groups.filter((template) => template.category === "footer")).toHaveLength(8);
   });
 
   it.each(groups.map((template) => [template.id, template] as const))(

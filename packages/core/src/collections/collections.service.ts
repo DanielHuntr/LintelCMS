@@ -252,7 +252,8 @@ export interface CollectionDefaults {
   handle: string;
   name: string;
   structure: CollectionStructure;
-  routePattern: string;
+  /** null: the entries have no page of their own (they are listed on other pages). */
+  routePattern: string | null;
   blueprint: BlueprintDefaults;
 }
 

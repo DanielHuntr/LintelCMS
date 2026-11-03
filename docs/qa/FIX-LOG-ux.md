@@ -1741,3 +1741,47 @@ Files: `packages/motion/src/effects/kit/{shader-renderer,layers,css-colour,pictu
 **Tests:** motion `effects/maths/creative-maths.test.ts` (11: contrast, veil none/dark/light/capped, picture fit), `effects-catalogue/creative-effects.test.ts` (7: suits, few settings, readable default, colour values accepted and refused, still CSS and bindings, shader warning); browser `creative-effects.browser.test.ts` (11: gradient behind the words, four backgrounds through 2D canvases, veil under light words only, static look and veil without WebGL, pictures untouched without WebGL, still frame for less motion, grain without WebGL and still, develop and pixelate hand back the picture, nothing for less motion, colour split on pointer movement), `effects.browser.test.ts` (liquid gradient through the shared context). motion-editor `MotionPanel.test.tsx` (+3, picture hover row updated), `quickPicks.test.ts` (+1). core `media-transforms.test.ts` (+1).
 
 **Screenshots** (`screenshots/creative-shaders/`): `builder-light-1-gradient-tiles`, `builder-light-2-soft-light`, `builder-light-3-contours`, `builder-light-4-develop-preview`, `builder-light-5-picture-hover-tiles`, `builder-dark-1-gradient-tiles`, `builder-dark-2-dust`, `site-desktop-1-gradient-develop`, `site-desktop-2-developed`, `site-desktop-3-colour-split`, `site-390-1`, `site-390-2-develop`, `site-390-less-motion`, `runtime-{mesh,light-dark,dust,contours}`.
+
+## Starter sites batch B and section packs (3 November 2026)
+
+**Asked by Daniel:** more starting points. Five new starter sites, each unlike the others, and at least twenty new sections for the library.
+
+**Starter sites** (`packages/builder-model/src/starter-sites`), each with its own pages, shared navigation and footer, site motion, words and drawings:
+
+- **Relay**, a crew rota app in Glasgow: home, pricing, updates (a release log) and start free. Manrope with Space Mono, one green.
+- **Chambers**, a law and accountancy practice in Edinburgh: home, services and fees, team and contact. DM Serif Display with DM Sans, deep green and oxblood.
+- **Longplay**, a band from Manchester: home, music, tour and mailing list. Anton with Space Mono, near-black and bone, one red.
+- **Threshold**, an estate and letting agent in Bath: home, homes, area guides and valuation. Fraunces with Manrope, limestone and terracotta. Its homes are a Listings collection.
+- **Longwave**, a podcast recorded in Cardiff: home, episodes, hosts and listen. Syne with DM Sans, ink blue and amber. Its episodes are an Episodes collection.
+
+**Section packs:** thirty new sections (`sections/pack-*.ts`, `templates/section-packs.ts`), each with search keywords: six intros and invitations, four features, two about, two pictures, six proof (logos, quotes, numbers), two pricing, two questions, three contact and three footers.
+
+**New for templates:** a starter site can bring collections with sample entries (`collections` on `StarterSite`, made by `core/src/starter-sites/starter-collections.ts`). A collection the site already has is left as it is, and someone without `collections:update` gets the pages without it.
+
+**Fixed on the way:**
+
+- **LINTEL-UX-160:** Collection lists and the builder's list of collections left out collections with no pages of their own, although that setting exists for entries shown on other pages. Lists now show them (`listedCollections` in the site context), and those entries' addresses are empty.
+- **LINTEL-UX-161:** A newsletter sign-up in a template never got a form, so the website drew its title with no email box. Templates now make the form for it, as they do for a contact form.
+- **LINTEL-UX-162:** Every form a template made was called "Contact". Each is now named after its handle.
+- **LINTEL-UX-163:** Relay's phone drawing moved over the words beside it, at 390px most of all, because of its parallax. It now fades up.
+- **LINTEL-UX-164:** Headings on Relay's green band and Threshold's terracotta band took the theme's heading colour: ink in light mode, and green on green in Relay's dark mode. They now follow the band's text colour.
+- **LINTEL-UX-165:** Longplay's band name was dark grey on the always-dark stage in light mode. It is now bone in both.
+- **LINTEL-UX-166:** Longplay's video poster had a drawn play button that played nothing. The drawing and its alt text no longer have one.
+- **LINTEL-UX-167:** Relay's start page lost its main title without Forms, because the form shared a band with it. The form has its own band.
+- **LINTEL-UX-168:** Two new sections needed changes. The Quiet footer didn't follow the site's menu like the other footers, and now shows it. Scrolling names widened the page to 1,601px at desktop and 1,094px at 390px, because the marquee shrank to fit its centred content; it now takes the page's width.
+- **LINTEL-UX-169:** Longplay's "Join the list" looked squashed in tight lower-case Anton. It is now in capitals, like the site's other headings.
+
+**Tests:** a test file for each site in `builder-model` (Relay 9, Chambers 7, Longplay 9, Threshold 8, Longwave 8), `templates/section-packs.test.ts` (9), and three new tests in `core/src/starter-sites/starter-sites.test.ts` for collections, permissions and the newsletter form.
+
+**Checked in a browser** (Chromium, 1440px and 390px, light and dark, on a copy of the styles test data, each template applied with "replace" and published). Every site's home page was checked in all four views and its other pages in desktop light and 390px dark. The palettes' text pairs were measured: the lowest is 4.6:1. All the new sections were also checked on one page at both widths with reduced motion: no sideways scrolling, and nothing left hidden once scrolled through.
+
+**Screenshots** (in `screenshots/starters-b/`): `<id>-home-{desktop,phone}-{light,dark}` for relay, chambers, longplay, threshold and longwave, and `sheet-section-packs-{desktop,phone}-{light,dark}`, the contact sheet of the new sections.
+
+**Left for later:**
+
+- Listings and episodes have no pages of their own, so their cards don't link anywhere.
+- Pictures in those collections are addresses in a text field, not media library pictures, until someone changes the field.
+- A video or audio element with no link draws nothing on the website, so Longplay shows a poster drawing above its video, and Longwave's "Play the latest episode" goes to the episode on the page.
+- Relay's sign-up page uses the standard contact form.
+- A form section added from Insert shows an empty panel or a title without an email box on the website until someone chooses its form, as the existing contact form section does.
+- Intro with video shows only its words until someone adds a link.

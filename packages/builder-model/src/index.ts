@@ -117,6 +117,9 @@ export {
 export {
   buildStarterPage,
   formsUsedBy,
+  type StarterCollection,
+  type StarterCollectionEntry,
+  type StarterCollectionField,
   type StarterPageOptions,
   type StarterPage,
   type StarterSite,
