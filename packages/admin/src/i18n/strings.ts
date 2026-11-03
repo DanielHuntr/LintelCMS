@@ -38,6 +38,7 @@ import { pageFlowStrings } from "../website/pageFlowStrings.js";
 import { cookieNoticeStrings } from "../website/cookieNoticeStrings.js";
 import { analyticsStrings } from "../analytics/analyticsStrings.js";
 import { publishingStrings } from "../publishing/publishingStrings.js";
+import { serverCheckStrings } from "../server-check/serverCheckStrings.js";
 import { clientEditingStrings } from "../client-editing/clientEditingStrings.js";
 import { addonStrings } from "../addons/addonStrings.js";
 
@@ -91,6 +92,7 @@ const english = {
   ...scheduleStrings,
   ...blockStrings,
   ...publishingStrings,
+  ...serverCheckStrings,
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",
   "nav.openMenu": "Open the menu",

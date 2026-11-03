@@ -122,7 +122,7 @@ export function loadProjectEnvFile(envFile = PROJECT_ENV_FILE): void {
 }
 
 export function loadConfig(environment: NodeJS.ProcessEnv = process.env): Config {
-  const result = configSchema.safeParse(environment);
+  const result = configSchema.safeParse(withPlatformAddress(environment));
 
   if (!result.success) {
     const problems = result.error.issues
@@ -132,6 +132,27 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): Config
   }
 
   return result.data;
+}
+
+/**
+ * Railway, Render and Fly.io each say what address they gave the app. When PUBLIC_URL isn't
+ * set, Lintel uses that, so a first deploy works before anyone types its address; setting
+ * PUBLIC_URL (for your own domain) always wins.
+ */
+export function platformPublicUrl(environment: NodeJS.ProcessEnv): string | undefined {
+  const render = environment.RENDER_EXTERNAL_URL?.trim();
+  if (render) return render;
+  const railway = environment.RAILWAY_PUBLIC_DOMAIN?.trim();
+  if (railway) return `https://${railway}`;
+  const fly = environment.FLY_APP_NAME?.trim();
+  if (fly) return `https://${fly}.fly.dev`;
+  return undefined;
+}
+
+function withPlatformAddress(environment: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  if (environment.PUBLIC_URL?.trim()) return environment;
+  const address = platformPublicUrl(environment);
+  return address ? { ...environment, PUBLIC_URL: address } : environment;
 }
 
 /**

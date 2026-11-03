@@ -11,6 +11,20 @@ describe("loadConfig", () => {
     expect(config.NODE_ENV).toBe("production");
   });
 
+  it("uses the address Railway, Render or Fly.io gave the app until PUBLIC_URL is set", () => {
+    expect(loadConfig({ RENDER_EXTERNAL_URL: "https://lintel-ab12.onrender.com" }).PUBLIC_URL).toBe(
+      "https://lintel-ab12.onrender.com",
+    );
+    expect(loadConfig({ RAILWAY_PUBLIC_DOMAIN: "lintel.up.railway.app" }).PUBLIC_URL).toBe(
+      "https://lintel.up.railway.app",
+    );
+    expect(loadConfig({ FLY_APP_NAME: "my-lintel" }).PUBLIC_URL).toBe("https://my-lintel.fly.dev");
+    expect(
+      loadConfig({ FLY_APP_NAME: "my-lintel", PUBLIC_URL: "https://cms.example.com" }).PUBLIC_URL,
+    ).toBe("https://cms.example.com");
+    expect(loadConfig({}).PUBLIC_URL).toBeUndefined();
+  });
+
   it("treats an empty DATABASE_URL line as not set", () => {
     expect(loadConfig({ DATABASE_URL: "" }).DATABASE_URL).toBeUndefined();
   });

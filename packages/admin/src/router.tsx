@@ -27,6 +27,7 @@ import { fieldsetRoutes } from "./fieldsets/fieldsetRoutes.js";
 import { dataToolsRoutes } from "./data-tools/dataToolsRoutes.js";
 import { importersRoutes } from "./importers/importersRoutes.js";
 import { updatesRoutes } from "./updates/updatesRoutes.js";
+import { serverCheckRoutes } from "./server-check/serverCheckRoutes.js";
 import { blockDesignRoutes, blockRoutes } from "./blocks/blockRoutes.js";
 import { ContentTypesPage } from "./content-types/ContentTypesPage.js";
 import { NewContentTypePage } from "./content-types/NewContentTypePage.js";
@@ -614,6 +615,7 @@ export const routeTree = rootRoute.addChildren([
       ...dataToolsRoutes(() => adminRoute),
       ...importersRoutes(() => adminRoute),
       ...updatesRoutes(() => adminRoute),
+      ...serverCheckRoutes(() => adminRoute),
       pluginScreensRoute,
     ]),
   ]),

@@ -30,11 +30,14 @@ export interface HostingChecker {
   formatText(report: HostingReport): string;
 }
 
-/** In the hosting package it sits beside app.js; in the repository, in its source folder. */
+/**
+ * In the hosting package it sits beside app.js; elsewhere it is in hosting/files, beside
+ * this file's folder in both src and dist (the build copies it).
+ */
 export function findHostingChecker(root: string): HostingChecker {
   const candidates = [
     join(root, "lintel-check.js"),
-    fileURLToPath(new URL("../../src/hosting/files/lintel-check.cjs", import.meta.url)),
+    fileURLToPath(new URL("../hosting/files/lintel-check.cjs", import.meta.url)),
   ];
   const file = candidates.find((candidate) => existsSync(candidate));
   if (!file) {

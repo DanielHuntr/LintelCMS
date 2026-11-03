@@ -26,6 +26,7 @@ describe("Settings", () => {
       "/settings/publishing",
       "/settings/backups",
       "/settings/updates",
+      "/settings/server",
       "/settings/about",
     ]);
     expect(screen.queryByText(/roadmap/)).not.toBeInTheDocument();

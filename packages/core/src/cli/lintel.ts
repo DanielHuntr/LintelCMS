@@ -15,6 +15,7 @@ const USAGE = `Usage: lintel <command>
 
   cron                  Run the scheduled jobs now, through the running website
   cron --print-line     Print the line to paste into your host's Cron Jobs screen
+  check                 Check this server: Node.js, the database, memory, folders, internet
   doctor                Check Lintel's settings and data folder
   doctor --hosting      Also check this server can run Lintel (Node.js, memory, images...)
 ${PUBLISH_USAGE}
@@ -25,6 +26,8 @@ export async function runCommandLine(argumentsGiven: readonly string[]): Promise
   switch (command) {
     case "cron":
       return runCronCommand(rest);
+    case "check":
+      return runDoctorCommand(["--hosting", ...rest]);
     case "doctor":
       return runDoctorCommand(rest);
     case "publish":

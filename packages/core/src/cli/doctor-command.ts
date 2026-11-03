@@ -8,12 +8,18 @@ import {
   DataFolderNotWritableError,
 } from "../production/data-folder.js";
 import { lintelPaths } from "../startup.js";
+import {
+  checkDatabaseAddress,
+  summarise,
+  withDatabaseCheck,
+} from "../server-check/server-check.service.js";
 import { findHostingChecker, runHostingChecks } from "./hosting-checker.js";
 
 /**
  * `lintel doctor`: checks what stops Lintel starting (its settings, its data folder, the
  * built admin) without starting it. `--hosting` adds the hosting checker's report: Node.js
- * version, memory, image resizing, internet access.
+ * version, memory, image resizing, internet access. `lintel check` is `doctor --hosting`,
+ * which also connects to the Postgres database in DATABASE_URL.
  */
 export async function runDoctorCommand(
   options: readonly string[],
@@ -23,11 +29,13 @@ export async function runDoctorCommand(
   if (environment === process.env) loadProjectEnvFile();
   const problems: string[] = [];
   let dataFolder: string | undefined;
+  let databaseUrl: string | undefined;
   const say = (line: string) => process.stdout.write(`${line}\n`);
 
   try {
     const config = loadConfig(environment);
     say("[OK] Settings: every setting is valid");
+    databaseUrl = config.DATABASE_URL;
     dataFolder = lintelPaths(config).root;
     checkDataFolderIsWritable(dataFolder);
     say(`[OK] Data folder: ${dataFolder} can be written to`);
@@ -46,7 +54,12 @@ export async function runDoctorCommand(
   if (options.includes("--hosting")) {
     const checker = findHostingChecker(root);
     // The folders this copy of Lintel really uses, rather than the hosting package's.
-    const report = await runHostingChecks(checker, root, dataFolder ? [dataFolder] : undefined);
+    const found = await runHostingChecks(checker, root, dataFolder ? [dataFolder] : undefined);
+    const report = databaseUrl
+      ? summarise(
+          withDatabaseCheck(found.checks, await checkDatabaseAddress(databaseUrl), "postgres"),
+        )
+      : found;
     say(checker.formatText(report));
     blocked = report.verdict === "blocked";
   }

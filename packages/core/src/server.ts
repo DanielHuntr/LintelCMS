@@ -131,6 +131,7 @@ import { clientEditingRoutes } from "./client-editing/client-editing.routes.js";
 import { wordpressImportRoutes } from "./wordpress-import/wordpress-import.routes.js";
 import { siteImportRoutes } from "./importers/site-import.routes.js";
 import { updatesRoutes } from "./updates/updates.routes.js";
+import { serverCheckRoutes } from "./server-check/server-check.routes.js";
 import { type UpdatesOptions, UpdatesRuntime } from "./updates/updates-runtime.js";
 
 declare module "fastify" {
@@ -596,6 +597,7 @@ function registerApiRoutes(
   server.register(wordpressImportRoutes);
   server.register(siteImportRoutes);
   server.register(updatesRoutes);
+  server.register(serverCheckRoutes);
 }
 
 /**
