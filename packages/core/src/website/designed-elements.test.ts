@@ -289,6 +289,21 @@ describe("designed pages with the element library", { timeout: 30000 }, () => {
     expect(nothing).not.toContain("Post number");
   });
 
+  it("finds words in a page's body and design, but not in its settings", async () => {
+    await publish(
+      "pages",
+      {
+        title: "Visit us",
+        design: design({ type: "heading", props: { text: "Sourdough baked at dawn" } }),
+      },
+      "visit-us",
+    );
+    const fromDesign = (await visit("/search?q=sourdough%20dawn")).body;
+    expect(fromDesign).toContain("Visit us");
+    const fromSettings = (await visit("/search?q=section")).body;
+    expect(fromSettings).not.toContain("Visit us");
+  });
+
   it("tells the builder about collections, their fields, terms and samples", async () => {
     await publishPosts(1);
     const response = await admin("GET", "/website/builder-data");

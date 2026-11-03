@@ -138,6 +138,7 @@ Liquid's standard tags and filters all work (`for`, `if`, `assign`, `capture`, `
 | `{% lintel_head %}`                       | The page's `<head>` contents, in a layout                                                                                                                    |
 | `{% site_header %}`, `{% site_footer %}`  | The site's own header and footer                                                                                                                             |
 | `{% cookie_settings %}`                   | A "Cookie settings" link that opens the cookie notice again; it shows only on sites that ask visitors about cookies                                          |
+| `{% search_box %}`                        | A search box that sends visitors to the site's `/search` results page. `label:`, `placeholder:` and `button:` change its words                               |
 | `{{ entry.data.body \| rich_text }}`      | A rich text or Markdown field's HTML, which Lintel has already cleaned, with pictures as `figure.lintel-picture` and links to pages at their current address |
 | `{{ entry.data.hero \| image_url: 800 }}` | The address of a resized copy, for a background image or `og:image`. `image_url: 800, "1/1"` crops it square                                                 |
 
