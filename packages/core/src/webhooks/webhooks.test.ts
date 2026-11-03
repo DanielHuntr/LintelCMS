@@ -25,6 +25,8 @@ async function startReceiver() {
   const receiver = {
     received: [] as ReceivedRequest[],
     status: 200,
+    /** How long it takes to answer, in milliseconds. */
+    delay: 0,
     url: "",
     server: undefined as Server | undefined,
   };
@@ -33,7 +35,11 @@ async function startReceiver() {
     request.on("data", (chunk: Buffer) => (body += chunk.toString()));
     request.on("end", () => {
       receiver.received.push({ headers: request.headers, body });
-      response.writeHead(receiver.status).end(receiver.status === 200 ? "thanks" : "broken");
+      setTimeout(
+        () =>
+          response.writeHead(receiver.status).end(receiver.status === 200 ? "thanks" : "broken"),
+        receiver.delay,
+      );
     });
   });
   await new Promise<void>((resolve) => receiver.server?.listen(0, "127.0.0.1", resolve));
@@ -81,6 +87,25 @@ describe("webhooks", () => {
     await api("POST", `/entries/${created.json().id}/publish`);
     return created.json().id as string;
   }
+
+  // LINTEL-FUNC-026: a whole run used the time it started, so later claims could already be
+  // over their lease, and were signed with a stale time.
+  it("claims and signs each delivery at the time it is sent", async () => {
+    const webhook = await addWebhook(["entry.published"]);
+    await publishPage("One");
+    await publishPage("Two");
+    await publishPage("Three");
+    receiver.delay = 300;
+
+    await server.webhooks.deliverDue();
+
+    const deliveries = (await api("GET", `/webhooks/${webhook.id}/deliveries`)).json().deliveries;
+    const times = deliveries
+      .map((delivery: { lastAttemptAt: string }) => new Date(delivery.lastAttemptAt).getTime())
+      .sort((first: number, second: number) => first - second);
+    expect(times).toHaveLength(3);
+    expect(times[2] - times[0]).toBeGreaterThanOrEqual(500);
+  });
 
   // LINTEL-SEC-012: anyone who could see settings could read the signing secret, and forge
   // deliveries the receiving app would trust.
@@ -192,17 +217,22 @@ describe("webhooks", () => {
     await server.webhooks.deliverDue(start);
     let [delivery] = (await api("GET", `/webhooks/${webhook.id}/deliveries`)).json().deliveries;
     expect(delivery).toMatchObject({ status: "pending", attemptCount: 1, responseStatus: 500 });
-    expect(new Date(delivery.nextAttemptAt).getTime() - start.getTime()).toBe(60_000);
+    // Each gap is counted from when the attempt was made, a moment after the run started.
+    const gapAfter = (attemptedAt: number, nextAttemptAt: string) =>
+      Math.round((new Date(nextAttemptAt).getTime() - attemptedAt) / 1000) * 1000;
+    expect(gapAfter(start.getTime(), delivery.nextAttemptAt)).toBe(60_000);
 
     // Not due yet: nothing is sent.
     await server.webhooks.deliverDue(new Date(start.getTime() + 30_000));
     expect(receiver.received).toHaveLength(1);
 
-    let now = start;
-    for (const minutes of [1, 5, 30, 120, 720]) {
-      now = new Date(now.getTime() + minutes * 60_000);
-      await server.webhooks.deliverDue(now);
+    for (const minutes of [5, 30, 120, 720]) {
+      const due = new Date(delivery.nextAttemptAt);
+      await server.webhooks.deliverDue(due);
+      [delivery] = (await api("GET", `/webhooks/${webhook.id}/deliveries`)).json().deliveries;
+      expect(gapAfter(due.getTime(), delivery.nextAttemptAt)).toBe(minutes * 60_000);
     }
+    await server.webhooks.deliverDue(new Date(delivery.nextAttemptAt));
     [delivery] = (await api("GET", `/webhooks/${webhook.id}/deliveries`)).json().deliveries;
     expect(receiver.received).toHaveLength(6);
     expect(delivery).toMatchObject({ status: "failed", attemptCount: 6, nextAttemptAt: null });

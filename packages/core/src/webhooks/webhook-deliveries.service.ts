@@ -112,11 +112,18 @@ export async function deliverDueWebhooks(
   now = new Date(),
 ): Promise<string[]> {
   const attempted: string[] = [];
+  // Each attempt takes the time it actually starts. One time for the whole run let a slow
+  // run's later claims carry a lease already over, so another server could send them too,
+  // and signed them minutes old (LINTEL-FUNC-026). `now` still sets where the run starts,
+  // for tests and the scheduler.
+  const startedAt = Date.now();
+  const timeNow = () => new Date(now.getTime() + (Date.now() - startedAt));
   for (const deliveryId of await findDueDeliveryIds(database, now, DELIVERIES_PER_RUN)) {
-    const leaseUntil = new Date(now.getTime() + ATTEMPT_LEASE_MILLISECONDS);
-    const claimed = await claimDueDelivery(database, deliveryId, now, leaseUntil);
+    const attemptAt = timeNow();
+    const leaseUntil = new Date(attemptAt.getTime() + ATTEMPT_LEASE_MILLISECONDS);
+    const claimed = await claimDueDelivery(database, deliveryId, attemptAt, leaseUntil);
     if (claimed) {
-      await attemptDelivery(database, claimed.delivery, claimed.webhook, sender, now);
+      await attemptDelivery(database, claimed.delivery, claimed.webhook, sender, attemptAt);
       attempted.push(deliveryId);
     }
   }
