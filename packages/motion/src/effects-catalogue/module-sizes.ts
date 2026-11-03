@@ -5,20 +5,20 @@ import type { EffectModuleName } from "../effects/effect-types.js";
  * imports. Measured by scripts/measure-effect-modules.mjs; a test checks it stays current.
  */
 export const effectModuleBytes: Record<EffectModuleName, number> = {
-  cursor: 4593,
-  depth: 4788,
+  cursor: 5114,
+  depth: 4970,
   "frosted-glass": 3984,
-  "image-distort": 4272,
-  intro: 2430,
-  "liquid-gradient": 4545,
+  "image-distort": 4454,
+  intro: 2482,
+  "liquid-gradient": 4727,
   marquee: 3030,
   particles: 2683,
   physics: 7176,
-  pointer: 4307,
+  pointer: 4556,
   ripple: 4180,
-  scroll: 4469,
+  scroll: 4650,
   "smooth-scroll": 1826,
   svg: 4879,
   text: 5070,
-  transitions: 1686,
+  transitions: 1682,
 };
