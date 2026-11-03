@@ -930,3 +930,43 @@ Decision record: `docs/decisions/0037-site-fonts.md`. New table `site_fonts` (mi
 **Fix:** the cursor's parts are now placed with the `translate` property (`calc(x - 50%) calc(y - 50%)`), which browsers apply after `scale`, so they shrink in place (`cursor.module.ts`).
 
 **Test:** `motion/src/browser-tests/site-motion.browser.test.ts`, "stays on the pointer while pressed, wherever the pointer is". It fails without the fix (595, 425 instead of 700, 500) and passes with it.
+
+## Starter site: Studio (3 November 2026)
+
+**What:** a new starter site, "Studio", for architects, interior designers and design studios. The fictional practice is Corran Wade, eleven people in a former tile workshop in Lisbon. It has four pages:
+
+- **Home:** the studio's name in very large type on the twelve-column grid, beside a drawing. Below it, an index of six projects as large rows: hovering over a row shows the project's drawing under the pointer, the word "View" on the cursor, and the row in the accent colour. Then a short statement, and a recognition list in Space Mono.
+- **Work:** a large "Work" title, then the project index with Place, Discipline and Year columns, and a drag gallery of drawings (Slider with "Let visitors drag it freely", "Drag" on the cursor).
+- **Studio:** the story of the workshop, "How we work" as four steps set alternately one column in, and a list of the people.
+- **Contact:** a large email address, the address, a telephone number, opening hours, the Lisbon Clock, and how to find the door.
+
+**Look:** ink and paper with one warm red (`#c8441f`, the brand colour). Archivo for headings and Inter for body text are set as the theme's fonts; Space Mono is used for captions. Corners are square. The site motion is Gentle smooth scrolling, the Ring cursor in the text colour (28px), the Fade page transition and no intro. Every band is a section placed on twelve columns (`placedGrid`), so people can drag things across the columns. On phones everything stacks, the middle index columns fold away, and each project row shows its drawing, since there is no pointer to follow.
+
+**Pictures:** nine original line drawings in `illustrations-studio.ts`: elevations, plans and sections, a saw-tooth workshop and a site plan, plus the library cover `studio-cover`. Each is 0.8 to 2.7 KB, and every picture has alt text that says what it shows.
+
+**Changes outside the site file:**
+
+- `StarterTheme` gains optional `headingFont` and `bodyFont`, which go through the website's theme settings as they are.
+- `illustrations.ts` has one import and one spread.
+- `starter-sites.ts` has one import and one entry.
+
+**Judgement calls:**
+
+- On the Work page the project names are level-2 headings, because the index follows the page title. The new heading-order test caught level 3 there.
+- The home page's opening drawing is hidden on phones, because the first project row shows the same drawing just below it.
+- The Work page's rows are not links, because there are no project pages yet. The home page's rows link to Work.
+
+**Tests:**
+
+- builder-model `starter-sites/studio.test.ts` (5): pages, fonts and motion; every band on the grid; the hover picture and "View" on each home row, with drawings that exist; the drag gallery and the Lisbon clock; alt text and heading order.
+- core `starter-sites.test.ts`: "applies Studio": its fonts, its motion, and a home page with the studio's name, the index and its drawing, plus the drawing served from `/_lintel/illustrations/`.
+- Results: builder-model 237 passed; core `src/website` and `src/starter-sites` 60 passed.
+
+**Checked in a browser:** applied with `POST /starter-sites/studio/apply` (`existingPages: "replace"`, `publish: true`) to a copy of the test data. For the screenshots, the test site's name was set to Corran Wade and its main menu to Work, Studio and Contact. Checked at 1440px and 390px, light and dark, with reduced motion, and while hovering over a project row.
+
+**Screenshots** (in `screenshots/starter-studio/`):
+
+- `{home,work,studio,contact}-{desktop,phone}-{light,dark}`
+- `home-midscroll-desktop-{light,dark}`
+- `home-hover-desktop-{light,dark}`
+- `reduced-motion-{home,contact}-*`
