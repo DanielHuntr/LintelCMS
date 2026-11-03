@@ -92,3 +92,41 @@ Each fix was reproduced first and has a regression test that fails without it.
 ## Also fixed on the way
 
 `payment-providers.test.ts` still expected the owner's "Mollie isn't connected yet…" at checkout after LEFT-002 changed shoppers' wording (`dae1f57`).
+
+## Content tree batch (3 November 2026)
+
+Branch `fix/content-tree`. Each regression test was run on the unfixed code first and failed there. These are server fixes with no screen changes, so there are no screenshots.
+
+### LINTEL-FUNC-017: a page could be moved under a page on another site
+
+- **Reproduced:** `POST /content-tree/move` putting a page under another site's home → 200.
+- **Fix:** the move passes the page's site to the parent check, as creating and saving already did. The answer is now 400, "The parent has to be on the same site."
+- **Test:** `content-tree.test.ts`.
+
+### LINTEL-FUNC-018: which page is "/" depended on content type names (part fixed)
+
+- **Reproduced:** add a second page-tree content type called "Archive" with a page at the top. Its page took "/" from Home, because sections went in alphabetical order.
+- **Fix:** page trees go in the order their content types were made, both in the tree and when choosing "/". The first page at the top of the tree is still "/", and renaming a content type changes nothing. Other sections stay alphabetical.
+- **Test:** `content-roots.test.ts`. "Archive" doesn't take "/", and renaming Pages to "Website" keeps Home at "/" and first in the tree.
+- **Left for Daniel: drafts still count.** Skipping drafts was tried and taken back out:
+  - Publishing pages in a different order would then move live addresses around. For example, Shop would be "/" until Home was published.
+  - An existing test (`content-roots.test.ts`, "builds addresses from the site starts") expects the draft Home to keep "/".
+  - With drafts counting, an unpublished home page shows "Page not found" at "/" until it is published, which is easy to understand and fix.
+  - Marked "Part" in the bug report until Daniel decides.
+
+### LINTEL-DATA-012: binning an entry unlinked its translations for good
+
+- **Cause:** binning clears the link on every translation of the entries that go. Nothing noted which translations they were.
+- **Fix:**
+  - The bin item now records those links (`translations`).
+  - Restoring links each translation back, unless it has been linked to something else meanwhile.
+  - Items binned before this have no record, so they restore as before.
+- **Test:** `recycle-bin.test.ts`: the French translation's `originId` is empty while the English page is binned and back after restoring, and the page lists it again.
+
+### LINTEL-FUNC-026: webhooks used one time for a whole run
+
+- **Cause:** a run of up to 25 deliveries took the time once, at the start. With slow receivers (up to 10 seconds each), later deliveries were claimed with a lease that had already run out, so another server could send them as well. They were also signed with a time minutes old, which receivers checking freshness reject.
+- **Fix:** each delivery is claimed, signed and given its retry time at the moment it is sent. `deliverDue(now)` still sets where the run starts.
+- **Tests:** `webhooks.test.ts`:
+  - New: three deliveries to a receiver that takes 300ms each are attempted at least 500ms apart. Before, all three had the same time.
+  - The retry test now measures each gap from that attempt (1, 5, 30, 120 and 720 minutes) rather than from the run's start time.
