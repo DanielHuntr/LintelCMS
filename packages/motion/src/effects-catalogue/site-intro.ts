@@ -19,6 +19,12 @@ export interface IntroContent {
 export const INTRO_SHORTEST_MILLISECONDS = 1300;
 export const INTRO_LONGEST_MILLISECONDS = 3000;
 
+/**
+ * Fired on the document when the intro has lifted, or was taken away without showing (seen
+ * already this visit, or less motion asked for). The page's own entrances wait for it.
+ */
+export const introEndEvent = "lintel:intro-end";
+
 /** How each intro leaves: the counter and name lift up, the line folds away, the logo fades. */
 export const introLeavingKeyframes: Readonly<
   Record<
@@ -74,6 +80,8 @@ export function introCss(settings: SiteEffectSettings): string {
 .lintel-intro-seen .lintel-intro { display: none; }
 @keyframes lintel-intro-failsafe { to { visibility: hidden; opacity: 0; } }
 .lintel-intro__middle { padding-inline: 1.5rem; text-align: center; }
+.lintel-intro:not([data-ready]) .lintel-intro__middle { visibility: hidden; animation: lintel-intro-wait 0s 0.8s forwards; }
+.lintel-intro:not([data-ready]) .lintel-intro__middle * { animation-play-state: paused; }
 .lintel-intro__count { font-variant-numeric: tabular-nums; font-size: 1.4em; }
 .lintel-intro__mask { display: inline-block; overflow: hidden; padding-block: 0.08em; }
 .lintel-intro__name { display: inline-block; animation: lintel-intro-rise 900ms cubic-bezier(.22,1,.36,1) both; }
@@ -82,6 +90,7 @@ export function introCss(settings: SiteEffectSettings): string {
 .lintel-intro__skip { position: absolute; inset-block-end: 1.5rem; inset-inline-end: 1.5rem; font: 500 0.875rem/1 system-ui, sans-serif; letter-spacing: 0; color: inherit; background: transparent; border: 1px solid currentColor; border-radius: 999px; padding: 0.6rem 1rem; cursor: pointer; opacity: 0.75; }
 .lintel-intro__skip:hover { opacity: 1; }
 .lintel-intro__skip:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; opacity: 1; }
+@keyframes lintel-intro-wait { to { visibility: visible; } }
 @keyframes lintel-intro-rise { from { transform: translateY(105%); } }
 @keyframes lintel-intro-logo { from { opacity: 0; transform: scale(0.94); filter: blur(6px); } }
 @keyframes lintel-intro-bar { from { transform: scaleX(0); } to { transform: scaleX(1); } }`;

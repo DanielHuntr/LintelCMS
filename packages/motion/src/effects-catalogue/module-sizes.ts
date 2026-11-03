@@ -9,7 +9,7 @@ export const effectModuleBytes: Record<EffectModuleName, number> = {
   depth: 4970,
   "frosted-glass": 3984,
   "image-distort": 4454,
-  intro: 2482,
+  intro: 2660,
   "liquid-gradient": 4727,
   marquee: 3030,
   particles: 2683,

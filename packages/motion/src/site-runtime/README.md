@@ -8,5 +8,9 @@ mounts each on the element with that `data-node-id`, and sets `window.lintelMoti
 builder's canvas can preview an animation on an element. Reduced motion is followed as
 everywhere else in the runtime.
 
+When the site intro is on screen, entrances (animations that play on load or when they come
+into view) wait for it to lift: the intro module fires `lintel:intro-end` on the document
+when it has gone, and `afterIntro` starts them then, or after a few seconds at most.
+
 The built-in website serves the file at `/_lintel/motion-<fingerprint>.js`
 (see `packages/core/src/website`).
