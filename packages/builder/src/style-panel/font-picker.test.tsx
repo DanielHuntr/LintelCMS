@@ -6,7 +6,7 @@ import {
   type PageDocument,
   standardCatalogue,
 } from "@lintel/builder-model";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { CanvasSite } from "../canvas/canvas-frame-script.js";
@@ -154,7 +154,8 @@ describe("the font list", () => {
     await person.click(within(group).getByRole("button", { name: "Use it on every page" }));
 
     expect(onMoveFontToSite).toHaveBeenCalledWith(studioSans);
-    expect(latest().root.props.fonts).toEqual([]);
+    // The move finishes after the site has the font, so the page changes a moment later.
+    await waitFor(() => expect(latest()?.root.props.fonts).toEqual([]));
     // The element keeps its font: the site's has the same name.
     expect(latest().root.children[0]?.children[0]?.styles.base.fontFamily).toBe(
       "'Studio Sans', system-ui, sans-serif",
