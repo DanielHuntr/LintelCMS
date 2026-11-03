@@ -5,6 +5,7 @@ import { Dialog } from "../design/Dialog.js";
 import { SelectField } from "../design/SelectField.js";
 import { Toggle } from "../design/Toggle.js";
 import { t } from "../i18n/strings.js";
+import { ConsentNoticeOffWarning } from "../website/ConsentNoticeOffWarning.js";
 import type { AnalyticsSettings } from "./analytics.api.js";
 import { useAnalyticsSettings, useSaveAnalyticsSettings } from "./analytics.queries.js";
 
@@ -56,6 +57,7 @@ export function VisitorSettingsDialog({ open, onClose }: { open: boolean; onClos
             <p id="visitors-consent-hint" className="mt-1.5 text-footnote text-label-secondary">
               {t("visitors.settings.consentHint")}
             </p>
+            <ConsentNoticeOffWarning waitsForConsent={draft.countOnlyAfterConsent} />
           </div>
           <SelectField
             label={t("visitors.settings.retention")}
