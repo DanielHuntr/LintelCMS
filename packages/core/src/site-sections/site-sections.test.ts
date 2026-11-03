@@ -3,6 +3,7 @@ import {
   createNode,
   findSectionTemplate,
   type PageDocument,
+  pageLinkHref,
 } from "@lintel/builder-model";
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -148,6 +149,94 @@ describe("the site's navigation and footer sections", () => {
     await owner("PUT", "/website/sections", starterSiteSections());
     const body = await visit("/about");
     expect(body).toMatch(/<a href="\/about" aria-current="page">About<\/a>/);
+  });
+
+  it("links 'Choose a page' buttons in the navigation and footer to the page's address", async () => {
+    await publish("Home", "home");
+    const aboutId = await publish("About", "about");
+    const draft = await owner("POST", "/collections/pages/entries", {
+      data: { title: "Soon" },
+      slug: "soon",
+    });
+    const { navigation, footer } = starterSiteSections();
+    const button = (id: string, href: string) => ({
+      id,
+      type: "button",
+      name: id,
+      props: { label: id, href },
+      styles: { base: {} },
+      children: [],
+    });
+    await owner("PUT", "/website/sections", {
+      navigation: {
+        ...navigation!,
+        children: [...navigation!.children, button("aboutlink", pageLinkHref(aboutId))],
+      },
+      footer: {
+        ...footer!,
+        children: [
+          ...footer!.children,
+          button("draftlink", pageLinkHref(draft.json().id)),
+          button("filelink", "/_lintel/files/menu.pdf"),
+          button("pdflink", "/menu.pdf"),
+        ],
+      },
+    });
+    const body = await visit("/");
+    expect(body).not.toContain("lintel:page/");
+    expect(body).toMatch(/<a[^>]*href="\/about"[^>]*>[\s\S]*?aboutlink/);
+    expect(body).toContain('href="/_lintel/files/menu.pdf"');
+    expect(body).toContain('href="/menu.pdf"');
+    // A page that isn't published has no address to link to.
+    expect(body).not.toContain("/soon");
+  });
+
+  it("links 'Choose a page' buttons inside the site's own blocks to the page's address", async () => {
+    const aboutId = await publish("About", "about");
+    const made = await owner("POST", "/blocks", {
+      name: "Call to action",
+      icon: "box",
+      category: "Marketing",
+      properties: [],
+      design: {
+        id: "cta",
+        type: "box",
+        name: "Call to action",
+        children: [
+          {
+            id: "go",
+            type: "button",
+            name: "Go",
+            props: { label: "Read about us", href: pageLinkHref(aboutId) },
+          },
+        ],
+      },
+    });
+    expect(made.statusCode, made.body).toBe(201);
+    const page = createEmptyPage();
+    await publish("Landing", "landing", {
+      ...page,
+      root: {
+        ...page.root,
+        children: [
+          {
+            id: "i1",
+            type: "customBlock",
+            name: "Call to action",
+            props: { block: made.json().handle, values: {} },
+            styles: { base: {} },
+            children: [],
+            hidden: false,
+            locked: false,
+          },
+        ],
+      },
+    });
+    const body = await visit("/landing");
+    expect(body).toContain("Read about us");
+    expect(body).not.toContain("lintel:page/");
+    // About is the site's first page, so its address is the home page's.
+    expect(body).toMatch(/<a class="go" href="\/">Read about us<\/a>/);
   });
 
   it("goes back to the automatic header when the navigation is taken off the site", async () => {
