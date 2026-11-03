@@ -50,6 +50,11 @@ Other things work like this:
 
 - **Menus and site settings** belong to the site you're working on. Each site fills in
   the same settings, such as the footer, in its own way.
+- **The site's look in the page builder** belongs to each site too: its
+  [fonts](/using/fonts/), its [navigation and footer](/using/navigation-and-footer/), its
+  [Site styles](/using/site-styles/) and its [motion across the site](/using/site-motion/).
+  Changing the French site's brand colour leaves the English site alone. The theme, logo
+  and cookie notice in **Settings → Your website** are shared by every site.
 - **Taxonomies** can be used on every site, or on one. Choose under **Used on** when you
   add one.
 - **Media** is one library every site can use. To keep things tidy, each site also has a

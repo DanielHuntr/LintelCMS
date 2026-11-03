@@ -30,6 +30,8 @@ You don't need to know any code to use it. Everything here happens in the browse
 2. [Find your way around](/using/getting-around/) the admin.
 3. [Write your first page](/using/writing/), then [publish it](/using/publishing/).
 4. [Add photos](/using/media/) and mark what matters in each one.
+5. [Start from a template](/using/templates/), then [design your pages](/using/designing-pages/)
+   in the page builder.
 
 Stuck? The **?** button at the top right of every admin screen opens the help for that
 screen, even without an internet connection. [Troubleshooting](/using/troubleshooting/)

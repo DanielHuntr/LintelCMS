@@ -26,10 +26,13 @@ short welcome until something is published.
 
 ## What's on every page
 
-- **The header** shows your site's name (or your logo) and your **Main menu**. Build the
-  menu in **Content**, then **Menus**.
+- **The navigation** at the top shows your site's name (or your logo) and your **Main
+  menu**. Build the menu in **Content**, then **Menus**. To design your own, add one from
+  **Insert → Sections → Navigation** in the page builder: see
+  [Navigation and footer](/using/navigation-and-footer/).
 - **The footer** shows the footer text, contact email and social links from **Site
-  settings**, in **Content**, then **Global settings**.
+  settings**, in **Content**, then **Global settings**, until you add a footer of your own
+  the same way.
 - **Your blog** is at **/blog**, ten posts a page. Each category and tag has its own page,
   such as **/blog/categories/recipes**, linked from the posts filed under it.
 - **Other languages** are under their code, such as **/fr-FR/about**, and the footer links
@@ -42,17 +45,21 @@ page" with a way back home.
 
 In **Settings**, **Your website**:
 
-- **Template** is the overall design. **Clean** suits a business: bold, centred headings
-  and posts shown as cards. **Journal** suits a blog: elegant serif type and posts shown as
-  a reading list. Lintel picks one from what you said you were building during setup.
-  Picking a template brings its own colours and fonts.
+- **Blog and page style** is the overall design of pages without a design of their own,
+  such as blog posts. **Clean** suits a business: bold, centred headings and posts shown as
+  cards. **Journal** suits a blog: elegant serif type and posts shown as a reading list.
+  Lintel picks one from what you said you were building during setup.
 - **Brand colour** is used for buttons and links, and **Accent colour** for small touches
   such as dates. Pick one by eye or paste your colour code. Lintel keeps text readable on
   whatever you choose.
-- **Fonts** is a short list of pairings that look good together.
+- **Fonts** is a short list of pairings that look good together. Under it, **Headings**
+  and **Body text** can use a font of your own instead, and **Manage fonts** adds more. See
+  [Fonts](/using/fonts/).
 - **Light or dark**: **Automatic** follows each visitor's device.
 - **Corners** and **Spacing** make the site feel sharper or softer, tighter or roomier.
 - **Logo** replaces your site's name in the header. A wide image works best.
+- **Moving between pages** chooses a page transition and an intro on the first visit. See
+  [Motion across the site](/using/site-motion/#page-transitions-and-the-first-visit-intro).
 
 Press **Save changes**. Your website shows them straight away.
 
@@ -70,13 +77,6 @@ while you're still using the address Lintel gives you.
 
 ## Cookie notice
 
-When your site uses something from another company that may set cookies (a YouTube or Vimeo
-video, a map, an embed, Adobe Fonts or an add-on that says so), visitors see a small notice
-that names them, with **Accept all**, **Only necessary** and **Choose**. Nothing from those
-services loads until a visitor allows it. Sites that use none of these show no notice.
-
-In **Settings → Your website → Cookie notice** you can choose Automatic (recommended),
-Always or Off, a bar along the bottom or a card in the corner, your own heading and message,
-and a privacy page to link to. Visitors can change their mind with **Cookie settings** in the
-footer; add the **Cookie settings** element to your own footer if it doesn't have one. This
-is general guidance, not legal advice.
+When your site uses something from another company that may set cookies, such as a YouTube
+video, a map or Adobe Fonts, visitors see a small notice first. See
+[Cookie notice](/using/cookie-notice/).

@@ -13,9 +13,9 @@ plain, readable CSS on the website.
 
 Everything here can be set for one screen size: pick **Tablet** or **Phone** at the top
 first, and the change applies at that size and smaller. A dot next to a setting means it's
-changed for that size; **Reset** goes back to the bigger size's value. In **Advanced**,
-**Style for** also lets you change things while the pointer is over the element, so a card
-can straighten up when someone points at it.
+changed for that size; **Reset** goes back to the bigger size's value. **Which look you're
+changing** also lets you change things while the pointer is over the element, so a card
+can straighten up when someone points at it (see [Site styles](/using/site-styles/#which-look-youre-changing)).
 
 ## Move and turn
 
@@ -64,14 +64,12 @@ full by screen readers.
 
 ## Fonts
 
-Under **Text**, the font list has your theme's two fonts and any fonts the page has added.
-**Add a font** offers 23 fonts that come with Lintel, from plain to headline to handwritten.
-They are free to use and load from your own website, never from anyone else's.
+Under **Text**, the font list has your theme's two fonts, your site's own fonts, any fonts
+added to this page only, and the 23 fonts that come with Lintel. They load from your own
+website, never from anyone else's (except Adobe Fonts, which Adobe serves).
 
-You can also upload your own: give it a name, choose its weight and style, and pick the font
-file (WOFF2, TTF or OTF). Upload bold and italic separately, with the same name. Only upload
-fonts your licence lets you use on a website. Text shows straight away in a similar font
-while yours loads, and the website loads each font's main file early.
+**Add a font**, at the bottom of the list, adds one from Google Fonts, your own files or
+Adobe Fonts to the whole site. See [Fonts](/using/fonts/).
 
 ## Text effects
 

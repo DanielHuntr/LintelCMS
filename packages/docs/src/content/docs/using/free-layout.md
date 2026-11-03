@@ -1,20 +1,22 @@
 ---
-title: Free layout
+title: Placing things anywhere
 description: Placing things anywhere in a section, overlapping, with snapping, guides and stacking, and keeping it working on phones.
 since: "0.1"
 sidebar:
-  label: Free layout
+  label: Placing things anywhere
 ---
 
-Most sections arrange what's inside them for you: one under another, side by side, or in a
-grid. A **free layout** lets you put things anywhere in the section instead, even over each
-other, like a poster: a photo between two giant words, a sticker across a picture.
+Most sections arrange what's inside them for you: one under another, side by side, or on a
+grid (see [Arranging things](/using/arranging-things/)). **Anywhere** lets you put things
+anywhere in the section instead, even over each other, like a poster: a photo between two
+giant words, a sticker across a picture.
 
 ## Switching it on
 
-1. Select a section (or a box) and open **Arrange** in **Style**.
-2. Tick **Free layout: place things anywhere**. The section gets room, and anything inside
-   that hasn't got a place is fanned out so nothing hides behind something else.
+1. Select a section, box or container and open **Layout** in **Style**.
+2. Under **How things are arranged**, choose **Anywhere**. The section gets room, and
+   anything inside that hasn't got a place is fanned out so nothing hides behind something
+   else.
 
 ## Placing things
 
@@ -23,7 +25,7 @@ other, like a poster: a photo between two giant words, a sticker across a pictur
   with. Hold **Alt** while dragging to place it freely.
 - **Nudge** it with the arrow keys after clicking it on the page; hold **Shift** to move
   10 pixels at a time.
-- In **Arrange**, **From the left**, **From the top** and **Width** show and set its place
+- In **Where it sits**, **From the left**, **From the top** and **Width** show and set its place
   exactly. Places are percentages of the section, so the design scales with the screen.
 - **To the front**, **Forward**, **Back** and **To the back** decide what's in front when
   things overlap. The shortcuts are **Ctrl** (or **⌘**) with **]** and **[**, and with
@@ -34,7 +36,7 @@ things to where they look best on a tablet.
 
 ## On phones
 
-**Put things one under another on phones** is on to start with: on phones, everything in the
+**Put things one under another on phones** (under **Anywhere**) is on to start with: on phones, everything in the
 section stacks in the order it has in **Layers**, which is what most free layouts need. Turn
 it off to place things by hand at phone size too.
 
@@ -49,4 +51,4 @@ use **To the front** and **To the back** (not the order in Layers) for what over
 The section is `position: relative` and the things in it are `position: absolute`, with
 `left`, `top` and `width` in percent and `z-index` for what's in front. On phones, with
 stacking on, they go back to normal flow in a column. It's ordinary CSS, so developers can
-read and change it in the **Code** panel.
+read and change it in the site's Liquid templates.

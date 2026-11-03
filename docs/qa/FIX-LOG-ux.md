@@ -1532,3 +1532,29 @@ Decision record: `docs/decisions/0047-designing-the-cursor.md`. No migration: th
 **Fix:** a small helper, `motion/src/effects/kit/top-layer.ts` (`attachAboveDialogs`), adds each of them to the page and moves them inside whichever modal dialog is open, then back out when it closes. It watches for dialogs opening and closing, and forgets anything taken off the page. `cursor.module.ts` and `pointer.module.ts` use it everywhere they add something that follows the pointer.
 
 **Test:** `motion/src/browser-tests/cursor-design.browser.test.ts`, "moves the cursor into the open dialog, and back out when it closes", which uses a real modal dialog.
+
+## Docs for today's features (3 November 2026)
+
+**Asked for:** documentation for everything built today, written for website makers first (plain English, task-led), with a short "For developers" note where it helps.
+
+**Checked against:** decision records 0034 to 0048, the sections of this log above, and the running admin (signed in to the test data, with every change request held back so nothing was saved; no private reference pages opened or shown).
+
+**New pages** (in `packages/docs/src/content/docs`):
+
+- `using/fonts.md`: Google Fonts (downloaded and served from the site), your own files (the licence tick), Adobe Fonts (project ID, served by Adobe, waits for consent), and using them for headings, body text and single elements.
+- `using/navigation-and-footer.md`: adding one, editing it once for every page, waiting for Publish, Hide on this page, Use as this page's own navigation, Remove from every page, sites without one, templates.
+- `using/site-styles.md`: colours, sizes and fonts (with dark-mode colours), shared styles and variants, Every element of a kind, Which look you're changing (Normal, Hovered, Pressed, Focused, Open, Current) and following something around it.
+- `using/arranging-things.md`: How things are arranged (One under another, Side by side, On a grid, Anywhere), placing things on the grid for each screen size, and canvas zoom.
+- `using/site-motion.md`: smooth scrolling, the cursor and the cursor's word, Your own picture, the per-element pointer choices, page transitions and the first-visit intro.
+- `using/cookie-notice.md` (moved out of "Your website" and filled out), `using/visitors.md`, `using/ab-testing.md` and `using/page-drafting.md` (the model, the setup screen, what downloads from where, offline use).
+- `hosting/requirements.md`: a server that runs Node.js 22, Postgres or the built-in database today, storage, email, and a few other companies' hosting listed neutrally.
+
+**Updated pages:** `animating-in-the-builder.md` (Add motion by moment and tiles, Start and End lines, Grow from small while scrolling), `getting-around-the-builder.md` (one builder, the eight tour steps as the builder shows them), `templates.md` (Studio, Atelier and Folio; adding alongside or replacing; what the look switch changes and that it starts off when adding alongside), `free-layout.md` (now "Placing things anywhere", reached through Anywhere), `designing-pages.md`, `advanced-styling.md`, `effects.md`, `animating.md`, `website.md`, `sites.md` (what each site keeps for itself), `elements-reference.md` (Clock, Site logo, Cookie settings), `using/index.md` and `hosting/index.md`. Stale words removed: "Style for", "Arrange", "Free layout: place things anywhere", the Code panel, Designer-only timeline, "Footer-style".
+
+**Sidebar:** the new pages sit beside the ones they belong with (`src/sidebar.ts`); the builder pages are now together, and "What it needs" follows "Start here" under Running Lintel.
+
+**Screenshots** (`packages/docs/src/assets/screens/`, 1440 × 900, light, palette PNGs of 22 to 61 KB): `builder-tour`, `insert-navigation`, `navigation-remove`, `site-styles`, `which-look-hovered`, `arrange-on-a-grid`, `add-motion`, `scroll-scene`, `site-motion`, `template-dialog`, `fonts-google`, `cookie-notice-settings`. Visitors, A/B testing and Page drafting are switched off in the test data, and switching them on would change it, so those pages have no screenshot.
+
+**Test:** `packages/docs/src/content.test.ts`, "the docs' wording": no page mentions a hosting service of Lintel's own or a 1.0 release.
+
+**Not done:** the admin's help panel still opens the older pages for Settings → Your website and the new screens (Visitors, A/B tests, Page drafting); pointing those routes at the new pages is a small change in `admin/src/help/helpTopics.ts`, outside the docs.

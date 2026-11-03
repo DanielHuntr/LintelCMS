@@ -75,6 +75,23 @@ describe("the docs pages", () => {
   });
 });
 
+describe("the docs' wording", () => {
+  // Lintel is software people run themselves: it isn't a hosting service, and it has no
+  // 1.0 release yet.
+  const notSaid: ReadonlyArray<[RegExp, string]> = [
+    [/hosted by lintel|lintel hosts|\bwe host\b/i, "hosting Lintel doesn't offer"],
+    [/\bv1\.0\b|\bversion 1\.0\b/i, "a 1.0 release that isn't out"],
+  ];
+
+  it("never promises hosting or a 1.0 release", () => {
+    for (const file of docsFiles) {
+      for (const [pattern, instead] of notSaid) {
+        expect(file.body, `${file.path}: ${instead}`).not.toMatch(pattern);
+      }
+    }
+  });
+});
+
 describe("links between pages", () => {
   const links = docsFiles.flatMap((file) =>
     [...file.body.matchAll(/\]\((\/[^)\s]*)\)/g)].map((match) => ({

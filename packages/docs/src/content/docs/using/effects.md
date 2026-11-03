@@ -13,7 +13,7 @@ flowing colour. There are over a hundred, and you add them without any code.
 ## Adding an effect
 
 1. Select something on your page: a heading, a picture, a button or a whole section.
-2. Open the **Animate** tab and choose **Effects**.
+2. Open the **Animate** tab, press **Add motion**, then **More effects…**.
 3. Move the pointer over a card (or tab to it) to try it. It plays on the card, and on your
    selected element on the page, so you see it on your own design.
 4. Click a card to add it. Its settings appear under **On this element**, in plain words:
@@ -25,7 +25,7 @@ this element** to see every kind, or search: "carousel", "glow", "typing".
 An element can have up to six effects and up to six animations: a card can fade up as it
 arrives _and_ tilt when the pointer is over it. A few effects, such as **Letters rise**, are
 animations themselves. Adding one adds an animation to the element, which you can fine-tune
-in the **Motion** panel, with the timeline if you're a Designer.
+in **More settings**, with the timeline under **Advanced**.
 
 ## The kinds of effect
 
@@ -49,24 +49,12 @@ menu** and **Notification**. They start with their effects, which you can change
 
 ## Motion across the whole site
 
-**Settings → Your website → Moving between pages** has two choices, with a preview:
-
-- **When people open another page**: change straight away (the default), or Fade, Rise,
-  Sweep up or Settle, at a Quick, Steady or Slow speed. Browsers that can't play it simply
-  change page.
-- **Intro on the first visit**: a counting number, your site's name, your logo or a simple
-  line, shown once per visit before the home page for at most three seconds. Visitors can
-  skip it with its button, a click or any key, and the page is all there underneath for
-  search engines and screen readers.
-
-People who ask their device for less motion see neither.
+Smooth scrolling, the site's cursor, page transitions and an intro on the first visit are
+set once for the whole site. See [Motion across the site](/using/site-motion/).
 
 To carry a picture across, such as a project photo that grows into the project page's big
-photo, give both the **Carry across pages** effect with the same name.
-
-With nothing selected, the Animate tab shows the site's **Cursor**: a dot, a ring or an
-inverting circle instead of the arrow, with an optional trail. Only for a mouse or
-trackpad; fields keep the normal cursor for typing.
+photo, give both the **Carry across pages** effect with the same name. It plays when a page
+transition is chosen.
 
 ## Keeping pages quick
 

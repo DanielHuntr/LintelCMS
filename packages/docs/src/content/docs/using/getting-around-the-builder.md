@@ -6,15 +6,20 @@ sidebar:
   label: Getting around the builder
 ---
 
-Everyone gets the same page builder, with every setting in it. It stays calm by showing the
+Everyone gets the same page builder, with every setting in it. There are no skill levels
+to choose: a beginner and a designer see the same screen. It stays calm by showing the
 settings people change most and folding the rest away until you ask for them:
 
 - **Style** opens with a few friendly groups (layout, spacing, text). **Simple** and
   **Advanced**, at the top, switch between those and every setting: size, position,
   borders, shadows and more.
-- **Animate** starts with ready-made animations and a few sliders. **Advanced** opens the
-  timeline, where you can drag keyframes and build scroll scenes.
+- **Animate** starts with **Add motion**: choose when something should move, and a gentle
+  motion is added straight away. **More settings** opens the rest, and **Advanced** there
+  opens the timeline, where you can drag keyframes and build scroll scenes. See
+  [Animating in the builder](/using/animating-in-the-builder/).
 - Groups you close stay closed, and the builder remembers which ones you use.
+
+![The page builder's first visit, with step 1 of the tour](../../../assets/screens/builder-tour.png)
 
 Developers who want to work in code use the site's Liquid templates in their own editor
 (such as VS Code) with `lintel templates init` and `lintel templates sync`. People with
@@ -25,15 +30,19 @@ CSS and JavaScript in **Content**.
 
 The first time you open the builder, a short tour of eight steps shows you around:
 
-1. **Insert** (sections, including navigation and a footer, and single elements) and
-   **Layers**.
-2. The page itself: click to select, double-click text to type.
-3. **Style**, and choosing which look you're changing (normal, hovered, pressed).
-4. **Site styles** and shared styles.
-5. **Layout**: how things are arranged inside a section or box.
-6. **Animate** and **Add motion**.
-7. Screen sizes, **Undo** and **History**.
-8. **Publish** and **View page**.
+1. **Add sections and elements:** **Insert** has ready-made sections, including a
+   navigation and a footer, and single elements. **Layers** lists everything on the page.
+2. **Click to select, double-click to type.**
+3. **Change how it looks:** **Style**, and choosing which look you're changing (as it
+   normally is, hovered or pressed). See [Site styles](/using/site-styles/#which-look-youre-changing).
+4. **Styles for the whole site:** **Site styles** and shared styles. See
+   [Site styles](/using/site-styles/).
+5. **Arrange what's inside:** **Layout** puts things one under another, side by side, on a
+   grid, or anywhere. See [Arranging things](/using/arranging-things/).
+6. **Make it move:** **Animate** and **Add motion**.
+7. **Every screen size, and every step:** desktop, tablet and phone, **Undo** and
+   **History**.
+8. **Publish and view your page:** **Publish** and **View page**.
 
 Each step dims the rest of the screen so the part it's about stands out. Press **Next** to
 go on, **Back** to look again, or **Skip the tour** (or Escape) to start straight away.

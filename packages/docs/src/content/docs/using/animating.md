@@ -11,9 +11,11 @@ rises into place as you scroll to it, cards that lift when the pointer is over t
 bar that fills as the reader moves down the page. You don't need to know any code, and
 every animation already works for people who prefer less motion.
 
-You'll find the studio in the page builder: select something on the page, then open
-**Animate**. [Animating in the builder](/using/animating-in-the-builder/) shows how it
-fits into building a page.
+You'll find the studio in the page builder: select something on the page, open
+**Animate**, press **Add motion** and choose a moment, then **More settings**.
+[Animating in the builder](/using/animating-in-the-builder/) shows the quicker way most
+people add motion. How one page gives way to the next is set once for the site: see
+[Motion across the site](/using/site-motion/).
 
 ## Start from a preset
 
@@ -23,13 +25,13 @@ plays.
 
 Use the buttons along the top to see one kind at a time:
 
-| Kind            | What it's for                                                         |
-| --------------- | --------------------------------------------------------------------- |
-| **Entrances**   | How something arrives as it scrolls into view: fades, slides, reveals |
-| **Scroll**      | Movement that follows the scroll position, forwards and backwards     |
-| **Hover**       | Small responses to the pointer, so things feel clickable              |
-| **Attention**   | A brief pulse or shake to draw the eye after something happens        |
-| **Transitions** | How a whole page arrives and leaves, and how sections open            |
+| Kind                | What it's for                                                         |
+| ------------------- | --------------------------------------------------------------------- |
+| **Entrances**       | How something arrives as it scrolls into view: fades, slides, reveals |
+| **Scroll**          | Movement that follows the scroll position, forwards and backwards     |
+| **Hover**           | Small responses to the pointer, so things feel clickable              |
+| **Attention**       | A brief pulse or shake to draw the eye after something happens        |
+| **Section reveals** | How sections open and uncover                                         |
 
 Choose one and the studio switches to **Simple**.
 

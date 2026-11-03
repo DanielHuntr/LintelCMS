@@ -6,6 +6,10 @@ sidebar:
   label: Start here
 ---
 
+Lintel runs on a server that runs Node.js, with Postgres or its built-in database. See
+[What Lintel needs to run](/hosting/requirements/) for the details and some hosting
+companies that suit it.
+
 On your computer, `pnpm dev` runs the API and the admin separately so they reload as you
 edit. On a server, Lintel runs as **one program** that serves everything:
 

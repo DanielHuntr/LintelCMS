@@ -7,8 +7,9 @@ sidebar:
 ---
 
 Every page has a **Design**: how it looks, laid out visually in the page builder. You see the
-page as visitors will, with your website's colours, fonts, header and footer, and change it
-by clicking on it.
+page as visitors will, with your website's colours, fonts, navigation and footer, and change
+it by clicking on it. New to the builder? Start with
+[Getting around the builder](/using/getting-around-the-builder/).
 
 ## A new page
 
@@ -63,17 +64,20 @@ after whatever is selected, or drag it into **Layers** to put it exactly where y
 
 ### Style
 
-**Style** is in groups: **Arrange**, **Layout**, **Spacing**, **Size**, **Text**,
+**Style** is in groups: **Layout**, **Where it sits**, **Spacing**, **Size**, **Text**,
 **Background**, **Corners and borders**, **Move and turn**, **Shape and mask**, **Position**,
 **Effects** and **Blend and filters** (some only in **Advanced**; see
-[Advanced styling](/using/advanced-styling/) and [Free layout](/using/free-layout/)). Each group
-opens and closes with its heading. A closed group says what's set inside it, such as
-"Row · gap M", so you can see the whole element at a glance.
+[Arranging things](/using/arranging-things/) and [Advanced styling](/using/advanced-styling/)).
+Each group opens and closes with its heading. A closed group says what's set inside it, such
+as "Side by side · gap M", so you can see the whole element at a glance.
 
 In **Simple**, the groups people use most start open and Lintel remembers how you leave
-them. In **Advanced**, every group starts closed except the one you used last. **Style for**
-chooses whether you're styling the element as it always looks, while the pointer is over
-it, or while it has keyboard focus.
+them. In **Advanced**, every group starts closed except the one you used last.
+
+Above the groups, **Which look you're changing** chooses whether you're styling the element
+as it normally looks, or while it's hovered, pressed or focused. The site's own colours,
+sizes, fonts and shared styles are under **Site styles**. Both are described in
+[Site styles](/using/site-styles/).
 
 **Content** works the same way for elements with a lot to fill in, such as a hero block:
 **Words**, **Link**, **Picture** and **Options** each have their own group.
