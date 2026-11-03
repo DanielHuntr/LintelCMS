@@ -48,12 +48,12 @@ export function readSiteFile(path: string): SiteFile | null {
   if (path === testsScript.path) return null;
   const name = path.split("/").at(-1) ?? "";
   if (path === `${EFFECTS_FOLDER}/${name}`) {
-    const code = readEffectFile(name);
-    if (code === undefined) return null;
+    const file = readEffectFile(name);
+    if (file === undefined) return null;
     const every = [...(readEffectModules()?.files ?? [])].map(
-      (file) => `${EFFECTS_FOLDER}/${file}`,
+      (moduleFile) => `${EFFECTS_FOLDER}/${moduleFile}`,
     );
-    return { content: code, alsoNeeds: every.filter((file) => file !== path) };
+    return { content: file.contents, alsoNeeds: every.filter((other) => other !== path) };
   }
   if (path === `${ILLUSTRATIONS_FOLDER}/${name}`) {
     const svg = readIllustration(name);
