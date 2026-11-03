@@ -9,6 +9,12 @@ site. The reasoning is in docs/decisions/0039-navigation-and-footer-sections.md.
 - `site-sections.service.ts`: reading (an unreadable section counts as none), changing
   (checked as pages are, with the site's rule for scripts), and the starter navigation and
   footer that setup and starter templates give a site that has never had any.
+- `POST /website/sections/restore-previous` (`builder:blocks`): brings back the navigation
+  and footer a starter template replaced. A template only replaces them when its look is
+  applied, none of the site's pages stay (it replaces them, or there are none) and the
+  person may change blocks; beside the site's own pages it never touches them. The ones it
+  replaced are kept in a `siteSectionsBeforeTemplate:<site id>` row, and restoring swaps the
+  two, so it can be undone the same way.
 - `site-sections.repository.ts`: one `siteSections:<site id>` row in the settings table.
 
 A site with no row, or no navigation in it, keeps the website's automatic header (the same

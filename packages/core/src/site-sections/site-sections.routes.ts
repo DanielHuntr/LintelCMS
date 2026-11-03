@@ -4,13 +4,18 @@ import { getSignedIn, requirePermission } from "../auth/require-permission.js";
 import { parseRequest } from "../http/http-errors.js";
 import { hasPermission } from "../roles/permissions.js";
 import { resolveEditingSite } from "../sites/request-site.js";
-import { changeSiteSections, readSiteSections } from "./site-sections.service.js";
+import {
+  changeSiteSections,
+  readSiteSections,
+  restorePreviousSiteSections,
+} from "./site-sections.service.js";
 
 /**
  * HTTP only, for the site being edited (the `Lintel-Site` header):
  *
  *   GET /website/sections  (entries:read)    -> { navigation, footer }
  *   PUT /website/sections  (builder:blocks)  { navigation?, footer? } -> both, as saved
+ *   POST /website/sections/restore-previous  (builder:blocks)  -> both, as brought back
  *
  * A slot left out of a PUT stays as it is; null takes it off the site. Changing them changes
  * every page, like changing a block, so it needs the same permission.
@@ -31,5 +36,14 @@ export async function siteSectionsRoutes(server: FastifyInstance) {
         mayEditCode: hasPermission(getSignedIn(request).permissions, "builder:code"),
       });
     },
+  );
+
+  // A starter template that replaced the site's navigation and footer kept them: this
+  // brings them back (and keeps the template's, so it can be undone the same way).
+  server.post(
+    "/website/sections/restore-previous",
+    { preHandler: requirePermission("builder:blocks") },
+    async (request) =>
+      restorePreviousSiteSections(server.database, await resolveEditingSite(request)),
   );
 }

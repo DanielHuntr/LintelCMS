@@ -23,11 +23,14 @@ import { readSetting } from "../settings/settings.service.js";
 import { findOrCreateDefaultSite } from "../sites/sites.service.js";
 import type { Site } from "../sites/sites.table.js";
 import {
+  NoPreviousSiteSectionsError,
   SiteSectionCodeNotAllowedError,
   SiteSectionNotValidError,
 } from "./site-sections.errors.js";
 import {
+  findPreviousSiteSections,
   findStoredSiteSections,
+  savePreviousSiteSections,
   saveStoredSiteSections,
   saveStoredSiteSectionsIfMissing,
 } from "./site-sections.repository.js";
@@ -131,19 +134,49 @@ export function starterSiteSections(
 }
 
 /**
- * A starter template's navigation and footer for a site: when the template's look is applied
- * they replace the site's (they are part of that look); otherwise the site gets them only
- * if it has never had sections of its own.
+ * A starter template's navigation and footer for a site. With `replace` (the template's look
+ * is applied to a site that keeps none of its own pages, by someone who may change blocks)
+ * they take the place of the site's, and the site's are kept so they can be brought back
+ * (`restorePreviousSiteSections`). Otherwise the site gets them only if it has never had
+ * sections of its own, so adding a template beside the site's pages never changes its menu
+ * or footer. Returns whether the site's own sections were set aside.
  */
 export async function applyStarterSiteSections(
   database: DatabaseOrTransaction,
   site: Site,
   own: { navigation?: NodeBlueprint; footer?: NodeBlueprint } | undefined,
   replace: boolean,
-): Promise<void> {
+): Promise<boolean> {
   const sections = starterSiteSections(own);
-  if (replace) await saveStoredSiteSections(database, site.id, sections);
-  else await saveStoredSiteSectionsIfMissing(database, site.id, sections);
+  if (!replace) {
+    await saveStoredSiteSectionsIfMissing(database, site.id, sections);
+    return false;
+  }
+  const stored = await findStoredSiteSections(database, site.id);
+  const keptPrevious = typeof stored === "object" && stored !== null;
+  if (keptPrevious) await savePreviousSiteSections(database, site.id, stored);
+  await saveStoredSiteSections(database, site.id, sections);
+  return keptPrevious;
+}
+
+/**
+ * Brings back the navigation and footer a starter template replaced. The template's go where
+ * the old ones were kept, so doing it again swaps them back.
+ */
+export async function restorePreviousSiteSections(
+  database: DatabaseOrTransaction,
+  site: Site,
+): Promise<SiteSections> {
+  const previous = await findPreviousSiteSections(database, site.id);
+  if (typeof previous !== "object" || previous === null) {
+    throw new NoPreviousSiteSectionsError();
+  }
+  const current = await findStoredSiteSections(database, site.id);
+  if (typeof current === "object" && current !== null) {
+    await savePreviousSiteSections(database, site.id, current);
+  }
+  await saveStoredSiteSections(database, site.id, previous);
+  return readSiteSections(database, site);
 }
 
 /**

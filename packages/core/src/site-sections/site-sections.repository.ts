@@ -30,6 +30,26 @@ export function saveStoredSiteSections(
   return upsertSettingValue(database, DEFAULT_TENANT_ID, settingKey(siteId), value);
 }
 
+function previousKey(siteId: string): string {
+  return `siteSectionsBeforeTemplate:${siteId}`;
+}
+
+/** The sections a starter template replaced, kept so they can be brought back. */
+export function findPreviousSiteSections(
+  database: DatabaseOrTransaction,
+  siteId: string,
+): Promise<unknown> {
+  return findSettingValue(database, DEFAULT_TENANT_ID, previousKey(siteId));
+}
+
+export function savePreviousSiteSections(
+  database: DatabaseOrTransaction,
+  siteId: string,
+  value: unknown,
+): Promise<void> {
+  return upsertSettingValue(database, DEFAULT_TENANT_ID, previousKey(siteId), value);
+}
+
 /** Saves the sections only if the site has none saved yet. Returns whether it did. */
 export function saveStoredSiteSectionsIfMissing(
   database: DatabaseOrTransaction,

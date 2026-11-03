@@ -196,6 +196,64 @@ describe("the site's navigation and footer sections", () => {
     }
   });
 
+  it("never changes the site's own menu and footer when a template is added beside its pages", async () => {
+    await publish("Home", "home");
+    await owner("PUT", "/website/sections", {
+      navigation: designed("navigation-centred").root.children[0],
+    });
+    const before = (await owner("GET", "/website/sections")).json();
+    const applied = await owner("POST", "/starter-sites/folio/apply", {
+      useTheme: true,
+      existingPages: "alongside",
+    });
+    expect(applied.statusCode, applied.body).toBe(201);
+    expect(applied.json().previousSectionsKept).toBe(false);
+    expect((await owner("GET", "/website/sections")).json()).toEqual(before);
+  });
+
+  it("keeps the site's menu and footer when a template replaces its pages, to bring back", async () => {
+    await publish("Home", "home");
+    await owner("PUT", "/website/sections", {
+      navigation: designed("navigation-centred").root.children[0],
+    });
+    const before = (await owner("GET", "/website/sections")).json();
+    const applied = await owner("POST", "/starter-sites/folio/apply", {
+      useTheme: true,
+      existingPages: "replace",
+    });
+    expect(applied.statusCode, applied.body).toBe(201);
+    expect(applied.json().previousSectionsKept).toBe(true);
+    const replaced = (await owner("GET", "/website/sections")).json();
+    expect(JSON.stringify(replaced.navigation)).toContain("Europe/Lisbon");
+
+    expect((await writer("POST", "/website/sections/restore-previous")).statusCode).toBe(403);
+    const restored = await owner("POST", "/website/sections/restore-previous");
+    expect(restored.statusCode, restored.body).toBe(200);
+    expect(restored.json()).toEqual(before);
+    // Doing it again puts the template's back.
+    const again = await owner("POST", "/website/sections/restore-previous");
+    expect(again.json()).toEqual(replaced);
+  });
+
+  it("says plainly when there is nothing to bring back", async () => {
+    const response = await owner("POST", "/website/sections/restore-previous");
+    expect(response.statusCode).toBe(404);
+    expect(response.json().code).toBe("NO_PREVIOUS_SECTIONS");
+  });
+
+  it("only lets people who may change blocks replace the menu and footer with a template's", async () => {
+    await createTestUser(testDatabase.database, "designer@example.com", [
+      ["entries:*", "settings:update", "navigation:update"],
+    ]);
+    const designer = requestsAs(api, await signInAndGetCookies(api, "designer@example.com"));
+    await owner("PUT", "/website/sections", starterSiteSections());
+    const before = (await owner("GET", "/website/sections")).json();
+    const applied = await designer("POST", "/starter-sites/folio/apply", { useTheme: true });
+    expect(applied.statusCode, applied.body).toBe(201);
+    expect(applied.json()).toMatchObject({ themeApplied: true, previousSectionsKept: false });
+    expect((await owner("GET", "/website/sections")).json()).toEqual(before);
+  });
+
   it("gives a site made in Websites and domains its own starter sections", async () => {
     const created = await owner("POST", "/sites", {
       handle: "france",

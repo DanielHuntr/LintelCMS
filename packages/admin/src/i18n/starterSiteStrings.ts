@@ -14,7 +14,8 @@ export const starterSiteStrings = {
   "templates.confirmTitle": "Start from {name}?",
   "templates.confirmText":
     "We’ll add {count} pages to Pages, ready to change in the page builder. Pages you already have stay as they are.",
-  "templates.useTheme": "Use this template’s colours and fonts for the website",
+  "templates.useTheme":
+    "Use this template’s colours, fonts, menu and footer, and motion for the website",
   "templates.publish": "Publish the pages straight away",
   "templates.publishHint":
     "Leave this off to look everything over first. The pages wait as drafts.",

@@ -3,7 +3,7 @@
 Design, Templates (`/design`): "Start from a template". The library lists every starter
 site from `@lintel/builder-model` (`starterSites`) with its illustration (served by the
 website), who it suits, its pages and colours. Choosing one asks two things, as far as the
-person may: use the template's colours and fonts (`settings:update`), and publish the pages
+person may: use the template's colours, fonts, menu and footer, and motion (`settings:update`), and publish the pages
 straight away (`entries:publish`, off by default). The API makes the pages
 (`POST /starter-sites/:id/apply`, see packages/core/src/starter-sites) and the screen then
 links each page to the page builder.

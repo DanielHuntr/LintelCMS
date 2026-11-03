@@ -132,8 +132,19 @@ export async function applyStarterSite(
     ? await fillEmptyMainMenu(database, pages, editingSite, replaced)
     : "left";
   // The template's pages share a navigation and footer: the template's own when it has them,
-  // else the standard ones. They replace the site's only when the template's look is applied.
-  await applyStarterSiteSections(database, editingSite, site.siteSections, themeApplied);
+  // else the standard ones. They take the place of the site's only when its look is applied,
+  // none of the site's pages stay (replacing them, or a site with none) and the person may
+  // change blocks; the site's are then kept to bring back. Beside the site's own pages, the
+  // site keeps its menu and footer.
+  const keepsOwnPages = existing.pages.length > 0 && !isReplacing;
+  const replaceSections =
+    themeApplied && !keepsOwnPages && hasPermission(context.permissions, "builder:blocks");
+  const previousSectionsKept = await applyStarterSiteSections(
+    database,
+    editingSite,
+    site.siteSections,
+    replaceSections,
+  );
   return {
     starterSiteId: site.id,
     pages,
@@ -142,6 +153,7 @@ export async function applyStarterSite(
     menuHasLinks: menu === "hasLinks",
     skippedHome: keptHome !== null,
     replacedCount: replaced.length,
+    previousSectionsKept,
   };
 }
 

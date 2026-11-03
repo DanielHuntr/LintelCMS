@@ -16,6 +16,7 @@ const applied = {
   menuHasLinks: false,
   skippedHome: false,
   replacedCount: 0,
+  previousSectionsKept: false,
 };
 
 const existingPages = {
@@ -49,7 +50,9 @@ describe("the template library", () => {
 
     await user.click(within(bakery).getByRole("button", { name: /Use this template/ }));
     const dialog = screen.getByRole("dialog", { name: "Start from Bakery and café?" });
-    expect(within(dialog).getByRole("switch", { name: /colours and fonts/ })).toBeChecked();
+    expect(
+      within(dialog).getByRole("switch", { name: /colours, fonts, menu and footer, and motion/ }),
+    ).toBeChecked();
     await user.click(within(dialog).getByRole("switch", { name: /Publish the pages/ }));
     await user.click(within(dialog).getByRole("button", { name: "Add the pages" }));
 
