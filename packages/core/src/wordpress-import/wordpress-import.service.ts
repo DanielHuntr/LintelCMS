@@ -2,11 +2,18 @@ import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import type { Database } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
+import { listBlueprints } from "../blueprints/blueprints.service.js";
 import { listCollections } from "../collections/collections.service.js";
 import { listTaxonomies } from "../taxonomies/taxonomies.service.js";
 import type { BackgroundTasks } from "../scheduler/background-tasks.js";
 import { InvalidFieldsError } from "../http/http-errors.js";
-import { listWordPressItems } from "./wordpress-import-items.js";
+import { isPluginEnabled } from "../plugins/plugins.service.js";
+import {
+  customFieldTargets,
+  suggestCustomFields,
+  valueFieldTypes,
+} from "./wordpress-custom-fields.js";
+import { listCustomFields, listWordPressItems } from "./wordpress-import-items.js";
 import { buildReport } from "./wordpress-import-report.js";
 import {
   collectionTarget,
@@ -73,6 +80,12 @@ export async function createWordPressImport(
       authors: site.authors.length,
       categories: site.categories.length,
       tags: site.tags.length,
+      menus: site.menus.length,
+      products: site.products.length,
+      customFields: {
+        post: listCustomFields(site.items, "post"),
+        page: listCustomFields(site.items, "page"),
+      },
       ignored: site.ignoredItemTypes,
     },
     progress: { done: 0, total: items.length },
@@ -125,19 +138,28 @@ export async function getWordPressImport(database: Database, importId: string) {
   return { ...describeImport(row), report };
 }
 
-/** What the mapping screen offers: the collections and taxonomies here, and a starting choice. */
+/**
+ * What the mapping screen offers: the collections and taxonomies here, each collection's
+ * fields (for custom fields to go into), whether the shop is on, and a starting choice.
+ */
 export async function describeMappingChoices(context: WordPressImportContext, importId: string) {
   const row = await findImportOrFail(context.database, importId);
   const { collections } = await listCollections(context.database);
   const { taxonomies } = await listTaxonomies(context.database);
+  const collectionFields = await listCollectionFields(context.database, collections);
   const has = (handle: string, list: Array<{ handle: string }>) =>
     list.some((item) => item.handle === handle) ? handle : null;
+  const postsCollection = has("posts", collections);
+  const pagesCollection = has("pages", collections);
+  const customFields = row.found.customFields ?? { post: [], page: [] };
   const suggested: WordPressImportMapping = row.mapping ?? {
     ...wordpressImportMappingSchema.parse({}),
-    postsCollection: has("posts", collections),
-    pagesCollection: has("pages", collections),
+    postsCollection,
+    pagesCollection,
     categoriesTaxonomy: has("categories", taxonomies),
     tagsTaxonomy: has("tags", taxonomies),
+    postFields: suggestCustomFields(customFields.post, collectionFields[postsCollection ?? ""]),
+    pageFields: suggestCustomFields(customFields.page, collectionFields[pagesCollection ?? ""]),
   };
   return {
     import: describeImport(row),
@@ -145,7 +167,9 @@ export async function describeMappingChoices(context: WordPressImportContext, im
       handle: collection.handle,
       name: collection.name,
     })),
+    collectionFields,
     taxonomies: taxonomies.map((taxonomy) => ({ handle: taxonomy.handle, name: taxonomy.name })),
+    shopEnabled: await isPluginEnabled(context.database, "commerce"),
     suggested,
   };
 }
@@ -179,6 +203,15 @@ export async function saveMapping(
     });
   }
   await describeFieldMapping(context, mapping);
+  const { collections } = await listCollections(context.database);
+  const collectionFields = await listCollectionFields(context.database, collections);
+  const problems = {
+    ...customFieldTargets(mapping.postFields, collectionFields[mapping.postsCollection ?? ""]),
+    ...customFieldTargets(mapping.pageFields, collectionFields[mapping.pagesCollection ?? ""]),
+  };
+  if (Object.keys(problems).length > 0) {
+    throw new InvalidFieldsError(problems);
+  }
   await updateImport(context.database, importId, { mapping });
   return mapping;
 }
@@ -213,6 +246,22 @@ export async function startWordPressImport(context: WordPressImportContext, impo
     }
   });
   return describeImport({ ...row, status: "running" });
+}
+
+/** Each collection's fields that can hold a value, for the custom field choices. */
+async function listCollectionFields(
+  database: Database,
+  collections: ReadonlyArray<{ handle: string; blueprintHandle: string }>,
+) {
+  const { blueprints } = await listBlueprints(database);
+  const byHandle = new Map(blueprints.map((blueprint) => [blueprint.handle, blueprint]));
+  const result: Record<string, Array<{ handle: string; label: string; type: string }>> = {};
+  for (const collection of collections) {
+    result[collection.handle] = (byHandle.get(collection.blueprintHandle)?.fields ?? [])
+      .filter((field) => field.handle !== "title" && valueFieldTypes.has(field.type))
+      .map((field) => ({ handle: field.handle, label: field.label, type: field.type }));
+  }
+  return result;
 }
 
 function mappingOf(row: WordPressImportRow): WordPressImportMapping {

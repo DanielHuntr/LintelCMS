@@ -99,6 +99,7 @@ import { EventBus } from "./events/event-bus.js";
 import { subscribeEventListeners } from "./events/event-listeners.js";
 import { registerWorkflows, type WorkflowOptions } from "./workflows/register-workflows.js";
 import { wordpressImportRoutes } from "./wordpress-import/wordpress-import.routes.js";
+import { siteImportRoutes } from "./importers/site-import.routes.js";
 import { updatesRoutes } from "./updates/updates.routes.js";
 import { type UpdatesOptions, UpdatesRuntime } from "./updates/updates-runtime.js";
 
@@ -469,6 +470,7 @@ function registerApiRoutes(
   server.register(backupsRoutes);
   server.register(contentTransferRoutes);
   server.register(wordpressImportRoutes);
+  server.register(siteImportRoutes);
   server.register(updatesRoutes);
 }
 

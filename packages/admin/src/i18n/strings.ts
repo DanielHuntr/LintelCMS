@@ -19,6 +19,7 @@ import { starterSiteStrings } from "./starterSiteStrings.js";
 import { fieldStrings } from "./fieldStrings.js";
 import { contentTreeStrings } from "./contentTreeStrings.js";
 import { dataToolsStrings } from "./dataToolsStrings.js";
+import { importersStrings } from "./importersStrings.js";
 import { updatesStrings } from "./updatesStrings.js";
 import { treeSelectionStrings } from "./treeSelectionStrings.js";
 import { pageMenuStrings } from "./pageMenuStrings.js";
@@ -54,6 +55,7 @@ const english = {
   ...fieldStrings,
   ...contentTreeStrings,
   ...dataToolsStrings,
+  ...importersStrings,
   ...updatesStrings,
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",

@@ -130,3 +130,15 @@ Branch `fix/content-tree`. Each regression test was run on the unfixed code firs
 - **Tests:** `webhooks.test.ts`:
   - New: three deliveries to a receiver that takes 300ms each are attempted at least 500ms apart. Before, all three had the same time.
   - The retry test now measures each gap from that attempt (1, 5, 30, 120 and 720 minutes) rather than from the run's start time.
+
+## Importers merge (3 November 2026)
+
+Branch `merge/importers`: `phase-6/importers` merged onto `release/1.0.0-rc` (60c5010).
+
+- **Spec check** (`spec-importers.md`): WordPress (menus, custom fields, WooCommerce products), Webflow, Framer, Statamic and Umbraco importers, the "Move your site to Lintel" hub, `lintel import <source> <file|url>`, dry run, mapping, resumable background runs, reports, zip and download safety, fixture tests, the WordPress end-to-end test and a "Moving from X" page per source are all in. Nothing left to build. Existing content is never overwritten; there is no "replace it" choice to ask about.
+- **Migration:** the branch's `0021_add_site_importers` was dropped and regenerated after release's 0022 as `0023_add_site_importers` (only the two new tables, both with `tenant_id`). Checked on a fresh database (the test suite) and on a copy of a database made with release's migrations (23 → 24 applied, both tables there).
+- **Decision record:** `0028-site-importers.md` (the branch had none).
+- **Screens moved to Build:** the importer screens were made under `/settings/import/*`; they are now `/build/import/*`, matching release's Build split. Old addresses already redirect through `movedPages.ts`; a test now covers `/settings/import/webflow/:id`. "Settings → Import" and "Settings → Features" in copy and docs now say Build.
+- **Wording kept from release:** "Import an export from {product}" (the branch had changed it back to "Import a {product} export", which `copyFixes.test.ts` caught).
+- **Browser check:** hub, Webflow and Statamic upload, mapping, dry run, report and the old address, at desktop and 390px, light and dark: `docs/qa/screenshots/merge-importers/`. No sideways scrolling and no console errors.
+- **Checks:** format, lint, typecheck and build pass. Tests: admin 661, builder, motion and the rest pass; core 1023 passed with the 22 known Windows failures; CLI 28 passed with the 2 known Windows failures.

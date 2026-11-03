@@ -47,3 +47,4 @@ export {
   wordpressImportsTable,
   wordpressImportItemsTable,
 } from "../wordpress-import/wordpress-import.table.js";
+export { siteImportsTable, siteImportItemsTable } from "../importers/site-import.table.js";

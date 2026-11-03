@@ -21,6 +21,7 @@ import {
 } from "./wordpress-import-context.js";
 import { assetAddress, importFile, safeDecode } from "./wordpress-item-handlers.js";
 import { findEntryFromEarlierImport, insertItemIfMissing } from "./wordpress-import.repository.js";
+import { convertCustomField } from "./wordpress-custom-fields.js";
 import { piecesToRichText } from "./wordpress-rich-text.js";
 import type { WordPressItem } from "./wxr-parser.js";
 
@@ -52,17 +53,13 @@ export async function importEntry(context: ItemContext, item: WordPressItem): Pr
   }
 
   const content = await convertContent(context, target, item);
-  let data: Record<string, unknown>;
-  try {
-    data = await validateForCollection(context.database, target.collection, content.data, {
-      assetExists: context.assetExists,
-    });
-  } catch (error) {
-    if (error instanceof InvalidFieldsError) {
-      return failed(Object.values(error.fields).join(" "));
-    }
-    throw error;
+  const custom = convertCustomFields(context, target, item);
+  const checked = await checkValues(context, target, { ...content.data, ...custom.values });
+  if ("problem" in checked) {
+    return failed(checked.problem);
   }
+  const data = checked.data;
+  const fieldsLeftOut = [...custom.leftOut, ...checked.leftOut];
 
   const scope = {
     collectionId: target.collection.id,
@@ -111,8 +108,80 @@ export async function importEntry(context: ItemContext, item: WordPressItem): Pr
     keptAsHtml: content.keptAsHtml,
     ...(slug !== wanted ? { renamedFrom: wanted, renamedTo: slug } : {}),
     ...(content.droppedBody ? { droppedBody: true } : {}),
+    ...(fieldsLeftOut.length > 0 ? { fieldsLeftOut } : {}),
     redirected,
   });
+}
+
+/**
+ * Checks the values against the content type. A custom field the content type refuses
+ * (a value too long, a choice it doesn't offer) is left out and listed, rather than losing
+ * the whole post; a problem with the post's own parts fails it.
+ */
+async function checkValues(
+  context: ItemContext,
+  target: CollectionTarget,
+  values: Record<string, unknown>,
+): Promise<{ data: Record<string, unknown>; leftOut: string[] } | { problem: string }> {
+  const customHandles = new Set(Object.values(mappedCustomFields(context, target)));
+  let attempt = values;
+  const leftOut: string[] = [];
+  for (let round = 0; round < 2; round += 1) {
+    try {
+      const data = await validateForCollection(context.database, target.collection, attempt, {
+        assetExists: context.assetExists,
+      });
+      return { data, leftOut };
+    } catch (error) {
+      if (!(error instanceof InvalidFieldsError)) {
+        throw error;
+      }
+      const refused = Object.keys(error.fields).map((key) => key.split(".")[0] ?? key);
+      if (round === 1 || refused.some((handle) => !customHandles.has(handle))) {
+        return { problem: Object.values(error.fields).join(" ") };
+      }
+      attempt = Object.fromEntries(
+        Object.entries(attempt).filter(([handle]) => !refused.includes(handle)),
+      );
+      leftOut.push(...refused);
+    }
+  }
+  return { problem: "Its values couldn't be saved." };
+}
+
+/** Custom field key → field handle, for the content type this item goes into. */
+function mappedCustomFields(context: ItemContext, target: CollectionTarget) {
+  const chosen = target === context.pages ? context.mapping.pageFields : context.mapping.postFields;
+  const handles = new Set(target.fields.map((field) => field.handle));
+  return Object.fromEntries(
+    Object.entries(chosen ?? {}).filter(
+      (pair): pair is [string, string] => pair[1] !== null && handles.has(pair[1]),
+    ),
+  );
+}
+
+function convertCustomFields(context: ItemContext, target: CollectionTarget, item: WordPressItem) {
+  const values: Record<string, unknown> = {};
+  const leftOut: string[] = [];
+  for (const [key, handle] of Object.entries(mappedCustomFields(context, target))) {
+    const raw = item.customFields[key];
+    const field = target.fields.find((candidate) => candidate.handle === handle);
+    if (raw === undefined || !field || raw.trim() === "") {
+      continue;
+    }
+    const value =
+      field.type === "richText"
+        ? piecesToRichText(splitWordPressContent(raw), () => null).document
+        : convertCustomField(raw, field, {
+            attachment: (attachmentId) => context.targets.get(`attachment:${attachmentId}`),
+          });
+    if (value === undefined) {
+      leftOut.push(handle);
+    } else {
+      values[handle] = value;
+    }
+  }
+  return { values, leftOut };
 }
 
 type Publishing = { status: EntryStatus } | { skip: string };

@@ -25,7 +25,8 @@ describe("reading a WordPress export", () => {
       "page:about-us",
       "page:our-team",
     ]);
-    expect(site.ignoredItemTypes).toEqual({ nav_menu_item: 1 });
+    // A menu link outside any menu is dropped, as WordPress itself never shows it.
+    expect(site.ignoredItemTypes).toEqual({});
 
     const post = site.items[1];
     expect(post).toMatchObject({

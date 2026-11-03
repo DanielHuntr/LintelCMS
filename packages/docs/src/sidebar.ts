@@ -24,6 +24,11 @@ export const usingPages = [
   "using/animating",
   "using/selling",
   "using/moving-from-shopify",
+  "using/wordpress",
+  "using/moving-from-webflow",
+  "using/moving-from-framer",
+  "using/moving-from-statamic",
+  "using/moving-from-umbraco",
   "using/animating-in-the-builder",
   "using/effects",
   "using/builder-skill-levels",
@@ -32,7 +37,6 @@ export const usingPages = [
   "using/interface-languages",
   "using/backups",
   "using/updating",
-  "using/wordpress",
   "using/troubleshooting",
 ] as const;
 

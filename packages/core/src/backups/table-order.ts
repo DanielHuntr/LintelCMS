@@ -6,7 +6,8 @@ import * as schema from "../database/schema.js";
  * Tables a backup leaves out, and why:
  * - `sessions`: who is signed in right now. Restoring them would sign people back in to
  *   browsers they may have left; everyone signs in again instead.
- * - `backups`, `wordpress_imports`, `wordpress_import_items`: the record of backups and
+ * - `backups`, `wordpress_imports`, `wordpress_import_items`, `site_imports`,
+ *   `site_import_items`: the record of backups and
  *   imports made on this install. Restoring an old backup shouldn't make newer backups
  *   disappear from the list, or forget an import half way through.
  * - `settings`: kept in the archive's settings.json instead, so it can be read on its own.
@@ -16,6 +17,8 @@ export const TABLES_LEFT_OUT_OF_BACKUPS = [
   "backups",
   "wordpress_imports",
   "wordpress_import_items",
+  "site_imports",
+  "site_import_items",
   "settings",
 ];
 

@@ -33,3 +33,10 @@ export { emailSchema } from "./users/users.schema.js";
 export { createAdmin, EmailAlreadyUsedError } from "./users/users.service.js";
 export { fail, readNewPassword } from "./scripts/read-new-password.js";
 export { promptPassword } from "./scripts/prompt-password.js";
+export {
+  commandLineSources,
+  importFromFiles,
+  type CommandLineSource,
+  type ImportFromFilesResult,
+} from "./importers/import-from-files.js";
+export { defaultImportsFolder } from "./backups/data-tools-folders.js";
