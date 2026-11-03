@@ -252,6 +252,30 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
       setStylingState(target ? { nodeId, target } : null),
     [],
   );
+  // The selected element's scroll scene, as Start and End lines on the canvas to drag. A held
+  // (pinned) scene runs while it's held, so it has no lines of its own.
+  const selectedTrigger = selectedNode?.animation?.spec.trigger;
+  const sceneStart =
+    selectedTrigger?.type === "scroll" &&
+    selectedTrigger.scope === "element" &&
+    !selectedTrigger.pin
+      ? selectedTrigger.start.viewport
+      : null;
+  const sceneEnd =
+    selectedTrigger?.type === "scroll" && sceneStart !== null ? selectedTrigger.end.viewport : null;
+  const sceneMarkers = useMemo(
+    () =>
+      sceneStart === null || sceneEnd === null
+        ? null
+        : {
+            start: sceneStart,
+            end: sceneEnd,
+            startLabel: text("pageBuilder.scene.start"),
+            endLabel: text("pageBuilder.scene.end"),
+            dragHint: text("pageBuilder.scene.dragHint"),
+          },
+    [sceneStart, sceneEnd, text],
+  );
   const statePreviewCss = useMemo(() => {
     if (!stylingState || stylingState.nodeId !== selectedId) return "";
     const root = state.document.root;
@@ -492,6 +516,23 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
       if (message.type === "place") {
         actions.placeFreely(message.nodeId, breakpoint, { left: message.left, top: message.top });
       }
+      if (message.type === "sceneMarker") {
+        const node = state.selectedId ? findNode(state.document.root, state.selectedId) : undefined;
+        const animation = node?.animation;
+        const trigger = animation?.spec.trigger;
+        if (node && animation && trigger?.type === "scroll") {
+          actions.animate(node.id, {
+            ...animation,
+            spec: {
+              ...animation.spec,
+              trigger: {
+                ...trigger,
+                [message.which]: { ...trigger[message.which], viewport: message.viewport },
+              },
+            },
+          });
+        }
+      }
       if (message.type === "openMenu") {
         actions.select(message.nodeId);
         setEditingMenuFor(message.nodeId);
@@ -701,6 +742,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                       motionPreview={motionPreview}
                       insertMarker={insertMarker}
                       isInsertDragging={isInsertDragging}
+                      sceneMarkers={sceneMarkers}
                       onMessage={handleFrameMessage}
                     />
                   )}

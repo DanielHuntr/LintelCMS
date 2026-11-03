@@ -101,6 +101,10 @@ export const builderStrings = {
   "pageBuilder.style.stateHover": "Pointer over",
   "pageBuilder.style.stateFocus": "Keyboard focus",
   "pageBuilder.style.statePressed": "Pressed",
+  "pageBuilder.scene.start": "Start",
+  "pageBuilder.scene.end": "End",
+  "pageBuilder.scene.dragHint":
+    "Where on the screen the scroll scene starts or ends. Drag it, or use the up and down arrow keys.",
   "pageBuilder.style.stateOwnHeading": "This element",
   "pageBuilder.style.stateOwnerHeading": "With what's around it",
   "pageBuilder.style.stateOwnerHover": "{name}: pointer over",
