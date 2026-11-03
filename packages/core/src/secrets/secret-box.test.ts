@@ -36,7 +36,7 @@ describe("the secret box", () => {
     const first = loadSecretKey(folder, {});
     const keyFile = join(folder.dataFolder, "..", "secret.key");
     expect(readFileSync(keyFile, "utf8").trim()).toBe(first.toString("hex"));
-    expect(statSync(keyFile).mode & 0o077).toBe(0);
+    if (process.platform !== "win32") expect(statSync(keyFile).mode & 0o077).toBe(0);
     expect(loadSecretKey(folder, {}).equals(first)).toBe(true);
   });
 

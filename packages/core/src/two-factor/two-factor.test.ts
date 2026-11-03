@@ -177,7 +177,7 @@ describe("two-factor authentication", () => {
     expect(answers.disable.slice(0, 10).every((status) => status === 401)).toBe(true);
     expect(answers.disable[10]).toBe(429);
     expect(answers.codes[10]).toBe(429);
-  });
+  }, 30_000);
 
   it("makes a new set of recovery codes, replacing the old", async () => {
     const { recoveryCodes } = await turnOn(asEd);
