@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { SubmissionValue } from "./submission-values.js";
+import type { ConsentRecord } from "./forms.table.js";
 
 export const listSubmissionsQuerySchema = z.object({
   search: z.string().trim().max(200).optional(),
@@ -62,6 +63,8 @@ export interface Submission {
   values: Record<string, SubmissionValueResponse>;
   submitterEmail: string | null;
   sourceUrl: string | null;
+  /** The consent boxes ticked, with the exact words shown, when and where. */
+  consents: ConsentRecord[];
   isRead: boolean;
   isStarred: boolean;
   createdAt: string;

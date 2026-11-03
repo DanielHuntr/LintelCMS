@@ -225,6 +225,13 @@
       "when": 1793734205184,
       "tag": "0031_client_reviews",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793739991175,
+      "tag": "0037_privacy_tools",
+      "breakpoints": true
     }
   ]
 }

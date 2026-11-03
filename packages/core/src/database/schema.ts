@@ -25,6 +25,7 @@ export { entrySeoTable, redirectsTable } from "../seo/seo.table.js";
 export { dashboardLayoutsTable } from "../dashboard/dashboard.table.js";
 export { oneTimeTokensTable } from "../one-time-tokens/one-time-tokens.table.js";
 export { securityEventsTable } from "../security-log/security-events.table.js";
+export { privacyRequestsTable } from "../privacy/privacy.table.js";
 export { invitationsTable } from "../invitations/invitations.table.js";
 export { twoFactorTable, recoveryCodesTable } from "../two-factor/two-factor.table.js";
 export { passkeysTable } from "../passkeys/passkeys.table.js";

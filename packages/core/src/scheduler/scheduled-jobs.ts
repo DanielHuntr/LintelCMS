@@ -8,6 +8,7 @@ import { describeEntryForEvent } from "../content-events/entry-event-data.js";
 import { publishDueEntries } from "../entries/entry-publishing.service.js";
 import { checkForUpdatesIfDue } from "../updates/update-checks.service.js";
 import { updateChecksContextFor } from "../updates/updates.service.js";
+import { runRetentionRules } from "../privacy/retention.service.js";
 import { type RepeatingJob, startRepeatingJob } from "./repeating-job.js";
 
 const ONE_MINUTE = 60_000;
@@ -64,6 +65,20 @@ export function registerScheduledJobs(server: FastifyInstance): void {
           }
         },
         onError: (error) => server.log.error(error, "Making the scheduled backup failed"),
+      }),
+      // Retention rules from Settings → Privacy: old personal data deleted or anonymised.
+      startRepeatingJob({
+        everyMilliseconds: ONE_HOUR,
+        run: async () => {
+          const done = await runRetentionRules({
+            database: server.database,
+            forms: server.forms.context,
+          });
+          if (Object.values(done).some((count) => count > 0)) {
+            server.log.info(done, "Applied the privacy retention rules");
+          }
+        },
+        onError: (error) => server.log.error(error, "Applying the retention rules failed"),
       }),
     );
     // Once a day, unless UPDATE_CHECKS=off (see src/updates). Checked hourly so a restart

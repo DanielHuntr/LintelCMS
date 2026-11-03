@@ -189,6 +189,11 @@ export const corePermissionGroups: readonly PermissionGroup[] = [
         name: "See the security log",
         description: "Sign-ins, failures and account changes.",
       },
+      {
+        permission: "privacy:manage",
+        name: "Manage privacy",
+        description: "Find, export and erase a person's data, and set how long data is kept.",
+      },
       { permission: "backups:read", name: "See backups", description: "" },
       {
         permission: "backups:manage",

@@ -8,6 +8,7 @@ import type {
   PluginConsentService,
   SettingsConsentService,
 } from "../cookie-notice/plugin-consent-services.js";
+import type { PluginPersonalData } from "../privacy/personal-data-declaration.js";
 import type { PluginCommand } from "./plugin-commands.js";
 import type { PluginEventHandlers } from "./plugin-events.js";
 import type { PluginJob } from "./plugin-jobs.js";
@@ -134,6 +135,12 @@ export interface PluginDefinition<
   jobs?: readonly PluginJob<z.output<SettingsSchema>>[];
   /** Terminal commands, run as `lintel <plugin id>:<name>`. */
   commands?: readonly PluginCommand<z.output<SettingsSchema>>[];
+  /**
+   * The personal data the plugin keeps (its tables and columns), and the `find`, `export` and
+   * `erase` hooks Settings → Privacy uses to answer a person's request. A plugin with tables
+   * but no hooks is listed there as one that can't be searched. See src/privacy.
+   */
+  personalData?: PluginPersonalData;
 }
 
 /** A plugin with its settings type erased, so different plugins can share one list. */

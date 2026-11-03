@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
+import { personalDataDeclarationSchema } from "../privacy/personal-data-declaration.js";
 import { isReadableRange } from "./version-range.js";
 
 /**
@@ -11,7 +12,8 @@ import { isReadableRange } from "./version-range.js";
  *     "id": "swatches",                 the plugin id its definePlugin uses
  *     "lintel": ">=1.0.0-rc.1",         the Lintel versions it works with
  *     "server": "dist/server.js",       its server half, built by `lintel addons build`
- *     "admin": "dist/admin.js"          its admin half, if it has one
+ *     "admin": "dist/admin.js",         its admin half, if it has one
+ *     "personalData": { "tables": [...] }  what personal data it keeps (see src/privacy)
  *   }
  */
 export const ADDON_MANIFEST_KEY = "lintel-addon";
@@ -27,6 +29,8 @@ export const addonManifestSchema = z.object({
   admin: z.string().optional(),
   /** A stylesheet for the admin half, loaded with it. */
   adminStyles: z.string().optional(),
+  /** The tables and columns it keeps personal data in, for Settings → Privacy. */
+  personalData: personalDataDeclarationSchema.optional(),
 });
 export type AddonManifest = z.output<typeof addonManifestSchema>;
 
