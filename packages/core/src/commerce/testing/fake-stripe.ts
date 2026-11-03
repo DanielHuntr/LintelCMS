@@ -41,6 +41,7 @@ export class FakeStripe {
     id: string;
     type: string;
     created: number;
+    livemode?: boolean;
     data: { object: Record<string, unknown> };
   }> = [];
   /** Events per page of `GET /v1/events`. */
@@ -147,7 +148,7 @@ export class FakeStripe {
     const page = newestFirst.slice(start, start + this.eventPageSize);
     return {
       object: "list",
-      data: page.map((event) => ({ object: "event", livemode: false, ...event })),
+      data: page.map((event) => ({ object: "event", livemode: true, ...event })),
       has_more: start + page.length < newestFirst.length,
     };
   }
@@ -184,11 +185,16 @@ export class FakeStripe {
 
 /** A webhook request exactly as Stripe would send it, signed with the test signing secret. */
 export function signedStripeWebhook(
-  event: { id: string; type: string; data: { object: Record<string, unknown> } },
+  event: {
+    id: string;
+    type: string;
+    livemode?: boolean;
+    data: { object: Record<string, unknown> };
+  },
   signedAt: Date,
   secret: string = FAKE_STRIPE_ENVIRONMENT.STRIPE_WEBHOOK_SECRET,
 ): { payload: string; headers: Record<string, string> } {
-  const payload = JSON.stringify({ object: "event", livemode: false, ...event });
+  const payload = JSON.stringify({ object: "event", livemode: true, ...event });
   const timestamp = Math.floor(signedAt.getTime() / 1000);
   return {
     payload,

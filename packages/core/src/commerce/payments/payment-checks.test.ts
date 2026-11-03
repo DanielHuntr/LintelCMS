@@ -397,6 +397,189 @@ describe("confirming payments without a webhook", () => {
     SLOW_TEST,
   );
 
+  const isTestOrder = async (current: TestShop) =>
+    (await current.admin("GET", "/shop/orders")).json().items[0].isTest as boolean;
+  const salesCount = async (current: TestShop) =>
+    (await current.admin("GET", "/shop/sales/summary?days=30")).json().byCurrency.length as number;
+
+  it(
+    "marks a Stripe test-mode payment as a test, by webhook",
+    async () => {
+      const { current, variantId, rateId } = await start();
+      const { checkoutId, total } = await checkout(current, variantId, rateId);
+      await current.sendWebhook({
+        id: "evt_test_mode",
+        type: "checkout.session.completed",
+        livemode: false,
+        data: { object: paidSession("cs_t", checkoutId, total.amount) },
+      });
+      expect(await isTestOrder(current)).toBe(true);
+      expect(await salesCount(current)).toBe(0);
+      const customers = await current.admin("GET", "/shop/customers");
+      expect(customers.json().items[0].orderCount).toBe(0);
+      const sent = current.server.emailOutbox?.sent ?? [];
+      expect(sent.at(-1)?.subject).toMatch(/^Test order: /);
+      expect(sent.at(-1)?.to).toContain("ada@example.com");
+    },
+    SLOW_TEST,
+  );
+
+  it(
+    "marks a Stripe test-mode payment as a test, on the return and from polled events",
+    async () => {
+      const { current, variantId, rateId } = await start(NO_WEBHOOK_SECRET);
+      const first = await checkout(current, variantId, rateId);
+      const sessionId = current.stripe.lastSessionId;
+      current.stripe.sessions.set(sessionId, {
+        ...paidSession(sessionId, first.checkoutId, first.total.amount),
+        livemode: false,
+      });
+      await status(current, first.checkoutId);
+      expect(await isTestOrder(current)).toBe(true);
+
+      const second = await checkout(current, variantId, rateId);
+      current.stripe.events.push({
+        id: "evt_polled_test",
+        type: "checkout.session.completed",
+        created: Math.floor(current.clock.now.getTime() / 1000),
+        livemode: false,
+        data: { object: paidSession("cs_p", second.checkoutId, second.total.amount) },
+      });
+      await checkPayments(current.server.shop, newPaymentCheckState());
+      const orders = (await current.admin("GET", "/shop/orders")).json();
+      expect(orders.total).toBe(2);
+      expect(orders.items.every((order: { isTest: boolean }) => order.isTest)).toBe(true);
+    },
+    SLOW_TEST,
+  );
+
+  it(
+    "never hides a live Stripe payment, or one that doesn't say",
+    async () => {
+      const { current, variantId, rateId } = await start();
+      const live = await checkout(current, variantId, rateId);
+      await current.sendWebhook({
+        id: "evt_live",
+        type: "checkout.session.completed",
+        livemode: true,
+        data: { object: paidSession("cs_l", live.checkoutId, live.total.amount) },
+      });
+      expect(await isTestOrder(current)).toBe(false);
+
+      const unsaid = await checkout(current, variantId, rateId);
+      const sessionId = current.stripe.lastSessionId;
+      current.stripe.sessions.set(
+        sessionId,
+        paidSession(sessionId, unsaid.checkoutId, unsaid.total.amount),
+      );
+      await status(current, unsaid.checkoutId);
+      const orders = (await current.admin("GET", "/shop/orders")).json();
+      expect(orders.total).toBe(2);
+      expect(orders.items.some((order: { isTest: boolean }) => order.isTest)).toBe(false);
+      expect(await salesCount(current)).toBe(1);
+    },
+    SLOW_TEST,
+  );
+
+  it(
+    "refunds a test-mode order through Stripe, then deletes it for good",
+    async () => {
+      const { current, variantId, rateId, product } = await start();
+      const { checkoutId, total } = await checkout(current, variantId, rateId);
+      const paid = paidSession("cs_d", checkoutId, total.amount);
+      await current.sendWebhook({
+        id: "evt_delete_1",
+        type: "checkout.session.completed",
+        livemode: false,
+        data: { object: paid },
+      });
+      const [order] = (await current.admin("GET", "/shop/orders")).json().items;
+      const refund = await current.admin("POST", `/shop/orders/${order.id}/refunds`, {
+        amount: 100,
+      });
+      expect(refund.statusCode).toBe(201);
+      expect(current.stripe.requestsTo("/v1/refunds")).toHaveLength(1);
+
+      const deleted = await current.admin("DELETE", "/shop/test-orders");
+      expect(deleted.json()).toEqual({ deleted: 1 });
+      const stock = await current.admin("GET", `/shop/products/${product.id}`);
+      expect(stock.json().variants[0].stock[0].onHand).toBe(5);
+
+      // Stripe's other message about the same payment must not bring the order back.
+      const late = await current.sendWebhook({
+        id: "evt_delete_2",
+        type: "payment_intent.succeeded",
+        livemode: false,
+        data: {
+          object: {
+            id: "pi_paid",
+            status: "succeeded",
+            amount_received: total.amount,
+            currency: "gbp",
+            metadata: { lintel_checkout_id: checkoutId },
+          },
+        },
+      });
+      expect(late.statusCode).toBe(200);
+      expect(await orderCount(current)).toBe(0);
+    },
+    SLOW_TEST,
+  );
+
+  it(
+    "marks a Mollie test payment as a test, and a live one as a sale",
+    async () => {
+      const { current, market, variantId, rateId } = await start({
+        MOLLIE_API_KEY: FAKE_MOLLIE_API_KEY,
+      });
+      await current.admin("PATCH", `/shop/markets/${market.id}`, { paymentProvider: "mollie" });
+      current.mollie.paymentMode = "test";
+      await checkout(current, variantId, rateId);
+      const [testPayment] = [...current.mollie.payments.values()];
+      if (!testPayment) throw new Error("The checkout should have made a Mollie payment");
+      testPayment.status = "paid";
+      await current.sendMollieWebhook(testPayment.id);
+      expect(await isTestOrder(current)).toBe(true);
+      expect(await salesCount(current)).toBe(0);
+
+      current.mollie.paymentMode = "live";
+      await checkout(current, variantId, rateId);
+      const livePayment = [...current.mollie.payments.values()].at(-1);
+      if (!livePayment) throw new Error("The checkout should have made a Mollie payment");
+      livePayment.status = "paid";
+      await current.sendMollieWebhook(livePayment.id);
+      expect(await isTestOrder(current)).toBe(false);
+      expect(await salesCount(current)).toBe(1);
+
+      expect((await current.admin("DELETE", "/shop/test-orders")).json()).toEqual({ deleted: 1 });
+      expect(await orderCount(current)).toBe(1);
+    },
+    SLOW_TEST,
+  );
+
+  it.each([
+    ["sandbox", true],
+    ["live", false],
+  ] as const)(
+    "reads a PayPal %s payment's test marking from the account",
+    async (environment, isTest) => {
+      const { current, market, variantId, rateId } = await start({
+        PAYPAL_CLIENT_ID: FAKE_PAYPAL.clientId,
+        PAYPAL_CLIENT_SECRET: FAKE_PAYPAL.clientSecret,
+        PAYPAL_ENVIRONMENT: environment,
+      });
+      await current.admin("PATCH", `/shop/markets/${market.id}`, { paymentProvider: "paypal" });
+      await checkout(current, variantId, rateId);
+      const [order] = [...current.paypal.orders.values()];
+      if (!order) throw new Error("The checkout should have made a PayPal order");
+      order.status = "APPROVED";
+      await checkPayments(current.server.shop, newPaymentCheckState());
+      expect(await isTestOrder(current)).toBe(isTest);
+      expect(await salesCount(current)).toBe(isTest ? 0 : 1);
+    },
+    SLOW_TEST,
+  );
+
   it("knows which addresses a provider can't reach", () => {
     for (const address of [
       "http://localhost:4100",

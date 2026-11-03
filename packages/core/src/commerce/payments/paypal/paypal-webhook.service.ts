@@ -104,6 +104,7 @@ export async function handlePayPalWebhook(
           capture.custom_id,
           {
             provider: "paypal",
+            isTest: credentials.environment === "sandbox",
             paymentIntentId: null,
             providerPaymentId: capture.id,
             amount: fromDecimalAmount(capture.amount.value, currency) ?? -1,
@@ -149,7 +150,7 @@ export async function confirmPayPalCheckout(
 ): Promise<void> {
   const orderId = checkout.providerPaymentId;
   if (!orderId) return;
-  const { client } = await connectPayPal(shop);
+  const { client, credentials } = await connectPayPal(shop);
   let order = await retrievePayPalOrder(client, orderId);
   if (order.status === "APPROVED" && checkout.status === "open") {
     await capturePayPalOrder(client, orderId);
@@ -167,6 +168,7 @@ export async function confirmPayPalCheckout(
         checkout.id,
         {
           provider: "paypal",
+          isTest: credentials.environment === "sandbox",
           paymentIntentId: null,
           providerPaymentId: capture.id,
           amount: capture.amount ? (fromDecimalAmount(capture.amount.value, currency) ?? -1) : -1,

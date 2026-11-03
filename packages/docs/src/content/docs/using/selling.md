@@ -114,6 +114,9 @@ Test orders take stock and send emails, marked as a test, to the address you typ
 count as sales and automations don't run for them. When you've finished, choose **Delete test
 orders** on the Orders page. The stock goes back.
 
+Orders paid with your payment provider's test keys or sandbox are test orders too. Their refunds
+still go through the provider.
+
 ## Taking payments
 
 Lintel can take payments through [Stripe](https://stripe.com), [PayPal](https://paypal.com)

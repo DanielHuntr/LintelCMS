@@ -11,6 +11,8 @@ const amountSchema = z.object({ currency: z.string(), value: z.string() });
 export const molliePaymentSchema = z.object({
   id: z.string(),
   status: z.string(),
+  /** "test" for a payment made with a test key. */
+  mode: z.string().nullish(),
   amount: amountSchema,
   metadata: z.record(z.string(), z.unknown()).nullish(),
   _links: z.object({ checkout: z.object({ href: z.string() }).nullish() }).nullish(),

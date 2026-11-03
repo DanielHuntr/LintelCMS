@@ -119,11 +119,20 @@ export async function confirmStripeCheckout(
   await runAfterCommit(shop, afterCommit, `the Stripe payment for checkout ${checkout.id}`);
 }
 
+/** Only Stripe saying so makes a payment a test: with nothing said, it's a real sale. */
+function isStripeTestMode(
+  eventLivemode: boolean | undefined,
+  objectLivemode: boolean | null | undefined,
+): boolean {
+  return (eventLivemode ?? objectLivemode) === false;
+}
+
 async function placeForSession(
   shop: ShopContext,
   transaction: Transaction,
   session: z.infer<typeof stripeCheckoutSessionObjectSchema>,
   afterCommit: AfterCommit[],
+  eventLivemode?: boolean,
 ): Promise<void> {
   const checkoutId = session.metadata?.lintel_checkout_id ?? session.client_reference_id;
   if (session.payment_status !== "paid" || !checkoutId) return;
@@ -131,6 +140,7 @@ async function placeForSession(
     transaction,
     checkoutId,
     {
+      isTest: isStripeTestMode(eventLivemode, session.livemode),
       paymentIntentId: session.payment_intent ?? null,
       amount:
         session.amount_total == null
@@ -148,6 +158,7 @@ async function placeForIntent(
   transaction: Transaction,
   intent: z.infer<typeof stripePaymentIntentObjectSchema>,
   afterCommit: AfterCommit[],
+  eventLivemode?: boolean,
 ): Promise<void> {
   const checkoutId = intent.metadata?.lintel_checkout_id;
   if (!checkoutId) return;
@@ -155,6 +166,7 @@ async function placeForIntent(
     transaction,
     checkoutId,
     {
+      isTest: isStripeTestMode(eventLivemode, intent.livemode),
       paymentIntentId: intent.id,
       amount:
         intent.amount_received == null
@@ -178,12 +190,12 @@ async function handleEvent(
     case "checkout.session.completed":
     case "checkout.session.async_payment_succeeded": {
       const session = stripeCheckoutSessionObjectSchema.parse(object);
-      await placeForSession(shop, transaction, session, afterCommit);
+      await placeForSession(shop, transaction, session, afterCommit, event.livemode);
       return;
     }
     case "payment_intent.succeeded": {
       const intent = stripePaymentIntentObjectSchema.parse(object);
-      await placeForIntent(shop, transaction, intent, afterCommit);
+      await placeForIntent(shop, transaction, intent, afterCommit, event.livemode);
       return;
     }
     case "checkout.session.async_payment_failed":

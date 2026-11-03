@@ -25,6 +25,7 @@ export interface TestShop {
   sendWebhook(event: {
     id: string;
     type: string;
+    livemode?: boolean;
     data: { object: Record<string, unknown> };
   }): Promise<LightMyRequestResponse>;
   sendPayPalWebhook(

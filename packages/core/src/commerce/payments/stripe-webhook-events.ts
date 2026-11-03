@@ -37,6 +37,7 @@ const metadataSchema = z.record(z.string(), z.string()).nullish();
 
 export const stripeCheckoutSessionObjectSchema = z.object({
   id: z.string(),
+  livemode: z.boolean().nullish(),
   payment_status: z.string().nullish(),
   amount_total: z.number().int().nullish(),
   currency: z.string().nullish(),
@@ -47,6 +48,7 @@ export const stripeCheckoutSessionObjectSchema = z.object({
 
 export const stripePaymentIntentObjectSchema = z.object({
   id: z.string(),
+  livemode: z.boolean().nullish(),
   status: z.string().nullish(),
   amount_received: z.number().int().nullish(),
   currency: z.string().nullish(),

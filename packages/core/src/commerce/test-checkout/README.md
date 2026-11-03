@@ -22,12 +22,18 @@ In a test session:
   usual follow-up, so stock, emails, discounts and tax really happen. Failing releases the
   stock, as a failed payment does.
 
+Orders paid with a provider's test keys get `isTest` too, when the provider says the payment
+wasn't live: Stripe's `livemode: false` (nothing said means live, so a real sale is never
+hidden), a Mollie payment in `mode: "test"`, or PayPal's sandbox. Their refunds still go to the
+provider, and their tax is still recorded in Stripe's test data.
+
 Test orders have `isTest`. They show a Test badge, their emails say they're a test, and
 they're left out of sales figures, the dashboard and customers' totals. They publish no
 events, so Visitors' goals and automations never see them, and their tax isn't reported to
-Stripe. `DELETE /shop/test-orders` clears them all away: stock goes back unless a refund or
+Stripe from the test checkout. `DELETE /shop/test-orders` clears them all away: stock goes back unless a refund or
 cancelling already put it back, discount uses are given back, and customers and order
-numbers that only a test used go too.
+numbers that only a test used go too. Each order's checkout goes with it, so a late message
+from a provider finds nothing to pay.
 
 | File                           | What it does                                       |
 | ------------------------------ | -------------------------------------------------- |

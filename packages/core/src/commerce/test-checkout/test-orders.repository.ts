@@ -1,4 +1,4 @@
-import { and, count, eq, inArray, max, notInArray } from "drizzle-orm";
+import { and, count, eq, inArray, max, notInArray, or } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../database/client.js";
 import { DEFAULT_TENANT_ID } from "../../database/columns.js";
 import { checkoutsTable } from "../checkouts/checkouts.table.js";
@@ -45,8 +45,23 @@ export async function listOpenTestCheckoutIds(database: DatabaseOrTransaction): 
   return rows.map((row) => row.id);
 }
 
-export async function deleteTestCheckoutRows(database: DatabaseOrTransaction): Promise<void> {
-  await database.delete(checkoutsTable).where(eq(checkoutsTable.paymentProvider, "test"));
+/**
+ * Test checkouts, and the checkouts of the orders given. An order paid with a provider's test
+ * keys has an ordinary checkout, which must go with it: left behind, it would look unpaid, and
+ * a late message from the provider would place the order again.
+ */
+export async function deleteTestCheckoutRows(
+  database: DatabaseOrTransaction,
+  orderCheckoutIds: readonly string[],
+): Promise<void> {
+  await database
+    .delete(checkoutsTable)
+    .where(
+      or(
+        eq(checkoutsTable.paymentProvider, "test"),
+        orderCheckoutIds.length > 0 ? inArray(checkoutsTable.id, [...orderCheckoutIds]) : undefined,
+      ),
+    );
 }
 
 /** Gives back the discount uses test orders took, so a limited code isn't used up. */

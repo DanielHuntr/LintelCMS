@@ -50,6 +50,8 @@ that can only fail.
   storefront already polls it.
 - Test orders use order numbers. Deleting them hands the numbers back unless a real order has
   come after, in which case there's a gap.
-- Orders paid with a provider's test keys are not marked as test: they count as sales.
+- Orders paid with a provider's test keys are marked as test too, on the provider's word:
+  Stripe's `livemode: false`, a Mollie payment in `mode: "test"`, or PayPal's sandbox. If
+  Stripe says nothing the payment counts as live, so a real sale can't be hidden.
 - Refunds made in PayPal's dashboard aren't seen without its webhook, because PayPal only
   lists events for a registered webhook.

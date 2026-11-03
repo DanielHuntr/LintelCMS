@@ -33,6 +33,11 @@ export interface ConfirmedPayment {
   paymentIntentId: string | null;
   /** PayPal's capture id or Mollie's payment id, which refunds go against. */
   providerPaymentId?: string | null;
+  /**
+   * The provider says this wasn't live: Stripe's test mode, a Mollie test payment, PayPal's
+   * sandbox. Only ever set on the provider's clear word, so a real sale is never hidden.
+   */
+  isTest?: boolean;
   /** What the provider says was paid, in minor units, and in which currency (any case). */
   amount: number;
   currency: string;
@@ -99,7 +104,7 @@ export async function placeOrderForPayment(
     paymentProvider: payment.provider ?? "stripe",
     providerPaymentId: payment.providerPaymentId ?? null,
     stripePaymentIntentId: payment.paymentIntentId ?? checkout.stripePaymentIntentId,
-    isTest: checkout.paymentProvider === "test",
+    isTest: checkout.paymentProvider === "test" || payment.isTest === true,
     paidAt,
   });
   await insertOrderLines(

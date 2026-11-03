@@ -38,8 +38,13 @@ export function followUpPlacement(
   if (result.outcome !== "placed") return;
   const { order, checkout } = result;
   afterCommit.push(() => announceOrderPaid(shop, order.id));
-  // A test order took no money, so there is no tax to report to Stripe.
-  if (!order.isTest && checkout.taxCalculation === "stripe" && checkout.taxReference) {
+  // The test checkout never reaches Stripe. A payment in Stripe's test mode records its tax
+  // there too, in Stripe's test data.
+  if (
+    order.paymentProvider !== "test" &&
+    checkout.taxCalculation === "stripe" &&
+    checkout.taxReference
+  ) {
     const calculationId = checkout.taxReference;
     afterCommit.push(async () => {
       try {

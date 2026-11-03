@@ -42,7 +42,10 @@ export async function deleteTestOrders(shop: ShopContext): Promise<{ deleted: nu
     const orderIds = orders.map((order) => order.id);
     await releaseOrderRedemptions(transaction, orderIds);
     await deleteTestOrderRows(transaction, orderIds);
-    await deleteTestCheckoutRows(transaction);
+    await deleteTestCheckoutRows(
+      transaction,
+      orders.map((order) => order.checkoutId),
+    );
     await deleteCustomersLeftEmpty(
       transaction,
       orders.flatMap((order) => order.customerId ?? []),

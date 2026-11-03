@@ -62,6 +62,7 @@ export async function handleMollieWebhook(
         checkoutId,
         {
           provider: "mollie",
+          isTest: payment.mode === "test",
           paymentIntentId: null,
           providerPaymentId: payment.id,
           amount: fromDecimalAmount(payment.amount.value, currency) ?? -1,
