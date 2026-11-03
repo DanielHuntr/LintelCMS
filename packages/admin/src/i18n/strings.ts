@@ -22,6 +22,7 @@ import { dataToolsStrings } from "./dataToolsStrings.js";
 import { updatesStrings } from "./updatesStrings.js";
 import { treeSelectionStrings } from "./treeSelectionStrings.js";
 import { pageMenuStrings } from "./pageMenuStrings.js";
+import { liquidTemplateStrings } from "../liquid-templates/liquidTemplateStrings.js";
 
 /**
  * Every word the admin shows lives here, in English: the source every translation in
@@ -34,6 +35,7 @@ const english = {
   ...contentModelStrings,
   ...treeSelectionStrings,
   ...pageMenuStrings,
+  ...liquidTemplateStrings,
   ...dashboardStrings,
   ...pluginStrings,
   ...peopleStrings,

@@ -50,6 +50,10 @@ import type { WorkspaceTab } from "../content-workspace/workspaceTabs.js";
 import { Dialog } from "../design/Dialog.js";
 import { SegmentedControl } from "../design/SegmentedControl.js";
 import { PageMenuSection } from "../menus/PageMenuSection.js";
+import {
+  TEMPLATE_CHOICE_KEY,
+  TemplateChoiceSection,
+} from "../liquid-templates/TemplateChoiceSection.js";
 import { EntryBreadcrumbs } from "./EntryBreadcrumbs.js";
 
 interface EntryEditorProps {
@@ -478,6 +482,15 @@ export function EntryEditor({
                 await refresh(entry ? [entry.id] : []);
               }}
             >
+              {Boolean(collection.routePattern) && (
+                <TemplateChoiceSection
+                  collection={collection}
+                  value={state.current.data[TEMPLATE_CHOICE_KEY]}
+                  onChange={(value) =>
+                    dispatch({ type: "fieldChanged", handle: TEMPLATE_CHOICE_KEY, value })
+                  }
+                />
+              )}
               {entry && collection.structure === "tree" && Boolean(collection.routePattern) && (
                 <PageMenuSection entryId={entry.id} pageTitle={title || t("editor.untitled")} />
               )}
