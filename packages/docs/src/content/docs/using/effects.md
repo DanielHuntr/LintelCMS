@@ -41,7 +41,7 @@ in the **Motion** panel, with the timeline if you're a Designer.
 | Cursor       | A "View" label or a trail of sparkles over one element               | “View” cursor             |
 | Marquee      | Endless rows that speed up when people scroll                        | Scroll-powered row        |
 | Loaders      | Shimmers, spinners and notifications                                 | Loading shimmer           |
-| Page changes | Morphing an element from one page to the next                        | Morph between pages       |
+| Page changes | Carrying a picture from one page to the next                         | Carry across pages        |
 
 There are also ready-made animated elements in the Insert panel: **Magnetic button**,
 **Card stack**, **3D gallery**, **Scrolling row**, **Counter row**, **Switch**, **Round
@@ -49,13 +49,24 @@ menu** and **Notification**. They start with their effects, which you can change
 
 ## Motion across the whole site
 
-With nothing selected, the Animate tab shows **Motion across the site**:
+**Settings → Your website → Moving between pages** has two choices, with a preview:
 
-- **Page transition**: fade, slide, wipe or zoom between pages of your site.
-- **Cursor**: a dot, a ring or an inverting circle instead of the arrow, with an optional
-  trail. Only for a mouse or trackpad; fields keep the normal cursor for typing.
-- **Intro**: a curtain, a counter or your name, shown once per visit for at most three
-  seconds. Visitors can skip it, and it never shows to anyone without JavaScript.
+- **When people open another page**: change straight away (the default), or Fade, Rise,
+  Sweep up or Settle, at a Quick, Steady or Slow speed. Browsers that can't play it simply
+  change page.
+- **Intro on the first visit**: a counting number, your site's name, your logo or a simple
+  line, shown once per visit before the home page for at most three seconds. Visitors can
+  skip it with its button, a click or any key, and the page is all there underneath for
+  search engines and screen readers.
+
+People who ask their device for less motion see neither.
+
+To carry a picture across, such as a project photo that grows into the project page's big
+photo, give both the **Carry across pages** effect with the same name.
+
+With nothing selected, the Animate tab shows the site's **Cursor**: a dot, a ring or an
+inverting circle instead of the arrow, with an optional trail. Only for a mouse or
+trackpad; fields keep the normal cursor for typing.
 
 ## Keeping pages quick
 

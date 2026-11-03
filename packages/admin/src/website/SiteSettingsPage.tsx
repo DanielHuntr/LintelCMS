@@ -11,16 +11,24 @@ import { SegmentedControl } from "../design/SegmentedControl.js";
 import { Skeleton } from "../design/Skeleton.js";
 import { TextField } from "../design/TextField.js";
 import { t } from "../i18n/strings.js";
+import { useAsset } from "../media/media.queries.js";
 import { MediaPicker } from "../media/MediaPicker.js";
-import { useCan } from "../session/SessionContext.js";
+import { useCan, useSession } from "../session/SessionContext.js";
 import { ColourChoice } from "./ColourChoice.js";
 import { FontPairingChoice } from "./FontPairingChoice.js";
 import type { ColourScheme, CornerStyle, SiteTheme, SpacingScale, Website } from "./website.api.js";
-import { useUpdateWebsite, useWebsite } from "./website.queries.js";
+import {
+  useSiteEffects,
+  useUpdateSiteEffects,
+  useUpdateWebsite,
+  useWebsite,
+} from "./website.queries.js";
+import { PageFlowSettings, type PageFlow } from "./PageFlowSettings.js";
 
-/** /settings/site: the built-in website's template, theme, logo and address. */
+/** /settings/site: the built-in website's template, theme, logo, page transitions and address. */
 export function SiteSettingsPage() {
   const website = useWebsite();
+  const effects = useSiteEffects();
 
   return (
     <>
@@ -34,7 +42,9 @@ export function SiteSettingsPage() {
           <Skeleton className="h-96 max-w-2xl rounded-card" />
         </LoadingRegion>
       )}
-      {website.data && <SiteSettingsForm initial={website.data} />}
+      {website.data && !effects.isPending && (
+        <SiteSettingsForm initial={website.data} initialFlow={effects.data} />
+      )}
     </>
   );
 }
@@ -48,20 +58,39 @@ interface FormValues {
 
 const templateIcons: Record<string, LucideIcon> = { clean: LayoutTemplate, journal: BookOpen };
 
-function SiteSettingsForm({ initial }: { initial: Website }) {
+function SiteSettingsForm({
+  initial,
+  initialFlow,
+}: {
+  initial: Website;
+  /** Undefined when the site's motion settings couldn't be read: the section is left out. */
+  initialFlow: PageFlow | undefined;
+}) {
   const [values, setValues] = useState<FormValues>({
     template: initial.template,
     theme: initial.theme,
     logoAssetId: initial.logoAssetId,
     siteAddress: initial.siteAddress,
   });
+  const [flow, setFlow] = useState<PageFlow | undefined>(
+    initialFlow && { pageTransition: initialFlow.pageTransition, intro: initialFlow.intro },
+  );
   const update = useUpdateWebsite();
+  const updateFlow = useUpdateSiteEffects();
   const canChange = useCan("settings:update");
+  const siteName = useSession().siteName ?? "";
+  const logo = useAsset(values.logoAssetId);
   const saved = update.data ?? initial;
 
   const change = (changes: Partial<FormValues>) => {
     update.reset();
+    updateFlow.reset();
     setValues((current) => ({ ...current, ...changes }));
+  };
+  const changeFlow = (next: PageFlow) => {
+    update.reset();
+    updateFlow.reset();
+    setFlow(next);
   };
   const changeTheme = (changes: Partial<SiteTheme>) =>
     change({ theme: { ...values.theme, ...changes } });
@@ -79,6 +108,7 @@ function SiteSettingsForm({ initial }: { initial: Website }) {
 
   function submit(event: FormEvent) {
     event.preventDefault();
+    if (flow) updateFlow.mutate(flow);
     update.mutate({
       template: values.template,
       ...values.theme,
@@ -183,6 +213,16 @@ function SiteSettingsForm({ initial }: { initial: Website }) {
         <p className="-mt-4 text-footnote text-label-secondary">{t("website.logoHint")}</p>
       </section>
 
+      {flow && (
+        <PageFlowSettings
+          value={flow}
+          onChange={changeFlow}
+          disabled={!canChange}
+          siteName={siteName}
+          logoUrl={values.logoAssetId ? (logo.data?.url ?? null) : null}
+        />
+      )}
+
       <section className="flex flex-col gap-5 rounded-card bg-surface p-6">
         <TextField
           label={t("website.siteAddress")}
@@ -199,16 +239,18 @@ function SiteSettingsForm({ initial }: { initial: Website }) {
       {canChange && (
         <div className="flex items-center justify-end gap-3">
           <p role="status" className="text-footnote text-label-secondary">
-            {update.isError ? (
-              <span className="text-danger">{describeError(update.error)}</span>
-            ) : update.isSuccess ? (
+            {update.isError || updateFlow.isError ? (
+              <span className="text-danger">
+                {describeError(update.isError ? update.error : updateFlow.error)}
+              </span>
+            ) : update.isSuccess && (!flow || updateFlow.isSuccess) ? (
               t("website.saved")
             ) : (
               ""
             )}
           </p>
-          <Button type="submit" disabled={update.isPending}>
-            {update.isPending ? t("website.saving") : t("website.save")}
+          <Button type="submit" disabled={update.isPending || updateFlow.isPending}>
+            {update.isPending || updateFlow.isPending ? t("website.saving") : t("website.save")}
           </Button>
         </div>
       )}

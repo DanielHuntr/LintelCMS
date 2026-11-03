@@ -152,10 +152,13 @@ describe("the Motion panel", () => {
     renderBuilder({ value: defaultSiteEffectSettings, onChange });
     await user.click(screen.getByRole("tab", { name: "Animate" }));
     expect(screen.getByRole("heading", { name: "Motion across the site" })).toBeInTheDocument();
-    await user.selectOptions(screen.getByRole("combobox", { name: "Page transition" }), "slide");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Cursor" }), "ring");
     expect(onChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({ pageTransition: { style: "slide", duration: 450 } }),
+      expect.objectContaining({ cursor: expect.objectContaining({ style: "ring" }) }),
     );
+    // Page transitions and the intro live with the site's look, in Settings → Your website.
+    expect(screen.queryByRole("combobox", { name: "Page transition" })).not.toBeInTheDocument();
+    expect(screen.getByText(/Settings → Your website/)).toBeInTheDocument();
   });
 });
 

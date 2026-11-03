@@ -724,3 +724,29 @@ What's saved is unchanged, so existing pages keep their states.
 **Fix:** element definitions can now carry `keywords`, the other names people know them by, and Insert's search reads them, as it already did for sections. 55 elements have them. For example: Slider has carousel and slideshow; Pop-up has popup, modal and dialog; Gallery has lightbox; Ticker and Logo strip have marquee; Accordion has faq; Embed has iframe; Menu drawer has hamburger.
 
 **Tests:** `builder/src/panels/insert-library.test.ts` searches each of those words and expects the right element.
+
+## Page transitions and first-visit intro (3 November 2026)
+
+**Asked for by Daniel:** page-to-page flow like award-winning sites, easy to use and not cluttered: a page transition chosen once for the site, and an optional intro before the home page.
+
+**Found:** a first version already existed, but it sat in the page builder's Animate tab, the intro showed on whichever page someone landed on, it still showed to people who ask for less motion, and the gallery also offered four whole-page presets ("Page fades in" and so on) that overlapped with it. A list where every picture had the "Morph between pages" name made the browser skip the transition entirely, because names must be unique.
+
+**Built** (decision 0036):
+
+- **Settings → Your website → Moving between pages**: two selects and a live preview. "When people open another page" is change straight away, Fade, Rise, Sweep up or Settle, and once one is chosen, a Quick, Steady or Slow speed. "Intro on the first visit" is no intro, a counting number, the site's name, the logo or a simple line, with its words and colours behind "Intro words and colours". Saved with the rest of the form.
+- The preview plays the same keyframes the website uses, on a stand-in page, whenever a choice changes (not on opening, and not for people who ask for less motion). "Play again" replays it.
+- **On the website**, transitions are cross-document view transitions (CSS only, no router). Fade keeps the browser's cross-fade; the others lay the new page over the old one. The intro is drawn on the home page only, at most once per visit, for 1.3 to 3 seconds. Any key, a click or "Skip intro" ends it. Its middle is hidden from screen readers and the page is complete underneath.
+- **Less motion**: no transition and no intro, in CSS and in the runtime fallback.
+- **Carry across pages** (renamed from "Morph between pages"): a small head script, sent only with transitions on, keeps each name unique, so in a list only the picture beside the followed link is carried.
+- The four whole-page presets left the animation gallery. Saved designs that use them still play. The gallery's "Transitions" group is now "Section reveals", with a new "Split open". The builder's Animate tab keeps the cursor and points to Settings for the rest.
+
+**Tests:**
+
+- `motion/src/effects-catalogue/site-effects.test.ts`: off by default; old saved settings still read; the view transition CSS (reduced-motion guard, blending, timing for carried elements, keyframes as CSS); speeds; intro words, logo and fallback, screen-reader markup, scripts-and-motion guard.
+- `motion/src/browser-tests/effects.browser.test.ts`: in Chromium, the intro never shows under reduced motion; any key ends it while counting; a real navigation has a view transition from CSS alone; none under reduced motion; only the picture beside the followed link keeps its carry name.
+- `motion/src/presets/presets.test.ts`: the whole-page presets are out of the gallery but still found.
+- `core/src/site-effects/site-effects.test.ts`: home page detection, the intro only on the home page with the site's name or logo, nothing when all is off, and through the real site server.
+- `admin/src/website/PageFlowSettings.test.tsx`: calm when off, saving a look, speed and intro, nearest speed for an old length, the no-logo note, and leaving the section out when the settings can't be read.
+- `builder/src/animate-panel/effects-tab.test.tsx`: the Animate tab offers the cursor and points to Settings.
+
+**Screenshots** (in `screenshots/page-transitions/`): settings at desktop (`settings-off-desktop-light`, `settings-on-desktop-light-preview-transition`, `settings-on-desktop-light-more`; the section was also checked at 390px and in dark mode). On the website at desktop and 390px: `site-intro-*` (the counter, then lifting away), `site-transition-*` (frames mid-transition, slowed down; light and dark), `site-home-desktop-light`, `site-arrived-desktop-light` and `site-home-reduced-motion-no-intro`. Also `builder-animate-tab-cursor-only`.

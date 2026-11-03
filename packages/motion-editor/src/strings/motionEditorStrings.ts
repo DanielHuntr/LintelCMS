@@ -31,7 +31,7 @@ export const motionEditorStrings = {
   "motionEditor.category.scroll": "Scroll",
   "motionEditor.category.hover": "Hover",
   "motionEditor.category.attention": "Attention",
-  "motionEditor.category.transition": "Transitions",
+  "motionEditor.category.transition": "Section reveals",
 
   "motionEditor.sample.heading": "Make it move",
   "motionEditor.sample.button": "Get started",

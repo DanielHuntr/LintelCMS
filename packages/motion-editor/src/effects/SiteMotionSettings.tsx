@@ -1,11 +1,12 @@
 import type { SiteEffectSettings } from "@lintel/motion";
-import { Select, TextInput } from "../controls/Field.js";
+import { Select } from "../controls/Field.js";
 import { Slider } from "../controls/Slider.js";
 import { TranslateProvider, useTranslate, type Translate } from "../strings/translate.js";
 
 /**
- * Motion across the whole site: the page transition, the cursor and the intro. Plain
- * choices with sensible defaults; each says what visitors who prefer less motion get.
+ * Motion across the whole site that belongs with the design: the cursor. Page transitions
+ * and the first-visit intro are set with the rest of the site's look, in the admin's
+ * Settings → Your website, and this says so.
  */
 interface SiteMotionSettingsProps {
   value: SiteEffectSettings;
@@ -45,7 +46,7 @@ function ColourWell({
 
 function Settings({ value, onChange }: SiteMotionSettingsProps) {
   const t = useTranslate();
-  const { pageTransition, cursor, intro } = value;
+  const { cursor } = value;
   const set = <Key extends keyof SiteEffectSettings>(
     key: Key,
     change: Partial<SiteEffectSettings[Key]>,
@@ -57,33 +58,6 @@ function Settings({ value, onChange }: SiteMotionSettingsProps) {
           {t("motionEditor.site.title")}
         </h3>
         <p className="text-footnote text-label-secondary">{t("motionEditor.site.description")}</p>
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <Select
-          label={t("motionEditor.site.transition")}
-          value={pageTransition.style}
-          onChange={(event) =>
-            set("pageTransition", {
-              style: event.target.value as SiteEffectSettings["pageTransition"]["style"],
-            })
-          }
-          options={(["none", "fade", "slide", "wipe", "zoom"] as const).map((style) => ({
-            value: style,
-            label: t(`motionEditor.site.transition.${style}`),
-          }))}
-        />
-        {pageTransition.style !== "none" && (
-          <Slider
-            label={t("motionEditor.site.transition.duration")}
-            value={pageTransition.duration}
-            min={150}
-            max={1200}
-            step={50}
-            displayValue={`${pageTransition.duration} ms`}
-            onChange={(duration) => set("pageTransition", { duration })}
-          />
-        )}
       </div>
 
       <div className="flex flex-col gap-3">
@@ -135,42 +109,7 @@ function Settings({ value, onChange }: SiteMotionSettingsProps) {
         )}
       </div>
 
-      <div className="flex flex-col gap-3">
-        <Select
-          label={t("motionEditor.site.intro")}
-          value={intro.style}
-          onChange={(event) =>
-            set("intro", { style: event.target.value as SiteEffectSettings["intro"]["style"] })
-          }
-          options={(["none", "curtain", "counter", "name"] as const).map((style) => ({
-            value: style,
-            label: t(`motionEditor.site.intro.${style}`),
-          }))}
-        />
-        {intro.style !== "none" && (
-          <>
-            {intro.style === "name" && (
-              <TextInput
-                label={t("motionEditor.site.intro.text")}
-                value={intro.text}
-                maxLength={60}
-                onChange={(event) => set("intro", { text: event.target.value })}
-              />
-            )}
-            <ColourWell
-              label={t("motionEditor.site.intro.background")}
-              value={intro.background}
-              onChange={(background) => set("intro", { background })}
-            />
-            <ColourWell
-              label={t("motionEditor.site.intro.colour")}
-              value={intro.colour}
-              onChange={(colour) => set("intro", { colour })}
-            />
-            <p className="text-caption text-label-tertiary">{t("motionEditor.site.intro.note")}</p>
-          </>
-        )}
-      </div>
+      <p className="text-caption text-label-tertiary">{t("motionEditor.site.elsewhere")}</p>
     </section>
   );
 }

@@ -33,7 +33,8 @@ describe("motion choices", () => {
     const appears = all
       .filter((choice) => choice.moment === "appears")
       .map((choice) => choice.group);
-    expect([...new Set(appears)]).toEqual(["blocks", "pageOpens", "words", "drawings"]);
+    // "As the page opens" had only the whole-page presets, which are now a site setting.
+    expect([...new Set(appears)]).toEqual(["blocks", "words", "drawings"]);
   });
 
   it("offers only the effects that suit the element", () => {

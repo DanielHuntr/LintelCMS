@@ -3,20 +3,20 @@ import { defineEffect } from "../effect-definition.js";
 import { text } from "../parameters.js";
 
 /**
- * Effects for moving between pages. The page transition itself (fade, slide, wipe, zoom)
- * is chosen once for the whole site in the builder's site settings.
+ * Effects for single elements as people move between pages. How the whole page changes
+ * (fade, rise, sweep, settle) is chosen once for the site, in Settings → Your website.
  */
 
 export const transitionEffects = [
   defineEffect({
     id: "shared-element",
-    name: "Morph between pages",
+    name: "Carry across pages",
     description:
-      "Give the same name to an element on two pages (a product photo and its large version) and it glides from one to the other when people navigate.",
+      "Give a picture the same name on two pages (a project photo and its large version) and it glides from one to the other. Needs a page transition switched on.",
     category: "transitions",
     kind: "style",
     suits: ["any"],
-    params: { name: text("Shared name", "hero-picture", 40) },
+    params: { name: text("Name to match", "hero-picture", 40) },
     staticCss: (selector, { name }) => {
       const safe =
         name
@@ -27,7 +27,7 @@ export const transitionEffects = [
     },
     reducedMotion: "Pages change without the glide.",
     preview: "image",
-    keywords: ["view transition", "shared element", "hero"],
+    keywords: ["view transition", "shared element", "hero", "morph"],
   }),
   defineEffect({
     id: "exit-fade",

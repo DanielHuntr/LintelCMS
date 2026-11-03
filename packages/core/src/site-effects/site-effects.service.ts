@@ -1,4 +1,5 @@
 import {
+  carriedElementsScript,
   defaultSiteEffectSettings,
   hasSiteEffects,
   introCss,
@@ -8,13 +9,13 @@ import {
   siteEffectSettingsSchema,
   type SiteEffectSettings,
 } from "@lintel/motion/effects";
-import type { SiteEffectsHead } from "@lintel/site-components";
+import type { SiteChrome, SiteEffectsHead } from "@lintel/site-components";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { findStoredSiteEffects, saveStoredSiteEffects } from "./site-effects.repository.js";
 
 /**
- * Motion across the whole website: the page transition, the cursor and the intro, chosen
- * in the page builder's site settings. Everything is off until someone switches it on, so
+ * Motion across the whole website: the page transition and the first-visit intro (chosen
+ * in Settings → Your website) and the cursor (in the page builder's Animate tab). Everything is off until someone switches it on, so
  * a site that never touches this ships no effect code at all.
  */
 
@@ -37,22 +38,50 @@ export async function updateSiteEffects(
   return next;
 }
 
-/** What every page's head and body get for the site-wide effects, or nothing when all are off. */
+/** The page a site-wide effect is drawn on: where it is and the site's name and logo. */
+export interface PageForEffects {
+  path: string;
+  chrome: Pick<SiteChrome, "homeUrl" | "siteName" | "logo">;
+}
+
+const withoutTrailingSlash = (path: string) => (path.length > 1 ? path.replace(/\/+$/, "") : path);
+
+/** The home page, in whichever language it is shown. */
+export function isHomePage(page: PageForEffects): boolean {
+  return withoutTrailingSlash(page.path) === withoutTrailingSlash(page.chrome.homeUrl);
+}
+
+/**
+ * What a page's head and body get for the site-wide effects, or nothing when all are off.
+ * The intro plays only before the home page: someone arriving at an article from a search
+ * goes straight to it.
+ */
 export function siteEffectsHead(
-  settings: SiteEffectSettings,
-  labels: { skip: string; loading: string },
+  saved: SiteEffectSettings,
+  page: PageForEffects,
+  labels: { skip: string } = { skip: "Skip intro" },
 ): SiteEffectsHead | undefined {
+  const settings: SiteEffectSettings = isHomePage(page)
+    ? saved
+    : { ...saved, intro: { ...saved.intro, style: "none" } };
   if (!hasSiteEffects(settings)) return undefined;
+  const transitionOn = settings.pageTransition.style !== "none";
+  const introOn = settings.intro.style !== "none";
   const modules = [
     settings.cursor.style !== "none" ? "cursor" : "",
-    settings.pageTransition.style !== "none" ? "transitions" : "",
-    settings.intro.style !== "none" ? "intro" : "",
+    transitionOn ? "transitions" : "",
+    introOn ? "intro" : "",
   ].filter(Boolean);
-  const introOn = settings.intro.style !== "none";
+  const logo = page.chrome.logo;
   return {
     css: [pageTransitionCss(settings), introCss(settings)].filter(Boolean).join("\n"),
-    bodyStartHtml: introMarkup(settings, labels),
-    headScript: introOn ? introSeenScript : "",
+    bodyStartHtml: introMarkup(settings, labels, {
+      siteName: page.chrome.siteName,
+      logo: logo ? { url: logo.url, alt: logo.alt } : null,
+    }),
+    headScript: [introOn ? introSeenScript : "", transitionOn ? carriedElementsScript : ""].join(
+      "",
+    ),
     settings: { ...settings },
     modules,
   };

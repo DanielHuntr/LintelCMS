@@ -12,7 +12,6 @@ import { createEffectRegistry } from "./effect-registry.js";
 import { measurePageWeight } from "./page-weight.js";
 import { number, toggle } from "./parameters.js";
 import { resolveNodeEffects } from "./resolve-effects.js";
-import { defaultSiteEffectSettings, introMarkup, pageTransitionCss } from "./site-effects.js";
 
 const loadedModules: Record<string, EffectModule> = Object.fromEntries(
   await Promise.all(
@@ -160,26 +159,5 @@ describe("turning saved effects into what the page runs", () => {
     const forText = registry.suiting("text").map((effect) => effect.id);
     expect(forText).toContain("scramble-in");
     expect(forText).not.toContain("cylinder-gallery");
-  });
-});
-
-describe("site-wide effects", () => {
-  it("are all off by default and then write nothing", () => {
-    expect(pageTransitionCss(defaultSiteEffectSettings)).toBe("");
-    expect(introMarkup(defaultSiteEffectSettings, { skip: "Skip", loading: "Loading" })).toBe("");
-  });
-
-  it("write view transition CSS only for people happy with motion, and escape the intro's text", () => {
-    const settings = {
-      ...defaultSiteEffectSettings,
-      pageTransition: { style: "slide" as const, duration: 400 },
-      intro: { ...defaultSiteEffectSettings.intro, style: "name" as const, text: "<Acme>" },
-    };
-    expect(pageTransitionCss(settings)).toMatch(
-      /^@media \(prefers-reduced-motion: no-preference\) \{\n@view-transition \{ navigation: auto; \}/,
-    );
-    expect(introMarkup(settings, { skip: "Skip intro", loading: "Loading" })).toContain(
-      "&lt;Acme&gt;",
-    );
   });
 });

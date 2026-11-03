@@ -59,14 +59,7 @@ export const effectsEditorStrings = {
 
   "motionEditor.site.title": "Motion across the site",
   "motionEditor.site.description":
-    "These apply to every page. People who ask their device for less motion get calmer versions.",
-  "motionEditor.site.transition": "Page transition",
-  "motionEditor.site.transition.none": "None",
-  "motionEditor.site.transition.fade": "Fade",
-  "motionEditor.site.transition.slide": "Slide",
-  "motionEditor.site.transition.wipe": "Wipe",
-  "motionEditor.site.transition.zoom": "Zoom",
-  "motionEditor.site.transition.duration": "Transition length",
+    "It applies to every page. People who ask their device for less motion get a calmer version.",
   "motionEditor.site.cursor": "Cursor",
   "motionEditor.site.cursor.none": "Normal",
   "motionEditor.site.cursor.dot": "Dot",
@@ -82,14 +75,6 @@ export const effectsEditorStrings = {
   "motionEditor.site.cursor.size": "Cursor size",
   "motionEditor.site.cursor.note":
     "Shown only with a mouse or trackpad. Typing in fields keeps the normal cursor.",
-  "motionEditor.site.intro": "Intro",
-  "motionEditor.site.intro.none": "None",
-  "motionEditor.site.intro.curtain": "Curtain",
-  "motionEditor.site.intro.counter": "Counter",
-  "motionEditor.site.intro.name": "Your name",
-  "motionEditor.site.intro.text": "Words on the intro",
-  "motionEditor.site.intro.background": "Intro background",
-  "motionEditor.site.intro.colour": "Intro text colour",
-  "motionEditor.site.intro.note":
-    "Plays once per visit, for at most three seconds. Visitors can skip it, and it never shows without JavaScript.",
+  "motionEditor.site.elsewhere":
+    "Page transitions and the first-visit intro are in Settings → Your website.",
 } as const;

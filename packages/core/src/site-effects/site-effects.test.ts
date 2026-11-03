@@ -7,7 +7,9 @@ import { ensureMainMenu } from "../navigation/default-navigation.js";
 import { useTestDatabase } from "../testing/test-database.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
+import { defaultSiteEffectSettings } from "@lintel/motion/effects";
 import { readPageDesign } from "../website/designed-pages.js";
+import { isHomePage, siteEffectsHead } from "./site-effects.service.js";
 import { readEffectModules } from "../website/site-assets.js";
 import { buildSiteServer } from "../website/site-server.js";
 
@@ -93,6 +95,58 @@ describe("code blocks that use the motion runtime", () => {
   });
 });
 
+describe("site-wide effects for one page", () => {
+  const chrome = { homeUrl: "/", siteName: "Rye & Crumb", logo: null };
+  const introAndTransition = {
+    ...defaultSiteEffectSettings,
+    pageTransition: { style: "fade" as const, duration: 300 },
+    intro: { ...defaultSiteEffectSettings.intro, style: "logo" as const },
+  };
+
+  it("knows the home page in any language, with or without a trailing slash", () => {
+    expect(isHomePage({ path: "/", chrome })).toBe(true);
+    expect(isHomePage({ path: "/fr/", chrome: { ...chrome, homeUrl: "/fr" } })).toBe(true);
+    expect(isHomePage({ path: "/about", chrome })).toBe(false);
+  });
+
+  it("give nothing at all when everything is off", () => {
+    expect(siteEffectsHead(defaultSiteEffectSettings, { path: "/", chrome })).toBeUndefined();
+  });
+
+  it("draw the intro on the home page only, with the site's name when there's no logo", () => {
+    const home = siteEffectsHead(introAndTransition, { path: "/", chrome });
+    expect(home?.bodyStartHtml).toContain("Rye &amp; Crumb");
+    expect(home?.modules).toEqual(["transitions", "intro"]);
+    expect(home?.headScript).toContain("lintel-intro-seen");
+
+    const about = siteEffectsHead(introAndTransition, { path: "/about", chrome });
+    expect(about?.bodyStartHtml).toBe("");
+    expect(about?.modules).toEqual(["transitions"]);
+    expect(about?.headScript).not.toContain("lintel-intro-seen");
+    expect(about?.css).not.toContain(".lintel-intro");
+  });
+
+  it("use the logo when the site has one", () => {
+    const head = siteEffectsHead(introAndTransition, {
+      path: "/",
+      chrome: {
+        ...chrome,
+        logo: { url: "/media/logo.png", alt: "Rye", width: 200, height: 80, focalPoint: null },
+      },
+    });
+    expect(head?.bodyStartHtml).toContain('src="/media/logo.png"');
+  });
+
+  it("send the intro alone on the home page, and nothing on others", () => {
+    const introOnly = {
+      ...introAndTransition,
+      pageTransition: { style: "none" as const, duration: 500 },
+    };
+    expect(siteEffectsHead(introOnly, { path: "/about", chrome })).toBeUndefined();
+    expect(siteEffectsHead(introOnly, { path: "/", chrome })?.headScript).not.toContain("pageswap");
+  });
+});
+
 describe("site-wide effects", () => {
   const testDatabase = useTestDatabase();
   let api: FastifyInstance;
@@ -127,7 +181,7 @@ describe("site-wide effects", () => {
     expect(home.body).not.toContain("@view-transition");
   });
 
-  it("save a transition and an intro, which every page then carries", async () => {
+  it("save a transition for every page and an intro shown only before the home page", async () => {
     const saved = await owner("PUT", "/website/effects", {
       pageTransition: { style: "slide", duration: 400 },
       intro: { style: "name", text: "Corner Bakery", background: "#222222", colour: "#ffffff" },
@@ -148,6 +202,14 @@ describe("site-wide effects", () => {
     const effects = JSON.parse(data?.[1] ?? "{}");
     expect(Object.keys(effects.modules).sort()).toEqual(["intro", "transitions"]);
     expect(effects.site.intro.text).toBe("Corner Bakery");
+
+    const otherPath = /<a [^>]*href="(\/[a-z][a-z0-9-]*)"/.exec(home.body)?.[1];
+    expect(otherPath, "the bakery's menu links to another page").toBeDefined();
+    const other = await site.inject({ method: "GET", url: otherPath! });
+    expect(other.statusCode).toBe(200);
+    expect(other.body).toContain("@view-transition { navigation: auto; }");
+    expect(other.body).not.toContain('class="lintel-intro"');
+    expect(other.body).toContain("pageswap");
   });
 
   it("refuses settings that aren't on offer", async () => {

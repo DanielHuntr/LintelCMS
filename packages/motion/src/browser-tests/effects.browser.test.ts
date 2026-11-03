@@ -2,6 +2,12 @@ import type { Browser, Page } from "playwright";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { launchBrowser } from "./harness.js";
 import { effectsDocument, openEffectsPage, waitFor } from "./effects-harness.js";
+import { defaultSiteEffectSettings } from "../effects-catalogue/site-effects.js";
+import {
+  carriedElementsScript,
+  pageTransitionCss,
+} from "../effects-catalogue/page-transition-looks.js";
+import { introCss, introMarkup } from "../effects-catalogue/site-intro.js";
 
 /** One or more effects from each family, played by the real site runtime and modules. */
 
@@ -489,6 +495,105 @@ describe("intro and page transitions", () => {
     await page.click("a");
     await page.waitForURL("**/next");
     expect(await page.textContent("p")).toBe("Arrived");
+    await page.close();
+  });
+
+  const counterIntro = {
+    ...defaultSiteEffectSettings,
+    intro: { ...defaultSiteEffectSettings.intro, style: "counter" as const },
+  };
+  const introPage = introMarkup(counterIntro, { skip: "Skip intro" });
+
+  it("never shows the intro to people who ask for less motion", async () => {
+    const { page } = await openEffectsPage(browser, `${introPage}<p>Content</p>`, [], {
+      css: introCss(counterIntro),
+      site: counterIntro,
+      reducedMotion: "reduce",
+    });
+    expect(await page.isVisible(".lintel-intro")).toBe(false);
+    await waitFor(page, () => document.querySelector(".lintel-intro") === null, 3000);
+    await page.close();
+  });
+
+  it("ends the intro on any key, counting towards 100 until then", async () => {
+    const { page } = await openEffectsPage(browser, `${introPage}<p>Content</p>`, [], {
+      css: introCss(counterIntro),
+      site: counterIntro,
+    });
+    expect(await read(page, ".lintel-intro", "display")).toBe("grid");
+    await waitFor(
+      page,
+      () => Number(document.querySelector(".lintel-intro__count")?.textContent) > 0,
+    );
+    await page.keyboard.press("Space");
+    await waitFor(page, () => document.querySelector(".lintel-intro") === null, 2000);
+    expect(await page.textContent("p")).toBe("Content");
+    await page.close();
+  });
+
+  const fade = {
+    ...defaultSiteEffectSettings,
+    pageTransition: { style: "fade" as const, duration: 300 },
+  };
+  const revealProbe = `<script>addEventListener("pagereveal", (event) => { window.hadTransition = Boolean(event.viewTransition); });</script>`;
+
+  it("moves between pages with a cross-document view transition, from CSS alone", async () => {
+    const next = effectsDocument(`${revealProbe}<p>Next</p>`, [], { css: pageTransitionCss(fade) });
+    const { page } = await openEffectsPage(browser, `<a href="/next">Next</a>`, [], {
+      css: pageTransitionCss(fade),
+      pages: { "/next": next },
+    });
+    await page.click("a");
+    await page.waitForURL("**/next");
+    await waitFor(page, () => "hadTransition" in window);
+    expect(
+      await page.evaluate(() => (window as Window & { hadTransition?: boolean }).hadTransition),
+    ).toBe(true);
+    await page.close();
+  });
+
+  it("changes page straight away for people who ask for less motion", async () => {
+    const next = effectsDocument(`${revealProbe}<p>Next</p>`, [], { css: pageTransitionCss(fade) });
+    const { page } = await openEffectsPage(browser, `<a href="/next">Next</a>`, [], {
+      css: pageTransitionCss(fade),
+      pages: { "/next": next },
+      reducedMotion: "reduce",
+    });
+    await page.click("a");
+    await page.waitForURL("**/next");
+    await waitFor(page, () => "hadTransition" in window);
+    expect(
+      await page.evaluate(() => (window as Window & { hadTransition?: boolean }).hadTransition),
+    ).toBe(false);
+    await page.close();
+  });
+
+  it("carries only the picture beside the followed link when a list repeats the name", async () => {
+    const card = (slug: string) =>
+      `<article><img data-node-id="pic" alt="" width="80" height="60"><a href="/projects/${slug}">${slug}</a></article>`;
+    const { page } = await openEffectsPage(
+      browser,
+      `<script>${carriedElementsScript}</script>${card("a")}${card("b")}${card("c")}`,
+      [],
+      {
+        css: `${pageTransitionCss(fade)} @media (prefers-reduced-motion: no-preference) { [data-node-id="pic"] { view-transition-name: lintel-hero-picture; } }`,
+      },
+    );
+    const names = () =>
+      page.$$eval("img", (pictures) =>
+        pictures.map((picture) => getComputedStyle(picture).viewTransitionName),
+      );
+    // Arriving: only the first of a repeated name keeps it.
+    expect(await names()).toEqual(["lintel-hero-picture", "none", "none"]);
+    // Leaving for project b: only b's picture keeps it.
+    await page.evaluate(() => {
+      const leaving = new Event("pageswap");
+      Object.defineProperty(leaving, "activation", {
+        value: { entry: { url: `${location.origin}/projects/b` } },
+      });
+      dispatchEvent(leaving);
+    });
+    expect(await names()).toEqual(["none", "lintel-hero-picture", "none"]);
     await page.close();
   });
 });
