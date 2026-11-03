@@ -25,4 +25,5 @@ its small physics world is `maths/playground.ts`, our own. `lottie` and `rive` p
 Lottie and Rive elements; the players they need (lottie-web's light build and
 `@rive-app/canvas-lite`, both MIT), Rive's WebAssembly and Lintel's two samples
 (`../../samples`) are written beside the modules with fingerprints and found through
-`kit/media-player.ts`. They never join the shared chunks, so no other module grows for them.
+`kit/media-player.ts`. They never join the shared chunks, so no module carries their code. The page weight meter
+counts them (`effectPlayerBytes`).

@@ -91,6 +91,34 @@ describe("drag and throw these", () => {
     await page.close();
   });
 
+  it("scrolls under a real finger on empty space, and drags under one on a sticker", async () => {
+    const { page } = await openEffectsPage(browser, playgroundHtml, playground(), { touch: true });
+    await waitFor(page, () => document.querySelector<HTMLElement>("#one")?.tabIndex === 0);
+    const client = await page.context().newCDPSession(page);
+    const swipe = async (x: number, y: number) => {
+      await client.send("Input.dispatchTouchEvent", {
+        type: "touchStart",
+        touchPoints: [{ x, y }],
+      });
+      for (let step = 1; step <= 12; step += 1) {
+        await client.send("Input.dispatchTouchEvent", {
+          type: "touchMove",
+          touchPoints: [{ x, y: y - step * 10 }],
+        });
+        await pause(16);
+      }
+      await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      await pause(300);
+    };
+    const scrolled = () => page.evaluate(() => window.scrollY);
+    const sticker = (await page.locator("#one").boundingBox())!;
+    await swipe(sticker.x + 40, sticker.y + 30);
+    expect(await scrolled()).toBe(0);
+    await swipe(600, 300);
+    expect(await scrolled()).toBeGreaterThan(50);
+    await page.close();
+  });
+
   it("keeps the designed layout, untouched, for people who ask for less motion", async () => {
     const { page } = await openEffectsPage(browser, playgroundHtml, playground(), {
       reducedMotion: "reduce",
@@ -217,6 +245,26 @@ describe("the Lottie element", () => {
     await page.close();
   });
 
+  it("plays forwards under the pointer and back again when it leaves", async () => {
+    const { page } = await openEffectsPage(browser, lottieHtml(), lottie({ play: "hover" }));
+    await waitFor(
+      page,
+      () => document.querySelector("[data-node-id=lottie][data-playing]") !== null,
+    );
+    const transform = () =>
+      page.$eval("[data-node-id=lottie] svg g g", (group) => group.getAttribute("transform"));
+    const resting = await transform();
+    await pause(300);
+    expect(await transform()).toBe(resting);
+    await page.hover("[data-node-id=lottie]");
+    await pause(400);
+    expect(await transform()).not.toBe(resting);
+    await page.mouse.move(800, 600);
+    await pause(1200);
+    expect(await transform()).toBe(resting);
+    await page.close();
+  });
+
   it("keeps the poster, and loads nothing, for people who ask for less motion", async () => {
     const { page, requested } = await openEffectsPage(browser, lottieHtml(posterImage), lottie(), {
       reducedMotion: "reduce",
@@ -273,37 +321,97 @@ describe("the Rive element", () => {
     await page.close();
   });
 
-  it("switches the state machine's input on while the pointer is over it", async () => {
-    const { page } = await openEffectsPage(
-      browser,
-      riveHtml,
-      rive({ respondTo: "hover", play: "load" }),
-    );
+  it("flips its switch by click and by keyboard when it responds to a click", async () => {
+    const pressable = riveHtml.replace('role="img"', 'role="button" tabindex="0"');
+    const { page } = await openEffectsPage(browser, pressable, rive({ respondTo: "click" }));
     await waitFor(
       page,
       () => document.querySelector("[data-node-id=rive][data-playing]") !== null,
       10_000,
     );
-    await page.hover("[data-node-id=rive]");
-    await pause(600);
-    // The sample's hover state is bigger: more of the canvas is coloured.
+    const pressed = () =>
+      page.$eval("[data-node-id=rive]", (element) => element.getAttribute("aria-pressed"));
+    await page.click("[data-node-id=rive]");
+    expect(await pressed()).toBe("true");
+    await page.focus("[data-node-id=rive]");
+    await page.keyboard.press("Enter");
+    expect(await pressed()).toBe("false");
+    await page.keyboard.press("Space");
+    expect(await pressed()).toBe("true");
+    await page.close();
+  });
+
+  it("holds one drawn frame for less motion when there is no poster", async () => {
+    const { page } = await openEffectsPage(browser, riveHtml, rive(), { reducedMotion: "reduce" });
+    await waitFor(
+      page,
+      () => document.querySelector("[data-node-id=rive][data-playing]") !== null,
+      10_000,
+    );
+    await pause(300);
+    const painted = await page.$eval("[data-node-id=rive] canvas", (element) => {
+      const canvas = element as HTMLCanvasElement;
+      const pixels = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height).data;
+      let count = 0;
+      for (let index = 3; index < pixels.length; index += 4) if (pixels[index]! > 0) count += 1;
+      return count;
+    });
+    expect(painted).toBeGreaterThan(1000);
+    const picture = await canvasPicture(page);
+    await pause(400);
+    expect(await canvasPicture(page)).toBe(picture);
+    await page.close();
+  });
+
+  it("keeps the poster, and loads no runtime, for less motion", async () => {
+    const { page, requested } = await openEffectsPage(
+      browser,
+      riveHtml.replace("</div>", `${posterImage}</div>`),
+      rive(),
+      { reducedMotion: "reduce" },
+    );
+    await pause(800);
+    expect(requested.some((path) => path.includes("rive-player"))).toBe(false);
+    expect(await page.locator(".lintel-animation__poster").isVisible()).toBe(true);
+    await page.close();
+  });
+
+  it("switches the state machine's input on while the pointer is over it", async () => {
+    const { page } = await openEffectsPage(browser, riveHtml, rive({ respondTo: "hover" }));
+    await waitFor(
+      page,
+      () => document.querySelector("[data-node-id=rive][data-playing]") !== null,
+      10_000,
+    );
     const coloured = () =>
       page.$eval("[data-node-id=rive] canvas", (element) => {
         const canvas = element as HTMLCanvasElement;
-        const copy = document.createElement("canvas");
-        copy.width = canvas.width;
-        copy.height = canvas.height;
-        const context = copy.getContext("2d")!;
-        context.drawImage(canvas, 0, 0);
-        const pixels = context.getImageData(0, 0, copy.width, copy.height).data;
+        const pixels = canvas
+          .getContext("2d")!
+          .getImageData(0, 0, canvas.width, canvas.height).data;
         let count = 0;
         for (let index = 3; index < pixels.length; index += 4) if (pixels[index]! > 0) count += 1;
         return count;
       });
-    const hovered = await coloured();
-    await page.mouse.move(600, 600);
-    await pause(900);
-    expect(hovered).toBeGreaterThan((await coloured()) * 1.05);
+    /** Several looks over a while, because the sample swells gently as it idles. */
+    const samples = async () => {
+      const seen: number[] = [];
+      for (let look = 0; look < 8; look += 1) {
+        seen.push(await coloured());
+        await pause(120);
+      }
+      return seen;
+    };
+    await page.mouse.move(800, 600);
+    const idle = Math.max(...(await samples()));
+    await page.hover("[data-node-id=rive]");
+    await pause(600);
+    // The sample's hover state is always bigger than its idle state ever gets.
+    const hovered = Math.min(...(await samples()));
+    expect(hovered).toBeGreaterThan(idle);
+    await page.mouse.move(800, 600);
+    await pause(700);
+    expect(Math.max(...(await samples()))).toBeLessThan(hovered);
     await page.close();
   });
 });

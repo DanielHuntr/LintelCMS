@@ -64,6 +64,15 @@ export async function besideModuleFiles() {
   ];
 }
 
+/** What each module's player costs a page, gzipped: { lottie: 48912, rive: 410628 }. */
+export function effectPlayerSizes(beside, gzip) {
+  const size = (name) => gzip(beside.find((file) => file.name === name).contents).byteLength;
+  return {
+    lottie: size("lottie-player.js"),
+    rive: size("rive-player.js") + size("rive.wasm"),
+  };
+}
+
 /**
  * Bundles the modules. With `outdir` it writes them; either way it returns the manifest:
  * each module's file and what it costs a page (gzipped, with the shared chunks it imports).

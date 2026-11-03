@@ -43,6 +43,26 @@ describe("the animation file field", () => {
     expect(screen.getByTestId("value").textContent).toBe("");
   });
 
+  it("gives the media library's id with an upload, and none for a typed address", async () => {
+    const changed = vi.fn();
+    render(
+      <FileUploaderContext
+        value={async () => ({
+          assetId: "a1",
+          src: "/media/a1/file",
+          mimeType: "application/x-rive",
+          filename: "orbit.riv",
+        })}
+      >
+        <FileField label="Animation file" value="" accept={[".riv"]} onChange={changed} />
+      </FileUploaderContext>,
+    );
+    await userEvent.upload(screen.getByLabelText("Upload a file"), new File(["RIVE"], "orbit.riv"));
+    expect(changed).toHaveBeenLastCalledWith("/media/a1/file", "a1");
+    await userEvent.type(screen.getByLabelText("File address"), "x");
+    expect(changed.mock.lastCall?.[1]).toBe("");
+  });
+
   it("refuses a file of the wrong kind before uploading it", async () => {
     const uploader = vi.fn<FileUploader>();
     render(<Field uploader={uploader} />);

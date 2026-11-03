@@ -60,18 +60,24 @@ const rivePlayer: EffectBehaviour = (element, params, context) => {
           const playing = machine ?? rive.animationNames[0];
           if (!playing || context.reduced) return;
           const play = () => rive.play(playing);
-          const inputs = (machine && rive.stateMachineInputs(machine)) || [];
-          const input =
-            inputs.find((candidate) => candidate.name.toLowerCase() === inputName) ??
-            inputs.find((candidate) =>
-              respondTo === "click"
-                ? Number(candidate.type) === triggerType || Number(candidate.type) === switchType
-                : Number(candidate.type) === switchType,
+          // Read when needed: a state machine has no inputs until it is running, and it
+          // only starts after this callback.
+          const findInput = () => {
+            const inputs = (machine && rive.stateMachineInputs(machine)) || [];
+            return (
+              inputs.find((candidate) => candidate.name.toLowerCase() === inputName) ??
+              inputs.find((candidate) =>
+                respondTo === "click"
+                  ? Number(candidate.type) === triggerType || Number(candidate.type) === switchType
+                  : Number(candidate.type) === switchType,
+              )
             );
-          if (respondTo === "hover" && input && Number(input.type) === switchType) {
+          };
+          if (respondTo === "hover") {
             const set = (on: boolean) => () => {
-              input.value = on;
               play();
+              const input = findInput();
+              if (input && Number(input.type) === switchType) input.value = on;
             };
             stops.push(
               listen(element, {
@@ -82,13 +88,14 @@ const rivePlayer: EffectBehaviour = (element, params, context) => {
               }),
             );
           }
-          if (respondTo === "click" && input) {
+          if (respondTo === "click") {
             const press = () => {
-              if (Number(input.type) === triggerType) input.fire();
-              else input.value = !input.value;
-              if (Number(input.type) === switchType)
-                element.setAttribute("aria-pressed", String(input.value));
               play();
+              const input = findInput();
+              if (!input) return;
+              if (Number(input.type) === triggerType) return input.fire();
+              input.value = !input.value;
+              element.setAttribute("aria-pressed", String(input.value));
             };
             stops.push(
               listen(element, {

@@ -45,7 +45,8 @@ export function FileField({
   label: string;
   value: string;
   accept: readonly string[];
-  onChange: (value: string) => void;
+  /** The address, and the media library's id when the file was uploaded here. */
+  onChange: (value: string, assetId: string) => void;
 }) {
   const text = useBuilderText();
   const uploadFile = useContext(FileUploaderContext);
@@ -77,7 +78,7 @@ export function FileField({
     }
     setProblem(null);
     setAddress(uploaded.src);
-    onChange(uploaded.src);
+    onChange(uploaded.src, uploaded.assetId ?? "");
   };
 
   return (
@@ -117,7 +118,7 @@ export function FileField({
                 type="button"
                 onClick={() => {
                   setAddress("");
-                  onChange("");
+                  onChange("", "");
                 }}
                 className="flex h-8 items-center gap-1.5 rounded-control px-2 text-footnote text-label-secondary hover:bg-fill focus-visible:focus-ring"
               >
@@ -138,7 +139,8 @@ export function FileField({
             value={address}
             onChange={(event) => {
               setAddress(event.target.value);
-              if (isSafeFileAddress(event.target.value.trim())) onChange(event.target.value.trim());
+              if (isSafeFileAddress(event.target.value.trim()))
+                onChange(event.target.value.trim(), "");
             }}
             className={inputClassName}
           />

@@ -90,12 +90,14 @@ export const lottieAnimationComponent = defineComponent({
   category: "media",
   propsSchema: z.object({
     src: animationAddressSchema,
+    // The media library's id, kept beside the address so a file in use can't be deleted.
+    assetId: plainText(64, ""),
     play: oneOf(["view", "load", "hover", "scroll"], "When it plays"),
     loop: z.boolean().default(true),
     label: plainText(200, ""),
     poster: imageAddressSchema.default(""),
   }),
-  defaultProps: { src: "", play: "view", loop: true, label: "", poster: "" },
+  defaultProps: { src: "", assetId: "", play: "view", loop: true, label: "", poster: "" },
   defaultStyles: { base: { width: "240px", maxWidth: "100%", aspectRatio: "1 / 1" } },
   allowedChildren: "none",
   editableFields: [
@@ -127,6 +129,8 @@ export const riveAnimationComponent = defineComponent({
   category: "media",
   propsSchema: z.object({
     src: animationAddressSchema,
+    // The media library's id, kept beside the address so a file in use can't be deleted.
+    assetId: plainText(64, ""),
     play: oneOf(["view", "load"], "When it plays"),
     respondTo: oneOf(["none", "hover", "click"], "What it responds to"),
     label: plainText(200, ""),
@@ -136,6 +140,7 @@ export const riveAnimationComponent = defineComponent({
   }),
   defaultProps: {
     src: "",
+    assetId: "",
     play: "view",
     respondTo: "hover",
     label: "",

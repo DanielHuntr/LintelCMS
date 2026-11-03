@@ -115,7 +115,7 @@ export function FieldControl({
           label={field.label}
           value={String(value ?? "")}
           accept={field.accept}
-          onChange={onChange}
+          onChange={(address) => onChange(address)}
         />
       );
   }

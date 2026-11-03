@@ -192,9 +192,10 @@ object(type.linearAnimation, [
 keyed(1, [key.scaleX, key.scaleY], swell(240, 1, 1.06));
 keyed(5, [key.rotation], turn(240));
 
-// Animation 1: Hover, quicker and a little bigger.
+// Animation 1: Quick, quicker and a little bigger. Not called Hover: playing a name picks an
+// animation before a state machine.
 object(type.linearAnimation, [
-  [key.animationName, "text", "Hover"],
+  [key.animationName, "text", "Quick"],
   [key.fps, "uint", 60],
   [key.duration, "uint", 90],
   [key.loop, "uint", 1],

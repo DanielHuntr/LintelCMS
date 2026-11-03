@@ -40,6 +40,11 @@ describe("the creative pack's elements", () => {
     ).toThrow();
   });
 
+  it("keep the media library's id beside the address, so a file in use can't be deleted", () => {
+    expect(lottieAnimationComponent.defaultProps.assetId).toBe("");
+    expect(riveAnimationComponent.propsSchema.parse({ assetId: "a1" }).assetId).toBe("a1");
+  });
+
   it("hand the Lottie and Rive players their settings as an effect", () => {
     expect(
       impliedAnimationEffect(
