@@ -230,7 +230,6 @@ describe("lintel addons add with npm itself", () => {
     const { terminal, said } = recordingTerminal(folder);
     // The package as it would be published: built, then packed by npm.
     await buildAddon(exampleFolder, { watch: false, terminal, nodePaths: [ADMIN_PACKAGES] });
-    console.log("STEP", Date.now(), 'const packed = join(folder, "p');
     const packed = join(folder, "packed");
     mkdirSync(packed);
     const pack = spawnSync("npm", ["pack", "--pack-destination", packed], {
@@ -242,7 +241,6 @@ describe("lintel addons add with npm itself", () => {
     const tarball = readdirSync(packed).find((name) => name.endsWith(".tgz"));
     expect(tarball).toBeDefined();
 
-    console.log("STEP", Date.now(), "const command = makeAddonsComm");
     const command = makeAddonsCommand({ npm: runNpm, folder: () => join(folder, "addons") });
     said.length = 0;
     expect(await command.run(["add", join(packed, tarball ?? "")], terminal)).toBe(0);
@@ -251,7 +249,6 @@ describe("lintel addons add with npm itself", () => {
       "  check-hours: Once a day, notes in the log if no opening hours are set.",
     );
 
-    console.log("STEP", Date.now(), "const installed = installedPac");
     const installed = installedPackageFolder(join(folder, "addons"), "@lintel/addon-example");
     expect(existsSync(join(installed, "dist", "server.js"))).toBe(true);
     const lock = JSON.parse(readFileSync(join(folder, "addons", "package-lock.json"), "utf8"));
@@ -262,12 +259,10 @@ describe("lintel addons add with npm itself", () => {
       enableOnStart: ["example"],
     });
 
-    console.log("STEP", Date.now(), "const addons = await loadSiteA");
     const addons = await loadSiteAddons(folder, []);
     expect(addons.problems).toEqual([]);
     expect(addons.loaded.map(({ plugin }) => plugin.id)).toEqual(["example"]);
 
-    console.log("STEP", Date.now(), 'expect(await command.run(["rem');
     expect(await command.run(["remove", "example"], terminal)).toBe(0);
     expect(existsSync(installed)).toBe(false);
   }, 180_000);
