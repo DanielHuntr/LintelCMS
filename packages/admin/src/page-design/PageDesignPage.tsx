@@ -308,15 +308,18 @@ function PageDesigner({
                   errorMessage={saving.errorMessage}
                   onRetry={saving.saveNow}
                 />
-                {canPublish && !saving.justPublished && saving.liveness !== "live" && (
-                  <span className="hidden text-footnote whitespace-nowrap text-label-secondary sm:inline">
-                    {t(
-                      saving.liveness === "notLiveYet"
-                        ? "pageDesign.notLiveYet"
-                        : "pageDesign.changesNotLive",
-                    )}
-                  </span>
-                )}
+                {canPublish &&
+                  !mustSendForReview &&
+                  !saving.justPublished &&
+                  saving.liveness !== "live" && (
+                    <span className="hidden text-footnote whitespace-nowrap text-label-secondary sm:inline">
+                      {t(
+                        saving.liveness === "notLiveYet"
+                          ? "pageDesign.notLiveYet"
+                          : "pageDesign.changesNotLive",
+                      )}
+                    </span>
+                  )}
                 <BuilderVisitorsLine entryId={saving.entry.id} />
                 {/* One note at a time: the page's own when it has changes waiting, else the
                     navigation and footer's. */}

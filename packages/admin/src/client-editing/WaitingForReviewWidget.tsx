@@ -2,7 +2,6 @@ import { ClipboardCheck } from "lucide-react";
 import { useId, useState } from "react";
 import { describeError } from "../api/describeError.js";
 import { LoadError } from "../api/LoadError.js";
-import { formatDateTime } from "../content/relativeTime.js";
 import { Button } from "../design/Button.js";
 import { Dialog } from "../design/Dialog.js";
 import { EmptyState } from "../design/EmptyState.js";
@@ -67,7 +66,6 @@ export function WaitingForReviewWidget() {
               collection: review.entry.collectionName,
               name: review.requestedByName ?? t("clientEditing.sentBack.someone"),
             })}
-            detail={formatDateTime(review.requestedAt)}
             to={`/content/${review.entry.collection}/${review.entry.id}`}
             accessory={
               canAnswer ? (
