@@ -2190,3 +2190,49 @@ Daniel showed Stripe refusing `http://localhost:4100/shop/stripe/webhook` with "
 ## Insert category icons
 
 - **LINTEL-UX-240:** the categories in Insert were a long list of words in capitals, which people had to read one by one. Each category in Sections and Elements now has a small picture beside its name, hidden from screen readers. `panels/insert-group-icons.ts` holds the list, and `CollapsibleSection` takes an optional `icon`. A test checks every category has one.
+
+## Ways to pay (`feature/shop-ways-to-pay`)
+
+Lintel leaves payment methods to the provider, so Klarna, Clearpay, iDEAL and others can work, but nothing told the shop owner. Shop → Settings → Payments now says what each connected provider offers and where to change it, and the paths those methods depend on were checked against Stripe's and Mollie's documentation.
+
+**No real payment was made.** There is no Stripe, Mollie or PayPal account behind this work, so no Klarna, Clearpay or iDEAL payment has been run. The tests use the fake providers: they show what Lintel sends and how it reacts, not that the real providers accept it.
+
+| ID            | Change                                                                                                                              |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| LINTEL-UX-220 | "Ways to pay" on the Payments page: what each connected provider has on, what's waiting for approval, and a link to the setting     |
+| LINTEL-UX-221 | "Last message from Stripe: 2 minutes ago", or a plain line when nothing has arrived since the webhook was saved                     |
+| LINTEL-UX-222 | `shop.setup.paymentsDescription` no longer stops at card, Apple Pay and Google Pay                                                  |
+| LINTEL-UX-223 | Stripe gets the delivery address on hosted and embedded payments (`payment_intent_data[shipping]`, `shipping`)                      |
+| LINTEL-UX-224 | Mollie gets `lines`, `billingAddress` and `shippingAddress`, which it requires for Klarna, in3, Billie and vouchers                 |
+| LINTEL-UX-225 | A Mollie payment that stops at `authorized` is captured while its checkout is open; before, it was ignored and no order was made    |
+| LINTEL-UX-226 | A Mollie bank transfer is left open when its checkout closes; before, it was cancelled after 35 minutes, though transfers take days |
+| LINTEL-UX-227 | The "Payment form on my site" hint says it's for custom storefronts, and the developer docs cover `return_url` and billing details  |
+
+**Where the list comes from:** Stripe's default Payment Method Configuration; Mollie's methods call, asked once per shop currency because it lists euro methods by default; nothing for PayPal, which has no such call. When a provider doesn't answer, the section says so and doesn't guess.
+
+**Checked and needing no change:**
+
+- Neither Stripe payment sends `payment_method_types`, so Stripe's dashboard decides what's offered.
+- Stripe's hosted page has `customer_email` and `success_url`. A delayed payment places no order at `checkout.session.completed` and places one at `…async_payment_succeeded`; a test now covers this.
+- The embedded `return_url` belongs to the storefront, which passes it to `stripe.confirmPayment`. The Payment Element collects Klarna's billing country and email.
+- A payment that arrives after its checkout expired is honoured, and the order says the stock may be short.
+
+**PayPal Pay Later:** it isn't in our setup. Lintel uses Orders v2 with a redirect, and has no PayPal JavaScript, button or messaging. Whether PayPal offers it on its own page isn't confirmed, so the admin doesn't claim it.
+
+**Tests:** `core/src/commerce/payments/ways-to-pay.test.ts` (11) and `admin/src/commerce/WaysToPay.test.tsx` (9).
+
+**Checked in a browser** (Chromium, 1280px and 390px, light and dark, real admin and API). Stripe's and Mollie's lists were stubbed in the browser, because there's no account to read from, and so was `lastWebhookAt`, because its server half is on `feature/shop-test-checkout`. The "didn't tell us" state was not stubbed: the real API asked the real Stripe with a made-up key, and Stripe refused it. No sideways scrolling and no page errors in any of the four views.
+
+**Screenshots** (in `screenshots/ways-to-pay/`): `ways-to-pay-{desktop,phone}-{light,dark}`, `payments-page-{desktop,phone}-light`, `no-message-yet-desktop-light`, `provider-did-not-answer-desktop-light`, `embedded-hint-desktop-light`.
+
+**Left for later:**
+
+- "Last message from Stripe" shows nothing until `feature/shop-test-checkout` is merged, because this branch's server doesn't send `lastWebhookAt`.
+- The website's cart has no Payment Element, so "Payment form on my site" only works on a custom storefront.
+- The list can't know the shopper: a listed method can still be hidden by their country, the currency or the amount. Mollie's is asked about a sample order of 100.00, so a method with a higher minimum wouldn't be listed.
+- Mollie's test mode lists pending methods and, if none were requested, its most popular ones, so its test list can be fuller than the live one.
+- The Mollie link opens the dashboard, not the setting, because the setting's address has the account's own ids in it. PayPal has no link, as there's no setting to point to.
+- The shop asks for one address, so Mollie gets it as the billing address too. A one-word name is sent as both given and family name.
+- A Mollie bank transfer's stock isn't held past the 35 minutes. A transfer from a checkout the shopper started again is also left open, so paying both would make two orders.
+- Riverty and Billink need `captureMode: manual`, which Lintel doesn't send, so don't expect them to work.
+- On Stripe, tax that isn't included in prices is a line called "Tax" on hosted pages; on Mollie it's a `surcharge` line. Whether Klarna accepts that hasn't been tried.

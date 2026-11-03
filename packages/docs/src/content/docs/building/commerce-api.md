@@ -157,7 +157,13 @@ PayPal or Mollie. It answers `201`:
   shopper to `url`. Stripe brings them back to `successUrl`.
 - **Embedded** (chosen under **Settings → Payments**): give `clientSecret` and
   `publishableKey` to Stripe's
-  [Payment Element](https://docs.stripe.com/payments/payment-element) on your own page.
+  [Payment Element](https://docs.stripe.com/payments/payment-element) on your own page. This
+  is for your own storefront: the cart on a site built in Lintel can't show the Payment
+  Element. Pass a `return_url` to `stripe.confirmPayment`, because methods like Klarna and
+  iDEAL send the shopper away and back, and put the `checkoutId` in it so that page can poll
+  the checkout. Leave the Payment Element to collect billing details: Klarna needs the country
+  and email. Lintel gives Stripe the delivery address itself. Don't trust `redirect_status` in
+  the address; poll as below.
 
 With PayPal or Mollie the checkout is always hosted: send `{ successUrl, cancelUrl }` and
 send the shopper to `url`, PayPal's or Mollie's own page.

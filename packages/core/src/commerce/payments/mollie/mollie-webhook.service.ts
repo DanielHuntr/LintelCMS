@@ -1,5 +1,7 @@
+import { DEFAULT_TENANT_ID } from "../../../database/columns.js";
 import { HttpError } from "../../../http/http-errors.js";
 import { abandonCheckout } from "../../checkouts/checkout-expiry.js";
+import { findCheckoutRow } from "../../checkouts/checkouts.repository.js";
 import type { ShopContext } from "../../commerce.context.js";
 import { PaymentProviderError } from "../../commerce.errors.js";
 import { placeOrderForPayment } from "../../orders/order-placement.service.js";
@@ -8,11 +10,13 @@ import { type AfterCommit, followUpPlacement, runAfterCommit } from "../payment-
 import { ProviderRequestError } from "../payment-provider.js";
 import { fromDecimalAmount } from "../provider-amounts.js";
 import {
+  captureMolliePayment,
   listMollieRefunds,
   type MolliePayment,
   mollieRefundStatus,
   retrieveMolliePayment,
 } from "./mollie-api.js";
+import type { MollieClient } from "./mollie-client.js";
 import { connectMollie } from "./mollie-provider.js";
 
 const PAYMENT_ID_PATTERN = /^tr_[A-Za-z0-9]+$/;
@@ -22,6 +26,8 @@ const PAYMENT_ID_PATTERN = /^tr_[A-Za-z0-9]+$/;
  * request is believed: the payment is fetched back from Mollie with the shop's own API key,
  * and what Mollie answers is what happens.
  *
+ *   authorized                  the shopper approved (Klarna can stop here): take the money, only
+ *                               while the checkout is open; Mollie then reports it paid
  *   paid                        the order is placed (once), and any refunds are brought up to date
  *   expired, canceled, failed   the checkout's stock goes back on sale
  *
@@ -51,6 +57,14 @@ export async function handleMollieWebhook(
   }
   const checkoutId = payment.metadata?.lintel_checkout_id;
   if (typeof checkoutId !== "string") return { received: true };
+
+  if (payment.status === "authorized") {
+    const checkout = await findCheckoutRow(shop.database, DEFAULT_TENANT_ID, checkoutId);
+    if (checkout?.status === "open" && checkout.providerPaymentId === payment.id) {
+      await capture(client, payment.id);
+    }
+    return { received: true };
+  }
 
   const refunds = payment.status === "paid" ? await listMollieRefunds(client, payment.id) : [];
   const afterCommit: AfterCommit[] = [];
@@ -85,4 +99,16 @@ export async function handleMollieWebhook(
   });
   await runAfterCommit(shop, afterCommit, `Mollie payment ${payment.id}`);
   return { received: true };
+}
+
+async function capture(client: MollieClient, paymentId: string): Promise<void> {
+  try {
+    await captureMolliePayment(client, paymentId);
+  } catch (error) {
+    if (error instanceof ProviderRequestError) {
+      // Answering with an error makes Mollie try again later.
+      throw new PaymentProviderError(`Mollie couldn't take payment ${paymentId}: ${error.message}`);
+    }
+    throw error;
+  }
 }

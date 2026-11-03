@@ -81,6 +81,7 @@ discounts, payment providers and the importer in `discountStrings.ts`,
 | `ShippingPage.tsx`, `ZoneDialog.tsx`, `RateDialog.tsx` | Delivery areas and prices                          |
 | `TaxesPage.tsx`                                        | Stripe Tax or your own rates                       |
 | `PaymentsPage.tsx`, `ConnectStripeSteps.tsx`           | Connecting Stripe                                  |
+| `WaysToPay.tsx`                                        | What each provider offers, Stripe's last message   |
 | `ConnectPayPalSteps.tsx`, `ConnectMollieSteps.tsx`     | Connecting PayPal and Mollie                       |
 | `ConnectStep.tsx`, `MarketPaymentProviders.tsx`        | A numbered step; which provider each market uses   |
 | `DiscountsPage.tsx`, `DiscountEditorPage.tsx`          | Discounts and one discount                         |

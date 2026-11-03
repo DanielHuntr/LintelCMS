@@ -57,6 +57,8 @@ export interface PaymentSettings {
   secretKey: { hint: string; source: "environment" | "admin" } | null;
   publishableKey: { value: string; source: "environment" | "admin" } | null;
   webhookSecret: { source: "environment" | "admin" } | null;
+  /** When Stripe's webhook last reached the shop since its signing secret was saved. */
+  lastWebhookAt?: string | null;
   webhookUrl: string;
   webhookEvents: string[];
   checkoutMode: "hosted" | "embedded";

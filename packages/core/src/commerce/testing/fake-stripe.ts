@@ -48,6 +48,8 @@ export class FakeStripe {
   eventPageSize = 100;
   /** The hosted payment page made last. */
   lastSessionId = "";
+  /** The account's Payment Method Configurations, as Stripe lists them. */
+  paymentMethodConfigurations: Array<Record<string, unknown>> = [];
   private counter = 0;
 
   readonly fetch: typeof fetch = async (input, init) => {
@@ -114,6 +116,9 @@ export class FakeStripe {
     }
     if (path.endsWith("/cancel")) {
       return { id: path.split("/")[3] };
+    }
+    if (path === "/v1/payment_method_configurations") {
+      return { object: "list", has_more: false, data: this.paymentMethodConfigurations };
     }
     if (path === "/v1/coupons") {
       return { id: `coupon_${this.next()}` };

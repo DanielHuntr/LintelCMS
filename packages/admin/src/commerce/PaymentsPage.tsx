@@ -25,6 +25,7 @@ import {
   usePaymentSettings,
   useSavePaymentKeys,
 } from "./shopSettings.queries.js";
+import { WaysToPay } from "./WaysToPay.js";
 
 /**
  * /commerce/settings/payments: connecting Stripe, PayPal and Mollie, each step by step, and
@@ -55,6 +56,7 @@ export function PaymentsPage() {
             stripeConnected={payments.data.connected}
             canChange={canChooseMarkets}
           />
+          <WaysToPay />
           <SegmentedControl<PaymentProviderId>
             label={t("shop.providers.chooseLabel")}
             value={provider}
