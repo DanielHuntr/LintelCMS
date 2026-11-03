@@ -71,7 +71,7 @@ describe("the Motion panel", () => {
     expect(screen.getByRole("region", { name: "Pictures and buttons" })).toBeInTheDocument();
     await user.keyboard("{ArrowLeft}");
     expect(screen.getByRole("radio", { name: "Appears" })).toHaveAttribute("aria-checked", "true");
-    await user.click(screen.getByRole("button", { name: /^Scramble/ }));
+    await user.click(screen.getByRole("button", { name: /^Scramble(?! on hover)/ }));
     expect(findNode(latest().root, "n2")?.effects).toEqual([
       { effect: "scramble-in", params: { duration: 900, trigger: "view" } },
     ]);
@@ -96,7 +96,7 @@ describe("the Motion panel", () => {
     await user.click(screen.getByRole("button", { name: "Add motion" }));
     await user.click(screen.getByRole("button", { name: "More effects…" }));
     await user.type(screen.getByRole("searchbox", { name: "Search all motion" }), "scramble");
-    expect(screen.getByRole("button", { name: /^Scramble/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Scramble(?! on hover)/ })).toBeInTheDocument();
     expect(screen.getByText(/^[0-9]+ match/)).toBeInTheDocument();
     await user.clear(screen.getByRole("searchbox", { name: "Search all motion" }));
     await user.type(screen.getByRole("searchbox", { name: "Search all motion" }), "cylinder");

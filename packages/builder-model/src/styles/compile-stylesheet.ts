@@ -10,6 +10,11 @@ import {
   type OwnerStateTarget,
 } from "../document/page-document.schema.js";
 import { makeCssSafeToEmbed } from "../code/sanitise-code.js";
+import {
+  compileMenuLinkRules,
+  drawerLinkSelector,
+  drawerMenuLinks,
+} from "../menu-links/menu-links.js";
 import { compileFontFaces, readPageFonts } from "../fonts/page-fonts.js";
 import { impliedFreeLayoutStyles } from "../free-layout/free-layout.js";
 import { impliedPlacedGridStyles } from "../placed-grid/placed-grid.js";
@@ -48,6 +53,15 @@ import { stylePropertyNames, styleProperties } from "./style-properties.js";
  */
 export function compileStylesheet(root: PageNode, classNames: ReadonlyMap<string, string>): string {
   const visible = listVisibleNodes(root);
+  // A Menu link's look also goes to the links of Menu buttons' drawers near it.
+  const drawers = drawerMenuLinks(root);
+  const selectorsOf = (node: PageNode, className: string) => [
+    `.${className}`,
+    ...(drawers.get(node.id) ?? []).flatMap((drawerId) => {
+      const drawerClass = classNames.get(drawerId);
+      return drawerClass ? [drawerLinkSelector(drawerClass)] : [];
+    }),
+  ];
   const ruleFor = (
     node: PageNode,
     declarations: StyleDeclarations | undefined,
@@ -56,7 +70,13 @@ export function compileStylesheet(root: PageNode, classNames: ReadonlyMap<string
   ) => {
     const className = classNames.get(node.id);
     return className && declarations
-      ? formatRule(`.${className}${suffix}`, declarations, indent)
+      ? formatRule(
+          selectorsOf(node, className)
+            .map((selector) => `${selector}${suffix}`)
+            .join(",\n"),
+          declarations,
+          indent,
+        )
       : null;
   };
   const styled = (entry: VisibleNode, breakpoint: Breakpoint) =>
@@ -72,12 +92,7 @@ export function compileStylesheet(root: PageNode, classNames: ReadonlyMap<string
   const states = visible.flatMap(({ node }) => {
     const className = classNames.get(node.id);
     if (!className) return [];
-    const own = stateOrder.map((state) => {
-      const declarations = node.styles[state];
-      return declarations
-        ? formatRule(statePart(className, state).join(",\n"), declarations)
-        : null;
-    });
+    const own = stateOrder.map((state) => ruleFor(node, node.styles[state], stateSelectors[state]));
     const owned = ownerTargets(node).map(({ target, state, ownerId }) => {
       const ownerClass = classNames.get(ownerId);
       const declarations = node.styles.owners?.[target];
@@ -90,7 +105,21 @@ export function compileStylesheet(root: PageNode, classNames: ReadonlyMap<string
     return [...own, ...owned];
   });
   const extras = visible.flatMap(({ node }) => extraRules(node, classNames.get(node.id)));
-  sections.push(...compact([...base, ...extras, ...states]));
+  const menuLinks = visible.flatMap(({ node }) => {
+    const className = classNames.get(node.id);
+    return node.type === "menuLink" && className
+      ? [compileMenuLinkRules(node, selectorsOf(node, className), formatRule)]
+      : [];
+  });
+  sections.push(
+    ...compact([
+      ...base,
+      ...extras,
+      ...menuLinks.flatMap((rules) => rules.early),
+      ...states,
+      ...menuLinks.flatMap((rules) => rules.late),
+    ]),
+  );
   const transitions = compileStateTransitions(
     visible.map(({ node }) => node),
     classNames,

@@ -47,7 +47,7 @@ import { SitePartProblems } from "./SitePartProblems.js";
 import { useSiteDesign } from "./useSiteDesign.js";
 import { useSiteMotion } from "./useSiteMotion.js";
 import { type SiteSectionsState, useSiteSections } from "./useSiteSections.js";
-import { useBuilderMenus } from "../menus/builderMenus.js";
+import { markCurrentPage, useBuilderMenus } from "../menus/builderMenus.js";
 import { InlineMenuEditor } from "../menus/InlineMenuEditor.js";
 import { useBuilderFonts } from "../site-fonts/useBuilderFonts.js";
 import { usePageDrafting } from "../page-drafts/usePageDrafting.js";
@@ -165,14 +165,14 @@ function PageDesigner({
   // Credits under Picture elements, as the website shows them.
   const photoCredits = usePhotoCredits(currentRoot);
   const dataSources = useMemo(() => {
-    const menus = builderMenus.data;
+    const menus = builderMenus.data && markCurrentPage(builderMenus.data, loadedEntry.id);
     if (!builderData.data && !menus && !photoCredits) return undefined;
     return {
       ...(builderData.data ?? { collections: [], forms: [], products: [], productCollections: [] }),
       menus,
       photoCredits,
     };
-  }, [builderData.data, builderMenus.data, photoCredits]);
+  }, [builderData.data, builderMenus.data, photoCredits, loadedEntry.id]);
   const canEditCode = useCan("builder:code");
   const canPublish = useCan("entries:publish");
   const collection = useCollection(collectionHandle);

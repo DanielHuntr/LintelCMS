@@ -14,3 +14,14 @@ empty menu draws nothing.
 The menus' links reach the canvas through `dataSources.menus` (see `canvas-data.ts`);
 without them it shows a sample menu. On narrow screens the Header folds its menu into a
 menu drawer by itself (the stylesheet's tablet rule).
+
+## Menu links
+
+Every Menu holds one **Menu link** (see `menu-links/` in the model): the look of every link
+in it, selected in Layers or by clicking a link on the canvas. Its Content sets what a link
+does on hover (a line drawing in, the words rolling up, the letters scrambling, a circle, a
+colour fade). Clicking a link reports it with the selection (`menuItem` on the frame's
+`select` message); while it is in hand, Style asks **Changes apply to: Every menu link /
+Only “Contact”** (`menu-link-panel.tsx`), and Only keeps the change on the Menu link by menu
+item id. Menu links are part of their Menu: they aren't deleted, copied or moved on their
+own. Menus made before Menu links get one when the page is opened in the builder.

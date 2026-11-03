@@ -113,6 +113,16 @@ const demos: Record<MotionDemo, { shape: string; extra?: string; timing?: string
     extra: "0%{transform:scaleX(0)}70%,100%{transform:scaleX(1)}",
     timing: "ease-in-out",
   },
+  roll: { shape: "0%,20%,90%,100%{transform:none}40%,70%{transform:translateY(-10px)}" },
+  scramble: {
+    shape: "0%,20%,70%,100%{opacity:1}28%{opacity:.2}36%{opacity:.85}44%{opacity:.3}54%{opacity:1}",
+    timing: "steps(1)",
+  },
+  wave: {
+    shape: "0%,20%,60%,100%{transform:none}35%{transform:translateY(-5px)}",
+    timing: "ease-in-out",
+  },
+  bolder: { shape: "0%,20%,90%,100%{transform:none}40%,70%{transform:scaleY(2)}" },
 };
 
 function rule(demo: string, part: "shape" | "extra", frames: string, timing: string): string {

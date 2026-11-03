@@ -155,6 +155,7 @@ describe("navigation menus", () => {
       locale: "en-GB",
       items: [
         {
+          id: expect.any(String),
           label: "About us",
           url: "/about-us",
           newTab: false,
@@ -162,6 +163,7 @@ describe("navigation menus", () => {
           entryId: aboutId,
           children: [
             {
+              id: expect.any(String),
               label: "Team",
               url: "/about-us#team",
               newTab: false,
@@ -172,6 +174,7 @@ describe("navigation menus", () => {
           ],
         },
         {
+          id: expect.any(String),
           label: "Contact",
           url: "mailto:hello@example.com",
           newTab: false,

@@ -44,6 +44,7 @@ export function deliverItems(
     }
     return [
       {
+        id: item.id,
         label: item.label || link?.title || "",
         url: link ? link.url : item.url,
         newTab: item.newTab,

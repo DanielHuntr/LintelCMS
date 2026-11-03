@@ -37,11 +37,16 @@ export function mountMotionList(
       destroy: () => undefined,
     };
   const attribute = options.nodeAttribute ?? "data-node-id";
+  // An element drawn more than once (each link of a menu, from its one Menu link) moves on
+  // every copy.
   const mounted = bindings.flatMap((binding) => {
     const escaped = binding.nodeId.replace(/["\\]/g, "\\$&");
-    const element = document.querySelector(`[${attribute}="${escaped}"]`);
-    if (!(element instanceof HTMLElement)) return [];
-    return [{ spec: binding.spec, controller: mountMotion(element, binding.spec, options) }];
+    return Array.from(document.querySelectorAll(`[${attribute}="${escaped}"]`)).flatMap(
+      (element) =>
+        element instanceof HTMLElement
+          ? [{ spec: binding.spec, controller: mountMotion(element, binding.spec, options) }]
+          : [],
+    );
   });
   const exits = mounted.filter(({ spec }) => spec.trigger.type === "pageExit");
   return {

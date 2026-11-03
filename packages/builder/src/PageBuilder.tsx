@@ -89,6 +89,7 @@ import { PictureDropStatus } from "./canvas/PictureDropStatus.js";
 import { type PictureUploader, usePictureDrop } from "./canvas/usePictureDrop.js";
 import { canvasPageData } from "./panels/canvas-data.js";
 import { MenuEditingContext, type RenderMenuEditor } from "./menus/menu-editing.js";
+import type { PickedMenuItem } from "./menus/menu-link-panel.js";
 import {
   type BuilderDataSources,
   DataSourcesContext,
@@ -276,6 +277,8 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   useEffect(() => onSelectionChange?.(selectedId), [onSelectionChange, selectedId]);
   const [breakpoint, setBreakpoint] = useState<Breakpoint>("base");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  // The menu link clicked on the canvas, for "Changes apply to: Only Contact".
+  const [pickedMenuItem, setPickedMenuItem] = useState<PickedMenuItem | null>(null);
   // "Select them" in Site styles: the elements outlined together, while one of them is selected.
   const [highlight, setHighlight] = useState<readonly string[]>([]);
   const [revealId, setRevealId] = useState<string | null>(null);
@@ -385,8 +388,9 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
       choices: menuChoices,
       editingFor: editingMenuFor,
       setEditingFor: setEditingMenuFor,
+      pickedMenuItem,
     }),
-    [props.menuEditor, menuChoices, editingMenuFor],
+    [props.menuEditor, menuChoices, editingMenuFor, pickedMenuItem],
   );
   const site = props.site;
   // A page with its own header or footer shows it instead of the site's, as the website does.
@@ -655,7 +659,14 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
         if (dragged && target) actions.insert(dragged.key, target.place);
         showCanvasDrop(null);
       }
-      if (message.type === "select") actions.select(message.nodeId);
+      if (message.type === "select") {
+        actions.select(message.nodeId);
+        setPickedMenuItem(
+          message.menuItem && message.nodeId
+            ? { nodeId: message.nodeId, ...message.menuItem }
+            : null,
+        );
+      }
       if (message.type === "hover") setHoveredId(message.nodeId);
       if (message.type === "editText") actions.editText(message.nodeId, message.prop, message.text);
       if (message.type === "key") runShortcut(message.key);

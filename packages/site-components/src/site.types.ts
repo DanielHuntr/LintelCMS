@@ -48,6 +48,8 @@ export interface SiteLink {
 
 /** One item of the main menu, with the items inside it. */
 export interface MenuItem {
+  /** The menu item's id, so a link styled on its own can be told apart. */
+  id?: string;
   label: string;
   /** Null for a heading that only opens its sub-menu. */
   url: string | null;

@@ -410,6 +410,72 @@ const waveText: EffectBehaviour = (element, params, context) => {
   );
 };
 
+/**
+ * The words slide up out of sight while a copy rolls in from below, on hover and on keyboard
+ * focus, and roll back when the pointer leaves. The original words stay where they were, so
+ * screen readers hear them once; the copy is hidden from them. With less motion, nothing
+ * moves.
+ */
+const rollUp: EffectBehaviour = (element, params, context) => {
+  if (context.reduced) return;
+  const original = Array.from(element.childNodes);
+  const text = element.textContent ?? "";
+  if (text.trim() === "") return;
+  const frame = document.createElement("span");
+  frame.setAttribute("data-lintel-roll", "");
+  frame.setAttribute(
+    "style",
+    "display:inline-grid;overflow:hidden;vertical-align:top;line-height:inherit",
+  );
+  const words = document.createElement("span");
+  words.append(...original);
+  const copy = document.createElement("span");
+  copy.setAttribute("aria-hidden", "true");
+  copy.textContent = text;
+  for (const layer of [words, copy]) {
+    layer.style.gridArea = "1 / 1";
+    layer.style.display = "block";
+    layer.style.whiteSpace = "nowrap";
+  }
+  copy.style.transform = "translateY(100%)";
+  frame.append(words, copy);
+  element.replaceChildren(frame);
+  const duration = readNumber(params, "duration", 420);
+  const options: KeyframeAnimationOptions = {
+    duration,
+    easing: "cubic-bezier(.65,0,.35,1)",
+    fill: "forwards",
+  };
+  let up = false;
+  const roll = (toTop: boolean) => {
+    if (up === toTop) return;
+    up = toTop;
+    words.animate(
+      [
+        { transform: `translateY(${toTop ? 0 : -100}%)` },
+        { transform: `translateY(${toTop ? -100 : 0}%)` },
+      ],
+      options,
+    );
+    copy.animate(
+      [
+        { transform: `translateY(${toTop ? 100 : 0}%)` },
+        { transform: `translateY(${toTop ? 0 : 100}%)` },
+      ],
+      options,
+    );
+  };
+  return combine(
+    listen(element, {
+      pointerenter: () => roll(true),
+      pointerleave: () => roll(element.matches(":focus-within")),
+      focusin: () => roll(true),
+      focusout: () => roll(element.matches(":hover")),
+    }),
+    () => element.replaceChildren(...original),
+  );
+};
+
 export const behaviours = {
   scramble,
   typewriter,
@@ -419,5 +485,6 @@ export const behaviours = {
   rotatingWords,
   countUp,
   waveText,
+  rollUp,
 };
 export default { behaviours } satisfies EffectModule;

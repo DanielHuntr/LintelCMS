@@ -3,6 +3,7 @@ import { ListTree } from "lucide-react";
 import { createContext, type ReactNode, useContext } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { inputClassName, Labelled } from "../ui/controls.js";
+import type { PickedMenuItem } from "./menu-link-panel.js";
 
 /**
  * Editing a site menu without leaving the builder. The Header, Menu and Menu drawer show
@@ -35,6 +36,8 @@ interface MenuEditingState {
   /** The element whose menu is being edited in the panel, if any. */
   editingFor: string | null;
   setEditingFor: (nodeId: string | null) => void;
+  /** The menu link last clicked on the canvas (see menu-link-panel.tsx). */
+  pickedMenuItem?: PickedMenuItem | null;
 }
 
 export const MenuEditingContext = createContext<MenuEditingState>({

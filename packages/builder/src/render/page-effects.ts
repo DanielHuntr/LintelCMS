@@ -1,4 +1,4 @@
-import type { PageNode } from "@lintel/builder-model";
+import { impliedMenuLinkEffect, type PageNode } from "@lintel/builder-model";
 import {
   effectRegistry,
   resolveNodeEffects,
@@ -24,7 +24,10 @@ export function collectNodeEffects(
   node: PageNode,
 ): Array<{ nodeId: string; effects: NodeEffect[] }> {
   if (node.hidden) return [];
-  const own = node.effects?.length ? [{ nodeId: node.id, effects: node.effects }] : [];
+  // A Menu link that scrambles on hover runs the scramble effect on every link.
+  const implied = impliedMenuLinkEffect(node);
+  const effects = implied ? [...(node.effects ?? []), implied] : (node.effects ?? []);
+  const own = effects.length ? [{ nodeId: node.id, effects }] : [];
   return [...own, ...node.children.flatMap(collectNodeEffects)];
 }
 

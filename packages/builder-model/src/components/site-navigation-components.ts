@@ -1,5 +1,6 @@
 import { z } from "zod";
-import type { PageNode } from "../document/page-document.schema.js";
+import { nodeStylesSchema, type PageNode } from "../document/page-document.schema.js";
+import { isSafeStyleValue } from "../styles/style-properties.js";
 import { defineComponent } from "./component-definition.js";
 import {
   emptyPicture,
@@ -62,6 +63,79 @@ export const menuHandleSchema = z
   .string({ error: "The menu should be named by its handle" })
   .max(64, { error: "A menu's handle is at most 64 characters" })
   .default("main");
+
+/**
+ * What a Menu link does while the pointer is over it (or it has keyboard focus): nothing
+ * more than its Hovered look, a line drawn in under it, the words rolling up, the letters
+ * scrambling, a thin circle drawn around it, or its colour fading to another.
+ */
+export const menuLinkHoverLooks = [
+  "none",
+  "underline",
+  "rollUp",
+  "scramble",
+  "circle",
+  "colour",
+] as const;
+export type MenuLinkHoverLook = (typeof menuLinkHoverLooks)[number];
+
+/** A menu item's id, as `data-menu-item` carries it and per-link looks are keyed by. */
+export const menuItemIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/, {
+  error: "A menu item should be named by its id",
+});
+
+/**
+ * The look of every link in a Menu, as one element inside it (see menu-links/). Its words
+ * and addresses still come from the menu; this only says how they look: its own styles,
+ * hovered and current looks, a hover effect, and a few links changed on their own
+ * (`itemStyles`, by menu item id), which keep the rest of the shared look.
+ */
+export const menuLinkComponent = defineComponent({
+  type: "menuLink",
+  label: "Menu link",
+  keywords: ["link", "menu item"],
+  description: "How every link in its menu looks. The words and addresses come from the menu.",
+  icon: "link",
+  category: "navigation",
+  propsSchema: z.object({
+    hoverLook: oneOf(menuLinkHoverLooks, "What a link does on hover"),
+    lookColour: z
+      .string()
+      .max(120)
+      .refine((value) => value === "" || isSafeStyleValue(value), {
+        error: "That colour can’t be used",
+      })
+      .default(""),
+    keepOnCurrent: z.boolean().default(true),
+    itemStyles: z
+      .record(menuItemIdSchema, nodeStylesSchema)
+      .refine((looks) => Object.keys(looks).length <= 50, {
+        error: "At most 50 links can have looks of their own",
+      })
+      .default({}),
+  }),
+  defaultProps: { hoverLook: "none", lookColour: "", keepOnCurrent: true, itemStyles: {} },
+  allowedChildren: "none",
+  allowedParents: ["navigation"],
+  hiddenFromInsert: true,
+  editableFields: [
+    {
+      kind: "choice",
+      prop: "hoverLook",
+      label: "When a link is hovered",
+      choices: [
+        { value: "none", label: "Only its Hovered look" },
+        { value: "underline", label: "A line draws in under it" },
+        { value: "rollUp", label: "The words roll up" },
+        { value: "scramble", label: "The letters scramble" },
+        { value: "circle", label: "A circle draws around it" },
+        { value: "colour", label: "Its colour fades" },
+      ],
+    },
+    { kind: "text", prop: "lookColour", label: "Colour" },
+    { kind: "toggle", prop: "keepOnCurrent", label: "Keep it on the current page’s link" },
+  ],
+});
 
 export const siteHeaderComponent = defineComponent({
   type: "siteHeader",

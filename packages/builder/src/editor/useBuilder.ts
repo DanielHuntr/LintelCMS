@@ -33,6 +33,7 @@ import {
   instanceBlockHandle,
   type BoundPicture,
   type SiteSectionSlot,
+  withMenuLinks,
 } from "@lintel/builder-model";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { Translate } from "../i18n/builder-text.js";
@@ -82,7 +83,11 @@ export function useBuilder({
   blocks = noBlockLibrary,
   sharesSiteSections = false,
 }: UseBuilderOptions) {
-  const [state, dispatch] = useReducer(editorReducer, initialDocument, createEditorState);
+  // Menus made before they had a Menu link get one, so it shows in Layers. It's saved with
+  // the next change; until then the page is as it was.
+  const [state, dispatch] = useReducer(editorReducer, initialDocument, (document) =>
+    createEditorState(withMenuLinksIn(document, createId)),
+  );
   const [announcement, setAnnouncement] = useState({ message: "", count: 0 });
   const clipboard = useRef<BuilderClipboard | null>(null);
   const latest = useRef(state);
@@ -95,7 +100,7 @@ export function useBuilder({
     [],
   );
 
-  const lastSent = useRef(initialDocument);
+  const lastSent = useRef(state.document);
   useEffect(() => {
     if (state.document === lastSent.current) return;
     lastSent.current = state.document;
@@ -505,4 +510,9 @@ export function useBuilder({
     announcement,
     announce,
   };
+}
+
+function withMenuLinksIn(document: PageDocument, createId: CreateNodeId): PageDocument {
+  const root = withMenuLinks(document.root, createId);
+  return root === document.root ? document : { ...document, root };
 }

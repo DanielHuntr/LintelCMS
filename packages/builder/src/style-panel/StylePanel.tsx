@@ -15,7 +15,15 @@ import {
   type StyleTarget,
 } from "@lintel/builder-model";
 import { ChevronRight, Palette } from "lucide-react";
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, use, useMemo, useState } from "react";
+import { MenuEditingContext } from "../menus/menu-editing.js";
+import {
+  changeItemStyles,
+  itemLook,
+  type MenuItemScope,
+  MenuItemScopeBar,
+  withoutItem,
+} from "../menus/menu-link-panel.js";
 import { type SharedScope, SharedStyleBar } from "../site-design/SharedStyleBar.js";
 import { useSiteDesign, withSharedStyle } from "../site-design/site-design-context.js";
 import { CanvasLookContext, useCanvasLook } from "./canvas-look.js";
@@ -95,9 +103,20 @@ interface StylePanelProps {
   onOpenSiteStyles?: () => void;
   /** Whether Open and Current make sense for this element; left out, both are offered. */
   looks?: RelevantLooks;
+  /** Changes the element's props: a menu link's own look is kept there (see menu-links/). */
+  onChangeProps?: (props: Record<string, unknown>, label: string) => void;
 }
 
-const textTypes = new Set(["heading", "text", "quote", "list", "button", "link", "navigation"]);
+const textTypes = new Set([
+  "heading",
+  "text",
+  "quote",
+  "list",
+  "button",
+  "link",
+  "navigation",
+  "menuLink",
+]);
 
 /** What Simple shows open the first time: the groups people change most. */
 const simpleOpenAtFirst = ["layout", "spacing", "text"];
@@ -135,6 +154,7 @@ export function StylePanel({
   nodeName = "",
   onOpenSiteStyles,
   looks,
+  onChangeProps,
 }: StylePanelProps) {
   const text = useBuilderText();
   const advanced = mode === "advanced";
@@ -162,12 +182,34 @@ export function StylePanel({
     scope: "every",
   });
   const sharedScope = scope.nodeId === node.id ? scope.scope : "every";
+  // A Menu link with one of its links clicked on the canvas: changes can go to that link only.
+  const picked = use(MenuEditingContext).pickedMenuItem ?? null;
+  const menuItem = node.type === "menuLink" && picked?.nodeId === node.id ? picked : null;
+  const itemKey = `${node.id}:${menuItem?.id ?? ""}`;
+  const [itemScope, setItemScope] = useState<{ key: string; scope: MenuItemScope }>({
+    key: itemKey,
+    scope: "every",
+  });
+  const editsItem =
+    menuItem !== null &&
+    onChangeProps !== undefined &&
+    itemScope.key === itemKey &&
+    itemScope.scope === "only" &&
+    !isOwnerStateTarget(target);
   const editsShared =
     shared !== undefined &&
     changeSite !== undefined &&
     sharedScope === "every" &&
     !isOwnerStateTarget(target);
   const editing = useMemo<StyleEditing>(() => {
+    if (editsItem && menuItem && onChangeProps) {
+      return {
+        styles: itemLook(node, menuItem.id),
+        target,
+        change: (values, label) =>
+          onChangeProps({ itemStyles: changeItemStyles(node, menuItem.id, target, values) }, label),
+      };
+    }
     if (shared && editsShared && changeSite) {
       return {
         // What shows is the look in effect; where it sits (its place) is always its own.
@@ -190,7 +232,19 @@ export function StylePanel({
       target,
       change: (values, label) => onChange(target, values, label),
     };
-  }, [shared, sharedLook, editsShared, changeSite, site.design, node.styles, target, onChange]);
+  }, [
+    editsItem,
+    menuItem,
+    onChangeProps,
+    node,
+    shared,
+    sharedLook,
+    editsShared,
+    changeSite,
+    site.design,
+    target,
+    onChange,
+  ]);
   const store = usePreferenceStore();
   const simpleSections = useRememberedOpenSections(store, "style.simple.open", simpleOpenAtFirst);
   const advancedSections = useLastUsedOpenSections(store, "style.advanced.lastUsed");
@@ -218,15 +272,35 @@ export function StylePanel({
           ]}
         />
         {note}
-        <SharedStyleBar
-          node={node}
-          design={design}
-          uses={node.sharedStyle ? (sharedStyleUses?.get(node.sharedStyle) ?? 1) : 0}
-          scope={sharedScope}
-          onScopeChange={(next) => setScope({ nodeId: node.id, scope: next })}
-          defaultName={nodeName}
-          isLocked={isLocked}
-        />
+        {node.type === "menuLink" ? (
+          <MenuItemScopeBar
+            node={node}
+            item={onChangeProps ? menuItem : null}
+            scope={itemScope.key === itemKey ? itemScope.scope : "every"}
+            onScopeChange={(next) => setItemScope({ key: itemKey, scope: next })}
+            onUseShared={() => {
+              if (!menuItem || !onChangeProps) return;
+              const looks = (node.props.itemStyles as Record<string, unknown> | undefined) ?? {};
+              onChangeProps(
+                { itemStyles: withoutItem(looks, menuItem.id) },
+                text("pageBuilder.menu.sharedAgainHistory", {
+                  name: menuItem.label || menuItem.id,
+                }),
+              );
+            }}
+            isLocked={isLocked}
+          />
+        ) : (
+          <SharedStyleBar
+            node={node}
+            design={design}
+            uses={node.sharedStyle ? (sharedStyleUses?.get(node.sharedStyle) ?? 1) : 0}
+            scope={sharedScope}
+            onScopeChange={(next) => setScope({ nodeId: node.id, scope: next })}
+            defaultName={nodeName}
+            isLocked={isLocked}
+          />
+        )}
         {onOpenSiteStyles && (
           <button
             type="button"
