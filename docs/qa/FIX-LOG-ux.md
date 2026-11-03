@@ -224,3 +224,7 @@ Asked by Daniel once dropping from Insert worked: "shouldn't I be able to move i
 **Tests:** `canvas-messages.test.ts` (move messages). In the browser, with the real mouse inside the canvas: the first section dragged below the second swapped them, and a click afterwards selected without moving anything.
 
 Also fixed: `Canvas.test.tsx` (added with FUNC-028) used a screen size that doesn't exist, which broke the builder's typecheck.
+
+## LINTEL-UX-006: status brought up to date
+
+Fixed in Phase A (`16f51ff`): fields a page's design replaces (Body, Sections, Blocks) sit behind a tinted note, "Body isn't shown on your website, because this page has a design", with "Show them anyway" (`designReplacedFields.ts`). The bug report still said Open; it now says Fixed.

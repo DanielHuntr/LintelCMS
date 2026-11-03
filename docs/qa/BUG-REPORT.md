@@ -745,7 +745,7 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-SEC-012  | P3       | Open   | Webhook signing secrets are shown to everyone with `settings:read`                                                  |
 | LINTEL-SEC-013  | P3       | Open   | No rate limit on the password checks for turning two-factor off and making recovery codes                           |
 | LINTEL-SEC-014  | P3       | Open   | Cart tokens are written to the request log (they are in the path, not the query)                                    |
-| LINTEL-UX-006   | P1       | Open   | A page's Body text vanishes from the website once it has a design; the editor still shows it (redesign)             |
+| LINTEL-UX-006   | P1       | Fixed  | A page's Body text vanishes from the website once it has a design; the editor still shows it (redesign)             |
 | LINTEL-UX-007   | P1       | Fixed  | Form notifications are on by default but nothing is sent without a mail service, and nothing says so                |
 | LINTEL-UX-008   | P1       | Fixed  | New products count stock from 0, so they show "Sold out" while the admin shows "On sale"                            |
 | LINTEL-UX-009   | P1       | Fixed  | The shop looks open before it can sell; checkout fails at the last step; no Shop link on the site (redesign)        |
