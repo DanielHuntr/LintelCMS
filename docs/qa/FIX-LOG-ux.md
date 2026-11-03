@@ -283,3 +283,70 @@ Six ambitious real-world page designs (editorial, studio, lookbook, showroom, co
 8. Layers are named "Heading", "Paragraph": name them from their text or picture.
 9. A full-screen hero is cut by the site header: "fill the screen below the header".
 10. Free-photo search matches loosely: filter to photographs and offer several to choose from.
+
+## Accessibility batch (4 November 2026)
+
+Branch `fix/accessibility`. Each regression test was run on the unfixed code first and failed there. Screenshots are in `screenshots/fix-a11y/`.
+
+### LINTEL-A11Y-001: the basket drawer didn't give focus back
+
+- **Cause:** "Add to basket" is disabled while the request runs, which takes focus off it. So when the drawer opened, the browser had nowhere to return focus to.
+- **Fix:** the button is ready again before the drawer opens, and gets focus back when the drawer closes.
+- **Test:** `builder/src/browser-tests/shop-cart-focus.test.ts` uses Chromium, the real elements script and a stand-in shop API. After Escape, focus was `BODY` before and is "Add to basket" now.
+
+### LINTEL-A11Y-002: checkout lost focus after "Choose delivery"
+
+- **Same cause:** the busy button lost focus.
+- **Fix:**
+  - Focus moves to the chosen delivery option.
+  - The status line says "2 ways to deliver. Choose one, then choose Pay now." (or "1 way to deliver…").
+  - If the button loses focus any other way (an error, say), focus returns to it.
+- **Tests:** the same browser file (focus was `BODY` before, the first rate now) and `cart-views.test.ts` (the message).
+
+### LINTEL-A11Y-003: no reflow at 320px in the editors
+
+- **Entry editor (368px wide at 320):** the sticky bar always reached 64px past the right edge, the room left for the help button on wider screens. Below 768px the page's own gutter is 16px.
+  - The bar now follows the page's gutter.
+  - Below 400px its buttons sit closer: no gaps, and 32px icon buttons.
+- **Content type editor (368px):** the preview address box couldn't narrow (`flex-1` without `min-w-0`).
+- **Measured at 320x256, after:** Content, the entry editor, the Page content type and Users are all 320px wide.
+- **Screenshots:** [entry before](screenshots/fix-a11y/a11y-003-entry-before-320.png), [entry after](screenshots/fix-a11y/a11y-003-entry-after-320.png), [content type before](screenshots/fix-a11y/a11y-003-type-before-320.png), [content type after](screenshots/fix-a11y/a11y-003-type-after-320.png).
+
+### LINTEL-A11Y-004: names that didn't contain the visible text (WCAG 2.5.3)
+
+Each name now starts with what's shown:
+
+- **Account link:** was "Your account: Sam Baker", while it also shows the email. Now it's "Your account: Sam Baker sam@bakery.test", from the visible text plus a hidden "Your account:".
+- **Recycle bin:** the visible words plus ", 1 item" in hidden text. The bare count is hidden from screen readers.
+- **Field cards in the content type editor:** were "Title settings". Now the card's own text, then "settings" ("Title Text · title settings").
+- **Tree rows:** the count's description follows the name ("Blog posts, 240 …"), and the bare number is hidden.
+
+**Tests:** `SidebarAccount.test.tsx` (new), `BlueprintEditor.test.tsx` and `ContentTree.test.tsx`.
+
+**After:** the name check finds no mismatches on Content, the entry editor, the Page content type or Users. The exception is a page-tree section ("Pages"), whose text includes its child pages; that's how a tree is built.
+
+### LINTEL-A11Y-005: low contrast
+
+- **Field picker footer:** its hint used tertiary text (3.44:1 light, 3.29:1 dark). It's real text, so it now uses secondary.
+- **Builder breakpoint switch:** the cause was secondary text on the grey control fill: 4.38:1 light and 4.29:1 dark. The secondary colour is now:
+  - light: `#67625a`, which is 4.94:1 on the fill, 5.5 on the page and 6.0 on cards;
+  - dark: `#b0a99f`, which is 4.71 and 5.25 on the fill over the two dark surfaces.
+- **Test:** `admin/src/design/colourContrast.test.ts` reads `styles.css` and checks label and secondary label against every background, in both schemes.
+- **Screenshots:** the field picker before and after, desktop and 390px, light and dark (`a11y-005-field-picker-*`).
+
+### LINTEL-A11Y-006: the sticky header covered fields the browser scrolled to
+
+- **Fix:**
+  - The page keeps `scroll-padding-top` at the header's height.
+  - The elements script measures the header (61px on desktop, 113px on a phone, where the menu wraps) and keeps the value current.
+  - The site's header styles give 5rem, or 8rem on phones, where the script isn't loaded.
+- **Test:** `builder/src/browser-tests/sticky-header-clearance.test.ts`. A form with a mistake sent from further down, and a link to a field, both left the field under the header before (its top at 1px, under a 113px header) and now leave it in view, with and without the script.
+
+### LINTEL-A11Y-007: small tap targets on phones
+
+- **Already gone:** the entry editor's 20px "Actions" button (the one-editor change).
+- **Measured at 390x844, two standalone text controls were 18px tall:** "Show them anyway" and "Open the main menu". Both now have a 24px minimum.
+- **Left as they are, under WCAG 2.5.8's exceptions:**
+  - The breadcrumb link (17px): it sits in a line of text.
+  - The content type editor's field width handles (12px): the width can also be set in each field's settings and with the arrow keys.
+  - One 16px checkbox: its label is clickable.
