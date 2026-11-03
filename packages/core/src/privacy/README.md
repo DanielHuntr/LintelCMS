@@ -29,16 +29,21 @@ box is saved with the exact words shown, the time and the page.
 
 ## Erasure rules
 
-| Kind            | What erasing does                                                                      |
-| --------------- | -------------------------------------------------------------------------------------- |
-| Form entries    | Deleted, with their files and notes                                                    |
-| Shop customers  | Deleted                                                                                |
-| Orders          | Kept for tax records; email, name, address and phone removed (country and region stay) |
-| Baskets         | Deleted; unpaid checkouts have the person removed                                      |
-| Security log    | Kept as a record; email, name, IP address and browser removed                          |
-| Admin accounts  | Kept: people who use the admin are removed in Users. Invitations are deleted           |
-| Plugins/add-ons | Whatever the plugin's `erase` hook does                                                |
-| Backups         | Can't be changed; erased data leaves them as older backups are replaced                |
+| Kind                           | What erasing does                                                                      |
+| ------------------------------ | -------------------------------------------------------------------------------------- |
+| Form entries                   | Deleted, with their files and notes                                                    |
+| Shop customers                 | Deleted                                                                                |
+| Orders                         | Kept for tax records; email, name, address and phone removed (country and region stay) |
+| Baskets                        | Deleted; unpaid checkouts have the person removed                                      |
+| Security log                   | Kept as a record; email, name, IP address, browser and details removed                 |
+| Webhook and automation history | Deleted, except automation runs still going                                            |
+| Admin accounts                 | Kept: people who use the admin are removed in Users. Invitations are deleted           |
+| Plugins/add-ons                | Whatever the plugin's `erase` hook does                                                |
+| Backups                        | Can't be changed; erased data leaves them as older backups are replaced                |
+
+Orders also lose the email from their history (`shop_order_events`), and checkouts and discount
+redemptions are cleared with them. Outside companies keep their own records, and messages an
+automation wrote into a notification aren't searched; the admin and docs say so.
 
 ## Retention defaults
 
@@ -46,11 +51,13 @@ box is saved with the exact words shown, the time and the page.
 | ----------------- | -------------- | ----------------------------------------------------- |
 | Form entries      | Off, 12 months | Deleting messages unasked could surprise the owner    |
 | Abandoned baskets | On, 30 days    | Nobody expects to keep them                           |
-| Security log      | On, 90 days    | Long enough to look into a problem                    |
+| Activity logs     | On, 90 days    | Long enough to look into a problem                    |
 | Orders            | Off, 7 years   | Tax rules differ; the owner chooses when to anonymise |
 
 Forms with their own "keep entries for" keep following it; the form entries rule covers the
-others. Privacy request records are never deleted by a rule.
+others. Activity logs are the security log, webhook deliveries that aren't waiting to send, and
+finished automation runs not about an entry. Privacy request records are never deleted by a
+rule, and are left out of backups so a restore can't lose them.
 
 ## Plugins and add-ons
 

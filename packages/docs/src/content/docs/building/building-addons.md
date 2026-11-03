@@ -195,6 +195,58 @@ commands: [
 Run as `pnpm lintel example:hours`, with the site's database open. `lintel help` lists every
 add-on's commands.
 
+## Personal data
+
+If an add-on keeps anything that can identify a person, declare it, so
+[Settings → Privacy](/using/privacy/) can list it, and give it the three hooks so people's
+requests reach it:
+
+```ts
+personalData: {
+  description: "The name and email of each person who books.",
+  tables: [
+    {
+      name: "bookings",
+      columns: [
+        { name: "customer_name", personalData: true },
+        { name: "customer_email", personalData: true },
+        { name: "starts_at" },
+      ],
+    },
+  ],
+  find: async ({ database, tenantId, person }) => [
+    { id: "…", summary: "Booking on 3 Nov", date: "2026-11-03T10:00:00.000Z" },
+  ],
+  export: async ({ database, tenantId, person }) => [{ name: "…", email: "…" }],
+  erase: async ({ database, tenantId, person }) => ({ deleted: 1 }),
+},
+```
+
+`person` is `{ email, name }`, with `null` for whichever wasn't given. Match an email whole and
+ignoring case, and a name only as a whole name, never part of one: erasing can't be undone.
+
+- `find` returns a short line for each thing found.
+- `export` returns plain rows. Each becomes a row of a spreadsheet in the person's download.
+- `erase` returns `{ deleted, anonymised?, kept?, explanation? }`. Say in `explanation` why
+  anything stayed. The hooks run while the add-on is switched off too, because its data stays.
+
+An add-on with no server code to run can declare its tables in package.json instead:
+
+```json
+"lintel-addon": {
+  "id": "swatches",
+  "lintel": ">=1.0.0-rc.1",
+  "personalData": {
+    "tables": [{ "name": "swatches_votes", "columns": [{ "name": "email", "personalData": true }] }]
+  }
+}
+```
+
+Without all three hooks, an add-on is listed as one that can't be searched, and so is one with
+tables that says nothing. Declaring tables with no `personalData: true` column says it keeps
+none, and it isn't listed. `packages/plugin-example-bookings` is a full example, in
+`bookings.personal-data.ts`.
+
 ## Tests
 
 `@lintel/core/plugin-testing` starts a real Lintel with a database in memory and the add-on

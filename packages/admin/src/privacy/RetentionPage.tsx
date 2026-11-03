@@ -92,6 +92,7 @@ function RuleRow({
 }) {
   const name = t(ruleNames[rule.id]);
   const hint = ruleHints[rule.id];
+  const due = describeDue(rule);
   return (
     <li className={`flex flex-col gap-3 px-4 py-3 ${rule.applies ? "" : "opacity-70"}`}>
       <div className="flex items-start justify-between gap-4">
@@ -121,20 +122,21 @@ function RuleRow({
           />
         </div>
       )}
-      <p className="text-footnote text-label-secondary">{describeDue(rule)}</p>
+      {due && <p className="text-footnote text-label-secondary">{due}</p>}
     </li>
   );
 }
 
-function describeDue(rule: RetentionRule): string {
+/** What the next run would do. A rule that is off with nothing past it has nothing to say. */
+function describeDue(rule: RetentionRule): string | null {
   if (!rule.applies && rule.dueNow === 0) return t("privacy.retention.notInUse");
   if (rule.dueNow > 0) {
     return rule.enabled
       ? t("privacy.retention.dueNow", { count: rule.dueNow })
       : t("privacy.retention.wouldGo", { count: rule.dueNow });
   }
-  if (rule.enabled && rule.nextDueAt) {
-    return t("privacy.retention.nextDue", { date: formatDate(rule.nextDueAt) });
-  }
-  return t("privacy.retention.nothing");
+  if (!rule.enabled) return null;
+  return rule.nextDueAt
+    ? t("privacy.retention.nextDue", { date: formatDate(rule.nextDueAt) })
+    : t("privacy.retention.nothing");
 }

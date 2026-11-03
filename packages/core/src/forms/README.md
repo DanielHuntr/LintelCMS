@@ -56,6 +56,11 @@ string, so it is served as it is with no build step; `public-forms.test.ts` chec
 
 - **Retention:** a form's `retentionDays` deletes older submissions and their files, every
   hour (`deleteExpiredSubmissions`, started in `register-forms.ts`).
+- **Consent records:** each ticked consent box is saved in `consents` with the exact words
+  shown (label and help text), the time and the page (`consent-records.ts`). They show on the
+  entry and go in the CSV and every export.
+- **Across the whole site:** Settings → Privacy finds, exports and erases one person's data
+  everywhere, and has a retention rule for forms without their own (see src/privacy).
 - **One person's data:** `POST /forms/privacy/export` and `/forms/privacy/erase` find
   submissions by `submitterEmail` across every form.
 - Files are deleted with their submission, unless another submission holds the same file or
