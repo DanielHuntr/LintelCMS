@@ -1,5 +1,6 @@
 import type { ComponentCatalogue } from "../components/component-catalogue.js";
 import type { PageNode } from "../document/page-document.schema.js";
+import { retargetAnimations } from "../tree/tree-changes.js";
 import { type BlockProperty, customBlockType } from "./custom-block.js";
 import { buildBlockDesign, findPropertyCandidates, type PropertyChoice } from "./make-block.js";
 
@@ -63,6 +64,10 @@ export interface ComponentFromSimilar {
   values: Record<string, Record<string, unknown>>;
   /** For "what will happen": each property and what every element keeps in it. */
   parts: DifferingPart[];
+  /** Parts whose animation or effects came from another element and now go on all of them. */
+  sharedMotion: string[];
+  /** Parts that differ but can't be properties, so all will show the first one's. */
+  notKept: string[];
 }
 
 /**
@@ -77,6 +82,8 @@ export function planComponentFromSimilar(
   const [first] = elements;
   if (!first || elements.length < 2) return null;
   const firstPaths = pathsById(first);
+  const { design: withMotion, names: sharedMotion } = gatherMotion(first, elements, catalogue);
+  const notKept: string[] = [];
   const candidates = findPropertyCandidates(first, catalogue).filter(
     (candidate) =>
       candidate.kind === "text" ||
@@ -95,7 +102,10 @@ export function planComponentFromSimilar(
     let read: (element: PageNode) => unknown;
     if (candidate.kind === "image") {
       const ids = elements.map((element) => at(element)?.props.assetId);
-      if (!ids.every((id) => typeof id === "string" && id !== "")) continue;
+      if (!ids.every((id) => typeof id === "string" && id !== "")) {
+        notKept.push(candidate.suggestedLabel);
+        continue;
+      }
       read = (element) => at(element)?.props.assetId;
     } else if (candidate.kind === "link") {
       read = (element) => ({ url: String(at(element)?.props[candidate.binding] ?? "") });
@@ -106,7 +116,7 @@ export function planComponentFromSimilar(
   }
 
   const { design, properties } = buildBlockDesign(
-    first,
+    withMotion,
     chosen.map((each) => each.choice),
     catalogue,
   );
@@ -126,7 +136,47 @@ export function planComponentFromSimilar(
         : String(value ?? "");
     }),
   }));
-  return { design, properties, values, parts };
+  return { design, properties, values, parts, sharedMotion, notKept };
+}
+
+/**
+ * The first element, with any animation or effects another has on a part where it has none.
+ * Someone who animated one row's title and then makes the rows one component means every
+ * title to move, whichever row they animated.
+ */
+function gatherMotion(
+  first: PageNode,
+  elements: readonly PageNode[],
+  catalogue: ComponentCatalogue,
+): { design: PageNode; names: string[] } {
+  const names: string[] = [];
+  const visit = (node: PageNode, path: readonly number[]): PageNode => {
+    const children = node.children.map((child, index) => visit(child, [...path, index]));
+    const gathered: PageNode = { ...node, children };
+    for (const element of elements) {
+      const other = nodeAtPath(element, path);
+      if (!other || element === first) continue;
+      const needsAnimations = !gathered.animations && other.animations;
+      const needsEffects = !gathered.effects && other.effects;
+      if (!needsAnimations && !needsEffects) continue;
+      if (needsAnimations) gathered.animations = animationsFor(other, element, first);
+      if (needsEffects) gathered.effects = other.effects;
+      const name = node.name || catalogue.find(node.type)?.label || node.type;
+      if (!names.includes(name)) names.push(name);
+    }
+    return gathered;
+  };
+  return { design: visit(first, []), names };
+}
+
+/** Another element's part's animations, pointed at the same parts of the first element. */
+function animationsFor(part: PageNode, element: PageNode, first: PageNode): PageNode["animations"] {
+  const newIds = new Map<string, string>();
+  for (const [id, path] of pathsById(element)) {
+    const same = nodeAtPath(first, path);
+    if (same) newIds.set(id, same.id);
+  }
+  return retargetAnimations({ ...part, children: [] }, newIds).animations;
 }
 
 function holdsComponent(node: PageNode): boolean {

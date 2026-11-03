@@ -214,6 +214,26 @@ describe("several selected in the builder", () => {
     expect(screen.getByRole("heading", { name: "4 selected" })).toBeInTheDocument();
   });
 
+  // Clicking the first of several kept them all, and they came back after clicking elsewhere.
+  it("goes back to one with a plain click, on any of them", async () => {
+    const user = userEvent.setup();
+    const document = pageWith(rows());
+    renderBuilder(document);
+    await user.click(projectRows()[0] as HTMLElement);
+    await user.keyboard("{Control>}a{/Control}");
+    await user.click(projectRows()[0] as HTMLElement);
+    expect(screen.queryByRole("heading", { name: /selected$/ })).not.toBeInTheDocument();
+
+    await user.keyboard("{Control>}a{/Control}");
+    await user.click(projectRows()[1] as HTMLElement);
+    await user.click(projectRows()[0] as HTMLElement);
+    expect(screen.queryByRole("heading", { name: /selected$/ })).not.toBeInTheDocument();
+
+    await user.keyboard("{Control>}a{/Control}");
+    canvasSays({ type: "select", nodeId: document.root.children[0]?.id });
+    expect(screen.queryByRole("heading", { name: /selected$/ })).not.toBeInTheDocument();
+  });
+
   it("extends the selection with Shift and the arrows", async () => {
     const user = userEvent.setup();
     renderBuilder(pageWith(rows()));
@@ -303,6 +323,39 @@ describe("several selected in the builder", () => {
     const after = latest().root.children;
     expect(after.map((row) => row.type)).toEqual(["box", "customBlock", "box", "customBlock"]);
     expect(after[3]?.props.values).toMatchObject({ project_title: "Salt and stone" });
+  });
+
+  it("keeps a client to one element at a time", () => {
+    const document = pageWith(rows());
+    const onChange = vi.fn<(next: PageDocument) => void>();
+    render(
+      <PageBuilder
+        initialDocument={document}
+        onChange={onChange}
+        title="Work"
+        canEditCode={false}
+        contentOnly
+        createId={createCountingNodeIds("new")}
+        preferences={createMemoryPreferenceStore({ tourSeen: "yes", clientTourSeen: "yes" })}
+      />,
+    );
+    const [first, second] = document.root.children;
+    canvasSays({ type: "select", nodeId: first?.children[0]?.id });
+    canvasSays({ type: "select", nodeId: second?.children[0]?.id, add: true });
+    expect(screen.queryByText(/\d selected/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("tree", { name: "Layers" })).not.toBeInTheDocument();
+  });
+
+  it("changes the layout of all of them as one step", async () => {
+    const user = userEvent.setup();
+    const { latest } = renderBuilder(pageWith(rows()));
+    await user.click(projectRows()[0] as HTMLElement);
+    await user.keyboard("{Control>}a{/Control}");
+    const panel = screen.getByRole("complementary", { name: "Selected element" });
+    await user.click(within(panel).getByRole("radio", { name: "Anywhere" }));
+    expect(latest().root.children.every((row) => row.freeLayout !== undefined)).toBe(true);
+    await user.click(screen.getByRole("button", { name: /^Undo: Changed the layout of 4/ }));
+    expect(latest().root.children.every((row) => row.freeLayout === undefined)).toBe(true);
   });
 
   it("deletes all of them with Delete, as one step", async () => {

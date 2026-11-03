@@ -395,6 +395,35 @@ describe("making several similar elements one component", () => {
     expect(titles[3]?.props.text).toBe("Salt and stone");
   });
 
+  it("keeps an animation added to one row that isn't the first, for all eight", () => {
+    const page = projectList();
+    const fourth = page.children[3] as PageNode;
+    const animatedTitle = { ...(fourth.children[1] as PageNode), animations: [{ spec: fadeIn }] };
+    const rows = page.children.map((row) =>
+      row.id === fourth.id
+        ? { ...row, children: row.children.map((c, i) => (i === 1 ? animatedTitle : c)) }
+        : row,
+    );
+    const plan = planComponentFromSimilar(rows, standardCatalogue);
+    expect(plan?.design.children[1]?.animations).toHaveLength(1);
+    expect(plan?.sharedMotion).toEqual(["Project title"]);
+  });
+
+  it("says when pictures can't stay separate, rather than losing them quietly", () => {
+    const row = (src: string, id: string) =>
+      createNode(
+        { type: "box", children: [{ type: "image", name: "Photo", props: { src } }] },
+        standardCatalogue,
+        createCountingNodeIds(id),
+      );
+    const plan = planComponentFromSimilar(
+      [row("/a.jpg", "a"), row("/b.jpg", "b")],
+      standardCatalogue,
+    );
+    expect(plan?.properties).toEqual([]);
+    expect(plan?.notKept).toEqual(["Photo"]);
+  });
+
   it("points animations at each instance's own parts", () => {
     const design = buttonDesign();
     const pointing = motionSpecSchema.parse({

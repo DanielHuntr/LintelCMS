@@ -1710,3 +1710,30 @@ Decision record: `docs/decisions/0053-content-only-editing-for-clients.md`. Migr
 **Screenshots** (in `screenshots/addon-kit/`): `addons-list-{desktop,390}-{light,dark}`, `addon-details-{desktop,390}-{light,dark}`, `opening-hours-screen-{desktop,390}-{light,dark}`.
 
 **Left for later:** rich text extensions (the editor's buttons and the HTML renderer are one fixed list; documented as next); an add-on's own tables aren't in backups yet (backups cover Lintel's schema; the same was already true of plugins from lintel.config.ts); Lintel's packages aren't on npm, so new add-ons link to a local copy of Lintel for types and tests.
+
+## Components with properties and variants (3 November 2026)
+
+**Asked by Daniel:** components at the level designers expect, with properties, variants and instances, built from the site's blocks. Then two additions from real use. He made a project row a shared style on eight rows, animated one title and expected all eight to follow. And "being able to select multiple would be nice too".
+
+**What changed** (decision 59; migration 0034):
+
+- **LINTEL-UX-140, components:** the builder and admin call the site's blocks components. Stored data, the API and blocks fields are unchanged.
+- **LINTEL-UX-141, variants:** variant properties with looks stored as differences from the design, laid over it per instance, least specific first. Older blocks read as having none.
+- **LINTEL-UX-142, the designer's variant bar:** picks the variant shown, says where changes go, and adds or edits variants. Edits made on a variant are kept as its look; a part deleted there is hidden there.
+- **LINTEL-UX-143, instances:** a Variants section above the properties, and a sketch of each component in Insert. Detach keeps the variant shown.
+- **LINTEL-UX-144, clients:** clients can now fill in a component's properties, and choose variants only with **Clients can choose variants**. The server enforces both.
+- **LINTEL-UX-145, server checks:** variants are checked against the design on save. Instances keep only choices that differ from the defaults.
+- **LINTEL-UX-146, motion inside components:** animation targets, scene steps and owner states inside a design pointed at the design's ids, not each instance's. They now follow each instance's own copies.
+- **LINTEL-UX-147, Make these one component:** from several selected, a shared style or similar siblings, with what will happen shown first and one Undo. Motion from any row goes into the design and the dialog says so. Style has a quiet hint under the shared-style row.
+- **LINTEL-UX-148, several selected:** Layers (Ctrl/Cmd-click, Shift-click, Ctrl/Cmd+A, Shift+arrows) and the canvas (Shift-click), with one label; a panel for Style with Mixed, Animate, Content and the actions; one Undo per bulk action.
+- **LINTEL-UX-149, stale selection (found in the browser):** a plain click on the first of several kept them all selected, and they came back after clicking elsewhere. A plain click now always leaves one. Regression test added.
+
+**Also fixed from the screenshots:** the variant bar cut off "Medium" and "Outline"; the rotate handle showed with several selected; the several-selected panel's layout tools acted on the first element only, and its effects did nothing. They now act on all of them, as one step, and "where it sits" isn't offered.
+
+**Daniel's case, in a real browser** (Chromium, on a copy of the styles test data with the private reference pages unpublished and out of the menu): eight rows given one shared style with Ctrl+A; a Fade up on the fourth row's title; Style's hint; Make these one component. All eight became instances with their own words, and the design took the animation and shared style. Changing the title to Pop in in the component and publishing gave eight motion entries on the website, one for each instance's own title. On the Button, hiding the icon while showing Large stored it in Large's look and left the design alone.
+
+**Migration:** the column was added on starting the server on the older test data, and the tests run it on a fresh database. `db:generate` reports no changes.
+
+**Screenshots** (in `screenshots/components/`): `make-these-one-component-offered`, `make-these-one-component-dialog`, `several-selected-style`, `several-selected-animate`, `instance-variants`, `designer-variant-bar`, `designer-variant-small-outline`, `designer-edit-variants`, `components-list` (each `-desktop-{light,dark}`); `shared-style-hint`, `make-these-one-component-with-motion`, `eight-rows-one-component`, `title-animated-in-component` (`-desktop-light`); `published-buttons-390-{light,dark}`, `published-eight-rows-390-light`.
+
+**Left for later:** variants for components written in code; a property that sets a variant from a blocks field; Copy, Cut, Hide and Lock act on the first of several; dragging moves one element; with different kinds selected, Style shows a box's controls; a row whose words are empty shows the design's words once it is an instance.

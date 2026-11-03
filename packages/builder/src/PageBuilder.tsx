@@ -308,6 +308,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   // Several selected: the first is the editor's selection, the rest are along with it. Any
   // other way of selecting (Layers, the canvas, undo) leaves just the one.
   const [many, setMany] = useState<{ primary: string; ids: readonly string[] } | null>(null);
+  if (many && many.primary !== selectedId) setMany(null);
   const selectedIds = useMemo<readonly string[]>(() => {
     if (many && selectedId && many.primary === selectedId) {
       const ids = stillThere(state.document.root, many.ids);
@@ -536,6 +537,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
 
   const selectFromPanel = useCallback(
     (nodeId: string | null) => {
+      setMany(null);
       actions.select(nodeId);
       setRevealId(nodeId);
     },
@@ -741,6 +743,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
       if (message.type === "select" && message.add && message.nodeId) {
         selectWith(message.nodeId, "toggle");
       } else if (message.type === "select") {
+        setMany(null);
         actions.select(message.nodeId);
         setPickedMenuItem(
           message.menuItem && message.nodeId
@@ -1092,7 +1095,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                         }
                         labels={labels}
                         revealId={revealId}
-                        canTransform={selectedNode !== undefined && !selectedIsLocked}
+                        canTransform={selectedNode !== undefined && !selectedIsLocked && !isMany}
                         site={site}
                         scripts={props.frameScripts}
                         motionPreview={motionPreview}

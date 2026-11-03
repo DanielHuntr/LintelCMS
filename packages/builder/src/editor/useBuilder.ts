@@ -573,6 +573,35 @@ export function useBuilder({
         ) => run(multi.changeStylesOfMany(context(), ids, target, values, label), ""),
         animate: (ids: readonly string[], animations: NodeAnimation[]) =>
           run(multi.animateMany(context(), ids, animations), ""),
+        setEffects: (ids: readonly string[], effects: NodeEffect[]) =>
+          run(
+            multi.allAsOne(
+              ids.map((id) => commands.changeEffects(context(), id, effects)),
+              text("pageBuilder.history.animatedMany", { count: ids.length }),
+            ),
+            "",
+          ),
+        setFreeLayout: (ids: readonly string[], freeLayout: FreeLayout | null) =>
+          run(
+            multi.allAsOne(
+              ids.map((id) => designCommands.setFreeLayout(context(), id, freeLayout)),
+              text("pageBuilder.history.layoutMany", { count: ids.length }),
+            ),
+          ),
+        setPlacedGrid: (ids: readonly string[], placedGrid: PlacedGrid | null) =>
+          run(
+            multi.allAsOne(
+              ids.map((id) => designCommands.setPlacedGrid(context(), id, placedGrid)),
+              text("pageBuilder.history.layoutMany", { count: ids.length }),
+            ),
+          ),
+        setBackgroundVideo: (ids: readonly string[], video: BackgroundVideo | null) =>
+          run(
+            multi.allAsOne(
+              ids.map((id) => designCommands.setBackgroundVideo(context(), id, video)),
+              text("pageBuilder.history.videoMany", { count: ids.length }),
+            ),
+          ),
         useSharedStyle: (ids: readonly string[], sharedStyleId: string | null) =>
           run(multi.applySharedStyleToMany(context(), ids, sharedStyleId)),
         remove: (ids: readonly string[]) => run(multi.removeMany(context(), ids)),

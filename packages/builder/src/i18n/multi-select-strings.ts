@@ -6,7 +6,9 @@ export const multiSelectStrings = {
   "pageBuilder.multi.styleNote":
     "Changes here go to all {count}. Values they don’t share show as Mixed.",
   "pageBuilder.multi.contentNote": "Select one to edit its words.",
-  "pageBuilder.multi.animateNote": "The motion you choose goes on all {count}.",
+  "pageBuilder.multi.animateNote": "What you choose here replaces the motion on all {count}.",
+  "pageBuilder.history.layoutMany": "Changed the layout of {count} elements",
+  "pageBuilder.history.videoMany": "Changed the background video of {count} elements",
   "pageBuilder.multi.actions": "With all of them",
   "pageBuilder.multi.duplicate": "Duplicate",
   "pageBuilder.multi.delete": "Delete",

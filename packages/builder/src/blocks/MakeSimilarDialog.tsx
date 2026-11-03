@@ -106,6 +106,18 @@ export function MakeSimilarDialog({
               </ul>
             )}
           </section>
+          {plan.sharedMotion.length > 0 && (
+            <p className="text-caption text-label-secondary">
+              {text("pageBuilder.components.similarMotion", {
+                names: plan.sharedMotion.join(", "),
+              })}
+            </p>
+          )}
+          {plan.notKept.length > 0 && (
+            <p className="text-caption text-warning">
+              {text("pageBuilder.components.similarNotKept", { names: plan.notKept.join(", ") })}
+            </p>
+          )}
           <p className="text-caption text-label-tertiary">
             {text("pageBuilder.components.similarUndo")}
           </p>

@@ -363,7 +363,7 @@ export function StylePanel({
           <OpenSectionsContext.Provider value={openSections}>
             <StyleEditingContext.Provider value={editing}>
               <DesignToolsContext.Provider value={design}>
-                <ArrangeSection advanced={advanced} />
+                {!mixedStyles && <ArrangeSection advanced={advanced} />}
                 {holdsElements && <LayoutSection advanced={advanced} />}
                 <SpacingSection advanced={advanced} />
                 {advanced && <SizeSection />}

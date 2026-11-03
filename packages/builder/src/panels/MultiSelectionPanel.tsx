@@ -1,8 +1,12 @@
 import type {
+  BackgroundVideo,
   Breakpoint,
   ComponentCatalogue,
+  FreeLayout,
   NodeAnimation,
+  NodeEffect,
   PageNode,
+  PlacedGrid,
   StylePropertyName,
   StyleTarget,
 } from "@lintel/builder-model";
@@ -28,6 +32,10 @@ export interface ManyActions {
     label: string,
   ) => void;
   animate: (ids: readonly string[], animations: NodeAnimation[]) => void;
+  setEffects: (ids: readonly string[], effects: NodeEffect[]) => void;
+  setFreeLayout: (ids: readonly string[], freeLayout: FreeLayout | null) => void;
+  setPlacedGrid: (ids: readonly string[], placedGrid: PlacedGrid | null) => void;
+  setBackgroundVideo: (ids: readonly string[], video: BackgroundVideo | null) => void;
   useSharedStyle: (ids: readonly string[], sharedStyleId: string | null) => void;
   remove: (ids: readonly string[]) => void;
   duplicate: (ids: readonly string[]) => void;
@@ -81,11 +89,25 @@ export function MultiSelectionPanel({
   const standIn = useMemo<PageNode>(
     () => ({
       ...first,
+      // Not any one element's id, so no one element's measured look shows as theirs.
+      id: "several-selected",
       type: type ?? "box",
       styles: look.styles,
       sharedStyle: undefined,
     }),
     [first, type, look.styles],
+  );
+  // The tools act on all of them, too. Where each one sits stays its own, so Style doesn't
+  // offer it here.
+  const tools = useMemo<DesignTools>(
+    () => ({
+      ...design,
+      node: standIn,
+      setFreeLayout: (freeLayout) => actions.setFreeLayout(ids, freeLayout),
+      setPlacedGrid: (placedGrid) => actions.setPlacedGrid(ids, placedGrid),
+      setBackgroundVideo: (video) => actions.setBackgroundVideo(ids, video),
+    }),
+    [design, standIn, actions, ids],
   );
   const sharedStyles = site.design.sharedStyles;
   const commonSharedStyle = nodes.every((node) => node.sharedStyle === first.sharedStyle)
@@ -131,7 +153,7 @@ export function MultiSelectionPanel({
       >
         {tab === "style" ? (
           <StylePanel
-            design={design}
+            design={tools}
             node={standIn}
             definition={type ? catalogue.find(type) : catalogue.find("box")}
             breakpoint={breakpoint}
@@ -164,7 +186,7 @@ export function MultiSelectionPanel({
               motionText={motionText}
               tips={tips}
               onChange={(animations) => actions.animate(ids, animations)}
-              onChangeEffects={() => undefined}
+              onChangeEffects={(effects) => actions.setEffects(ids, effects)}
               onPreview={(spec) => ids.forEach((id) => onPreviewMotion(id, spec))}
               onPreviewEffect={() => undefined}
             />

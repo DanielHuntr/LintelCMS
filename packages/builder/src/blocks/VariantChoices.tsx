@@ -22,7 +22,10 @@ export function VariantChoices({
     return (
       <>
         {variants.properties.map((property) => (
-          <div key={property.handle} className="flex items-center gap-1.5">
+          <div
+            key={property.handle}
+            className="flex shrink-0 items-center gap-1.5 [&_[role=radio]]:flex-none [&_[role=radio]]:px-2.5 [&_[role=radio]]:whitespace-nowrap"
+          >
             <span aria-hidden="true" className="text-caption text-label-secondary">
               {property.label}
             </span>

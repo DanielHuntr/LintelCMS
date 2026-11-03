@@ -64,16 +64,16 @@ export const builderBlockStrings = {
   "pageBuilder.content.bind.blockScope": "Component",
 
   "pageBuilder.components.variants": "Variants",
-  "pageBuilder.components.properties": "Properties",
   "pageBuilder.components.makeSimilar": "Make these {count} one component",
   "pageBuilder.components.similarIntro":
     "The first becomes the component. Each one turns into an instance of it and keeps its own words, pictures and links. Layout, styles and animation are shared, so a change to one reaches all.",
   "pageBuilder.components.similarParts": "Filled in separately",
   "pageBuilder.components.similarNoParts": "They’re all the same, so there’s nothing to fill in.",
   "pageBuilder.components.similarMore": "and {count} more",
+  "pageBuilder.components.similarMotion": "{names} will move the same way on all of them.",
+  "pageBuilder.components.similarNotKept":
+    "{names} can’t be kept separately, because they aren’t all in your media library. Every one will show the first one’s.",
   "pageBuilder.components.similarUndo": "You can undo this in one step.",
-  "pageBuilder.components.similarNotAlike":
-    "These aren’t built the same way, so they can’t share one design. Select elements with the same parts inside.",
   "pageBuilder.history.madeSimilar": "Made {count} elements into {name}",
   "pageBuilder.history.changedVariant": "Changed {name}’s variant",
   "pageBuilder.components.sharedStyleHint": "Want changes inside these to follow too?",

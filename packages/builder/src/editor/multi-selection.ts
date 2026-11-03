@@ -8,6 +8,7 @@ import {
   type NodeStyles,
   type PageNode,
   removeNode,
+  retargetAnimations,
   rootNodeId,
   setStyles,
   siteSectionSlotOf,
@@ -16,6 +17,7 @@ import {
   updateNode,
 } from "@lintel/builder-model";
 import { type CommandContext, type CommandResult, isLocked, layerName } from "./commands.js";
+import type { PageChange } from "./editor-state.js";
 
 /**
  * Several elements selected at once: Ctrl/Cmd-click or Shift-click in Layers or on the
@@ -158,6 +160,24 @@ const updateAll =
     root: ids.reduce((root, id) => updateNode(root, id, change), document.root),
   });
 
+/**
+ * The same change made to each element, as one step: each result's update runs on what the
+ * one before left. Refused when any of them is.
+ */
+export function allAsOne(results: readonly CommandResult[], label: string): CommandResult {
+  const changes: PageChange[] = [];
+  for (const result of results) {
+    if ("refused" in result) return result;
+    changes.push(result.change);
+  }
+  return {
+    change: {
+      label,
+      update: (document) => changes.reduce((current, change) => change.update(current), document),
+    },
+  };
+}
+
 /** One style change to every selected element, as one step (typing runs merge, as for one). */
 export function changeStylesOfMany(
   context: CommandContext,
@@ -193,7 +213,13 @@ export function animateMany(
       label: context.text("pageBuilder.history.animatedMany", { count: ids.length }),
       update: updateAll(ids, (node) => {
         const next: PageNode = { ...node };
-        if (animations.length > 0) next.animations = [...animations];
+        // What played on the first plays on each one itself.
+        const own = new Map([[ids[0] as string, node.id]]);
+        const moved = retargetAnimations(
+          { ...node, children: [], animations: [...animations] },
+          own,
+        );
+        if (animations.length > 0) next.animations = moved.animations;
         else delete next.animations;
         return next;
       }),
