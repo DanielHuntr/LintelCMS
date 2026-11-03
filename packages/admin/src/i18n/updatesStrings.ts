@@ -124,9 +124,13 @@ export const updatesStrings = {
   "updates.rollbackTitle": "Go back to {product} {version}?",
   "updates.rollbackText":
     "{product} restarts with {version}. Your website shows a “back in a minute” page for about a minute.",
-  "updates.rollbackRestore": "Also put back the backup made before leaving {version}",
+  "updates.rollbackRestore": "Also put your content back as it was when you left {version}",
   "updates.rollbackRestoreHelp":
-    "Choose this if the newer version changed your content in a way you don’t want. Anything added or changed since that backup is lost.",
+    "Choose this if the newer version changed your content in a way you don’t want. Anything added or changed since then is lost.",
+  "updates.rollbackMustRestore":
+    "The newer version changed how your content is stored, so going back also puts your content back as it was when you left {version}. Anything added or changed since then is lost.",
+  "updates.rollbackNotPossible":
+    "The newer version changed how your content is stored, and the copy from before isn’t kept any more, so {version} can’t safely run again. Stay on this version, or ask whoever looks after your server.",
   "updates.rollbackNoBackup": "There’s no backup from before leaving this version.",
   "updates.rollbackConfirm": "Roll back",
 

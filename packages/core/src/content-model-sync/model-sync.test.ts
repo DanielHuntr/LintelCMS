@@ -76,7 +76,11 @@ describe("content model sync", { timeout: 30_000 }, () => {
       await rm(folder, { recursive: true, force: true });
       await start();
       const pulled = await pullModel(testDatabase.database, folder, "typescript");
-      expect(pulled.written.map((path) => path.slice(folder.length + 1)).sort()).toEqual([
+      // Forward slashes, so the list reads the same on Windows.
+      const written = pulled.written.map((path) =>
+        path.slice(folder.length + 1).replaceAll("\\", "/"),
+      );
+      expect(written.sort()).toEqual([
         "content-types/post.ts",
         "taxonomies/categories.ts",
         "taxonomies/tags.ts",

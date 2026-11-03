@@ -90,6 +90,11 @@ export function RollbackDialog({
   const checkboxId = useId();
   const helpId = useId();
   if (!target) return null;
+  // Going back across database changes is only safe with the database put back too.
+  const mustRestore = target.databaseDiffers && target.databaseCopyBeforeLeaving !== null;
+  const notPossible = target.databaseDiffers && target.databaseCopyBeforeLeaving === null;
+  const canRestore =
+    target.databaseCopyBeforeLeaving !== null || target.backupBeforeLeaving !== null;
   return (
     <Dialog
       open
@@ -102,8 +107,8 @@ export function RollbackDialog({
           </Button>
           <Button
             variant="destructive"
-            onClick={() => onConfirm(restoreBackup)}
-            disabled={isWorking}
+            onClick={() => onConfirm(mustRestore || restoreBackup)}
+            disabled={isWorking || notPossible}
           >
             {t("updates.rollbackConfirm")}
           </Button>
@@ -113,7 +118,15 @@ export function RollbackDialog({
       <p className="text-body text-label">
         {t("updates.rollbackText", { version: target.version })}
       </p>
-      {target.backupBeforeLeaving ? (
+      {notPossible ? (
+        <p className="mt-3 text-footnote text-label-secondary">
+          {t("updates.rollbackNotPossible", { version: target.version })}
+        </p>
+      ) : mustRestore ? (
+        <p className="mt-3 text-footnote text-label-secondary">
+          {t("updates.rollbackMustRestore", { version: target.version })}
+        </p>
+      ) : canRestore ? (
         <div className="mt-4 flex items-start gap-3">
           <input
             id={checkboxId}

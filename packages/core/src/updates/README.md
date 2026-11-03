@@ -37,23 +37,30 @@ about the site, not even the running version, is sent.
 
 `update-install.service.ts`, owners only, written to the security log:
 
-1. a backup of the whole site (Settings → Backups, "Before an update");
-2. `release-download.ts` downloads `lintel-<version>-<platform>-<arch>.tar.gz`, checks the
+1. `release-download.ts` downloads `lintel-<version>-<platform>-<arch>.tar.gz`, checks the
    minisign signature of `SHA256SUMS` against the key in `release-public-key.ts` (or
    `UPDATE_PUBLIC_KEY`) and the build's SHA-256 against it, and unpacks it into
-   `versions/<version>`;
-3. the server asks the supervisor (Node IPC) to switch.
+   `versions/<version>` (with Windows' own `tar` on Windows);
+2. on a Postgres server, an update whose release has migrations the running one doesn't is
+   refused here: that database can't be copied to go back to;
+3. a backup of the whole site (Settings → Backups, "Before an update"), for people to keep;
+4. the server asks the supervisor (Node IPC) to switch.
 
 The supervisor (`supervisor/`) stops the server, answers the site's address with a
-maintenance page, runs the new version's migrations, points `current` at it, starts it and
-waits for `/ready`. If any of that fails it stops the new version, restores the backup if
-migrations ran, points `current` back and starts the old version. Progress is in
-`versions/update-status.json`, which the maintenance page serves at
+maintenance page, copies the built-in database's folder while it holds its lock
+(`database-copies.ts`), runs the new version's migrations, points `current` at it, starts
+it and waits for `/ready`. If any of that fails it stops the new version, puts the database
+copy back if migrations had begun, points `current` back and starts the old version.
+Progress is in `versions/update-status.json`, which the maintenance page serves at
 `/api/updates/progress` while the server is down, so the admin follows the whole thing.
+Before each step `versions/switch-journal.json` records how far it got; a supervisor that
+starts and finds it finishes or reverses that switch first (`switch-journal.ts`).
 `install-home.ts` describes the folder layout.
 
 Roll back (Settings → Updates → Earlier versions) switches to a version kept on disk, and
-can put back the backup made before updating away from it.
+can put back the database copy made when Lintel left it. When the running version has
+migrations the older one doesn't know, putting the copy back is required, and without the
+copy the roll back is refused. See `docs/decisions/0041-going-back-a-version.md`.
 
 ## Endpoints
 
@@ -81,3 +88,5 @@ and rolling back also need the Owner role.
 | `supervisor/supervisor.ts`       | Switching versions, and rolling back by itself on failure |
 | `supervisor/run-supervisor.ts`   | `lintel start`: the real child process, port and clock    |
 | `supervisor/maintenance-page.ts` | What the site shows while no server is running            |
+| `supervisor/database-copies.ts`  | Copying the built-in database at a switch, and back       |
+| `supervisor/switch-journal.ts`   | How far a switch got, to finish or undo it after a stop   |

@@ -186,12 +186,21 @@ describe("Settings → Updates", () => {
           releases: [],
           recommendedVersion: null,
           installedVersions: [
-            { version: "1.1.0", current: true, installedAt: null, backupBeforeLeaving: null },
+            {
+              version: "1.1.0",
+              current: true,
+              installedAt: null,
+              backupBeforeLeaving: null,
+              databaseCopyBeforeLeaving: null,
+              databaseDiffers: false,
+            },
             {
               version: "1.0.0",
               current: false,
               installedAt: null,
               backupBeforeLeaving: "lintel-backup.zip",
+              databaseCopyBeforeLeaving: "copy-1",
+              databaseDiffers: false,
             },
           ],
         });
@@ -215,7 +224,7 @@ describe("Settings → Updates", () => {
 
     await userEvent.click(await screen.findByRole("button", { name: "Roll back to 1.0.0" }));
     const dialog = screen.getByRole("dialog", { name: "Go back to Lintel 1.0.0?" });
-    await userEvent.click(within(dialog).getByLabelText(/Also put back the backup/));
+    await userEvent.click(within(dialog).getByLabelText(/Also put your content back/));
     await userEvent.click(within(dialog).getByRole("button", { name: "Roll back" }));
 
     expect(calls.find((call) => call.url.pathname === "/updates/rollback")?.body).toEqual({
@@ -223,6 +232,77 @@ describe("Settings → Updates", () => {
       restoreBackup: true,
       confirmed: true,
     });
+  });
+});
+
+// LINTEL-DATA-011: going back across database changes needs the database put back too.
+describe("rolling back after the database changed", () => {
+  function overviewWith(databaseCopyBeforeLeaving: string | null) {
+    return overview({
+      releases: [],
+      recommendedVersion: null,
+      installedVersions: [
+        {
+          version: "1.1.0",
+          current: true,
+          installedAt: null,
+          backupBeforeLeaving: null,
+          databaseCopyBeforeLeaving: null,
+          databaseDiffers: false,
+        },
+        {
+          version: "1.0.0",
+          current: false,
+          installedAt: null,
+          backupBeforeLeaving: "lintel-backup.zip",
+          databaseCopyBeforeLeaving,
+          databaseDiffers: true,
+        },
+      ],
+    });
+  }
+
+  it("puts the content back without asking, and says so", async () => {
+    const { calls } = mockApi(({ method, url }) => {
+      if (url.pathname === "/updates") return overviewWith("copy-1");
+      if (url.pathname === "/updates/rollback" && method === "POST") {
+        return {
+          version: "1.0.0",
+          fromVersion: "1.1.0",
+          kind: "rollback",
+          step: "maintenance",
+          message: "Going back to Lintel 1.0.0.",
+          fraction: null,
+          startedAt: new Date().toISOString(),
+          finishedAt: null,
+          backupFilename: null,
+        };
+      }
+      return undefined;
+    });
+    renderScreen(<UpdatesPage />);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Roll back to 1.0.0" }));
+    const dialog = screen.getByRole("dialog", { name: "Go back to Lintel 1.0.0?" });
+    expect(within(dialog).queryByRole("checkbox")).not.toBeInTheDocument();
+    expect(within(dialog).getByText(/changed how your content is stored/)).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Roll back" }));
+
+    expect(calls.find((call) => call.url.pathname === "/updates/rollback")?.body).toEqual({
+      version: "1.0.0",
+      restoreBackup: true,
+      confirmed: true,
+    });
+  });
+
+  it("explains, and doesn't offer the button, when the copy from before is gone", async () => {
+    mockApi(({ url }) => (url.pathname === "/updates" ? overviewWith(null) : undefined));
+    renderScreen(<UpdatesPage />);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Roll back to 1.0.0" }));
+    const dialog = screen.getByRole("dialog", { name: "Go back to Lintel 1.0.0?" });
+    expect(within(dialog).getByText(/can’t safely run again/)).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Roll back" })).toBeDisabled();
   });
 });
 
