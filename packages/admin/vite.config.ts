@@ -121,7 +121,7 @@ export default defineConfig(({ command, mode }) => {
       // The help panel bundles the docs pages with import.meta.glob. Vitest's file cache keys
       // a module on its own text only, so pages added to the docs were missed until the
       // cache was cleared; tests here always read the files as they are.
-      experimental: { fsModuleCache: false },
+      fsModuleCache: false,
     },
   };
 });
