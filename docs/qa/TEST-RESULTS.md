@@ -179,3 +179,84 @@ SUITES_PLACEHOLDER
 - Performance (TC-PERF-001).
 - Session expiry by elapsed time (30-day cookie; no clock control), two-factor and passkeys.
 - Whether a restricted editor sees other sites' drafts in the dashboard's "Drafts needing attention" widget.
+
+---
+
+# Full run (4 November 2026, `release/1.0.0-rc` at `60c5010`, branch `docs/qa-verdict`)
+
+A full run of the repository's own checks after the fixes in the fix logs, from a clean worktree with a fresh `pnpm install`. No manual cases were run in this pass. The new cases in TEST-CASES.md (batch 4) are covered here only through their regression tests.
+
+**Environment:** Windows 11, Node 22, pnpm 10.28.0; the built-in database in tests. Other dev servers were running on the same machine, so it was under some load.
+
+## Commands
+
+Run one after another from the repository root:
+
+| Command                | Result                                                                                         |
+| ---------------------- | ---------------------------------------------------------------------------------------------- |
+| `pnpm format:check`    | Pass: "All matched files use Prettier code style!"                                             |
+| `pnpm lint`            | Pass: no errors, no warnings                                                                   |
+| `pnpm typecheck`       | Pass: 21 of 21 tasks                                                                           |
+| `pnpm build`           | Pass: 12 of 12 tasks                                                                           |
+| `pnpm test --continue` | 19 of 21 tasks pass; `@lintel/core` and `@lintel/cli` fail, on the known Windows failures only |
+
+## Test counts per package
+
+| Package                           | Files                    | Tests                                  |
+| --------------------------------- | ------------------------ | -------------------------------------- |
+| `@lintel/admin`                   | 126 passed               | 660 passed                             |
+| `@lintel/core`                    | 152 passed, 7 failed     | 1,001 passed, 22 failed, 5 skipped     |
+| `@lintel/builder` (unit)          | 26 passed                | 248 passed                             |
+| `@lintel/builder` (browser)       | 7 passed                 | 21 passed                              |
+| `@lintel/builder-model`           | 13 passed                | 169 passed                             |
+| `@lintel/motion` (unit)           | 15 passed                | 133 passed                             |
+| `@lintel/motion` (browser)        | 3 passed                 | 38 passed                              |
+| `@lintel/motion-editor` (unit)    | 4 passed                 | 25 passed                              |
+| `@lintel/motion-editor` (browser) | 1 passed                 | 3 passed                               |
+| `@lintel/site-components`         | 7 passed                 | 35 passed                              |
+| `@lintel/field-conditions`        | 1 passed                 | 17 passed                              |
+| `@lintel/docs`                    | 2 passed                 | 11 passed                              |
+| `@lintel/plugin-example-bookings` | 1 passed                 | 6 passed                               |
+| `starter-nextjs`                  | 3 passed                 | 19 passed                              |
+| `@lintel/cli`                     | 2 passed, 2 failed       | 27 passed, 3 failed                    |
+| **All**                           | **363 passed, 9 failed** | **2,413 passed, 25 failed, 5 skipped** |
+
+## Known failures (Windows only; not counted against the release)
+
+All 25 failures are the known Windows ones. CI runs on Linux and doesn't see them. None is new.
+
+**Core (22):**
+
+- `updates/updates.test.ts`: 9 of 9. `tar -czf C:\…` fails with "tar (child): Cannot connect to C: resolve failed": `tar` reads the drive letter as a remote host.
+- `updates/supervisor/supervisor.test.ts`: 5 of 8, the same `tar` cause.
+- `updates/release-signature.test.ts`: 4 of 8, the same `tar` cause.
+- `updates/install-type.test.ts`: 1 of 3. "expected 'process' to be 'source'": installs are told apart by POSIX paths.
+- `main.test.ts`: 1 of 1. "Test timed out in 120000ms": the start-up test spawns processes in a way that assumes Linux.
+- `dev-runtime/dev-runtime.test.ts`: 1 of 1. "spawn …\node_modules\.bin\tsx ENOENT".
+- `content-model-sync/model-sync.test.ts`: 1 of 12. Paths come back as `content-types\post.ts` instead of `content-types/post.ts`.
+
+**CLI (3):**
+
+- `command-line.test.ts`: 1 of 11. "expected 'C:\home\ana\site\backups\site.zip' to be '/home/ana/site/backups/site.zip'".
+- `commands/model.test.ts`: 2 of 6. "loads without failing whether or not core has the commands" timed out at 5000ms; "reads the same settings and defaults as the server" failed on paths.
+
+## Flaky tests
+
+None failed in this run. Admin `router.test`, `HelpLauncher.test` and core `roles.test` all passed, so nothing needed a re-run on its own.
+
+## New or unexpected failures
+
+None.
+
+## Compared with the last recorded runs
+
+- Admin: 660 tests, up from 600 (FIX-LOG-security.md). Builder-model 169, up from 150. Builder 248 unit and 21 browser, up from 207 and 10.
+- Core: 1,001 passed, up from 959. Failures went from 23 to 22: `plugin-system.test.ts` now passes (LEFT-008).
+- CLI: unchanged at 27 passed, 3 failed.
+
+## What this run doesn't show
+
+- No manual or browser pass over the fixed screens. Each fix log records its own browser checks and screenshots.
+- The `admin/e2e` journeys were not run.
+- The update tests can't run on Windows, so this run neither confirms nor rules out the open update defects (DATA-011, FUNC-016, DATA-013, FUNC-027).
+- Paying through Stripe is still covered only by the faked Stripe in `commerce.e2e.test.ts`.
