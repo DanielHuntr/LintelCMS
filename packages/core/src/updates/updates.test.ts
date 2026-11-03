@@ -73,6 +73,17 @@ describe("Settings → Updates", { timeout: 60_000 }, () => {
     });
   }
 
+  /** An unpacked release in versions/, with its migrations. */
+  async function keepVersion(version: string, migrations = ["0000_initial_schema"]) {
+    const versionHome = versionFolder(join(folder, "home"), version);
+    await mkdir(join(versionHome, "packages/core/migrations/meta"), { recursive: true });
+    await writeFile(join(versionHome, "release.json"), JSON.stringify({ version }));
+    await writeFile(
+      join(versionHome, "packages/core/migrations/meta/_journal.json"),
+      JSON.stringify({ entries: migrations.map((tag, idx) => ({ idx, tag })) }),
+    );
+  }
+
   async function as(email: string, role: string) {
     await createPersonWithRole(testDatabase.database, email, role, role);
     return requestsAs(server, await signInAndGetCookies(server, email));
@@ -88,11 +99,7 @@ describe("Settings → Updates", { timeout: 60_000 }, () => {
       await makeTestRelease(key, "1.1.0", { security: true }),
       await makeTestRelease(key, "1.2.0-beta.1"),
     ];
-    await mkdir(versionFolder(join(folder, "home"), "1.0.0"), { recursive: true });
-    await writeFile(
-      join(versionFolder(join(folder, "home"), "1.0.0"), "release.json"),
-      JSON.stringify({ version: "1.0.0" }),
-    );
+    await keepVersion("1.0.0");
     await pointCurrentAt(join(folder, "home"), versionFolder(join(folder, "home"), "1.0.0"));
     await startServer();
   });
@@ -209,7 +216,8 @@ describe("Settings → Updates", { timeout: 60_000 }, () => {
 
     const started = await owner("POST", "/updates/install", { version: "1.1.0", confirmed: true });
     expect(started.statusCode).toBe(202);
-    expect(started.json<UpdateProgress>().step).toBe("backing-up");
+    // The download comes first; the backup is made after it, just before the switch.
+    expect(started.json<UpdateProgress>().step).toBe("downloading");
     expect(
       (await owner("POST", "/updates/install", { version: "1.1.0", confirmed: true })).statusCode,
     ).toBe(409);
@@ -273,11 +281,7 @@ describe("Settings → Updates", { timeout: 60_000 }, () => {
   });
 
   it("rolls back to a version kept on disk, for owners only", async () => {
-    await mkdir(versionFolder(join(folder, "home"), "0.9.0"), { recursive: true });
-    await writeFile(
-      join(versionFolder(join(folder, "home"), "0.9.0"), "release.json"),
-      JSON.stringify({ version: "0.9.0" }),
-    );
+    await keepVersion("0.9.0");
     const admin = await as("admin@example.com", "admin");
     const owner = await as("owner@example.com", "owner");
     const body = { version: "0.9.0", restoreBackup: false, confirmed: true };
@@ -291,7 +295,74 @@ describe("Settings → Updates", { timeout: 60_000 }, () => {
     ).toBe(404);
     expect((await owner("POST", "/updates/rollback", body)).statusCode).toBe(202);
     expect(asked).toEqual([
-      { kind: "rollback", version: "0.9.0", backupFile: null, restoreBackupFirst: false },
+      {
+        kind: "rollback",
+        version: "0.9.0",
+        backupFile: null,
+        restoreBackupFirst: false,
+        databaseCopy: null,
+      },
+    ]);
+  });
+
+  // LINTEL-DATA-011: going back to a version that doesn't know the database's tables.
+  it("only rolls back across database changes with the database put back as it was", async () => {
+    await keepVersion("0.9.0", []);
+    const owner = await as("owner@example.com", "owner");
+    const body = { version: "0.9.0", restoreBackup: false, confirmed: true };
+
+    const overview = (await owner("GET", "/updates")).json<UpdatesOverview>();
+    expect(overview.installedVersions.find((kept) => kept.version === "0.9.0")).toMatchObject({
+      databaseDiffers: true,
+      databaseCopyBeforeLeaving: null,
+    });
+
+    // No copy of the database from before: refused, with a way forward.
+    const refused = await owner("POST", "/updates/rollback", { ...body, restoreBackup: true });
+    expect(refused.statusCode).toBe(409);
+    expect(refused.json()).toMatchObject({ code: "ROLLBACK_NEEDS_DATABASE_COPY" });
+    expect(refused.json<{ message: string }>().message).toContain("Stay on 1.0.0");
+
+    // With a copy, it must be put back.
+    const copyId = "2026-11-01T09-00-00-000Z-0.9.0-to-1.0.0";
+    await mkdir(join(folder, "home", "versions", "database-copies", copyId), { recursive: true });
+    await writeFile(
+      join(folder, "home", "versions", "database-copies", copyId, "copy.json"),
+      JSON.stringify({ id: copyId }),
+    );
+    await writeFile(
+      join(folder, "home", "versions", "update-history.json"),
+      JSON.stringify([
+        {
+          version: "1.0.0",
+          fromVersion: "0.9.0",
+          kind: "update",
+          step: "done",
+          message: "Updated to Lintel 1.0.0.",
+          fraction: null,
+          startedAt: "2026-11-01T09:00:00.000Z",
+          finishedAt: "2026-11-01T09:01:00.000Z",
+          backupFilename: "lintel-backup-before.zip",
+          databaseCopy: copyId,
+        },
+      ]),
+    );
+    const notTicked = await owner("POST", "/updates/rollback", body);
+    expect(notTicked.json()).toMatchObject({ code: "ROLLBACK_NEEDS_DATABASE_COPY" });
+    expect(notTicked.json<{ message: string }>().message).toContain("Tick that box");
+    expect(asked).toEqual([]);
+
+    expect(
+      (await owner("POST", "/updates/rollback", { ...body, restoreBackup: true })).statusCode,
+    ).toBe(202);
+    expect(asked).toEqual([
+      {
+        kind: "rollback",
+        version: "0.9.0",
+        backupFile: null,
+        restoreBackupFirst: true,
+        databaseCopy: copyId,
+      },
     ]);
   });
 });

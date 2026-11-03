@@ -133,6 +133,11 @@ function closeCleanlyOnStop(server: FastifyInstance): void {
   };
   process.once("SIGINT", stop);
   process.once("SIGTERM", stop);
+  // Under `lintel start`: if the supervisor itself stops, so does the server, so a restarted
+  // supervisor finds the database free and can finish a switch it was in the middle of.
+  if (process.env.LINTEL_SUPERVISED === "1" && process.connected) {
+    process.once("disconnect", stop);
+  }
 }
 
 function say(message: string): void {

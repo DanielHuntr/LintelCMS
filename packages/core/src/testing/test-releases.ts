@@ -4,7 +4,12 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { minisignPublicKeyLine, signMinisign } from "../updates/release-signature.js";
-import { buildFileName, CHECKSUM_FILE, SIGNATURE_FILE } from "../updates/release-download.js";
+import {
+  buildFileName,
+  CHECKSUM_FILE,
+  SIGNATURE_FILE,
+  tarProgram,
+} from "../updates/release-download.js";
 import type { AvailableRelease } from "../updates/updates.schema.js";
 
 /**
@@ -37,7 +42,7 @@ export async function makeTestRelease(
     await writeFile(join(contents, "release.json"), JSON.stringify({ version }));
     await writeFile(join(contents, "hello.txt"), `Lintel ${version}\n`);
     const buildName = buildFileName(version);
-    execFileSync("tar", ["-czf", join(folder, buildName), "-C", contents, "."]);
+    execFileSync(tarProgram(), ["-czf", join(folder, buildName), "-C", contents, "."]);
     let build = await readFile(join(folder, buildName));
     const checksums = `${createHash("sha256").update(build).digest("hex")}  ${buildName}\n`;
     const signature = signMinisign(

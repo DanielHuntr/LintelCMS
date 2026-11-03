@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { detectInstallType, type InstallFacts, updateMethodFor } from "./install-type.js";
 
@@ -21,7 +22,8 @@ describe("how Lintel was installed", () => {
     expect(
       detectInstallType(facts({}, ["/home/forge/example.com/.git"], "/home/forge/example.com")),
     ).toBe("forge");
-    expect(detectInstallType(facts({}, ["/srv/lintel/.git"]))).toBe("source");
+    // Joined as the code does, so the test holds on Windows too.
+    expect(detectInstallType(facts({}, [join("/srv/lintel", ".git")]))).toBe("source");
     expect(detectInstallType(facts({}))).toBe("process");
   });
 

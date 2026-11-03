@@ -11,8 +11,14 @@ const switchRequestSchema = z.object({
   version: z.string().min(1),
   /** The backup made just before; an update puts it back if it fails after migrating. */
   backupFile: z.string().nullable(),
-  /** A roll back that also puts back the backup made before updating away. */
+  /** A roll back that also puts the database back as it was before updating away. */
   restoreBackupFirst: z.boolean(),
+  /**
+   * For a roll back: the copy of the built-in database made when Lintel updated away from
+   * that version, put back instead of the backup. Optional, because the supervisor may be
+   * older or newer than the server asking.
+   */
+  databaseCopy: z.string().nullable().optional(),
 });
 export type SwitchRequest = Omit<z.infer<typeof switchRequestSchema>, "type">;
 
@@ -30,5 +36,6 @@ export function readSupervisorRequest(message: unknown): SwitchRequest | null {
     version: parsed.data.version,
     backupFile: parsed.data.backupFile,
     restoreBackupFirst: parsed.data.restoreBackupFirst,
+    databaseCopy: parsed.data.databaseCopy ?? null,
   };
 }
