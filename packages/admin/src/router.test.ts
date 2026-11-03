@@ -1,5 +1,5 @@
 import { createMemoryHistory, createRouter } from "@tanstack/react-router";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SetupStatus } from "./setup/setup.api.js";
 import { setupStatus } from "./setup/testStatus.js";
 
@@ -40,6 +40,13 @@ beforeEach(() => vi.resetModules());
 afterEach(() => vi.restoreAllMocks());
 
 describe("where the admin sends people", () => {
+  // The first import of the whole route tree can take longer than one test is allowed when
+  // every package's tests run at once, which failed the first test now and then. It's loaded
+  // once here, with time to spare, so no test is timed on it.
+  beforeAll(async () => {
+    await import("./router.js");
+  }, 60_000);
+
   it("sends every address to /setup on a brand new Lintel, sign-in included", async () => {
     fakeApi(setupStatus({ needsSetup: true }), false);
 
