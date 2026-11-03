@@ -12,7 +12,7 @@ export const builderElementStrings = {
   "pageBuilder.content.findIcon": "Find an icon",
   "pageBuilder.content.noIcon": "No icon",
   "pageBuilder.content.iconsFound": "{count} icons",
-  "pageBuilder.content.pictureDescription": "Describe the picture",
+  "pageBuilder.content.pictureDescription": "Picture description",
   "pageBuilder.content.itemNumber": "{name} {number}",
   "pageBuilder.content.untitledItem": "{name} {number} (empty)",
   "pageBuilder.content.bind.label": "Shows",

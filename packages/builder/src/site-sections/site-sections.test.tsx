@@ -146,6 +146,31 @@ describe("the commands for the site's navigation and footer", () => {
     );
     expect(ids(state.document)).toEqual(["site-navigation", "n1", "site-footer"]);
   });
+
+  it("removes the site's navigation from every page, and undo brings it back", () => {
+    let state = createEditorState(heroPage());
+    state = apply(
+      state,
+      siteSectionCommands.insertSiteSection(
+        context(state.document),
+        "navigation",
+        findSectionTemplate("navigation-logo-left")!.blueprint,
+      ),
+    );
+    state = apply(
+      state,
+      siteSectionCommands.setSiteSectionHidden(context(state.document), "navigation", true),
+    );
+    state = apply(
+      state,
+      siteSectionCommands.removeSiteSectionFromSite(context(state.document), "navigation"),
+    );
+    expect(ids(state.document)).toEqual(["n1"]);
+    expect(state.document.root.props.hideSiteNavigation).toBeUndefined();
+    expect(state.past.at(-1)?.label).toBe("Removed the navigation from every page");
+    state = editorReducer(state, { type: "undo" });
+    expect(ids(state.document)).toEqual(["site-navigation", "n1"]);
+  });
 });
 
 function renderBuilder(
@@ -184,8 +209,10 @@ describe("the site's navigation in the builder", () => {
     const change = onSectionsChange.mock.lastCall?.[0];
     expect(change?.navigation?.id).toBe("site-navigation");
     expect(change).not.toHaveProperty("footer");
-    // A site that had the automatic header is told it has gone.
-    expect(screen.getByText(/automatic header is gone/)).toBeInTheDocument();
+    // The site is told it went live everywhere at once.
+    expect(
+      screen.getByText("This navigation is now live on every page of your website."),
+    ).toBeInTheDocument();
     expect(screen.getByText("Navigation · on every page")).toBeInTheDocument();
   });
 
@@ -202,7 +229,7 @@ describe("the site's navigation in the builder", () => {
     expect(saved.root.props.hideSiteNavigation).toBe(true);
     expect(ids(saved)).toEqual(["n1"]);
     expect(onSectionsChange).not.toHaveBeenCalled();
-    expect(screen.queryByText(/automatic header is gone/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/now live on every page/)).not.toBeInTheDocument();
   });
 
   it("shows the page's switches with nothing selected", async () => {
@@ -237,5 +264,63 @@ describe("the site's navigation in the builder", () => {
     expect(saved.root.children[0]?.props.element).toBe("header");
     expect(saved.root.props.hideSiteNavigation).toBe(true);
     expect(screen.queryByText(/starts with its own menu/)).not.toBeInTheDocument();
+  });
+});
+
+describe("adding and removing the site's navigation (QA sweep)", () => {
+  it("undoes a new navigation from the note, taking it off the site", async () => {
+    const user = userEvent.setup();
+    const { onSectionsChange } = renderBuilder(heroPage(), { navigation: null, footer: null });
+    await user.click(screen.getByRole("tab", { name: "Insert" }));
+    await user.click(screen.getByRole("button", { name: /^Navigation/ }));
+    await user.click(screen.getByRole("button", { name: /^Logo and menu/ }));
+    await user.click(screen.getByRole("button", { name: "Undo" }));
+    expect(onSectionsChange.mock.lastCall?.[0]).toEqual({ navigation: null });
+    expect(screen.queryByText(/now live on every page/)).not.toBeInTheDocument();
+  });
+
+  it("shows a navigation added to an empty page, with the start card below it", async () => {
+    const user = userEvent.setup();
+    renderBuilder(createEmptyPage(), { navigation: null, footer: null });
+    expect(document.querySelector("iframe")).toBeNull();
+    await user.click(screen.getByRole("tab", { name: "Insert" }));
+    await user.click(screen.getByRole("button", { name: /^Navigation/ }));
+    await user.click(screen.getByRole("button", { name: /^Logo and menu/ }));
+    expect(document.querySelector("iframe")).not.toBeNull();
+    expect(screen.getByRole("heading", { name: "This page is empty" })).toBeInTheDocument();
+  });
+
+  it("asks where to delete the site's navigation from, and can remove it from every page", async () => {
+    const user = userEvent.setup();
+    const navigation = { ...section("navigation-logo-left"), id: "site-navigation" };
+    const { onChange, onSectionsChange } = renderBuilder(heroPage(), {
+      navigation,
+      footer: null,
+    });
+    const item = screen.getAllByRole("treeitem", { name: /Navigation/ })[0]!;
+    await user.click(item);
+    item.focus();
+    await user.keyboard("{Delete}");
+    const dialog = screen.getByRole("dialog", { name: "Remove the navigation?" });
+    await user.click(within(dialog).getByRole("button", { name: /^Remove from every page/ }));
+    expect(onSectionsChange.mock.lastCall?.[0]).toEqual({ navigation: null });
+    const saved = onChange.mock.lastCall?.[0] as PageDocument;
+    expect(saved.root.props.hideSiteNavigation).toBeUndefined();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("can still just hide it on this page from the same question", async () => {
+    const user = userEvent.setup();
+    const navigation = { ...section("navigation-logo-left"), id: "site-navigation" };
+    const { onChange, onSectionsChange } = renderBuilder(heroPage(), {
+      navigation,
+      footer: null,
+    });
+    await user.click(screen.getAllByRole("treeitem", { name: /Navigation/ })[0]!);
+    await user.click(screen.getByRole("button", { name: "Remove…" }));
+    const dialog = screen.getByRole("dialog", { name: "Remove the navigation?" });
+    await user.click(within(dialog).getByRole("button", { name: /^Hide on this page/ }));
+    expect((onChange.mock.lastCall?.[0] as PageDocument).root.props.hideSiteNavigation).toBe(true);
+    expect(onSectionsChange).not.toHaveBeenCalled();
   });
 });

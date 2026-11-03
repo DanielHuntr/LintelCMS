@@ -11,6 +11,8 @@ export interface CanvasLook {
   fontSize: number;
   fontWeight: string;
   color: string;
+  /** How many columns it has as a grid; 0 when it isn't one. */
+  gridColumns?: number;
 }
 
 export const CanvasLookContext = createContext<CanvasLook | null>(null);
@@ -51,4 +53,49 @@ export function nearestSizeChip(
     if (!best || distance < best.distance) best = { value, distance };
   }
   return best && best.distance <= 0.2 ? best.value : null;
+}
+
+/** A weight as a number: "bold" is 700, "normal" 400; null for one that can't be read here. */
+function weightNumber(weight: string): number | null {
+  if (weight === "bold") return 700;
+  if (weight === "normal") return 400;
+  const number = Number(weight);
+  return Number.isFinite(number) && weight.trim() !== "" ? number : null;
+}
+
+/**
+ * The weight chip that looks like this weight: the nearest within 100, the heavier one on a
+ * tie, so a 600 button reads Bold rather than Custom. Null when none is near.
+ */
+export function nearestWeightChip(weight: string | undefined, chips: readonly string[]) {
+  const wanted = weight === undefined ? null : weightNumber(weight);
+  if (wanted === null) return null;
+  let best: { chip: string; distance: number } | null = null;
+  for (const chip of chips) {
+    const distance = Math.abs(Number(chip) - wanted);
+    if (distance <= 100 && (!best || distance <= best.distance)) best = { chip, distance };
+  }
+  return best?.chip ?? null;
+}
+
+/**
+ * How many columns a grid's template has: "repeat(3, 1fr)" is 3 and "1fr 2fr" is 2. Zero for
+ * one that can't be counted here ("repeat(auto-fill, ...)").
+ */
+export function countGridColumns(template: string | undefined): number {
+  if (!template) return 0;
+  const repeat = /^repeat\(\s*(\d+)\s*,/.exec(template.trim());
+  if (repeat) return Number(repeat[1]);
+  if (template.includes("repeat(")) return 0;
+  let depth = 0;
+  let tracks = 0;
+  let inTrack = false;
+  for (const character of template.replace(/\[[^\]]*\]/g, " ")) {
+    if (character === "(") depth += 1;
+    if (character === ")") depth -= 1;
+    const isSpace = /\s/.test(character) && depth === 0;
+    if (!isSpace && !inTrack) tracks += 1;
+    inTrack = !isSpace;
+  }
+  return tracks;
 }

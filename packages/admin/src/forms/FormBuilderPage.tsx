@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Inbox, Plus } from "lucide-react";
+import { ChevronRight, Inbox, Plus } from "lucide-react";
 import { useState } from "react";
 import { ApiError, apiUrl } from "../api/client.js";
 import { describeError } from "../api/describeError.js";
@@ -285,8 +285,18 @@ function FormBuilder({ form }: { form: Form }) {
               {t("forms.share.pageDescription")}
             </p>
           </section>
-          <section className="rounded-card bg-surface p-5">
-            <h2 className="text-headline text-label">{t("forms.share.embedTitle")}</h2>
+          {/* Code and the API are for whoever built the site: folded away until asked for. */}
+          <details className="group rounded-card bg-surface p-5">
+            <summary className="flex cursor-pointer list-none items-center gap-1.5 text-headline text-label focus-visible:focus-ring">
+              <ChevronRight
+                aria-hidden="true"
+                className="size-4 text-label-secondary transition-transform group-open:rotate-90 motion-reduce:transition-none"
+              />
+              {t("forms.share.developersTitle")}
+            </summary>
+            <h3 className="mt-4 text-body font-semibold text-label">
+              {t("forms.share.embedTitle")}
+            </h3>
             <p className="mt-1 mb-3 text-body text-label-secondary">
               {t("forms.share.embedDescription")}
             </p>
@@ -299,14 +309,12 @@ function FormBuilder({ form }: { form: Form }) {
             <p className="mt-3 text-footnote text-label-secondary">
               {t("forms.share.embedFooter")}
             </p>
-          </section>
-          <section className="rounded-card bg-surface p-5">
-            <h2 className="text-headline text-label">{t("forms.share.apiTitle")}</h2>
+            <h3 className="mt-5 text-body font-semibold text-label">{t("forms.share.apiTitle")}</h3>
             <p className="mt-1 text-body text-label-secondary">
               {t("forms.share.apiDescription", { handle: form.handle })}
             </p>
             <p className="mt-2 font-mono text-footnote text-label">{`${apiUrl}/delivery/forms/${form.handle}`}</p>
-          </section>
+          </details>
         </div>
       )}
 

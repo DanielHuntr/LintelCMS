@@ -93,7 +93,7 @@ describe("pictures in rich text", () => {
       ]),
     );
     // The library's description is the starting point, ready to change.
-    const description = await screen.findByLabelText("Describe the picture");
+    const description = await screen.findByLabelText("Picture description");
     expect(description).toHaveValue("Our shop on the high street");
     expect(description).toHaveFocus();
     expect(await screen.findByRole("img", { name: "Our shop on the high street" })).toBeVisible();
@@ -134,7 +134,7 @@ describe("pictures in rich text", () => {
       ),
     ).toBeInTheDocument();
     // No description yet: the editor asks for one.
-    expect(screen.getByLabelText("Describe the picture")).toHaveValue("");
+    expect(screen.getByLabelText("Picture description")).toHaveValue("");
     expect(
       screen.getByText("No description yet. Click the picture to add one."),
     ).toBeInTheDocument();
@@ -150,7 +150,7 @@ describe("pictures in rich text", () => {
     await waitFor(() => expect(picturesIn(changes.mock.lastCall?.[0])).toHaveLength(1));
 
     await userEvent.click(screen.getByRole("button", { name: "Done" }));
-    expect(screen.queryByLabelText("Describe the picture")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Picture description")).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Add picture" }));
     const again = await screen.findByRole("dialog", { name: "Choose an image" });

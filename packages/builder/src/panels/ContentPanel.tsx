@@ -117,9 +117,12 @@ export function ContentPanel({
       <MenuSection node={node} isLocked={isLocked} onChange={onChange} />
       {isGrouped ? (
         <OpenSectionsContext.Provider value={groupSections}>
-          <h2 className="px-4 pt-3 pb-1 text-footnote font-semibold text-label">
-            {definition?.label ?? node.type}
-          </h2>
+          {/* The element's name, unless its first group says it already ("Picture"). */}
+          {groups[0] && text(groups[0].title) !== (definition?.label ?? node.type) && (
+            <h2 className="px-4 pt-3 pb-1 text-footnote font-semibold text-label">
+              {definition?.label ?? node.type}
+            </h2>
+          )}
           {groups.map((group) => (
             <PanelSection
               key={group.id}
@@ -138,6 +141,7 @@ export function ContentPanel({
                   onBind={onBind}
                   onMarkText={onMarkText}
                   pageFonts={pageFonts}
+                  groupTitle={text(group.title)}
                 />
               ))}
             </PanelSection>
@@ -194,7 +198,10 @@ function ContentField({
   onBind,
   onMarkText,
   pageFonts,
+  groupTitle,
 }: {
+  /** The heading of the group it's in, so a label saying the same again is left unshown. */
+  groupTitle?: string;
   field: EditableField;
   node: PageNode;
   pickImage: ImagePicker | undefined;
@@ -269,6 +276,7 @@ function ContentField({
           return (
             <ImageField
               label={field.label}
+              labelHidden={field.label === groupTitle}
               pickImage={pickImage}
               value={{
                 src: String(value ?? ""),

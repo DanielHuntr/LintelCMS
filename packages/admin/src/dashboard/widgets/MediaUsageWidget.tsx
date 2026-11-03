@@ -1,4 +1,5 @@
 import { ImageOff, Images } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { LoadError } from "../../api/LoadError.js";
 import { EmptyState } from "../../design/EmptyState.js";
 import { LinkButton } from "../../design/LinkButton.js";
@@ -72,9 +73,17 @@ export function MediaUsageWidget() {
             className="mt-0.5 size-4 shrink-0 text-warning"
           />
         )}
-        {imagesWithoutAltText > 0
-          ? t("dashboard.media.missingAlt", { count: imagesWithoutAltText })
-          : t("dashboard.media.allDescribed")}
+        {imagesWithoutAltText > 0 ? (
+          <Link
+            to="/media"
+            search={{ filter: "needs-description" }}
+            className="text-accent underline decoration-1 underline-offset-2 hover:decoration-2 focus-visible:focus-ring"
+          >
+            {t("dashboard.media.missingAlt", { count: imagesWithoutAltText })}
+          </Link>
+        ) : (
+          t("dashboard.media.allDescribed")
+        )}
       </p>
       {/* Its own width, not the card's: a full-width pill read as a progress bar. */}
       <div className="self-start">

@@ -6,7 +6,8 @@ import {
   siteSectionSlotOf,
   type SiteSectionSlot,
 } from "@lintel/builder-model";
-import { ChevronRight, EyeOff, PanelBottom, PanelTop, X } from "lucide-react";
+import { ChevronRight, EyeOff, PanelBottom, PanelTop, Trash2, X } from "lucide-react";
+import { useEffect, useId, useRef } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { ToggleField } from "../panels/content-fields.js";
 
@@ -29,8 +30,19 @@ export function siteSectionAround(root: PageNode, nodeId: string | null): SiteSe
 const stripButton =
   "flex h-7 items-center gap-1.5 rounded-control px-2 text-footnote font-medium text-accent hover:bg-fill focus-visible:focus-ring";
 
-/** Above the canvas while the navigation (or something in it) is selected: what it is, and Hide. */
-export function SiteSectionStrip({ slot, onHide }: { slot: SiteSectionSlot; onHide: () => void }) {
+/**
+ * Above the canvas while the navigation (or something in it) is selected: what it is, Hide
+ * here, and Remove (which asks where).
+ */
+export function SiteSectionStrip({
+  slot,
+  onHide,
+  onRemove,
+}: {
+  slot: SiteSectionSlot;
+  onHide: () => void;
+  onRemove?: () => void;
+}) {
   const text = useBuilderText();
   const Icon = slot === "navigation" ? PanelTop : PanelBottom;
   return (
@@ -47,7 +59,86 @@ export function SiteSectionStrip({ slot, onHide }: { slot: SiteSectionSlot; onHi
         <EyeOff aria-hidden="true" className="size-3.5" />
         {text("pageBuilder.siteSection.hideHere")}
       </button>
+      {onRemove && (
+        <button type="button" onClick={onRemove} className={stripButton}>
+          <Trash2 aria-hidden="true" className="size-3.5" />
+          {text("pageBuilder.siteSection.remove")}
+        </button>
+      )}
     </div>
+  );
+}
+
+/**
+ * Deleting the site's navigation or footer asks where: hide it on this page only, or take it
+ * off every page (back to the automatic one).
+ */
+export function SiteSectionRemoveDialog({
+  slot,
+  onHideHere,
+  onRemoveEverywhere,
+  onCancel,
+}: {
+  slot: SiteSectionSlot;
+  onHideHere: () => void;
+  /** Left out for people who may not change the site's sections. */
+  onRemoveEverywhere?: () => void;
+  onCancel: () => void;
+}) {
+  const text = useBuilderText();
+  const dialog = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
+  useEffect(() => {
+    const element = dialog.current;
+    if (!element || element.open) return;
+    if (typeof element.showModal === "function") element.showModal();
+    else element.setAttribute("open", "");
+  }, []);
+  const choice =
+    "flex w-full flex-col items-start gap-0.5 rounded-control bg-fill px-3 py-2.5 text-start hover:bg-fill-secondary focus-visible:focus-ring";
+  return (
+    <dialog
+      ref={dialog}
+      aria-labelledby={titleId}
+      onCancel={(event) => {
+        event.preventDefault();
+        onCancel();
+      }}
+      className="m-auto w-[26rem] max-w-[calc(100vw-2rem)] rounded-card bg-surface-raised p-5 text-label shadow-float backdrop:bg-black/30"
+    >
+      <h2 id={titleId} className="text-headline font-semibold">
+        {text(`pageBuilder.siteSection.removeTitle.${slot}`)}
+      </h2>
+      <div className="mt-4 flex flex-col gap-2">
+        <button type="button" onClick={onHideHere} className={choice} autoFocus>
+          <span className="text-footnote font-semibold">
+            {text("pageBuilder.siteSection.hideHere")}
+          </span>
+          <span className="text-caption text-label-secondary">
+            {text("pageBuilder.siteSection.hideHereHint")}
+          </span>
+        </button>
+        {onRemoveEverywhere && (
+          <button type="button" onClick={onRemoveEverywhere} className={choice}>
+            <span className="text-footnote font-semibold">
+              {text("pageBuilder.siteSection.removeEverywhere")}
+            </span>
+            <span className="text-caption text-label-secondary">
+              {text(`pageBuilder.siteSection.removeEverywhereHint.${slot}`)}
+            </span>
+          </button>
+        )}
+      </div>
+      <div className="mt-4 flex justify-end">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="h-8 rounded-control px-3 text-footnote font-medium text-accent hover:bg-fill focus-visible:focus-ring"
+        >
+          {text("pageBuilder.siteSection.cancel")}
+        </button>
+      </div>
+    </dialog>
   );
 }
 

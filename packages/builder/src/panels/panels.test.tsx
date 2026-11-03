@@ -7,9 +7,10 @@ import {
   type PageDocument,
   standardCatalogue,
 } from "@lintel/builder-model";
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { picturePreviewSrc } from "./content-fields.js";
 import { PageBuilder } from "../PageBuilder.js";
 import {
   createMemoryPreferenceStore,
@@ -262,6 +263,21 @@ describe("the Style panel's groups", () => {
     );
   });
 
+  it("offers Open and Current only where they mean something, until Advanced", async () => {
+    const person = user();
+    renderBuilder();
+    const lookNames = () =>
+      within(screen.getByRole("radiogroup", { name: "Which look you're changing" }))
+        .getAllByRole("radio")
+        .map((look) => look.textContent);
+    await select(person, "Hero title");
+    expect(lookNames()).toEqual(["Normal", "Hovered", "Pressed", "Focused"]);
+    await select(person, "Button");
+    expect(lookNames()).toEqual(["Normal", "Hovered", "Pressed", "Focused", "Open"]);
+    await person.click(screen.getByRole("radio", { name: "Advanced" }));
+    expect(lookNames()).toEqual(["Normal", "Hovered", "Pressed", "Focused", "Open", "Current"]);
+  });
+
   // States: the button can follow the state of what's around it, and both ease together.
   it("styles an element for the hover of what's around it, and sets how they move", async () => {
     const person = user();
@@ -389,5 +405,101 @@ describe("collapsible Content and Animate groups", () => {
       screen.getByRole("combobox", { name: /For people who prefer less motion|less motion/i }),
     ).toBeInTheDocument();
     expect(preferences.read("animate.open")).toBe("trigger,timing,reducedMotion");
+  });
+});
+
+describe("a picture's Content (QA sweep)", () => {
+  it("says Picture once, and shows a built-in illustration without its path", async () => {
+    const person = user();
+    renderBuilder(
+      pageWith({
+        type: "image",
+        name: "Photo",
+        props: { src: "/_lintel/illustrations/abstract-hills.svg" },
+      }),
+    );
+    await select(person, "Photo");
+    await person.click(screen.getByRole("tab", { name: "Content" }));
+
+    expect(disclosure("Picture")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 2, name: "Picture" })).toBeNull();
+    expect(screen.getByText(/A built-in illustration/)).toBeInTheDocument();
+    expect(
+      screen.queryByDisplayValue("/_lintel/illustrations/abstract-hills.svg"),
+    ).not.toBeVisible();
+  });
+
+  it("loads a built-in illustration from the website's address", () => {
+    expect(picturePreviewSrc("/_lintel/illustrations/hills.svg", "http://localhost:4000/")).toBe(
+      "http://localhost:4000/_lintel/illustrations/hills.svg",
+    );
+    expect(picturePreviewSrc("/media/photo.jpg", "http://localhost:4000")).toBe("/media/photo.jpg");
+    expect(picturePreviewSrc("/_lintel/illustrations/hills.svg", null)).toBe(
+      "/_lintel/illustrations/hills.svg",
+    );
+  });
+});
+
+describe("Style chips that match the real look (QA sweep)", () => {
+  it("presses Bold for a 600 button and 2 for a grid of 1fr 1fr", async () => {
+    const person = user();
+    renderBuilder(
+      pageWith(
+        { type: "button", name: "Go", styles: { base: { fontWeight: "600" } } },
+        {
+          type: "box",
+          name: "Pair",
+          styles: { base: { display: "grid", gridTemplateColumns: "1fr 1fr" } },
+        },
+      ),
+    );
+    await select(person, "Go");
+    const weight = screen.getByRole("group", { name: "Weight" });
+    expect(within(weight).getByRole("button", { name: "Bold" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(within(weight).queryByText("Custom")).toBeNull();
+    await select(person, "Pair");
+    const columns = screen.getByRole("radiogroup", { name: "Columns" });
+    expect(within(columns).getByRole("radio", { name: "2" })).toBeChecked();
+  });
+
+  it("presses the chips the canvas measures when nothing is set: Normal size, 3 columns", async () => {
+    const person = user();
+    renderBuilder(
+      pageWith(
+        { type: "button", name: "Go" },
+        { type: "box", name: "Trio", styles: { base: { display: "grid" } } },
+      ),
+    );
+    const measured = (nodeId: string, gridColumns: number) =>
+      act(() => {
+        window.dispatchEvent(
+          new MessageEvent("message", {
+            source: document.querySelector("iframe")!.contentWindow,
+            data: {
+              type: "look",
+              nodeId,
+              textAlign: "start",
+              fontSize: 17,
+              fontWeight: "600",
+              color: "rgb(0, 0, 0)",
+              gridColumns,
+            },
+          }),
+        );
+      });
+    await select(person, "Go");
+    measured("n1", 0);
+    const size = screen.getByRole("group", { name: "Text size" });
+    expect(within(size).getByRole("button", { name: "Normal" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await select(person, "Trio");
+    measured("n2", 3);
+    const columns = screen.getByRole("radiogroup", { name: "Columns" });
+    expect(within(columns).getByRole("radio", { name: "3" })).toBeChecked();
   });
 });

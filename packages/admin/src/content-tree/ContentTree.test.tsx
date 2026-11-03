@@ -163,12 +163,10 @@ describe("the content tree", () => {
     fireEvent.contextMenu(homeRow.firstElementChild ?? homeRow);
     await userEvent.click(await screen.findByRole("menuitem", { name: "Create…" }));
 
-    const dialog = await screen.findByRole("dialog", { name: "Create in Home" });
-    expect(
-      within(dialog)
-        .getAllByRole("radio")
-        .map((radio) => radio.getAttribute("value")),
-    ).toEqual(["pages"]);
+    // Only pages may go here, so there's no question about what to make: the title says it.
+    const dialog = await screen.findByRole("dialog", { name: "New page in Home" });
+    expect(within(dialog).queryAllByRole("radio")).toEqual([]);
+    expect(within(dialog).queryByText("What would you like to make?")).toBeNull();
     await userEvent.type(within(dialog).getByRole("textbox", { name: "Name" }), "Team");
     await userEvent.click(within(dialog).getByRole("button", { name: "Create" }));
 
@@ -215,7 +213,7 @@ describe("the content tree", () => {
     renderScreen(<ContentSection />, editor);
 
     await userEvent.click(await screen.findByRole("button", { name: "Create a page at the top" }));
-    const dialog = await screen.findByRole("dialog", { name: "Create something new" });
+    const dialog = await screen.findByRole("dialog", { name: "New page" });
     // Focus starts in Name once the content types have loaded (LINTEL-A11Y-031).
     const nameField = await within(dialog).findByRole("textbox", { name: "Name" });
     await waitFor(() => expect(nameField).toHaveFocus());
@@ -241,7 +239,7 @@ describe("the content tree", () => {
     const tree = await screen.findByRole("tree", { name: "Content tree" });
     fireEvent.contextMenu(tree.parentElement as Element);
     await userEvent.click(await screen.findByRole("menuitem", { name: "Create…" }));
-    expect(await screen.findByRole("dialog", { name: "Create something new" })).toBeTruthy();
+    expect(await screen.findByRole("dialog", { name: "New page" })).toBeTruthy();
   });
 
   it("asks for the home page while nothing is at the top, with Home as its name", async () => {
@@ -350,5 +348,68 @@ describe("the content tree", () => {
     fireEvent.contextMenu(homeRow.firstElementChild ?? homeRow);
     await screen.findByRole("menuitem", { name: "Create…" });
     expect(screen.queryByRole("menuitem", { name: "Hostnames…" })).toBeNull();
+  });
+});
+
+describe("the content tree (QA sweep)", () => {
+  function answerWithEdits() {
+    return mockApi(({ method, url, body }) => {
+      const path = url.pathname;
+      if (path.endsWith("/content-tree")) return roots;
+      if (path.endsWith("/content-tree/children")) {
+        return url.searchParams.get("parentId") === "home"
+          ? level([about, contact])
+          : level([home]);
+      }
+      if (method === "PATCH" && path.endsWith("/entries/about")) {
+        return { ...about, data: (body as { data: unknown }).data };
+      }
+      throw new Error(`Unexpected ${method} ${path}`);
+    });
+  }
+
+  it("unfolds Pages and the home page when Pages is chosen", async () => {
+    answerWithEdits();
+    renderScreen(<ContentSection />, { ...editor, initialPath: "/content/pages" });
+
+    expect(await screen.findByRole("treeitem", { name: "Home, Draft" })).toBeTruthy();
+    expect(await screen.findByRole("treeitem", { name: "About, Published" })).toBeTruthy();
+  });
+
+  it("lists the tree's pages in Move… before anything is typed", async () => {
+    window.localStorage.setItem("lintel.contentTree.expanded.main", '["root:pages","home"]');
+    answerWithEdits();
+    renderScreen(<ContentSection />, editor);
+
+    const aboutRow = await screen.findByRole("treeitem", { name: "About, Published" });
+    fireEvent.contextMenu(aboutRow.firstElementChild ?? aboutRow);
+    await userEvent.click(await screen.findByRole("menuitem", { name: "Move…" }));
+    const dialog = await screen.findByRole("dialog", { name: "Move “About”" });
+    await within(dialog).findByRole("radio", { name: /^Home/ });
+    expect(within(dialog).getByRole("radio", { name: /^Contact/ })).toBeTruthy();
+    // What is moving is never offered as its own new place.
+    expect(within(dialog).queryByRole("radio", { name: /^About/ })).toBeNull();
+  });
+
+  it("renames a page from its right-click menu", async () => {
+    window.localStorage.setItem("lintel.contentTree.expanded.main", '["root:pages","home"]');
+    const api = answerWithEdits();
+    renderScreen(<ContentSection />, editor);
+
+    const aboutRow = await screen.findByRole("treeitem", { name: "About, Published" });
+    fireEvent.contextMenu(aboutRow.firstElementChild ?? aboutRow);
+    await userEvent.click(await screen.findByRole("menuitem", { name: "Rename…" }));
+    const dialog = await screen.findByRole("dialog", { name: "Rename “About”" });
+    const name = within(dialog).getByRole("textbox", { name: "Name" });
+    await userEvent.clear(name);
+    await userEvent.type(name, "About us");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Rename" }));
+
+    await waitFor(() =>
+      expect(api.calls.find((call) => call.method === "PATCH")?.body).toEqual({
+        data: { title: "About us" },
+      }),
+    );
+    expect(await screen.findByText("Renamed to “About us”.")).toBeTruthy();
   });
 });

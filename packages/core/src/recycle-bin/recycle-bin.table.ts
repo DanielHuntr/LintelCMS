@@ -9,6 +9,8 @@ import { usersTable } from "../users/users.table.js";
  */
 export interface BinnedBranch {
   entries: BinnedEntry[];
+  /** Where the entry was on the site ("/about"), shown in the bin. Missing in items binned before. */
+  address?: string | null;
   revisions: BinnedRevision[];
   seo: BinnedSeo[];
   /** A site start's own domain and path, from "Hostnames". Missing in items binned before. */

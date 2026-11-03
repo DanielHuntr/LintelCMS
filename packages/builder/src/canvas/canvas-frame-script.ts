@@ -159,6 +159,7 @@ export function runCanvasFrame(snap: typeof snapBox, fitGrid: typeof fitToGrid):
     if (outline.hoveredId && outline.hoveredId !== outline.selectedId) {
       drawBox(outline.hoveredId, "hover", outline.labels.hovered);
     }
+    drawSelectedGridColumns();
     drawBox(outline.selectedId, "selected", outline.labels.selected);
     drawRotateHandle();
     drawGridHandle();
@@ -175,6 +176,42 @@ export function runCanvasFrame(snap: typeof snapBox, fitGrid: typeof fitToGrid):
     handle.style.left = `${rect.right + window.scrollX}px`;
     handle.style.top = `${rect.bottom + window.scrollY}px`;
     overlay.appendChild(handle);
+  }
+
+  /**
+   * The columns of the placed grid that is selected, or that the selected element is on, so
+   * people see the grid they're placing things on before they start dragging.
+   */
+  function drawSelectedGridColumns() {
+    if (editing) return;
+    const selected = nodeElement(outline.selectedId);
+    const container =
+      selected && isPlacedGrid(selected)
+        ? selected
+        : selected?.parentElement && isPlacedGrid(selected.parentElement)
+          ? selected.parentElement
+          : null;
+    if (!container) return;
+    const fit = fitOnGrid(container, { left: 0, top: 0, width: 1, height: 1 }, "fit");
+    if (!fit) return;
+    const origin = gridOrigin(container);
+    for (const column of fit.columnAreas) {
+      const stripe = document.createElement("div");
+      stripe.className = "lintel-grid-column lintel-grid-column--quiet";
+      Object.assign(stripe.style, {
+        left: `${origin.x + window.scrollX + column.left}px`,
+        top: `${origin.y + window.scrollY}px`,
+        width: `${column.width}px`,
+        height: `${container.clientHeight}px`,
+      });
+      overlay.appendChild(stripe);
+    }
+  }
+
+  function isPlacedGrid(element: HTMLElement): boolean {
+    return (
+      element.hasAttribute("data-lintel-grid") && getComputedStyle(element).display.includes("grid")
+    );
   }
 
   /** The element when its parent is a placed grid, or null. */
@@ -421,6 +458,13 @@ export function runCanvasFrame(snap: typeof snapBox, fitGrid: typeof fitToGrid):
       fontSize: Number.parseFloat(style.fontSize) || 16,
       fontWeight: style.fontWeight,
       color: style.color,
+      // Tracks as drawn ("240px 240px"), line names ("[wide]") left out.
+      gridColumns: style.display.includes("grid")
+        ? style.gridTemplateColumns
+            .replace(/\[[^\]]*\]/g, " ")
+            .split(/\s+/)
+            .filter((track) => track !== "" && track !== "none").length
+        : 0,
     });
   }
 
@@ -1174,6 +1218,7 @@ const canvasStyles = `
 .lintel-guide--y { height: 1px; }
 [data-lintel-free] > [data-lintel-node] { cursor: move; touch-action: none; }
 [data-lintel-grid] > [data-lintel-node] { cursor: move; touch-action: none; }
+.lintel-grid-column--quiet { position: absolute; pointer-events: none; opacity: 0.6; }
 .lintel-grid-column { background: rgb(255 45 135 / 0.07); box-shadow: inset 1px 0 rgb(255 45 135 / 0.35), inset -1px 0 rgb(255 45 135 / 0.35); }
 .lintel-grid-area { background: rgb(0 113 227 / 0.14); outline: 2px solid #0071e3; outline-offset: -2px; border-radius: 4px; }
 .lintel-grid-area span { position: absolute; left: 6px; top: 6px; padding: 1px 7px; border-radius: 4px; background: #0071e3; color: #fff; font: 600 11px/18px -apple-system, "Segoe UI", system-ui, sans-serif; }

@@ -19,3 +19,17 @@ describe("wording that depends on what's put into it", () => {
     );
   });
 });
+
+describe("the site fonts' words (QA sweep)", () => {
+  // They said "Lintel" even in an admin white-labelled with another name.
+  it("name the product the agency chose, never Lintel itself", async () => {
+    const { siteFontsStrings } = await import("../site-fonts/siteFontsStrings.js");
+    for (const text of Object.values(siteFontsStrings)) expect(text).not.toMatch(/Lintel/);
+    expect(t("siteFonts.included", { count: 23, product: "Acme Studio" })).toBe(
+      "Acme Studio also includes 23 fonts, such as Inter, Lora and Bebas Neue.",
+    );
+    expect(t("siteFonts.google.included", { product: "Acme Studio" })).toBe(
+      "Comes with Acme Studio",
+    );
+  });
+});

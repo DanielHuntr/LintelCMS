@@ -7,6 +7,7 @@ import {
   Globe,
   History,
   Info,
+  Pencil,
   List,
   type LucideIcon,
   Plus,
@@ -23,6 +24,7 @@ import { actionsFor, type TreeAction, type TreeTarget } from "./treeActions.js";
 const appearance: Record<TreeAction, { label: StringKey; icon: LucideIcon }> = {
   create: { label: "tree.action.create", icon: Plus },
   duplicate: { label: "tree.action.duplicate", icon: Copy },
+  rename: { label: "tree.action.rename", icon: Pencil },
   move: { label: "tree.action.move", icon: FolderInput },
   sort: { label: "tree.action.sort", icon: ArrowUpDown },
   publish: { label: "tree.action.publish", icon: Send },

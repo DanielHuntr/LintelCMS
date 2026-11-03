@@ -192,6 +192,7 @@ export function RecycleBinPage() {
                       {item.itemCount > 1 &&
                         ` · ${t("recycleBin.withChildren", { count: item.itemCount - 1 })}`}
                     </p>
+                    <RecycledPlace item={item} />
                   </div>
                   {canRestore && (
                     <Button
@@ -261,4 +262,23 @@ export function RecycleBinPage() {
       />
     </Page>
   );
+}
+
+/**
+ * Where a binned entry was and the first pages that were under it, so two items with the
+ * same title (two "Home"s) can be told apart.
+ */
+function RecycledPlace({ item }: { item: RecycleBinItem }) {
+  const childTitles = item.childTitles ?? [];
+  const parts = [
+    item.address ? t("recycleBin.wasAt", { address: item.address }) : null,
+    childTitles.length > 0
+      ? t("recycleBin.underIt", {
+          titles: childTitles.join(", "),
+          more: Math.max(0, item.itemCount - 1 - childTitles.length),
+        })
+      : null,
+  ].filter((part): part is string => part !== null);
+  if (parts.length === 0) return null;
+  return <p className="truncate text-footnote text-label-tertiary">{parts.join(" · ")}</p>;
 }

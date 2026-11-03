@@ -10,6 +10,7 @@ import {
   not,
   or,
   type SQL,
+  sql,
 } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { usersTable } from "../users/users.table.js";
@@ -33,6 +34,8 @@ export interface AssetListFilter {
   kind?: AssetKind;
   /** One folder: a site's id, or null for the shared library. Left out, every file. */
   siteId?: string | null;
+  /** Only pictures whose description is empty. */
+  missingAlt?: boolean;
   limit: number;
   offset: number;
 }
@@ -158,6 +161,9 @@ function listConditions(filter: AssetListFilter): SQL[] {
   }
   if (filter.kind === "document") {
     conditions.push(not(ilike(assetsTable.mimeType, "image/%")));
+  }
+  if (filter.missingAlt) {
+    conditions.push(ilike(assetsTable.mimeType, "image/%"), sql`trim(${assetsTable.alt}) = ''`);
   }
 
   return conditions;

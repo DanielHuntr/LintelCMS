@@ -43,6 +43,8 @@ export const treeKeys = {
     ["content-tree", "items", place, query] as const,
   recycleBin: () => ["content-tree", "recycle-bin"] as const,
   hostnames: (entryId: string) => ["content-tree", "hostnames", entryId] as const,
+  moveTargets: (collection: string, siteId: string | undefined) =>
+    ["content-tree", "move-targets", collection, siteId ?? "main"] as const,
 };
 
 export function useRootHostnames(entryId: string) {
@@ -65,6 +67,35 @@ export function useTreeChildren(place: TreePlace, siteId: string | undefined, en
     initialPageParam: 0,
     getNextPageParam: (last) =>
       last.offset + last.items.length < last.total ? last.offset + last.items.length : undefined,
+    enabled,
+  });
+}
+
+/** How many pages each level of "Move…" lists before a search is needed. */
+const MOVE_TARGETS_PER_LEVEL = 50;
+
+/**
+ * The places "Move…" offers before anything is typed: the top of the collection's tree and
+ * one level under each page there (the home page's pages), with how deep each one is.
+ */
+export function useMoveTargets(collection: string, siteId: string | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: treeKeys.moveTargets(collection, siteId),
+    queryFn: async () => {
+      const page = { offset: 0, limit: MOVE_TARGETS_PER_LEVEL };
+      const top = await getTreeChildren({ collection }, page, siteId);
+      const under = await Promise.all(
+        top.items.map((node) =>
+          node.childCount > 0 && !node.childrenAsCollection
+            ? getTreeChildren({ parentId: node.id }, page, siteId)
+            : null,
+        ),
+      );
+      return top.items.flatMap((node, index) => [
+        { node, depth: 0 },
+        ...(under[index]?.items ?? []).map((child) => ({ node: child, depth: 1 })),
+      ]);
+    },
     enabled,
   });
 }

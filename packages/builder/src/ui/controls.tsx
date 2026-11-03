@@ -174,6 +174,8 @@ interface LabelledProps {
   onReset?: () => void;
   resetLabel?: string;
   hint?: string;
+  /** Read out but not shown, when a heading right above already says it ("Picture"). */
+  labelHidden?: boolean;
 }
 
 /** A label above a control, with the "changed here" dot and a way to reset it. */
@@ -184,13 +186,19 @@ export function Labelled({
   onReset,
   resetLabel,
   hint,
+  labelHidden = false,
 }: LabelledProps) {
   const id = useId();
   return (
     // Long labels wrap rather than being cut off; side by side, the controls still line up.
     <div className="flex min-w-0 flex-col justify-end gap-1">
       <div className="flex items-center gap-1.5">
-        <label htmlFor={id} className="min-w-0 text-caption text-pretty text-label-secondary">
+        <label
+          htmlFor={id}
+          className={
+            labelHidden ? "sr-only" : "min-w-0 text-caption text-pretty text-label-secondary"
+          }
+        >
           {label}
         </label>
         {overridden && (

@@ -20,6 +20,7 @@ import { type SharedScope, SharedStyleBar } from "../site-design/SharedStyleBar.
 import { useSiteDesign, withSharedStyle } from "../site-design/site-design-context.js";
 import { CanvasLookContext, useCanvasLook } from "./canvas-look.js";
 import type { BuilderStringKey } from "../i18n/builder-strings.js";
+import { type RelevantLooks } from "./relevant-looks.js";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { usePreferenceStore } from "../preferences/builder-preferences.js";
 import {
@@ -92,6 +93,8 @@ interface StylePanelProps {
   nodeName?: string;
   /** Opens Site styles: the site's named colours, sizes, fonts and shared styles. */
   onOpenSiteStyles?: () => void;
+  /** Whether Open and Current make sense for this element; left out, both are offered. */
+  looks?: RelevantLooks;
 }
 
 const textTypes = new Set(["heading", "text", "quote", "list", "button", "link", "navigation"]);
@@ -131,6 +134,7 @@ export function StylePanel({
   sharedStyleUses,
   nodeName = "",
   onOpenSiteStyles,
+  looks,
 }: StylePanelProps) {
   const text = useBuilderText();
   const advanced = mode === "advanced";
@@ -243,6 +247,7 @@ export function StylePanel({
         )}
         <LookPicker
           value={validState}
+          looks={advanced ? undefined : looks}
           owners={owners}
           onChange={onStateChange}
           onPointAtOwner={onPointAtOwner}
@@ -329,11 +334,13 @@ const followableStates = new Set<StyleState>(["hover", "pressed", "open", "selec
  */
 function LookPicker({
   value,
+  looks,
   owners,
   onChange,
   onPointAtOwner,
 }: {
   value: StateChoice;
+  looks?: RelevantLooks;
   owners: readonly StateOwner[];
   onChange: (state: StateChoice) => void;
   onPointAtOwner?: (nodeId: string | null) => void;
@@ -364,10 +371,19 @@ function LookPicker({
         value={look}
         onChange={chooseLook}
         wraps
-        choices={lookChoices.map((choice) => ({
-          value: choice.value,
-          label: text(choice.label),
-        }))}
+        choices={lookChoices
+          // Open and Current only where they mean something (or are already in use).
+          .filter(
+            (choice) =>
+              !looks ||
+              choice.value === look ||
+              (choice.value !== "open" && choice.value !== "selected") ||
+              looks[choice.value === "open" ? "open" : "selected"],
+          )
+          .map((choice) => ({
+            value: choice.value,
+            label: text(choice.label),
+          }))}
       />
       {canFollow && !ownerId && !isFollowing && (
         <button

@@ -70,7 +70,7 @@ export function PageDesignCard({
         )}
       </div>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-4">
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <div className="flex min-w-0 flex-[1_1_14rem] flex-col gap-0.5">
           <h2 id={headingId} className="text-headline text-label">
             {isDesigned || entryId === undefined ? field.label : t("pageDesign.card.emptyTitle")}
           </h2>

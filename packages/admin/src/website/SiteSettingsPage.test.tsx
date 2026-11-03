@@ -150,3 +150,26 @@ describe("Settings, Your website", () => {
     expect(screen.queryByRole("button", { name: "Save changes" })).not.toBeInTheDocument();
   });
 });
+
+describe("Settings, Your website (QA sweep)", () => {
+  it("calls the template a blog and page style, and ticks no pairing for fonts of your own", async () => {
+    mockApi(({ url }) => {
+      if (url.pathname === "/website") return { ...website, headingFont: "Studio Sans" };
+      if (url.pathname === "/site-fonts") return { fonts: [], adobeProjects: [] };
+      if (url.pathname === "/website/address")
+        return { siteAddress: "http://localhost:3000", defaultLocale: "en-GB" };
+      throw new Error(`Unexpected request: ${url.pathname}`);
+    });
+    renderScreen(<SiteSettingsPage />);
+    expect(await screen.findByRole("heading", { name: "Blog and page style" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Editorial/ })).not.toBeChecked();
+    expect(screen.getByRole("radio", { name: /^Clean.*device/ })).not.toBeChecked();
+    expect(screen.getByText("Your own fonts")).toBeInTheDocument();
+
+    // Picking a pairing uses its fonts again.
+    await userEvent.click(screen.getByRole("radio", { name: /Editorial/ }));
+    expect(screen.getByRole("radio", { name: /Editorial/ })).toBeChecked();
+    expect(screen.queryByText("Your own fonts")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Headings")).toHaveValue("");
+  });
+});

@@ -105,6 +105,19 @@ describe("the form builder", () => {
     await userEvent.click(await screen.findByRole("radio", { name: "Add to your site" }));
     expect(screen.getByText(/data-form="contact"/)).toBeInTheDocument();
   });
+
+  // The code and the API were two cards beside "On a page"; they are for developers.
+  it("folds the embed code and the API away under For developers", async () => {
+    mockForm();
+    renderScreen(<FormBuilderPage formId="f1" />, { enabledPlugins: ["forms"] });
+
+    await userEvent.click(await screen.findByRole("radio", { name: "Add to your site" }));
+    expect(screen.getByText(/add a Form element/)).toBeVisible();
+    const developers = screen.getByText("For developers").closest("details");
+    expect(developers).not.toHaveAttribute("open");
+    expect(developers).toContainElement(screen.getByText(/data-form="contact"/));
+    expect(developers).toContainElement(screen.getByText("Through the API"));
+  });
 });
 
 describe("the submissions inbox", () => {

@@ -2,7 +2,7 @@ import { colourTokens } from "@lintel/builder-model";
 import { AlignCenter, AlignJustify, AlignLeft, AlignRight } from "lucide-react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { ChoiceGroup, PanelSection } from "../ui/controls.js";
-import { lookAlign, nearestSizeChip, useSelectedLook } from "./canvas-look.js";
+import { lookAlign, nearestSizeChip, nearestWeightChip, useSelectedLook } from "./canvas-look.js";
 import { useStyleField } from "./style-field.js";
 import { textSummary } from "./style-summaries.js";
 import { FontPicker } from "./FontPicker.js";
@@ -50,7 +50,9 @@ export function TypographySection({ advanced }: { advanced: boolean }) {
           { value: "500", label: text("pageBuilder.style.weightMedium") },
           { value: "700", label: text("pageBuilder.style.weightBold") },
         ]}
-        lookValue={look && weights.includes(look.fontWeight) ? look.fontWeight : null}
+        lookValue={nearestWeightChip(look?.fontWeight, weights)}
+        // A weight set here that looks like a chip ("600") presses it, rather than "Custom".
+        matchValue={(value) => nearestWeightChip(value, weights)}
       />
       <ChoiceGroup
         label={text("pageBuilder.style.textAlign")}

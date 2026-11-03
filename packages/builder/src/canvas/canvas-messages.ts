@@ -134,6 +134,8 @@ export type MessageFromFrame =
       fontSize: number;
       fontWeight: string;
       color: string;
+      /** How many columns it has as a grid; 0 when it isn't one. Missing from older frames. */
+      gridColumns?: number;
     }
   /** Part of a text is selected (or, with nodeId null, nothing is). */
   | { type: "textSelection"; nodeId: null }

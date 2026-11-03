@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { readFrameMessage } from "../canvas/canvas-messages.js";
-import { type CanvasLook, lookAlign, nearestSizeChip } from "./canvas-look.js";
+import {
+  type CanvasLook,
+  countGridColumns,
+  lookAlign,
+  nearestSizeChip,
+  nearestWeightChip,
+} from "./canvas-look.js";
 
 const look = (overrides: Partial<CanvasLook>): CanvasLook => ({
   nodeId: "n1",
@@ -44,5 +50,27 @@ describe("the canvas's look message", () => {
     };
     expect(readFrameMessage(sent)).toEqual(sent);
     expect(readFrameMessage({ ...sent, fontSize: "big" })).toBeNull();
+  });
+});
+
+describe("chips that match the real look (QA sweep)", () => {
+  const weights = ["400", "500", "700"];
+
+  it("reads a 600 button as Bold, and bold or normal by name", () => {
+    expect(nearestWeightChip("600", weights)).toBe("700");
+    expect(nearestWeightChip("bold", weights)).toBe("700");
+    expect(nearestWeightChip("normal", weights)).toBe("400");
+    expect(nearestWeightChip("450", weights)).toBe("500");
+    expect(nearestWeightChip("900", weights)).toBeNull();
+    expect(nearestWeightChip("var(--lintel-var-weight)", weights)).toBeNull();
+    expect(nearestWeightChip(undefined, weights)).toBeNull();
+  });
+
+  it("counts a grid's columns however its template is written", () => {
+    expect(countGridColumns("repeat(3, minmax(0, 1fr))")).toBe(3);
+    expect(countGridColumns("1fr 1fr")).toBe(2);
+    expect(countGridColumns("minmax(0, 2fr) 1fr  [wide] 1fr")).toBe(3);
+    expect(countGridColumns("repeat(auto-fill, minmax(12rem, 1fr))")).toBe(0);
+    expect(countGridColumns(undefined)).toBe(0);
   });
 });

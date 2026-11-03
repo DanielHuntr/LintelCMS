@@ -12,6 +12,7 @@ export type TreeTarget =
 export type TreeAction =
   | "create"
   | "duplicate"
+  | "rename"
   | "move"
   | "sort"
   | "publish"
@@ -56,7 +57,7 @@ export function actionsFor(target: TreeTarget, can: ActionPermissions): TreeActi
   const isLive = node.status === "published";
   const actions: TreeAction[] = [];
   if (can.create) actions.push("create", "duplicate");
-  if (can.update) actions.push("move");
+  if (can.update) actions.push("rename", "move");
   if (can.update && node.childCount > 1) actions.push("sort");
   if (can.publish) {
     if (!isLive || node.hasUnpublishedChanges || node.childCount > 0) actions.push("publish");

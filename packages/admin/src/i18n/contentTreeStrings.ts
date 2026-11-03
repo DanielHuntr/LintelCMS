@@ -46,6 +46,13 @@ export const contentTreeStrings = {
   "tree.action.create": "Create…",
   "tree.action.duplicate": "Duplicate…",
   "tree.action.move": "Move…",
+  "tree.action.rename": "Rename…",
+  "tree.rename.title": "Rename “{title}”",
+  "tree.rename.label": "Name",
+  "tree.rename.hint": "Its web address stays the same.",
+  "tree.rename.confirm": "Rename",
+  "tree.rename.empty": "Give it a name.",
+  "tree.renamed": "Renamed to “{title}”.",
   "tree.action.sort": "Sort children…",
   "tree.action.publish": "Publish…",
   "tree.action.unpublish": "Unpublish…",
@@ -88,6 +95,8 @@ export const contentTreeStrings = {
 
   "tree.create.title": "Create in {place}",
   "tree.create.titleAtTop": "Create something new",
+  "tree.create.titleOne": "New {type} in {place}",
+  "tree.create.titleOneAtTop": "New {type}",
   "tree.create.typeLabel": "What would you like to make?",
   "tree.create.nameLabel": "Name",
   "tree.create.namePlaceholder": "About us",
@@ -264,6 +273,9 @@ export const contentTreeStrings = {
   "recycleBin.detailNobody": "{collection} · deleted {time}",
   "recycleBin.withChildren":
     "{count, plural, one {with # item under it} other {with # items under it}}",
+  "recycleBin.wasAt": "Was at {address}",
+  "recycleBin.underIt":
+    "{more, plural, =0 {Under it: {titles}} one {Under it: {titles} and # more} other {Under it: {titles} and # more}}",
   "recycleBin.restore": "Restore",
   "recycleBin.restoreLabel": "Restore {title}",
   "recycleBin.restored": "Restored “{title}” as a draft.",

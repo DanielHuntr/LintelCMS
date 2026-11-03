@@ -69,3 +69,10 @@ checks every move against the content types' rules.
 | `ContentTreeContext.tsx` | What the tree's parts share                               |
 | `selectedTreeKey.ts`     | Which row the address selects                             |
 | `testTree.tsx`           | Test helpers for screens that expect the tree around them |
+| `RenameDialog.tsx`       | "Rename…": the entry's title; its address stays           |
+
+Choosing the site's pages (the first page tree) unfolds it and its home page. "Move…" lists
+the tree's top level and the pages under each before anything is typed (`useMoveTargets`).
+"Create…" asks what to make only when more than one content type may go there; with one, the
+title names it ("New page in Home"). The recycle bin shows where each item was and the first
+pages that were under it, so two items with the same title can be told apart.

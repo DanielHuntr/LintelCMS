@@ -2,7 +2,7 @@
 export const richTextPictureStrings = {
   "fields.richText.addPicture": "Add picture",
   "fields.richText.picture.settings": "Picture",
-  "fields.richText.picture.alt": "Describe the picture",
+  "fields.richText.picture.alt": "Picture description",
   "fields.richText.picture.altHint":
     "For people who can’t see it, and for search engines. Leave it empty only for decoration.",
   "fields.richText.picture.caption": "Caption",

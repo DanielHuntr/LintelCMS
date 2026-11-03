@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CalendarDays } from "lucide-react";
 import { defineAdminPlugin } from "../plugins/adminPlugin.js";
+import { t } from "../i18n/strings.js";
 import { sections, visibleSections } from "./sections.js";
 
 const allPlugins = ["blog", "commerce", "forms", "automations", "seo"];
@@ -25,7 +26,7 @@ describe("visibleSections", () => {
     expect(labelsFor(["*"], ["blog", "seo"])).toEqual([
       "Dashboard",
       "Content",
-      "Design",
+      "Templates",
       "Media",
       "Users",
       "Settings",
@@ -69,7 +70,7 @@ describe("sidebar items from plugins", () => {
     expect(labels(["*"], ["bookings"])).toEqual([
       "Dashboard",
       "Content",
-      "Design",
+      "Templates",
       "Media",
       "Bookings",
       "Users",
@@ -79,5 +80,13 @@ describe("sidebar items from plugins", () => {
     ]);
     expect(labels(["*"], [])).not.toContain("Bookings");
     expect(labels(["media:read"], ["bookings"])).not.toContain("Bookings");
+  });
+});
+
+describe("sidebar names (QA sweep)", () => {
+  // The sidebar said "Design" and the page it opened said "Templates".
+  it("calls the template library by the name its page has", () => {
+    const templates = sections.find((section) => section.path === "/design");
+    expect(templates && t(templates.label)).toBe(t("templates.title"));
   });
 });

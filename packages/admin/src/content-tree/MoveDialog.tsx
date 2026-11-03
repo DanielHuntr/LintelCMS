@@ -7,7 +7,7 @@ import { t } from "../i18n/strings.js";
 import { useDebouncedValue } from "../media/useDebouncedValue.js";
 import { useContentTree } from "./ContentTreeContext.js";
 import type { TreeNode } from "./contentTree.types.js";
-import { useTreeSearch } from "./contentTree.queries.js";
+import { useMoveTargets, useTreeSearch } from "./contentTree.queries.js";
 import { iconForContent } from "./typeIcons.js";
 
 interface MoveDialogProps {
@@ -26,12 +26,22 @@ export function MoveDialog({ nodes, onMove, onClose }: MoveDialogProps) {
   const [search, setSearch] = useState("");
   const settled = useDebouncedValue(search.trim(), 250);
   const results = useTreeSearch(settled, siteId);
+  const first = nodes[0];
+  // Before anything is typed, the tree's own pages are listed, so there is something to pick.
+  const browsing = useMoveTargets(
+    first?.collection.handle ?? "",
+    siteId,
+    settled === "" && !!first,
+  );
   const [choice, setChoice] = useState<string | null | undefined>(undefined);
   const [isWorking, setIsWorking] = useState(false);
   const groupName = useId();
-  const first = nodes[0];
   const moving = new Set(nodes.map((node) => node.id));
-  const candidates = (results.data?.items ?? []).filter((node) => !moving.has(node.id));
+  const candidates: { node: TreeNode; depth: number }[] = (
+    settled === ""
+      ? (browsing.data ?? [])
+      : (results.data?.items ?? []).map((node) => ({ node, depth: 0 }))
+  ).filter(({ node }) => !moving.has(node.id));
   const title =
     nodes.length === 1 && first
       ? t("tree.move.title", { title: first.title || t("tree.untitled") })
@@ -48,7 +58,7 @@ export function MoveDialog({ nodes, onMove, onClose }: MoveDialogProps) {
     }
   }
 
-  const option = (value: string | null, label: string, node?: TreeNode) => {
+  const option = (value: string | null, label: string, node?: TreeNode, depth = 0) => {
     const Icon = iconForContent(node?.collection ?? first?.collection ?? { handle: "" });
     return (
       <label
@@ -56,6 +66,7 @@ export function MoveDialog({ nodes, onMove, onClose }: MoveDialogProps) {
         className={classNames(
           "flex cursor-pointer items-center gap-2.5 rounded-control px-3 py-2 text-body has-focus-visible:focus-ring",
           choice === value ? "bg-accent/12 text-accent" : "text-label hover:bg-fill",
+          depth > 0 && "ps-8",
         )}
       >
         <input
@@ -98,7 +109,9 @@ export function MoveDialog({ nodes, onMove, onClose }: MoveDialogProps) {
         />
         <div role="radiogroup" aria-label={title} className="flex flex-col gap-0.5">
           {first && option(null, t("tree.move.top", { collection: first.collection.name }))}
-          {candidates.map((node) => option(node.id, node.title || t("tree.untitled"), node))}
+          {candidates.map(({ node, depth }) =>
+            option(node.id, node.title || t("tree.untitled"), node, depth),
+          )}
         </div>
       </div>
     </Dialog>

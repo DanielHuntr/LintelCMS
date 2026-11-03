@@ -228,16 +228,7 @@ interface ChipChoice {
   label: string;
 }
 
-/**
- * A row of one-tap choices ("None, S, M, L"): the friendly control Simple mode is made of.
- * `properties` lets one chip set several properties, such as padding on all four sides.
- */
-export function StyleChips({
-  properties,
-  label,
-  choices,
-  lookValue = null,
-}: {
+interface StyleChipsProps {
   properties: readonly StylePropertyName[];
   label: string;
   choices: readonly ChipChoice[];
@@ -246,11 +237,30 @@ export function StyleChips({
    * is set on it. Null when the look isn't known or matches no choice.
    */
   lookValue?: string | undefined | null;
-}) {
+  /**
+   * The choice a value set here looks like when it isn't one of them (a weight of 600 looks
+   * Bold); null when none. Without it, such a value shows as "Custom".
+   */
+  matchValue?: (value: string) => string | null;
+}
+
+/**
+ * A row of one-tap choices ("None, S, M, L"): the friendly control Simple mode is made of.
+ * `properties` lets one chip set several properties, such as padding on all four sides.
+ */
+export function StyleChips(props: StyleChipsProps) {
+  const { properties, label, choices, matchValue } = props;
+  // `undefined` is a real answer here (the "Normal" chip, which sets nothing), so a default
+  // value would hide it: only a look that wasn't passed at all counts as unknown.
+  const lookValue = "lookValue" in props ? props.lookValue : null;
   const text = useBuilderText();
   const { change } = useStyleEditing();
   const first = useStyleField(properties[0] as StylePropertyName, label);
   const labelId = useId();
+  const isChipValue = choices.some((each) => each.value === first.value);
+  const matched =
+    first.value !== undefined && !isChipValue ? (matchValue?.(first.value) ?? null) : null;
+  const isCustom = first.value !== undefined && !isChipValue && matched === null;
   return (
     <Labelled
       label={label}
@@ -268,9 +278,8 @@ export function StyleChips({
           {choices.map((choice) => {
             // A value set here that no chip matches shows as "Custom" below, with no chip
             // pressed; with nothing set, the chip nearest how it looks is pressed.
-            const isChipValue = choices.some((each) => each.value === first.value);
             const shown =
-              first.value !== undefined ? (isChipValue ? first.value : null) : lookValue;
+              first.value !== undefined ? (isChipValue ? first.value : matched) : lookValue;
             const isCurrent = choice.value === shown;
             return (
               <button
@@ -294,7 +303,7 @@ export function StyleChips({
               </button>
             );
           })}
-          {first.value !== undefined && !choices.some((each) => each.value === first.value) && (
+          {isCustom && first.value !== undefined && (
             <span className="flex h-7 items-center rounded-control bg-accent-fill px-2.5 text-caption font-medium text-on-accent">
               {friendlyLength(first.value)
                 ? text("pageBuilder.style.customValue", { value: friendlyLength(first.value)! })

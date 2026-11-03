@@ -781,11 +781,37 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-042   | P2       | Fixed  | Site cursor: the cursor, its word ("Play") and hover pictures freeze on top of a YouTube or Vimeo video                        |
 | LINTEL-UX-043   | P2       | Fixed  | Motion timeline: the Trigger settings are squeezed into a narrow column in the side panel; labels overlap, selects unreadable  |
 | LINTEL-UX-044   | P2       | Fixed  | Grow while scrolling can't start smaller than 60%: a video can't grow from a tenth of its size to full as the page scrolls     |
+| <<<<<<< HEAD    |
 | LINTEL-UX-062   | P3       | Fixed  | The Motion panel's moment icons use bright stock iOS colours that clash with the warm admin                                    |
 | LINTEL-UX-063   | P3       | Fixed  | A scroll scene's Start and End lines sit on the canvas's very edges by default, so they're hard to see or grab                 |
 | LINTEL-UX-041   | P1       | Fixed  | No site-wide cookie notice: videos, maps, embeds and Adobe Fonts each asked alone (Adobe Fonts not at all), with no way back   |
 | LINTEL-UX-060   | P2       | Fixed  | Builder: Tools: Beginner / Designer / Developer hides settings per person; the tour differs per level; a Code tab for few      |
 | LINTEL-UX-061   | P2       | Fixed  | Style: two stacked controls for one question (Arrange → Place things, Layout → Arrange what's inside); "Normal" means nothing  |
+| =======         |
+| LINTEL-UX-045   | P2       | Fixed  | Adding a Navigation or Footer goes live on every page at once, while the top bar says "Not on your site yet"                   |
+| LINTEL-UX-046   | P2       | Fixed  | A Navigation added to an empty page is hidden behind "This page is empty"                                                      |
+| LINTEL-UX-047   | P2       | Fixed  | Deleting the site's navigation or footer only hides it on that page; nothing removes it from the site                          |
+| LINTEL-UX-048   | P3       | Fixed  | The page's Design card squashes its heading to one word per line beside the button                                             |
+| LINTEL-UX-049   | P3       | Fixed  | Move… lists only "The top of Pages" until something is typed                                                                   |
+| LINTEL-UX-050   | P3       | Fixed  | Choosing Pages leaves the tree folded                                                                                          |
+| LINTEL-UX-051   | P3       | Fixed  | "Which look you're changing" offers Open and Current for every element                                                         |
+| LINTEL-UX-052   | P3       | Fixed  | Settings → Your website: "Template" means the blog and page style; a pairing is ticked though your own fonts are in use        |
+| LINTEL-UX-053   | P3       | Fixed  | The forms "email isn't set up" warning is a dead end: no next step                                                             |
+| LINTEL-UX-054   | P2       | Fixed  | Picture → Content shows a broken image and a raw /_lintel/ path for built-in illustrations, and says Picture three times       |
+| LINTEL-UX-055   | P3       | Fixed  | Alt text has four names: Describe the picture, Alt text, description for screen readers, Name or description                   |
+| LINTEL-UX-056   | P3       | Fixed  | A placed grid's columns show only while dragging, not while the grid is selected                                               |
+| LINTEL-UX-057   | P3       | Fixed  | The content tree's right-click menu has no Rename                                                                              |
+| LINTEL-UX-058   | P3       | Fixed  | Recycle bin: identical "Home" items can't be told apart                                                                        |
+| LINTEL-UX-059   | P3       | Fixed  | The dashboard's "N images have no description" leads nowhere; the library can't list them                                      |
+| LINTEL-UX-070   | P3       | Fixed  | The sidebar says Design and the page it opens says Templates                                                                   |
+| LINTEL-UX-071   | P3       | Fixed  | Forms: "Form section" and "Form element" for the same thing; code and API cards sit beside "On a page"                         |
+| LINTEL-UX-072   | P2       | Fixed  | The site fonts' words say "Lintel" in a white-labelled admin                                                                   |
+| LINTEL-UX-073   | P3       | Fixed  | Site styles in Beginner show colour codes and "Gutter 1.5rem"                                                                  |
+| LINTEL-UX-074   | P3       | Fixed  | Create asks "What would you like to make?" with one choice, Pages                                                              |
+| LINTEL-UX-075   | P3       | Fixed  | Users says "It's just you so far" while an invitation is waiting                                                               |
+| LINTEL-UX-076   | P3       | Fixed  | Style chips ignore the real look: a 600 button shows Weight Custom, a 1fr 1fr grid no Columns chip, a 17px button no size      |
+
+> > > > > > > 695eaa4
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 

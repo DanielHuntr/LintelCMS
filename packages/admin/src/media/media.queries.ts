@@ -22,8 +22,8 @@ export const ASSETS_PER_PAGE = 60;
 export const mediaKeys = {
   all: ["media"] as const,
   lists: () => [...mediaKeys.all, "list"] as const,
-  list: (search: string, type: AssetKind | undefined, folder?: string) =>
-    [...mediaKeys.lists(), { search: search.trim(), type, folder }] as const,
+  list: (search: string, type: AssetKind | undefined, folder?: string, missingAlt = false) =>
+    [...mediaKeys.lists(), { search: search.trim(), type, folder, missingAlt }] as const,
   asset: (assetId: string) => [...mediaKeys.all, "asset", assetId] as const,
   bin: () => [...mediaKeys.all, "bin"] as const,
 };
@@ -31,11 +31,16 @@ export const mediaKeys = {
 type AssetPages = InfiniteData<{ assets: Asset[]; total: number }, number>;
 
 /** The library, newest first, a page at a time ("Show more" loads the next). */
-export function useAssetList(search: string, type: AssetKind | undefined, folder?: string) {
+export function useAssetList(
+  search: string,
+  type: AssetKind | undefined,
+  folder?: string,
+  missingAlt = false,
+) {
   return useInfiniteQuery({
-    queryKey: mediaKeys.list(search, type, folder),
+    queryKey: mediaKeys.list(search, type, folder, missingAlt),
     queryFn: ({ pageParam }) =>
-      listAssets({ search, type, folder, page: pageParam, perPage: ASSETS_PER_PAGE }),
+      listAssets({ search, type, folder, missingAlt, page: pageParam, perPage: ASSETS_PER_PAGE }),
     initialPageParam: 1,
     getNextPageParam: (lastPage, pages) =>
       pages.length * ASSETS_PER_PAGE < lastPage.total ? pages.length + 1 : undefined,

@@ -87,3 +87,40 @@ describe("the recycle bin", () => {
     expect(api.calls.some((call) => call.url.pathname === "/media-bin/f1/restore")).toBe(true);
   });
 });
+
+describe("the recycle bin (QA sweep)", () => {
+  it("tells two items called Home apart by where they were and what was under them", async () => {
+    const home = (id: string, address: string, childTitles: string[], itemCount: number) => ({
+      id,
+      entryId: `e-${id}`,
+      title: "Home",
+      collection: { handle: "pages", name: "Pages" },
+      itemCount,
+      deletedAt: "2026-11-01T09:00:00.000Z",
+      deletedBy: null,
+      address,
+      childTitles,
+    });
+    mockApi(({ url }) =>
+      url.pathname === "/recycle-bin"
+        ? {
+            items: [
+              home("r1", "/", ["About", "Menu", "Contact"], 6),
+              home("r2", "/shop", ["Cakes"], 2),
+            ],
+          }
+        : {},
+    );
+    renderScreen(
+      <WithTestTree actions={[]}>
+        <RecycleBinPage />
+      </WithTestTree>,
+      { initialPath: "/content/recycle-bin" },
+    );
+
+    expect(
+      await screen.findByText("Was at / · Under it: About, Menu, Contact and 2 more"),
+    ).toBeTruthy();
+    expect(screen.getByText("Was at /shop · Under it: Cakes")).toBeTruthy();
+  });
+});

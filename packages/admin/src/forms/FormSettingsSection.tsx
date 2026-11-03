@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useId, type ReactNode } from "react";
 import { SegmentedControl } from "../design/SegmentedControl.js";
 import { useEmailStatus } from "../email-outbox/emailStatus.queries.js";
@@ -97,7 +98,14 @@ export function FormSettingsSection({ draft, hasEmailField, onChange }: FormSett
             role="note"
             className="rounded-control bg-warning/12 px-3 py-2 text-footnote text-label"
           >
-            {t("forms.settings.emailNotSetUp")}
+            {t("forms.settings.emailNotSetUp")} {t("forms.settings.emailNextStep")}{" "}
+            <Link
+              to="/help"
+              search={{ topic: "using/forms", anchor: "emails" }}
+              className="font-medium text-accent underline decoration-1 underline-offset-2 hover:decoration-2 focus-visible:focus-ring"
+            >
+              {t("forms.settings.emailHelp")}
+            </Link>
           </p>
         )}
         <Toggle

@@ -155,3 +155,29 @@ export function setSiteSectionHidden(
     },
   };
 }
+
+/**
+ * "Remove from every page": the section is taken out of the site, so every page goes back to
+ * the automatic header (or footer). Undo brings it back.
+ */
+export function removeSiteSectionFromSite(
+  context: CommandContext,
+  slot: SiteSectionSlot,
+): CommandResult {
+  const sharedId = siteSectionNodeIds[slot];
+  if (!findNode(context.document.root, sharedId)) {
+    return { refused: context.text("pageBuilder.refused.nothingSelected") };
+  }
+  return {
+    change: {
+      label: context.text("pageBuilder.siteSection.history.removed", {
+        name: slotName(context, slot),
+      }),
+      update: (document: PageDocument) => ({
+        ...document,
+        root: withHiddenOnPage(removeNode(document.root, sharedId), slot, false),
+      }),
+      select: null,
+    },
+  };
+}

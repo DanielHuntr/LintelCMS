@@ -42,6 +42,8 @@ export interface AssetListQuery {
   perPage: number;
   /** "shared" or a site's handle for one folder; undefined for every file. */
   folder?: string;
+  /** Only pictures with no description yet. */
+  missingAlt?: boolean;
 }
 
 export interface AssetChanges {
@@ -81,6 +83,7 @@ export function listAssets(query: AssetListQuery) {
   if (query.search.trim()) parameters.set("search", query.search.trim());
   if (query.type) parameters.set("type", query.type);
   if (query.folder) parameters.set("folder", query.folder);
+  if (query.missingAlt) parameters.set("missingAlt", "true");
   return apiRequest<{ assets: Asset[]; total: number }>(`/media?${parameters}`);
 }
 

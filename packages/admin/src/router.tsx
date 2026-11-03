@@ -509,14 +509,15 @@ const mediaRoute = createRoute({
   // `?upload=true` opens the file chooser, for "Upload media" in the command palette.
   validateSearch: (
     search: Record<string, unknown>,
-  ): { asset?: string; search?: string; upload?: boolean } => ({
+  ): { asset?: string; search?: string; upload?: boolean; filter?: "needs-description" } => ({
     asset: typeof search.asset === "string" && search.asset !== "" ? search.asset : undefined,
+    filter: search.filter === "needs-description" ? "needs-description" : undefined,
     search: typeof search.search === "string" && search.search !== "" ? search.search : undefined,
     upload: search.upload === true || search.upload === "true" ? true : undefined,
   }),
   component: function MediaRoute() {
     const { session } = adminRoute.useRouteContext();
-    const { asset, search, upload } = mediaRoute.useSearch();
+    const { asset, search, upload, filter } = mediaRoute.useSearch();
     const navigate = useNavigate();
     return (
       <MediaLibraryPage
@@ -524,9 +525,10 @@ const mediaRoute = createRoute({
         permissions={session.permissions}
         initialAssetId={asset}
         initialSearch={search}
+        initialFilter={filter === "needs-description" ? "needsDescription" : undefined}
         startUpload={upload}
         onUploadStarted={() =>
-          void navigate({ to: "/media", search: { asset, search }, replace: true })
+          void navigate({ to: "/media", search: { asset, search, filter }, replace: true })
         }
       />
     );

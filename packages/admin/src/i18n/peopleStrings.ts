@@ -22,6 +22,8 @@ export const peopleStrings = {
   "people.noMatchesDescription": "Try part of their name or email address.",
   "people.onlyYou":
     "It’s just you so far. Invite the people you work with, and choose what each can do.",
+  "people.onlyYouInvited":
+    "{count, plural, one {Just you for now, with one invitation waiting to be accepted.} other {Just you for now, with # invitations waiting to be accepted.}}",
   "people.invitationsHeader": "Invitations",
   "people.invitationsFooter":
     "Invitations work for 7 days. Resending one sends a new link and stops the old one working.",

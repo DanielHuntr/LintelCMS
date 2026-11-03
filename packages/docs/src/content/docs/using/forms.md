@@ -79,6 +79,10 @@ the person who filled in the form.
 **Send a confirmation to the person** emails them a copy of what they sent. It needs an
 Email field, so Lintel knows where to send it.
 
+If the form's settings say email isn't set up, these emails aren't sent yet, though every
+message still arrives in **Submissions**. Ask whoever set up your website to connect an
+email service; once they have, the emails start on their own.
+
 In subjects and messages, `{form}` is the form's name and a field's handle in braces, such
 as `{name}`, is that answer. "New message from {name}" becomes "New message from Ana Lima".
 

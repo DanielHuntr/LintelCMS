@@ -3,6 +3,7 @@ import { ArrowDown, ArrowRight, LayoutGrid, Move } from "lucide-react";
 import { type KeyboardEvent, useMemo, useRef } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { ChoiceGroup, classNames, Labelled, PanelSection } from "../ui/controls.js";
+import { countGridColumns, useSelectedLook } from "./canvas-look.js";
 import { useDesignTools } from "./design-tools.js";
 import { GridSettings, selfAlignments } from "./GridPlaceControls.js";
 import {
@@ -193,7 +194,10 @@ function GridDetails({ canPlaceOnGrid }: { canPlaceOnGrid: boolean }) {
   const text = useBuilderText();
   const tools = useDesignTools();
   const columns = useStyleField("gridTemplateColumns", text("pageBuilder.style.columns"));
-  const columnCount = Number(/^repeat\((\d+)/.exec(columns.value ?? "")?.[1] ?? 0);
+  // Counted from the template however it's written, or as the canvas draws it when unset.
+  const look = useSelectedLook();
+  const columnCount =
+    columns.value !== undefined ? countGridColumns(columns.value) : (look?.gridColumns ?? 0);
   return (
     <>
       <ChoiceGroup

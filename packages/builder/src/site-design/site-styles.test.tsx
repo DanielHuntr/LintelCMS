@@ -298,3 +298,19 @@ describe("Site styles in the right panel", () => {
     expect(screen.queryByRole("radio", { name: /^Container/ })).toBeNull();
   });
 });
+
+describe("Site styles show swatches and plain names (QA sweep)", () => {
+  it("shows colours as swatches, without their codes, and calls the side space plainly", async () => {
+    const person = userEvent.setup();
+    renderBuilder({ ...ink, variables: [{ ...ink.variables[0]!, darkValue: "#e6e1d8" }] });
+    const row = screen.getByRole("button", { name: /^Ink/ });
+    expect(row).not.toHaveTextContent("#1f2328");
+    await person.click(row);
+    expect(screen.getByLabelText("Ink: Value (Colour)")).toBeInTheDocument();
+    const code = document.querySelector<HTMLInputElement>('input[aria-label="Ink: Value"]');
+    expect(code).not.toBeNull();
+    expect(code).not.toBeVisible();
+    expect(screen.getByText("In light mode")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Side space" })).toBeInTheDocument();
+  });
+});

@@ -11,6 +11,7 @@ import { getEntryInfo } from "./contentTree.api.js";
 import { CreateDialog } from "./CreateDialog.js";
 import { HostnamesDialog } from "./HostnamesDialog.js";
 import { MoveDialog } from "./MoveDialog.js";
+import { RenameDialog } from "./RenameDialog.js";
 import { SortDialog } from "./SortDialog.js";
 import type { TreeAction, TreeTarget } from "./treeActions.js";
 import type { TreeNotice } from "./TreeToast.js";
@@ -68,6 +69,8 @@ export function TreeDialogs({ pending, onClose, onNotice, selectedKey }: TreeDia
       );
     case "sort":
       return <SortDialog place={{ parentId: node.id }} placeName={name} onClose={onClose} />;
+    case "rename":
+      return <RenameDialog node={node} onClose={onClose} onNotice={onNotice} />;
     case "hostnames":
       return <HostnamesDialog node={node} onClose={onClose} onNotice={onNotice} />;
     case "move":

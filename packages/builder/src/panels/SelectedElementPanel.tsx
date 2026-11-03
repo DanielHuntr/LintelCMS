@@ -46,6 +46,7 @@ import {
   type StylePanelMode,
 } from "../style-panel/StylePanel.js";
 import { layerName } from "../editor/commands.js";
+import { relevantLooks } from "../style-panel/relevant-looks.js";
 import { SiteStylesPanel } from "../site-design/SiteStylesPanel.js";
 import { useSiteDesign } from "../site-design/site-design-context.js";
 import type { SharedStyleChange } from "../editor/design-commands.js";
@@ -181,6 +182,7 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
       sharedStyleUses={sharedStyleUses}
       variableUses={variableUses}
       breakpoint={props.breakpoint}
+      showsValues={false}
       onBack={onBack}
       onDeleteVariable={actions.writeOutVariable}
       onDeleteSharedStyle={(sharedStyle) => {
@@ -220,6 +222,11 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
         };
       });
   }, [node, document, props.registry, text]);
+  // Whether Open and Current mean anything for this element (the simple panel hides them).
+  const looks = useMemo(
+    () => (node ? relevantLooks(findPath(document.root, node.id)) : undefined),
+    [node, document],
+  );
   // The ones a state can follow, offered by name: cards, links, buttons and the like, and
   // anything the person has named. Plain layout boxes ("Container") mean nothing to people.
   const followableOwners = useMemo<StateOwner[]>(() => {
@@ -372,6 +379,7 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
               actions.changeStyles(node.id, target, values, label)
             }
             owners={followableOwners}
+            looks={looks}
             onPointAtOwner={props.onPointAtElement}
             onTransitionChange={actions.setStateTransition}
             sharedStyleUses={sharedStyleUses}
