@@ -695,3 +695,22 @@ Every upload uses the media library's upload and checks, and its plain messages.
 - `site-components/src/media/photo-credit.test.tsx`: the image section with a credit, a typed credit with a caption, and none.
 
 **Screenshots** (in `screenshots/qol-b/`): `credits-site-desktop-light`, `credits-site-desktop-dark`, `credits-site-phone-light`, `credits-builder-on-desktop-light` and `credits-builder-off-desktop-light`.
+
+## LINTEL-UX-033: choosing which look to change (3 November 2026)
+
+**Reported by Daniel:** the Style panel's "Style for" dropdown "makes no sense, what does it do?". It mixed the element's own states with "Lookbook: pointer over" style entries for the elements around it, in one long list with jargon headings.
+
+**Reproduced:** select a picture inside a card, open Style. The dropdown lists Always, then "This element" and "With what's around it" groups. Nothing says that it picks which look the changes below apply to.
+
+**Fix:** the dropdown is now two plain questions at the top of Style.
+
+- **Which look you're changing:** Normal, Hovered, Pressed, Focused, Open, Current, as buttons that are all visible at once.
+- **What has to be hovered** (or pressed, open, current): this element, or one of the elements around it by name ("Two halves, around it"). It only shows once a look other than Normal is chosen. Focused has no second question, because focus is always the element's own. Moving between looks keeps following the same element around it.
+- **A sentence in a tinted box** says what's being changed, with an example: "You're changing how this looks while the pointer is over Two halves, like a picture that grows when its card is hovered."
+- The designer tour's text now names the looks instead of "Style for".
+
+What's saved is unchanged, so existing pages keep their states.
+
+**Tests:** `builder/src/panels/panels.test.tsx` checks the six looks in order and that Hovered saves to the hover styles. It also checks that the second question appears for Hovered, isn't there for Focused, and keeps the element around it when switching from Open to Hovered. It also covers the owner's transition. `studio.test.tsx` checks the tour text.
+
+**Screenshots** (in `screenshots/looks/`): `before-style-for-desktop-light`, then `looks-normal-desktop-light`, `looks-owner-desktop-light` and `looks-owner-desktop-dark`. At 390px wide the designer shows its "needs a bigger screen" page, as before.

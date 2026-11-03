@@ -9,7 +9,7 @@ import {
   type StyleState,
   type StyleTarget,
 } from "@lintel/builder-model";
-import { type ReactNode, useId, useMemo } from "react";
+import { type ReactNode, useMemo } from "react";
 import { CanvasLookContext, useCanvasLook } from "./canvas-look.js";
 import type { BuilderStringKey } from "../i18n/builder-strings.js";
 import { useBuilderText } from "../i18n/builder-text.js";
@@ -19,7 +19,7 @@ import {
   useRememberedOpenSections,
 } from "../preferences/open-sections.js";
 import { OpenSectionsContext } from "../ui/CollapsibleSection.js";
-import { ChoiceGroup, inputClassName } from "../ui/controls.js";
+import { ChoiceGroup } from "../ui/controls.js";
 import { ArrangeSection } from "./ArrangeSection.js";
 import { BackgroundSection } from "./BackgroundSection.js";
 import { type DesignTools, DesignToolsContext } from "./design-tools.js";
@@ -155,14 +155,10 @@ export function StylePanel({
         ) : (
           note
         )}
-        <StateSelect value={validState} owners={owners} onChange={onStateChange} />
-        <p className="text-caption text-label-secondary">
-          {owner
-            ? text("pageBuilder.style.editingOwnerState", { name: owner.name })
-            : validState !== "none"
-              ? text("pageBuilder.style.editingState")
-              : text(breakpointNotes[breakpoint])}
-        </p>
+        <LookPicker value={validState} owners={owners} onChange={onStateChange} />
+        {validState === "none" && (
+          <p className="text-caption text-label-secondary">{text(breakpointNotes[breakpoint])}</p>
+        )}
         {validState !== "none" && onTransitionChange && (
           <TransitionControls
             owner={
@@ -206,11 +202,41 @@ export function StylePanel({
   );
 }
 
+/** The looks an element can have, in the order they're offered. */
+const lookChoices: ReadonlyArray<{ value: "none" | StyleState; label: BuilderStringKey }> = [
+  { value: "none", label: "pageBuilder.style.lookNormal" },
+  { value: "hover", label: "pageBuilder.style.lookHover" },
+  { value: "pressed", label: "pageBuilder.style.lookPressed" },
+  { value: "focus", label: "pageBuilder.style.lookFocus" },
+  { value: "open", label: "pageBuilder.style.lookOpen" },
+  { value: "selected", label: "pageBuilder.style.lookSelected" },
+];
+
+/** What each look means, in a sentence, for this element or one around it. */
+const lookMeanings: Record<StyleState, BuilderStringKey> = {
+  hover: "pageBuilder.style.meansHover",
+  pressed: "pageBuilder.style.meansPressed",
+  focus: "pageBuilder.style.meansFocus",
+  open: "pageBuilder.style.meansOpen",
+  selected: "pageBuilder.style.meansSelected",
+};
+const ownerLookMeanings: Record<StyleState, BuilderStringKey> = {
+  hover: "pageBuilder.style.ownerMeansHover",
+  pressed: "pageBuilder.style.ownerMeansPressed",
+  focus: "pageBuilder.style.ownerMeansHover",
+  open: "pageBuilder.style.ownerMeansOpen",
+  selected: "pageBuilder.style.ownerMeansSelected",
+};
+
+/** Keyboard focus is the element's own: something around it can't follow it. */
+const followableStates = new Set<StyleState>(["hover", "pressed", "open", "selected"]);
+
 /**
- * "Style for": always, one of its own states, or a state of an element around it. The list
- * is short: its own three states, then the nearest few elements around it.
+ * Which look is being changed: the normal one, or how it looks while hovered, pressed and so
+ * on. For those, a second question says whose state it is: this element's own, or one around
+ * it ("the picture grows while its card is hovered").
  */
-function StateSelect({
+function LookPicker({
   value,
   owners,
   onChange,
@@ -220,45 +246,60 @@ function StateSelect({
   onChange: (state: StateChoice) => void;
 }) {
   const text = useBuilderText();
-  const id = useId();
+  const ownerTarget = readOwnerStateTarget(value === "none" ? "base" : value);
+  const look: "none" | StyleState = ownerTarget
+    ? ownerTarget.state
+    : (value as "none" | StyleState);
+  const ownerId = ownerTarget?.ownerId;
+  const canFollow = look !== "none" && followableStates.has(look) && owners.length > 0;
+  const owner = owners.find((candidate) => candidate.id === ownerId);
+
+  function chooseLook(next: "none" | StyleState) {
+    // Keep following the same element around it when the new look allows it.
+    if (next !== "none" && ownerId && followableStates.has(next)) {
+      onChange(`${next}@${ownerId}`);
+    } else {
+      onChange(next);
+    }
+  }
+
   return (
-    <div className="flex items-center gap-2">
-      <label htmlFor={id} className="shrink-0 text-caption text-label-secondary">
-        {text("pageBuilder.style.stateLabel")}
-      </label>
-      <select
-        id={id}
-        value={value}
-        onChange={(event) => onChange(event.target.value as StateChoice)}
-        className={inputClassName}
-      >
-        <option value="none">{text("pageBuilder.style.stateNone")}</option>
-        <optgroup label={text("pageBuilder.style.stateOwnHeading")}>
-          <option value="hover">{text("pageBuilder.style.stateHover")}</option>
-          <option value="pressed">{text("pageBuilder.style.statePressed")}</option>
-          <option value="focus">{text("pageBuilder.style.stateFocus")}</option>
-          <option value="open">{text("pageBuilder.style.stateOpen")}</option>
-          <option value="selected">{text("pageBuilder.style.stateSelected")}</option>
-        </optgroup>
-        {owners.length > 0 && (
-          <optgroup label={text("pageBuilder.style.stateOwnerHeading")}>
-            {owners.flatMap((owner) => [
-              <option key={`hover@${owner.id}`} value={`hover@${owner.id}`}>
-                {text("pageBuilder.style.stateOwnerHover", { name: owner.name })}
-              </option>,
-              <option key={`pressed@${owner.id}`} value={`pressed@${owner.id}`}>
-                {text("pageBuilder.style.stateOwnerPressed", { name: owner.name })}
-              </option>,
-              <option key={`open@${owner.id}`} value={`open@${owner.id}`}>
-                {text("pageBuilder.style.stateOwnerOpen", { name: owner.name })}
-              </option>,
-              <option key={`selected@${owner.id}`} value={`selected@${owner.id}`}>
-                {text("pageBuilder.style.stateOwnerSelected", { name: owner.name })}
-              </option>,
-            ])}
-          </optgroup>
-        )}
-      </select>
+    <div className="flex flex-col gap-2">
+      <ChoiceGroup<"none" | StyleState>
+        label={text("pageBuilder.style.lookLabel")}
+        value={look}
+        onChange={chooseLook}
+        wraps
+        choices={lookChoices.map((choice) => ({
+          value: choice.value,
+          label: text(choice.label),
+        }))}
+      />
+      {canFollow && (
+        <ChoiceGroup<string>
+          label={text("pageBuilder.style.whoseLabel", {
+            look: text(lookChoices.find((choice) => choice.value === look)!.label).toLowerCase(),
+          })}
+          value={ownerId ?? "self"}
+          onChange={(next) => onChange(next === "self" ? look : `${look}@${next}`)}
+          stacked
+          choices={[
+            { value: "self", label: text("pageBuilder.style.whoseSelf") },
+            ...owners.map((candidate) => ({
+              value: candidate.id,
+              label: text("pageBuilder.style.whoseOwner", { name: candidate.name }),
+            })),
+          ]}
+        />
+      )}
+      {look !== "none" && (
+        <p
+          className="rounded-control bg-accent/10 px-3 py-2 text-caption text-label"
+          aria-live="polite"
+        >
+          {owner ? text(ownerLookMeanings[look], { name: owner.name }) : text(lookMeanings[look])}
+        </p>
+      )}
     </div>
   );
 }

@@ -244,13 +244,19 @@ describe("the Style panel's groups", () => {
     expect(disclosure("Text")).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("chooses the state to style from a dropdown", async () => {
+  it("chooses the look to change, in plain words", async () => {
     const person = user();
     const { latest } = renderBuilder();
     await select(person, "Button");
     await person.click(screen.getByRole("radio", { name: "Advanced" }));
-    await person.selectOptions(screen.getByRole("combobox", { name: "Style for" }), "Pointer over");
-    expect(screen.getByText(/apply only in this state/)).toBeInTheDocument();
+    const looks = screen.getByRole("radiogroup", { name: "Which look you're changing" });
+    expect(
+      within(looks)
+        .getAllByRole("radio")
+        .map((look) => look.textContent),
+    ).toEqual(["Normal", "Hovered", "Pressed", "Focused", "Open", "Current"]);
+    await person.click(within(looks).getByRole("radio", { name: "Hovered" }));
+    expect(screen.getByText(/while a mouse pointer is over it/)).toBeInTheDocument();
     await person.click(disclosure("Background"));
     await person.click(within(groupOf("Background")).getByRole("button", { name: "Accent" }));
     expect(findNode(latest().root, "n5")?.styles.hover?.backgroundColor).toBe(
@@ -263,27 +269,46 @@ describe("the Style panel's groups", () => {
     const person = user();
     const { latest } = renderBuilder();
     await select(person, "Button");
-    const styleFor = screen.getByRole("combobox", { name: "Style for" });
-    const ownerOption = within(styleFor)
-      .getAllByRole("option")
-      .find((option) => option.textContent?.endsWith(": pointer over"));
-    expect(ownerOption).toBeDefined();
-    const labels = within(styleFor)
-      .getAllByRole("option")
-      .map((option) => option.textContent ?? "");
-    expect(labels).toContain("Open (its button opens it)");
-    expect(labels).toContain("Selected (current page, chosen tab)");
-    expect(labels.some((label) => label.endsWith(": open"))).toBe(true);
-    const target = (ownerOption as HTMLOptionElement).value;
-    const ownerId = target.split("@")[1]!;
-    await person.selectOptions(styleFor, target);
-    expect(screen.getByText(/apply while .* is in this state/)).toBeInTheDocument();
+    // Nothing to answer about whose look until a look other than Normal is chosen.
+    expect(screen.queryByRole("radiogroup", { name: /What has to be/ })).toBeNull();
+    const looks = screen.getByRole("radiogroup", { name: "Which look you're changing" });
+    await person.click(within(looks).getByRole("radio", { name: "Hovered" }));
+    const whose = screen.getByRole("radiogroup", { name: "What has to be hovered" });
+    expect(within(whose).getByRole("radio", { name: "This element" })).toBeChecked();
+    const ownerChoice = within(whose)
+      .getAllByRole("radio")
+      .find((choice) => choice.textContent?.endsWith(", around it"));
+    expect(ownerChoice).toBeDefined();
+    await person.click(ownerChoice!);
+    expect(screen.getByText(/while the pointer is over/)).toBeInTheDocument();
+
+    // Keyboard focus is the element's own, so there's no second question for it.
+    await person.click(within(looks).getByRole("radio", { name: "Focused" }));
+    expect(screen.queryByRole("radiogroup", { name: /What has to be/ })).toBeNull();
+    await person.click(within(looks).getByRole("radio", { name: "Open" }));
+    await person.click(
+      within(screen.getByRole("radiogroup", { name: "What has to be open" })).getAllByRole(
+        "radio",
+      )[1]!,
+    );
+    await person.click(within(looks).getByRole("radio", { name: "Hovered" }));
+    // Moving between looks keeps following the same element around it.
+    expect(
+      within(screen.getByRole("radiogroup", { name: "What has to be hovered" })).getAllByRole(
+        "radio",
+      )[1],
+    ).toBeChecked();
+    const ownerName = ownerChoice!.textContent!.replace(", around it", "");
+    expect(screen.getByText(/while the pointer is over/)).toHaveTextContent(ownerName);
 
     await person.click(disclosure("Background"));
     await person.click(within(groupOf("Background")).getByRole("button", { name: "Accent" }));
-    expect(findNode(latest().root, "n5")?.styles.owners).toEqual({
-      [target]: { backgroundColor: "var(--lintel-color-accent)" },
+    const [target] = Object.keys(findNode(latest().root, "n5")?.styles.owners ?? {});
+    expect(target).toMatch(/^hover@/);
+    expect(findNode(latest().root, "n5")?.styles.owners?.[target as `hover@${string}`]).toEqual({
+      backgroundColor: "var(--lintel-color-accent)",
     });
+    const ownerId = target!.split("@")[1]!;
 
     // Instant until a feel is chosen; the transition is saved on the owner.
     expect(screen.getByRole("radio", { name: "Instant" })).toBeChecked();

@@ -217,7 +217,7 @@ describe("the guided tour", () => {
       await user.click(screen.getByRole("button", { name: "Next" }));
     }
     const beginner = screen.getByRole("dialog", { name: "Change what you’ve selected" });
-    expect(beginner).not.toHaveTextContent("Style for");
+    expect(beginner).not.toHaveTextContent("Hovered");
     await user.click(screen.getByRole("button", { name: "Next" }));
     expect(screen.getByRole("dialog")).toHaveTextContent("Tools, beside them");
     await user.keyboard("{Escape}");
@@ -230,7 +230,7 @@ describe("the guided tour", () => {
       await user.click(screen.getByRole("button", { name: "Next" }));
     }
     expect(screen.getByRole("dialog", { name: "Change what you’ve selected" })).toHaveTextContent(
-      "Style for",
+      "Hovered",
     );
   });
 

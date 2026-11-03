@@ -770,6 +770,7 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-025   | P2       | Fixed  | Builder: no states like Framer's: a card can't animate its picture on hover; no pressed state; no scroll steps      |
 | LINTEL-UX-026   | P3       | Fixed  | The content tree's note goes after 8 seconds even while hovered or focused, and restarts when the tree re-renders   |
 | LINTEL-UX-027   | P3       | Fixed  | The dashboard's "Add images and files" checks a permission no role has, so Authors who may upload never see it      |
+| LINTEL-UX-033   | P2       | Fixed  | Builder: the "Style for" dropdown makes no sense; its labels ("Lookbook: pointer over") don't say what they do      |
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 
