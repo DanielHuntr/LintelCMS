@@ -119,13 +119,24 @@ function copyIds(node: PageNode, createId: CreateNodeId, newIds: Map<string, str
 function retargetAnimations(node: PageNode, newIds: ReadonlyMap<string, string>): PageNode {
   const children = node.children.map((child) => retargetAnimations(child, newIds));
   node = retargetOwnerStates(node, newIds);
-  const targets = node.animation?.spec.targets;
-  if (!node.animation || targets?.type !== "nodes") return { ...node, children };
-  const spec = {
-    ...node.animation.spec,
-    targets: { ...targets, nodeIds: targets.nodeIds.map((id) => newIds.get(id) ?? id) },
-  };
-  return { ...node, children, animation: { ...node.animation, spec } };
+  if (!node.animations) return { ...node, children };
+  const animations = node.animations.map((animation) => {
+    const targets = animation.spec.targets;
+    const trigger = animation.spec.trigger;
+    let spec = animation.spec;
+    if (targets.type === "nodes") {
+      spec = {
+        ...spec,
+        targets: { ...targets, nodeIds: targets.nodeIds.map((id) => newIds.get(id) ?? id) },
+      };
+    }
+    // A scene step inside the copy follows the copied section, too.
+    if (trigger.type === "scroll" && trigger.follows && newIds.has(trigger.follows)) {
+      spec = { ...spec, trigger: { ...trigger, follows: newIds.get(trigger.follows) } };
+    }
+    return { ...animation, spec };
+  });
+  return { ...node, children, animations };
 }
 
 /** Puts a copy straight after the original and gives back the copy's id. */

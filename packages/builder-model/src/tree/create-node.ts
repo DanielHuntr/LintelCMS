@@ -32,7 +32,7 @@ export function createNode(
     children: children.map((child) => createNode(child, catalogue, createId)),
     hidden: false,
     locked: false,
-    ...(blueprint.animation ? { animation: structuredCopy(blueprint.animation) } : {}),
+    ...(blueprint.animation ? { animations: [structuredCopy(blueprint.animation)] } : {}),
     ...(effects.length ? { effects: structuredCopy([...effects]) } : {}),
     ...(blueprint.freeLayout ? { freeLayout: { ...blueprint.freeLayout } } : {}),
     ...(blueprint.backgroundVideo ? { backgroundVideo: { ...blueprint.backgroundVideo } } : {}),

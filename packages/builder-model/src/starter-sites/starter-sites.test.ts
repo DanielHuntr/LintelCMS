@@ -47,7 +47,7 @@ describe("starter sites", () => {
       expect(findIllustration(site.coverIllustration)).toBeDefined();
       for (const page of site.pages) {
         const design = buildStarterPage(page, standardCatalogue, createCountingNodeIds());
-        expect(listNodes(design.root).some((node) => node.animation)).toBe(true);
+        expect(listNodes(design.root).some((node) => node.animations?.length)).toBe(true);
         for (const src of page.sections.flatMap(pictures)) {
           const name = /^\/_lintel\/illustrations\/([a-z-]+)\.svg$/.exec(src)?.[1] ?? "";
           expect(findIllustration(name), src).toBeDefined();

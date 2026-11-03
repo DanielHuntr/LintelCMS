@@ -19,7 +19,7 @@ import { isSafeValueFor } from "../styles/style-values.js";
  * docs/decisions/0015-page-documents.md explains the choices.
  */
 
-export const pageDocumentVersion = 1;
+export const pageDocumentVersion = 2;
 
 /** Screen sizes, widest first. Styles cascade down: tablet starts from desktop, phone from tablet. */
 export const breakpoints = ["base", "tablet", "phone"] as const;
@@ -86,8 +86,12 @@ export interface PageNode {
   hidden: boolean;
   /** Can't be moved, changed or deleted until it is unlocked. */
   locked: boolean;
-  /** Left out when the element doesn't move. */
-  animation?: NodeAnimation;
+  /**
+   * How it moves: one or more animations, such as fading in when it appears and lifting on
+   * hover. Left out when the element doesn't move. (Pages before version 2 had one,
+   * `animation`; they're migrated when read.)
+   */
+  animations?: NodeAnimation[];
   /**
    * Effects from the Effects library (`@lintel/motion/effects`): magnetic pull, tilt,
    * scramble... Several can be on one element, alongside its animation. Left out for none.
@@ -178,6 +182,9 @@ export function isStateTarget(target: StyleTarget): boolean {
   return isOwnerStateTarget(target) || (styleStates as readonly string[]).includes(target);
 }
 
+/** Enough for an entrance, a hover and a scroll step or two, without piling up. */
+export const maxAnimationsPerElement = 6;
+
 const nodeAnimationSchema = z.object({
   spec: motionSpecSchema,
   presetId: z
@@ -216,7 +223,7 @@ export const pageNodeSchema: z.ZodType<PageNode> = z.lazy(() =>
       .default([]),
     hidden: z.boolean({ error: "hidden should be true or false" }).default(false),
     locked: z.boolean({ error: "locked should be true or false" }).default(false),
-    animation: nodeAnimationSchema.optional(),
+    animations: z.array(nodeAnimationSchema).min(1).max(maxAnimationsPerElement).optional(),
     effects: nodeEffectsSchema.optional(),
     stateTransition: stateTransitionSchema.optional(),
     freeLayout: freeLayoutSchema.optional(),

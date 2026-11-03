@@ -190,10 +190,44 @@ describe("animations on elements", () => {
     );
     expect(checked.ok).toBe(true);
     if (!checked.ok) return;
-    const animation = checked.document.root.children[0]?.animation;
+    // Saved as version 1 with one `animation`: read as version 2's list.
+    const animation = checked.document.root.children[0]?.animations?.[0];
     expect(animation?.presetId).toBe("fade-in");
     expect(animation?.spec.duration).toBe(600);
     expect(animation?.spec.reducedMotion).toBe("fade");
+  });
+
+  it("keeps several animations on one element, up to a limit", () => {
+    const spec = {
+      trigger: { type: "hover" },
+      tracks: [
+        {
+          property: "scale",
+          keyframes: [
+            { offset: 0, value: 1 },
+            { offset: 1, value: 1.05 },
+          ],
+        },
+      ],
+    };
+    const page = (count: number) => ({
+      version: 2,
+      root: {
+        id: "page",
+        type: "page",
+        children: [
+          {
+            id: "h1",
+            type: "heading",
+            props: { text: "Hi", level: 1 },
+            animations: Array.from({ length: count }, () => ({ spec })),
+          },
+        ],
+      },
+    });
+    const two = validatePageDocument(page(2), standardCatalogue);
+    expect(two.ok && two.document.root.children[0]?.animations).toHaveLength(2);
+    expect(validatePageDocument(page(7), standardCatalogue).ok).toBe(false);
   });
 
   it("refuses an animation the runtime couldn't play", () => {
@@ -207,6 +241,6 @@ describe("animations on elements", () => {
   it("leaves elements without an animation as they are", () => {
     const checked = validatePageDocument(withAnimation(undefined), standardCatalogue);
     expect(checked.ok).toBe(true);
-    if (checked.ok) expect(checked.document.root.children[0]?.animation).toBeUndefined();
+    if (checked.ok) expect(checked.document.root.children[0]?.animations).toBeUndefined();
   });
 });
