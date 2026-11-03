@@ -3,7 +3,7 @@ import type { DatabaseOrTransaction } from "../../database/client.js";
 import { DEFAULT_TENANT_ID } from "../../database/columns.js";
 import { ordersTable } from "../orders/orders.table.js";
 
-/** Database reads for the sales summary. Cancelled orders don't count; refunds come off. */
+/** Database reads for the sales summary. Cancelled and test orders don't count; refunds come off. */
 
 const netSales = sql<number>`coalesce(sum(${ordersTable.totalAmount} - ${ordersTable.refundedAmount}), 0)`;
 
@@ -12,6 +12,7 @@ function ordersSince(since: Date): SQL | undefined {
     eq(ordersTable.tenantId, DEFAULT_TENANT_ID),
     gte(ordersTable.createdAt, since),
     isNull(ordersTable.cancelledAt),
+    eq(ordersTable.isTest, false),
   );
 }
 

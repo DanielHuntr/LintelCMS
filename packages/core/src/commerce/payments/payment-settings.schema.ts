@@ -46,12 +46,18 @@ const keySourceSchema = z.enum(["environment", "admin"]);
 
 export const paymentSettingsSchema = z.object({
   connected: z.boolean(),
+  /** The shop is on this computer or a private network, so no webhook can reach it. */
+  siteIsLocal: z.boolean(),
+  /** Lintel asks Stripe about payments itself, because no webhook is doing it. */
+  checksForPayments: z.boolean(),
   /** "test" while using test keys: no real money moves. */
   mode: z.enum(["test", "live"]).nullable(),
   /** Only the end of the secret key is ever shown: sk_test_…4242. */
   secretKey: z.object({ hint: z.string(), source: keySourceSchema }).nullable(),
   publishableKey: z.object({ value: z.string(), source: keySourceSchema }).nullable(),
   webhookSecret: z.object({ source: keySourceSchema }).nullable(),
+  /** When Stripe's webhook last reached the shop since its signing secret was saved. */
+  lastWebhookAt: z.iso.datetime().nullable(),
   /** The address to give Stripe for webhooks. */
   webhookUrl: z.string(),
   /** The events to tick when adding the webhook in Stripe. */

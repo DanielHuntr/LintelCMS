@@ -1,4 +1,4 @@
-import { boolean, integer, jsonb, pgTable, text } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { tenantId, timestamps } from "../../database/columns.js";
 
 export const taxCalculations = ["stripe", "manual"] as const;
@@ -34,6 +34,10 @@ export const shopSettingsTable = pgTable("shop_settings", {
   stripeSecretKey: text("stripe_secret_key"),
   stripePublishableKey: text("stripe_publishable_key"),
   stripeWebhookSecret: text("stripe_webhook_secret"),
+  /** How far Lintel has read Stripe's events itself, when no webhook can reach the shop. */
+  stripeEventsCheckedUntil: timestamp("stripe_events_checked_until", { withTimezone: true }),
+  /** When a signed webhook last arrived; emptied when a new signing secret is saved. */
+  stripeLastWebhookAt: timestamp("stripe_last_webhook_at", { withTimezone: true }),
   orderNumberPrefix: text("order_number_prefix").notNull().default("#"),
   /** The number the next order gets; taken and increased in one statement. */
   nextOrderNumber: integer("next_order_number").notNull().default(1001),

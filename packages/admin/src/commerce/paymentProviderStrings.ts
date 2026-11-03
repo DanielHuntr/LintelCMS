@@ -7,6 +7,7 @@ export const paymentProviderStrings = {
   "shop.providers.name.stripe": "Stripe",
   "shop.providers.name.paypal": "PayPal",
   "shop.providers.name.mollie": "Mollie",
+  "shop.providers.name.test": "Test checkout",
   "shop.providers.notConnectedOption": "{name} (not connected yet)",
   "shop.providers.marketsHeader": "Who takes payments",
   "shop.providers.marketsBody":
@@ -23,6 +24,8 @@ export const paymentProviderStrings = {
   "shop.paypal.step3Title": "Paste your app's details",
   "shop.paypal.step3Body":
     "Copy the Client ID and Secret from the top of your app's page, and the webhook ID from step 2. {product} checks them with PayPal before saving.",
+  "shop.paypal.step3BodyLocal":
+    "Copy the Client ID and Secret from the top of your app's page. {product} checks them with PayPal before saving.",
   "shop.paypal.environmentLabel": "Where you copied them from",
   "shop.paypal.sandbox": "Sandbox (testing)",
   "shop.paypal.live": "Live",
@@ -56,5 +59,5 @@ export const paymentProviderStrings = {
   "shop.mollie.webhookAutomatic":
     "Nothing else to set up: each payment tells Mollie to report back to {url}.",
   "shop.mollie.webhookLocal":
-    "While {product} runs on this computer, Mollie can't reach it to say a payment arrived. Payments work once the site is online.",
+    "Mollie can't reach this computer, so {product} checks with Mollie instead. Test payments still work, and there's nothing to set up.",
 } as const;

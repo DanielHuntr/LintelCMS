@@ -1,4 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { readTestCookie } from "../commerce/test-checkout/test-checkout-site.routes.js";
+import { TEST_SESSION_HEADER } from "../commerce/test-checkout/test-session-tokens.js";
 
 /**
  * HTTP only, on the website's own server: the storefront and forms APIs at the website's own
@@ -61,6 +63,9 @@ export async function siteApiRoutes(
       const value = request.headers[name];
       if (typeof value === "string") headers[name] = value;
     }
+    // Only this browser's own test session, read from its cookie (src/commerce/test-checkout).
+    const testToken = area === "shop" ? readTestCookie(request) : undefined;
+    if (testToken) headers[TEST_SESSION_HEADER] = testToken;
     const response = await options.api.inject({
       method: request.method as "GET",
       url: `${options.apiPrefix ?? ""}${apiPathFor[area]}${rest}`,

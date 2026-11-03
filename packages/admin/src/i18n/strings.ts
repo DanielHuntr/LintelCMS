@@ -6,6 +6,7 @@ import { experimentsStrings } from "../experiments/experimentsStrings.js";
 import { discountStrings } from "../commerce/discountStrings.js";
 import { paymentProviderStrings } from "../commerce/paymentProviderStrings.js";
 import { shopifyImportStrings } from "../commerce/shopifyImportStrings.js";
+import { testCheckoutStrings } from "../commerce/testCheckoutStrings.js";
 import { commerceStrings } from "./commerceStrings.js";
 import { appStrings } from "./appStrings.js";
 import { contentModelStrings } from "./contentModelStrings.js";
@@ -74,6 +75,7 @@ const english = {
   ...commerceStrings,
   ...discountStrings,
   ...paymentProviderStrings,
+  ...testCheckoutStrings,
   ...shopifyImportStrings,
   ...siteStrings,
   ...brandingStrings,

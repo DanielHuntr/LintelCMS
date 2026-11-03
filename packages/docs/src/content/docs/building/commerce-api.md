@@ -166,7 +166,8 @@ Either way, card details go straight to the provider and never pass through your
 Lintel.
 
 The order is made **only** when the provider confirms the payment (Stripe's signed webhook,
-a PayPal webhook PayPal has verified, or a Mollie payment fetched back from Mollie), never by
+a PayPal webhook PayPal has verified, or a payment fetched back from the provider with the
+shop's own key, as happens when `GET /delivery/shop/checkouts/:id` is polled), never by
 the shopper landing on your success page. On that page, poll
 `GET /delivery/shop/checkouts/:checkoutId` until `status` is `completed`, then show
 `orderName` ("#1001").
@@ -194,7 +195,9 @@ Errors use the same shape as the rest of the API, `{ statusCode, code, message }
 
 Stripe sends events to `POST /shop/stripe/webhook`. Lintel checks each event's signature with
 the signing secret and records its id, so an event Stripe sends twice is only acted on once.
-For local testing:
+
+On a local address nothing needs setting up: Lintel reads Stripe's events itself, through the
+same handler. To try the webhook route itself on your own computer, use the Stripe CLI:
 
 ```bash
 stripe listen --forward-to localhost:4000/shop/stripe/webhook

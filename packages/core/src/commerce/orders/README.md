@@ -1,7 +1,8 @@
 # Orders
 
-Orders are made by `order-placement.service.ts`, called only from the Stripe webhook, so
-every order has been paid. Lines, prices and addresses are copied from the checkout, so
+Orders are made by `order-placement.service.ts`, called only once a provider has confirmed
+the payment (see `../payments`), so every order has been paid, except test orders (see
+`../test-checkout`), which took no money and don't count as sales. Lines, prices and addresses are copied from the checkout, so
 editing a product later never changes history. Numbers count up per shop (`#1001`), and
 abandoned checkouts never use one.
 

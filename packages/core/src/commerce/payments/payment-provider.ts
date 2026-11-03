@@ -12,19 +12,28 @@ import type { OrderRow, RefundStatus } from "../orders/orders.table.js";
  * Stripe webhook, a PayPal webhook PayPal has verified, or a Mollie payment fetched back
  * from Mollie with the shop's own key).
  */
-export const paymentProviderIds = ["stripe", "paypal", "mollie"] as const;
+export const marketPaymentProviderIds = ["stripe", "paypal", "mollie"] as const;
+export type MarketPaymentProviderId = (typeof marketPaymentProviderIds)[number];
+
+/**
+ * Every provider a checkout or an order can have. "test" is the test checkout (see
+ * ../test-checkout): it takes no money, so it can never be a market's choice, only what a
+ * signed test session's own checkouts use.
+ */
+export const paymentProviderIds = [...marketPaymentProviderIds, "test"] as const;
 export type PaymentProviderId = (typeof paymentProviderIds)[number];
 
 export const PAYMENT_PROVIDER_NAMES: Record<PaymentProviderId, string> = {
   stripe: "Stripe",
   paypal: "PayPal",
   mollie: "Mollie",
+  test: "the test checkout",
 };
 
 /** Who takes payments in a market: its own choice, or Stripe. */
 export function marketPaymentProvider(market: {
-  paymentProvider: PaymentProviderId | null;
-}): PaymentProviderId {
+  paymentProvider: MarketPaymentProviderId | null;
+}): MarketPaymentProviderId {
   return market.paymentProvider ?? "stripe";
 }
 

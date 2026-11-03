@@ -45,6 +45,7 @@ const order: OrderRow = {
   paidAt,
   cancelledAt: null,
   cancelReason: null,
+  isTest: false,
   createdAt: paidAt,
   updatedAt: paidAt,
 };

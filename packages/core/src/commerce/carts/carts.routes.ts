@@ -7,6 +7,8 @@ import { HttpError } from "../../http/http-errors.js";
 import { readIdParam } from "../commerce-params.js";
 import type { ShopContext } from "../commerce.context.js";
 import { ShopNotReadyError } from "../commerce.errors.js";
+import { requireGoodTestSession } from "../test-checkout/test-session.service.js";
+import { TEST_SESSION_HEADER } from "../test-checkout/test-session-tokens.js";
 import { CartNotFoundError } from "./carts.errors.js";
 import {
   addCartLineRequestSchema,
@@ -93,11 +95,16 @@ export async function cartsRoutes(server: FastifyInstance, { shop }: { shop: Sho
 
   server.post("/delivery/shop/carts/:token/checkout", access, async (request, reply) => {
     const pages = parseRequest(startCheckoutRequestSchema, request.body ?? {});
-    const started = await startCheckout(shop, readToken(request.params), pages).catch(
-      (error: unknown) => {
-        throw forShoppers(shop, error);
-      },
+    const header = request.headers[TEST_SESSION_HEADER];
+    const testSession = await requireGoodTestSession(
+      shop,
+      typeof header === "string" ? header : undefined,
     );
+    const started = await startCheckout(shop, readToken(request.params), pages, {
+      testSession,
+    }).catch((error: unknown) => {
+      throw forShoppers(shop, error);
+    });
     return reply.code(201).header("cache-control", NO_STORE).send(started);
   });
 

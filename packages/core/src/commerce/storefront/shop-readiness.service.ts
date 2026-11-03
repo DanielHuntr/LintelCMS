@@ -1,6 +1,7 @@
 import { DEFAULT_TENANT_ID } from "../../database/columns.js";
 import type { ShopContext } from "../commerce.context.js";
 import { listMarketRows } from "../markets/markets.repository.js";
+import { isLocalAddress } from "../payments/local-address.js";
 import { findMollieCredentials } from "../payments/mollie/mollie-provider.js";
 import { marketPaymentProvider, type PaymentProviderId } from "../payments/payment-provider.js";
 import { findPayPalCredentials } from "../payments/paypal/paypal-provider.js";
@@ -28,7 +29,9 @@ async function connectedProviders(shop: ShopContext): Promise<Set<PaymentProvide
   const connected = new Set<PaymentProviderId>();
   if ((await shop.stripeKeys()).secretKey) connected.add("stripe");
   const paypal = await findPayPalCredentials(shop);
-  if (paypal && paypal.webhookId !== null) connected.add("paypal");
+  if (paypal && (paypal.webhookId !== null || isLocalAddress(shop.publicApiUrl))) {
+    connected.add("paypal");
+  }
   if (await findMollieCredentials(shop)) connected.add("mollie");
   return connected;
 }

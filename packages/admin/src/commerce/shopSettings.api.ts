@@ -49,6 +49,10 @@ export interface TaxSettings {
 
 export interface PaymentSettings {
   connected: boolean;
+  /** The shop is on this computer or a private network, so no webhook can reach it. */
+  siteIsLocal: boolean;
+  /** Lintel asks Stripe about payments itself, because no webhook is doing it. */
+  checksForPayments: boolean;
   mode: "test" | "live" | null;
   secretKey: { hint: string; source: "environment" | "admin" } | null;
   publishableKey: { value: string; source: "environment" | "admin" } | null;

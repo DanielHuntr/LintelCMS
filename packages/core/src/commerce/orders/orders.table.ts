@@ -23,8 +23,9 @@ export const fulfilmentStatuses = ["unfulfilled", "partially_fulfilled", "fulfil
 export type FulfilmentStatus = (typeof fulfilmentStatuses)[number];
 
 /**
- * A paid order. Orders only exist once Stripe has confirmed the payment in a signed
- * webhook, so every order here has been paid; what can change afterwards is how much has
+ * A paid order. Orders only exist once the provider has confirmed the payment (see
+ * order-placement.service.ts), so every order here has been paid, or is marked as a test;
+ * what can change afterwards is how much has
  * been refunded (`paymentStatus`), how much has been sent (`fulfilmentStatus`), and whether
  * it was cancelled (`cancelledAt`).
  *
@@ -65,6 +66,11 @@ export const ordersTable = pgTable(
     /** PayPal's capture id or Mollie's payment id, which refunds go against. */
     providerPaymentId: text("provider_payment_id"),
     stripePaymentIntentId: text("stripe_payment_intent_id"),
+    /**
+     * Placed through the test checkout: no money moved. Shown with a Test badge, left out of
+     * every sales figure, and deleted with one action (see ../test-checkout).
+     */
+    isTest: boolean("is_test").notNull().default(false),
     paidAt: timestamp("paid_at", { withTimezone: true }).notNull(),
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
     cancelReason: text("cancel_reason"),

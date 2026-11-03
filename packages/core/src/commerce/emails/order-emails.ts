@@ -186,6 +186,18 @@ function list(lines: readonly string[]): string {
   return `<p style="margin:0 0 16px">${lines.map(escapeHtml).join("<br>")}</p>`;
 }
 
+const TEST_NOTICE = "This is a test order. No money was taken.";
+
+/** The same email, saying plainly that it came from the test checkout. */
+export function asTestEmail(email: OrderEmail): OrderEmail {
+  return {
+    ...email,
+    subject: `Test order: ${email.subject}`,
+    text: `${TEST_NOTICE}\n\n${email.text}`,
+    html: email.html.replace(/(<body[^>]*>)/, `$1${paragraph(TEST_NOTICE)}`),
+  };
+}
+
 function layout(shop: ShopIdentity, parts: readonly string[]): string {
   const footer = shop.supportEmail
     ? paragraph(`Questions? Reply to this email or write to ${shop.supportEmail}.`)

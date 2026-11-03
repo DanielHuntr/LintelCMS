@@ -19,6 +19,7 @@ import type {
 import { PAYPAL_WEBHOOK_EVENTS, retrievePayPalWebhook } from "./paypal/paypal-api.js";
 import { findPayPalCredentials, payPalClientFor } from "./paypal/paypal-provider.js";
 import { PAYPAL_WEBHOOK_PATH } from "./paypal/paypal-webhook.service.js";
+import { isLocalAddress, needsOwnChecks } from "./local-address.js";
 import { hintForSecret, mollieKeyMode } from "./provider-credentials.js";
 
 /**
@@ -33,7 +34,11 @@ export async function readPaymentProviders(shop: ShopContext): Promise<PaymentPr
   const markets = await listMarketRows(shop.database, DEFAULT_TENANT_ID);
   return {
     paypal: {
-      connected: paypal !== null && paypal.webhookId !== null,
+      // On someone's own computer PayPal can't send a webhook, and Lintel asks PayPal instead.
+      connected:
+        paypal !== null && (paypal.webhookId !== null || isLocalAddress(shop.publicApiUrl)),
+      checksForPayments:
+        paypal !== null && needsOwnChecks(shop.publicApiUrl, paypal.webhookId !== null),
       mode: paypal ? (paypal.environment === "live" ? "live" : "test") : null,
       source: paypal?.source ?? null,
       clientIdHint: paypal ? hintForSecret(paypal.clientId) : null,
@@ -46,6 +51,7 @@ export async function readPaymentProviders(shop: ShopContext): Promise<PaymentPr
       mode: mollie ? mollieKeyMode(mollie.apiKey) : null,
       source: mollie?.source ?? null,
       apiKeyHint: mollie ? hintForSecret(mollie.apiKey) : null,
+      checksForPayments: mollie !== null && mollieWebhookUrl(shop.publicApiUrl) === null,
       webhookUrl: mollieWebhookUrl(shop.publicApiUrl),
     },
     markets: markets.map((market) => ({

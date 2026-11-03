@@ -10,6 +10,8 @@ export const FAKE_MOLLIE_API_KEY = "test_dHar4XY7LxsDOtmnkVtjNVWXLSlXsM";
 interface FakeMolliePayment {
   id: string;
   status: string;
+  /** Mollie says which on every payment. */
+  mode: "live" | "test";
   amount: { currency: string; value: string };
   metadata: Record<string, unknown>;
   refunds: Array<{ id: string; status: string; amount: { currency: string; value: string } }>;
@@ -20,6 +22,8 @@ export class FakeMollie {
   readonly payments = new Map<string, FakeMolliePayment>();
   /** The status new refunds come back with; Mollie usually says "pending" first. */
   refundStatus = "pending";
+  /** The mode new payments are made in. */
+  paymentMode: "live" | "test" = "live";
   private counter = 0;
 
   readonly fetch: typeof fetch = async (input, init) => {
@@ -53,6 +57,7 @@ export class FakeMollie {
       const payment: FakeMolliePayment = {
         id,
         status: "open",
+        mode: this.paymentMode,
         amount: body.amount as FakeMolliePayment["amount"],
         metadata: (body.metadata as Record<string, unknown>) ?? {},
         refunds: [],
@@ -90,6 +95,7 @@ export class FakeMollie {
       resource: "payment",
       id: payment.id,
       status: payment.status,
+      mode: payment.mode,
       amount: payment.amount,
       metadata: payment.metadata,
       _links: { checkout: { href: `https://www.mollie.com/checkout/select-method/${payment.id}` } },

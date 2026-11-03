@@ -19,10 +19,10 @@ import { addOrderNote, cancelOrder, findOrder, listOrders } from "./orders.servi
 import { refundOrder } from "./refunds.service.js";
 
 /**
- * HTTP only. Orders are made by the Stripe webhook, never by a request here. Refunds and
- * cancelling move money, so they need `commerce:refund`. Reading and handling orders also
- * accept the narrower `commerce:read-orders` and `commerce:handle-orders`, which is all an
- * app with the read_orders or write_orders scope gets (see src/apps/app-scopes.ts).
+ * HTTP only. Orders are made when a provider confirms a payment, never by a request here.
+ * Refunds and cancelling move money, so they need `commerce:refund`. Reading and handling
+ * orders also accept the narrower `commerce:read-orders` and `commerce:handle-orders`, which
+ * is all an app with the read_orders or write_orders scope gets (see src/apps/app-scopes.ts).
  *
  *   GET  /shop/orders                   (commerce:read)    ?search&paymentStatus&fulfilmentStatus&cancelled&customerId&page&perPage
  *   GET  /shop/orders/:id               (commerce:read)    with lines, refunds, fulfilments and timeline

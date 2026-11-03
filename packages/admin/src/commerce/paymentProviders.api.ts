@@ -8,6 +8,7 @@ type KeySource = "environment" | "admin";
 export interface PaymentProviders {
   paypal: {
     connected: boolean;
+    checksForPayments: boolean;
     mode: "test" | "live" | null;
     source: KeySource | null;
     clientIdHint: string | null;
@@ -17,6 +18,7 @@ export interface PaymentProviders {
   };
   mollie: {
     connected: boolean;
+    checksForPayments: boolean;
     mode: "test" | "live" | null;
     source: KeySource | null;
     apiKeyHint: string | null;

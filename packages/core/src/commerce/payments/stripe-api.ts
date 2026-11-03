@@ -1,5 +1,15 @@
 import { z } from "zod";
-import type { StripeClient, StripeParameters } from "./stripe-client.js";
+import {
+  encodeStripeParameters,
+  type StripeClient,
+  type StripeParameters,
+} from "./stripe-client.js";
+import {
+  type StripeEvent,
+  stripeCheckoutSessionObjectSchema,
+  stripeEventSchema,
+  stripePaymentIntentObjectSchema,
+} from "./stripe-webhook-events.js";
 
 /**
  * The Stripe calls the shop makes, each with the shape of the answer it relies on. Only the
@@ -49,6 +59,51 @@ export function expireStripeCheckoutSession(stripe: StripeClient, sessionId: str
     {},
     checkoutSessionSchema,
   );
+}
+
+/** Reads a payment page back from Stripe, to see for ourselves whether it was paid. */
+export function retrieveStripeCheckoutSession(stripe: StripeClient, sessionId: string) {
+  return stripe.get(
+    `/v1/checkout/sessions/${encodeURIComponent(sessionId)}`,
+    stripeCheckoutSessionObjectSchema,
+  );
+}
+
+export function retrieveStripePaymentIntent(stripe: StripeClient, paymentIntentId: string) {
+  return stripe.get(
+    `/v1/payment_intents/${encodeURIComponent(paymentIntentId)}`,
+    stripePaymentIntentObjectSchema,
+  );
+}
+
+const eventListSchema = z.object({ data: z.array(stripeEventSchema), has_more: z.boolean() });
+
+/** More events than any shop has between two checks, so a bad answer can't loop for ever. */
+const MOST_EVENT_PAGES = 20;
+
+/**
+ * Stripe's own list of what happened, for a shop no webhook can reach. It comes straight from
+ * Stripe over the authenticated API, so there is no signature to check. Oldest first.
+ */
+export async function listStripeEvents(
+  stripe: StripeClient,
+  options: { createdFrom: number; types: readonly string[] },
+): Promise<StripeEvent[]> {
+  const events: StripeEvent[] = [];
+  let startingAfter: string | undefined;
+  for (let page = 0; page < MOST_EVENT_PAGES; page += 1) {
+    const query = encodeStripeParameters({
+      created: { gte: options.createdFrom },
+      types: options.types,
+      limit: 100,
+      starting_after: startingAfter,
+    });
+    const answer = await stripe.get(`/v1/events?${query.toString()}`, eventListSchema);
+    events.push(...answer.data);
+    startingAfter = answer.data.at(-1)?.id;
+    if (!answer.has_more || !startingAfter) break;
+  }
+  return events.reverse();
 }
 
 const paymentIntentSchema = z.object({

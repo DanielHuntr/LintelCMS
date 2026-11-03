@@ -1,6 +1,20 @@
-import { and, asc, count, desc, eq, ilike, isNotNull, isNull, ne, or, type SQL } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gte,
+  ilike,
+  isNotNull,
+  isNull,
+  ne,
+  or,
+  type SQL,
+} from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../database/client.js";
 import { DEFAULT_TENANT_ID } from "../../database/columns.js";
+import type { MarketPaymentProviderId } from "../payments/payment-provider.js";
 import {
   type FulfilmentStatus,
   type NewOrderRow,
@@ -179,6 +193,18 @@ function orderConditions(filter: OrderFilter): SQL | undefined {
   );
 }
 
+export async function countOrdersPaidSince(
+  database: DatabaseOrTransaction,
+  provider: MarketPaymentProviderId,
+  since: Date,
+): Promise<number> {
+  const [total] = await database
+    .select({ value: count() })
+    .from(ordersTable)
+    .where(and(eq(ordersTable.paymentProvider, provider), gte(ordersTable.paidAt, since)));
+  return total?.value ?? 0;
+}
+
 /** Orders that still need sending, for the dashboard. */
 export async function countUnfulfilledOrders(database: DatabaseOrTransaction): Promise<number> {
   const [total] = await database
@@ -190,6 +216,7 @@ export async function countUnfulfilledOrders(database: DatabaseOrTransaction): P
         ne(ordersTable.fulfilmentStatus, "fulfilled"),
         ne(ordersTable.paymentStatus, "refunded"),
         isNull(ordersTable.cancelledAt),
+        eq(ordersTable.isTest, false),
       ),
     );
   return total?.value ?? 0;

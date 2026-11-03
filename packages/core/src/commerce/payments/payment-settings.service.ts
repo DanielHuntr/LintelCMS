@@ -3,6 +3,7 @@ import type { ShopContext } from "../commerce.context.js";
 import { PaymentProviderError } from "../commerce.errors.js";
 import { updateShopSettingsRow } from "../settings/shop-settings.repository.js";
 import { readShopSettingsRow } from "../settings/shop-settings.service.js";
+import { isLocalAddress, needsOwnChecks } from "./local-address.js";
 import type { PaymentSettings, UpdatePaymentSettingsRequest } from "./payment-settings.schema.js";
 import { retrieveStripeAccount } from "./stripe-api.js";
 import { StripeRequestError } from "./stripe-client.js";
@@ -17,12 +18,18 @@ export async function readPaymentSettings(shop: ShopContext): Promise<PaymentSet
   const settings = await readShopSettingsRow(shop.database);
   const keys = await shop.stripeKeys();
   const secret = keys.secretKey;
+  const siteIsLocal = isLocalAddress(shop.publicApiUrl);
   return {
-    connected: secret !== null && keys.webhookSecret !== null,
+    // On someone's own computer Stripe can't send a webhook, and Lintel asks Stripe instead.
+    connected: secret !== null && (keys.webhookSecret !== null || siteIsLocal),
+    siteIsLocal,
+    checksForPayments:
+      secret !== null && needsOwnChecks(shop.publicApiUrl, keys.webhookSecret !== null),
     mode: secret ? stripeKeyMode(secret.value) : null,
     secretKey: secret ? { hint: hintFor(secret.value), source: secret.source } : null,
     publishableKey: keys.publishableKey,
     webhookSecret: keys.webhookSecret ? { source: keys.webhookSecret.source } : null,
+    lastWebhookAt: settings.stripeLastWebhookAt?.toISOString() ?? null,
     webhookUrl: `${shop.publicApiUrl.replace(/\/+$/, "")}${STRIPE_WEBHOOK_PATH}`,
     webhookEvents: [...STRIPE_WEBHOOK_EVENTS],
     checkoutMode: settings.checkoutMode,
@@ -50,7 +57,10 @@ export async function updatePaymentSettings(
   await updateShopSettingsRow(shop.database, DEFAULT_TENANT_ID, {
     ...(changes.secretKey && { stripeSecretKey: changes.secretKey }),
     ...(changes.publishableKey && { stripePublishableKey: changes.publishableKey }),
-    ...(changes.webhookSecret && { stripeWebhookSecret: changes.webhookSecret }),
+    ...(changes.webhookSecret && {
+      stripeWebhookSecret: changes.webhookSecret,
+      stripeLastWebhookAt: null,
+    }),
     ...(changes.checkoutMode && { checkoutMode: changes.checkoutMode }),
   });
   return readPaymentSettings(shop);
@@ -62,6 +72,7 @@ export async function disconnectStripe(shop: ShopContext): Promise<PaymentSettin
     stripeSecretKey: null,
     stripePublishableKey: null,
     stripeWebhookSecret: null,
+    stripeLastWebhookAt: null,
   });
   return readPaymentSettings(shop);
 }

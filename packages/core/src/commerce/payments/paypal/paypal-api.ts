@@ -21,7 +21,15 @@ const orderSchema = z.object({
       z.object({
         payments: z
           .object({
-            captures: z.array(z.object({ id: z.string(), status: z.string() })).optional(),
+            captures: z
+              .array(
+                z.object({
+                  id: z.string(),
+                  status: z.string(),
+                  amount: z.object({ currency_code: z.string(), value: z.string() }).optional(),
+                }),
+              )
+              .optional(),
           })
           .optional(),
       }),
@@ -111,6 +119,11 @@ export async function capturePayPalOrder(paypal: PayPalClient, orderId: string) 
   return { id: order.id, status: order.status };
 }
 
+/** Reads an order back from PayPal, to see for ourselves what the shopper did. */
+export function retrievePayPalOrder(paypal: PayPalClient, orderId: string) {
+  return paypal.get(`/v2/checkout/orders/${encodeURIComponent(orderId)}`, orderSchema);
+}
+
 export interface PayPalTransmission {
   authAlgo: string;
   certUrl: string;
@@ -165,6 +178,10 @@ export function refundPayPalCapture(
     refundSchema,
     `lintel-refund-${parameters.refundId}`,
   );
+}
+
+export function retrievePayPalRefund(paypal: PayPalClient, refundId: string) {
+  return paypal.get(`/v2/payments/refunds/${encodeURIComponent(refundId)}`, refundSchema);
 }
 
 const webhookSchema = z.object({ id: z.string(), url: z.string() });

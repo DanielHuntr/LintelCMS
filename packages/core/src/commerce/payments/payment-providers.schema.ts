@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { paymentProviderIds } from "./payment-provider.js";
+import { marketPaymentProviderIds } from "./payment-provider.js";
 import { MOLLIE_API_KEY_PATTERN } from "./provider-credentials.js";
 
 /** `PUT /shop/settings/payment-providers/paypal`: the REST app's credentials. */
@@ -48,6 +48,8 @@ const sourceSchema = z.enum(["environment", "admin"]);
 export const paymentProvidersSchema = z.object({
   paypal: z.object({
     connected: z.boolean(),
+    /** Lintel asks PayPal about payments itself, because no webhook is doing it. */
+    checksForPayments: z.boolean(),
     mode: z.enum(["test", "live"]).nullable(),
     source: sourceSchema.nullable(),
     clientIdHint: z.string().nullable(),
@@ -57,6 +59,8 @@ export const paymentProvidersSchema = z.object({
   }),
   mollie: z.object({
     connected: z.boolean(),
+    /** Lintel asks Mollie about payments itself, because no webhook is doing it. */
+    checksForPayments: z.boolean(),
     mode: z.enum(["test", "live"]).nullable(),
     source: sourceSchema.nullable(),
     apiKeyHint: z.string().nullable(),
@@ -69,7 +73,7 @@ export const paymentProvidersSchema = z.object({
       id: z.uuid(),
       name: z.string(),
       currency: z.string(),
-      paymentProvider: z.enum(paymentProviderIds),
+      paymentProvider: z.enum(marketPaymentProviderIds),
     }),
   ),
 });

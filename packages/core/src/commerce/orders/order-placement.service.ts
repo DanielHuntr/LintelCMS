@@ -20,8 +20,10 @@ import type { OrderRow } from "./orders.table.js";
 /**
  * Turning a paid checkout into an order. Called only once the payment provider has
  * confirmed the payment in a way that can't be forged (Stripe's signed webhook, a PayPal
- * webhook PayPal verified, a Mollie payment fetched back from Mollie), inside the
- * transaction that records it: an order never exists without a confirmed payment.
+ * webhook PayPal verified, or a payment or event fetched back from the provider with the
+ * shop's own key), inside the transaction that records it: an order never exists without a
+ * confirmed payment. The test checkout comes here too, from a signed test session, and its
+ * orders are marked as test. The checkout's lock makes every route safe to repeat or race.
  */
 
 export interface ConfirmedPayment {
@@ -31,6 +33,11 @@ export interface ConfirmedPayment {
   paymentIntentId: string | null;
   /** PayPal's capture id or Mollie's payment id, which refunds go against. */
   providerPaymentId?: string | null;
+  /**
+   * The provider says this wasn't live: Stripe's test mode, a Mollie test payment, PayPal's
+   * sandbox. Only ever set on the provider's clear word, so a real sale is never hidden.
+   */
+  isTest?: boolean;
   /** What the provider says was paid, in minor units, and in which currency (any case). */
   amount: number;
   currency: string;
@@ -50,6 +57,10 @@ export async function placeOrderForPayment(
 ): Promise<PlacementResult> {
   const checkout = await lockCheckoutRow(transaction, DEFAULT_TENANT_ID, checkoutId);
   if (!checkout) {
+    return { outcome: "unknown_checkout" };
+  }
+  // A test payment can only pay a test checkout, and nothing else can pay one.
+  if ((payment.provider === "test") !== (checkout.paymentProvider === "test")) {
     return { outcome: "unknown_checkout" };
   }
   if (checkout.orderId) {
@@ -93,6 +104,7 @@ export async function placeOrderForPayment(
     paymentProvider: payment.provider ?? "stripe",
     providerPaymentId: payment.providerPaymentId ?? null,
     stripePaymentIntentId: payment.paymentIntentId ?? checkout.stripePaymentIntentId,
+    isTest: checkout.paymentProvider === "test" || payment.isTest === true,
     paidAt,
   });
   await insertOrderLines(
@@ -142,6 +154,14 @@ export async function placeOrderForPayment(
       providerPaymentId: order.providerPaymentId,
     },
   });
+  if (order.isTest) {
+    await insertOrderEvent(transaction, {
+      orderId: order.id,
+      kind: "test_order",
+      message:
+        "This is a test order. No money was taken, and it doesn't count as a sale. Automations don't run for it.",
+    });
+  }
   for (const discount of checkout.discounts) {
     const name = discount.code ? `Code ${discount.code}` : discount.title;
     await insertOrderEvent(transaction, {

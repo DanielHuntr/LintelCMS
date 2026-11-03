@@ -17,6 +17,7 @@ import {
 } from "./site-assets.js";
 import { withAnalyticsTag } from "../analytics/page-tag.js";
 import { readSampleModel } from "../media/sample-models.js";
+import type { TestVisit } from "../commerce/test-checkout/test-checkout-site.routes.js";
 import { STYLESHEET_FOLDER } from "./site-context.service.js";
 import { findSiteForAddress } from "./site-for-address.js";
 import { loadRunningTests, visitTests } from "../experiments/experiment-pages.js";
@@ -66,6 +67,8 @@ export async function siteRoutes(
     dependencies: (site: Site) => SiteDependencies;
     /** A line for public pages' `<head>`, added as they are sent (the Visitors beacon). */
     pageTag?: (site: Site) => Promise<string>;
+    /** Whether this visit is a shop test session; null for everyone else. */
+    testVisit?: (request: FastifyRequest) => Promise<TestVisit | null>;
   },
 ) {
   const visit = async (request: FastifyRequest) => {
@@ -161,13 +164,23 @@ export async function siteRoutes(
   });
 
   server.get("/*", async (request, reply) => {
-    const { dependencies, path } = await visit(request);
+    const visited = await visit(request);
+    const { path } = visited;
+    const testVisit = (await options.testVisit?.(request)) ?? null;
+    const dependencies = testVisit
+      ? testVisit.dependencies(visited.dependencies)
+      : visited.dependencies;
     const { preview, page, sort, q } = pageQuerySchema.parse(request.query);
     // Running A/B tests, shared until something changes, and this visitor's versions of them.
-    const tests = await dependencies.cache.shareValue("experiments", () =>
-      loadRunningTests(dependencies.database),
-    );
-    const experiments = visitTests(tests, readVisitor(request.headers, request.ip));
+    // Someone trying the shop isn't a visitor, so they aren't counted in any test.
+    const experiments = testVisit
+      ? undefined
+      : visitTests(
+          await dependencies.cache.shareValue("experiments", () =>
+            loadRunningTests(dependencies.database),
+          ),
+          readVisitor(request.headers, request.ip),
+        );
     const response = await respondToSitePath({ ...dependencies, experiments }, path, preview, {
       page: page ?? 1,
       sort,
@@ -175,6 +188,7 @@ export async function siteRoutes(
     });
     // Shared caches must keep each site's pages apart.
     reply.header("vary", "Host, X-Forwarded-Host");
+    if (testVisit) return send(request, reply, await testVisit.finish(response));
     const tag = options.pageTag ? await options.pageTag(dependencies.site) : "";
     return send(request, reply, withAnalyticsTag(response, tag));
   });

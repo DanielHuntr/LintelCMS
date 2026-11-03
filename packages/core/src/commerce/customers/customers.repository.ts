@@ -83,8 +83,8 @@ export async function listCustomerRows(
 }
 
 /**
- * Orders and money spent per customer, net of refunds, leaving out cancelled orders. Orders
- * from before the move (archived by the Shopify import) count too, so the customer's history
+ * Orders and money spent per customer, net of refunds, leaving out cancelled and test
+ * orders. Orders from before the move (archived by the Shopify import) count too, so the customer's history
  * doesn't start again at nothing.
  */
 export async function sumCustomerOrders(
@@ -102,7 +102,13 @@ export async function sumCustomerOrders(
       amount: sql<number>`coalesce(sum(${ordersTable.totalAmount} - ${ordersTable.refundedAmount}), 0)`,
     })
     .from(ordersTable)
-    .where(and(inArray(ordersTable.customerId, ids), isNull(ordersTable.cancelledAt)))
+    .where(
+      and(
+        inArray(ordersTable.customerId, ids),
+        isNull(ordersTable.cancelledAt),
+        eq(ordersTable.isTest, false),
+      ),
+    )
     .groupBy(ordersTable.customerId, ordersTable.currency);
   // Cancelled orders from before the move don't count or add up, but still date the customer.
   const notCancelled = sql`${archivedOrdersTable.cancelledAt} is null`;

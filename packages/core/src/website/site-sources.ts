@@ -1,3 +1,4 @@
+import { TEST_SESSION_HEADER } from "../commerce/test-checkout/test-session-tokens.js";
 import type {
   BoundPicture,
   DataForm,
@@ -52,11 +53,18 @@ export const noSources: SiteSources = {
 
 type Json = Record<string, unknown>;
 
-async function getJson(api: FastifyInstance, url: string): Promise<Json | null> {
+async function getJson(
+  api: FastifyInstance,
+  url: string,
+  testSessionToken?: string,
+): Promise<Json | null> {
   const response = await api.inject({
     method: "GET",
     url,
-    headers: { accept: "application/json" },
+    headers: {
+      accept: "application/json",
+      ...(testSessionToken ? { [TEST_SESSION_HEADER]: testSessionToken } : {}),
+    },
   });
   if (response.statusCode !== 200) return null;
   try {
@@ -134,17 +142,24 @@ function readCollection(value: unknown): ShopCollectionSummary | null {
     : null;
 }
 
-/** `apiPrefix` is where the API's routes are on `api`: "" beside the website, "/api" in one process. */
-export function storefrontSources(api: FastifyInstance, apiPrefix = ""): SiteSources {
+/**
+ * `apiPrefix` is where the API's routes are on `api`: "" beside the website, "/api" in one
+ * process. `testSessionToken` reads the shop as that test session sees it (src/commerce/test-checkout).
+ */
+export function storefrontSources(
+  api: FastifyInstance,
+  apiPrefix = "",
+  testSessionToken?: string,
+): SiteSources {
+  const getShopJson = (url: string) => getJson(api, url, testSessionToken);
   const shop: ShopCatalogue = {
     async listProducts({ collection, page, perPage }) {
       const query = `page=${page}&perPage=${Math.min(100, perPage)}`;
       const answer = collection
-        ? await getJson(
-            api,
+        ? await getShopJson(
             `${apiPrefix}/delivery/shop/collections/${encodeURIComponent(collection)}?${query}`,
           )
-        : await getJson(api, `${apiPrefix}/delivery/shop/products?${query}`);
+        : await getShopJson(`${apiPrefix}/delivery/shop/products?${query}`);
       if (!answer) return null;
       const items = (collection ? answer.products : answer.items) ?? [];
       const products = (Array.isArray(items) ? items : []).flatMap(
@@ -154,7 +169,7 @@ export function storefrontSources(api: FastifyInstance, apiPrefix = ""): SiteSou
     },
     async findProduct(handle) {
       return readStorefrontProduct(
-        await getJson(api, `${apiPrefix}/delivery/shop/products/${encodeURIComponent(handle)}`),
+        await getShopJson(`${apiPrefix}/delivery/shop/products/${encodeURIComponent(handle)}`),
       );
     },
     async listCollections() {

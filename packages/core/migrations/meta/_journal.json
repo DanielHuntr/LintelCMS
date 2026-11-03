@@ -253,6 +253,13 @@
       "when": 1793748559326,
       "tag": "0035_privacy_tools",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1793748584215,
+      "tag": "0036_test_orders_and_payment_checks",
+      "breakpoints": true
     }
   ]
 }

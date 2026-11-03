@@ -16,6 +16,8 @@ const withShop = { enabledPlugins: ["commerce"] };
 
 const notConnected: PaymentSettings = {
   connected: false,
+  siteIsLocal: false,
+  checksForPayments: false,
   mode: null,
   secretKey: null,
   publishableKey: null,
@@ -37,6 +39,7 @@ const paidOrder: Order = {
   paymentStatus: "paid",
   fulfilmentStatus: "unfulfilled",
   cancelled: false,
+  isTest: false,
   total: pounds(9400),
   itemCount: 2,
   createdAt: "2026-10-31T10:00:00Z",
