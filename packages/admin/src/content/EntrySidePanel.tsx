@@ -17,6 +17,7 @@ interface EntrySidePanelProps {
   isWorking: boolean;
   onUnpublish: () => void;
   onSchedule: (publishAt: string) => void;
+  onCompareWithLive?: () => void;
   onRestore: (revisionId: string) => Promise<void>;
   /** Sections from plugins, such as SEO, shown above the history. */
   children?: ReactNode;
@@ -34,6 +35,7 @@ export function EntrySidePanel({
   isWorking,
   onUnpublish,
   onSchedule,
+  onCompareWithLive,
   onRestore,
   children,
 }: EntrySidePanelProps) {
@@ -49,6 +51,7 @@ export function EntrySidePanel({
         isWorking={isWorking}
         onUnpublish={onUnpublish}
         onSchedule={onSchedule}
+        onCompareWithLive={onCompareWithLive}
       />
       <TranslationsSection collectionHandle={collection.handle} entry={entry} locale={locale} />
       {collection.structure === "tree" && (

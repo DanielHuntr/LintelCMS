@@ -24,6 +24,7 @@ import { treeSelectionStrings } from "./treeSelectionStrings.js";
 import { pageMenuStrings } from "./pageMenuStrings.js";
 import { freePhotosStrings } from "../free-photos/freePhotosStrings.js";
 import { quickUploadStrings } from "../media/quickUploadStrings.js";
+import { compareLiveStrings } from "../compare-live/compareLiveStrings.js";
 
 /**
  * Every word the admin shows lives here, in English: the source every translation in
@@ -59,6 +60,7 @@ const english = {
   ...updatesStrings,
   ...freePhotosStrings,
   ...quickUploadStrings,
+  ...compareLiveStrings,
   "nav.label": "Main navigation",
   "nav.skipToContent": "Skip to content",
   "nav.openMenu": "Open the menu",

@@ -433,3 +433,33 @@ Every upload uses the media library's upload and checks, and its plain messages.
 - `paste-markdown-*` and `paste-rich-text-*` (desktop and 390px, light);
 - `paste-media-library-*` (all four);
 - `drop-builder-wrong-place-desktop-*` and `drop-builder-picture-desktop-*`.
+
+## LINTEL-UX-026: Compare with live (3 November 2026)
+
+**Asked for:** when a published entry has unpublished changes, a way to see exactly what publishing will change.
+
+**What it does:**
+
+- The Status box in the entry editor still says "Unpublished changes". It now has **Compare with live** under that line.
+- The dialog lists every field that differs from the live version, in the content type's order:
+  - **Text and rich text:** the removed and added words, inline. Removed words are struck through and added ones underlined, each on a light tint, so colour isn't the only mark. Screen readers hear "removed:" and "added:" before each change.
+  - **Pictures:** the live and the new picture side by side, with their names.
+  - **Page designs:** "Design changed", with a link to view the live page.
+  - **Choices, switches and dates:** "Live" and "After publishing" values.
+  - **Blocks and other structured values:** "This changed".
+- It compares what's in the editor with the stored `publishedData`. If a change is still waiting for autosave, the dialog says so.
+- **API:** `GET /entries/:id/live` (`entries:read`) returns `{ publishedAt, data }`, where `data` is null while nothing is live. It's a separate endpoint so the entry itself, which every screen loads, doesn't double in size.
+
+**Tests:**
+
+- `core/src/entries/entry-publishing.test.ts`: the live version before and after publishing, and a 404.
+- `admin/src/compare-live/compareLive.test.tsx`:
+  - word comparison;
+  - which fields count as changed, and how each is shown;
+  - rich text read as words;
+  - the dialog's marks and their spoken words;
+  - the live-page link;
+  - "nothing differs";
+  - the button showing only while there are unpublished changes.
+
+**Screenshots** (in `screenshots/qol-b/`): `compare-offer-desktop-light` and `compare-dialog-*` (desktop and 390px, light and dark).

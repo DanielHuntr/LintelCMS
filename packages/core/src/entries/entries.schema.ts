@@ -129,6 +129,15 @@ export const entrySchema = entrySummarySchema.extend({
   createdById: z.uuid().nullable(),
 });
 
+/**
+ * `GET /entries/:id/live`: what the website shows now, for comparing with the saved values.
+ * `data` is null while nothing is live.
+ */
+export const liveVersionSchema = z.object({
+  publishedAt: z.iso.datetime().nullable(),
+  data: z.record(z.string(), z.unknown()).nullable(),
+});
+
 export const entryListSchema = z.object({
   entries: z.array(entrySummarySchema),
   total: z.number().int(),
@@ -158,6 +167,7 @@ export type TranslateEntryRequest = z.infer<typeof translateEntryRequestSchema>;
 export type UpdateEntryRequest = z.infer<typeof updateEntryRequestSchema>;
 export type EntrySummaryResponse = z.infer<typeof entrySummarySchema>;
 export type EntryResponse = z.infer<typeof entrySchema>;
+export type LiveVersion = z.infer<typeof liveVersionSchema>;
 export type EntryTranslation = EntryResponse["translations"][number];
 export type EntryListResponse = z.infer<typeof entryListSchema>;
 export type Person = z.infer<typeof personSchema>;

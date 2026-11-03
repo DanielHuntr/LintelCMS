@@ -21,6 +21,7 @@ import { EntryEditorBar } from "./EntryEditorBar.js";
 import { EntryFields } from "./EntryFields.js";
 import { defaultValues } from "../fields/fieldLayout.js";
 import { EntrySidePanel } from "./EntrySidePanel.js";
+import { CompareWithLiveDialog } from "../compare-live/CompareWithLiveDialog.js";
 import { EntrySlugInput } from "./EntrySlugInput.js";
 import { EntryTitleInput } from "./EntryTitleInput.js";
 import type { FieldMessages } from "../api/client.js";
@@ -105,6 +106,7 @@ export function EntryEditor({
   const otherSites =
     currentSite?.sites.filter((site) => site.handle !== currentSite.site.handle) ?? [];
   const [isStartingDesign, setIsStartingDesign] = useState(false);
+  const [isComparingWithLive, setIsComparingWithLive] = useState(false);
   // A new entry's id, as soon as its first save returns, for opening it in the builder.
   const createdEntryId = useRef<string | undefined>(undefined);
   const documentElement = useRef<HTMLDivElement>(null);
@@ -473,6 +475,7 @@ export function EntryEditor({
                   async (saved) => saved && afterPublishing(await actions.schedule(publishAt)),
                 )
               }
+              onCompareWithLive={entry ? () => setIsComparingWithLive(true) : undefined}
               onRestore={async (revisionId) => {
                 await actions.restore(revisionId);
                 await refresh(entry ? [entry.id] : []);
@@ -543,6 +546,17 @@ export function EntryEditor({
         onCancel={() => setIsConfirmingDelete(false)}
         onConfirm={() => void deleteEntry()}
       />
+
+      {isComparingWithLive && entry && (
+        <CompareWithLiveDialog
+          entryId={entry.id}
+          fields={blueprint.fields}
+          current={state.current.data}
+          hasUnsavedChanges={isUnsaved}
+          viewPage={viewPage}
+          onClose={() => setIsComparingWithLive(false)}
+        />
+      )}
 
       {isCopyingToSite && entry && (
         <CopyToSiteDialog
