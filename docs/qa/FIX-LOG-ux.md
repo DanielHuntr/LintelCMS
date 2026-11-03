@@ -260,3 +260,26 @@ Raised by Daniel: "+ Create" opened one editor (fields with a side panel, Publis
 **Fix:** the shared surface (`effects/kit/surface.ts`) only resizes the canvas when its size changes, and particles, frosted glass and the liquid gradient redraw after a real resize.
 
 **Tests:** the branch's particles test now passes, and a new one, "keeps the still frame for people who ask for less motion", fails without the fix and passes with it. All 37 motion browser tests pass.
+
+## LINTEL-FUNC-030: reveals that start fully clipped never play
+
+**Found in the designer test** (building ambitious real-world pages): two giant headings with "Mask reveal up" never appeared on the published page. Their animation sat paused at its first frame, `clip-path: inset(100% 0 0)`. Chrome's IntersectionObserver counts an element clipped to nothing as out of view (checked in isolation: clipped 0, plain 1), so the in-view trigger waited for ever. Mask reveal up, Mask reveal right, Section curtain and Section iris were all affected, on any page.
+
+**Fix:** animations that clip their own element measure the element's box on scroll and resize (once a frame, until they've played) instead of asking the observer. Watching the container instead was tried and rejected: a tall container is always in view, so the reveal played before its words were on screen.
+
+**Test:** `runtime.browser.test.ts`, "plays a reveal that starts fully clipped, once it's in view" (times out without the fix). All 38 motion browser tests pass.
+
+## The designer test: findings for the designer push
+
+Six ambitious real-world page designs (editorial, studio, lookbook, showroom, course launch, weddings) were rebuilt privately from the designer's own elements, with motion and effects, to find where the designer falls short. All six could be built; most came close. The copies are kept out of the repo. What to fix:
+
+1. The site's header and footer always show on a designed page unless it has its own Header: offer "hide the site's header and footer on this page".
+2. Links are underlined by default, custom navigation included: link styles set once (design system classes or variables).
+3. The carousel shows whole slides only: add "show part of the next" and free slide widths.
+4. Most catalogue fonts come in regular and bold only: add thin and light weights for display fonts.
+5. Giant type doesn't shrink on phones unless set by hand: fluid sizes on by default for the largest steps.
+6. The Desktop canvas is about 800px wide, so free layouts reflow in the designer: true widths scaled to fit, side-by-side breakpoints.
+7. The font menu shows raw CSS for fonts set in code: always the font's name.
+8. Layers are named "Heading", "Paragraph": name them from their text or picture.
+9. A full-screen hero is cut by the site header: "fill the screen below the header".
+10. Free-photo search matches loosely: filter to photographs and offer several to choose from.

@@ -743,6 +743,7 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-FUNC-027 | P2       | Open   | The update supervisor doesn't recover from dying mid-switch                                                         |
 | LINTEL-FUNC-028 | P1       | Fixed  | Builder: dragging from Insert onto the page does nothing; only Layers takes drops                                   |
 | LINTEL-FUNC-029 | P2       | Fixed  | Canvas effects lose their first frame; visitors who ask for less motion see no particles, frost or gradient         |
+| LINTEL-FUNC-030 | P1       | Fixed  | Mask reveal and section curtain/iris animations never play on the website, so their words stay hidden               |
 | LINTEL-SEC-012  | P3       | Open   | Webhook signing secrets are shown to everyone with `settings:read`                                                  |
 | LINTEL-SEC-013  | P3       | Open   | No rate limit on the password checks for turning two-factor off and making recovery codes                           |
 | LINTEL-SEC-014  | P3       | Open   | Cart tokens are written to the request log (they are in the path, not the query)                                    |
