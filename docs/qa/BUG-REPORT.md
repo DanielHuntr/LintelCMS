@@ -811,6 +811,10 @@ Found by reading the code end to end, area by area (security, shop and forms, co
 | LINTEL-UX-077   | P2       | Fixed  | The pointer can't be designed: the word has one look, no own cursor picture, few per-element choices                           |
 | LINTEL-UX-079   | P2       | Fixed  | The site cursor, its word and hover pictures are hidden behind the open phone menu drawer                                      |
 | LINTEL-UX-078   | P2       | Fixed  | No text effects on hover for menus: a Menu's links can't be selected, styled one by one or given a look like a circle          |
+| LINTEL-UX-090   | P2       | Fixed  | No way to set words around a circle (a turning sticker) or along an arc or wave without code                                   |
+| LINTEL-UX-091   | P2       | Fixed  | Lottie animations can't be used: the media library refuses .json and .lottie, and there is no element to play one              |
+| LINTEL-UX-092   | P2       | Fixed  | Rive animations can't be used: the media library refuses .riv, and there is no element to play or interact with one            |
+| LINTEL-UX-093   | P2       | Fixed  | Visitors can't pick up and throw a group of stickers or cards; the drag effects move one element alone, with no collisions     |
 
 The full UX pass (about 35 findings, each marked small fix or redesign, with screenshots) is in `UX-PASS-batch-3.md`. Redesigns wait for Daniel's approval.
 

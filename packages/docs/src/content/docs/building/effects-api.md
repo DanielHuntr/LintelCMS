@@ -52,7 +52,7 @@ ES modules with shared chunks, served from `/_lintel/effects/` with fingerprints
 | `intro`           |  2.3 kB | siteIntro, sectionLoader, toast                                                                                                                                                          |
 | `playground`      |  4.6 kB | dragPlayground (its own small physics world)                                                                                                                                             |
 | `lottie`          |  3.1 kB | lottiePlayer; fetches lottie-web's light build (MIT, 48 kB) only when a Lottie is near the screen                                                                                        |
-| `rive`            |  2.4 kB | rivePlayer; fetches `@rive-app/canvas-lite` (MIT, 62 kB) and its WebAssembly (350 kB) only when a Rive is near the screen                                                                |
+| `rive`            |  2.4 kB | rivePlayer; fetches `@rive-app/canvas-lite` (MIT, 62 kB) and its WebAssembly (349 kB) only when a Rive is near the screen                                                                |
 
 Sizes include the shared chunks each module imports, so two modules on one page cost a
 little less than their sum. The Lottie and Rive players, Rive's WebAssembly and Lintel's

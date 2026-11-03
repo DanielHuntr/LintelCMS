@@ -8,4 +8,4 @@ other page or module pays for them.
 | File               | What it is                                                                                      |
 | ------------------ | ----------------------------------------------------------------------------------------------- |
 | `lottie-player.ts` | lottie-web's light SVG build (MIT), about 49 KB gzipped                                         |
-| `rive-player.ts`   | `@rive-app/canvas-lite` (MIT), about 62 KB gzipped, plus its WebAssembly (about 350 KB gzipped) |
+| `rive-player.ts`   | `@rive-app/canvas-lite` (MIT), about 62 KB gzipped, plus its WebAssembly (about 349 KB gzipped) |
