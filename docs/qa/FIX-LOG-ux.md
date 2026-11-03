@@ -212,3 +212,15 @@ Reported by Daniel: "I can't drag and drop the block."
 **Tests:** `canvas-drop.test.ts` (inside, before and after, sections between sections, handing up, the end of the page), `canvas-messages.test.ts`. In the browser, Playwright's mouse can't carry an HTML drag into a frame, so the check starts a real drag on the tile and sends the frame the browser's own drag events: 20 elements, then 22 after one drop, then 24.
 
 **Follow-up (FUNC-028 reopened by Daniel: "cursor not allowed"):** the first fix relied on drag events reaching the canvas frame, and the browser check sent those events straight into the frame. A truly native drag, driven through Chrome's own input (DevTools `Input.dispatchDragEvent`), showed that browsers don't deliver a drag from the builder into the sandboxed frame at all: neither the builder nor the frame saw it over the page, hence "not allowed". Now, while something from Insert is dragged, a transparent layer over the canvas catches the drag in the builder and sends the frame the pointer's position (`insertPoint`). The frame answers with what's under it, the line is drawn as before, and the drop is handled by the builder. Checked with a native drag: Product grid, 20 elements then 22; the "Story with key points" section, 20 then 28, placed before the hero where the line showed (`canvas-drop-native-line.png`, `canvas-drop-native-after.png`). Test: `Canvas.test.tsx`.
+
+## LINTEL-UX-021: drag elements to a new place on the page
+
+Asked by Daniel once dropping from Insert worked: "shouldn't I be able to move it here too?"
+
+**Before:** on the canvas, only elements in a free layout could be dragged (to a pixel position). Everything else had to be moved in Layers.
+
+**After:** press any element and drag a few pixels: it fades in place, the same line as for Insert shows where it would go, and letting go moves it there and keeps it selected (`canvas-move-during.png`, `canvas-move-after.png`). The same rules as Insert apply (a section goes between sections; something an element can't hold goes beside it), it never goes inside itself, locked elements stay put, and Escape calls it off. A plain click still selects, double-click still edits text, and free layouts keep their pixel dragging.
+
+**Tests:** `canvas-messages.test.ts` (move messages). In the browser, with the real mouse inside the canvas: the first section dragged below the second swapped them, and a click afterwards selected without moving anything.
+
+Also fixed: `Canvas.test.tsx` (added with FUNC-028) used a screen size that doesn't exist, which broke the builder's typecheck.
