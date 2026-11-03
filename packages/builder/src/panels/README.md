@@ -47,3 +47,18 @@ address instead** to go back to typing one.
 
 Insert lists the site's own blocks first under "Your site's blocks", and a selected instance
 shows its property form instead of these tabs. See `../blocks/README.md`.
+
+## Several selected
+
+Ctrl/Cmd-click adds a layer or takes it away, Shift-click selects a range among siblings,
+Ctrl/Cmd+A in Layers selects everything beside the focused layer and Shift with the arrows
+extends; on the canvas, Shift-click (or Ctrl/Cmd-click) adds or takes away. Every selected
+element is outlined, with one label ("3 selected"). Layers says `aria-multiselectable` and
+each row's `aria-selected`.
+
+`MultiSelectionPanel` replaces the element's panel: Style changes go to all of them (values
+they don't share show as Mixed, through `StyleEditing.mixed`), Animate puts the same motion on
+all, Content asks to select one, and the actions are Make these one component, a shared
+style, Duplicate, Group into a box, Move up and down together, and Delete. Each is one step in
+Undo (`editor/multi-selection.ts`). Delete, Duplicate and Alt+arrows act on all of them too.
+The client's content-only view selects one element at a time.

@@ -21,6 +21,8 @@ export interface StyleEditing {
   target: StyleTarget;
   /** Sets or (with undefined) clears values at the current target; `label` names the change. */
   change: (values: Partial<Record<StylePropertyName, string | undefined>>, label: string) => void;
+  /** With several elements selected: the properties they have different values for. */
+  mixed?: ReadonlySet<StylePropertyName>;
 }
 
 export const StyleEditingContext = createContext<StyleEditing | null>(null);
@@ -42,15 +44,18 @@ export interface StyleField {
   value: string | undefined;
   /** Set here rather than inherited, at a screen size other than desktop or in a state. */
   isOverridden: boolean;
+  /** Several elements are selected and theirs differ: the control says "Mixed". */
+  isMixed: boolean;
   set: (value: string | undefined) => void;
   reset: () => void;
 }
 
 export function useStyleField(property: StylePropertyName, label: string): StyleField {
-  const { styles, target, change } = useStyleEditing();
+  const { styles, target, change, mixed } = useStyleEditing();
   return {
     value: resolveStyle(styles, target, property).value,
     isOverridden: target !== "base" && isSetAt(styles, target, property),
+    isMixed: mixed?.has(property) === true,
     set: (value) => change({ [property]: value }, label),
     reset: () => change({ [property]: undefined }, label),
   };

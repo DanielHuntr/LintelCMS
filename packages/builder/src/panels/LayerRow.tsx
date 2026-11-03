@@ -16,7 +16,8 @@ export interface LayerRowProps {
   isRenaming: boolean;
   isFocusable: boolean;
   dropIndicator: DropPosition | null;
-  onSelect: (nodeId: string) => void;
+  /** With Ctrl/Cmd (`toggle`) or Shift (`range`) held, to select several. */
+  onSelect: (nodeId: string, held?: { toggle: boolean; range: boolean }) => void;
   onHover: (nodeId: string | null) => void;
   onToggleExpanded: (nodeId: string) => void;
   onToggleHidden: (nodeId: string) => void;
@@ -56,7 +57,12 @@ export const LayerRow = memo(function LayerRow(props: LayerRowProps) {
         .join(", ")}
       tabIndex={props.isFocusable ? 0 : -1}
       draggable={!isRenaming && !node.locked}
-      onClick={() => props.onSelect(node.id)}
+      onClick={(event) =>
+        props.onSelect(node.id, {
+          toggle: event.metaKey || event.ctrlKey,
+          range: event.shiftKey,
+        })
+      }
       onDoubleClick={() => props.onStartRename(node.id)}
       onMouseEnter={() => props.onHover(node.id)}
       onMouseLeave={() => props.onHover(null)}

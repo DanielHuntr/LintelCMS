@@ -9,6 +9,7 @@ import {
   type SharedStyle,
   sharedStylesById,
   type Breakpoint,
+  findNode,
   findPath,
   type FreeLayout,
   type GridPlace,
@@ -35,6 +36,7 @@ import { AnimatePanel, type EffectPreview } from "../animate-panel/AnimatePanel.
 import type { PageWeight } from "@lintel/motion/effects";
 import { BlockInstancePanel } from "../blocks/BlockInstancePanel.js";
 import { BlockTools } from "../blocks/BlockTools.js";
+import { type ManyActions, MultiSelectionPanel } from "./MultiSelectionPanel.js";
 import { useBlockMaster, useBuilderBlocks } from "../blocks/blocks-context.js";
 import { useBuilderText } from "../i18n/builder-text.js";
 import type { ComponentRegistry } from "../render/component-registry.js";
@@ -114,6 +116,7 @@ interface SelectedElementPanelProps {
       values: Readonly<Record<string, Record<string, unknown>>>,
     ) => void;
     replaceDesign: (nodeId: string, design: PageNode) => void;
+    many: ManyActions;
     markText: (
       selection: { nodeId: string; prop: string; from: number; to: number; text: string },
       styles: MarkChange | null,
@@ -139,6 +142,10 @@ interface SelectedElementPanelProps {
   onStyleStateChange?: (nodeId: string, target: StyleTarget | null) => void;
   /** Outlines an element on the page while the pointer is on its name in a list; null clears. */
   onPointAtElement?: (nodeId: string | null) => void;
+  /** Several elements selected (the first is `node`): the panel works on all of them. */
+  selectedIds?: readonly string[];
+  /** Back to just the first of several selected. */
+  onSelectOne?: () => void;
 }
 
 /** The elements on a page that use a shared style, in page order. */
@@ -327,9 +334,36 @@ export function SelectedElementPanel(props: SelectedElementPanelProps) {
       onMadeBlock={actions.replaceWithBlock}
       onMadeFromSimilar={actions.replaceWithInstances}
       similarRequest={similarRequest}
+      selectedIds={props.selectedIds}
       onReplaceDesign={actions.replaceDesign}
     />
   );
+
+  const selectedNodes = useMemo(
+    () =>
+      (props.selectedIds ?? []).flatMap((id) => {
+        const found = findNode(document.root, id);
+        return found ? [found] : [];
+      }),
+    [props.selectedIds, document.root],
+  );
+  if (selectedNodes.length > 1 && design) {
+    return (
+      <MultiSelectionPanel
+        nodes={selectedNodes}
+        catalogue={props.registry.catalogue}
+        breakpoint={props.breakpoint}
+        design={design}
+        isLocked={props.isLocked}
+        actions={actions.many}
+        componentTools={blockTools}
+        motionText={props.motionText}
+        tips={props.tips}
+        onPreviewMotion={props.onPreviewMotion}
+        onSelectOne={() => props.onSelectOne?.()}
+      />
+    );
+  }
 
   // An instance of one of the site's blocks: its design is the block's, so only its details
   // can be changed here.

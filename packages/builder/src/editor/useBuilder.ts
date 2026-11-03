@@ -45,6 +45,7 @@ import { type BuilderClipboard, choosePasteSource, writeToSystemClipboard } from
 import { instanceBlueprint } from "../blocks/block-commands.js";
 import * as commands from "./commands.js";
 import * as designCommands from "./design-commands.js";
+import * as multi from "./multi-selection.js";
 import { insertDraftedSections } from "./draft-commands.js";
 import * as siteSectionCommands from "./site-section-commands.js";
 import { createEditorState, describeUndo, editorReducer } from "./editor-state.js";
@@ -562,6 +563,24 @@ export function useBuilder({
         run(siteSectionCommands.setSiteSectionHidden(context(), slot, hidden)),
       removeSiteSectionFromSite: (slot: SiteSectionSlot) =>
         run(siteSectionCommands.removeSiteSectionFromSite(context(), slot)),
+      /** Several selected elements, each change one step in Undo (see multi-selection.ts). */
+      many: {
+        changeStyles: (
+          ids: readonly string[],
+          target: StyleTarget,
+          values: StyleValues,
+          label: string,
+        ) => run(multi.changeStylesOfMany(context(), ids, target, values, label), ""),
+        animate: (ids: readonly string[], animations: NodeAnimation[]) =>
+          run(multi.animateMany(context(), ids, animations), ""),
+        useSharedStyle: (ids: readonly string[], sharedStyleId: string | null) =>
+          run(multi.applySharedStyleToMany(context(), ids, sharedStyleId)),
+        remove: (ids: readonly string[]) => run(multi.removeMany(context(), ids)),
+        duplicate: (ids: readonly string[]) => run(multi.duplicateMany(context(), ids)),
+        group: (ids: readonly string[]) => run(multi.groupIntoBox(context(), ids)),
+        move: (ids: readonly string[], direction: "up" | "down") =>
+          run(multi.moveManyTogether(context(), ids, direction)),
+      },
       selectAdjacent: adjacent,
       selectParent: () => {
         const selected = latest.current.selectedId;

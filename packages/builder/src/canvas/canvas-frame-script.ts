@@ -821,7 +821,9 @@ export function runCanvasFrame(snap: typeof snapBox, fitGrid: typeof fitToGrid):
           }
         : null;
     pickedMenuItem = menuItem && nodeId ? { nodeId, id: menuItem.id } : null;
-    send({ type: "select", nodeId, ...(menuItem ? { menuItem } : {}) });
+    // Shift (or Ctrl/Cmd) adds the element to the selection, or takes it away.
+    const add = event.shiftKey || event.metaKey || event.ctrlKey;
+    send({ type: "select", nodeId, ...(menuItem ? { menuItem } : {}), ...(add ? { add } : {}) });
     const openMenu =
       event.target instanceof Element ? event.target.closest("[data-lintel-open-menu]") : null;
     if (openMenu)

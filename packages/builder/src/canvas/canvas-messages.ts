@@ -94,7 +94,8 @@ export interface CanvasMenuItem {
 export type MessageFromFrame =
   | { type: "ready" }
   /** `menuItem`: the link clicked, when it was one of a menu's links (see menu-links/). */
-  | { type: "select"; nodeId: string | null; menuItem?: CanvasMenuItem }
+  /** `add`: Shift (or Ctrl/Cmd) was held, to add the element to the selection or take it away. */
+  | { type: "select"; nodeId: string | null; menuItem?: CanvasMenuItem; add?: boolean }
   | { type: "hover"; nodeId: string | null }
   | { type: "editText"; nodeId: string; prop: string; text: string }
   | { type: "key"; key: ForwardedKey }
@@ -205,7 +206,10 @@ export function readFrameMessage(data: unknown): MessageFromFrame | null {
           /^[A-Za-z0-9_-]{1,64}$/.test(item.id) &&
           typeof item.label === "string" &&
           item.label.length <= 200);
-      return isOptionalId(message.nodeId) && itemIsFine ? (message as MessageFromFrame) : null;
+      const addIsFine = message.add === undefined || typeof message.add === "boolean";
+      return isOptionalId(message.nodeId) && itemIsFine && addIsFine
+        ? (message as MessageFromFrame)
+        : null;
     }
     case "hover":
       return isOptionalId(message.nodeId) ? (message as MessageFromFrame) : null;

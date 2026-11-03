@@ -3,10 +3,12 @@ import {
   cannotMakeBlockFrom,
   type ComponentCatalogue,
   type CustomBlock,
+  findNode,
   findSimilarElements,
   type PageDocument,
   type PageNode,
   planComponentFromSimilar,
+  shapeOf,
 } from "@lintel/builder-model";
 import { Component } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -30,6 +32,7 @@ export function BlockTools({
   onMadeBlock,
   onMadeFromSimilar,
   similarRequest = 0,
+  selectedIds,
   onReplaceDesign,
 }: {
   document: PageDocument;
@@ -44,6 +47,8 @@ export function BlockTools({
   onReplaceDesign: (nodeId: string, design: PageNode) => void;
   /** Raised to open "Make these one component" from elsewhere (Style's hint). */
   similarRequest?: number;
+  /** Several selected: only "Make these one component", for them, when they're built alike. */
+  selectedIds?: readonly string[];
 }) {
   const text = useBuilderText();
   const blocks = useBuilderBlocks();
@@ -60,10 +65,22 @@ export function BlockTools({
     setAnsweredRequest(similarRequest);
     setDialog("similar");
   }
-  const similar = useMemo(
-    () => (node && !master ? findSimilarElements(document.root, node.id) : []),
-    [document.root, node, master],
-  );
+  const isMany = (selectedIds?.length ?? 0) > 1;
+  const similar = useMemo(() => {
+    if (master) return [];
+    if (selectedIds && selectedIds.length > 1) {
+      const nodes = selectedIds.flatMap((id) => {
+        const found = findNode(document.root, id);
+        return found ? [found] : [];
+      });
+      const shape = nodes[0] ? shapeOf(nodes[0]) : "";
+      const alike = nodes.every(
+        (each) => shapeOf(each) === shape && cannotMakeBlockFrom(each) === null,
+      );
+      return alike ? nodes : [];
+    }
+    return node ? findSimilarElements(document.root, node.id) : [];
+  }, [document.root, node, master, selectedIds]);
   const plan = useMemo(
     () => (dialog === "similar" ? planComponentFromSimilar(similar, catalogue) : null),
     [dialog, similar, catalogue],
@@ -126,15 +143,22 @@ export function BlockTools({
   };
 
   return (
-    <div className="flex flex-col gap-1.5 hairline-top px-4 py-3">
-      <button
-        type="button"
-        onClick={open}
-        className="flex h-8 w-full items-center justify-center gap-2 rounded-control bg-fill px-3 text-footnote font-medium text-accent hover:bg-fill-secondary focus-visible:focus-ring"
-      >
-        <Component aria-hidden="true" className="size-4" />
-        {text("pageBuilder.blocks.make")}
-      </button>
+    <div
+      className={isMany ? "flex flex-col gap-1.5" : "flex flex-col gap-1.5 hairline-top px-4 py-3"}
+    >
+      {isMany && similar.length === 0 && (
+        <p className="text-caption text-label-tertiary">{text("pageBuilder.multi.notAlike")}</p>
+      )}
+      {!isMany && (
+        <button
+          type="button"
+          onClick={open}
+          className="flex h-8 w-full items-center justify-center gap-2 rounded-control bg-fill px-3 text-footnote font-medium text-accent hover:bg-fill-secondary focus-visible:focus-ring"
+        >
+          <Component aria-hidden="true" className="size-4" />
+          {text("pageBuilder.blocks.make")}
+        </button>
+      )}
       {similar.length >= 2 && onMadeFromSimilar && (
         <button
           type="button"

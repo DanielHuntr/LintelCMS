@@ -75,6 +75,13 @@ import type {
 } from "./canvas/canvas-messages.js";
 import { isLocked, layerName } from "./editor/commands.js";
 import { isTextEntry, isTypingTarget, shortcutFor } from "./editor/shortcuts.js";
+import {
+  extendSelection,
+  selectionAfterClick,
+  selectSiblings,
+  stillThere,
+} from "./editor/multi-selection.js";
+import type { LayerSelectHow } from "./panels/LayersPanel.js";
 import { useBuilder } from "./editor/useBuilder.js";
 import { Breadcrumbs } from "./frame/Breadcrumbs.js";
 import { EmptyPage } from "./frame/EmptyPage.js";
@@ -298,6 +305,17 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   const [pickedMenuItem, setPickedMenuItem] = useState<PickedMenuItem | null>(null);
   // "Select them" in Site styles: the elements outlined together, while one of them is selected.
   const [highlight, setHighlight] = useState<readonly string[]>([]);
+  // Several selected: the first is the editor's selection, the rest are along with it. Any
+  // other way of selecting (Layers, the canvas, undo) leaves just the one.
+  const [many, setMany] = useState<{ primary: string; ids: readonly string[] } | null>(null);
+  const selectedIds = useMemo<readonly string[]>(() => {
+    if (many && selectedId && many.primary === selectedId) {
+      const ids = stillThere(state.document.root, many.ids);
+      if (ids.length > 1) return ids;
+    }
+    return selectedId ? [selectedId] : [];
+  }, [many, selectedId, state.document.root]);
+  const isMany = selectedIds.length > 1;
   const [revealId, setRevealId] = useState<string | null>(null);
   const [leftTab, setLeftTab] = useState<LeftTab>("layers");
   const [insertFocusRequest, setInsertFocusRequest] = useState<InsertFocusRequest>();
@@ -523,6 +541,27 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     },
     [actions],
   );
+  const selectWith = useCallback(
+    (nodeId: string, how: LayerSelectHow) => {
+      const root = state.document.root;
+      const next =
+        how === "siblings"
+          ? selectSiblings(root, nodeId)
+          : how === "extendNext" || how === "extendPrevious"
+            ? extendSelection(
+                root,
+                selectedIds.length > 0 ? selectedIds : [nodeId],
+                how === "extendNext" ? "next" : "previous",
+              )
+            : selectionAfterClick(root, selectedIds, nodeId, how);
+      const primary = next[0] ?? nodeId;
+      setMany(next.length > 1 ? { primary, ids: next } : null);
+      if (primary !== selectedId) actions.select(primary);
+      setRevealId(next.at(-1) ?? primary);
+      if (next.length > 1) announce(text("pageBuilder.multi.count", { count: next.length }));
+    },
+    [actions, state.document.root, selectedIds, selectedId, announce, text],
+  );
 
   // Deleting the site's navigation or footer asks first: this page, or every page.
   const [removingSlot, setRemovingSlot] = useState<SiteSectionSlot | null>(null);
@@ -531,6 +570,15 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
       const command = shortcutFor(key);
       if (!command) return false;
       const selected = state.selectedId;
+      // With several selected, deleting, copying and moving act on all of them at once.
+      if (isMany) {
+        if (command === "remove") return (actions.many.remove(selectedIds), true);
+        if (command === "duplicate") return (actions.many.duplicate(selectedIds), true);
+        if (command === "moveUp" || command === "moveDown") {
+          actions.many.move(selectedIds, command === "moveUp" ? "up" : "down");
+          return true;
+        }
+      }
       switch (command) {
         case "undo":
           actions.undo();
@@ -617,7 +665,16 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
       }
       return true;
     },
-    [actions, state.selectedId, state.document, textSelection, text, onSaveNow],
+    [
+      actions,
+      state.selectedId,
+      state.document,
+      textSelection,
+      text,
+      onSaveNow,
+      isMany,
+      selectedIds,
+    ],
   );
 
   // Something dragged from Insert, and where it would land on the canvas.
@@ -681,7 +738,9 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
         if (dragged && target) actions.insert(dragged.key, target.place);
         showCanvasDrop(null);
       }
-      if (message.type === "select") {
+      if (message.type === "select" && message.add && message.nodeId) {
+        selectWith(message.nodeId, "toggle");
+      } else if (message.type === "select") {
         actions.select(message.nodeId);
         setPickedMenuItem(
           message.menuItem && message.nodeId
@@ -767,6 +826,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
       showCanvasDrop,
       pictures,
       selectedId,
+      selectWith,
     ],
   );
 
@@ -849,8 +909,12 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
           })
         : layerName(node, catalogue);
     };
-    return { selected: nameOf(selectedId), hovered: nameOf(hoveredId) };
-  }, [state.document, selectedId, hoveredId, catalogue, text]);
+    // Several selected share one label on the canvas: "3 selected".
+    const selected = isMany
+      ? text("pageBuilder.multi.count", { count: selectedIds.length })
+      : nameOf(selectedId);
+    return { selected, hovered: nameOf(hoveredId) };
+  }, [state.document, selectedId, hoveredId, catalogue, text, isMany, selectedIds]);
   const selectedSiteSection = siteSectionAround(root, selectedId);
   // A site's first navigation (or footer) replaces the automatic one: say so, once.
   const [switchNoteDismissed, setSwitchNoteDismissed] = useState(false);
@@ -940,7 +1004,9 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                           root={root}
                           catalogue={catalogue}
                           selectedId={selectedId}
+                          selectedIds={selectedIds}
                           onSelect={selectFromPanel}
+                          onSelectWith={selectWith}
                           onHover={setHoveredId}
                           onToggleHidden={actions.toggleHidden}
                           onToggleLocked={actions.toggleLocked}
@@ -1018,7 +1084,11 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                         selectedId={selectedId}
                         hoveredId={hoveredId}
                         highlightIds={
-                          selectedId && highlight.includes(selectedId) ? highlight : undefined
+                          isMany
+                            ? selectedIds
+                            : selectedId && highlight.includes(selectedId)
+                              ? highlight
+                              : undefined
                         }
                         labels={labels}
                         revealId={revealId}
@@ -1106,6 +1176,8 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                         onPreviewEffect={previewEffect}
                         onStyleStateChange={reportStylingState}
                         onPointAtElement={setHoveredId}
+                        selectedIds={isMany ? selectedIds : undefined}
+                        onSelectOne={() => setMany(null)}
                         onSelectMany={(nodeIds) => {
                           const first = nodeIds[0];
                           if (!first) return;

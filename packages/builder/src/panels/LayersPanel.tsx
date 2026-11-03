@@ -29,6 +29,13 @@ export interface LayersPanelProps {
   catalogue: ComponentCatalogue;
   selectedId: string | null;
   onSelect: (nodeId: string | null) => void;
+  /** Every selected layer, when several are (the first is `selectedId`). */
+  selectedIds?: readonly string[];
+  /**
+   * Selecting several: Ctrl/Cmd-click adds or takes away, Shift-click a range, Ctrl/Cmd+A
+   * everything beside it, Shift+Up and Down extend. Left out, clicks select one.
+   */
+  onSelectWith?: (nodeId: string, how: LayerSelectHow) => void;
   onHover: (nodeId: string | null) => void;
   onToggleHidden: (nodeId: string) => void;
   onToggleLocked: (nodeId: string) => void;
@@ -44,6 +51,8 @@ export interface LayersPanelProps {
  * renames. Dragging a row moves the layer; the global shortcuts (Alt+arrows to move, Delete,
  * Cmd+D...) act on the selected layer, so they work here too.
  */
+export type LayerSelectHow = "toggle" | "range" | "siblings" | "extendNext" | "extendPrevious";
+
 export function LayersPanel(props: LayersPanelProps) {
   const text = useBuilderText();
   const { root, catalogue, selectedId } = props;
@@ -102,6 +111,27 @@ export function LayersPanel(props: LayersPanelProps) {
       const list = rowsRef.current;
       const index = list.findIndex((row) => row.node.id === nodeId);
       const row = list[index];
+      const selectWith = latest.current.onSelectWith;
+      if (
+        row &&
+        selectWith &&
+        (event.metaKey || event.ctrlKey) &&
+        event.key.toLowerCase() === "a"
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        return selectWith(nodeId, "siblings");
+      }
+      if (
+        row &&
+        selectWith &&
+        event.shiftKey &&
+        (event.key === "ArrowDown" || event.key === "ArrowUp")
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        return selectWith(nodeId, event.key === "ArrowDown" ? "extendNext" : "extendPrevious");
+      }
       if (!row || event.altKey || event.metaKey || event.ctrlKey) return;
       const select = (target: { node: PageNode } | undefined) => {
         if (target) latest.current.onSelect(target.node.id);
@@ -198,7 +228,12 @@ export function LayersPanel(props: LayersPanelProps) {
 
   const stable = useMemo(
     () => ({
-      onSelect: (nodeId: string) => latest.current.onSelect(nodeId),
+      onSelect: (nodeId: string, held?: { toggle: boolean; range: boolean }) => {
+        const selectWith = latest.current.onSelectWith;
+        if (selectWith && held?.toggle) selectWith(nodeId, "toggle");
+        else if (selectWith && held?.range) selectWith(nodeId, "range");
+        else latest.current.onSelect(nodeId);
+      },
       onHover: (nodeId: string | null) => latest.current.onHover(nodeId),
       onToggleHidden: (nodeId: string) => latest.current.onToggleHidden(nodeId),
       onToggleLocked: (nodeId: string) => latest.current.onToggleLocked(nodeId),
@@ -231,6 +266,7 @@ export function LayersPanel(props: LayersPanelProps) {
       role="tree"
       aria-label={text("pageBuilder.layers.title")}
       aria-describedby="lintel-layers-help"
+      aria-multiselectable={props.onSelectWith ? true : undefined}
       className="flex flex-col gap-px p-2"
       onDragLeave={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node)) setDrop(null);
@@ -248,7 +284,7 @@ export function LayersPanel(props: LayersPanelProps) {
             depth={depth}
             name={layerName(node, catalogue)}
             icon={definition?.icon}
-            isSelected={node.id === selectedId}
+            isSelected={node.id === selectedId || (props.selectedIds?.includes(node.id) ?? false)}
             isExpanded={!visibleCollapsed.has(node.id)}
             isRenaming={node.id === renamingId}
             isFocusable={node.id === focusableId}

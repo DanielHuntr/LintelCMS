@@ -107,6 +107,11 @@ interface StylePanelProps {
   onChangeProps?: (props: Record<string, unknown>, label: string) => void;
   /** Under the shared-style row: a quiet suggestion, such as making similar elements one component. */
   sharedStyleHint?: ReactNode;
+  /**
+   * Several elements selected: `node` stands for them all (the styles they share), these are
+   * the properties they differ in, and there's no shared-style row (Actions has one).
+   */
+  mixedStyles?: ReadonlySet<StylePropertyName>;
 }
 
 const textTypes = new Set([
@@ -158,6 +163,7 @@ export function StylePanel({
   looks,
   onChangeProps,
   sharedStyleHint,
+  mixedStyles,
 }: StylePanelProps) {
   const text = useBuilderText();
   const advanced = mode === "advanced";
@@ -234,8 +240,10 @@ export function StylePanel({
       styles: sharedLook ? layerStyles(sharedLook.styles, node.styles) : node.styles,
       target,
       change: (values, label) => onChange(target, values, label),
+      mixed: mixedStyles,
     };
   }, [
+    mixedStyles,
     editsItem,
     menuItem,
     onChangeProps,
@@ -293,7 +301,7 @@ export function StylePanel({
             }}
             isLocked={isLocked}
           />
-        ) : (
+        ) : mixedStyles ? null : (
           <SharedStyleBar
             node={node}
             design={design}
