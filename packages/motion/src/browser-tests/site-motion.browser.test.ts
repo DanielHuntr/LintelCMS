@@ -325,6 +325,37 @@ describe("the hover picture", () => {
   });
 });
 
+describe("the hover picture's file", () => {
+  it("is fetched the first time the pointer comes over, at a smaller size from the media library", async () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"/>';
+    const { page, requested } = await openEffectsPage(
+      browser,
+      `<a data-node-id="row" href="#" style="display:block;height:80px;margin-top:100px">Project one</a>`,
+      [
+        {
+          nodeId: "row",
+          module: "pointer",
+          behaviour: "hoverPicture",
+          params: { src: "/media/cake/file?v=1", assetId: "cake" },
+        },
+      ],
+      { pages: { "/media/cake/file": svg } },
+    );
+    await page.mouse.move(10, 10);
+    await waitFor(page, () => document.querySelector(".lintel-hover-picture") !== null);
+    await page.waitForTimeout(200);
+    expect(requested.filter((path) => path.startsWith("/media/"))).toEqual([]);
+    await page.mouse.move(100, 130);
+    await page.mouse.move(120, 140);
+    await waitFor(page, () => document.querySelector(".lintel-hover-picture[data-shown]") !== null);
+    expect(await page.$eval(".lintel-hover-picture img", (node) => node.getAttribute("src"))).toBe(
+      "/media/cake/file?v=1&w=720&format=webp",
+    );
+    expect(requested.filter((path) => path.startsWith("/media/"))).toContain("/media/cake/file");
+    await page.close();
+  });
+});
+
 /*
  * A video from YouTube or Vimeo plays in an iframe, which keeps the pointer's events to
  * itself: the page stops hearing where the pointer is the moment it crosses onto the

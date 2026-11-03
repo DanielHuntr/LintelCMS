@@ -34,6 +34,10 @@ export function PointerFields({ effects, onChange, pickImage }: PointerFieldsPro
   const picture = effects.find((effect) => effect.effect === hoverPictureEffectId);
   const wordText = typeof word?.params.text === "string" ? word.params.text : "";
   const pictureSrc = typeof picture?.params.src === "string" ? picture.params.src : "";
+  const pictureAssetId =
+    typeof picture?.params.assetId === "string" && picture.params.assetId !== ""
+      ? picture.params.assetId
+      : null;
   const readyWord = readyWords.find(
     (ready) => text(`pageBuilder.animate.pointer.word.${ready}`) === wordText,
   );
@@ -96,12 +100,13 @@ export function PointerFields({ effects, onChange, pickImage }: PointerFieldsPro
       {picture && (
         <ImageField
           label={text("pageBuilder.animate.pointer.pictureField")}
-          value={{ src: pictureSrc, alt: "", assetId: null }}
+          value={{ src: pictureSrc, alt: "", assetId: pictureAssetId }}
           pickImage={pickImage}
           onChange={(picked) =>
             replace(hoverPictureEffectId, {
               effect: hoverPictureEffectId,
-              params: { ...picture.params, src: picked.src },
+              // The picture's id too, so the website asks for a smaller copy of it.
+              params: { ...picture.params, src: picked.src, assetId: picked.assetId ?? "" },
             })
           }
         />

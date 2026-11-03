@@ -72,7 +72,7 @@ describe("when the pointer is over an element", () => {
     await user.click(within(fields).getByRole("button", { name: "Choose a picture" }));
     expect(project()?.effects?.at(-1)).toEqual({
       effect: "hover-picture",
-      params: { src: "/media/harbour.jpg", size: "medium" },
+      params: { src: "/media/harbour.jpg", assetId: "a1", size: "medium" },
     });
 
     // They stay out of the Motion panel's own list, which still shows the magnetic pull.

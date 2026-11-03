@@ -14,7 +14,7 @@ export const effectModuleBytes: Record<EffectModuleName, number> = {
   marquee: 3030,
   particles: 2683,
   physics: 7176,
-  pointer: 4556,
+  pointer: 4660,
   ripple: 4180,
   scroll: 4650,
   "smooth-scroll": 1826,
