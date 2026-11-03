@@ -110,6 +110,51 @@ describe("playing presets in a real browser", () => {
     );
   });
 
+  // "Grow while scrolling" pushed as far as it goes: a video from a tenth of its size to full.
+  it("grows a video from a tenth of its size to full across its scene, staying centred", async () => {
+    const page = await openPage(
+      browser,
+      `<div style="height:1000px"></div><figure id="film" style="margin:0 auto;width:400px;height:200px"><video style="display:block;width:100%;height:100%;background:#222"></video></figure><div style="height:1600px"></div>`,
+    );
+    await page.evaluate(() => {
+      const grow = window.presets.findPreset("scroll-grow")!.spec;
+      window.motion.mountMotion(document.getElementById("film")!, {
+        ...grow,
+        tracks: grow.tracks.map((track) =>
+          track.property === "scale"
+            ? {
+                ...track,
+                keyframes: [
+                  { offset: 0, value: 0.1 },
+                  { offset: 1, value: 1 },
+                ],
+              }
+            : track,
+        ),
+      });
+    });
+    const scaleAt = async (scroll: number) => {
+      await page.evaluate((y) => window.scrollTo(0, y), scroll);
+      await nextFrames(page);
+      await nextFrames(page);
+      return Number((await style(page, "#film", "scale")).split(" ")[0]);
+    };
+    // The scene starts as its top meets the bottom of the 600px window (400px scrolled) and
+    // ends as its middle meets the middle of the window (800px scrolled).
+    expect(await scaleAt(0)).toBeCloseTo(0.1, 2);
+    expect(await scaleAt(400)).toBeCloseTo(0.1, 2);
+    const halfway = await scaleAt(600);
+    expect(halfway).toBeGreaterThan(0.3);
+    expect(halfway).toBeLessThan(1);
+    expect(await scaleAt(800)).toBeCloseTo(1, 2);
+    expect(await scaleAt(1200)).toBeCloseTo(1, 2);
+    // It grows from its centre, so it stays in the middle of the page as it grows.
+    await scaleAt(600);
+    const box = await page.$eval("#film", (element) => element.getBoundingClientRect().toJSON());
+    expect(box.x + box.width / 2).toBeCloseTo(400, 0);
+    expect(box.y + box.height / 2).toBeCloseTo(1000 + 100 - 600, 0);
+  });
+
   it("scrubs staggered scenes itself, reading once and writing once per frame", async () => {
     const page = await openPage(
       browser,

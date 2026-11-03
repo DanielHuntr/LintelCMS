@@ -29,6 +29,7 @@ export const motionPanelStrings = {
     "Choose one and it's added straight away. You can change it after.",
   "motionEditor.panel.styles": "How it moves",
   "motionEditor.panel.howMuch": "How much",
+  "motionEditor.panel.startsAtSize": "Starts at {percent}%",
   "motionEditor.panel.speed": "Speed",
   "motionEditor.panel.feel": "Feel",
   "motionEditor.panel.feelSmooth": "Smooth",

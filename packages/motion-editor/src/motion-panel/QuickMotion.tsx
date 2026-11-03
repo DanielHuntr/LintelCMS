@@ -10,7 +10,10 @@ import type { MotionChoice, MotionMoment } from "./motionChoices.js";
 import { motionDemoCss } from "./motionDemos.js";
 import { MotionTile } from "./MotionTile.js";
 import {
+  distanceForStartSize,
+  growRange,
   quickControls,
+  startSizeFor,
   type MotionFeel,
   type QuickChoice,
   type QuickSettings,
@@ -177,7 +180,15 @@ function QuickControls({
   if (!shows.howMuch && !shows.speed && !shows.feel && !shows.starts) return null;
   return (
     <div className="flex flex-col gap-3 rounded-card bg-background p-3">
-      {shows.howMuch && (
+      {shows.howMuch && shows.growsFrom !== undefined && (
+        <GrowSizeSlider
+          from={shows.growsFrom}
+          distance={settings.adjustments.distance}
+          onChange={(distance) => adjust({ distance })}
+          onCommit={commit}
+        />
+      )}
+      {shows.howMuch && shows.growsFrom === undefined && (
         <Slider
           label={t("motionEditor.panel.howMuch")}
           min={0.25}
@@ -247,6 +258,41 @@ function QuickControls({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * "How much" for growing while scrolling: from subtle (it starts at 90% of its size) to
+ * dramatic (it starts at a tenth), with the size it starts at shown beside it.
+ */
+function GrowSizeSlider({
+  from,
+  distance,
+  onChange,
+  onCommit,
+}: {
+  from: number;
+  distance: number;
+  onChange: (distance: number) => void;
+  onCommit: () => void;
+}) {
+  const t = useTranslate();
+  const size = startSizeFor(from, distance);
+  const startsAt = t("motionEditor.panel.startsAtSize", { percent: Math.round(size * 100) });
+  return (
+    <Slider
+      label={t("motionEditor.panel.howMuch")}
+      min={1 - growRange.largest}
+      max={1 - growRange.smallest}
+      step={0.05}
+      value={Math.round((1 - size) * 100) / 100}
+      minLabel={t("motionEditor.simple.subtle")}
+      maxLabel={t("motionEditor.simple.dramatic")}
+      displayValue={startsAt}
+      valueText={startsAt}
+      onChange={(grows) => onChange(distanceForStartSize(from, 1 - grows))}
+      onCommit={onCommit}
+    />
   );
 }
 

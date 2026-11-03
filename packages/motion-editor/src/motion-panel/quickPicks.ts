@@ -185,12 +185,44 @@ export function quickResult(base: MotionSpec, settings: QuickSettings): MotionSp
   return withFeel(applyAdjustments(base, settings.adjustments), settings.feel);
 }
 
+/**
+ * Where a scroll motion that grows into place ("Grow while scrolling") starts, as a share of
+ * its full size: 0.8 starts at 80%. Undefined for anything else.
+ */
+export function growsFrom(spec: MotionSpec): number | undefined {
+  if (spec.trigger.type !== "scroll") return undefined;
+  const scale = spec.tracks.find((track) => track.property === "scale");
+  const first = scale?.keyframes[0]?.value;
+  const last = scale?.keyframes.at(-1)?.value;
+  return typeof first === "number" && last === 1 && first > 0 && first < 1 ? first : undefined;
+}
+
+/**
+ * For growing while scrolling, "How much" runs from subtle (starting at 90% of full size) to
+ * dramatic (starting at 10%), so a video can grow from a tenth of its size to all of it.
+ */
+export const growRange = { smallest: 0.1, largest: 0.9 };
+
+/** The size it starts at once "How much" is applied to a grow that starts at `from`. */
+export function startSizeFor(from: number, distance: number): number {
+  const size = 1 - (1 - from) * distance;
+  return Math.round(Math.min(growRange.largest, Math.max(growRange.smallest, size)) * 100) / 100;
+}
+
+/** The "How much" that makes a grow starting at `from` start at `size` instead. */
+export function distanceForStartSize(from: number, size: number): number {
+  const clamped = Math.min(growRange.largest, Math.max(growRange.smallest, size));
+  return (1 - clamped) / (1 - from);
+}
+
 /** Which plain controls make sense for a spec in this moment. */
 export function quickControls(base: MotionSpec, moment: MotionMoment) {
   const followsScroll = moment === "scroll";
   const loops = base.repeat.times === "forever";
   return {
     howMuch: hasDistance(base),
+    /** Set for a grow while scrolling: "How much" then reads as the size it starts at. */
+    growsFrom: followsScroll ? growsFrom(base) : undefined,
     speed: !followsScroll,
     feel: !followsScroll && !loops,
     starts: moment === "appears",
