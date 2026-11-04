@@ -152,7 +152,11 @@ export function jsonOnlyKeys(
   return object.mapWith((text: string) => JSON.parse(text) as Record<string, unknown>);
 }
 
-/** Whether any value at the top of a JSON object is this text, ignoring case and spaces. */
+/**
+ * Whether any value at the top of a JSON object is this text, ignoring case and spaces. On
+ * MySQL this counts rather than using `exists`: alone in the `where` of a join, `exists` over
+ * json_table becomes a semi-join, which finds nothing.
+ */
 export function jsonObjectHoldsText(
   database: DatabaseOrTransaction,
   json: SQLWrapper,
@@ -161,7 +165,7 @@ export function jsonObjectHoldsText(
   const wanted = text.trim().toLowerCase();
   return dialectOf(database) === "postgres"
     ? sql`exists (select 1 from jsonb_each_text(${json}) as answer where lower(trim(answer.value)) = ${wanted})`
-    : sql`exists (select 1 from json_table(${json}, '$.*' columns (value longtext collate utf8mb4_bin path '$')) as answer where lower(trim(answer.value)) = ${wanted})`;
+    : sql`(select count(*) from json_table(${json}, '$.*' columns (value longtext collate utf8mb4_bin path '$')) as answer where lower(trim(answer.value)) = ${wanted}) > 0`;
 }
 
 /** Whether a JSON list of text has an item matching a `like` pattern, ignoring case. */
@@ -172,7 +176,7 @@ export function jsonListHasItemLike(
 ): SQL<boolean> {
   return dialectOf(database) === "postgres"
     ? sql`exists (select 1 from jsonb_array_elements_text(${json}) as tag where tag ilike ${pattern})`
-    : sql`exists (select 1 from json_table(${json}, '$[*]' columns (item longtext collate utf8mb4_bin path '$')) as tag where lower(tag.item) like lower(${pattern}))`;
+    : sql`(select count(*) from json_table(${json}, '$[*]' columns (item longtext collate utf8mb4_bin path '$')) as tag where lower(tag.item) like lower(${pattern})) > 0`;
 }
 
 /** The titles of the first few entries under an item in the recycle bin, from its branch. */

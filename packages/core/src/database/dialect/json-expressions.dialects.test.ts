@@ -1,5 +1,6 @@
-import { eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { expect, it } from "vitest";
+import { collectionsTable } from "../../collections/collections.table.js";
 import { entriesTable } from "../../entries/entries.table.js";
 import { addTestEntry, describeOnEveryDatabase } from "../../testing/every-database.js";
 import {
@@ -166,6 +167,18 @@ describeOnEveryDatabase("JSON expressions", (handle) => {
     expect(await holds("  ÜBER UNS ")).toHaveLength(1);
     expect(await holds("Über")).toEqual([]);
     expect(await holds("Opening hours")).toEqual([]);
+  });
+
+  it("finds a whole value when that's the only condition on a join", async () => {
+    const { database, entries, data } = await entry();
+    const collections = tableFor(database, collectionsTable);
+    const rows = await database
+      .select({ id: entries.id, handle: collections.handle })
+      .from(entries)
+      .innerJoin(collections, eq(collections.id, entries.collectionId))
+      .where(and(eq(entries.tenantId, "default"), jsonObjectHoldsText(database, data, "über uns")))
+      .orderBy(desc(entries.createdAt));
+    expect(rows).toHaveLength(1);
   });
 
   it("finds a list item by pattern, ignoring case", async () => {
