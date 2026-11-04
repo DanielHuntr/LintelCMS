@@ -85,8 +85,8 @@ function withKeysInOrder(value: unknown): unknown {
 }
 
 /**
- * Checks MySQL won't take, because their columns have `on delete` rules (error 3823).
- * What they guard is enforced on every database by the service that writes the rows.
+ * Checks MySQL won't take as written, because their columns have `on delete` rules (error
+ * 3823). Each is in a migration written by hand, on a generated column Drizzle isn't told about.
  */
 const CHECKS_LEFT_TO_LINTEL = new Set(["dashboard_layouts_one_owner"]);
 

@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { eq, sql } from "drizzle-orm";
+import { migrate } from "drizzle-orm/mysql2/migrator";
 import { pgTable, text, uuid } from "drizzle-orm/pg-core";
 import { createConnection } from "mysql2/promise";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -28,9 +29,12 @@ import {
   engineFromVersion,
   exactCollationFor,
   isSupportedMysqlVersion,
+  openMysqlDatabase,
 } from "./dialect/mysql-database.js";
 import { tableFor } from "./dialect/mysql-tables.js";
 import { readRawRows } from "./dialect/raw-queries.js";
+import { dashboardLayoutsTable } from "../dashboard/dashboard.table.js";
+import { rolesTable } from "../roles/roles.table.js";
 import { usersTable } from "../users/users.table.js";
 
 /**
@@ -65,6 +69,8 @@ async function withConnection<T>(
     await connection.end();
   }
 }
+
+const ROLE_ID = "11111111-1111-4111-8111-111111111111";
 
 const PUBLISHED_ENTRY = {
   id: randomUUID(),
@@ -383,6 +389,38 @@ describe.each(servers.filter(([, url]) => url))("Lintel starting on %s", (_name,
       const stamps = server.plugins.find("stamps");
       expect(stamps && (await isPluginRunning(active.database, stamps))).toBe(true);
     });
+  });
+
+  it("mends a dashboard layout with two owners when the check arrives", async () => {
+    // Migrations as they stood before it, with a row the check would refuse.
+    const before = join(folder, "before-check");
+    await cp(MYSQL_MIGRATIONS_FOLDER, before, { recursive: true });
+    const journalFile = join(before, "meta", "_journal.json");
+    const journal = JSON.parse(await readFile(journalFile, "utf8")) as {
+      entries: { tag: string }[];
+    };
+    const place = journal.entries.findIndex(({ tag }) => tag.includes("one_owner"));
+    await writeFile(
+      journalFile,
+      JSON.stringify({ ...journal, entries: journal.entries.slice(0, place) }),
+    );
+    const older = await openMysqlDatabase(addressOf(url, name));
+    opened.push(older);
+    await migrate(older.database as never, { migrationsFolder: before });
+    const person = await addTestUser(older.database);
+    const roles = tableFor(older.database, rolesTable);
+    await older.database.insert(roles).values({ id: ROLE_ID, handle: "a", name: "A" });
+    const layouts = tableFor(older.database, dashboardLayoutsTable);
+    await older.database
+      .insert(layouts)
+      .values({ userId: person.id, roleId: ROLE_ID, widgets: [] });
+    await older.database.insert(layouts).values({ widgets: [] });
+
+    await older.applyMigrations();
+
+    const rows = await older.database.select().from(layouts);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ userId: person.id, roleId: null });
   });
 
   it("keeps an add-on's own table in a backup, in the form Postgres writes", async () => {

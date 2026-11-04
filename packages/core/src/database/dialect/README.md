@@ -107,8 +107,9 @@ Handled here:
 - **Keys in JSON are written in one order,** the one jsonb uses, so values read the same on
   every database. A change made in SQL, such as a renamed field, can leave them out of that
   order on MariaDB, whose json is text, so compare two columns with `jsonDiffers`, not `<>`.
-- **`dashboard_layouts_one_owner` isn't there.** MySQL refuses a check on columns with `on
-delete` rules. The repository writes either a person or a role, never both.
+- **`dashboard_layouts_one_owner` is on a generated column.** MySQL refuses a check on columns
+  with `on delete` rules, so migration 0003 adds `owner_count`, worked out from the two, and
+  checks that. Drizzle isn't told about it, so no query touches it.
 - **A value too long for a key** is refused with a plain 422 rather than an error.
 - **Search can't see where a word starts inside JSON,** so `searchEntries` checks each row it
   finds in Node, with `search/word-starts.ts`, which splits text as Postgres does.
