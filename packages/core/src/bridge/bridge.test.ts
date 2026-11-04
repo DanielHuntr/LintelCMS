@@ -1,6 +1,14 @@
 import { type ChildProcess, execFileSync, spawn } from "node:child_process";
 import { createServer, type Server } from "node:http";
-import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+  readFileSync,
+} from "node:fs";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -413,6 +421,56 @@ describe.skipIf(!hasPhp)("the PHP companion", { timeout: 60_000 }, () => {
     expect(orders).toHaveLength(1);
     expect(orders[0]?.matches).toBe(true);
     expect(orders[0]?.totalAmount).toBe(845);
+  });
+
+  it("records a payment that arrives days later, as bank debits do", async () => {
+    writePrivate("catalogue.json", signEnvelope(SECRET, catalogue(10)));
+    const started = (await (await postJson("checkout", basket(1))).json()) as { holdId: string };
+    const deliver = (id: string, type: string, status: string) => {
+      const payload = JSON.stringify({
+        id,
+        type,
+        data: {
+          object: {
+            id: "cs_delayed",
+            payment_status: status,
+            amount_total: 845,
+            currency: "gbp",
+            payment_intent: "pi_delayed",
+            metadata: { lintel_hold: started.holdId },
+          },
+        },
+      });
+      const time = Math.floor(Date.now() / 1000);
+      return fetch(`${base}?action=stripe-webhook`, {
+        method: "POST",
+        headers: {
+          "stripe-signature": `t=${time},v1=${hmacHex(STRIPE_WEBHOOK_SECRET, `${time}.${payload}`)}`,
+          "content-type": "application/json",
+        },
+        body: payload,
+      });
+    };
+    const queue = () => readdirSync(join(folder, "lintel-private", "data", "queue", "orders"));
+
+    await deliver("evt_delayed_1", "checkout.session.completed", "unpaid");
+    expect(queue()).not.toContain(`${started.holdId}.json`);
+
+    // Three days on, with another shopper's checkout having tidied the holds since.
+    const holdsFile = join(folder, "lintel-private", "data", "holds.json");
+    const holds = JSON.parse(readFileSync(holdsFile, "utf8")) as Record<
+      string,
+      { expiresAt: number }
+    >;
+    const hold = holds[started.holdId];
+    if (!hold) throw new Error("The hold wasn't kept.");
+    hold.expiresAt = Math.floor(Date.now() / 1000) - 3 * 86_400;
+    writeFileSync(holdsFile, JSON.stringify(holds));
+    await postJson("checkout", basket(1));
+
+    const paid = await deliver("evt_delayed_2", "checkout.session.async_payment_succeeded", "paid");
+    expect(paid.status).toBe(200);
+    expect(queue()).toContain(`${started.holdId}.json`);
   });
 
   it("checks Mollie's message by asking Mollie about the payment", async () => {

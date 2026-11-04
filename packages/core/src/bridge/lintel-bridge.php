@@ -31,6 +31,8 @@ const LINTEL_FASTEST_HUMAN_SECONDS = 3;
 const LINTEL_TOKEN_LIFETIME_SECONDS = 86400;
 const LINTEL_SIGNED_REQUEST_WINDOW_SECONDS = 300;
 const LINTEL_HOLD_SECONDS = 2100;
+/** How long a hold's details stay after it ends, because a bank payment can take weeks. */
+const LINTEL_HOLD_KEPT_SECONDS = 2592000;
 const LINTEL_SUBMISSIONS_PER_MINUTE = 10;
 const LINTEL_MAX_FIELD_LENGTH = 10000;
 /** Currencies without minor units, as Mollie writes amounts. */
@@ -949,7 +951,7 @@ function lintel_start_checkout(array $basket): array
         $path = lintel_data_path('holds.json');
         $now = time();
         $holds = array_filter(lintel_read_json($path, []), function ($hold) use ($now) {
-            return $hold['expiresAt'] > $now - 86400;
+            return $hold['expiresAt'] > $now - LINTEL_HOLD_KEPT_SECONDS;
         });
         $wanted = [];
         foreach ($quote['lines'] as $line) {
@@ -1068,7 +1070,9 @@ function lintel_stripe_webhook(string $payload, string $header): array
         throw new LintelProblem(400, 'This request isn\'t signed by Stripe with this shop\'s signing secret.');
     }
     $event = json_decode($payload, true);
-    if (!is_array($event) || ($event['type'] ?? '') !== 'checkout.session.completed') {
+    // A bank debit or transfer is unpaid when the session completes, and paid days later.
+    $paidEvents = ['checkout.session.completed', 'checkout.session.async_payment_succeeded'];
+    if (!is_array($event) || !in_array($event['type'] ?? '', $paidEvents, true)) {
         return ['received' => true];
     }
     $session = (array) ($event['data']['object'] ?? []);

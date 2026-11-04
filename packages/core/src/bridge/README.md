@@ -41,6 +41,11 @@ signature; Mollie's is checked by fetching the payment back from Mollie. Each pa
 recorded once, and Lintel collects paid orders into Orders through the same
 `placeOrderForPayment` as its own checkout, so stock, emails and `order.paid` follow.
 
+A payment that arrives after its hold ended (a bank debit or transfer can take days) is still
+recorded: a hold stops counting against stock after 35 minutes, and its details are kept for 30
+days so the order can be made. Stripe's `…async_payment_succeeded` counts as paid too, so add it
+to the webhook's events.
+
 Stock and discount codes sync each time Lintel publishes or collects: an order counts
 against the published stock until a catalogue made after Lintel collected it arrives.
 Buy-X-get-Y codes and automatic discounts only work in Lintel's own checkout.
