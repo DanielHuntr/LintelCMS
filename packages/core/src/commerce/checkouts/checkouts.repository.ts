@@ -1,7 +1,13 @@
 import { and, asc, eq, lte } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../database/client.js";
 import type { MarketPaymentProviderId } from "../payments/payment-provider.js";
-import { type CheckoutRow, checkoutsTable, type NewCheckoutRow } from "./checkouts.table.js";
+import {
+  type CheckoutRow,
+  checkoutsTable as checkoutsDefinition,
+  type NewCheckoutRow,
+} from "./checkouts.table.js";
+import { insertReturning, updateReturning } from "../../database/dialect/writes.js";
+import { tableFor } from "../../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for checkouts. */
 
@@ -9,7 +15,8 @@ export async function insertCheckout(
   database: DatabaseOrTransaction,
   checkout: NewCheckoutRow,
 ): Promise<CheckoutRow> {
-  const [inserted] = await database.insert(checkoutsTable).values(checkout).returning();
+  const checkoutsTable = tableFor(database, checkoutsDefinition);
+  const [inserted] = await insertReturning(database, checkoutsTable, checkout);
   if (!inserted) throw new Error("Saving the checkout returned nothing");
   return inserted;
 }
@@ -19,6 +26,7 @@ export async function findCheckoutRow(
   tenantId: string,
   checkoutId: string,
 ): Promise<CheckoutRow | undefined> {
+  const checkoutsTable = tableFor(database, checkoutsDefinition);
   const [row] = await database
     .select()
     .from(checkoutsTable)
@@ -36,6 +44,7 @@ export async function lockCheckoutRow(
   tenantId: string,
   checkoutId: string,
 ): Promise<CheckoutRow | undefined> {
+  const checkoutsTable = tableFor(database, checkoutsDefinition);
   const [row] = await database
     .select()
     .from(checkoutsTable)
@@ -49,6 +58,7 @@ export async function findCheckoutRowBySession(
   database: DatabaseOrTransaction,
   sessionId: string,
 ): Promise<CheckoutRow | undefined> {
+  const checkoutsTable = tableFor(database, checkoutsDefinition);
   const [row] = await database
     .select()
     .from(checkoutsTable)
@@ -61,6 +71,7 @@ export async function listOpenCheckoutRowsForCart(
   database: DatabaseOrTransaction,
   cartId: string,
 ): Promise<CheckoutRow[]> {
+  const checkoutsTable = tableFor(database, checkoutsDefinition);
   return database
     .select()
     .from(checkoutsTable)
@@ -73,6 +84,7 @@ export async function listOpenCheckoutIdsForCart(
   database: DatabaseOrTransaction,
   cartId: string,
 ): Promise<string[]> {
+  const checkoutsTable = tableFor(database, checkoutsDefinition);
   const rows = await database
     .select({ id: checkoutsTable.id })
     .from(checkoutsTable)
@@ -86,6 +98,7 @@ export async function listOpenCheckoutRowsForProvider(
   provider: MarketPaymentProviderId,
   limit = 50,
 ): Promise<CheckoutRow[]> {
+  const checkoutsTable = tableFor(database, checkoutsDefinition);
   return database
     .select()
     .from(checkoutsTable)
@@ -98,6 +111,7 @@ export async function listExpiredOpenCheckoutRows(
   database: DatabaseOrTransaction,
   now: Date,
 ): Promise<CheckoutRow[]> {
+  const checkoutsTable = tableFor(database, checkoutsDefinition);
   return database
     .select()
     .from(checkoutsTable)
@@ -110,6 +124,7 @@ export async function updateCheckoutRow(
   checkoutId: string,
   changes: Partial<NewCheckoutRow>,
 ): Promise<void> {
+  const checkoutsTable = tableFor(database, checkoutsDefinition);
   await database.update(checkoutsTable).set(changes).where(eq(checkoutsTable.id, checkoutId));
 }
 
@@ -118,10 +133,13 @@ export async function expireOpenCheckoutRow(
   database: DatabaseOrTransaction,
   checkoutId: string,
 ): Promise<boolean> {
-  const updated = await database
-    .update(checkoutsTable)
-    .set({ status: "expired" })
-    .where(and(eq(checkoutsTable.id, checkoutId), eq(checkoutsTable.status, "open")))
-    .returning({ id: checkoutsTable.id });
+  const checkoutsTable = tableFor(database, checkoutsDefinition);
+  const updated = await updateReturning(
+    database,
+    checkoutsTable,
+    { status: "expired" },
+    and(eq(checkoutsTable.id, checkoutId), eq(checkoutsTable.status, "open")),
+    { id: checkoutsTable.id },
+  );
   return updated.length > 0;
 }

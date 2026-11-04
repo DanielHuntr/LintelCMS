@@ -20,9 +20,6 @@
     "returning": 1,
     "upsert": 1
   },
-  "commerce/checkouts/checkouts.repository.ts": {
-    "returning": 2
-  },
   "commerce/customers/customers.repository.ts": {
     "filter clause": 2,
     "ilike": 2,
