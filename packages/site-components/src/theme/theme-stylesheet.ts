@@ -62,7 +62,7 @@ function colourTokens(theme: SiteTheme, palette: Palette): string[] {
     `--lintel-color-on-brand: ${textColourOn(theme.brandColour)};`,
     // Small labels and numbers: the brand, or the nearest tone that reads on page and panel.
     `--lintel-color-brand-text: ${readableOn(theme.brandColour, palette.surface)};`,
-    `--lintel-color-link: ${readableOn(theme.brandColour, palette.background)};`,
+    `--lintel-color-link: ${readableOn(theme.brandColour, palette.surface)};`,
     `--lintel-color-accent: ${readableOn(theme.accentColour, palette.background)};`,
   ];
 }

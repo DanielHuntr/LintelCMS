@@ -20,7 +20,7 @@ const ink = "light-dark(#141615, #ecebe5)";
 const quiet = "light-dark(#585b57, #a4a7a1)";
 const rule = "light-dark(#d6d4cc, #2d302e)";
 /** The one accent: 5.1:1 on the paper in light mode, 10:1 on it in dark mode. */
-const green = "light-dark(#1f7a4d, #5fcf95)";
+const green = "light-dark(#1d754a, #5fcf95)";
 const onGreen = "light-dark(#ffffff, #0c1410)";
 const mono = "'Space Mono', ui-monospace, monospace";
 
@@ -1132,7 +1132,7 @@ export const relaySite: StarterSite = {
   suitedTo: "Apps, software products and online services",
   coverIllustration: "relay-cover",
   theme: {
-    brandColour: "#1f7a4d",
+    brandColour: "#1d754a",
     accentColour: "#141615",
     fontPairing: "system",
     cornerStyle: "round",

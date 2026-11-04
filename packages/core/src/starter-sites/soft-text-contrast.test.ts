@@ -43,6 +43,12 @@ describe("the theme's soft text", () => {
     },
   );
 
+  it("leaves Relay's green readable on its darkest panel", () => {
+    expect(contrastRatio("#1d754a", "#e9e8e1")).toBeGreaterThan(AA);
+    const relay = JSON.stringify(starterSites.find((site) => site.id === "relay"));
+    expect(relay).toContain("light-dark(#1d754a, #5fcf95)");
+  });
+
   it("finds the tinted papers it is meant to check", () => {
     const papers = starterSites.flatMap(papersOf).map((paper) => paper.light);
     expect(papers).toContain("#f4efe6");

@@ -241,7 +241,11 @@ export function columnsFooter(copy: { about: string; columns: FooterColumn[] }):
                   },
                   ...("menuHandle" in column
                     ? [siteMenu(column.heading, column.menuHandle)]
-                    : column.links.map((item) => link(item.label, item.href))),
+                    : column.links.map((item) => ({
+                        ...link(item.label, item.href),
+                        // The band's own light words: the link colour is for the page.
+                        styles: { base: { color: "inherit" } },
+                      }))),
                 ],
                 2,
               ),

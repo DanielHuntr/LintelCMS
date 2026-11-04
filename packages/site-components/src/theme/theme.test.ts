@@ -59,6 +59,10 @@ describe("theme colours", () => {
         expect(contrastRatio(text, surface), `${brand} ${scheme}`).toBeGreaterThanOrEqual(4.5);
       }
     }
+    // Links get the same tone: they sit on panels as well.
+    const dark = themeStylesheet({ ...defaultTheme, brandColour: "#b1623f", colourScheme: "dark" });
+    const link = /--lintel-color-link: (#[0-9a-f]{6});/.exec(dark)?.[1] ?? "";
+    expect(contrastRatio(link, "#1c1c1e")).toBeGreaterThanOrEqual(4.5);
     // A brand that already reads well stays exactly as chosen.
     expect(tones("#14213d", "light").text).toBe("#14213d");
   });
