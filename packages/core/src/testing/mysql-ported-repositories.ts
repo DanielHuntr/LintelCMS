@@ -37,4 +37,7 @@ export const mysqlPortedRepositories = [
   "workflows/notifications/notifications.repository.ts",
   "workflows/workflow-people.repository.ts",
   "workflows/workflows.repository.ts",
+  "media/media-bin.repository.ts",
+  "users/authorship.repository.ts",
+  "backups/backups.repository.ts",
 ];

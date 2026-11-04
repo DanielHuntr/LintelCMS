@@ -1,9 +1,14 @@
 import { eq } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { entriesTable, revisionsTable } from "../entries/entries.table.js";
-import { globalValuesTable } from "../globals/globals.table.js";
-import { assetsTable } from "../media/media.table.js";
-import { webhooksTable } from "../webhooks/webhooks.table.js";
+import {
+  entriesTable as entriesDefinition,
+  revisionsTable as revisionsDefinition,
+} from "../entries/entries.table.js";
+import { globalValuesTable as globalValuesDefinition } from "../globals/globals.table.js";
+import { assetsTable as assetsDefinition } from "../media/media.table.js";
+import { webhooksTable as webhooksDefinition } from "../webhooks/webhooks.table.js";
+import { updateReturning } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /**
  * Moves everything someone made to another person, before their account is removed, so
@@ -15,11 +20,18 @@ export async function reassignAuthorship(
   fromUserId: string,
   toUserId: string,
 ): Promise<number> {
-  const entries = await database
-    .update(entriesTable)
-    .set({ createdBy: toUserId })
-    .where(eq(entriesTable.createdBy, fromUserId))
-    .returning({ id: entriesTable.id });
+  const assetsTable = tableFor(database, assetsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
+  const globalValuesTable = tableFor(database, globalValuesDefinition);
+  const revisionsTable = tableFor(database, revisionsDefinition);
+  const webhooksTable = tableFor(database, webhooksDefinition);
+  const entries = await updateReturning(
+    database,
+    entriesTable,
+    { createdBy: toUserId },
+    eq(entriesTable.createdBy, fromUserId),
+    { id: entriesTable.id },
+  );
   await database
     .update(entriesTable)
     .set({ updatedBy: toUserId })

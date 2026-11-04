@@ -1,12 +1,13 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { sitesTable } from "../sites/sites.table.js";
-import { usersTable } from "../users/users.table.js";
+import { sitesTable as sitesDefinition } from "../sites/sites.table.js";
+import { usersTable as usersDefinition } from "../users/users.table.js";
 import {
   type BinnedAssetRow,
-  binnedAssetsTable,
+  binnedAssetsTable as binnedAssetsDefinition,
   type NewBinnedAssetRow,
 } from "./media-bin.table.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for deleted files. Rules live in media-bin.service.ts. */
 
@@ -14,6 +15,7 @@ export async function insertBinnedAsset(
   database: DatabaseOrTransaction,
   binned: NewBinnedAssetRow,
 ): Promise<void> {
+  const binnedAssetsTable = tableFor(database, binnedAssetsDefinition);
   await database.insert(binnedAssetsTable).values(binned);
 }
 
@@ -22,6 +24,7 @@ export async function findBinnedAsset(
   tenantId: string,
   assetId: string,
 ): Promise<BinnedAssetRow | undefined> {
+  const binnedAssetsTable = tableFor(database, binnedAssetsDefinition);
   const [row] = await database
     .select()
     .from(binnedAssetsTable)
@@ -35,6 +38,8 @@ export async function listBinnedAssetRows(
   tenantId: string,
   limit: number,
 ): Promise<{ binned: BinnedAssetRow; deletedByName: string | null }[]> {
+  const binnedAssetsTable = tableFor(database, binnedAssetsDefinition);
+  const usersTable = tableFor(database, usersDefinition);
   return database
     .select({ binned: binnedAssetsTable, deletedByName: usersTable.name })
     .from(binnedAssetsTable)
@@ -48,6 +53,7 @@ export async function listAllBinnedAssets(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<BinnedAssetRow[]> {
+  const binnedAssetsTable = tableFor(database, binnedAssetsDefinition);
   return database.select().from(binnedAssetsTable).where(eq(binnedAssetsTable.tenantId, tenantId));
 }
 
@@ -56,6 +62,7 @@ export async function deleteBinnedAssetRow(
   tenantId: string,
   assetId: string,
 ): Promise<void> {
+  const binnedAssetsTable = tableFor(database, binnedAssetsDefinition);
   await database
     .delete(binnedAssetsTable)
     .where(and(eq(binnedAssetsTable.tenantId, tenantId), eq(binnedAssetsTable.id, assetId)));
@@ -65,6 +72,7 @@ export async function userExists(
   database: DatabaseOrTransaction,
   userId: string,
 ): Promise<boolean> {
+  const usersTable = tableFor(database, usersDefinition);
   const [row] = await database
     .select({ id: usersTable.id })
     .from(usersTable)
@@ -76,6 +84,7 @@ export async function siteExists(
   database: DatabaseOrTransaction,
   siteId: string,
 ): Promise<boolean> {
+  const sitesTable = tableFor(database, sitesDefinition);
   const [row] = await database
     .select({ id: sitesTable.id })
     .from(sitesTable)

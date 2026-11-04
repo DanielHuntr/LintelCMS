@@ -1,7 +1,13 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { type BackupRow, backupsTable, type NewBackupRow } from "./backups.table.js";
+import {
+  type BackupRow,
+  backupsTable as backupsDefinition,
+  type NewBackupRow,
+} from "./backups.table.js";
 import type { BackupTrigger } from "./backups.schema.js";
+import { insertReturning } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for the list of backups, nothing else. */
 
@@ -9,6 +15,7 @@ export async function listBackupRows(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<BackupRow[]> {
+  const backupsTable = tableFor(database, backupsDefinition);
   return database
     .select()
     .from(backupsTable)
@@ -21,6 +28,7 @@ export async function findBackupRow(
   tenantId: string,
   backupId: string,
 ): Promise<BackupRow | undefined> {
+  const backupsTable = tableFor(database, backupsDefinition);
   const [row] = await database
     .select()
     .from(backupsTable)
@@ -33,7 +41,8 @@ export async function insertBackupRow(
   database: DatabaseOrTransaction,
   backup: NewBackupRow,
 ): Promise<BackupRow> {
-  const [row] = await database.insert(backupsTable).values(backup).returning();
+  const backupsTable = tableFor(database, backupsDefinition);
+  const [row] = await insertReturning(database, backupsTable, backup);
   if (!row) {
     throw new Error("The backup could not be recorded.");
   }
@@ -45,6 +54,7 @@ export async function updateBackupRow(
   backupId: string,
   changes: Partial<Omit<NewBackupRow, "id" | "tenantId">>,
 ): Promise<void> {
+  const backupsTable = tableFor(database, backupsDefinition);
   await database
     .update(backupsTable)
     .set({ ...changes, updatedAt: new Date() })
@@ -55,6 +65,7 @@ export async function deleteBackupRow(
   database: DatabaseOrTransaction,
   backupId: string,
 ): Promise<void> {
+  const backupsTable = tableFor(database, backupsDefinition);
   await database.delete(backupsTable).where(eq(backupsTable.id, backupId));
 }
 
@@ -64,6 +75,7 @@ export async function listCompleteBackupsBy(
   tenantId: string,
   trigger: BackupTrigger,
 ): Promise<BackupRow[]> {
+  const backupsTable = tableFor(database, backupsDefinition);
   return database
     .select()
     .from(backupsTable)
@@ -83,6 +95,7 @@ export async function failRunningBackups(
   tenantId: string,
   reason: string,
 ): Promise<void> {
+  const backupsTable = tableFor(database, backupsDefinition);
   await database
     .update(backupsTable)
     .set({ status: "failed", failureReason: reason, updatedAt: new Date() })

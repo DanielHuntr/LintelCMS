@@ -10,9 +10,6 @@
     "returning": 1,
     "upsert": 1
   },
-  "backups/backups.repository.ts": {
-    "returning": 1
-  },
   "backups/database-snapshot.repository.ts": {
     "cast with ::": 4,
     "jsonb function": 3,
@@ -232,9 +229,6 @@
   },
   "starter-sites/starter-sites.repository.ts": {
     "json field access": 1
-  },
-  "users/authorship.repository.ts": {
-    "returning": 1
   },
   "wordpress-import/wordpress-import.repository.ts": {
     "cast with ::": 1,
