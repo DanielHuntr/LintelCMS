@@ -116,11 +116,6 @@
   "health/health.repository.ts": {
     "postgres catalogue": 1
   },
-  "importers/site-import.repository.ts": {
-    "cast with ::": 1,
-    "returning": 2,
-    "upsert": 1
-  },
   "media/media.repository.ts": {
     "ilike": 7,
     "returning": 1
@@ -155,10 +150,5 @@
   "setup/setup.repository.ts": {
     "advisory lock": 1,
     "postgres function": 1
-  },
-  "wordpress-import/wordpress-import.repository.ts": {
-    "cast with ::": 1,
-    "returning": 3,
-    "upsert": 1
   }
 }

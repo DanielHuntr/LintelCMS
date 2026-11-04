@@ -1,23 +1,29 @@
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { count, and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { entriesTable } from "../entries/entries.table.js";
-import { taxonomiesTable, termsTable } from "../taxonomies/taxonomies.table.js";
+import { entriesTable as entriesDefinition } from "../entries/entries.table.js";
+import {
+  taxonomiesTable as taxonomiesDefinition,
+  termsTable as termsDefinition,
+} from "../taxonomies/taxonomies.table.js";
 import {
   type NewWordPressImportItemRow,
   type WordPressImportItemRow,
-  wordpressImportItemsTable,
+  wordpressImportItemsTable as wordpressImportItemsDefinition,
   type WordPressImportRow,
-  wordpressImportsTable,
+  wordpressImportsTable as wordpressImportsDefinition,
 } from "./wordpress-import.table.js";
 import type { WordPressImportStatus } from "./wordpress-import.schema.js";
+import { insertIfNew, insertReturning, updateReturning } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for WordPress imports, nothing else. */
 
 export async function insertImport(
   database: DatabaseOrTransaction,
-  values: typeof wordpressImportsTable.$inferInsert,
+  values: typeof wordpressImportsDefinition.$inferInsert,
 ): Promise<WordPressImportRow> {
-  const [row] = await database.insert(wordpressImportsTable).values(values).returning();
+  const wordpressImportsTable = tableFor(database, wordpressImportsDefinition);
+  const [row] = await insertReturning(database, wordpressImportsTable, values);
   if (!row) {
     throw new Error("The import could not be recorded.");
   }
@@ -29,6 +35,7 @@ export async function findImport(
   tenantId: string,
   importId: string,
 ): Promise<WordPressImportRow | undefined> {
+  const wordpressImportsTable = tableFor(database, wordpressImportsDefinition);
   const [row] = await database
     .select()
     .from(wordpressImportsTable)
@@ -40,6 +47,7 @@ export async function findImport(
 }
 
 export function listImports(database: DatabaseOrTransaction, tenantId: string) {
+  const wordpressImportsTable = tableFor(database, wordpressImportsDefinition);
   return database
     .select()
     .from(wordpressImportsTable)
@@ -50,8 +58,9 @@ export function listImports(database: DatabaseOrTransaction, tenantId: string) {
 export async function updateImport(
   database: DatabaseOrTransaction,
   importId: string,
-  changes: Partial<Omit<typeof wordpressImportsTable.$inferInsert, "id" | "tenantId">>,
+  changes: Partial<Omit<typeof wordpressImportsDefinition.$inferInsert, "id" | "tenantId">>,
 ): Promise<void> {
+  const wordpressImportsTable = tableFor(database, wordpressImportsDefinition);
   await database
     .update(wordpressImportsTable)
     .set({ ...changes, updatedAt: new Date() })
@@ -66,19 +75,17 @@ export async function claimImportToRun(
   database: DatabaseOrTransaction,
   importId: string,
 ): Promise<boolean> {
-  const claimed = await database
-    .update(wordpressImportsTable)
-    .set({ status: "running", lastError: null, updatedAt: new Date() })
-    .where(
-      and(
-        eq(wordpressImportsTable.id, importId),
-        inArray(wordpressImportsTable.status, [
-          "ready",
-          "paused",
-        ] satisfies WordPressImportStatus[]),
-      ),
-    )
-    .returning({ id: wordpressImportsTable.id });
+  const wordpressImportsTable = tableFor(database, wordpressImportsDefinition);
+  const claimed = await updateReturning(
+    database,
+    wordpressImportsTable,
+    { status: "running", lastError: null, updatedAt: new Date() },
+    and(
+      eq(wordpressImportsTable.id, importId),
+      inArray(wordpressImportsTable.status, ["ready", "paused"] satisfies WordPressImportStatus[]),
+    ),
+    { id: wordpressImportsTable.id },
+  );
   return claimed.length > 0;
 }
 
@@ -87,6 +94,7 @@ export async function pauseRunningImports(
   tenantId: string,
   reason: string,
 ): Promise<void> {
+  const wordpressImportsTable = tableFor(database, wordpressImportsDefinition);
   await database
     .update(wordpressImportsTable)
     .set({ status: "paused", lastError: reason, updatedAt: new Date() })
@@ -99,6 +107,7 @@ export async function pauseRunningImports(
 }
 
 export async function deleteImport(database: DatabaseOrTransaction, importId: string) {
+  const wordpressImportsTable = tableFor(database, wordpressImportsDefinition);
   await database.delete(wordpressImportsTable).where(eq(wordpressImportsTable.id, importId));
 }
 
@@ -106,6 +115,7 @@ export async function insertItems(
   database: DatabaseOrTransaction,
   items: NewWordPressImportItemRow[],
 ): Promise<void> {
+  const wordpressImportItemsTable = tableFor(database, wordpressImportItemsDefinition);
   for (let start = 0; start < items.length; start += 500) {
     await database.insert(wordpressImportItemsTable).values(items.slice(start, start + 500));
   }
@@ -115,10 +125,12 @@ export async function insertItemIfMissing(
   database: DatabaseOrTransaction,
   item: NewWordPressImportItemRow,
 ): Promise<void> {
-  await database.insert(wordpressImportItemsTable).values(item).onConflictDoNothing();
+  const wordpressImportItemsTable = tableFor(database, wordpressImportItemsDefinition);
+  await insertIfNew(database, wordpressImportItemsTable, item);
 }
 
 export function listItems(database: DatabaseOrTransaction, importId: string) {
+  const wordpressImportItemsTable = tableFor(database, wordpressImportItemsDefinition);
   return database
     .select()
     .from(wordpressImportItemsTable)
@@ -131,6 +143,7 @@ export function listPendingItems(
   importId: string,
   limit: number,
 ): Promise<WordPressImportItemRow[]> {
+  const wordpressImportItemsTable = tableFor(database, wordpressImportItemsDefinition);
   return database
     .select()
     .from(wordpressImportItemsTable)
@@ -149,6 +162,7 @@ export async function finishItem(
   itemId: string,
   result: Pick<WordPressImportItemRow, "status" | "targetId" | "message" | "details">,
 ): Promise<void> {
+  const wordpressImportItemsTable = tableFor(database, wordpressImportItemsDefinition);
   await database
     .update(wordpressImportItemsTable)
     .set({ ...result, updatedAt: new Date() })
@@ -160,8 +174,9 @@ export async function countFinishedItems(
   database: DatabaseOrTransaction,
   importId: string,
 ): Promise<number> {
+  const wordpressImportItemsTable = tableFor(database, wordpressImportItemsDefinition);
   const [row] = await database
-    .select({ count: sql<number>`count(*)::int` })
+    .select({ count: count() })
     .from(wordpressImportItemsTable)
     .where(
       and(
@@ -179,6 +194,7 @@ export async function findTargets(
   importId: string,
   kinds: string[],
 ): Promise<Map<string, string>> {
+  const wordpressImportItemsTable = tableFor(database, wordpressImportItemsDefinition);
   const rows = await database
     .select({
       kind: wordpressImportItemsTable.kind,
@@ -209,6 +225,9 @@ export async function findEntryFromEarlierImport(
   siteAddress: string,
   item: { kind: string; sourceId: string },
 ): Promise<string | undefined> {
+  const entriesTable = tableFor(database, entriesDefinition);
+  const wordpressImportItemsTable = tableFor(database, wordpressImportItemsDefinition);
+  const wordpressImportsTable = tableFor(database, wordpressImportsDefinition);
   const [row] = await database
     .select({ entryId: entriesTable.id })
     .from(wordpressImportItemsTable)
@@ -236,6 +255,8 @@ export async function findTermInTaxonomy(
   taxonomyHandle: string,
   slug: string,
 ) {
+  const taxonomiesTable = tableFor(database, taxonomiesDefinition);
+  const termsTable = tableFor(database, termsDefinition);
   const [row] = await database
     .select({ id: termsTable.id, taxonomyId: taxonomiesTable.id })
     .from(taxonomiesTable)
@@ -250,9 +271,10 @@ export async function findTermInTaxonomy(
 
 export async function insertTerm(
   database: DatabaseOrTransaction,
-  term: typeof termsTable.$inferInsert,
+  term: typeof termsDefinition.$inferInsert,
 ): Promise<string> {
-  const [row] = await database.insert(termsTable).values(term).returning({ id: termsTable.id });
+  const termsTable = tableFor(database, termsDefinition);
+  const [row] = await insertReturning(database, termsTable, term, { id: termsTable.id });
   if (!row) {
     throw new Error("The term could not be saved.");
   }
