@@ -293,7 +293,8 @@ function applyChange(root: PageNode, change: PageChange): PageNode {
     case "move":
       return moveNode(root, change);
     case "remove":
-      return change.node === root.id ? root : removeNode(root, change.node);
+      if (change.node === root.id || !findNode(root, change.node)) return root;
+      return removeNode(root, change.node);
   }
 }
 

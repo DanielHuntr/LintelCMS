@@ -273,7 +273,7 @@ describe("merging words", () => {
   });
 
   it("gives the later edit when both changed the same words", () => {
-    expect(mergeText("Hello", "Hello there", "Hello you")).toBe("Hello there");
+    expect(mergeText("Hello world", "Hello there", "Hello you")).toBe("Hello there");
   });
 
   it("is harmless when applied twice", () => {
