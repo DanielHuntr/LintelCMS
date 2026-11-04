@@ -132,3 +132,23 @@ Not checked in a browser:
 - UX-333, UX-334, UX-285 and UX-328 before the fix in the running admin, apart from UX-328's sample name on the running website: reproduced by failing tests.
 - The code box in dark mode.
 - A real Newsletter connection, a real app server (the test apps framed the local website), Firefox and WebKit.
+
+## Follow-up: UX-338, UX-339 and UX-335's Export and Delete data
+
+Added after the above, which stays as it was. This section gives the newer state of "Still open, found here", and of the UX-335 note.
+
+| ID            | Severity | Status  | Outcome                                                                                                  |
+| ------------- | -------- | ------- | -------------------------------------------------------------------------------------------------------- |
+| LINTEL-UX-338 | P3       | Fixed   | The details of an add-on with no code say so, and no longer say it runs inside the site with full access |
+| LINTEL-UX-339 | P3       | Fixed   | A 404 on a site with no home page uses the automatic header and footer                                   |
+| LINTEL-UX-335 | P3       | Changed | Tables named only under `personalData` are now in Export and Delete data, wherever declared tables are   |
+
+- **UX-338:** `GET /addons` gives `dataOnly`, and the dialog shows "It has no code of its own: it only says what data it keeps." An add-on with code keeps the warning.
+- **UX-339:** `findHome` in `site-pages.service.ts` says whether the site has anything to show at "/", and both the home page and a 404 use it. A site led by a blog list has a home, so it keeps its own navigation and footer on a 404.
+- **UX-335:** Daniel's decision through the coordinator: an owner would expect these tables to go with the others. `findOwnTables` now includes them, so the details, Export and Delete data share one list. Lintel's own tables are still left out, whichever way they are named.
+
+Two existing tests had to change, as they listed exactly what is exported and emptied, and the add-on in them now has one more table. What they check still holds, so they were extended, not loosened: they now expect that table, with a row in it, and that it is emptied. The test that Lintel's own tables are never exported or emptied was kept, and its add-on now names `shop_customers` under `personalData` too.
+
+**Left as it was:** backups go by `listAddonTableNames`, which reads `tables` and `database.tables`, so a table named only under `personalData` is exported and emptied but not backed up. As with a declared table, Delete data trusts what an add-on names, so it could name another add-on's table.
+
+**Tests:** core `src/website`, `src/production`, `src/site-sections`, `src/addons` and `postgres-only-code`: 19 files, 140 passed. Admin `src/addons`: 3 files, 18 passed. ESLint and format clean on the changed files; `pnpm typecheck` 29 of 29. In the first of those runs, "are wired up in one place only" in `website-routes.test.ts` failed once (139 passed). The error wasn't captured, and it passed alone, in its folder twice, and in the same run again. The test reads every source file inside the default 5 seconds, and the machine was busy, so a timeout is likely but unproven. It now has 30 seconds. **Browser:** UX-338 and UX-339 at desktop and 390px, light and dark, on the dev servers. Screenshots are `ux338-*` and `ux339-*`. Export and Delete data of these tables: tests only.

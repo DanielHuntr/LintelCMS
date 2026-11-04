@@ -1099,3 +1099,13 @@ Fixed on `fix/open-p3`; the details are in `FIX-LOG-open-p3.md`. Earlier rows ab
 | LINTEL-UX-339   | P3       | Open   | On a site with no home page, a 404 still shows the template's navigation and footer                     |
 
 LINTEL-UX-326 was fixed in `3936dee3`: its "Open" row is older than the "Fixed" row below it.
+
+## Remaining small items, follow-up (4 November 2026)
+
+On `fix/open-p3`; see the follow-up in `FIX-LOG-open-p3.md`. This table gives the newer state of the rows above.
+
+| ID            | Severity | Status | Summary                                                                                         |
+| ------------- | -------- | ------ | ----------------------------------------------------------------------------------------------- |
+| LINTEL-UX-338 | P3       | Fixed  | The details of an add-on with no code said it runs inside the site with full access             |
+| LINTEL-UX-339 | P3       | Fixed  | On a site with no home page, a 404 showed the template's navigation and footer                  |
+| LINTEL-UX-335 | P3       | Fixed  | As well as being labelled, tables named only under `personalData` are in Export and Delete data |
