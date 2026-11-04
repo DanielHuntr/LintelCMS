@@ -43,4 +43,7 @@ export const mysqlPortedRepositories = [
   "commerce/payments/stripe-events.repository.ts",
   "commerce/payments/payment-accounts.repository.ts",
   "commerce/shipping/shipping.repository.ts",
+  "site-effects/site-effects.repository.ts",
+  "site-sections/site-sections.repository.ts",
+  "cookie-notice/cookie-notice.repository.ts",
 ];

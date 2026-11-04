@@ -92,9 +92,6 @@
     "jsonb function": 1,
     "nulls ordering": 2
   },
-  "cookie-notice/cookie-notice.repository.ts": {
-    "json field access": 2
-  },
   "dashboard/dashboard-widgets.repository.ts": {
     "filter clause": 2,
     "json field access": 1
