@@ -40,4 +40,7 @@ export const mysqlPortedRepositories = [
   "media/media-bin.repository.ts",
   "users/authorship.repository.ts",
   "backups/backups.repository.ts",
+  "commerce/payments/stripe-events.repository.ts",
+  "commerce/payments/payment-accounts.repository.ts",
+  "commerce/shipping/shipping.repository.ts",
 ];

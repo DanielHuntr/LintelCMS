@@ -58,14 +58,6 @@
     "filter clause": 2,
     "returning": 2
   },
-  "commerce/payments/payment-accounts.repository.ts": {
-    "returning": 1,
-    "upsert": 2
-  },
-  "commerce/payments/stripe-events.repository.ts": {
-    "returning": 1,
-    "upsert": 1
-  },
   "commerce/product-collections/product-collection-rules.ts": {
     "cast with ::": 1,
     "ilike in sql": 1,
@@ -79,9 +71,6 @@
   "commerce/products/products.repository.ts": {
     "ilike": 2,
     "returning": 3
-  },
-  "commerce/shipping/shipping.repository.ts": {
-    "returning": 5
   },
   "commerce/shopify-import/shopify-import.repository.ts": {
     "returning": 4,
