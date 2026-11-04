@@ -11,6 +11,7 @@ import {
   type DatabaseTarget,
   type DescribedDatabaseError,
   describeDatabaseError,
+  isMysqlUrl,
   targetFromUrl,
 } from "./database-errors.js";
 import {
@@ -18,6 +19,11 @@ import {
   checkPostgresConnection,
   connectToPostgres,
 } from "./postgres-database.js";
+import {
+  buildMysqlUrl,
+  openMysqlDatabase,
+  WrongDatabaseCollationError,
+} from "./dialect/mysql-database.js";
 
 /**
  * How the database in use was picked:
@@ -110,11 +116,10 @@ export async function openStartupDatabase(
   options: StartupDatabaseOptions,
 ): Promise<ActiveDatabase> {
   if (options.databaseUrl) {
-    const opened = await openPostgresChecked(
-      options.databaseUrl,
-      targetFromUrl(options.databaseUrl),
-      "environment",
-    );
+    const target = targetFromUrl(options.databaseUrl);
+    const opened = isMysqlUrl(options.databaseUrl)
+      ? await openMysqlChecked(options.databaseUrl, target, "environment")
+      : await openPostgresChecked(options.databaseUrl, target, "environment");
     return new ActiveDatabase(opened, "environment");
   }
 
@@ -134,11 +139,19 @@ export function openChosenDatabase(
   if (choice.kind === "built-in") {
     return openMigratedBuiltInDatabase(lintelFolder);
   }
+  if (choice.kind === "mysql") {
+    return openMysqlChecked(buildMysqlUrl(choice), choice, source);
+  }
   return openPostgresChecked(buildPostgresUrl(choice), choice, source);
 }
 
 /** One line for the terminal saying which database is in use. */
 export function describeActiveDatabase(activeDatabase: ActiveDatabase): string {
+  if (activeDatabase.kind === "mysql") {
+    return activeDatabase.chosenBy === "environment"
+      ? "Using the MySQL or MariaDB database in DATABASE_URL."
+      : "Using the MySQL or MariaDB database chosen during setup (saved in .lintel/config.json).";
+  }
   if (activeDatabase.chosenBy === "environment") {
     return "Using the Postgres database in DATABASE_URL.";
   }
@@ -156,6 +169,27 @@ async function openMigratedBuiltInDatabase(lintelFolder: LintelFolder): Promise<
   } catch (error) {
     await opened.close();
     throw error;
+  }
+}
+
+async function openMysqlChecked(
+  databaseUrl: string,
+  target: DatabaseTarget,
+  source: DatabaseSettingsSource,
+): Promise<OpenedDatabase> {
+  const mysqlTarget: DatabaseTarget = { ...target, kind: "mysql" };
+  let opened: OpenedDatabase | undefined;
+  try {
+    opened = await openMysqlDatabase(databaseUrl);
+    await opened.applyMigrations();
+    return opened;
+  } catch (error) {
+    await opened?.close();
+    if (error instanceof WrongDatabaseCollationError) {
+      throw new DatabaseConnectionError({ problem: "invalid", message: error.message });
+    }
+    const described = describeDatabaseError(error, mysqlTarget, source);
+    throw described ? new DatabaseConnectionError(described) : error;
   }
 }
 

@@ -43,7 +43,7 @@ RUN pnpm turbo run build --filter "@lintel/core..." --filter "@lintel/admin..."
 # workspace packages keeps pnpm from looking for Lintel's own packages on npm.
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm --config.link-workspace-packages=true --filter @lintel/core deploy --prod --legacy /out
-RUN cp -r packages/core/dist packages/core/migrations /out/ \
+RUN cp -r packages/core/dist packages/core/migrations packages/core/migrations-mysql /out/ \
  && cp -r packages/admin/dist /out/admin
 
 # ---- Run: Node and the built files; Lintel runs as the ordinary `node` user ----

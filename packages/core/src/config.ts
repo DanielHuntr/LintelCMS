@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { DATABASE_URL_ADVICE } from "./database/database-errors.js";
+import { DATABASE_URL_ADVICE, isMysqlUrl } from "./database/database-errors.js";
 import { checkEmailSettings, emailSettings } from "./email/email.config.js";
 import { checkStorageSettings, storageSettings } from "./media/storage.config.js";
 import { updateSettings } from "./updates/updates.config.js";
@@ -26,7 +26,7 @@ const coreSettingsSchema = z.object({
     (value) => (value === "" ? undefined : value),
     z
       .string()
-      .refine(isPostgresUrl, {
+      .refine((url) => isPostgresUrl(url) || isMysqlUrl(url), {
         error: `This isn't a valid Postgres address. ${DATABASE_URL_ADVICE}`,
       })
       .optional(),

@@ -3,10 +3,10 @@ import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import type * as schema from "./schema.js";
 
 /**
- * The database every repository works with. Lintel runs on two drivers: the built-in
- * database (PGlite, Postgres compiled to WebAssembly) and a real Postgres server.
- * Both are Drizzle `PgDatabase`s underneath, so repositories are written once against
- * this shared type and never know which one they are talking to.
+ * The database every repository works with: the built-in database (PGlite, Postgres
+ * compiled to WebAssembly), a real Postgres server, or MySQL or MariaDB. Repositories are
+ * written once against the Postgres type and never know which one they are talking to; see
+ * src/database/dialect/README.md for how MySQL fits behind it.
  */
 export type Database = PgDatabase<PgQueryResultHKT, typeof schema>;
 
@@ -19,8 +19,11 @@ export type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
  */
 export type DatabaseOrTransaction = Database | Transaction;
 
-/** "built-in" is PGlite, stored in .lintel/data; "postgres" is a server someone runs. */
-export type DatabaseKind = "built-in" | "postgres";
+/**
+ * "built-in" is PGlite, stored in .lintel/data; "postgres" is a server someone runs, and
+ * "mysql" is a MySQL or MariaDB server.
+ */
+export type DatabaseKind = "built-in" | "postgres" | "mysql";
 
 /** An open database, with what it takes to bring its tables up to date and to close it. */
 export interface OpenedDatabase {
@@ -37,6 +40,8 @@ export interface OpenedDatabase {
 export interface PluginMigrations {
   pluginId: string;
   migrationsFolder: string;
+  /** Its migrations for MySQL and MariaDB, if it has any. */
+  mysqlMigrationsFolder?: string;
 }
 
 /**
