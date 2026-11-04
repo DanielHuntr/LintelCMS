@@ -30,7 +30,7 @@ a { color: inherit; }
 `;
 
 function page(title: string, body: string): string {
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>${escapeHtml(title)}</title><style>${PAGE_STYLES}</style></head><body><main>${body}</main></body></html>`;
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>${escapeHtml(title)}</title><style>@view-transition{navigation:auto}${PAGE_STYLES}</style></head><body><main>${body}</main></body></html>`;
 }
 
 /** Stands in for the provider's payment page, with a way to try both outcomes. */
