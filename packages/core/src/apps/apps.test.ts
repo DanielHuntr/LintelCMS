@@ -8,6 +8,7 @@ import { useTestDatabase } from "../testing/test-database.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
 import { usersTable } from "../users/users.table.js";
+import { queueWebhookEvent } from "../webhooks/webhook-deliveries.service.js";
 import { verifyWebhookSignature } from "../webhooks/webhook-signatures.js";
 import { webhookDeliveriesTable, webhooksTable } from "../webhooks/webhooks.table.js";
 import type { AppManifestInput } from "./app-manifest.schema.js";
@@ -406,6 +407,18 @@ describe("apps", () => {
       expect((await api("GET", "/apps/extensions")).json().apps).toEqual([]);
       expect((await api("POST", `/apps/${app.id}/session-token`)).statusCode).toBe(404);
       expect((await api("DELETE", `/apps/${app.id}`)).statusCode).toBe(404);
+    });
+
+    it("stops telling the app about events while its installer is deactivated", async () => {
+      await install();
+      expect(await queueWebhookEvent(testDatabase.database, "entry.published", {})).toBe(1);
+
+      await testDatabase.database
+        .update(usersTable)
+        .set({ status: "deactivated" })
+        .where(eq(usersTable.email, "admin@example.com"));
+
+      expect(await queueWebhookEvent(testDatabase.database, "entry.published", {})).toBe(0);
     });
 
     it("happens when the installer's account is deleted", async () => {

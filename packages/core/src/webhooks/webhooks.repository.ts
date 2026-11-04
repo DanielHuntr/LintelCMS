@@ -1,5 +1,7 @@
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { appsTable } from "../apps/apps.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
+import { usersTable } from "../users/users.table.js";
 import {
   type NewWebhookRow,
   webhookDeliveriesTable,
@@ -66,6 +68,12 @@ export async function listWebhooksForEvent(
         eq(webhooksTable.tenantId, tenantId),
         eq(webhooksTable.enabled, true),
         sql`${webhooksTable.events} @> ${JSON.stringify([event])}::jsonb`,
+        // An app stops working with its installer's account; so does telling it things.
+        sql`(${webhooksTable.appId} is null or exists (
+          select 1 from ${appsTable} inner join ${usersTable}
+            on ${usersTable.id} = ${appsTable.installedBy}
+          where ${appsTable.id} = ${webhooksTable.appId} and ${usersTable.status} = 'active'
+        ))`,
       ),
     );
 }
