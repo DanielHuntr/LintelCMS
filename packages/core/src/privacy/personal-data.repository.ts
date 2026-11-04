@@ -141,6 +141,8 @@ export async function listMatchingSubmissions(
 ) {
   const conditions = [
     person.email ? eq(formSubmissionsTable.submitterEmail, person.email.toLowerCase()) : undefined,
+    // Only the first email answer is kept in that column; a friend's address is in the answers.
+    person.email ? answersInclude(person.email) : undefined,
     person.name ? answersInclude(person.name) : undefined,
   ].filter((condition): condition is SQL => condition !== undefined);
   return database
@@ -194,6 +196,24 @@ export async function deleteCustomers(
     .where(inArray(customersTable.id, [...ids]))
     .returning({ id: customersTable.id });
   return deleted.length;
+}
+
+/** Customers of these ids with no order left: once their orders lose them, they're all that's left. */
+export async function deleteCustomersWithoutOrders(
+  database: DatabaseOrTransaction,
+  ids: ReadonlyArray<string | null>,
+): Promise<void> {
+  const customerIds = [...new Set(ids.filter((id) => id !== null))];
+  if (customerIds.length === 0) return;
+  await database
+    .delete(customersTable)
+    .where(
+      and(
+        inArray(customersTable.id, customerIds),
+        sql`not exists (select 1 from ${ordersTable} where ${ordersTable.customerId} = ${customersTable.id})`,
+        sql`not exists (select 1 from ${archivedOrdersTable} where ${archivedOrdersTable.customerId} = ${customersTable.id})`,
+      ),
+    );
 }
 
 /** Orders still holding the person's details; ones already anonymised don't match. */
@@ -273,6 +293,7 @@ export async function anonymiseOrders(
       .update(ordersTable)
       .set({
         email: "",
+        customerId: null,
         shippingAddress: anonymisedAddress(order.shippingAddress) ?? order.shippingAddress,
       })
       .where(eq(ordersTable.id, order.id));
@@ -308,7 +329,11 @@ export async function anonymiseArchivedOrders(
   for (const order of orders) {
     await database
       .update(archivedOrdersTable)
-      .set({ email: "", shippingAddress: anonymisedAddress(order.shippingAddress) })
+      .set({
+        email: "",
+        customerId: null,
+        shippingAddress: anonymisedAddress(order.shippingAddress),
+      })
       .where(eq(archivedOrdersTable.id, order.id));
   }
   return orders.length;

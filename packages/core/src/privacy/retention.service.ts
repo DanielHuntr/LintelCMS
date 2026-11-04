@@ -9,6 +9,7 @@ import {
   anonymiseCheckout,
   anonymiseOrders,
   deleteCarts,
+  deleteCustomersWithoutOrders,
   deleteFinishedWorkflowRuns,
   deleteSecurityEvents,
   deleteWebhookDeliveries,
@@ -180,10 +181,24 @@ async function removeOrAnonymise(
       return deleteWebhookDeliveries(database, ids);
     case retainedKinds.workflowRuns:
       return deleteFinishedWorkflowRuns(database, ids);
-    case retainedKinds.orders:
-      return anonymiseOrders(database, await listOrdersByIds(database, ids));
-    case retainedKinds.archivedOrders:
-      return anonymiseArchivedOrders(database, await listArchivedOrdersByIds(database, ids));
+    case retainedKinds.orders: {
+      const orders = await listOrdersByIds(database, ids);
+      const changed = await anonymiseOrders(database, orders);
+      await deleteCustomersWithoutOrders(
+        database,
+        orders.map((order) => order.customerId),
+      );
+      return changed;
+    }
+    case retainedKinds.archivedOrders: {
+      const orders = await listArchivedOrdersByIds(database, ids);
+      const changed = await anonymiseArchivedOrders(database, orders);
+      await deleteCustomersWithoutOrders(
+        database,
+        orders.map((order) => order.customerId),
+      );
+      return changed;
+    }
     default:
       return 0;
   }

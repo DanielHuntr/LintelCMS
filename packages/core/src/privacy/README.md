@@ -54,6 +54,9 @@ automation wrote into a notification aren't searched; the admin and docs say so.
 | Activity logs     | On, 90 days    | Long enough to look into a problem                    |
 | Orders            | Off, 7 years   | Tax rules differ; the owner chooses when to anonymise |
 
+When the orders rule anonymises an order it also unlinks the customer, and a customer left with
+no orders is deleted, because their record holds the same name, email and addresses.
+
 Forms with their own "keep entries for" keep following it; the form entries rule covers the
 others. Activity logs are the security log, webhook deliveries that aren't waiting to send, and
 finished automation runs not about an entry. Privacy request records are never deleted by a
