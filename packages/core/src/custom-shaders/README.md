@@ -14,6 +14,7 @@ shaders".
 - `custom-shaders.repository.ts`: one `customShaders:<site id>` row per site in the settings
   table, so no migration.
 
-Pages name a shader by id in a layer (`{ effect: "custom-shader", shader: "<id>" }`). The
+A page's saved data can't carry code: only the library can (`planLayer` in
+`@lintel/motion/effects`). Pages name a shader by id in a layer (`{ effect: "custom-shader", shader: "<id>" }`). The
 page's `lintel-effects` list carries the code of only the shaders that page uses, written
 with `scriptSafeJson`. Saving clears the rendered pages, like any write.

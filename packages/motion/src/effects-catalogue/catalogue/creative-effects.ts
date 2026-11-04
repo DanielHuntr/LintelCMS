@@ -355,6 +355,8 @@ export const creativeEffects = [
     preview: "card",
     weight: "heavy",
     keywords: ["layers", "stack", "blend", "shader", "webgl"],
+    // Reached through "Add a layer" on a background, which brings the first layer with it.
+    listed: false,
   }),
   // A layer only: its settings come from the code (see customShaderDefinition).
   defineEffect({

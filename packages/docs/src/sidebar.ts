@@ -70,6 +70,7 @@ export const buildingPages = [
   "building/blocks-in-code",
   "building/animation-spec",
   "building/effects-api",
+  "building/custom-shaders",
   "building/multisite",
   "building/nextjs-starter",
   "building/plugins",

@@ -272,3 +272,15 @@ None.
 - CLI: the known 3 Windows failures.
 
 In a browser (API 4600, site 4601, admin 5690, a fresh Lintel folder): a page drawn by `templates/pages.liquid` through a layout and a partial, a page choosing `landing.liquid` inside the shared document, a template edit showing on reload without a restart, a broken template showing its error in development, and the editor's Template section at desktop and 390px in light and dark. Screenshots in `screenshots/liquid-templates/`.
+
+## Shader studio (feature/shader-studio, 4 November 2026)
+
+Targeted runs on Windows, not the full suite, which runs at merge:
+
+- Motion: unit 243 passed (27 files). Browser: `shader-studio` 24, `effects-performance` 3, `creative-effects` 11, all passed.
+- Motion editor: 89 passed (10 files), with 17 in `shaders.test.tsx`.
+- Core: `src/custom-shaders` 6 passed. Site components: `src/document` 21 passed. Builder: `src/animate-panel` 13 passed. Admin: `src/page-design` and `src/blocks` 34 passed. Docs: 14 passed.
+- `tsc`: motion editor, builder and core clean. Admin has one error, in `commerce/WaysToPay.test.tsx`, which this branch doesn't touch.
+- Sizes: the core runtime is 9,791 bytes gzipped, under its 10,240 limit.
+
+The browser checks and what they don't cover are in `FIX-LOG-shader-studio.md`.

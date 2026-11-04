@@ -891,6 +891,7 @@ Found while building six new starter sites; see "Starter sites: six more (batch 
 | LINTEL-UX-157 | P3       | Open   | The theme's soft grey is 4.25 to 4.43:1 on tinted paper in light mode: clock place names, table headings and form hints            |
 | LINTEL-UX-158 | P3       | Open   | A template footer with a clock zone not on the list is silently replaced by the standard footer; Melbourne isn't listed            |
 | LINTEL-UX-159 | P3       | Open   | Older templates fail the new checks: Atelier skips a heading level, Magazine lacks alt text, three keep header or footer in a page |
+
 ## Static publishing and deploy recipes (3 November 2026)
 
 | ID            | Severity | Status | Defect                                                                                                                                              |
@@ -902,6 +903,7 @@ Found while building six new starter sites; see "Starter sites: six more (batch 
 | LINTEL-UX-124 | P2       | Fixed  | Forms on the website drawn from Form sections posted to the API's own address, not the website's                                                    |
 | LINTEL-UX-125 | P2       | Fixed  | Timed jobs added since the cron request was written (backups, update checks, visitor counts) wouldn't have run from cron                            |
 | LINTEL-UX-126 | P3       | Fixed  | A message from the PHP companion isn't shown under a builder form, and only the last ticked box of a question reaches it                            |
+
 ## External apps (3 November 2026)
 
 Found while joining external apps to the release branch and checking Build → Apps in a browser. All fixed on `feature/external-apps`; see "External apps" in `FIX-LOG-ux.md`.
@@ -914,3 +916,17 @@ Found while joining external apps to the release branch and checking Build → A
 | LINTEL-UX-133 | P3       | Fixed  | An app's page said its name twice when its sidebar label is the app's name                                      |
 | LINTEL-UX-134 | P3       | Fixed  | An app's details page: the Uninstall button sat far to the right of the narrower cards below it                 |
 | LINTEL-UX-135 | P2       | Fixed  | An app could keep working after the person who installed it was deactivated (API tokens already stopped)        |
+
+## Shader studio (4 November 2026)
+
+Found while finishing `feature/shader-studio`. All fixed there; the details are in `FIX-LOG-shader-studio.md`.
+
+| ID                           | Severity | Status | Summary                                                                                   |
+| ---------------------------- | -------- | ------ | ----------------------------------------------------------------------------------------- |
+| LINTEL-UX-254                | P1       | Fixed  | Section went blank in the builder after "Add a layer"                                     |
+| LINTEL-UX-257                | P1       | Fixed  | Code box stuck after the graphics card stopped a shader, and retried the same code        |
+| LINTEL-UX-261                | P1       | Fixed  | Custom shader loop checks could be fooled into allowing far more work per pixel           |
+| LINTEL-UX-250, 253, 255      | P2       | Fixed  | Reacting Speed did nothing; own picture hidden; a saved shader didn't show on the canvas  |
+| LINTEL-UX-258, 259, 260, 263 | P2       | Fixed  | Code lost to Escape; unchecked delete; code on the canvas while off; words on still looks |
+| LINTEL-UX-251, 252, 256, 262 | P3       | Fixed  | Opacity couldn't react; Grain setting ignored; repeated checkbox; stale veil              |
+| LINTEL-UX-264 to 269         | P3       | Fixed  | Silk, dust and three tiles redrawn; code box focus                                        |
