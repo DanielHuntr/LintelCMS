@@ -37,13 +37,20 @@ export function ShaderCodeBox({
   const [name, setName] = useState(shader?.name ?? "");
   const [problems, setProblems] = useState<ShaderProblem[]>([]);
   const [noPreview, setNoPreview] = useState(false);
-  const [stopped, setStopped] = useState(false);
+  /** Goes up to start a new preview after the card stopped the last one. */
+  const [round, setRound] = useState(0);
+  /** The code that was showing when the graphics card stopped it. */
+  const [stoppedCode, setStoppedCode] = useState<string>();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [saving, setSaving] = useState(false);
   const [refused, setRefused] = useState<string>();
   const [values, setValues] = useState<Record<string, number | string | boolean>>({});
   const canvas = useRef<HTMLCanvasElement>(null);
   const preview = useRef<ShaderPreview | undefined>(undefined);
   const gutter = useRef<HTMLDivElement>(null);
+  const editor = useRef<HTMLTextAreaElement>(null);
+  const shownCode = useRef(code);
+  const stopped = stoppedCode === code;
 
   const read = useMemo(() => readCustomShader(code), [code]);
   const definition = useMemo(
@@ -54,37 +61,58 @@ export function ShaderCodeBox({
 
   useEffect(() => {
     if (!library.allowed || !canvas.current) return;
-    const made = createShaderPreview(canvas.current, () => setStopped(true));
+    const made = createShaderPreview(canvas.current, () => {
+      setStoppedCode(shownCode.current);
+      setRound((round) => round + 1);
+    });
     if (!made) setNoPreview(true);
     preview.current = made;
     return () => {
       made?.destroy();
       preview.current = undefined;
     };
-  }, [library.allowed, stopped]);
+  }, [library.allowed, round]);
 
-  // Waits for a pause in typing, so the card isn't asked to compile every key press.
   useEffect(() => {
+    shownCode.current = code;
+  }, [code]);
+
+  // Waits for a pause in typing, so the card isn't asked to compile every key press. Code the
+  // card stopped isn't tried again until it has changed.
+  useEffect(() => {
+    if (stopped) return;
     const timer = window.setTimeout(() => {
       if (preview.current) setProblems(preview.current.show(code));
       else setProblems(read.problems);
     }, 300);
     return () => window.clearTimeout(timer);
-  }, [code, read, stopped]);
+  }, [code, read, stopped, round]);
 
   useEffect(() => preview.current?.setValues(values), [values]);
 
+  // Escape leaves only while there's nothing to lose; Cancel always leaves.
+  const untouched = code === (shader?.code ?? starterShader) && name === (shader?.name ?? "");
   useEffect(() => {
     const close = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape" && untouched) onClose();
     };
     document.addEventListener("keydown", close);
     return () => document.removeEventListener("keydown", close);
-  }, [onClose]);
+  }, [onClose, untouched]);
+
+  // Into the box on opening, and back to where the person was on leaving.
+  useEffect(() => {
+    const before = document.activeElement;
+    editor.current?.focus();
+    return () => {
+      if (before instanceof HTMLElement) before.focus();
+    };
+  }, []);
 
   const lines = code.split("\n").length;
   const badLines = new Set(problems.map((problem) => problem.line));
-  const canSave = problems.length === 0 && read.problems.length === 0 && shownName !== "";
+  const canSave =
+    problems.length === 0 && read.problems.length === 0 && shownName !== "" && !stopped;
 
   async function save() {
     setSaving(true);
@@ -144,6 +172,7 @@ export function ShaderCodeBox({
                 ))}
               </div>
               <textarea
+                ref={editor}
                 aria-label={t("motionEditor.shaders.code.label")}
                 aria-describedby={`${titleId}-problems`}
                 aria-invalid={problems.length > 0}
@@ -174,7 +203,7 @@ export function ShaderCodeBox({
           <div className="flex min-w-0 flex-col gap-3">
             <div className="relative aspect-video overflow-hidden rounded-card bg-surface">
               <canvas
-                key={String(stopped)}
+                key={round}
                 ref={canvas}
                 width={640}
                 height={360}
@@ -214,18 +243,41 @@ export function ShaderCodeBox({
             <p className="px-1 text-caption text-label-secondary">
               {t("motionEditor.shaders.code.help")}
             </p>
-            {shader && (
-              <button
-                type="button"
-                onClick={() => {
-                  library.remove(shader.id);
-                  onClose();
-                }}
-                className="min-h-11 rounded-card bg-surface text-body font-medium text-danger hover:bg-fill focus-visible:focus-ring"
-              >
-                {t("motionEditor.shaders.code.delete")}
-              </button>
-            )}
+            {shader &&
+              (confirmingDelete ? (
+                <div className="flex flex-col gap-2 rounded-card bg-surface p-3">
+                  <p className="text-footnote text-label-secondary">
+                    {t("motionEditor.shaders.code.deleteWarning")}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setConfirmingDelete(false)}
+                      className="min-h-11 flex-1 rounded-control bg-fill text-body font-medium text-label focus-visible:focus-ring"
+                    >
+                      {t("motionEditor.shaders.code.keep")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        library.remove(shader.id);
+                        onClose();
+                      }}
+                      className="min-h-11 flex-1 rounded-control bg-fill text-body font-medium text-danger focus-visible:focus-ring"
+                    >
+                      {t("motionEditor.shaders.code.deleteConfirm")}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmingDelete(true)}
+                  className="min-h-11 rounded-card bg-surface text-body font-medium text-danger hover:bg-fill focus-visible:focus-ring"
+                >
+                  {t("motionEditor.shaders.code.delete")}
+                </button>
+              ))}
           </div>
         </div>
       ) : (

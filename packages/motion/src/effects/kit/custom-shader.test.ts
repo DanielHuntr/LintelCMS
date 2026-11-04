@@ -101,6 +101,51 @@ void main(){float v=0.;for(int i=0;i<STEPS;i++){v+=m();}gl_FragColor=vec4(v);}`;
     expect(messages(fine)).toEqual([]);
   });
 
+  describe("can't be talked out of counting", () => {
+    const refused = (code: string) => readCustomShader(code).problems.map(({ message }) => message);
+    const body = "for (int i = 0; i < N; i++) { x += 1.0; }";
+    const shader = (top: string, loop = body) =>
+      `${top}
+void main(){float x=0.;${loop}gl_FragColor=vec4(x);}`;
+
+    it("doesn't read a number from the start of a constant it can't work out", () => {
+      expect(refused(shader("const int N = 0x7fffffff;"))[0]).toContain("fixed number of steps");
+      expect(refused(shader("const int N = 1000 * 1000;"))[0]).toContain("fixed number of steps");
+    });
+
+    it("takes the largest when a name is given more than one value", () => {
+      const code = shader("const int N = 100000;\nfloat a(){const int N = 1;return 0.;}");
+      expect(refused(code)[0]).toContain("times for every pixel");
+    });
+
+    it("counts the dearest of functions that share a name", () => {
+      const code = `float a(int v){float x=0.;for(int i=0;i<9000;i++){x+=1.;}return x;}
+float a(float v){return v;}
+void main(){gl_FragColor=vec4(a(1.));}`;
+      expect(refused(code)[0]).toContain("times for every pixel");
+    });
+
+    it("refuses a loop that runs away from its end", () => {
+      for (const loop of [
+        "for (int i = 0; i < 10; i--) { x += 1.0; }",
+        "for (int i = 10; i > 0; i++) { x += 1.0; }",
+        "for (int i = 0; i < 10; i -= 1) { x += 1.0; }",
+      ]) {
+        expect(refused(shader("", loop))[0]).toContain("fixed number of steps");
+      }
+    });
+
+    it("refuses a loop that can step past its end", () => {
+      const loop = "for (int i = 0; i != 10; i += 3) { x += 1.0; }";
+      expect(refused(shader("", loop))[0]).toContain("fixed number of steps");
+    });
+
+    it("still takes a loop that counts down", () => {
+      const loop = "for (int i = 10; i > 0; i--) { x += 1.0; }";
+      expect(refused(shader("", loop))).toEqual([]);
+    });
+  });
+
   it("keeps a shader to what Lintel provides", () => {
     expect(messages(shader("uniform sampler2D photo;"))[0]).toContain("can't load pictures");
     expect(messages(shader("uniform float time;"))[0]).toContain("provided for you");

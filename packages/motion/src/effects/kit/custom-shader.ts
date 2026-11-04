@@ -172,11 +172,17 @@ function readControl(
 /** `#define NAME 8` and `const int NAME = 8;`: numbers a loop may use as its limit. */
 function readConstants(code: string): Map<string, number> {
   const constants = new Map<string, number>();
+  // A name can be given again in another function: counting the largest can't be fooled.
+  const keep = (name: string, value: number) =>
+    constants.set(name, Math.max(value, constants.get(name) ?? value));
   for (const [, name, value] of code.matchAll(/^[ \t]*#define\s+(\w+)\s+([\d.]+)[ \t]*$/gm)) {
-    constants.set(name!, Number(value));
+    keep(name!, Number(value));
   }
-  for (const [, name, value] of code.matchAll(/\bconst\s+(?:int|float)\s+(\w+)\s*=\s*([\d.]+)/g)) {
-    constants.set(name!, Number(value));
+  // Only a plain number: `0x7fffffff` and `1000 * 1000` must not read as 0 and 1000.
+  for (const [, name, value] of code.matchAll(
+    /\bconst\s+(?:int|float)\s+(\w+)\s*=\s*([\d.]+)\s*;/g,
+  )) {
+    keep(name!, Number(value));
   }
   return constants;
 }
@@ -194,10 +200,15 @@ function loopSteps(head: string, constants: ReadonlyMap<string, number>): number
   };
   const start = value(parts[2]);
   const limit = value(parts[5]);
-  const change = parts[6] ?? parts[9] ?? "";
-  const by = /^[+-]=/.test(change.replace(/\s/g, "")) ? value(change.replace(/[+\-=\s]/g, "")) : 1;
+  const test = parts[4] ?? "";
+  const change = (parts[6] ?? parts[9] ?? "").replace(/\s/g, "");
+  const by = /^[+-]=/.test(change) ? value(change.replace(/[+\-=]/g, "")) : 1;
   if (start === undefined || limit === undefined || !by || parts[1] !== parts[3]) return undefined;
-  return Math.ceil(Math.abs(limit - start) / by) + (/=/.test(parts[4] ?? "") ? 1 : 0);
+  // A loop stepping away from its end, or past a `!=`, would run until the card gave up.
+  const rising = change.startsWith("+");
+  if (test === "!=" || rising !== test.startsWith("<")) return undefined;
+  if (rising ? limit < start : limit > start) return 0;
+  return Math.ceil(Math.abs(limit - start) / by) + (test.endsWith("=") ? 1 : 0);
 }
 
 /** Where the bracket opened at `open` closes. */
@@ -213,11 +224,13 @@ function closingOf(code: string, open: number, opening: string, closing: string)
 /** The most work one pixel can ask for, counting loops inside loops and calls inside loops. */
 function measureWork(code: string, problems: ShaderProblem[]): number {
   const constants = readConstants(code);
-  const functions = new Map<string, [number, number]>();
+  // Functions can share a name (`float a(int)`, `float a(float)`): each is kept and counted.
+  const functions = new Map<string, Array<[number, number]>>();
   for (const found of code.matchAll(/\b\w+\s+(\w+)\s*\([^;{}()]*\)\s*\{/g)) {
     if (["if", "for", "else"].includes(found[1]!)) continue;
     const open = found.index + found[0].length - 1;
-    functions.set(found[1]!, [open + 1, closingOf(code, open, "{", "}")]);
+    const bodies = functions.get(found[1]!) ?? [];
+    functions.set(found[1]!, [...bodies, [open + 1, closingOf(code, open, "{", "}")]]);
   }
   const known = new Map<string, number>();
   const visiting = new Set<string>();
@@ -226,8 +239,7 @@ function measureWork(code: string, problems: ShaderProblem[]): number {
     if (saved !== undefined) return saved;
     if (visiting.has(name)) return 0;
     visiting.add(name);
-    const [start, end] = functions.get(name)!;
-    const cost = costOf(start, end);
+    const cost = Math.max(...functions.get(name)!.map(([start, end]) => costOf(start, end)));
     visiting.delete(name);
     known.set(name, cost);
     return cost;

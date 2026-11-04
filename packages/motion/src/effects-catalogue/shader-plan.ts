@@ -39,9 +39,15 @@ export function usesStackRuntime(saved: NodeEffect, definition: EffectDefinition
   return definition.module === "shader-stack" || Object.keys(saved.reacts ?? {}).length > 0;
 }
 
+/** Where a layer's own opacity saves what drives it, beside its settings' reactions. */
+export const layerOpacityReact = "layerOpacity";
+
 /** Keeps only reactions to number settings, with their ends inside the setting's range. */
 function cleanReacts(definition: EffectDefinition, reacts: NodeEffect["reacts"]) {
   const kept = Object.entries(reacts ?? {}).flatMap(([name, react]) => {
+    if (name === layerOpacityReact) {
+      return [[name, { ...react, to: Math.min(1, Math.max(0, react.to)) }] as const];
+    }
     const parameter: EffectParameter | undefined = definition.params[name];
     if (parameter?.kind !== "number") return [];
     const to = Math.min(parameter.max, Math.max(parameter.min, react.to));

@@ -24,7 +24,7 @@ export const effectModuleBytes: Record<EffectModuleName, number> = {
   rive: 2568,
   scroll: 6022,
   "shader-backgrounds": 9076,
-  "shader-stack": 17650,
+  "shader-stack": 17881,
   "smooth-scroll": 2038,
   svg: 5059,
   text: 5549,

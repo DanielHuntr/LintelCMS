@@ -65,6 +65,7 @@ export {
   layerFromEffect,
   shaderIdsInPlan,
   usesStackRuntime,
+  layerOpacityReact,
 } from "./shader-plan.js";
 export {
   customShaderLimits,

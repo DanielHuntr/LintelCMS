@@ -6,6 +6,7 @@ import {
   defaultProps,
   isStackable,
   layeredBackgroundEffectId,
+  layerOpacityReact,
   maxShaderLayers,
   readCustomShader,
   type BlendMode,
@@ -23,6 +24,7 @@ import type { CursorColourSwatch } from "../effects/CursorLookFields.js";
 import { EffectSettings } from "../effects/EffectSettings.js";
 import type { MotionEditorStringKey } from "../strings/motionEditorStrings.js";
 import { useTranslate } from "../strings/translate.js";
+import { ReactControl } from "./ReactControl.js";
 import { ShaderCodeBox } from "./ShaderCodeBox.js";
 import { useShaderLibrary, type ShaderInLibrary } from "./shader-library.js";
 
@@ -158,19 +160,35 @@ export function ShaderLayers({
               </div>
               {open && (
                 <div className="flex flex-col gap-3 px-3 pt-1 pb-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <Select
-                      label={t("motionEditor.shaders.blend")}
-                      value={layer.blend}
-                      options={blendModes.map((mode) => ({
-                        value: mode,
-                        label: t(`motionEditor.shaders.blend.${mode}` as MotionEditorStringKey),
-                      }))}
-                      onChange={(event) => {
-                        update(layer.id, { blend: event.target.value as BlendMode });
-                        onCommit?.();
-                      }}
-                    />
+                  <Select
+                    label={t("motionEditor.shaders.blend")}
+                    value={layer.blend}
+                    options={blendModes.map((mode) => ({
+                      value: mode,
+                      label: t(`motionEditor.shaders.blend.${mode}` as MotionEditorStringKey),
+                    }))}
+                    onChange={(event) => {
+                      update(layer.id, { blend: event.target.value as BlendMode });
+                      onCommit?.();
+                    }}
+                  />
+                  <ReactControl
+                    label={t("motionEditor.shaders.opacity")}
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={layer.opacity}
+                    react={layer.reacts?.[layerOpacityReact]}
+                    onChange={(react) => {
+                      const reacts = { ...layer.reacts };
+                      if (react) reacts[layerOpacityReact] = react;
+                      else delete reacts[layerOpacityReact];
+                      update(layer.id, {
+                        reacts: Object.keys(reacts).length > 0 ? reacts : undefined,
+                      });
+                    }}
+                    onCommit={onCommit}
+                  >
                     <Slider
                       label={t("motionEditor.shaders.opacity")}
                       min={0}
@@ -181,7 +199,7 @@ export function ShaderLayers({
                       onChange={(opacity) => update(layer.id, { opacity })}
                       onCommit={onCommit}
                     />
-                  </div>
+                  </ReactControl>
                   {definition && (
                     <EffectSettings
                       definition={definition}

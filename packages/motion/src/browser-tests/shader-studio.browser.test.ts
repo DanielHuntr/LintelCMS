@@ -174,6 +174,49 @@ describe("layers", () => {
     await page.close();
   });
 
+  it("keeps a section's own picture under layers that lay over it", async () => {
+    const picture = "background-image:linear-gradient(#0a0,#0a0);background-color:#fff;color:#111";
+    const { page } = await open(
+      [layer("dust", { colour: "#ff0000" })],
+      section(picture),
+      {},
+      false,
+    );
+    await whenDrawn(page);
+    const seen = await page.evaluate(() => {
+      const element = document.querySelector("section")!;
+      const canvas = element.querySelector("canvas")!;
+      const { data } = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height);
+      let clear = 0;
+      for (let at = 3; at < data.length; at += 4) if (data[at] === 0) clear += 1;
+      return {
+        image: getComputedStyle(element).backgroundImage,
+        clear: clear / (data.length / 4),
+      };
+    });
+    expect(seen.image).toContain("linear-gradient");
+    expect(seen.clear).toBeGreaterThan(0.5);
+    await page.close();
+  });
+
+  it("gives film grain as a layer the Size it has alone", async () => {
+    const spread = async (size: string) => {
+      const { page } = await open([layer("grain", { strength: 1, size })]);
+      await whenDrawn(page);
+      const runs = await page.evaluate(() => {
+        const canvas = document.querySelector("section canvas") as HTMLCanvasElement;
+        const row = canvas.getContext("2d")!.getImageData(0, 20, canvas.width, 1).data;
+        let changes = 0;
+        for (let at = 4; at < row.length; at += 4) if (row[at] !== row[at - 4]) changes += 1;
+        return changes;
+      });
+      await page.close();
+      return runs;
+    };
+    const [fine, coarse] = [await spread("fine"), await spread("coarse")];
+    expect(coarse).toBeLessThan(fine * 0.7);
+  });
+
   it("leaves words alone when asked to", async () => {
     const { page } = await open(
       [custom(`void main(){gl_FragColor=vec4(0.,0.,0.,1.);}`)],
@@ -224,6 +267,41 @@ void main(){gl_FragColor=vec4(vec3(level),1.);}`;
       seen.add(Math.round((await averageColour(page))![0]! / 40));
       return seen.size >= 3;
     }, "the drawing changing");
+    await page.close();
+  });
+
+  it("drives speed, which sets how time runs rather than what's drawn", async () => {
+    const clock = `void main(){gl_FragColor=vec4(vec3(fract(time*.02)),1.);}`;
+    const { page } = await open([
+      custom(clock, { speed: 0 }, { reacts: { speed: { source: "timeline", to: 3, seconds: 1 } } }),
+    ]);
+    await whenDrawn(page);
+    const first = (await averageColour(page))![0]!;
+    await waitFor(
+      async () => Math.abs((await averageColour(page))![0]! - first) > 6,
+      "time moving, from a speed of 0",
+    );
+    await page.close();
+  });
+
+  it("drives a layer's own opacity", async () => {
+    const { page } = await open(
+      [
+        custom(
+          red,
+          {},
+          {
+            opacity: 0,
+            reacts: { layerOpacity: { source: "pointerX", to: 1 } },
+          },
+        ),
+      ],
+      section("background:#fff;color:#111"),
+    );
+    await whenDrawn(page);
+    await page.mouse.move(10, 100);
+    await page.mouse.move(980, 100);
+    await waitFor(async () => (await averageColour(page))![1]! < 120, "the layer showing");
     await page.close();
   });
 

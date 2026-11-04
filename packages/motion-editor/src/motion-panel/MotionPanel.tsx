@@ -179,7 +179,9 @@ function Panel({
    */
   function previewSaved(saved: NodeEffect, definition: EffectDefinition) {
     const plan = effectPlan(saved, registry, {
-      codeOf: (id) => library?.shaders.find((shader) => shader.id === id)?.code,
+      // While the site doesn't allow custom code, the canvas leaves it out as pages do.
+      codeOf: (id) =>
+        library?.allowed ? library.shaders.find((shader) => shader.id === id)?.code : undefined,
     });
     onPreviewEffect(definition, plan ? { plan } : saved.params);
   }

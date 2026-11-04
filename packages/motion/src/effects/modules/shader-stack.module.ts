@@ -77,6 +77,12 @@ const slowFrame = 120;
 const framesPerCheck = 30;
 const framesPerVeilCheck = 90;
 const strikesKey = "lintel-shader-strikes";
+/** Film grain's Size setting, as how many pixels make a grain. */
+const grainSizes: Record<string, number> = { fine: 1, medium: 2, coarse: 3 };
+/** These lay over the section and have no still version, so its own picture stays under them. */
+const laidOver = new Set(["dust", "contours", "grain"]);
+/** Where a layer's own opacity saves what drives it (`layerOpacityReact` in the catalogue). */
+const layerOpacity = "layerOpacity";
 
 function struck(fingerprint: string): boolean {
   try {
@@ -146,6 +152,7 @@ function prepareLook(
     fixed: {
       hc: typeof third === "string" && third ? 1 : 0,
       gn: plan.look === "dust" && luminance(backgroundBehind(element)) > 0.5 ? 2.4 : 1,
+      ...(plan.look === "grain" ? { sc: grainSizes[String(plan.values.size)] ?? 1 } : {}),
     },
     time: Math.random() * 100,
     custom: false,
@@ -247,8 +254,12 @@ function sampleDrawing(canvas: HTMLCanvasElement, behind: Rgb): Rgb[] {
   }
 }
 
-/** The plain colour to start from, unless a picture sits behind the section. */
-function seedColour(element: HTMLElement): Rgb | null {
+/**
+ * The plain colour to start from, unless a picture sits behind the section. `ownPicture` says
+ * a background picture on the section is the designer's, not the effect's still version.
+ */
+function seedColour(element: HTMLElement, ownPicture: boolean): Rgb | null {
+  if (ownPicture && getComputedStyle(element).backgroundImage !== "none") return null;
   for (let at = element.parentElement; at; at = at.parentElement) {
     const style = getComputedStyle(at);
     if (style.backgroundImage !== "none") return null;
@@ -315,11 +326,16 @@ const shaderStack: EffectBehaviour = (element, params, context: EffectContext) =
   const drivers = createDrivers(element, context);
   cleanups.push(() => drivers.destroy());
 
+  const valuesNow = (layer: Running) =>
+    reactedValue(layer.plan.values, layer.plan.reacts, (react) => drivers.read(react));
+  const opacityNow = ({ plan: { opacity, reacts } }: Running) => {
+    const react = reacts?.[layerOpacity];
+    return react ? opacity + (react.to - opacity) * drivers.read(react) : opacity;
+  };
+
   const steps = (): StackStep[] =>
     layers.map((layer, index) => {
-      const values = reactedValue(layer.plan.values, layer.plan.reacts, (react) =>
-        drivers.read(react),
-      );
+      const values = valuesNow(layer);
       const size = [backdrop.canvas.width, backdrop.canvas.height];
       if (layer.custom) {
         return {
@@ -335,7 +351,7 @@ const shaderStack: EffectBehaviour = (element, params, context: EffectContext) =
           belowName: "lintelBelow",
           belowSizeName: "lintelBelowSize",
           blend: layer.plan.blend,
-          opacity: layer.plan.opacity,
+          opacity: opacityNow(layer),
         };
       }
       const [one, two, three] = layer.colours;
@@ -357,11 +373,13 @@ const shaderStack: EffectBehaviour = (element, params, context: EffectContext) =
         belowName: "lb",
         belowSizeName: "ls",
         blend: layer.plan.blend,
-        opacity: layer.plan.opacity,
+        opacity: opacityNow(layer),
       };
     });
 
-  const seed = seedColour(element);
+  // With only layers that lay over the section, a picture on it is the designer's own.
+  const ownPicture = plan.layers.every((layer) => laidOver.has(layer.look ?? ""));
+  const seed = seedColour(element, ownPicture);
   const draw = () => {
     if (layers.length === 0) return false;
     sizeCanvas(backdrop.canvas, element.clientWidth, element.clientHeight, ratio);
@@ -369,7 +387,7 @@ const shaderStack: EffectBehaviour = (element, params, context: EffectContext) =
     if (drew) {
       backdrop.canvas.style.visibility = "";
       // Once the drawing shows, the static fallback under it steps aside.
-      restoreBackground ??= setStyles(element, { "background-image": "none" });
+      if (!ownPicture) restoreBackground ??= setStyles(element, { "background-image": "none" });
     }
     return drew;
   };
@@ -447,7 +465,7 @@ const shaderStack: EffectBehaviour = (element, params, context: EffectContext) =
   const loop = createFrameLoop(element, (elapsed) => {
     drivers.tick(elapsed);
     for (const layer of layers) {
-      const speed = layer.plan.values.speed;
+      const { speed } = valuesNow(layer);
       layer.time += (elapsed / 1000) * (typeof speed === "number" ? speed : 1);
     }
     frames += 1;

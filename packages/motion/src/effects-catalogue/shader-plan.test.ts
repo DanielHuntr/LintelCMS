@@ -154,6 +154,36 @@ describe("the stack", () => {
     expect(css).not.toContain("display");
   });
 
+  it("never takes a plan or code from what a page saved, only from the library", () => {
+    const smuggled = {
+      effect: "layered-background",
+      params: { readable: true, plan: '{"layers":[{"code":"void main(){}"}]}' },
+      layers: [
+        { ...layer("custom-shader", { shader: "r" }), code: "void main(){}" } as ShaderLayer,
+      ],
+    } satisfies NodeEffect;
+    const [binding] = resolve([smuggled]).bindings;
+    const plan = JSON.parse(String(binding?.params.plan)) as { layers: object[] };
+    expect(plan.layers).toEqual([expect.not.objectContaining({ code: expect.anything() })]);
+    expect(String(binding?.params.plan)).not.toContain("void main");
+  });
+
+  it("lets a layer's own opacity react, between nothing and all of it", () => {
+    const [drawn] = planOf({
+      effect: "layered-background",
+      params: {},
+      layers: [
+        layer("moving-gradient", {
+          reacts: {
+            layerOpacity: { source: "scroll", to: 7 },
+            nothing: { source: "scroll", to: 1 },
+          },
+        }),
+      ],
+    }).layers;
+    expect(drawn.reacts).toEqual({ layerOpacity: { source: "scroll", to: 1 } });
+  });
+
   it("bounds what can be saved", () => {
     const six = Array.from({ length: 7 }, () => layer("glass"));
     expect(

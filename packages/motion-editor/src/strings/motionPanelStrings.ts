@@ -130,6 +130,10 @@ export const motionPanelStrings = {
     "The graphics card stopped this shader. Make it do less, then edit the code to try again.",
   "motionEditor.shaders.code.noPreview": "This browser can't show a preview.",
   "motionEditor.shaders.code.delete": "Delete from this site",
+  "motionEditor.shaders.code.deleteWarning":
+    "Sections using this shader go back to their plain background, on every page of this site.",
+  "motionEditor.shaders.code.deleteConfirm": "Delete",
+  "motionEditor.shaders.code.keep": "Keep it",
   "motionEditor.shaders.code.offTitle": "This site doesn't allow custom code",
   "motionEditor.shaders.code.offBody":
     "Allowing it also keeps scripts in Code elements. Only do this if you trust everyone who can write code on this site.",
