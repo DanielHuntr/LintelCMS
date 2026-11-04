@@ -73,6 +73,7 @@ a short curated list), corner style, spacing scale, and light, dark or automatic
 | `--lintel-color-text`, `-text-secondary`                | Text                                                    |
 | `--lintel-color-brand`, `-on-brand`                     | Buttons, and readable text on them                      |
 | `--lintel-color-link`, `-accent`                        | Brand and accent, darkened or lightened to pass 4.5 : 1 |
+| `--lintel-color-brand-text`                             | Brand for small labels: passes on the page and panels   |
 | `--lintel-font-heading`, `--lintel-font-body`           | The font pairing                                        |
 | `--lintel-space-1` … `--lintel-space-9`                 | The spacing scale                                       |
 | `--lintel-radius-small`, `-medium`, `-large`, `-button` | Corners                                                 |

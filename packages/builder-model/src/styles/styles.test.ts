@@ -4,7 +4,7 @@ import { createEmptyPage, type PageNode } from "../document/page-document.schema
 import { createNode } from "../tree/create-node.js";
 import { createCountingNodeIds } from "../tree/node-ids.js";
 import { assignClassNames, slugifyClassName } from "./class-names.js";
-import { compileStylesheet } from "./compile-stylesheet.js";
+import { compileStylesheet, formatRule } from "./compile-stylesheet.js";
 import { overriddenProperties, resolveStyle, setStyle } from "./style-cascade.js";
 import { isSafeStyleValue } from "./style-properties.js";
 
@@ -88,6 +88,33 @@ describe("class names", () => {
       "heading-4",
     ]);
     expect(new Set(names).size).toBe(names.length);
+  });
+});
+
+describe("brand-coloured text", () => {
+  const brand = "var(--lintel-color-brand)";
+
+  it("takes the theme's readable tone of the brand", () => {
+    expect(formatRule(".label", { color: brand })).toContain(
+      "  color: var(--lintel-color-brand-text, var(--lintel-color-brand));",
+    );
+  });
+
+  it("is left alone with a background of its own", () => {
+    const css = formatRule(".button", {
+      color: brand,
+      backgroundColor: "var(--lintel-color-on-brand)",
+    });
+    expect(css).toContain("  color: var(--lintel-color-brand);");
+  });
+
+  it("changes no other colour", () => {
+    expect(formatRule(".a", { color: "var(--lintel-color-text)" })).toContain(
+      "  color: var(--lintel-color-text);",
+    );
+    expect(formatRule(".a", { backgroundColor: brand })).toContain(
+      "  background-color: var(--lintel-color-brand);",
+    );
   });
 });
 
