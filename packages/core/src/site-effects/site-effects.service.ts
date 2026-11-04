@@ -85,6 +85,8 @@ export async function findSiteCursorsUsingAsset(
 export interface PageForEffects {
   path: string;
   chrome: Pick<SiteChrome, "homeUrl" | "siteName" | "logo">;
+  /** The "no home page yet" message: nothing to introduce. */
+  isEmptySite?: boolean;
 }
 
 const withoutTrailingSlash = (path: string) => (path.length > 1 ? path.replace(/\/+$/, "") : path);
@@ -108,7 +110,7 @@ export function siteEffectsHead(
   const picture = saved.cursor.picture;
   const settings: SiteEffectSettings = {
     ...saved,
-    intro: isHomePage(page) ? saved.intro : { ...saved.intro, style: "none" },
+    intro: isHomePage(page) && !page.isEmptySite ? saved.intro : { ...saved.intro, style: "none" },
     // The page loads the cursor picture at the size it's shown, never the full upload.
     cursor: picture
       ? {

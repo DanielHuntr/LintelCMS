@@ -118,6 +118,19 @@ describe("site-wide effects for one page", () => {
     ).toBeUndefined();
   });
 
+  it("skip the intro while the site has no home page to show (LINTEL-UX-328)", () => {
+    const empty = siteEffectsHead(
+      introAndTransition,
+      {
+        path: "/",
+        chrome: { siteName: "Corner Bakery", locale: "en-GB", alternates: [] } as never,
+        isEmptySite: true,
+      },
+      { skipIntro: "Skip" },
+    );
+    expect(empty?.modules).toEqual(["transitions"]);
+  });
+
   it("draw the intro on the home page only, with the site's name when there's no logo", () => {
     const home = siteEffectsHead(introAndTransition, { path: "/", chrome }, englishLabels);
     expect(home?.bodyStartHtml).toContain("Rye &amp; Crumb");

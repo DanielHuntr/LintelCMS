@@ -59,7 +59,7 @@ export function renderPage(
     elementsScriptUrl: readElementsScript()?.path,
     siteEffects: siteEffectsHead(
       context.effectSettings,
-      { path: page.path, chrome: thisPageChrome },
+      { path: page.path, chrome: thisPageChrome, isEmptySite: page.view.kind === "emptySite" },
       englishLabels,
     ),
     effectModuleUrls: readEffectModules()?.urls,
