@@ -351,3 +351,117 @@ What was taken from the spike on `spike/any-database` (commit 288818c), and what
 - Not taken yet: SQLite, libSQL and its migrations. MySQL and MariaDB come first.
 
 Sections below this line are added as the work moves on.
+
+### Recount on release 9943c3c1, 2026-11-04
+
+The audit above was counted on an older release. Counted again by the check in
+`src/testing/postgres-only-code.ts`, which reads the source, so comments don't count. The
+two days' numbers for query calls were counted in different ways, so that row is a guide.
+
+| What                        | 2026-11-03 | 2026-11-04 |
+| --------------------------- | ---------: | ---------: |
+| Tables                      |         83 |         89 |
+| Table files                 |         50 |         54 |
+| Repositories                |         86 |         95 |
+| Query calls in repositories |        628 |        708 |
+| `returning`                 |         98 |        118 |
+| Upserts                     |         41 |         42 |
+
+Counting every kind of Postgres-only item once, wherever it is, there were 325 in 89 files
+before any moved. That number includes `returning` and upserts, so it isn't comparable with
+the "about 60" raw fragments above.
+
+### What was built
+
+- `src/database/dialect/`: one place that says which database is in use and what it can
+  do, with helpers for `returning`, upserts, insert-if-new, JSON, lists of ids,
+  case-insensitive matching, counting, ordering and date maths. On Postgres each gives the
+  query Lintel already ran, so Postgres and PGlite behave as before.
+- **MySQL tables are worked out from the Postgres tables** (`mysql-tables.ts`), rather than
+  each table being rewritten as a `portableTable`. All 89 tables have a MySQL form, created
+  by one migration in `migrations-mysql`. `pnpm db:generate` still reports no changes, and
+  no table file or Postgres migration was touched. A new column reaches MySQL with no extra
+  code. The cost is that a repository has to ask for its table with `tableFor`.
+- `src/testing/postgres-only-code.test.ts`: fails on new Postgres-only code outside the
+  dialect layer, using a list of what's left that can only shrink.
+- `pnpm test:dialects`: runs every `*.dialects.test.ts` on the built-in database, MySQL 8.4
+  and MariaDB 11.4 in throwaway Docker containers. Ordinary `pnpm test` runs the same files
+  on the built-in database alone and needs no Docker.
+- `pnpm dialect:report`: the counts below, read from the source.
+
+### What changed from the plan above, and why
+
+- **`text` is `longtext`, not `text`.** MySQL's `text` stops at 64 KB and Postgres has no
+  limit, so the proof's column kit would have refused long values.
+- **The collations are `utf8mb4_0900_bin` (MySQL) and `utf8mb4_nopad_bin` (MariaDB), not
+  `utf8mb4_bin`.** `utf8mb4_bin` ignores trailing spaces, so "Lora" and "Lora " would clash.
+  MySQL's JSON functions return `utf8mb4_bin` and refuse to compare it with text in the
+  column collation, so MySQL connections use `utf8mb4_bin` while the columns stay exact.
+- **JSON is read as text and parsed by the column.** Drizzle's own MySQL JSON column does no
+  parsing, which MariaDB needs, and the driver's parsing can't tell the stored text "123"
+  from the number.
+- **`insert ignore` isn't used for insert-if-new.** A plain insert and a caught duplicate
+  error keep Postgres's meaning: other errors still surface, and so does a clash on a
+  different key from the one named. `insert ignore` would hide both.
+- **`dashboard_layouts_one_owner` is left out on MySQL.** MySQL refuses a check on columns
+  with `on delete` rules (error 3823). The service that writes those rows still enforces it.
+- **Timestamps with a `now()` default are set in Node on MySQL too,** so a row's times come
+  from one clock.
+
+### Which features run on which database
+
+Postgres and the built-in database run everything, as they always have. **MySQL and MariaDB
+run nothing a person can use yet: the server can't open them.** What is proved is at the
+repository level. Each repository below has no Postgres-only code left, gets every table
+through `tableFor`, and has every exported function run on MySQL 8.4 and MariaDB 11.4 by a
+`*.dialects.test.ts`. Their services and routes have not been run on MySQL.
+
+| Area                  | Repositories moved                                                             |
+| --------------------- | ------------------------------------------------------------------------------ |
+| Sites                 | sites, locales, site fonts                                                     |
+| Settings              | settings, interface languages                                                  |
+| Signing in and people | users, roles, sessions, one-time tokens, two-factor, passkeys, invitations     |
+| Security and access   | security log, API tokens, apps                                                 |
+| Content model         | blueprints, fieldsets, collections, taxonomies, terms, global sets and values  |
+| Other                 | redirects, dashboard layouts, webhooks and deliveries, forms (not submissions) |
+| Shop                  | sales summary, markets, shop settings                                          |
+
+Counts on 2026-11-04, from `pnpm dialect:report` and the list of what's left:
+
+| What                                   | Done | Of all |
+| -------------------------------------- | ---: | -----: |
+| Repositories moved                     |   30 |     95 |
+| Query calls moved                      |  206 |    708 |
+| Tables with a MySQL form and migration |   89 |     89 |
+| Tables a moved repository uses         |   34 |     89 |
+| Tables used only by moved repositories |   11 |     89 |
+| Postgres-only items removed            |   78 |    325 |
+
+Not moved, and not simple:
+
+- Entries, the content tree, delivery and GraphQL: JSON field changes and renames
+  (`jsonb_set`, `jsonb_exists`), `data <> published_data`, and sorting by a JSON field.
+  MariaDB's json is text, so comparing it depends on key order where jsonb's doesn't.
+- Search: full-text search has no helper yet.
+- Form submissions and setup: advisory locks have no helper yet. `GET_LOCK` belongs to the
+  connection rather than the transaction, so it needs more than a swapped call.
+- Backups: reading and restoring through `row_to_json`, and `truncate ... cascade`.
+- Everything the server does on start: the opener, the setup screen, migration status,
+  health checks and connection errors are all Postgres-only.
+- Plugins: their tables and migrations are Postgres-only.
+
+### Estimate of what's left
+
+For one developer who knows the codebase, in focused weeks: **about 6 to 9 weeks**.
+
+| Work                                                                         |   Weeks |
+| ---------------------------------------------------------------------------- | ------: |
+| The other 65 repositories, of which about 40 are mechanical like the 30 done | 1.5 – 2 |
+| Entries, content tree, field changes, search, submissions, privacy, backups  |   2 – 3 |
+| Opening MySQL in the server: start-up, setup screen, errors, health, status  |       1 |
+| The whole test suite on MySQL (a switch in `useTestDatabase`), and its fixes | 1.5 – 3 |
+| Plugins, docs and the setup choice                                           |    ~0.5 |
+
+Most of the risk is in the fourth row. The existing tests have never run on MySQL, and that
+is where differences in ordering, locking and deadlocks will show up. Until that row is
+done, nothing should tell people that MySQL works.
