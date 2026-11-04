@@ -20,4 +20,7 @@ export const mysqlPortedRepositories = [
   "passkeys/passkeys.repository.ts",
   "users/users.repository.ts",
   "roles/roles.repository.ts",
+  "collections/collections.repository.ts",
+  "taxonomies/taxonomies.repository.ts",
+  "taxonomies/terms.repository.ts",
 ];

@@ -34,12 +34,6 @@
     "pg-core import": 1,
     "returning": 2
   },
-  "collections/collections.repository.ts": {
-    "array function": 2,
-    "cast with ::": 2,
-    "returning": 2,
-    "upsert": 1
-  },
   "commerce/carts/carts.repository.ts": {
     "returning": 3,
     "upsert": 1
@@ -270,14 +264,6 @@
   },
   "starter-sites/starter-sites.repository.ts": {
     "json field access": 1
-  },
-  "taxonomies/taxonomies.repository.ts": {
-    "returning": 1,
-    "upsert": 1
-  },
-  "taxonomies/terms.repository.ts": {
-    "returning": 1,
-    "upsert": 1
   },
   "users/authorship.repository.ts": {
     "returning": 1

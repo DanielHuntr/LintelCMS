@@ -1,6 +1,13 @@
 import { and, asc, eq, inArray, or, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { type NewTerm, type Term, taxonomiesTable, termsTable } from "./taxonomies.table.js";
+import {
+  type NewTerm,
+  type Term,
+  taxonomiesTable as taxonomiesDefinition,
+  termsTable as termsDefinition,
+} from "./taxonomies.table.js";
+import { insertIfNew, insertReturning } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for terms, nothing else. */
 
@@ -8,6 +15,8 @@ import { type NewTerm, type Term, taxonomiesTable, termsTable } from "./taxonomi
 export type TermWithTaxonomy = Term & { taxonomyHandle: string };
 
 function selectWithTaxonomy(database: DatabaseOrTransaction) {
+  const taxonomiesTable = tableFor(database, taxonomiesDefinition);
+  const termsTable = tableFor(database, termsDefinition);
   return database
     .select({ term: termsTable, taxonomyHandle: taxonomiesTable.handle })
     .from(termsTable)
@@ -23,6 +32,7 @@ export async function listTermsInTaxonomy(
   database: DatabaseOrTransaction,
   taxonomyId: string,
 ): Promise<TermWithTaxonomy[]> {
+  const termsTable = tableFor(database, termsDefinition);
   const rows = await selectWithTaxonomy(database)
     .where(eq(termsTable.taxonomyId, taxonomyId))
     .orderBy(asc(sql`lower(${termsTable.title})`), asc(termsTable.createdAt));
@@ -33,6 +43,7 @@ export async function findTermById(
   database: DatabaseOrTransaction,
   termId: string,
 ): Promise<TermWithTaxonomy | undefined> {
+  const termsTable = tableFor(database, termsDefinition);
   const [row] = await selectWithTaxonomy(database).where(eq(termsTable.id, termId)).limit(1);
   return row ? toTermWithTaxonomy(row) : undefined;
 }
@@ -42,6 +53,7 @@ export async function findTermBySlug(
   taxonomyId: string,
   slug: string,
 ): Promise<TermWithTaxonomy | undefined> {
+  const termsTable = tableFor(database, termsDefinition);
   const [row] = await selectWithTaxonomy(database)
     .where(and(eq(termsTable.taxonomyId, taxonomyId), eq(termsTable.slug, slug)))
     .limit(1);
@@ -53,6 +65,7 @@ export async function findTermsByIds(
   database: DatabaseOrTransaction,
   termIds: readonly string[],
 ): Promise<TermWithTaxonomy[]> {
+  const termsTable = tableFor(database, termsDefinition);
   if (termIds.length === 0) {
     return [];
   }
@@ -66,6 +79,8 @@ export async function findTermIdsInTaxonomy(
   taxonomyHandle: string,
   termIds: readonly string[],
 ): Promise<string[]> {
+  const taxonomiesTable = tableFor(database, taxonomiesDefinition);
+  const termsTable = tableFor(database, termsDefinition);
   if (termIds.length === 0) {
     return [];
   }
@@ -82,6 +97,7 @@ export async function findTermSlugsStartingWith(
   base: string,
   exceptTermId?: string,
 ): Promise<string[]> {
+  const termsTable = tableFor(database, termsDefinition);
   const rows = await database
     .select({ id: termsTable.id, slug: termsTable.slug })
     .from(termsTable)
@@ -95,7 +111,8 @@ export async function findTermSlugsStartingWith(
 }
 
 export async function insertTerm(database: DatabaseOrTransaction, term: NewTerm): Promise<Term> {
-  const [inserted] = await database.insert(termsTable).values(term).returning();
+  const termsTable = tableFor(database, termsDefinition);
+  const [inserted] = await insertReturning(database, termsTable, term);
   if (!inserted) {
     throw new Error("The database did not return the new term.");
   }
@@ -107,12 +124,10 @@ export async function insertTermIfMissing(
   database: DatabaseOrTransaction,
   term: NewTerm,
 ): Promise<void> {
-  await database
-    .insert(termsTable)
-    .values(term)
-    .onConflictDoNothing({
-      target: [termsTable.tenantId, termsTable.taxonomyId, termsTable.slug],
-    });
+  const termsTable = tableFor(database, termsDefinition);
+  await insertIfNew(database, termsTable, term, {
+    target: [termsTable.tenantId, termsTable.taxonomyId, termsTable.slug],
+  });
 }
 
 export async function updateTermRow(
@@ -120,6 +135,7 @@ export async function updateTermRow(
   termId: string,
   changes: Partial<Pick<Term, "title" | "slug" | "description">>,
 ): Promise<void> {
+  const termsTable = tableFor(database, termsDefinition);
   await database
     .update(termsTable)
     .set({ ...changes, updatedAt: new Date() })
@@ -127,6 +143,7 @@ export async function updateTermRow(
 }
 
 export async function deleteTermRow(database: DatabaseOrTransaction, termId: string) {
+  const termsTable = tableFor(database, termsDefinition);
   await database.delete(termsTable).where(eq(termsTable.id, termId));
 }
 
@@ -134,6 +151,7 @@ export async function listTermIdsInTaxonomy(
   database: DatabaseOrTransaction,
   taxonomyId: string,
 ): Promise<string[]> {
+  const termsTable = tableFor(database, termsDefinition);
   const rows = await database
     .select({ id: termsTable.id })
     .from(termsTable)
