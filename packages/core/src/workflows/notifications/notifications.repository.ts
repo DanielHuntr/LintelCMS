@@ -1,13 +1,18 @@
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../database/client.js";
-import { type UserNotificationRow, userNotificationsTable } from "../workflows.table.js";
+import {
+  type UserNotificationRow,
+  userNotificationsTable as userNotificationsDefinition,
+} from "../workflows.table.js";
+import { tableFor } from "../../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for in-app notifications, nothing else. */
 
 export async function insertNotifications(
   database: DatabaseOrTransaction,
-  notifications: (typeof userNotificationsTable.$inferInsert)[],
+  notifications: (typeof userNotificationsDefinition.$inferInsert)[],
 ): Promise<void> {
+  const userNotificationsTable = tableFor(database, userNotificationsDefinition);
   if (notifications.length > 0) {
     await database.insert(userNotificationsTable).values(notifications);
   }
@@ -19,6 +24,7 @@ export async function listNotificationRows(
   userId: string,
   limit: number,
 ): Promise<{ rows: UserNotificationRow[]; unread: number }> {
+  const userNotificationsTable = tableFor(database, userNotificationsDefinition);
   const mine = and(
     eq(userNotificationsTable.tenantId, tenantId),
     eq(userNotificationsTable.userId, userId),
@@ -44,6 +50,7 @@ export async function markNotificationsRead(
   notificationId: string | undefined,
   now: Date,
 ): Promise<void> {
+  const userNotificationsTable = tableFor(database, userNotificationsDefinition);
   const conditions = [
     eq(userNotificationsTable.tenantId, tenantId),
     eq(userNotificationsTable.userId, userId),

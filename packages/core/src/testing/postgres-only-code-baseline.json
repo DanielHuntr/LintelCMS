@@ -249,8 +249,5 @@
     "distinct on": 1,
     "returning": 3,
     "upsert": 1
-  },
-  "workflows/workflows.repository.ts": {
-    "returning": 2
   }
 }
