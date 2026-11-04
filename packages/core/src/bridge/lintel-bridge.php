@@ -27,6 +27,12 @@ const LINTEL_BRIDGE_VERSION = 1;
 const LINTEL_BRIDGE_MINIMUM_PHP = '7.4.0';
 /** Where the private folder may be, relative to this file: outside the website first. */
 const LINTEL_PRIVATE_FOLDERS = ['../lintel-private', 'lintel-private'];
+/**
+ * The first line of every private file. A private file is PHP, so a browser that reaches it
+ * gets nothing on any server, whether or not the server reads .htaccess; PHP stops reading at
+ * __halt_compiler, so nothing a visitor typed below it can ever run.
+ */
+const LINTEL_FILE_GUARD = "<?php exit; __halt_compiler();\n";
 const LINTEL_FASTEST_HUMAN_SECONDS = 3;
 const LINTEL_TOKEN_LIFETIME_SECONDS = 86400;
 const LINTEL_SIGNED_REQUEST_WINDOW_SECONDS = 300;
@@ -57,6 +63,9 @@ function lintel_handle_request(): void
             lintel_cors();
             http_response_code(204);
             return;
+        }
+        if (lintel_config_or_empty() !== []) {
+            lintel_move_old_private_files();
         }
         switch ($action) {
             case 'token':
@@ -176,12 +185,42 @@ function lintel_data_path(string $name): string
     return $path;
 }
 
-/** Writes whole files only: a temporary file renamed into place. */
+/** A private file's contents without the guard at its top. */
+function lintel_read_private(string $path): string
+{
+    $contents = (string) file_get_contents($path);
+    return strpos($contents, LINTEL_FILE_GUARD) === 0 ? substr($contents, strlen(LINTEL_FILE_GUARD)) : $contents;
+}
+
+/** Writes whole files only: a temporary file, guarded like the rest, renamed into place. */
 function lintel_write_json(string $path, $value): void
 {
-    $temporary = $path . '.' . bin2hex(random_bytes(4)) . '.tmp';
-    file_put_contents($temporary, json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+    $temporary = dirname($path) . '/.tmp-' . bin2hex(random_bytes(8)) . '.php';
+    file_put_contents($temporary, LINTEL_FILE_GUARD . json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
     rename($temporary, $path);
+}
+
+/** What an older companion left as plain .json files, moved behind the guard. */
+function lintel_move_old_private_files(): void
+{
+    $folder = lintel_private_folder();
+    $old = array_merge(
+        glob($folder . '/*.json') ?: [],
+        glob($folder . '/data/*.json') ?: [],
+        glob($folder . '/data/queue/*/*.json') ?: []
+    );
+    if ($old === []) {
+        return;
+    }
+    lintel_with_lock(function () use ($old) {
+        foreach ($old as $file) {
+            $guarded = substr($file, 0, -strlen('.json')) . '.php';
+            if (is_file($file) && !is_file($guarded)) {
+                file_put_contents($guarded, LINTEL_FILE_GUARD . (string) file_get_contents($file));
+            }
+            @unlink($file);
+        }
+    });
 }
 
 /** @return mixed */
@@ -190,7 +229,7 @@ function lintel_read_json(string $path, $fallback)
     if (!is_file($path)) {
         return $fallback;
     }
-    $decoded = json_decode((string) file_get_contents($path), true);
+    $decoded = json_decode(lintel_read_private($path), true);
     return $decoded === null ? $fallback : $decoded;
 }
 
@@ -225,7 +264,7 @@ function lintel_signed_file(string $name): array
     if (!is_file($path)) {
         throw new LintelProblem(503, 'This website is still being set up. Please try again in a few minutes.');
     }
-    $envelope = json_decode((string) file_get_contents($path), true);
+    $envelope = json_decode(lintel_read_private($path), true);
     $payload = is_array($envelope) ? (string) ($envelope['payload'] ?? '') : '';
     $signature = is_array($envelope) ? (string) ($envelope['signature'] ?? '') : '';
     if (!hash_equals(hash_hmac('sha256', $payload, lintel_secret()), $signature)) {
@@ -371,7 +410,7 @@ function lintel_check_signed_request(string $action, string $body): void
         throw new LintelProblem(401, 'This request isn\'t signed by Lintel.');
     }
     lintel_with_lock(function () use ($nonce) {
-        $path = lintel_data_path('nonces.json');
+        $path = lintel_data_path('nonces.php');
         $seen = lintel_read_json($path, []);
         $now = time();
         $seen = array_filter($seen, function ($at) use ($now) {
@@ -400,11 +439,11 @@ function lintel_status(): array
 function lintel_pull(): array
 {
     $submissions = [];
-    foreach (glob(lintel_data_path('queue/submissions') . '/*.json') ?: [] as $file) {
+    foreach (glob(lintel_data_path('queue/submissions') . '/*.php') ?: [] as $file) {
         $submissions[] = lintel_read_json($file, null);
     }
     $orders = [];
-    foreach (glob(lintel_data_path('queue/orders') . '/*.json') ?: [] as $file) {
+    foreach (glob(lintel_data_path('queue/orders') . '/*.php') ?: [] as $file) {
         $order = lintel_read_json($file, null);
         if (is_array($order) && empty($order['ackedAt'])) {
             $orders[] = $order;
@@ -418,14 +457,14 @@ function lintel_ack(array $body): array
 {
     $forgotten = 0;
     foreach ((array) ($body['submissions'] ?? []) as $id) {
-        $path = lintel_data_path('queue/submissions/' . preg_replace('/[^a-f0-9]/', '', (string) $id) . '.json');
+        $path = lintel_data_path('queue/submissions/' . preg_replace('/[^a-f0-9]/', '', (string) $id) . '.php');
         if (is_file($path) && unlink($path)) {
             $forgotten++;
         }
     }
     lintel_with_lock(function () use ($body, &$forgotten) {
         foreach ((array) ($body['orders'] ?? []) as $id) {
-            $path = lintel_data_path('queue/orders/' . preg_replace('/[^a-f0-9]/', '', (string) $id) . '.json');
+            $path = lintel_data_path('queue/orders/' . preg_replace('/[^a-f0-9]/', '', (string) $id) . '.php');
             $order = lintel_read_json($path, null);
             if (is_array($order) && empty($order['ackedAt'])) {
                 $order['ackedAt'] = time();
@@ -443,7 +482,7 @@ function lintel_ack(array $body): array
 
 function lintel_issue_token(string $handle): string
 {
-    $forms = lintel_signed_file('forms.json');
+    $forms = lintel_signed_file('forms.php');
     if (!isset($forms['forms'][$handle])) {
         throw new LintelProblem(404, 'There is no such form.');
     }
@@ -471,7 +510,7 @@ function lintel_check_token(string $handle, string $token, int $now): string
 
 function lintel_receive_form(string $handle): void
 {
-    $forms = lintel_signed_file('forms.json');
+    $forms = lintel_signed_file('forms.php');
     $form = $forms['forms'][$handle] ?? null;
     if (!is_array($form)) {
         throw new LintelProblem(404, 'There is no such form.');
@@ -501,7 +540,7 @@ function lintel_receive_form(string $handle): void
             'sourceUrl' => substr((string) ($_SERVER['HTTP_REFERER'] ?? ''), 0, 2000),
             'notifiedByHost' => lintel_email_owner($form, $values),
         ];
-        lintel_write_json(lintel_data_path('queue/submissions/' . $submission['id'] . '.json'), $submission);
+        lintel_write_json(lintel_data_path('queue/submissions/' . $submission['id'] . '.php'), $submission);
     }
     $confirmation = $form['confirmation'] ?? ['type' => 'message', 'message' => 'Thank you.'];
     if (lintel_wants_page()) {
@@ -547,7 +586,7 @@ function lintel_limit_rate(): void
 {
     $key = hash('sha256', (string) ($_SERVER['REMOTE_ADDR'] ?? '') . lintel_secret());
     lintel_with_lock(function () use ($key) {
-        $path = lintel_data_path('rate.json');
+        $path = lintel_data_path('rate.php');
         $minute = (int) floor(time() / 60);
         $counts = lintel_read_json($path, []);
         if (($counts['minute'] ?? 0) !== $minute) {
@@ -634,7 +673,7 @@ function lintel_email_owner(array $form, array $values): bool
 /** @return array<string,mixed> */
 function lintel_catalogue(): array
 {
-    return lintel_signed_file('catalogue.json');
+    return lintel_signed_file('catalogue.php');
 }
 
 function lintel_market_for(array $catalogue, string $country): array
@@ -864,7 +903,7 @@ function lintel_counted_orders(array $catalogue): array
 {
     $made = strtotime((string) $catalogue['generatedAt']);
     $orders = [];
-    foreach (glob(lintel_data_path('queue/orders') . '/*.json') ?: [] as $file) {
+    foreach (glob(lintel_data_path('queue/orders') . '/*.php') ?: [] as $file) {
         $order = lintel_read_json($file, null);
         if (!is_array($order)) {
             continue;
@@ -948,7 +987,7 @@ function lintel_start_checkout(array $basket): array
     $catalogue = lintel_catalogue();
     $holdId = lintel_new_id();
     lintel_with_lock(function () use ($catalogue, $quote, $email, $address, $holdId) {
-        $path = lintel_data_path('holds.json');
+        $path = lintel_data_path('holds.php');
         $now = time();
         $holds = array_filter(lintel_read_json($path, []), function ($hold) use ($now) {
             return $hold['expiresAt'] > $now - LINTEL_HOLD_KEPT_SECONDS;
@@ -1120,12 +1159,12 @@ function lintel_mollie_webhook(string $paymentId): array
 function lintel_record_paid_order(string $holdId, string $provider, string $paymentId, int $amount, string $currency, string $eventKey, ?bool $livemode = null): ?string
 {
     return lintel_with_lock(function () use ($holdId, $provider, $paymentId, $amount, $currency, $eventKey, $livemode) {
-        $eventsPath = lintel_data_path('payment-events.json');
+        $eventsPath = lintel_data_path('payment-events.php');
         $events = lintel_read_json($eventsPath, []);
         if (isset($events[$eventKey])) {
             return $events[$eventKey];
         }
-        $holdsPath = lintel_data_path('holds.json');
+        $holdsPath = lintel_data_path('holds.php');
         $holds = lintel_read_json($holdsPath, []);
         $hold = $holds[$holdId] ?? null;
         if (!is_array($hold)) {
@@ -1145,7 +1184,7 @@ function lintel_record_paid_order(string $holdId, string $provider, string $paym
             'shippingAddress' => $hold['address'],
         ] + $quote;
         unset($order['shippingOptions']);
-        lintel_write_json(lintel_data_path('queue/orders/' . $holdId . '.json'), $order);
+        lintel_write_json(lintel_data_path('queue/orders/' . $holdId . '.php'), $order);
         $holds[$holdId]['ordered'] = true;
         lintel_write_json($holdsPath, $holds);
         $events[$eventKey] = $holdId;

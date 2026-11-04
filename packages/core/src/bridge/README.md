@@ -9,14 +9,19 @@ hosting that only runs PHP. It is copied into `dist/bridge` at build time and up
 Its settings and everything it keeps live in `lintel-private`, beside the website when the
 host allows it and otherwise inside it, protected by `.htaccess` and `web.config`:
 
-| File             | Written by    | What it holds                                                            |
-| ---------------- | ------------- | ------------------------------------------------------------------------ |
-| `config.php`     | Lintel        | The shared secret, the site's address, Stripe and Mollie keys            |
-| `forms.json`     | Lintel        | Each form's questions, signed                                            |
-| `catalogue.json` | Lintel        | Prices per market, stock, shipping, tax, discount codes, signed          |
-| `data/`          | the companion | Submissions and paid orders waiting for Lintel, stock holds, used nonces |
+| File            | Written by    | What it holds                                                            |
+| --------------- | ------------- | ------------------------------------------------------------------------ |
+| `config.php`    | Lintel        | The shared secret, the site's address, Stripe and Mollie keys            |
+| `forms.php`     | Lintel        | Each form's questions, signed                                            |
+| `catalogue.php` | Lintel        | Prices per market, stock, shipping, tax, discount codes, signed          |
+| `data/`         | the companion | Submissions and paid orders waiting for Lintel, stock holds, used nonces |
 
 Keys never go into the website's own files.
+
+`.htaccess` and `web.config` are only a second layer, because Nginx reads neither. Everything
+private is a `.php` file starting with `<?php exit; __halt_compiler();`, so a browser that
+reaches one gets an empty page on any server, and nothing a visitor typed can run. The
+companion moves `.json` files left by an older version behind that line on its next request.
 
 ## Forms
 
