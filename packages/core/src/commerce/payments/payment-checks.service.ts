@@ -133,11 +133,27 @@ async function stripeIsBusy(shop: ShopContext, now: Date): Promise<boolean> {
   return (await listOrdersWithPendingRefunds(shop.database, "stripe")).length > 0;
 }
 
-async function checkPayPal(shop: ShopContext): Promise<void> {
-  for (const checkout of await listOpenCheckoutRowsForProvider(shop.database, "paypal")) {
-    await confirmPayPalCheckout(shop, checkout);
+/** Checks every item, so one payment that can't be read doesn't hold up the others. */
+async function checkEach<Item>(
+  items: Iterable<Item>,
+  check: (item: Item) => Promise<unknown>,
+): Promise<void> {
+  const problems: unknown[] = [];
+  for (const item of items) {
+    await check(item).catch((error: unknown) => problems.push(error));
   }
-  await settlePendingPayPalRefunds(shop);
+  if (problems.length > 0) throw problems[0];
+}
+
+async function checkPayPal(shop: ShopContext): Promise<void> {
+  const checkouts = await listOpenCheckoutRowsForProvider(shop.database, "paypal");
+  await checkEach(
+    [
+      ...checkouts.map((checkout) => () => confirmPayPalCheckout(shop, checkout)),
+      () => settlePendingPayPalRefunds(shop),
+    ],
+    (check) => check(),
+  );
 }
 
 async function checkMollie(shop: ShopContext): Promise<void> {
@@ -148,9 +164,7 @@ async function checkMollie(shop: ShopContext): Promise<void> {
   for (const order of await listOrdersWithPendingRefunds(shop.database, "mollie")) {
     if (order.providerPaymentId) paymentIds.add(order.providerPaymentId);
   }
-  for (const paymentId of paymentIds) {
-    await handleMollieWebhook(shop, paymentId);
-  }
+  await checkEach(paymentIds, (paymentId) => handleMollieWebhook(shop, paymentId));
 }
 
 /** Keeps checking until the server stops; each round says when the next one is. */
