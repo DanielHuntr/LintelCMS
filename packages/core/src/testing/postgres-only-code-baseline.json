@@ -50,10 +50,6 @@
     "json containment": 1,
     "jsonb function": 1
   },
-  "commerce/products/products.repository.ts": {
-    "ilike": 2,
-    "returning": 3
-  },
   "commerce/shopify-import/shopify-import.repository.ts": {
     "returning": 4,
     "upsert": 2

@@ -1,16 +1,19 @@
-import { and, asc, count, desc, eq, ilike, inArray, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, type SQL } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../database/client.js";
 import {
   type NewProductRow,
   type NewVariantRow,
   type ProductRow,
   type ProductStatus,
-  productsTable,
+  productsTable as productsDefinition,
   type VariantPriceRow,
-  variantPricesTable,
+  variantPricesTable as variantPricesDefinition,
   type VariantRow,
-  variantsTable,
+  variantsTable as variantsDefinition,
 } from "./products.table.js";
+import { deleteReturning, insertReturning } from "../../database/dialect/writes.js";
+import { tableFor } from "../../database/dialect/mysql-tables.js";
+import { likeIgnoringCase } from "../../database/dialect/expressions.js";
 
 /** Database reads and writes for products, their variants and their prices. */
 
@@ -27,7 +30,8 @@ export async function listProductRows(
   filter: ProductFilter,
   page: { page: number; perPage: number },
 ): Promise<{ rows: ProductRow[]; total: number }> {
-  const where = productConditions(tenantId, filter);
+  const productsTable = tableFor(database, productsDefinition);
+  const where = productConditions(database, tenantId, filter);
   const rows = await database
     .select()
     .from(productsTable)
@@ -44,6 +48,7 @@ export async function listProductRowsById(
   tenantId: string,
   productIds: readonly string[],
 ): Promise<ProductRow[]> {
+  const productsTable = tableFor(database, productsDefinition);
   if (productIds.length === 0) return [];
   return database
     .select()
@@ -56,6 +61,7 @@ export async function findProductRow(
   tenantId: string,
   productId: string,
 ): Promise<ProductRow | undefined> {
+  const productsTable = tableFor(database, productsDefinition);
   const [row] = await database
     .select()
     .from(productsTable)
@@ -69,6 +75,7 @@ export async function findProductRowByHandle(
   tenantId: string,
   handle: string,
 ): Promise<ProductRow | undefined> {
+  const productsTable = tableFor(database, productsDefinition);
   const [row] = await database
     .select()
     .from(productsTable)
@@ -83,10 +90,16 @@ export async function listHandlesLike(
   tenantId: string,
   base: string,
 ): Promise<Set<string>> {
+  const productsTable = tableFor(database, productsDefinition);
   const rows = await database
     .select({ handle: productsTable.handle })
     .from(productsTable)
-    .where(and(eq(productsTable.tenantId, tenantId), ilike(productsTable.handle, `${base}%`)));
+    .where(
+      and(
+        eq(productsTable.tenantId, tenantId),
+        likeIgnoringCase(database, productsTable.handle, `${base}%`),
+      ),
+    );
   return new Set(rows.map((row) => row.handle));
 }
 
@@ -94,7 +107,8 @@ export async function insertProduct(
   database: DatabaseOrTransaction,
   product: NewProductRow,
 ): Promise<ProductRow> {
-  const [inserted] = await database.insert(productsTable).values(product).returning();
+  const productsTable = tableFor(database, productsDefinition);
+  const [inserted] = await insertReturning(database, productsTable, product);
   if (!inserted) {
     throw new Error("Saving the product returned nothing");
   }
@@ -107,6 +121,7 @@ export async function updateProductRow(
   productId: string,
   changes: Partial<NewProductRow>,
 ): Promise<void> {
+  const productsTable = tableFor(database, productsDefinition);
   await database
     .update(productsTable)
     .set(changes)
@@ -118,10 +133,13 @@ export async function deleteProductRow(
   tenantId: string,
   productId: string,
 ): Promise<boolean> {
-  const deleted = await database
-    .delete(productsTable)
-    .where(and(eq(productsTable.tenantId, tenantId), eq(productsTable.id, productId)))
-    .returning({ id: productsTable.id });
+  const productsTable = tableFor(database, productsDefinition);
+  const deleted = await deleteReturning(
+    database,
+    productsTable,
+    and(eq(productsTable.tenantId, tenantId), eq(productsTable.id, productId)),
+    { id: productsTable.id },
+  );
   return deleted.length > 0;
 }
 
@@ -129,6 +147,7 @@ export async function listVariantRows(
   database: DatabaseOrTransaction,
   productIds: readonly string[],
 ): Promise<VariantRow[]> {
+  const variantsTable = tableFor(database, variantsDefinition);
   if (productIds.length === 0) return [];
   return database
     .select()
@@ -142,6 +161,7 @@ export async function listVariantRowsById(
   tenantId: string,
   variantIds: readonly string[],
 ): Promise<VariantRow[]> {
+  const variantsTable = tableFor(database, variantsDefinition);
   if (variantIds.length === 0) return [];
   return database
     .select()
@@ -153,7 +173,8 @@ export async function insertVariant(
   database: DatabaseOrTransaction,
   variant: NewVariantRow,
 ): Promise<VariantRow> {
-  const [inserted] = await database.insert(variantsTable).values(variant).returning();
+  const variantsTable = tableFor(database, variantsDefinition);
+  const [inserted] = await insertReturning(database, variantsTable, variant);
   if (!inserted) {
     throw new Error("Saving the variant returned nothing");
   }
@@ -165,6 +186,7 @@ export async function updateVariantRow(
   variantId: string,
   changes: Partial<NewVariantRow>,
 ): Promise<void> {
+  const variantsTable = tableFor(database, variantsDefinition);
   await database.update(variantsTable).set(changes).where(eq(variantsTable.id, variantId));
 }
 
@@ -172,6 +194,7 @@ export async function deleteVariantRows(
   database: DatabaseOrTransaction,
   variantIds: readonly string[],
 ): Promise<void> {
+  const variantsTable = tableFor(database, variantsDefinition);
   if (variantIds.length === 0) return;
   await database.delete(variantsTable).where(inArray(variantsTable.id, [...variantIds]));
 }
@@ -182,6 +205,7 @@ export async function findVariantBySku(
   tenantId: string,
   sku: string,
 ): Promise<VariantRow | undefined> {
+  const variantsTable = tableFor(database, variantsDefinition);
   const [row] = await database
     .select()
     .from(variantsTable)
@@ -194,6 +218,7 @@ export async function listPriceRows(
   database: DatabaseOrTransaction,
   variantIds: readonly string[],
 ): Promise<VariantPriceRow[]> {
+  const variantPricesTable = tableFor(database, variantPricesDefinition);
   if (variantIds.length === 0) return [];
   return database
     .select()
@@ -207,6 +232,7 @@ export async function replaceVariantPrices(
   variantId: string,
   prices: ReadonlyArray<{ currency: string; amount: number; compareAtAmount: number | null }>,
 ): Promise<void> {
+  const variantPricesTable = tableFor(database, variantPricesDefinition);
   await database.delete(variantPricesTable).where(eq(variantPricesTable.variantId, variantId));
   if (prices.length > 0) {
     await database
@@ -215,12 +241,17 @@ export async function replaceVariantPrices(
   }
 }
 
-function productConditions(tenantId: string, filter: ProductFilter): SQL | undefined {
+function productConditions(
+  database: DatabaseOrTransaction,
+  tenantId: string,
+  filter: ProductFilter,
+): SQL | undefined {
+  const productsTable = tableFor(database, productsDefinition);
   const escaped = filter.search?.replace(/[\\%_]/g, (character) => `\\${character}`);
   return and(
     eq(productsTable.tenantId, tenantId),
     filter.status ? eq(productsTable.status, filter.status) : undefined,
-    escaped ? ilike(productsTable.title, `%${escaped}%`) : undefined,
+    escaped ? likeIgnoringCase(database, productsTable.title, `%${escaped}%`) : undefined,
     filter.productIds ? inArray(productsTable.id, [...filter.productIds]) : undefined,
     filter.extraCondition,
   );
