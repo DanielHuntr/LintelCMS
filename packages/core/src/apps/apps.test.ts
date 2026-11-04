@@ -4,6 +4,10 @@ import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ensurePagesCollection } from "../collections/default-collections.js";
+import { DEFAULT_TENANT_ID } from "../database/columns.js";
+import { CLIENT_ROLE_HANDLE } from "../roles/built-in-roles.js";
+import { assignRoleToUser, findRoleByHandle } from "../roles/roles.repository.js";
+import { ensureBuiltInRoles } from "../roles/roles.service.js";
 import { useTestDatabase } from "../testing/test-database.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
@@ -389,6 +393,59 @@ describe("apps", () => {
         },
       ]);
       expect(response.body).not.toContain("lintelapp_");
+    });
+
+    describe("who a page is for (LINTEL-UX-334)", () => {
+      async function extensionsFor(email: string, roleHandle: string) {
+        const person = await createTestUser(testDatabase.database, email, []);
+        await ensureBuiltInRoles(testDatabase.database);
+        const role = await findRoleByHandle(testDatabase.database, DEFAULT_TENANT_ID, roleHandle);
+        await assignRoleToUser(testDatabase.database, person.id, role?.id ?? "");
+        const signedIn = requestsAs(server, await signInAndGetCookies(server, email));
+        return (await signedIn("GET", "/apps/extensions")).json().apps[0].admin;
+      }
+
+      it("leaves a page that names no roles out for clients, keeping the rest", async () => {
+        await install();
+
+        const admin = await extensionsFor("client@example.com", CLIENT_ROLE_HANDLE);
+
+        expect(admin.page).toBeUndefined();
+        expect(admin.dashboardWidgets).toHaveLength(1);
+        expect((await extensionsFor("editor@example.com", "editor")).page).toBeDefined();
+        expect((await extensionsFor("viewer@example.com", "viewer")).page).toBeUndefined();
+        expect((await extensionsFor("owner@example.com", "owner")).page).toBeDefined();
+      });
+
+      it("shows a page to the roles it names and Owners, and nobody else", async () => {
+        const manifest = stockSyncManifest(appServer.origin);
+        await install({
+          ...manifest,
+          admin: {
+            ...manifest.admin,
+            page: { ...manifest.admin.page, roles: [CLIENT_ROLE_HANDLE] },
+          },
+        });
+
+        expect((await extensionsFor("client@example.com", CLIENT_ROLE_HANDLE)).page).toBeDefined();
+        expect((await extensionsFor("owner@example.com", "owner")).page).toBeDefined();
+        expect((await extensionsFor("editor@example.com", "editor")).page).toBeUndefined();
+        const custom = requestsAs(server, adminCookies);
+        expect((await custom("GET", "/apps/extensions")).json().apps[0].admin.page).toBeUndefined();
+      });
+
+      it("refuses a role that doesn't exist", async () => {
+        const manifest = stockSyncManifest(appServer.origin);
+        const response = await api("POST", "/apps/preview", {
+          manifest: {
+            ...manifest,
+            admin: { ...manifest.admin, page: { ...manifest.admin.page, roles: ["everyone"] } },
+          },
+        });
+
+        expect(response.statusCode).toBe(400);
+        expect(response.body).toContain("Roles are one of");
+      });
     });
   });
 

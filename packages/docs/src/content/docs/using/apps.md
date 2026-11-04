@@ -73,7 +73,8 @@ Only install apps from developers you trust: an app that may read your content c
 
 Depending on the app, you'll find:
 
-- a new item in the **sidebar**, under Media;
+- a new item in the **sidebar**, under Media, for the roles the app is meant for (the details
+  before you install say which);
 - a **widget** to add to your dashboard (press **Edit dashboard**, then **Add widget**);
 - a **panel** beside the entry you are editing, sometimes only for some kinds of content;
 - a row in **Settings**, under Apps, for its own settings.

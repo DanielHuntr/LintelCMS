@@ -79,8 +79,8 @@ export async function appsRoutes(server: FastifyInstance, options: AppsRoutesOpt
     return reply.code(201).header("cache-control", "no-store").send(installed);
   });
 
-  server.get("/apps/extensions", { preHandler: requireSignedIn }, async () =>
-    listAppExtensions(server.database),
+  server.get("/apps/extensions", { preHandler: requireSignedIn }, async (request) =>
+    listAppExtensions(server.database, getSignedIn(request)),
   );
 
   server.get("/apps/development-mode", read, async () =>

@@ -92,10 +92,14 @@ a settings page. Read it beside this page; the same steps in C# and Python are
 | `appUrl`                 | The app's origin. The icon and every admin page must be on it.                                  |
 | `scopes`                 | What the app may do; see below. Ask for as little as you can.                                   |
 | `webhooks`               | Events and where to send them; each event needs the scope that reads what it is about.          |
-| `admin.page`             | A sidebar item and a full page.                                                                 |
+| `admin.page`             | A sidebar item and a full page. `roles` says who it is for; see below.                          |
 | `admin.dashboardWidgets` | Widgets people can add to their dashboard: `small`, `medium` or `large`.                        |
 | `admin.editorPanels`     | Sections beside the entry editor; `collections` limits them to some collections.                |
 | `admin.settingsPage`     | A row in Settings, under Apps, for admins.                                                      |
+
+`admin.page.roles` lists who sees the page, from `owner`, `admin`, `editor`, `author`,
+`client-content-only` and `viewer`. Owners always see it. With a list, nobody else does, custom
+roles included. Leave it out and everyone sees it except clients and Viewers.
 
 Addresses must be `https://`, except `http://localhost` and `http://127.0.0.1` while you
 develop. An app can't be on the same origin as Lintel's admin or API. Lintel keeps the copy

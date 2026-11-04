@@ -55,8 +55,16 @@ export async function roleRequiresTwoFactor(
 }
 
 export async function isOwner(database: DatabaseOrTransaction, userId: string): Promise<boolean> {
+  const handles = await findRoleHandlesForUser(database, userId);
+  return handles.includes(OWNER_ROLE_HANDLE);
+}
+
+export async function findRoleHandlesForUser(
+  database: DatabaseOrTransaction,
+  userId: string,
+): Promise<string[]> {
   const roles = await findRolesForUsers(database, [userId]);
-  return roles.some((role) => role.handle === OWNER_ROLE_HANDLE);
+  return roles.map((role) => role.handle);
 }
 
 export function findActiveOwnerIds(database: DatabaseOrTransaction): Promise<string[]> {

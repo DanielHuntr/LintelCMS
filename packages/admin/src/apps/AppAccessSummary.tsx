@@ -35,6 +35,23 @@ const eventWords: Record<EventName, StringKey> = {
   "form.submitted": "apps.event.formSubmitted",
 };
 
+const pageRoleNames = {
+  owner: "apps.role.owner",
+  admin: "apps.role.admin",
+  editor: "apps.role.editor",
+  author: "apps.role.author",
+  "client-content-only": "apps.role.client",
+  viewer: "apps.role.viewer",
+} as const;
+
+/** Who a page shows for: the Owner always, so they aren't named twice. */
+function pageSummary({ label, roles }: NonNullable<AppManifest["admin"]["page"]>): string {
+  if (!roles) return t("apps.adds.page", { label });
+  const others = roles.filter((role) => role !== "owner");
+  const names = [t(pageRoleNames.owner), ...others.map((role) => t(pageRoleNames[role]))];
+  return t("apps.adds.pageFor", { label, roles: names.join(", ") });
+}
+
 /**
  * Everything an app asks for, in plain English: what it may read and change, what it is
  * told about, and what it adds to the admin. Shown before installing and on the app's page,
@@ -44,7 +61,7 @@ export function AppAccessSummary({ manifest }: { manifest: AppManifest }) {
   const events = [...new Set(manifest.webhooks.map((webhook) => webhook.event))];
   const { page, dashboardWidgets, editorPanels, settingsPage } = manifest.admin;
   const parts = [
-    ...(page ? [{ icon: SquareMenu, text: t("apps.adds.page", { label: page.label }) }] : []),
+    ...(page ? [{ icon: SquareMenu, text: pageSummary(page) }] : []),
     ...dashboardWidgets.map((widget) => ({
       icon: LayoutGrid,
       text: t("apps.adds.widget", { title: widget.title }),

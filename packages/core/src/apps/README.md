@@ -39,7 +39,8 @@ developers start with the docs page "Building an app".
   `Retry-After`. Each app request is written to the server log with the app's id.
 - **Hear about events**: its webhook subscriptions are ordinary webhooks signed with the
   client secret, sent by `src/webhooks`. They are kept out of Settings → Webhooks.
-- **Show pages in the admin**: a sidebar page, dashboard widgets, entry editor panels (for
+- **Show pages in the admin**: a sidebar page (for the roles it names, or everyone but clients
+  and Viewers; see `app-page-audience.ts`), dashboard widgets, entry editor panels (for
   some or all collections) and a settings page, each drawn in a sandboxed frame. The admin
   gets a short-lived **session token** for each frame from `POST /apps/:id/session-token`
   (`app-session-tokens.ts`): an HS256 JWT signed with the client secret, naming the app, the

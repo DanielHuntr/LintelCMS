@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { webhookEventNames } from "../webhooks/webhook-events.js";
+import { appPageRoleNames } from "./app-page-audience.js";
 import { appScopeNames, scopeNeededForEvent } from "./app-scopes.js";
 
 /**
@@ -42,6 +43,16 @@ const partIdSchema = z.string({ error: "Each part needs an id" }).regex(PART_ID_
 export const appPageSchema = z.object({
   label: shortText("page's label", 40),
   url: appAddressSchema,
+  /** The roles the page is for; leave it out for everyone but clients and Viewers. */
+  roles: z
+    .array(
+      z.enum(appPageRoleNames, {
+        error: `Roles are one of: ${appPageRoleNames.join(", ")}`,
+      }),
+    )
+    .min(1, { error: "List at least one role, or leave roles out" })
+    .max(appPageRoleNames.length)
+    .optional(),
 });
 
 export const appSettingsPageSchema = z.object({ url: appAddressSchema });

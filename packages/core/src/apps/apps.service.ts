@@ -4,7 +4,11 @@ import type { Database, DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import { findEnabledPluginIds } from "../plugins/plugins.service.js";
 import { hasPermission } from "../roles/permissions.js";
-import { findPermissionsForUser, findSiteIdsForUser } from "../roles/roles.service.js";
+import {
+  findPermissionsForUser,
+  findRoleHandlesForUser,
+  findSiteIdsForUser,
+} from "../roles/roles.service.js";
 import { readSetting } from "../settings/settings.service.js";
 import { findUserById } from "../users/users.repository.js";
 import { isLoopbackHost } from "../webhooks/address-safety.js";
@@ -23,6 +27,7 @@ import {
 } from "./app-credentials.js";
 import type { AppManifest } from "./app-manifest.schema.js";
 import { checkAppManifest, fetchAppManifest } from "./app-manifest-reader.js";
+import { appPageIsFor } from "./app-page-audience.js";
 import { permissionsForScopes, pluginsMissingForScopes } from "./app-scopes.js";
 import { signSessionToken } from "./app-session-tokens.js";
 import {
@@ -175,8 +180,10 @@ export async function uninstallApp(database: DatabaseOrTransaction, appId: strin
 /** Every installed app's parts of the admin. Who may use them is decided by what they do. */
 export async function listAppExtensions(
   database: DatabaseOrTransaction,
+  signedIn: SignedIn,
 ): Promise<{ apps: AppExtensions[] }> {
   const rows = await listAppRows(database, DEFAULT_TENANT_ID);
+  const personsRoles = await findRoleHandlesForUser(database, signedIn.user.id);
   return {
     apps: rows.map((row) => ({
       id: row.id,
@@ -184,9 +191,18 @@ export async function listAppExtensions(
       name: row.name,
       iconUrl: row.manifest.icon ?? null,
       origin: new URL(row.manifest.appUrl).origin,
-      admin: row.manifest.admin,
+      admin: withoutPageUnlessFor(row.manifest.admin, personsRoles),
     })),
   };
+}
+
+/** Someone the page isn't for gets no sidebar item, screen or address for it. */
+function withoutPageUnlessFor(
+  admin: AppManifest["admin"],
+  personsRoles: readonly string[],
+): AppManifest["admin"] {
+  if (!admin.page || appPageIsFor(admin.page, personsRoles)) return admin;
+  return { ...admin, page: undefined };
 }
 
 /**
