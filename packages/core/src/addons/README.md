@@ -24,7 +24,8 @@ own tables are in backups: those they declare in `tables` (see below) and those 
 ## An add-on package
 
 `package.json` has a `lintel-addon` section (`addon-package.ts`): the plugin id, the Lintel
-versions it works with (`version-range.ts`) and its built `server` and `admin` files.
+versions it works with (`version-range.ts`) and its built `server` and `admin` files. One that
+only says what data it keeps needs no `server` (`dataOnly` in `addon-package.ts`).
 `lintel addons build` (packages/cli) bundles both with esbuild, leaving out the modules
 listed in `addon-module-names.ts`. The bundle reads those from
 `globalThis.__lintelAddonModules`, which `addon-modules.ts` fills in on the server and

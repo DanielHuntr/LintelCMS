@@ -42,26 +42,32 @@ export async function buildAddon(
     throw error instanceof AddonPackageError ? new CommandError(error.message) : error;
   });
   const { manifest } = addonPackage;
+  if (addonPackage.dataOnly && !manifest.admin) {
+    options.terminal.say(`${addonPackage.packageName} has no code, so there's nothing to build.`);
+    return { stop: async () => {} };
+  }
   const esbuild = await import("esbuild");
   const builds: BuildOptions[] = [];
 
   const serverEntry = join(addonFolder, "src", "server", "index.ts");
-  if (!existsSync(serverEntry)) {
+  if (!existsSync(serverEntry) && !addonPackage.dataOnly) {
     throw new CommandError(
       `An add-on's server half goes in src/server/index.ts, and ${addonFolder} has none.`,
     );
   }
-  builds.push({
-    entryPoints: [serverEntry],
-    outfile: join(addonFolder, manifest.server),
-    platform: "node",
-    target: "node22",
-    // Bundled packages written for CommonJS may still call require().
-    banner: {
-      js: 'import { createRequire as lintelCreateRequire } from "node:module"; const require = lintelCreateRequire(import.meta.url);',
-    },
-    plugins: [shareWithLintel(SERVER_ADDON_MODULES)],
-  });
+  if (!addonPackage.dataOnly) {
+    builds.push({
+      entryPoints: [serverEntry],
+      outfile: join(addonFolder, manifest.server),
+      platform: "node",
+      target: "node22",
+      // Bundled packages written for CommonJS may still call require().
+      banner: {
+        js: 'import { createRequire as lintelCreateRequire } from "node:module"; const require = lintelCreateRequire(import.meta.url);',
+      },
+      plugins: [shareWithLintel(SERVER_ADDON_MODULES)],
+    });
+  }
 
   if (manifest.admin) {
     const adminEntry = ["index.tsx", "index.ts"]

@@ -12,7 +12,8 @@ import { isReadableRange } from "./version-range.js";
  *   "lintel-addon": {
  *     "id": "swatches",                 the plugin id its definePlugin uses
  *     "lintel": ">=1.0.0-rc.1",         the Lintel versions it works with
- *     "server": "dist/server.js",       its server half, built by `lintel addons build`
+ *     "server": "dist/server.js",       its server half, built by `lintel addons build`;
+ *                                       left out by one that only says what data it keeps
  *     "admin": "dist/admin.js",         its admin half, if it has one
  *     "tables": [...],                  what it keeps, and the rest of addon-declarations.ts
  *     "personalData": { "tables": [...] }  what personal data it keeps (see src/privacy)
@@ -75,6 +76,12 @@ export interface AddonPackage {
   folder: string;
   manifest: AddonManifest;
   origin: AddonOrigin;
+  /**
+   * Whether it has no code of its own and only says what data it keeps, in package.json:
+   * no `server` named, nothing built and nothing to build, and something declared. One that
+   * names a `server` or has src/server is only unbuilt, and is told so.
+   */
+  dataOnly: boolean;
 }
 
 /** "git+https://github.com/a/b.git" as a link people can open. */
@@ -114,12 +121,19 @@ export async function readAddonPackage(folder: string): Promise<AddonPackage> {
       `${packageInfo.name}'s "${ADDON_MANIFEST_KEY}" section: ${reason}.`,
     );
   }
+  const namesServer =
+    (packageInfo[ADDON_MANIFEST_KEY] as { server?: unknown }).server !== undefined;
   return {
     packageName: packageInfo.name,
     version: packageInfo.version,
     description: packageInfo.description,
     folder,
     manifest: manifest.data,
+    dataOnly:
+      !namesServer &&
+      !existsSync(join(folder, manifest.data.server)) &&
+      !existsSync(join(folder, "src", "server")) &&
+      (manifest.data.tables.length > 0 || (manifest.data.personalData?.tables.length ?? 0) > 0),
     origin: {
       publisher: packageInfo.author?.trim() || null,
       licence: packageInfo.license?.trim() || null,

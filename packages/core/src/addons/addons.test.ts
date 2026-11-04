@@ -192,6 +192,52 @@ describe("add-ons", () => {
   });
 });
 
+describe("an add-on with no code (LINTEL-UX-287)", () => {
+  const personalData = {
+    tables: [{ name: "votes_cast", columns: [{ name: "email", personalData: true }] }],
+  };
+
+  async function load(manifest: Record<string, unknown>, sourceFolder?: string) {
+    const root = await mkdtemp(join(tmpdir(), "lintel-data-only-"));
+    const folder = join(root, "work", "votes");
+    await writeAddon(folder, { id: "votes", lintel: "*", ...manifest }, {}, "votes");
+    if (sourceFolder) await mkdir(join(folder, sourceFolder), { recursive: true });
+    await writeAddonsList(join(root, "addons"), {
+      packages: [],
+      linked: [folder],
+      enableOnStart: [],
+    });
+    const state = await loadAddons(join(root, "addons"), {
+      lintelVersion: "1.0.0-rc.4",
+      takenIds: [],
+    });
+    await rm(root, { recursive: true, force: true });
+    return state;
+  }
+
+  it("loads from package.json alone when it says what data it keeps", async () => {
+    const { loaded, problems } = await load({ personalData });
+
+    expect(problems).toEqual([]);
+    expect(loaded[0]?.plugin).toMatchObject({
+      id: "votes",
+      name: "votes",
+      description: "Says what data it keeps. It has no code of its own.",
+    });
+  });
+
+  it.each([
+    ["names a server file", { personalData, server: "dist/server.js" }, undefined],
+    ["has server code to build", { personalData }, "src/server"],
+    ["says nothing about data", {}, undefined],
+  ])("is still told to build when it %s", async (_name, manifest, sourceFolder) => {
+    const { loaded, problems } = await load(manifest, sourceFolder);
+
+    expect(loaded).toEqual([]);
+    expect(problems[0]?.message).toContain("Its server file (dist/server.js) is missing");
+  });
+});
+
 describe("which Lintel versions an add-on works with", () => {
   it.each([
     ["1.0.0-rc.4", ">=1.0.0-rc.1", true],

@@ -105,6 +105,7 @@ async function loadOne(
   if (taken.has(manifest.id)) {
     throw new AddonPackageError(`Another plugin already uses the id "${manifest.id}".`);
   }
+  if (addonPackage.dataOnly) return dataOnlyPlugin(addonPackage);
   const serverFile = join(addonPackage.folder, manifest.server);
   if (!existsSync(serverFile)) {
     throw new AddonPackageError(
@@ -128,6 +129,15 @@ async function loadOne(
   const problem = findPluginProblem(plugin);
   if (problem) throw new AddonPackageError(`It isn't quite right: ${problem}`);
   return plugin;
+}
+
+/** An add-on with no code: its name and what it says it keeps are all there is to it. */
+function dataOnlyPlugin({ manifest, packageName, description }: AddonPackage): LintelPlugin {
+  return {
+    id: manifest.id,
+    name: packageName,
+    description: description.trim() || "Says what data it keeps. It has no code of its own.",
+  };
 }
 
 function isPlugin(value: unknown): value is LintelPlugin {

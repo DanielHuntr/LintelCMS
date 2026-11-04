@@ -86,6 +86,27 @@ describe("lintel addons new and build", () => {
     expect(loaded?.plugin.liquid?.tags?.map(({ name }) => name)).toEqual(["star_ratings_stars"]);
   }, 60_000);
 
+  it("has nothing to build for an add-on with no code (LINTEL-UX-287)", async () => {
+    const { terminal, said } = recordingTerminal(folder);
+    await writeFile(
+      join(folder, "package.json"),
+      JSON.stringify({
+        name: "votes",
+        "lintel-addon": {
+          id: "votes",
+          lintel: "*",
+          personalData: {
+            tables: [{ name: "votes_cast", columns: [{ name: "email", personalData: true }] }],
+          },
+        },
+      }),
+    );
+
+    await buildAddon(folder, { watch: false, terminal });
+
+    expect(said).toEqual(["votes has no code, so there's nothing to build."]);
+  });
+
   it("won't make an add-on over files already there, or with an unusable name", async () => {
     const { terminal } = recordingTerminal(folder);
     await expect(scaffoldAddon({ name: "Star Ratings!", terminal })).rejects.toThrow(

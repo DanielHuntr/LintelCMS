@@ -250,7 +250,8 @@ ignoring case, and a name only as a whole name, never part of one: erasing can't
   anything stayed. The hooks run while the add-on is switched off too, because its data stays.
 
 An add-on with no server code to run can say so in package.json instead, under `tables` or as
-below:
+below. Leave out `server` and it needs no `dist/server.js` and no build: Lintel lists it from
+package.json alone.
 
 ```json
 "lintel-addon": {
