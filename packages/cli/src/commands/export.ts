@@ -1,19 +1,22 @@
 import { writeExport } from "@lintel/core/data-tools";
 import { type Command, defaultStorage, readArguments, withDatabase } from "../command.js";
 import { plural, resolvePath } from "../terminal.js";
+import { serverVersionOf } from "./server-commands.js";
 
 /**
  * Exports content types, entries, taxonomies, globals, menus and media as a Lintel export,
  * for moving content to another Lintel. Users, settings and secrets stay behind; use
  * `lintel backup` to copy a whole site.
  */
-const usage = "Usage: pnpm lintel export [--output <file>] [--revisions] [--no-files]";
+const usage =
+  "Usage: pnpm lintel export [--output <file>] [--revisions] [--no-files], or --out <folder> to write the website as files";
 
 export const exportCommand: Command = {
   name: "export",
   summary: "Export content and media as portable JSON (a .zip with the files)",
   usage,
   async run(argumentList, terminal) {
+    if (argumentList.includes("--out")) return serverVersionOf("export", argumentList);
     const { values } = readArguments(
       argumentList,
       {

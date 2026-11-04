@@ -24,13 +24,14 @@ import {
   probeWritableFolder,
 } from "../doctor/doctor-probes.js";
 import type { Terminal } from "../terminal.js";
+import { serverVersionOf } from "./server-commands.js";
 
 /**
  * Checks that this machine can run Lintel and says what to do about anything that's
  * wrong: Node.js and pnpm versions, settings, the database and its tables, the folders
  * Lintel saves files in, and the ports it listens on. Changes nothing.
  */
-const usage = "Usage: pnpm lintel doctor";
+const usage = "Usage: pnpm lintel doctor [--hosting]";
 
 const symbols = { ok: "✓", warning: "!", problem: "✗" } as const;
 
@@ -39,6 +40,7 @@ export const doctorCommand: Command = {
   summary: "Check this machine can run Lintel, with fixes for what's wrong",
   usage,
   async run(argumentList, terminal) {
+    if (argumentList.includes("--hosting")) return serverVersionOf("doctor", argumentList);
     readArguments(argumentList, {}, usage);
     loadProjectEnvFile();
     terminal.say("Checking that Lintel can run here…");

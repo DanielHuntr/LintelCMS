@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { lintelVersion } from "@lintel/core/updates";
 import { describe, expect, it } from "vitest";
@@ -19,6 +20,18 @@ function recordingTerminal(answers: string[] = []): Terminal & { lines: string[]
 }
 
 describe("the lintel command", () => {
+  it("reaches one tool from the repository, with the server's commands too (LINTEL-FUNC-040)", async () => {
+    const root = readFileSync(new URL("../../../package.json", import.meta.url), "utf8");
+    expect(root.match(/"lintel": "pnpm/g)).toHaveLength(1);
+    expect(root).toContain('"lintel": "pnpm --silent --filter @lintel/cli lintel"');
+
+    const terminal = recordingTerminal();
+    await runCommandLine([], terminal);
+    for (const name of ["addons", "apps", "cron", "check", "publish"]) {
+      expect(terminal.lines.join(" ")).toContain(name);
+    }
+  });
+
   it("lists every command when run without one", async () => {
     const terminal = recordingTerminal();
     expect(await runCommandLine([], terminal)).toBe(0);

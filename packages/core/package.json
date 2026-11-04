@@ -10,6 +10,11 @@
       "development": "./src/index.ts",
       "default": "./dist/index.js"
     },
+    "./server-commands": {
+      "types": "./dist/cli/lintel.d.ts",
+      "development": "./src/cli/lintel.ts",
+      "default": "./dist/cli/lintel.js"
+    },
     "./permissions": {
       "types": "./dist/roles/permissions.d.ts",
       "development": "./src/roles/permissions.ts",

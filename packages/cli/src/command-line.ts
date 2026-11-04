@@ -12,6 +12,7 @@ import { importCommand } from "./commands/import.js";
 import { migrateCommand } from "./commands/migrate.js";
 import { modelCommand } from "./commands/model.js";
 import { restoreCommand } from "./commands/restore.js";
+import { checkCommand, cronCommand, publishCommand } from "./commands/server-commands.js";
 import { startCommand } from "./commands/start.js";
 import { templatesCommand } from "./commands/templates.js";
 import { updateCommand } from "./commands/update.js";
@@ -25,6 +26,9 @@ export const commands: readonly Command[] = [
   startCommand,
   updateCommand,
   doctorCommand,
+  checkCommand,
+  cronCommand,
+  publishCommand,
   backupCommand,
   restoreCommand,
   exportCommand,
