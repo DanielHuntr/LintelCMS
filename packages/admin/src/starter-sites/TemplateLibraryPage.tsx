@@ -319,6 +319,16 @@ function AppliedSummary({
         ))}
       </ul>
       <MenuNote result={result} />
+      {result.linksToGonePages.length > 0 && (
+        <p className="text-footnote text-label-secondary">
+          {t("templates.result.goneLinks", { links: result.linksToGonePages.join(", ") })}
+        </p>
+      )}
+      {result.leftoverCollections.length > 0 && (
+        <p className="text-footnote text-label-secondary">
+          {t("templates.result.leftover", { names: result.leftoverCollections.join(", ") })}
+        </p>
+      )}
       {published && siteAddress && (
         <a
           href={siteAddress}

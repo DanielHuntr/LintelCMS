@@ -69,6 +69,10 @@ export interface AppliedStarterSiteResponse {
   collectionsMade: string[];
   /** The names of the features the template needed that were off and are now on. */
   featuresSwitchedOn: string[];
+  /** Words on buttons left in the site's navigation or footer that lead to replaced pages. */
+  linksToGonePages: string[];
+  /** Collections from an earlier template that are still under Content, by name. */
+  leftoverCollections: string[];
 }
 
 /** `GET /starter-sites/:id/existing-pages`: what applying would meet, for the admin's question. */

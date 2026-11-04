@@ -3,6 +3,9 @@ import {
   buildStarterPage,
   createRandomNodeId,
   findStarterSite,
+  type SiteSections,
+  starterSites,
+  walkNodes,
   formsUsedBy,
   type StarterPageOptions,
   type StarterPage,
@@ -25,7 +28,12 @@ import type { NavigationResponse } from "../navigation/navigation.schema.js";
 import { findNavigation, updateNavigation } from "../navigation/navigation.service.js";
 import { NavigationNotFoundError } from "../navigation/navigation.errors.js";
 import { removePageItems } from "../navigation/page-menu-items.js";
-import { applyStarterSiteSections } from "../site-sections/site-sections.service.js";
+import {
+  applyStarterSiteSections,
+  readSiteSections,
+} from "../site-sections/site-sections.service.js";
+import { findCollectionByHandle } from "../collections/collections.repository.js";
+import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import { pageComponentCatalogue } from "../pages/page-components.js";
 import { createForm, listForms } from "../forms/forms.service.js";
 import { type FormTemplateId, formTemplateIds } from "../forms/form-templates.js";
@@ -155,6 +163,8 @@ export async function applyStarterSite(
     site.siteSections,
     replaceSections,
   );
+  const gonePages =
+    isReplacing && !replaceSections ? goneAddresses(existing, pages) : new Set<string>();
   return {
     starterSiteId: site.id,
     pages,
@@ -166,7 +176,54 @@ export async function applyStarterSite(
     previousSectionsKept,
     collectionsMade,
     featuresSwitchedOn,
+    linksToGonePages: findLinksTo(gonePages, await readSiteSections(database, editingSite)),
+    leftoverCollections: isReplacing ? await findLeftoverCollections(database, site) : [],
   };
+}
+
+/** The addresses of pages that went to the recycle bin and have no new page in their place. */
+function goneAddresses(existing: ExistingPages, pages: AppliedStarterPage[]): Set<string> {
+  const kept = new Set(pages.map((page) => page.slug));
+  return new Set(
+    existing.pages.filter((page) => !kept.has(page.slug)).map((page) => `/${page.slug}`),
+  );
+}
+
+/**
+ * The words on buttons and links in the site's navigation and footer that lead to these
+ * addresses. Those sections stay when the look isn't applied, so the person is told.
+ */
+function findLinksTo(addresses: Set<string>, sections: SiteSections): string[] {
+  if (addresses.size === 0) return [];
+  const labels = new Set<string>();
+  for (const section of [sections.navigation, sections.footer]) {
+    if (!section) continue;
+    walkNodes(section, (node) => {
+      const { href, label, text } = node.props;
+      if (typeof href !== "string" || !addresses.has(href)) return;
+      labels.add(textOf(label) || textOf(text) || href);
+    });
+  }
+  return [...labels];
+}
+
+/** Collections an earlier template made that this one doesn't use, by name. */
+async function findLeftoverCollections(
+  database: DatabaseOrTransaction,
+  site: StarterSite,
+): Promise<string[]> {
+  const own = new Set((site.collections ?? []).map((collection) => collection.handle));
+  const fromTemplates = new Map(
+    starterSites.flatMap((template) =>
+      (template.collections ?? []).map((collection) => [collection.handle, collection.name]),
+    ),
+  );
+  const names: string[] = [];
+  for (const [handle, name] of fromTemplates) {
+    if (own.has(handle)) continue;
+    if (await findCollectionByHandle(database, DEFAULT_TENANT_ID, handle)) names.push(name);
+  }
+  return names;
 }
 
 /**

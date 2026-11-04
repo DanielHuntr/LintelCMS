@@ -62,6 +62,10 @@ export const treeSelectionStrings = {
   "templates.existing.replaceNotAllowed": "You need permission to delete pages to replace them.",
   "templates.existing.choose": "What should happen to your pages",
   "templates.result.skippedHome": "Your home page stayed as it was.",
+  "templates.result.goneLinks":
+    "Your menu or footer still has a link to a page that’s gone: {links}. Change it in the page builder.",
+  "templates.result.leftover":
+    "{names} from an earlier template stayed in Content, in case you’ve added your own. You can delete them there.",
   "templates.result.featuresOn": "This template needs {features}, so we switched it on.",
   "templates.result.replaced":
     "{count, plural, one {# page went to the recycle bin.} other {# pages went to the recycle bin.}}",

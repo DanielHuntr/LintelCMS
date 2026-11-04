@@ -67,6 +67,18 @@ describe("starting from a template", () => {
     expect(home.body).toContain('href="/menu"');
   });
 
+  it("says what Replace my pages leaves behind (LINTEL-UX-316, LINTEL-UX-317)", async () => {
+    await owner("POST", "/starter-sites/threshold/apply", { publish: true });
+
+    const response = await owner("POST", "/starter-sites/longwave/apply", {
+      useTheme: false,
+      existingPages: "replace",
+    });
+
+    expect(response.json().linksToGonePages).toContain("Book a valuation");
+    expect(response.json().leftoverCollections).toContain("Listings");
+  });
+
   it("publishes a standard footer with nothing left to replace (LINTEL-UX-302)", async () => {
     await owner("POST", "/starter-sites/bakery/apply", { publish: true });
 

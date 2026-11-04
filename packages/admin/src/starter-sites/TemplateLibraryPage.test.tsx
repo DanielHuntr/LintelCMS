@@ -18,6 +18,8 @@ const applied = {
   replacedCount: 0,
   previousSectionsKept: false,
   featuresSwitchedOn: [],
+  linksToGonePages: [],
+  leftoverCollections: [],
 };
 
 const existingPages = {
@@ -133,6 +135,30 @@ describe("the template library", () => {
         return undefined;
       });
     }
+
+    it("says what a replaced site left behind (LINTEL-UX-316, LINTEL-UX-317)", async () => {
+      const user = userEvent.setup();
+      mockApi(({ method, url }) => {
+        if (url.pathname === "/starter-sites/bakery/existing-pages") return existingPages;
+        if (method === "POST" && url.pathname === "/starter-sites/bakery/apply") {
+          return {
+            ...applied,
+            linksToGonePages: ["Book a valuation"],
+            leftoverCollections: ["Episodes"],
+          };
+        }
+        return undefined;
+      });
+      renderScreen(<TemplateLibraryPage />, { permissions: ["*"] });
+      const dialog = await openBakery(user);
+      await user.click(await within(dialog).findByRole("radio", { name: /Replace my pages/ }));
+      await user.click(within(dialog).getByRole("button", { name: "Add the pages" }));
+
+      expect(
+        await screen.findByText(/link to a page that’s gone: Book a valuation/),
+      ).toBeInTheDocument();
+      expect(screen.getByText(/Episodes from an earlier template/)).toBeInTheDocument();
+    });
 
     it("doesn't promise to keep the site's pages when they are being replaced", async () => {
       const user = userEvent.setup();
