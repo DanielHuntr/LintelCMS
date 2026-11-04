@@ -13,6 +13,7 @@ import { announceFormSubmitted } from "../forms/form-submitted.js";
 import { findFormRowByHandle } from "../forms/forms.repository.js";
 import { checkSubmissionValues, findSubmitterEmail } from "../forms/submission-values.js";
 import { insertSubmissionRow } from "../forms/submissions.repository.js";
+import { checkDestinationAddresses } from "../publishing/destination-safety.js";
 import { recordReceipt } from "../publishing/publishing.repository.js";
 import type { PublishTargetRow } from "../publishing/publishing.table.js";
 import { BRIDGE_FILE } from "./bridge-files.js";
@@ -168,6 +169,7 @@ export async function pullFromBridge(
       problems: ["Add the website's address to collect forms and orders from it."],
     };
   }
+  await checkDestinationAddresses("zip", { siteAddress }, api.publishing.destinationRules());
   const pulled = pullSchema.parse(await callBridge(siteAddress, secret, "pull", "", fetcher));
   const result: PullResult = { submissions: 0, orders: 0, problems: [] };
   const acknowledged = { submissions: [] as string[], orders: [] as string[] };

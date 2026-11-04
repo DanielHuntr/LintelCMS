@@ -1,3 +1,4 @@
+import { useCan } from "../session/SessionContext.js";
 import { Cloud, Folder, FolderArchive, Server, Terminal } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { describeError } from "../api/describeError.js";
@@ -72,6 +73,8 @@ export function PublishTargetDialog({
   onSubmit,
   onClose,
 }: PublishTargetDialogProps) {
+  // A folder writes straight to the server's disk, so the server only allows it for Owners.
+  const isOwner = useCan("*");
   const [kind, setKind] = useState<PublishTargetKind>(target?.kind ?? "ftp");
   const [name, setName] = useState(target?.name ?? "");
   const [options, setOptions] = useState<PublishTargetOptions>(
@@ -144,7 +147,7 @@ export function PublishTargetDialog({
         {!target && (
           <ChoiceCardGroup
             label={t("publishing.addTitle")}
-            options={kindChoices}
+            options={isOwner ? kindChoices : kindChoices.filter(({ value }) => value !== "folder")}
             value={kind}
             onChange={setKind}
             columns={2}

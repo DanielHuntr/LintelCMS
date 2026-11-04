@@ -5,6 +5,7 @@ import { pullFromBridge } from "../bridge/bridge-pull.service.js";
 import { prepareBridgePublish } from "../bridge/bridge-publish.service.js";
 import { exportStaticSite } from "../static-site/static-export.service.js";
 import { hashContent } from "../static-site/static-files.js";
+import { checkDestination } from "./destination-safety.js";
 import type { PublishingContext } from "./publishing-context.js";
 import {
   describeConnectionError,
@@ -184,6 +185,8 @@ async function upload(
   progress: (step: "uploading" | "finishing", done: number, total: number) => void,
 ): Promise<void> {
   const secrets = readSecrets(context.secretBox(), target);
+  // Saved before these rules, or a name that has changed since: checked again each time.
+  await checkDestination(target, context.destinationRules());
   let remote: RemoteFolder;
   try {
     remote = await openTargetRemote(target, secrets, {

@@ -1,8 +1,13 @@
-import type { FastifyInstance } from "fastify";
-import { requirePermission } from "../auth/require-permission.js";
+import type { FastifyInstance, FastifyRequest } from "fastify";
+import { getSignedIn, requirePermission } from "../auth/require-permission.js";
 import { parseRequest } from "../http/http-errors.js";
 import { findPublishRun, startPublish } from "./publish-runs.service.js";
-import { PublishRunNotFoundError, PublishTargetNotFoundError } from "./publishing.errors.js";
+import {
+  FolderDestinationNeedsOwnerError,
+  PublishRunNotFoundError,
+  PublishTargetNotFoundError,
+} from "./publishing.errors.js";
+import type { PublishTargetKind } from "./publishing.table.js";
 import {
   createPublishTargetRequestSchema,
   publishRequestSchema,
@@ -37,17 +42,30 @@ import { buildZipDownload } from "./zip-download.service.js";
  *   GET    /publishing/targets/:id/runs/:runId      (settings:read)   with progress while it runs
  *   GET    /publishing/targets/:id/download         (settings:update) the website as a ZIP
  *
- * Passwords and keys are accepted in `secrets` and never sent back.
+ * Passwords and keys are accepted in `secrets` and never sent back. A folder on this server
+ * can be seen with `settings:read`; everything else about it is for Owners.
  */
 export async function publishingRoutes(server: FastifyInstance) {
   const read = { preHandler: requirePermission("settings:read") };
   const update = { preHandler: requirePermission("settings:update") };
   const context = () => server.publishing;
 
+  /** A folder writes straight to the server's disk, so all of it is for Owners. */
+  const refuseFolderUnlessOwner = (request: FastifyRequest, kind: PublishTargetKind) => {
+    if (kind === "folder" && !getSignedIn(request).permissions.includes("*")) {
+      throw new FolderDestinationNeedsOwnerError();
+    }
+  };
+  const refuseSavedFolderUnlessOwner = async (request: FastifyRequest) => {
+    const target = await findPublishTargetRow(server.database, readTargetId(request.params));
+    refuseFolderUnlessOwner(request, target.kind);
+  };
+
   server.get("/publishing/targets", read, async () => listPublishTargets(context()));
 
   server.post("/publishing/targets", update, async (request, reply) => {
     const target = parseRequest(createPublishTargetRequestSchema, request.body);
+    refuseFolderUnlessOwner(request, target.kind);
     return reply.code(201).send(await createPublishTarget(context(), target));
   });
 
@@ -58,24 +76,28 @@ export async function publishingRoutes(server: FastifyInstance) {
     ),
   );
 
-  server.patch("/publishing/targets/:id", update, async (request) =>
-    updatePublishTarget(
+  server.patch("/publishing/targets/:id", update, async (request) => {
+    await refuseSavedFolderUnlessOwner(request);
+    return updatePublishTarget(
       context(),
       readTargetId(request.params),
       parseRequest(updatePublishTargetRequestSchema, request.body),
-    ),
-  );
+    );
+  });
 
   server.delete("/publishing/targets/:id", update, async (request, reply) => {
+    await refuseSavedFolderUnlessOwner(request);
     await deletePublishTarget(context(), readTargetId(request.params));
     return reply.code(204).send();
   });
 
-  server.post("/publishing/targets/:id/test", update, async (request) =>
-    testPublishTarget(context(), readTargetId(request.params)),
-  );
+  server.post("/publishing/targets/:id/test", update, async (request) => {
+    await refuseSavedFolderUnlessOwner(request);
+    return testPublishTarget(context(), readTargetId(request.params));
+  });
 
   server.post("/publishing/targets/:id/publish", update, async (request, reply) => {
+    await refuseSavedFolderUnlessOwner(request);
     const options = parseRequest(publishRequestSchema, request.body ?? {});
     const started = await startPublish(context(), readTargetId(request.params), {
       trigger: "manual",
