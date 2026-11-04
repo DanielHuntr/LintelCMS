@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockApi } from "../testing/mockApi.js";
@@ -18,13 +18,13 @@ const grace: PersonSearch = {
       kindId: "form-entries",
       name: "Form entries",
       erasure: "Deleted, with the files they sent and your notes on them.",
-      items: [{ id: "s1", summary: "Contact entry", date: "2026-10-31T09:00:00Z" }],
+      items: [{ id: "s1", summary: "Contact entry", email: null, date: "2026-10-31T09:00:00Z" }],
     },
     {
       kindId: "shop-orders",
       name: "Orders",
       erasure: "Kept for tax records with the name, email, address and phone removed.",
-      items: [{ id: "o1", summary: "Order #1001", date: "2026-10-30T09:00:00Z" }],
+      items: [{ id: "o1", summary: "Order #1001", email: null, date: "2026-10-30T09:00:00Z" }],
     },
   ],
   notSearched: [
@@ -110,6 +110,55 @@ describe("Settings → Privacy", () => {
       email: null,
       name: "Grace Hopper",
     });
+  });
+
+  it("after a name search, acts only on what's ticked", async () => {
+    const found = {
+      found: [
+        {
+          kindId: "shop-customers",
+          name: "Shop customers",
+          erasure: "Deleted.",
+          items: [
+            { id: "c1", summary: "Customer: Sam Lee", email: "one@example.com", date: null },
+            { id: "c2", summary: "Customer: Sam Lee", email: "two@example.com", date: null },
+          ],
+        },
+      ],
+      notSearched: [],
+    };
+    const { calls } = mockApi(({ url }) => {
+      if (url.pathname === "/privacy/requests") return { requests: [] };
+      if (url.pathname === "/privacy/people/find") return found;
+      if (url.pathname === "/privacy/people/erase") return { parts: [], explanations: [] };
+      throw new Error(`Unexpected request: ${url.pathname}`);
+    });
+    renderScreen(<PrivacyPage />, { permissions: ["privacy:manage"] });
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Search by full name instead" }),
+    );
+    await userEvent.type(screen.getByRole("textbox", { name: "Or their full name" }), "Sam Lee");
+    await userEvent.click(screen.getByRole("button", { name: "Find" }));
+
+    const second = await screen.findByRole("checkbox", { name: /two@example\.com/ });
+    expect(screen.getByRole("checkbox", { name: /one@example\.com/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Erase…" })).toBeDisabled();
+
+    await userEvent.click(second);
+    await userEvent.click(screen.getByRole("button", { name: "Erase…" }));
+    const dialog = await screen.findByRole("alertdialog", {
+      name: "Erase this person's data?",
+    });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Erase" }));
+
+    await waitFor(() =>
+      expect(calls.find((call) => call.url.pathname === "/privacy/people/erase")?.body).toEqual({
+        email: null,
+        name: "Sam Lee",
+        selected: [{ kindId: "shop-customers", id: "c2" }],
+      }),
+    );
   });
 
   it("maps personal data, and flags add-ons that can't be searched", async () => {

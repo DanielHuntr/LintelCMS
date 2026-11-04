@@ -14,6 +14,7 @@ import {
 } from "./person-requests.service.js";
 import { describePolicyHelper } from "./policy-helper.service.js";
 import {
+  personActionRequestSchema,
   personRequestSchema,
   updateProcessorsRequestSchema,
   updateRetentionRequestSchema,
@@ -27,8 +28,8 @@ import { findSiteServices } from "./site-services.service.js";
  *
  *   GET  /privacy/map                where personal data lives       -> { kinds }
  *   POST /privacy/people/find        { email?, name? }               -> { found, notSearched }
- *   POST /privacy/people/export      { email?, name? }               -> a .zip (JSON and CSVs)
- *   POST /privacy/people/erase       { email?, name? }               -> { parts }
+ *   POST /privacy/people/export      { email } | { name, selected }  -> a .zip (JSON and CSVs)
+ *   POST /privacy/people/erase       { email } | { name, selected }  -> { parts }
  *   GET  /privacy/requests           exports and erasures made       -> { requests }
  *   GET  /privacy/retention          the rules and what's due        -> { rules }
  *   PUT  /privacy/retention          any rules                       -> the same
@@ -65,7 +66,7 @@ export async function privacyRoutes(server: FastifyInstance) {
   );
 
   server.post("/privacy/people/export", manage, async (request, reply) => {
-    const person = parseRequest(personRequestSchema, request.body);
+    const person = parseRequest(personActionRequestSchema, request.body);
     const { archive, filename } = await exportPerson(await context(), person, getSignedIn(request));
     return reply
       .type("application/zip")
@@ -77,7 +78,7 @@ export async function privacyRoutes(server: FastifyInstance) {
   server.post("/privacy/people/erase", manage, async (request) =>
     erasePerson(
       await context(),
-      parseRequest(personRequestSchema, request.body),
+      parseRequest(personActionRequestSchema, request.body),
       getSignedIn(request),
     ),
   );

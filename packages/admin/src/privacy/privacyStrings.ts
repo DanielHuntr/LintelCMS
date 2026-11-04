@@ -25,8 +25,10 @@ export const privacyStrings = {
   "privacy.find.eraseTitle": "Erase this person's data?",
   "privacy.find.eraseMessage":
     "This can't be undone. It doesn't reach older backups, or outside companies such as your payment provider.",
-  "privacy.find.nameWarning":
-    "You searched by name, and two people can share one. Check everything found is theirs.",
+  "privacy.find.tickHint":
+    "Two people can share a name. Tick only what belongs to this person; the emails and dates help you tell.",
+  "privacy.find.noEmail": "No email",
+  "privacy.find.tickedCount": "{count, plural, one {# item ticked} other {# items ticked}}",
   "privacy.find.eraseConfirm": "Erase",
   "privacy.find.cancel": "Cancel",
   "privacy.find.erased": "Done. Their data has been erased or anonymised.",

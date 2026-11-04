@@ -94,29 +94,58 @@ export const updateProcessorsRequestSchema = z.object({
   processors: z.array(addedProcessorSchema).max(100),
 });
 
-/** `POST /privacy/people/...`: an email address, a whole name, or both. */
-export const personRequestSchema = z
-  .object({
-    email: z
-      .string()
-      .trim()
-      .toLowerCase()
-      .transform((email) => (email === "" ? null : email))
-      .pipe(z.email({ error: "That doesn't look like an email address" }).nullable())
-      .nullable()
-      .default(null),
-    name: z
-      .string()
-      .trim()
-      .max(200, { error: "Names can be at most 200 characters" })
-      .transform((name) => (name === "" ? null : name))
-      .nullable()
-      .default(null),
+const personFields = z.object({
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .transform((email) => (email === "" ? null : email))
+    .pipe(z.email({ error: "That doesn't look like an email address" }).nullable())
+    .nullable()
+    .default(null),
+  name: z
+    .string()
+    .trim()
+    .max(200, { error: "Names can be at most 200 characters" })
+    .transform((name) => (name === "" ? null : name))
+    .nullable()
+    .default(null),
+});
+
+const hasEmailOrName = (person: { email: string | null; name: string | null }) =>
+  person.email !== null || person.name !== null;
+const lookingFor = { error: "Give an email address or a name to look for", path: ["email"] };
+
+/** An email is who someone is, so a name sent with one is left out, never matched as well. */
+const emailWins = <Person extends { email: string | null; name: string | null }>(
+  person: Person,
+): Person => (person.email ? { ...person, name: null } : person);
+
+/** `POST /privacy/people/find`: an email address or a whole name. */
+export const personRequestSchema = personFields
+  .refine(hasEmailOrName, lookingFor)
+  .transform(emailWins);
+
+/** One record ticked in a search: its kind, and its id in that kind. */
+const chosenRecordSchema = z.object({
+  kindId: z.string().min(1).max(200),
+  id: z.string().min(1).max(300),
+});
+export type ChosenRecord = z.output<typeof chosenRecordSchema>;
+
+/**
+ * `POST /privacy/people/export` and `.../erase`. By email it's everything of theirs, unless
+ * `selected` narrows it. By name it has to say which records: two people can share a name.
+ */
+export const personActionRequestSchema = personFields
+  .extend({ selected: z.array(chosenRecordSchema).max(5000).optional() })
+  .refine(hasEmailOrName, lookingFor)
+  .refine((person) => person.email !== null || (person.selected?.length ?? 0) > 0, {
+    error: "Two people can share a name, so tick the records that belong to this person",
+    path: ["selected"],
   })
-  .refine((person) => person.email !== null || person.name !== null, {
-    error: "Give an email address or a name to look for",
-    path: ["email"],
-  });
+  .transform(emailWins);
+export type PersonActionRequest = z.output<typeof personActionRequestSchema>;
 
 /** One kind of personal data, as the map and the search list it. */
 export interface PersonalDataKind {
@@ -145,7 +174,7 @@ export interface FoundKind {
   kindId: string;
   name: string;
   erasure: string | null;
-  items: Array<{ id: string; summary: string; date: string | null }>;
+  items: Array<{ id: string; summary: string; email: string | null; date: string | null }>;
 }
 
 export interface PersonSearchResponse {
