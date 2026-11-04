@@ -190,6 +190,20 @@ describe("the Visitors plugin", () => {
     expect(salts.map((salt) => salt.day)).toEqual(["2026-11-03"]);
   });
 
+  it("doesn't count a form sent by a robot as a goal (LINTEL-UX-327)", async () => {
+    await server.events.publish(
+      "form.submitted",
+      {
+        form: { id: "00000000-0000-4000-8000-000000000003", handle: "contact", name: "Contact" },
+        submission: { id: "00000000-0000-4000-8000-000000000004", fields: {} },
+      },
+      { actor: null, fromRobot: true },
+    );
+
+    const events = await testDatabase.database.select().from(analyticsEventsTable);
+    expect(events.filter((event) => event.kind === "goal")).toEqual([]);
+  });
+
   it("counts form and order goals from what happened, with a conversion rate", async () => {
     await collect({ kind: "view", path: "/contact" });
     await collect({ kind: "view", path: "/" }, { ip: "198.51.100.7" });

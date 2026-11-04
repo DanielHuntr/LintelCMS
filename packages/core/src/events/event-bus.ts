@@ -24,6 +24,8 @@ export interface PublishedEvent<Name extends LintelEventName = LintelEventName> 
    * forever: each run started by an event is one level deeper (see src/workflows).
    */
   cause: EventCause | null;
+  /** Sent by a script rather than a person, as far as the request shows. */
+  fromRobot?: boolean;
 }
 
 export interface EventCause {
@@ -39,6 +41,7 @@ export type AnyPublishedEvent = {
 export interface PublishOptions {
   actor?: EventActor | null;
   cause?: EventCause | null;
+  fromRobot?: boolean;
   /** Tests pass a fixed time. */
   now?: Date;
 }
@@ -121,6 +124,7 @@ export class EventBus {
       data,
       actor: options.actor ?? null,
       cause: options.cause ?? null,
+      ...(options.fromRobot && { fromRobot: true }),
     };
     const anyEvent = event as AnyPublishedEvent;
     for (const subscription of this.subscriptions) {

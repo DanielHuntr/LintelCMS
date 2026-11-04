@@ -26,7 +26,8 @@ export function registerAnalytics(
   const isOn = () => isPluginEnabled(server.database, analyticsPlugin.id);
 
   server.events.on("form.submitted", "visitor goals", async (event) => {
-    if (!(await isOn())) return;
+    // Robots aren't counted as visitors, so they can't count as conversions either.
+    if (event.fromRobot || !(await isOn())) return;
     await recordFormGoal(server.database, event.data.form, event.data.submission.id);
   });
   server.events.on("order.paid", "visitor goals", async (event) => {

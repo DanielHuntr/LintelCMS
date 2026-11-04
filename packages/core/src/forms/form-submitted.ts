@@ -13,6 +13,7 @@ export async function announceFormSubmitted(
   server: FastifyInstance,
   form: FormRow,
   submission: FormSubmissionRow,
+  options: { fromRobot?: boolean } = {},
 ): Promise<void> {
   const inboxUrl = `${server.adminOrigin}/forms/${form.id}/submissions?submission=${submission.id}`;
   const emails = buildSubmissionEmails(form, submission.values, submission.submitterEmail, {
@@ -36,6 +37,6 @@ export async function announceFormSubmitted(
         url: inboxUrl,
       },
     },
-    { actor: null, now: submission.createdAt },
+    { actor: null, now: submission.createdAt, ...options },
   );
 }

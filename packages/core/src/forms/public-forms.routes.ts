@@ -5,6 +5,7 @@ import type { FormsContext } from "./forms-context.js";
 import { formsEmbedScript } from "./forms-embed-script.js";
 import { FormNotFoundError, TooManySubmissionsError } from "./forms.errors.js";
 import { formHandleParamsSchema } from "./forms.schema.js";
+import { looksLikeRobot } from "../analytics/visitor-signals.js";
 import { announceFormSubmitted } from "./form-submitted.js";
 import { describePublicForm, receiveSubmission } from "./public-forms.service.js";
 import type { TurnstileVerifier } from "./spam-protection.js";
@@ -79,7 +80,9 @@ export async function publicFormsRoutes(
           options.verifyTurnstile,
         );
         if (outcome.saved) {
-          await announceFormSubmitted(server, outcome.form, outcome.submission);
+          await announceFormSubmitted(server, outcome.form, outcome.submission, {
+            fromRobot: looksLikeRobot(request.headers["user-agent"]),
+          });
         }
         const confirmation = outcome.form.confirmation;
         if (wantsPage) {
