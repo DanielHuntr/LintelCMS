@@ -1,3 +1,4 @@
+import { queueWebhookEvent } from "../webhooks/webhook-deliveries.service.js";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { eq } from "drizzle-orm";
@@ -49,6 +50,46 @@ function localManifest(origin: string, changes: object = {}) {
     ...changes,
   };
 }
+
+describe("what an app is told about", () => {
+  const testDatabase = useTestDatabase();
+
+  it("is cut down to what the person who installed it may see", async () => {
+    const server = await startTestServer(testDatabase.activeDatabase, {
+      webhooks: { allowPrivateAddresses: true, sendStraightAway: false },
+    });
+    try {
+      await createTestUser(testDatabase.database, "admin@example.com", [["*"]]);
+      await createTestUser(testDatabase.database, "manager@example.com", [
+        ["settings:*", "entries:read"],
+      ]);
+      const owner = requestsAs(server, await signInAndGetCookies(server, "admin@example.com"));
+      await owner("PUT", "/plugins", { enabled: ["forms"] });
+      const manager = requestsAs(server, await signInAndGetCookies(server, "manager@example.com"));
+      const origin = "https://forms-app.example.com";
+      const installed = await manager("POST", "/apps", {
+        manifest: {
+          name: "Form copier",
+          handle: "form-copier",
+          description: "Copies what people send.",
+          appUrl: origin,
+          scopes: ["read_forms", "read_content"],
+          webhooks: [
+            { event: "form.submitted", url: `${origin}/forms` },
+            { event: "entry.published", url: `${origin}/entries` },
+          ],
+        },
+        approvedScopes: ["read_forms", "read_content"],
+      });
+      expect(installed.statusCode, installed.body).toBe(201);
+
+      expect(await queueWebhookEvent(testDatabase.database, "form.submitted", {})).toBe(0);
+      expect(await queueWebhookEvent(testDatabase.database, "entry.published", {})).toBe(1);
+    } finally {
+      await server.close();
+    }
+  });
+});
 
 describe("apps' development mode", () => {
   const testDatabase = useTestDatabase();

@@ -49,6 +49,11 @@ export function coreSources(context: PrivacyContext): PersonalDataSource[] {
 
 const iso = (date: Date | null) => date?.toISOString() ?? null;
 
+/** The rows ticked after a search by name, or all of them. */
+function chosen<Row extends { id: string }>(only: ReadonlySet<string> | undefined, rows: Row[]) {
+  return only ? rows.filter((row) => only.has(row.id)) : rows;
+}
+
 function source(
   fields: Omit<PersonalDataSource, "from" | "notSearchableReason" | "pluginId"> & {
     pluginId?: string;
@@ -58,32 +63,36 @@ function source(
 }
 
 function accountsSource(): PersonalDataSource {
+  const look = async ({ database, tenantId, person, only }: PersonalDataHookContext) => {
+    const [users, invitations] = await Promise.all([
+      listMatchingUsers(database, tenantId, person),
+      listMatchingInvitations(database, tenantId, person),
+    ]);
+    return { users: chosen(only, users), invitations: chosen(only, invitations) };
+  };
   const hooks: PersonalDataHooks = {
-    async find({ database, tenantId, person }) {
-      const [users, invitations] = await Promise.all([
-        listMatchingUsers(database, tenantId, person),
-        listMatchingInvitations(database, tenantId, person),
-      ]);
+    choosesRecords: true,
+    async find(context) {
+      const { users, invitations } = await look(context);
       return [
         ...users.map((user) => ({
           id: user.id,
           summary: `Admin account: ${user.name}`,
+          email: user.email,
           date: iso(user.createdAt),
         })),
         ...invitations.map((invitation) => ({
           id: invitation.id,
           summary: "Invitation to the admin",
+          email: invitation.email,
           date: iso(invitation.createdAt),
         })),
       ];
     },
-    async export({ database, tenantId, person }) {
-      const [users, invitations] = await Promise.all([
-        listMatchingUsers(database, tenantId, person),
-        listMatchingInvitations(database, tenantId, person),
-      ]);
+    async export(context) {
+      const { users, invitations } = await look(context);
       const sessions = await listSessionsOfUsers(
-        database,
+        context.database,
         users.map((user) => user.id),
       );
       return [
@@ -105,13 +114,10 @@ function accountsSource(): PersonalDataSource {
         })),
       ];
     },
-    async erase({ database, tenantId, person }) {
-      const [users, invitations] = await Promise.all([
-        listMatchingUsers(database, tenantId, person),
-        listMatchingInvitations(database, tenantId, person),
-      ]);
+    async erase(context) {
+      const { users, invitations } = await look(context);
       const deleted = await deleteInvitations(
-        database,
+        context.database,
         invitations.map((invitation) => invitation.id),
       );
       return {
@@ -139,19 +145,25 @@ function accountsSource(): PersonalDataSource {
 }
 
 function formEntriesSource(context: PrivacyContext): PersonalDataSource {
+  const look = async ({ database, tenantId, person, only }: PersonalDataHookContext) => {
+    const rows = await listMatchingSubmissions(database, tenantId, person);
+    return only ? rows.filter(({ submission }) => only.has(submission.id)) : rows;
+  };
   const hooks: PersonalDataHooks = {
-    async find({ database, tenantId, person }) {
-      const rows = await listMatchingSubmissions(database, tenantId, person);
+    choosesRecords: true,
+    async find(input) {
+      const rows = await look(input);
       return rows.map(({ submission, formName }) => ({
         id: submission.id,
         summary: `${formName} entry`,
+        email: submission.submitterEmail,
         date: iso(submission.createdAt),
       }));
     },
-    async export({ database, tenantId, person }) {
-      const rows = await listMatchingSubmissions(database, tenantId, person);
+    async export(input) {
+      const rows = await look(input);
       const notes = await listNotesOnSubmissions(
-        database,
+        input.database,
         rows.map(({ submission }) => submission.id),
       );
       return rows.map(({ submission, formName }) => ({
@@ -165,10 +177,10 @@ function formEntriesSource(context: PrivacyContext): PersonalDataSource {
           .map((note) => ({ note: note.body, writtenAt: iso(note.createdAt) })),
       }));
     },
-    async erase({ database, tenantId, person }) {
-      const rows = await listMatchingSubmissions(database, tenantId, person);
+    async erase(input) {
+      const rows = await look(input);
       const deleted = await deleteSubmissionsAndFiles(
-        { ...context.forms(), database },
+        { ...context.forms(), database: input.database },
         rows.map(({ submission }) => submission.id),
       );
       return { deleted };
@@ -190,17 +202,21 @@ function formEntriesSource(context: PrivacyContext): PersonalDataSource {
 }
 
 function customersSource(): PersonalDataSource {
+  const look = async ({ database, tenantId, person, only }: PersonalDataHookContext) =>
+    chosen(only, await listMatchingCustomers(database, tenantId, person));
   const hooks: PersonalDataHooks = {
-    async find({ database, tenantId, person }) {
-      const rows = await listMatchingCustomers(database, tenantId, person);
+    choosesRecords: true,
+    async find(context) {
+      const rows = await look(context);
       return rows.map((row) => ({
         id: row.id,
         summary: `Customer: ${row.name || row.email}`,
+        email: row.email,
         date: iso(row.createdAt),
       }));
     },
-    async export({ database, tenantId, person }) {
-      const rows = await listMatchingCustomers(database, tenantId, person);
+    async export(context) {
+      const rows = await look(context);
       return rows.map((row) => ({
         name: row.name,
         email: row.email,
@@ -210,11 +226,11 @@ function customersSource(): PersonalDataSource {
         createdAt: iso(row.createdAt),
       }));
     },
-    async erase({ database, tenantId, person }) {
-      const rows = await listMatchingCustomers(database, tenantId, person);
+    async erase(context) {
+      const rows = await look(context);
       return {
         deleted: await deleteCustomers(
-          database,
+          context.database,
           rows.map((row) => row.id),
         ),
       };
@@ -231,27 +247,30 @@ function customersSource(): PersonalDataSource {
   });
 }
 
-async function findOrders({ database, tenantId, person }: PersonalDataHookContext) {
+async function findOrders({ database, tenantId, person, only }: PersonalDataHookContext) {
   const [orders, archived] = await Promise.all([
     listMatchingOrders(database, tenantId, person),
     listMatchingArchivedOrders(database, tenantId, person),
   ]);
-  return { orders, archived };
+  return { orders: chosen(only, orders), archived: chosen(only, archived) };
 }
 
 function ordersSource(): PersonalDataSource {
   const hooks: PersonalDataHooks = {
+    choosesRecords: true,
     async find(context) {
       const { orders, archived } = await findOrders(context);
       return [
         ...orders.map((order) => ({
           id: order.id,
           summary: `Order ${order.name}`,
+          email: order.email,
           date: iso(order.createdAt),
         })),
         ...archived.map((order) => ({
           id: order.id,
           summary: `Order ${order.name} (from before the move)`,
+          email: order.email,
           date: iso(order.placedAt),
         })),
       ];
@@ -323,21 +342,28 @@ function ordersSource(): PersonalDataSource {
 }
 
 function cartsSource(): PersonalDataSource {
-  const find = async ({ database, tenantId, person }: PersonalDataHookContext) => {
+  const find = async ({ database, tenantId, person, only }: PersonalDataHookContext) => {
     const [carts, checkouts] = await Promise.all([
       listMatchingCarts(database, tenantId, person),
       listMatchingUnfinishedCheckouts(database, tenantId, person),
     ]);
-    return { carts, checkouts };
+    return { carts: chosen(only, carts), checkouts: chosen(only, checkouts) };
   };
   const hooks: PersonalDataHooks = {
+    choosesRecords: true,
     async find(context) {
       const { carts, checkouts } = await find(context);
       return [
-        ...carts.map((cart) => ({ id: cart.id, summary: "Basket", date: iso(cart.updatedAt) })),
+        ...carts.map((cart) => ({
+          id: cart.id,
+          summary: "Basket",
+          email: cart.email,
+          date: iso(cart.updatedAt),
+        })),
         ...checkouts.map((checkout) => ({
           id: checkout.id,
           summary: "Checkout that wasn't paid",
+          email: checkout.email,
           date: iso(checkout.createdAt),
         })),
       ];
@@ -388,17 +414,21 @@ function cartsSource(): PersonalDataSource {
 }
 
 function securityLogSource(): PersonalDataSource {
+  const look = async ({ database, tenantId, person, only }: PersonalDataHookContext) =>
+    chosen(only, await listMatchingSecurityEvents(database, tenantId, person));
   const hooks: PersonalDataHooks = {
-    async find({ database, tenantId, person }) {
-      const rows = await listMatchingSecurityEvents(database, tenantId, person);
+    choosesRecords: true,
+    async find(context) {
+      const rows = await look(context);
       return rows.map((row) => ({
         id: row.id,
         summary: `Security log: ${row.kind.replaceAll("-", " ")}`,
+        email: row.actorEmail,
         date: iso(row.createdAt),
       }));
     },
-    async export({ database, tenantId, person }) {
-      const rows = await listMatchingSecurityEvents(database, tenantId, person);
+    async export(context) {
+      const rows = await look(context);
       return rows.map((row) => ({
         event: row.kind,
         at: iso(row.createdAt),
@@ -408,10 +438,10 @@ function securityLogSource(): PersonalDataSource {
         browser: row.userAgent,
       }));
     },
-    async erase({ database, tenantId, person }) {
-      const rows = await listMatchingSecurityEvents(database, tenantId, person);
+    async erase(context) {
+      const rows = await look(context);
       const anonymised = await anonymiseSecurityEvents(
-        database,
+        context.database,
         rows.map((row) => row.id),
       );
       return {
@@ -446,14 +476,15 @@ function securityLogSource(): PersonalDataSource {
  * until they finish. Messages an automation wrote into a notification aren't searched.
  */
 function automationHistorySource(): PersonalDataSource {
-  const look = async ({ database, tenantId, person }: PersonalDataHookContext) => {
+  const look = async ({ database, tenantId, person, only }: PersonalDataHookContext) => {
     const [deliveries, runs] = await Promise.all([
       listMatchingWebhookDeliveries(database, tenantId, person),
       listMatchingWorkflowRuns(database, tenantId, person),
     ]);
-    return { deliveries, runs };
+    return { deliveries: chosen(only, deliveries), runs: chosen(only, runs) };
   };
   const hooks: PersonalDataHooks = {
+    choosesRecords: true,
     async find(context) {
       const { deliveries, runs } = await look(context);
       return [

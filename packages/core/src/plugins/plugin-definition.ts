@@ -9,6 +9,7 @@ import type {
   PluginConsentService,
   SettingsConsentService,
 } from "../cookie-notice/plugin-consent-services.js";
+import type { PluginFormConsent } from "../forms/required-consent.js";
 import type { PluginPersonalData } from "../privacy/personal-data-declaration.js";
 import type { PluginCommand } from "./plugin-commands.js";
 import type { PluginEventHandlers } from "./plugin-events.js";
@@ -115,6 +116,13 @@ export interface PluginDefinition<
   consentServicesFromSettings?(
     settings: z.output<SettingsSchema>,
   ): readonly SettingsConsentService[];
+  /**
+   * Says a form must ask for consent just now, for a plugin that passes people on to someone
+   * else: return the words for the box, or null. While the plugin is on, a consent box the form
+   * already has becomes required, and a form without one gets this one. The saved form doesn't
+   * change. See src/forms/required-consent.ts.
+   */
+  formConsent?: PluginFormConsent;
   /**
    * Makes the content the plugin needs (a collection, say) each time it is switched on.
    * It must only create what is missing: it runs again after every switch off and on.

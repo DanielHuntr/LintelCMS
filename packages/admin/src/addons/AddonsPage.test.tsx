@@ -1,6 +1,9 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { LucideIcon } from "lucide-react";
+import type { AdminPluginDefinition } from "../plugins/adminPlugin.js";
+import { AdminPluginsContext } from "../plugins/AdminPluginsContext.js";
 import { mockApi } from "../testing/mockApi.js";
 import { renderScreen } from "../testing/renderScreen.js";
 import type { Addon, AddonDetails } from "./addons.api.js";
@@ -219,6 +222,78 @@ describe("AddonsPage", () => {
       "href",
       "https://github.com/acme/swatches",
     );
+  });
+
+  describe("its own screen", () => {
+    const withScreen = (definition: AdminPluginDefinition) => (
+      <AdminPluginsContext.Provider value={[definition]}>
+        <AddonsPage />
+      </AdminPluginsContext.Provider>
+    );
+    const open = async (definition: AdminPluginDefinition, enabledPlugins: string[]) => {
+      fakeApi([{ ...swatches, enabled: enabledPlugins.includes("swatches") }]);
+      renderScreen(withScreen(definition), { enabledPlugins });
+      await userEvent.click(await screen.findByRole("button", { name: /Colour swatches/ }));
+      return screen.findByRole("dialog", { name: "Colour swatches" });
+    };
+    const icon = (() => null) as unknown as LucideIcon;
+
+    it("links to its sidebar screen", async () => {
+      const dialog = await open(
+        { id: "swatches", sidebarItems: [{ path: "/swatches", label: "Swatches", icon }] },
+        ["swatches"],
+      );
+      expect(within(dialog).getByRole("link", { name: "Open Colour swatches" })).toHaveAttribute(
+        "href",
+        "/swatches",
+      );
+    });
+
+    it("links to its row in Settings when it has no sidebar link", async () => {
+      const row = { group: "Add-ons", label: "Swatches", description: "", icon };
+      const dialog = await open(
+        { id: "swatches", settingsRows: [{ ...row, to: "/settings/swatches" }] },
+        ["swatches"],
+      );
+      expect(within(dialog).getByRole("link", { name: "Open Colour swatches" })).toHaveAttribute(
+        "href",
+        "/settings/swatches",
+      );
+    });
+
+    it("links to a screen at a plain address when that's all it has", async () => {
+      const component = () => null;
+      const dialog = await open(
+        {
+          id: "swatches",
+          screens: [
+            { path: "/swatches/$swatchId", component },
+            { path: "/swatches", component },
+          ],
+        },
+        ["swatches"],
+      );
+      expect(within(dialog).getByRole("link", { name: "Open Colour swatches" })).toHaveAttribute(
+        "href",
+        "/swatches",
+      );
+    });
+
+    it("offers no link while it's off", async () => {
+      const off = await open(
+        { id: "swatches", sidebarItems: [{ path: "/swatches", label: "Swatches", icon }] },
+        [],
+      );
+      expect(within(off).queryByRole("link", { name: /^Open/ })).not.toBeInTheDocument();
+    });
+
+    it("offers no link to a screen that needs an address", async () => {
+      const dialog = await open(
+        { id: "swatches", screens: [{ path: "/swatches/$swatchId", component: () => null }] },
+        ["swatches"],
+      );
+      expect(within(dialog).queryByRole("link", { name: /^Open/ })).not.toBeInTheDocument();
+    });
   });
 
   it("offers an export, then keeping or deleting its data, once it is off", async () => {

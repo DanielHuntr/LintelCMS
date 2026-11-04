@@ -11,8 +11,22 @@ export const BRIDGE_FILE = "lintel-bridge.php";
 /** The oldest PHP the companion runs on; `LINTEL_BRIDGE_MINIMUM_PHP` in the PHP says the same. */
 export const BRIDGE_MINIMUM_PHP_VERSION = "7.4";
 export const BRIDGE_CONFIG_FILE = "config.php";
-export const BRIDGE_FORMS_FILE = "forms.json";
-export const BRIDGE_CATALOGUE_FILE = "catalogue.json";
+export const BRIDGE_FORMS_FILE = "forms.php";
+export const BRIDGE_CATALOGUE_FILE = "catalogue.php";
+
+/**
+ * The top of every private file, matching `LINTEL_FILE_GUARD` in the PHP. A private file is a
+ * PHP file that stops at once, so a browser that reaches it gets nothing, on any server.
+ */
+export const BRIDGE_FILE_GUARD = "<?php exit; __halt_compiler();\n";
+
+export function guardPrivateFile(content: string): string {
+  return `${BRIDGE_FILE_GUARD}${content}`;
+}
+
+export function unguardPrivateFile(content: string): string {
+  return content.startsWith(BRIDGE_FILE_GUARD) ? content.slice(BRIDGE_FILE_GUARD.length) : content;
+}
 
 let script: string | undefined;
 

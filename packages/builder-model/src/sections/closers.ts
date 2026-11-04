@@ -233,10 +233,19 @@ export function columnsFooter(copy: { about: string; columns: FooterColumn[] }):
               stack(
                 column.heading,
                 [
-                  heading(column.heading, 3),
+                  {
+                    type: "text",
+                    name: "Column title",
+                    props: { text: column.heading },
+                    styles: { base: { fontSize: "1.125rem", fontWeight: "600" } },
+                  },
                   ...("menuHandle" in column
                     ? [siteMenu(column.heading, column.menuHandle)]
-                    : column.links.map((item) => link(item.label, item.href))),
+                    : column.links.map((item) => ({
+                        ...link(item.label, item.href),
+                        // The band's own light words: the link colour is for the page.
+                        styles: { base: { color: "inherit" } },
+                      }))),
                 ],
                 2,
               ),

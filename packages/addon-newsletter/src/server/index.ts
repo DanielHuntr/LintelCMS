@@ -2,7 +2,7 @@ import { join } from "node:path";
 import { defineBlock, definePlugin, packageFolder, text, textarea } from "@lintel/core/plugin";
 import type { FetchFunction } from "./newsletter-providers.js";
 import { newsletterRoutes } from "./newsletter.routes.js";
-import { signUp } from "./newsletter.service.js";
+import { needsConsentTick, signUp } from "./newsletter.service.js";
 import { newsletterConnectionTable } from "./newsletter.table.js";
 import { defaultSignUpFormText, renderSignUpForm, signUpBlockTemplate } from "./signup-form.js";
 
@@ -12,6 +12,9 @@ import { defaultSignUpFormText, renderSignUpForm, signUpBlockTemplate } from "./
  * visitors' browsers load nothing from them. The admin half (the Newsletter screen) is in
  * src/admin.
  */
+
+/** The form the site's own Newsletter element usually sends. */
+const NEWSLETTER_FORM = "newsletter";
 
 export interface NewsletterAddonOptions {
   /** How it reaches Mailchimp and Brevo. Tests pass a stand-in. */
@@ -64,15 +67,26 @@ export function createNewsletterAddon(options: NewsletterAddonOptions = {}) {
       ],
     },
 
+    // Unless people confirm by email, the "newsletter" form has to ask them first.
+    formConsent: async (form, database) =>
+      form.handle === NEWSLETTER_FORM && (await needsConsentTick(database))
+        ? defaultSignUpFormText.consentLabel
+        : null,
+
     // A form of the site's own with a ticked "newsletter" field signs its sender up too.
     events: {
       "form.submitted": async (event, { database, log }) => {
-        const { fields, submitterEmail } = event.data.submission;
+        const { fields, submitterEmail, consents = [] } = event.data.submission;
         // The site's own Newsletter element sends its form ("newsletter"); any other form signs
         // people up when they tick a box with the handle "newsletter".
-        const wantsNewsletter =
-          event.data.form.handle === "newsletter" || isTicked(fields.newsletter);
+        const tickedNewsletter = isTicked(fields.newsletter);
+        const wantsNewsletter = event.data.form.handle === NEWSLETTER_FORM || tickedNewsletter;
         if (!wantsNewsletter || !submitterEmail) return;
+        // A page published as files can be older than the rule, so this holds on its own.
+        if (!tickedNewsletter && consents.length === 0 && (await needsConsentTick(database))) {
+          log.info(`Left out the sender of "${event.data.form.name}": no consent box was ticked`);
+          return;
+        }
         const firstName = typeof fields.name === "string" ? fields.name.trim().slice(0, 100) : "";
         try {
           await signUp(database, fetcher, { email: submitterEmail, firstName });

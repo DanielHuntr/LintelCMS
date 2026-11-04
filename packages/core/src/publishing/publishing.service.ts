@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { targetUsesBridge } from "../bridge/bridge-publish.service.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import type { SecretBox } from "../secrets/secret-box.js";
@@ -30,6 +31,7 @@ import type {
   PublishTargetKind,
   PublishTargetRow,
 } from "./publishing.table.js";
+import { checkDestination, type DestinationRules } from "./destination-safety.js";
 import { openTargetRemote, targetLocation } from "./target-remotes.js";
 
 /** Settings → Publishing: the places a website is published to as files. */
@@ -60,6 +62,23 @@ export interface PublishTarget {
 export interface PublishingDependencies {
   database: DatabaseOrTransaction;
   secretBox: () => SecretBox;
+  /** Where publishing may go (see destination-safety.ts). */
+  destinationRules?: () => DestinationRules;
+}
+
+/** Websites published here that have the companion, for Settings → Privacy to ask. */
+export async function listBridgeWebsites(dependencies: PublishingDependencies) {
+  const rows = await listTargetRows(dependencies.database, DEFAULT_TENANT_ID);
+  return rows
+    .filter(
+      (row) => row.lastPublishedAt !== null && row.options.siteAddress && targetUsesBridge(row),
+    )
+    .map((row) => ({
+      id: row.id,
+      name: row.name,
+      siteAddress: row.options.siteAddress ?? "",
+      secret: readSecrets(dependencies.secretBox(), row).bridgeSecret ?? "",
+    }));
 }
 
 export function readSecrets(
@@ -177,6 +196,10 @@ export async function createPublishTarget(
 ): Promise<PublishTarget> {
   const box = dependencies.secretBox();
   await checkSiteExists(dependencies.database, request.siteId);
+  await checkDestination(
+    { kind: request.kind, options: defaultOptions(request) },
+    dependencies.destinationRules?.(),
+  );
   const secrets = mergeSecrets({ bridgeSecret: randomBytes(32).toString("hex") }, request.secrets);
   const row = await insertTargetRow(dependencies.database, {
     tenantId: DEFAULT_TENANT_ID,
@@ -200,6 +223,10 @@ export async function updatePublishTarget(
   const box = dependencies.secretBox();
   const row = await findPublishTargetRow(dependencies.database, targetId);
   await checkSiteExists(dependencies.database, changes.siteId);
+  await checkDestination(
+    { kind: row.kind, options: { ...row.options, ...changes.options } },
+    dependencies.destinationRules?.(),
+  );
   let sealedSecrets = row.sealedSecrets;
   if (changes.secrets) {
     let saved: PublishTargetSecrets = {};
@@ -243,6 +270,7 @@ export async function testPublishTarget(
   targetId: string,
 ): Promise<{ ok: true; message: string }> {
   const row = await findPublishTargetRow(dependencies.database, targetId);
+  await checkDestination(row, dependencies.destinationRules?.());
   if (row.kind === "zip") {
     return {
       ok: true,

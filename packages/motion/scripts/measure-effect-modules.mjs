@@ -5,11 +5,11 @@ import { gzipSync } from "node:zlib";
 import { fileURLToPath } from "node:url";
 import { buildEffectModules, effectPlayerSizes } from "./effect-modules.mjs";
 
-const { modules, beside } = await buildEffectModules();
+const { modules, beside, loadedLater } = await buildEffectModules();
 const lines = Object.entries(modules)
   .sort(([a], [b]) => a.localeCompare(b))
   .map(([name, module]) => `  "${name}": ${module.gzipBytes},`);
-const players = Object.entries(effectPlayerSizes(beside, gzipSync)).map(
+const players = Object.entries(effectPlayerSizes(beside, gzipSync, loadedLater)).map(
   ([name, bytes]) => `  "${name}": ${bytes},`,
 );
 writeFileSync(
@@ -26,7 +26,8 @@ ${lines.join("\n")}
 
 /**
  * What a page also downloads, gzipped, once such an element nears the screen: the player
- * and, for Rive, its WebAssembly. Kept apart from the modules, which stay small.
+ * and, for Rive, its WebAssembly, or three.js for a 3D model. Kept apart from the modules,
+ * which stay small. A model's own file is counted from the page.
  */
 export const effectPlayerBytes: Partial<Record<EffectModuleName, number>> = {
 ${players.join("\n")}

@@ -19,6 +19,7 @@ import type { ListedCollection, RoutedCollection } from "./site-routing.js";
 import { readWebsiteLook, type WebsiteLook } from "./website.service.js";
 import type { SiteEffectSettings } from "@lintel/motion/effects";
 import { readSiteEffects } from "../site-effects/site-effects.service.js";
+import { readShadersForPages } from "../custom-shaders/custom-shaders.service.js";
 import { choiceLabelsOf } from "./bound-entries.js";
 import {
   type CustomScriptRule,
@@ -72,6 +73,8 @@ export interface SiteContext {
   fontStylesheetUrls: string[];
   /** Page transitions, cursor and intro; drawn per page by siteEffectsHead. */
   effectSettings: SiteEffectSettings;
+  /** The site's own shaders' code, by id; empty while the site doesn't allow custom code. */
+  customShaders: Readonly<Record<string, string>>;
   /** Whether Code elements may run scripts: applied each time a design is drawn. */
   scriptRule: CustomScriptRule;
   /** The site's design variables and shared styles, made in the page builder. */
@@ -102,6 +105,7 @@ export async function loadSiteContext(
 ): Promise<SiteContext> {
   const { site } = options;
   const effects = readSiteEffects(database, site);
+  const customShaders = readShadersForPages(database, site);
   const websiteFonts = readWebsiteFonts(database, site, options.assetLookup);
   const scriptRule = readSetting(database, "builderCustomScripts");
   const design = await readSiteDesign(database, site);
@@ -167,6 +171,7 @@ export async function loadSiteContext(
     fonts: fonts.map(({ family, category, source }) => ({ family, category, source })),
     fontStylesheetUrls: fontsWait ? [] : stylesheetUrls,
     effectSettings: await effects,
+    customShaders: await customShaders,
     scriptRule: await scriptRule,
     design,
     cookieNotice,

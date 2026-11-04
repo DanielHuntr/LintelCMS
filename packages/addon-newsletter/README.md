@@ -21,6 +21,10 @@ website.
   not in its settings: the admin only ever sees its last four characters.
 - Nobody is added from this add-on's own form without ticking the consent box, and it
   stores nothing in Lintel about the people who sign up.
+- With double opt-in off, the form with the handle `newsletter` must have a required consent
+  box too. If it has a consent box, that box becomes required; if not, one is added while the
+  form is drawn and checked. Nobody is added without a tick, and the saved form isn't changed.
+  With double opt-in on, people confirm by email, so the form stays as you made it.
 - A hidden field catches robots: they are thanked and nothing is sent.
 
 ## Setting it up

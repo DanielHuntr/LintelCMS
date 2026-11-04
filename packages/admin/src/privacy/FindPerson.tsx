@@ -9,6 +9,7 @@ import { saveFile } from "../forms/forms.api.js";
 import { formatDate } from "../i18n/formatting.js";
 import { t } from "../i18n/strings.js";
 import {
+  type ChosenRecord,
   erasePerson,
   exportPerson,
   findPerson,
@@ -23,7 +24,8 @@ type Mode = "email" | "name";
 /**
  * Find a person: one field (their email, or their full name instead), then what was found,
  * kind by kind, with the two things people ask for: a copy of it, and to have it erased.
- * Erasing asks first, listing what happens to each kind.
+ * Erasing asks first, listing what happens to each kind. Two people can share a name, so after
+ * a name search each record has a tick box, and only the ones ticked are exported or erased.
  */
 export function FindPerson() {
   const queryClient = useQueryClient();
@@ -35,6 +37,7 @@ export function FindPerson() {
   const [error, setError] = useState<string | null>(null);
   const [working, setWorking] = useState<"find" | "export" | "erase" | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [ticked, setTicked] = useState<ChosenRecord[]>([]);
 
   const person: Person = mode === "email" ? { email: typed, name: "" } : { email: "", name: typed };
 
@@ -55,11 +58,12 @@ export function FindPerson() {
   const find = () =>
     run("find", async () => {
       setSearched({ person, result: await findPerson(person) });
+      setTicked([]);
     });
 
   const download = (who: Person) =>
     run("export", async () => {
-      const { blob, filename } = await exportPerson(who);
+      const { blob, filename } = await exportPerson(who, byName(who) ? ticked : undefined);
       saveFile(blob, filename);
       setStatus(t("privacy.find.exported"));
       await queryClient.invalidateQueries({ queryKey: privacyKeys.requests() });
@@ -69,14 +73,28 @@ export function FindPerson() {
     run("erase", async () => {
       // Closed either way, so a failure's message can be read behind it.
       setConfirming(false);
-      const outcome = await erasePerson(who);
+      const outcome = await erasePerson(who, byName(who) ? ticked : undefined);
       setSearched({ person: who, result: await findPerson(who) });
+      setTicked([]);
       setStatus(t("privacy.find.erased"));
       setExplanations(outcome.explanations);
       await queryClient.invalidateQueries({ queryKey: privacyKeys.requests() });
     });
 
   const total = searched?.result.found.reduce((sum, kind) => sum + kind.items.length, 0) ?? 0;
+  const choosing = searched !== null && byName(searched.person);
+  const kindsAffected =
+    searched?.result.found.filter(
+      (kind) => !choosing || ticked.some((record) => record.kindId === kind.kindId),
+    ) ?? [];
+
+  function toggle(record: ChosenRecord) {
+    setTicked((current) =>
+      current.some((one) => sameRecord(one, record))
+        ? current.filter((one) => !sameRecord(one, record))
+        : [...current, record],
+    );
+  }
 
   return (
     <section aria-labelledby="find-person" className="flex flex-col gap-1.5">
@@ -138,6 +156,8 @@ export function FindPerson() {
               result={searched.result}
               total={total}
               working={working}
+              ticked={choosing ? ticked : null}
+              onToggle={toggle}
               onDownload={() => void download(searched.person)}
               onErase={() => setConfirming(true)}
             />
@@ -172,11 +192,13 @@ export function FindPerson() {
             </>
           }
         >
-          {searched.person.email === "" && (
-            <p className="mb-3 text-footnote text-warning">{t("privacy.find.nameWarning")}</p>
+          {choosing && (
+            <p className="mb-3 text-footnote text-warning">
+              {t("privacy.find.tickedCount", { count: ticked.length })}
+            </p>
           )}
           <ul className="flex flex-col gap-2 text-footnote">
-            {searched.result.found.map((kind) => (
+            {kindsAffected.map((kind) => (
               <li key={kind.kindId}>
                 <span className="font-medium text-label">{kind.name}</span>
                 <span className="text-label-secondary"> · {kind.erasure}</span>
@@ -189,28 +211,42 @@ export function FindPerson() {
   );
 }
 
+const byName = (person: Person) => person.email.trim() === "";
+
+const sameRecord = (first: ChosenRecord, second: ChosenRecord) =>
+  first.kindId === second.kindId && first.id === second.id;
+
 function SearchResult({
   result,
   total,
   working,
+  ticked,
+  onToggle,
   onDownload,
   onErase,
 }: {
   result: PersonSearch;
   total: number;
   working: string | null;
+  /** Null after a search by email, which is one person already. */
+  ticked: ChosenRecord[] | null;
+  onToggle: (record: ChosenRecord) => void;
   onDownload: () => void;
   onErase: () => void;
 }) {
+  const nothingTicked = ticked !== null && ticked.length === 0;
   return (
     <>
       <p className="text-body text-label">
         {total === 0 ? t("privacy.find.nothing") : t("privacy.find.foundCount", { count: total })}
       </p>
+      {ticked !== null && total > 0 && (
+        <p className="text-footnote text-label-secondary">{t("privacy.find.tickHint")}</p>
+      )}
       {result.found.length > 0 && (
         <ul className="flex flex-col divide-y divide-separator rounded-control bg-fill/40">
           {result.found.map((kind) => (
-            <FoundKindRow key={kind.kindId} kind={kind} />
+            <FoundKindRow key={kind.kindId} kind={kind} ticked={ticked} onToggle={onToggle} />
           ))}
         </ul>
       )}
@@ -232,7 +268,7 @@ function SearchResult({
             variant="tinted"
             icon={<Download aria-hidden="true" />}
             onClick={onDownload}
-            disabled={working !== null}
+            disabled={working !== null || nothingTicked}
           >
             {working === "export" ? t("privacy.find.exporting") : t("privacy.find.export")}
           </Button>
@@ -240,7 +276,7 @@ function SearchResult({
             variant="destructive"
             icon={<Trash2 aria-hidden="true" />}
             onClick={onErase}
-            disabled={working !== null}
+            disabled={working !== null || nothingTicked}
           >
             {t("privacy.find.erase")}
           </Button>
@@ -251,21 +287,47 @@ function SearchResult({
 }
 
 /** One kind of data: its name and count, opening to the items themselves. */
-function FoundKindRow({ kind }: { kind: FoundKind }) {
+function FoundKindRow({
+  kind,
+  ticked,
+  onToggle,
+}: {
+  kind: FoundKind;
+  ticked: ChosenRecord[] | null;
+  onToggle: (record: ChosenRecord) => void;
+}) {
   return (
     <li>
-      <details className="group px-3 py-2.5">
+      <details className="group px-3 py-2.5" open={ticked !== null}>
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-body text-label">
           <span>{kind.name}</span>
           <span className="text-footnote text-label-secondary">{kind.items.length}</span>
         </summary>
         <ul className="mt-2 flex flex-col gap-1 text-footnote text-label-secondary">
-          {kind.items.map((item) => (
-            <li key={item.id}>
-              {item.summary}
-              {item.date ? ` · ${formatDate(item.date)}` : ""}
-            </li>
-          ))}
+          {kind.items.map((item) => {
+            const words = [
+              item.summary,
+              ...(ticked ? [item.email || t("privacy.find.noEmail")] : []),
+              ...(item.date ? [formatDate(item.date)] : []),
+            ].join(" · ");
+            const record = { kindId: kind.kindId, id: item.id };
+            return (
+              <li key={item.id}>
+                {ticked ? (
+                  <label className="flex min-h-11 items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={ticked.some((one) => sameRecord(one, record))}
+                      onChange={() => onToggle(record)}
+                    />
+                    <span className="min-w-0 break-words">{words}</span>
+                  </label>
+                ) : (
+                  words
+                )}
+              </li>
+            );
+          })}
         </ul>
       </details>
     </li>

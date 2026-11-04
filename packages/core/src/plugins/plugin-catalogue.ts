@@ -2,6 +2,7 @@ import { getTableName } from "drizzle-orm";
 import { pluginBlockPrefix, registerPluginBlocks } from "../blocks/define-block.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { registerPluginConsentServices } from "../cookie-notice/plugin-consent-services.js";
+import { registerPluginFormConsent } from "../forms/required-consent.js";
 import { registerPluginFieldtypes } from "../fieldtypes/fieldtypes.registry.js";
 import { registerPluginPermissions } from "../roles/permission-catalog.js";
 import type { LintelPlugin } from "./plugin-definition.js";
@@ -57,6 +58,7 @@ export class PluginCatalogue {
         plugin.consentServices ?? [],
         settingsConsentServicesReader(plugin),
       );
+      registerPluginFormConsent(plugin.id, plugin.formConsent);
       registerPluginPermissions(plugin);
     }
   }

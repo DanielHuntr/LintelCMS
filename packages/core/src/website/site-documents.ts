@@ -63,6 +63,7 @@ export function renderPage(
       englishLabels,
     ),
     effectModuleUrls: readEffectModules()?.urls,
+    customShaders: context.customShaders,
     cookieNotice: cookieNoticeHead(context, chrome.locale),
   });
   return htmlResponse(body, page);

@@ -21,7 +21,7 @@ const lightPalette: Palette = {
   background: "#ffffff",
   surface: "#f5f5f7",
   text: "#1d1d1f",
-  textSecondary: "#6e6e73",
+  textSecondary: "#646469",
   border: "#d2d2d7",
 };
 
@@ -60,7 +60,9 @@ function colourTokens(theme: SiteTheme, palette: Palette): string[] {
     `--lintel-color-border: ${palette.border};`,
     `--lintel-color-brand: ${theme.brandColour};`,
     `--lintel-color-on-brand: ${textColourOn(theme.brandColour)};`,
-    `--lintel-color-link: ${readableOn(theme.brandColour, palette.background)};`,
+    // Small labels and numbers: the brand, or the nearest tone that reads on page and panel.
+    `--lintel-color-brand-text: ${readableOn(theme.brandColour, palette.surface)};`,
+    `--lintel-color-link: ${readableOn(theme.brandColour, palette.surface)};`,
     `--lintel-color-accent: ${readableOn(theme.accentColour, palette.background)};`,
   ];
 }

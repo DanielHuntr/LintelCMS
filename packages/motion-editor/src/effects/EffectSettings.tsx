@@ -1,9 +1,15 @@
-import type { EffectDefinition, EffectParameter } from "@lintel/motion/effects";
-import { Check, Pipette } from "lucide-react";
-import { useId } from "react";
+import type {
+  EffectDefinition,
+  EffectParameter,
+  NodeEffect,
+  SettingReactInput,
+} from "@lintel/motion/effects";
+import { Check, ChevronRight, Pipette } from "lucide-react";
+import { useId, useState } from "react";
 import { classNames } from "../controls/classNames.js";
 import { Checkbox, Select, TextInput } from "../controls/Field.js";
 import { Slider } from "../controls/Slider.js";
+import { ReactControl } from "../shaders/ReactControl.js";
 import { useTranslate } from "../strings/translate.js";
 import { themeCursorSwatches, type CursorColourSwatch } from "./CursorLookFields.js";
 
@@ -18,6 +24,9 @@ interface EffectSettingsProps {
   onCommit?: () => void;
   /** The site's colours, offered for colour settings; the theme's when left out. */
   colours?: readonly CursorColourSwatch[];
+  /** What number settings react to. With `onReacts`, each number can be made to react. */
+  reacts?: NodeEffect["reacts"];
+  onReacts?: (reacts: NodeEffect["reacts"]) => void;
 }
 
 function formatNumber(parameter: Extract<EffectParameter, { kind: "number" }>, value: number) {
@@ -35,6 +44,7 @@ function ColourInput({
   label,
   value,
   offerWords,
+  offerNone,
   colours,
   onChange,
 }: {
@@ -42,6 +52,8 @@ function ColourInput({
   value: string;
   /** Offers the colour of the element's words (`currentColor`). */
   offerWords: boolean;
+  /** For a colour that is off until chosen. */
+  offerNone: boolean;
   colours: readonly CursorColourSwatch[];
   onChange: (value: string) => void;
 }) {
@@ -58,6 +70,21 @@ function ColourInput({
         {chosenName && <span className="font-normal text-label-tertiary"> · {chosenName}</span>}
       </span>
       <div role="group" aria-labelledby={labelId} className="flex flex-wrap items-center gap-1.5">
+        {offerNone && (
+          <button
+            type="button"
+            aria-pressed={value === ""}
+            onClick={() => onChange("")}
+            className={classNames(
+              "h-6 rounded-full px-2.5 text-caption font-medium focus-visible:focus-ring",
+              value === ""
+                ? "bg-accent-fill text-on-accent"
+                : "bg-fill text-label-secondary hover:bg-fill/70",
+            )}
+          >
+            {t("motionEditor.effects.noColour")}
+          </button>
+        )}
         {offerWords && (
           <button
             type="button"
@@ -121,77 +148,123 @@ export function EffectSettings({
   onChange,
   onCommit,
   colours,
+  reacts,
+  onReacts,
 }: EffectSettingsProps) {
   const t = useTranslate();
+  const [moreOpen, setMoreOpen] = useState(false);
   const swatches = colours ?? themeCursorSwatches(t);
   const entries = Object.entries(definition.params);
   if (entries.length === 0) return null;
   const set = (name: string, value: number | string | boolean) =>
     onChange({ ...values, [name]: value });
+  const setReact = (name: string, react: SettingReactInput | undefined) => {
+    const next = { ...reacts };
+    if (react) next[name] = react;
+    else delete next[name];
+    onReacts?.(Object.keys(next).length > 0 ? next : undefined);
+  };
+  const drawSetting = ([name, parameter]: (typeof entries)[number]) => {
+    const value = values[name] ?? parameter.default;
+    switch (parameter.kind) {
+      case "number": {
+        const step = parameter.step ?? (parameter.max - parameter.min > 20 ? 1 : 0.01);
+        const slider = (
+          <Slider
+            key={name}
+            label={parameter.label}
+            value={Number(value)}
+            min={parameter.min}
+            max={parameter.max}
+            step={step}
+            displayValue={formatNumber(parameter, Number(value))}
+            valueText={formatNumber(parameter, Number(value))}
+            onChange={(next) => set(name, next)}
+            onCommit={onCommit}
+          />
+        );
+        if (!onReacts) return slider;
+        return (
+          <ReactControl
+            key={name}
+            label={parameter.label}
+            min={parameter.min}
+            max={parameter.max}
+            step={step}
+            value={Number(value)}
+            react={reacts?.[name]}
+            onChange={(react) => setReact(name, react)}
+            onCommit={onCommit}
+          >
+            {slider}
+          </ReactControl>
+        );
+      }
+      case "choice":
+        return (
+          <Select
+            key={name}
+            label={parameter.label}
+            options={parameter.choices}
+            value={String(value)}
+            onChange={(event) => (set(name, event.target.value), onCommit?.())}
+          />
+        );
+      case "colour":
+        return (
+          <ColourInput
+            key={name}
+            label={parameter.label}
+            value={String(value)}
+            offerWords={parameter.default === "currentColor"}
+            offerNone={parameter.default === ""}
+            colours={swatches}
+            onChange={(next) => (set(name, next), onCommit?.())}
+          />
+        );
+      case "switch":
+        return (
+          <Checkbox
+            key={name}
+            label={parameter.label}
+            checked={Boolean(value)}
+            onChange={(next) => (set(name, next), onCommit?.())}
+          />
+        );
+      case "text":
+        return (
+          <TextInput
+            key={name}
+            label={parameter.label}
+            value={String(value)}
+            maxLength={parameter.maxLength}
+            onChange={(event) => set(name, event.target.value)}
+            onBlur={onCommit}
+          />
+        );
+    }
+    return null;
+  };
+  const main = entries.filter(([, parameter]) => !parameter.more);
+  const folded = entries.filter(([, parameter]) => parameter.more);
   return (
     <div className="flex flex-col gap-3">
-      {entries.map(([name, parameter]) => {
-        const value = values[name] ?? parameter.default;
-        switch (parameter.kind) {
-          case "number":
-            return (
-              <Slider
-                key={name}
-                label={parameter.label}
-                value={Number(value)}
-                min={parameter.min}
-                max={parameter.max}
-                step={parameter.step ?? (parameter.max - parameter.min > 20 ? 1 : 0.01)}
-                displayValue={formatNumber(parameter, Number(value))}
-                valueText={formatNumber(parameter, Number(value))}
-                onChange={(next) => set(name, next)}
-                onCommit={onCommit}
-              />
-            );
-          case "choice":
-            return (
-              <Select
-                key={name}
-                label={parameter.label}
-                options={parameter.choices}
-                value={String(value)}
-                onChange={(event) => (set(name, event.target.value), onCommit?.())}
-              />
-            );
-          case "colour":
-            return (
-              <ColourInput
-                key={name}
-                label={parameter.label}
-                value={String(value)}
-                offerWords={parameter.default === "currentColor"}
-                colours={swatches}
-                onChange={(next) => (set(name, next), onCommit?.())}
-              />
-            );
-          case "switch":
-            return (
-              <Checkbox
-                key={name}
-                label={parameter.label}
-                checked={Boolean(value)}
-                onChange={(next) => (set(name, next), onCommit?.())}
-              />
-            );
-          case "text":
-            return (
-              <TextInput
-                key={name}
-                label={parameter.label}
-                value={String(value)}
-                maxLength={parameter.maxLength}
-                onChange={(event) => set(name, event.target.value)}
-                onBlur={onCommit}
-              />
-            );
-        }
-        return null;
-      })}
+      {main.map(drawSetting)}
+      {folded.length > 0 && (
+        <button
+          type="button"
+          aria-expanded={moreOpen}
+          onClick={() => setMoreOpen(!moreOpen)}
+          className="-mx-1 flex min-h-8 items-center gap-1 rounded-control px-1 text-start text-footnote font-medium text-label-secondary hover:text-label focus-visible:focus-ring"
+        >
+          <ChevronRight
+            aria-hidden="true"
+            className={classNames("size-3.5 transition-transform", moreOpen && "rotate-90")}
+          />
+          {t("motionEditor.panel.moreSettings")}
+        </button>
+      )}
+      {moreOpen && folded.map(drawSetting)}
     </div>
   );
 }

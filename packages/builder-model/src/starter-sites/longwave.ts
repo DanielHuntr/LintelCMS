@@ -255,7 +255,7 @@ function footer(): NodeBlueprint {
   return gridBand(
     "Footer",
     [
-      title("Footer title", "New episodes every Tuesday morning.", 2, {
+      words("Footer title", "New episodes every Tuesday morning.", {
         base: {
           ...at(1, 7, 1),
           ...display,

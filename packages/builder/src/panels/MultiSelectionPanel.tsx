@@ -19,7 +19,12 @@ import { sharedLook, sharedType } from "../editor/multi-selection.js";
 import { useBuilderText } from "../i18n/builder-text.js";
 import { useSiteDesign } from "../site-design/site-design-context.js";
 import type { DesignTools } from "../style-panel/design-tools.js";
-import { type StateChoice, StylePanel, type StylePanelMode } from "../style-panel/StylePanel.js";
+import {
+  type StateChoice,
+  StylePanel,
+  type StylePanelMode,
+  textTypes,
+} from "../style-panel/StylePanel.js";
 import { inputClassName, Tabs } from "../ui/controls.js";
 
 type ManyTab = "style" | "content" | "animate";
@@ -91,7 +96,8 @@ export function MultiSelectionPanel({
       ...first,
       // Not any one element's id, so no one element's measured look shows as theirs.
       id: "several-selected",
-      type: type ?? "box",
+      // Different kinds are no one kind: nothing only one kind has is offered.
+      type: type ?? "several",
       styles: look.styles,
       sharedStyle: undefined,
     }),
@@ -109,6 +115,14 @@ export function MultiSelectionPanel({
     }),
     [design, standIn, actions, ids],
   );
+  const commonControls = useMemo(() => {
+    if (type) return undefined;
+    const holds = (node: PageNode) => catalogue.find(node.type)?.allowedChildren !== "none";
+    return {
+      holdsElements: nodes.every(holds),
+      showsText: nodes.every((node) => textTypes.has(node.type) || holds(node)),
+    };
+  }, [type, nodes, catalogue]);
   const sharedStyles = site.design.sharedStyles;
   const commonSharedStyle = nodes.every((node) => node.sharedStyle === first.sharedStyle)
     ? (first.sharedStyle ?? "")
@@ -155,7 +169,8 @@ export function MultiSelectionPanel({
           <StylePanel
             design={tools}
             node={standIn}
-            definition={type ? catalogue.find(type) : catalogue.find("box")}
+            definition={type ? catalogue.find(type) : undefined}
+            commonControls={commonControls}
             breakpoint={breakpoint}
             mode={mode}
             onModeChange={setMode}
@@ -164,7 +179,9 @@ export function MultiSelectionPanel({
             isLocked={isLocked}
             note={
               <p className="text-caption text-label-secondary">
-                {text("pageBuilder.multi.styleNote", { count })}
+                {text(type ? "pageBuilder.multi.styleNote" : "pageBuilder.multi.styleNoteKinds", {
+                  count,
+                })}
               </p>
             }
             onChange={(target, values, label) => actions.changeStyles(ids, target, values, label)}

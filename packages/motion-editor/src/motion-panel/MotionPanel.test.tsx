@@ -320,7 +320,7 @@ describe("backgrounds and picture effects", () => {
     const { saved, onPreviewEffect, user } = renderPanel({ elementKind: "container" });
     await user.click(screen.getByRole("button", { name: "Add motion" }));
     await user.click(screen.getByRole("radio", { name: "Always" }));
-    expect(tileNames()).toEqual(["Gradient", "Soft light", "Dust", "Contours", "Grain"]);
+    expect(tileNames()).toEqual(["Gradient", "Soft light", "Dust", "Contours", "Grain", "Glass"]);
     expect(saved.effects.map((effect) => effect.effect)).toEqual(["moving-gradient"]);
     expect(onPreviewEffect).toHaveBeenCalled();
   });

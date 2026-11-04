@@ -13,7 +13,7 @@ import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { buildBridgeConfig } from "./bridge-files.js";
+import { buildBridgeConfig, guardPrivateFile, unguardPrivateFile } from "./bridge-files.js";
 import { hmacHex, signedRequestHeaders, signEnvelope } from "./bridge-signing.js";
 import type { ShopCatalogue } from "./shop-catalogue.service.js";
 
@@ -97,6 +97,8 @@ function catalogue(stock: number): ShopCatalogue {
   };
 }
 
+const CATALOGUE = "catalogue.php";
+
 describe.skipIf(!hasPhp)("the PHP companion", { timeout: 60_000 }, () => {
   let folder = "";
   let php: ChildProcess;
@@ -105,7 +107,8 @@ describe.skipIf(!hasPhp)("the PHP companion", { timeout: 60_000 }, () => {
   const sessions: Array<Record<string, string>> = [];
 
   function writePrivate(name: string, content: string) {
-    writeFileSync(join(folder, "lintel-private", name), content);
+    const guarded = name === "config.php" ? content : guardPrivateFile(content);
+    writeFileSync(join(folder, "lintel-private", name), guarded);
   }
 
   beforeAll(async () => {
@@ -174,7 +177,7 @@ describe.skipIf(!hasPhp)("the PHP companion", { timeout: 60_000 }, () => {
       }),
     );
     writePrivate(
-      "forms.json",
+      "forms.php",
       signEnvelope(SECRET, {
         forms: {
           contact: {
@@ -190,7 +193,7 @@ describe.skipIf(!hasPhp)("the PHP companion", { timeout: 60_000 }, () => {
         },
       }),
     );
-    writePrivate("catalogue.json", signEnvelope(SECRET, catalogue(3)));
+    writePrivate(CATALOGUE, signEnvelope(SECRET, catalogue(3)));
 
     const port = 18_000 + Math.floor(Math.random() * 1_000);
     php = spawn("php", ["-S", `127.0.0.1:${port}`, "-t", join(folder, "site")], {
@@ -343,7 +346,7 @@ describe.skipIf(!hasPhp)("the PHP companion", { timeout: 60_000 }, () => {
       '"prices":{"' + MARKET + '":450}',
       '"prices":{"' + MARKET + '":1}',
     );
-    writePrivate("catalogue.json", JSON.stringify(tampered));
+    writePrivate(CATALOGUE, JSON.stringify(tampered));
     try {
       const answer = await postJson("quote", basket());
       expect(answer.status).toBe(503);
@@ -351,7 +354,7 @@ describe.skipIf(!hasPhp)("the PHP companion", { timeout: 60_000 }, () => {
         "don't match what Lintel published",
       );
     } finally {
-      writePrivate("catalogue.json", signEnvelope(SECRET, catalogue(3)));
+      writePrivate(CATALOGUE, signEnvelope(SECRET, catalogue(3)));
     }
   });
 
@@ -369,7 +372,7 @@ describe.skipIf(!hasPhp)("the PHP companion", { timeout: 60_000 }, () => {
   });
 
   it("takes paid orders only from Stripe's signed messages, once each", async () => {
-    writePrivate("catalogue.json", signEnvelope(SECRET, catalogue(10)));
+    writePrivate(CATALOGUE, signEnvelope(SECRET, catalogue(10)));
     const started = (await (await postJson("checkout", basket(1))).json()) as { holdId: string };
     const event = (id: string, amount: number) =>
       JSON.stringify({
@@ -424,7 +427,7 @@ describe.skipIf(!hasPhp)("the PHP companion", { timeout: 60_000 }, () => {
   });
 
   it("records a payment that arrives days later, as bank debits do", async () => {
-    writePrivate("catalogue.json", signEnvelope(SECRET, catalogue(10)));
+    writePrivate(CATALOGUE, signEnvelope(SECRET, catalogue(10)));
     const started = (await (await postJson("checkout", basket(1))).json()) as { holdId: string };
     const deliver = (id: string, type: string, status: string) => {
       const payload = JSON.stringify({
@@ -454,30 +457,178 @@ describe.skipIf(!hasPhp)("the PHP companion", { timeout: 60_000 }, () => {
     const queue = () => readdirSync(join(folder, "lintel-private", "data", "queue", "orders"));
 
     await deliver("evt_delayed_1", "checkout.session.completed", "unpaid");
-    expect(queue()).not.toContain(`${started.holdId}.json`);
+    expect(queue()).not.toContain(`${started.holdId}.php`);
 
     // Three days on, with another shopper's checkout having tidied the holds since.
-    const holdsFile = join(folder, "lintel-private", "data", "holds.json");
-    const holds = JSON.parse(readFileSync(holdsFile, "utf8")) as Record<
+    const holdsFile = join(folder, "lintel-private", "data", "holds.php");
+    const holds = JSON.parse(unguardPrivateFile(readFileSync(holdsFile, "utf8"))) as Record<
       string,
       { expiresAt: number }
     >;
     const hold = holds[started.holdId];
     if (!hold) throw new Error("The hold wasn't kept.");
     hold.expiresAt = Math.floor(Date.now() / 1000) - 3 * 86_400;
-    writeFileSync(holdsFile, JSON.stringify(holds));
+    writeFileSync(holdsFile, guardPrivateFile(JSON.stringify(holds)));
     await postJson("checkout", basket(1));
 
     const paid = await deliver("evt_delayed_2", "checkout.session.async_payment_succeeded", "paid");
     expect(paid.status).toBe(200);
-    expect(queue()).toContain(`${started.holdId}.json`);
+    expect(queue()).toContain(`${started.holdId}.php`);
+  });
+
+  it("says whether Stripe called a payment live, and says nothing when Stripe doesn't", async () => {
+    writePrivate(CATALOGUE, signEnvelope(SECRET, catalogue(10)));
+    const deliver = async (id: string, livemode: boolean | undefined) => {
+      const started = (await (await postJson("checkout", basket(1))).json()) as { holdId: string };
+      const payload = JSON.stringify({
+        id,
+        type: "checkout.session.completed",
+        ...(livemode === undefined ? {} : { livemode }),
+        data: {
+          object: {
+            id: `cs_${id}`,
+            payment_status: "paid",
+            amount_total: 845,
+            currency: "gbp",
+            payment_intent: `pi_${id}`,
+            metadata: { lintel_hold: started.holdId },
+          },
+        },
+      });
+      const time = Math.floor(Date.now() / 1000);
+      await fetch(`${base}?action=stripe-webhook`, {
+        method: "POST",
+        headers: {
+          "stripe-signature": `t=${time},v1=${hmacHex(STRIPE_WEBHOOK_SECRET, `${time}.${payload}`)}`,
+          "content-type": "application/json",
+        },
+        body: payload,
+      });
+      return started.holdId;
+    };
+    const test = await deliver("evt_test", false);
+    const live = await deliver("evt_live", true);
+    const unsaid = await deliver("evt_unsaid", undefined);
+
+    const pulled = (await (await signed("pull")).json()) as {
+      orders: Array<{ id: string; livemode?: boolean | null }>;
+    };
+    const said = new Map(pulled.orders.map((order) => [order.id, order.livemode]));
+    expect(said.get(test)).toBe(false);
+    expect(said.get(live)).toBe(true);
+    expect(said.get(unsaid) ?? null).toBeNull();
+  });
+
+  it("reveals nothing to a direct download, even where .htaccess means nothing", async () => {
+    writePrivate(CATALOGUE, signEnvelope(SECRET, catalogue(10)));
+    const opened = String(Math.floor(Date.now() / 1000) - 30);
+    const sent = await fetch(`${base}?action=form&form=contact`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+        accept: "application/json",
+      },
+      body: new URLSearchParams({
+        _token: `${opened}.${hmacHex(SECRET, `form:contact.${opened}`)}`,
+        name: '<?php echo "ran"; ?> Ann Visitor',
+        email: "ann.visitor@example.com",
+      }).toString(),
+    });
+    expect(sent.status).toBe(201);
+    expect((await postJson("checkout", basket(1))).status).toBe(200);
+
+    // PHP's own server ignores .htaccess and web.config, as Nginx does.
+    const port = 18_000 + Math.floor(Math.random() * 1_000);
+    const exposed = spawn(
+      "php",
+      ["-S", `127.0.0.1:${port}`, "-t", join(folder, "lintel-private")],
+      {
+        stdio: "ignore",
+      },
+    );
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 700));
+      const files = readdirSync(join(folder, "lintel-private"), { recursive: true })
+        .map((file) => String(file).replaceAll("\\", "/"))
+        .filter((file) => /\.[a-z]+$/.test(file));
+      expect(files.length).toBeGreaterThan(3);
+      for (const file of files) {
+        const body = await (await fetch(`http://127.0.0.1:${port}/${file}`)).text();
+        for (const secret of ["sam@example.com", "Ann Visitor", "ran", "Sourdough", SECRET]) {
+          expect(body, file).not.toContain(secret);
+        }
+      }
+    } finally {
+      exposed.kill();
+    }
+  });
+
+  it("moves what an older companion kept into files that reveal nothing", async () => {
+    const data = join(folder, "lintel-private", "data");
+    const order = { id: "abcabcabc0", email: "old@example.com" };
+    mkdirSync(join(data, "queue", "orders"), { recursive: true });
+    writeFileSync(join(data, "queue", "orders", `${order.id}.json`), JSON.stringify(order));
+
+    const pulled = (await (await signed("pull")).json()) as { orders: Array<{ id: string }> };
+
+    expect(pulled.orders.map((item) => item.id)).toContain(order.id);
+    const left = readdirSync(data, { recursive: true }).map(String);
+    expect(left.filter((file) => file.endsWith(".json"))).toEqual([]);
+  });
+
+  it("finds, hands over and erases one person's details, and nobody else's", async () => {
+    writePrivate(CATALOGUE, signEnvelope(SECRET, catalogue(100)));
+    const asked = async (action: "privacy-find" | "privacy-erase", body: object) => {
+      const text = JSON.stringify(body);
+      const response = await fetch(`${base}?action=${action}`, {
+        method: "POST",
+        headers: signedRequestHeaders(SECRET, action, text),
+        body: text,
+      });
+      expect(response.status, await response.clone().text()).toBe(200);
+      return (await response.json()) as {
+        records: Array<{ id: string; email: string; summary: string; data: object }>;
+        erased: number;
+      };
+    };
+    const shopper = (email: string, name: string) =>
+      basket(1, {
+        email,
+        address: { name, line1: "2 Low Road", city: "Bath", postalCode: "BA1 1AA" },
+      });
+    const hers = (await (
+      await postJson("checkout", shopper("erin@example.com", "Erin Holt"))
+    ).json()) as { holdId: string };
+    const his = (await (
+      await postJson("checkout", shopper("omar@example.com", "Omar Reed"))
+    ).json()) as { holdId: string };
+
+    const found = await asked("privacy-find", { email: "Erin@Example.com", name: null });
+    expect(found.records.map((record) => record.id)).toEqual([`hold:${hers.holdId}`]);
+    expect(JSON.stringify(found.records[0]?.data)).toContain("2 Low Road");
+    const byName = await asked("privacy-find", { email: null, name: "erin holt" });
+    expect(byName.records.map((record) => record.id)).toEqual([`hold:${hers.holdId}`]);
+
+    const erased = await asked("privacy-erase", { ids: [`hold:${hers.holdId}`] });
+    expect(erased.erased).toBe(1);
+
+    const holdsFile = join(folder, "lintel-private", "data", "holds.php");
+    const kept = readFileSync(holdsFile, "utf8");
+    expect(kept).not.toContain("erin@example.com");
+    expect(kept).not.toContain("Erin Holt");
+    expect(kept).toContain("omar@example.com");
+    expect(kept).toContain(his.holdId);
+    expect(kept).toContain(hers.holdId);
+    expect(
+      (await asked("privacy-find", { email: "erin@example.com", name: null })).records,
+    ).toEqual([]);
   });
 
   it("checks Mollie's message by asking Mollie about the payment", async () => {
-    const catalogueWithMollie = catalogue(10);
+    const catalogueWithMollie = catalogue(100);
     const market = catalogueWithMollie.markets[0];
     if (market) market.paymentProvider = "mollie";
-    writePrivate("catalogue.json", signEnvelope(SECRET, catalogueWithMollie));
+    writePrivate(CATALOGUE, signEnvelope(SECRET, catalogueWithMollie));
     const response = await postJson("checkout", basket(1));
     expect(response.status, await response.clone().text()).toBe(200);
     mollieHold = ((await response.json()) as { holdId: string }).holdId;
@@ -495,6 +646,6 @@ describe.skipIf(!hasPhp)("the PHP companion", { timeout: 60_000 }, () => {
     });
     expect(paid.status).toBe(200);
     const queue = readdirSync(join(folder, "lintel-private", "data", "queue", "orders"));
-    expect(queue).toContain(`${mollieHold}.json`);
+    expect(queue).toContain(`${mollieHold}.php`);
   });
 });

@@ -11,11 +11,12 @@ import { insertPrivacyRequest, listPrivacyRequests } from "./privacy.repository.
 import type {
   ErasureResponse,
   FoundKind,
+  PersonActionRequest,
   PersonSearchResponse,
   PrivacyRequestResponse,
 } from "./privacy.schema.js";
 import type { PrivacyRequestPart, PrivacyRequestRow } from "./privacy.table.js";
-import { PersonalDataSourceError } from "./privacy.errors.js";
+import { CantChooseRecordsError, PersonalDataSourceError } from "./privacy.errors.js";
 
 /**
  * Answering one person's request: finding everything the site holds about them, giving it to
@@ -34,8 +35,50 @@ function searchableSources(context: PrivacyContext) {
   );
 }
 
-function hookContext(context: PrivacyContext, person: PersonLookup): PersonalDataHookContext {
-  return { database: context.database, tenantId: DEFAULT_TENANT_ID, person };
+function hookContext(
+  context: PrivacyContext,
+  person: PersonLookup,
+  only?: ReadonlySet<string>,
+): PersonalDataHookContext {
+  return {
+    database: context.database,
+    tenantId: DEFAULT_TENANT_ID,
+    person,
+    ...(only && { only }),
+  };
+}
+
+type SearchableSource = ReturnType<typeof searchableSources>[number];
+
+/**
+ * Each source to work on, with what to give its hooks, worked out for all of them first so a
+ * refusal comes before anything is done. With records ticked, a source none of them belong
+ * to is left alone, and one that can't pick out records is only used if all of it was ticked.
+ */
+async function planWork(
+  context: PrivacyContext,
+  { selected, ...person }: PersonActionRequest,
+): Promise<Array<{ source: SearchableSource; input: PersonalDataHookContext }>> {
+  const work = [];
+  for (const source of searchableSources(context)) {
+    if (!selected) {
+      work.push({ source, input: hookContext(context, person) });
+      continue;
+    }
+    const ticked = new Set(
+      selected.filter((record) => record.kindId === source.id).map((record) => record.id),
+    );
+    if (ticked.size === 0) continue;
+    if (source.hooks.choosesRecords) {
+      work.push({ source, input: hookContext(context, person, ticked) });
+      continue;
+    }
+    const input = hookContext(context, person);
+    const found = await fromSource(source, () => source.hooks.find(input));
+    if (found.some((item) => !ticked.has(item.id))) throw new CantChooseRecordsError(source.name);
+    work.push({ source, input });
+  }
+  return work;
 }
 
 /** Runs one source's hook, naming the source when it fails so the owner knows where to look. */
@@ -55,7 +98,12 @@ export async function findPerson(
   for (const source of searchableSources(context)) {
     const items = await fromSource(source, () => source.hooks.find(hookContext(context, person)));
     if (items.length === 0) continue;
-    found.push({ kindId: source.id, name: source.name, erasure: source.erasure, items });
+    found.push({
+      kindId: source.id,
+      name: source.name,
+      erasure: source.erasure,
+      items: items.map((item) => ({ ...item, email: item.email ?? null })),
+    });
   }
   const notSearched = listPersonalDataSources(context)
     // Switched off or not, its data is still there.
@@ -71,13 +119,13 @@ export async function findPerson(
 /** Everything held about the person, as a .zip, and a record that it was exported. */
 export async function exportPerson(
   context: PrivacyContext,
-  person: PersonLookup,
+  person: PersonActionRequest,
   signedIn: SignedIn,
   now = new Date(),
 ): Promise<{ archive: Buffer; filename: string }> {
   const kinds: ExportedKind[] = [];
-  for (const source of searchableSources(context)) {
-    const rows = await fromSource(source, () => source.hooks.export(hookContext(context, person)));
+  for (const { source, input } of await planWork(context, person)) {
+    const rows = await fromSource(source, () => source.hooks.export(input));
     if (rows.length > 0) kinds.push({ kindId: source.id, name: source.name, rows });
   }
   await recordRequest(
@@ -101,14 +149,14 @@ export async function exportPerson(
 /** Erases the person from every searchable source, by each source's own rule. */
 export async function erasePerson(
   context: PrivacyContext,
-  person: PersonLookup,
+  person: PersonActionRequest,
   signedIn: SignedIn,
 ): Promise<ErasureResponse> {
   const parts: PrivacyRequestPart[] = [];
   const explanations: string[] = [];
+  const work = await planWork(context, person);
   try {
-    for (const source of searchableSources(context)) {
-      const hookInput = hookContext(context, person);
+    for (const { source, input: hookInput } of work) {
       const found = await fromSource(source, () => source.hooks.find(hookInput));
       if (found.length === 0) continue;
       const outcome = await fromSource(source, () => source.hooks.erase(hookInput));

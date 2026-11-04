@@ -88,6 +88,7 @@ export async function renderEntryWithLiquid(
         englishLabels,
       ),
       effectModuleUrls: readEffectModules()?.urls,
+      customShaders: context.customShaders,
       cookieNotice: cookieNoticeHead(context, locale),
     });
 

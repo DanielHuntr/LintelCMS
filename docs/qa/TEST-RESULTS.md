@@ -334,3 +334,33 @@ Automated, at `a73763c2` on Windows: `pnpm test` 29 of 29 tasks, 4,281 passed, 2
 | Role check with a real account for each built-in role                                                                   | See `FIX-LOG-night-qa.md`                                                                                                                                  |
 
 Automated, at the end of the second part, on Windows: 4,326 passed, 21 skipped, none failed (core 1,664, admin 1,035, builder 480 and 45, builder-model 439). The last `pnpm test` had one admin failure, a test in `RichTextPictures.test.tsx` that checked focus a frame too soon and failed about one run in three. After fixing that test, admin was run again on its own: 1,035 passed. `pnpm typecheck` 29 of 29, format and lint clean.
+
+## Overnight follow-ups (fix/overnight-followups, 2026-11-04)
+
+Targeted runs on Windows; the full suite runs at merge.
+
+- Core, `src/privacy` and `src/addons`: 7 files, 54 tests passed. New: `personal-data-sources.test.ts` (9).
+- Admin, `src/addons`: 3 files, 15 tests passed, with 5 new in `AddonsPage.test.tsx`.
+- `pnpm lint`, `pnpm typecheck` and `pnpm build` passed.
+
+In a browser: see "Overnight follow-ups" in `FIX-LOG-ux.md`.
+
+## Decisions from the review (fix/night-review, 2026-11-04)
+
+Windows, Node 24, with PHP 8.1 on the path:
+
+- Core: 249 files, 1,688 passed, 11 skipped, none failed. That run was just before the last small commit, which only underlines a link and drops an unused function; the privacy tests were run again after it (39 passed).
+- Admin privacy, dashboard and publishing 23, plugin-example-bookings 7: all passed. `pnpm typecheck`: 29 tasks clean. The rest of the admin, the builder and the CLI were not run; only READMEs changed in the builder and the CLI.
+- Migrations 0032 to 0037 on a new database and on one stopped at 0031 with rows in it, built-in database only: both ended with the same tables, the older one holds its retention rules and the new one doesn't, and `db:generate` reports no changes.
+
+## Shader studio (feature/shader-studio, 4 November 2026)
+
+Targeted runs on Windows, not the full suite, which runs at merge:
+
+- Motion: unit 243 passed (27 files). Browser: `shader-studio` 24, `effects-performance` 3, `creative-effects` 11, all passed.
+- Motion editor: 89 passed (10 files), with 17 in `shaders.test.tsx`.
+- Core: `src/custom-shaders` 6 passed. Site components: `src/document` 21 passed. Builder: `src/animate-panel` 13 passed. Admin: `src/page-design` and `src/blocks` 34 passed. Docs: 14 passed.
+- `tsc`: motion editor, builder and core clean. Admin has one error, in `commerce/WaysToPay.test.tsx`, which this branch doesn't touch.
+- Sizes: the core runtime is 9,791 bytes gzipped, under its 10,240 limit.
+
+The browser checks and what they don't cover are in `FIX-LOG-shader-studio.md`.

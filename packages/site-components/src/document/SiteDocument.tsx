@@ -35,6 +35,8 @@ export interface SiteDocumentProps {
   siteEffects?: SiteEffectsHead;
   /** Where each effect module is served; only the ones a page uses are listed in it. */
   effectModuleUrls?: Readonly<Record<string, string>>;
+  /** The site's own shaders' code, by id; a page carries only the ones it uses. */
+  customShaders?: Readonly<Record<string, string>>;
   /** The cookie notice, on sites that ask visitors about cookies. */
   cookieNotice?: CookieNoticeHead;
 }
@@ -57,6 +59,7 @@ export function SiteDocument({
   elementsScriptUrl,
   siteEffects,
   effectModuleUrls = {},
+  customShaders,
   cookieNotice,
 }: SiteDocumentProps) {
   const pageDesign = view.kind === "page" ? view.design : null;
@@ -84,6 +87,7 @@ export function SiteDocument({
           design={design ?? null}
           siteEffects={siteEffects}
           effectModuleUrls={effectModuleUrls}
+          customShaders={customShaders}
           motionScriptUrl={motionScriptUrl}
         />
       </head>

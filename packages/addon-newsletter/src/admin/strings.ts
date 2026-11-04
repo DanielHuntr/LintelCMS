@@ -20,6 +20,8 @@ export const t = createTranslator({
   "newsletter.doubleOptIn": "Ask people to confirm by email",
   "newsletter.doubleOptInHint":
     "Recommended. Only people who confirm are added, which keeps your list clean and is required in some countries.",
+  "newsletter.consentTickHint":
+    "Without this, your Newsletter form gets a box people must tick, and nobody is added without it.",
   "newsletter.brevoTemplate": "Confirmation email template number",
   "newsletter.brevoTemplateHint": "In Brevo: Campaigns → Templates. Use a double opt-in template.",
   "newsletter.brevoConfirmUrl": "Page people see after confirming",

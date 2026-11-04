@@ -33,7 +33,8 @@ installing anything beside it.
 
 An add-on can also say what personal data it keeps, under `personalData` in that section:
 `{ tables: [{ name, columns: [{ name, personalData: true }] }] }`. Settings → Privacy lists it
-(see src/privacy). The hooks that let it be searched go in `definePlugin`.
+(see src/privacy), and so does a column marked `personalData: true` under `tables`, so saying
+it in one place is enough. The hooks that let it be searched go in `definePlugin`.
 
 ## At start
 

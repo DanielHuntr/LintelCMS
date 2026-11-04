@@ -38,6 +38,7 @@ export class FileTypeNotAllowedError extends HttpError {
 const modelProblems = {
   unreadable: "can’t be read as a 3D model. Export it again as a .glb file.",
   version: "is an older kind of glTF file. Export it again as glTF 2.0 (a .glb file).",
+  draco: "uses Draco compression, which Lintel can’t show. Export it again with Draco turned off.",
   outside:
     "points to other files (a .bin or pictures) that weren’t uploaded with it. Export it as a single .glb file instead.",
 } as const;

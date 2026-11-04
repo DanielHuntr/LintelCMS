@@ -260,6 +260,13 @@
       "when": 1793748584215,
       "tag": "0036_test_orders_and_payment_checks",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1793758402741,
+      "tag": "0037_hold_retention_on_upgrades",
+      "breakpoints": true
     }
   ]
 }

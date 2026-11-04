@@ -77,18 +77,17 @@ export async function placeOrderForPayment(
     return { outcome: "needs_review", checkout: { ...checkout, status: "needs_review", problem } };
   }
 
-  const customer = await recordCustomerForOrder(
-    transaction,
-    checkout.email,
-    checkout.shippingAddress,
-  );
+  // A checkout whose person was erased while it was open has nobody to remember.
+  const customer = checkout.email
+    ? await recordCustomerForOrder(transaction, checkout.email, checkout.shippingAddress)
+    : null;
   const { number, prefix } = await takeNextOrderNumber(transaction, DEFAULT_TENANT_ID);
   const order = await insertOrder(transaction, {
     tenantId: DEFAULT_TENANT_ID,
     number,
     name: `${prefix}${number}`,
     checkoutId: checkout.id,
-    customerId: customer.id,
+    customerId: customer?.id ?? null,
     email: checkout.email,
     marketId: checkout.marketId,
     currency: checkout.currency,

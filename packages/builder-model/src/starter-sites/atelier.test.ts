@@ -30,9 +30,7 @@ describe("the Atelier starter site", () => {
     expect(navigation[0]?.props.element).toBe("header");
     expect(navigation.find((node) => node.type === "navigation")?.props.menuSource).toBe("site");
     expect(footer[0]?.props.element).toBe("footer");
-    expect(footer.some((node) => node.type === "heading" && textOf(node) === "Wrenfold")).toBe(
-      true,
-    );
+    expect(footer.some((node) => node.type === "text" && textOf(node) === "Wrenfold")).toBe(true);
     for (const slug of ["home", "collection", "craft", "visit"]) {
       const elements = listNodes(build(slug).root).map((node) => node.props.element);
       expect(elements, slug).not.toContain("footer");

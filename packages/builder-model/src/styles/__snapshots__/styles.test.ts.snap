@@ -10,7 +10,7 @@ exports[`the stylesheet > prints rules, states and breakpoints in a fixed order,
 
 .hero-title {
   font-size: 3rem;
-  color: var(--lintel-color-brand);
+  color: var(--lintel-color-brand-text, var(--lintel-color-brand));
 }
 
 .button {

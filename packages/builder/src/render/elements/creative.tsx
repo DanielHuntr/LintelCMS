@@ -103,21 +103,17 @@ const LottieAnimation = drawsProps(lottieAnimationComponent, ({ props, attribute
   </div>
 ));
 
-const RiveAnimation = drawsProps(riveAnimationComponent, ({ props, attributes, mode }) => {
-  // Clicked, it works like a button: reachable by keyboard, pressed with Enter or Space.
-  const pressable = props.respondTo === "click";
-  return (
-    <div
-      {...attributes}
-      {...(pressable
-        ? { role: "button", tabIndex: 0, "aria-label": props.label || undefined }
-        : describedBy(props.label))}
-      className={cx(attributes.className, "lintel-animation")}
-    >
-      <StandIn mode={mode} poster={props.poster} />
-    </div>
-  );
-});
+// One that responds to a click starts as a picture too: its player makes it a button once the
+// animation can answer, so nobody reaches a button that does nothing.
+const RiveAnimation = drawsProps(riveAnimationComponent, ({ props, attributes, mode }) => (
+  <div
+    {...attributes}
+    {...describedBy(props.label)}
+    className={cx(attributes.className, "lintel-animation")}
+  >
+    <StandIn mode={mode} poster={props.poster} />
+  </div>
+));
 
 const StickerPlayground = drawsProps(
   stickerPlaygroundComponent,

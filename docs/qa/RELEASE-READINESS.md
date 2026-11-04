@@ -250,3 +250,15 @@ Branch `fix/night-qa` (`FIX-LOG-night-qa.md`). The text above is unchanged.
 - **Open from this pass:** 3 P3s (UX-332, UX-333, UX-334), and the sample footer text in UX-328.
 - **Lesson:** browser passes should run on a production build. Several earlier "pass" results were only true on `pnpm dev`.
 - **Still not covered:** Firefox (not installed), the full journeys in WebKit, a real payment, FTP, SFTP and S3 publishing, a screen reader, and contrast of text over pictures.
+
+## Overnight follow-ups (4 November 2026)
+
+LINTEL-UX-270 to 284 are fixed on `fix/overnight-followups`, and LINTEL-UX-157, 158 and 159 with them. LINTEL-UX-285 to 288 are open, all P3. No P1 was added.
+
+## Update, 4 November 2026: the review's decisions are built
+
+Branch `fix/night-review` (`FIX-LOG-night-review.md`, LINTEL-CODE-030 to 037). The text above is unchanged.
+
+- All seven decisions are built, along with reaching what published websites keep from Find a person and erase.
+- Sites published with the companion need publishing once more, for the new private files' names and the two privacy actions.
+- An upgraded site now keeps everything until its owner chooses retention rules.

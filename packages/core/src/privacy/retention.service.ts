@@ -60,17 +60,14 @@ const ruleKinds: Record<RetentionRuleId, { kinds: RetainedKind[]; pluginId: stri
   orders: { kinds: [retainedKinds.orders, retainedKinds.archivedOrders], pluginId: "commerce" },
 };
 
-export async function readRetentionRules(database: DatabaseOrTransaction): Promise<RetentionRules> {
-  return (await readSetting(database, "privacy")).retention;
-}
-
 export async function updateRetentionRules(
   database: DatabaseOrTransaction,
   changes: Partial<RetentionRules>,
 ): Promise<RetentionRules> {
   const settings = await readSetting(database, "privacy");
   const retention = retentionRulesSchema.parse({ ...settings.retention, ...changes });
-  await writeSetting(database, "privacy", { ...settings, retention });
+  // Any saved choice counts, keeping them all off included.
+  await writeSetting(database, "privacy", { ...settings, retention, retentionNeedsChoice: false });
   return retention;
 }
 
@@ -81,8 +78,8 @@ export async function describeRetention(
   database: DatabaseOrTransaction,
   now = new Date(),
 ): Promise<RetentionResponse> {
-  const [rules, enabledPlugins] = await Promise.all([
-    readRetentionRules(database),
+  const [{ retention: rules, retentionNeedsChoice }, enabledPlugins] = await Promise.all([
+    readSetting(database, "privacy"),
     findEnabledPluginIds(database),
   ]);
   const described = await Promise.all(
@@ -112,7 +109,7 @@ export async function describeRetention(
       };
     }),
   );
-  return { rules: described };
+  return { rules: described, needsChoice: retentionNeedsChoice };
 }
 
 export type RetentionRunResult = Record<RetentionRuleId, number>;
@@ -126,13 +123,14 @@ export async function runRetentionRules(
   context: { database: DatabaseOrTransaction; forms: () => FormsContext },
   now = new Date(),
 ): Promise<RetentionRunResult> {
-  const rules = await readRetentionRules(context.database);
+  const { retention: rules, retentionNeedsChoice } = await readSetting(context.database, "privacy");
   const result: RetentionRunResult = {
     formEntries: 0,
     abandonedCarts: 0,
     activityLogs: 0,
     orders: 0,
   };
+  if (retentionNeedsChoice) return result;
   for (const id of retentionRuleIds) {
     const rule = rules[id];
     if (!rule.enabled) continue;

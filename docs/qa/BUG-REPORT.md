@@ -1014,3 +1014,64 @@ On the production build, after merging `merge/batch-15`. Earlier rows above stay
 | LINTEL-UX-332   | P3       | Open   | The same website is wired up twice (`site-server.ts`, `built-in-public-site.ts`), which caused FUNC-042 and can again          |
 | LINTEL-UX-334   | P3       | Open   | An installed app's sidebar page shows for every role, clients included. The app decides what they see; Daniel may want a rule  |
 | LINTEL-UX-333   | P3       | Open   | A client's canvas shows the column guides of a placed grid, which mean nothing to them                                         |
+
+## Overnight follow-ups (4 November 2026)
+
+On `fix/overnight-followups`; see "Overnight follow-ups" in `FIX-LOG-ux.md`. LINTEL-UX-289 wasn't needed.
+
+| ID            | Severity | Status | Summary                                                                                       |
+| ------------- | -------- | ------ | --------------------------------------------------------------------------------------------- |
+| LINTEL-UX-270 | P2       | Fixed  | With double opt-in off, the Newsletter form joined people to the list without asking          |
+| LINTEL-UX-271 | P2       | Fixed  | The builder's Newsletter element drew no consent box, so a required one stopped every sign-up |
+| LINTEL-UX-272 | P3       | Fixed  | The theme's soft grey fell short of AA on tinted paper (fixes LINTEL-UX-157)                  |
+| LINTEL-UX-273 | P2       | Fixed  | Brand-coloured labels and numbers could be unreadable with a dark brand in dark mode          |
+| LINTEL-UX-274 | P3       | Fixed  | Older templates failed the starter site checks (fixes LINTEL-UX-159)                          |
+| LINTEL-UX-275 | P3       | Fixed  | A footer with an unlisted clock zone was silently replaced (fixes LINTEL-UX-158)              |
+| LINTEL-UX-276 | P3       | Fixed  | Links on panels and dark footer bands, and Relay's green on its panel, fell short of AA       |
+| LINTEL-UX-277 | P2       | Fixed  | With several selected, Copy, Cut, Hide, Lock and dragging acted on one element                |
+| LINTEL-UX-278 | P3       | Fixed  | With different kinds selected, Style showed a box's controls                                  |
+| LINTEL-UX-279 | P2       | Fixed  | A Rive element set to respond to a click was a button that could have no name or do nothing   |
+| LINTEL-UX-280 | P3       | Fixed  | The page weight meter left out three.js and the model file                                    |
+| LINTEL-UX-281 | P3       | Fixed  | A model needing Draco uploaded and then never drew                                            |
+| LINTEL-UX-282 | P3       | Fixed  | An add-on's details dialog didn't link to its own screen                                      |
+| LINTEL-UX-283 | P2       | Fixed  | Personal columns marked under `tables` didn't reach the data map                              |
+| LINTEL-UX-284 | P3       | Fixed  | The install review said "Nothing of its own" for tables named only under `personalData`       |
+| LINTEL-UX-285 | P3       | Open   | The designer's canvas doesn't show a consent box added to the website's form                  |
+| LINTEL-UX-286 | P3       | Open   | The "Open …" link in an add-on's details has no underline until hovered                       |
+| LINTEL-UX-287 | P3       | Open   | The docs say an add-on needs no server code, but it can't load without `dist/server.js`       |
+| LINTEL-UX-288 | P3       | Open   | Pasting several lands them after the first selected, and only one stays selected              |
+
+Fixed since they were reported above:
+
+- LINTEL-UX-157 is fixed by LINTEL-UX-272.
+- LINTEL-UX-158 is fixed by LINTEL-UX-275.
+- LINTEL-UX-159 is fixed by LINTEL-UX-274.
+
+## Decisions from the night's review, built (4 November 2026)
+
+Fixed on `fix/night-review`; `FIX-LOG-night-review.md` has the commits.
+
+| ID              | Severity | Status | Summary                                                                                                    |
+| --------------- | -------- | ------ | ---------------------------------------------------------------------------------------------------------- |
+| LINTEL-CODE-030 | P2       | Fixed  | Finding someone by name treated two people with one name as one, and erased both                           |
+| LINTEL-CODE-031 | P2       | Fixed  | Find a person and erase didn't reach what a published website keeps, such as a checkout's name and address |
+| LINTEL-CODE-032 | P2       | Fixed  | Publishing could reach private addresses, and any Admin could write to any folder on the server            |
+| LINTEL-CODE-033 | P2       | Fixed  | The first retention run after an upgrade deleted things the owner never chose to delete                    |
+| LINTEL-CODE-034 | P2       | Fixed  | The companion's private files relied on `.htaccess`, which Nginx ignores                                   |
+| LINTEL-CODE-035 | P3       | Fixed  | Companion orders paid with test keys counted as real sales                                                 |
+| LINTEL-CODE-036 | P3       | Fixed  | An app could be sent form entries its installer may not see                                                |
+| LINTEL-CODE-037 | P3       | Fixed  | Five feature folders had no README                                                                         |
+
+## Shader studio (4 November 2026)
+
+Found while finishing `feature/shader-studio`. All fixed there; the details are in `FIX-LOG-shader-studio.md`.
+
+| ID                           | Severity | Status | Summary                                                                                   |
+| ---------------------------- | -------- | ------ | ----------------------------------------------------------------------------------------- |
+| LINTEL-UX-254                | P1       | Fixed  | Section went blank in the builder after "Add a layer"                                     |
+| LINTEL-UX-257                | P1       | Fixed  | Code box stuck after the graphics card stopped a shader, and retried the same code        |
+| LINTEL-UX-261                | P1       | Fixed  | Custom shader loop checks could be fooled into allowing far more work per pixel           |
+| LINTEL-UX-250, 253, 255      | P2       | Fixed  | Reacting Speed did nothing; own picture hidden; a saved shader didn't show on the canvas  |
+| LINTEL-UX-258, 259, 260, 263 | P2       | Fixed  | Code lost to Escape; unchecked delete; code on the canvas while off; words on still looks |
+| LINTEL-UX-251, 252, 256, 262 | P3       | Fixed  | Opacity couldn't react; Grain setting ignored; repeated checkbox; stale veil              |
+| LINTEL-UX-264 to 269         | P3       | Fixed  | Silk, dust and three tiles redrawn; code box focus                                        |

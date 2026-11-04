@@ -7,6 +7,12 @@ export interface Person {
   name: string;
 }
 
+/** A record ticked after searching by name. */
+export interface ChosenRecord {
+  kindId: string;
+  id: string;
+}
+
 export interface PersonalDataKind {
   id: string;
   name: string;
@@ -23,7 +29,7 @@ export interface FoundKind {
   kindId: string;
   name: string;
   erasure: string | null;
-  items: Array<{ id: string; summary: string; date: string | null }>;
+  items: Array<{ id: string; summary: string; email: string | null; date: string | null }>;
 }
 
 export interface PersonSearch {
@@ -57,6 +63,12 @@ export interface RetentionRule {
   applies: boolean;
   dueNow: number;
   nextDueAt: string | null;
+}
+
+export interface RetentionSettings {
+  rules: RetentionRule[];
+  /** Every rule is off until the owner chooses, because the site was upgraded. */
+  needsChoice: boolean;
 }
 
 export interface Processor {
@@ -96,20 +108,23 @@ export function findPerson(person: Person) {
   });
 }
 
-export function erasePerson(person: Person) {
+export function erasePerson(person: Person, selected?: ChosenRecord[]) {
   return apiRequest<{ parts: RequestPart[]; explanations: string[] }>("/privacy/people/erase", {
     method: "POST",
-    body: personBody(person),
+    body: { ...personBody(person), ...(selected && { selected }) },
   });
 }
 
 /** The export is a .zip, so it is fetched as a blob rather than as JSON. */
-export async function exportPerson(person: Person): Promise<{ blob: Blob; filename: string }> {
+export async function exportPerson(
+  person: Person,
+  selected?: ChosenRecord[],
+): Promise<{ blob: Blob; filename: string }> {
   const response = await fetch(`${apiUrl}/privacy/people/export`, {
     method: "POST",
     credentials: "include",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(personBody(person)),
+    body: JSON.stringify({ ...personBody(person), ...(selected && { selected }) }),
   });
   if (!response.ok) {
     let body: unknown;
@@ -130,13 +145,13 @@ export function listPrivacyRequests() {
 }
 
 export function getRetention() {
-  return apiRequest<{ rules: RetentionRule[] }>("/privacy/retention");
+  return apiRequest<RetentionSettings>("/privacy/retention");
 }
 
 export function updateRetention(
   changes: Partial<Record<RetentionRuleId, { enabled: boolean; days: number }>>,
 ) {
-  return apiRequest<{ rules: RetentionRule[] }>("/privacy/retention", {
+  return apiRequest<RetentionSettings>("/privacy/retention", {
     method: "PUT",
     body: changes,
   });

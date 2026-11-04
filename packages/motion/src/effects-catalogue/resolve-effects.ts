@@ -2,6 +2,7 @@ import type { EffectBinding } from "../effects/effect-types.js";
 import { cleanProps, type EffectDefinition } from "./effect-definition.js";
 import type { EffectRegistry } from "./effect-registry.js";
 import type { NodeEffect } from "./node-effect.schema.js";
+import { effectPlan, stackDefinitions, stackStaticCss } from "./shader-plan.js";
 
 /**
  * Saved effects turned into what the published page needs: the bindings the runtime
@@ -43,13 +44,22 @@ export function resolveNodeEffects(
         ...definition.elementAttributes?.(props as never),
       });
       if (definition.staticCss) css.push(definition.staticCss(selectorFor(nodeId), props as never));
+      if (saved.layers) {
+        css.push(stackStaticCss(selectorFor(nodeId), saved.layers, registry));
+        resolved.used.push(...stackDefinitions(saved.layers, registry));
+      }
       if (definition.kind === "behaviour") {
-        resolved.bindings.push({
-          nodeId,
-          module: definition.module,
-          behaviour: definition.module === "custom" ? definition.id : definition.behaviour,
-          params: { ...definition.fixed, ...props },
-        });
+        const plan = effectPlan(saved, registry);
+        resolved.bindings.push(
+          plan
+            ? { nodeId, module: "shader-stack", behaviour: "shaderStack", params: { plan } }
+            : {
+                nodeId,
+                module: definition.module,
+                behaviour: definition.module === "custom" ? definition.id : definition.behaviour,
+                params: { ...definition.fixed, ...props },
+              },
+        );
       }
     }
   }

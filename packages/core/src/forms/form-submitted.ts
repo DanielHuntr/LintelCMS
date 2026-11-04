@@ -35,6 +35,7 @@ export async function announceFormSubmitted(
         fields: response.values,
         submitterEmail: response.submitterEmail,
         url: inboxUrl,
+        consents: submission.consents,
       },
     },
     { actor: null, now: submission.createdAt, ...options },

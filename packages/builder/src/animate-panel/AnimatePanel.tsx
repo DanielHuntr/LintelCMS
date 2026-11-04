@@ -98,13 +98,18 @@ export function AnimatePanel({
           onChangeEffects={(effects) => onChangeEffects([...effects, ...pointerEffects])}
           onPreviewSpec={onPreview}
           onPreviewEffect={(definition, props) => {
-            if (definition.kind === "behaviour") {
-              onPreviewEffect({
-                module: definition.module,
-                behaviour: definition.module === "custom" ? definition.id : definition.behaviour,
-                params: { ...definition.fixed, ...props },
-              });
-            }
+            if (definition.kind !== "behaviour") return;
+            // Layers and reacting settings run from a plan, on the stack.
+            onPreviewEffect(
+              typeof props.plan === "string"
+                ? { module: "shader-stack", behaviour: "shaderStack", params: props }
+                : {
+                    module: definition.module,
+                    behaviour:
+                      definition.module === "custom" ? definition.id : definition.behaviour,
+                    params: { ...definition.fixed, ...props },
+                  },
+            );
           }}
           onStopPreview={() => onPreviewEffect(null)}
           showsTimeline

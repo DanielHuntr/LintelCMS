@@ -8,6 +8,7 @@ import { createCountingNodeIds } from "../tree/node-ids.js";
 import { createNode } from "../tree/create-node.js";
 import { findIllustration } from "./illustrations.js";
 import { buildStarterPage } from "./starter-site.js";
+import { checkStarterSite } from "./starter-site-checks.js";
 import { findStarterSite, starterSites } from "./starter-sites.js";
 
 function pictures(blueprint: NodeBlueprint): string[] {
@@ -19,6 +20,14 @@ function pictures(blueprint: NodeBlueprint): string[] {
 }
 
 describe("starter sites", () => {
+  it.each(starterSites.map((site) => [site.id, site] as const))(
+    "%s passes the template checks, with and without the shop and forms",
+    (_id, site) => {
+      expect(checkStarterSite(site, standardCatalogue)).toEqual([]);
+      expect(checkStarterSite(site, standardCatalogue, { enabledPlugins: [] })).toEqual([]);
+    },
+  );
+
   it("offers at least six, each with a home page and two to four others", () => {
     expect(starterSites.length).toBeGreaterThanOrEqual(6);
     for (const site of starterSites) {

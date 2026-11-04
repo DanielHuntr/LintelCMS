@@ -15,6 +15,7 @@ import {
   BRIDGE_FILE,
   BRIDGE_FORMS_FILE,
   buildBridgeConfig,
+  guardPrivateFile,
   privateFolderGuards,
   readBridgeScript,
 } from "./bridge-files.js";
@@ -88,12 +89,15 @@ export async function prepareBridgePublish(
         ...testing,
       }),
     },
-    { path: BRIDGE_FORMS_FILE, content: signEnvelope(secret, await describeFormsForBridge(api)) },
+    {
+      path: BRIDGE_FORMS_FILE,
+      content: guardPrivateFile(signEnvelope(secret, await describeFormsForBridge(api))),
+    },
   ];
   if (shopEnabled) {
     privateFiles.push({
       path: BRIDGE_CATALOGUE_FILE,
-      content: signEnvelope(secret, await buildShopCatalogue(api.shop)),
+      content: guardPrivateFile(signEnvelope(secret, await buildShopCatalogue(api.shop))),
     });
   }
   return {

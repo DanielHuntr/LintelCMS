@@ -11,8 +11,10 @@ import {
 import { recordConsents } from "../forms/consent-records.js";
 import { announceFormSubmitted } from "../forms/form-submitted.js";
 import { findFormRowByHandle } from "../forms/forms.repository.js";
+import { withRequiredConsent } from "../forms/required-consent.js";
 import { checkSubmissionValues, findSubmitterEmail } from "../forms/submission-values.js";
 import { insertSubmissionRow } from "../forms/submissions.repository.js";
+import { checkDestinationAddresses } from "../publishing/destination-safety.js";
 import { recordReceipt } from "../publishing/publishing.repository.js";
 import type { PublishTargetRow } from "../publishing/publishing.table.js";
 import { BRIDGE_FILE } from "./bridge-files.js";
@@ -56,6 +58,8 @@ const orderSchema = z.object({
   paidAt: z.string(),
   paidAmount: z.number().int(),
   paidCurrency: z.string(),
+  /** False when the provider said test keys paid it. Older orders don't say: they're live. */
+  livemode: z.boolean().nullish(),
   email: z.string(),
   shippingAddress: z.object({
     name: z.string(),
@@ -106,23 +110,26 @@ export class BridgeUnreachableError extends Error {
   }
 }
 
+export type BridgeAction = "status" | "pull" | "ack" | "privacy-find" | "privacy-erase";
+
 export async function callBridge(
   siteAddress: string,
   secret: string,
-  action: "status" | "pull" | "ack",
+  action: BridgeAction,
   body = "",
   fetcher: typeof fetch = fetch,
 ): Promise<unknown> {
   const url = `${siteAddress.replace(/\/+$/, "")}/${BRIDGE_FILE}?action=${action}`;
+  const sendsBody = action !== "status" && action !== "pull";
   let response: Response;
   try {
     response = await fetcher(url, {
-      method: action === "ack" ? "POST" : "GET",
+      method: sendsBody ? "POST" : "GET",
       headers: {
         ...signedRequestHeaders(secret, action, body),
         "content-type": "application/json",
       },
-      ...(action === "ack" ? { body } : {}),
+      ...(sendsBody ? { body } : {}),
       signal: AbortSignal.timeout(30_000),
     });
   } catch (error) {
@@ -163,6 +170,7 @@ export async function pullFromBridge(
       problems: ["Add the website's address to collect forms and orders from it."],
     };
   }
+  await checkDestinationAddresses("zip", { siteAddress }, api.publishing.destinationRules());
   const pulled = pullSchema.parse(await callBridge(siteAddress, secret, "pull", "", fetcher));
   const result: PullResult = { submissions: 0, orders: 0, problems: [] };
   const acknowledged = { submissions: [] as string[], orders: [] as string[] };
@@ -199,7 +207,8 @@ async function importSubmission(
 ): Promise<"imported" | "duplicate" | "problem"> {
   const form = await findFormRowByHandle(api.database, DEFAULT_TENANT_ID, submission.form);
   if (!form) return "problem";
-  const checked = checkSubmissionValues(form.fields, submission.values);
+  const fields = await withRequiredConsent(api.database, form);
+  const checked = checkSubmissionValues(fields, submission.values);
   // The companion already checked what matters; anything Lintel reads differently is kept as sent.
   const values =
     Object.keys(checked.messages).length === 0 ? checked.values : { ...submission.values };
@@ -222,12 +231,7 @@ async function importSubmission(
       submitterEmail: findSubmitterEmail(form.fields, checked.values),
       assetIds: [],
       sourceUrl,
-      consents: recordConsents(
-        form.fields,
-        checked.values,
-        sourceUrl,
-        new Date(submission.receivedAt),
-      ),
+      consents: recordConsents(fields, checked.values, sourceUrl, new Date(submission.receivedAt)),
     });
   });
   if (!row) return "duplicate";
@@ -276,6 +280,7 @@ async function importOrder(
         provider: order.provider,
         paymentIntentId: order.provider === "stripe" ? order.providerPaymentId : null,
         providerPaymentId: order.providerPaymentId,
+        isTest: order.livemode === false,
         amount: order.paidAmount,
         currency: order.paidCurrency,
       },

@@ -59,6 +59,10 @@ string, so it is served as it is with no build step; `public-forms.test.ts` chec
 - **Consent records:** each ticked consent box is saved in `consents` with the exact words
   shown (label and help text), the time and the page (`consent-records.ts`). They show on the
   entry and go in the CSV and every export.
+- **Boxes a plugin asks for:** a plugin that passes people on to someone else can declare
+  `formConsent`, saying a form must ask just now (`required-consent.ts`). The form's own box
+  becomes required, or one is added, while the form is drawn and checked. The saved form
+  doesn't change. The Newsletter add-on uses this when double opt-in is off.
 - **Across the whole site:** Settings → Privacy finds, exports and erases one person's data
   everywhere, and has a retention rule for forms without their own (see src/privacy).
 - **One person's data:** `POST /forms/privacy/export` and `/forms/privacy/erase` find
