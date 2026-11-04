@@ -53,4 +53,6 @@ export const mysqlPortedRepositories = [
   "entries/scheduled-entries.repository.ts",
   "entries/revisions.repository.ts",
   "publishing/publishing.repository.ts",
+  "navigation/navigation.repository.ts",
+  "client-editing/client-reviews.repository.ts",
 ];

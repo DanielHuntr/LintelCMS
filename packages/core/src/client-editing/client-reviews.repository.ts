@@ -1,13 +1,14 @@
-import { and, asc, desc, eq } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
+import { aliasedTable, and, asc, desc, eq } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
-import { usersTable } from "../users/users.table.js";
+import { usersTable as usersDefinition } from "../users/users.table.js";
 import {
   type ClientReviewRow,
   type ClientReviewStatus,
-  clientReviewsTable,
+  clientReviewsTable as clientReviewsDefinition,
 } from "./client-reviews.table.js";
+import { insertReturning, updateReturning } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for client reviews, nothing else. */
 
@@ -16,10 +17,11 @@ export interface ClientReviewWithNames extends ClientReviewRow {
   decidedByName: string | null;
 }
 
-const requester = alias(usersTable, "requester");
-const decider = alias(usersTable, "decider");
-
 function selectWithNames(database: DatabaseOrTransaction) {
+  const usersTable = tableFor(database, usersDefinition);
+  const requester = aliasedTable(usersTable, "requester");
+  const decider = aliasedTable(usersTable, "decider");
+  const clientReviewsTable = tableFor(database, clientReviewsDefinition);
   return database
     .select({
       review: clientReviewsTable,
@@ -43,10 +45,11 @@ export async function insertClientReview(
   database: DatabaseOrTransaction,
   review: { entryId: string; requestedBy: string; requestNote: string },
 ): Promise<ClientReviewRow> {
-  const [inserted] = await database
-    .insert(clientReviewsTable)
-    .values({ ...review, tenantId: DEFAULT_TENANT_ID })
-    .returning();
+  const clientReviewsTable = tableFor(database, clientReviewsDefinition);
+  const [inserted] = await insertReturning(database, clientReviewsTable, {
+    ...review,
+    tenantId: DEFAULT_TENANT_ID,
+  });
   if (!inserted) throw new Error("The review could not be saved.");
   return inserted;
 }
@@ -55,6 +58,7 @@ export async function findClientReviewRow(
   database: DatabaseOrTransaction,
   reviewId: string,
 ): Promise<ClientReviewRow | undefined> {
+  const clientReviewsTable = tableFor(database, clientReviewsDefinition);
   const [row] = await database
     .select()
     .from(clientReviewsTable)
@@ -70,6 +74,7 @@ export async function findLatestReviewForEntry(
   database: DatabaseOrTransaction,
   entryId: string,
 ): Promise<ClientReviewWithNames | undefined> {
+  const clientReviewsTable = tableFor(database, clientReviewsDefinition);
   const [row] = await selectWithNames(database)
     .where(
       and(
@@ -86,6 +91,7 @@ export async function listReviewRowsByStatus(
   database: DatabaseOrTransaction,
   status: ClientReviewStatus,
 ): Promise<ClientReviewWithNames[]> {
+  const clientReviewsTable = tableFor(database, clientReviewsDefinition);
   const rows = await selectWithNames(database)
     .where(
       and(
@@ -108,10 +114,13 @@ export async function decideClientReview(
     decidedAt: Date;
   },
 ): Promise<boolean> {
-  const updated = await database
-    .update(clientReviewsTable)
-    .set(decision)
-    .where(and(eq(clientReviewsTable.id, reviewId), eq(clientReviewsTable.status, "waiting")))
-    .returning({ id: clientReviewsTable.id });
+  const clientReviewsTable = tableFor(database, clientReviewsDefinition);
+  const updated = await updateReturning(
+    database,
+    clientReviewsTable,
+    decision,
+    and(eq(clientReviewsTable.id, reviewId), eq(clientReviewsTable.status, "waiting")),
+    { id: clientReviewsTable.id },
+  );
   return updated.length > 0;
 }

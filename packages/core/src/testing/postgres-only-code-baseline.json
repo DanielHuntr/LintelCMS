@@ -24,10 +24,6 @@
     "returning": 1,
     "upsert": 1
   },
-  "client-editing/client-reviews.repository.ts": {
-    "pg-core import": 1,
-    "returning": 2
-  },
   "commerce/carts/carts.repository.ts": {
     "returning": 3,
     "upsert": 1
@@ -150,11 +146,6 @@
   "media/media.repository.ts": {
     "ilike": 7,
     "returning": 1
-  },
-  "navigation/navigation.repository.ts": {
-    "json field access": 1,
-    "returning": 1,
-    "upsert": 1
   },
   "privacy/personal-data.repository.ts": {
     "cast with ::": 1,
