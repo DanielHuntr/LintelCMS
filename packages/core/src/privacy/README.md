@@ -40,12 +40,18 @@ box is saved with the exact words shown, the time and the page.
 | Security log                   | Kept as a record; email, name, IP address, browser and details removed                 |
 | Webhook and automation history | Deleted, except automation runs still going                                            |
 | Admin accounts                 | Kept: people who use the admin are removed in Users. Invitations are deleted           |
+| Published websites             | Form entries deleted; checkouts and paid orders kept there without the person          |
 | Plugins/add-ons                | Whatever the plugin's `erase` hook does                                                |
 | Backups                        | Can't be changed; erased data leaves them as older backups are replaced                |
 
 Orders also lose the email from their history (`shop_order_events`), and checkouts and discount
 redemptions are cleared with them. Outside companies keep their own records, and messages an
 automation wrote into a notification aren't searched; the admin and docs say so.
+
+A website published as files keeps details of its own until Lintel collects them, and holds a
+checkout's name, email and address for 30 days. The search asks each one through the companion
+(`src/bridge/bridge-personal-data.ts`). A website that can't be reached is listed as not
+searched, and erasing says it missed it.
 
 ## Retention defaults
 

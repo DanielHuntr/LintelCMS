@@ -18,6 +18,7 @@
  *   POST ?action=stripe-webhook         Stripe's signed "paid" message
  *   POST ?action=mollie-webhook         Mollie's "something changed", checked with Mollie
  *   GET  ?action=status|pull, POST ?action=ack    Lintel only, signed with the shared secret
+ *   POST ?action=privacy-find|privacy-erase       the same: one person's details kept here
  */
 
 declare(strict_types=1);
@@ -97,12 +98,18 @@ function lintel_handle_request(): void
             case 'status':
             case 'pull':
             case 'ack':
+            case 'privacy-find':
+            case 'privacy-erase':
                 $body = (string) file_get_contents('php://input');
                 lintel_check_signed_request($action, $body);
                 if ($action === 'status') {
                     lintel_json(200, lintel_status());
                 } elseif ($action === 'pull') {
                     lintel_json(200, lintel_pull());
+                } elseif ($action === 'privacy-find') {
+                    lintel_json(200, ['records' => lintel_person_records(json_decode($body, true) ?: [])]);
+                } elseif ($action === 'privacy-erase') {
+                    lintel_json(200, ['erased' => lintel_erase_records((array) (json_decode($body, true)['ids'] ?? []))]);
                 } else {
                     lintel_json(200, lintel_ack(json_decode($body, true) ?: []));
                 }
@@ -474,6 +481,130 @@ function lintel_ack(array $body): array
         }
     });
     return ['acknowledged' => $forgotten];
+}
+
+// ---------------------------------------------------------------------------------------
+// One person's details, for Settings → Privacy. Nothing here is believed unless it is signed.
+// ---------------------------------------------------------------------------------------
+
+/** Whole values only, ignoring case and spaces at the ends, as Lintel matches them. */
+function lintel_same_text($value, ?string $wanted): bool
+{
+    if ($wanted === null || $wanted === '' || !is_string($value)) {
+        return false;
+    }
+    $lower = function_exists('mb_strtolower')
+        ? function (string $text): string {
+            return mb_strtolower($text, 'UTF-8');
+        }
+        : 'strtolower';
+    return $lower(trim($value)) === $lower(trim($wanted));
+}
+
+/** Everything kept here about someone: by their email, or by a whole name. */
+function lintel_person_records(array $who): array
+{
+    $email = isset($who['email']) ? (string) $who['email'] : null;
+    $name = isset($who['name']) ? (string) $who['name'] : null;
+    $matches = function ($personEmail, $personName) use ($email, $name): bool {
+        return lintel_same_text($personEmail, $email) || lintel_same_text($personName, $name);
+    };
+    $records = [];
+    foreach (lintel_read_json(lintel_data_path('holds.php'), []) as $id => $hold) {
+        if (empty($hold['ordered']) && $matches($hold['email'] ?? '', $hold['address']['name'] ?? '')) {
+            $records[] = [
+                'id' => 'hold:' . $id,
+                'summary' => 'Checkout that wasn\'t paid',
+                'email' => (string) ($hold['email'] ?? ''),
+                'date' => gmdate('c', (int) ($hold['createdAt'] ?? 0)),
+                'data' => ['email' => $hold['email'] ?? '', 'deliveryAddress' => $hold['address'] ?? null],
+            ];
+        }
+    }
+    foreach (glob(lintel_data_path('queue/orders') . '/*.php') ?: [] as $file) {
+        $order = lintel_read_json($file, null);
+        if (is_array($order) && $matches($order['email'] ?? '', $order['shippingAddress']['name'] ?? '')) {
+            $records[] = [
+                'id' => 'order:' . (string) $order['id'],
+                'summary' => 'Paid order waiting to be collected',
+                'email' => (string) ($order['email'] ?? ''),
+                'date' => (string) ($order['paidAt'] ?? ''),
+                'data' => ['email' => $order['email'] ?? '', 'deliveryAddress' => $order['shippingAddress'] ?? null],
+            ];
+        }
+    }
+    foreach (glob(lintel_data_path('queue/submissions') . '/*.php') ?: [] as $file) {
+        $submission = lintel_read_json($file, null);
+        if (!is_array($submission)) {
+            continue;
+        }
+        $answers = (array) ($submission['values'] ?? []);
+        $found = array_filter($answers, function ($answer) use ($matches) {
+            return $matches($answer, $answer);
+        });
+        if ($found !== []) {
+            $records[] = [
+                'id' => 'submission:' . (string) $submission['id'],
+                'summary' => 'Form entry waiting to be collected',
+                'email' => $email ?? '',
+                'date' => (string) ($submission['receivedAt'] ?? ''),
+                'data' => ['answers' => $answers, 'page' => $submission['sourceUrl'] ?? ''],
+            ];
+        }
+    }
+    return $records;
+}
+
+/** An address with the person taken out; the country stays, for the order's tax. */
+function lintel_blank_address(array $address): array
+{
+    return [
+        'name' => 'Removed', 'company' => '', 'line1' => 'Removed', 'line2' => '', 'city' => 'Removed',
+        'region' => (string) ($address['region'] ?? ''), 'postalCode' => '',
+        'country' => (string) ($address['country'] ?? ''), 'phone' => '',
+    ];
+}
+
+/**
+ * Form entries go. Holds and orders stay without the person: a hold still counts against
+ * stock, and a paid order is still a sale for Lintel to collect.
+ */
+function lintel_erase_records(array $ids): int
+{
+    return lintel_with_lock(function () use ($ids) {
+        $erased = 0;
+        $holdsPath = lintel_data_path('holds.php');
+        $holds = lintel_read_json($holdsPath, []);
+        foreach ($ids as $record) {
+            [$kind, $rawId] = array_pad(explode(':', (string) $record, 2), 2, '');
+            $id = preg_replace('/[^a-f0-9]/', '', $rawId);
+            if ($id === '') {
+                continue;
+            }
+            if ($kind === 'submission') {
+                $path = lintel_data_path('queue/submissions/' . $id . '.php');
+                $erased += is_file($path) && unlink($path) ? 1 : 0;
+                continue;
+            }
+            if ($kind === 'order') {
+                $path = lintel_data_path('queue/orders/' . $id . '.php');
+                $order = lintel_read_json($path, null);
+                if (is_array($order)) {
+                    $order['email'] = '';
+                    $order['shippingAddress'] = lintel_blank_address((array) ($order['shippingAddress'] ?? []));
+                    lintel_write_json($path, $order);
+                    $erased++;
+                }
+            }
+            if (($kind === 'hold' || $kind === 'order') && isset($holds[$id])) {
+                $holds[$id]['email'] = '';
+                $holds[$id]['address'] = lintel_blank_address((array) ($holds[$id]['address'] ?? []));
+                $erased += $kind === 'hold' ? 1 : 0;
+            }
+        }
+        lintel_write_json($holdsPath, $holds);
+        return $erased;
+    });
 }
 
 // ---------------------------------------------------------------------------------------

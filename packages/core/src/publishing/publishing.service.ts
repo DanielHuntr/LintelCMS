@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { targetUsesBridge } from "../bridge/bridge-publish.service.js";
 import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import type { SecretBox } from "../secrets/secret-box.js";
@@ -60,6 +61,21 @@ export interface PublishTarget {
 export interface PublishingDependencies {
   database: DatabaseOrTransaction;
   secretBox: () => SecretBox;
+}
+
+/** Websites published here that have the companion, for Settings → Privacy to ask. */
+export async function listBridgeWebsites(dependencies: PublishingDependencies) {
+  const rows = await listTargetRows(dependencies.database, DEFAULT_TENANT_ID);
+  return rows
+    .filter(
+      (row) => row.lastPublishedAt !== null && row.options.siteAddress && targetUsesBridge(row),
+    )
+    .map((row) => ({
+      id: row.id,
+      name: row.name,
+      siteAddress: row.options.siteAddress ?? "",
+      secret: readSecrets(dependencies.secretBox(), row).bridgeSecret ?? "",
+    }));
 }
 
 export function readSecrets(

@@ -108,23 +108,26 @@ export class BridgeUnreachableError extends Error {
   }
 }
 
+export type BridgeAction = "status" | "pull" | "ack" | "privacy-find" | "privacy-erase";
+
 export async function callBridge(
   siteAddress: string,
   secret: string,
-  action: "status" | "pull" | "ack",
+  action: BridgeAction,
   body = "",
   fetcher: typeof fetch = fetch,
 ): Promise<unknown> {
   const url = `${siteAddress.replace(/\/+$/, "")}/${BRIDGE_FILE}?action=${action}`;
+  const sendsBody = action !== "status" && action !== "pull";
   let response: Response;
   try {
     response = await fetcher(url, {
-      method: action === "ack" ? "POST" : "GET",
+      method: sendsBody ? "POST" : "GET",
       headers: {
         ...signedRequestHeaders(secret, action, body),
         "content-type": "application/json",
       },
-      ...(action === "ack" ? { body } : {}),
+      ...(sendsBody ? { body } : {}),
       signal: AbortSignal.timeout(30_000),
     });
   } catch (error) {

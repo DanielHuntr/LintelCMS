@@ -3,6 +3,7 @@ import { getSignedIn, requirePermission } from "../auth/require-permission.js";
 import { contentDisposition } from "../media/content-disposition.js";
 import { parseRequest } from "../http/http-errors.js";
 import { findEnabledPluginIds } from "../plugins/plugins.service.js";
+import { listBridgeWebsites } from "../publishing/publishing.service.js";
 import { resolveEditingSite } from "../sites/request-site.js";
 import { describePersonalDataMap } from "./personal-data-map.service.js";
 import type { PrivacyContext } from "./personal-data-sources.js";
@@ -48,6 +49,7 @@ export async function privacyRoutes(server: FastifyInstance) {
     plugins: server.plugins.plugins,
     addons: server.addons.loaded,
     forms: server.forms.context,
+    bridgeWebsites: () => listBridgeWebsites(server.publishing),
   });
 
   const siteServices = async (request: FastifyRequest) =>

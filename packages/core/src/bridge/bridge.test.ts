@@ -576,6 +576,54 @@ describe.skipIf(!hasPhp)("the PHP companion", { timeout: 60_000 }, () => {
     expect(left.filter((file) => file.endsWith(".json"))).toEqual([]);
   });
 
+  it("finds, hands over and erases one person's details, and nobody else's", async () => {
+    writePrivate(CATALOGUE, signEnvelope(SECRET, catalogue(100)));
+    const asked = async (action: "privacy-find" | "privacy-erase", body: object) => {
+      const text = JSON.stringify(body);
+      const response = await fetch(`${base}?action=${action}`, {
+        method: "POST",
+        headers: signedRequestHeaders(SECRET, action, text),
+        body: text,
+      });
+      expect(response.status, await response.clone().text()).toBe(200);
+      return (await response.json()) as {
+        records: Array<{ id: string; email: string; summary: string; data: object }>;
+        erased: number;
+      };
+    };
+    const shopper = (email: string, name: string) =>
+      basket(1, {
+        email,
+        address: { name, line1: "2 Low Road", city: "Bath", postalCode: "BA1 1AA" },
+      });
+    const hers = (await (
+      await postJson("checkout", shopper("erin@example.com", "Erin Holt"))
+    ).json()) as { holdId: string };
+    const his = (await (
+      await postJson("checkout", shopper("omar@example.com", "Omar Reed"))
+    ).json()) as { holdId: string };
+
+    const found = await asked("privacy-find", { email: "Erin@Example.com", name: null });
+    expect(found.records.map((record) => record.id)).toEqual([`hold:${hers.holdId}`]);
+    expect(JSON.stringify(found.records[0]?.data)).toContain("2 Low Road");
+    const byName = await asked("privacy-find", { email: null, name: "erin holt" });
+    expect(byName.records.map((record) => record.id)).toEqual([`hold:${hers.holdId}`]);
+
+    const erased = await asked("privacy-erase", { ids: [`hold:${hers.holdId}`] });
+    expect(erased.erased).toBe(1);
+
+    const holdsFile = join(folder, "lintel-private", "data", "holds.php");
+    const kept = readFileSync(holdsFile, "utf8");
+    expect(kept).not.toContain("erin@example.com");
+    expect(kept).not.toContain("Erin Holt");
+    expect(kept).toContain("omar@example.com");
+    expect(kept).toContain(his.holdId);
+    expect(kept).toContain(hers.holdId);
+    expect(
+      (await asked("privacy-find", { email: "erin@example.com", name: null })).records,
+    ).toEqual([]);
+  });
+
   it("checks Mollie's message by asking Mollie about the payment", async () => {
     const catalogueWithMollie = catalogue(100);
     const market = catalogueWithMollie.markets[0];

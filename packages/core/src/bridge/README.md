@@ -58,6 +58,13 @@ Stock and discount codes sync each time Lintel publishes or collects: an order c
 against the published stock until a catalogue made after Lintel collected it arrives.
 Buy-X-get-Y codes and automatic discounts only work in Lintel's own checkout.
 
+## People's details
+
+Settings → Privacy asks the companion what it holds about someone (`privacy-find`) and erases
+it (`privacy-erase`), with signed requests. Form entries are deleted. A checkout's hold and a
+paid order stay without the person, because the hold still counts against stock and the order
+is still a sale; Lintel collects such an order with no customer and emails nobody.
+
 ## Signing
 
 `bridge-signing.ts`, matching the PHP. Files carry an HMAC-SHA256 of their contents.
@@ -72,6 +79,7 @@ and any nonce it has seen.
 | `bridge-signing.ts`         | Signed files and signed requests                         |
 | `bridge-publish.service.ts` | What a publish adds for forms and the shop               |
 | `bridge-pull.service.ts`    | Collecting submissions and orders                        |
+| `bridge-personal-data.ts`   | Find a person, export and erase on the website           |
 | `shop-catalogue.service.ts` | The signed catalogue                                     |
 | `shop-pages.ts`             | The shop's pages and the basket script                   |
 | `bridge.test.ts`            | The companion under PHP's own web server                 |

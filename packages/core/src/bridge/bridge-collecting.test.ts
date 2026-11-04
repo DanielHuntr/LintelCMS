@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
+import { customersTable } from "../commerce/customers/customers.table.js";
 import { ordersTable } from "../commerce/orders/orders.table.js";
 import { formsTable, formSubmissionsTable } from "../forms/forms.table.js";
 import type * as SubmissionsRepository from "../forms/submissions.repository.js";
@@ -127,6 +128,22 @@ describe("collecting form entries from a published site", () => {
     expect(isTest.get("pi_aaaaaaaa")).toBe(true);
     expect(isTest.get("pi_bbbbbbbb")).toBe(false);
     expect(isTest.get("pi_cccccccc")).toBe(false);
+  });
+
+  it("takes in an order whose person was erased, without making a customer for it", async () => {
+    const { target } = await setUp();
+    const orders = [paidOrder("dddddddd", { email: "" })];
+    const fetcher = (async (input: string | URL | Request) =>
+      String(input).includes("action=pull")
+        ? Response.json({ submissions: [], orders })
+        : Response.json({ acknowledged: 1 })) as typeof fetch;
+
+    const result = await pullFromBridge(lintel.api, target, "secret", fetcher);
+
+    expect(result.orders).toBe(1);
+    const [order] = await testDatabase.database.select().from(ordersTable);
+    expect(order).toMatchObject({ email: "", customerId: null });
+    expect(await testDatabase.database.select().from(customersTable)).toEqual([]);
   });
 
   it("doesn't count an entry as received until it is saved", async () => {

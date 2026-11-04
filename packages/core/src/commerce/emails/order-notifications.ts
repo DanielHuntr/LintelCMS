@@ -80,6 +80,8 @@ type Compose = (
 ) => OrderEmail;
 
 async function emailCustomer(shop: ShopContext, order: OrderRow, compose: Compose) {
+  // Erased: there is nobody to write to.
+  if (!order.email) return;
   const settings = await readShopSettings(shop.database);
   const composed = compose(await listOrderLineRows(shop.database, order.id), settings);
   const message = order.isTest ? asTestEmail(composed) : composed;
