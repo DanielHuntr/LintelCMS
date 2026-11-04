@@ -265,6 +265,13 @@ export function setUpCheckoutDetails(onChange: (cart: Cart) => void): void {
   page.append(area);
 
   let choosingRate = false;
+  // Shoppers see the total they'll pay before they press Pay now.
+  rates.addEventListener("change", (event) => {
+    const chosen = (event.target as HTMLInputElement).value;
+    updateCart({ shippingRateId: chosen }).then(onChange, (error: unknown) => {
+      message.textContent = shopperMessage(error, "Something went wrong. Please try again.");
+    });
+  });
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     message.textContent = "";
@@ -300,6 +307,9 @@ export function setUpCheckoutDetails(onChange: (cart: Cart) => void): void {
               ? "1 way to deliver. Check it, then choose Pay now."
               : `${offered.length} ways to deliver. Choose one, then choose Pay now.`;
           rates.querySelector<HTMLInputElement>("input:checked")?.focus();
+          // The first choice is already ticked, so the total should already include it.
+          const first = offered[0];
+          if (first) onChange(await updateCart({ shippingRateId: first.rateId }));
         }
         return;
       }
