@@ -262,3 +262,12 @@ Branch `fix/night-review` (`FIX-LOG-night-review.md`, LINTEL-CODE-030 to 037). T
 - All seven decisions are built, along with reaching what published websites keep from Find a person and erase.
 - Sites published with the companion need publishing once more, for the new private files' names and the two privacy actions.
 - An upgraded site now keeps everything until its owner chooses retention rules.
+
+## Update, 4 November 2026: the small open items
+
+Branch `fix/open-p3` (`FIX-LOG-open-p3.md`). The text above is unchanged.
+
+- LINTEL-UX-285 to 288, 328, 332 to 334, UX-005 and SPEC-005 are fixed, so the two P3s listed under "What is still open" are closed. LINTEL-UX-335 to 337 were found and fixed.
+- LINTEL-UX-336 is a P2: dust or contours alone hid a section's own picture. Pages using them over a picture will now show it.
+- **Open from this pass:** 2 new P3s, LINTEL-UX-338 and 339.
+- Installed apps' sidebar pages stop showing for clients and Viewers, unless the app is installed again with `roles` that name them.

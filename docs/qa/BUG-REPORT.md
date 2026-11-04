@@ -1075,3 +1075,27 @@ Found while finishing `feature/shader-studio`. All fixed there; the details are 
 | LINTEL-UX-258, 259, 260, 263 | P2       | Fixed  | Code lost to Escape; unchecked delete; code on the canvas while off; words on still looks |
 | LINTEL-UX-251, 252, 256, 262 | P3       | Fixed  | Opacity couldn't react; Grain setting ignored; repeated checkbox; stale veil              |
 | LINTEL-UX-264 to 269         | P3       | Fixed  | Silk, dust and three tiles redrawn; code box focus                                        |
+
+## Remaining small items (4 November 2026)
+
+Fixed on `fix/open-p3`; the details are in `FIX-LOG-open-p3.md`. Earlier rows above stay as they were; this table gives the newer state.
+
+| ID              | Severity | Status | Summary                                                                                                 |
+| --------------- | -------- | ------ | ------------------------------------------------------------------------------------------------------- |
+| LINTEL-UX-332   | P3       | Fixed  | The website was wired up twice. Now one function, with a test that the two servers can't drift          |
+| LINTEL-UX-334   | P3       | Fixed  | An app's sidebar page showed for every role. Now for the roles it names, or all but clients and Viewers |
+| LINTEL-UX-333   | P3       | Fixed  | A client's canvas showed the column guides of a placed grid                                             |
+| LINTEL-UX-328   | P3       | Fixed  | A site with no home page showed the template's sample name in its navigation and footer                 |
+| LINTEL-UX-285   | P3       | Fixed  | The designer's canvas didn't show a consent box added to the website's form                             |
+| LINTEL-UX-286   | P3       | Fixed  | The "Open …" link in an add-on's details had no underline until hovered                                 |
+| LINTEL-UX-287   | P3       | Fixed  | An add-on with no server code couldn't load without `dist/server.js`                                    |
+| LINTEL-UX-288   | P3       | Fixed  | Pasting several landed them after the first selected, and only one stayed selected                      |
+| LINTEL-UX-005   | P3       | Fixed  | An empty .png was refused as the wrong kind of file, and a linked SVG was called damaged                |
+| LINTEL-SPEC-005 | P3       | Fixed  | Admin carried `orders:*`, which nothing checks. The rest of the report no longer applied                |
+| LINTEL-UX-335   | P3       | Fixed  | Tables named only under `personalData` weren't labelled personal on the Add-ons screen                  |
+| LINTEL-UX-336   | P2       | Fixed  | Dust or contours used alone hid a section's own background picture                                      |
+| LINTEL-UX-337   | P3       | Fixed  | Narrowing the window closed the shader code box and lost its unsaved code                               |
+| LINTEL-UX-338   | P3       | Open   | The details of an add-on with no code say it runs inside the site with full access                      |
+| LINTEL-UX-339   | P3       | Open   | On a site with no home page, a 404 still shows the template's navigation and footer                     |
+
+LINTEL-UX-326 was fixed in `3936dee3`: its "Open" row is older than the "Fixed" row below it.
