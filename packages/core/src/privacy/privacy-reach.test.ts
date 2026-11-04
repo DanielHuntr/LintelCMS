@@ -8,6 +8,7 @@ import { useTestDatabase } from "../testing/test-database.js";
 import { coreSources } from "./core-sources.js";
 import { usePrivacyTestServer } from "./privacy-test-server.js";
 import { runRetentionRules, updateRetentionRules } from "./retention.service.js";
+import { insertReturning } from "../database/dialect/writes.js";
 
 const DAY = 24 * 60 * 60_000;
 const daysAgo = (days: number) => new Date(Date.now() - days * DAY);
@@ -72,10 +73,12 @@ describe("how far the privacy tools reach", () => {
   }
 
   async function customer(email: string) {
-    const [row] = await testDatabase.database
-      .insert(customersTable)
-      .values({ email, name: "Grace Hopper", phone: "01225 000000", addresses: [address("Grace")] })
-      .returning();
+    const [row] = await insertReturning(testDatabase.database, customersTable, {
+      email,
+      name: "Grace Hopper",
+      phone: "01225 000000",
+      addresses: [address("Grace")],
+    });
     if (!row) throw new Error("No customer was made.");
     return row;
   }

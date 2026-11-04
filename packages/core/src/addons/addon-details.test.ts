@@ -108,9 +108,9 @@ describe("an add-on's details", () => {
     const database = testDatabase.database;
     await database.execute(sql`drop table if exists postcards_sent, postcards_drafts`);
     await database.execute(
-      sql`create table postcards_sent (id text primary key, sender_email text, message text)`,
+      sql`create table postcards_sent (id varchar(64) primary key, sender_email text, message text)`,
     );
-    await database.execute(sql`create table postcards_drafts (id text primary key)`);
+    await database.execute(sql`create table postcards_drafts (id varchar(64) primary key)`);
     await database.execute(
       sql`insert into postcards_sent values ('p1', 'ann@example.com', 'Hello, "friend"')`,
     );

@@ -66,7 +66,7 @@ describe("an add-on and Lintel's own tables", () => {
     await api.ready();
     const database = testDatabase.database;
     await database.execute(sql`drop table if exists shop_extras_notes`);
-    await database.execute(sql`create table shop_extras_notes (id text primary key)`);
+    await database.execute(sql`create table shop_extras_notes (id varchar(64) primary key)`);
     await database.execute(sql`insert into shop_extras_notes values ('n1')`);
     await database.execute(sql`insert into shop_customers (email) values ('ann@example.com')`);
     await createTestUser(database, "owner@example.com", [["*"]]);

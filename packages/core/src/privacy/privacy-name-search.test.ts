@@ -4,6 +4,7 @@ import { customersTable } from "../commerce/customers/customers.table.js";
 import { definePlugin } from "../plugins/plugin-definition.js";
 import { useTestDatabase } from "../testing/test-database.js";
 import { usePrivacyTestServer } from "./privacy-test-server.js";
+import { insertReturning } from "../database/dialect/writes.js";
 
 interface FoundItem {
   id: string;
@@ -18,13 +19,10 @@ describe("finding someone by name", () => {
   const privacy = usePrivacyTestServer(testDatabase);
 
   async function twoPeople() {
-    const rows = await testDatabase.database
-      .insert(customersTable)
-      .values([
-        { email: "sam.one@example.com", name: "Sam Lee", phone: "111" },
-        { email: "sam.two@example.com", name: "Sam Lee", phone: "222" },
-      ])
-      .returning();
+    const rows = await insertReturning(testDatabase.database, customersTable, [
+      { email: "sam.one@example.com", name: "Sam Lee", phone: "111" },
+      { email: "sam.two@example.com", name: "Sam Lee", phone: "222" },
+    ]);
     const [one, two] = rows;
     if (!one || !two) throw new Error("Two customers should have been made");
     return { one, two };

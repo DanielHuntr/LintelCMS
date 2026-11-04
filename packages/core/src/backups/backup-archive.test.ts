@@ -97,7 +97,7 @@ describe("backup archives", () => {
   it("backs up add-ons' own tables, as they declare them, and puts them back", async () => {
     const database = testDatabase.database;
     await database.execute(
-      sql`create table stamps_cards (id text primary key, owner_email text not null, stamps integer not null)`,
+      sql`create table stamps_cards (id varchar(64) primary key, owner_email text not null, stamps integer not null)`,
     );
     await database.execute(
       sql`insert into stamps_cards values ('c1', 'ann@example.com', 3), ('c2', 'bo@example.com', 9)`,
