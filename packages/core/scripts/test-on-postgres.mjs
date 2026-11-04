@@ -5,11 +5,12 @@
 //
 // The server lives in a throwaway container with its data in memory, so there are no volumes
 // to clean up, and the container is removed at the end, pass or fail.
-// LINTEL_TEST_POSTGRES_PORT changes the port.
+// LINTEL_TEST_POSTGRES_PORT changes the port, and LINTEL_TEST_POSTGRES_CONTAINER the name, which
+// runs from two worktrees at once need: each removes the container by name when it starts and ends.
 // Arguments go to vitest: `pnpm test:postgres src/settings`.
 import { execFileSync, spawnSync } from "node:child_process";
 
-const CONTAINER = "lintel-test-postgres";
+const CONTAINER = process.env.LINTEL_TEST_POSTGRES_CONTAINER ?? "lintel-test-postgres";
 const IMAGE = "postgres:17";
 const USER = "lintel";
 const PASSWORD = "lintel-test";
