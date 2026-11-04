@@ -118,6 +118,64 @@ describe("shader backgrounds", () => {
     await page.close();
   });
 
+  it.each(["dust", "contours"])(
+    "keeps the section's own picture under %s used alone, and lets it show through",
+    async (look) => {
+      const { page } = await openEffectsPage(
+        browser,
+        `<section data-node-id="s" style="height:300px;color:#ffffff;background-color:#101010;background-image:linear-gradient(#0a0,#0a0)"><h2>Words</h2></section>`,
+        [
+          {
+            nodeId: "s",
+            module: "shader-backgrounds",
+            behaviour: "shaderBackground",
+            params: { look, colour: "#ff0000", strength: 0.4 },
+          },
+        ],
+      );
+      await waitFor(page, () => document.querySelector("[data-node-id=s] canvas") !== null);
+      await waitFor(page, () => {
+        const canvas = document.querySelector<HTMLCanvasElement>("[data-node-id=s] canvas");
+        return canvas !== null && canvas.width > 0 && canvas.style.visibility !== "hidden";
+      });
+      await page.waitForTimeout(200);
+      const seen = await page.$eval("[data-node-id=s]", (element) => {
+        const canvas = element.querySelector("canvas")!;
+        const { data } = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height);
+        let clear = 0;
+        for (let at = 3; at < data.length; at += 4) if (data[at]! < 128) clear += 1;
+        return {
+          image: getComputedStyle(element).backgroundImage,
+          clear: clear / (data.length / 4),
+        };
+      });
+      expect(seen.image).toContain("linear-gradient");
+      expect(seen.clear).toBeGreaterThan(0.5);
+      await page.close();
+    },
+  );
+
+  it("still steps a mesh's static look aside once it draws", async () => {
+    const { page } = await openEffectsPage(
+      browser,
+      `<section data-node-id="s" style="height:200px;background-image:linear-gradient(#0a0,#0a0)"></section>`,
+      [
+        {
+          nodeId: "s",
+          module: "shader-backgrounds",
+          behaviour: "shaderBackground",
+          params: { look: "mesh", one: "#ff0000", two: "#0000ff" },
+        },
+      ],
+    );
+    await waitFor(
+      page,
+      () =>
+        getComputedStyle(document.querySelector("[data-node-id=s]")!).backgroundImage === "none",
+    );
+    await page.close();
+  });
+
   it("keeps the static look where there is no WebGL, and still lays the veil", async () => {
     const { page } = await openEffectsPage(
       browser,

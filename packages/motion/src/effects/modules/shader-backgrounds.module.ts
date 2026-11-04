@@ -84,6 +84,8 @@ const shaderBackground: EffectBehaviour = (element, params, context) => {
   // A dark speck on a pale ground needs more presence than the same speck in light.
   const gain = look === looks.dust && luminance(backgroundBehind(element)) > 0.5 ? 2.4 : 1;
   const thirdColour = readText(params, look.colours[2] ?? "", "") ? 1 : 0;
+  // These lay over the section and have no still version, so a picture on it is its own.
+  const ownPicture = look === looks.dust || look === looks.contours;
   const uniforms = (): Record<string, UniformValue> => ({
     ...numbers,
     t: time,
@@ -104,7 +106,7 @@ const shaderBackground: EffectBehaviour = (element, params, context) => {
     backdrop.canvas.style.visibility = drew ? "" : "hidden";
     // Once the drawing shows, the static fallback under it steps aside; if it stops (the
     // context is lost), the fallback comes back.
-    if (drew && !restoreBackground) {
+    if (drew && !restoreBackground && !ownPicture) {
       restoreBackground = setStyles(element, { "background-image": "none" });
     } else if (!drew) {
       restoreBackground?.();
