@@ -11,3 +11,4 @@ starters/nextjs/lib/lintel.generated.ts
 generated
 # Written by the sample scripts, minified on purpose
 packages/motion/samples/*.json
+packages/core/migrations-mysql

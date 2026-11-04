@@ -49,3 +49,6 @@ how to %-encode `#`, `@` and `/`). The server, the scripts and the setup screen 
 | `data-folder-lock.ts`  | One program at a time for the built-in database                 |
 | `schema.ts`            | Every table, gathered from the feature folders                  |
 | `columns.ts`           | Columns most tables share (`id`, `tenantId`, timestamps)        |
+
+`dialect/` is the start of support for other databases. It changes nothing for Postgres;
+see its README.

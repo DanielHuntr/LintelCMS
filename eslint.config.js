@@ -13,6 +13,7 @@ export default tseslint.config(
       "**/node_modules/**",
       "**/.turbo/**",
       "**/migrations/**",
+      "**/migrations-mysql/**",
       "**/.next/**",
       "**/.astro/**",
       "**/next-env.d.ts",
@@ -30,6 +31,12 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
       "no-console": ["warn", { allow: ["warn", "error"] }],
     },
+  },
+  {
+    // Read by drizzle-kit, which needs a list of exports that an ES module can't give.
+    files: ["packages/core/src/database/dialect/mysql-schema.cjs"],
+    languageOptions: { sourceType: "commonjs" },
+    rules: { "@typescript-eslint/no-require-imports": "off" },
   },
   {
     // The files shipped in the shared-hosting package: plain CommonJS that hosting control
