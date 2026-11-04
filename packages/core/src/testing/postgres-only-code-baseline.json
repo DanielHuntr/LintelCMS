@@ -114,9 +114,6 @@
     "json field access": 3,
     "returning": 2
   },
-  "entries/entry-publishing.repository.ts": {
-    "returning": 1
-  },
   "entries/field-changes.repository.ts": {
     "array function": 2,
     "cast with ::": 5,
@@ -128,12 +125,6 @@
     "cast with ::": 4,
     "json field access": 2,
     "jsonb function": 3
-  },
-  "entries/revisions.repository.ts": {
-    "returning": 1
-  },
-  "entries/scheduled-entries.repository.ts": {
-    "json field access": 1
   },
   "experiments/experiments.repository.ts": {
     "returning": 1,

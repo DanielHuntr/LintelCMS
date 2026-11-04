@@ -1,7 +1,9 @@
-import { and, asc, eq, gte, lt, or, sql } from "drizzle-orm";
-import { collectionsTable } from "../collections/collections.table.js";
+import { and, asc, eq, gte, lt, or } from "drizzle-orm";
+import { collectionsTable as collectionsDefinition } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { entriesTable } from "./entries.table.js";
+import { jsonText } from "../database/dialect/expressions.js";
+import { entriesTable as entriesDefinition } from "./entries.table.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads for the schedule calendar, nothing else. */
 
@@ -29,10 +31,12 @@ export async function listEntriesScheduledBetween(
   database: DatabaseOrTransaction,
   filter: ScheduledEntryFilter,
 ): Promise<ScheduledEntryRow[]> {
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
   const rows = await database
     .select({
       id: entriesTable.id,
-      title: sql<string | null>`${entriesTable.data}->>'title'`,
+      title: jsonText(database, entriesTable.data, "title"),
       locale: entriesTable.locale,
       scheduledFor: entriesTable.scheduledFor,
       collectionHandle: collectionsTable.handle,

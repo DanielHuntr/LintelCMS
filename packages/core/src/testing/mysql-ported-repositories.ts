@@ -49,4 +49,7 @@ export const mysqlPortedRepositories = [
   "liquid-templates/template-choice.repository.ts",
   "starter-sites/starter-sites.repository.ts",
   "seo/seo.repository.ts",
+  "entries/entry-publishing.repository.ts",
+  "entries/scheduled-entries.repository.ts",
+  "entries/revisions.repository.ts",
 ];
