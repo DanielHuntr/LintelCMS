@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "turbo run dev --filter=!starter-nextjs --filter=!@lintel/docs",
     "docs:dev": "pnpm --filter @lintel/docs dev",
-    "lintel": "pnpm --silent --filter @lintel/core lintel",
+    "lintel": "pnpm --silent --filter @lintel/cli lintel",
     "create-admin": "pnpm --silent --filter @lintel/cli lintel create-admin",
     "reset-password": "pnpm --silent --filter @lintel/core reset-password",
     "db:migrate": "pnpm --silent --filter @lintel/core db:migrate",
