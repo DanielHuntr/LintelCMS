@@ -73,7 +73,8 @@ async function listColumnNames(database: DatabaseOrTransaction, table: string): 
   const rows = await readRawRows(
     database,
     sql`select column_name as column_name from information_schema.columns
-        where table_schema = ${currentSchema(database)} and table_name = ${table}`,
+        where table_schema = ${currentSchema(database)} and table_name = ${table}
+        order by ordinal_position`,
   );
   return rows.map((row) => String(row.column_name));
 }
