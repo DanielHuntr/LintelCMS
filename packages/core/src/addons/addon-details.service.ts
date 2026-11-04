@@ -88,15 +88,12 @@ async function measure(database: DatabaseOrTransaction, table: string) {
   }
 }
 
-/**
- * Tables named under `personalData` alone, with only their personal columns to show. They
- * are for the details only: Export and Delete data still go by `findOwnTables`.
- */
+/** Tables named under `personalData` alone, with only their personal columns to show. */
 function tablesOnlyInPersonalData(found: Found, described: readonly { name: string }[]) {
   const personalData = ownPersonalData(found);
   const known = new Set(described.map((table) => table.name));
   return (personalData?.tables ?? [])
-    .filter((table) => !known.has(table.name) && !isLintelTable(table.name))
+    .filter((table) => !known.has(table.name))
     .map((table) => ({
       name: table.name,
       purpose: "",
@@ -108,9 +105,13 @@ function tablesOnlyInPersonalData(found: Found, described: readonly { name: stri
     }));
 }
 
-/** The tables this add-on keeps data in: those it declares and any others with its name. */
+/**
+ * The tables this add-on keeps data in: those it declares, in `tables` or `personalData`, and
+ * any others with its name. The details, Export and Delete data all go by this list.
+ */
 async function findOwnTables(database: DatabaseOrTransaction, found: Found) {
-  const declared = declarationsOf(found.plugin, found.addon).tables.filter(
+  const described = declarationsOf(found.plugin, found.addon).tables;
+  const declared = [...described, ...tablesOnlyInPersonalData(found, described)].filter(
     (table) => !isLintelTable(table.name),
   );
   const inDatabase = await listTableNames(database);
@@ -161,9 +162,8 @@ export async function describeAddon(
   const own = await findOwnTables(database, found);
   const personalData = ownPersonalData(found);
 
-  const personalOnly = tablesOnlyInPersonalData(found, own.declared);
   const tables = await Promise.all(
-    [...own.declared, ...personalOnly].map(async (table) => {
+    own.declared.map(async (table) => {
       const checked = own.present.has(table.name);
       const columns = checked ? new Set(await listColumnNames(database, table.name)) : new Set();
       return {
@@ -182,11 +182,8 @@ export async function describeAddon(
       };
     }),
   );
-  const named = new Set(personalOnly.map((table) => table.name));
   const undeclared = await Promise.all(
-    own.undeclared
-      .filter((name) => !named.has(name))
-      .map(async (name) => ({ name, ...(await measure(database, name)) })),
+    own.undeclared.map(async (name) => ({ name, ...(await measure(database, name)) })),
   );
 
   const registered = listRegisteredPluginRoutes(plugin.id);

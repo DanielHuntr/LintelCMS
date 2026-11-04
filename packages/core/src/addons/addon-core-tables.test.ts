@@ -29,6 +29,9 @@ const manifest = {
     { name: "shop_extras_notes", purpose: "Its own notes." },
     { name: "users", purpose: "Declared by mistake." },
   ],
+  personalData: {
+    tables: [{ name: "shop_customers", columns: [{ name: "email", personalData: true }] }],
+  },
 };
 
 describe("an add-on and Lintel's own tables", () => {

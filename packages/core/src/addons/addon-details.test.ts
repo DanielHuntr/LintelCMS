@@ -120,6 +120,7 @@ describe("an add-on's details", () => {
     await database.execute(
       sql`insert into postcards_sent values ('p1', 'ann@example.com', 'Hello, "friend"')`,
     );
+    await database.execute(sql`insert into guestbook_signups values ('g1', 'gus@example.com')`);
     await createTestUser(database, "owner@example.com", [["*"]]);
     owner = requestsAs(api, await signInAndGetCookies(api, "owner@example.com"));
   });
@@ -198,6 +199,7 @@ describe("an add-on's details", () => {
     expect(json.headers["content-disposition"]).toContain("postcards-data.json");
     expect(json.json().tables).toEqual({
       postcards_sent: [{ id: "p1", sender_email: "ann@example.com", message: 'Hello, "friend"' }],
+      guestbook_signups: [{ id: "g1", email: "gus@example.com" }],
       postcards_drafts: [],
     });
 
@@ -225,7 +227,13 @@ describe("an add-on's details", () => {
     const unconfirmed = await owner("POST", "/addons/postcards/delete-data", {});
     expect(unconfirmed.statusCode).toBe(400);
     const deleted = await owner("POST", "/addons/postcards/delete-data", { confirm: "DELETE" });
-    expect(deleted.json()).toEqual({ emptied: ["postcards_sent", "postcards_drafts"] });
+    expect(deleted.json()).toEqual({
+      emptied: ["postcards_sent", "guestbook_signups", "postcards_drafts"],
+    });
+    const signups = await testDatabase.database.execute(
+      sql`select count(*)::int as count from guestbook_signups`,
+    );
+    expect(rowsOf(signups)[0]?.count).toBe(0);
     const left = await testDatabase.database.execute(
       sql`select count(*)::int as count from postcards_sent`,
     );
