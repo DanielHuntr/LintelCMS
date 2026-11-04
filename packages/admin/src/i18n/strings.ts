@@ -1065,7 +1065,7 @@ const english = {
   "website.loading": "Loading your website’s settings",
   "website.settingsDescription":
     "Blog and page style, colours, fonts, logo, page transitions and address",
-  "website.liveAt": "Your website is live",
+  "website.liveAt": "Your website’s address",
   "website.notServed": "{product} isn’t serving a website here",
   "website.notServedHint":
     "Your site is built separately and reads its content through the API. Ask whoever set it up for its address.",

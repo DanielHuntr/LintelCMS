@@ -61,7 +61,7 @@ describe.skipIf(!enabled)("the hosting package, from zip to a running site", () 
 
   it("passes its own hosting check", () => {
     const report = execFileSync("node", ["lintel-check.js"], { cwd: appFolder, encoding: "utf8" });
-    expect(report).toContain("[OK] Image resizing: sharp works");
+    expect(report).toContain("[OK] Image resizing: Pictures can be resized");
     expect(report).toMatch(/Lintel will run here/);
   }, 30_000);
 

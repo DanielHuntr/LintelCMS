@@ -84,7 +84,7 @@ describe("Settings, Your website", () => {
   it("shows where the site is live, with a link to open it", async () => {
     serve();
     renderScreen(<SiteSettingsPage />);
-    expect(await screen.findByText("Your website is live")).toBeInTheDocument();
+    expect(await screen.findByText("Your website’s address")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Open website/ })).toHaveAttribute(
       "href",
       "http://localhost:3000",

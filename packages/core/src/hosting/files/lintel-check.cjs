@@ -267,7 +267,7 @@ function buildReport(facts) {
   );
 
   if (facts.sharp.state === "loaded") {
-    checks.push({ name: "Image resizing", status: "pass", detail: "sharp works" });
+    checks.push({ name: "Image resizing", status: "pass", detail: "Pictures can be resized" });
   } else if (facts.sharp.state === "not-installed") {
     checks.push({
       name: "Image resizing",
