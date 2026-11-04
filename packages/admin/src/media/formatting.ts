@@ -13,7 +13,8 @@ export function formatFileSize(bytes: number): string {
   return new Intl.NumberFormat(formattingLocale(), {
     style: "unit",
     unit,
-    unitDisplay: "short",
+    // "646 bytes": the short form of bytes reads "646 byte".
+    unitDisplay: unit === "byte" ? "long" : "short",
     maximumFractionDigits: unit === "megabyte" ? 1 : 0,
   }).format(value);
 }
