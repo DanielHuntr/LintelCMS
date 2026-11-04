@@ -12,4 +12,8 @@ export const pluginStrings = {
   "plugins.notFoundDescription":
     "The link may be out of date, or the feature it belongs to may be switched off.",
   "plugins.backToDashboard": "Go to the dashboard",
+  "layout.notAvailable.title": "Not available",
+  "layout.notAvailable.heading": "This isn’t part of your account",
+  "layout.notAvailable.description":
+    "If you need it, ask whoever looks after your website to change what you can do.",
 } as const;

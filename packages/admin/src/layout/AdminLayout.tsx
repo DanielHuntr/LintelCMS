@@ -1,5 +1,7 @@
 import { hasPermission } from "@lintel/core/permissions";
 import { Outlet, useRouterState } from "@tanstack/react-router";
+import { canOpenPath } from "../navigation/sectionAccess.js";
+import { NotAvailablePage } from "./NotAvailablePage.js";
 import { Menu } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useContentModelEvents } from "../content-model-sync/useContentModelEvents.js";
@@ -158,7 +160,7 @@ export function AdminLayout({
           className="@container outline-none md:ps-[264px]"
         >
           <div className="pt-14 pe-(--page-gutter) pb-20 pl-(--page-gutter) [--page-gutter:clamp(1.5rem,3.5cqw,4rem)] max-md:[--page-gutter:1rem] md:pe-16">
-            <Outlet />
+            {canOpenPath(pathname, permissions) ? <Outlet /> : <NotAvailablePage />}
           </div>
         </main>
       </div>
