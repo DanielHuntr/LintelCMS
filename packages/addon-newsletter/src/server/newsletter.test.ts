@@ -1,5 +1,5 @@
 import { type PluginTestServer, startPluginTestServer } from "@lintel/core/plugin-testing";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createNewsletterAddon } from "./index.js";
 import { mailchimpDataCentre, mailchimpMemberId } from "./newsletter-providers.js";
 
@@ -359,6 +359,163 @@ describe("the Newsletter sign-up add-on", () => {
         },
       });
       expect(calls[0]?.body).toMatchObject({ email_address: "cy@example.com" });
+    });
+
+    describe("with confirmation by email switched off", () => {
+      const saveForm = async (name: string, handle: string, fields: unknown[]) => {
+        const created = await asOwner({
+          method: "POST",
+          url: "/forms",
+          payload: { name, handle, template: "blank" },
+        });
+        await asOwner({
+          method: "PATCH",
+          url: `/forms/${created.json().id}`,
+          payload: { fields },
+        });
+      };
+      const newsletterForm = (fields: unknown[]) => saveForm("Newsletter", "newsletter", fields);
+      const emailField = {
+        id: "email",
+        type: "email",
+        handle: "email",
+        label: "Email address",
+        required: true,
+      };
+      const publicForm = async () =>
+        (await lintel.server.inject({ method: "GET", url: "/delivery/forms/newsletter" })).json();
+      const send = async (values: Record<string, unknown>) => {
+        const form = await publicForm();
+        // Forms send sooner than a person could are dropped as spam.
+        vi.setSystemTime(Date.now() + 5000);
+        const sent = await lintel.server.inject({
+          method: "POST",
+          url: "/delivery/forms/newsletter/submissions",
+          payload: { [form.spamProtection.tokenField]: form.spamProtection.token, ...values },
+        });
+        // Let the event's handlers finish before looking at what they did.
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        return sent;
+      };
+
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      beforeEach(async () => {
+        vi.useFakeTimers({ toFake: ["Date"] });
+        await lintel.setEnabledPlugins(["newsletter", "forms"]);
+        const forms = (await asOwner({ method: "GET", url: "/forms" })).json().forms;
+        for (const form of forms) {
+          await asOwner({ method: "DELETE", url: `/forms/${form.id}` });
+        }
+      });
+
+      const newsletterEvent = (consents: Array<{ field: string; wording: string }>) =>
+        lintel.server.events.publish("form.submitted", {
+          form: { id: "form-2", handle: "newsletter", name: "Newsletter" },
+          submission: {
+            id: "submission-4",
+            fields: { email: "cy@example.com" },
+            submitterEmail: "cy@example.com",
+            consents,
+          },
+        });
+
+      it("adds nobody who didn't tick a consent box", async () => {
+        await connectMailchimp(false);
+        calls.length = 0;
+        await newsletterEvent([]);
+        expect(calls).toEqual([]);
+      });
+
+      it("adds people who ticked one", async () => {
+        await connectMailchimp(false);
+        calls.length = 0;
+        await newsletterEvent([{ field: "consent", wording: "Yes please" }]);
+        expect(calls[0]?.body).toMatchObject({
+          email_address: "cy@example.com",
+          status_if_new: "subscribed",
+        });
+      });
+
+      it("puts a required box on a newsletter form that has none", async () => {
+        await newsletterForm([emailField]);
+        await connectMailchimp(false);
+        calls.length = 0;
+
+        const form = await publicForm();
+        expect(form.fields.at(-1)).toMatchObject({
+          handle: "consent",
+          type: "consent",
+          required: true,
+          label: "I'd like the newsletter. I can unsubscribe at any time.",
+        });
+        expect(form.steps.at(-1).fields).toContain("consent");
+
+        const refused = await send({ email: "cy@example.com" });
+        expect(refused.statusCode).toBe(400);
+        expect(refused.json().fields.consent).toBe("Please tick this box to continue");
+        expect(calls).toEqual([]);
+
+        expect((await send({ email: "cy@example.com", consent: "yes" })).statusCode).toBe(201);
+        expect(calls[0]?.body).toMatchObject({ email_address: "cy@example.com" });
+      });
+
+      it("keeps the words of the box in the submission's consent record", async () => {
+        await newsletterForm([emailField]);
+        await connectMailchimp(false);
+        await send({ email: "cy@example.com", consent: "yes" });
+        const forms = (await asOwner({ method: "GET", url: "/forms" })).json().forms;
+        const inbox = await asOwner({ method: "GET", url: `/forms/${forms[0].id}/submissions` });
+        expect(inbox.json().submissions[0].consents[0]).toMatchObject({
+          field: "consent",
+          wording: "I'd like the newsletter. I can unsubscribe at any time.",
+        });
+      });
+
+      it("makes the form's own box required instead of adding a second", async () => {
+        await newsletterForm([
+          emailField,
+          { id: "news", type: "consent", handle: "news", label: "Send me news" },
+        ]);
+        await connectMailchimp(false);
+        const fields = (await publicForm()).fields;
+        expect(fields.filter((field: { type: string }) => field.type === "consent")).toHaveLength(
+          1,
+        );
+        expect(fields.at(-1)).toMatchObject({ handle: "news", required: true });
+      });
+
+      it("leaves the form alone while people confirm by email", async () => {
+        await newsletterForm([emailField]);
+        await connectMailchimp(true);
+        calls.length = 0;
+        const form = await publicForm();
+        expect(form.fields.map((field: { handle: string }) => field.handle)).toEqual(["email"]);
+        expect((await send({ email: "cy@example.com" })).statusCode).toBe(201);
+        expect(calls[0]?.body).toMatchObject({ status_if_new: "pending" });
+      });
+
+      it("leaves other forms alone", async () => {
+        await saveForm("Contact", "contact", [emailField]);
+        await connectMailchimp(false);
+        const contact = await lintel.server.inject({
+          method: "GET",
+          url: "/delivery/forms/contact",
+        });
+        expect(contact.json().fields.map((field: { handle: string }) => field.handle)).toEqual([
+          "email",
+        ]);
+      });
+
+      it("adds no box while the add-on is switched off", async () => {
+        await newsletterForm([emailField]);
+        await connectMailchimp(false);
+        await lintel.setEnabledPlugins(["forms"]);
+        const form = await publicForm();
+        expect(form.fields.map((field: { handle: string }) => field.handle)).toEqual(["email"]);
+      });
     });
 
     it("isn't there while the add-on is switched off", async () => {

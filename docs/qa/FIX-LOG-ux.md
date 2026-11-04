@@ -2276,3 +2276,10 @@ Switching views saved first but had gaps, now fixed in `page-home/useViewSwitch.
 - Words still being typed on the canvas now finish on request (`finishEditing` between the builder and its frame), so saving doesn't rely on timing.
 
 **Checked in a browser** (real canvas edits): a 500 and then going offline in the designer, each staying with the words on the canvas and a message, then saving and moving once back online; a 500 on the page screen, keeping the Summary; a save held open for 1.5 seconds with a second edit and the press during it, giving two saves with the last words on the server and on the canvas after coming back; double presses both ways, one save each; dragging Studio under Contact in the tree, then Undo. The 409 and the navigation and footer failure were checked in tests only.
+
+## Overnight follow-ups (4 November 2026)
+
+Loose ends from the overnight batches, on `fix/overnight-followups`. Screenshots are in `docs/qa/screenshots/overnight-followups/`.
+
+- **LINTEL-UX-270:** With double opt-in off, anyone who sent the form with the handle `newsletter` joined the list without being asked. Now, unless people confirm by email, that form has to ask: its own consent box becomes required, or one is added while the form is drawn and checked. The saved form doesn't change, and the words go in the submission's consent record. If a page published as files is older than the rule, the add-on still leaves out anyone with no tick. Double opt-in on behaves as before. Daniel agreed this for GDPR. The rule reaches core through a new plugin hook, `formConsent`.
+- **LINTEL-UX-271:** Found while testing LINTEL-UX-270. The builder's Newsletter element drew only the email box, so with the ready-made Newsletter form, which has a required consent box, nobody could sign up and there was no box to tick. The element now draws the form's consent boxes. Submissions pulled from the PHP companion now keep consent records too; they had none.

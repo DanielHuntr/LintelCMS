@@ -82,6 +82,7 @@ export {
   url,
 } from "../content-model-sync/field-helpers.js";
 export type { PluginConsentService } from "../cookie-notice/plugin-consent-services.js";
+export type { PluginFormConsent } from "../forms/required-consent.js";
 // Personal data: what the plugin keeps, and the hooks Settings → Privacy uses.
 export type {
   FoundPersonalData,

@@ -228,6 +228,11 @@ const NewsletterSignup = drawsProps(
               </button>
             </span>
             <p className="lintel-form__error" data-error-for={emailField} hidden />
+            {form?.fields
+              .filter((field) => field.type === "consent")
+              .map((field) => (
+                <FieldInput key={field.handle} field={field} formId={inputId} />
+              ))}
             <p className="lintel-form__status" role="status" aria-live="polite" />
           </form>
         ) : null}

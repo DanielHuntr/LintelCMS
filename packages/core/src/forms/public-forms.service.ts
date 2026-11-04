@@ -28,6 +28,7 @@ import {
 import { checkSubmittedFiles, type IncomingFile, storeSubmittedFiles } from "./submission-files.js";
 import { checkSubmissionValues, findSubmitterEmail } from "./submission-values.js";
 import { recordConsents } from "./consent-records.js";
+import { withRequiredConsent } from "./required-consent.js";
 import {
   insertSubmissionRow,
   listRecentSubmissionsWithToken,
@@ -109,12 +110,13 @@ export async function describePublicForm(
 ): Promise<PublicForm> {
   const row = await findPublicFormRow(database, handle);
   const spam = await readSetting(database, "formsSpamProtection");
+  const fields = await withRequiredConsent(database, row);
   return {
     handle: row.handle,
     name: row.name,
     submitLabel: row.submitLabel,
     acceptingSubmissions: row.acceptingSubmissions,
-    fields: answerFields(row.fields).map((field) => ({
+    fields: answerFields(fields).map((field) => ({
       handle: field.handle,
       type: field.type,
       label: field.label,
@@ -123,7 +125,7 @@ export async function describePublicForm(
       required: field.required,
       options: field.options,
     })),
-    steps: splitIntoSteps(row.fields),
+    steps: splitIntoSteps(fields),
     confirmation: row.confirmation,
     spamProtection: {
       honeypotField: HONEYPOT_FIELD,
@@ -183,7 +185,8 @@ export async function receiveSubmission(
   }
   await checkTurnstile(context.database, incoming, verifyTurnstile);
 
-  const { values, messages } = checkSubmissionValues(form.fields, incoming.values);
+  const fields = await withRequiredConsent(context.database, form);
+  const { values, messages } = checkSubmissionValues(fields, incoming.values);
   Object.assign(messages, await checkSubmittedFiles(form.fields, incoming.files));
   if (Object.keys(messages).length > 0) {
     throw new InvalidFieldsError(messages);
@@ -216,7 +219,7 @@ export async function receiveSubmission(
       submitterEmail: findSubmitterEmail(form.fields, allValues),
       assetIds: stored.assetIds,
       sourceUrl,
-      consents: recordConsents(form.fields, allValues, sourceUrl, now),
+      consents: recordConsents(fields, allValues, sourceUrl, now),
       tokenHash,
     });
     return { saved: true, form, submission };

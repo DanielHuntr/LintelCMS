@@ -185,6 +185,18 @@ and then every `everyMinutes`; every server process runs them, so make a job saf
 twice. Each is given `database`, `readSettings()` and `log`. The events are listed in
 [Automations](/building/workflows/).
 
+An add-on that passes people on to someone else can make a form ask first. Return the words
+for a consent box, or `null` when the form needs none:
+
+```ts
+formConsent: async (form, database) =>
+  form.handle === "newsletter" ? "I'd like the newsletter." : null,
+```
+
+While the add-on is on, a consent box the form already has becomes required, and a form
+without one gets this one. The saved form doesn't change. `form.submitted` lists the boxes
+that were ticked in `submission.consents`.
+
 ## Terminal commands
 
 ```ts
