@@ -333,3 +333,21 @@ four or five databases in CI.
    who want a single file they can open with other tools.
 2. Is it acceptable to build SQL Server only once Drizzle 1.0 is stable, rather than
    adding a second query layer for it now?
+
+## Status update, 2026-11-04
+
+Status: **MySQL and MariaDB approved as the next database; work started. Nobody can run
+Lintel on them yet.** SQLite and SQL Server stay proposed, and the two open questions
+above are still open. Everything above is left as it was written on 2026-11-03.
+
+What was taken from the spike on `spike/any-database` (commit 288818c), and what wasn't:
+
+- Taken: the audit, the idea of one dialect check and a small set of helpers, ids made in
+  Node on MySQL, read-back in place of `returning`, a test per feature on each database,
+  and a separate migrations folder.
+- Not taken: `portableTable` and the column kits. They would rewrite all 54 `*.table.ts`
+  files while other work is changing them. MySQL tables are now worked out from the
+  Postgres tables instead, so the table files don't change at all (see below).
+- Not taken yet: SQLite, libSQL and its migrations. MySQL and MariaDB come first.
+
+Sections below this line are added as the work moves on.
