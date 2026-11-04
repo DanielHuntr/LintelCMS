@@ -143,7 +143,10 @@ describe("TranslationsSection", () => {
     await userEvent.click(screen.getByRole("button", { name: "Translate into French (France)" }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/content/posts/p2"));
-    expect(api.calls.find(({ method }) => method === "POST")?.body).toEqual({ locale: "fr-FR" });
+    expect(api.calls.find(({ method }) => method === "POST")?.body).toEqual({
+      locale: "fr-FR",
+      withParents: false,
+    });
   });
 
   it("links to translations that exist, and hides itself on one-language sites", async () => {
