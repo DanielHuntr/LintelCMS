@@ -15,6 +15,8 @@ const withShop = { enabledPlugins: ["commerce"] };
 
 const settings: PaymentSettings = {
   connected: true,
+  siteIsLocal: false,
+  checksForPayments: false,
   mode: "live",
   secretKey: { hint: "sk_live_…4242", source: "admin" },
   publishableKey: { value: "pk_live_x", source: "admin" },
