@@ -6,7 +6,9 @@ import type { Database } from "../client.js";
 
 /**
  * Opening MySQL and MariaDB. Only the dialect tests use this so far: the server can't run
- * on these databases yet, and `mysql2` is a development dependency until it can.
+ * on these databases yet, and `mysql2` is a development dependency until it can. It is at
+ * the workspace root because it is an optional peer of drizzle-orm: in one package alone it
+ * would give that package a different drizzle-orm from the add-ons, and their types clash.
  * See docs/decisions/0049-any-database.md.
  */
 
