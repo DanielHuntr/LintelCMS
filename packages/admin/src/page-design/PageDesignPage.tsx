@@ -1,3 +1,5 @@
+import { ShaderLibraryContext } from "@lintel/motion-editor";
+import { useShaderLibraryForBuilder } from "./useShaderLibraryForBuilder.js";
 import { useEntryReviewState } from "../client-editing/clientEditing.queries.js";
 import { SendForReviewButton, SentBackNote } from "../client-editing/SendForReview.js";
 import {
@@ -211,6 +213,7 @@ function PageDesigner({
     : undefined;
   const effectModules = useEffectModules(besideTheAdmin);
   const siteMotion = useSiteMotion();
+  const shaderLibrary = useShaderLibraryForBuilder();
   const siteDesign = useSiteDesign({ entry: saving.entry.id });
   const imagePicker = useImagePicker();
   const fonts = useBuilderFonts();
@@ -344,7 +347,7 @@ function PageDesigner({
     );
 
   return (
-    <>
+    <ShaderLibraryContext value={shaderLibrary}>
       <PageBuilder
         key={experiments.editing}
         initialDocument={experiments.initialDocument ?? opened.document}
@@ -481,7 +484,7 @@ function PageDesigner({
         onConfirm={leave.leave}
         onCancel={leave.stay}
       />
-    </>
+    </ShaderLibraryContext>
   );
 }
 

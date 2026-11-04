@@ -1,5 +1,11 @@
-import { cleanProps, type EffectDefinition, type NodeEffect } from "@lintel/motion/effects";
+import {
+  cleanProps,
+  isStackable,
+  type EffectDefinition,
+  type NodeEffect,
+} from "@lintel/motion/effects";
 import { Play, Trash2 } from "lucide-react";
+import type { ReactNode } from "react";
 import { Button } from "../controls/Button.js";
 import { useTranslate } from "../strings/translate.js";
 import type { CursorColourSwatch } from "./CursorLookFields.js";
@@ -14,6 +20,10 @@ interface AppliedEffectProps {
   onCommit?: () => void;
   /** The site's colours, for colour settings. */
   colours?: readonly CursorColourSwatch[];
+  /** Saves what its number settings react to; shader backgrounds offer this. */
+  onReacts?: (reacts: NodeEffect["reacts"]) => void;
+  /** Shown under the settings: "Add a layer", on shader backgrounds. */
+  extra?: ReactNode;
 }
 
 /** One effect on the element: its name, what it does with less motion, and its settings. */
@@ -25,6 +35,8 @@ export function AppliedEffect({
   onTry,
   onCommit,
   colours,
+  onReacts,
+  extra,
 }: AppliedEffectProps) {
   const t = useTranslate();
   const values = cleanProps(definition, saved.params);
@@ -56,7 +68,10 @@ export function AppliedEffect({
         onChange={onChange}
         onCommit={onCommit}
         colours={colours}
+        reacts={saved.reacts}
+        onReacts={isStackable(definition) ? onReacts : undefined}
       />
+      {extra}
       <p className="text-caption text-label-tertiary">
         {t("motionEditor.effects.lessMotion", { text: definition.reducedMotion })}
       </p>

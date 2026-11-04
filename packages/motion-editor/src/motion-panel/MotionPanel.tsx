@@ -3,7 +3,11 @@ import {
   cleanProps,
   defaultProps,
   effectAnimation,
+  effectPlan,
   effectRegistry,
+  isStackable,
+  layeredBackgroundEffectId,
+  layerFromEffect,
   maxEffectsPerElement,
   type EffectDefinition,
   type EffectRegistry,
@@ -12,7 +16,7 @@ import {
   type PageWeight,
 } from "@lintel/motion/effects";
 import { findPreset, motionPresets, type MotionPreset } from "@lintel/motion/presets";
-import { ChevronLeft, ChevronRight, Play, Plus, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Layers, Play, Plus, Search } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import type { OpenGroups } from "../controls/CollapsibleGroup.js";
 import { classNames } from "../controls/classNames.js";
@@ -20,6 +24,8 @@ import { AppliedEffect } from "../effects/AppliedEffect.js";
 import type { CursorColourSwatch } from "../effects/CursorLookFields.js";
 import { EffectSettings } from "../effects/EffectSettings.js";
 import { PageWeightMeter } from "../effects/PageWeightMeter.js";
+import { useShaderLibrary } from "../shaders/shader-library.js";
+import { ShaderLayers } from "../shaders/ShaderLayers.js";
 import type { MotionEditorStringKey } from "../strings/motionEditorStrings.js";
 import { TranslateProvider, useTranslate, type Translate } from "../strings/translate.js";
 import { MotionStudio, type StudioView } from "../studio/MotionStudio.js";
@@ -165,6 +171,42 @@ function Panel({
     findPresetOrEffectName(animation.presetId, presets, registry) ??
     t("motionEditor.panel.yourAnimation");
   const animationsFull = animations.length >= maxAnimations;
+  const library = useShaderLibrary();
+
+  /**
+   * Shows an effect on the page. One with layers or reactions runs from a plan, which brings
+   * custom shaders' code along, as the canvas has no list from the server.
+   */
+  function previewSaved(saved: NodeEffect, definition: EffectDefinition) {
+    const plan = effectPlan(saved, registry, {
+      codeOf: (id) => library?.shaders.find((shader) => shader.id === id)?.code,
+    });
+    onPreviewEffect(definition, plan ? { plan } : saved.params);
+  }
+
+  /** Changes a saved effect, and shows it on the page if it's one that shows each change. */
+  function changeSaved(index: number, definition: EffectDefinition, next: NodeEffect) {
+    onChangeEffects(effects.map((saved, at) => (at === index ? next : saved)));
+    if (previewsEachChange(definition)) previewSaved(next, definition);
+  }
+
+  /** Turns a shader background into layers (it becomes the bottom one), and opens them. */
+  function openLayers(index: number) {
+    const saved = effects[index];
+    const stack = registry.find(layeredBackgroundEffectId);
+    if (!saved || !stack) return;
+    const next: NodeEffect = {
+      effect: layeredBackgroundEffectId,
+      params: { readable: saved.params.readable !== false },
+      layers: [layerFromEffect(saved, "first")],
+    };
+    changeSaved(index, stack, next);
+    onCommit?.();
+    go({ name: "effect", index });
+  }
+
+  const layersRow = (index: number, definition: EffectDefinition) =>
+    isStackable(definition) && <LayersRow onClick={() => openLayers(index)} />;
 
   function go(next: View) {
     onStopPreview();
@@ -285,13 +327,18 @@ function Panel({
           values={cleanProps(addedDefinition, addedSaved.params)}
           colours={colours}
           onChange={(params) => {
-            onChangeEffects(
-              effects.map((saved, at) => (at === effectAdded.index ? { ...saved, params } : saved)),
-            );
-            onPreviewEffect(addedDefinition, params);
+            changeSaved(effectAdded.index, addedDefinition, { ...addedSaved, params });
           }}
           onCommit={onCommit}
+          reacts={addedSaved.reacts}
+          onReacts={
+            isStackable(addedDefinition)
+              ? (reacts) =>
+                  changeSaved(effectAdded.index, addedDefinition, { ...addedSaved, reacts })
+              : undefined
+          }
         />
+        {layersRow(effectAdded.index, addedDefinition)}
       </div>
     ) : undefined;
 
@@ -401,6 +448,28 @@ function Panel({
   if (view.name === "effect") {
     const item = known.find((entry) => entry.index === view.index);
     if (item) {
+      const remove = () => {
+        onChangeEffects(effects.filter((_, at) => at !== item.index));
+        onCommit?.();
+        go({ name: "list" });
+      };
+      if (item.saved.effect === layeredBackgroundEffectId) {
+        return (
+          <div className="flex flex-col gap-3">
+            <PanelBar onBack={() => go({ name: "list" })}>
+              <PlayButton onClick={() => previewSaved(item.saved, item.definition)} />
+            </PanelBar>
+            <ShaderLayers
+              saved={item.saved}
+              registry={registry}
+              colours={colours}
+              onChange={(next) => changeSaved(item.index, item.definition, next)}
+              onRemove={remove}
+              onCommit={onCommit}
+            />
+          </div>
+        );
+      }
       return (
         <div className="flex flex-col gap-3">
           <PanelBar onBack={() => go({ name: "list" })} />
@@ -408,18 +477,15 @@ function Panel({
             definition={item.definition}
             saved={item.saved}
             colours={colours}
-            onChange={(params) => {
-              onChangeEffects(
-                effects.map((saved, at) => (at === item.index ? { ...saved, params } : saved)),
-              );
-              if (previewsEachChange(item.definition)) onPreviewEffect(item.definition, params);
-            }}
-            onRemove={() => {
-              onChangeEffects(effects.filter((_, at) => at !== item.index));
-              onCommit?.();
-              go({ name: "list" });
-            }}
-            onTry={() => onPreviewEffect(item.definition, item.saved.params)}
+            onChange={(params) =>
+              changeSaved(item.index, item.definition, { ...item.saved, params })
+            }
+            onReacts={(reacts) =>
+              changeSaved(item.index, item.definition, { ...item.saved, reacts })
+            }
+            extra={layersRow(item.index, item.definition)}
+            onRemove={remove}
+            onTry={() => previewSaved(item.saved, item.definition)}
             onCommit={onCommit}
           />
         </div>
@@ -461,7 +527,7 @@ function Panel({
                 moment={momentOfEffect(definition)}
                 name={definition.name}
                 onOpen={() => go({ name: "effect", index })}
-                onTry={() => onPreviewEffect(definition, saved.params)}
+                onTry={() => previewSaved(saved, definition)}
                 onStopTry={onStopPreview}
               />
             ))}
@@ -514,6 +580,21 @@ function findPresetOrEffectName(
   if (!id) return undefined;
   return (
     (presets.find((preset) => preset.id === id) ?? findPreset(id))?.name ?? registry.find(id)?.name
+  );
+}
+
+function LayersRow({ onClick }: { onClick: () => void }) {
+  const t = useTranslate();
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="-mx-1 mt-1 flex min-h-9 w-[calc(100%+0.5rem)] items-center gap-2 rounded-control px-1 text-start text-footnote font-medium text-label hover:bg-fill focus-visible:focus-ring"
+    >
+      <Layers aria-hidden="true" className="size-4 text-label-secondary" />
+      <span className="min-w-0 flex-1">{t("motionEditor.shaders.addLayer")}</span>
+      <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-label-tertiary" />
+    </button>
   );
 }
 

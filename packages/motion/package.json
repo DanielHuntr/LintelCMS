@@ -33,6 +33,11 @@
       "default": "./dist/effects-catalogue/index.js"
     },
     "./effect-modules/*": "./dist/effect-modules/*",
+    "./shader-preview": {
+      "types": "./dist/effects/kit/shader-preview.d.ts",
+      "development": "./src/effects/kit/shader-preview.ts",
+      "default": "./dist/effects/kit/shader-preview.js"
+    },
     "./model-poster": {
       "types": "./dist/effects/model/model-poster.d.ts",
       "development": "./src/effects/model/model-poster.ts",

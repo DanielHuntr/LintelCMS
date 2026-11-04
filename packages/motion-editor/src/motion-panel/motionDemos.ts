@@ -155,15 +155,19 @@ const demos: Record<
     timing: "steps(1)",
     duration: ".6s",
   },
+  glass: {
+    shape: "0%,100%{transform:translateX(0)}50%{transform:translateX(-5px)}",
+    timing: "ease-in-out",
+    duration: "4s",
+  },
   develop: {
-    shape:
-      "0%,8%{opacity:.25;filter:blur(3px)}55%,88%{opacity:1;filter:none}100%{opacity:.25;filter:blur(3px)}",
-    extra: "0%,8%{opacity:1}55%,88%{opacity:0}100%{opacity:1}",
+    shape: "0%,18%{opacity:0}62%,90%{opacity:1}100%{opacity:0}",
+    extra: "0%,18%{opacity:1;filter:blur(.6px)}62%,90%{opacity:0;filter:none}100%{opacity:1}",
   },
   pixels: { shape: "0%,10%{opacity:.6}50%,88%{opacity:1}100%{opacity:.6}" },
   split: {
-    shape:
-      "0%,20%,85%,100%{box-shadow:0 0 0 transparent,0 0 0 transparent}45%,65%{box-shadow:-2px 0 0 rgb(255 40 90/.55),2px 0 0 rgb(30 150 255/.55)}",
+    shape: "0%,20%,85%,100%{transform:none}45%,65%{transform:translate(-3px,1px)}",
+    extra: "0%,20%,85%,100%{transform:none}45%,65%{transform:translate(3px,-1px)}",
   },
   liquid: {
     shape:
@@ -181,10 +185,19 @@ const demos: Record<
 const grainTile = `url("data:image/svg+xml,${encodeURIComponent(
   "<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='1'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(#g)'/></svg>",
 )}")`;
+/** The same noise as holes: what's under it shows through in specks, on any theme. */
+const speckTile = `url("data:image/svg+xml,${encodeURIComponent(
+  "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><filter id='s'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='1'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 9 -4'/></filter><rect width='100%' height='100%' filter='url(#s)'/></svg>",
+)}")`;
 const textures =
   `.motion-demo-light{background-image:repeating-linear-gradient(62deg,transparent 0 5px,currentColor 5px 6px),repeating-linear-gradient(-58deg,transparent 0 7px,currentColor 7px 8px);opacity:.35}` +
   `.motion-demo-contours{background-image:repeating-radial-gradient(circle at 40% 60%,transparent 0 3px,currentColor 3px 4px);opacity:.4}` +
   `.motion-demo-grain{background-image:${grainTile};opacity:.55;mix-blend-mode:multiply}` +
+  `.motion-demo-glass{background-image:repeating-linear-gradient(90deg,currentColor 0 1px,transparent 1px 3px,color-mix(in srgb,currentColor 35%,transparent) 3px 5px,transparent 5px 6px);opacity:.5}` +
+  // A little landscape: a sun and two hills, in the colour of the words.
+  `.motion-demo-scene{background:radial-gradient(circle at 70% 28%,currentColor 0 14%,transparent 15%),linear-gradient(currentColor,currentColor) bottom/100% 30% no-repeat;clip-path:polygon(0 100%,0 62%,28% 40%,52% 66%,72% 50%,100% 72%,100% 100%,100% 0,0 0);opacity:.85}` +
+  `.motion-demo-specks{-webkit-mask-image:${speckTile};mask-image:${speckTile};mask-size:12px 12px}` +
+  `.motion-demo-red{color:#ff2d55;opacity:.9}.motion-demo-blue{color:#0a84ff;opacity:.9}` +
   `[data-motion-demo="pixels"] .motion-demo-block{animation:motion-demo-pixel 2.6s steps(1) infinite}` +
   `@keyframes motion-demo-pixel{45%,88%{opacity:1}}`;
 
