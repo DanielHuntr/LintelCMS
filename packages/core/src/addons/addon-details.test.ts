@@ -188,6 +188,14 @@ describe("an add-on's details", () => {
     expect(elsewhere.statusCode).toBe(404);
   });
 
+  it("stops a spreadsheet running what a visitor typed into an add-on's table", async () => {
+    await testDatabase.database.execute(
+      sql`insert into postcards_sent values ('p2', 'ben@example.com', '=HYPERLINK("x")')`,
+    );
+    const csv = await owner("GET", "/addons/postcards/export?format=csv&table=postcards_sent");
+    expect(csv.body).toContain(`"'=HYPERLINK(""x"")"`);
+  });
+
   it("deletes its data only once it is off, leaving its tables empty", async () => {
     await owner("PUT", "/plugins", { enabled: ["postcards"] });
     const refused = await owner("POST", "/addons/postcards/delete-data", { confirm: "DELETE" });

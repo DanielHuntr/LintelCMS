@@ -21,6 +21,7 @@ import { PluginNotFoundError } from "../plugins/plugins.errors.js";
 import { isPluginEnabled } from "../plugins/plugins.service.js";
 import { deleteSettingValue } from "../settings/settings.repository.js";
 import { declarationsOf, isLintelTable } from "./addon-tables.js";
+import { csvCell } from "../forms/submissions-csv.js";
 import { AddonStillOnError, AddonTableNotFoundError } from "./addons.errors.js";
 import type { AddonDetails } from "./addons.schema.js";
 import type { AddonsState, LoadedAddon } from "./load-addons.js";
@@ -276,13 +277,8 @@ export async function exportAddonTableCsv(
   const columns = await listColumnNames(database, table);
   const rows = await readAllRows(database, table);
   const cell = (value: unknown) => {
-    const text =
-      value === null || value === undefined
-        ? ""
-        : typeof value === "object"
-          ? JSON.stringify(value)
-          : String(value);
-    return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+    if (value === null || value === undefined) return "";
+    return csvCell(typeof value === "object" ? JSON.stringify(value) : String(value));
   };
   return [columns, ...rows.map((row) => columns.map((column) => row[column]))]
     .map((line) => line.map(cell).join(","))
