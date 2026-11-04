@@ -36,6 +36,8 @@ export const pluginSummarySchema = z.object({
   name: z.string(),
   description: z.string(),
   enabled: z.boolean(),
+  /** False for a plugin with tables that has no MySQL form, on a MySQL database. */
+  canRunHere: z.boolean(),
   /** "built-in" ships with Lintel; "installed" was added in lintel.config.ts. */
   source: z.enum(["built-in", "installed"]),
   version: z.string().nullable(),

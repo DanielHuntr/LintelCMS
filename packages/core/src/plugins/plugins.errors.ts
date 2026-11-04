@@ -23,6 +23,18 @@ export class UnknownPluginError extends HttpError {
   }
 }
 
+/** A plugin with tables of its own that hasn't been made to work on MySQL and MariaDB. */
+export class PluginNeedsPostgresError extends HttpError {
+  constructor(pluginNames: readonly string[]) {
+    const names = pluginNames.map((name) => `“${name}”`).join(", ");
+    super(
+      409,
+      "PLUGIN_NEEDS_POSTGRES",
+      `${names} keeps its own data in tables made for Postgres, so it can't run on this database. Ask whoever made it for a version that supports MySQL.`,
+    );
+  }
+}
+
 export class PluginNotFoundError extends HttpError {
   constructor(pluginId: string) {
     super(404, "NOT_FOUND", `There is no plugin called "${pluginId}".`);

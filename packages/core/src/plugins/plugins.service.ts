@@ -1,7 +1,9 @@
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { readSetting, writeSetting } from "../settings/settings.service.js";
+import { dialectOf } from "../database/dialect/database-dialect.js";
 import type { PluginCatalogue } from "./plugin-catalogue.js";
-import { UnknownPluginError } from "./plugins.errors.js";
+import type { LintelPlugin } from "./plugin-definition.js";
+import { PluginNeedsPostgresError, UnknownPluginError } from "./plugins.errors.js";
 import type { PluginList } from "./plugins.schema.js";
 
 /**
@@ -22,6 +24,18 @@ export async function isPluginEnabled(
   return (await findEnabledPluginIds(database)).includes(pluginId);
 }
 
+/**
+ * A plugin with tables of its own only runs on MySQL if it says so, by bringing migrations
+ * for it: its queries were written for Postgres otherwise, and would fail or misread rows.
+ */
+export function canRunOn(
+  database: DatabaseOrTransaction,
+  plugin: Pick<LintelPlugin, "database">,
+): boolean {
+  if (dialectOf(database) === "postgres" || !plugin.database) return true;
+  return plugin.database.mysqlMigrationsFolder !== undefined;
+}
+
 /** Every plugin in the catalogue, with whether it is on. */
 export async function listPlugins(
   database: DatabaseOrTransaction,
@@ -33,7 +47,8 @@ export async function listPlugins(
       id: plugin.id,
       name: plugin.name,
       description: plugin.description,
-      enabled: enabled.has(plugin.id),
+      enabled: enabled.has(plugin.id) && canRunOn(database, plugin),
+      canRunHere: canRunOn(database, plugin),
       source,
       version: plugin.version ?? null,
       permissions: [...(plugin.permissions ?? [])],
@@ -60,6 +75,13 @@ export async function setEnabledPlugins(
 
   const wasEnabled = await findEnabledPluginIds(database);
   const enabled = catalogue.ids.filter((id) => pluginIds.includes(id));
+  const refused = enabled
+    .filter((id) => !wasEnabled.includes(id))
+    .flatMap((id) => catalogue.find(id) ?? [])
+    .filter((plugin) => !canRunOn(database, plugin));
+  if (refused.length > 0) {
+    throw new PluginNeedsPostgresError(refused.map((plugin) => plugin.name));
+  }
   await writeSetting(database, "enabledPlugins", enabled);
 
   for (const pluginId of enabled.filter((id) => !wasEnabled.includes(id))) {
