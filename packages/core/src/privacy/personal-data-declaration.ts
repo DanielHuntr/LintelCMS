@@ -44,6 +44,15 @@ export const personalDataDeclarationSchema = z.object({
   tables: z.array(personalDataTableSchema).max(100).default([]),
 });
 
+/** The columns of one table that a declaration says are personal. */
+export function personalColumnsOf(
+  declaration: PersonalDataDeclaration | undefined,
+  tableName: string,
+): string[] {
+  const table = declaration?.tables.find((candidate) => candidate.name === tableName);
+  return (table?.columns ?? []).filter((column) => column.personalData).map(({ name }) => name);
+}
+
 export type PersonalDataColumn = z.input<typeof personalDataColumnSchema>;
 export type PersonalDataTable = z.input<typeof personalDataTableSchema>;
 export type PersonalDataDeclaration = z.output<typeof personalDataDeclarationSchema>;
