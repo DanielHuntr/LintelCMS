@@ -1,24 +1,28 @@
-import { and, asc, count, desc, eq, inArray, isNull, notInArray, type SQL, sql } from "drizzle-orm";
-import { collectionsTable } from "../collections/collections.table.js";
+import { and, asc, count, desc, eq, inArray, isNull, notInArray, type SQL } from "drizzle-orm";
+import { collectionsTable as collectionsDefinition } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import {
   type Entry,
-  entriesTable,
+  entriesTable as entriesDefinition,
   type NewEntry,
   type Revision,
-  revisionsTable,
+  revisionsTable as revisionsDefinition,
 } from "../entries/entries.table.js";
 import {
   type ContentRootAddressRow,
-  contentRootAddressesTable,
+  contentRootAddressesTable as contentRootAddressesDefinition,
 } from "../content-roots/content-roots.table.js";
-import { entrySeoTable, type EntrySeoRow } from "../seo/seo.table.js";
-import { usersTable } from "../users/users.table.js";
+import { entrySeoTable as entrySeoDefinition, type EntrySeoRow } from "../seo/seo.table.js";
+import { usersTable as usersDefinition } from "../users/users.table.js";
 import {
   type NewRecycleBinItem,
   type RecycleBinItem,
-  recycleBinItemsTable,
+  recycleBinItemsTable as recycleBinItemsDefinition,
 } from "./recycle-bin.table.js";
+import { deleteReturning, insertReturning } from "../database/dialect/writes.js";
+import { jsonText } from "../database/dialect/expressions.js";
+import { childTitlesInBranch, jsonTextAt } from "../database/dialect/json-expressions.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for the recycle bin, nothing else. */
 
@@ -26,6 +30,7 @@ export async function countRecycleBinItems(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<number> {
+  const recycleBinItemsTable = tableFor(database, recycleBinItemsDefinition);
   const [row] = await database
     .select({ count: count() })
     .from(recycleBinItemsTable)
@@ -51,11 +56,17 @@ const LISTED_CHILDREN = 3;
  * The site an item's entries were on. A branch never spans sites, so the first entry's site
  * is everyone's.
  */
-const itemSiteId = sql<string>`${recycleBinItemsTable.branch}->'entries'->0->>'siteId'`;
+function itemSiteId(database: DatabaseOrTransaction): SQL<string | null> {
+  const recycleBinItemsTable = tableFor(database, recycleBinItemsDefinition);
+  return jsonTextAt(database, recycleBinItemsTable.branch, ["entries", 0, "siteId"]);
+}
 
 /** Items on these sites only, or every item when `siteIds` is null. */
-function onSites(siteIds: readonly string[] | null): SQL | undefined {
-  return siteIds === null ? undefined : inArray(itemSiteId, [...siteIds]);
+function onSites(
+  database: DatabaseOrTransaction,
+  siteIds: readonly string[] | null,
+): SQL | undefined {
+  return siteIds === null ? undefined : inArray(itemSiteId(database), [...siteIds]);
 }
 
 /** Newest first, without the stored branches (they can be large). */
@@ -65,6 +76,9 @@ export async function listRecycleBinRows(
   limit: number,
   siteIds: readonly string[] | null,
 ): Promise<RecycleBinRow[]> {
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const recycleBinItemsTable = tableFor(database, recycleBinItemsDefinition);
+  const usersTable = tableFor(database, usersDefinition);
   return database
     .select({
       item: {
@@ -81,20 +95,18 @@ export async function listRecycleBinRows(
       collectionHandle: collectionsTable.handle,
       collectionName: collectionsTable.name,
       deletedByName: usersTable.name,
-      address: sql<string | null>`${recycleBinItemsTable.branch}->>'address'`,
-      childTitles: sql<string[] | null>`(
-        select jsonb_agg(child.value->'data'->>'title')
-        from (
-          select value from jsonb_array_elements(${recycleBinItemsTable.branch}->'entries')
-          where value->>'parentId' = ${recycleBinItemsTable.entryId}::text
-          limit ${LISTED_CHILDREN}
-        ) as child
-      )`,
+      address: jsonText(database, recycleBinItemsTable.branch, "address"),
+      childTitles: childTitlesInBranch(
+        database,
+        recycleBinItemsTable.branch,
+        recycleBinItemsTable.entryId,
+        LISTED_CHILDREN,
+      ),
     })
     .from(recycleBinItemsTable)
     .innerJoin(collectionsTable, eq(collectionsTable.id, recycleBinItemsTable.collectionId))
     .leftJoin(usersTable, eq(usersTable.id, recycleBinItemsTable.deletedBy))
-    .where(and(eq(recycleBinItemsTable.tenantId, tenantId), onSites(siteIds)))
+    .where(and(eq(recycleBinItemsTable.tenantId, tenantId), onSites(database, siteIds)))
     .orderBy(desc(recycleBinItemsTable.deletedAt))
     .limit(limit);
 }
@@ -104,6 +116,7 @@ export async function findRecycleBinItem(
   tenantId: string,
   itemId: string,
 ): Promise<RecycleBinItem | undefined> {
+  const recycleBinItemsTable = tableFor(database, recycleBinItemsDefinition);
   const [item] = await database
     .select()
     .from(recycleBinItemsTable)
@@ -116,7 +129,8 @@ export async function insertRecycleBinItem(
   database: DatabaseOrTransaction,
   item: NewRecycleBinItem,
 ): Promise<RecycleBinItem> {
-  const [inserted] = await database.insert(recycleBinItemsTable).values(item).returning();
+  const recycleBinItemsTable = tableFor(database, recycleBinItemsDefinition);
+  const [inserted] = await insertReturning(database, recycleBinItemsTable, item);
   if (!inserted) {
     throw new Error("The database did not return the recycle bin item.");
   }
@@ -127,6 +141,7 @@ export async function deleteRecycleBinItem(
   database: DatabaseOrTransaction,
   itemId: string,
 ): Promise<void> {
+  const recycleBinItemsTable = tableFor(database, recycleBinItemsDefinition);
   await database.delete(recycleBinItemsTable).where(eq(recycleBinItemsTable.id, itemId));
 }
 
@@ -136,10 +151,13 @@ export async function deleteAllRecycleBinItems(
   tenantId: string,
   siteIds: readonly string[] | null,
 ): Promise<number> {
-  const deleted = await database
-    .delete(recycleBinItemsTable)
-    .where(and(eq(recycleBinItemsTable.tenantId, tenantId), onSites(siteIds)))
-    .returning({ id: recycleBinItemsTable.id });
+  const recycleBinItemsTable = tableFor(database, recycleBinItemsDefinition);
+  const deleted = await deleteReturning(
+    database,
+    recycleBinItemsTable,
+    and(eq(recycleBinItemsTable.tenantId, tenantId), onSites(database, siteIds)),
+    { id: recycleBinItemsTable.id },
+  );
   return deleted.length;
 }
 
@@ -147,6 +165,7 @@ export async function listEntryRows(
   database: DatabaseOrTransaction,
   entryIds: readonly string[],
 ): Promise<Entry[]> {
+  const entriesTable = tableFor(database, entriesDefinition);
   if (entryIds.length === 0) return [];
   return database
     .select()
@@ -159,6 +178,7 @@ export async function listTranslationLinks(
   database: DatabaseOrTransaction,
   entryIds: readonly string[],
 ): Promise<Array<{ entryId: string; originId: string }>> {
+  const entriesTable = tableFor(database, entriesDefinition);
   if (entryIds.length === 0) return [];
   const rows = await database
     .select({ entryId: entriesTable.id, originId: entriesTable.originId })
@@ -179,6 +199,7 @@ export async function relinkTranslations(
   database: DatabaseOrTransaction,
   links: readonly { entryId: string; originId: string }[],
 ): Promise<void> {
+  const entriesTable = tableFor(database, entriesDefinition);
   for (const link of links) {
     await database
       .update(entriesTable)
@@ -191,6 +212,7 @@ export async function listRevisionRows(
   database: DatabaseOrTransaction,
   entryIds: readonly string[],
 ): Promise<Revision[]> {
+  const revisionsTable = tableFor(database, revisionsDefinition);
   if (entryIds.length === 0) return [];
   return database
     .select()
@@ -203,6 +225,7 @@ export async function listSeoRows(
   database: DatabaseOrTransaction,
   entryIds: readonly string[],
 ): Promise<EntrySeoRow[]> {
+  const entrySeoTable = tableFor(database, entrySeoDefinition);
   if (entryIds.length === 0) return [];
   return database
     .select()
@@ -214,6 +237,7 @@ export async function listRootAddressRows(
   database: DatabaseOrTransaction,
   entryIds: readonly string[],
 ): Promise<ContentRootAddressRow[]> {
+  const contentRootAddressesTable = tableFor(database, contentRootAddressesDefinition);
   if (entryIds.length === 0) return [];
   return database
     .select()
@@ -223,8 +247,9 @@ export async function listRootAddressRows(
 
 export async function insertRootAddressRow(
   database: DatabaseOrTransaction,
-  row: typeof contentRootAddressesTable.$inferInsert,
+  row: typeof contentRootAddressesDefinition.$inferInsert,
 ): Promise<void> {
+  const contentRootAddressesTable = tableFor(database, contentRootAddressesDefinition);
   await database.insert(contentRootAddressesTable).values(row);
 }
 
@@ -232,21 +257,24 @@ export async function insertEntryRow(
   database: DatabaseOrTransaction,
   entry: NewEntry,
 ): Promise<void> {
+  const entriesTable = tableFor(database, entriesDefinition);
   await database.insert(entriesTable).values(entry);
 }
 
 export async function insertRevisionRows(
   database: DatabaseOrTransaction,
-  revisions: (typeof revisionsTable.$inferInsert)[],
+  revisions: (typeof revisionsDefinition.$inferInsert)[],
 ): Promise<void> {
+  const revisionsTable = tableFor(database, revisionsDefinition);
   if (revisions.length === 0) return;
   await database.insert(revisionsTable).values(revisions);
 }
 
 export async function insertSeoRows(
   database: DatabaseOrTransaction,
-  rows: (typeof entrySeoTable.$inferInsert)[],
+  rows: (typeof entrySeoDefinition.$inferInsert)[],
 ): Promise<void> {
+  const entrySeoTable = tableFor(database, entrySeoDefinition);
   if (rows.length === 0) return;
   await database.insert(entrySeoTable).values(rows);
 }
@@ -256,6 +284,7 @@ export async function findExistingUserIds(
   database: DatabaseOrTransaction,
   userIds: readonly string[],
 ): Promise<Set<string>> {
+  const usersTable = tableFor(database, usersDefinition);
   if (userIds.length === 0) return new Set();
   const rows = await database
     .select({ id: usersTable.id })
@@ -269,6 +298,7 @@ export async function findExistingEntryIds(
   database: DatabaseOrTransaction,
   entryIds: readonly string[],
 ): Promise<Set<string>> {
+  const entriesTable = tableFor(database, entriesDefinition);
   if (entryIds.length === 0) return new Set();
   const rows = await database
     .select({ id: entriesTable.id })

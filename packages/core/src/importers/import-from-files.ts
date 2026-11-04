@@ -29,6 +29,7 @@ import { buildSiteReport } from "./site-import-report.js";
 import { findImport, listItems } from "./site-import.repository.js";
 import { importSources } from "./site-import.schema.js";
 import { createSiteImport, describeSiteMappingChoices } from "./site-import.service.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /**
  * `lintel import <source> <file|url>...`: the same importers as Build → Import, from the
@@ -200,10 +201,11 @@ async function whoIsImporting(database: Database, email: string | undefined): Pr
     if (!user) throw new ImportInputError(`Nobody here has the email ${email}.`);
     return user.id;
   }
+  const users = tableFor(database, usersTable);
   const [first] = await database
-    .select({ id: usersTable.id })
-    .from(usersTable)
-    .orderBy(asc(usersTable.createdAt))
+    .select({ id: users.id })
+    .from(users)
+    .orderBy(asc(users.createdAt))
     .limit(1);
   if (!first)
     throw new ImportInputError(

@@ -11,6 +11,8 @@ import type { useTestDatabase } from "../testing/test-database.js";
 import { issueFormToken } from "../forms/spam-protection.js";
 import { readSetting } from "../settings/settings.service.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
+import { insertReturning } from "../database/dialect/writes.js";
 
 /**
  * A server for the privacy tests: Forms and the shop on, plugins the test hands in, and an
@@ -102,10 +104,13 @@ export function usePrivacyTestServer(
       });
     },
     async createMarket() {
-      const [market] = await testDatabase.database
-        .insert(marketsTable)
-        .values({ name: "United Kingdom", handle: "uk", currency: "GBP", isPrimary: true })
-        .returning();
+      const { database } = testDatabase;
+      const [market] = await insertReturning(database, tableFor(database, marketsTable), {
+        name: "United Kingdom",
+        handle: "uk",
+        currency: "GBP",
+        isPrimary: true,
+      });
       if (!market) throw new Error("No market was made.");
       return market;
     },

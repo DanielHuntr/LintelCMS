@@ -1,25 +1,33 @@
 import { and, desc, eq, inArray, isNotNull, ne, or, type SQL, sql } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
-import { cartsTable } from "../commerce/carts/carts.table.js";
-import { checkoutsTable } from "../commerce/checkouts/checkouts.table.js";
+import { cartsTable as cartsDefinition } from "../commerce/carts/carts.table.js";
+import { checkoutsTable as checkoutsDefinition } from "../commerce/checkouts/checkouts.table.js";
 import type { Address } from "../commerce/customers/address.schema.js";
-import { customersTable } from "../commerce/customers/customers.table.js";
-import { discountRedemptionsTable } from "../commerce/discounts/discounts.table.js";
-import { orderEventsTable, orderLinesTable, ordersTable } from "../commerce/orders/orders.table.js";
-import { archivedOrdersTable } from "../commerce/shopify-import/shopify-import.table.js";
+import { customersTable as customersDefinition } from "../commerce/customers/customers.table.js";
+import { discountRedemptionsTable as discountRedemptionsDefinition } from "../commerce/discounts/discounts.table.js";
+import {
+  orderEventsTable as orderEventsDefinition,
+  orderLinesTable as orderLinesDefinition,
+  ordersTable as ordersDefinition,
+} from "../commerce/orders/orders.table.js";
+import { archivedOrdersTable as archivedOrdersDefinition } from "../commerce/shopify-import/shopify-import.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import {
-  formSubmissionNotesTable,
-  formSubmissionsTable,
-  formsTable,
+  formSubmissionNotesTable as formSubmissionNotesDefinition,
+  formSubmissionsTable as formSubmissionsDefinition,
+  formsTable as formsDefinition,
 } from "../forms/forms.table.js";
-import { invitationsTable } from "../invitations/invitations.table.js";
-import { securityEventsTable } from "../security-log/security-events.table.js";
-import { sessionsTable } from "../sessions/sessions.table.js";
-import { usersTable } from "../users/users.table.js";
-import { webhookDeliveriesTable } from "../webhooks/webhooks.table.js";
-import { workflowRunsTable } from "../workflows/workflows.table.js";
+import { invitationsTable as invitationsDefinition } from "../invitations/invitations.table.js";
+import { securityEventsTable as securityEventsDefinition } from "../security-log/security-events.table.js";
+import { sessionsTable as sessionsDefinition } from "../sessions/sessions.table.js";
+import { usersTable as usersDefinition } from "../users/users.table.js";
+import { webhookDeliveriesTable as webhookDeliveriesDefinition } from "../webhooks/webhooks.table.js";
+import { workflowRunsTable as workflowRunsDefinition } from "../workflows/workflows.table.js";
 import type { PersonLookup } from "./personal-data-declaration.js";
+import { deleteReturning, updateReturning } from "../database/dialect/writes.js";
+import { jsonAsText, jsonText } from "../database/dialect/expressions.js";
+import { jsonObjectHoldsText } from "../database/dialect/json-expressions.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /**
  * Database reads and writes for finding, exporting and erasing one person's data in Lintel's
@@ -43,7 +51,8 @@ function matchesPerson(
   return or(...conditions) ?? sql`false`;
 }
 
-const addressName = (column: AnyPgColumn) => sql`${column} ->> 'name'`;
+const addressName = (database: DatabaseOrTransaction, column: AnyPgColumn) =>
+  jsonText(database, column, "name");
 
 /** An address with everything that could identify someone removed. The country stays for tax. */
 export function anonymisedAddress(address: Address | null): Address | null {
@@ -68,6 +77,7 @@ export function listMatchingUsers(
   tenantId: string,
   person: PersonLookup,
 ) {
+  const usersTable = tableFor(database, usersDefinition);
   return database
     .select({
       id: usersTable.id,
@@ -89,6 +99,7 @@ export function listMatchingInvitations(
   tenantId: string,
   person: PersonLookup,
 ) {
+  const invitationsTable = tableFor(database, invitationsDefinition);
   return database
     .select({
       id: invitationsTable.id,
@@ -105,6 +116,7 @@ export function listMatchingInvitations(
 }
 
 export function listSessionsOfUsers(database: DatabaseOrTransaction, userIds: readonly string[]) {
+  const sessionsTable = tableFor(database, sessionsDefinition);
   if (userIds.length === 0) return Promise.resolve([]);
   return database
     .select({
@@ -119,19 +131,23 @@ export async function deleteInvitations(
   database: DatabaseOrTransaction,
   ids: readonly string[],
 ): Promise<number> {
+  const invitationsTable = tableFor(database, invitationsDefinition);
   if (ids.length === 0) return 0;
-  const deleted = await database
-    .delete(invitationsTable)
-    .where(inArray(invitationsTable.id, [...ids]))
-    .returning({ id: invitationsTable.id });
+  const deleted = await deleteReturning(
+    database,
+    invitationsTable,
+    inArray(invitationsTable.id, [...ids]),
+    { id: invitationsTable.id },
+  );
   return deleted.length;
 }
 
 // Form entries ------------------------------------------------------------------------------
 
 /** A submission's answers include the name, as any whole answer. */
-function answersInclude(name: string): SQL {
-  return sql`exists (select 1 from jsonb_each_text(${formSubmissionsTable.values}) as answer where lower(trim(answer.value)) = ${name.trim().toLowerCase()})`;
+function answersInclude(database: DatabaseOrTransaction, name: string): SQL {
+  const formSubmissionsTable = tableFor(database, formSubmissionsDefinition);
+  return jsonObjectHoldsText(database, formSubmissionsTable.values, name);
 }
 
 export async function listMatchingSubmissions(
@@ -139,11 +155,13 @@ export async function listMatchingSubmissions(
   tenantId: string,
   person: PersonLookup,
 ) {
+  const formSubmissionsTable = tableFor(database, formSubmissionsDefinition);
+  const formsTable = tableFor(database, formsDefinition);
   const conditions = [
     person.email ? eq(formSubmissionsTable.submitterEmail, person.email.toLowerCase()) : undefined,
     // Only the first email answer is kept in that column; a friend's address is in the answers.
-    person.email ? answersInclude(person.email) : undefined,
-    person.name ? answersInclude(person.name) : undefined,
+    person.email ? answersInclude(database, person.email) : undefined,
+    person.name ? answersInclude(database, person.name) : undefined,
   ].filter((condition): condition is SQL => condition !== undefined);
   return database
     .select({ submission: formSubmissionsTable, formName: formsTable.name })
@@ -157,6 +175,7 @@ export function listNotesOnSubmissions(
   database: DatabaseOrTransaction,
   submissionIds: readonly string[],
 ) {
+  const formSubmissionNotesTable = tableFor(database, formSubmissionNotesDefinition);
   if (submissionIds.length === 0) return Promise.resolve([]);
   return database
     .select({
@@ -175,6 +194,7 @@ export function listMatchingCustomers(
   tenantId: string,
   person: PersonLookup,
 ) {
+  const customersTable = tableFor(database, customersDefinition);
   return database
     .select()
     .from(customersTable)
@@ -190,11 +210,14 @@ export async function deleteCustomers(
   database: DatabaseOrTransaction,
   ids: readonly string[],
 ): Promise<number> {
+  const customersTable = tableFor(database, customersDefinition);
   if (ids.length === 0) return 0;
-  const deleted = await database
-    .delete(customersTable)
-    .where(inArray(customersTable.id, [...ids]))
-    .returning({ id: customersTable.id });
+  const deleted = await deleteReturning(
+    database,
+    customersTable,
+    inArray(customersTable.id, [...ids]),
+    { id: customersTable.id },
+  );
   return deleted.length;
 }
 
@@ -203,6 +226,9 @@ export async function deleteCustomersWithoutOrders(
   database: DatabaseOrTransaction,
   ids: ReadonlyArray<string | null>,
 ): Promise<void> {
+  const archivedOrdersTable = tableFor(database, archivedOrdersDefinition);
+  const customersTable = tableFor(database, customersDefinition);
+  const ordersTable = tableFor(database, ordersDefinition);
   const customerIds = [...new Set(ids.filter((id) => id !== null))];
   if (customerIds.length === 0) return;
   await database
@@ -222,19 +248,25 @@ export function listMatchingOrders(
   tenantId: string,
   person: PersonLookup,
 ) {
+  const ordersTable = tableFor(database, ordersDefinition);
   return database
     .select()
     .from(ordersTable)
     .where(
       and(
         eq(ordersTable.tenantId, tenantId),
-        matchesPerson(person, ordersTable.email, addressName(ordersTable.shippingAddress)),
+        matchesPerson(
+          person,
+          ordersTable.email,
+          addressName(database, ordersTable.shippingAddress),
+        ),
       ),
     )
     .orderBy(desc(ordersTable.createdAt));
 }
 
 export function listLinesOfOrders(database: DatabaseOrTransaction, orderIds: readonly string[]) {
+  const orderLinesTable = tableFor(database, orderLinesDefinition);
   if (orderIds.length === 0) return Promise.resolve([]);
   return database
     .select({
@@ -252,6 +284,7 @@ export function listMatchingArchivedOrders(
   tenantId: string,
   person: PersonLookup,
 ) {
+  const archivedOrdersTable = tableFor(database, archivedOrdersDefinition);
   return database
     .select()
     .from(archivedOrdersTable)
@@ -261,7 +294,7 @@ export function listMatchingArchivedOrders(
         matchesPerson(
           person,
           archivedOrdersTable.email,
-          addressName(archivedOrdersTable.shippingAddress),
+          addressName(database, archivedOrdersTable.shippingAddress),
         ),
       ),
     );
@@ -281,6 +314,8 @@ export async function anonymiseOrders(
     shippingAddress: Address;
   }>,
 ): Promise<number> {
+  const orderEventsTable = tableFor(database, orderEventsDefinition);
+  const ordersTable = tableFor(database, ordersDefinition);
   for (const order of orders) {
     // The order's history says who it was placed by and sent to, in words.
     if (order.email) {
@@ -303,6 +338,8 @@ export async function anonymiseOrders(
 }
 
 export async function anonymiseCheckout(database: DatabaseOrTransaction, checkoutId: string) {
+  const checkoutsTable = tableFor(database, checkoutsDefinition);
+  const discountRedemptionsTable = tableFor(database, discountRedemptionsDefinition);
   const [checkout] = await database
     .select({ shippingAddress: checkoutsTable.shippingAddress })
     .from(checkoutsTable)
@@ -326,6 +363,7 @@ export async function anonymiseArchivedOrders(
   database: DatabaseOrTransaction,
   orders: ReadonlyArray<{ id: string; shippingAddress: Address | null }>,
 ): Promise<number> {
+  const archivedOrdersTable = tableFor(database, archivedOrdersDefinition);
   for (const order of orders) {
     await database
       .update(archivedOrdersTable)
@@ -345,13 +383,14 @@ export function listMatchingCarts(
   tenantId: string,
   person: PersonLookup,
 ) {
+  const cartsTable = tableFor(database, cartsDefinition);
   return database
     .select()
     .from(cartsTable)
     .where(
       and(
         eq(cartsTable.tenantId, tenantId),
-        matchesPerson(person, cartsTable.email, addressName(cartsTable.shippingAddress)),
+        matchesPerson(person, cartsTable.email, addressName(database, cartsTable.shippingAddress)),
       ),
     );
 }
@@ -361,6 +400,7 @@ export function listMatchingUnfinishedCheckouts(
   tenantId: string,
   person: PersonLookup,
 ) {
+  const checkoutsTable = tableFor(database, checkoutsDefinition);
   return database
     .select()
     .from(checkoutsTable)
@@ -368,7 +408,11 @@ export function listMatchingUnfinishedCheckouts(
       and(
         eq(checkoutsTable.tenantId, tenantId),
         ne(checkoutsTable.status, "completed"),
-        matchesPerson(person, checkoutsTable.email, addressName(checkoutsTable.shippingAddress)),
+        matchesPerson(
+          person,
+          checkoutsTable.email,
+          addressName(database, checkoutsTable.shippingAddress),
+        ),
       ),
     );
 }
@@ -388,8 +432,9 @@ export async function anonymiseCheckouts(
 // Security log -------------------------------------------------------------------------------
 
 /** Some events keep an email in their details (an invitation, a changed address). */
-function detailsInclude(value: string): SQL {
-  return sql`exists (select 1 from jsonb_each_text(${securityEventsTable.details}) as detail where lower(trim(detail.value)) = ${value.trim().toLowerCase()})`;
+function detailsInclude(database: DatabaseOrTransaction, value: string): SQL {
+  const securityEventsTable = tableFor(database, securityEventsDefinition);
+  return jsonObjectHoldsText(database, securityEventsTable.details, value);
 }
 
 export function listMatchingSecurityEvents(
@@ -397,6 +442,7 @@ export function listMatchingSecurityEvents(
   tenantId: string,
   person: PersonLookup,
 ) {
+  const securityEventsTable = tableFor(database, securityEventsDefinition);
   return database
     .select()
     .from(securityEventsTable)
@@ -407,7 +453,7 @@ export function listMatchingSecurityEvents(
           matchesPerson(person, securityEventsTable.actorEmail, securityEventsTable.subjectName),
           // Invitations name the person by their email.
           matchesPerson(person, securityEventsTable.subjectName, null),
-          person.email ? detailsInclude(person.email) : undefined,
+          person.email ? detailsInclude(database, person.email) : undefined,
         ),
       ),
     )
@@ -419,12 +465,15 @@ export async function anonymiseSecurityEvents(
   database: DatabaseOrTransaction,
   ids: readonly string[],
 ): Promise<number> {
+  const securityEventsTable = tableFor(database, securityEventsDefinition);
   if (ids.length === 0) return 0;
-  const updated = await database
-    .update(securityEventsTable)
-    .set({ actorEmail: null, subjectName: null, ipAddress: null, userAgent: null, details: {} })
-    .where(inArray(securityEventsTable.id, [...ids]))
-    .returning({ id: securityEventsTable.id });
+  const updated = await updateReturning(
+    database,
+    securityEventsTable,
+    { actorEmail: null, subjectName: null, ipAddress: null, userAgent: null, details: {} },
+    inArray(securityEventsTable.id, [...ids]),
+    { id: securityEventsTable.id },
+  );
   return updated.length;
 }
 
@@ -434,11 +483,15 @@ export async function anonymiseSecurityEvents(
  * A JSON value holds the email or name as a whole value, in any case. Webhook deliveries and
  * automation runs keep a copy of the event that started them, form answers included.
  */
-function jsonIncludes(column: AnyPgColumn, person: PersonLookup): SQL {
+function jsonIncludes(
+  database: DatabaseOrTransaction,
+  column: AnyPgColumn,
+  person: PersonLookup,
+): SQL {
   const conditions = [person.email, person.name]
     .filter((value): value is string => value !== null)
     .map((value) => JSON.stringify(value.trim().toLowerCase()))
-    .map((quoted) => sql`position(${quoted} in lower(${column}::text)) > 0`);
+    .map((quoted) => sql`position(${quoted} in lower(${jsonAsText(database, column)})) > 0`);
   return or(...conditions) ?? sql`false`;
 }
 
@@ -447,13 +500,14 @@ export function listMatchingWebhookDeliveries(
   tenantId: string,
   person: PersonLookup,
 ) {
+  const webhookDeliveriesTable = tableFor(database, webhookDeliveriesDefinition);
   return database
     .select()
     .from(webhookDeliveriesTable)
     .where(
       and(
         eq(webhookDeliveriesTable.tenantId, tenantId),
-        jsonIncludes(webhookDeliveriesTable.payload, person),
+        jsonIncludes(database, webhookDeliveriesTable.payload, person),
       ),
     )
     .orderBy(desc(webhookDeliveriesTable.createdAt));
@@ -464,13 +518,14 @@ export function listMatchingWorkflowRuns(
   tenantId: string,
   person: PersonLookup,
 ) {
+  const workflowRunsTable = tableFor(database, workflowRunsDefinition);
   return database
     .select()
     .from(workflowRunsTable)
     .where(
       and(
         eq(workflowRunsTable.tenantId, tenantId),
-        jsonIncludes(workflowRunsTable.context, person),
+        jsonIncludes(database, workflowRunsTable.context, person),
       ),
     )
     .orderBy(desc(workflowRunsTable.createdAt));
@@ -480,11 +535,14 @@ export async function deleteWebhookDeliveries(
   database: DatabaseOrTransaction,
   ids: readonly string[],
 ): Promise<number> {
+  const webhookDeliveriesTable = tableFor(database, webhookDeliveriesDefinition);
   if (ids.length === 0) return 0;
-  const deleted = await database
-    .delete(webhookDeliveriesTable)
-    .where(inArray(webhookDeliveriesTable.id, [...ids]))
-    .returning({ id: webhookDeliveriesTable.id });
+  const deleted = await deleteReturning(
+    database,
+    webhookDeliveriesTable,
+    inArray(webhookDeliveriesTable.id, [...ids]),
+    { id: webhookDeliveriesTable.id },
+  );
   return deleted.length;
 }
 
@@ -493,17 +551,21 @@ export async function deleteFinishedWorkflowRuns(
   database: DatabaseOrTransaction,
   ids: readonly string[],
 ): Promise<number> {
+  const workflowRunsTable = tableFor(database, workflowRunsDefinition);
   if (ids.length === 0) return 0;
-  const deleted = await database
-    .delete(workflowRunsTable)
-    .where(and(inArray(workflowRunsTable.id, [...ids]), isNotNull(workflowRunsTable.finishedAt)))
-    .returning({ id: workflowRunsTable.id });
+  const deleted = await deleteReturning(
+    database,
+    workflowRunsTable,
+    and(inArray(workflowRunsTable.id, [...ids]), isNotNull(workflowRunsTable.finishedAt)),
+    { id: workflowRunsTable.id },
+  );
   return deleted.length;
 }
 
 // Retention: whole rows by id ---------------------------------------------------------------
 
 export function listOrdersByIds(database: DatabaseOrTransaction, ids: readonly string[]) {
+  const ordersTable = tableFor(database, ordersDefinition);
   if (ids.length === 0) return Promise.resolve([]);
   return database
     .select()
@@ -512,6 +574,7 @@ export function listOrdersByIds(database: DatabaseOrTransaction, ids: readonly s
 }
 
 export function listArchivedOrdersByIds(database: DatabaseOrTransaction, ids: readonly string[]) {
+  const archivedOrdersTable = tableFor(database, archivedOrdersDefinition);
   if (ids.length === 0) return Promise.resolve([]);
   return database
     .select()
@@ -523,11 +586,11 @@ export async function deleteCarts(
   database: DatabaseOrTransaction,
   ids: readonly string[],
 ): Promise<number> {
+  const cartsTable = tableFor(database, cartsDefinition);
   if (ids.length === 0) return 0;
-  const deleted = await database
-    .delete(cartsTable)
-    .where(inArray(cartsTable.id, [...ids]))
-    .returning({ id: cartsTable.id });
+  const deleted = await deleteReturning(database, cartsTable, inArray(cartsTable.id, [...ids]), {
+    id: cartsTable.id,
+  });
   return deleted.length;
 }
 
@@ -535,10 +598,13 @@ export async function deleteSecurityEvents(
   database: DatabaseOrTransaction,
   ids: readonly string[],
 ): Promise<number> {
+  const securityEventsTable = tableFor(database, securityEventsDefinition);
   if (ids.length === 0) return 0;
-  const deleted = await database
-    .delete(securityEventsTable)
-    .where(inArray(securityEventsTable.id, [...ids]))
-    .returning({ id: securityEventsTable.id });
+  const deleted = await deleteReturning(
+    database,
+    securityEventsTable,
+    inArray(securityEventsTable.id, [...ids]),
+    { id: securityEventsTable.id },
+  );
   return deleted.length;
 }

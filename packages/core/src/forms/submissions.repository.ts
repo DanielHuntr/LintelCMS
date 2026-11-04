@@ -1,15 +1,24 @@
-import { and, count, desc, eq, gte, ilike, inArray, lt, or, type SQL, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, lt, or, type SQL, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction, Transaction } from "../database/client.js";
 import { escapeLikePattern } from "../search/search-terms.js";
-import { usersTable } from "../users/users.table.js";
+import { usersTable as usersDefinition } from "../users/users.table.js";
 import {
   type FormSubmissionNoteRow,
-  formSubmissionNotesTable,
+  formSubmissionNotesTable as formSubmissionNotesDefinition,
   type FormSubmissionRow,
-  formSubmissionsTable,
-  formsTable,
+  formSubmissionsTable as formSubmissionsDefinition,
+  formsTable as formsDefinition,
   type NewFormSubmissionRow,
 } from "./forms.table.js";
+import { deleteReturning, insertReturning } from "../database/dialect/writes.js";
+import {
+  daysBefore,
+  jsonAsText,
+  jsonListIncludes,
+  likeIgnoringCase,
+} from "../database/dialect/expressions.js";
+import { holdLockUntilTransactionEnds } from "../database/dialect/locks.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for submissions and their notes, nothing else. */
 
@@ -26,16 +35,17 @@ export async function insertSubmissionRow(
   database: DatabaseOrTransaction,
   submission: NewFormSubmissionRow,
 ): Promise<FormSubmissionRow> {
-  const [row] = await database.insert(formSubmissionsTable).values(submission).returning();
+  const formSubmissionsTable = tableFor(database, formSubmissionsDefinition);
+  const [row] = await insertReturning(database, formSubmissionsTable, submission);
   if (!row) {
     throw new Error("Saving the submission returned nothing.");
   }
   return row;
 }
 
-/** Hashes `formId` into an advisory lock key, held until the transaction ends. */
+/** One lock per form, held until the transaction ends. */
 export async function lockFormSubmissions(transaction: Transaction, formId: string): Promise<void> {
-  await transaction.execute(sql`select pg_advisory_xact_lock(hashtext(${`form:${formId}`}))`);
+  await holdLockUntilTransactionEnds(transaction, `form:${formId}`);
 }
 
 /** Submissions to a form sent with the same token since `since`. */
@@ -45,6 +55,7 @@ export async function listRecentSubmissionsWithToken(
   tokenHash: string,
   since: Date,
 ): Promise<FormSubmissionRow[]> {
+  const formSubmissionsTable = tableFor(database, formSubmissionsDefinition);
   return database
     .select()
     .from(formSubmissionsTable)
@@ -57,7 +68,13 @@ export async function listRecentSubmissionsWithToken(
     );
 }
 
-function listConditions(tenantId: string, formId: string, options: SubmissionListOptions) {
+function listConditions(
+  database: DatabaseOrTransaction,
+  tenantId: string,
+  formId: string,
+  options: SubmissionListOptions,
+) {
+  const formSubmissionsTable = tableFor(database, formSubmissionsDefinition);
   const conditions: SQL[] = [
     eq(formSubmissionsTable.tenantId, tenantId),
     eq(formSubmissionsTable.formId, formId),
@@ -68,8 +85,8 @@ function listConditions(tenantId: string, formId: string, options: SubmissionLis
     // Every answer is searched at once through the JSON's text, which is plenty for an inbox.
     const pattern = `%${escapeLikePattern(options.search)}%`;
     const matches = or(
-      ilike(sql<string>`${formSubmissionsTable.values}::text`, pattern),
-      ilike(formSubmissionsTable.submitterEmail, pattern),
+      likeIgnoringCase(database, jsonAsText(database, formSubmissionsTable.values), pattern),
+      likeIgnoringCase(database, formSubmissionsTable.submitterEmail, pattern),
     );
     if (matches) conditions.push(matches);
   }
@@ -82,7 +99,8 @@ export async function listSubmissionRows(
   formId: string,
   options: SubmissionListOptions,
 ): Promise<{ rows: FormSubmissionRow[]; total: number }> {
-  const where = listConditions(tenantId, formId, options);
+  const formSubmissionsTable = tableFor(database, formSubmissionsDefinition);
+  const where = listConditions(database, tenantId, formId, options);
   const rows = await database
     .select()
     .from(formSubmissionsTable)
@@ -103,6 +121,7 @@ export async function listAllSubmissionRows(
   tenantId: string,
   formId: string,
 ): Promise<FormSubmissionRow[]> {
+  const formSubmissionsTable = tableFor(database, formSubmissionsDefinition);
   return database
     .select()
     .from(formSubmissionsTable)
@@ -118,6 +137,7 @@ export async function findSubmissionRow(
   formId: string,
   submissionId: string,
 ): Promise<FormSubmissionRow | undefined> {
+  const formSubmissionsTable = tableFor(database, formSubmissionsDefinition);
   const [row] = await database
     .select()
     .from(formSubmissionsTable)
@@ -138,6 +158,7 @@ export async function updateSubmissionFlags(
   submissionIds: readonly string[],
   changes: { isRead?: boolean; isStarred?: boolean },
 ): Promise<void> {
+  const formSubmissionsTable = tableFor(database, formSubmissionsDefinition);
   if (submissionIds.length === 0) return;
   await database
     .update(formSubmissionsTable)
@@ -156,16 +177,16 @@ export async function deleteSubmissionRows(
   tenantId: string,
   submissionIds: readonly string[],
 ): Promise<FormSubmissionRow[]> {
+  const formSubmissionsTable = tableFor(database, formSubmissionsDefinition);
   if (submissionIds.length === 0) return [];
-  return database
-    .delete(formSubmissionsTable)
-    .where(
-      and(
-        eq(formSubmissionsTable.tenantId, tenantId),
-        inArray(formSubmissionsTable.id, [...submissionIds]),
-      ),
-    )
-    .returning();
+  return deleteReturning(
+    database,
+    formSubmissionsTable,
+    and(
+      eq(formSubmissionsTable.tenantId, tenantId),
+      inArray(formSubmissionsTable.id, [...submissionIds]),
+    ),
+  );
 }
 
 /** Ids of submissions within this form, out of those asked about. */
@@ -175,6 +196,7 @@ export async function findSubmissionIdsInForm(
   formId: string,
   submissionIds: readonly string[],
 ): Promise<string[]> {
+  const formSubmissionsTable = tableFor(database, formSubmissionsDefinition);
   if (submissionIds.length === 0) return [];
   const rows = await database
     .select({ id: formSubmissionsTable.id })
@@ -196,6 +218,8 @@ export async function findExpiredSubmissionIds(
   now: Date,
   limit: number,
 ): Promise<string[]> {
+  const formSubmissionsTable = tableFor(database, formSubmissionsDefinition);
+  const formsTable = tableFor(database, formsDefinition);
   const rows = await database
     .select({ id: formSubmissionsTable.id })
     .from(formSubmissionsTable)
@@ -204,10 +228,7 @@ export async function findExpiredSubmissionIds(
       and(
         eq(formSubmissionsTable.tenantId, tenantId),
         sql`${formsTable.retentionDays} is not null`,
-        lt(
-          formSubmissionsTable.createdAt,
-          sql`${now.toISOString()}::timestamptz - make_interval(days => ${formsTable.retentionDays})`,
-        ),
+        lt(formSubmissionsTable.createdAt, daysBefore(database, now, formsTable.retentionDays)),
       ),
     )
     .limit(limit);
@@ -222,6 +243,8 @@ export async function listSubmissionRowsByEmail(
   tenantId: string,
   email: string,
 ): Promise<SubmissionWithForm[]> {
+  const formSubmissionsTable = tableFor(database, formSubmissionsDefinition);
+  const formsTable = tableFor(database, formsDefinition);
   const rows = await database
     .select({
       submission: formSubmissionsTable,
@@ -253,6 +276,7 @@ export async function findAssetIdsStillUsed(
   tenantId: string,
   assetIds: readonly string[],
 ): Promise<Set<string>> {
+  const formSubmissionsTable = tableFor(database, formSubmissionsDefinition);
   const used = new Set<string>();
   for (const assetId of assetIds) {
     const [row] = await database
@@ -262,8 +286,8 @@ export async function findAssetIdsStillUsed(
         and(
           eq(formSubmissionsTable.tenantId, tenantId),
           or(
-            sql`${formSubmissionsTable.assetIds} @> ${JSON.stringify([assetId])}::jsonb`,
-            sql`position(${assetId} in ${formSubmissionsTable.values}::text) > 0`,
+            jsonListIncludes(database, formSubmissionsTable.assetIds, assetId),
+            sql`position(${assetId} in ${jsonAsText(database, formSubmissionsTable.values)}) > 0`,
           ),
         ),
       )
@@ -280,6 +304,8 @@ export async function listNoteRows(
   tenantId: string,
   submissionId: string,
 ): Promise<NoteWithAuthor[]> {
+  const formSubmissionNotesTable = tableFor(database, formSubmissionNotesDefinition);
+  const usersTable = tableFor(database, usersDefinition);
   const rows = await database
     .select({ note: formSubmissionNotesTable, authorName: usersTable.name })
     .from(formSubmissionNotesTable)
@@ -298,6 +324,7 @@ export async function insertNoteRow(
   database: DatabaseOrTransaction,
   note: { tenantId: string; submissionId: string; authorId: string; body: string },
 ): Promise<void> {
+  const formSubmissionNotesTable = tableFor(database, formSubmissionNotesDefinition);
   await database.insert(formSubmissionNotesTable).values(note);
 }
 
@@ -307,15 +334,16 @@ export async function deleteNoteRow(
   submissionId: string,
   noteId: string,
 ): Promise<boolean> {
-  const deleted = await database
-    .delete(formSubmissionNotesTable)
-    .where(
-      and(
-        eq(formSubmissionNotesTable.tenantId, tenantId),
-        eq(formSubmissionNotesTable.submissionId, submissionId),
-        eq(formSubmissionNotesTable.id, noteId),
-      ),
-    )
-    .returning({ id: formSubmissionNotesTable.id });
+  const formSubmissionNotesTable = tableFor(database, formSubmissionNotesDefinition);
+  const deleted = await deleteReturning(
+    database,
+    formSubmissionNotesTable,
+    and(
+      eq(formSubmissionNotesTable.tenantId, tenantId),
+      eq(formSubmissionNotesTable.submissionId, submissionId),
+      eq(formSubmissionNotesTable.id, noteId),
+    ),
+    { id: formSubmissionNotesTable.id },
+  );
   return deleted.length > 0;
 }
