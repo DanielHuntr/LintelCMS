@@ -5,12 +5,13 @@ import { join } from "node:path";
 import { eq, sql } from "drizzle-orm";
 import { pgTable, text, uuid } from "drizzle-orm/pg-core";
 import { createConnection } from "mysql2/promise";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { restoreBackupArchive, writeBackupArchive } from "../backups/backup-archive.service.js";
 import { insertAllRows, readAllRows } from "../backups/database-snapshot.repository.js";
 import { checkReadiness } from "../health/readiness.service.js";
 import { definePlugin, type LintelPlugin } from "../plugins/plugin-definition.js";
-import { listPlugins, setEnabledPlugins } from "../plugins/plugins.service.js";
+import { isPluginRunning, listPlugins, setEnabledPlugins } from "../plugins/plugins.service.js";
+import { readSetting, writeSetting } from "../settings/settings.service.js";
 import { LocalDiskStorage } from "../media/local-disk-storage.js";
 import { checkDatabase, checkDatabaseAddress } from "../server-check/server-check.service.js";
 import { buildServer } from "../server.js";
@@ -63,6 +64,34 @@ async function withConnection<T>(
   } finally {
     await connection.end();
   }
+}
+
+const PUBLISHED_ENTRY = {
+  id: randomUUID(),
+  collection: "pages",
+  slug: "home",
+  title: "Home",
+  url: "/",
+  status: "published" as const,
+  publishedAt: "2026-11-01T09:00:00.000Z",
+};
+
+async function pluginMysqlMigrations(folder: string) {
+  const migrations = join(folder, "plugin-migrations");
+  await mkdir(join(migrations, "meta"), { recursive: true });
+  await writeFile(
+    join(migrations, "0000_cards.sql"),
+    "create table stamps_cards (id varchar(36) primary key, owner longtext not null);",
+  );
+  await writeFile(
+    join(migrations, "meta", "_journal.json"),
+    JSON.stringify({
+      version: "5",
+      dialect: "mysql",
+      entries: [{ idx: 0, version: "5", when: 1, tag: "0000_cards", breakpoints: true }],
+    }),
+  );
+  return migrations;
 }
 
 describe.each(servers.filter(([, url]) => url))("Lintel starting on %s", (_name, serverUrl) => {
@@ -222,23 +251,7 @@ describe.each(servers.filter(([, url]) => url))("Lintel starting on %s", (_name,
       pgTable("stamps_cards", { id: uuid("id").primaryKey(), owner: text("owner").notNull() }),
     ];
 
-    async function mysqlMigrations() {
-      const migrations = join(folder, "plugin-migrations");
-      await mkdir(join(migrations, "meta"), { recursive: true });
-      await writeFile(
-        join(migrations, "0000_cards.sql"),
-        "create table stamps_cards (id varchar(36) primary key, owner longtext not null);",
-      );
-      await writeFile(
-        join(migrations, "meta", "_journal.json"),
-        JSON.stringify({
-          version: "5",
-          dialect: "mysql",
-          entries: [{ idx: 0, version: "5", when: 1, tag: "0000_cards", breakpoints: true }],
-        }),
-      );
-      return migrations;
-    }
+    const mysqlMigrations = () => pluginMysqlMigrations(folder);
 
     async function serverWith(database: LintelPlugin["database"]) {
       const active = await start();
@@ -288,6 +301,87 @@ describe.each(servers.filter(([, url]) => url))("Lintel starting on %s", (_name,
       const cards = tableFor(active.database, table);
       await active.database.insert(cards).values({ id: randomUUID(), owner: "Ada" });
       expect(await active.database.select().from(cards)).toHaveLength(1);
+    });
+  });
+
+  describe("a plugin that was on in a backup from Postgres", () => {
+    const tables = [
+      pgTable("stamps_cards", { id: uuid("id").primaryKey(), owner: text("owner").notNull() }),
+    ];
+
+    function plugin(database: LintelPlugin["database"], counts: { job: number; event: number }) {
+      return definePlugin({
+        id: "stamps",
+        name: "Stamps",
+        description: "Loyalty stamps.",
+        ...(database ? { database } : {}),
+        routes: async (server) => {
+          server.get("/stamps", async () => ({ cards: [] }));
+        },
+        jobs: [
+          {
+            id: "tidy",
+            name: "Tidying",
+            everyMinutes: 60,
+            run: async () => {
+              counts.job += 1;
+            },
+          },
+        ],
+        events: {
+          "entry.published": async () => {
+            counts.event += 1;
+          },
+        },
+        formConsent: async () => "Tick to join",
+        liquid: { tags: [{ name: "stamps_count", render: async () => "3 stamps" }] },
+      });
+    }
+
+    async function serverRunning(database: LintelPlugin["database"]) {
+      const counts = { job: 0, event: 0 };
+      const active = await start();
+      await writeSetting(active.database, "enabledPlugins", ["stamps"]);
+      const server = buildServer({
+        adminOrigin: "http://localhost:5173",
+        database: active,
+        runScheduledJobs: true,
+        plugins: [plugin(database, counts)],
+      });
+      await server.ready();
+      opened.push({ close: async () => void (await server.close()) });
+      await server.events.publish("entry.published", { entry: PUBLISHED_ENTRY });
+      return { active, server, counts };
+    }
+
+    it("does nothing at all where its tables can't be", async () => {
+      const { active, server, counts } = await serverRunning({
+        tables,
+        migrationsFolder: folder,
+      });
+
+      // A job first runs as the server starts, and checks a setting before it does.
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      expect(counts).toEqual({ job: 0, event: 0 });
+      const stamps = server.plugins.find("stamps");
+      expect(stamps && (await isPluginRunning(active.database, stamps))).toBe(false);
+      expect((await server.inject({ method: "GET", url: "/stamps" })).statusCode).toBe(404);
+      const listed = await listPlugins(active.database, server.plugins);
+      expect(listed.plugins.find(({ id }) => id === "stamps")?.enabled).toBe(false);
+      // Still in the list, for a move back to Postgres.
+      expect(await readSetting(active.database, "enabledPlugins")).toEqual(["stamps"]);
+    });
+
+    it("keeps working when it brings MySQL migrations", async () => {
+      const { active, server, counts } = await serverRunning({
+        tables,
+        migrationsFolder: folder,
+        mysqlMigrationsFolder: await pluginMysqlMigrations(folder),
+      });
+
+      await vi.waitFor(() => expect(counts).toEqual({ job: 1, event: 1 }));
+      const stamps = server.plugins.find("stamps");
+      expect(stamps && (await isPluginRunning(active.database, stamps))).toBe(true);
     });
   });
 

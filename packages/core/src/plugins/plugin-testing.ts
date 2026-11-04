@@ -22,7 +22,7 @@ import { createLintelGlobal } from "../liquid-templates/liquid-page-helpers.js";
 import { findPluginCommand, runPluginCommand } from "./plugin-commands.js";
 import { createPluginContext, pluginLog } from "./plugin-context.js";
 import type { LintelPlugin } from "./plugin-definition.js";
-import { isPluginEnabled, setEnabledPlugins } from "./plugins.service.js";
+import { isPluginRunning, setEnabledPlugins } from "./plugins.service.js";
 
 /**
  * `@lintel/core/plugin-testing`: a real Lintel server for a plugin's tests, with the plugin
@@ -103,7 +103,7 @@ export async function startPluginTestServer(
       const plugin = server.plugins.find(pluginId);
       const job = plugin?.jobs?.find(({ id }) => id === jobId);
       if (!plugin || !job) throw new Error(`There is no job "${jobId}" in "${pluginId}".`);
-      if (!(await isPluginEnabled(opened.database, pluginId))) return;
+      if (!(await isPluginRunning(opened.database, plugin))) return;
       await job.run(createPluginContext(plugin, opened.database, pluginLog(plugin.id, server.log)));
     },
     runCommand: async (fullName, commandArguments = []) => {

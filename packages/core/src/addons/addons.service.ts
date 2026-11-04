@@ -5,7 +5,7 @@ import { z } from "zod";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import type { PluginCatalogue } from "../plugins/plugin-catalogue.js";
 import type { LintelPlugin } from "../plugins/plugin-definition.js";
-import { findEnabledPluginIds, setEnabledPlugins } from "../plugins/plugins.service.js";
+import { canRunOn, findEnabledPluginIds, setEnabledPlugins } from "../plugins/plugins.service.js";
 import { readAddonsList, writeAddonsList } from "./addons-list.js";
 import { AddonFileNotFoundError } from "./addons.errors.js";
 import type { AddonAdminScripts, AddonList, AddonPart, AddonSummary } from "./addons.schema.js";
@@ -24,7 +24,9 @@ export async function listAddons(
   const byId = new Map(addons.loaded.map((addon) => [addon.plugin.id, addon]));
   const installed: AddonSummary[] = catalogue.entries
     .filter(({ source }) => source === "installed")
-    .map(({ plugin }) => summarise(plugin, byId.get(plugin.id), enabled.has(plugin.id)));
+    .map(({ plugin }) =>
+      summarise(plugin, byId.get(plugin.id), enabled.has(plugin.id) && canRunOn(database, plugin)),
+    );
   const failed: AddonSummary[] = addons.problems.map((problem) => ({
     id: problem.id,
     name: problem.name,

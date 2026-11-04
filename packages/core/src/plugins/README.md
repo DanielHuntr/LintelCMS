@@ -36,7 +36,9 @@ fieldtypes named after it. A mistake stops the server with a message naming the 
 | `permissions`   | Listed by `GET /plugins` for the roles screen                                                                   |
 | `personalData`  | `src/privacy`: listed in Settings → Privacy, and searched, exported and erased through its hooks                |
 
-Which plugins are on is the `enabledPlugins` setting, per tenant. `GET /auth/me` carries
+Which plugins are on is the `enabledPlugins` setting, per tenant. A backup restored into MySQL
+can name one that can't run there: `isPluginRunning` keeps its routes, jobs, event handlers,
+Liquid tags, form consent and privacy hooks out, and `GET /plugins` shows it off. `GET /auth/me` carries
 it, so the admin shows the right things without another request. Switching a plugin off
 deletes nothing.
 

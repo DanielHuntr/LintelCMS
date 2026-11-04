@@ -3,7 +3,7 @@ import type { PublishedEvent } from "../events/event-bus.js";
 import type { LintelEventName } from "../events/event-catalogue.js";
 import type { PluginCatalogue } from "./plugin-catalogue.js";
 import { createPluginContext, pluginLog, type PluginContext } from "./plugin-context.js";
-import { isPluginEnabled } from "./plugins.service.js";
+import { isPluginRunning } from "./plugins.service.js";
 
 /** One handler: told about each event of its name, with the plugin's context. */
 export type PluginEventHandler<Name extends LintelEventName, Settings> = (
@@ -36,7 +36,7 @@ export function subscribePluginEventHandlers(
     for (const eventName of Object.keys(handlers) as LintelEventName[]) {
       const handler = handlers[eventName] as PluginEventHandler<LintelEventName, unknown>;
       server.events.on(eventName, `the ${plugin.name} plugin`, async (event) => {
-        if (!(await isPluginEnabled(server.database, plugin.id))) return;
+        if (!(await isPluginRunning(server.database, plugin))) return;
         await handler(
           event,
           createPluginContext(plugin, server.database, pluginLog(plugin.id, server.log)),

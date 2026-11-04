@@ -16,7 +16,7 @@ import {
 } from "../liquid-templates/liquid-page-helpers.js";
 import { createPluginContext, pluginLog, type PluginContext } from "./plugin-context.js";
 import type { LintelPlugin } from "./plugin-definition.js";
-import { findEnabledPluginIds } from "./plugins.service.js";
+import { isPluginRunning } from "./plugins.service.js";
 
 /**
  * A Liquid tag a plugin adds to the site's templates:
@@ -113,7 +113,7 @@ export function addPluginLiquid(engine: Liquid): void {
 
 async function isOn(helpers: LiquidPageHelpers | undefined, plugin: LintelPlugin) {
   if (!helpers) return false;
-  return (await findEnabledPluginIds(helpers.database)).includes(plugin.id);
+  return isPluginRunning(helpers.database, plugin);
 }
 
 function pluginTagClass(

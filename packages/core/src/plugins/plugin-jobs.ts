@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { type RepeatingJob, startRepeatingJob } from "../scheduler/repeating-job.js";
 import type { PluginCatalogue } from "./plugin-catalogue.js";
 import { createPluginContext, pluginLog, type PluginContext } from "./plugin-context.js";
-import { isPluginEnabled } from "./plugins.service.js";
+import { isPluginRunning } from "./plugins.service.js";
 
 /**
  * Work a plugin does on a timer: once when the server starts and then every so often, but
@@ -45,7 +45,7 @@ export function registerPluginJobs(server: FastifyInstance, catalogue: PluginCat
           startRepeatingJob({
             everyMilliseconds: job.everyMinutes * ONE_MINUTE,
             run: async () => {
-              if (!(await isPluginEnabled(server.database, plugin.id))) return;
+              if (!(await isPluginRunning(server.database, plugin))) return;
               const key = `${plugin.id}:${job.id}`;
               try {
                 await job.run(

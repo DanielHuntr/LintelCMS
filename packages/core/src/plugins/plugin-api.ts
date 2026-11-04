@@ -58,7 +58,7 @@ export type {
   LintelEventName,
   LintelEvents,
 } from "../events/event-catalogue.js";
-export { isPluginEnabled } from "./plugins.service.js";
+export { isPluginEnabled, isPluginRunning } from "./plugins.service.js";
 export { PluginNotEnabledError } from "./plugins.errors.js";
 
 /**

@@ -9,6 +9,7 @@ import type { LintelPlugin } from "./plugin-definition.js";
 import { readPluginSettings } from "./plugin-settings.service.js";
 import { findLiquidProblem } from "./plugin-liquid.js";
 import { InvalidPluginError } from "./plugins.errors.js";
+import { canRunOn } from "./plugins.service.js";
 
 /** "built-in" plugins ship with Lintel; "installed" ones come from lintel.config.ts. */
 export type PluginSource = "built-in" | "installed";
@@ -59,7 +60,7 @@ export class PluginCatalogue {
         plugin.consentServices ?? [],
         settingsConsentServicesReader(plugin),
       );
-      registerPluginFormConsent(plugin.id, plugin.formConsent);
+      registerPluginFormConsent(plugin.id, formConsentWhereItRuns(plugin));
       registerPluginPermissions(plugin);
     }
   }
@@ -95,6 +96,14 @@ export class PluginCatalogue {
         : [],
     );
   }
+}
+
+/** A plugin's form consent reads its own tables, so it says nothing where it can't run. */
+function formConsentWhereItRuns(plugin: LintelPlugin): LintelPlugin["formConsent"] {
+  const { formConsent } = plugin;
+  if (!formConsent) return undefined;
+  return async (form, database) =>
+    canRunOn(database, plugin) ? formConsent.call(plugin, form, database) : null;
 }
 
 function checkPlugin(plugin: LintelPlugin): void {

@@ -36,6 +36,31 @@ export function canRunOn(
   return plugin.database.mysqlMigrationsFolder !== undefined;
 }
 
+/**
+ * Whether a plugin should be doing anything here. The list of plugins that are on comes with a
+ * restored backup, so it can name one made for Postgres on a database it can't run on. Its
+ * tables aren't there, so it stays out of everything until it can run. Its place in the list is
+ * kept, so it comes back if the site moves to Postgres again.
+ */
+export async function isPluginRunning(
+  database: DatabaseOrTransaction,
+  plugin: Pick<LintelPlugin, "id" | "database">,
+): Promise<boolean> {
+  return canRunOn(database, plugin) && (await isPluginEnabled(database, plugin.id));
+}
+
+/** The plugins that are on and can run here, from a list of those that are on. */
+export function pluginIdsRunningHere(
+  database: DatabaseOrTransaction,
+  catalogue: Pick<PluginCatalogue, "find">,
+  enabled: readonly string[],
+): string[] {
+  return enabled.filter((id) => {
+    const plugin = catalogue.find(id);
+    return !plugin || canRunOn(database, plugin);
+  });
+}
+
 /** Every plugin in the catalogue, with whether it is on. */
 export async function listPlugins(
   database: DatabaseOrTransaction,

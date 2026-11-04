@@ -3,7 +3,7 @@ import type { PluginCatalogue } from "./plugin-catalogue.js";
 import type { LintelPlugin } from "./plugin-definition.js";
 import { readPluginSettings } from "./plugin-settings.service.js";
 import { PluginNotEnabledError } from "./plugins.errors.js";
-import { canRunOn, isPluginEnabled } from "./plugins.service.js";
+import { isPluginRunning } from "./plugins.service.js";
 
 /**
  * A preHandler that answers 404 PLUGIN_NOT_ENABLED while the plugin is switched off. Every
@@ -13,7 +13,7 @@ import { canRunOn, isPluginEnabled } from "./plugins.service.js";
 export function requirePluginEnabled(plugin: Pick<LintelPlugin, "id" | "name" | "database">) {
   return async function checkPluginEnabled(request: FastifyRequest): Promise<void> {
     const { database } = request.server;
-    if (!canRunOn(database, plugin) || !(await isPluginEnabled(database, plugin.id))) {
+    if (!(await isPluginRunning(database, plugin))) {
       throw new PluginNotEnabledError(plugin.name);
     }
   };

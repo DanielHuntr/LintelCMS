@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import { getSignedIn, requirePermission } from "../auth/require-permission.js";
 import { contentDisposition } from "../media/content-disposition.js";
 import { parseRequest } from "../http/http-errors.js";
-import { findEnabledPluginIds } from "../plugins/plugins.service.js";
+import { findEnabledPluginIds, pluginIdsRunningHere } from "../plugins/plugins.service.js";
 import { listBridgeWebsites } from "../publishing/publishing.service.js";
 import { resolveEditingSite } from "../sites/request-site.js";
 import { describePersonalDataMap } from "./personal-data-map.service.js";
@@ -45,7 +45,11 @@ export async function privacyRoutes(server: FastifyInstance) {
 
   const context = async (): Promise<PrivacyContext> => ({
     database: server.database,
-    enabledPlugins: await findEnabledPluginIds(server.database),
+    enabledPlugins: pluginIdsRunningHere(
+      server.database,
+      server.plugins,
+      await findEnabledPluginIds(server.database),
+    ),
     plugins: server.plugins.plugins,
     addons: server.addons.loaded,
     forms: server.forms.context,
