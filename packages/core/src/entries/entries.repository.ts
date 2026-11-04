@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ilike, inArray, or, type SQL, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, isNull, or, type SQL, sql } from "drizzle-orm";
 import { type Blueprint, blueprintsTable } from "../blueprints/blueprints.table.js";
 import { collectionsTable } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
@@ -384,6 +384,27 @@ export async function findEntriesMentioning(
 }
 
 /** An entry and its translations: the entry `rootId` and every entry pointing at it. */
+/** The first page at the top of a tree in one language: the page that answers at "/". */
+export async function findFirstTopLevelEntry(
+  database: DatabaseOrTransaction,
+  scope: { collectionId: string; siteId: string; locale: string },
+): Promise<Entry | undefined> {
+  const [first] = await database
+    .select()
+    .from(entriesTable)
+    .where(
+      and(
+        eq(entriesTable.collectionId, scope.collectionId),
+        eq(entriesTable.siteId, scope.siteId),
+        eq(entriesTable.locale, scope.locale),
+        isNull(entriesTable.parentId),
+      ),
+    )
+    .orderBy(asc(entriesTable.sortOrder), asc(entriesTable.createdAt))
+    .limit(1);
+  return first;
+}
+
 export async function listTranslationFamily(
   database: DatabaseOrTransaction,
   rootId: string,

@@ -53,6 +53,21 @@ export class TranslationExistsError extends HttpError {
   }
 }
 
+/**
+ * The pages above this one have no version in the language, so it would land at the top of
+ * that language's tree and could become its home page. The admin offers to translate them.
+ */
+export class ParentsNotTranslatedError extends HttpError {
+  constructor(localeName: string, missingParents: { id: string; title: string }[]) {
+    super(
+      409,
+      "PARENTS_NOT_TRANSLATED",
+      `Translate the pages above this one into ${localeName} first.`,
+      { missingParents },
+    );
+  }
+}
+
 export class SameLocaleTranslationError extends HttpError {
   constructor(localeName: string) {
     super(400, "INVALID_REQUEST", `This entry is already written in ${localeName}.`);

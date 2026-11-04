@@ -2,8 +2,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronRight, Languages, Plus } from "lucide-react";
 import { useState } from "react";
+import { ApiError } from "../api/client.js";
 import { describeError } from "../api/describeError.js";
 import { Button } from "../design/Button.js";
+import { ConfirmDialog } from "../design/ConfirmDialog.js";
 import { t } from "../i18n/strings.js";
 import { useLocales } from "../locales/locales.queries.js";
 import { useCan } from "../session/SessionContext.js";
@@ -32,6 +34,10 @@ export function TranslationsSection({ collectionHandle, entry, locale }: Transla
   const navigate = useNavigate();
   const [translatingInto, setTranslatingInto] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+  // The pages above this one that have to be translated first, once someone asks.
+  const [parentsNeeded, setParentsNeeded] = useState<{ code: string; titles: string[] } | null>(
+    null,
+  );
 
   const siteLocales = locales.data?.locales ?? [];
   if (!locales.data || siteLocales.length < 2) return null;
@@ -40,12 +46,13 @@ export function TranslationsSection({ collectionHandle, entry, locale }: Transla
     siteLocales.find((candidate) => candidate.code === code)?.name ?? code;
   const others = siteLocales.filter((candidate) => candidate.code !== current);
 
-  async function translate(code: string) {
+  async function translate(code: string, withParents = false) {
     if (!entry) return;
     setTranslatingInto(code);
     setProblem(null);
+    setParentsNeeded(null);
     try {
-      const translation = await translateEntry(entry.id, code);
+      const translation = await translateEntry(entry.id, code, withParents);
       queryClient.setQueryData(contentKeys.entry(translation.id), translation);
       void queryClient.invalidateQueries({ queryKey: contentKeys.entry(entry.id) });
       void queryClient.invalidateQueries({ queryKey: contentKeys.collections() });
@@ -54,7 +61,12 @@ export function TranslationsSection({ collectionHandle, entry, locale }: Transla
         params: { collection: collectionHandle, entryId: translation.id },
       });
     } catch (error) {
-      setProblem(describeError(error));
+      if (error instanceof ApiError && error.code === "PARENTS_NOT_TRANSLATED") {
+        const missing = (error.details.missingParents ?? []) as { title: string }[];
+        setParentsNeeded({ code, titles: missing.map((page) => page.title) });
+      } else {
+        setProblem(describeError(error));
+      }
     } finally {
       setTranslatingInto(null);
     }
@@ -117,6 +129,21 @@ export function TranslationsSection({ collectionHandle, entry, locale }: Transla
         <p role="alert" className="text-footnote text-danger">
           {problem}
         </p>
+      )}
+      {parentsNeeded && (
+        <ConfirmDialog
+          open
+          title={t("translations.parents.title", { language: nameOf(parentsNeeded.code) })}
+          message={t("translations.parents.message", {
+            count: parentsNeeded.titles.length,
+            pages: parentsNeeded.titles.join(", "),
+            language: nameOf(parentsNeeded.code),
+          })}
+          confirmLabel={t("translations.parents.confirm")}
+          cancelLabel={t("common.cancel")}
+          onConfirm={() => void translate(parentsNeeded.code, true)}
+          onCancel={() => setParentsNeeded(null)}
+        />
       )}
     </PanelSection>
   );

@@ -9,8 +9,9 @@ import { translateEntry } from "./entry-translations.service.js";
 /**
  * HTTP only:
  *
- *   POST /entries/:id/translations  (entries:create)  { locale } -> 201 Entry (the new draft),
- *                                                      or 409 TRANSLATION_EXISTS
+ *   POST /entries/:id/translations  (entries:create)  { locale, withParents? }
+ *        -> 201 Entry (the new draft), 409 TRANSLATION_EXISTS, or 409 PARENTS_NOT_TRANSLATED
+ *           with `missingParents` unless `withParents` starts those too
  *
  * The translations themselves are listed on every entry, as `translations`.
  */
@@ -20,15 +21,10 @@ export async function translationsRoutes(server: FastifyInstance) {
     { preHandler: [requirePermission("entries:create"), requireEntrySiteAccess] },
     async (request, reply) => {
       const id = readEntryId(request.params);
-      const { locale } = parseRequest(translateEntryRequestSchema, request.body);
-      const translation = await translateEntry(
-        server.database,
-        id,
-        { locale },
-        {
-          authorId: getSignedIn(request).user.id,
-        },
-      );
+      const body = parseRequest(translateEntryRequestSchema, request.body);
+      const translation = await translateEntry(server.database, id, body, {
+        authorId: getSignedIn(request).user.id,
+      });
       return reply.code(201).send(translation);
     },
   );

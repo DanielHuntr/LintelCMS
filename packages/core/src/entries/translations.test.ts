@@ -68,6 +68,48 @@ describe("translations", () => {
     expect(unknown.statusCode).toBe(404);
   });
 
+  it("never lets a page become a language's home page by accident (LINTEL-FUNC-037)", async () => {
+    const home = await createPage({ title: "Home" });
+    const about = await createPage({ title: "About us" }, { parentId: home.id });
+    const team = await createPage({ title: "Team" }, { parentId: about.id });
+
+    const refused = await api("POST", `/entries/${team.id}/translations`, { locale: "fr-FR" });
+    expect(refused.statusCode).toBe(409);
+    expect(refused.json()).toMatchObject({
+      code: "PARENTS_NOT_TRANSLATED",
+      missingParents: [
+        { id: home.id, title: "Home" },
+        { id: about.id, title: "About us" },
+      ],
+    });
+
+    const started = await api("POST", `/entries/${team.id}/translations`, {
+      locale: "fr-FR",
+      withParents: true,
+    });
+    expect(started.statusCode).toBe(201);
+    const french = (await api("GET", "/collections/pages/entries?locale=fr-FR")).json().entries as {
+      locale: string;
+      parentId: string | null;
+      originId: string | null;
+      id: string;
+    }[];
+    const frenchOf = (id: string) =>
+      french.find((page) => page.locale === "fr-FR" && page.originId === id);
+    expect(frenchOf(home.id)?.parentId).toBeNull();
+    expect(frenchOf(about.id)?.parentId).toBe(frenchOf(home.id)?.id);
+    expect(started.json().parentId).toBe(frenchOf(about.id)?.id);
+  });
+
+  it("asks for the home page before another page at the top of the tree", async () => {
+    const home = await createPage({ title: "Home" });
+    const other = await createPage({ title: "Landing" });
+
+    const refused = await api("POST", `/entries/${other.id}/translations`, { locale: "fr-FR" });
+
+    expect(refused.json().missingParents).toEqual([{ id: home.id, title: "Home" }]);
+  });
+
   it("lists, slugs and nests entries per language", async () => {
     const about = await createPage({ title: "About us" });
     const team = await createPage({ title: "Team" }, { parentId: about.id });

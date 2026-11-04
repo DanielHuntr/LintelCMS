@@ -55,6 +55,8 @@ export const copyEntryToSiteRequestSchema = z.object({
 /** `POST /entries/:id/translations`: start a translation of an entry into another language. */
 export const translateEntryRequestSchema = z.object({
   locale: z.string({ error: "Please choose a language to translate into" }),
+  /** Also start translations of the pages above this one that have none. */
+  withParents: z.boolean().default(false),
 });
 
 /**

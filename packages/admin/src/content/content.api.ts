@@ -60,10 +60,14 @@ export function createEntry(
 }
 
 /** Starts a draft translation of an entry into another of the site's languages. */
-export function translateEntry(entryId: string, locale: string): Promise<Entry> {
+export function translateEntry(
+  entryId: string,
+  locale: string,
+  withParents = false,
+): Promise<Entry> {
   return apiRequest<Entry>(`/entries/${entryId}/translations`, {
     method: "POST",
-    body: { locale },
+    body: { locale, withParents },
   });
 }
 

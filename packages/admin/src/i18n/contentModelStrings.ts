@@ -222,5 +222,9 @@ export const contentModelStrings = {
   "translations.open": "Open the {language} version",
   "translations.translate": "Translate",
   "translations.translateInto": "Translate into {language}",
+  "translations.parents.title": "Translate the pages above it too?",
+  "translations.parents.message":
+    "{count, plural, one {{pages} comes first. It has} other {{pages} come first. They have}} no {language} version yet, and this page sits under {count, plural, one {it} other {them}}. They all start as drafts.",
+  "translations.parents.confirm": "Translate them too",
   "translations.saveFirst": "Save this entry first, then you can translate it.",
 } as const;
