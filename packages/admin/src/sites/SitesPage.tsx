@@ -167,7 +167,9 @@ export function SitesPage() {
 /** "acme.fr/fr · French (France) · 12 entries" */
 function describeSiteRow(site: Site): string {
   const address =
-    site.hostnames.length > 0 ? `${site.hostnames[0]}${site.pathPrefix}` : t("sites.noDomain");
+    site.hostnames.length > 0
+      ? `${site.hostnames[0]}${site.pathPrefix}`
+      : site.pathPrefix || t("sites.noDomain");
   const language =
     site.locales.find((locale) => locale.code === site.defaultLocale)?.name ?? site.defaultLocale;
   const entries = t("entries.count", { count: site.entryCount });

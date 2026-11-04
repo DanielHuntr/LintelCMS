@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { SESSION_COOKIE_NAME } from "../auth/session-cookie.js";
 import { buildServer } from "../server.js";
+import { findOrCreateDefaultSite } from "../sites/sites.service.js";
 import { testDatabaseUrl, useTestDatabase } from "../testing/test-database.js";
 import { usersTable } from "../users/users.table.js";
 import { SETUP_CODE_HEADER } from "./setup-code.js";
@@ -66,6 +67,13 @@ describe("first-run setup", () => {
       requiresSetupCode: false,
       siteSetupCompleted: false,
     });
+  });
+
+  it("names the first site after the site, not 'Default site' (LINTEL-UX-323)", async () => {
+    await postSetup(FIRST_ADMIN);
+
+    const site = await findOrCreateDefaultSite(testDatabase.database);
+    expect(site.name).toBe("Brightside Bakery");
   });
 
   it("creates the owner with every permission, saves the site and signs them in", async () => {

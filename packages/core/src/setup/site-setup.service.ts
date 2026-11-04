@@ -7,6 +7,8 @@ import type { PluginCatalogue } from "../plugins/plugin-catalogue.js";
 import { setEnabledPlugins } from "../plugins/plugins.service.js";
 import type { PluginList } from "../plugins/plugins.schema.js";
 import { writeSetting } from "../settings/settings.service.js";
+import { updateSiteRow } from "../sites/sites.repository.js";
+import { findOrCreateDefaultSite } from "../sites/sites.service.js";
 import type { SiteChoices } from "./setup.schema.js";
 import { pluginsForSiteType } from "./site-presets.js";
 
@@ -25,6 +27,10 @@ export async function saveSiteChoices(
   choices: SiteChoices,
 ): Promise<PluginList> {
   await writeSetting(database, "siteName", choices.siteName);
+  // The first site takes the chosen name, so the admin never says "Default site".
+  await updateSiteRow(database, (await findOrCreateDefaultSite(database)).id, {
+    name: choices.siteName,
+  });
   await writeSetting(database, "siteType", choices.siteType);
   await writeSetting(database, "siteSetupCompleted", true);
   await ensurePagesCollection(database);
