@@ -64,7 +64,8 @@ interface UseBuilderOptions {
   createId: CreateNodeId;
   canEditCode: boolean;
   text: Translate;
-  onChange: (document: PageDocument) => void;
+  /** `isFromElsewhere`: it's someone else's change arriving, not this person's. */
+  onChange: (document: PageDocument, isFromElsewhere?: boolean) => void;
   /**
    * Sections from the Navigation and Footer groups go on every page of the site (see
    * site-sections/ in the model). Off, they're added to this page like any other.
@@ -115,12 +116,16 @@ export function useBuilder({
     [],
   );
 
+  const fromElsewhere = useRef(new WeakSet<PageDocument>());
   useEffect(
     () =>
       incomingChanges?.subscribe(({ document, changes }) => {
         const from = latest.current.document;
         const to = dressIncoming ? dressIncoming(document, from) : document;
+        fromElsewhere.current.add(to);
         dispatch({ type: "remote", from, to, changes });
+        // Another may arrive before this is drawn, and it has to start from here.
+        latest.current = { ...latest.current, document: to };
       }),
     [incomingChanges, dressIncoming],
   );
@@ -129,7 +134,7 @@ export function useBuilder({
   useEffect(() => {
     if (state.document === lastSent.current) return;
     lastSent.current = state.document;
-    onChange(state.document);
+    onChange(state.document, fromElsewhere.current.has(state.document));
   }, [state.document, onChange]);
 
   const selectedNode = state.selectedId

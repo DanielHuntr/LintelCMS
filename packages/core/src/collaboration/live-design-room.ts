@@ -22,10 +22,16 @@ export interface RoomServices {
     after: PageDocument,
     signedIn: SignedIn,
   ) => Promise<void>;
-  store: (document: PageDocument, author: SignedIn | null) => Promise<StoredResult | null>;
+  store: (
+    document: PageDocument,
+    author: SignedIn | null,
+    expectedVersion: number,
+  ) => Promise<StoredResult | "moved" | null>;
   read: () => Promise<StoredDesign | null>;
   onError: (error: unknown) => void;
 }
+
+const MOST_STORE_ATTEMPTS = 5;
 
 type RoomMessage<Message> = Message extends LiveServerMessage
   ? Omit<Message, "tab" | "entryId" | "field">
@@ -76,6 +82,7 @@ export class LiveDesignRoom {
         type: "designOpened",
         session: this.session,
         sequence: this.sequence,
+        storedSequence: this.storedSequence,
         version: this.version,
         document: this.document,
         canEdit,
@@ -92,7 +99,8 @@ export class LiveDesignRoom {
     return this.inTurn(async () => {
       const seen = this.batches.get(batch);
       if (seen !== undefined) {
-        this.tell(tab, { type: "changesAccepted", batch, sequence: seen });
+        this.tell(tab, { type: "changesAccepted", batch, sequence: seen, alreadyApplied: true });
+        if (!this.isDirty) this.tellStored(tab, this.hasUnpublished);
         return;
       }
       const { signedIn } = tab.connection;
@@ -123,23 +131,25 @@ export class LiveDesignRoom {
    * Their changes come in on top of what's here, and everyone gets them.
    */
   takeInSave(personId: string | null): Promise<void> {
-    return this.inTurn(async () => {
-      const stored = await this.services.read();
-      if (!stored || stored.entry.version === this.version) return;
-      this.entry = stored.entry;
-      this.version = stored.entry.version;
-      this.hasUnpublished = hasUnpublishedChanges(stored.entry);
-      const changes = diffPages(this.storedDocument, stored.document);
-      this.storedDocument = stored.document;
-      if (changes.length === 0) return;
-      this.document = applyPageChanges(this.document, changes);
-      const wasDirty = this.isDirty;
-      this.sequence += 1;
-      if (!wasDirty) this.storedSequence = this.sequence;
-      for (const tab of this.tabs) {
-        this.tell(tab, { type: "designChanged", sequence: this.sequence, personId, changes });
-      }
-    });
+    return this.inTurn(() => this.takeInLatest(personId));
+  }
+
+  private async takeInLatest(personId: string | null): Promise<void> {
+    const stored = await this.services.read();
+    if (!stored || stored.entry.version === this.version) return;
+    this.entry = stored.entry;
+    this.version = stored.entry.version;
+    this.hasUnpublished = hasUnpublishedChanges(stored.entry);
+    const changes = diffPages(this.storedDocument, stored.document);
+    this.storedDocument = stored.document;
+    if (changes.length === 0) return;
+    this.document = applyPageChanges(this.document, changes);
+    const wasDirty = this.isDirty;
+    this.sequence += 1;
+    if (!wasDirty) this.storedSequence = this.sequence;
+    for (const tab of this.tabs) {
+      this.tell(tab, { type: "designChanged", sequence: this.sequence, personId, changes });
+    }
   }
 
   /** Stops the timer. What's waiting is the caller's to store first. */
@@ -211,10 +221,9 @@ export class LiveDesignRoom {
       if (asking) this.tellStored(asking, this.hasUnpublished, request);
       return;
     }
-    const { sequence, document } = this;
     let stored: StoredResult | null;
     try {
-      stored = await this.services.store(document, this.lastAuthor);
+      stored = await this.storeOverLatest();
     } catch (error) {
       if (!(error instanceof HttpError)) this.services.onError(error);
       const message = error instanceof HttpError ? error.message : "The page couldn't be saved.";
@@ -222,11 +231,12 @@ export class LiveDesignRoom {
         const answer = tab === asking && request !== undefined ? { request } : {};
         this.tell(tab, { type: "designNotStored", message, ...answer });
       }
+      this.retryStoreLater();
       return;
     }
     if (!stored) return;
-    this.storedSequence = sequence;
-    this.storedDocument = document;
+    this.storedSequence = this.sequence;
+    this.storedDocument = this.document;
     this.firstUnstoredAt = null;
     this.entry = stored.entry;
     this.version = stored.entry.version;
@@ -234,6 +244,25 @@ export class LiveDesignRoom {
     for (const tab of this.tabs) {
       this.tellStored(tab, stored.hasUnpublishedChanges, tab === asking ? request : undefined);
     }
+  }
+
+  /** Takes in whatever got there first, then stores on top of it. */
+  private async storeOverLatest(): Promise<StoredResult | null> {
+    for (let attempt = 0; attempt < MOST_STORE_ATTEMPTS; attempt += 1) {
+      const stored = await this.services.store(this.document, this.lastAuthor, this.version);
+      if (stored !== "moved") return stored;
+      await this.takeInLatest(null);
+    }
+    throw new Error("The page kept changing while it was being stored.");
+  }
+
+  private retryStoreLater(): void {
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = setTimeout(() => {
+      this.timer = null;
+      void this.store().catch((error: unknown) => this.services.onError(error));
+    }, liveLimits.retryStoreAfterMilliseconds);
+    this.timer.unref();
   }
 
   private tellStored(tab: LiveTab, hasUnpublishedChanges: boolean, request?: string): void {

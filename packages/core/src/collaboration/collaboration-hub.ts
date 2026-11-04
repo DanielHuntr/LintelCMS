@@ -69,12 +69,13 @@ export class CollaborationHub {
             assetExists: options.assetExists(),
             permissions: signedIn.permissions,
           }),
-        store: async (document, author) => {
+        store: async (document, author, expectedVersion) => {
           const stored = await storeDesign(options.database(), entryId, field, document, {
             assetExists: options.assetExists(),
             authorId: author?.user.id ?? null,
+            expectedVersion,
           });
-          if (stored) await options.announceStored(entryId, field, author);
+          if (stored && stored !== "moved") await options.announceStored(entryId, field, author);
           return stored;
         },
       }),
@@ -130,7 +131,7 @@ export class CollaborationHub {
     for (const tab of this.presence.tabsOnPage(entryId)) {
       tab.connection.send({ type: "entryChanged", tab: tab.id, entryId, ...news });
     }
-    if (news.what === "saved") {
+    if (news.what !== "deleted") {
       void this.rooms.takeInSave(entryId, news.personId).catch((error: unknown) => {
         this.options.log.error(error, "Taking a saved change into a live design had a problem");
       });

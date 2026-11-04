@@ -82,6 +82,8 @@ export async function siteSectionsRoutes(server: FastifyInstance) {
     "/website/sections/restore-previous",
     { preHandler: requirePermission("builder:blocks") },
     async (request) =>
-      restorePreviousSiteSections(server.database, await resolveEditingSite(request)),
+      withRevisions(
+        await restorePreviousSiteSections(server.database, await resolveEditingSite(request)),
+      ),
   );
 }

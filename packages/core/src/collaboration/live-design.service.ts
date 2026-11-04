@@ -2,7 +2,7 @@ import { createEmptyPage, type PageDocument, validatePageDocument } from "@linte
 import { findBlueprintByIdOrFail } from "../blueprints/blueprints.service.js";
 import { findCollectionByIdOrFail } from "../collections/collections.service.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { updateEntryRow, findEntryById } from "../entries/entries.repository.js";
+import { findEntryById, updateEntryRowAtVersion } from "../entries/entries.repository.js";
 import { hasUnpublishedChanges } from "../entries/entry-responses.js";
 import { type EntryChangeContext, validateForCollection } from "../entries/entries.service.js";
 import type { Entry } from "../entries/entries.table.js";
@@ -74,16 +74,23 @@ export interface StoredResult {
  * Writes a design everyone has been editing into the entry, like a save. Each step was checked
  * against the person who made it, so what may be changed isn't asked again here: nobody is
  * "the person" for a page several people made. The design itself is still checked.
+ *
+ * Like a save, it only goes over the version it knows: "moved" means the entry has changed
+ * since, and the room has to take that in first, or it would put back what was replaced.
  */
 export async function storeDesign(
   database: DatabaseOrTransaction,
   entryId: string,
   fieldHandle: string,
   document: PageDocument,
-  context: Pick<EntryChangeContext, "assetExists"> & { authorId: string | null },
-): Promise<StoredResult | null> {
+  context: Pick<EntryChangeContext, "assetExists"> & {
+    authorId: string | null;
+    expectedVersion: number;
+  },
+): Promise<StoredResult | "moved" | null> {
   const entry = await findEntryById(database, entryId);
   if (!entry) return null;
+  if (entry.version !== context.expectedVersion) return "moved";
   const collection = await findCollectionByIdOrFail(database, entry.collectionId);
   const data = await validateForCollection(
     database,
@@ -92,10 +99,11 @@ export async function storeDesign(
     { assetExists: context.assetExists },
   );
   const updated = await database.transaction(async (transaction) => {
-    const row = await updateEntryRow(transaction, entry.id, {
+    const row = await updateEntryRowAtVersion(transaction, entry.id, entry.version, {
       data,
       updatedBy: context.authorId,
     });
+    if (!row) return undefined;
     await recordEdit(transaction, {
       entryId: entry.id,
       authorId: context.authorId,
@@ -105,5 +113,6 @@ export async function storeDesign(
     });
     return row;
   });
+  if (!updated) return "moved";
   return { entry: updated, hasUnpublishedChanges: hasUnpublishedChanges(updated) };
 }

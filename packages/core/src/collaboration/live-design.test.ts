@@ -15,6 +15,7 @@ import { createPersonWithRole } from "../testing/test-people.js";
 import { requestsAs, type SendRequest, startTestServer } from "../testing/test-server.js";
 import { signInAndGetCookies } from "../testing/test-users.js";
 import { connectAs, type TestBrowser } from "../testing/test-live-browser.js";
+import { storeDesign } from "./live-design.service.js";
 
 type Node = PageDocument["root"]["children"][number];
 
@@ -374,6 +375,55 @@ describe("editing a design together", () => {
     await owner("POST", `/entries/${entryId}/revisions/${oldest}/restore`);
     const heard = await browser.next("designChanged");
     expect(heard.changes).toContainEqual(rename("hero", ""));
+  });
+
+  it("takes in a change it hasn't heard about yet, rather than storing over it", async () => {
+    const { browser } = await inDesign("owner", "a");
+    // Straight into the table, as something that announces nothing would.
+    const page = startingPage();
+    const children = page.root.children.map((child) =>
+      child.id === "cta" ? { ...child, name: "Written behind the room's back" } : child,
+    );
+    await database.database.execute(
+      `update entries set version = version + 1, data = data || '${JSON.stringify({
+        design: { ...page, root: { ...page.root, children } },
+      }).replace(/'/g, "''")}'::jsonb where id = '${entryId}'`,
+    );
+    send(browser, "a", [rename("hero", "Stored on top")]);
+    await browser.next("changesAccepted");
+    await store(browser, "a");
+    const root = (await stored()).data.design?.root as Node;
+    expect(findNode(root, "cta")?.name).toBe("Written behind the room's back");
+    expect(findNode(root, "hero")?.name).toBe("Stored on top");
+    expect((await browser.next("designChanged")).changes).toContainEqual(
+      rename("cta", "Written behind the room's back"),
+    );
+  });
+
+  it("does not store over a version it was not told about", async () => {
+    const entry = await stored();
+    const result = await storeDesign(database.database, entryId, field, startingPage(), {
+      assetExists: async () => true,
+      authorId: null,
+      expectedVersion: entry.version - 1,
+    });
+    expect(result).toBe("moved");
+  });
+
+  it("says a batch sent twice was already applied, so it isn't applied again", async () => {
+    const { browser } = await inDesign("owner", "a");
+    const message = {
+      type: "changes",
+      tab: "a",
+      entryId,
+      field,
+      batch: "twice",
+      changes: [rename("hero", "Once")],
+    } as unknown as LiveClientMessage;
+    browser.send(message);
+    await browser.next("changesAccepted", (each) => each.alreadyApplied !== true);
+    browser.send(message);
+    await browser.next("changesAccepted", (each) => each.alreadyApplied === true);
   });
 
   it("stores when the last person leaves", async () => {

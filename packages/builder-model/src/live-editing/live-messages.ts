@@ -123,6 +123,8 @@ export type LiveServerMessage =
       /** Changes when the server has started this design afresh, such as after a restart. */
       session: string;
       sequence: number;
+      /** Everything up to here is stored. */
+      storedSequence: number;
       version: number;
       document: PageDocument;
       /** False for someone who may only look: their changes would be refused. */
@@ -145,6 +147,8 @@ export type LiveServerMessage =
       field: string;
       batch: string;
       sequence: number;
+      /** It was sent twice: the page this tab was last given already has it. */
+      alreadyApplied?: boolean;
     }
   | {
       type: "changesRefused";

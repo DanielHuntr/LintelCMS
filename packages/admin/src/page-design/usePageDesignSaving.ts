@@ -124,9 +124,10 @@ export function usePageDesignSaving(
       if (!isUnstored) setSaved(update.document);
       emitUpdate(update);
     },
-    onStored: ({ version, hasUnpublishedChanges, document: stored }) => {
+    onStored: ({ version, hasUnpublishedChanges, document: stored, hasUnstoredChanges: more }) => {
       savedDesign.current = stored;
-      setSaved(newestDesign.current);
+      // Edits still on their way stay unsaved, so they aren't forgotten if the connection goes.
+      if (!more) setSaved(newestDesign.current);
       setStatus("saved");
       setErrorMessage(null);
       remember({

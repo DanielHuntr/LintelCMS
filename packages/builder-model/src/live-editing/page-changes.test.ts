@@ -11,6 +11,7 @@ import {
   applyPageChanges,
   diffPages,
   findClashes,
+  maxChangesInBatch,
   type PageChange,
   pageChangesSchema,
 } from "./page-changes.js";
@@ -414,6 +415,49 @@ describe("two people editing one page", () => {
     expect(sam.isSendingTooMuch).toBe(false);
     sam.accepted(first?.id ?? "", 1);
     expect(sam.nextBatch()?.changes).toHaveLength(1);
+  });
+
+  it("does not put a batch sent twice on top of what replaced it", () => {
+    const sam = new LiveDocument(start, "sam");
+    sam.edit(renamed(sam.document, "a", "Sam"));
+    const batch = sam.nextBatch();
+    // The server took it, Ada then changed the same value, and Sam's answer was lost.
+    const onServer = applyPageChanges(start, [
+      { op: "set", node: "a", path: ["name"], value: "Ada" },
+    ]);
+    sam.rejoin(onServer, false);
+    expect(sam.nextBatch()?.id).toBe(batch?.id);
+    const update = sam.accepted(batch?.id ?? "", 2, true);
+    expect(findNode(update?.document.root ?? start.root, "a")?.name).toBe("Ada");
+    expect(findNode(sam.document.root, "a")?.name).toBe("Ada");
+  });
+
+  it("keeps a batch to what the server will take, by count as well as size", () => {
+    const sam = new LiveDocument(start, "sam");
+    const many: PageChange[] = Array.from({ length: maxChangesInBatch + 1 }, (_, index) => ({
+      op: "insert",
+      parent: "page",
+      after: null,
+      node: element(`n${index}`),
+    }));
+    sam.edit(applyPageChanges(sam.document, many));
+    expect(sam.nextBatch()?.changes).toHaveLength(maxChangesInBatch);
+  });
+
+  it("counts bytes, not letters", () => {
+    const sam = new LiveDocument(start, "sam");
+    sam.edit(renamed(sam.document, "a", "面".repeat(500 * 1024)));
+    sam.nextBatch();
+    expect(sam.isSendingTooMuch).toBe(true);
+  });
+
+  it("sends a batch again when no answer came", () => {
+    const sam = new LiveDocument(start, "sam");
+    sam.edit(renamed(sam.document, "a", "Hello?"));
+    const batch = sam.nextBatch();
+    expect(sam.nextBatch()).toBeNull();
+    sam.resendInFlight();
+    expect(sam.nextBatch()?.id).toBe(batch?.id);
   });
 
   it("knows when one step is too big to send", () => {

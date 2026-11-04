@@ -1081,10 +1081,12 @@ Found while finishing `feature/shader-studio`. All fixed there; the details are 
 Found while building `feature/collaboration`. All fixed there; the details are in
 `FIX-LOG-collaboration.md`.
 
-| ID                 | Severity | Status | Summary                                                                                   |
-| ------------------ | -------- | ------ | ----------------------------------------------------------------------------------------- |
-| LINTEL-UX-368      | P1       | Fixed  | Two saves of different fields at the same moment could lose one                           |
-| LINTEL-UX-369      | P1       | Fixed  | The designer opened a design before entering the page, so it saved the old way            |
-| LINTEL-UX-370, 371 | P2       | Fixed  | A dropped network went unnoticed; one enormous change would have been sent again for ever |
-| LINTEL-UX-372      | P2       | Fixed  | "Couldn't save" showed behind the question when changes clashed                           |
-| LINTEL-UX-373      | P3       | Fixed  | Words typed on the canvas could put back someone else's change to the same words          |
+| ID                   | Severity | Status | Summary                                                                                   |
+| -------------------- | -------- | ------ | ----------------------------------------------------------------------------------------- |
+| LINTEL-UX-368        | P1       | Fixed  | Two saves of different fields at the same moment could lose one                           |
+| LINTEL-UX-369        | P1       | Fixed  | The designer opened a design before entering the page, so it saved the old way            |
+| LINTEL-UX-370, 371   | P2       | Fixed  | A dropped network went unnoticed; one enormous change would have been sent again for ever |
+| LINTEL-UX-372        | P2       | Fixed  | "Couldn't save" showed behind the question when changes clashed                           |
+| LINTEL-UX-373        | P3       | Fixed  | Words typed on the canvas could put back someone else's change to the same words          |
+| LINTEL-UX-374 to 376 | P1       | Fixed  | Edits taken as already seen; another's change sent back as an edit; a store over a save   |
+| LINTEL-UX-377 to 379 | P2       | Fixed  | Code through a set-aside version; duplicate and unanswered batches; stores not retried    |

@@ -1,6 +1,7 @@
 import type { PageChange } from "@lintel/builder-model";
 import type { LiveTab } from "./live-connection.js";
 import { LiveDesignRoom, type RoomServices } from "./live-design-room.js";
+import { liveLimits } from "./live-limits.js";
 import type { StoredDesign } from "./live-design.service.js";
 
 const roomKey = (entryId: string, field: string) => `${entryId}\n${field}`;
@@ -49,10 +50,22 @@ export class LiveDesignRooms {
     const room = await this.rooms.get(key);
     if (!room) return;
     room.leave(tab);
-    if (room.tabs.size > 0) return;
+    if (room.tabs.size === 0) await this.closeOnceStored(key, room, 1);
+  }
+
+  /** A room isn't given up while it holds changes that could still be stored. */
+  private async closeOnceStored(key: string, room: LiveDesignRoom, tries: number): Promise<void> {
     await room.store().catch(this.options.onError);
     // Someone may have come in while that was being stored.
     if (room.tabs.size > 0) return;
+    if (room.isDirty && tries < liveLimits.storeTriesAfterEveryoneLeft) {
+      setTimeout(() => {
+        void this.closeOnceStored(key, room, tries + 1).catch(this.options.onError);
+      }, liveLimits.retryStoreAfterMilliseconds).unref();
+      return;
+    }
+    if (room.isDirty)
+      this.options.onError(new Error(`Gave up storing the design of ${room.entryId}`));
     room.close();
     this.rooms.delete(key);
   }

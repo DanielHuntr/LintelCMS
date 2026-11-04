@@ -146,8 +146,11 @@ import { ContentEditingScreen } from "./client-editing/ContentEditingScreen.js";
 export interface PageBuilderProps {
   /** The page as stored. Read once; the builder owns it from then on. */
   initialDocument: PageDocument;
-  /** Called with each new version of the page, for the app to save. */
-  onChange: (document: PageDocument) => void;
+  /**
+   * Called with each new version of the page, for the app to save. `isFromElsewhere` says it is
+   * someone else's change arriving through `incomingChanges`, which has nothing to save.
+   */
+  onChange: (document: PageDocument, isFromElsewhere?: boolean) => void;
   /** The page's name, shown in the toolbar as the screen's heading. */
   title: string;
   /** Has the `builder:code` permission: Code elements can be added and their code edited. */

@@ -75,7 +75,18 @@ export async function restoreRevision(
     throw new RevisionNotFoundError();
   }
   const collection = await findCollectionByIdOrFail(database, entry.collectionId);
-  const data = await validateForCollection(database, collection, revision.data, context);
+  // Anyone who may edit can set a version aside, unchecked, so bringing one back is checked as
+  // a save is. Other revisions were checked when they were saved.
+  const data = await validateForCollection(
+    database,
+    collection,
+    revision.data,
+    context,
+    "saving",
+    revision.kind === "kept"
+      ? { previousData: entry.data, entryId: entry.id, locale: entry.locale }
+      : undefined,
+  );
   const blueprint = await findBlueprintByIdOrFail(database, collection.blueprintId);
   checkContentOnlyChange(blueprint.fields, entry.data, data, context.permissions);
 

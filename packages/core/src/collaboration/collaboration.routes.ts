@@ -31,7 +31,7 @@ export async function collaborationRoutes(
 
   server.get(
     "/live",
-    { websocket: true, preHandler: [checkOrigin, requirePersonInBrowser] },
+    { websocket: true, preHandler: [requirePersonInBrowser, checkOrigin] },
     async (socket, request) => {
       const signedIn = getSignedIn(request);
       const token = readSessionToken(request);

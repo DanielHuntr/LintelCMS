@@ -37,7 +37,8 @@ refused with 409 `ENTRY_CHANGED` if the entry has moved on. The write itself is 
 - **Nothing clashes:** the admin fetches the entry, merges, and saves again. Nobody is asked.
 - **Both changed the same thing:** saving stops and asks, naming the person and what they both
   changed. "Keep mine" saves over theirs, which stays in History. "Use theirs" puts this person's
-  version in History first, as a `kept` revision, so nothing is lost either way.
+  version in History first, as a `kept` revision, so nothing is lost either way. A kept
+  revision isn't checked when it's set aside, so restoring one is checked as a save is.
 
 Saves that send no `baseVersion` work as before, so API clients aren't affected. They also read
 again if they lose a race, rather than putting back what they read: two people saving different
@@ -76,8 +77,9 @@ never change, which is what makes this simple:
 
 **Saving.** While a design is live, the server stores it: a second after the last change, at
 least every five seconds, before anything reads it (publishing, a save, a restore), when the last
-person leaves and when the server stops. Browsers keep what isn't confirmed stored, and send it
-again if the server restarted before storing it.
+person leaves and when the server stops. A store is conditional on the version like any save: if
+the entry has moved on, the room takes that in and stores on top of it. Browsers keep what isn't
+confirmed stored, and send it again if the server restarted before storing it.
 
 **Permissions.** Every `changes` message goes through what a save goes through
 (`validateForCollection`, with `findDesignChanges` for clients and the code rule), with that

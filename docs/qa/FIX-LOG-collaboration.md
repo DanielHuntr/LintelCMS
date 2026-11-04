@@ -43,6 +43,19 @@ Each was reproduced first.
 | LINTEL-UX-372 | P2       | "Couldn't save" and an error showed behind the question when changes clashed, though nothing had failed  | The save is held, not failed                                           | e2e, looked |
 | LINTEL-UX-373 | P3       | Words typed on the canvas could put back someone else's change to the same words                         | Typed words carry what they started from, and merge                    | test        |
 
+## Found by reading the code back
+
+An independent read of the finished code, before merging. Each was confirmed against the code.
+
+| ID            | Severity | What was wrong                                                                                                                    | Fix                                                                                             | Proof |
+| ------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----- |
+| LINTEL-UX-374 | P1       | Going to Content and back while someone else stayed in the design restarted batch ids, so the room took new edits as already seen | Each opening has ids of its own                                                                 | e2e   |
+| LINTEL-UX-375 | P1       | Two changes arriving before a redraw could be reported back as this person's edit, undoing the other person's                     | The builder marks pages that came from elsewhere, and they're never sent as edits               | e2e   |
+| LINTEL-UX-376 | P1       | A store went over a save it hadn't heard about, such as a test's winner being published                                           | Stores are conditional on the version too; on a miss the room takes the save in and tries again | test  |
+| LINTEL-UX-377 | P2       | A set-aside version wasn't checked, so someone without the code permission could bring code in by restoring it                    | Bringing one back is checked as a save is                                                       | test  |
+| LINTEL-UX-378 | P2       | A batch sent twice around a dropped connection could show a value the server didn't have; an unanswered one stuck on "Saving…"    | Duplicates are flagged and not applied again; no answer in 15 seconds sends it again            | test  |
+| LINTEL-UX-379 | P2       | A store that failed wasn't tried again, and a person gone mid-request could stay on the page for good                             | Stores retry, rooms wait for them, and a closed connection finishes nothing                     | test  |
+
 ## Checked in a browser
 
 | Check                                                             | Desktop light | Desktop dark | 390px light | 390px dark |

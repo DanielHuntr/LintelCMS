@@ -207,9 +207,9 @@ function PageDesigner({
   const changeSavedDesign = saving.change;
   const changeExperimentDesign = experiments.change;
   const changeDesign = useCallback(
-    (document: PageDocument) => {
+    (document: PageDocument, isFromElsewhere = false) => {
       setCurrentRoot(document.root);
-      if (!changeExperimentDesign(document)) changeSavedDesign(document);
+      if (!changeExperimentDesign(document) && !isFromElsewhere) changeSavedDesign(document);
     },
     [changeSavedDesign, changeExperimentDesign],
   );

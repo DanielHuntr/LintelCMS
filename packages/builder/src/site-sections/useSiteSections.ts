@@ -37,7 +37,7 @@ function signature(sections: SiteSections, slot: keyof SiteSections): string {
 export function useSiteSections(
   source: SiteSectionsSource | undefined,
   initialDocument: PageDocument,
-  onChange: (document: PageDocument) => void,
+  onChange: (document: PageDocument, isFromElsewhere?: boolean) => void,
 ) {
   const [opened] = useState(() => {
     if (!source) return { document: initialDocument, had: noSiteSections };
@@ -77,11 +77,11 @@ export function useSiteSections(
     };
   }
 
-  const handleChange = useCallback((document: PageDocument) => {
+  const handleChange = useCallback((document: PageDocument, isFromElsewhere?: boolean) => {
     const { source: current, onChange: changePage } = latest.current;
-    if (!current) return changePage(document);
+    if (!current) return changePage(document, isFromElsewhere);
     const split = splitSiteSections(document);
-    changePage(split.document);
+    changePage(split.document, isFromElsewhere);
     if (!current.onChange || !known.current) return;
     const change: SiteSectionsChange = {};
     for (const slot of siteSectionSlots) {

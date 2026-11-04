@@ -1,8 +1,14 @@
 import type { PageDocument } from "../document/page-document.schema.js";
-import { applyPageChanges, diffPages, type PageChange } from "./page-changes.js";
+import { applyPageChanges, diffPages, maxChangesInBatch, type PageChange } from "./page-changes.js";
 
 /** How much one batch may hold. The server takes a little more, for what goes around it. */
 export const maxBatchBytes = 1024 * 1024;
+
+/** At most how many bytes this takes as a message: letters beyond ASCII take up to three. */
+function bytesOf(value: unknown): number {
+  const text = JSON.stringify(value);
+  return text.length + (text.match(/[-￿]/g)?.length ?? 0) * 2;
+}
 
 /** Some of this person's steps, sent as one message. */
 export interface ChangeBatch {
@@ -90,8 +96,8 @@ export class LiveDocument {
     this.batchCount += 1;
     let size = 0;
     let count = 0;
-    while (count < this.waiting.length) {
-      size += JSON.stringify(this.waiting[count]).length;
+    while (count < this.waiting.length && count < maxChangesInBatch) {
+      size += bytesOf(this.waiting[count]);
       if (count > 0 && size > maxBatchBytes) break;
       count += 1;
     }
@@ -103,16 +109,29 @@ export class LiveDocument {
 
   /** Whether the batch on its way is one step too big for any message. */
   get isSendingTooMuch(): boolean {
-    return this.inFlight !== null && JSON.stringify(this.inFlight.changes).length > maxBatchBytes;
+    return this.inFlight !== null && bytesOf(this.inFlight.changes) > maxBatchBytes;
   }
 
-  /** The server put this person's batch in its order. */
-  accepted(batchId: string, sequence: number): void {
-    if (this.inFlight?.id !== batchId) return;
+  /**
+   * The server put this person's batch in its order. `alreadyApplied`: it was sent twice, and
+   * the page last given to this person already has it, perhaps with later changes over it, so
+   * it isn't applied again. That can change what's on screen, so it comes back as an update.
+   */
+  accepted(batchId: string, sequence: number, alreadyApplied = false): RemoteUpdate | null {
+    if (this.inFlight?.id !== batchId) return null;
     const { changes } = this.inFlight;
-    this.confirmed = applyPageChanges(this.confirmed, changes);
+    if (!alreadyApplied) this.confirmed = applyPageChanges(this.confirmed, changes);
     this.unstored.push({ sequence, changes });
     this.inFlight = null;
+    if (!alreadyApplied) return null;
+    const before = this.local;
+    this.rebuild();
+    return { document: this.local, changes: diffPages(before, this.local) };
+  }
+
+  /** No answer came: the batch on its way goes again, under the same id. */
+  resendInFlight(): void {
+    this.mustResend = this.inFlight !== null;
   }
 
   /** The server refused this person's batch: those edits are taken back. */

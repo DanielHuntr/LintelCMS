@@ -28,6 +28,10 @@ export const liveLimits = {
   storeAfterMilliseconds: 1000,
   /** ...and at least this often while it keeps changing. */
   storeAtLeastEveryMilliseconds: 5000,
+  /** How long to wait before trying a store that failed... */
+  retryStoreAfterMilliseconds: 5000,
+  /** ...and how many times, once everyone has left the page. */
+  storeTriesAfterEveryoneLeft: 12,
   /** How long people editing together share a line in History. */
   shareHistoryLineForMilliseconds: 5 * 60 * 1000,
   /** Batches remembered per design, so one sent twice after reconnecting counts once. */

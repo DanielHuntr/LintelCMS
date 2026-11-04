@@ -14,6 +14,8 @@ const HOLD_SAVING_FOR_MS = 20_000;
 /** How long a page waits for the live connection when it first opens. */
 const WAIT_ON_OPENING_MS = 4000;
 const SETTLE_TIMEOUT_MS = 10_000;
+/** How long the server gets to answer a batch before it is sent again. */
+const RESEND_AFTER_MS = 15_000;
 
 interface LiveDesignOptions {
   entryId: string;
@@ -27,6 +29,8 @@ interface LiveDesignOptions {
     version: number;
     hasUnpublishedChanges: boolean;
     document: PageDocument;
+    /** Edits made since aren't stored yet. */
+    hasUnstoredChanges: boolean;
   }) => void;
   /** Something about the page changed, such as someone publishing it. */
   onNews: (news: Extract<LiveServerMessage, { type: "entryChanged" }>) => void;
@@ -66,7 +70,7 @@ export function useLiveDesign(options: LiveDesignOptions): LiveDesign {
   const client = useLiveClient();
   const { entryId, field, openedDesign } = options;
   const [live] = useState(() =>
-    openedDesign ? new LiveDocument(openedDesign, client?.tab ?? "tab") : null,
+    openedDesign ? new LiveDocument(openedDesign, crypto.randomUUID()) : null,
   );
   const [isJoined, setIsJoined] = useState(false);
   const [hasJoined, setHasJoined] = useState(false);
@@ -78,6 +82,8 @@ export function useLiveDesign(options: LiveDesignOptions): LiveDesign {
   const waitingForStore = useRef(new Map<string, (stored: boolean) => void>());
   const settledCount = useRef(0);
   const isJoinedNow = useRef(false);
+  const answerTimer = useRef(0);
+  const pumpAgain = useRef<() => void>(() => undefined);
 
   useEffect(() => {
     latestOptions.current = options;
@@ -102,7 +108,19 @@ export function useLiveDesign(options: LiveDesignOptions): LiveDesign {
       });
     }
     setHasUnstoredChanges(live.hasUnstoredChanges);
+    // An answer can go missing (a database hiccup, say), and nothing else would send it again.
+    window.clearTimeout(answerTimer.current);
+    if (live.hasWaitingChanges) {
+      answerTimer.current = window.setTimeout(() => {
+        live.resendInFlight();
+        pumpAgain.current();
+      }, RESEND_AFTER_MS);
+    }
   }, [client, live, entryId, field]);
+  useEffect(() => {
+    pumpAgain.current = pump;
+  }, [pump]);
+  useEffect(() => () => window.clearTimeout(answerTimer.current), []);
 
   const join = useCallback((isIn: boolean) => {
     isJoinedNow.current = isIn;
@@ -124,6 +142,7 @@ export function useLiveDesign(options: LiveDesignOptions): LiveDesign {
           const isNewSession = session.current !== null && session.current !== message.session;
           session.current = message.session;
           const update = live.rejoin(message.document, isNewSession);
+          if (!isNewSession) live.stored(message.storedSequence);
           setCanEdit(message.canEdit);
           join(true);
           setIsHolding(true);
@@ -136,10 +155,12 @@ export function useLiveDesign(options: LiveDesignOptions): LiveDesign {
         case "designChanged":
           onUpdate(live.remote(message.changes), live.hasUnstoredChanges);
           return;
-        case "changesAccepted":
-          live.accepted(message.batch, message.sequence);
+        case "changesAccepted": {
+          const update = live.accepted(message.batch, message.sequence, message.alreadyApplied);
+          if (update && update.changes.length > 0) onUpdate(update, live.hasUnstoredChanges);
           pump();
           return;
+        }
         case "changesRefused": {
           const update = live.refused(message.batch);
           if (update) onUpdate(update, live.hasUnstoredChanges);
@@ -150,7 +171,11 @@ export function useLiveDesign(options: LiveDesignOptions): LiveDesign {
         case "designStored":
           live.stored(message.sequence);
           setHasUnstoredChanges(live.hasUnstoredChanges);
-          onStored({ ...message, document: live.confirmedDocument });
+          onStored({
+            ...message,
+            document: live.confirmedDocument,
+            hasUnstoredChanges: live.hasUnstoredChanges,
+          });
           if (message.request) answerStore(message.request, true);
           return;
         case "designNotStored":

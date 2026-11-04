@@ -449,6 +449,29 @@ const steps = {
     await other.context.close();
   },
 
+  async comingBack(browser, cookie) {
+    const pageToEdit = await makePage(cookie, "Coming back");
+    const sam = await signIn(browser, people.sam);
+    const ada = await signIn(browser, people.ada);
+    await openDesigner(sam, pageToEdit.design);
+    await openDesigner(ada, pageToEdit.design);
+    await typeInto(ada.page, "hero-text", "Before going away.");
+    await until(async () => (await wordsOf(sam.page, "hero-text")).includes("Before going"));
+    // Within the app, so the tab and its connection stay the same.
+    await ada.page.getByRole("radio", { name: "Content" }).click();
+    await ada.page.getByRole("textbox", { name: "Title" }).waitFor();
+    await ada.page.getByRole("radio", { name: "Design" }).click();
+    await node(ada.page, "hero-heading").waitFor();
+    await ada.page.waitForTimeout(800);
+    await typeInto(ada.page, "hero-text", "After coming back.");
+    check(
+      "edits still reach others after going to Content and back",
+      await until(async () => (await wordsOf(sam.page, "hero-text")).includes("After coming back")),
+    );
+    await sam.context.close();
+    await ada.context.close();
+  },
+
   async contentView(browser, cookie) {
     const pageToEdit = await makePage(cookie, "Content together");
     const sam = await signIn(browser, people.sam);

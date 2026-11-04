@@ -124,6 +124,48 @@ describe("two people saving the same entry", () => {
     expect(restored.json<SavedEntry>().data.title).toBe("What Ada had");
   });
 
+  it("checks a set-aside version when it is brought back, as a save would be", async () => {
+    await createPersonWithRole(database.database, "ann@example.com", "author", "Ann Author");
+    const author = requestsAs(server, await signInAndGetCookies(server, "ann@example.com"));
+    const created = await author("POST", "/collections/pages/entries", {
+      data: { title: "Ann's" },
+    });
+    const { id } = created.json<SavedEntry>();
+    const design = {
+      version: 2,
+      root: {
+        id: "page",
+        type: "page",
+        name: "",
+        props: {},
+        styles: { base: {} },
+        hidden: false,
+        locked: false,
+        children: [
+          {
+            id: "sneaky",
+            type: "codeBlock",
+            name: "",
+            props: { html: "<b>hi</b>" },
+            styles: { base: {} },
+            children: [],
+            hidden: false,
+            locked: false,
+          },
+        ],
+      },
+    };
+    await author("POST", `/entries/${id}/revisions/keep`, {
+      data: { title: "Ann's", design },
+    });
+    const history = await author("GET", `/entries/${id}/revisions`);
+    const kept = history.json<{ revisions: { id: string }[] }>().revisions[0]?.id ?? "";
+    const restored = await author("POST", `/entries/${id}/revisions/${kept}/restore`);
+    expect(restored.statusCode).toBeGreaterThanOrEqual(400);
+    const stored = await sam("GET", `/entries/${id}`);
+    expect(JSON.stringify(stored.json<SavedEntry>().data)).not.toContain("sneaky");
+  });
+
   it("does not let someone set a version aside without being able to edit", async () => {
     await createPersonWithRole(database.database, "viv@example.com", "viewer", "Viv Viewer");
     const viewer = requestsAs(server, await signInAndGetCookies(server, "viv@example.com"));

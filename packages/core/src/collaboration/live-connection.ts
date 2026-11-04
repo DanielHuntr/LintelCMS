@@ -55,6 +55,7 @@ export class LiveConnection {
   private readonly budget = new MessageBudget();
   private strikes = 0;
   private isAlive = true;
+  private isClosed = false;
   private permissionsReadAt = Date.now();
   private queue: Promise<void> = Promise.resolve();
 
@@ -70,6 +71,7 @@ export class LiveConnection {
     });
     socket.on("error", (error) => handlers.onError(error));
     socket.on("close", () => {
+      this.isClosed = true;
       for (const tab of this.tabs.values()) handlers.onTabClosed(tab);
       this.tabs.clear();
       handlers.onClosed(this);
@@ -112,6 +114,7 @@ export class LiveConnection {
   }
 
   private async handle(text: string): Promise<void> {
+    if (this.isClosed) return;
     const message = parseMessage(text);
     if (!message) {
       this.strike("BAD_MESSAGE");
@@ -126,6 +129,8 @@ export class LiveConnection {
       return;
     }
     await this.handlers.onMessage(tab, message);
+    // It may have closed while that was waiting for the database: this tab can't stay behind.
+    if (this.isClosed) this.handlers.onTabClosed(tab);
   }
 
   private tabFor(id: string): LiveTab | undefined {
