@@ -161,6 +161,7 @@ export const effectElementsStylesheet = `
 :where(.lintel-card-stack) { display: grid; gap: var(--lintel-space-4); }
 :where(.lintel-cylinder-gallery) { display: flex; gap: var(--lintel-space-4); overflow-x: auto; }
 :where(.lintel-arc-carousel) { display: flex; align-items: center; gap: var(--lintel-space-4); overflow-x: auto; }
+.lintel-arc-carousel:empty { display: none !important; }
 :where(.lintel-scrolling-row) { display: flex; gap: var(--lintel-space-6); overflow-x: auto; }
 :where(.lintel-counter-row) { display: grid; gap: var(--lintel-space-6); }
 :where(.lintel-toggle-field) { display: inline-flex; align-items: center; gap: var(--lintel-space-3); }
