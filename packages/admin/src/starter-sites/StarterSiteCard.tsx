@@ -10,6 +10,11 @@ interface StarterSiteCardProps {
   onUse: () => void;
 }
 
+/** Lowers only the first letter, so a list reads on from "Good for" and keeps "DJs". */
+function sentenceMiddle(list: string): string {
+  return list.charAt(0).toLowerCase() + list.slice(1);
+}
+
 /** One template in the library: its picture, who it suits, its pages and colours. */
 export function StarterSiteCard({ site, siteAddress, onUse }: StarterSiteCardProps) {
   const home = site.pages[0];
@@ -38,7 +43,7 @@ export function StarterSiteCard({ site, siteAddress, onUse }: StarterSiteCardPro
         </h2>
         <p className="text-footnote text-label-secondary">{site.description}</p>
         <p className="text-caption text-label-secondary">
-          {t("templates.suitedTo", { who: site.suitedTo.toLowerCase() })}
+          {t("templates.suitedTo", { who: sentenceMiddle(site.suitedTo) })}
         </p>
         <p className="text-caption text-label-secondary">
           {t("templates.pages", { pages: site.pages.map((page) => page.title).join(" · ") })}

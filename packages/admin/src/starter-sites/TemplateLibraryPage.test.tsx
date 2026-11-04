@@ -48,6 +48,10 @@ describe("the template library", () => {
     expect(within(list).getAllByRole("listitem").length).toBeGreaterThanOrEqual(6);
     const bakery = within(list).getByRole("article", { name: "Bakery and café" });
     expect(bakery).toHaveTextContent("Home · Menu · Our story · Visit us");
+    // Only the first letter is lowered, so names keep their capitals.
+    expect(within(list).getByRole("article", { name: "Longplay" })).toHaveTextContent(
+      "Good for bands, singers, DJs and other musicians",
+    );
 
     await user.click(within(bakery).getByRole("button", { name: /Use this template/ }));
     const dialog = screen.getByRole("dialog", { name: "Start from Bakery and café?" });
@@ -118,6 +122,18 @@ describe("the template library", () => {
         return undefined;
       });
     }
+
+    it("doesn't promise to keep the site's pages when they are being replaced", async () => {
+      const user = userEvent.setup();
+      answer();
+      renderScreen(<TemplateLibraryPage />, { permissions: ["*"] });
+      const dialog = await openBakery(user);
+      await user.click(await within(dialog).findByRole("radio", { name: /Replace my pages/ }));
+
+      expect(dialog).toHaveAccessibleDescription(
+        "We’ll add 4 pages to Pages, ready to change in the page builder.",
+      );
+    });
 
     it("adds the pages alongside by default, saying what happens to Home and clashes", async () => {
       const user = userEvent.setup();
