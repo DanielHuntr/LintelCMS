@@ -16,6 +16,8 @@ function isTestCode(path: string): boolean {
   if (!file.includes("/src/")) return false;
   // Checks how a Postgres table becomes a MySQL one, so it needs the Postgres table.
   if (file.endsWith("/mysql-tables.test.ts")) return false;
+  // These use `tableFor` themselves, and hand tables to code that wants the Postgres one.
+  if (file.endsWith(".dialects.test.ts")) return false;
   return (
     file.endsWith(".test.ts") ||
     /\/src\/testing\/[^/]+\.ts$/.test(file) ||

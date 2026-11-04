@@ -43,16 +43,21 @@ describe.runIf(process.env.TEST_MYSQL_URL)("MySQL migrations", () => {
   it.each([
     ["MySQL", "TEST_MYSQL_URL"],
     ["MariaDB", "TEST_MARIADB_URL"],
-  ])("creates every table on %s", async (_name, variable) => {
-    const opened = await openMysqlDatabase(process.env[variable] ?? "");
-    await opened.applyMigrations();
-    const result = (await opened.database.execute(
-      "select table_name as name from information_schema.tables where table_schema = database()",
-    )) as unknown as [{ name: string }[]];
-    await opened.close();
-    const created = result[0].map((row) => row.name);
-    for (const table of everyPostgresTable()) {
-      expect(created).toContain(getTableName(table));
-    }
-  });
+  ])(
+    "creates every table on %s",
+    async (_name, variable) => {
+      const opened = await openMysqlDatabase(process.env[variable] ?? "");
+      await opened.applyMigrations();
+      const result = (await opened.database.execute(
+        "select table_name as name from information_schema.tables where table_schema = database()",
+      )) as unknown as [{ name: string }[]];
+      await opened.close();
+      const created = result[0].map((row) => row.name);
+      for (const table of everyPostgresTable()) {
+        expect(created).toContain(getTableName(table));
+      }
+    },
+    // A new database takes a while: every table, one statement at a time.
+    60_000,
+  );
 });

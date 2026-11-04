@@ -140,6 +140,7 @@
     "test:postgres": "node scripts/test-on-postgres.mjs",
     "test:mysql": "node scripts/test-suite-on-mysql.mjs",
     "test:addons": "node scripts/test-addons-on-databases.mjs",
+    "test:load": "node scripts/load-test.mjs",
     "test:hosting": "LINTEL_HOSTING_E2E=1 vitest run src/hosting/hosting-package.e2e.test.ts"
   },
   "dependencies": {

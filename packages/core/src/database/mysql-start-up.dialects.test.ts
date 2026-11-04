@@ -522,9 +522,12 @@ describe("telling MySQL and MariaDB apart", () => {
   it("knows a version it has been tested on", () => {
     expect(isSupportedMysqlVersion("8.4.3")).toBe(true);
     expect(isSupportedMysqlVersion("9.1.0")).toBe(true);
-    expect(isSupportedMysqlVersion("8.0.36")).toBe(false);
+    expect(isSupportedMysqlVersion("8.0.36")).toBe(true);
+    expect(isSupportedMysqlVersion("8.0.15")).toBe(false);
+    expect(isSupportedMysqlVersion("5.7.44")).toBe(false);
     expect(isSupportedMysqlVersion("11.4.2-MariaDB-ubu2404")).toBe(true);
-    expect(isSupportedMysqlVersion("10.11.6-MariaDB")).toBe(false);
+    expect(isSupportedMysqlVersion("10.11.6-MariaDB")).toBe(true);
+    expect(isSupportedMysqlVersion("10.6.18-MariaDB")).toBe(false);
   });
 
   it("writes an address that survives any password", () => {

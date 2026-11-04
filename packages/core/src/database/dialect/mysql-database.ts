@@ -42,8 +42,10 @@ export const MYSQL_MIGRATIONS_FOLDER = fileURLToPath(
 
 /** The oldest versions Lintel's whole test suite has run on. */
 export const MINIMUM_MYSQL_VERSIONS: Record<MysqlEngine, string> = {
-  mysql: "8.4",
-  mariadb: "11.4",
+  // Below 8.0.16 MySQL has no check constraints, which migration 0003 needs. MariaDB's
+  // `json_equals` came in 10.7, and 10.11 is the oldest of its long-term versions run here.
+  mysql: "8.0.16",
+  mariadb: "10.11",
 };
 
 /**

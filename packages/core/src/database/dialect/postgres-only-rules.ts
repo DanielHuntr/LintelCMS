@@ -33,7 +33,7 @@ const RAW_SQL: Record<string, RegExp> = {
   "json containment": /@>/,
   "jsonb function": /\bjsonb?_[a-z_]+\s*\(|\brow_to_json\b/i,
   "array function": /\barray_[a-z]+\s*\(|\barray\[|=\s*any\s*\(/i,
-  "full-text search": /\bto_tsvector\b|\bto_tsquery\b|\bts_rank\b|@@/i,
+  "full-text search": /\bto_tsvector\b|\bto_tsquery\b|\bts_rank\b|@@\s/i,
   "advisory lock": /\bpg_advisory/i,
   "postgres function": /\bpg_[a-z_]+\s*\(|\bhashtext\b/i,
   "filter clause": /\bfilter\s*\(\s*where\b/i,
