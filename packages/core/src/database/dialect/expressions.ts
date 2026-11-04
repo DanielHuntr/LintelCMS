@@ -32,15 +32,21 @@ export function jsonText(
   return sql`(case when json_type(${value}) = 'NULL' then null else json_unquote(${value}) end)`;
 }
 
-/** One key of a JSON object as JSON: `data -> 'design'`. */
+/**
+ * One key of a JSON object as JSON: `data -> 'design'`. Selected on its own it isn't read
+ * through a column, so on MySQL it's parsed here.
+ */
 export function jsonValue(
   database: DatabaseOrTransaction,
   json: SQLWrapper,
   key: string,
 ): SQL<unknown> {
-  return dialectOf(database) === "postgres"
-    ? sql`${json} -> ${postgresJsonKey(key)}`
-    : sql`json_extract(${json}, ${mysqlJsonPath(key)})`;
+  if (dialectOf(database) === "postgres") {
+    return sql`${json} -> ${postgresJsonKey(key)}`;
+  }
+  return sql<unknown>`json_extract(${json}, ${mysqlJsonPath(key)})`.mapWith((text: string) =>
+    JSON.parse(text),
+  );
 }
 
 /** Whether a JSON list has this item: `tags @> '["sale"]'`. */

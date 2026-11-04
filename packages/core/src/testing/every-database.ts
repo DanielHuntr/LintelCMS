@@ -1,11 +1,14 @@
-import { getTableName, is, sql } from "drizzle-orm";
+import { eq, getTableName, is, sql } from "drizzle-orm";
 import { PgTable } from "drizzle-orm/pg-core";
 import { afterAll, beforeAll, beforeEach, describe } from "vitest";
+import { blueprintsTable } from "../blueprints/blueprints.table.js";
+import { collectionsTable } from "../collections/collections.table.js";
 import type { Database } from "../database/client.js";
 import { openMysqlDatabase } from "../database/dialect/mysql-database.js";
 import { tableFor } from "../database/dialect/mysql-tables.js";
 import { insertReturning } from "../database/dialect/writes.js";
 import * as schema from "../database/schema.js";
+import { entriesTable } from "../entries/entries.table.js";
 import { sitesTable } from "../sites/sites.table.js";
 import { usersTable } from "../users/users.table.js";
 import { emptyAllTables, openTestDatabase } from "./test-database.js";
@@ -129,4 +132,51 @@ export async function addTestSite(database: Database, handle = "main") {
   });
   if (!site) throw new Error("The test site was not saved.");
   return site;
+}
+
+type EntryValues = Partial<typeof entriesTable.$inferInsert>;
+
+/** An entry, in a collection and site made for it the first time. */
+export async function addTestEntry(database: Database, values: EntryValues = {}) {
+  const blueprints = tableFor(database, blueprintsTable);
+  const collections = tableFor(database, collectionsTable);
+  const sites = tableFor(database, sitesTable);
+  const [site] = await database.select().from(sites).where(eq(sites.handle, "main"));
+  const [collection] = await database
+    .select()
+    .from(collections)
+    .where(eq(collections.handle, "pages"));
+  const siteId = site?.id ?? (await addTestSite(database)).id;
+  const collectionId = collection?.id ?? (await addTestCollection(database, blueprints)).id;
+
+  const [entry] = await insertReturning(database, tableFor(database, entriesTable), {
+    collectionId,
+    siteId,
+    slug: "home",
+    ...values,
+  });
+  if (!entry) throw new Error("The test entry was not saved.");
+  return entry;
+}
+
+async function addTestCollection(database: Database, blueprints: typeof blueprintsTable) {
+  const [blueprint] = await insertReturning(database, blueprints, {
+    handle: "page",
+    name: "Page",
+    kind: "entry",
+  });
+  const [collection] = await insertReturning(database, tableFor(database, collectionsTable), {
+    handle: "pages",
+    name: "Pages",
+    blueprintId: blueprint?.id ?? "",
+    routePattern: "/{slug}",
+  });
+  if (!collection) throw new Error("The test collection was not saved.");
+  return collection;
+}
+
+export async function findEntryRow(database: Database, entryId: string) {
+  const entries = tableFor(database, entriesTable);
+  const [entry] = await database.select().from(entries).where(eq(entries.id, entryId));
+  return entry;
 }
