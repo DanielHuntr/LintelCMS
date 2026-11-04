@@ -100,6 +100,7 @@ describe("the plugin system", () => {
       name: "Greetings",
       description: "Says hello to visitors.",
       enabled: false,
+      canRunHere: true,
       source: "installed",
       version: "1.2.0",
       permissions: [{ permission: "greetings:read", description: "See the greeting" }],

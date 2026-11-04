@@ -12,6 +12,7 @@ import { ZipArchiveReader } from "../archives/zip-reader.js";
 import { ensurePagesCollection } from "../collections/default-collections.js";
 import { LocalDiskStorage } from "../media/local-disk-storage.js";
 import { readSetting, writeSetting } from "../settings/settings.service.js";
+import { rowsOf } from "./database-snapshot.repository.js";
 import { makeTestPng, useMediaTestServer } from "../testing/test-media.js";
 import { useTestDatabase } from "../testing/test-database.js";
 import { requestsAs } from "../testing/test-server.js";
@@ -131,8 +132,7 @@ describe("backup archives", () => {
       current: 3,
     });
     const rows = await database.execute(sql`select id, stamps from stamps_cards order by id`);
-    const list = Array.isArray(rows) ? rows : (rows as { rows: unknown[] }).rows;
-    expect(list).toEqual([
+    expect(rowsOf(rows)).toEqual([
       { id: "c1", stamps: 3 },
       { id: "c2", stamps: 9 },
     ]);

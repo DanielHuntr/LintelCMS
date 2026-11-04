@@ -14,6 +14,8 @@ const TABLE_FOR = fileURLToPath(new URL("../database/dialect/mysql-tables.ts", i
 function isTestCode(path: string): boolean {
   const file = path.replaceAll("\\", "/").split("?")[0] ?? "";
   if (!file.includes("/src/")) return false;
+  // Checks how a Postgres table becomes a MySQL one, so it needs the Postgres table.
+  if (file.endsWith("/mysql-tables.test.ts")) return false;
   return (
     file.endsWith(".test.ts") ||
     /\/src\/testing\/[^/]+\.ts$/.test(file) ||

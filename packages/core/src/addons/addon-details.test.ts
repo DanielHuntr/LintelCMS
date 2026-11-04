@@ -208,9 +208,9 @@ describe("an add-on's details", () => {
     const deleted = await owner("POST", "/addons/postcards/delete-data", { confirm: "DELETE" });
     expect(deleted.json()).toEqual({ emptied: ["postcards_sent", "postcards_drafts"] });
     const left = await testDatabase.database.execute(
-      sql`select count(*)::int as count from postcards_sent`,
+      sql`select count(*) as count from postcards_sent`,
     );
-    expect(rowsOf(left)[0]?.count).toBe(0);
+    expect(Number(rowsOf(left)[0]?.count)).toBe(0);
   });
 
   it("needs settings:read to look, and settings:update to export or delete", async () => {

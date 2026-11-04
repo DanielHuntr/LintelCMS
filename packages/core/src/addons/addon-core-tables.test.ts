@@ -80,7 +80,7 @@ describe("an add-on and Lintel's own tables", () => {
 
   const count = async (table: string) => {
     const result = await testDatabase.database.execute(
-      sql`select count(*)::int as total from ${sql.identifier(table)}`,
+      sql`select count(*) as total from ${sql.identifier(table)}`,
     );
     return Number(rowsOf(result)[0]?.total);
   };
