@@ -215,6 +215,26 @@ export function useBuilder({
         clipboard.current = { nodes: [node], systemText: wrote ? html : null };
     };
 
+    /** Copies or cuts several: they paste side by side, in page order. */
+    const copyMany = async (ids: readonly string[], andRemove: boolean) => {
+      const { document } = latest.current;
+      const nodes = multi.outermostInPageOrder(document.root, ids);
+      if (nodes.length === 0) return announce(text("pageBuilder.refused.nothingSelected"));
+      if (andRemove) {
+        const label = text("pageBuilder.history.cutMany", { count: nodes.length });
+        if (!run(multi.removeMany(context(), ids, label))) return;
+      } else {
+        announce(text("pageBuilder.clipboard.copiedMany", { count: nodes.length }));
+      }
+      clipboard.current = { nodes, systemText: null };
+      const html = nodes
+        .map((node) => renderPage(document, registry, { nodeId: node.id }).html)
+        .join("");
+      const wrote = await writeToSystemClipboard(html);
+      if (clipboard.current?.nodes === nodes)
+        clipboard.current = { nodes, systemText: wrote ? html : null };
+    };
+
     const adjacent = (step: number) => {
       const nodes = listNodes(latest.current.document.root).filter(
         (node) => node.id !== rootNodeId,
@@ -605,6 +625,12 @@ export function useBuilder({
         useSharedStyle: (ids: readonly string[], sharedStyleId: string | null) =>
           run(multi.applySharedStyleToMany(context(), ids, sharedStyleId)),
         remove: (ids: readonly string[]) => run(multi.removeMany(context(), ids)),
+        copy: (ids: readonly string[]) => void copyMany(ids, false),
+        cut: (ids: readonly string[]) => void copyMany(ids, true),
+        toggleHidden: (ids: readonly string[]) => run(multi.toggleHiddenOfMany(context(), ids)),
+        toggleLocked: (ids: readonly string[]) => run(multi.toggleLockedOfMany(context(), ids)),
+        moveTo: (ids: readonly string[], parentId: string, index: number) =>
+          run(multi.moveManyTo(context(), ids, parentId, index)),
         duplicate: (ids: readonly string[]) => run(multi.duplicateMany(context(), ids)),
         group: (ids: readonly string[]) => run(multi.groupIntoBox(context(), ids)),
         move: (ids: readonly string[], direction: "up" | "down") =>

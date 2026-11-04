@@ -74,6 +74,8 @@ function ownerName(owner: StateOwner): string {
 interface StylePanelProps {
   node: PageNode;
   definition: AnyComponentDefinition | undefined;
+  /** For several different kinds at once: the controls all of them can use. */
+  commonControls?: { holdsElements: boolean; showsText: boolean };
   breakpoint: Breakpoint;
   mode: StylePanelMode;
   onModeChange: (mode: StylePanelMode) => void;
@@ -114,7 +116,7 @@ interface StylePanelProps {
   mixedStyles?: ReadonlySet<StylePropertyName>;
 }
 
-const textTypes = new Set([
+export const textTypes = new Set([
   "heading",
   "text",
   "quote",
@@ -145,6 +147,7 @@ const breakpointNotes: Record<Breakpoint, BuilderStringKey> = {
 export function StylePanel({
   node,
   definition,
+  commonControls,
   breakpoint,
   mode,
   onModeChange,
@@ -264,10 +267,11 @@ export function StylePanel({
     () => ({ ...sections, isContentDisabled: isLocked }),
     [sections, isLocked],
   );
-  const holdsElements = definition?.allowedChildren !== "none";
+  const holdsElements = commonControls?.holdsElements ?? definition?.allowedChildren !== "none";
   // Only this element's measured look goes on to the sections, never another's.
   const look = useCanvasLook(node.id);
-  const showsText = advanced || textTypes.has(node.type) || holdsElements;
+  const showsText =
+    commonControls?.showsText ?? (advanced || textTypes.has(node.type) || holdsElements);
 
   return (
     <div className="flex flex-col">
