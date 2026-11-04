@@ -231,12 +231,7 @@ async function importSubmission(
       submitterEmail: findSubmitterEmail(form.fields, checked.values),
       assetIds: [],
       sourceUrl,
-      consents: recordConsents(
-        fields,
-        checked.values,
-        sourceUrl,
-        new Date(submission.receivedAt),
-      ),
+      consents: recordConsents(fields, checked.values, sourceUrl, new Date(submission.receivedAt)),
     });
   });
   if (!row) return "duplicate";

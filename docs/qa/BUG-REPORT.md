@@ -936,6 +936,7 @@ A second reading of `dde71e4d..9943c3c1` on `fix/night-review`. All fixed there;
 | LINTEL-CODE-027 | P3       | Fixed  | Add-on CSV exports let what a visitor typed run as a spreadsheet formula                                  |
 | LINTEL-CODE-028 | P3       | Fixed  | `lintel-check.php` asked for PHP 8.1 when the companion needs 7.4                                         |
 | LINTEL-CODE-029 | P3       | Fixed  | Two comments spoke of a hosted version of Lintel                                                          |
+
 ## Overnight QA and UX pass (4 November 2026)
 
 A first-time website maker's journeys on a fresh install, in real Chromium, on `fix/night-qa` from `9943c3c1`. Fixes are in `FIX-LOG-night-qa.md`; screenshots in `screenshots/night-qa/`. Ranked by severity.
@@ -979,6 +980,7 @@ A first-time website maker's journeys on a fresh install, in real Chromium, on `
 | LINTEL-UX-327   | P3       | Open   | Visitors counts goals from automated browsers but not their visits: "form sent 2" beside 0 visitors, a 100% conversion rate   |
 | LINTEL-UX-329   | P3       | Open   | During a shop test with the cookie notice showing, the test bar covers the last line of the notice                            |
 | LINTEL-UX-328   | P3       | Open   | Templates as drafts with the look on: the first-visit intro and footer show the sample's name on the empty site               |
+
 ## Overnight follow-ups (4 November 2026)
 
 On `fix/overnight-followups`; see "Overnight follow-ups" in `FIX-LOG-ux.md`. LINTEL-UX-289 wasn't needed.
@@ -1025,6 +1027,7 @@ Fixed on `fix/night-review`; `FIX-LOG-night-review.md` has the commits.
 | LINTEL-CODE-035 | P3       | Fixed  | Companion orders paid with test keys counted as real sales                                                 |
 | LINTEL-CODE-036 | P3       | Fixed  | An app could be sent form entries its installer may not see                                                |
 | LINTEL-CODE-037 | P3       | Fixed  | Five feature folders had no README                                                                         |
+
 ## Shader studio (4 November 2026)
 
 Found while finishing `feature/shader-studio`. All fixed there; the details are in `FIX-LOG-shader-studio.md`.
