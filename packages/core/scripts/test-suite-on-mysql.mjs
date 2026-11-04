@@ -13,6 +13,7 @@
 // to LINTEL_TEST_REPORT_FOLDER when it's set.
 import { execFileSync, spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createConnection } from "mysql2/promise";
 
@@ -108,6 +109,8 @@ function runShard(server, shard) {
         `--outputFile.json=${join(reportFolder, `${server.name}-${shard}.json`)}`,
       ]
     : [];
+  const ownTemporaryFolder = join(tmpdir(), `lintel-suite-${server.name}-${shard}`);
+  mkdirSync(ownTemporaryFolder, { recursive: true });
   return new Promise((resolve) => {
     const run = spawn(
       "pnpm",
@@ -117,6 +120,11 @@ function runShard(server, shard) {
           ...process.env,
           TEST_DATABASE_URL: urlOf(server, `lintel_test_${shard}`),
           LINTEL_TEST_ENGINE: server.name,
+          LINTEL_TEST_CACHE_FOLDER: join(ownTemporaryFolder, "cache"),
+          // Some tests write beside their temporary folder, so runs side by side need their own.
+          TMP: ownTemporaryFolder,
+          TEMP: ownTemporaryFolder,
+          TMPDIR: ownTemporaryFolder,
         },
         stdio: ["ignore", "pipe", "pipe"],
         shell: true,
