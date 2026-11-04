@@ -272,3 +272,13 @@ None.
 - CLI: the known 3 Windows failures.
 
 In a browser (API 4600, site 4601, admin 5690, a fresh Lintel folder): a page drawn by `templates/pages.liquid` through a layout and a partial, a page choosing `landing.liquid` inside the shared document, a template edit showing on reload without a restart, a broken template showing its error in development, and the editor's Template section at desktop and 390px in light and dark. Screenshots in `screenshots/liquid-templates/`.
+
+## Overnight follow-ups (fix/overnight-followups, 2026-11-04)
+
+Targeted runs on Windows; the full suite runs at merge.
+
+- Core, `src/privacy` and `src/addons`: 7 files, 54 tests passed. New: `personal-data-sources.test.ts` (9).
+- Admin, `src/addons`: 3 files, 15 tests passed, with 5 new in `AddonsPage.test.tsx`.
+- `pnpm lint`, `pnpm typecheck` and `pnpm build` passed.
+
+In a browser: see "Overnight follow-ups" in `FIX-LOG-ux.md`.

@@ -891,6 +891,7 @@ Found while building six new starter sites; see "Starter sites: six more (batch 
 | LINTEL-UX-157 | P3       | Open   | The theme's soft grey is 4.25 to 4.43:1 on tinted paper in light mode: clock place names, table headings and form hints            |
 | LINTEL-UX-158 | P3       | Open   | A template footer with a clock zone not on the list is silently replaced by the standard footer; Melbourne isn't listed            |
 | LINTEL-UX-159 | P3       | Open   | Older templates fail the new checks: Atelier skips a heading level, Magazine lacks alt text, three keep header or footer in a page |
+
 ## Static publishing and deploy recipes (3 November 2026)
 
 | ID            | Severity | Status | Defect                                                                                                                                              |
@@ -902,6 +903,7 @@ Found while building six new starter sites; see "Starter sites: six more (batch 
 | LINTEL-UX-124 | P2       | Fixed  | Forms on the website drawn from Form sections posted to the API's own address, not the website's                                                    |
 | LINTEL-UX-125 | P2       | Fixed  | Timed jobs added since the cron request was written (backups, update checks, visitor counts) wouldn't have run from cron                            |
 | LINTEL-UX-126 | P3       | Fixed  | A message from the PHP companion isn't shown under a builder form, and only the last ticked box of a question reaches it                            |
+
 ## External apps (3 November 2026)
 
 Found while joining external apps to the release branch and checking Build → Apps in a browser. All fixed on `feature/external-apps`; see "External apps" in `FIX-LOG-ux.md`.
@@ -914,3 +916,35 @@ Found while joining external apps to the release branch and checking Build → A
 | LINTEL-UX-133 | P3       | Fixed  | An app's page said its name twice when its sidebar label is the app's name                                      |
 | LINTEL-UX-134 | P3       | Fixed  | An app's details page: the Uninstall button sat far to the right of the narrower cards below it                 |
 | LINTEL-UX-135 | P2       | Fixed  | An app could keep working after the person who installed it was deactivated (API tokens already stopped)        |
+
+## Overnight follow-ups (4 November 2026)
+
+On `fix/overnight-followups`; see "Overnight follow-ups" in `FIX-LOG-ux.md`. LINTEL-UX-289 wasn't needed.
+
+| ID            | Severity | Status | Summary                                                                                       |
+| ------------- | -------- | ------ | --------------------------------------------------------------------------------------------- |
+| LINTEL-UX-270 | P2       | Fixed  | With double opt-in off, the Newsletter form joined people to the list without asking          |
+| LINTEL-UX-271 | P2       | Fixed  | The builder's Newsletter element drew no consent box, so a required one stopped every sign-up |
+| LINTEL-UX-272 | P3       | Fixed  | The theme's soft grey fell short of AA on tinted paper (fixes LINTEL-UX-157)                  |
+| LINTEL-UX-273 | P2       | Fixed  | Brand-coloured labels and numbers could be unreadable with a dark brand in dark mode          |
+| LINTEL-UX-274 | P3       | Fixed  | Older templates failed the starter site checks (fixes LINTEL-UX-159)                          |
+| LINTEL-UX-275 | P3       | Fixed  | A footer with an unlisted clock zone was silently replaced (fixes LINTEL-UX-158)              |
+| LINTEL-UX-276 | P3       | Fixed  | Links on panels and dark footer bands, and Relay's green on its panel, fell short of AA       |
+| LINTEL-UX-277 | P2       | Fixed  | With several selected, Copy, Cut, Hide, Lock and dragging acted on one element                |
+| LINTEL-UX-278 | P3       | Fixed  | With different kinds selected, Style showed a box's controls                                  |
+| LINTEL-UX-279 | P2       | Fixed  | A Rive element set to respond to a click was a button that could have no name or do nothing   |
+| LINTEL-UX-280 | P3       | Fixed  | The page weight meter left out three.js and the model file                                    |
+| LINTEL-UX-281 | P3       | Fixed  | A model needing Draco uploaded and then never drew                                            |
+| LINTEL-UX-282 | P3       | Fixed  | An add-on's details dialog didn't link to its own screen                                      |
+| LINTEL-UX-283 | P2       | Fixed  | Personal columns marked under `tables` didn't reach the data map                              |
+| LINTEL-UX-284 | P3       | Fixed  | The install review said "Nothing of its own" for tables named only under `personalData`       |
+| LINTEL-UX-285 | P3       | Open   | The designer's canvas doesn't show a consent box added to the website's form                  |
+| LINTEL-UX-286 | P3       | Open   | The "Open …" link in an add-on's details has no underline until hovered                       |
+| LINTEL-UX-287 | P3       | Open   | The docs say an add-on needs no server code, but it can't load without `dist/server.js`       |
+| LINTEL-UX-288 | P3       | Open   | Pasting several lands them after the first selected, and only one stays selected              |
+
+Fixed since they were reported above:
+
+- LINTEL-UX-157 is fixed by LINTEL-UX-272.
+- LINTEL-UX-158 is fixed by LINTEL-UX-275.
+- LINTEL-UX-159 is fixed by LINTEL-UX-274.

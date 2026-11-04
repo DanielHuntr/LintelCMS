@@ -225,3 +225,7 @@ With these, **no P1 is open**. Still needed before calling one-click updates saf
 - a real update and roll back of a release build, on Linux and on Windows;
 - the update tests on Linux in CI;
 - a decision on Postgres: updates that change the database are done by hand for now.
+
+## Overnight follow-ups (4 November 2026)
+
+LINTEL-UX-270 to 284 are fixed on `fix/overnight-followups`, and LINTEL-UX-157, 158 and 159 with them. LINTEL-UX-285 to 288 are open, all P3. No P1 was added.
