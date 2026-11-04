@@ -1,12 +1,19 @@
 import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
-import { blueprintsTable } from "../blueprints/blueprints.table.js";
-import { collectionsTable } from "../collections/collections.table.js";
+import { blueprintsTable as blueprintsDefinition } from "../blueprints/blueprints.table.js";
+import { collectionsTable as collectionsDefinition } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { entriesTable, type EntryData } from "../entries/entries.table.js";
-import { fieldsetsTable } from "../fieldsets/fieldsets.table.js";
-import { globalSetsTable, globalValuesTable } from "../globals/globals.table.js";
-import { navigationsTable } from "../navigation/navigation.table.js";
-import { taxonomiesTable, termsTable } from "../taxonomies/taxonomies.table.js";
+import { entriesTable as entriesDefinition, type EntryData } from "../entries/entries.table.js";
+import { fieldsetsTable as fieldsetsDefinition } from "../fieldsets/fieldsets.table.js";
+import {
+  globalSetsTable as globalSetsDefinition,
+  globalValuesTable as globalValuesDefinition,
+} from "../globals/globals.table.js";
+import { navigationsTable as navigationsDefinition } from "../navigation/navigation.table.js";
+import {
+  taxonomiesTable as taxonomiesDefinition,
+  termsTable as termsDefinition,
+} from "../taxonomies/taxonomies.table.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /**
  * Database reads and writes for syncing the content model, nothing else: the model's rows
@@ -14,6 +21,7 @@ import { taxonomiesTable, termsTable } from "../taxonomies/taxonomies.table.js";
  */
 
 export async function listBlueprintModelRows(database: DatabaseOrTransaction, tenantId: string) {
+  const blueprintsTable = tableFor(database, blueprintsDefinition);
   return database
     .select({
       id: blueprintsTable.id,
@@ -27,6 +35,7 @@ export async function listBlueprintModelRows(database: DatabaseOrTransaction, te
 }
 
 export async function listCollectionModelRows(database: DatabaseOrTransaction, tenantId: string) {
+  const collectionsTable = tableFor(database, collectionsDefinition);
   return database
     .select({
       id: collectionsTable.id,
@@ -45,6 +54,7 @@ export async function listCollectionModelRows(database: DatabaseOrTransaction, t
 }
 
 export async function listTaxonomyModelRows(database: DatabaseOrTransaction, tenantId: string) {
+  const taxonomiesTable = tableFor(database, taxonomiesDefinition);
   return database
     .select({ id: taxonomiesTable.id, handle: taxonomiesTable.handle, name: taxonomiesTable.name })
     .from(taxonomiesTable)
@@ -53,6 +63,7 @@ export async function listTaxonomyModelRows(database: DatabaseOrTransaction, ten
 }
 
 export async function listGlobalSetModelRows(database: DatabaseOrTransaction, tenantId: string) {
+  const globalSetsTable = tableFor(database, globalSetsDefinition);
   return database
     .select({
       id: globalSetsTable.id,
@@ -66,6 +77,7 @@ export async function listGlobalSetModelRows(database: DatabaseOrTransaction, te
 }
 
 export async function listMenuModelRows(database: DatabaseOrTransaction, tenantId: string) {
+  const navigationsTable = tableFor(database, navigationsDefinition);
   return database
     .select({
       id: navigationsTable.id,
@@ -92,6 +104,7 @@ export async function listEntryValues(
   database: DatabaseOrTransaction,
   collectionIds: readonly string[],
 ): Promise<StoredEntryValues[]> {
+  const entriesTable = tableFor(database, entriesDefinition);
   if (collectionIds.length === 0) {
     return [];
   }
@@ -112,6 +125,7 @@ export async function replaceEntryValues(
   entryId: string,
   values: Pick<StoredEntryValues, "data" | "publishedData">,
 ): Promise<void> {
+  const entriesTable = tableFor(database, entriesDefinition);
   await database.update(entriesTable).set(values).where(eq(entriesTable.id, entryId));
 }
 
@@ -119,6 +133,7 @@ export async function listEntryIdsInCollection(
   database: DatabaseOrTransaction,
   collectionId: string,
 ): Promise<string[]> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const rows = await database
     .select({ id: entriesTable.id })
     .from(entriesTable)
@@ -130,6 +145,7 @@ export async function countEntriesWithParents(
   database: DatabaseOrTransaction,
   collectionId: string,
 ): Promise<number> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const rows = await database
     .select({ id: entriesTable.id })
     .from(entriesTable)
@@ -139,6 +155,7 @@ export async function countEntriesWithParents(
 
 /** Every language's saved values of a global set. */
 export async function listFieldsetModelRows(database: DatabaseOrTransaction, tenantId: string) {
+  const fieldsetsTable = tableFor(database, fieldsetsDefinition);
   return database
     .select({
       handle: fieldsetsTable.handle,
@@ -151,6 +168,7 @@ export async function listFieldsetModelRows(database: DatabaseOrTransaction, ten
 }
 
 export async function listGlobalValueRows(database: DatabaseOrTransaction, globalSetId: string) {
+  const globalValuesTable = tableFor(database, globalValuesDefinition);
   return database
     .select({ id: globalValuesTable.id, data: globalValuesTable.data })
     .from(globalValuesTable)
@@ -161,6 +179,7 @@ export async function countTermsInTaxonomy(
   database: DatabaseOrTransaction,
   taxonomyId: string,
 ): Promise<number> {
+  const termsTable = tableFor(database, termsDefinition);
   const rows = await database
     .select({ id: termsTable.id })
     .from(termsTable)
