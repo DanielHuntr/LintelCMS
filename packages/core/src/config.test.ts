@@ -43,7 +43,7 @@ describe("loadConfig", () => {
     expect(() => loadConfig({ DATABASE_URL: "postgres://lintel:pa/ss@localhost/lintel" })).toThrow(
       /DATABASE_URL/,
     );
-    expect(() => loadConfig({ DATABASE_URL: "mysql://localhost/lintel" })).toThrow(/DATABASE_URL/);
+    expect(() => loadConfig({ DATABASE_URL: "oracle://localhost/lintel" })).toThrow(/DATABASE_URL/);
   });
 
   it("reads which proxies to trust", () => {

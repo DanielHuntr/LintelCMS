@@ -47,3 +47,14 @@ export async function selectNewestPerGroup<TFields extends SelectedFieldsFlat>(
     .where(eq(columns.placeInGroup as PgColumn, 1));
   return rows as SelectResultFields<TFields>[];
 }
+
+/**
+ * For `.for("update", ...)` on a query with joins: lock only this table's rows. MariaDB can't
+ * name a table there, so on MySQL and MariaDB the joined rows are locked too.
+ */
+export function lockOnly(
+  database: DatabaseOrTransaction,
+  table: PgTable,
+): { of: PgTable } | undefined {
+  return dialectOf(database) === "postgres" ? { of: table } : undefined;
+}

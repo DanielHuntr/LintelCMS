@@ -3,6 +3,7 @@ import { cp, mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/pro
 import { join } from "node:path";
 import { z } from "zod";
 import { lintelFolderAt, readSavedDatabaseChoice } from "../../database/database-choice.js";
+import { isMysqlUrl } from "../../database/database-errors.js";
 import { lockDataFolder } from "../../database/data-folder-lock.js";
 import { databaseCopiesFolder, databaseCopyExists } from "../install-home.js";
 
@@ -32,19 +33,20 @@ export interface DatabaseCopies {
 /** Where the database the server uses lives, worked out the way the server does. */
 export type DatabaseLocation =
   | { kind: "built-in"; dataFolder: string }
-  | { kind: "postgres"; chosenBy: "environment" | "setup" };
+  | { kind: "postgres" | "mysql"; chosenBy: "environment" | "setup" };
 
 export function locateDatabase(
   environment: NodeJS.ProcessEnv,
   lintelFolder: string,
 ): DatabaseLocation {
   if (environment.DATABASE_URL) {
-    return { kind: "postgres", chosenBy: "environment" };
+    const kind = isMysqlUrl(environment.DATABASE_URL) ? "mysql" : "postgres";
+    return { kind, chosenBy: "environment" };
   }
   const folder = lintelFolderAt(lintelFolder);
   const choice = readSavedDatabaseChoice(folder);
-  if (choice?.kind === "postgres") {
-    return { kind: "postgres", chosenBy: "setup" };
+  if (choice?.kind === "postgres" || choice?.kind === "mysql") {
+    return { kind: choice.kind, chosenBy: "setup" };
   }
   return { kind: "built-in", dataFolder: folder.dataFolder };
 }

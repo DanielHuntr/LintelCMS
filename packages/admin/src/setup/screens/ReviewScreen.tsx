@@ -129,7 +129,7 @@ function DatabaseSummary({ answers }: { answers: SetupAnswers }) {
   return (
     <>
       <Detail
-        label={t("review.postgres")}
+        label={answers.databaseKind === "mysql" ? t("review.mysql") : t("review.postgres")}
       >{`${postgres.host.trim()}:${postgres.port.trim()}`}</Detail>
       <Detail label={t("review.databaseName")}>
         {postgres.database.trim()}

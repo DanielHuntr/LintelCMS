@@ -56,6 +56,12 @@ export interface PluginDatabase {
    * server starts, recorded apart from Lintel's own, so the two never get in each other's way.
    */
   migrationsFolder: string;
+  /**
+   * The same tables for MySQL and MariaDB, as drizzle-kit writes them with `dialect: "mysql"`.
+   * Without this the plugin stays switched off on those databases. A plugin that has it must
+   * also make its queries work there: see "Running on MySQL" in the plugin docs.
+   */
+  mysqlMigrationsFolder?: string;
 }
 
 /** What a plugin's routes are given, besides the Fastify instance to add them to. */

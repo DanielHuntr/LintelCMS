@@ -1,14 +1,25 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
-import { blueprintsTable } from "../blueprints/blueprints.table.js";
-import { collectionsTable } from "../collections/collections.table.js";
+import { blueprintsTable as blueprintsDefinition } from "../blueprints/blueprints.table.js";
+import { collectionsTable as collectionsDefinition } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { entriesTable, revisionsTable } from "../entries/entries.table.js";
-import { globalSetsTable, globalValuesTable } from "../globals/globals.table.js";
-import { assetsTable } from "../media/media.table.js";
-import { navigationsTable } from "../navigation/navigation.table.js";
-import { siteLocalesTable } from "../sites/locales.table.js";
-import { sitesTable } from "../sites/sites.table.js";
-import { taxonomiesTable, termsTable } from "../taxonomies/taxonomies.table.js";
+import {
+  entriesTable as entriesDefinition,
+  revisionsTable as revisionsDefinition,
+} from "../entries/entries.table.js";
+import {
+  globalSetsTable as globalSetsDefinition,
+  globalValuesTable as globalValuesDefinition,
+} from "../globals/globals.table.js";
+import { assetsTable as assetsDefinition } from "../media/media.table.js";
+import { navigationsTable as navigationsDefinition } from "../navigation/navigation.table.js";
+import { siteLocalesTable as siteLocalesDefinition } from "../sites/locales.table.js";
+import { sitesTable as sitesDefinition } from "../sites/sites.table.js";
+import {
+  taxonomiesTable as taxonomiesDefinition,
+  termsTable as termsDefinition,
+} from "../taxonomies/taxonomies.table.js";
+import { insertIfNew, upsert } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /**
  * Database reads and writes for exports and imports, nothing else. Reads take whole tables
@@ -16,26 +27,32 @@ import { taxonomiesTable, termsTable } from "../taxonomies/taxonomies.table.js";
  */
 
 export function listSites(database: DatabaseOrTransaction, tenantId: string) {
+  const sitesTable = tableFor(database, sitesDefinition);
   return database.select().from(sitesTable).where(eq(sitesTable.tenantId, tenantId));
 }
 
 export function listLocales(database: DatabaseOrTransaction, tenantId: string) {
+  const siteLocalesTable = tableFor(database, siteLocalesDefinition);
   return database.select().from(siteLocalesTable).where(eq(siteLocalesTable.tenantId, tenantId));
 }
 
 export function listBlueprints(database: DatabaseOrTransaction, tenantId: string) {
+  const blueprintsTable = tableFor(database, blueprintsDefinition);
   return database.select().from(blueprintsTable).where(eq(blueprintsTable.tenantId, tenantId));
 }
 
 export function listCollections(database: DatabaseOrTransaction, tenantId: string) {
+  const collectionsTable = tableFor(database, collectionsDefinition);
   return database.select().from(collectionsTable).where(eq(collectionsTable.tenantId, tenantId));
 }
 
 export function listTaxonomies(database: DatabaseOrTransaction, tenantId: string) {
+  const taxonomiesTable = tableFor(database, taxonomiesDefinition);
   return database.select().from(taxonomiesTable).where(eq(taxonomiesTable.tenantId, tenantId));
 }
 
 export function listTerms(database: DatabaseOrTransaction, tenantId: string) {
+  const termsTable = tableFor(database, termsDefinition);
   return database
     .select()
     .from(termsTable)
@@ -44,22 +61,27 @@ export function listTerms(database: DatabaseOrTransaction, tenantId: string) {
 }
 
 export function listGlobalSets(database: DatabaseOrTransaction, tenantId: string) {
+  const globalSetsTable = tableFor(database, globalSetsDefinition);
   return database.select().from(globalSetsTable).where(eq(globalSetsTable.tenantId, tenantId));
 }
 
 export function listGlobalValues(database: DatabaseOrTransaction, tenantId: string) {
+  const globalValuesTable = tableFor(database, globalValuesDefinition);
   return database.select().from(globalValuesTable).where(eq(globalValuesTable.tenantId, tenantId));
 }
 
 export function listMenus(database: DatabaseOrTransaction, tenantId: string) {
+  const navigationsTable = tableFor(database, navigationsDefinition);
   return database.select().from(navigationsTable).where(eq(navigationsTable.tenantId, tenantId));
 }
 
 export function listAssets(database: DatabaseOrTransaction, tenantId: string) {
+  const assetsTable = tableFor(database, assetsDefinition);
   return database.select().from(assetsTable).where(eq(assetsTable.tenantId, tenantId));
 }
 
 export function listEntries(database: DatabaseOrTransaction, tenantId: string) {
+  const entriesTable = tableFor(database, entriesDefinition);
   return database
     .select()
     .from(entriesTable)
@@ -68,6 +90,7 @@ export function listEntries(database: DatabaseOrTransaction, tenantId: string) {
 }
 
 export function listRevisions(database: DatabaseOrTransaction, tenantId: string) {
+  const revisionsTable = tableFor(database, revisionsDefinition);
   return database
     .select()
     .from(revisionsTable)
@@ -79,6 +102,7 @@ export async function listExistingRevisionIds(
   database: DatabaseOrTransaction,
   revisionIds: readonly string[],
 ): Promise<Set<string>> {
+  const revisionsTable = tableFor(database, revisionsDefinition);
   if (revisionIds.length === 0) {
     return new Set();
   }
@@ -91,16 +115,18 @@ export async function listExistingRevisionIds(
 
 export async function insertLocale(
   database: DatabaseOrTransaction,
-  locale: typeof siteLocalesTable.$inferInsert,
+  locale: typeof siteLocalesDefinition.$inferInsert,
 ) {
-  await database.insert(siteLocalesTable).values(locale).onConflictDoNothing();
+  const siteLocalesTable = tableFor(database, siteLocalesDefinition);
+  await insertIfNew(database, siteLocalesTable, locale);
 }
 
 export async function upsertBlueprint(
   database: DatabaseOrTransaction,
-  blueprint: typeof blueprintsTable.$inferInsert & { id: string },
+  blueprint: typeof blueprintsDefinition.$inferInsert & { id: string },
   existing: boolean,
 ) {
+  const blueprintsTable = tableFor(database, blueprintsDefinition);
   if (!existing) {
     await database.insert(blueprintsTable).values(blueprint);
     return;
@@ -113,9 +139,10 @@ export async function upsertBlueprint(
 
 export async function upsertCollection(
   database: DatabaseOrTransaction,
-  collection: typeof collectionsTable.$inferInsert & { id: string },
+  collection: typeof collectionsDefinition.$inferInsert & { id: string },
   existing: boolean,
 ) {
+  const collectionsTable = tableFor(database, collectionsDefinition);
   if (!existing) {
     await database.insert(collectionsTable).values(collection);
     return;
@@ -135,9 +162,10 @@ export async function upsertCollection(
 
 export async function upsertTaxonomy(
   database: DatabaseOrTransaction,
-  taxonomy: typeof taxonomiesTable.$inferInsert & { id: string },
+  taxonomy: typeof taxonomiesDefinition.$inferInsert & { id: string },
   existing: boolean,
 ) {
+  const taxonomiesTable = tableFor(database, taxonomiesDefinition);
   if (!existing) {
     await database.insert(taxonomiesTable).values(taxonomy);
     return;
@@ -150,9 +178,10 @@ export async function upsertTaxonomy(
 
 export async function upsertTerm(
   database: DatabaseOrTransaction,
-  term: typeof termsTable.$inferInsert & { id: string },
+  term: typeof termsDefinition.$inferInsert & { id: string },
   existing: boolean,
 ) {
+  const termsTable = tableFor(database, termsDefinition);
   if (!existing) {
     await database.insert(termsTable).values(term);
     return;
@@ -165,9 +194,10 @@ export async function upsertTerm(
 
 export async function upsertGlobalSet(
   database: DatabaseOrTransaction,
-  globalSet: typeof globalSetsTable.$inferInsert & { id: string },
+  globalSet: typeof globalSetsDefinition.$inferInsert & { id: string },
   existing: boolean,
 ) {
+  const globalSetsTable = tableFor(database, globalSetsDefinition);
   if (!existing) {
     await database.insert(globalSetsTable).values(globalSet);
     return;
@@ -180,22 +210,21 @@ export async function upsertGlobalSet(
 
 export async function upsertGlobalValues(
   database: DatabaseOrTransaction,
-  values: typeof globalValuesTable.$inferInsert,
+  values: typeof globalValuesDefinition.$inferInsert,
 ) {
-  await database
-    .insert(globalValuesTable)
-    .values(values)
-    .onConflictDoUpdate({
-      target: [globalValuesTable.globalSetId, globalValuesTable.locale],
-      set: { data: values.data, updatedAt: new Date() },
-    });
+  const globalValuesTable = tableFor(database, globalValuesDefinition);
+  await upsert(database, globalValuesTable, values, {
+    target: [globalValuesTable.globalSetId, globalValuesTable.locale],
+    set: { data: values.data, updatedAt: new Date() },
+  });
 }
 
 export async function upsertMenu(
   database: DatabaseOrTransaction,
-  menu: typeof navigationsTable.$inferInsert & { id: string },
+  menu: typeof navigationsDefinition.$inferInsert & { id: string },
   existing: boolean,
 ) {
+  const navigationsTable = tableFor(database, navigationsDefinition);
   if (!existing) {
     await database.insert(navigationsTable).values(menu);
     return;
@@ -208,9 +237,10 @@ export async function upsertMenu(
 
 export async function upsertAsset(
   database: DatabaseOrTransaction,
-  asset: typeof assetsTable.$inferInsert & { id: string },
+  asset: typeof assetsDefinition.$inferInsert & { id: string },
   existing: boolean,
 ) {
+  const assetsTable = tableFor(database, assetsDefinition);
   if (!existing) {
     await database.insert(assetsTable).values(asset);
     return;
@@ -230,9 +260,10 @@ export async function upsertAsset(
 /** Inserts or replaces an entry, leaving its parent and origin for `linkEntry`. */
 export async function upsertEntry(
   database: DatabaseOrTransaction,
-  entry: typeof entriesTable.$inferInsert & { id: string },
+  entry: typeof entriesDefinition.$inferInsert & { id: string },
   existing: boolean,
 ) {
+  const entriesTable = tableFor(database, entriesDefinition);
   const unlinked = { ...entry, parentId: null, originId: null };
   if (!existing) {
     await database.insert(entriesTable).values(unlinked);
@@ -263,6 +294,7 @@ export async function linkEntry(
   entryId: string,
   links: { parentId: string | null; originId: string | null },
 ) {
+  const entriesTable = tableFor(database, entriesDefinition);
   await database
     .update(entriesTable)
     .set(links)
@@ -271,8 +303,9 @@ export async function linkEntry(
 
 export async function insertRevisions(
   database: DatabaseOrTransaction,
-  revisions: Array<typeof revisionsTable.$inferInsert>,
+  revisions: Array<typeof revisionsDefinition.$inferInsert>,
 ) {
+  const revisionsTable = tableFor(database, revisionsDefinition);
   if (revisions.length > 0) {
     await database.insert(revisionsTable).values(revisions);
   }

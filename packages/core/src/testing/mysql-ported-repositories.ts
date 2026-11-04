@@ -75,3 +75,42 @@ export const mysqlPortedRepositories = [
   "commerce/customers/customers.repository.ts",
   "commerce/test-checkout/test-orders.repository.ts",
 ];
+
+/**
+ * Moved too, and run on MySQL and MariaDB by the whole core suite (`pnpm test:mysql`) rather
+ * than a `*.dialects.test.ts` naming each exported function. The suite goes through their
+ * services and routes, so a function nothing in the suite calls isn't proved by this.
+ */
+export const repositoriesRunByTheWholeSuite = [
+  "backups/database-snapshot.repository.ts",
+  "backups/mysql-snapshot.repository.ts",
+  "commerce/discounts/discounts.repository.ts",
+  "commerce/inventory/inventory.repository.ts",
+  "commerce/orders/orders.repository.ts",
+  "commerce/orders/refunds-and-fulfilments.repository.ts",
+  "commerce/shopify-import/shopify-import.repository.ts",
+  "content-transfer/content-transfer.repository.ts",
+  "content-tree/content-tree.repository.ts",
+  "dashboard/dashboard-widgets.repository.ts",
+  "delivery/delivery.repository.ts",
+  "entries/entries.repository.ts",
+  "entries/field-changes.repository.ts",
+  "entries/field-renames.repository.ts",
+  "forms/submissions.repository.ts",
+  "health/health.repository.ts",
+  "media/media.repository.ts",
+  "privacy/personal-data.repository.ts",
+  "privacy/retention.repository.ts",
+  "recycle-bin/recycle-bin.repository.ts",
+  "search/search.repository.ts",
+  "setup/setup.repository.ts",
+];
+
+/** Named `repository`, but they read and write files, so there was nothing to move. */
+export const repositoriesWithoutADatabase = [
+  "custom-shaders/custom-shaders.repository.ts",
+  "liquid-editor-support/snippets-file.repository.ts",
+  "liquid-templates/templates-folder.repository.ts",
+  "page-drafts/model-files.repository.ts",
+  "scheduler/cron-secret.repository.ts",
+];

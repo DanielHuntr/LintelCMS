@@ -103,6 +103,25 @@ function referencedTableNames(table: PgTable): string[] {
   );
 }
 
+/**
+ * These tables and every table of Lintel's that points at them, however indirectly: what
+ * `truncate ... cascade` empties. Names not in the schema, such as add-ons' tables, stay.
+ */
+export function referencingTableNames(names: readonly string[]): string[] {
+  const found = new Set(names);
+  for (let grew = true; grew;) {
+    grew = false;
+    for (const table of listSchemaTables()) {
+      const name = getTableName(table);
+      if (!found.has(name) && referencedTableNames(table).some((other) => found.has(other))) {
+        found.add(name);
+        grew = true;
+      }
+    }
+  }
+  return [...found];
+}
+
 /** The database names of a table's columns, as they are now. */
 export function columnNamesOf(table: PgTable): string[] {
   return getTableConfig(table).columns.map((column) => column.name);

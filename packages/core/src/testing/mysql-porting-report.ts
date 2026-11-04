@@ -4,7 +4,10 @@ import { is } from "drizzle-orm";
 import { PgTable } from "drizzle-orm/pg-core";
 import ts from "typescript";
 import * as schema from "../database/schema.js";
-import { mysqlPortedRepositories } from "./mysql-ported-repositories.js";
+import {
+  mysqlPortedRepositories,
+  repositoriesRunByTheWholeSuite,
+} from "./mysql-ported-repositories.js";
 import { SOURCE_FOLDER } from "./postgres-only-code.js";
 
 /**
@@ -144,7 +147,7 @@ export interface PortingReport {
 }
 
 export function portingReport(): PortingReport {
-  const ported = new Set(mysqlPortedRepositories);
+  const ported = new Set([...mysqlPortedRepositories, ...repositoriesRunByTheWholeSuite]);
   const facts = allRepositories().map(readRepository);
   const portedFacts = facts.filter((fact) => ported.has(fact.file));
   const others = facts.filter((fact) => !ported.has(fact.file));

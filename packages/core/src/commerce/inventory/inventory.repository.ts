@@ -1,13 +1,21 @@
 import { and, asc, eq, gt, inArray, lte, notInArray, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../database/client.js";
-import { variantsTable } from "../products/products.table.js";
+import { variantsTable as variantsDefinition } from "../products/products.table.js";
 import {
   type InventoryLevelRow,
-  inventoryLevelsTable,
+  inventoryLevelsTable as inventoryLevelsDefinition,
   type InventoryLocationRow,
-  inventoryLocationsTable,
-  inventoryReservationsTable,
+  inventoryLocationsTable as inventoryLocationsDefinition,
+  inventoryReservationsTable as inventoryReservationsDefinition,
 } from "./inventory.table.js";
+import {
+  deleteReturning,
+  insertReturning,
+  updateReturning,
+  upsert,
+} from "../../database/dialect/writes.js";
+import { lockOnly } from "../../database/dialect/reads.js";
+import { tableFor } from "../../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for locations, stock levels and reservations. */
 
@@ -15,6 +23,7 @@ export async function listLocationRows(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<InventoryLocationRow[]> {
+  const inventoryLocationsTable = tableFor(database, inventoryLocationsDefinition);
   return database
     .select()
     .from(inventoryLocationsTable)
@@ -24,9 +33,10 @@ export async function listLocationRows(
 
 export async function insertLocation(
   database: DatabaseOrTransaction,
-  location: typeof inventoryLocationsTable.$inferInsert,
+  location: typeof inventoryLocationsDefinition.$inferInsert,
 ): Promise<InventoryLocationRow> {
-  const [inserted] = await database.insert(inventoryLocationsTable).values(location).returning();
+  const inventoryLocationsTable = tableFor(database, inventoryLocationsDefinition);
+  const [inserted] = await insertReturning(database, inventoryLocationsTable, location);
   if (!inserted) {
     throw new Error("Saving the location returned nothing");
   }
@@ -39,16 +49,14 @@ export async function updateLocationRow(
   locationId: string,
   changes: Partial<Pick<InventoryLocationRow, "name" | "isActive" | "position">>,
 ): Promise<boolean> {
-  const updated = await database
-    .update(inventoryLocationsTable)
-    .set(changes)
-    .where(
-      and(
-        eq(inventoryLocationsTable.tenantId, tenantId),
-        eq(inventoryLocationsTable.id, locationId),
-      ),
-    )
-    .returning({ id: inventoryLocationsTable.id });
+  const inventoryLocationsTable = tableFor(database, inventoryLocationsDefinition);
+  const updated = await updateReturning(
+    database,
+    inventoryLocationsTable,
+    changes,
+    and(eq(inventoryLocationsTable.tenantId, tenantId), eq(inventoryLocationsTable.id, locationId)),
+    { id: inventoryLocationsTable.id },
+  );
   return updated.length > 0;
 }
 
@@ -57,15 +65,13 @@ export async function deleteLocationRow(
   tenantId: string,
   locationId: string,
 ): Promise<boolean> {
-  const deleted = await database
-    .delete(inventoryLocationsTable)
-    .where(
-      and(
-        eq(inventoryLocationsTable.tenantId, tenantId),
-        eq(inventoryLocationsTable.id, locationId),
-      ),
-    )
-    .returning({ id: inventoryLocationsTable.id });
+  const inventoryLocationsTable = tableFor(database, inventoryLocationsDefinition);
+  const deleted = await deleteReturning(
+    database,
+    inventoryLocationsTable,
+    and(eq(inventoryLocationsTable.tenantId, tenantId), eq(inventoryLocationsTable.id, locationId)),
+    { id: inventoryLocationsTable.id },
+  );
   return deleted.length > 0;
 }
 
@@ -73,6 +79,7 @@ export async function listLevelRows(
   database: DatabaseOrTransaction,
   variantIds: readonly string[],
 ): Promise<InventoryLevelRow[]> {
+  const inventoryLevelsTable = tableFor(database, inventoryLevelsDefinition);
   if (variantIds.length === 0) return [];
   return database
     .select()
@@ -84,13 +91,11 @@ export async function upsertLevel(
   database: DatabaseOrTransaction,
   level: { tenantId: string; variantId: string; locationId: string; onHand: number },
 ): Promise<void> {
-  await database
-    .insert(inventoryLevelsTable)
-    .values(level)
-    .onConflictDoUpdate({
-      target: [inventoryLevelsTable.variantId, inventoryLevelsTable.locationId],
-      set: { onHand: level.onHand },
-    });
+  const inventoryLevelsTable = tableFor(database, inventoryLevelsDefinition);
+  await upsert(database, inventoryLevelsTable, level, {
+    target: [inventoryLevelsTable.variantId, inventoryLevelsTable.locationId],
+    set: { onHand: level.onHand },
+  });
 }
 
 /**
@@ -102,6 +107,8 @@ export async function lockLevelRows(
   database: DatabaseOrTransaction,
   variantIds: readonly string[],
 ): Promise<InventoryLevelRow[]> {
+  const inventoryLevelsTable = tableFor(database, inventoryLevelsDefinition);
+  const inventoryLocationsTable = tableFor(database, inventoryLocationsDefinition);
   if (variantIds.length === 0) return [];
   return database
     .select({
@@ -129,7 +136,7 @@ export async function lockLevelRows(
       asc(inventoryLocationsTable.position),
       asc(inventoryLocationsTable.createdAt),
     )
-    .for("update", { of: inventoryLevelsTable });
+    .for("update", lockOnly(database, inventoryLevelsTable));
 }
 
 /** Locks one variant's row, so a variant with no stock levels yet still queues checkouts. */
@@ -137,6 +144,7 @@ export async function lockVariantRows(
   database: DatabaseOrTransaction,
   variantIds: readonly string[],
 ): Promise<Array<{ id: string; title: string; inventoryTracked: boolean }>> {
+  const variantsTable = tableFor(database, variantsDefinition);
   if (variantIds.length === 0) return [];
   return database
     .select({
@@ -155,6 +163,7 @@ export async function changeOnHand(
   levelId: string,
   change: number,
 ): Promise<void> {
+  const inventoryLevelsTable = tableFor(database, inventoryLevelsDefinition);
   await database
     .update(inventoryLevelsTable)
     .set({ onHand: sql`${inventoryLevelsTable.onHand} + ${change}` })
@@ -168,6 +177,7 @@ export async function sumHeldQuantities(
   now: Date,
   exceptCheckoutIds: readonly string[] = [],
 ): Promise<Map<string, number>> {
+  const inventoryReservationsTable = tableFor(database, inventoryReservationsDefinition);
   if (variantIds.length === 0) return new Map();
   const rows = await database
     .select({
@@ -191,8 +201,9 @@ export async function sumHeldQuantities(
 
 export async function insertReservations(
   database: DatabaseOrTransaction,
-  reservations: Array<typeof inventoryReservationsTable.$inferInsert>,
+  reservations: Array<typeof inventoryReservationsDefinition.$inferInsert>,
 ): Promise<void> {
+  const inventoryReservationsTable = tableFor(database, inventoryReservationsDefinition);
   if (reservations.length === 0) return;
   await database.insert(inventoryReservationsTable).values(reservations);
 }
@@ -203,16 +214,17 @@ export async function finishCheckoutReservations(
   checkoutId: string,
   status: "committed" | "released",
 ): Promise<number> {
-  const updated = await database
-    .update(inventoryReservationsTable)
-    .set({ status })
-    .where(
-      and(
-        eq(inventoryReservationsTable.checkoutId, checkoutId),
-        eq(inventoryReservationsTable.status, "active"),
-      ),
-    )
-    .returning({ id: inventoryReservationsTable.id });
+  const inventoryReservationsTable = tableFor(database, inventoryReservationsDefinition);
+  const updated = await updateReturning(
+    database,
+    inventoryReservationsTable,
+    { status },
+    and(
+      eq(inventoryReservationsTable.checkoutId, checkoutId),
+      eq(inventoryReservationsTable.status, "active"),
+    ),
+    { id: inventoryReservationsTable.id },
+  );
   return updated.length;
 }
 
@@ -221,15 +233,16 @@ export async function releaseExpiredReservationRows(
   database: DatabaseOrTransaction,
   now: Date,
 ): Promise<string[]> {
-  const released = await database
-    .update(inventoryReservationsTable)
-    .set({ status: "released" })
-    .where(
-      and(
-        eq(inventoryReservationsTable.status, "active"),
-        lte(inventoryReservationsTable.expiresAt, now),
-      ),
-    )
-    .returning({ checkoutId: inventoryReservationsTable.checkoutId });
+  const inventoryReservationsTable = tableFor(database, inventoryReservationsDefinition);
+  const released = await updateReturning(
+    database,
+    inventoryReservationsTable,
+    { status: "released" },
+    and(
+      eq(inventoryReservationsTable.status, "active"),
+      lte(inventoryReservationsTable.expiresAt, now),
+    ),
+    { checkoutId: inventoryReservationsTable.checkoutId },
+  );
   return [...new Set(released.map((row) => row.checkoutId))];
 }

@@ -69,9 +69,11 @@ describe("an add-on and Lintel's own tables", () => {
     await api.ready();
     const database = testDatabase.database;
     await database.execute(sql`drop table if exists shop_extras_notes`);
-    await database.execute(sql`create table shop_extras_notes (id text primary key)`);
+    await database.execute(sql`create table shop_extras_notes (id varchar(64) primary key)`);
     await database.execute(sql`insert into shop_extras_notes values ('n1')`);
-    await database.execute(sql`insert into shop_customers (email) values ('ann@example.com')`);
+    await database.execute(
+      sql`insert into shop_customers (id, email) values ('11111111-1111-4111-8111-111111111111', 'ann@example.com')`,
+    );
     await createTestUser(database, "owner@example.com", [["*"]]);
     owner = requestsAs(api, await signInAndGetCookies(api, "owner@example.com"));
   });
@@ -81,7 +83,7 @@ describe("an add-on and Lintel's own tables", () => {
 
   const count = async (table: string) => {
     const result = await testDatabase.database.execute(
-      sql`select count(*)::int as total from ${sql.identifier(table)}`,
+      sql`select count(*) as total from ${sql.identifier(table)}`,
     );
     return Number(rowsOf(result)[0]?.total);
   };

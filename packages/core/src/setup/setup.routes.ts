@@ -3,7 +3,7 @@ import { prettifyError } from "zod";
 import { setSessionCookie } from "../auth/session-cookie.js";
 import { type FieldMessages, InvalidRequestError, parseRequest } from "../http/http-errors.js";
 import { isLocalRequest, SETUP_CODE_HEADER, setupCodeMatches } from "./setup-code.js";
-import { testPostgresConnection } from "./setup-database.service.js";
+import { testMysqlConnection, testPostgresConnection } from "./setup-database.service.js";
 import {
   SetupAlreadyDoneError,
   SetupCodeInvalidError,
@@ -52,7 +52,11 @@ export async function setupRoutes(server: FastifyInstance) {
 
   server.post("/setup/database/test", firstRunOnly, async (request) => {
     const details = parseRequest(testDatabaseRequestSchema, request.body);
-    await testPostgresConnection(server.activeDatabase, details);
+    if (details.kind === "mysql") {
+      await testMysqlConnection(server.activeDatabase, details);
+    } else {
+      await testPostgresConnection(server.activeDatabase, details);
+    }
     return { ok: true };
   });
 

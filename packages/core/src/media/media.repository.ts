@@ -4,7 +4,6 @@ import {
   desc,
   eq,
   getTableColumns,
-  ilike,
   inArray,
   isNull,
   not,
@@ -14,9 +13,12 @@ import {
 } from "drizzle-orm";
 import { animationMimeTypes } from "./file-types.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { usersTable } from "../users/users.table.js";
-import { type AssetRow, assetsTable, type NewAssetRow } from "./media.table.js";
+import { usersTable as usersDefinition } from "../users/users.table.js";
+import { type AssetRow, assetsTable as assetsDefinition, type NewAssetRow } from "./media.table.js";
 import type { AssetKind } from "./media.schema.js";
+import { insertReturning } from "../database/dialect/writes.js";
+import { likeIgnoringCase } from "../database/dialect/expressions.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for assets, nothing else. */
 
@@ -41,18 +43,24 @@ export interface AssetListFilter {
   offset: number;
 }
 
-const assetWithUploaderColumns = {
-  ...getTableColumns(assetsTable),
-  uploaderName: usersTable.name,
-};
+function assetWithUploaderColumns(database: DatabaseOrTransaction) {
+  const assetsTable = tableFor(database, assetsDefinition);
+  const usersTable = tableFor(database, usersDefinition);
+  return {
+    ...getTableColumns(assetsTable),
+    uploaderName: usersTable.name,
+  };
+}
 
 export async function findAssetById(
   database: DatabaseOrTransaction,
   tenantId: string,
   assetId: string,
 ): Promise<AssetRowWithUploader | undefined> {
+  const assetsTable = tableFor(database, assetsDefinition);
+  const usersTable = tableFor(database, usersDefinition);
   const [asset] = await database
-    .select(assetWithUploaderColumns)
+    .select(assetWithUploaderColumns(database))
     .from(assetsTable)
     .leftJoin(usersTable, eq(usersTable.id, assetsTable.uploadedBy))
     .where(and(eq(assetsTable.tenantId, tenantId), eq(assetsTable.id, assetId)))
@@ -65,6 +73,7 @@ export async function findAssetsByIdList(
   tenantId: string,
   assetIds: readonly string[],
 ): Promise<AssetRow[]> {
+  const assetsTable = tableFor(database, assetsDefinition);
   if (assetIds.length === 0) {
     return [];
   }
@@ -79,6 +88,7 @@ export async function findAssetIdByContentHash(
   tenantId: string,
   contentHash: string,
 ): Promise<string | undefined> {
+  const assetsTable = tableFor(database, assetsDefinition);
   const [asset] = await database
     .select({ id: assetsTable.id })
     .from(assetsTable)
@@ -93,10 +103,12 @@ export async function listAssetRows(
   tenantId: string,
   filter: AssetListFilter,
 ): Promise<{ rows: AssetRowWithUploader[]; total: number }> {
-  const where = and(eq(assetsTable.tenantId, tenantId), ...listConditions(filter));
+  const assetsTable = tableFor(database, assetsDefinition);
+  const usersTable = tableFor(database, usersDefinition);
+  const where = and(eq(assetsTable.tenantId, tenantId), ...listConditions(database, filter));
 
   const rows = await database
-    .select(assetWithUploaderColumns)
+    .select(assetWithUploaderColumns(database))
     .from(assetsTable)
     .leftJoin(usersTable, eq(usersTable.id, assetsTable.uploadedBy))
     .where(where)
@@ -113,7 +125,8 @@ export async function insertAsset(
   database: DatabaseOrTransaction,
   asset: NewAssetRow,
 ): Promise<AssetRow> {
-  const [inserted] = await database.insert(assetsTable).values(asset).returning();
+  const assetsTable = tableFor(database, assetsDefinition);
+  const [inserted] = await insertReturning(database, assetsTable, asset);
   if (!inserted) {
     throw new Error("The database did not return the new asset.");
   }
@@ -126,6 +139,7 @@ export async function updateAssetRow(
   assetId: string,
   changes: AssetChanges,
 ): Promise<void> {
+  const assetsTable = tableFor(database, assetsDefinition);
   await database
     .update(assetsTable)
     .set(changes)
@@ -137,23 +151,28 @@ export async function deleteAssetRow(
   tenantId: string,
   assetId: string,
 ): Promise<void> {
+  const assetsTable = tableFor(database, assetsDefinition);
   await database
     .delete(assetsTable)
     .where(and(eq(assetsTable.tenantId, tenantId), eq(assetsTable.id, assetId)));
 }
 
-function listConditions(filter: AssetListFilter): SQL[] {
+function listConditions(database: DatabaseOrTransaction, filter: AssetListFilter): SQL[] {
+  const assetsTable = tableFor(database, assetsDefinition);
   const conditions: SQL[] = [];
 
   if (filter.search) {
     const pattern = `%${escapeLikePattern(filter.search)}%`;
-    const matchesText = or(ilike(assetsTable.filename, pattern), ilike(assetsTable.alt, pattern));
+    const matchesText = or(
+      likeIgnoringCase(database, assetsTable.filename, pattern),
+      likeIgnoringCase(database, assetsTable.alt, pattern),
+    );
     if (matchesText) {
       conditions.push(matchesText);
     }
   }
   if (filter.kind === "image") {
-    conditions.push(ilike(assetsTable.mimeType, "image/%"));
+    conditions.push(likeIgnoringCase(database, assetsTable.mimeType, "image/%"));
   }
   if (filter.siteId === null) {
     conditions.push(isNull(assetsTable.siteId));
@@ -162,18 +181,21 @@ function listConditions(filter: AssetListFilter): SQL[] {
   }
   if (filter.kind === "document") {
     conditions.push(
-      not(ilike(assetsTable.mimeType, "image/%")),
-      not(ilike(assetsTable.mimeType, "model/%")),
+      not(likeIgnoringCase(database, assetsTable.mimeType, "image/%")),
+      not(likeIgnoringCase(database, assetsTable.mimeType, "model/%")),
     );
   }
   if (filter.kind === "model") {
-    conditions.push(ilike(assetsTable.mimeType, "model/%"));
+    conditions.push(likeIgnoringCase(database, assetsTable.mimeType, "model/%"));
   }
   if (filter.kind === "animation") {
     conditions.push(inArray(assetsTable.mimeType, [...animationMimeTypes]));
   }
   if (filter.missingAlt) {
-    conditions.push(ilike(assetsTable.mimeType, "image/%"), sql`trim(${assetsTable.alt}) = ''`);
+    conditions.push(
+      likeIgnoringCase(database, assetsTable.mimeType, "image/%"),
+      sql`trim(${assetsTable.alt}) = ''`,
+    );
   }
 
   return conditions;
@@ -189,6 +211,7 @@ export async function listAllStorageKeys(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<{ storageKey: string; mimeType: string }[]> {
+  const assetsTable = tableFor(database, assetsDefinition);
   return database
     .select({ storageKey: assetsTable.storageKey, mimeType: assetsTable.mimeType })
     .from(assetsTable)

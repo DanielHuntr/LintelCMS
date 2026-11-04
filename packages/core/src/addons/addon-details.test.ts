@@ -114,9 +114,9 @@ describe("an add-on's details", () => {
     );
     await database.execute(sql`create table guestbook_signups (id text primary key, email text)`);
     await database.execute(
-      sql`create table postcards_sent (id text primary key, sender_email text, message text)`,
+      sql`create table postcards_sent (id varchar(64) primary key, sender_email text, message text)`,
     );
-    await database.execute(sql`create table postcards_drafts (id text primary key)`);
+    await database.execute(sql`create table postcards_drafts (id varchar(64) primary key)`);
     await database.execute(
       sql`insert into postcards_sent values ('p1', 'ann@example.com', 'Hello, "friend"')`,
     );
@@ -235,9 +235,9 @@ describe("an add-on's details", () => {
     );
     expect(rowsOf(signups)[0]?.count).toBe(0);
     const left = await testDatabase.database.execute(
-      sql`select count(*)::int as count from postcards_sent`,
+      sql`select count(*) as count from postcards_sent`,
     );
-    expect(rowsOf(left)[0]?.count).toBe(0);
+    expect(Number(rowsOf(left)[0]?.count)).toBe(0);
   });
 
   it("needs settings:read to look, and settings:update to export or delete", async () => {

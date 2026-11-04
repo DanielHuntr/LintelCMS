@@ -8,6 +8,7 @@ import { t } from "../i18n/strings.js";
 import type { ConnectionErrors, PostgresForm } from "./postgresConnection.js";
 
 interface PostgresFieldsProps {
+  kind?: "postgres" | "mysql";
   form: PostgresForm;
   errors: ConnectionErrors;
   onChange: (changes: Partial<PostgresForm>) => void;
@@ -19,7 +20,13 @@ interface PostgresFieldsProps {
  * The connection details for someone's own Postgres, as plain separate fields rather than
  * one connection URL, which is easy to get subtly wrong.
  */
-export function PostgresFields({ form, errors, onChange, hostRef }: PostgresFieldsProps) {
+export function PostgresFields({
+  kind = "postgres",
+  form,
+  errors,
+  onChange,
+  hostRef,
+}: PostgresFieldsProps) {
   return (
     <fieldset className="flex flex-col gap-6">
       <legend className="sr-only">{t("database.connectionDetails")}</legend>
@@ -32,7 +39,7 @@ export function PostgresFields({ form, errors, onChange, hostRef }: PostgresFiel
           name="host"
           value={form.host}
           onChange={(event) => onChange({ host: event.target.value })}
-          hint={t("database.hostHint")}
+          hint={kind === "mysql" ? t("database.mysqlHostHint") : t("database.hostHint")}
           error={errors.host}
           autoCapitalize="off"
           autoCorrect="off"
@@ -87,7 +94,9 @@ export function PostgresFields({ form, errors, onChange, hostRef }: PostgresFiel
       <GroupedList>
         <GroupedListRow
           label={t("database.ssl")}
-          description={t("database.sslDescription")}
+          description={
+            kind === "mysql" ? t("database.mysqlSslDescription") : t("database.sslDescription")
+          }
           wrapsText
           accessory={
             <Toggle

@@ -1,139 +1,19 @@
 {
-  "addons/addon-details.service.ts": {
-    "cast with ::": 1,
-    "postgres function": 1
-  },
   "addons/addon-modules.ts": {
     "pg-core import": 1
   },
   "backups/database-snapshot.repository.ts": {
-    "cast with ::": 4,
+    "cast with ::": 3,
     "jsonb function": 3,
     "truncate cascade": 1
   },
   "backups/table-order.ts": {
     "pg-core import": 1
   },
-  "commerce/discounts/discounts.repository.ts": {
-    "cast with ::": 3,
-    "filter clause": 1,
-    "returning": 2,
-    "upsert": 1
-  },
-  "commerce/inventory/inventory.repository.ts": {
-    "returning": 5,
-    "upsert": 1
-  },
-  "commerce/orders/orders.repository.ts": {
-    "ilike": 2,
-    "returning": 1
-  },
-  "commerce/orders/refunds-and-fulfilments.repository.ts": {
-    "filter clause": 2,
-    "returning": 2
-  },
-  "commerce/product-collections/product-collection-rules.ts": {
-    "cast with ::": 1,
-    "ilike in sql": 1,
-    "ilike": 1,
-    "json containment": 1,
-    "jsonb function": 1
-  },
-  "commerce/shopify-import/shopify-import.repository.ts": {
-    "returning": 4,
-    "upsert": 2
-  },
-  "content-transfer/content-transfer.repository.ts": {
-    "upsert": 2
-  },
-  "content-tree/content-tree.repository.ts": {
-    "array function": 1,
-    "cast with ::": 5,
-    "ilike in sql": 1,
-    "ilike": 2,
-    "json field access": 3,
-    "jsonb function": 1,
-    "nulls ordering": 2
-  },
-  "dashboard/dashboard-widgets.repository.ts": {
-    "filter clause": 2,
-    "json field access": 1
-  },
   "database/columns.ts": {
     "pg-core import": 1
   },
-  "database/migration-status.ts": {
-    "cast with ::": 1,
-    "postgres catalogue": 1
-  },
-  "delivery/delivery.repository.ts": {
-    "cast with ::": 1,
-    "json containment": 1,
-    "json field access": 2
-  },
-  "entries/entries.repository.ts": {
-    "cast with ::": 7,
-    "ilike": 1,
-    "json field access": 3,
-    "returning": 2
-  },
-  "entries/field-changes.repository.ts": {
-    "array function": 2,
-    "cast with ::": 5,
-    "json field access": 1,
-    "jsonb function": 5
-  },
-  "entries/field-renames.repository.ts": {
-    "array function": 1,
-    "cast with ::": 4,
-    "json field access": 2,
-    "jsonb function": 3
-  },
-  "forms/submissions.repository.ts": {
-    "advisory lock": 1,
-    "cast with ::": 4,
-    "date function": 1,
-    "ilike": 2,
-    "json containment": 1,
-    "postgres function": 1,
-    "returning": 3
-  },
-  "health/health.repository.ts": {
-    "postgres catalogue": 1
-  },
-  "media/media.repository.ts": {
-    "ilike": 7,
-    "returning": 1
-  },
-  "privacy/personal-data.repository.ts": {
-    "cast with ::": 1,
-    "json field access": 1,
-    "jsonb function": 2,
-    "returning": 7
-  },
-  "privacy/privacy-test-server.ts": {
-    "returning": 1
-  },
-  "privacy/retention.repository.ts": {
-    "json field access": 1
-  },
-  "recycle-bin/recycle-bin.repository.ts": {
-    "cast with ::": 1,
-    "json field access": 3,
-    "jsonb function": 1,
-    "returning": 2
-  },
-  "search/search.repository.ts": {
-    "full-text search": 4,
-    "ilike": 3,
-    "json field access": 2,
-    "jsonb function": 1
-  },
   "server-check/server-check.service.ts": {
     "postgres catalogue": 1
-  },
-  "setup/setup.repository.ts": {
-    "advisory lock": 1,
-    "postgres function": 1
   }
 }

@@ -13,11 +13,21 @@ export function sendBrandedEmail(
   to: string,
   content: BrandedEmailContent,
 ): void {
-  composeBrandedEmail(server, content)
+  const sending = composeBrandedEmail(server, content)
     .then((email) => server.email.send({ to, ...email }))
+    .then(() => undefined)
     .catch((error: unknown) => {
       server.log.error({ error, subject: content.subject }, "Sending an email failed");
-    });
+    })
+    .finally(() => emailsOnTheirWay.delete(sending));
+  emailsOnTheirWay.add(sending);
+}
+
+const emailsOnTheirWay = new Set<Promise<void>>();
+
+/** Finishes when every email started so far has gone. Requests don't wait for them. */
+export async function emailsSent(): Promise<void> {
+  await Promise.all(emailsOnTheirWay);
 }
 
 /** The email as it would be sent: subject, plain text and HTML in the current branding. */

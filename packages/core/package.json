@@ -133,6 +133,7 @@
     "build:hosting": "tsx src/hosting/build-hosting-package.ts",
     "test:dialects": "node scripts/test-on-mysql.mjs",
     "test:postgres": "node scripts/test-on-postgres.mjs",
+    "test:mysql": "node scripts/test-suite-on-mysql.mjs",
     "test:hosting": "LINTEL_HOSTING_E2E=1 vitest run src/hosting/hosting-package.e2e.test.ts"
   },
   "dependencies": {
@@ -171,6 +172,7 @@
     "jsdom": "^30.1.3",
     "liquidjs": "^10.30.1",
     "markdown-it": "^14.3.3",
+    "mysql2": "^3.24.6",
     "node-llama-cpp": "3.22.2",
     "nodemailer": "^10.3.1",
     "postgres": "^4.0.0",

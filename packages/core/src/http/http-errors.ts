@@ -1,5 +1,6 @@
 import { STATUS_CODES } from "node:http";
 import type { FastifyError, FastifyReply, FastifyRequest } from "fastify";
+import { isValueTooLong } from "../database/database-errors.js";
 import { type z, prettifyError } from "zod";
 
 /**
@@ -81,6 +82,14 @@ export async function sendHttpErrorDetails(
   request: FastifyRequest,
   reply: FastifyReply,
 ) {
+  if (isValueTooLong(error)) {
+    return reply.code(422).send({
+      statusCode: 422,
+      code: "VALUE_TOO_LONG",
+      error: STATUS_CODES[422],
+      message: "One of the values is too long to save here. Please shorten it and try again.",
+    });
+  }
   if (!(error instanceof HttpError) && (error.statusCode ?? 500) >= 500) {
     return sendUnexpectedError(error, request, reply);
   }

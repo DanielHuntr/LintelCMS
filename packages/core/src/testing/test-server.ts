@@ -1,5 +1,6 @@
 import type { FastifyInstance, InjectOptions, LightMyRequestResponse } from "fastify";
 import type { ActiveDatabase } from "../database/active-database.js";
+import { emailsSent } from "../email/send-branded-email.js";
 import { buildServer, type ServerOptions } from "../server.js";
 
 /**
@@ -15,6 +16,11 @@ export async function startTestServer(
     database,
     runScheduledJobs: false,
     ...options,
+  });
+  // Emails go out after the response. On a server with a pool of connections they can still
+  // be on their way when a test looks for them, so tests wait for them here.
+  server.addHook("onSend", async () => {
+    await emailsSent();
   });
   await server.ready();
   return server;

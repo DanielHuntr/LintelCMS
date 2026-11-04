@@ -518,3 +518,107 @@ milliseconds older than the row. That was already so, and it's left as it is.
 
 The estimate above was about 6 to 9 weeks. With the mechanical repositories nearly done,
 about **5 to 7 weeks** remain, and the risk is where it was: the whole suite on MySQL.
+
+## Status update, later on 2026-11-04: MySQL and MariaDB run
+
+Status: **Lintel runs on MySQL 8.4 and MariaDB 11.4.** The server opens them, setup offers
+them, and the whole core test suite passes on both. SQLite and SQL Server are as they were,
+and the two open questions are still open. Everything above stands as it was written.
+
+### Results
+
+The same 2,252 tests on each database, on the last code commit, with other work sharing the
+machine:
+
+| Database          | Command              | Passed | Failed | Skipped |
+| ----------------- | -------------------- | -----: | -----: | ------: |
+| Built-in (PGlite) | `vitest run`         |  2,215 |      0 |      37 |
+| Postgres 17       | `pnpm test:postgres` |  2,222 |      2 |      28 |
+| MySQL 8.4         | `pnpm test:mysql`    |  2,212 |      1 |      39 |
+| MariaDB 11.4      | `pnpm test:mysql`    |  2,213 |      0 |      39 |
+
+All three failures were five-second timeouts while four test runs shared the machine, and each
+passed alone afterwards: `site-effects.test.ts` on Postgres (21 of 21) and
+`website-sites.test.ts` on MySQL (7 of 7, three times). One commit earlier, with the machine
+quieter and no change to Lintel's own server code since, MySQL and MariaDB each passed 2,211 of
+2,250 with none failed and 39 skipped. `pnpm test:dialects` passed 685, with 2 skipped.
+
+Five tests that pass on the built-in database are skipped on MySQL, and two that only run on a
+database server make up the difference. Of the five, four run a Postgres migration file that no MySQL install is old enough to
+need. One is a built-in-only update test; its twin for a database server runs instead. Five
+setup tests that need a real Postgres are skipped on MySQL, and
+`mysql-start-up.dialects.test.ts` covers the same ground there.
+
+While the suite runs on MySQL, a query on a table that didn't come through `tableFor` fails at
+once (`refuse-postgres-tables-on-mysql.ts`), so a pass means Lintel's own code asked for the
+right tables. Test files themselves get MySQL tables by a swap of their imports
+(`use-mysql-tables-in-tests.ts`), which keeps 300 files unchanged.
+
+| What                                   | Done | Of all |
+| -------------------------------------- | ---: | -----: |
+| Repositories moved                     |   92 |     97 |
+| Query calls moved                      |  713 |    714 |
+| Tables used only by moved repositories |   89 |     89 |
+| Postgres-only items left, of 325       |   11 |    325 |
+
+The other five "repositories" read and write files, and the one query call left is in one of
+them. The 11 items are Postgres's own branch of backups and three `pg-core` imports that
+don't query anything. 22 of the 92 have no `*.dialects.test.ts` naming each function: the whole
+suite runs them through their services and routes, and how much of each it reaches wasn't
+measured. `repositoriesRunByTheWholeSuite` lists them.
+
+### What the suite found
+
+Differences no reading of the code had caught:
+
+- **Postgres's `now()` is one time for a whole transaction.** A new customer and their first
+  order had the same time, and clearing test orders relied on that. On MySQL Node stamps each
+  row, so the customer looked older than the order and was never cleared.
+- **`exists` over `json_table` finds nothing** when it is the only condition on a join: MySQL
+  makes it a semi-join. Finding a person by name in form answers came back empty. It counts
+  instead now.
+- **MariaDB's JSON functions give `utf8mb4_bin`,** as MySQL's do, so connections use it on both.
+- **Emails go out after the response.** The built-in database's single connection hid that
+  from tests; on a pool they can still be on their way. Nothing changes for visitors, and the
+  test server now waits for them.
+
+### Decisions made along the way
+
+- **Connections use read committed,** as Postgres does, rather than MySQL's repeatable read. A
+  read after waiting for a lock then sees the other writer's work, and deadlocks are rarer.
+- **A lock that ends with its transaction is a row lock** in `lintel_locks`, a table only MySQL
+  has. `get_lock` belongs to the connection, so a failed transaction could leave it held.
+- **A transaction undone to break a deadlock is tried again,** up to four times. Single
+  statements outside a transaction aren't.
+- **JSON keys are written in jsonb's order,** so MariaDB, whose json is text, can compare two
+  values with `<>`.
+- **Search on MySQL isn't FULLTEXT.** That needs an index on a text column, and entries' values
+  are JSON. Postgres's search has no stored index either, so neither is slower by design. Each
+  word is looked for with `like` and `json_search`, which reads values and never keys. A word
+  can match inside a longer word on MySQL, where on Postgres it must start one.
+- **`dashboard_layouts_one_owner` stays left out.** The repository writes a person or a role,
+  never both, but the database itself doesn't stop a row with both, as it does on Postgres.
+- **MySQL 8.4 and MariaDB 11.4 are the stated minimums,** because those are what the suite ran
+  on. Older ones get a warning in the server check, not a refusal.
+- **A backup doesn't say which database it came from.** Tests move one from the built-in
+  database to MySQL and back, on both engines.
+
+### Add-ons
+
+An add-on with no tables runs anywhere. One with tables stays off on MySQL and MariaDB unless
+it names `mysqlMigrationsFolder`, and then it is promising that it gets each table through
+`tableFor` and uses nothing only Postgres has. Nothing checks that promise. The bookings
+example and the Newsletter and Instagram add-ons haven't made the move, so they stay off.
+
+### What isn't proved
+
+- A plugin that was on when a Postgres backup is restored into MySQL is kept out of its routes
+  and the list, but its timed jobs and event handlers aren't stopped. They'd fail on missing
+  tables, and the errors go to the log.
+- On MariaDB, renaming a field with `json_set` can leave keys out of order. Two copies changed
+  the same way still match, but one changed alone can show "unpublished changes" until it is
+  published again.
+- Nothing has run under real load, and the suite doesn't test many people at once beyond its
+  own concurrency tests.
+- MySQL 8.0, MariaDB 10.x and managed services with their own limits are untested.
+- The Docker image hasn't been built with this change.

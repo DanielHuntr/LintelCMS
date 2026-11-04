@@ -11,7 +11,8 @@ import * as schema from "../database/schema.js";
 import { entriesTable } from "../entries/entries.table.js";
 import { sitesTable } from "../sites/sites.table.js";
 import { usersTable } from "../users/users.table.js";
-import { emptyAllTables, openTestDatabase } from "./test-database.js";
+import { isMysqlUrl } from "../database/database-errors.js";
+import { emptyAllTables, openTestDatabase, testDatabaseUrl } from "./test-database.js";
 
 /**
  * For `*.dialects.test.ts` files: runs the same tests on every database within reach. The
@@ -66,6 +67,15 @@ function mysqlTarget(name: DatabaseUnderTest, url: string): Target {
 function targets(): Target[] {
   const mysqlUrl = process.env.TEST_MYSQL_URL;
   const mariadbUrl = process.env.TEST_MARIADB_URL;
+  // The whole suite on MySQL (`pnpm test:mysql`): that one database is all there is.
+  if (testDatabaseUrl && isMysqlUrl(testDatabaseUrl)) {
+    return [
+      mysqlTarget(
+        process.env.LINTEL_TEST_ENGINE === "mariadb" ? "mariadb" : "mysql",
+        testDatabaseUrl,
+      ),
+    ];
+  }
   return [
     {
       name: "built-in",

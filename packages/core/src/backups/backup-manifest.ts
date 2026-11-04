@@ -33,7 +33,7 @@ export const backupManifestSchema = z.object({
   format: z.literal(BACKUP_FORMAT, { error: "This isn't a Lintel backup" }),
   formatVersion: z.number().int().positive(),
   createdAt: z.string(),
-  /** "built-in" or "postgres": where it was made. Either can restore it. */
+  /** "built-in", "postgres" or "mysql": where it was made. Any of them can restore it. */
   databaseKind: z.string(),
   /** The migrations the database had, oldest first. */
   migrations: z.array(z.string()),

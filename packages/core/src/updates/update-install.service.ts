@@ -119,9 +119,9 @@ async function runUpdate(
       release,
     );
     const running = await currentTarget(updates.home, updates.installFolder);
-    if (server.activeDatabase.kind === "postgres" && (await databaseDiffers(folder, running))) {
+    if (server.activeDatabase.kind !== "built-in" && (await databaseDiffers(folder, running))) {
       throw new Error(
-        `Lintel ${release.version} changes the database, and on a Postgres server Lintel can't ` +
+        `Lintel ${release.version} changes the database, and on a database server Lintel can't ` +
           "keep a copy to go back to if the update fails. Nothing was changed. Make a backup " +
           "with your database provider, then update by hand (see “Updating Lintel”).",
       );

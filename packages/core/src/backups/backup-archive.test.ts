@@ -12,6 +12,7 @@ import { ZipArchiveReader } from "../archives/zip-reader.js";
 import { ensurePagesCollection } from "../collections/default-collections.js";
 import { LocalDiskStorage } from "../media/local-disk-storage.js";
 import { readSetting, writeSetting } from "../settings/settings.service.js";
+import { rowsOf } from "./database-snapshot.repository.js";
 import { makeTestPng, useMediaTestServer } from "../testing/test-media.js";
 import { useTestDatabase } from "../testing/test-database.js";
 import { requestsAs } from "../testing/test-server.js";
@@ -107,7 +108,7 @@ describe("backup archives", () => {
   it("backs up add-ons' own tables, as they declare them, and puts them back", async () => {
     const database = testDatabase.database;
     await database.execute(
-      sql`create table stamps_cards (id text primary key, owner_email text not null, stamps integer not null)`,
+      sql`create table stamps_cards (id varchar(64) primary key, owner_email text not null, stamps integer not null)`,
     );
     await database.execute(
       sql`insert into stamps_cards values ('c1', 'ann@example.com', 3), ('c2', 'bo@example.com', 9)`,
@@ -141,8 +142,7 @@ describe("backup archives", () => {
       current: 3,
     });
     const rows = await database.execute(sql`select id, stamps from stamps_cards order by id`);
-    const list = Array.isArray(rows) ? rows : (rows as { rows: unknown[] }).rows;
-    expect(list).toEqual([
+    expect(rowsOf(rows)).toEqual([
       { id: "c1", stamps: 3 },
       { id: "c2", stamps: 9 },
     ]);

@@ -1,24 +1,28 @@
 import { and, asc, desc, eq, gt, inArray, isNull, lte, or, type SQL, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../database/client.js";
 import { DEFAULT_TENANT_ID } from "../../database/columns.js";
-import { checkoutsTable } from "../checkouts/checkouts.table.js";
+import { checkoutsTable as checkoutsDefinition } from "../checkouts/checkouts.table.js";
 import { collectionRulesCondition } from "../product-collections/product-collection-rules.js";
 import {
-  productCollectionItemsTable,
-  productCollectionsTable,
+  productCollectionItemsTable as productCollectionItemsDefinition,
+  productCollectionsTable as productCollectionsDefinition,
 } from "../product-collections/product-collections.table.js";
-import { productsTable } from "../products/products.table.js";
+import { productsTable as productsDefinition } from "../products/products.table.js";
 import type { DiscountUsage } from "./discount-rules.js";
 import {
-  discountRedemptionsTable,
+  discountRedemptionsTable as discountRedemptionsDefinition,
   type DiscountRow,
-  discountsTable,
+  discountsTable as discountsDefinition,
   type NewDiscountRow,
 } from "./discounts.table.js";
+import { deleteReturning, insertIfNew, insertReturning } from "../../database/dialect/writes.js";
+import { countWhere } from "../../database/dialect/expressions.js";
+import { tableFor } from "../../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for discounts and their uses. */
 
 export async function listDiscountRows(database: DatabaseOrTransaction): Promise<DiscountRow[]> {
+  const discountsTable = tableFor(database, discountsDefinition);
   return database
     .select()
     .from(discountsTable)
@@ -30,6 +34,7 @@ export async function findDiscountRow(
   database: DatabaseOrTransaction,
   discountId: string,
 ): Promise<DiscountRow | undefined> {
+  const discountsTable = tableFor(database, discountsDefinition);
   const [row] = await database
     .select()
     .from(discountsTable)
@@ -42,6 +47,7 @@ export async function findDiscountRowByCode(
   database: DatabaseOrTransaction,
   code: string,
 ): Promise<DiscountRow | undefined> {
+  const discountsTable = tableFor(database, discountsDefinition);
   const [row] = await database
     .select()
     .from(discountsTable)
@@ -55,6 +61,7 @@ export async function listDiscountRowsByCodes(
   database: DatabaseOrTransaction,
   codes: readonly string[],
 ): Promise<DiscountRow[]> {
+  const discountsTable = tableFor(database, discountsDefinition);
   if (codes.length === 0) return [];
   return database
     .select()
@@ -73,6 +80,7 @@ export async function listLiveAutomaticDiscountRows(
   database: DatabaseOrTransaction,
   now: Date,
 ): Promise<DiscountRow[]> {
+  const discountsTable = tableFor(database, discountsDefinition);
   return database
     .select()
     .from(discountsTable)
@@ -91,7 +99,8 @@ export async function insertDiscount(
   database: DatabaseOrTransaction,
   discount: NewDiscountRow,
 ): Promise<DiscountRow> {
-  const [inserted] = await database.insert(discountsTable).values(discount).returning();
+  const discountsTable = tableFor(database, discountsDefinition);
+  const [inserted] = await insertReturning(database, discountsTable, discount);
   if (!inserted) throw new Error("Saving the discount returned nothing");
   return inserted;
 }
@@ -101,6 +110,7 @@ export async function updateDiscountRow(
   discountId: string,
   changes: Partial<NewDiscountRow>,
 ): Promise<void> {
+  const discountsTable = tableFor(database, discountsDefinition);
   await database
     .update(discountsTable)
     .set(changes)
@@ -111,10 +121,13 @@ export async function deleteDiscountRow(
   database: DatabaseOrTransaction,
   discountId: string,
 ): Promise<boolean> {
-  const deleted = await database
-    .delete(discountsTable)
-    .where(and(eq(discountsTable.tenantId, DEFAULT_TENANT_ID), eq(discountsTable.id, discountId)))
-    .returning({ id: discountsTable.id });
+  const discountsTable = tableFor(database, discountsDefinition);
+  const deleted = await deleteReturning(
+    database,
+    discountsTable,
+    and(eq(discountsTable.tenantId, DEFAULT_TENANT_ID), eq(discountsTable.id, discountId)),
+    { id: discountsTable.id },
+  );
   return deleted.length > 0;
 }
 
@@ -126,6 +139,7 @@ export async function lockDiscountRows(
   database: DatabaseOrTransaction,
   discountIds: readonly string[],
 ): Promise<DiscountRow[]> {
+  const discountsTable = tableFor(database, discountsDefinition);
   if (discountIds.length === 0) return [];
   return database
     .select()
@@ -139,7 +153,9 @@ export async function lockDiscountRows(
  * A use counts once the order is placed, and while its checkout is still open and within
  * its time; an abandoned checkout's hold stops counting by itself.
  */
-function countedUse(now: Date): SQL | undefined {
+function countedUse(database: DatabaseOrTransaction, now: Date): SQL | undefined {
+  const checkoutsTable = tableFor(database, checkoutsDefinition);
+  const discountRedemptionsTable = tableFor(database, discountRedemptionsDefinition);
   // Built from columns rather than raw SQL: a column turns `now` into what the driver takes,
   // and the Postgres server's driver refuses a plain Date, which the built-in database accepts.
   return or(
@@ -158,17 +174,24 @@ export async function countDiscountUsage(
   email: string | null,
   now: Date,
 ): Promise<Map<string, DiscountUsage>> {
+  const checkoutsTable = tableFor(database, checkoutsDefinition);
+  const discountRedemptionsTable = tableFor(database, discountRedemptionsDefinition);
   const usage = new Map<string, DiscountUsage>();
   if (discountIds.length === 0) return usage;
   const rows = await database
     .select({
       discountId: discountRedemptionsTable.discountId,
-      total: sql<number>`count(*)::int`,
-      byCustomer: sql<number>`count(*) filter (where ${discountRedemptionsTable.email} = ${email ?? ""})::int`,
+      total: sql<number>`count(*)`.mapWith(Number),
+      byCustomer: countWhere(database, eq(discountRedemptionsTable.email, email ?? "")),
     })
     .from(discountRedemptionsTable)
     .leftJoin(checkoutsTable, eq(checkoutsTable.id, discountRedemptionsTable.checkoutId))
-    .where(and(inArray(discountRedemptionsTable.discountId, [...discountIds]), countedUse(now)))
+    .where(
+      and(
+        inArray(discountRedemptionsTable.discountId, [...discountIds]),
+        countedUse(database, now),
+      ),
+    )
     .groupBy(discountRedemptionsTable.discountId);
   for (const row of rows) {
     usage.set(row.discountId, { total: Number(row.total), byCustomer: Number(row.byCustomer) });
@@ -180,10 +203,11 @@ export async function insertRedemption(
   database: DatabaseOrTransaction,
   redemption: { discountId: string; checkoutId: string; email: string },
 ): Promise<void> {
-  await database
-    .insert(discountRedemptionsTable)
-    .values({ ...redemption, tenantId: DEFAULT_TENANT_ID })
-    .onConflictDoNothing();
+  const discountRedemptionsTable = tableFor(database, discountRedemptionsDefinition);
+  await insertIfNew(database, discountRedemptionsTable, {
+    ...redemption,
+    tenantId: DEFAULT_TENANT_ID,
+  });
 }
 
 /** The checkout became an order: its holds become uses. */
@@ -192,6 +216,7 @@ export async function markRedemptionsUsed(
   checkoutId: string,
   orderId: string,
 ): Promise<void> {
+  const discountRedemptionsTable = tableFor(database, discountRedemptionsDefinition);
   await database
     .update(discountRedemptionsTable)
     .set({ status: "used", orderId })
@@ -202,6 +227,7 @@ export async function releaseRedemptions(
   database: DatabaseOrTransaction,
   checkoutId: string,
 ): Promise<void> {
+  const discountRedemptionsTable = tableFor(database, discountRedemptionsDefinition);
   await database
     .update(discountRedemptionsTable)
     .set({ status: "released" })
@@ -220,6 +246,9 @@ export async function findCollectionsOfProducts(
   productIds: readonly string[],
   primaryCurrency: string | null,
 ): Promise<Map<string, Set<string>>> {
+  const productCollectionItemsTable = tableFor(database, productCollectionItemsDefinition);
+  const productCollectionsTable = tableFor(database, productCollectionsDefinition);
+  const productsTable = tableFor(database, productsDefinition);
   const membership = new Map<string, Set<string>>();
   if (collectionIds.length === 0 || productIds.length === 0) return membership;
   const add = (productId: string, collectionId: string) => {
@@ -257,7 +286,12 @@ export async function findCollectionsOfProducts(
       .where(
         and(
           inArray(productsTable.id, [...productIds]),
-          collectionRulesCondition(collection.rules, collection.matchAll, primaryCurrency),
+          collectionRulesCondition(
+            database,
+            collection.rules,
+            collection.matchAll,
+            primaryCurrency,
+          ),
         ),
       );
     matching.forEach((row) => add(row.id, collection.id));
@@ -270,11 +304,12 @@ export async function countUsedRedemptions(
   database: DatabaseOrTransaction,
   discountIds: readonly string[],
 ): Promise<Map<string, number>> {
+  const discountRedemptionsTable = tableFor(database, discountRedemptionsDefinition);
   if (discountIds.length === 0) return new Map();
   const rows = await database
     .select({
       discountId: discountRedemptionsTable.discountId,
-      count: sql<number>`count(*)::int`,
+      count: sql<number>`count(*)`.mapWith(Number),
     })
     .from(discountRedemptionsTable)
     .where(

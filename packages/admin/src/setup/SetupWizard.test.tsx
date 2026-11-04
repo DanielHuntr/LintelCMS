@@ -242,6 +242,25 @@ describe("SetupWizard", () => {
           ssl: false,
         },
         undefined,
+        "postgres",
+      );
+    });
+
+    it("offers MySQL and MariaDB with their usual port and user", async () => {
+      const { api } = renderWizard();
+      await press("Get started");
+      await userEvent.click(screen.getByRole("radio", { name: "Your own MySQL or MariaDB" }));
+      await press("Continue");
+      await screen.findByRole("heading", { name: "Connect to your MySQL or MariaDB" });
+      expect(screen.getByLabelText("Port")).toHaveValue("3306");
+      expect(screen.getByLabelText("Username")).toHaveValue("root");
+
+      await press("Test connection");
+      expect(await screen.findByText("Connected. Lintel can use this database.")).toBeVisible();
+      expect(api.testDatabaseConnection).toHaveBeenCalledWith(
+        expect.objectContaining({ port: 3306, user: "root" }),
+        undefined,
+        "mysql",
       );
     });
 

@@ -1,5 +1,5 @@
 /**
- * Turns the errors Postgres and the network give us into one sentence a person can act
+ * Turns the errors a database and the network give us into one sentence a person can act
  * on, instead of a stack trace. Used when the server starts, by the command-line scripts,
  * and by the setup screen's "test connection" button.
  */
@@ -17,6 +17,8 @@ export interface DatabaseTarget {
   port: number;
   database: string;
   user: string;
+  /** Which kind of server it is. Left out, it's Postgres. */
+  kind?: "postgres" | "mysql";
 }
 
 export interface DescribedDatabaseError {
@@ -52,10 +54,24 @@ export function describeMalformedDatabaseUrl(): string {
   return `DATABASE_URL isn't a valid Postgres address. ${DATABASE_URL_ADVICE}`;
 }
 
+/** Whether a database address is for a MySQL or MariaDB server. */
+export function isMysqlUrl(databaseUrl: string): boolean {
+  return /^(mysql|mariadb):/i.test(databaseUrl);
+}
+
 /** Reads the parts of a DATABASE_URL that the messages mention. */
 export function targetFromUrl(databaseUrl: string): DatabaseTarget {
   try {
     const url = new URL(databaseUrl);
+    if (isMysqlUrl(databaseUrl)) {
+      return {
+        host: url.hostname || "localhost",
+        port: url.port ? Number(url.port) : 3306,
+        database: decodeURIComponent(url.pathname.slice(1)),
+        user: decodeURIComponent(url.username),
+        kind: "mysql",
+      };
+    }
     return {
       host: url.hostname || "localhost",
       port: url.port ? Number(url.port) : 5432,
@@ -73,10 +89,16 @@ function describeCode(
   target: DatabaseTarget,
 ): DescribedDatabaseError | undefined {
   const address = `${target.host}:${target.port}`;
+  const server = target.kind === "mysql" ? "MySQL or MariaDB" : "Postgres";
+
+  if (target.kind === "mysql") {
+    const mysqlProblem = describeMysqlCode(code, error, target, address);
+    if (mysqlProblem) return mysqlProblem;
+  }
 
   switch (code) {
     case "ECONNREFUSED":
-      return unreachable(`Lintel can't reach Postgres at ${address}. Is it running?`);
+      return unreachable(`Lintel can't reach ${server} at ${address}. Is it running?`);
     case "ENOTFOUND":
     case "EAI_AGAIN":
       return unreachable(
@@ -87,7 +109,7 @@ function describeCode(
     case "EHOSTUNREACH":
     case "ENETUNREACH":
       return unreachable(
-        `Postgres at ${address} didn't answer. Check the host and port, ` +
+        `${server} at ${address} didn't answer. Check the host and port, ` +
           "and that no firewall is blocking the connection.",
       );
     case "SSL_NOT_SUPPORTED":
@@ -120,6 +142,76 @@ function describeCode(
   }
 }
 
+/** What mysql2 reports, by the names MySQL and MariaDB give their errors. */
+function describeMysqlCode(
+  code: string,
+  error: unknown,
+  target: DatabaseTarget,
+  address: string,
+): DescribedDatabaseError | undefined {
+  switch (code) {
+    case "ER_ACCESS_DENIED_ERROR":
+    case "ER_ACCESS_DENIED_NO_PASSWORD_ERROR":
+      return {
+        problem: "auth-failed",
+        message: `The server at ${address} turned down the user name or password for "${target.user}".`,
+      };
+    case "ER_DBACCESS_DENIED_ERROR":
+      return {
+        problem: "auth-failed",
+        message: `"${target.user}" isn't allowed to use the database "${target.database}" on the server at ${address}.`,
+      };
+    case "ER_BAD_DB_ERROR":
+      return {
+        problem: "not-found",
+        message: `There's no database called "${target.database}" on the server at ${address}.`,
+      };
+    case "HANDSHAKE_NO_SSL_SUPPORT":
+      return invalid(
+        `The server at ${address} doesn't accept encrypted (SSL) connections. ` +
+          "Turn SSL off and try again.",
+      );
+    case "ER_HOST_NOT_PRIVILEGED":
+    case "ER_HOST_IS_BLOCKED":
+      return {
+        problem: "auth-failed",
+        message: `The server at ${address} won't take connections from this computer. Allow it in the server's settings.`,
+      };
+    case "ER_NOT_SUPPORTED_AUTH_MODE":
+      return invalid(
+        `The server at ${address} signs people in in a way Lintel can't use. ` +
+          "Ask your host to give this user the caching_sha2_password or mysql_native_password method.",
+      );
+    default:
+      return code.startsWith("ER_")
+        ? invalid(`The database server reported a problem: ${mysqlMessage(error)}.`)
+        : undefined;
+  }
+}
+
+function mysqlMessage(error: unknown, depth = 0): string {
+  if (!(error instanceof Error) || depth > 5) return "no details given";
+  if ("sqlMessage" in error && typeof error.sqlMessage === "string") return error.sqlMessage;
+  return error.cause ? mysqlMessage(error.cause, depth + 1) : error.message;
+}
+
+function mysqlHintFor(problem: DatabaseProblem, target: DatabaseTarget): string | undefined {
+  if (problem === "unreachable") {
+    return "Start the server, or remove DATABASE_URL to use the built-in database instead.";
+  }
+  if (problem === "auth-failed") {
+    return `Check the user name and password in DATABASE_URL. ${SPECIAL_CHARACTERS_HINT}`;
+  }
+  if (problem === "not-found") {
+    const database = target.database.replaceAll("`", "``");
+    return (
+      `Create it with: CREATE DATABASE \`${database}\` CHARACTER SET utf8mb4 ` +
+      "COLLATE utf8mb4_0900_bin (on MariaDB, utf8mb4_nopad_bin); then start Lintel again."
+    );
+  }
+  return undefined;
+}
+
 function hintFor(
   problem: DatabaseProblem,
   target: DatabaseTarget,
@@ -133,6 +225,9 @@ function hintFor(
       "These settings were chosen during setup and saved in .lintel/config.json. " +
       "Fix them there, or delete that file to go back to the built-in database."
     );
+  }
+  if (target.kind === "mysql") {
+    return mysqlHintFor(problem, target);
   }
 
   if (problem === "unreachable") {
@@ -189,6 +284,14 @@ function unreachable(message: string): DescribedDatabaseError {
 
 function invalid(message: string): DescribedDatabaseError {
   return { problem: "invalid", message };
+}
+
+/**
+ * MySQL keeps text used in a key to a fixed length, 255 characters unless
+ * `mysql-tables.ts` says otherwise. Postgres has no such limit, so this can't happen there.
+ */
+export function isValueTooLong(error: unknown): boolean {
+  return findErrorCode(error) === "ER_DATA_TOO_LONG";
 }
 
 /**

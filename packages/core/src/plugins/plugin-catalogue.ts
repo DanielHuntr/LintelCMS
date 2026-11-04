@@ -22,6 +22,7 @@ export interface CataloguedPlugin {
 export interface PluginMigrations {
   pluginId: string;
   migrationsFolder: string;
+  mysqlMigrationsFolder?: string;
 }
 
 const PLUGIN_ID_PATTERN = /^[a-z][a-z0-9-]*$/;
@@ -82,7 +83,15 @@ export class PluginCatalogue {
   get migrations(): PluginMigrations[] {
     return this.plugins.flatMap((plugin) =>
       plugin.database
-        ? [{ pluginId: plugin.id, migrationsFolder: plugin.database.migrationsFolder }]
+        ? [
+            {
+              pluginId: plugin.id,
+              migrationsFolder: plugin.database.migrationsFolder,
+              ...(plugin.database.mysqlMigrationsFolder
+                ? { mysqlMigrationsFolder: plugin.database.mysqlMigrationsFolder }
+                : {}),
+            },
+          ]
         : [],
     );
   }

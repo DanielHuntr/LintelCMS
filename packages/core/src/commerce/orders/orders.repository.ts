@@ -1,17 +1,4 @@
-import {
-  and,
-  asc,
-  count,
-  desc,
-  eq,
-  gte,
-  ilike,
-  isNotNull,
-  isNull,
-  ne,
-  or,
-  type SQL,
-} from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, isNotNull, isNull, ne, or, type SQL } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../database/client.js";
 import { DEFAULT_TENANT_ID } from "../../database/columns.js";
 import type { MarketPaymentProviderId } from "../payments/payment-provider.js";
@@ -19,13 +6,16 @@ import {
   type FulfilmentStatus,
   type NewOrderRow,
   type OrderEventRow,
-  orderEventsTable,
+  orderEventsTable as orderEventsDefinition,
   type OrderLineRow,
-  orderLinesTable,
+  orderLinesTable as orderLinesDefinition,
   type OrderRow,
-  ordersTable,
+  ordersTable as ordersDefinition,
   type PaymentStatus,
 } from "./orders.table.js";
+import { insertReturning } from "../../database/dialect/writes.js";
+import { likeIgnoringCase } from "../../database/dialect/expressions.js";
+import { tableFor } from "../../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for orders, their lines and their timeline. */
 
@@ -41,15 +31,17 @@ export async function insertOrder(
   database: DatabaseOrTransaction,
   order: NewOrderRow,
 ): Promise<OrderRow> {
-  const [inserted] = await database.insert(ordersTable).values(order).returning();
+  const ordersTable = tableFor(database, ordersDefinition);
+  const [inserted] = await insertReturning(database, ordersTable, order);
   if (!inserted) throw new Error("Saving the order returned nothing");
   return inserted;
 }
 
 export async function insertOrderLines(
   database: DatabaseOrTransaction,
-  lines: Array<typeof orderLinesTable.$inferInsert>,
+  lines: Array<typeof orderLinesDefinition.$inferInsert>,
 ): Promise<void> {
+  const orderLinesTable = tableFor(database, orderLinesDefinition);
   if (lines.length > 0) {
     await database.insert(orderLinesTable).values(lines);
   }
@@ -59,6 +51,7 @@ export async function findOrderRow(
   database: DatabaseOrTransaction,
   orderId: string,
 ): Promise<OrderRow | undefined> {
+  const ordersTable = tableFor(database, ordersDefinition);
   const [row] = await database
     .select()
     .from(ordersTable)
@@ -72,6 +65,7 @@ export async function lockOrderRow(
   database: DatabaseOrTransaction,
   orderId: string,
 ): Promise<OrderRow | undefined> {
+  const ordersTable = tableFor(database, ordersDefinition);
   const [row] = await database
     .select()
     .from(ordersTable)
@@ -85,6 +79,7 @@ export async function findOrderRowByCheckout(
   database: DatabaseOrTransaction,
   checkoutId: string,
 ): Promise<OrderRow | undefined> {
+  const ordersTable = tableFor(database, ordersDefinition);
   const [row] = await database
     .select()
     .from(ordersTable)
@@ -97,6 +92,7 @@ export async function findOrderRowByPaymentIntent(
   database: DatabaseOrTransaction,
   paymentIntentId: string,
 ): Promise<OrderRow | undefined> {
+  const ordersTable = tableFor(database, ordersDefinition);
   const [row] = await database
     .select()
     .from(ordersTable)
@@ -110,7 +106,8 @@ export async function listOrderRows(
   filter: OrderFilter,
   page: { page: number; perPage: number },
 ): Promise<{ rows: OrderRow[]; total: number }> {
-  const where = orderConditions(filter);
+  const ordersTable = tableFor(database, ordersDefinition);
+  const where = orderConditions(database, filter);
   const rows = await database
     .select()
     .from(ordersTable)
@@ -127,6 +124,7 @@ export async function updateOrderRow(
   orderId: string,
   changes: Partial<NewOrderRow>,
 ): Promise<void> {
+  const ordersTable = tableFor(database, ordersDefinition);
   await database.update(ordersTable).set(changes).where(eq(ordersTable.id, orderId));
 }
 
@@ -134,6 +132,7 @@ export async function listOrderLineRows(
   database: DatabaseOrTransaction,
   orderId: string,
 ): Promise<OrderLineRow[]> {
+  const orderLinesTable = tableFor(database, orderLinesDefinition);
   return database
     .select()
     .from(orderLinesTable)
@@ -146,6 +145,7 @@ export async function updateOrderLineRow(
   lineId: string,
   changes: Partial<Pick<OrderLineRow, "fulfilledQuantity" | "refundedQuantity">>,
 ): Promise<void> {
+  const orderLinesTable = tableFor(database, orderLinesDefinition);
   await database.update(orderLinesTable).set(changes).where(eq(orderLinesTable.id, lineId));
 }
 
@@ -159,6 +159,7 @@ export async function insertOrderEvent(
     createdBy?: string | null;
   },
 ): Promise<void> {
+  const orderEventsTable = tableFor(database, orderEventsDefinition);
   await database.insert(orderEventsTable).values({ tenantId: DEFAULT_TENANT_ID, ...event });
 }
 
@@ -166,6 +167,7 @@ export async function listOrderEventRows(
   database: DatabaseOrTransaction,
   orderId: string,
 ): Promise<OrderEventRow[]> {
+  const orderEventsTable = tableFor(database, orderEventsDefinition);
   return database
     .select()
     .from(orderEventsTable)
@@ -173,7 +175,8 @@ export async function listOrderEventRows(
     .orderBy(desc(orderEventsTable.createdAt), desc(orderEventsTable.id));
 }
 
-function orderConditions(filter: OrderFilter): SQL | undefined {
+function orderConditions(database: DatabaseOrTransaction, filter: OrderFilter): SQL | undefined {
+  const ordersTable = tableFor(database, ordersDefinition);
   const search = filter.search?.replace(/^#/, "").trim();
   const escaped = search?.replace(/[\\%_]/g, (character) => `\\${character}`);
   return and(
@@ -185,9 +188,9 @@ function orderConditions(filter: OrderFilter): SQL | undefined {
     filter.customerId ? eq(ordersTable.customerId, filter.customerId) : undefined,
     escaped
       ? or(
-          ilike(ordersTable.email, `%${escaped}%`),
+          likeIgnoringCase(database, ordersTable.email, `%${escaped}%`),
           /^\d+$/.test(search ?? "") ? eq(ordersTable.number, Number(search)) : undefined,
-          ilike(ordersTable.name, `%${escaped}%`),
+          likeIgnoringCase(database, ordersTable.name, `%${escaped}%`),
         )
       : undefined,
   );
@@ -198,6 +201,7 @@ export async function countOrdersPaidSince(
   provider: MarketPaymentProviderId,
   since: Date,
 ): Promise<number> {
+  const ordersTable = tableFor(database, ordersDefinition);
   const [total] = await database
     .select({ value: count() })
     .from(ordersTable)
@@ -207,6 +211,7 @@ export async function countOrdersPaidSince(
 
 /** Orders that still need sending, for the dashboard. */
 export async function countUnfulfilledOrders(database: DatabaseOrTransaction): Promise<number> {
+  const ordersTable = tableFor(database, ordersDefinition);
   const [total] = await database
     .select({ value: count() })
     .from(ordersTable)

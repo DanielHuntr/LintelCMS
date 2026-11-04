@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { sql } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { withPrivacyChoice } from "../backups/backup-archive.service.js";
-import { useTestDatabase } from "../testing/test-database.js";
+import { testsRunOnMysql, useTestDatabase } from "../testing/test-database.js";
 import { securityEventsTable } from "../security-log/security-events.table.js";
 import { readSetting, writeSetting } from "../settings/settings.service.js";
 import { usePrivacyTestServer } from "./privacy-test-server.js";
@@ -14,6 +14,9 @@ import {
 import { runRetentionRules } from "./retention.service.js";
 
 const DAY = 24 * 60 * 60_000;
+
+// That migration is Postgres's. A MySQL install is never older than it, so has none to run.
+const itAfterUpgrade = it.skipIf(testsRunOnMysql);
 
 const migration = readFileSync(
   new URL("../../migrations/0037_hold_retention_on_upgrades.sql", import.meta.url),
@@ -49,24 +52,27 @@ describe("retention rules after an upgrade", () => {
     expect(await logEntries()).toEqual([]);
   });
 
-  it("deletes nothing on an upgraded install, and says a choice is waiting", async () => {
-    await upgrade();
-    await oldLogEntry();
+  itAfterUpgrade(
+    "deletes nothing on an upgraded install, and says a choice is waiting",
+    async () => {
+      await upgrade();
+      await oldLogEntry();
 
-    await run();
+      await run();
 
-    expect(await logEntries()).toHaveLength(1);
-    const answer = (await privacy.api("GET", "/privacy/retention")).json();
-    expect(answer.needsChoice).toBe(true);
-    expect(answer.rules.map((rule: { enabled: boolean }) => rule.enabled)).toEqual([
-      false,
-      false,
-      false,
-      false,
-    ]);
-  });
+      expect(await logEntries()).toHaveLength(1);
+      const answer = (await privacy.api("GET", "/privacy/retention")).json();
+      expect(answer.needsChoice).toBe(true);
+      expect(answer.rules.map((rule: { enabled: boolean }) => rule.enabled)).toEqual([
+        false,
+        false,
+        false,
+        false,
+      ]);
+    },
+  );
 
-  it("applies a rule once the owner turns it on, and the notice goes", async () => {
+  itAfterUpgrade("applies a rule once the owner turns it on, and the notice goes", async () => {
     await upgrade();
     await oldLogEntry();
 
@@ -79,7 +85,7 @@ describe("retention rules after an upgrade", () => {
     expect(await logEntries()).toEqual([]);
   });
 
-  it("lets the owner keep them all off", async () => {
+  itAfterUpgrade("lets the owner keep them all off", async () => {
     await upgrade();
     const answer = await privacy.api("PUT", "/privacy/retention", {});
     expect(answer.json().needsChoice).toBe(false);
@@ -97,7 +103,7 @@ describe("retention rules after an upgrade", () => {
     expect(withPrivacyChoice(chosen)).toBe(chosen);
   });
 
-  it("leaves a choice already saved alone", async () => {
+  itAfterUpgrade("leaves a choice already saved alone", async () => {
     const chosen = {
       retention: { ...defaultRetentionRules, orders: { enabled: true, days: 3650 } },
       processors: [],

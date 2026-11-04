@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { postgresConnectionDetailsSchema } from "../database/database-choice.js";
+import {
+  mysqlConnectionDetailsSchema,
+  postgresConnectionDetailsSchema,
+} from "../database/database-choice.js";
 import { siteNameSchema, siteTypeSchema } from "../settings/settings.schema.js";
 import { emailSchema, newPasswordSchema } from "../users/users.schema.js";
 
@@ -15,9 +18,19 @@ export const ownerAccountSchema = z.object({
 });
 
 /** `POST /setup/database/test` */
-export const testDatabaseRequestSchema = postgresConnectionDetailsSchema;
+export const testDatabaseRequestSchema = z.preprocess(
+  // The kind can be left out, for Postgres.
+  (value) =>
+    typeof value === "object" && value !== null && !("kind" in value)
+      ? { ...value, kind: "postgres" }
+      : value,
+  z.discriminatedUnion("kind", [
+    mysqlConnectionDetailsSchema.extend({ kind: z.literal("mysql") }),
+    postgresConnectionDetailsSchema.extend({ kind: z.literal("postgres") }),
+  ]),
+);
 
-/** The "Database" step's answer: built-in, or a Postgres server (created if missing, when asked). */
+/** The "Database" step's answer: built-in, or a server (created if missing, when asked). */
 export const databaseChoiceRequestSchema = z.discriminatedUnion(
   "kind",
   [
@@ -29,8 +42,14 @@ export const databaseChoiceRequestSchema = z.discriminatedUnion(
         .boolean({ error: "createIfMissing should be true or false" })
         .default(false),
     }),
+    mysqlConnectionDetailsSchema.extend({
+      kind: z.literal("mysql"),
+      createIfMissing: z
+        .boolean({ error: "createIfMissing should be true or false" })
+        .default(false),
+    }),
   ],
-  { error: 'Please choose "built-in" or "postgres" as the kind of database' },
+  { error: 'Please choose "built-in", "postgres" or "mysql" as the kind of database' },
 );
 
 /** The "Site name" and "What you're building" steps. */
@@ -54,7 +73,7 @@ export const setupSteps = ["database", "account", "site"] as const;
 export type SetupStep = (typeof setupSteps)[number];
 
 export const databaseStatusSchema = z.object({
-  kind: z.enum(["built-in", "postgres"]),
+  kind: z.enum(["built-in", "postgres", "mysql"]),
   chosenBy: z.enum(["environment", "setup", "default"]),
 });
 

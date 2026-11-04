@@ -11,6 +11,7 @@ import {
   type TestShop,
 } from "../testing/test-shop.js";
 import { checkTestToken, signTestToken, TEST_SESSION_COOKIE } from "./test-session-tokens.js";
+import { insertReturning } from "../../database/dialect/writes.js";
 
 const SLOW_TEST = 60_000;
 const USER_ID = "00000000-0000-4000-8000-000000000001";
@@ -275,10 +276,11 @@ describe("the test checkout", () => {
     "keeps a customer who was there before the test, even with no orders",
     async () => {
       const { current, site, variantId, rateId } = await start();
-      const [imported] = await testDatabase.database
-        .insert(customersTable)
-        .values({ email: "tester@example.com", name: "Imported", createdAt: new Date(0) })
-        .returning();
+      const [imported] = await insertReturning(testDatabase.database, customersTable, {
+        email: "tester@example.com",
+        name: "Imported",
+        createdAt: new Date(0),
+      });
       await placeTestOrder(site, variantId, rateId, await openSession(current, site));
 
       const deleted = await current.admin("DELETE", "/shop/test-orders");

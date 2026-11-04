@@ -11,6 +11,7 @@ import { workflowRunsTable, workflowsTable } from "../workflows/workflows.table.
 import { usePrivacyTestServer } from "./privacy-test-server.js";
 import { privacyRequestsTable } from "./privacy.table.js";
 import { runRetentionRules } from "./retention.service.js";
+import { insertReturning } from "../database/dialect/writes.js";
 
 /** The copies of a person's details that aren't in the obvious place. */
 
@@ -38,14 +39,18 @@ describe("copies of a person's details", () => {
 
   async function automationHistory(createdAt = new Date()) {
     const database = testDatabase.database;
-    const [webhook] = await database
-      .insert(webhooksTable)
-      .values({ name: "CRM", url: "https://crm.test", events: [], secret: "s" })
-      .returning();
-    const [workflow] = await database
-      .insert(workflowsTable)
-      .values({ name: "Reply", trigger, steps: [], secret: "s" })
-      .returning();
+    const [webhook] = await insertReturning(database, webhooksTable, {
+      name: "CRM",
+      url: "https://crm.test",
+      events: [],
+      secret: "s",
+    });
+    const [workflow] = await insertReturning(database, workflowsTable, {
+      name: "Reply",
+      trigger,
+      steps: [],
+      secret: "s",
+    });
     if (!webhook || !workflow) throw new Error("Nothing was made.");
     await database.insert(webhookDeliveriesTable).values({
       webhookId: webhook.id,

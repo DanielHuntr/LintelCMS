@@ -9,6 +9,14 @@ import {
   runHostingChecks,
 } from "../cli/hosting-checker.js";
 import type { Database, DatabaseKind } from "../database/client.js";
+import { readRawRows } from "../database/dialect/raw-queries.js";
+import {
+  MINIMUM_MYSQL_VERSIONS,
+  engineFromVersion,
+  isSupportedMysqlVersion,
+  readMysqlVersion,
+} from "../database/dialect/mysql-database.js";
+import { isMysqlUrl } from "../database/database-errors.js";
 
 /**
  * "Check this server": what Lintel needs from the machine it runs on, in plain English.
@@ -62,6 +70,10 @@ export async function checkDatabase(
         detail: "The built-in database is working. For a busy site, Postgres is faster.",
       };
     }
+    if (kind === "mysql") {
+      const [row] = await readRawRows(database, sql`select version() as version`);
+      return mysqlCheck(String(row?.version));
+    }
     return postgresCheck(readVersion(await database.execute(sql`show server_version`)));
   } catch (error) {
     return unreachable(error);
@@ -73,6 +85,13 @@ export async function checkDatabase(
  * own connections, and the built-in database can only be opened by one program at a time.
  */
 export async function checkDatabaseAddress(databaseUrl: string): Promise<HostingCheck> {
+  if (isMysqlUrl(databaseUrl)) {
+    try {
+      return mysqlCheck(await readMysqlVersion(databaseUrl));
+    } catch (error) {
+      return unreachable(error);
+    }
+  }
   const client = postgres(databaseUrl, { max: 1, connect_timeout: 10, onnotice: () => {} });
   try {
     const rows = await client<Array<{ server_version: string }>>`show server_version`;
@@ -95,6 +114,23 @@ function postgresCheck(version: string): HostingCheck {
     };
   }
   return { name: "Database", status: "pass", detail: `Postgres ${version} answers` };
+}
+
+/** "8.4.3" or "11.4.2-MariaDB-ubu2404", as each server says it. */
+function mysqlCheck(version: string): HostingCheck {
+  const engine = engineFromVersion(version);
+  const name = engine === "mariadb" ? "MariaDB" : "MySQL";
+  const shown = version.split("-")[0] ?? version;
+  if (!isSupportedMysqlVersion(version)) {
+    const minimum = MINIMUM_MYSQL_VERSIONS[engine];
+    return {
+      name: "Database",
+      status: "warn",
+      detail: `${name} ${shown}. Lintel is tested with ${minimum} or newer; upgrade when you can.`,
+      askHost: `Please upgrade my ${name} database to version ${minimum} or newer.`,
+    };
+  }
+  return { name: "Database", status: "pass", detail: `${name} ${shown} answers` };
 }
 
 function unreachable(error: unknown): HostingCheck {

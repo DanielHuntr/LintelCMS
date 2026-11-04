@@ -2,7 +2,7 @@ import { apiRequest } from "../api/client.js";
 import type { Session } from "../session/session.api.js";
 
 /** What the API says about first-run setup. Matches `GET /setup/status`. */
-export type DatabaseKind = "built-in" | "postgres";
+export type DatabaseKind = "built-in" | "postgres" | "mysql";
 
 export interface SetupStatus {
   /** True until the first account exists. */
@@ -28,7 +28,8 @@ export interface PostgresConnection {
 }
 
 export type DatabaseChoice =
-  { kind: "built-in" } | ({ kind: "postgres"; createIfMissing: boolean } & PostgresConnection);
+  | { kind: "built-in" }
+  | ({ kind: "postgres" | "mysql"; createIfMissing: boolean } & PostgresConnection);
 
 export interface FirstAccountDetails {
   name: string;
@@ -49,10 +50,11 @@ export function fetchSetupStatus(): Promise<SetupStatus> {
 export async function testDatabaseConnection(
   connection: PostgresConnection,
   setupCode: SetupCode,
+  kind: "postgres" | "mysql" = "postgres",
 ): Promise<void> {
   await apiRequest<{ ok: true }>("/setup/database/test", {
     method: "POST",
-    body: connection,
+    body: { ...connection, kind },
     headers: setupCodeHeader(setupCode),
   });
 }

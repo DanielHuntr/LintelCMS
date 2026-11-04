@@ -5,6 +5,7 @@ import { findPermissionsForUser } from "../roles/roles.service.js";
 import type { WebhookEventName } from "../webhooks/webhook-events.js";
 import { permissionNeededForEvent } from "./app-scopes.js";
 import { appsTable } from "./apps.table.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /**
  * Of these apps, the ones whose installer may see what this event carries. An app never has
@@ -17,10 +18,11 @@ export async function findAppsAllowedEvent(
   event: WebhookEventName,
 ): Promise<Set<string>> {
   if (appIds.length === 0) return new Set();
+  const appRows = tableFor(database, appsTable);
   const apps = await database
-    .select({ id: appsTable.id, installedBy: appsTable.installedBy })
-    .from(appsTable)
-    .where(inArray(appsTable.id, [...appIds]));
+    .select({ id: appRows.id, installedBy: appRows.installedBy })
+    .from(appRows)
+    .where(inArray(appRows.id, [...appIds]));
   const allowed = new Set<string>();
   for (const app of apps) {
     const permissions = await findPermissionsForUser(database, app.installedBy);

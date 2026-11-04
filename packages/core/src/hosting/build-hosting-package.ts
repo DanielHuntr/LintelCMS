@@ -53,9 +53,11 @@ export async function buildHostingPackage(): Promise<string> {
       : join(packageFolder, "packages", "core", "node_modules", workspacePackage.name);
     await copyBuiltPackage(workspacePackage, target);
   }
-  await cp(join(CORE_FOLDER, "migrations"), join(packageFolder, "packages", "core", "migrations"), {
-    recursive: true,
-  });
+  for (const folder of ["migrations", "migrations-mysql"]) {
+    await cp(join(CORE_FOLDER, folder), join(packageFolder, "packages", "core", folder), {
+      recursive: true,
+    });
+  }
   await cp(ADMIN_BUILD, join(packageFolder, "packages", "admin", "dist"), { recursive: true });
 
   for (const [source, name] of [

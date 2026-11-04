@@ -5,6 +5,8 @@ import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
 import { MIGRATIONS_FOLDER } from "../database/client.js";
+import { isMysqlUrl } from "../database/database-errors.js";
+import { openMysqlDatabase } from "../database/dialect/mysql-database.js";
 import { connectToPostgres } from "../database/postgres-database.js";
 import { testDatabaseUrl } from "./test-database.js";
 import type { TestProject } from "vitest/node";
@@ -19,7 +21,9 @@ export default async function setup(project: TestProject): Promise<() => Promise
   const templateFile = join(templateFolder, "built-in-database.tar");
 
   if (testDatabaseUrl) {
-    const opened = connectToPostgres(testDatabaseUrl);
+    const opened = isMysqlUrl(testDatabaseUrl)
+      ? await openMysqlDatabase(testDatabaseUrl)
+      : connectToPostgres(testDatabaseUrl);
     await opened.applyMigrations();
     await opened.close();
   }

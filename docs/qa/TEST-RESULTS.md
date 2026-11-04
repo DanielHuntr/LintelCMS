@@ -364,3 +364,24 @@ Targeted runs on Windows, not the full suite, which runs at merge:
 - Sizes: the core runtime is 9,791 bytes gzipped, under its 10,240 limit.
 
 The browser checks and what they don't cover are in `FIX-LOG-shader-studio.md`.
+
+## MySQL and MariaDB (feature/mysql-foundation, 4 November 2026)
+
+Windows, Node 24, Docker. The whole core suite, 2,252 tests, on each database, with other work
+sharing the machine:
+
+- Built-in database: 2,215 passed, 37 skipped, none failed.
+- Postgres 17 (`pnpm test:postgres`): 2,222 passed, 28 skipped, 2 failed. Both were timeouts in
+  `site-effects.test.ts`, which then passed alone, 21 of 21.
+- MySQL 8.4 (`pnpm test:mysql`): 2,212 passed, 39 skipped, 1 failed. It was a timeout in
+  `website-sites.test.ts`, which then passed alone three times, 7 of 7.
+- MariaDB 11.4 (`pnpm test:mysql`): 2,213 passed, 39 skipped, none failed.
+- One commit earlier, on a quieter machine: MySQL and MariaDB each 2,211 of 2,250, none failed.
+- `pnpm test:dialects`: 685 passed, 2 skipped, on all three.
+- `node dist/main.js` with `DATABASE_URL` on real MySQL and MariaDB: `/ready` said ready.
+- Other packages: all pass. `motion` failed one browser drag test under load and passed on the
+  next run; admin failed two `page-design` tests under load, which passed alone, 23 of 23.
+- `pnpm format:check`, `pnpm lint`, `pnpm typecheck` and `pnpm build`: clean.
+
+What the suite found is in `FIX-LOG-mysql.md`. What isn't proved is at the end of
+`docs/decisions/0049-any-database.md`.

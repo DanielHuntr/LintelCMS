@@ -27,12 +27,31 @@ Lintel, and neither can hosting for static files only.
 
 ## A database
 
-Lintel uses **Postgres or the built-in database** today.
+Lintel uses **the built-in database, Postgres, MySQL or MariaDB**.
 
 - **The built-in database** needs nothing set up. It's meant for one person trying Lintel
   on one computer.
 - **Postgres** is for a live site on a server. Any Postgres works: one your host
   provides, a managed service, or one on your own server. Set `DATABASE_URL` to its address.
+- **MySQL 8.4 or newer, or MariaDB 11.4 or newer** suits hosts that come with one of these.
+  Lintel's tests run on those two versions. Set `DATABASE_URL` to `mysql://...`, or choose it
+  on the setup screen, which can create the database for you.
+
+If you make the MySQL or MariaDB database yourself, it has to compare text exactly, or Lintel
+won't start, and it says so. On MySQL:
+
+```sql
+CREATE DATABASE lintel CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin;
+```
+
+On MariaDB, use `utf8mb4_nopad_bin` in place of `utf8mb4_0900_bin`.
+
+A few things differ on MySQL and MariaDB:
+
+- Add-ons that keep their own tables only run there if they say they support it. Others stay
+  switched off. See [Running on MySQL](/building/writing-a-plugin/#running-on-mysql-and-mariadb).
+- Text used to find a row, such as a page's address, is kept to 255 characters.
+- Search also finds a word inside a longer word in a page's body, so "port" finds "support".
 
 Back up whichever you use, and try restoring a backup once. See
 [Backups](/using/backups/) and the [production checklist](/hosting/checklist/).

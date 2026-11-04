@@ -57,7 +57,7 @@ export function setupScreensFor(status: SetupStatus, databaseKind: DatabaseKind)
   if (status.requiresSetupCode) screens.push("setup-code");
   for (const step of setupStepsFor(status)) {
     screens.push(step);
-    if (step === "database" && databaseKind === "postgres") screens.push("postgres");
+    if (step === "database" && databaseKind !== "built-in") screens.push("postgres");
   }
   screens.push("done");
   return screens;

@@ -46,6 +46,7 @@ describe("plugins", () => {
       name: "Blog",
       description: "Posts, categories and tags.",
       enabled: false,
+      canRunHere: true,
       source: "built-in",
       version: null,
       permissions: [],

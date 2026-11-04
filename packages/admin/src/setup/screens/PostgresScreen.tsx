@@ -10,6 +10,7 @@ import { WizardScreen } from "../WizardScreen.js";
 export type TestOutcome = "passed" | "passed-will-create" | "failed";
 
 interface PostgresScreenProps {
+  kind?: "postgres" | "mysql";
   form: PostgresForm;
   errors: ConnectionErrors;
   onChange: (changes: Partial<PostgresForm>) => void;
@@ -26,6 +27,7 @@ interface PostgresScreenProps {
  * fields, and the connection is made for real when setup finishes.
  */
 export function PostgresScreen({
+  kind = "postgres",
   form,
   errors,
   onChange,
@@ -58,7 +60,7 @@ export function PostgresScreen({
 
   return (
     <WizardScreen
-      title={t("postgres.title")}
+      title={kind === "mysql" ? t("mysql.title") : t("postgres.title")}
       subtitle={t("postgres.subtitle")}
       focusTarget={hostInput}
       onContinue={onContinue}
@@ -66,7 +68,13 @@ export function PostgresScreen({
       statusMessage={statusMessage}
       notice={notice}
     >
-      <PostgresFields form={form} errors={errors} onChange={change} hostRef={hostInput} />
+      <PostgresFields
+        kind={kind}
+        form={form}
+        errors={errors}
+        onChange={change}
+        hostRef={hostInput}
+      />
 
       <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-3">
         <Button

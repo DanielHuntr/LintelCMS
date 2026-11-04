@@ -24,6 +24,26 @@ export type { PluginCommand, PluginCommandContext } from "./plugin-commands.js";
 export type { PluginLiquid, PluginLiquidFilter, PluginLiquidTag } from "./plugin-liquid.js";
 export { escapeHtml } from "../liquid-templates/liquid-tags.js";
 export { packageFolder } from "./package-folder.js";
+
+// For a plugin with tables to run on MySQL and MariaDB as well: see the plugin docs.
+export { mysqlTableFor, tableFor } from "../database/dialect/mysql-tables.js";
+export {
+  deleteReturning,
+  insertIfNew,
+  insertIfNewReturning,
+  insertReturning,
+  updateReturning,
+  upsert,
+  upsertReturning,
+} from "../database/dialect/writes.js";
+export {
+  countWhere,
+  jsonAsText,
+  jsonListIncludes,
+  jsonText,
+  likeIgnoringCase,
+  orderNullsLast,
+} from "../database/dialect/expressions.js";
 /**
  * Where routes for a site's visitors go: `${ADDON_PUBLIC_PREFIX}/<plugin id>/...` on the API,
  * which the website answers at its own address as `/_lintel/api/addons/<plugin id>/...`.

@@ -37,9 +37,20 @@ export const postgresConnectionDetailsSchema = z.object({
   ssl: z.boolean({ error: "SSL should be true or false" }).default(false),
 });
 
+/** The same details for a MySQL or MariaDB server, whose usual port is another. */
+export const mysqlConnectionDetailsSchema = postgresConnectionDetailsSchema.extend({
+  port: z.coerce
+    .number({ error: "The port should be a number, usually 3306" })
+    .int({ error: "The port should be a whole number, usually 3306" })
+    .min(1, { error: "The port should be between 1 and 65535" })
+    .max(65535, { error: "The port should be between 1 and 65535" })
+    .default(3306),
+});
+
 export const databaseChoiceSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("built-in") }),
   postgresConnectionDetailsSchema.extend({ kind: z.literal("postgres") }),
+  mysqlConnectionDetailsSchema.extend({ kind: z.literal("mysql") }),
 ]);
 
 export type DatabaseChoice = z.infer<typeof databaseChoiceSchema>;
