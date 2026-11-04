@@ -93,7 +93,7 @@ export function AddonDetailsDialog({ addon, onClose }: AddonDetailsDialogProps) 
             <Link
               to={ownScreen}
               onClick={onClose}
-              className="self-start text-footnote font-medium text-accent hover:underline focus-visible:focus-ring"
+              className="self-start text-footnote font-medium text-accent underline decoration-1 underline-offset-2 hover:decoration-2 focus-visible:focus-ring"
             >
               {t("addons.openScreen", { name: addon.name })}
             </Link>

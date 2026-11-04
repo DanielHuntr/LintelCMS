@@ -249,6 +249,18 @@ describe("AddonsPage", () => {
       );
     });
 
+    it("underlines the link without a hover, so it reads as one (LINTEL-UX-286)", async () => {
+      const dialog = await open(
+        { id: "swatches", sidebarItems: [{ path: "/swatches", label: "Swatches", icon }] },
+        ["swatches"],
+      );
+      const classes = within(dialog)
+        .getByRole("link", { name: "Open Colour swatches" })
+        .className.split(" ");
+      expect(classes).toContain("underline");
+      expect(classes).not.toContain("hover:underline");
+    });
+
     it("links to its row in Settings when it has no sidebar link", async () => {
       const row = { group: "Add-ons", label: "Swatches", description: "", icon };
       const dialog = await open(
