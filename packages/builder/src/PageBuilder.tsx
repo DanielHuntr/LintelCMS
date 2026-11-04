@@ -72,6 +72,8 @@ import {
   type UploadedPageFont,
 } from "./style-panel/font-choices.js";
 import type {
+  CanvasPeer,
+  CanvasPointer,
   ForwardedKey,
   MessageFromFrame,
   TextSelectionMessage,
@@ -254,6 +256,10 @@ export interface PageBuilderProps {
   pageDrafting?: PageDrafting;
   /** Changes made to this page by someone else, merged into what's on screen. */
   incomingChanges?: IncomingChanges;
+  /** Other people on the page, marked on the canvas with their selection and pointer. */
+  peers?: readonly CanvasPeer[];
+  /** Told where this person's pointer is on the page, for the others to see. */
+  onPointerChange?: (pointer: CanvasPointer | null) => void;
   /** Told which element is selected (null for none), such as for trying another version of it. */
   onSelectionChange?: (nodeId: string | null) => void;
   /**
@@ -316,7 +322,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     incomingChanges: props.incomingChanges,
     dressIncoming: sharedSections.dressIncoming,
   });
-  const { onSelectionChange } = props;
+  const { onSelectionChange, onPointerChange } = props;
   useEffect(() => onSelectionChange?.(selectedId), [onSelectionChange, selectedId]);
   const [breakpoint, setBreakpoint] = useState<Breakpoint>("base");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -792,6 +798,9 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
         );
       }
       if (message.type === "hover") setHoveredId(message.nodeId);
+      if (message.type === "pointer") {
+        onPointerChange?.(message.nodeId === null ? null : (message as CanvasPointer));
+      }
       if (message.type === "editText") {
         actions.editText(message.nodeId, message.prop, message.text, message.original);
       }
@@ -1142,6 +1151,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                     )}
                     {!isBlank && (
                       <Canvas
+                        peers={props.peers}
                         finishEditingRef={props.finishEditingRef}
                         html={rendered.html}
                         css={canvasCss}

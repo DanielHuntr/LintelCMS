@@ -22,7 +22,7 @@ import { type KeyboardEvent, useCallback, useEffect, useMemo, useState } from "r
 import type { PageBuilderProps } from "../PageBuilder.js";
 import { BlocksProvider, blocksByHandle, noBlocks } from "../blocks/blocks-context.js";
 import { Canvas } from "../canvas/Canvas.js";
-import type { MessageFromFrame } from "../canvas/canvas-messages.js";
+import type { CanvasPointer, MessageFromFrame } from "../canvas/canvas-messages.js";
 import { layerName } from "../editor/commands.js";
 import { isTypingTarget, shortcutFor } from "../editor/shortcuts.js";
 import { useBuilder } from "../editor/useBuilder.js";
@@ -79,6 +79,8 @@ export function ContentEditingScreen(props: PageBuilderProps & { text: Translate
     dressIncoming: shared.dressIncoming,
   });
   const { root } = state.document;
+  const { onSelectionChange, onPointerChange } = props;
+  useEffect(() => onSelectionChange?.(selectedId), [onSelectionChange, selectedId]);
   const [breakpoint, setBreakpoint] = useState<Breakpoint>("base");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const preferences = props.preferences ?? browserPreferenceStore;
@@ -202,6 +204,9 @@ export function ContentEditingScreen(props: PageBuilderProps & { text: Translate
         }
       }
       if (message.type === "hover") setHoveredId(message.nodeId);
+      if (message.type === "pointer") {
+        onPointerChange?.(message.nodeId === null ? null : (message as CanvasPointer));
+      }
       if (message.type === "editText") {
         const node = findNode(root, message.nodeId);
         if (node && mayEditText(node, message.prop)) {
@@ -210,7 +215,16 @@ export function ContentEditingScreen(props: PageBuilderProps & { text: Translate
       }
       if (message.type === "key") runShortcut(message.key);
     },
-    [actions, root, sharedIds, catalogue, mayEditText, replacePicture, runShortcut],
+    [
+      actions,
+      root,
+      sharedIds,
+      catalogue,
+      mayEditText,
+      replacePicture,
+      runShortcut,
+      onPointerChange,
+    ],
   );
 
   useEffect(() => {
@@ -268,6 +282,7 @@ export function ContentEditingScreen(props: PageBuilderProps & { text: Translate
             >
               {hasContent ? (
                 <Canvas
+                  peers={props.peers}
                   finishEditingRef={props.finishEditingRef}
                   html={rendered.html}
                   css={canvasCss}

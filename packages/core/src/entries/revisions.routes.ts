@@ -40,7 +40,15 @@ export async function revisionsRoutes(server: FastifyInstance) {
 
   server.post("/entries/:id/revisions/:revisionId/restore", canUpdate, async (request) => {
     const { id, revisionId } = readRevisionParams(request.params);
-    return restoreRevision(server.database, id, revisionId, changeContext(request));
+    await server.collaboration.storeOpenDesigns(id);
+    const restored = await restoreRevision(server.database, id, revisionId, changeContext(request));
+    server.collaboration.entryChanged(id, {
+      version: restored.version,
+      personId: getSignedIn(request).user.id,
+      what: "saved",
+      fields: Object.keys(restored.data),
+    });
+    return restored;
   });
 }
 

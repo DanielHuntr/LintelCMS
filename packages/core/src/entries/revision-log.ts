@@ -29,11 +29,16 @@ export interface RecordedEdit {
   /** Save version: keep this as a revision of its own; the next edit starts a new one. */
   saveVersion: boolean;
   now?: Date;
+  /**
+   * People editing together: their stores alternate every few seconds, so an open revision
+   * younger than this takes the next person's too, rather than History gaining a line each time.
+   */
+  joinOthersWithinMs?: number;
 }
 
 export async function recordEdit(
   database: DatabaseOrTransaction,
-  { entryId, authorId, data, saveVersion, now = new Date() }: RecordedEdit,
+  { entryId, authorId, data, saveVersion, now = new Date(), joinOthersWithinMs = 0 }: RecordedEdit,
 ): Promise<void> {
   const latest = await findLatestRevision(database, entryId);
   const canJoin =
@@ -41,8 +46,8 @@ export async function recordEdit(
     latest.kind === "edited" &&
     latest.isOpen &&
     authorId !== null &&
-    latest.authorId === authorId &&
-    now.getTime() - latest.createdAt.getTime() < OPEN_REVISION_LIFETIME_MS;
+    now.getTime() - latest.createdAt.getTime() <
+      (latest.authorId === authorId ? OPEN_REVISION_LIFETIME_MS : joinOthersWithinMs);
 
   if (canJoin) {
     await updateOpenRevision(database, latest.id, { data, isOpen: !saveVersion, updatedAt: now });

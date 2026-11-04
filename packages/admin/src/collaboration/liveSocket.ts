@@ -49,6 +49,7 @@ export class SocketLink implements LiveLink {
   ) {
     this.open();
     globalThis.addEventListener?.("online", this.retryNow);
+    globalThis.addEventListener?.("offline", this.closeNow);
   }
 
   send(text: string): void {
@@ -58,10 +59,14 @@ export class SocketLink implements LiveLink {
   close(): void {
     this.isClosed = true;
     globalThis.removeEventListener?.("online", this.retryNow);
+    globalThis.removeEventListener?.("offline", this.closeNow);
     window.clearTimeout(this.retryTimer);
     window.clearInterval(this.pingTimer);
     this.socket?.close();
   }
+
+  /** The browser knows the network has gone, so there's no waiting for the socket to notice. */
+  private readonly closeNow = () => this.socket?.close();
 
   private readonly retryNow = () => {
     if (this.socket || this.isClosed) return;

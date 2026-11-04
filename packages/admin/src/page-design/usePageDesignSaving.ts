@@ -19,6 +19,7 @@ import { contentKeys } from "../content/content.queries.js";
 import type { Entry } from "../content/content.types.js";
 import type { SaveStatus } from "../content/entryDraft.js";
 import { useAutosave } from "../content/useAutosave.js";
+import { useLiveDesign } from "../collaboration/useLiveDesign.js";
 import { t } from "../i18n/strings.js";
 
 /** Someone else saved the page, and changed something this person changed too. */
@@ -87,8 +88,6 @@ export function usePageDesignSaving(
     return () => window.clearTimeout(timer);
   }, [mergeNote]);
 
-  const hasUnsavedChanges = design !== null && design !== saved;
-
   const remember = useCallback(
     (updated: Entry) => {
       entryRef.current = updated;
@@ -97,6 +96,54 @@ export function usePageDesignSaving(
     },
     [queryClient],
   );
+
+  const emitUpdate = useCallback((update: RemoteUpdate) => {
+    for (const listener of listeners.current) listener(update);
+  }, []);
+
+  const {
+    isLive,
+    isReconnecting,
+    holdsSaving,
+    hasUnstoredChanges,
+    document: liveDocument,
+    confirmed,
+    edit: editLive,
+    settle,
+    savedElsewhere,
+  } = useLiveDesign({
+    entryId: entry.id,
+    field: fieldHandle,
+    openedDesign,
+    onUpdate: (update, isUnstored) => {
+      newestDesign.current = update.document;
+      setDesign(update.document);
+      if (!isUnstored) setSaved(update.document);
+      emitUpdate(update);
+    },
+    onStored: ({ version, hasUnpublishedChanges, document: stored }) => {
+      savedDesign.current = stored;
+      setSaved(newestDesign.current);
+      setStatus("saved");
+      setErrorMessage(null);
+      remember({
+        ...entryRef.current,
+        version,
+        hasUnpublishedChanges,
+        data: { ...entryRef.current.data, [fieldHandle]: stored },
+      });
+    },
+    onNews: (news) => {
+      const onlyTheDesign =
+        news.what === "saved" && news.fields.every((each) => each === fieldHandle);
+      if (onlyTheDesign || news.what === "deleted") return;
+      void getEntry(entry.id).then(remember, () => undefined);
+    },
+    onProblem: setMergeNote,
+  });
+
+  const hasUnsavedLocally = design !== null && design !== saved;
+  const hasUnsavedChanges = holdsSaving ? hasUnstoredChanges : hasUnsavedLocally;
 
   /** Puts someone else's changes on screen, and measures this person's from theirs. */
   const takeIn = useCallback(
@@ -110,9 +157,9 @@ export function usePageDesignSaving(
       savedDesign.current = theirs;
       newestDesign.current = document;
       setDesign(document);
-      for (const listener of listeners.current) listener({ document, changes });
+      emitUpdate({ document, changes });
     },
-    [remember],
+    [remember, emitUpdate],
   );
 
   const saveMerged = useCallback(
@@ -127,7 +174,7 @@ export function usePageDesignSaving(
           if (!(error instanceof ApiError) || error.code !== "ENTRY_CHANGED") throw error;
           if (merges >= MOST_MERGES) throw error;
           const latest = await getEntry(id);
-          const base = savedDesign.current ?? createEmptyPage();
+          const base = confirmed() ?? savedDesign.current ?? createEmptyPage();
           const theirs = designOf(latest, fieldHandle);
           const theirChanges = diffPages(base, theirs);
           const mine = diffPages(base, next);
@@ -145,7 +192,7 @@ export function usePageDesignSaving(
         }
       }
     },
-    [fieldHandle, takeIn],
+    [fieldHandle, takeIn, confirmed],
   );
 
   const save = useCallback(
@@ -158,6 +205,9 @@ export function usePageDesignSaving(
         remember(updated);
         savedDesign.current = sent;
         setSaved(sent);
+        // Anything typed while it was on its way is still to go.
+        savedElsewhere(sent);
+        if (newestDesign.current && newestDesign.current !== sent) editLive(newestDesign.current);
         setStatus("saved");
         setErrorMessage(null);
       } catch (error) {
@@ -166,15 +216,21 @@ export function usePageDesignSaving(
         throw error;
       }
     },
-    [fieldHandle, remember, saveMerged],
+    [fieldHandle, remember, saveMerged, savedElsewhere, editLive],
   );
 
-  const { saveNow, saveUntilSaved } = useAutosave({
+  const { saveNow: saveThroughApi, saveUntilSaved } = useAutosave({
     draft: design,
-    hasUnsavedChanges,
-    isEnabled: conflict === null,
+    hasUnsavedChanges: hasUnsavedLocally,
+    isEnabled: conflict === null && !holdsSaving,
     save,
   });
+
+  /** Everything is stored once this resolves, or it rejects and says why. */
+  const saveNow = useCallback(async () => {
+    if (isLive && (await settle())) return;
+    await saveThroughApi();
+  }, [isLive, settle, saveThroughApi]);
 
   const publish = useCallback(async () => {
     setIsPublishing(true);
@@ -217,15 +273,19 @@ export function usePageDesignSaving(
     void queryClient.invalidateQueries({ queryKey: contentKeys.revisions(latest.id) });
   }, [conflict, fieldHandle, queryClient, takeIn]);
 
-  const change = useCallback((document: PageDocument) => {
-    newestDesign.current = document;
-    setDesign(document);
-  }, []);
+  const change = useCallback(
+    (document: PageDocument) => {
+      newestDesign.current = document;
+      setDesign(document);
+      editLive(document);
+    },
+    [editLive],
+  );
 
   return {
     entry: latestEntry,
     change,
-    status,
+    status: holdsSaving && hasUnstoredChanges ? ("saving" as const) : status,
     errorMessage,
     hasUnsavedChanges,
     incomingChanges,
@@ -238,11 +298,16 @@ export function usePageDesignSaving(
     mergeNote,
     saveNow: () => saveNow().catch(() => undefined),
     /** Saves anything waiting, and says whether it's all safe to leave. */
-    saveBeforeLeaving: () =>
-      saveUntilSaved().then(
+    saveBeforeLeaving: async () => {
+      if (isLive && (await settle())) return true;
+      return saveUntilSaved().then(
         () => true,
         () => false,
-      ),
+      );
+    },
+    /** The page with everyone's changes, for a builder opening on it again. */
+    currentDocument: liveDocument,
+    isReconnecting,
     publish,
     isPublishing,
     justPublished,

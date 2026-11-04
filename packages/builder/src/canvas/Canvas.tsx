@@ -10,6 +10,7 @@ import {
   canvasFrameSource,
 } from "./canvas-frame-script.js";
 import {
+  type CanvasPeer,
   type MessageFromFrame,
   type MessageToFrame,
   type OutlineLabels,
@@ -57,6 +58,8 @@ export const canvasWidths: Record<Breakpoint, string> = {
 /** No answer from the frame by then means it's gone or reloading, with nothing to keep. */
 const FINISH_EDITING_WAIT_MS = 400;
 
+const noPeers: readonly CanvasPeer[] = [];
+
 interface CanvasProps {
   /** Filled with a way to keep words being typed on the page, for leaving the builder. */
   finishEditingRef?: RefObject<(() => Promise<void>) | null>;
@@ -84,6 +87,8 @@ interface CanvasProps {
   isInsertDragging?: boolean;
   /** The selected element's scroll scene lines, or null for none. */
   sceneMarkers?: SceneMarkers | null;
+  /** Other people on the page, marked on it. */
+  peers?: readonly CanvasPeer[];
   onMessage: (message: MessageFromFrame) => void;
 }
 
@@ -108,6 +113,7 @@ export function Canvas({
   scripts,
   motionPreview = null,
   insertMarker = null,
+  peers = noPeers,
   isInsertDragging = false,
   sceneMarkers = null,
   onMessage,
@@ -272,6 +278,10 @@ export function Canvas({
   useEffect(() => {
     if (isReady && revealId) post({ type: "reveal", nodeId: revealId });
   }, [isReady, revealId]);
+
+  useEffect(() => {
+    if (isReady) post({ type: "peers", peers });
+  }, [isReady, peers, html, breakpoint]);
 
   useEffect(() => {
     if (isReady) post({ type: "insertMarker", marker: insertMarker });

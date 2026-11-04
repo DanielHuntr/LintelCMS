@@ -6,6 +6,10 @@ export const collaborationStrings = {
   "collab.where.design": "In the designer",
   "collab.where.content": "Editing content",
   "collab.onThisPage": "On this page now: {names}",
+  "collab.reconnecting": "Reconnecting…",
+  "collab.reconnecting.more":
+    "Your changes are safe on this screen and will be merged when the connection comes back.",
+  "collab.editingField": "{name} is editing this",
   "collab.conflict.title": "{name} changed this while you were working",
   "collab.conflict.titleSomeone": "This changed while you were working",
   "collab.conflict.both": "You both changed:",

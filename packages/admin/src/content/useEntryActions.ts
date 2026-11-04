@@ -204,6 +204,12 @@ export function useEntryActions({
     putOffConflict: () => setConflict(null),
     /** Someone else's save arrived, with nothing to ask about yet. */
     adopt,
+    /** Someone else changed a part of the entry this screen doesn't hold. */
+    noteVersion: (newest: number) => {
+      version.current = Math.max(version.current ?? 0, newest);
+    },
+    /** The version the next save starts from. */
+    currentVersion: () => version.current ?? 0,
     isWorking,
     actionError,
     dismissActionError: () => setActionError(null),

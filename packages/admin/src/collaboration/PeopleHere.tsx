@@ -28,12 +28,8 @@ export function PersonDot({
   return (
     <span
       aria-hidden="true"
-      style={{ backgroundColor: personColour(person.id) }}
-      className={classNames(
-        shape,
-        "flex items-center justify-center font-semibold text-white",
-        className,
-      )}
+      style={{ backgroundColor: personColour(person.id), color: "#fff" }}
+      className={classNames(shape, "flex items-center justify-center font-semibold", className)}
     >
       {initialsOf(person.name)}
     </span>

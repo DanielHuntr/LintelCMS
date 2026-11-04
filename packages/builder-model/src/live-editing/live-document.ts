@@ -49,6 +49,11 @@ export class LiveDocument {
     return this.local;
   }
 
+  /** The page as the server last confirmed it, without this person's waiting edits. */
+  get confirmedDocument(): PageDocument {
+    return this.confirmed;
+  }
+
   /** Whether anything of this person's has yet to reach the server. */
   get hasWaitingChanges(): boolean {
     return this.inFlight !== null || this.waiting.length > 0;

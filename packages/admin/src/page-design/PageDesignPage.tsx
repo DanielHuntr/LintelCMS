@@ -3,6 +3,7 @@ import { useShaderLibraryForBuilder } from "./useShaderLibraryForBuilder.js";
 import { useEntryReviewState } from "../client-editing/clientEditing.queries.js";
 import { SendForReviewButton, SentBackNote } from "../client-editing/SendForReview.js";
 import {
+  type CanvasPointer,
   type CanvasSite,
   type FileUploader,
   PageBuilder,
@@ -52,6 +53,7 @@ import { usePageDesignSaving } from "./usePageDesignSaving.js";
 import { ConflictDialog } from "../collaboration/ConflictDialog.js";
 import { describeDesignClashes } from "../collaboration/describeClashes.js";
 import { PeopleHere } from "../collaboration/PeopleHere.js";
+import { useLiveActivity } from "../collaboration/useLiveActivity.js";
 import { usePeopleHere } from "../collaboration/usePeople.js";
 import { SitePartProblems } from "./SitePartProblems.js";
 import { useSiteDesign } from "./useSiteDesign.js";
@@ -161,6 +163,8 @@ function PageDesigner({
   // Publishing the page also puts the navigation and footer changes live, for those who
   // may change them.
   const canPublishShared = useCan("builder:blocks");
+  // Before the saving below: someone has to be on the page before they can open its design.
+  const peopleHere = usePeopleHere(loadedEntry.id, "design");
   const saving = usePageDesignSaving(
     loadedEntry,
     fieldHandle,
@@ -168,7 +172,19 @@ function PageDesigner({
     canPublishShared ? shared.publish : undefined,
   );
   const session = useSession();
-  const peopleHere = usePeopleHere(loadedEntry.id, "design");
+  const { atWork, share } = useLiveActivity(loadedEntry.id, peopleHere);
+  const canvasPeers = useMemo(
+    () =>
+      atWork.map(({ id, name, colour, pointer, selection }) => ({
+        id,
+        name,
+        colour,
+        pointer,
+        selectedId: selection[0] ?? null,
+      })),
+    [atWork],
+  );
+  const sharePointer = useCallback((pointer: CanvasPointer | null) => share({ pointer }), [share]);
   // A/B tests: Version B and C of the page open on the same canvas (see src/experiments).
   const experiments = useExperimentsInDesigner({
     entryId: loadedEntry.id,
@@ -179,6 +195,14 @@ function PageDesigner({
   // The page as it is now, for the pictures and server-drawn HTML its blocks need.
   const [currentRoot, setCurrentRoot] = useState<PageDocument["root"] | null>(
     "document" in opened ? opened.document.root : null,
+  );
+  const selectInExperiments = experiments.select;
+  const selectionChanged = useCallback(
+    (nodeId: string | null) => {
+      selectInExperiments?.(nodeId);
+      share({ selection: nodeId ? [nodeId] : [] });
+    },
+    [selectInExperiments, share],
   );
   const changeSavedDesign = saving.change;
   const changeExperimentDesign = experiments.change;
@@ -359,10 +383,15 @@ function PageDesigner({
     <ShaderLibraryContext value={shaderLibrary}>
       <PageBuilder
         key={experiments.editing}
-        initialDocument={experiments.initialDocument ?? opened.document}
+        initialDocument={
+          (experiments.isEditingVersion ? experiments.initialDocument : saving.currentDocument()) ??
+          opened.document
+        }
+        peers={experiments.isEditingVersion ? undefined : canvasPeers}
+        onPointerChange={sharePointer}
         onChange={changeDesign}
         incomingChanges={experiments.isEditingVersion ? undefined : saving.incomingChanges}
-        onSelectionChange={experiments.select}
+        onSelectionChange={selectionChanged}
         title={title}
         toolbarTitleNote={
           <PageStatus
@@ -426,6 +455,15 @@ function PageDesigner({
               experiments.saveState
             ) : (
               <>
+                {saving.isReconnecting && (
+                  <span
+                    role="status"
+                    title={t("collab.reconnecting.more")}
+                    className="whitespace-nowrap text-footnote text-label-secondary"
+                  >
+                    {t("collab.reconnecting")}
+                  </span>
+                )}
                 <SaveIndicator
                   status={saving.status}
                   hasUnsavedChanges={saving.hasUnsavedChanges}

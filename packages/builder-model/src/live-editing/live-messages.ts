@@ -1,4 +1,6 @@
 import { z } from "zod";
+import type { PageDocument } from "../document/page-document.schema.js";
+import { type PageChange, pageChangesSchema } from "./page-changes.js";
 
 /**
  * What browsers and the server say to each other over the live connection
@@ -14,6 +16,8 @@ export const maxSharedSelection = 50;
 const tabIdSchema = z.string().min(1).max(64);
 const entryIdSchema = z.uuid();
 const elementIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/);
+const fieldHandleSchema = z.string().min(1).max(100);
+const requestIdSchema = z.string().min(1).max(100);
 
 export const liveViews = ["content", "design", "children"] as const;
 export type LiveView = (typeof liveViews)[number];
@@ -55,6 +59,35 @@ export const liveClientMessageSchema = z.discriminatedUnion("type", [
     entryId: entryIdSchema,
     activity: liveActivitySchema,
   }),
+  /** Start editing a page's design with whoever else has it open. */
+  z.object({
+    type: z.literal("openDesign"),
+    tab: tabIdSchema,
+    entryId: entryIdSchema,
+    field: fieldHandleSchema,
+  }),
+  z.object({
+    type: z.literal("closeDesign"),
+    tab: tabIdSchema,
+    entryId: entryIdSchema,
+    field: fieldHandleSchema,
+  }),
+  z.object({
+    type: z.literal("changes"),
+    tab: tabIdSchema,
+    entryId: entryIdSchema,
+    field: fieldHandleSchema,
+    batch: requestIdSchema,
+    changes: pageChangesSchema,
+  }),
+  /** Store the design now, rather than shortly: for leaving, publishing and previews. */
+  z.object({
+    type: z.literal("storeDesign"),
+    tab: tabIdSchema,
+    entryId: entryIdSchema,
+    field: fieldHandleSchema,
+    request: requestIdSchema,
+  }),
 ]);
 export type LiveClientMessage = z.infer<typeof liveClientMessageSchema>;
 
@@ -81,7 +114,78 @@ export type LiveServerMessage =
   | { type: "peopleHere"; tab: string; entryId: string; people: LiveAttendee[] }
   | { type: "activity"; tab: string; entryId: string; personId: string; activity: LiveActivity }
   /** A request wasn't allowed. `entryId` says which page, when it was about one. */
-  | { type: "refused"; tab: string; code: LiveRefusalCode; entryId?: string; message: string };
+  | { type: "refused"; tab: string; code: LiveRefusalCode; entryId?: string; message: string }
+  | {
+      type: "designOpened";
+      tab: string;
+      entryId: string;
+      field: string;
+      /** Changes when the server has started this design afresh, such as after a restart. */
+      session: string;
+      sequence: number;
+      version: number;
+      document: PageDocument;
+      /** False for someone who may only look: their changes would be refused. */
+      canEdit: boolean;
+    }
+  /** Someone else's steps, or changes saved another way. */
+  | {
+      type: "designChanged";
+      tab: string;
+      entryId: string;
+      field: string;
+      sequence: number;
+      personId: string | null;
+      changes: readonly PageChange[];
+    }
+  | {
+      type: "changesAccepted";
+      tab: string;
+      entryId: string;
+      field: string;
+      batch: string;
+      sequence: number;
+    }
+  | {
+      type: "changesRefused";
+      tab: string;
+      entryId: string;
+      field: string;
+      batch: string;
+      code: string;
+      message: string;
+    }
+  /** Everything up to `sequence` is stored. `request` answers a `storeDesign`. */
+  | {
+      type: "designStored";
+      tab: string;
+      entryId: string;
+      field: string;
+      sequence: number;
+      version: number;
+      hasUnpublishedChanges: boolean;
+      request?: string;
+    }
+  | {
+      type: "designNotStored";
+      tab: string;
+      entryId: string;
+      field: string;
+      message: string;
+      request?: string;
+    }
+  /** Something about the page changed, for anyone on it. */
+  | {
+      type: "entryChanged";
+      tab: string;
+      entryId: string;
+      version: number;
+      personId: string | null;
+      /** "saved", or what else happened to it. */
+      what: "saved" | "published" | "unpublished" | "deleted";
+      /** The fields a save changed. */
+      fields: readonly string[];
+    };
 
 /** Why the server closed a connection. A browser doesn't reconnect after `signedOut`. */
 export const liveCloseCodes = {

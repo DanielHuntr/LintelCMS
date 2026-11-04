@@ -60,14 +60,14 @@ describe("working out what changed", () => {
   });
 
   it("changes one style at one screen size", () => {
-    const before = page(element("a", { styles: { base: { color: "red", margin: "1px" } } }));
+    const before = page(element("a", { styles: { base: { color: "red", marginTop: "1px" } } }));
     const after = page(
       element("a", {
-        styles: { base: { color: "red", margin: "2px" }, phone: { color: "blue" } },
+        styles: { base: { color: "red", marginTop: "2px" }, phone: { color: "blue" } },
       }),
     );
     expect(expectDiffToWork(before, after)).toEqual([
-      { op: "set", node: "a", path: ["styles", "base", "margin"], value: "2px" },
+      { op: "set", node: "a", path: ["styles", "base", "marginTop"], value: "2px" },
       { op: "set", node: "a", path: ["styles", "phone", "color"], value: "blue" },
     ]);
   });
