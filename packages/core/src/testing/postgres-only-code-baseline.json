@@ -1,0 +1,366 @@
+{
+  "addons/addon-details.service.ts": {
+    "cast with ::": 1,
+    "postgres function": 1
+  },
+  "addons/addon-modules.ts": {
+    "pg-core import": 1
+  },
+  "analytics/analytics.repository.ts": {
+    "returning": 1,
+    "upsert": 1
+  },
+  "api-tokens/api-tokens.repository.ts": {
+    "returning": 2
+  },
+  "apps/apps.repository.ts": {
+    "returning": 2
+  },
+  "backups/backups.repository.ts": {
+    "returning": 1
+  },
+  "backups/database-snapshot.repository.ts": {
+    "cast with ::": 4,
+    "jsonb function": 3,
+    "truncate cascade": 1
+  },
+  "backups/table-order.ts": {
+    "pg-core import": 1
+  },
+  "blocks/blocks.repository.ts": {
+    "cast with ::": 2,
+    "json field access": 1,
+    "returning": 1,
+    "upsert": 1
+  },
+  "blueprints/blueprints.repository.ts": {
+    "returning": 3,
+    "upsert": 1
+  },
+  "client-editing/client-reviews.repository.ts": {
+    "pg-core import": 1,
+    "returning": 2
+  },
+  "collections/collections.repository.ts": {
+    "array function": 2,
+    "cast with ::": 2,
+    "returning": 2,
+    "upsert": 1
+  },
+  "commerce/carts/carts.repository.ts": {
+    "returning": 3,
+    "upsert": 1
+  },
+  "commerce/checkouts/checkouts.repository.ts": {
+    "returning": 2
+  },
+  "commerce/customers/customers.repository.ts": {
+    "filter clause": 2,
+    "ilike": 1,
+    "upsert": 1
+  },
+  "commerce/discounts/discounts.repository.ts": {
+    "cast with ::": 3,
+    "filter clause": 1,
+    "returning": 2,
+    "upsert": 1
+  },
+  "commerce/inventory/inventory.repository.ts": {
+    "returning": 5,
+    "upsert": 1
+  },
+  "commerce/markets/markets.repository.ts": {
+    "returning": 2
+  },
+  "commerce/orders/orders.repository.ts": {
+    "ilike": 1,
+    "returning": 1
+  },
+  "commerce/orders/refunds-and-fulfilments.repository.ts": {
+    "filter clause": 2,
+    "returning": 2
+  },
+  "commerce/payments/payment-accounts.repository.ts": {
+    "returning": 1,
+    "upsert": 2
+  },
+  "commerce/payments/stripe-events.repository.ts": {
+    "returning": 1,
+    "upsert": 1
+  },
+  "commerce/product-collections/product-collection-rules.ts": {
+    "cast with ::": 1,
+    "ilike in sql": 1,
+    "ilike": 1,
+    "json containment": 1,
+    "jsonb function": 1
+  },
+  "commerce/product-collections/product-collections.repository.ts": {
+    "returning": 2
+  },
+  "commerce/products/products.repository.ts": {
+    "ilike": 1,
+    "returning": 3
+  },
+  "commerce/sales/sales.repository.ts": {
+    "date function": 1
+  },
+  "commerce/settings/shop-settings.repository.ts": {
+    "returning": 1,
+    "upsert": 1
+  },
+  "commerce/shipping/shipping.repository.ts": {
+    "returning": 5
+  },
+  "commerce/shopify-import/shopify-import.repository.ts": {
+    "returning": 4,
+    "upsert": 2
+  },
+  "content-roots/content-roots.repository.ts": {
+    "json field access": 2,
+    "upsert": 1
+  },
+  "content-transfer/content-transfer.repository.ts": {
+    "upsert": 2
+  },
+  "content-tree/content-tree.repository.ts": {
+    "array function": 1,
+    "cast with ::": 5,
+    "ilike in sql": 1,
+    "ilike": 1,
+    "json field access": 3,
+    "jsonb function": 1,
+    "nulls ordering": 2
+  },
+  "cookie-notice/cookie-notice.repository.ts": {
+    "json field access": 2
+  },
+  "dashboard/dashboard-widgets.repository.ts": {
+    "filter clause": 2,
+    "json field access": 1
+  },
+  "dashboard/dashboard.repository.ts": {
+    "upsert": 2
+  },
+  "database/columns.ts": {
+    "pg-core import": 1
+  },
+  "database/migration-status.ts": {
+    "cast with ::": 1,
+    "postgres catalogue": 1
+  },
+  "delivery/delivery.repository.ts": {
+    "cast with ::": 1,
+    "json containment": 1,
+    "json field access": 2
+  },
+  "entries/entries.repository.ts": {
+    "cast with ::": 7,
+    "ilike": 1,
+    "json field access": 3,
+    "returning": 2
+  },
+  "entries/entry-publishing.repository.ts": {
+    "returning": 1
+  },
+  "entries/field-changes.repository.ts": {
+    "array function": 2,
+    "cast with ::": 5,
+    "json field access": 1,
+    "jsonb function": 5
+  },
+  "entries/field-renames.repository.ts": {
+    "array function": 1,
+    "cast with ::": 4,
+    "json field access": 2,
+    "jsonb function": 3
+  },
+  "entries/revisions.repository.ts": {
+    "returning": 1
+  },
+  "entries/scheduled-entries.repository.ts": {
+    "json field access": 1
+  },
+  "experiments/experiments.repository.ts": {
+    "returning": 1,
+    "upsert": 2
+  },
+  "fieldsets/fieldsets.repository.ts": {
+    "returning": 1,
+    "upsert": 1
+  },
+  "forms/forms.repository.ts": {
+    "filter clause": 1,
+    "returning": 1
+  },
+  "forms/submissions.repository.ts": {
+    "advisory lock": 1,
+    "cast with ::": 4,
+    "date function": 1,
+    "ilike": 1,
+    "json containment": 1,
+    "postgres function": 1,
+    "returning": 3
+  },
+  "globals/global-sets.repository.ts": {
+    "returning": 1,
+    "upsert": 1
+  },
+  "globals/global-values.repository.ts": {
+    "cast with ::": 1,
+    "upsert": 1
+  },
+  "health/health.repository.ts": {
+    "postgres catalogue": 1
+  },
+  "importers/site-import.repository.ts": {
+    "cast with ::": 1,
+    "returning": 2,
+    "upsert": 1
+  },
+  "interface-languages/interface-languages.repository.ts": {
+    "upsert": 1
+  },
+  "invitations/invitations.repository.ts": {
+    "returning": 2,
+    "upsert": 1
+  },
+  "liquid-templates/template-choice.repository.ts": {
+    "json field access": 1
+  },
+  "media/media.repository.ts": {
+    "ilike": 1,
+    "returning": 1
+  },
+  "navigation/navigation.repository.ts": {
+    "json field access": 1,
+    "returning": 1,
+    "upsert": 1
+  },
+  "one-time-tokens/one-time-tokens.repository.ts": {
+    "returning": 1
+  },
+  "passkeys/passkeys.repository.ts": {
+    "returning": 2
+  },
+  "privacy/personal-data.repository.ts": {
+    "cast with ::": 1,
+    "json field access": 1,
+    "jsonb function": 2,
+    "returning": 7
+  },
+  "privacy/privacy-test-server.ts": {
+    "returning": 1
+  },
+  "privacy/privacy.repository.ts": {
+    "ilike": 1,
+    "returning": 1
+  },
+  "privacy/retention.repository.ts": {
+    "json field access": 1
+  },
+  "publishing/publishing.repository.ts": {
+    "returning": 5,
+    "upsert": 1
+  },
+  "recycle-bin/recycle-bin.repository.ts": {
+    "cast with ::": 1,
+    "json field access": 3,
+    "jsonb function": 1,
+    "returning": 2
+  },
+  "roles/roles.repository.ts": {
+    "array function": 2,
+    "cast with ::": 2,
+    "returning": 2,
+    "upsert": 2
+  },
+  "search/search.repository.ts": {
+    "full-text search": 4,
+    "ilike": 1,
+    "json field access": 2,
+    "jsonb function": 1
+  },
+  "seo/redirects.repository.ts": {
+    "returning": 2
+  },
+  "seo/seo.repository.ts": {
+    "upsert": 1
+  },
+  "server-check/server-check.service.ts": {
+    "postgres catalogue": 1
+  },
+  "sessions/sessions.repository.ts": {
+    "returning": 4
+  },
+  "settings/settings.repository.ts": {
+    "returning": 1,
+    "upsert": 2
+  },
+  "setup/setup.repository.ts": {
+    "advisory lock": 1,
+    "postgres function": 1
+  },
+  "site-design/site-design.repository.ts": {
+    "cast with ::": 2
+  },
+  "site-fonts/site-fonts.repository.ts": {
+    "returning": 2
+  },
+  "sites/locales.repository.ts": {
+    "returning": 1,
+    "upsert": 1
+  },
+  "sites/sites.repository.ts": {
+    "returning": 1,
+    "upsert": 1
+  },
+  "starter-sites/starter-sites.repository.ts": {
+    "json field access": 1
+  },
+  "taxonomies/taxonomies.repository.ts": {
+    "returning": 1,
+    "upsert": 1
+  },
+  "taxonomies/terms.repository.ts": {
+    "returning": 1,
+    "upsert": 1
+  },
+  "two-factor/two-factor.repository.ts": {
+    "returning": 2,
+    "upsert": 1
+  },
+  "users/authorship.repository.ts": {
+    "returning": 1
+  },
+  "users/users.repository.ts": {
+    "ilike": 1,
+    "returning": 2
+  },
+  "webhooks/webhook-deliveries.repository.ts": {
+    "returning": 2
+  },
+  "webhooks/webhooks.repository.ts": {
+    "cast with ::": 1,
+    "distinct on": 1,
+    "json containment": 1,
+    "returning": 2
+  },
+  "wordpress-import/wordpress-import.repository.ts": {
+    "cast with ::": 1,
+    "returning": 3,
+    "upsert": 1
+  },
+  "workflows/approvals/approvals.repository.ts": {
+    "returning": 2,
+    "upsert": 1
+  },
+  "workflows/engine/workflow-runs.repository.ts": {
+    "distinct on": 1,
+    "returning": 3,
+    "upsert": 1
+  },
+  "workflows/workflows.repository.ts": {
+    "returning": 2
+  }
+}
