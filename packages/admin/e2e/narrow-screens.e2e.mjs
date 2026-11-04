@@ -96,6 +96,8 @@ try {
 
   // 3. The content tree, above the workspace, opens a page that fits too.
   await openFresh("/content");
+  // On a phone the tree starts folded away behind this button.
+  await page.getByRole("button", { name: "Show pages" }).click();
   const tree = page.getByRole("navigation", { name: "Content tree" });
   const pages = tree.getByRole("treeitem", { name: /^Pages/ });
   await pages.click();
@@ -105,7 +107,7 @@ try {
   await first.waitFor();
   await first.click();
   await page.waitForURL(/\/content\/pages\/[0-9a-f-]+$/);
-  await page.getByRole("region", { name: "Saving and publishing" }).waitFor();
+  await page.getByRole("heading", { level: 1 }).first().waitFor();
   assert.equal(await scrollWidth(), 390, "a page's workspace scrolls sideways");
   if (shots) await page.screenshot({ path: join(shots, "02-page-workspace.png") });
   console.warn("The admin fits a phone.");
