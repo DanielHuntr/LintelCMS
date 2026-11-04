@@ -24,6 +24,9 @@ describe("the lintel command", () => {
     const root = readFileSync(new URL("../../../package.json", import.meta.url), "utf8");
     expect(root.match(/"lintel": "pnpm/g)).toHaveLength(1);
     expect(root).toContain('"lintel": "pnpm --silent --filter @lintel/cli lintel"');
+    // Without the core settings, `export --out` and `publish` fail drawing pages.
+    const own = readFileSync(new URL("../package.json", import.meta.url), "utf8");
+    expect(own).toContain("--tsconfig ../core/tsconfig.dev.json");
 
     const terminal = recordingTerminal();
     await runCommandLine([], terminal);

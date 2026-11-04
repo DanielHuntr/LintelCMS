@@ -8,7 +8,7 @@
     "lintel": "./dist/main.js"
   },
   "scripts": {
-    "lintel": "tsx --conditions=development src/main.ts",
+    "lintel": "tsx --tsconfig ../core/tsconfig.dev.json --conditions=development src/main.ts",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
