@@ -183,7 +183,7 @@ async function findInvitationOrFail(server: FastifyInstance, invitationId: strin
 
 function emailInvitation(server: FastifyInstance, row: InvitationWithNames, token: string): string {
   // After "#", so the token never reaches a server log or a Referer header.
-  const link = `${server.adminOrigin}/accept-invitation#token=${token}`;
+  const link = `${server.adminUrl}/accept-invitation#token=${token}`;
   const from = row.inviterName ? `${row.inviterName} has` : "You've been";
   sendBrandedEmail(server, row.email, {
     subject: "You're invited",

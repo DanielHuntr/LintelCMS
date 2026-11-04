@@ -166,8 +166,10 @@ declare module "fastify" {
     plugins: PluginCatalogue;
     /** The site's add-ons as found at start, and any that couldn't load (see src/addons). */
     addons: AddonsState;
-    /** The admin app's address, for links in emails and as the passkeys' site. */
+    /** The admin app's origin: who may call the API, and the passkeys' site. */
     adminOrigin: string;
+    /** The admin app's whole address, with its path, for links to screens in emails. */
+    adminUrl: string;
     /** Sends email: `await server.email.send({ to, subject, text })` (see src/email). */
     email: EmailSender;
     /** The outbox, while no real email driver is set, for Users → Security log → Emails sent. */
@@ -220,6 +222,8 @@ export interface DataTools {
 export interface ServerOptions {
   /** The admin app's address, allowed to call the API from the browser. */
   adminOrigin: string;
+  /** Where the admin sits under that address in production (ADMIN_PATH), such as /admin. */
+  adminPath?: string;
   /**
    * Passed in rather than created here, so tests can hand over a test database.
    * A Postgres connection opens on the first query, so routes like /health never touch it.
@@ -395,6 +399,7 @@ export function buildServer(options: ServerOptions) {
     }
   });
   server.decorate("adminOrigin", options.adminOrigin.replace(/\/+$/, ""));
+  server.decorate("adminUrl", `${server.adminOrigin}${options.adminPath ?? ""}`);
   const email =
     options.email ??
     createEmailSender(new OutboxEmailDriver(), { defaultFrom: DEFAULT_EMAIL_FROM });
@@ -464,7 +469,7 @@ export function buildServer(options: ServerOptions) {
   registerWorkflows(server, {
     ...options.workflows,
     runScheduledJobs: options.runScheduledJobs ?? true,
-    adminOrigin: options.adminOrigin,
+    adminOrigin: server.adminUrl,
   });
   // Clients whose changes wait for approval send them for review instead of publishing.
   registerClientEditing(server);

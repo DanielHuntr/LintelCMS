@@ -24,7 +24,12 @@ export interface ProductionServerOptions extends Omit<ServerOptions, "apiPrefix"
  */
 export function buildProductionServer(options: ProductionServerOptions) {
   const { adminPath, adminBuildFolder, adminApiUrl, publicSite, ...serverOptions } = options;
-  const server = buildServer({ ...serverOptions, apiPrefix: API_PREFIX, compression: true });
+  const server = buildServer({
+    ...serverOptions,
+    adminPath,
+    apiPrefix: API_PREFIX,
+    compression: true,
+  });
 
   server.register(adminApp, { adminPath, buildFolder: adminBuildFolder, apiUrl: adminApiUrl });
   server.register(publicSite ?? placeholderPublicSite, { apiPrefix: API_PREFIX, adminPath });

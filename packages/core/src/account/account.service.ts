@@ -144,7 +144,7 @@ export async function requestEmailChange(
     ],
     action: {
       label: "Confirm this email",
-      url: `${server.adminOrigin}/confirm-email#token=${token}`,
+      url: `${server.adminUrl}/confirm-email#token=${token}`,
     },
   });
   sendBrandedEmail(server, user.email, {

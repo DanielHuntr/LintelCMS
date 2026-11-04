@@ -125,6 +125,11 @@ describe("the production server", () => {
     expect(notApi.headers.get("content-type")).toContain("text/html");
   });
 
+  it("links emails to the admin under its path (LINTEL-FUNC-041)", async () => {
+    const app = await start();
+    expect(app.adminUrl).toBe("https://example.com/admin");
+  });
+
   it("serves the API under /api, with health checks at the root", async () => {
     const app = await start();
 

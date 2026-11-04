@@ -15,7 +15,7 @@ export async function announceFormSubmitted(
   submission: FormSubmissionRow,
   options: { fromRobot?: boolean } = {},
 ): Promise<void> {
-  const inboxUrl = `${server.adminOrigin}/forms/${form.id}/submissions?submission=${submission.id}`;
+  const inboxUrl = `${server.adminUrl}/forms/${form.id}/submissions?submission=${submission.id}`;
   const emails = buildSubmissionEmails(form, submission.values, submission.submitterEmail, {
     publicApiUrl: server.publicApiUrl,
     inboxUrl,

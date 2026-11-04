@@ -53,7 +53,7 @@ export async function requestPasswordReset(
     now,
   );
   // The token goes after "#", which browsers never send to a server or in a Referer.
-  const link = `${server.adminOrigin}/reset-password#token=${token}`;
+  const link = `${server.adminUrl}/reset-password#token=${token}`;
   sendBrandedEmail(server, user.email, {
     subject: "Reset your password",
     heading: `Hello ${user.name},`,

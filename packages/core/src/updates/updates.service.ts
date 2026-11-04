@@ -51,7 +51,7 @@ export function updateChecksContextFor(server: FastifyInstance): UpdateChecksCon
     currentVersion: server.updates.currentVersion,
     installFolder: server.updates.installFolder,
     email: server.email,
-    adminUrl: server.adminOrigin,
+    adminUrl: server.adminUrl,
     log: server.log,
   };
 }
