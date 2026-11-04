@@ -16,7 +16,7 @@ export const contentTreeStrings = {
   "tree.siteWideHeading": "Site-wide",
   "tree.globals": "Global settings",
   "tree.menus": "Menus",
-  "tree.taxonomies": "Taxonomies",
+  "tree.taxonomies": "Categories and tags",
   "tree.recycleBin": "Recycle bin",
   "tree.recycleBinItems": "{count, plural, one {# item} other {# items}}",
   "tree.showMore": "Show {count} more",
@@ -78,9 +78,9 @@ export const contentTreeStrings = {
   "tree.action.info": "Info",
   "tree.action.delete": "Delete…",
   "tree.action.openList": "Open the list",
-  "tree.action.hostnames": "Hostnames…",
+  "tree.action.hostnames": "Domain and path…",
 
-  "tree.hostnames.title": "Hostnames for “{title}”",
+  "tree.hostnames.title": "Domain and path for “{title}”",
   "tree.hostnames.description":
     "Choose where this page and everything under it can be found. Leave both empty to use the default.",
   "tree.hostnames.domainLabel": "Domain",

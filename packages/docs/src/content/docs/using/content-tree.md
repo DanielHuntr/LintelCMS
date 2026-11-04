@@ -47,7 +47,7 @@ Press **…** on a row, or right-click it. The menu keeps to what you're likely 
 - **Delete…**
 
 Everything else waits under **More**: Move, Sort children, History, Info, Show as a list and
-Hostnames. If a page has pages under it, More also has the other of Publish and Unpublish,
+Domain and path. If a page has pages under it, More also has the other of Publish and Unpublish,
 for changing those pages along with it.
 
 You only see what your role allows.

@@ -55,7 +55,7 @@ Other things work like this:
   [Site styles](/using/site-styles/) and its [motion across the site](/using/site-motion/).
   Changing the French site's brand colour leaves the English site alone. The theme, logo
   and cookie notice in **Settings → Your website** are shared by every site.
-- **Taxonomies** can be used on every site, or on one. Choose under **Used on** when you
+- **Categories and tags** can be used on every site, or on one. Choose under **Used on** when you
   add one.
 - **Media** is one library every site can use. To keep things tidy, each site also has a
   folder: under **Folder** in the media library, choose **All files**, **Shared**, or the
