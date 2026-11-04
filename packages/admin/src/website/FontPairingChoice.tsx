@@ -57,9 +57,7 @@ export function FontPairingChoice({
           <div className="flex items-center gap-3 bg-accent/8 px-4 py-3">
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="text-body text-label">{t("website.ownFonts")}</span>
-              <span className="text-footnote text-label-secondary">
-                {t("website.ownFontsHint")}
-              </span>
+              <span className="text-footnote text-label">{t("website.ownFontsHint")}</span>
             </span>
             <Check aria-hidden="true" strokeWidth={2.25} className="size-4 shrink-0 text-accent" />
           </div>

@@ -11,7 +11,7 @@ const toneClasses: Record<Tone, string> = {
   neutral: "bg-fill text-label-secondary",
   accent: "bg-accent/14 text-accent",
   success: "bg-success/14 text-success",
-  warning: "bg-warning/14 text-warning",
+  warning: "bg-warning/14 text-[color-mix(in_srgb,var(--color-warning)_78%,var(--color-label))]",
   danger: "bg-danger/14 text-danger",
 };
 
