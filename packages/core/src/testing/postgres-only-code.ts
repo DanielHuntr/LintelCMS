@@ -86,9 +86,15 @@ export function postgresOnlyCodeIn(fileName: string, source: string): Record<str
     counts[rule] = (counts[rule] ?? 0) + 1;
   };
 
+  const drizzleCalls = new Map<string, string>();
+
   function visit(node: ts.Node): void {
     if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
       const rule = METHODS.get(node.expression.name.text);
+      if (rule) count(rule);
+    }
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {
+      const rule = drizzleCalls.get(node.expression.text);
       if (rule) count(rule);
     }
     if (ts.isTaggedTemplateExpression(node) && isSqlTag(node.tag)) {
@@ -110,7 +116,7 @@ export function postgresOnlyCodeIn(fileName: string, source: string): Record<str
       if (bindings && ts.isNamedImports(bindings)) {
         for (const element of bindings.elements) {
           const rule = DRIZZLE_IMPORTS.get((element.propertyName ?? element.name).text);
-          if (rule) count(rule);
+          if (rule) drizzleCalls.set(element.name.text, rule);
         }
       }
     }

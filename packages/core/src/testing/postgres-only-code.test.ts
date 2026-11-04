@@ -39,6 +39,7 @@ describe("Postgres-only code", () => {
       "example.repository.ts",
       `import { eq, ilike } from "drizzle-orm";
        import { alias } from "drizzle-orm/pg-core";
+       ilike(a, b);
        query.onConflictDoNothing();
        query.onConflictDoUpdate({});
        database.selectDistinctOn([]);

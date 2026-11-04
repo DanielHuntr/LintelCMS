@@ -56,7 +56,7 @@
   },
   "commerce/customers/customers.repository.ts": {
     "filter clause": 2,
-    "ilike": 1,
+    "ilike": 2,
     "upsert": 1
   },
   "commerce/discounts/discounts.repository.ts": {
@@ -73,7 +73,7 @@
     "returning": 2
   },
   "commerce/orders/orders.repository.ts": {
-    "ilike": 1,
+    "ilike": 2,
     "returning": 1
   },
   "commerce/orders/refunds-and-fulfilments.repository.ts": {
@@ -99,7 +99,7 @@
     "returning": 2
   },
   "commerce/products/products.repository.ts": {
-    "ilike": 1,
+    "ilike": 2,
     "returning": 3
   },
   "commerce/sales/sales.repository.ts": {
@@ -127,7 +127,7 @@
     "array function": 1,
     "cast with ::": 5,
     "ilike in sql": 1,
-    "ilike": 1,
+    "ilike": 2,
     "json field access": 3,
     "jsonb function": 1,
     "nulls ordering": 2
@@ -197,7 +197,7 @@
     "advisory lock": 1,
     "cast with ::": 4,
     "date function": 1,
-    "ilike": 1,
+    "ilike": 2,
     "json containment": 1,
     "postgres function": 1,
     "returning": 3
@@ -229,7 +229,7 @@
     "json field access": 1
   },
   "media/media.repository.ts": {
-    "ilike": 1,
+    "ilike": 7,
     "returning": 1
   },
   "navigation/navigation.repository.ts": {
@@ -277,7 +277,7 @@
   },
   "search/search.repository.ts": {
     "full-text search": 4,
-    "ilike": 1,
+    "ilike": 3,
     "json field access": 2,
     "jsonb function": 1
   },
@@ -334,7 +334,7 @@
     "returning": 1
   },
   "users/users.repository.ts": {
-    "ilike": 1,
+    "ilike": 2,
     "returning": 2
   },
   "webhooks/webhook-deliveries.repository.ts": {
