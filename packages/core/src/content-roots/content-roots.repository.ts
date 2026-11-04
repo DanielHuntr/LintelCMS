@@ -1,8 +1,11 @@
-import { and, eq, inArray, isNotNull, isNull, ne, sql } from "drizzle-orm";
-import { collectionsTable } from "../collections/collections.table.js";
+import { and, eq, inArray, isNotNull, isNull, ne } from "drizzle-orm";
+import { collectionsTable as collectionsDefinition } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { entriesTable } from "../entries/entries.table.js";
-import { contentRootAddressesTable } from "./content-roots.table.js";
+import { entriesTable as entriesDefinition } from "../entries/entries.table.js";
+import { contentRootAddressesTable as contentRootAddressesDefinition } from "./content-roots.table.js";
+import { upsert } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
+import { jsonText } from "../database/dialect/expressions.js";
 
 /** Database reads and writes for site starts and their addresses, nothing else. */
 
@@ -29,11 +32,14 @@ export async function listSiteStartRows(
   siteId: string,
   locale: string,
 ): Promise<SiteStartRow[]> {
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const contentRootAddressesTable = tableFor(database, contentRootAddressesDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
   return database
     .select({
       entryId: entriesTable.id,
       slug: entriesTable.slug,
-      title: sql<string | null>`${entriesTable.data}->>'title'`,
+      title: jsonText(database, entriesTable.data, "title"),
       sortOrder: entriesTable.sortOrder,
       createdAt: entriesTable.createdAt,
       collectionHandle: collectionsTable.handle,
@@ -73,6 +79,7 @@ export async function findEntryPlaces(
   database: DatabaseOrTransaction,
   entryIds: readonly string[],
 ): Promise<EntryPlaceRow[]> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const rows: EntryPlaceRow[] = [];
   for (let start = 0; start < entryIds.length; start += IDS_PER_QUERY) {
     const ids = entryIds.slice(start, start + IDS_PER_QUERY);
@@ -106,13 +113,15 @@ export async function findEntryAddressRows(
   database: DatabaseOrTransaction,
   entryIds: readonly string[],
 ): Promise<EntryAddressRow[]> {
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
   const rows: EntryAddressRow[] = [];
   for (let start = 0; start < entryIds.length; start += IDS_PER_QUERY) {
     rows.push(
       ...(await database
         .select({
           id: entriesTable.id,
-          title: sql<string | null>`${entriesTable.data}->>'title'`,
+          title: jsonText(database, entriesTable.data, "title"),
           slug: entriesTable.slug,
           status: entriesTable.status,
           publishedAt: entriesTable.publishedAt,
@@ -132,6 +141,8 @@ export async function listSiteStartHostnameRows(
   tenantId: string,
   siteId?: string,
 ): Promise<{ siteId: string; hostname: string }[]> {
+  const contentRootAddressesTable = tableFor(database, contentRootAddressesDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
   return database
     .selectDistinct({ siteId: entriesTable.siteId, hostname: contentRootAddressesTable.hostname })
     .from(contentRootAddressesTable)
@@ -151,6 +162,7 @@ export async function findRootAddressRow(
   tenantId: string,
   entryId: string,
 ) {
+  const contentRootAddressesTable = tableFor(database, contentRootAddressesDefinition);
   const [row] = await database
     .select()
     .from(contentRootAddressesTable)
@@ -170,13 +182,16 @@ export async function saveRootAddressRow(
   entryId: string,
   address: { hostname: string; pathPrefix: string },
 ): Promise<void> {
-  await database
-    .insert(contentRootAddressesTable)
-    .values({ tenantId, entryId, ...address })
-    .onConflictDoUpdate({
+  const contentRootAddressesTable = tableFor(database, contentRootAddressesDefinition);
+  await upsert(
+    database,
+    contentRootAddressesTable,
+    { tenantId, entryId, ...address },
+    {
       target: [contentRootAddressesTable.tenantId, contentRootAddressesTable.entryId],
       set: { ...address, updatedAt: new Date() },
-    });
+    },
+  );
 }
 
 export async function deleteRootAddressRow(
@@ -184,6 +199,7 @@ export async function deleteRootAddressRow(
   tenantId: string,
   entryId: string,
 ): Promise<void> {
+  const contentRootAddressesTable = tableFor(database, contentRootAddressesDefinition);
   await database
     .delete(contentRootAddressesTable)
     .where(

@@ -68,10 +68,6 @@
     "returning": 4,
     "upsert": 2
   },
-  "content-roots/content-roots.repository.ts": {
-    "json field access": 2,
-    "upsert": 1
-  },
   "content-transfer/content-transfer.repository.ts": {
     "upsert": 2
   },

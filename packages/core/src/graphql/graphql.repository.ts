@@ -1,10 +1,11 @@
 import { and, asc, desc, eq, sql } from "drizzle-orm";
-import { blueprintsTable } from "../blueprints/blueprints.table.js";
-import { collectionsTable } from "../collections/collections.table.js";
+import { blueprintsTable as blueprintsDefinition } from "../blueprints/blueprints.table.js";
+import { collectionsTable as collectionsDefinition } from "../collections/collections.table.js";
 import type { CollectionSiteScope } from "../collections/collections.schema.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { entriesTable } from "../entries/entries.table.js";
+import { entriesTable as entriesDefinition } from "../entries/entries.table.js";
 import type { FieldDefinition } from "../fieldtypes/field-definition.schema.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /**
  * Database reads for GraphQL. Published content comes through src/delivery; the reads
@@ -27,6 +28,8 @@ export async function listCollectionsWithBlueprints(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<CollectionWithBlueprint[]> {
+  const blueprintsTable = tableFor(database, blueprintsDefinition);
+  const collectionsTable = tableFor(database, collectionsDefinition);
   const rows = await database
     .select({
       id: collectionsTable.id,
@@ -71,14 +74,17 @@ export interface WorkingCopyRow {
   data: Record<string, unknown>;
 }
 
-const workingCopyColumns = {
-  id: entriesTable.id,
-  locale: entriesTable.locale,
-  slug: entriesTable.slug,
-  status: entriesTable.status,
-  publishedAt: entriesTable.publishedAt,
-  data: sql<Record<string, unknown>>`${entriesTable.data}`,
-};
+function workingCopyColumns(database: DatabaseOrTransaction) {
+  const entriesTable = tableFor(database, entriesDefinition);
+  return {
+    id: entriesTable.id,
+    locale: entriesTable.locale,
+    slug: entriesTable.slug,
+    status: entriesTable.status,
+    publishedAt: entriesTable.publishedAt,
+    data: sql<Record<string, unknown>>`${entriesTable.data}`.mapWith(entriesTable.data),
+  };
+}
 
 /** Every entry in a collection, drafts included, with its latest saved values. */
 export async function listWorkingCopies(
@@ -89,10 +95,11 @@ export async function listWorkingCopies(
   newestFirst: boolean,
   page: { limit: number; offset: number },
 ): Promise<{ rows: WorkingCopyRow[]; total: number }> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const rows = await database
-    .select(workingCopyColumns)
+    .select(workingCopyColumns(database))
     .from(entriesTable)
-    .where(inCollection(collectionId, siteId, locale))
+    .where(inCollection(entriesTable, collectionId, siteId, locale))
     .orderBy(
       ...(newestFirst
         ? [desc(entriesTable.createdAt)]
@@ -103,11 +110,16 @@ export async function listWorkingCopies(
   const [counted] = await database
     .select({ total: sql<number>`count(*)`.mapWith(Number) })
     .from(entriesTable)
-    .where(inCollection(collectionId, siteId, locale));
+    .where(inCollection(entriesTable, collectionId, siteId, locale));
   return { rows, total: counted?.total ?? 0 };
 }
 
-function inCollection(collectionId: string, siteId: string, locale: string) {
+function inCollection(
+  entriesTable: typeof entriesDefinition,
+  collectionId: string,
+  siteId: string,
+  locale: string,
+) {
   return and(
     eq(entriesTable.collectionId, collectionId),
     eq(entriesTable.siteId, siteId),
@@ -122,10 +134,13 @@ export async function findWorkingCopyBySlug(
   locale: string,
   slug: string,
 ): Promise<WorkingCopyRow | undefined> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const [row] = await database
-    .select(workingCopyColumns)
+    .select(workingCopyColumns(database))
     .from(entriesTable)
-    .where(and(inCollection(collectionId, siteId, locale), eq(entriesTable.slug, slug)))
+    .where(
+      and(inCollection(entriesTable, collectionId, siteId, locale), eq(entriesTable.slug, slug)),
+    )
     .limit(1);
   return row;
 }
