@@ -172,7 +172,9 @@ describe("visitors beside a page", () => {
   it("says how many visited this week in the builder, only with the plugin on", async () => {
     mockApi(() => pageStats);
     renderScreen(<BuilderVisitorsLine entryId="e1" />, { enabledPlugins: ["analytics"] });
-    expect(await screen.findByText("128 visitors this week")).toBeInTheDocument();
+    const line = await screen.findByText("128 visitors this week");
+    // It never squeezes onto three lines beside the other toolbar buttons (LINTEL-UX-330).
+    expect(line.className).toContain("whitespace-nowrap");
     cleanup();
 
     const { calls } = mockApi(() => pageStats);

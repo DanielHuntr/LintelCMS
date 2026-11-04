@@ -18,7 +18,7 @@ export function BuilderVisitorsLine({ entryId }: { entryId: string }) {
     return null;
   }
   return (
-    <span className="hidden text-footnote text-label-secondary lg:inline">
+    <span className="hidden shrink-0 text-footnote whitespace-nowrap text-label-secondary 2xl:inline">
       {t("visitors.builder.week", { visitors: stats.data.totals.visitors })}
     </span>
   );
