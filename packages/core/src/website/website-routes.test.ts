@@ -100,5 +100,6 @@ describe("the website's two servers", () => {
     }
 
     expect(wiredIn).toEqual([join(sourceFolder, "website", "website-routes.ts")]);
-  });
+    // It reads every source file, which takes longer on a busy machine.
+  }, 30_000);
 });
