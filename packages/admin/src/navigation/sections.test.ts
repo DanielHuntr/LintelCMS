@@ -83,6 +83,15 @@ describe("sidebar items from plugins", () => {
   });
 });
 
+describe("who sees Templates (LINTEL-FUNC-038)", () => {
+  it("shows it to anyone who can design, not only the owner", () => {
+    const labels = (permissions: string[]) =>
+      visibleSections(permissions, []).map((section) => section.path);
+    expect(labels(["builder:design"])).toContain("/design");
+    expect(labels(["entries:read"])).not.toContain("/design");
+  });
+});
+
 describe("sidebar names (QA sweep)", () => {
   // The sidebar said "Design" and the page it opened said "Templates".
   it("calls the template library by the name its page has", () => {

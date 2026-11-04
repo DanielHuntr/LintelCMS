@@ -38,7 +38,7 @@ export interface Section {
 export const sections: readonly Section[] = [
   { path: "/", label: "nav.dashboard", icon: LayoutGrid },
   { path: "/content", label: "nav.content", permission: "entries:read", icon: FileText },
-  { path: "/design", label: "nav.design", permission: "design:read", icon: Palette },
+  { path: "/design", label: "nav.design", permission: "builder:design", icon: Palette },
   {
     path: "/commerce",
     label: "nav.commerce",
