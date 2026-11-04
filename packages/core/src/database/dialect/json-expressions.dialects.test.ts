@@ -18,7 +18,8 @@ import {
   jsonWithKeyRenamed,
   positionInList,
 } from "./json-expressions.js";
-import { jsonText } from "./expressions.js";
+import { isValueTooLong } from "../database-errors.js";
+import { jsonText, orderNewestFirst } from "./expressions.js";
 import { holdLockUntilTransactionEnds } from "./locks.js";
 import { tableFor } from "./mysql-tables.js";
 import { appliedMigrationsTable, currentSchema, measureTable, readRawRows } from "./raw-queries.js";
@@ -276,6 +277,28 @@ describeOnEveryDatabase("Locks until a transaction ends", (handle) => {
       }),
     ).rejects.toThrow("Gave up");
     await database.transaction((transaction) => holdLockUntilTransactionEnds(transaction, 123));
+  });
+});
+
+describeOnEveryDatabase("Differences that show in results", (handle) => {
+  it("puts nulls first in newest-first order, as Postgres does", async () => {
+    const { database } = handle;
+    const entries = tableFor(database, entriesTable);
+    await addTestEntry(database, { slug: "old", publishedAt: new Date("2026-01-01T00:00:00Z") });
+    await addTestEntry(database, { slug: "new", publishedAt: new Date("2026-02-01T00:00:00Z") });
+    await addTestEntry(database, { slug: "none", publishedAt: null });
+    const rows = await database
+      .select({ slug: entries.slug })
+      .from(entries)
+      .orderBy(orderNewestFirst(database, entries.publishedAt));
+    expect(rows.map((row) => row.slug)).toEqual(["none", "new", "old"]);
+  });
+
+  it.skipIf(handle.name === "built-in")("knows a value too long for a key", async () => {
+    const failure = await addTestEntry(handle.database, { slug: "x".repeat(300) }).catch(
+      (error: unknown) => error,
+    );
+    expect(isValueTooLong(failure)).toBe(true);
   });
 });
 
