@@ -241,3 +241,12 @@ Branch `fix/night-qa` (`FIX-LOG-night-qa.md`). The text above is unchanged.
 - The three P1s were everyday flows that automated tests didn't reach: where a section lands in the builder (FUNC-033, FUNC-034) and a basket total without delivery (FUNC-035).
 - **Open:** 1 P2 (FUNC-037, translating a page before its parent, for Daniel to decide) and 14 P3. No P0 or P1 is open from this pass.
 - **Not covered:** a real payment, a real add-on or app install, FTP, SFTP and S3 publishing, WebKit and Firefox, a screen reader, contrast measurement. See `TEST-RESULTS.md`.
+
+## Update, 4 November 2026: the production build
+
+`FIX-LOG-night-qa.md`, "Second part". The earlier note on this pass said no P0 or P1 was open; that was true of what had been tested, which was the dev servers only.
+
+- Running the production build found one P0 and three P1s, all fixed: emailed admin links led to a 404 (FUNC-041), Visitors, A/B reporting and Liquid templates didn't work on the live website (FUNC-042), a form from the site's own page was refused (FUNC-043), and most `pnpm lintel` commands failed (FUNC-040).
+- **Open from this pass:** 3 P3s (UX-332, UX-333, UX-334), and the sample footer text in UX-328.
+- **Lesson:** browser passes should run on a production build. Several earlier "pass" results were only true on `pnpm dev`.
+- **Still not covered:** Firefox (not installed), the full journeys in WebKit, a real payment, FTP, SFTP and S3 publishing, a screen reader, and contrast of text over pictures.

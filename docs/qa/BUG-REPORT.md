@@ -936,6 +936,7 @@ A second reading of `dde71e4d..9943c3c1` on `fix/night-review`. All fixed there;
 | LINTEL-CODE-027 | P3       | Fixed  | Add-on CSV exports let what a visitor typed run as a spreadsheet formula                                  |
 | LINTEL-CODE-028 | P3       | Fixed  | `lintel-check.php` asked for PHP 8.1 when the companion needs 7.4                                         |
 | LINTEL-CODE-029 | P3       | Fixed  | Two comments spoke of a hosted version of Lintel                                                          |
+
 ## Overnight QA and UX pass (4 November 2026)
 
 A first-time website maker's journeys on a fresh install, in real Chromium, on `fix/night-qa` from `9943c3c1`. Fixes are in `FIX-LOG-night-qa.md`; screenshots in `screenshots/night-qa/`. Ranked by severity.
@@ -979,3 +980,37 @@ A first-time website maker's journeys on a fresh install, in real Chromium, on `
 | LINTEL-UX-327   | P3       | Open   | Visitors counts goals from automated browsers but not their visits: "form sent 2" beside 0 visitors, a 100% conversion rate   |
 | LINTEL-UX-329   | P3       | Open   | During a shop test with the cookie notice showing, the test bar covers the last line of the notice                            |
 | LINTEL-UX-328   | P3       | Open   | Templates as drafts with the look on: the first-visit intro and footer show the sample's name on the empty site               |
+
+## Overnight QA, second part (4 November 2026)
+
+On the production build, after merging `merge/batch-15`. Earlier rows above stay as they were; this table gives the newer state. Fixes are in `FIX-LOG-night-qa.md`, "Second part".
+
+| ID              | Severity | Status | Summary                                                                                                                        |
+| --------------- | -------- | ------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| LINTEL-FUNC-041 | P0       | Fixed  | In production every emailed admin link left out `/admin`, so invitations, password resets and email changes led to a 404       |
+| LINTEL-FUNC-042 | P1       | Fixed  | The production website had no Visitors beacon, no A/B reporting and no Liquid templates: counts stayed at 0 with no error      |
+| LINTEL-FUNC-043 | P1       | Fixed  | In production a form posted from the site's own page was refused as cross-site, so Pay (test) ended in Something went wrong    |
+| LINTEL-FUNC-040 | P1       | Fixed  | `pnpm lintel` ran the server tool only, as `package.json` named the script twice: addons, apps, backup, import and more failed |
+| LINTEL-FUNC-037 | P2       | Fixed  | Translating a page before its parent made it that language's home page. Now offers to translate the parents first              |
+| LINTEL-FUNC-038 | P2       | Fixed  | Templates was in the sidebar for the Owner only: it asked for `design:read`, which no role has                                 |
+| LINTEL-FUNC-039 | P2       | Fixed  | Admins couldn't reach A/B tests                                                                                                |
+| LINTEL-UX-324   | P2       | Fixed  | A client typing /settings or /build saw those screens, or "This didn't load". Now a Not available page with a way back         |
+| LINTEL-UX-319   | P2       | Fixed  | Lottie and Rive could only upload, not pick a file already in Media                                                            |
+| LINTEL-UX-318   | P2       | Fixed  | Sample 3D models were left out of static publishing                                                                            |
+| LINTEL-A11Y-039 | P3       | Fixed  | Warning badges at 3.90:1 and the own-fonts hint at 4.18:1 to 4.42:1                                                            |
+| LINTEL-UX-316   | P3       | Fixed  | Replace my pages now says when a menu or footer link leads to a page that has gone. The link itself isn't changed              |
+| LINTEL-UX-317   | P3       | Fixed  | Replace my pages now names collections left by an earlier template. They aren't deleted                                        |
+| LINTEL-UX-320   | P3       | Fixed  | Rive's console warning on published pages                                                                                      |
+| LINTEL-UX-321   | P3       | Fixed  | `InvalidStateError` on the way to the test payment page: none in a full test order on production                               |
+| LINTEL-UX-322   | P3       | Fixed  | Insert search matched "form" inside "information"                                                                              |
+| LINTEL-UX-323   | P3       | Fixed  | "Default site" for new installs, and "No domain yet" on a site at a path. Existing installs keep their name                    |
+| LINTEL-UX-325   | P3       | Fixed  | "Your website is live" on an empty site; "sharp works"                                                                         |
+| LINTEL-UX-326   | P3       | Fixed  | An Arc carousel with no pictures left a blank gap                                                                              |
+| LINTEL-UX-327   | P3       | Fixed  | Forms sent by robots counted as Visitors goals                                                                                 |
+| LINTEL-UX-328   | P3       | Part   | The intro no longer plays on a site with no home page. The template's footer still shows its sample name until pages go live   |
+| LINTEL-UX-329   | P3       | Fixed  | The test bar covered the cookie notice                                                                                         |
+| LINTEL-UX-330   | P3       | Fixed  | "24 visitors this week" wrapped onto three lines in the builder toolbar at 1440px                                              |
+| LINTEL-UX-331   | P3       | Fixed  | "B is ahead" with no successes on either side                                                                                  |
+| LINTEL-UX-332   | P3       | Open   | The same website is wired up twice (`site-server.ts`, `built-in-public-site.ts`), which caused FUNC-042 and can again          |
+| LINTEL-UX-334   | P3       | Open   | An installed app's sidebar page shows for every role, clients included. The app decides what they see; Daniel may want a rule  |
+| LINTEL-UX-333   | P3       | Open   | A client's canvas shows the column guides of a placed grid, which mean nothing to them                                         |
