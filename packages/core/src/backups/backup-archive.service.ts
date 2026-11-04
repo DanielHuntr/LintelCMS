@@ -25,6 +25,7 @@ import {
   readAllRows,
   readAllSettings,
   replaceAllSettings,
+  withForeignKeysAtEase,
   type TableRow,
 } from "./database-snapshot.repository.js";
 import type { RestoreSummary } from "./backups.schema.js";
@@ -271,29 +272,31 @@ async function replaceDatabase(
 
   const forwardColumns = columnsPointingForward(tables);
 
-  await database.transaction(async (transaction) => {
-    // Add-ons' tables go in after Lintel's, since they may point at Lintel's rows.
-    await emptyTables(transaction, [...tables, ...addonTables]);
-    for (const table of tables) {
-      const name = getTableName(table);
-      await insertAllRows(
-        transaction,
-        table,
-        rowsByTable.get(name) ?? [],
-        forwardColumns.get(name) ?? [],
-      );
-    }
-    for (const [name, columns] of forwardColumns) {
-      const table = tables.find((candidate) => getTableName(candidate) === name);
-      if (table) {
-        await fillInColumns(transaction, table, rowsByTable.get(name) ?? [], columns);
+  await database.transaction((transaction) =>
+    withForeignKeysAtEase(transaction, async () => {
+      // Add-ons' tables go in after Lintel's, since they may point at Lintel's rows.
+      await emptyTables(transaction, [...tables, ...addonTables]);
+      for (const table of tables) {
+        const name = getTableName(table);
+        await insertAllRows(
+          transaction,
+          table,
+          rowsByTable.get(name) ?? [],
+          forwardColumns.get(name) ?? [],
+        );
       }
-    }
-    for (const name of addonTables) {
-      await insertAllRows(transaction, name, rowsByTable.get(name) ?? []);
-    }
-    await replaceAllSettings(transaction, isRecord(settings) ? settings : {});
-  });
+      for (const [name, columns] of forwardColumns) {
+        const table = tables.find((candidate) => getTableName(candidate) === name);
+        if (table) {
+          await fillInColumns(transaction, table, rowsByTable.get(name) ?? [], columns);
+        }
+      }
+      for (const name of addonTables) {
+        await insertAllRows(transaction, name, rowsByTable.get(name) ?? []);
+      }
+      await replaceAllSettings(transaction, isRecord(settings) ? settings : {});
+    }),
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
