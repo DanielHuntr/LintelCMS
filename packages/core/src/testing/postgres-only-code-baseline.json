@@ -30,10 +30,6 @@
     "returning": 1,
     "upsert": 1
   },
-  "blueprints/blueprints.repository.ts": {
-    "returning": 3,
-    "upsert": 1
-  },
   "client-editing/client-reviews.repository.ts": {
     "pg-core import": 1,
     "returning": 2
@@ -181,10 +177,6 @@
   "experiments/experiments.repository.ts": {
     "returning": 1,
     "upsert": 2
-  },
-  "fieldsets/fieldsets.repository.ts": {
-    "returning": 1,
-    "upsert": 1
   },
   "forms/forms.repository.ts": {
     "filter clause": 1,

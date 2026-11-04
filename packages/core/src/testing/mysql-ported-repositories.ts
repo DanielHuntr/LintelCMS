@@ -14,4 +14,6 @@ export const mysqlPortedRepositories = [
   "security-log/security-log.repository.ts",
   "api-tokens/api-tokens.repository.ts",
   "seo/redirects.repository.ts",
+  "fieldsets/fieldsets.repository.ts",
+  "blueprints/blueprints.repository.ts",
 ];
