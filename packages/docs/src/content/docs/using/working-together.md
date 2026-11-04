@@ -1,7 +1,7 @@
 ---
 title: Working together
 description: Seeing who else is on a page, editing it at the same time, and what happens when you both change the same thing.
-since: "1.0.0-rc.1"
+since: "1.0.0-rc"
 sidebar:
   label: Working together
 ---

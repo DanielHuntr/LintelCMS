@@ -436,7 +436,7 @@ describe("two people editing one page", () => {
     const host = server(start);
     const sam = new LiveDocument(start, "sam");
     sam.edit(renamed(sam.document, "a", "Sent before the drop"));
-    sam.nextBatch();
+    const sentBefore = sam.nextBatch();
     sam.edit(renamed(sam.document, "b", "Typed offline"));
     const theirs: PageChange[] = [{ op: "set", node: "h", path: ["name"], value: "Theirs" }];
     host.take(theirs);
@@ -444,8 +444,11 @@ describe("two people editing one page", () => {
     expect(findNode(update.document.root, "h")?.name).toBe("Theirs");
     expect(findNode(update.document.root, "b")?.name).toBe("Typed offline");
     expect(update.changes).toEqual(theirs);
+    const again = sam.nextBatch();
+    expect(again?.id).toBe(sentBefore?.id);
+    sam.accepted(again?.id ?? "", host.take(again?.changes ?? []));
     const batch = sam.nextBatch();
-    expect(batch?.changes).toHaveLength(2);
+    expect(batch?.changes).toHaveLength(1);
     sam.accepted(batch?.id ?? "", host.take(batch?.changes ?? []));
     expect(shape(sam.document)).toEqual(shape(host.document));
   });

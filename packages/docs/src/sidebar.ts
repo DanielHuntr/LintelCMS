@@ -28,6 +28,7 @@ export const usingPages = [
   "using/effects",
   "using/site-motion",
   "using/history",
+  "using/working-together",
   "using/media",
   "using/forms",
   "using/cookie-notice",

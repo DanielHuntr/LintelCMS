@@ -305,6 +305,13 @@ describe("editing a design together", () => {
     expect(second.received("designChanged")).toHaveLength(0);
   });
 
+  it("says everything is stored when a change turned out to change nothing", async () => {
+    const { browser } = await inDesign("owner", "a");
+    send(browser, "a", [rename("element-someone-removed", "Too late")]);
+    await browser.next("changesAccepted");
+    await browser.next("designStored");
+  });
+
   it("stores what is open before publishing, so nothing live is out of date", async () => {
     const { browser } = await inDesign("owner", "a");
     send(browser, "a", [rename("hero", "Going live")]);

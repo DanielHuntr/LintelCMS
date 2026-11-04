@@ -163,6 +163,15 @@ describe("the live connection", () => {
     expect((await stranger.next("refused")).code).toBe("NOT_FOUND");
   });
 
+  it("won't show the tree of another tenant's site", async () => {
+    await database.database.execute(
+      `update sites set tenant_id = 'another-agency' where id = '${siteId}'`,
+    );
+    const stranger = await browser(owner);
+    stranger.send({ type: "watchSite", tab: "tree", siteId });
+    expect((await stranger.next("refused")).code).toBe("NOT_ALLOWED");
+  });
+
   it("closes the connection once the person has signed out", async () => {
     const first = await browser(owner);
     await requestsAs(server, owner)("POST", "/auth/sign-out");

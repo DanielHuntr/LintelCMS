@@ -1,12 +1,13 @@
 import { type LinkEvents, type LiveLink, SocketLink } from "./liveSocket.js";
 
 type ChannelMessage =
-  | { kind: "up" }
+  /** `to`: answering one tab. Left out, it is news for all of them. */
+  | { kind: "up"; to?: string }
   | { kind: "down"; status: "offline" | "unavailable" | "signedOut" }
   | { kind: "fromServer"; text: string }
   | { kind: "toServer"; text: string }
   /** A tab has just opened and asks whether the connection is up. */
-  | { kind: "isItUp" };
+  | { kind: "isItUp"; from: string };
 
 /**
  * One connection for the whole browser. The first tab takes a lock and opens the socket;
@@ -33,14 +34,15 @@ export function openSharedLink(
   let isSocketUp = false;
   let giveUpLock: (() => void) | null = null;
   const stopWaitingForLock = new AbortController();
+  const thisTab = crypto.randomUUID();
 
   channel.onmessage = ({ data }: MessageEvent<ChannelMessage>) => {
     if (socket) {
       if (data.kind === "toServer") socket.send(data.text);
-      if (data.kind === "isItUp" && isSocketUp) post({ kind: "up" });
+      if (data.kind === "isItUp" && isSocketUp) post({ kind: "up", to: data.from });
       return;
     }
-    if (data.kind === "up") events.onUp();
+    if (data.kind === "up" && (data.to === undefined || data.to === thisTab)) events.onUp();
     if (data.kind === "down") events.onDown(data.status);
     if (data.kind === "fromServer") events.onMessage(data.text);
   };
@@ -68,7 +70,7 @@ export function openSharedLink(
       });
     })
     .catch(() => undefined);
-  post({ kind: "isItUp" });
+  post({ kind: "isItUp", from: thisTab });
 
   return {
     send: (text) => (socket ? socket.send(text) : post({ kind: "toServer", text })),

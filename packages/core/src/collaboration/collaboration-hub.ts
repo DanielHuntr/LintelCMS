@@ -14,6 +14,7 @@ import type { Entry } from "../entries/entries.table.js";
 import type { AssetExists } from "../fieldtypes/image-assets.js";
 import { hasPermission } from "../roles/permissions.js";
 import { canWorkOnSite } from "../sites/request-site.js";
+import { findSiteById } from "../sites/sites.repository.js";
 import { LiveConnection, type LiveSocket, type LiveTab } from "./live-connection.js";
 import { checkDesignChange, readStoredDesign, storeDesign } from "./live-design.service.js";
 import { LiveDesignRooms } from "./live-design-rooms.js";
@@ -158,11 +159,7 @@ export class CollaborationHub {
         tab.connection.send({ type: "pong", tab: tab.id });
         return;
       case "watchSite":
-        if (mayReadSite(tab.connection.signedIn, message.siteId)) {
-          this.presence.watch(tab, message.siteId);
-        } else {
-          refuse(tab, "NOT_ALLOWED", "You don't have access to this site.");
-        }
+        await this.watchSite(tab, message.siteId, tenantId);
         return;
       case "stopWatchingSite":
         this.presence.stopWatching(tab);
@@ -246,6 +243,15 @@ export class CollaborationHub {
     const room = await this.rooms.roomOf(tab, message.entryId, message.field);
     if (room) await room.store(tab, message.request);
     else refuse(tab, "NOT_FOUND", "This design isn't open.", message.entryId);
+  }
+
+  private async watchSite(tab: LiveTab, siteId: string, tenantId: string): Promise<void> {
+    const site = await findSiteById(this.options.database(), siteId);
+    if (site?.tenantId === tenantId && mayReadSite(tab.connection.signedIn, siteId)) {
+      this.presence.watch(tab, siteId);
+    } else {
+      refuse(tab, "NOT_ALLOWED", "You don't have access to this site.");
+    }
   }
 
   private async enterPage(

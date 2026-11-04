@@ -39,6 +39,7 @@ export class LiveDocument {
   /** Confirmed, but not yet known to be stored; sent again if the server lost them. */
   private unstored: { sequence: number; changes: readonly PageChange[] }[] = [];
   private batchCount = 0;
+  private mustResend = false;
 
   constructor(
     document: PageDocument,
@@ -81,6 +82,10 @@ export class LiveDocument {
    * steps go a part at a time, so no message goes over what the server takes.
    */
   nextBatch(): ChangeBatch | null {
+    if (this.inFlight && this.mustResend) {
+      this.mustResend = false;
+      return this.inFlight;
+    }
     if (this.inFlight || this.waiting.length === 0) return null;
     this.batchCount += 1;
     let size = 0;
@@ -133,20 +138,23 @@ export class LiveDocument {
 
   /**
    * The page as the server has it, on joining or coming back after losing the connection.
-   * What was on its way goes again, after everything else that is waiting. Steps said to be
-   * stored by a server that has since restarted (`isNewSession`) go again too: they are safe
-   * to repeat, and it may have lost them.
+   * What was on its way goes again first, under the same id: the server may already have it,
+   * and then counts it once. A server that has since restarted (`isNewSession`) remembers no
+   * ids and may have lost steps it confirmed, so those go again too: they are safe to repeat.
    */
   rejoin(document: PageDocument, isNewSession: boolean): RemoteUpdate {
     const changes = diffPages(this.confirmed, document);
     this.confirmed = document;
-    const resend = [
-      ...(isNewSession ? this.unstored.flatMap((each) => each.changes) : []),
-      ...(this.inFlight?.changes ?? []),
-    ];
-    if (isNewSession) this.unstored = [];
-    this.waiting = [...resend, ...this.waiting];
-    this.inFlight = null;
+    if (isNewSession) {
+      const resend = [
+        ...this.unstored.flatMap((each) => each.changes),
+        ...(this.inFlight?.changes ?? []),
+      ];
+      this.unstored = [];
+      this.waiting = [...resend, ...this.waiting];
+      this.inFlight = null;
+    }
+    this.mustResend = this.inFlight !== null;
     this.rebuild();
     return { document: this.local, changes };
   }
@@ -159,6 +167,7 @@ export class LiveDocument {
     this.confirmed = document;
     this.local = document;
     this.inFlight = null;
+    this.mustResend = false;
     this.waiting = [];
     this.unstored = [];
   }

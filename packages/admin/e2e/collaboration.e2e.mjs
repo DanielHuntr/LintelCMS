@@ -184,17 +184,22 @@ const blockLiveConnection = (context) =>
 async function severableConnection(context) {
   const open = new Set();
   let isCut = false;
+  let changesSent = 0;
   await context.routeWebSocket(/\/live$/, (socket) => {
     if (isCut) {
       socket.close();
       return;
     }
     const server = socket.connectToServer();
-    socket.onMessage((message) => server.send(message));
+    socket.onMessage((message) => {
+      if (String(message).includes('"type":"changes"')) changesSent += 1;
+      server.send(message);
+    });
     server.onMessage((message) => socket.send(message));
     open.add(socket);
   });
   return {
+    changesSent: () => changesSent,
     cut() {
       isCut = true;
       for (const socket of open) void socket.close();
@@ -344,6 +349,13 @@ const steps = {
     await shot(ada, "live-cursor-and-selection-desktop-light");
 
     await typeInto(sam.page, "hero-heading", "Warm bread every morning");
+    await until(async () => (await wordsOf(ada.page, "hero-heading")).includes("Warm bread"));
+    await ada.page.waitForTimeout(800);
+    check(
+      "someone else's change isn't sent back by the screen it arrives on",
+      connection.changesSent() === 0,
+      `${connection.changesSent()} sent`,
+    );
     await typeInto(ada.page, "hero-text", "Baked by hand since 1921.");
     const everyoneHas = async (id, words) =>
       (await wordsOf(sam.page, id)).includes(words) &&

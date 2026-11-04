@@ -109,6 +109,7 @@ export class LiveDesignRoom {
       this.rememberBatch(batch);
       this.tell(tab, { type: "changesAccepted", batch, sequence: this.sequence });
       if (this.isDirty) this.storeSoon();
+      else this.tellStored(tab, this.hasUnpublished);
     });
   }
 
