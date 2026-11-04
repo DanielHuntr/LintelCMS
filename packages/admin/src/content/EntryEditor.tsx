@@ -35,6 +35,8 @@ import {
   focusField,
   focusTargetFor,
 } from "./fieldErrors.js";
+import { PeopleHere } from "../collaboration/PeopleHere.js";
+import { usePeopleHere } from "../collaboration/usePeople.js";
 import { SaveIndicator } from "./SaveIndicator.js";
 import { useAutosave } from "./useAutosave.js";
 import { useEntryActions } from "./useEntryActions.js";
@@ -142,6 +144,7 @@ export function EntryEditor({
     onPublishBlocked: (error) => focusFirstFieldError(error),
   });
   const { entry } = actions;
+  const peopleHere = usePeopleHere(entry?.id, tab === "children" ? "children" : "content");
   const info = useEntryInfo(entry?.id);
   const refresh = useRefreshContent();
   const canPublish = useCan("entries:publish");
@@ -426,6 +429,7 @@ export function EntryEditor({
         onTogglePreview={() =>
           setCompanion((current) => (current === "preview" ? "panel" : "preview"))
         }
+        people={<PeopleHere people={peopleHere} />}
         saveIndicator={
           <SaveIndicator
             status={state.saveStatus}

@@ -134,6 +134,8 @@ import { subscribeEventListeners } from "./events/event-listeners.js";
 import { registerWorkflows, type WorkflowOptions } from "./workflows/register-workflows.js";
 import { registerClientEditing } from "./client-editing/register-client-editing.js";
 import { clientEditingRoutes } from "./client-editing/client-editing.routes.js";
+import { collaborationRoutes } from "./collaboration/collaboration.routes.js";
+import { registerCollaboration } from "./collaboration/register-collaboration.js";
 import { wordpressImportRoutes } from "./wordpress-import/wordpress-import.routes.js";
 import { siteImportRoutes } from "./importers/site-import.routes.js";
 import { updatesRoutes } from "./updates/updates.routes.js";
@@ -461,6 +463,7 @@ export function buildServer(options: ServerOptions) {
   );
   // Off by default; routes that need a limit (like sign-in) set their own.
   server.register(rateLimit, { global: false });
+  registerCollaboration(server);
   // Installed apps share one limit across every route they call (see src/apps).
   server.addHook("onRequest", limitAppRequests);
 
@@ -630,6 +633,9 @@ function registerApiRoutes(
   server.register(siteImportRoutes);
   server.register(updatesRoutes);
   server.register(serverCheckRoutes);
+  server.register(collaborationRoutes, {
+    trustedOrigins: [options.adminOrigin, server.publicApiUrl],
+  });
 }
 
 /**

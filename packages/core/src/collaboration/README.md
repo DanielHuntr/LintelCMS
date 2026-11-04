@@ -1,0 +1,44 @@
+# Collaboration
+
+Two people working on a site at once: seeing each other, and not overwriting each other. See
+`docs/decisions/0067-working-together-on-a-page.md`.
+
+One WebSocket per browser, `GET /live`, on Lintel's own server. Nothing goes through another
+service, nothing here needs a second process, and the built-in database and Postgres work the
+same, because who's where is held in memory. If the connection is blocked, the admin carries
+on without it (see `packages/admin/src/collaboration`).
+
+| File                        | What it is                                                 |
+| --------------------------- | ---------------------------------------------------------- |
+| `collaboration.routes.ts`   | `GET /live`: who may connect                               |
+| `register-collaboration.ts` | Sets the hub up on the server                              |
+| `collaboration-hub.ts`      | Everyone connected, and what each message does             |
+| `live-connection.ts`        | One browser: limits, message order, re-reading permissions |
+| `live-presence.ts`          | Who is on which page                                       |
+| `live-limits.ts`            | How much one browser may ask for                           |
+| `message-budget.ts`         | Counts messages and bytes against those limits             |
+| `test-browser.ts`           | A real WebSocket client for tests                          |
+
+The messages are in `packages/builder-model/src/live-editing/live-messages.ts`, shared with
+the admin. Every message is parsed against those schemas before it is read.
+
+## Who may connect
+
+- **Signed in, in a browser.** The session cookie, as the admin uses; API tokens aren't accepted.
+- **From the admin.** `Origin` must be the admin's or the API's. Browsers send cookies with a
+  WebSocket from any website, so this is what stops another site using someone's session. A
+  request with no `Origin` is refused too.
+- **Two-factor set up**, if their role requires it.
+
+## On every message
+
+- It is counted (`MessageBudget`). Too many, and it is refused; twenty refusals close the
+  connection (close code 4408).
+- It is parsed. A message over 1 MiB closes the connection.
+- What the person may do is read again when what we hold is over 5 seconds old, and on every
+  sweep (20 seconds), for quiet connections. A session that ended closes the connection (4401);
+  someone who lost access to a site is taken off its pages.
+- It is checked against that: being on a page needs `entries:read`, the entry's site and the
+  person's own tenant. A page out of reach reads the same as one that doesn't exist.
+
+People appear by name and picture. Email addresses aren't sent.

@@ -49,6 +49,8 @@ import { useBuilderData, useCanvasSite, useViewPageSite } from "../website/websi
 import { useEffectModules } from "./useEffectModules.js";
 import { useBuilderBlocks } from "../blocks/useBuilderBlocks.js";
 import { usePageDesignSaving } from "./usePageDesignSaving.js";
+import { PeopleHere } from "../collaboration/PeopleHere.js";
+import { usePeopleHere } from "../collaboration/usePeople.js";
 import { SitePartProblems } from "./SitePartProblems.js";
 import { useSiteDesign } from "./useSiteDesign.js";
 import { useSiteMotion } from "./useSiteMotion.js";
@@ -160,6 +162,7 @@ function PageDesigner({
     canPublishShared ? shared.publish : undefined,
   );
   const session = useSession();
+  const peopleHere = usePeopleHere(loadedEntry.id, "design");
   // A/B tests: Version B and C of the page open on the same canvas (see src/experiments).
   const experiments = useExperimentsInDesigner({
     entryId: loadedEntry.id,
@@ -410,6 +413,7 @@ function PageDesigner({
         }
         toolbarEnd={
           <div className="ms-2 flex items-center gap-3" data-tour="publish">
+            <PeopleHere people={peopleHere} />
             {experiments.switcher}
             {experiments.isEditingVersion ? (
               experiments.saveState

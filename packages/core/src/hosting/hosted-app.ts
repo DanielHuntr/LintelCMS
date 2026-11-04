@@ -95,6 +95,11 @@ export function startHostedApp(options: HostedAppOptions): HostedApp {
   };
 
   const httpServer = createServer(handleRequest);
+  // The live connection (see src/collaboration). A host that blocks it loses only that.
+  httpServer.on("upgrade", (request, socket, head) => {
+    if (server) server.server.emit("upgrade", request, socket, head);
+    else socket.destroy();
+  });
   if (mode.kind !== "handler-only") {
     (options.listen ?? listenOnHost)(httpServer, mode);
   }

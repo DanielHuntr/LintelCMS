@@ -1,3 +1,4 @@
+import { useWatchSite } from "../collaboration/usePeople.js";
 import type { ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { CalendarDays, House, Info, Plus, Trash2 } from "lucide-react";
@@ -33,6 +34,7 @@ import { useActionItems } from "./useActionItems.js";
 export function ContentTree({ beside }: { beside?: ReactNode } = {}) {
   const tree = useContentTree();
   const roots = useTreeRoots(tree.siteId);
+  useWatchSite(tree.siteId);
   const topActions = useActionItems({ kind: "top" });
   const canCreate = topActions.length > 0;
   const [topMenuAt, setTopMenuAt] = useState<{ x: number; y: number } | null>(null);

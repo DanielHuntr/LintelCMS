@@ -50,6 +50,7 @@ import { loadInterfaceLanguage } from "./interface-language/loadInterfaceLanguag
 import { AdminLayout } from "./layout/AdminLayout.js";
 import { MediaLibraryPage } from "./media/MediaLibraryPage.js";
 import { sendOnFromOldAddress } from "./navigation/movedPages.js";
+import { closeLiveClient } from "./collaboration/useLiveClient.js";
 import { fetchCurrentSession, signOut } from "./session/session.api.js";
 import { ServerUnreachablePage } from "./setup/ServerUnreachablePage.js";
 import { SetupPage } from "./setup/SetupPage.js";
@@ -161,6 +162,7 @@ function SignedInAdmin() {
 
   async function handleSignOut() {
     await signOut();
+    closeLiveClient();
     adminQueryClient.clear();
     // The next person may have chosen another language; until then, the site's.
     await loadInterfaceLanguage();

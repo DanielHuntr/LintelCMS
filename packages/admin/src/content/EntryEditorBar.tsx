@@ -15,6 +15,8 @@ interface EntryEditorBarProps {
   viewSwitch?: ReactNode;
   /** Little room: the buttons are icons, and the name stands alone. See useBarRoom. */
   isTight?: boolean;
+  /** Who else is on this page. */
+  people?: ReactNode;
   saveIndicator: ReactNode;
   /** The main action: Publish, or Save for people who can't publish. */
   primaryAction: ReactNode;
@@ -46,6 +48,7 @@ export function EntryEditorBar({
   status,
   viewSwitch,
   isTight = false,
+  people,
   saveIndicator,
   primaryAction,
   isPanelOpen,
@@ -93,6 +96,7 @@ export function EntryEditorBar({
 
       {/* Below 400px wide the buttons sit closer, so the bar fits a 320px screen (LINTEL-A11Y-003). */}
       <div className="ms-auto flex shrink-0 items-center gap-1 max-[25rem]:gap-0">
+        {people}
         <div className="me-1.5 max-sm:me-0">{saveIndicator}</div>
         {viewPage && <PageViewLink target={viewPage} />}
         <PagePreviewButton
