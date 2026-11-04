@@ -121,12 +121,8 @@ describe("site-wide effects for one page", () => {
   it("skip the intro while the site has no home page to show (LINTEL-UX-328)", () => {
     const empty = siteEffectsHead(
       introAndTransition,
-      {
-        path: "/",
-        chrome: { siteName: "Corner Bakery", locale: "en-GB", alternates: [] } as never,
-        isEmptySite: true,
-      },
-      { skipIntro: "Skip" },
+      { path: "/", chrome, isEmptySite: true },
+      englishLabels,
     );
     expect(empty?.modules).toEqual(["transitions"]);
   });
