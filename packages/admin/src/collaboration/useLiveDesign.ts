@@ -211,7 +211,12 @@ export function useLiveDesign(options: LiveDesignOptions): LiveDesign {
   const edit = useCallback(
     (document: PageDocument) => {
       if (!live) return;
-      live.edit(document);
+      // Saving mustn't depend on this: a page that can't be compared still saves through the API.
+      try {
+        live.edit(document);
+      } catch {
+        return;
+      }
       setHasUnstoredChanges(live.hasUnstoredChanges);
       pump();
     },

@@ -1,3 +1,6 @@
+import websocket from "@fastify/websocket";
+import type { AddressInfo } from "node:net";
+import WebSocket from "ws";
 import { EventEmitter } from "node:events";
 import { createServer, type Server } from "node:http";
 import { cp, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -105,6 +108,33 @@ describe("the hosted startup (app.js)", () => {
     stop();
     await vi.waitFor(() => expect(exit).toHaveBeenCalledWith(0));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("passes the live connection on to Lintel", async () => {
+    const server = fakeLintel();
+    await server.register(websocket);
+    server.get("/api/live", { websocket: true }, (socket) => socket.send("hello"));
+    let port = 0;
+    const hosted = start({
+      passenger: { configure: vi.fn() },
+      listen: (httpServer) => {
+        httpServer.listen(0, "127.0.0.1", () => {
+          port = (httpServer.address() as AddressInfo).port;
+        });
+      },
+      prepare: () => prepared(server),
+    });
+    await hosted.ready;
+    await vi.waitFor(() => expect(port).toBeGreaterThan(0));
+    const heard = await new Promise<string>((resolve, reject) => {
+      const socket = new WebSocket(`ws://127.0.0.1:${port}/api/live`);
+      socket.on("message", (data: Buffer) => {
+        resolve(data.toString());
+        socket.close();
+      });
+      socket.on("error", reject);
+    });
+    expect(heard).toBe("hello");
   });
 
   it("shows why Lintel couldn't start instead of the host's error page", async () => {
