@@ -26,7 +26,7 @@ export { escapeHtml } from "../liquid-templates/liquid-tags.js";
 export { packageFolder } from "./package-folder.js";
 
 // For a plugin with tables to run on MySQL and MariaDB as well: see the plugin docs.
-export { tableFor } from "../database/dialect/mysql-tables.js";
+export { mysqlTableFor, tableFor } from "../database/dialect/mysql-tables.js";
 export {
   deleteReturning,
   insertIfNew,

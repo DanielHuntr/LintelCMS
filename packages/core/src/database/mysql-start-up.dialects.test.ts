@@ -1,11 +1,15 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { eq, sql } from "drizzle-orm";
+import { pgTable, text, uuid } from "drizzle-orm/pg-core";
 import { createConnection } from "mysql2/promise";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { restoreBackupArchive, writeBackupArchive } from "../backups/backup-archive.service.js";
 import { checkReadiness } from "../health/readiness.service.js";
+import { definePlugin, type LintelPlugin } from "../plugins/plugin-definition.js";
+import { listPlugins, setEnabledPlugins } from "../plugins/plugins.service.js";
 import { LocalDiskStorage } from "../media/local-disk-storage.js";
 import { checkDatabase, checkDatabaseAddress } from "../server-check/server-check.service.js";
 import { buildServer } from "../server.js";
@@ -211,6 +215,80 @@ describe.each(servers.filter(([, url]) => url))("Lintel starting on %s", (_name,
       await withConnection(url, (query) => query(`drop database if exists ${name}_made`));
     }
   }, 60_000);
+
+  describe("plugins with tables of their own", () => {
+    const tables = [
+      pgTable("stamps_cards", { id: uuid("id").primaryKey(), owner: text("owner").notNull() }),
+    ];
+
+    async function mysqlMigrations() {
+      const migrations = join(folder, "plugin-migrations");
+      await mkdir(join(migrations, "meta"), { recursive: true });
+      await writeFile(
+        join(migrations, "0000_cards.sql"),
+        "create table stamps_cards (id varchar(36) primary key, owner longtext not null);",
+      );
+      await writeFile(
+        join(migrations, "meta", "_journal.json"),
+        JSON.stringify({
+          version: "5",
+          dialect: "mysql",
+          entries: [{ idx: 0, version: "5", when: 1, tag: "0000_cards", breakpoints: true }],
+        }),
+      );
+      return migrations;
+    }
+
+    async function serverWith(database: LintelPlugin["database"]) {
+      const active = await start();
+      const server = buildServer({
+        adminOrigin: "http://localhost:5173",
+        database: active,
+        runScheduledJobs: false,
+        plugins: [
+          definePlugin({
+            id: "stamps",
+            name: "Stamps",
+            description: "Loyalty stamps.",
+            ...(database ? { database } : {}),
+          }),
+        ],
+      });
+      await server.ready();
+      opened.push({ close: async () => void (await server.close()) });
+      return { active, server };
+    }
+
+    it("stays off when it has no migrations for MySQL, and says why", async () => {
+      const { active, server } = await serverWith({ tables, migrationsFolder: folder });
+      const plugins = await listPlugins(active.database, server.plugins);
+      expect(plugins.plugins.find(({ id }) => id === "stamps")).toMatchObject({
+        enabled: false,
+        canRunHere: false,
+      });
+      await expect(setEnabledPlugins(active.database, server.plugins, ["stamps"])).rejects.toThrow(
+        "made for Postgres",
+      );
+    });
+
+    it("gets its tables and can be switched on when it has", async () => {
+      const { active, server } = await serverWith({
+        tables,
+        migrationsFolder: folder,
+        mysqlMigrationsFolder: await mysqlMigrations(),
+      });
+      const listed = await setEnabledPlugins(active.database, server.plugins, ["stamps"]);
+      expect(listed.plugins.find(({ id }) => id === "stamps")).toMatchObject({
+        enabled: true,
+        canRunHere: true,
+      });
+      const [table] = tables;
+      if (!table) throw new Error("There is no table.");
+      const cards = tableFor(active.database, table);
+      await active.database.insert(cards).values({ id: randomUUID(), owner: "Ada" });
+      expect(await active.database.select().from(cards)).toHaveLength(1);
+    });
+  });
 
   async function fillAndBackUp(from: OpenedDatabase | ActiveDatabase, kind: "built-in" | "mysql") {
     const { database } = from;
