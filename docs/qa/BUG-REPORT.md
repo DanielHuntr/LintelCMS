@@ -916,3 +916,23 @@ Found while joining external apps to the release branch and checking Build → A
 | LINTEL-UX-133 | P3       | Fixed  | An app's page said its name twice when its sidebar label is the app's name                                      |
 | LINTEL-UX-134 | P3       | Fixed  | An app's details page: the Uninstall button sat far to the right of the narrower cards below it                 |
 | LINTEL-UX-135 | P2       | Fixed  | An app could keep working after the person who installed it was deactivated (API tokens already stopped)        |
+
+## Independent review of the night's work (4 November 2026)
+
+A second reading of `dde71e4d..9943c3c1` on `fix/night-review`. All fixed there; `FIX-LOG-night-review.md` has the commits and the decisions left for Daniel.
+
+| ID              | Severity | Status | Summary                                                                                                   |
+| --------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------- |
+| LINTEL-CODE-017 | P1       | Fixed  | An add-on's Delete data and export could reach Lintel's own tables: an id of `shop` owned `shop_orders`   |
+| LINTEL-CODE-018 | P1       | Fixed  | The PHP companion lost delayed payments: the money was taken and no order was made                        |
+| LINTEL-CODE-019 | P2       | Fixed  | A publish could reach outside its folders: the path check never refused anything                          |
+| LINTEL-CODE-020 | P2       | Fixed  | Find a person missed form entries holding the email anywhere but the form's first email answer            |
+| LINTEL-CODE-021 | P2       | Fixed  | The orders retention rule left the customer's name, email, phone and addresses, still linked to the order |
+| LINTEL-CODE-022 | P2       | Fixed  | Entries collected from a published site could be lost after a failed save, and had no consent record      |
+| LINTEL-CODE-023 | P2       | Fixed  | An app kept being sent events, form answers included, after its installer was deactivated                 |
+| LINTEL-CODE-024 | P3       | Fixed  | Personal data exports divided every order total by 100, so a yen total was wrong                          |
+| LINTEL-CODE-025 | P3       | Fixed  | Deleting test orders could delete a real customer who had no orders here                                  |
+| LINTEL-CODE-026 | P3       | Fixed  | One PayPal or Mollie payment that couldn't be read stopped the checks on all the others                   |
+| LINTEL-CODE-027 | P3       | Fixed  | Add-on CSV exports let what a visitor typed run as a spreadsheet formula                                  |
+| LINTEL-CODE-028 | P3       | Fixed  | `lintel-check.php` asked for PHP 8.1 when the companion needs 7.4                                         |
+| LINTEL-CODE-029 | P3       | Fixed  | Two comments spoke of a hosted version of Lintel                                                          |

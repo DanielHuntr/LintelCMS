@@ -225,3 +225,10 @@ With these, **no P1 is open**. Still needed before calling one-click updates saf
 - a real update and roll back of a release build, on Linux and on Windows;
 - the update tests on Linux in CI;
 - a decision on Postgres: updates that change the database are done by hand for now.
+
+## Update, 4 November 2026: independent review of the night's work
+
+Branch `fix/night-review` (`FIX-LOG-night-review.md`). The text above is unchanged.
+
+- Two P1s are fixed: LINTEL-CODE-017 (an add-on's Delete data could empty Lintel's own tables) and LINTEL-CODE-018 (the PHP companion lost delayed payments). Sites published with the companion must add `checkout.session.async_payment_succeeded` to their Stripe webhook.
+- Seven decisions are left for Daniel, listed in the fix log. The one to look at first: finding a person by name treats two people with the same name as one, and erases both.

@@ -272,3 +272,12 @@ None.
 - CLI: the known 3 Windows failures.
 
 In a browser (API 4600, site 4601, admin 5690, a fresh Lintel folder): a page drawn by `templates/pages.liquid` through a layout and a partial, a page choosing `landing.liquid` inside the shared document, a template edit showing on reload without a restart, a broken template showing its error in development, and the editor's Template section at desktop and 390px in light and dark. Screenshots in `screenshots/liquid-templates/`.
+
+## Independent review (fix/night-review, 2026-11-04)
+
+Windows, Node 24, with PHP 8.1 on the path so the companion's tests ran:
+
+- Core: 245 files, 1,658 passed, 11 skipped, none failed.
+- plugin-example-bookings 7, addon-newsletter 22, addon-instagram 13: all passed.
+- `pnpm typecheck`: 29 tasks clean. Admin, builder and the other packages' tests weren't run, as nothing in them changed.
+- Migrations 0032 to 0036 on a new database and on one stopped at 0031 with rows in it, on the built-in database only: both ended the same, and `db:generate` reports no changes.
