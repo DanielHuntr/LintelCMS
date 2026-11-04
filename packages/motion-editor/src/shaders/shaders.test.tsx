@@ -146,6 +146,16 @@ describe("layers", () => {
     });
   });
 
+  it("keeps a layer's settings to the layer, and starts showing it on the page at once", () => {
+    const onPreview = vi.fn();
+    render(<Panel initial={[{ effect: "moving-gradient", params: {} }]} onPreview={onPreview} />);
+    fireEvent.click(screen.getByRole("button", { name: "Edit Moving gradient" }));
+    onPreview.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "Add a layer" }));
+    expect(onPreview).toHaveBeenCalledTimes(1);
+    expect(screen.getAllByLabelText("Keep words readable")).toHaveLength(1);
+  });
+
   it('keeps "Keep words readable" working over the stack', () => {
     render(<Panel initial={[stack]} />);
     openStack();
@@ -174,6 +184,27 @@ describe("custom shaders", () => {
   });
 
   const stack: NodeEffect = { effect: "layered-background", params: {}, layers: [] };
+
+  it("shows a shader on the page as soon as it's saved, before the library has it back", async () => {
+    const onPreview = vi.fn();
+    render(
+      <ShaderLibraryContext value={library()}>
+        <Panel initial={[stack]} onPreview={onPreview} />
+      </ShaderLibraryContext>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Edit Layered background" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add a layer" }));
+    fireEvent.click(screen.getByRole("button", { name: "Write your own…" }));
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Rings" } });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 350));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    });
+    const [, props] = onPreview.mock.calls.at(-1) as [unknown, { plan: string }];
+    expect(JSON.parse(props.plan).layers[0].code).toContain("void main");
+  });
 
   it("offers saved shaders to anyone, and writing only to those who may", () => {
     const shaders = [{ id: "r", name: "Rings", code: "void main(){gl_FragColor=vec4(1.);}" }];

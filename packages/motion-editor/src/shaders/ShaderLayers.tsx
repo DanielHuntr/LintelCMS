@@ -39,6 +39,14 @@ function definitionOf(
   return shader ? customShaderDefinition(shader.name, readCustomShader(shader.code)) : undefined;
 }
 
+/** A layer's settings: "Keep words readable" belongs to the whole stack, so it's left out. */
+const layerSettings = (definition: EffectDefinition): EffectDefinition => ({
+  ...definition,
+  params: Object.fromEntries(
+    Object.entries(definition.params).filter(([name]) => name !== "readable"),
+  ),
+});
+
 const newLayerId = () => `l${Math.random().toString(36).slice(2, 10)}`;
 
 /**
@@ -50,6 +58,7 @@ export function ShaderLayers({
   registry,
   colours,
   onChange,
+  onShaderSaved,
   onRemove,
   onCommit,
 }: {
@@ -57,6 +66,8 @@ export function ShaderLayers({
   registry: EffectRegistry;
   colours?: readonly CursorColourSwatch[];
   onChange: (next: NodeEffect) => void;
+  /** Called with a shader as it's saved, before the layers change to use it. */
+  onShaderSaved: (shader: ShaderInLibrary) => void;
   onRemove: () => void;
   onCommit?: () => void;
 }) {
@@ -202,7 +213,7 @@ export function ShaderLayers({
                   </ReactControl>
                   {definition && (
                     <EffectSettings
-                      definition={definition}
+                      definition={layerSettings(definition)}
                       values={cleanProps(definition, layer.params)}
                       colours={colours}
                       onChange={(params) => update(layer.id, { params })}
@@ -325,7 +336,10 @@ export function ShaderLayers({
           onClose={() => setEditing(undefined)}
           onSaved={(shader, isNew) => {
             setEditing(undefined);
+            onShaderSaved(shader);
+            // Changed code shows on the page at once, as any other change does.
             if (isNew) addShader(shader);
+            else onChange({ ...saved });
           }}
         />
       )}

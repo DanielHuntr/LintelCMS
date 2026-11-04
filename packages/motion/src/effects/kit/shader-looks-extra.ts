@@ -58,13 +58,14 @@ vec3 col=mix(a,b,clamp(y*2.2+.3,0.,1.));col=mix(col,c,hc*smoothstep(.45,.95,band
 al=clamp(al+(h(gl_FragCoord.xy+fract(t))-.5)/96.,0.,1.);gl_FragColor=vec4(col*al,al);}`;
 
 const silk = `${lookHeader}
-float cloth(vec2 p){float s=t*.05;return sin(p.x*2.1+2.4*n(p*.8+s))+.6*sin(p.y*3.+p.x*1.2+2.*n(p*.6-s+4.));}
-void main(){float w=r.x/r.y;vec2 p=turn(vec2(uv.x*w,uv.y),w)*3.2;float e0=.012;
-float c0=cloth(p),depth=.3+.8*k;
+float cloth(vec2 p){float s=t*.05,u=p.x*.8+p.y*.45,v=n(p*.4+vec2(s,-s*.6))*3.6;
+return sin(u*1.7+v)+.5*sin(u*3.4-v*1.3+p.y*.7+s*2.)+.14*sin(u*7.1+v*2.1);}
+void main(){float w=r.x/r.y;vec2 p=turn(vec2(uv.x*w,uv.y),w)*3.2;float e0=.02;
+float c0=cloth(p),depth=.16+.5*k;
 vec3 N=normalize(vec3((c0-cloth(p+vec2(e0,0.)))/e0*depth,(c0-cloth(p+vec2(0.,e0)))/e0*depth,1.));
-vec3 L=normalize(vec3(-.45,.6,.66));float l=clamp(dot(N,L),0.,1.);
+vec3 L=normalize(vec3(-.5,.55,.67));float l=clamp(dot(N,L),0.,1.);
 float shine=pow(max(reflect(-L,N).z,0.),10.+30.*(1.-so));
-vec3 col=mix(a,b,smoothstep(.25,.98,l))+mix(b,c,hc)*shine*.3;
+vec3 col=mix(a,b,smoothstep(.15,.95,l))+mix(b,c,hc)*shine*.22;
 col+=(h(gl_FragCoord.xy+fract(t))-.5)/128.;gl_FragColor=vec4(col,1.);}`;
 
 const cells = `${lookHeader}

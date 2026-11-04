@@ -43,7 +43,7 @@ col+=(h(gl_FragCoord.xy+fract(t))-.5)/128.;gl_FragColor=vec4(col,1.);}`;
 /**
  * Specks at three depths: far ones small and sharp, near ones larger and soft. `gn` is above
  * 1 on light sections, where a dark speck on a pale ground needs more presence than the
- * same speck in light on a dark one.
+ * same speck in light on a dark one. The near ones gain less, or they read as smudges.
  */
 const dust = `${lookHeader}
 float speck(vec2 p,float scale,float seed,float rise,float size,float edge){
@@ -53,7 +53,7 @@ size*=(.55+.9*h(id+seed+3.7))*(1.+(gn-1.)*.3);float tw=.5+.5*sin(t*(.4+z)+z*20.)
 return smoothstep(size,size*min(edge*(2.-2.*so),.95),length(g-c))*tw;}
 void main(){float w=r.x/r.y;vec2 p=turn(vec2(uv.x*w,uv.y),w);vec2 q=m-.5;
 vec2 mp=vec2(m.x*w,m.y);float near=e*exp(-dot(p-mp,p-mp)*10.);
-float v=speck(p+q*.012,24.,0.,.25,.06,.2)*.6+speck(p+q*.03,12.,3.,.12,.07,.3)*.7+speck(p+q*.06,5.,7.,.05,.13,0.)*.4;
+float v=speck(p+q*.012,24.,0.,.25,.06,.2)*.6+speck(p+q*.03,12.,3.,.12,.07,.3)*.7+speck(p+q*.06,5.,7.,.05,.13,0.)*.4/sqrt(gn);
 float al=clamp(v*(.35+.65*k)*(1.+near*.8)*gn,0.,1.);gl_FragColor=vec4(a*al,al);}`;
 
 /**

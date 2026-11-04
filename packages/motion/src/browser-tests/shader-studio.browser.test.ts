@@ -1,7 +1,7 @@
 import type { Browser, Page } from "playwright";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { launchBrowser } from "./harness.js";
-import { openEffectsPage, type OpenOptions } from "./effects-harness.js";
+import { openEffectsPage, readManifest, type OpenOptions } from "./effects-harness.js";
 
 /**
  * Layers, reactions and custom shaders, played by the real site runtime and modules: they
@@ -196,6 +196,25 @@ describe("layers", () => {
     });
     expect(seen.image).toContain("linear-gradient");
     expect(seen.clear).toBeGreaterThan(0.5);
+    await page.close();
+  });
+
+  it("gives the section its still look back when it stops, as the builder's canvas needs", async () => {
+    const { page } = await open([], section("background-image:linear-gradient(#0a0,#0a0)"));
+    const url = readManifest().modules["shader-stack"]!.file;
+    const plan = JSON.stringify({ layers: [layer("mesh")], readable: false });
+    // As a string: the test runner would rewrite an `import()` written here.
+    const left = (await page.evaluate(`(async () => {
+      const { default: module } = await import(${JSON.stringify(`/_lintel/effects/${url}`)});
+      const element = document.querySelector("section");
+      const context = { reduced: true, lowPower: false, finePointer: false };
+      const stop = module.behaviours.shaderStack(element, { plan: ${JSON.stringify(plan)} }, context);
+      const during = getComputedStyle(element).backgroundImage;
+      stop();
+      return { during, after: getComputedStyle(element).backgroundImage };
+    })()`)) as { during: string; after: string };
+    expect(left.during).toBe("none");
+    expect(left.after).toContain("linear-gradient");
     await page.close();
   });
 

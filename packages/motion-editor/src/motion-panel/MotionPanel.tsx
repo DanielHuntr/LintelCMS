@@ -172,6 +172,8 @@ function Panel({
     t("motionEditor.panel.yourAnimation");
   const animationsFull = animations.length >= maxAnimations;
   const library = useShaderLibrary();
+  /** Code saved just now, which the library may not have brought back yet. */
+  const [savedCode] = useState(() => new Map<string, string>());
 
   /**
    * Shows an effect on the page. One with layers or reactions runs from a plan, which brings
@@ -181,7 +183,9 @@ function Panel({
     const plan = effectPlan(saved, registry, {
       // While the site doesn't allow custom code, the canvas leaves it out as pages do.
       codeOf: (id) =>
-        library?.allowed ? library.shaders.find((shader) => shader.id === id)?.code : undefined,
+        library?.allowed
+          ? (savedCode.get(id) ?? library.shaders.find((shader) => shader.id === id)?.code)
+          : undefined,
     });
     onPreviewEffect(definition, plan ? { plan } : saved.params);
   }
@@ -202,9 +206,10 @@ function Panel({
       params: { readable: saved.params.readable !== false },
       layers: [layerFromEffect(saved, "first")],
     };
+    // In this order: leaving a view stops what's showing on the page.
+    go({ name: "effect", index });
     changeSaved(index, stack, next);
     onCommit?.();
-    go({ name: "effect", index });
   }
 
   const layersRow = (index: number, definition: EffectDefinition) =>
@@ -466,6 +471,7 @@ function Panel({
               registry={registry}
               colours={colours}
               onChange={(next) => changeSaved(item.index, item.definition, next)}
+              onShaderSaved={(shader) => savedCode.set(shader.id, shader.code)}
               onRemove={remove}
               onCommit={onCommit}
             />

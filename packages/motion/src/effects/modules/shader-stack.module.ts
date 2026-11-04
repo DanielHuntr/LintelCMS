@@ -292,6 +292,7 @@ const shaderStack: EffectBehaviour = (element, params, context: EffectContext) =
   };
 
   let restoreBackground: (() => void) | undefined;
+  cleanups.push(() => restoreBackground?.());
   /** The drawing steps aside: the plain background shows, and the words stay readable on it. */
   const fallBack = () => {
     backdrop.canvas.style.visibility = "hidden";
