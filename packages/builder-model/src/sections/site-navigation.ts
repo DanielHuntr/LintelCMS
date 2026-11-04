@@ -245,7 +245,7 @@ const cookieSettingsLink: NodeBlueprint = {
 };
 
 /** Logo, the menu and a line of small print, all centred. */
-export function footerCentred(copy: { smallPrint: string }): NodeBlueprint {
+export function footerCentred(copy: { smallPrint?: string }): NodeBlueprint {
   return footerBand(
     [
       {
@@ -269,7 +269,9 @@ export function footerCentred(copy: { smallPrint: string }): NodeBlueprint {
           siteMenuRow({ label: "Footer", always: true }),
           // Shows only on a site in more than one language.
           { type: "languageSwitcher", props: { look: "links", label: "Language" } },
-          text(copy.smallPrint, { name: "Small print", styles: { base: smallPrintStyles } }),
+          ...(copy.smallPrint
+            ? [text(copy.smallPrint, { name: "Small print", styles: { base: smallPrintStyles } })]
+            : []),
           cookieSettingsLink,
         ],
       },

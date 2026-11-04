@@ -67,6 +67,12 @@ describe("starting from a template", () => {
     expect(home.body).toContain('href="/menu"');
   });
 
+  it("publishes a standard footer with nothing left to replace (LINTEL-UX-302)", async () => {
+    await owner("POST", "/starter-sites/bakery/apply", { publish: true });
+
+    expect((await visit("/")).body).not.toContain("Replace this with");
+  });
+
   it("switches on the blog the magazine's links lead to (LINTEL-FUNC-032)", async () => {
     await owner("PUT", "/plugins", { enabled: [] });
     const response = await owner("POST", "/starter-sites/magazine/apply", { publish: true });
