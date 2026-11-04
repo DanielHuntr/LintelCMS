@@ -130,6 +130,15 @@ describe("refusing requests forged by other websites", () => {
   });
 
   it("refuses a cross-site request that carries no Origin header", async () => {
+    // A form from a page with no-referrer says "null" (LINTEL-FUNC-043): only its own site passes.
+    expect(
+      (await createMenu({ origin: "null", "sec-fetch-site": "same-origin" })).statusCode,
+    ).not.toBe(403);
+    expect((await createMenu({ origin: "null", "sec-fetch-site": "cross-site" })).statusCode).toBe(
+      403,
+    );
+    expect((await createMenu({ origin: "null" })).statusCode).toBe(403);
+
     const response = await createMenu({ "sec-fetch-site": "cross-site" });
     expect(response.statusCode).toBe(403);
   });

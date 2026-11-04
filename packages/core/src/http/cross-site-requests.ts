@@ -57,9 +57,12 @@ export function refuseCrossSiteRequests(trustedOrigins: readonly string[]) {
 
 function comesFromTrustedPage(request: FastifyRequest, trusted: ReadonlySet<string>): boolean {
   const origin = request.headers.origin;
+  // Browsers say "null" for a form sent from a page with `Referrer-Policy: no-referrer`, which
+  // pages in production have. Sec-Fetch-Site then says where it came from; a page can't set it.
+  const fetchSite = request.headers["sec-fetch-site"];
+  if (origin === "null") return fetchSite === "same-origin";
   if (origin !== undefined) {
     return trusted.has(origin);
   }
-  const fetchSite = request.headers["sec-fetch-site"];
   return fetchSite === undefined || fetchSite === "same-origin" || fetchSite === "none";
 }
