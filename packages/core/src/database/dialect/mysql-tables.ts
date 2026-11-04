@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { SQL, getTableColumns, is, sql } from "drizzle-orm";
 import {
   type AnyMySqlColumn,
-  type MySqlTable,
+  MySqlTable,
   bigint,
   boolean,
   check,
@@ -56,9 +56,25 @@ const CHOICE_TEXT_LENGTH = 64;
  */
 const jsonColumn = customType<{ data: unknown; driverData: string }>({
   dataType: () => "json",
-  toDriver: (value) => JSON.stringify(value),
+  toDriver: (value) => JSON.stringify(withKeysInOrder(value)),
   fromDriver: (value) => JSON.parse(value) as unknown,
 });
+
+/**
+ * Keys in the order jsonb and MySQL's json keep them: shorter first, then by their bytes. Two
+ * equal values are then the same text, so MariaDB, whose json is text, can compare them, and
+ * a page's values come back in the same order on every database.
+ */
+function withKeysInOrder(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(withKeysInOrder);
+  if (typeof value !== "object" || value === null) return value;
+  if (value instanceof Date) return value;
+  const inOrder = Object.entries(value).sort(([first], [second]) => {
+    if (first.length !== second.length) return first.length - second.length;
+    return Buffer.compare(Buffer.from(first), Buffer.from(second));
+  });
+  return Object.fromEntries(inOrder.map(([key, item]) => [key, withKeysInOrder(item)]));
+}
 
 /**
  * Checks MySQL won't take, because their columns have `on delete` rules (error 3823).
@@ -81,12 +97,26 @@ export function tableFor<TTable extends PgTable>(
  * repositories are written once: the one deliberate type lie (see README.md).
  */
 export function mysqlTableFor<TTable extends PgTable>(table: TTable): TTable {
+  // Already one: see `use-mysql-tables-in-tests.ts`.
+  if (is(table, MySqlTable)) return table;
   let mysql = built.get(table);
   if (!mysql) {
     mysql = buildMysqlTable(table);
     built.set(table, mysql);
   }
   return mysql as unknown as TTable;
+}
+
+/** A column of a table, in the dialect `database` speaks. */
+export function columnFor<TColumn extends AnyPgColumn>(
+  database: DatabaseOrTransaction,
+  column: TColumn,
+): TColumn {
+  if (dialectOf(database) === "postgres") return column;
+  const table = mysqlTableFor(column.table as PgTable);
+  const found = Object.values(getTableColumns(table)).find(({ name }) => name === column.name);
+  if (!found) throw new Error(`${getTableConfig(table).name} has no column "${column.name}".`);
+  return found as unknown as TColumn;
 }
 
 function buildMysqlTable(table: PgTable): MySqlTable {

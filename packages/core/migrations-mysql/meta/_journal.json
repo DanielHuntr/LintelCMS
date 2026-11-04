@@ -8,6 +8,13 @@
       "when": 1793763388692,
       "tag": "0000_all_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1793775896785,
+      "tag": "0001_add_locks",
+      "breakpoints": true
     }
   ]
 }

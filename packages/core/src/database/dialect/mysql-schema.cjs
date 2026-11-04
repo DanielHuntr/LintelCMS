@@ -3,10 +3,14 @@
 const { is } = require("drizzle-orm");
 const { PgTable } = require("drizzle-orm/pg-core");
 const schema = require("../schema.ts");
+const { mysqlLocksTable } = require("./locks.ts");
 const { mysqlTableFor } = require("./mysql-tables.ts");
 
-module.exports = Object.fromEntries(
-  Object.entries(schema)
-    .filter(([, value]) => is(value, PgTable))
-    .map(([name, table]) => [name, mysqlTableFor(table)]),
-);
+module.exports = {
+  ...Object.fromEntries(
+    Object.entries(schema)
+      .filter(([, value]) => is(value, PgTable))
+      .map(([name, table]) => [name, mysqlTableFor(table)]),
+  ),
+  mysqlLocksTable,
+};

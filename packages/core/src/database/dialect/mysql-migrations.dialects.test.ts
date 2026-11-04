@@ -5,6 +5,7 @@ import { getTableName, is } from "drizzle-orm";
 import { PgTable } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import * as schema from "../schema.js";
+import { mysqlLocksTable } from "./locks.js";
 import { MYSQL_MIGRATIONS_FOLDER, openMysqlDatabase } from "./mysql-database.js";
 import { mysqlTableFor } from "./mysql-tables.js";
 
@@ -29,9 +30,12 @@ function everyPostgresTable() {
 /** Run by `pnpm test:dialects`. Only there, so a table change needn't wait for MySQL. */
 describe.runIf(process.env.TEST_MYSQL_URL)("MySQL migrations", () => {
   it("match the tables: run `pnpm db:generate:mysql` if this fails", async () => {
-    const tables = Object.fromEntries(
-      everyPostgresTable().map((table) => [getTableName(table), mysqlTableFor(table)]),
-    );
+    const tables = {
+      ...Object.fromEntries(
+        everyPostgresTable().map((table) => [getTableName(table), mysqlTableFor(table)]),
+      ),
+      lintel_locks: mysqlLocksTable,
+    };
     const current = (await generateMySQLDrizzleJson(tables)) as Snapshot;
     expect(current.tables).toEqual(newestSnapshot().tables);
   });
