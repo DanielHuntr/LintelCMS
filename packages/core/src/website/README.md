@@ -146,6 +146,7 @@ There is no repository: everything is kept in settings and read through other fe
 | File                       | What it does                                                 |
 | -------------------------- | ------------------------------------------------------------ |
 | `site-server.ts`           | The website's own Fastify server, reading through the API    |
+| `website-routes.ts`        | What the website serves, shared by dev and production        |
 | `site.routes.ts`           | Its routes: the stylesheet, and every page                   |
 | `site-pages.service.ts`    | What to answer for an address; the cache in front of it      |
 | `site-for-address.ts`      | Which site a visit is for                                    |
