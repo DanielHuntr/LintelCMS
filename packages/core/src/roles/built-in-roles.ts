@@ -52,7 +52,6 @@ export const builtInRoles: readonly BuiltInRole[] = [
       "content:transfer",
       "updates:read",
       "commerce:*",
-      "orders:*",
       "forms:*",
       "automations:*",
       "drafts:*",

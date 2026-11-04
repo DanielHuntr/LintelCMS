@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
+import { builtInRoles } from "./built-in-roles.js";
 import { hasPermission } from "./permissions.js";
+
+describe("the built-in roles", () => {
+  it("give no permission that nothing checks (LINTEL-SPEC-005)", () => {
+    const admin = builtInRoles.find((role) => role.handle === "admin");
+
+    expect(admin?.permissions).not.toContain("orders:*");
+  });
+});
 
 describe("hasPermission", () => {
   it("allows an exact match", () => {
