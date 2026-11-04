@@ -465,3 +465,56 @@ For one developer who knows the codebase, in focused weeks: **about 6 to 9 weeks
 Most of the risk is in the fourth row. The existing tests have never run on MySQL, and that
 is where differences in ordering, locking and deadlocks will show up. Until that row is
 done, nothing should tell people that MySQL works.
+
+### Later on 2026-11-04
+
+The sections above stand as written. These are the numbers and findings since.
+
+**Still true: MySQL and MariaDB run nothing a person can use.** The server can't open them,
+and services and routes haven't run on them. The repository-level rules are the same as
+above.
+
+| What                                   | Done | Of all |
+| -------------------------------------- | ---: | -----: |
+| Repositories moved                     |   68 |     95 |
+| Query calls moved                      |  455 |    710 |
+| Tables with a MySQL form and migration |   89 |     89 |
+| Tables a moved repository uses         |   75 |     89 |
+| Tables used only by moved repositories |   43 |     89 |
+| Postgres-only items removed            |  159 |    325 |
+
+Four of the 95 "repositories" read and write files rather than the database, so they need no
+move. Also moved since the table above: workflows and runs, approvals, notifications,
+revisions, scheduled entries, entry publishing, SEO, menus, content roots, GraphQL reads,
+content model reads, publishing, the file export's reads, carts, checkouts, products,
+product collections, shipping, payment accounts, the media bin, backups' list, visitor
+counts, A/B tests, site and WordPress imports, client reviews, privacy requests, blocks.
+
+Not moved: entries, the content tree, delivery, search, field changes and renames, form
+submissions, the recycle bin, media, orders, refunds, customers, discounts, inventory, the
+Shopify import, personal data, setup, health and the backup archive itself. A moved
+repository can still be handed conditions from code that hasn't moved: `listProductRows`
+takes one from `product-collection-rules.ts`, which is Postgres-only.
+
+New on MySQL, found by the tests:
+
+- An insert can't read from its own table (error 1093), and MariaDB gives a misleading null
+  error for the same query. `capabilitiesOf` says so, and the workflow log counts first.
+- A raw `sql` value holding JSON comes back as text, so `jsonValue` parses it.
+- MariaDB has no `for update of`, which `inventory.repository.ts` uses. That is one reason
+  it hasn't moved.
+
+**The whole core suite has now run on a real Postgres 17 server** (`pnpm test:postgres`), not
+just the built-in database. Migrations pass on an empty database, and on one stopped at 0031
+with rows in it, which ends up with the same tables and keys and keeps its rows.
+
+It found one real bug. Any discount code with a usage count failed with a 500 on a Postgres
+server, because a plain Date went into raw SQL: the built-in database accepts that and the
+server's driver doesn't. The query is fixed, and the Postgres-only check now refuses a date
+in raw SQL. It also found that a content model sync still running could write after the
+server had closed, and that one update test assumed the built-in database. A row's created
+and updated times on a Postgres server come from two clocks, so an update can look a few
+milliseconds older than the row. That was already so, and it's left as it is.
+
+The estimate above was about 6 to 9 weeks. With the mechanical repositories nearly done,
+about **5 to 7 weeks** remain, and the risk is where it was: the whole suite on MySQL.
