@@ -5,8 +5,11 @@ import { afterAll, beforeAll, beforeEach, inject } from "vitest";
 import { ActiveDatabase } from "../database/active-database.js";
 import { openBuiltInDatabase } from "../database/built-in-database.js";
 import type { Database, OpenedDatabase } from "../database/client.js";
+import { isMysqlUrl } from "../database/database-errors.js";
+import { openMysqlDatabase } from "../database/dialect/mysql-database.js";
 import { connectToPostgres } from "../database/postgres-database.js";
 import * as schema from "../database/schema.js";
+import { emptyEveryMysqlTable } from "./mysql-test-database.js";
 
 declare module "vitest" {
   export interface ProvidedContext {
@@ -18,7 +21,8 @@ declare module "vitest" {
 /**
  * Database tests run against the built-in database (PGlite) by default: nothing to
  * install, and each test file gets its own copy in memory. Set TEST_DATABASE_URL to run
- * them against a real Postgres server instead, as CI does.
+ * them against a real Postgres server instead, as CI does, or a MySQL or MariaDB server
+ * (see `pnpm test:mysql`).
  *
  * The database is emptied before every test, so never point TEST_DATABASE_URL at real data.
  */
@@ -29,6 +33,9 @@ export const testDatabaseUrl = process.env.TEST_DATABASE_URL || undefined;
  * of a second, where creating a built-in database from nothing takes a few.
  */
 export async function openTestDatabase(): Promise<OpenedDatabase> {
+  if (testDatabaseUrl && isMysqlUrl(testDatabaseUrl)) {
+    return openMysqlDatabase(testDatabaseUrl);
+  }
   if (testDatabaseUrl) {
     return connectToPostgres(testDatabaseUrl);
   }
@@ -77,6 +84,10 @@ export function useTestDatabase() {
  * migrations in a separate "drizzle" schema, so that survives.
  */
 export async function emptyAllTables(database: Database): Promise<void> {
+  if (testDatabaseUrl && isMysqlUrl(testDatabaseUrl)) {
+    await emptyEveryMysqlTable(testDatabaseUrl);
+    return;
+  }
   const tableNames = Object.values(schema)
     .filter((value) => is(value, PgTable))
     .map((table) => sql.identifier(getTableName(table)));
