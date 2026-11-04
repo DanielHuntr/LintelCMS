@@ -34,27 +34,44 @@ function columnsByName(table: PgTable) {
 type NamedColumnKind = "bytes" | "boolean" | "json" | "time" | "other";
 
 /**
- * What each column of an add-on's table holds. Only its name is known here, so this asks the
- * database. MariaDB's json is longtext with the collation it gives JSON, which isn't the one
- * Lintel's text columns use.
+ * MariaDB's json is longtext with a check, so its columns are found by their checks, which it
+ * names after the column. MySQL's own json has a type of its own, and MySQL's list of checks
+ * has no table names.
  */
+async function mariadbJsonColumns(
+  database: DatabaseOrTransaction,
+  table: string,
+): Promise<Set<string>> {
+  const [server] = await readRawRows(database, sql`select version() as version`);
+  if (!/mariadb/i.test(String(server?.version))) return new Set();
+  const rows = await readRawRows(
+    database,
+    sql`select constraint_name as name, check_clause as clause
+        from information_schema.check_constraints
+        where constraint_schema = ${currentSchema(database)} and table_name = ${table}`,
+  );
+  return new Set(
+    rows.filter((row) => /^json_valid\(/i.test(String(row.clause))).map((row) => String(row.name)),
+  );
+}
+
+/** What each column of an add-on's table holds. Only its name is known, so this asks. */
 async function columnKindsOf(
   database: DatabaseOrTransaction,
   table: string,
 ): Promise<Map<string, NamedColumnKind>> {
+  const jsonOnMariadb = await mariadbJsonColumns(database, table);
   const rows = await readRawRows(
     database,
-    sql`select column_name as name, data_type as type, column_type as full_type,
-               collation_name as collation
+    sql`select column_name as name, data_type as type, column_type as full_type
         from information_schema.columns
         where table_schema = ${currentSchema(database)} and table_name = ${table}`,
   );
-  const kindOf = ({ type, full_type: fullType, collation }: RawRow): NamedColumnKind => {
+  const kindOf = ({ name, type, full_type: fullType }: RawRow): NamedColumnKind => {
     if (/blob|binary/i.test(String(type))) return "bytes";
     if (String(fullType).toLowerCase() === "tinyint(1)") return "boolean";
     if (/^(datetime|timestamp)$/i.test(String(type))) return "time";
-    const isJson = String(type).toLowerCase() === "json";
-    return isJson || (/longtext/i.test(String(type)) && collation === "utf8mb4_bin")
+    return String(type).toLowerCase() === "json" || jsonOnMariadb.has(String(name))
       ? "json"
       : "other";
   };
@@ -100,16 +117,29 @@ export async function readAllMysqlRows(
 
 /**
  * Empties these tables, and, as `truncate ... cascade` does, every table of Lintel's that
- * points at them. Foreign keys must be at ease (`withForeignKeysAtEase`): rows can't be taken
- * out in any order that suits a table pointing at itself.
+ * points at them. Rows can't be taken out in any order that suits a table pointing at itself,
+ * so foreign key checks are off meanwhile, and left as they were found: a restore has its own.
  */
 export async function emptyMysqlTables(
   database: DatabaseOrTransaction,
   names: readonly string[],
 ): Promise<void> {
-  for (const name of referencingTableNames(names)) {
-    await database.execute(sql`delete from ${sql.identifier(name)}`);
-  }
+  await database.transaction(async (transaction) => {
+    const [checks] = await readRawRows(
+      transaction,
+      sql`select @@foreign_key_checks as foreign_key_checks`,
+    );
+    await transaction.execute(sql`set foreign_key_checks = 0`);
+    try {
+      for (const name of referencingTableNames(names)) {
+        await transaction.execute(sql`delete from ${sql.identifier(name)}`);
+      }
+    } finally {
+      await transaction.execute(
+        sql`set foreign_key_checks = ${Number(checks?.foreign_key_checks)}`,
+      );
+    }
+  });
 }
 
 /** Bytes as a backup holds them: `\\x` and hex. */
@@ -205,6 +235,12 @@ export async function fillInMysqlColumns(
   const columns = columnsByName(table);
   const id = columns.get("id")?.column;
   if (!id) throw new Error(`${getTableName(table)} has no id column.`);
+  // Named here, or `.set` would stamp them as an edit: this is a row put back, not a change.
+  const unchanged = Object.fromEntries(
+    Object.entries(getTableColumns(mysqlTable))
+      .filter(([, column]) => column.onUpdateFn)
+      .map(([key, column]) => [key, sql`${column}`]),
+  );
   for (const row of rows) {
     const changes = Object.fromEntries(
       names.flatMap((name) => {
@@ -215,7 +251,7 @@ export async function fillInMysqlColumns(
     if (Object.keys(changes).length > 0) {
       await database
         .update(mysqlTable)
-        .set(changes as never)
+        .set({ ...changes, ...unchanged } as never)
         .where(eq(id, row.id));
     }
   }

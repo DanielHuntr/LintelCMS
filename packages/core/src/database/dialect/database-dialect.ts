@@ -19,6 +19,8 @@ export interface DatabaseCapabilities {
   insertsReadTheirOwnTable: boolean;
   /** Whether `textSearch` can tell where a word starts. If not, rows are checked in Node. */
   searchFindsWordStarts: boolean;
+  /** Whether `jsonKeyEquals` tells lists apart by order and repeats. If not, check in Node. */
+  jsonKeyEqualsIsExact: boolean;
 }
 
 const capabilities: Record<DatabaseDialect, DatabaseCapabilities> = {
@@ -27,6 +29,7 @@ const capabilities: Record<DatabaseDialect, DatabaseCapabilities> = {
     upsertsNameTheirKey: true,
     insertsReadTheirOwnTable: true,
     searchFindsWordStarts: true,
+    jsonKeyEqualsIsExact: true,
   },
   // MariaDB has `returning` on inserts and deletes but not updates, and MySQL has none, so
   // both read rows back rather than Lintel keeping a third path.
@@ -35,6 +38,7 @@ const capabilities: Record<DatabaseDialect, DatabaseCapabilities> = {
     upsertsNameTheirKey: false,
     insertsReadTheirOwnTable: false,
     searchFindsWordStarts: false,
+    jsonKeyEqualsIsExact: false,
   },
 };
 

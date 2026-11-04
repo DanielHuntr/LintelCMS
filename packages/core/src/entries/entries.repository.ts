@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util";
 import { and, asc, desc, eq, inArray, isNull, or, type SQL, sql } from "drizzle-orm";
 import {
   type Blueprint,
@@ -15,6 +16,7 @@ import {
 } from "./entries.table.js";
 import { insertReturning, updateReturning } from "../database/dialect/writes.js";
 import { jsonAsText, jsonText, likeIgnoringCase } from "../database/dialect/expressions.js";
+import { capabilitiesOf } from "../database/dialect/database-dialect.js";
 import { jsonKeyEquals } from "../database/dialect/json-expressions.js";
 import { tableFor } from "../database/dialect/mysql-tables.js";
 
@@ -511,17 +513,23 @@ export async function hasEntryWithValue(
   value: unknown,
 ): Promise<boolean> {
   const entriesTable = tableFor(database, entriesDefinition);
+  const matching = and(
+    eq(entriesTable.collectionId, where.collectionId),
+    eq(entriesTable.locale, where.locale),
+    where.exceptEntryId ? sql`${entriesTable.id} <> ${where.exceptEntryId}` : undefined,
+    jsonKeyEquals(database, entriesTable.data, handle, value),
+  );
+  if (!capabilitiesOf(database).jsonKeyEqualsIsExact) {
+    const rows = await database
+      .select({ data: entriesTable.data })
+      .from(entriesTable)
+      .where(matching);
+    return rows.some(({ data }) => isDeepStrictEqual(data[handle], value));
+  }
   const rows = await database
     .select({ id: entriesTable.id })
     .from(entriesTable)
-    .where(
-      and(
-        eq(entriesTable.collectionId, where.collectionId),
-        eq(entriesTable.locale, where.locale),
-        where.exceptEntryId ? sql`${entriesTable.id} <> ${where.exceptEntryId}` : undefined,
-        jsonKeyEquals(database, entriesTable.data, handle, value),
-      ),
-    )
+    .where(matching)
     .limit(1);
   return rows.length > 0;
 }

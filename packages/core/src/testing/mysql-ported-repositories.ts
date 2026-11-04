@@ -74,14 +74,6 @@ export const mysqlPortedRepositories = [
   "blocks/blocks.repository.ts",
   "commerce/customers/customers.repository.ts",
   "commerce/test-checkout/test-orders.repository.ts",
-];
-
-/**
- * Moved too, and run on MySQL and MariaDB by the whole core suite (`pnpm test:mysql`) rather
- * than a `*.dialects.test.ts` naming each exported function. The suite goes through their
- * services and routes, so a function nothing in the suite calls isn't proved by this.
- */
-export const repositoriesRunByTheWholeSuite = [
   "backups/database-snapshot.repository.ts",
   "backups/mysql-snapshot.repository.ts",
   "commerce/discounts/discounts.repository.ts",
@@ -105,6 +97,9 @@ export const repositoriesRunByTheWholeSuite = [
   "search/search.repository.ts",
   "setup/setup.repository.ts",
 ];
+
+/** Moved, and run only by the whole suite. There are none left: every moved one has its test. */
+export const repositoriesRunByTheWholeSuite: readonly string[] = [];
 
 /** Named `repository`, but they read and write files, so there was nothing to move. */
 export const repositoriesWithoutADatabase = [

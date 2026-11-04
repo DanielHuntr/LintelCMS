@@ -175,6 +175,8 @@ export async function listOrderEventRows(
     .orderBy(desc(orderEventsTable.createdAt), desc(orderEventsTable.id));
 }
 
+const LARGEST_ORDER_NUMBER = 2_147_483_647;
+
 function orderConditions(database: DatabaseOrTransaction, filter: OrderFilter): SQL | undefined {
   const ordersTable = tableFor(database, ordersDefinition);
   const search = filter.search?.replace(/^#/, "").trim();
@@ -189,11 +191,16 @@ function orderConditions(database: DatabaseOrTransaction, filter: OrderFilter): 
     escaped
       ? or(
           likeIgnoringCase(database, ordersTable.email, `%${escaped}%`),
-          /^\d+$/.test(search ?? "") ? eq(ordersTable.number, Number(search)) : undefined,
+          isOrderNumber(search) ? eq(ordersTable.number, Number(search)) : undefined,
           likeIgnoringCase(database, ordersTable.name, `%${escaped}%`),
         )
       : undefined,
   );
+}
+
+/** Digits that fit the column: Postgres refuses to compare a bigger number with it. */
+function isOrderNumber(search: string | undefined): boolean {
+  return /^\d+$/.test(search ?? "") && Number(search) <= LARGEST_ORDER_NUMBER;
 }
 
 export async function countOrdersPaidSince(

@@ -214,7 +214,7 @@ export async function upsertGlobalValues(
 ) {
   const globalValuesTable = tableFor(database, globalValuesDefinition);
   await upsert(database, globalValuesTable, values, {
-    target: [globalValuesTable.globalSetId, globalValuesTable.locale],
+    target: [globalValuesTable.globalSetId, globalValuesTable.siteId, globalValuesTable.locale],
     set: { data: values.data, updatedAt: new Date() },
   });
 }

@@ -70,7 +70,10 @@ export function jsonKeyInQuery(
     : sql`json_extract(${json}, ${mysqlKeyPath(key)})`;
 }
 
-/** Whether one key of a JSON object holds exactly this value. */
+/**
+ * Whether one key of a JSON object holds this value. On MySQL a list in another order, or with
+ * items repeated, also counts: see `jsonKeyEqualsIsExact`.
+ */
 export function jsonKeyEquals(
   database: DatabaseOrTransaction,
   json: SQLWrapper,
@@ -79,8 +82,8 @@ export function jsonKeyEquals(
 ): SQL<boolean> {
   const text = JSON.stringify(value);
   if (dialectOf(database) === "postgres") return sql`${json} -> ${key} = ${text}::jsonb`;
-  // MariaDB can't cast to json. Each holding the other is the same as being equal, whichever
-  // order an object's keys are in.
+  // MariaDB can't cast to json, and the two engines have no other comparison in common. Each
+  // holding the other finds every equal value, whichever order an object's keys are in.
   const stored = sql`json_extract(${json}, ${mysqlKeyPath(key)})`;
   return sql`(json_contains(${stored}, ${text}) and json_contains(${text}, ${stored}))`;
 }
