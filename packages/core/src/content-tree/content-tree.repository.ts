@@ -12,6 +12,7 @@ import {
   orderNullsLast,
 } from "../database/dialect/expressions.js";
 import { jsonOnlyKeys, positionInList } from "../database/dialect/json-expressions.js";
+import { jsonDiffers } from "../database/dialect/json-expressions.js";
 import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for the content tree, nothing else. */
@@ -59,10 +60,9 @@ function nodeColumns(database: DatabaseOrTransaction) {
     title: titleColumn(database),
     slug: entriesTable.slug,
     status: entriesTable.status,
-    // Ignores key order, as the editor's own comparison does: jsonb and MySQL's json compare
-    // by value, and on MariaDB, where json is text, keys are always written in one order.
+    // Ignores key order, as the editor's own comparison does.
     hasUnpublishedChanges:
-      sql<boolean>`(${entriesTable.publishedData} is not null and ${entriesTable.data} <> ${entriesTable.publishedData})`.mapWith(
+      sql<boolean>`(${entriesTable.publishedData} is not null and ${jsonDiffers(database, entriesTable.data, entriesTable.publishedData)})`.mapWith(
         Boolean,
       ),
     scheduledFor: entriesTable.scheduledFor,

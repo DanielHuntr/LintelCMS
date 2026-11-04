@@ -103,8 +103,9 @@ Handled here:
 - **A transaction MySQL undoes to break a deadlock is tried again,** up to four times. It can
   run more than once, so do anything that leaves the database, such as sending an email,
   after it.
-- **Keys in JSON are written in one order,** the one jsonb uses, so MariaDB, whose json is
-  text, can compare two values with `<>`.
+- **Keys in JSON are written in one order,** the one jsonb uses, so values read the same on
+  every database. A change made in SQL, such as a renamed field, can leave them out of that
+  order on MariaDB, whose json is text, so compare two columns with `jsonDiffers`, not `<>`.
 - **`dashboard_layouts_one_owner` isn't there.** MySQL refuses a check on columns with `on
 delete` rules. The repository writes either a person or a role, never both.
 - **A value too long for a key** is refused with a plain 422 rather than an error.

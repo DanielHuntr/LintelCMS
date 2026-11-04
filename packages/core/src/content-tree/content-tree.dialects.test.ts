@@ -1,11 +1,14 @@
 import { randomUUID } from "node:crypto";
+import { eq } from "drizzle-orm";
 import { expect, it } from "vitest";
 import { blueprintsTable } from "../blueprints/blueprints.table.js";
 import { clientReviewsTable } from "../client-editing/client-reviews.table.js";
 import { collectionsTable, type NewCollection } from "../collections/collections.table.js";
 import type { Database } from "../database/client.js";
+import { jsonWithKeyRenamed } from "../database/dialect/json-expressions.js";
 import { tableFor } from "../database/dialect/mysql-tables.js";
 import { insertReturning } from "../database/dialect/writes.js";
+import { entriesTable } from "../entries/entries.table.js";
 import { sitesTable } from "../sites/sites.table.js";
 import {
   addTestEntry,
@@ -125,6 +128,24 @@ describeOnEveryDatabase("Content tree", (handle) => {
     const rows = await findNodeRows(database, [missing.id, empty.id]);
 
     expect(rows.map((row) => row.title)).toEqual([null, null]);
+  });
+
+  it("doesn't call a renamed field an unpublished change", async () => {
+    const { database } = handle;
+    const entries = tableFor(database, entriesTable);
+    const entry = await addTestEntry(database, {
+      slug: "renamed",
+      data: { long_handle: 1, b: { y: 2, x: [1, 2] } },
+      publishedData: { a: 1, b: { x: [1, 2], y: 2 } },
+    });
+    // On MariaDB, whose json is text, the moved key now comes last.
+    await database
+      .update(entries)
+      .set({ data: jsonWithKeyRenamed(database, entries.data, "long_handle", "a") })
+      .where(eq(entries.id, entry.id));
+
+    const [row] = await findNodeRows(database, [entry.id]);
+    expect(row?.hasUnpublishedChanges).toBe(false);
   });
 
   it("sees unpublished changes by value, whatever order the keys are in", async () => {

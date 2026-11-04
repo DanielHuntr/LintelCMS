@@ -101,6 +101,24 @@ export function jsonKeyListIncludes(
     : sql`json_contains(${json}, ${list}, ${mysqlKeyPath(key)})`;
 }
 
+/**
+ * Whether two JSON columns hold different values: key order doesn't count, and list order
+ * does. jsonb and MySQL's json compare by content. MariaDB's json is text, so it needs
+ * `json_equals`, which MySQL doesn't have. Each runs its own comment and skips the other's:
+ * `/*M!` is MariaDB's, and MariaDB leaves out `/*!80000`. Columns only: a value can't be bound
+ * inside a comment.
+ */
+export function jsonDiffers(
+  database: DatabaseOrTransaction,
+  first: SQLWrapper,
+  second: SQLWrapper,
+): SQL {
+  if (dialectOf(database) === "postgres") return sql`${first} <> ${second}`;
+  const mariadb = sql`/*M! json_equals(${first}, ${second}) = 0 */`;
+  const mysql = sql`/*!80000 ${first} <> ${second} */`;
+  return sql`(${mariadb} ${mysql})`;
+}
+
 /** A value as JSON, ready for `jsonWithKey`. */
 export function jsonLiteral(database: DatabaseOrTransaction, value: unknown): SQL {
   const text = JSON.stringify(value);

@@ -5,6 +5,7 @@ import { entriesTable as entriesDefinition } from "../entries/entries.table.js";
 import { assetsTable as assetsDefinition } from "../media/media.table.js";
 import { usersTable as usersDefinition } from "../users/users.table.js";
 import { countWhere, jsonText } from "../database/dialect/expressions.js";
+import { jsonDiffers } from "../database/dialect/json-expressions.js";
 import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Reads for the built-in dashboard widgets, nothing else. */
@@ -24,7 +25,7 @@ export interface DashboardEntryRow {
 /** The working copy differs from what is live: saved, but not published again since. */
 function hasUnpublishedChanges(database: DatabaseOrTransaction) {
   const entriesTable = tableFor(database, entriesDefinition);
-  return sql<boolean>`(${entriesTable.publishedData} is not null and ${entriesTable.data} <> ${entriesTable.publishedData})`.mapWith(
+  return sql<boolean>`(${entriesTable.publishedData} is not null and ${jsonDiffers(database, entriesTable.data, entriesTable.publishedData)})`.mapWith(
     Boolean,
   );
 }
