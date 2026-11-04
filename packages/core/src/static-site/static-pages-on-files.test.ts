@@ -59,6 +59,12 @@ describe("pages as files", () => {
       ),
     ).toEqual(["/_lintel/elements-abc.js", "/_lintel/fonts/inter-latin-400-normal.woff2"]);
     expect(readSiteFile("/_lintel/fonts/inter-latin-400-normal.woff2")).not.toBeNull();
+    // A 3D model named in a page's effect settings (LINTEL-UX-318).
+    expect(findSiteFiles('{"src":"/_lintel/models/vase.glb"}')).toEqual([
+      "/_lintel/models/vase.glb",
+    ]);
+    expect(readSiteFile("/_lintel/models/vase.glb")?.content.length).toBeGreaterThan(0);
+    expect(readSiteFile("/_lintel/models/not-a-model.glb")).toBeNull();
     expect(readSiteFile("/_lintel/fonts/not-a-font.woff2")).toBeNull();
     expect(readSiteFile("/_lintel/illustrations/../secret.svg")).toBeNull();
   });

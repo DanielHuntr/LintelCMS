@@ -1,4 +1,5 @@
 import { testsScript } from "../experiments/tests-script.js";
+import { readSampleModel } from "../media/sample-models.js";
 import {
   EFFECTS_FOLDER,
   FONTS_FOLDER,
@@ -10,19 +11,20 @@ import {
   readFontFile,
   readIllustration,
   readMotionRuntime,
+  SAMPLE_MODELS_FOLDER,
 } from "../website/site-assets.js";
 
 /**
  * The website's own files that pages and the stylesheet link to under `/_lintel`: the
  * motion runtime, the elements script (sliders, forms, menus), the cookie notice, effect
- * modules, illustrations and the fonts that come with Lintel. The live site serves them
+ * modules, illustrations, sample 3D models and the fonts that come with Lintel. The live site serves them
  * from memory; an export copies each one a page or the stylesheet names.
  *
  * `/_lintel/api/...` isn't a file: it is Lintel answering (forms, the shop, visitor counts),
  * which a folder of files can't do. See static-capabilities.ts for what happens instead.
  */
 
-const SITE_FILE_PATTERN = /\/_lintel\/(?!api\/)[A-Za-z0-9._/-]+\.(?:js|css|woff2|svg)/g;
+const SITE_FILE_PATTERN = /\/_lintel\/(?!api\/)[A-Za-z0-9._/-]+\.(?:js|css|woff2|svg|glb)/g;
 
 /** Every `/_lintel/...` file named in a page, a stylesheet or a script, once each. */
 export function findSiteFiles(text: string): string[] {
@@ -58,6 +60,10 @@ export function readSiteFile(path: string): SiteFile | null {
   if (path === `${ILLUSTRATIONS_FOLDER}/${name}`) {
     const svg = readIllustration(name);
     return svg === undefined ? null : { content: svg, alsoNeeds: [] };
+  }
+  if (path === `${SAMPLE_MODELS_FOLDER}/${name}`) {
+    const model = readSampleModel(name);
+    return model === undefined ? null : { content: model, alsoNeeds: [] };
   }
   if (path === `${FONTS_FOLDER}/${name}`) {
     const font = readFontFile(name);
