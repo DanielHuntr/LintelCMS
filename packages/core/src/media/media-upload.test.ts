@@ -35,6 +35,25 @@ describe("uploading media", () => {
     expect(original.rawPayload.equals(png)).toBe(true);
   });
 
+  it("says a file is empty, not that it is the wrong kind (LINTEL-UX-005)", async () => {
+    const response = await media.upload("empty.png", Buffer.alloc(0));
+
+    expect(response.statusCode).toBe(422);
+    expect(response.json()).toMatchObject({ code: "EMPTY_FILE" });
+    expect(response.json().message).toContain("has nothing in it");
+  });
+
+  it("names an SVG's outside link, not damage, when it can't be opened (LINTEL-UX-005)", async () => {
+    const linked =
+      '<svg xmlns="http://www.w3.org/2000/svg"><use href="https://a.example/b.svg#c"/></svg>';
+
+    const response = await media.upload("linked.svg", Buffer.from(linked));
+
+    expect(response.statusCode).toBe(422);
+    expect(response.json()).toMatchObject({ code: "SVG_LINKS_OUTSIDE" });
+    expect(response.json().message).toContain("links to something outside the file");
+  });
+
   it("judges a file by its bytes: a program renamed to .png is refused", async () => {
     const program = Buffer.concat([
       Buffer.from("MZ\x90\x00\x03\x00\x00\x00\x04\x00\x00\x00\xff\xff\x00\x00", "latin1"),

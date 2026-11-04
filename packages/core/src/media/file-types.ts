@@ -1,6 +1,6 @@
 import { extname } from "node:path";
 import { fileTypeFromBuffer } from "file-type";
-import { FileTypeNotAllowedError } from "./media.errors.js";
+import { EmptyFileError, FileTypeNotAllowedError } from "./media.errors.js";
 import { looksLikeGltf } from "./model-files.js";
 
 /**
@@ -92,6 +92,9 @@ export async function detectFileType(
   contents: Buffer,
   originalFilename: string,
 ): Promise<AllowedFileType> {
+  if (contents.length === 0) {
+    throw new EmptyFileError(originalFilename);
+  }
   if (isRiveFile(contents)) {
     return allowedFileTypeFor("application/x-rive");
   }

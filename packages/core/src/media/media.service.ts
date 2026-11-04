@@ -13,6 +13,7 @@ import {
   AssetInUseError,
   AssetNotFoundError,
   ImageTooLargeError,
+  SvgLinksOutsideError,
   UnreadableImageError,
 } from "./media.errors.js";
 import {
@@ -33,7 +34,7 @@ import {
 } from "./media.schema.js";
 import type { CreditDetails } from "./photo-credit.js";
 import type { StorageDriver } from "./storage-driver.js";
-import { assertSvgIsSafe } from "./svg-safety.js";
+import { assertSvgIsSafe, linksOutside } from "./svg-safety.js";
 import { removeCachedTransforms } from "./transform-cache.js";
 
 /** Everything media's business rules need, gathered per request by the routes. */
@@ -91,6 +92,9 @@ export async function uploadAsset(
   const canMeasure = fileType.kind === "image" && (await loadImageLibrary()).available;
   const size = canMeasure ? await readImageSize(contents) : undefined;
   if (canMeasure && !size) {
+    if (fileType.mimeType === "image/svg+xml" && linksOutside(decodeAsText(contents) ?? "")) {
+      throw new SvgLinksOutsideError(filename);
+    }
     throw new UnreadableImageError(filename);
   }
   if (size && size.width * size.height > MAX_IMAGE_PIXELS) {

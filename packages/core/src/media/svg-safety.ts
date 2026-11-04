@@ -42,6 +42,11 @@ export function assertSvgIsSafe(svgText: string, filename: string): void {
   }
 }
 
+/** Whether an SVG reaches for a file elsewhere, which is why some can't be opened here. */
+export function linksOutside(svgText: string): boolean {
+  return /href\s*=\s*["']\s*(https?:)?\/\//i.test(svgText);
+}
+
 function decodeCharacterReferences(text: string): string {
   return text
     .replace(/&#x([0-9a-f]+);?/gi, (_match, hex: string) => codePointToText(parseInt(hex, 16)))

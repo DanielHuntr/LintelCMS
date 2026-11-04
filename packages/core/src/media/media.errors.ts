@@ -80,6 +80,26 @@ export class UnreadableImageError extends HttpError {
   }
 }
 
+export class EmptyFileError extends HttpError {
+  constructor(filename: string) {
+    super(
+      422,
+      "EMPTY_FILE",
+      `"${filename}" has nothing in it. Try saving or exporting it again, then upload it.`,
+    );
+  }
+}
+
+export class SvgLinksOutsideError extends HttpError {
+  constructor(filename: string) {
+    super(
+      422,
+      "SVG_LINKS_OUTSIDE",
+      `"${filename}" links to something outside the file, so it can't be opened here. Put that part inside the SVG, then upload it again.`,
+    );
+  }
+}
+
 export class AssetNotFoundError extends HttpError {
   constructor() {
     super(404, "NOT_FOUND", "That file isn't in the media library. It may have been deleted.");
