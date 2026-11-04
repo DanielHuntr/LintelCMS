@@ -72,4 +72,5 @@ export const mysqlPortedRepositories = [
   "wordpress-import/wordpress-import.repository.ts",
   "commerce/products/products.repository.ts",
   "blocks/blocks.repository.ts",
+  "commerce/customers/customers.repository.ts",
 ];

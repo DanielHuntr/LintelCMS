@@ -56,6 +56,7 @@ export async function listSiteFontRows(database: DatabaseOrTransaction, tenantId
 | `ilike`                                  | `likeIgnoringCase`                                  |
 | `count(*) filter (where ...)`            | `countWhere`                                        |
 | `selectDistinctOn`, newest of each group | `selectNewestPerGroup` (in `reads.ts`)              |
+| `sum(...) filter (where ...)`            | `sumWhere`                                          |
 | `nulls last`                             | `orderNullsLast`                                    |
 | `to_char(... at time zone 'UTC', ...)`   | `utcDay`                                            |
 | `... - make_interval(days => ...)`       | `daysBefore`                                        |

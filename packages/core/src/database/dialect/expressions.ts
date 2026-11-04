@@ -90,6 +90,17 @@ export function countWhere(database: DatabaseOrTransaction, condition: SQLWrappe
   return count.mapWith(Number);
 }
 
+/** Adds up an amount over rows matching a condition, giving 0 for none. */
+export function sumWhere(
+  database: DatabaseOrTransaction,
+  amount: SQLWrapper,
+  condition: SQLWrapper,
+): SQL<number> {
+  return dialectOf(database) === "postgres"
+    ? sql`coalesce(sum(${amount}) filter (where ${condition}), 0)`
+    : sql`coalesce(sum(case when ${condition} then ${amount} else 0 end), 0)`;
+}
+
 /** `order by ... nulls last`. MySQL puts nulls first when ascending. */
 export function orderNullsLast(
   database: DatabaseOrTransaction,

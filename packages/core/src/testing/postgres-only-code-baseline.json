@@ -14,11 +14,6 @@
   "backups/table-order.ts": {
     "pg-core import": 1
   },
-  "commerce/customers/customers.repository.ts": {
-    "filter clause": 2,
-    "ilike": 2,
-    "upsert": 1
-  },
   "commerce/discounts/discounts.repository.ts": {
     "cast with ::": 3,
     "filter clause": 1,
