@@ -46,10 +46,7 @@ export async function deleteTestOrders(shop: ShopContext): Promise<{ deleted: nu
       transaction,
       orders.map((order) => order.checkoutId),
     );
-    await deleteCustomersLeftEmpty(
-      transaction,
-      orders.flatMap((order) => order.customerId ?? []),
-    );
+    await deleteCustomersLeftEmpty(transaction, orders);
     await handBackOrderNumbers(transaction, orders);
     return { deleted: orders.length };
   });

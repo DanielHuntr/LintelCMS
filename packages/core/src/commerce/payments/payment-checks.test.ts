@@ -1,5 +1,7 @@
+import { eq } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 import { useTestDatabase } from "../../testing/test-database.js";
+import { checkoutsTable } from "../checkouts/checkouts.table.js";
 import { FAKE_MOLLIE_API_KEY } from "../testing/fake-mollie.js";
 import { FAKE_PAYPAL } from "../testing/fake-paypal.js";
 import { FAKE_STRIPE_ENVIRONMENT } from "../testing/fake-stripe.js";
@@ -576,6 +578,32 @@ describe("confirming payments without a webhook", () => {
       await checkPayments(current.server.shop, newPaymentCheckState());
       expect(await isTestOrder(current)).toBe(isTest);
       expect(await salesCount(current)).toBe(isTest ? 0 : 1);
+    },
+    SLOW_TEST,
+  );
+
+  it(
+    "still places one shopper's order when asking about another's payment fails",
+    async () => {
+      const { current, variantId, rateId, market } = await start({
+        ...FAKE_STRIPE_ENVIRONMENT,
+        MOLLIE_API_KEY: FAKE_MOLLIE_API_KEY,
+      });
+      await current.admin("PATCH", `/shop/markets/${market.id}`, { paymentProvider: "mollie" });
+      await checkout(current, variantId, rateId);
+      const paying = await checkout(current, variantId, rateId);
+      const [stuck, paid] = [...current.mollie.payments.values()];
+      if (!stuck || !paid) throw new Error("Both checkouts should have made a payment");
+      current.mollie.unavailablePayments.add(stuck.id);
+      paid.status = "paid";
+
+      await checkPayments(current.server.shop, newPaymentCheckState());
+
+      const [row] = await testDatabase.database
+        .select()
+        .from(checkoutsTable)
+        .where(eq(checkoutsTable.id, paying.checkoutId));
+      expect(row?.status).toBe("completed");
     },
     SLOW_TEST,
   );

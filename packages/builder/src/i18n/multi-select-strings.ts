@@ -5,6 +5,8 @@ export const multiSelectStrings = {
   "pageBuilder.multi.mixed": "Mixed",
   "pageBuilder.multi.styleNote":
     "Changes here go to all {count}. Values they don’t share show as Mixed.",
+  "pageBuilder.multi.styleNoteKinds":
+    "Changes here go to all {count}. Only what they have in common shows; values they don’t share show as Mixed.",
   "pageBuilder.multi.contentNote": "Select one to edit its words.",
   "pageBuilder.multi.animateNote": "What you choose here replaces the motion on all {count}.",
   "pageBuilder.history.layoutMany": "Changed the layout of {count} elements",
@@ -26,6 +28,12 @@ export const multiSelectStrings = {
   "pageBuilder.history.duplicatedMany": "Duplicated {count} elements",
   "pageBuilder.history.groupedMany": "Grouped {count} elements into a box",
   "pageBuilder.history.movedMany": "Moved {count} elements",
+  "pageBuilder.history.cutMany": "Cut {count} elements",
+  "pageBuilder.history.hiddenMany": "Hid {count} elements",
+  "pageBuilder.history.shownMany": "Showed {count} elements",
+  "pageBuilder.history.lockedMany": "Locked {count} elements",
+  "pageBuilder.history.unlockedMany": "Unlocked {count} elements",
+  "pageBuilder.clipboard.copiedMany": "Copied {count} elements",
   "pageBuilder.refused.manyWithSiteSection":
     "The site’s navigation and footer can’t be changed along with other elements. Select them on their own.",
   "pageBuilder.refused.groupNeedsSameParent":

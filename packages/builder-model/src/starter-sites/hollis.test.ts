@@ -49,7 +49,7 @@ describe("the Hollis starter site", () => {
       expect.arrayContaining(["siteLogo", "navigation", "mobileMenu"]),
     );
     expect(footer[0]?.props.element).toBe("footer");
-    expect(footer.find((node) => node.type === "clock")?.props.zone).toBe("Australia/Sydney");
+    expect(footer.find((node) => node.type === "clock")?.props.zone).toBe("Australia/Melbourne");
     expect(footer.some((node) => node.type === "cookieSettings")).toBe(true);
     for (const page of site?.pages ?? []) {
       const elements = pageNodes(page.slug).map((node) => node.props.element);

@@ -8,7 +8,8 @@ export const testCheckoutStrings = {
     "Place a test order on your website. You don't need a payment account, and no money is taken.",
   "shop.tryShop.action": "Place a test order",
   "shop.tryShop.opening": "Opening…",
-  "shop.tryShop.notReady": "To try it, you need a market, a delivery price and an active product.",
+  "shop.tryShop.notReady":
+    "To try it, choose where you sell, set a delivery price and put a product on sale.",
   "shop.testOrders.badge": "Test",
   "shop.testOrders.title": "{count, plural, one {# test order} other {# test orders}}",
   "shop.testOrders.body":

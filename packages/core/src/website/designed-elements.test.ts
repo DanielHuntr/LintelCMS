@@ -84,6 +84,17 @@ const fakeShop: SiteSources = {
         submitLabel: "Join",
         fields: [
           { handle: "email", type: "email", label: "Email address", required: true, options: {} },
+          ...(handle === "with-consent"
+            ? [
+                {
+                  handle: "consent",
+                  type: "consent",
+                  label: "Send me the newsletter",
+                  required: true,
+                  options: {},
+                },
+              ]
+            : []),
         ],
         spamProtection: { honeypotField: "_website", tokenField: "_token", token: "123.abc" },
         confirmation: { type: "message", message: "Thanks for joining." },
@@ -263,6 +274,22 @@ describe("designed pages with the element library", { timeout: 30000 }, () => {
     expect(page).toContain('action="/_lintel/api/forms/newsletter/submissions"');
     expect(page).toContain('name="_token" value="123.abc"');
     expect(page).toMatch(/<input id="newsletter-\w+" type="email"[^>]*name="email"/);
+    expect(page).not.toContain('type="checkbox"');
+  });
+
+  it("draws the consent boxes of the form a newsletter sign-up sends", async () => {
+    await publish(
+      "pages",
+      {
+        title: "Join",
+        design: design({ type: "newsletterSignup", props: { form: "with-consent" } }),
+      },
+      "join",
+    );
+    const page = (await visit("/join")).body;
+    expect(page).toMatch(/<input type="checkbox"[^>]*required=""[^>]*name="consent"/);
+    expect(page).toContain("Send me the newsletter");
+    expect(page).toContain('data-error-for="consent"');
   });
 
   it("passes the storefront and forms APIs through, and answers plainly while they are off", async () => {

@@ -30,7 +30,7 @@ developers start with the docs page "Building an app".
   installer, with only its scopes' permissions that the installer also has (`app-scopes.ts`),
   checked on every request. No scope reaches settings, users, roles, webhooks, apps or a
   page's design (`builder:design`), so apps are content-only, like API tokens. An app whose
-  installer is deactivated stops working. `read_orders` and `write_orders` map to the
+  installer is deactivated stops working, and stops being sent events. `read_orders` and `write_orders` map to the
   narrow `commerce:read-orders` and `commerce:handle-orders`, which only the orders routes
   accept.
 - **Be limited**: `app-rate-limit.ts` counts each app's requests, 240 a minute by default

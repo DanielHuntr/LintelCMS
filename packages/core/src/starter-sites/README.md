@@ -21,7 +21,9 @@ As far as the person is allowed, it also:
   Threshold's listings), when the site has none with that handle (`collections:update`),
   publishing the entries with the pages. The answer's `collectionsMade` names them;
 - makes the forms its pages show (a contact form, a newsletter sign-up), named after the
-  job they do, when Forms is on.
+  job they do, when Forms is on;
+- switches on the features its pages rely on (`features`, such as the magazine's Blog), for
+  someone with `settings:update`. The answer's `featuresSwitchedOn` names them.
 
 The template's home page starts the page tree and its other pages go under it ("/about").
 

@@ -95,7 +95,9 @@ function OperationDetails({ operation }: { operation: ReferenceOperation }) {
         >
           {operation.method}
         </Badge>
-        <code className="font-mono text-footnote text-label">{operation.path}</code>
+        <code className="min-w-0 font-mono text-footnote text-label break-all">
+          {operation.path}
+        </code>
         <span className="ms-auto truncate text-footnote text-label-secondary">
           {operation.summary}
         </span>

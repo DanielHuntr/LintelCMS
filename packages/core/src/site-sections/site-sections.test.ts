@@ -112,6 +112,28 @@ describe("the site's navigation and footer sections", () => {
     });
   });
 
+  it("keeps a footer whose clock is in a zone that isn't on the list", async () => {
+    await publish("Home", "home");
+    const { footer } = starterSiteSections();
+    const clock = {
+      id: "footer-clock",
+      type: "clock",
+      name: "Clock",
+      props: { zone: "Australia/Adelaide", hours: "24", label: "" },
+      styles: { base: {} },
+      children: [],
+    };
+    const saved = await putLive({
+      footer: { ...footer, children: [...(footer?.children ?? []), clock] },
+    });
+    expect(saved.statusCode, saved.body).toBe(200);
+
+    const body = await visit("/");
+    expect(chromeOf(body)).toMatchObject({ automaticFooter: 0, siteFooter: 1 });
+    expect(body).toContain('data-zone="Australia/Adelaide"');
+    expect(body).toContain("Adelaide</span>");
+  });
+
   it("shows a navigation added once on every page, in place of the automatic header", async () => {
     await publish("Home", "home");
     await publish("About", "about", designed("questions"));

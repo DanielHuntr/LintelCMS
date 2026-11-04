@@ -33,7 +33,7 @@ describe("options for the newer fieldtypes", () => {
       label: "Tags",
     });
 
-    expect(blueprintProblems(added)).toEqual({ k1: "Choose a taxonomy to pick terms from." });
+    expect(blueprintProblems(added)).toEqual({ k1: "Choose a group to pick terms from." });
     const chosen = blueprintDraftReducer(added, {
       type: "fieldOptionsChanged",
       key: "k1",

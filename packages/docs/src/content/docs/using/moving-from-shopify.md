@@ -12,8 +12,8 @@ Shopify shop, so you can keep selling there until your new site is ready.
 
 ## Before you start
 
-- Switch on **Online shop** and add your main **market** under **Shop → Settings →
-  Markets**, in the same currency as your Shopify shop. Shopify's files have prices but not
+- Switch on **Online shop** and add your main **region** under **Shop → Settings →
+  Where you sell**, in the same currency as your Shopify shop. Shopify's files have prices but not
   their currency, so Lintel reads them in your shop's own currency.
 - Export the files from your Shopify admin:
   - **Products → Export**, choosing "Plain CSV file". This is the only file you need.

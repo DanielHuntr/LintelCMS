@@ -12,7 +12,7 @@
 $guides = 'https://github.com/DanielHuntr/lintelcms/blob/main/packages/docs/src/content/docs/hosting/';
 $minimumNodeMajor = 22;
 // What lintel-bridge.php (forms and checkout for published sites) needs.
-$bridgeMinimumPhp = '8.1.0';
+$bridgeMinimumPhp = '7.4.0';
 
 /** True when PHP may look at this path (open_basedir can hide the rest of the server). */
 function lintel_exists($path)

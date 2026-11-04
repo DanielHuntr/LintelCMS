@@ -26,6 +26,8 @@ export class FakeMollie {
   refundStatus = "pending";
   /** The mode new payments are made in. */
   paymentMode: "live" | "test" = "live";
+  /** Payments Mollie can't answer about just now. */
+  readonly unavailablePayments = new Set<string>();
   /** What the methods call answers with. */
   methods: Array<{ id: string; description: string; status?: string }> = [
     { id: "ideal", description: "iDEAL", status: "activated" },
@@ -103,6 +105,9 @@ export class FakeMollie {
     }
     const one = /^\/v2\/payments\/([^/]+)$/.exec(path);
     if (one) {
+      if (this.unavailablePayments.has(one[1] ?? "")) {
+        return json(503, { status: 503, title: "Service Unavailable" });
+      }
       const payment = this.payments.get(one[1] ?? "");
       if (!payment) return notFound();
       if (method === "DELETE") payment.status = "canceled";

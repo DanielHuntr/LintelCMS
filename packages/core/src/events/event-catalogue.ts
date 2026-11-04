@@ -43,6 +43,8 @@ export interface LintelEvents {
       submitterEmail?: string | null;
       /** The submission in the admin's inbox. */
       url?: string;
+      /** The consent boxes ticked, with the words the person saw. */
+      consents?: Array<{ field: string; wording: string }>;
     };
   };
   /** Declared now so automations can use it; the users feature publishes it. */

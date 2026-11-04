@@ -916,3 +916,97 @@ Found while joining external apps to the release branch and checking Build → A
 | LINTEL-UX-133 | P3       | Fixed  | An app's page said its name twice when its sidebar label is the app's name                                      |
 | LINTEL-UX-134 | P3       | Fixed  | An app's details page: the Uninstall button sat far to the right of the narrower cards below it                 |
 | LINTEL-UX-135 | P2       | Fixed  | An app could keep working after the person who installed it was deactivated (API tokens already stopped)        |
+
+## Independent review of the night's work (4 November 2026)
+
+A second reading of `dde71e4d..9943c3c1` on `fix/night-review`. All fixed there; `FIX-LOG-night-review.md` has the commits and the decisions left for Daniel.
+
+| ID              | Severity | Status | Summary                                                                                                   |
+| --------------- | -------- | ------ | --------------------------------------------------------------------------------------------------------- |
+| LINTEL-CODE-017 | P1       | Fixed  | An add-on's Delete data and export could reach Lintel's own tables: an id of `shop` owned `shop_orders`   |
+| LINTEL-CODE-018 | P1       | Fixed  | The PHP companion lost delayed payments: the money was taken and no order was made                        |
+| LINTEL-CODE-019 | P2       | Fixed  | A publish could reach outside its folders: the path check never refused anything                          |
+| LINTEL-CODE-020 | P2       | Fixed  | Find a person missed form entries holding the email anywhere but the form's first email answer            |
+| LINTEL-CODE-021 | P2       | Fixed  | The orders retention rule left the customer's name, email, phone and addresses, still linked to the order |
+| LINTEL-CODE-022 | P2       | Fixed  | Entries collected from a published site could be lost after a failed save, and had no consent record      |
+| LINTEL-CODE-023 | P2       | Fixed  | An app kept being sent events, form answers included, after its installer was deactivated                 |
+| LINTEL-CODE-024 | P3       | Fixed  | Personal data exports divided every order total by 100, so a yen total was wrong                          |
+| LINTEL-CODE-025 | P3       | Fixed  | Deleting test orders could delete a real customer who had no orders here                                  |
+| LINTEL-CODE-026 | P3       | Fixed  | One PayPal or Mollie payment that couldn't be read stopped the checks on all the others                   |
+| LINTEL-CODE-027 | P3       | Fixed  | Add-on CSV exports let what a visitor typed run as a spreadsheet formula                                  |
+| LINTEL-CODE-028 | P3       | Fixed  | `lintel-check.php` asked for PHP 8.1 when the companion needs 7.4                                         |
+| LINTEL-CODE-029 | P3       | Fixed  | Two comments spoke of a hosted version of Lintel                                                          |
+## Overnight QA and UX pass (4 November 2026)
+
+A first-time website maker's journeys on a fresh install, in real Chromium, on `fix/night-qa` from `9943c3c1`. Fixes are in `FIX-LOG-night-qa.md`; screenshots in `screenshots/night-qa/`. Ranked by severity.
+
+| ID              | Severity | Status | Summary                                                                                                                       |
+| --------------- | -------- | ------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| LINTEL-FUNC-034 | P1       | Fixed  | A section from Insert goes inside what's selected: a column, or the section just added, so the second section of a page nests |
+| LINTEL-FUNC-033 | P1       | Fixed  | With nothing selected, a new section goes after the site's footer until the page is reopened                                  |
+| LINTEL-FUNC-035 | P1       | Fixed  | The basket total leaves out the ticked delivery until the payment page                                                        |
+| LINTEL-FUNC-031 | P2       | Fixed  | A published page scrolls sideways on a phone while something waits to slide in from the right (Bakery, Our story)             |
+| LINTEL-FUNC-032 | P2       | Fixed  | Blog and magazine publishes dead `/blog` links on a site with the blog off                                                    |
+| LINTEL-FUNC-036 | P2       | Fixed  | A destination still says "Not published yet" after publishing, until the page is reloaded                                     |
+| LINTEL-FUNC-037 | P2       | Open   | Translating a page before its parent makes it that language's home page: `/fr-FR` is "Our services". Needs Daniel's decision  |
+| LINTEL-UX-302   | P2       | Fixed  | New sites and templates without their own footer publish "Replace this with your small print…"                                |
+| LINTEL-UX-304   | P2       | Fixed  | "Market" in the shop: "To try it, you need a market", Add market, Primary                                                     |
+| LINTEL-UX-305   | P2       | Fixed  | A refused product save says only "Some boxes need fixing", with the boxes far below; "making the product active"              |
+| LINTEL-UX-306   | P2       | Fixed  | What Insert adds lands below the fold with the canvas left where it was, so nothing seems to happen                           |
+| LINTEL-UX-315   | P2       | Fixed  | Back from a failed payment, the shopper's email and address are gone                                                          |
+| LINTEL-UX-300   | P3       | Fixed  | The template dialog says "Pages you already have stay as they are" while Replace my pages is chosen                           |
+| LINTEL-UX-301   | P3       | Fixed  | Template cards lower every letter: "djs"                                                                                      |
+| LINTEL-UX-303   | P3       | Fixed  | Make a component shows `Now: var(--lintel-color-border)`                                                                      |
+| LINTEL-UX-307   | P3       | Fixed  | An A/B test says "No visitors yet" over a version with 8 visitors                                                             |
+| LINTEL-UX-308   | P3       | Fixed  | Media shows "646 byte"                                                                                                        |
+| LINTEL-UX-309   | P3       | Fixed  | Adding an unreachable app shows `getaddrinfo ENOTFOUND nothing.invalid`                                                       |
+| LINTEL-UX-310   | P3       | Fixed  | "Taxonomies" and "Hostnames…" in the content tree                                                                             |
+| LINTEL-UX-311   | P3       | Fixed  | A client who opens /design is offered Use this template, then refused with a design error                                     |
+| LINTEL-UX-312   | P3       | Fixed  | A page named after the site is titled "Mia's Studio \| Mia's Studio", as is the "no home page yet" page                       |
+| LINTEL-UX-313   | P3       | Fixed  | The API reference overflows at 390px (403px wide)                                                                             |
+| LINTEL-UX-314   | P3       | Fixed  | Updates says "plugins"; everywhere else says add-ons                                                                          |
+| LINTEL-UX-316   | P3       | Open   | Replace my pages with the look off keeps the old look's header button, which can lead to a replaced page (a 404)              |
+| LINTEL-UX-317   | P3       | Open   | Replace my pages leaves the old template's collections (Episodes, Listings) and their published samples behind                |
+| LINTEL-UX-318   | P3       | Open   | Static publishing leaves out the sample 3D models: `/_lintel/models/vase.glb` is a 404 (held by the Rive and 3D track)        |
+| LINTEL-UX-319   | P3       | Open   | Lottie and Rive offer Upload a file but no way to pick a file already in Media (held by the Rive and 3D track)                |
+| LINTEL-UX-320   | P3       | Open   | Rive's own warning about `stateMachine` is in the console on every page with a Rive animation (held by the Rive and 3D track) |
+| LINTEL-UX-321   | P3       | Open   | `InvalidStateError` from the page transition in the console when a page moves to the test payment page. Harmless              |
+| LINTEL-UX-322   | P3       | Open   | Insert search for "form" lists about 30 elements, from words in their descriptions; Form is first                             |
+| LINTEL-UX-323   | P3       | Open   | The first site is called "Default site" beside the site's own name, and a site at a path says "No domain yet"                 |
+| LINTEL-UX-324   | P3       | Open   | A client who types /settings or /build sees those screens (the data is refused); /users shows "This didn't load"              |
+| LINTEL-UX-325   | P3       | Open   | Settings → Your website says "Your website is live" on a site with no pages; This server says "sharp works"                   |
+| LINTEL-UX-326   | P3       | Open   | An Arc carousel published without pictures is a blank 380px gap                                                               |
+| LINTEL-UX-327   | P3       | Open   | Visitors counts goals from automated browsers but not their visits: "form sent 2" beside 0 visitors, a 100% conversion rate   |
+| LINTEL-UX-329   | P3       | Open   | During a shop test with the cookie notice showing, the test bar covers the last line of the notice                            |
+| LINTEL-UX-328   | P3       | Open   | Templates as drafts with the look on: the first-visit intro and footer show the sample's name on the empty site               |
+## Overnight follow-ups (4 November 2026)
+
+On `fix/overnight-followups`; see "Overnight follow-ups" in `FIX-LOG-ux.md`. LINTEL-UX-289 wasn't needed.
+
+| ID            | Severity | Status | Summary                                                                                       |
+| ------------- | -------- | ------ | --------------------------------------------------------------------------------------------- |
+| LINTEL-UX-270 | P2       | Fixed  | With double opt-in off, the Newsletter form joined people to the list without asking          |
+| LINTEL-UX-271 | P2       | Fixed  | The builder's Newsletter element drew no consent box, so a required one stopped every sign-up |
+| LINTEL-UX-272 | P3       | Fixed  | The theme's soft grey fell short of AA on tinted paper (fixes LINTEL-UX-157)                  |
+| LINTEL-UX-273 | P2       | Fixed  | Brand-coloured labels and numbers could be unreadable with a dark brand in dark mode          |
+| LINTEL-UX-274 | P3       | Fixed  | Older templates failed the starter site checks (fixes LINTEL-UX-159)                          |
+| LINTEL-UX-275 | P3       | Fixed  | A footer with an unlisted clock zone was silently replaced (fixes LINTEL-UX-158)              |
+| LINTEL-UX-276 | P3       | Fixed  | Links on panels and dark footer bands, and Relay's green on its panel, fell short of AA       |
+| LINTEL-UX-277 | P2       | Fixed  | With several selected, Copy, Cut, Hide, Lock and dragging acted on one element                |
+| LINTEL-UX-278 | P3       | Fixed  | With different kinds selected, Style showed a box's controls                                  |
+| LINTEL-UX-279 | P2       | Fixed  | A Rive element set to respond to a click was a button that could have no name or do nothing   |
+| LINTEL-UX-280 | P3       | Fixed  | The page weight meter left out three.js and the model file                                    |
+| LINTEL-UX-281 | P3       | Fixed  | A model needing Draco uploaded and then never drew                                            |
+| LINTEL-UX-282 | P3       | Fixed  | An add-on's details dialog didn't link to its own screen                                      |
+| LINTEL-UX-283 | P2       | Fixed  | Personal columns marked under `tables` didn't reach the data map                              |
+| LINTEL-UX-284 | P3       | Fixed  | The install review said "Nothing of its own" for tables named only under `personalData`       |
+| LINTEL-UX-285 | P3       | Open   | The designer's canvas doesn't show a consent box added to the website's form                  |
+| LINTEL-UX-286 | P3       | Open   | The "Open …" link in an add-on's details has no underline until hovered                       |
+| LINTEL-UX-287 | P3       | Open   | The docs say an add-on needs no server code, but it can't load without `dist/server.js`       |
+| LINTEL-UX-288 | P3       | Open   | Pasting several lands them after the first selected, and only one stays selected              |
+
+Fixed since they were reported above:
+
+- LINTEL-UX-157 is fixed by LINTEL-UX-272.
+- LINTEL-UX-158 is fixed by LINTEL-UX-275.
+- LINTEL-UX-159 is fixed by LINTEL-UX-274.

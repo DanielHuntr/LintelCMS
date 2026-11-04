@@ -322,13 +322,13 @@ describe("the Rive element", () => {
   });
 
   it("flips its switch by click and by keyboard when it responds to a click", async () => {
-    const pressable = riveHtml.replace('role="img"', 'role="button" tabindex="0"');
-    const { page } = await openEffectsPage(browser, pressable, rive({ respondTo: "click" }));
+    const { page } = await openEffectsPage(browser, riveHtml, rive({ respondTo: "click" }));
     await waitFor(
       page,
-      () => document.querySelector("[data-node-id=rive][data-playing]") !== null,
+      () => document.querySelector("[data-node-id=rive][role=button]") !== null,
       10_000,
     );
+    expect(await page.getAttribute("[data-node-id=rive]", "aria-label")).toBe("A dot circling");
     const pressed = () =>
       page.$eval("[data-node-id=rive]", (element) => element.getAttribute("aria-pressed"));
     await page.click("[data-node-id=rive]");
@@ -338,6 +338,37 @@ describe("the Rive element", () => {
     expect(await pressed()).toBe("false");
     await page.keyboard.press("Space");
     expect(await pressed()).toBe("true");
+    await page.close();
+  });
+
+  it("names a button nobody described", async () => {
+    const unnamed = riveHtml.replace(
+      'role="img" aria-label="A dot circling"',
+      'aria-hidden="true"',
+    );
+    const { page } = await openEffectsPage(browser, unnamed, rive({ respondTo: "click" }));
+    await waitFor(
+      page,
+      () => document.querySelector("[data-node-id=rive][role=button]") !== null,
+      10_000,
+    );
+    expect(await page.getAttribute("[data-node-id=rive]", "aria-label")).toBe("Play the animation");
+    expect(await page.getAttribute("[data-node-id=rive]", "aria-hidden")).toBeNull();
+    await page.close();
+  });
+
+  it("isn't a button for less motion, when a press would do nothing", async () => {
+    const { page } = await openEffectsPage(browser, riveHtml, rive({ respondTo: "click" }), {
+      reducedMotion: "reduce",
+    });
+    await waitFor(
+      page,
+      () => document.querySelector("[data-node-id=rive][data-playing]") !== null,
+      10_000,
+    );
+    await pause(300);
+    expect(await page.getAttribute("[data-node-id=rive]", "role")).toBe("img");
+    expect(await page.getAttribute("[data-node-id=rive]", "tabindex")).toBeNull();
     await page.close();
   });
 

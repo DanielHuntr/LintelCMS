@@ -4,6 +4,7 @@ import {
   createNode,
   type PageDocument,
   type PageNode,
+  rootNodeId,
   standardCatalogue,
 } from "@lintel/builder-model";
 import { act, render, screen, within } from "@testing-library/react";
@@ -19,11 +20,15 @@ import {
   duplicateMany,
   extendSelection,
   groupIntoBox,
+  moveManyTo,
   moveManyTogether,
+  outermostInPageOrder,
   removeMany,
   selectionAfterClick,
   selectSiblings,
   sharedLook,
+  toggleHiddenOfMany,
+  toggleLockedOfMany,
 } from "./multi-selection.js";
 
 /** Four project rows on a page, each a title and a year. */
@@ -171,6 +176,13 @@ function renderBuilder(document: PageDocument, create?: (draft: NewBlockDraft) =
 const layers = () => within(screen.getByRole("tree", { name: "Layers" }));
 const projectRows = () => layers().getAllByRole("treeitem", { name: "Project" });
 
+function pressOnCanvas(key: string, shiftKey = false) {
+  canvasSays({
+    type: "key",
+    key: { key, ctrlKey: true, metaKey: true, shiftKey, altKey: false },
+  });
+}
+
 function canvasSays(data: Record<string, unknown>) {
   act(() => {
     window.dispatchEvent(
@@ -181,6 +193,74 @@ function canvasSays(data: Record<string, unknown>) {
     );
   });
 }
+
+describe("hiding, locking and moving several", () => {
+  const document = pageWith(rows());
+  const ids = document.root.children.map((row) => row.id);
+  const [a = "", b = "", c = "", d = ""] = ids;
+  const order = (next: PageDocument) => next.root.children.map((row) => ids.indexOf(row.id));
+
+  it("hides all of them, then shows them all, as one step each", () => {
+    const hidden = apply(document, toggleHiddenOfMany(contextFor(document), [a, b]));
+    expect(hidden.root.children.map((row) => Boolean(row.hidden))).toEqual([
+      true,
+      true,
+      false,
+      false,
+    ]);
+    const shown = apply(hidden, toggleHiddenOfMany(contextFor(hidden), [a, b]));
+    expect(shown.root.children.every((row) => !row.hidden)).toBe(true);
+  });
+
+  it("hides all of them when only some are hidden", () => {
+    const one = apply(document, toggleHiddenOfMany(contextFor(document), [a, b]));
+    const all = apply(one, toggleHiddenOfMany(contextFor(one), [a, b, c]));
+    expect(all.root.children.slice(0, 3).every((row) => row.hidden)).toBe(true);
+  });
+
+  it("locks all of them, and unlocks them even though they're locked", () => {
+    const locked = apply(document, toggleLockedOfMany(contextFor(document), [a, b]));
+    expect(locked.root.children.slice(0, 2).every((row) => row.locked)).toBe(true);
+    const unlocked = apply(locked, toggleLockedOfMany(contextFor(locked), [a, b]));
+    expect(unlocked.root.children.every((row) => !row.locked)).toBe(true);
+  });
+
+  it("moves all of them to one place, side by side in page order", () => {
+    const root = rootNodeId;
+    // Selected last to first; the end of the page.
+    expect(order(apply(document, moveManyTo(contextFor(document), [b, a], root, 4)))).toEqual([
+      2, 3, 0, 1,
+    ]);
+    // Between two others, with one of them before the place and one after.
+    expect(order(apply(document, moveManyTo(contextFor(document), [a, d], root, 2)))).toEqual([
+      1, 0, 3, 2,
+    ]);
+    expect(order(apply(document, moveManyTo(contextFor(document), [c, d], root, 0)))).toEqual([
+      2, 3, 0, 1,
+    ]);
+  });
+
+  it("moves them into another element, bringing what's inside them", () => {
+    const next = apply(document, moveManyTo(contextFor(document), [a, b], d, 0));
+    const target = next.root.children.at(-1);
+    expect(next.root.children).toHaveLength(2);
+    expect(target?.children.slice(0, 2).map((row) => row.id)).toEqual([a, b]);
+  });
+
+  it("won't move them inside one of themselves, or past a locked one", () => {
+    const inside = moveManyTo(contextFor(document), [a, b], b, 0);
+    expect("refused" in inside && inside.refused).toMatch(/inside itself/);
+    const locked = apply(document, toggleLockedOfMany(contextFor(document), [a]));
+    const result = moveManyTo(contextFor(locked), [a, b], rootNodeId, 4);
+    expect("refused" in result && result.refused).toMatch(/locked/);
+  });
+
+  it("leaves out an element inside another selected one, and keeps page order", () => {
+    const child = document.root.children[1]?.children[0]?.id ?? "";
+    const taken = outermostInPageOrder(document.root, [c, child, b]);
+    expect(taken.map((node) => node.id)).toEqual([b, c]);
+  });
+});
 
 describe("several selected in the builder", () => {
   it("selects several in Layers with Ctrl-click, Shift-click and Ctrl+A", async () => {
@@ -356,6 +436,97 @@ describe("several selected in the builder", () => {
     expect(latest().root.children.every((row) => row.freeLayout !== undefined)).toBe(true);
     await user.click(screen.getByRole("button", { name: /^Undo: Changed the layout of 4/ }));
     expect(latest().root.children.every((row) => row.freeLayout === undefined)).toBe(true);
+  });
+
+  it("hides, locks, copies and cuts all of them from the keyboard, one Undo each", async () => {
+    const user = userEvent.setup();
+    const { latest } = renderBuilder(pageWith(rows()));
+    await user.click(projectRows()[0] as HTMLElement);
+    await user.keyboard("{Shift>}{ArrowDown}{/Shift}");
+    const firstTwo = () => latest().root.children.slice(0, 2);
+
+    pressOnCanvas("h", true);
+    expect(firstTwo().every((row) => row.hidden)).toBe(true);
+    expect(screen.getByRole("status")).toHaveTextContent("Hid 2 elements");
+    pressOnCanvas("z");
+    expect(firstTwo().every((row) => !row.hidden)).toBe(true);
+
+    pressOnCanvas("l", true);
+    expect(firstTwo().every((row) => row.locked)).toBe(true);
+    pressOnCanvas("z");
+    expect(firstTwo().every((row) => !row.locked)).toBe(true);
+
+    pressOnCanvas("c");
+    expect(screen.getByRole("status")).toHaveTextContent("Copied 2 elements");
+    pressOnCanvas("x");
+    expect(latest().root.children).toHaveLength(2);
+    expect(screen.getByRole("status")).toHaveTextContent("Cut 2 elements");
+    canvasSays({ type: "paste", html: "", text: "" });
+    expect(latest().root.children).toHaveLength(4);
+    pressOnCanvas("z");
+    pressOnCanvas("z");
+    expect(latest().root.children).toHaveLength(4);
+    expect(latest().root.children[0]?.children[0]?.props.text).toBe("Harbour lights");
+  });
+
+  it("hides all of them from any of their rows in Layers", async () => {
+    const user = userEvent.setup();
+    const { latest } = renderBuilder(pageWith(rows()));
+    await user.click(projectRows()[0] as HTMLElement);
+    await user.keyboard("{Shift>}{ArrowDown}{/Shift}");
+    const second = projectRows()[1] as HTMLElement;
+    await user.click(within(second).getByRole("button", { name: /^Hide/ }));
+    expect(
+      latest()
+        .root.children.slice(0, 2)
+        .every((row) => row.hidden),
+    ).toBe(true);
+    expect(latest().root.children[2]?.hidden).toBeFalsy();
+  });
+
+  it("moves all of them when one is dragged on the canvas, keeping them selected", async () => {
+    const user = userEvent.setup();
+    const document = pageWith(rows());
+    const { latest } = renderBuilder(document);
+    await user.click(projectRows()[0] as HTMLElement);
+    await user.keyboard("{Shift>}{ArrowDown}{/Shift}");
+    const [first, second, , last] = document.root.children;
+    canvasSays({
+      type: "moveOver",
+      nodeId: second?.id,
+      chain: [{ nodeId: last?.id, ratio: 0.95, across: false }],
+    });
+    canvasSays({ type: "moveDrop", nodeId: second?.id });
+    expect(
+      latest()
+        .root.children.slice(-2)
+        .map((row) => row.id),
+    ).toEqual([first?.id, second?.id]);
+    expect(screen.getByRole("heading", { name: "2 selected" })).toBeInTheDocument();
+  });
+
+  it("offers only what different kinds share in Style", async () => {
+    const user = userEvent.setup();
+    const picture = createNode(
+      { type: "image", name: "Picture", props: { src: "/a.jpg", alt: "A boat" } },
+      standardCatalogue,
+      createCountingNodeIds("p"),
+    );
+    const words = createNode(
+      { type: "text", name: "Words", props: { text: "Hello" } },
+      standardCatalogue,
+      createCountingNodeIds("w"),
+    );
+    renderBuilder(pageWith([picture, words]));
+    const row = (name: string) => layers().getByRole("treeitem", { name });
+    await user.click(row("Picture"));
+    await user.keyboard("{Shift>}{ArrowDown}{/Shift}");
+    expect(screen.getByRole("heading", { name: "2 selected" })).toBeInTheDocument();
+    expect(screen.getByText(/Only what they have in common shows/)).toBeInTheDocument();
+    const styleButtons = screen.getAllByRole("button").map((button) => button.textContent);
+    expect(styleButtons).toContain("Spacing");
+    expect(styleButtons).not.toContain("Text");
+    expect(styleButtons).not.toContain("Layout");
   });
 
   it("deletes all of them with Delete, as one step", async () => {

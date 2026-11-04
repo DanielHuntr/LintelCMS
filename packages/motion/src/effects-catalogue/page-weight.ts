@@ -19,7 +19,7 @@ export type PageWeightWarning =
 export interface PageWeight {
   effectCount: number;
   modules: EffectModuleName[];
-  /** Gzipped bytes the effects add to the page. */
+  /** Bytes the effects add to the page: code gzipped, with the files they load. */
   bytes: number;
   warnings: PageWeightWarning[];
 }
@@ -35,6 +35,8 @@ const shaderModules: readonly EffectModuleName[] = [
 export function measurePageWeight(
   effects: readonly EffectDefinition[],
   site?: SiteEffectSettings,
+  /** Files the page's elements load besides the code, such as its 3D models. */
+  fileBytes = 0,
 ): PageWeight {
   const modules = new Set<EffectModuleName>();
   for (const effect of effects) {
@@ -49,7 +51,7 @@ export function measurePageWeight(
   const list = [...modules].sort();
   const bytes = list.reduce(
     (total, name) => total + effectModuleBytes[name] + (effectPlayerBytes[name] ?? 0),
-    0,
+    fileBytes,
   );
   const warnings: PageWeightWarning[] = [];
   const shaders = effects.filter(

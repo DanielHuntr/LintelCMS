@@ -101,6 +101,26 @@ describe("3D model files", () => {
     expect(response.json().message).toContain("single .glb file");
   });
 
+  it("says at upload that a model needing Draco can't be shown", async () => {
+    const draco = JSON.stringify({
+      ...JSON.parse(triangleGltf("")),
+      extensionsUsed: ["KHR_draco_mesh_compression"],
+      extensionsRequired: ["KHR_draco_mesh_compression"],
+    });
+    const response = await media.upload("squeezed.gltf", Buffer.from(draco));
+    expect(response.statusCode).toBe(422);
+    expect(response.json().message).toBe(
+      '"squeezed.gltf" uses Draco compression, which Lintel can’t show. Export it again with Draco turned off.',
+    );
+
+    // One that only offers Draco, with plain data to fall back on, is fine.
+    const optional = JSON.stringify({
+      ...JSON.parse(triangleGltf("")),
+      extensionsUsed: ["KHR_draco_mesh_compression"],
+    });
+    expect((await media.upload("optional.gltf", Buffer.from(optional))).statusCode).toBe(201);
+  });
+
   it("refuses a broken .glb and any other JSON called .gltf", async () => {
     const broken = Buffer.concat([vase.subarray(0, 12), Buffer.from("not json at all")]);
     expect((await media.upload("broken.glb", broken)).statusCode).toBe(422);

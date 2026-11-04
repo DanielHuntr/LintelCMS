@@ -19,8 +19,13 @@ import { findPluginJobRun } from "../plugins/plugin-jobs.js";
 import { listRegisteredPluginRoutes } from "../plugins/plugin-routes.js";
 import { PluginNotFoundError } from "../plugins/plugins.errors.js";
 import { isPluginEnabled } from "../plugins/plugins.service.js";
+import {
+  personalColumnsOf,
+  personalDataDeclarationSchema,
+} from "../privacy/personal-data-declaration.js";
 import { deleteSettingValue } from "../settings/settings.repository.js";
-import { declarationsOf } from "./addon-tables.js";
+import { declarationsOf, isLintelTable } from "./addon-tables.js";
+import { csvCell } from "../forms/submissions-csv.js";
 import { AddonStillOnError, AddonTableNotFoundError } from "./addons.errors.js";
 import type { AddonDetails } from "./addons.schema.js";
 import type { AddonsState, LoadedAddon } from "./load-addons.js";
@@ -41,6 +46,12 @@ function findAddon(catalogue: PluginCatalogue, addons: AddonsState, id: string):
   );
   if (!entry) throw new PluginNotFoundError(id);
   return { plugin: entry.plugin, addon: addons.loaded.find(({ plugin }) => plugin.id === id) };
+}
+
+/** What it says in `personalData`, in its code or its package.json, as Privacy reads it. */
+function ownPersonalData({ plugin, addon }: Found) {
+  const parsed = personalDataDeclarationSchema.safeParse(plugin.personalData);
+  return parsed.success ? parsed.data : addon?.addonPackage.manifest.personalData;
 }
 
 /** Tables are named after the plugin: "gift-cards" owns "gift_cards" and "gift_cards_…". */
@@ -79,11 +90,16 @@ async function measure(database: DatabaseOrTransaction, table: string) {
 
 /** The tables this add-on keeps data in: those it declares and any others with its name. */
 async function findOwnTables(database: DatabaseOrTransaction, found: Found) {
-  const declared = declarationsOf(found.plugin, found.addon).tables;
+  const declared = declarationsOf(found.plugin, found.addon).tables.filter(
+    (table) => !isLintelTable(table.name),
+  );
   const inDatabase = await listTableNames(database);
   const declaredNames = new Set(declared.map((table) => table.name));
   const undeclared = inDatabase
-    .filter((name) => ownsTableName(found.plugin.id, name) && !declaredNames.has(name))
+    .filter(
+      (name) =>
+        ownsTableName(found.plugin.id, name) && !declaredNames.has(name) && !isLintelTable(name),
+    )
     .sort();
   const present = new Set(inDatabase);
   return { declared, undeclared, present };
@@ -123,6 +139,7 @@ export async function describeAddon(
   const { plugin, addon } = found;
   const declarations = declarationsOf(plugin, addon);
   const own = await findOwnTables(database, found);
+  const personalData = ownPersonalData(found);
 
   const tables = await Promise.all(
     own.declared.map(async (table) => {
@@ -134,7 +151,9 @@ export async function describeAddon(
         columns: table.columns.map((column) => ({
           name: column.name,
           purpose: column.purpose,
-          personalData: column.personalData ?? false,
+          personalData:
+            (column.personalData ?? false) ||
+            personalColumnsOf(personalData, table.name).includes(column.name),
           checked: columns.has(column.name),
         })),
         checked,
@@ -271,13 +290,8 @@ export async function exportAddonTableCsv(
   const columns = await listColumnNames(database, table);
   const rows = await readAllRows(database, table);
   const cell = (value: unknown) => {
-    const text =
-      value === null || value === undefined
-        ? ""
-        : typeof value === "object"
-          ? JSON.stringify(value)
-          : String(value);
-    return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+    if (value === null || value === undefined) return "";
+    return csvCell(typeof value === "object" ? JSON.stringify(value) : String(value));
   };
   return [columns, ...rows.map((row) => columns.map((column) => row[column]))]
     .map((line) => line.map(cell).join(","))

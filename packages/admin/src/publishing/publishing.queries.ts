@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import {
   createPublishTarget,
   deletePublishTarget,
@@ -34,12 +35,21 @@ export function usePublishRuns(targetId: string) {
 
 /** One publish, followed every second until it is over, for the progress bar. */
 export function usePublishRun(targetId: string, runId: string | null) {
-  return useQuery({
+  const queryClient = useQueryClient();
+  const run = useQuery({
     queryKey: publishingKeys.run(targetId, runId ?? "none"),
     queryFn: () => getPublishRun(targetId, runId ?? ""),
     enabled: runId !== null,
     refetchInterval: (query) => (query.state.data?.status === "running" ? 1000 : false),
   });
+  // Once it's over, the destination's "Last published" and the history have changed.
+  const status = run.data?.status;
+  useEffect(() => {
+    if (!status || status === "running") return;
+    void queryClient.invalidateQueries({ queryKey: publishingKeys.targets() });
+    void queryClient.invalidateQueries({ queryKey: publishingKeys.runs(targetId) });
+  }, [status, queryClient, targetId]);
+  return run;
 }
 
 export function useCreatePublishTarget() {

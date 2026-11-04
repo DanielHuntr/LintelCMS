@@ -1,5 +1,5 @@
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import type { RemoteFolder } from "./remote-folder.js";
 import { temporaryName } from "./remote-folder.js";
 
@@ -11,7 +11,8 @@ export function openFolderRemote(folderPath: string): RemoteFolder {
   const root = resolve(folderPath);
   const full = (path: string) => {
     const target = resolve(root, path);
-    if (!target.startsWith(resolve(root, ".."))) {
+    const reach = relative(resolve(root, ".."), target);
+    if (reach === ".." || reach.startsWith(`..${sep}`) || isAbsolute(reach)) {
       throw new Error(`"${path}" would be outside the folders Lintel publishes to.`);
     }
     return target;

@@ -1,4 +1,5 @@
 import { getTableName } from "drizzle-orm";
+import { listSchemaTables } from "../backups/table-order.js";
 import type { LintelPlugin } from "../plugins/plugin-definition.js";
 import {
   addonDeclarationsSchema,
@@ -20,6 +21,16 @@ export function declarationsOf(
   return parsed.success ? parsed.data : noDeclarations;
 }
 
+const lintelTableNames = new Set(listSchemaTables().map((table) => getTableName(table)));
+
+/**
+ * Lintel's own tables are never an add-on's, whatever it declares or however its id reads:
+ * an add-on called "shop" must not be able to empty shop_orders with Delete data.
+ */
+export function isLintelTable(name: string): boolean {
+  return lintelTableNames.has(name);
+}
+
 /**
  * The tables plugins and add-ons keep their own data in, by name, for backups: those they
  * declare, and those their `database.tables` define. Each once, in the order given.
@@ -33,5 +44,5 @@ export function listAddonTableNames(
     ...declarationsOf(plugin, addons.get(plugin.id)).tables.map((table) => table.name),
     ...(plugin.database?.tables ?? []).map((table) => getTableName(table)),
   ]);
-  return [...new Set(names)];
+  return [...new Set(names)].filter((name) => !isLintelTable(name));
 }

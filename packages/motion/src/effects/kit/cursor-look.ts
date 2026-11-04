@@ -13,7 +13,7 @@ import type { CursorPicture, CursorSettings, CursorWordLook } from "../effect-ty
 /** The theme's colours, with what the page uses before the theme loads and letters that read on each. */
 const themeColours: Record<string, { fallback: string; letters: string }> = {
   "lintel-color-text": { fallback: "#111111", letters: "lintel-color-background" },
-  "lintel-color-text-secondary": { fallback: "#6e6e73", letters: "lintel-color-background" },
+  "lintel-color-text-secondary": { fallback: "#646469", letters: "lintel-color-background" },
   "lintel-color-background": { fallback: "#ffffff", letters: "lintel-color-text" },
   "lintel-color-surface": { fallback: "#f5f5f7", letters: "lintel-color-text" },
   "lintel-color-border": { fallback: "#d2d2d7", letters: "lintel-color-text" },

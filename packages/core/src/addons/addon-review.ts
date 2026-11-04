@@ -1,3 +1,4 @@
+import { personalColumnsOf } from "../privacy/personal-data-declaration.js";
 import type { AddonPackage } from "./addon-package.js";
 
 /**
@@ -8,14 +9,24 @@ import type { AddonPackage } from "./addon-package.js";
 export function describeAddonForReview(addonPackage: AddonPackage): string[] {
   const { manifest, origin } = addonPackage;
   const lines: string[] = ["What it stores:"];
-  if (manifest.tables.length === 0)
+  const described = new Set(manifest.tables.map((table) => table.name));
+  const onlyPersonal = (manifest.personalData?.tables ?? []).filter(
+    (table) =>
+      !described.has(table.name) && personalColumnsOf(manifest.personalData, table.name).length > 0,
+  );
+  if (manifest.tables.length === 0 && onlyPersonal.length === 0)
     lines.push("  Nothing of its own, as it says, besides settings.");
   for (const table of manifest.tables) {
-    const personal = table.columns.filter((column) => column.personalData);
+    const personal = new Set([
+      ...table.columns.filter((column) => column.personalData).map(({ name }) => name),
+      ...personalColumnsOf(manifest.personalData, table.name),
+    ]);
     lines.push(`  ${table.name}: ${table.purpose}`);
-    if (personal.length > 0) {
-      lines.push(`    Personal data: ${personal.map((column) => column.name).join(", ")}`);
-    }
+    if (personal.size > 0) lines.push(`    Personal data: ${[...personal].join(", ")}`);
+  }
+  for (const { name } of onlyPersonal) {
+    lines.push(`  ${name}:`);
+    lines.push(`    Personal data: ${personalColumnsOf(manifest.personalData, name).join(", ")}`);
   }
   lines.push("What it adds to your website:");
   if (manifest.publicRoutes.length === 0) lines.push("  No public addresses, as it says.");

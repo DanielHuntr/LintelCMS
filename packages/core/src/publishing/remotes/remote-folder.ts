@@ -15,11 +15,15 @@ export interface RemoteFolder {
   close(): Promise<void>;
 }
 
+const STAND_IN_FOLDER = "/a/b/c/d/e/f/g/h";
+
 /** Joins a target's folder and a path inside it, keeping it from climbing out further. */
 export function remotePath(root: string, path: string): string {
   const joined = posix.normalize(posix.join(root || ".", path));
-  const parent = posix.normalize(posix.join(root || ".", ".."));
-  if (joined.startsWith("../") && !joined.startsWith(parent)) {
+  // Measured from a stand-in folder, so a relative root is compared like an absolute one.
+  const parent = posix.resolve(STAND_IN_FOLDER, root || ".", "..");
+  const reach = posix.relative(parent, posix.resolve(STAND_IN_FOLDER, joined));
+  if (reach === ".." || reach.startsWith("../")) {
     throw new Error(`"${path}" would be outside the folders Lintel publishes to.`);
   }
   return joined;

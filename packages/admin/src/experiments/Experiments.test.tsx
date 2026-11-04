@@ -103,6 +103,10 @@ describe("A/B test words", () => {
       "B is better: about 95% sure.",
     );
     expect(verdictSentence(result("b", 1000, 70, "worse", 97))).toBe("B is worse: about 97% sure.");
+    // One version can have visitors while the other has none (LINTEL-UX-307).
+    expect(verdictSentence(result("b", 8, 0, "noData", 0))).toBe(
+      "Not enough visitors to compare yet.",
+    );
   });
 
   it("shows the difference with a sign", () => {

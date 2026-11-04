@@ -17,11 +17,34 @@ const remoteManifestSchema = z.object({
 
 export type RemoteManifest = z.infer<typeof remoteManifestSchema>;
 
+/**
+ * The list sits on the host, where anyone with access to it can change it, and files on it get
+ * deleted. So only paths Lintel could have written count: inside the website, or for private
+ * files one folder beside it.
+ */
+function isPlainPath(path: string): boolean {
+  return !/^\/|^[a-z]:|[\\]/i.test(path) && !path.split("/").includes("..");
+}
+
+function keepPaths(
+  files: Record<string, string>,
+  isAllowed: (path: string) => boolean,
+): Record<string, string> {
+  return Object.fromEntries(Object.entries(files).filter(([path]) => isAllowed(path)));
+}
+
 export function readRemoteManifest(content: Buffer | null): RemoteManifest {
   if (!content) return { version: 1, files: {}, privateFiles: {} };
   try {
     const parsed = remoteManifestSchema.safeParse(JSON.parse(content.toString("utf8")));
-    return parsed.success ? parsed.data : { version: 1, files: {}, privateFiles: {} };
+    if (!parsed.success) return { version: 1, files: {}, privateFiles: {} };
+    return {
+      version: 1,
+      files: keepPaths(parsed.data.files, isPlainPath),
+      privateFiles: keepPaths(parsed.data.privateFiles, (path) =>
+        isPlainPath(path.replace(/^\.\.\//, "")),
+      ),
+    };
   } catch {
     return { version: 1, files: {}, privateFiles: {} };
   }

@@ -1,5 +1,6 @@
 import { Badge } from "../design/Badge.js";
 import type { Tone } from "../design/tones.js";
+import { formatDateTime } from "../i18n/formatting.js";
 import { t } from "../i18n/strings.js";
 import type { PublishRun, PublishRunStatus } from "./publishing.api.js";
 
@@ -24,8 +25,7 @@ export function PublishHistory({ runs }: { runs: readonly PublishRun[] }) {
               <div className="flex flex-wrap items-center gap-2">
                 <Badge tone={statusTones[run.status]}>{t(`publishing.run.${run.status}`)}</Badge>
                 <span className="text-footnote text-label-secondary">
-                  {new Date(run.startedAt).toLocaleString()} ·{" "}
-                  {t(`publishing.run.trigger.${run.trigger}`)}
+                  {formatDateTime(run.startedAt)} · {t(`publishing.run.trigger.${run.trigger}`)}
                 </span>
               </div>
               {run.summary && (

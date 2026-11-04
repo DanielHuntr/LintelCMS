@@ -8,8 +8,10 @@ import {
   followUpPlacement,
   runAfterCommit,
 } from "../commerce/payments/payment-follow-up.js";
+import { recordConsents } from "../forms/consent-records.js";
 import { announceFormSubmitted } from "../forms/form-submitted.js";
 import { findFormRowByHandle } from "../forms/forms.repository.js";
+import { withRequiredConsent } from "../forms/required-consent.js";
 import { checkSubmissionValues, findSubmitterEmail } from "../forms/submission-values.js";
 import { insertSubmissionRow } from "../forms/submissions.repository.js";
 import { recordReceipt } from "../publishing/publishing.repository.js";
@@ -198,29 +200,39 @@ async function importSubmission(
 ): Promise<"imported" | "duplicate" | "problem"> {
   const form = await findFormRowByHandle(api.database, DEFAULT_TENANT_ID, submission.form);
   if (!form) return "problem";
-  if (
-    !(await recordReceipt(api.database, {
-      targetId,
-      itemId: `submission:${submission.id}`,
-      kind: "submission",
-    }))
-  ) {
-    return "duplicate";
-  }
-  const checked = checkSubmissionValues(form.fields, submission.values);
+  const fields = await withRequiredConsent(api.database, form);
+  const checked = checkSubmissionValues(fields, submission.values);
   // The companion already checked what matters; anything Lintel reads differently is kept as sent.
   const values =
     Object.keys(checked.messages).length === 0 ? checked.values : { ...submission.values };
-  const row = await insertSubmissionRow(api.database, {
-    tenantId: DEFAULT_TENANT_ID,
-    formId: form.id,
-    values: values as typeof checked.values,
-    submitterEmail: findSubmitterEmail(form.fields, checked.values),
-    assetIds: [],
-    sourceUrl: /^https?:\/\//.test(submission.sourceUrl)
-      ? submission.sourceUrl.slice(0, 2000)
-      : null,
+  const sourceUrl = /^https?:\/\//.test(submission.sourceUrl)
+    ? submission.sourceUrl.slice(0, 2000)
+    : null;
+  // Together, so an entry that couldn't be saved isn't taken for one already collected: the
+  // companion forgets what Lintel says it has.
+  const row = await api.database.transaction(async (transaction) => {
+    const isNew = await recordReceipt(transaction, {
+      targetId,
+      itemId: `submission:${submission.id}`,
+      kind: "submission",
+    });
+    if (!isNew) return null;
+    return insertSubmissionRow(transaction, {
+      tenantId: DEFAULT_TENANT_ID,
+      formId: form.id,
+      values: values as typeof checked.values,
+      submitterEmail: findSubmitterEmail(form.fields, checked.values),
+      assetIds: [],
+      sourceUrl,
+      consents: recordConsents(
+        fields,
+        checked.values,
+        sourceUrl,
+        new Date(submission.receivedAt),
+      ),
+    });
   });
+  if (!row) return "duplicate";
   await announceFormSubmitted(api, form, row);
   return "imported";
 }

@@ -4,6 +4,7 @@ import {
   findNode,
   findPlace,
   insertNode,
+  listNodes,
   type NodeAnimation,
   type NodeStyles,
   type PageNode,
@@ -16,7 +17,13 @@ import {
   type StyleTarget,
   updateNode,
 } from "@lintel/builder-model";
-import { type CommandContext, type CommandResult, isLocked, layerName } from "./commands.js";
+import {
+  type CommandContext,
+  type CommandResult,
+  isLocked,
+  layerName,
+  moveTo,
+} from "./commands.js";
 import type { PageChange } from "./editor-state.js";
 
 /**
@@ -249,8 +256,107 @@ export function applySharedStyleToMany(
   };
 }
 
+/**
+ * The selected elements in page order, leaving out any inside another selected one: those
+ * come along with it. What copying and dragging several work with.
+ */
+export function outermostInPageOrder(root: PageNode, ids: readonly string[]): PageNode[] {
+  const chosen = new Set(ids);
+  const taken: PageNode[] = [];
+  for (const node of listNodes(root)) {
+    if (chosen.has(node.id) && !taken.some((outer) => findNode(outer, node.id))) taken.push(node);
+  }
+  return taken;
+}
+
+/** Hides every selected element, or shows them all when all of them are hidden. */
+export function toggleHiddenOfMany(context: CommandContext, ids: readonly string[]): CommandResult {
+  const refused = refuseLockedOrMissing(context, ids);
+  if (refused) return refused;
+  if (ids.some((id) => siteSectionSlotOf(id))) {
+    return { refused: context.text("pageBuilder.refused.manyWithSiteSection") };
+  }
+  const hidden = ids.some((id) => !findNode(context.document.root, id)?.hidden);
+  return {
+    change: {
+      label: context.text(
+        hidden ? "pageBuilder.history.hiddenMany" : "pageBuilder.history.shownMany",
+        { count: ids.length },
+      ),
+      update: updateAll(ids, (node) => ({ ...node, hidden })),
+    },
+  };
+}
+
+/** Locks every selected element, or unlocks them all when all of them are locked. */
+export function toggleLockedOfMany(context: CommandContext, ids: readonly string[]): CommandResult {
+  const nodes = ids.map((id) => findNode(context.document.root, id));
+  if (nodes.length === 0 || nodes.some((node) => !node)) {
+    return { refused: context.text("pageBuilder.refused.nothingSelected") };
+  }
+  if (ids.some((id) => siteSectionSlotOf(id))) {
+    return { refused: context.text("pageBuilder.refused.manyWithSiteSection") };
+  }
+  const locked = nodes.some((node) => !node?.locked);
+  return {
+    change: {
+      label: context.text(
+        locked ? "pageBuilder.history.lockedMany" : "pageBuilder.history.unlockedMany",
+        { count: ids.length },
+      ),
+      update: updateAll(ids, (node) => ({ ...node, locked })),
+    },
+  };
+}
+
+/**
+ * Moves every selected element to one place, side by side in page order. `index` is a place
+ * among the parent's children as they are now. Refused if any of them can't go there.
+ */
+export function moveManyTo(
+  context: CommandContext,
+  ids: readonly string[],
+  parentId: string,
+  index: number,
+): CommandResult {
+  const refused = refuseLockedOrMissing(context, ids);
+  if (refused) return refused;
+  if (ids.some((id) => siteSectionSlotOf(id))) {
+    return { refused: context.text("pageBuilder.refused.manyWithSiteSection") };
+  }
+  const moving = outermostInPageOrder(context.document.root, ids);
+  for (const node of moving) {
+    const one = moveTo(context, node.id, parentId, index);
+    if ("refused" in one) return one;
+  }
+  const leaving = new Set(moving.map((node) => node.id));
+  const before = findNode(context.document.root, parentId)
+    ?.children.slice(0, index)
+    .filter((child) => leaving.has(child.id)).length;
+  const at = index - (before ?? 0);
+  return {
+    change: {
+      label: context.text("pageBuilder.history.movedMany", { count: ids.length }),
+      update: (document) => {
+        const without = moving.reduce((root, node) => removeNode(root, node.id), document.root);
+        return {
+          ...document,
+          root: moving.reduce(
+            (root, node, offset) => insertNode(root, parentId, at + offset, node),
+            without,
+          ),
+        };
+      },
+    },
+  };
+}
+
 /** Deletes every selected element. The site's navigation and footer can't go this way. */
-export function removeMany(context: CommandContext, ids: readonly string[]): CommandResult {
+export function removeMany(
+  context: CommandContext,
+  ids: readonly string[],
+  label = context.text("pageBuilder.history.removedMany", { count: ids.length }),
+): CommandResult {
   const refused = refuseLockedOrMissing(context, ids);
   if (refused) return refused;
   if (ids.some((id) => siteSectionSlotOf(id))) {
@@ -258,7 +364,7 @@ export function removeMany(context: CommandContext, ids: readonly string[]): Com
   }
   return {
     change: {
-      label: context.text("pageBuilder.history.removedMany", { count: ids.length }),
+      label,
       update: (document) => ({
         ...document,
         root: ids.reduce(

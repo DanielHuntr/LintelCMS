@@ -102,7 +102,9 @@ describe("a menu's look in the CSS", () => {
       ),
     );
     expect(output).toMatch(/\.menu-link \{\n[^}]*color: var\(--lintel-color-text\);/);
-    expect(output).toContain(".menu-link:hover {\n  color: var(--lintel-color-brand);\n}");
+    expect(output).toContain(
+      ".menu-link:hover {\n  color: var(--lintel-color-brand-text, var(--lintel-color-brand));\n}",
+    );
     expect(output).toContain(
       '.menu-link:is([aria-current="page"], [aria-selected="true"], [aria-pressed="true"]) {',
     );

@@ -1,3 +1,4 @@
+import { minorUnitsPerMajorUnit } from "../commerce/money/currencies.js";
 import { deleteSubmissionsAndFiles } from "../forms/submissions.service.js";
 import type { PersonalDataHookContext, PersonalDataHooks } from "./personal-data-declaration.js";
 import {
@@ -268,7 +269,7 @@ function ordersSource(): PersonalDataSource {
           email: order.email,
           deliveryAddress: order.shippingAddress,
           currency: order.currency,
-          total: order.totalAmount / 100,
+          total: order.totalAmount / minorUnitsPerMajorUnit(order.currency),
           items: lines
             .filter((line) => line.orderId === order.id)
             .map((line) => ({
@@ -283,7 +284,7 @@ function ordersSource(): PersonalDataSource {
           email: order.email,
           deliveryAddress: order.shippingAddress,
           currency: order.currency,
-          total: order.totalAmount / 100,
+          total: order.totalAmount / minorUnitsPerMajorUnit(order.currency),
           items: order.lines,
         })),
       ];

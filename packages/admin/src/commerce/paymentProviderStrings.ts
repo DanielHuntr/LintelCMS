@@ -11,7 +11,7 @@ export const paymentProviderStrings = {
   "shop.providers.notConnectedOption": "{name} (not connected yet)",
   "shop.providers.marketsHeader": "Who takes payments",
   "shop.providers.marketsBody":
-    "Each market's shoppers pay with one provider. Stripe is used unless you choose another. Shoppers always pay on the provider's own secure page, so card details never reach your site.",
+    "Each region's shoppers pay with one provider. Stripe is used unless you choose another. Shoppers always pay on the provider's own secure page, so card details never reach your site.",
 
   "shop.waysToPay.title": "Ways to pay",
   "shop.waysToPay.availability":

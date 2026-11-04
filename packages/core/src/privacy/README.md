@@ -54,6 +54,9 @@ automation wrote into a notification aren't searched; the admin and docs say so.
 | Activity logs     | On, 90 days    | Long enough to look into a problem                    |
 | Orders            | Off, 7 years   | Tax rules differ; the owner chooses when to anonymise |
 
+When the orders rule anonymises an order it also unlinks the customer, and a customer left with
+no orders is deleted, because their record holds the same name, email and addresses.
+
 Forms with their own "keep entries for" keep following it; the form entries rule covers the
 others. Activity logs are the security log, webhook deliveries that aren't waiting to send, and
 finished automation runs not about an entry. Privacy request records are never deleted by a
@@ -63,7 +66,8 @@ rule, and are left out of backups so a restore can't lose them.
 
 `personalData` in `definePlugin` (`personal-data-declaration.ts`) declares the tables and
 columns that hold personal data, and the `find`, `export` and `erase` hooks. An add-on can
-also declare its tables in the `lintel-addon` section of its package.json. A plugin or add-on
+also declare its tables in the `lintel-addon` section of its package.json. A column marked
+`personalData: true` under `tables` counts too, so it only has to be said once. A plugin or add-on
 with tables but no hooks is listed as one that "can't be searched", so the owner knows to
 look there by hand. `packages/plugin-example-bookings` is the example.
 

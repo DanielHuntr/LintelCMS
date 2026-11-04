@@ -5,6 +5,7 @@ import { Badge } from "../design/Badge.js";
 import { Button } from "../design/Button.js";
 import { Card } from "../design/Card.js";
 import { ConfirmDialog } from "../design/ConfirmDialog.js";
+import { formatDateTime } from "../i18n/formatting.js";
 import { t } from "../i18n/strings.js";
 import { useSession } from "../session/SessionContext.js";
 import { type PublishRun, type PublishTarget, zipDownloadUrl } from "./publishing.api.js";
@@ -76,7 +77,7 @@ export function PublishTargetCard({
         <Badge tone={target.lastPublishedAt ? "success" : "neutral"}>
           {target.lastPublishedAt
             ? t("publishing.lastPublished", {
-                when: new Date(target.lastPublishedAt).toLocaleString(),
+                when: formatDateTime(target.lastPublishedAt),
               })
             : t("publishing.neverPublished")}
         </Badge>

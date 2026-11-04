@@ -137,6 +137,21 @@ export function readModelProps(props: Readonly<Record<string, unknown>>): Model3
 }
 
 /** The effect that draws a 3D model element on the page; undefined for anything else. */
+/** What a page's 3D models weigh: each file once, however many elements show it. */
+export function modelFileBytes(node: PageNode): number {
+  const files = new Map<string, number>();
+  const visit = (current: PageNode) => {
+    if (current.hidden) return;
+    if (current.type === "model3d") {
+      const { src, bytes } = readModelProps(current.props).model;
+      if (src) files.set(src, bytes);
+    }
+    current.children.forEach(visit);
+  };
+  visit(node);
+  return [...files.values()].reduce((total, bytes) => total + bytes, 0);
+}
+
 export function impliedModelEffect(
   node: PageNode,
 ): { effect: string; params: Record<string, string> } | undefined {

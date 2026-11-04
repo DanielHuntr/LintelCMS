@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { fetchAppManifest } from "./app-manifest-reader.js";
 import { appManifestSchema, isSecureAppAddress } from "./app-manifest.schema.js";
 import { permissionsForScopes } from "./app-scopes.js";
 
@@ -128,5 +129,16 @@ describe("scopes", () => {
     expect(everything.some((permission) => /^(settings|users|roles):/.test(permission))).toBe(
       false,
     );
+  });
+});
+
+describe("reading an app's details from its address", () => {
+  it("says nothing answered, not what the system said (LINTEL-UX-309)", async () => {
+    await expect(
+      fetchAppManifest("http://127.0.0.1:1/lintel-app.json", {
+        allowPrivateAddresses: false,
+        allowLoopbackAddresses: true,
+      }),
+    ).rejects.toThrow(/nothing answered at that address\. Check the address/);
   });
 });

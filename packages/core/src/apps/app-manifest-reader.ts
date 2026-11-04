@@ -91,7 +91,7 @@ function download(url: URL, options: SenderOptions): Promise<string> {
       response.on("data", (chunk: Buffer) => {
         size += chunk.length;
         if (size > MAXIMUM_BYTES) {
-          outgoing.destroy(fail("the file is far too big to be a manifest"));
+          outgoing.destroy(fail("the file is far too big"));
           return;
         }
         chunks.push(chunk);
@@ -100,8 +100,13 @@ function download(url: URL, options: SenderOptions): Promise<string> {
       response.on("error", (error) => reject(fail(error.message)));
     });
     outgoing.on("timeout", () => outgoing.destroy(fail("it took too long to answer")));
+    // The system's own words ("getaddrinfo ENOTFOUND") mean nothing to the person adding an app.
     outgoing.on("error", (error) =>
-      reject(error instanceof AppManifestUnreachableError ? error : fail(error.message)),
+      reject(
+        error instanceof AppManifestUnreachableError
+          ? error
+          : fail("nothing answered at that address"),
+      ),
     );
     outgoing.end();
   });

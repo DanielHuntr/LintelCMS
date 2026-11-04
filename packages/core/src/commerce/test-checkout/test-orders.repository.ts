@@ -77,28 +77,44 @@ export async function releaseOrderRedemptions(
 }
 
 /**
- * Removes customers who only existed because of test orders: nothing left that's theirs, and
- * no note anyone wrote about them.
+ * Removes customers who only existed because of test orders: made by one (a new customer gets
+ * the same time as the order that made them), nothing left that's theirs, and no note anyone
+ * wrote about them. Someone already there, such as an imported customer with no orders here,
+ * stays even when a test used their address.
  */
 export async function deleteCustomersLeftEmpty(
   database: DatabaseOrTransaction,
-  customerIds: readonly string[],
+  orders: ReadonlyArray<Pick<OrderRow, "customerId" | "createdAt">>,
 ): Promise<void> {
+  const firstOrders = new Map<string, number>();
+  for (const { customerId, createdAt } of orders) {
+    if (!customerId) continue;
+    const first = firstOrders.get(customerId) ?? Infinity;
+    firstOrders.set(customerId, Math.min(first, createdAt.getTime()));
+  }
+  if (firstOrders.size === 0) return;
+  const candidates = await database
+    .select({ id: customersTable.id, createdAt: customersTable.createdAt })
+    .from(customersTable)
+    .where(inArray(customersTable.id, [...firstOrders.keys()]));
+  const customerIds = candidates
+    .filter(({ id, createdAt }) => createdAt.getTime() >= (firstOrders.get(id) ?? Infinity))
+    .map(({ id }) => id);
   if (customerIds.length === 0) return;
   const withOrders = await database
     .selectDistinct({ id: ordersTable.customerId })
     .from(ordersTable)
-    .where(inArray(ordersTable.customerId, [...customerIds]));
+    .where(inArray(ordersTable.customerId, customerIds));
   const withArchivedOrders = await database
     .selectDistinct({ id: archivedOrdersTable.customerId })
     .from(archivedOrdersTable)
-    .where(inArray(archivedOrdersTable.customerId, [...customerIds]));
+    .where(inArray(archivedOrdersTable.customerId, customerIds));
   const kept = [...withOrders, ...withArchivedOrders].flatMap((row) => row.id ?? []);
   await database
     .delete(customersTable)
     .where(
       and(
-        inArray(customersTable.id, [...customerIds]),
+        inArray(customersTable.id, customerIds),
         eq(customersTable.note, ""),
         kept.length > 0 ? notInArray(customersTable.id, kept) : undefined,
       ),

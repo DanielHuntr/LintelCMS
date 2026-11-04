@@ -14,13 +14,14 @@ export const SHORTEST_USEFUL_DESCRIPTION_LENGTH = 50;
  * {siteName} goes too, so the result is "About us" rather than "About us | ".
  */
 export function applyTitleTemplate(template: string, title: string, siteName: string): string {
-  const withSite =
-    siteName.trim() === ""
-      ? template
-          .replace(/\s*[|·•:–—-]\s*\{siteName\}/g, "")
-          .replace(/\{siteName\}\s*[|·•:–—-]\s*/g, "")
-          .replaceAll("{siteName}", "")
-      : template.replaceAll("{siteName}", siteName.trim());
+  // A page named after the site would otherwise read "Acme | Acme".
+  const showSiteName = siteName.trim() !== "" && siteName.trim() !== title.trim();
+  const withSite = !showSiteName
+    ? template
+        .replace(/\s*[|·•:–—-]\s*\{siteName\}/g, "")
+        .replace(/\{siteName\}\s*[|·•:–—-]\s*/g, "")
+        .replaceAll("{siteName}", "")
+    : template.replaceAll("{siteName}", siteName.trim());
   return withSite.replaceAll("{title}", title.trim()).trim();
 }
 

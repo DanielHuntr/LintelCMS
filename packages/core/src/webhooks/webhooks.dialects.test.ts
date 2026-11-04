@@ -1,6 +1,8 @@
 import { expect, it } from "vitest";
 import type { Database } from "../database/client.js";
-import { describeOnEveryDatabase } from "../testing/every-database.js";
+import { insertApp } from "../apps/apps.repository.js";
+import { addTestUser, describeOnEveryDatabase } from "../testing/every-database.js";
+import { updateUserRow } from "../users/users.repository.js";
 import {
   claimDueDelivery,
   findDeliveryRow,
@@ -38,6 +40,32 @@ describeOnEveryDatabase("Webhooks", (handle) => {
     expect(await listWebhooksForEvent(database, TENANT, "entry.deleted")).toEqual([]);
 
     await updateWebhookRow(database, TENANT, webhook.id, { enabled: false });
+    expect(await listWebhooksForEvent(database, TENANT, "entry.published")).toEqual([]);
+  });
+
+  it("stops telling an app things once its installer is deactivated", async () => {
+    const { database } = handle;
+    const user = await addTestUser(database);
+    const app = await insertApp(database, {
+      handle: "stock-sync",
+      name: "Stock sync",
+      manifest: {} as never,
+      scopes: [],
+      clientId: "client",
+      clientSecret: "secret",
+      clientSecretHash: "hash",
+      clientSecretStart: "sec",
+      installedBy: user.id,
+    });
+    await insertWebhook(database, {
+      name: "App",
+      url: "https://example.com/hook",
+      events: ["entry.published"],
+      secret: "secret",
+      appId: app.id,
+    });
+    expect(await listWebhooksForEvent(database, TENANT, "entry.published")).toHaveLength(1);
+    await updateUserRow(database, user.id, { status: "deactivated" });
     expect(await listWebhooksForEvent(database, TENANT, "entry.published")).toEqual([]);
   });
 

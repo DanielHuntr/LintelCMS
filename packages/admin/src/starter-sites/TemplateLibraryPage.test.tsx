@@ -17,6 +17,7 @@ const applied = {
   skippedHome: false,
   replacedCount: 0,
   previousSectionsKept: false,
+  featuresSwitchedOn: [],
 };
 
 const existingPages = {
@@ -34,6 +35,14 @@ async function openBakery(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("the template library", () => {
+  it("offers no templates to use to someone who can't design, such as a client", async () => {
+    mockApi(() => undefined);
+    renderScreen(<TemplateLibraryPage />, { permissions: ["entries:read", "entries:create"] });
+
+    await screen.findByRole("heading", { level: 1, name: "Templates" });
+    expect(screen.queryByRole("button", { name: /Use this template/ })).not.toBeInTheDocument();
+  });
+
   it("lists the templates and adds one's pages, then links to the builder", async () => {
     const user = userEvent.setup();
     const { calls } = mockApi(({ method, url }) => {
@@ -48,6 +57,10 @@ describe("the template library", () => {
     expect(within(list).getAllByRole("listitem").length).toBeGreaterThanOrEqual(6);
     const bakery = within(list).getByRole("article", { name: "Bakery and café" });
     expect(bakery).toHaveTextContent("Home · Menu · Our story · Visit us");
+    // Only the first letter is lowered, so names keep their capitals.
+    expect(within(list).getByRole("article", { name: "Longplay" })).toHaveTextContent(
+      "Good for bands, singers, DJs and other musicians",
+    );
 
     await user.click(within(bakery).getByRole("button", { name: /Use this template/ }));
     const dialog = screen.getByRole("dialog", { name: "Start from Bakery and café?" });
@@ -101,7 +114,9 @@ describe("the template library", () => {
   it("only offers what the person may do", async () => {
     const user = userEvent.setup();
     mockApi(() => undefined);
-    renderScreen(<TemplateLibraryPage />, { permissions: ["entries:read", "entries:create"] });
+    renderScreen(<TemplateLibraryPage />, {
+      permissions: ["entries:read", "entries:create", "builder:design"],
+    });
     await user.click((await screen.findAllByRole("button", { name: /Use this template/ }))[0]!);
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).queryByRole("switch")).not.toBeInTheDocument();
@@ -118,6 +133,18 @@ describe("the template library", () => {
         return undefined;
       });
     }
+
+    it("doesn't promise to keep the site's pages when they are being replaced", async () => {
+      const user = userEvent.setup();
+      answer();
+      renderScreen(<TemplateLibraryPage />, { permissions: ["*"] });
+      const dialog = await openBakery(user);
+      await user.click(await within(dialog).findByRole("radio", { name: /Replace my pages/ }));
+
+      expect(dialog).toHaveAccessibleDescription(
+        "We’ll add 4 pages to Pages, ready to change in the page builder.",
+      );
+    });
 
     it("adds the pages alongside by default, saying what happens to Home and clashes", async () => {
       const user = userEvent.setup();
@@ -166,7 +193,9 @@ describe("the template library", () => {
     it("keeps Replace from people who can't delete pages", async () => {
       const user = userEvent.setup();
       answer();
-      renderScreen(<TemplateLibraryPage />, { permissions: ["entries:read", "entries:create"] });
+      renderScreen(<TemplateLibraryPage />, {
+        permissions: ["entries:read", "entries:create", "builder:design"],
+      });
       const dialog = await openBakery(user);
       expect(await within(dialog).findByRole("radio", { name: /Replace my pages/ })).toBeDisabled();
     });

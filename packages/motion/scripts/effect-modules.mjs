@@ -64,11 +64,15 @@ export async function besideModuleFiles() {
   ];
 }
 
-/** What each module's player costs a page, gzipped: { lottie: 48912, rive: 410628 }. */
-export function effectPlayerSizes(beside, gzip) {
+/**
+ * What each module's player costs a page, gzipped: { lottie: 48912, model: 180000, rive:
+ * 410628 }. `loadedLater` is what `buildEffectModules` found modules import only when needed.
+ */
+export function effectPlayerSizes(beside, gzip, loadedLater) {
   const size = (name) => gzip(beside.find((file) => file.name === name).contents).byteLength;
   return {
     lottie: size("lottie-player.js"),
+    model: loadedLater.model,
     rive: size("rive-player.js") + size("rive.wasm"),
   };
 }
@@ -113,6 +117,25 @@ export async function buildEffectModules({ outdir } = {}) {
     return gzipped.get(path);
   };
   const modules = {};
+  const loadedLater = {};
+  /** Everything a file imports only when needed, with what those import, less what's `known`. */
+  const reachedLater = (start, known) => {
+    const reached = new Set();
+    const queue = result.metafile.outputs[start].imports
+      .filter((imported) => imported.kind === "dynamic-import")
+      .map((imported) => imported.path);
+    while (queue.length) {
+      const path = queue.shift();
+      if (known.has(path) || reached.has(path)) continue;
+      reached.add(path);
+      queue.push(
+        ...result.metafile.outputs[path].imports
+          .filter((imported) => imported.kind === "import-statement")
+          .map((imported) => imported.path),
+      );
+    }
+    return reached;
+  };
   for (const [path, output] of Object.entries(result.metafile.outputs)) {
     // Chunks a module imports only when needed (three.js for the 3D model) are entry points
     // too, but not modules: they are listed in `files` and cost only pages that load them.
@@ -132,6 +155,10 @@ export async function buildEffectModules({ outdir } = {}) {
       file: path.split("/").pop(),
       gzipBytes: [...seen].reduce((total, file) => total + sizeOf(file), 0),
     };
+    loadedLater[name] = [...reachedLater(path, seen)].reduce(
+      (total, file) => total + sizeOf(file),
+      0,
+    );
   }
   return {
     modules,
@@ -140,5 +167,6 @@ export async function buildEffectModules({ outdir } = {}) {
       ...beside.map(({ file }) => file),
     ],
     beside,
+    loadedLater,
   };
 }

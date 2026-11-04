@@ -23,7 +23,7 @@ function token(name: string, label: string, fallback: string): DesignToken {
 
 export const colourTokens: readonly DesignToken[] = [
   token("color-text", "Text", "#1d1d1f"),
-  token("color-text-secondary", "Soft text", "#6e6e73"),
+  token("color-text-secondary", "Soft text", "#646469"),
   token("color-background", "Page", "#ffffff"),
   token("color-surface", "Panel", "#f5f5f7"),
   token("color-border", "Lines", "#d2d2d7"),

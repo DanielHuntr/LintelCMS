@@ -198,12 +198,20 @@ function ProductForm({
         {save.isSuccess ? t("shop.saved") : ""}
       </div>
       {(generalError || Object.keys(fieldErrors).length > 0) && (
-        <p
+        <div
           role="alert"
           className="mb-5 max-w-3xl rounded-card bg-danger/10 px-4 py-3 text-body text-danger"
         >
-          {generalError ?? t("shop.products.fixProblems")}
-        </p>
+          <p>{generalError ?? t("shop.products.fixProblems")}</p>
+          {/* The boxes can be a long way down the page, so the problems are said here too. */}
+          {!generalError && (
+            <ul className="mt-1 list-inside list-disc text-footnote">
+              {[...new Set(Object.values(fieldErrors))].map((problem) => (
+                <li key={problem}>{problem}</li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
       <div className="flex max-w-3xl flex-col gap-6">
         <ProductDetailsSection draft={draft} onChange={change} errors={fieldErrors} />
