@@ -185,9 +185,18 @@ export async function createMysqlDatabase(
 /** How often a transaction is tried in all, when the database picks it to give way. */
 const TRANSACTION_ATTEMPTS = 4;
 
+/**
+ * The second code comes from a write nested in the transaction, such as `insertReturning`: the
+ * deadlock undoes everything, savepoint included, so Drizzle's rollback to it fails instead.
+ * A savepoint is only ever missing because the whole transaction has gone.
+ */
+const CODES_OF_AN_UNDONE_TRANSACTION = ["ER_LOCK_DEADLOCK", "ER_SP_DOES_NOT_EXIST"];
+
 function isDeadlock(error: unknown): boolean {
   for (let current = error, depth = 0; current instanceof Error && depth < 5; depth += 1) {
-    if ("code" in current && current.code === "ER_LOCK_DEADLOCK") return true;
+    if ("code" in current && CODES_OF_AN_UNDONE_TRANSACTION.includes(String(current.code))) {
+      return true;
+    }
     current = current.cause;
   }
   return false;

@@ -329,6 +329,39 @@ describeOnEveryDatabase("Deadlocks", (handle) => {
     await Promise.all([crossing(first.id, second.id), crossing(second.id, first.id)]);
     expect(attempts).toBe(3);
   });
+
+  it.skipIf(handle.name === "built-in")(
+    "tries again when the deadlock comes in a write nested in the transaction",
+    async () => {
+      const { database } = handle;
+      const entries = tableFor(database, entriesTable);
+      const first = await addTestEntry(database, { slug: "first" });
+      const second = await addTestEntry(database, { slug: "second" });
+      let attempts = 0;
+      let bothHoldOne: () => void = () => {};
+      let holding = 0;
+      const together = new Promise<void>((resolve) => {
+        bothHoldOne = resolve;
+      });
+
+      // As `insertReturning` does inside a service's transaction. The deadlock undoes the whole
+      // transaction, savepoint and all, so rolling back to the savepoint fails with its own error.
+      const crossing = (mine: string, theirs: string) =>
+        database.transaction(async (transaction) => {
+          attempts += 1;
+          await transaction.update(entries).set({ sortOrder: 1 }).where(eq(entries.id, mine));
+          holding += 1;
+          if (holding === 2) bothHoldOne();
+          await together;
+          await transaction.transaction(async (nested) => {
+            await nested.update(entries).set({ sortOrder: 2 }).where(eq(entries.id, theirs));
+          });
+        });
+
+      await Promise.all([crossing(first.id, second.id), crossing(second.id, first.id)]);
+      expect(attempts).toBe(3);
+    },
+  );
 });
 
 describeOnEveryDatabase("Raw queries", (handle) => {

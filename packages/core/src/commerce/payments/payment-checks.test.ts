@@ -119,7 +119,7 @@ describe("confirming payments without a webhook", () => {
           data: { object: paid },
         }),
       ]);
-      expect(webhook.statusCode).toBe(200);
+      expect(webhook.statusCode, webhook.body).toBe(200);
       expect(returned.checkoutId).toBe(checkoutId);
       expect(await orderCount(current)).toBe(1);
       expect((await status(current, checkoutId)).status).toBe("completed");

@@ -9,7 +9,7 @@ import { SOURCE_FOLDER } from "./postgres-only-code.js";
  * (`retryTransactionsAfterDeadlock`). So a callback mustn't reach outside the database, or add
  * to anything from outside itself unless it empties it first. This reads every transaction in
  * core. It sees what a callback does itself, not what the functions it calls do: they were
- * read by hand on 2026-11-04 (see docs/qa/FIX-LOG-mysql.md).
+ * traced once, on 2026-11-04 (see docs/qa/FIX-LOG-mysql.md).
  */
 
 const OUTSIDE_EFFECTS = /^(fetch|sendEmail|send|publish|put|writeFile|rm|unlink|rename|mkdir)$/;

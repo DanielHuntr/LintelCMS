@@ -33,8 +33,9 @@ Lintel uses **the built-in database, Postgres, MySQL or MariaDB**.
   on one computer.
 - **Postgres** is for a live site on a server. Any Postgres works: one your host
   provides, a managed service, or one on your own server. Set `DATABASE_URL` to its address.
-- **MySQL 8.4 or newer, or MariaDB 11.4 or newer** suits hosts that come with one of these.
-  Lintel's tests run on those two versions. Set `DATABASE_URL` to `mysql://...`, or choose it
+- **MySQL 8.0.16 or newer, or MariaDB 10.11 or newer** suits hosts that come with one of these.
+  Lintel's tests run on MySQL 8.4 and 8.0, and on MariaDB 11.4 and 10.11. Prefer 8.4 or 11.4:
+  Oracle's own support for MySQL 8.0 has ended. Set `DATABASE_URL` to `mysql://...`, or choose it
   on the setup screen, which can create the database for you.
 
 If you make the MySQL or MariaDB database yourself, it has to compare text exactly, or Lintel
@@ -49,9 +50,28 @@ On MariaDB, use `utf8mb4_nopad_bin` in place of `utf8mb4_0900_bin`.
 A few things differ on MySQL and MariaDB:
 
 - Add-ons that keep their own tables only run there if they say they support it. Others stay
-  switched off. See [Running on MySQL](/building/writing-a-plugin/#running-on-mysql-and-mariadb).
+  switched off. Newsletter, Instagram and the bookings example do. See
+  [Running on MySQL](/building/writing-a-plugin/#running-on-mysql-and-mariadb).
 - Text used to find a row, such as a page's address, is kept to 255 characters.
-- Search also finds a word inside a longer word in a page's body, so "port" finds "support".
+- Search finds the same pages as on Postgres, in a similar order. Pages that match equally well
+  can come back in a different order.
+
+### Managed databases
+
+We've only run Lintel on the plain MySQL and MariaDB servers above, in Docker, and not on any
+company's managed service. This is what we expect, from what each says it runs. Try a backup
+and a restore before you rely on one.
+
+| Service                                    | What to expect                                                                                                                                                                                                                            |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Amazon RDS for MySQL or MariaDB            | Should work. It offers the same versions as above, and Lintel needs no special privileges. Pick MySQL 8.4 or MariaDB 11.4, and create the database with the collation above.                                                              |
+| Amazon Aurora MySQL                        | Should work on version 3, which follows MySQL 8.0, but its storage and locking are Amazon's own, so treat it as less certain than RDS.                                                                                                    |
+| DigitalOcean Managed MySQL                 | Should work. It requires a primary key on every table, which Lintel's tables have: we ran the migrations with that setting on. It needs an encrypted connection, so tick SSL on the setup screen, or end the address with `?ssl=require`. |
+| Google Cloud SQL, Azure Database for MySQL | Should work, for the same reasons as RDS.                                                                                                                                                                                                 |
+| PlanetScale (Vitess)                       | Not supported. Lintel's tables rely on foreign keys that delete and tidy up rows. PlanetScale keeps those off unless you turn them on for an unsharded database, and warns they slow busy sites down. Use one of the others.              |
+
+An add-on's tables have to fit too: on a service that requires primary keys, each of its tables
+needs one.
 
 Back up whichever you use, and try restoring a backup once. See
 [Backups](/using/backups/) and the [production checklist](/hosting/checklist/).

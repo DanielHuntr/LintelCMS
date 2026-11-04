@@ -1,8 +1,9 @@
 # Database dialects
 
 The one place that knows Lintel can run on more than one kind of database: Postgres (the
-built-in database and a Postgres server), MySQL 8.4 and MariaDB 11.4. `pnpm test:mysql` runs
-the whole core suite on the last two. The history and the state of it are in
+built-in database and a Postgres server), MySQL 8.0.16 or newer and MariaDB 10.11 or newer.
+`pnpm test:mysql` runs the whole core suite on MySQL 8.4 and MariaDB 11.4, and
+`LINTEL_TEST_MYSQL_IMAGE=mysql:8.0 LINTEL_TEST_MARIADB_IMAGE=mariadb:10.11` on the older two. The history and the state of it are in
 `docs/decisions/0049-any-database.md`.
 
 Nothing here changes Postgres. Every helper gives the same query Lintel ran before, and the
