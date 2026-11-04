@@ -223,9 +223,6 @@
     "returning": 1,
     "upsert": 1
   },
-  "passkeys/passkeys.repository.ts": {
-    "returning": 2
-  },
   "privacy/personal-data.repository.ts": {
     "cast with ::": 1,
     "json field access": 1,
@@ -286,10 +283,6 @@
   },
   "taxonomies/terms.repository.ts": {
     "returning": 1,
-    "upsert": 1
-  },
-  "two-factor/two-factor.repository.ts": {
-    "returning": 2,
     "upsert": 1
   },
   "users/authorship.repository.ts": {

@@ -1,6 +1,12 @@
 import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { recoveryCodesTable, type TwoFactorRow, twoFactorTable } from "./two-factor.table.js";
+import {
+  recoveryCodesTable as recoveryCodesDefinition,
+  type TwoFactorRow,
+  twoFactorTable as twoFactorDefinition,
+} from "./two-factor.table.js";
+import { updateReturning, upsert } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for two-factor settings and recovery codes, nothing else. */
 
@@ -8,6 +14,7 @@ export async function findTwoFactorRow(
   database: DatabaseOrTransaction,
   userId: string,
 ): Promise<TwoFactorRow | undefined> {
+  const twoFactorTable = tableFor(database, twoFactorDefinition);
   const [row] = await database
     .select()
     .from(twoFactorTable)
@@ -21,10 +28,13 @@ export async function savePendingSecret(
   userId: string,
   pendingSecret: string,
 ): Promise<void> {
-  await database
-    .insert(twoFactorTable)
-    .values({ userId, pendingSecret })
-    .onConflictDoUpdate({ target: twoFactorTable.userId, set: { pendingSecret } });
+  const twoFactorTable = tableFor(database, twoFactorDefinition);
+  await upsert(
+    database,
+    twoFactorTable,
+    { userId, pendingSecret },
+    { target: twoFactorTable.userId, set: { pendingSecret } },
+  );
 }
 
 export async function updateTwoFactorRow(
@@ -32,6 +42,7 @@ export async function updateTwoFactorRow(
   userId: string,
   changes: Partial<Pick<TwoFactorRow, "secret" | "pendingSecret" | "enabledAt" | "lastUsedStep">>,
 ): Promise<void> {
+  const twoFactorTable = tableFor(database, twoFactorDefinition);
   await database.update(twoFactorTable).set(changes).where(eq(twoFactorTable.userId, userId));
 }
 
@@ -45,22 +56,24 @@ export async function claimTotpStep(
   step: number,
   previousStep: number | null,
 ): Promise<boolean> {
-  const claimed = await database
-    .update(twoFactorTable)
-    .set({ lastUsedStep: step })
-    .where(
-      and(
-        eq(twoFactorTable.userId, userId),
-        previousStep === null
-          ? isNull(twoFactorTable.lastUsedStep)
-          : eq(twoFactorTable.lastUsedStep, previousStep),
-      ),
-    )
-    .returning({ userId: twoFactorTable.userId });
+  const twoFactorTable = tableFor(database, twoFactorDefinition);
+  const claimed = await updateReturning(
+    database,
+    twoFactorTable,
+    { lastUsedStep: step },
+    and(
+      eq(twoFactorTable.userId, userId),
+      previousStep === null
+        ? isNull(twoFactorTable.lastUsedStep)
+        : eq(twoFactorTable.lastUsedStep, previousStep),
+    ),
+    { userId: twoFactorTable.userId },
+  );
   return claimed.length > 0;
 }
 
 export async function deleteTwoFactorRow(database: DatabaseOrTransaction, userId: string) {
+  const twoFactorTable = tableFor(database, twoFactorDefinition);
   await database.delete(twoFactorTable).where(eq(twoFactorTable.userId, userId));
 }
 
@@ -68,6 +81,7 @@ export async function findEnabledTwoFactorUserIds(
   database: DatabaseOrTransaction,
   userIds: readonly string[],
 ): Promise<string[]> {
+  const twoFactorTable = tableFor(database, twoFactorDefinition);
   if (userIds.length === 0) {
     return [];
   }
@@ -83,6 +97,7 @@ export async function replaceRecoveryCodes(
   userId: string,
   codeHashes: readonly string[],
 ): Promise<void> {
+  const recoveryCodesTable = tableFor(database, recoveryCodesDefinition);
   await database.delete(recoveryCodesTable).where(eq(recoveryCodesTable.userId, userId));
   await database
     .insert(recoveryCodesTable)
@@ -90,6 +105,7 @@ export async function replaceRecoveryCodes(
 }
 
 export async function deleteRecoveryCodes(database: DatabaseOrTransaction, userId: string) {
+  const recoveryCodesTable = tableFor(database, recoveryCodesDefinition);
   await database.delete(recoveryCodesTable).where(eq(recoveryCodesTable.userId, userId));
 }
 
@@ -97,6 +113,7 @@ export async function countUnusedRecoveryCodes(
   database: DatabaseOrTransaction,
   userId: string,
 ): Promise<number> {
+  const recoveryCodesTable = tableFor(database, recoveryCodesDefinition);
   const rows = await database
     .select({ id: recoveryCodesTable.id })
     .from(recoveryCodesTable)
@@ -111,16 +128,17 @@ export async function useRecoveryCode(
   codeHash: string,
   now: Date,
 ): Promise<boolean> {
-  const used = await database
-    .update(recoveryCodesTable)
-    .set({ usedAt: now })
-    .where(
-      and(
-        eq(recoveryCodesTable.userId, userId),
-        eq(recoveryCodesTable.codeHash, codeHash),
-        isNull(recoveryCodesTable.usedAt),
-      ),
-    )
-    .returning({ id: recoveryCodesTable.id });
+  const recoveryCodesTable = tableFor(database, recoveryCodesDefinition);
+  const used = await updateReturning(
+    database,
+    recoveryCodesTable,
+    { usedAt: now },
+    and(
+      eq(recoveryCodesTable.userId, userId),
+      eq(recoveryCodesTable.codeHash, codeHash),
+      isNull(recoveryCodesTable.usedAt),
+    ),
+    { id: recoveryCodesTable.id },
+  );
   return used.length > 0;
 }
