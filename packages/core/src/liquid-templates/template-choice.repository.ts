@@ -1,7 +1,9 @@
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { entriesTable } from "../entries/entries.table.js";
+import { entriesTable as entriesDefinition } from "../entries/entries.table.js";
+import { jsonValue } from "../database/dialect/expressions.js";
 import { TEMPLATE_CHOICE_KEY } from "./template-choice.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /**
  * The template choice stored with an entry: in its published values for the live page, in
@@ -13,9 +15,10 @@ export async function findStoredTemplateChoice(
   entryId: string,
   copy: "published" | "draft",
 ): Promise<unknown> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const column = copy === "published" ? entriesTable.publishedData : entriesTable.data;
   const [row] = await database
-    .select({ choice: sql<unknown>`${column} -> ${TEMPLATE_CHOICE_KEY}` })
+    .select({ choice: jsonValue(database, column, TEMPLATE_CHOICE_KEY) })
     .from(entriesTable)
     .where(eq(entriesTable.id, entryId))
     .limit(1);

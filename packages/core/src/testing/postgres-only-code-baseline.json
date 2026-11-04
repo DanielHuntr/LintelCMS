@@ -156,9 +156,6 @@
     "returning": 2,
     "upsert": 1
   },
-  "liquid-templates/template-choice.repository.ts": {
-    "json field access": 1
-  },
   "media/media.repository.ts": {
     "ilike": 7,
     "returning": 1
@@ -200,9 +197,6 @@
     "json field access": 2,
     "jsonb function": 1
   },
-  "seo/seo.repository.ts": {
-    "upsert": 1
-  },
   "server-check/server-check.service.ts": {
     "postgres catalogue": 1
   },
@@ -212,9 +206,6 @@
   },
   "site-design/site-design.repository.ts": {
     "cast with ::": 2
-  },
-  "starter-sites/starter-sites.repository.ts": {
-    "json field access": 1
   },
   "wordpress-import/wordpress-import.repository.ts": {
     "cast with ::": 1,

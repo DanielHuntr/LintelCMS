@@ -46,4 +46,7 @@ export const mysqlPortedRepositories = [
   "site-effects/site-effects.repository.ts",
   "site-sections/site-sections.repository.ts",
   "cookie-notice/cookie-notice.repository.ts",
+  "liquid-templates/template-choice.repository.ts",
+  "starter-sites/starter-sites.repository.ts",
+  "seo/seo.repository.ts",
 ];

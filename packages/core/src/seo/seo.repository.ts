@@ -1,8 +1,10 @@
 import { and, asc, eq, isNotNull, or } from "drizzle-orm";
-import { collectionsTable } from "../collections/collections.table.js";
+import { collectionsTable as collectionsDefinition } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { entriesTable } from "../entries/entries.table.js";
-import { type EntrySeoRow, entrySeoTable } from "./seo.table.js";
+import { entriesTable as entriesDefinition } from "../entries/entries.table.js";
+import { type EntrySeoRow, entrySeoTable as entrySeoDefinition } from "./seo.table.js";
+import { upsert } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for entries' SEO settings and the sitemap. */
 
@@ -11,6 +13,7 @@ export async function findEntrySeoRow(
   tenantId: string,
   entryId: string,
 ): Promise<EntrySeoRow | undefined> {
+  const entrySeoTable = tableFor(database, entrySeoDefinition);
   const [row] = await database
     .select()
     .from(entrySeoTable)
@@ -25,13 +28,16 @@ export async function upsertEntrySeoRow(
   entryId: string,
   values: Pick<EntrySeoRow, "title" | "description" | "socialImageId" | "noindex">,
 ): Promise<void> {
-  await database
-    .insert(entrySeoTable)
-    .values({ tenantId, entryId, ...values })
-    .onConflictDoUpdate({
+  const entrySeoTable = tableFor(database, entrySeoDefinition);
+  await upsert(
+    database,
+    entrySeoTable,
+    { tenantId, entryId, ...values },
+    {
       target: [entrySeoTable.tenantId, entrySeoTable.entryId],
       set: { ...values, updatedAt: new Date() },
-    });
+    },
+  );
 }
 
 export interface SitemapEntryRow {
@@ -55,6 +61,9 @@ export async function listSitemapEntryRows(
   limit: number,
   sites?: { siteId: string; defaultSiteId: string },
 ): Promise<SitemapEntryRow[]> {
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
+  const entrySeoTable = tableFor(database, entrySeoDefinition);
   const rows = await database
     .select({
       id: entriesTable.id,
