@@ -29,12 +29,12 @@ describe("the creative pack", () => {
 
   it("keeps to a few plain settings each", () => {
     // Players are set through their elements' own fields, so the gallery leaves them out.
+    // Anything further is folded under "More settings".
     for (const effect of creativeEffects.filter(({ listed }) => listed !== false)) {
-      const settings = Object.values(effect.params).filter(
-        (parameter) => parameter.kind !== "colour",
-      );
+      const main = Object.values(effect.params).filter((parameter) => !parameter.more);
+      const settings = main.filter((parameter) => parameter.kind !== "colour");
       expect(settings.length, effect.id).toBeLessThanOrEqual(3);
-      expect(Object.keys(effect.params).length, effect.id).toBeLessThanOrEqual(5);
+      expect(main.length, effect.id).toBeLessThanOrEqual(5);
     }
   });
 

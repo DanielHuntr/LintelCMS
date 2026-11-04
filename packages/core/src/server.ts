@@ -124,6 +124,7 @@ import { starterSitesRoutes } from "./starter-sites/starter-sites.routes.js";
 import { websiteRoutes } from "./website/website.routes.js";
 import { liquidTemplatesRoutes } from "./liquid-templates/liquid-templates.routes.js";
 import { registerFieldSnippetsSync } from "./liquid-editor-support/field-snippets-sync.js";
+import { customShadersRoutes } from "./custom-shaders/custom-shaders.routes.js";
 import { siteEffectsRoutes } from "./site-effects/site-effects.routes.js";
 import { cookieNoticeRoutes } from "./cookie-notice/cookie-notice.routes.js";
 import { siteDesignRoutes } from "./site-design/site-design.routes.js";
@@ -606,6 +607,7 @@ function registerApiRoutes(
   server.register(websiteRoutes);
   server.register(liquidTemplatesRoutes);
   server.register(siteEffectsRoutes);
+  server.register(customShadersRoutes);
   server.register(cookieNoticeRoutes);
   server.register(siteDesignRoutes);
   server.register(siteSectionsRoutes);

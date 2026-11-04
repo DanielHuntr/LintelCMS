@@ -43,6 +43,8 @@ export interface OpenOptions {
   withoutViewTransitions?: boolean;
   /** Pretends the browser has no WebGL, to test the shader effects' fallbacks. */
   withoutWebGl?: boolean;
+  /** The site's own shaders' code, by id, as the page's list carries it. */
+  shaders?: Record<string, string>;
   /** Runs in the page before anything else, to watch for something that may pass quickly. */
   beforePageLoads?: () => void;
 }
@@ -56,6 +58,7 @@ function document(html: string, effects: readonly EffectOnTest[], options: OpenO
     modules,
     bindings: effects.map((effect) => ({ params: {}, ...effect })),
     site: options.site,
+    shaders: options.shaders,
   }).replace(/</g, "\\u003c");
   return `<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;font:16px sans-serif}${options.css ?? ""}</style>
 <script type="application/json" id="lintel-effects">${data}</script>

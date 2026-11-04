@@ -29,6 +29,7 @@ const shaderModules: readonly EffectModuleName[] = [
   "image-distort",
   "ripple",
   "shader-backgrounds",
+  "shader-stack",
   "picture-effects",
 ];
 

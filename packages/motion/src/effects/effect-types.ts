@@ -22,6 +22,7 @@ export const effectModuleNames = [
   "intro",
   "smooth-scroll",
   "shader-backgrounds",
+  "shader-stack",
   "film-grain",
   "picture-effects",
   "playground",

@@ -7,6 +7,13 @@ import { lottiePlayerEffectId, rivePlayerEffectId } from "./catalogue/creative-e
 import { effectModuleBytes, effectPlayerBytes } from "./module-sizes.js";
 import { measurePageWeight } from "./page-weight.js";
 
+/**
+ * Kilobytes for the two modules allowed more than the usual 8. They load only on pages with
+ * a shader background, and each carries the shared renderer; the stack also has every look,
+ * the layer mixing, and the custom shader checks. See decision 0066.
+ */
+const largerModules: Record<string, number> = { "shader-backgrounds": 10, "shader-stack": 20 };
+
 /** The page weight meter shows these numbers, so they must stay true. */
 describe("the effect modules' sizes", () => {
   it("match the modules as they are built today, and each stays small", async () => {
@@ -19,7 +26,7 @@ describe("the effect modules' sizes", () => {
         Math.abs(actual - bytes) / bytes,
         `${name}: run pnpm --filter @lintel/motion measure:effects`,
       ).toBeLessThan(0.1);
-      expect(actual, name).toBeLessThan(8 * 1024);
+      expect(actual, name).toBeLessThan((largerModules[name] ?? 8) * 1024);
     }
   }, 30_000);
 

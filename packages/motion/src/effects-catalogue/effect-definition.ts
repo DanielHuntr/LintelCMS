@@ -41,6 +41,8 @@ export type ElementKind = (typeof elementKinds)[number];
 interface ParameterBase {
   /** Plain words for Simple mode: "How strong the pull is". */
   label: string;
+  /** Folded under "More settings", so an effect opens with only its few main settings. */
+  more?: boolean;
 }
 
 export type EffectParameter =
@@ -118,6 +120,11 @@ export type BehaviourEffect<Parameters extends EffectParameters = EffectParamete
     fixed?: Readonly<Record<string, EffectParameterValue>>;
     /** For code-registered effects: the function itself (see registerEffectBehaviour). */
     run?: EffectBehaviour;
+    /**
+     * The shader look it can run as, as a layer or with settings that react to something
+     * (see `shader-plan.ts`). Looks set in `fixed` count too.
+     */
+    stackLook?: string;
   };
 
 export type AnimationEffect<Parameters extends EffectParameters = EffectParameters> =
