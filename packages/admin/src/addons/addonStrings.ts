@@ -22,6 +22,7 @@ export const addonStrings = {
   "addons.access": "Access",
   "addons.accessText":
     "Runs inside your site with full access to its content, people and settings, like Lintel itself.",
+  "addons.accessDataOnly": "It has no code of its own: it only says what data it keeps.",
   "addons.permissions": "It adds these permissions for roles:",
   "addons.settings": "Settings",
   "addons.settingsSave": "Save settings",

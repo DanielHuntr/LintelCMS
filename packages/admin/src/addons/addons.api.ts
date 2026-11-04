@@ -29,6 +29,7 @@ export interface Addon {
   permissions: Array<{ permission: string; description: string }>;
   settingsSchema: Record<string, unknown> | null;
   problem: string | null;
+  dataOnly: boolean;
 }
 
 export interface AddonList {

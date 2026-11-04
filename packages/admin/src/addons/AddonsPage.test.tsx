@@ -24,6 +24,7 @@ const swatches: Addon = {
     properties: { greeting: { type: "string" }, showNames: { type: "boolean" } },
   },
   problem: null,
+  dataOnly: false,
 };
 
 const broken: Addon = {
@@ -222,6 +223,30 @@ describe("AddonsPage", () => {
       "href",
       "https://github.com/acme/swatches",
     );
+  });
+
+  describe("what it can reach (LINTEL-UX-338)", () => {
+    const opened = async (addon: Addon) => {
+      fakeApi([addon]);
+      renderScreen(<AddonsPage />);
+      await userEvent.click(await screen.findByRole("button", { name: /Colour swatches/ }));
+      return screen.findByRole("dialog", { name: "Colour swatches" });
+    };
+
+    it("warns that an add-on with code runs inside the site", async () => {
+      const dialog = await opened(swatches);
+
+      expect(
+        within(dialog).getByText(/Runs inside your site with full access/),
+      ).toBeInTheDocument();
+    });
+
+    it("says an add-on with no code only says what data it keeps", async () => {
+      const dialog = await opened({ ...swatches, dataOnly: true });
+
+      expect(within(dialog).queryByText(/Runs inside your site/)).not.toBeInTheDocument();
+      expect(within(dialog).getByText(/has no code of its own/)).toBeInTheDocument();
+    });
   });
 
   describe("its own screen", () => {

@@ -37,6 +37,7 @@ export async function listAddons(
     permissions: [],
     settingsSchema: null,
     problem: problem.message,
+    dataOnly: false,
   }));
   return { addons: [...installed, ...failed], folder: addons.folder };
 }
@@ -61,6 +62,7 @@ function summarise(
     })),
     settingsSchema: plugin.settings ? settingsJsonSchema(plugin.settings.schema) : null,
     problem: null,
+    dataOnly: addon?.addonPackage.dataOnly ?? false,
   };
 }
 

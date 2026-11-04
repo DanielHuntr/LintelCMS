@@ -193,6 +193,7 @@ describe("add-ons", () => {
 });
 
 describe("an add-on with no code (LINTEL-UX-287)", () => {
+  const testDatabase = useTestDatabase();
   const personalData = {
     tables: [{ name: "votes_cast", columns: [{ name: "email", personalData: true }] }],
   };
@@ -224,6 +225,27 @@ describe("an add-on with no code (LINTEL-UX-287)", () => {
       name: "votes",
       description: "Says what data it keeps. It has no code of its own.",
     });
+  });
+
+  it("is listed as having no code, for the Add-ons screen (LINTEL-UX-338)", async () => {
+    const server = buildServer({
+      adminOrigin: "http://localhost:5173",
+      database: testDatabase.activeDatabase,
+      runScheduledJobs: false,
+      addons: await load({ personalData }),
+    });
+    await server.ready();
+    await createTestUser(testDatabase.database, "owner@example.com", [["*"]]);
+    const cookies = await signInAndGetCookies(server, "owner@example.com");
+
+    const response = await server.inject({ method: "GET", url: "/addons", cookies });
+    await server.close();
+
+    const listed = response.json().addons;
+    expect(listed.find((addon: { id: string }) => addon.id === "votes").dataOnly).toBe(true);
+    expect(listed.find((addon: { id: string }) => addon.id === "bookings")?.dataOnly).not.toBe(
+      true,
+    );
   });
 
   it.each([

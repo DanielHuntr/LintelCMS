@@ -104,7 +104,9 @@ export function AddonDetailsDialog({ addon, onClose }: AddonDetailsDialogProps) 
         </div>
 
         <p className="text-footnote text-label-secondary">
-          {t("addons.accessText")} {t("addons.untrusted")}
+          {addon.dataOnly
+            ? t("addons.accessDataOnly")
+            : `${t("addons.accessText")} ${t("addons.untrusted")}`}
         </p>
 
         <div className="flex flex-col gap-2">

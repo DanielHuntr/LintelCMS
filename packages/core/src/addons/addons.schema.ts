@@ -33,6 +33,8 @@ export const addonSummarySchema = z.object({
   /** The settings' JSON Schema, for a form drawn from it; null without settings. */
   settingsSchema: z.record(z.string(), z.unknown()).nullable(),
   problem: z.string().nullable(),
+  /** It has no code and only says what data it keeps (`dataOnly` in addon-package.ts). */
+  dataOnly: z.boolean(),
 });
 export type AddonSummary = z.infer<typeof addonSummarySchema>;
 
