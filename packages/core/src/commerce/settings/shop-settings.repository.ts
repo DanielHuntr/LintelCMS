@@ -1,6 +1,11 @@
 import { eq, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../database/client.js";
-import { type ShopSettingsRow, shopSettingsTable } from "./shop-settings.table.js";
+import {
+  type ShopSettingsRow,
+  shopSettingsTable as shopSettingsDefinition,
+} from "./shop-settings.table.js";
+import { insertIfNew, updateReturning } from "../../database/dialect/writes.js";
+import { tableFor } from "../../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for the shop's one settings row. */
 
@@ -13,7 +18,8 @@ export async function findOrCreateShopSettingsRow(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<ShopSettingsRow> {
-  await database.insert(shopSettingsTable).values({ tenantId }).onConflictDoNothing();
+  const shopSettingsTable = tableFor(database, shopSettingsDefinition);
+  await insertIfNew(database, shopSettingsTable, { tenantId });
   const [row] = await database
     .select()
     .from(shopSettingsTable)
@@ -30,6 +36,7 @@ export async function updateShopSettingsRow(
   tenantId: string,
   changes: ShopSettingsChanges,
 ): Promise<void> {
+  const shopSettingsTable = tableFor(database, shopSettingsDefinition);
   await findOrCreateShopSettingsRow(database, tenantId);
   // Nothing to change isn't an error: the database refuses an update with nothing to set
   // (LINTEL-FUNC-010).
@@ -48,15 +55,18 @@ export async function takeNextOrderNumber(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<{ number: number; prefix: string }> {
+  const shopSettingsTable = tableFor(database, shopSettingsDefinition);
   await findOrCreateShopSettingsRow(database, tenantId);
-  const [taken] = await database
-    .update(shopSettingsTable)
-    .set({ nextOrderNumber: sql`${shopSettingsTable.nextOrderNumber} + 1` })
-    .where(eq(shopSettingsTable.tenantId, tenantId))
-    .returning({
+  const [taken] = await updateReturning(
+    database,
+    shopSettingsTable,
+    { nextOrderNumber: sql`${shopSettingsTable.nextOrderNumber} + 1` },
+    eq(shopSettingsTable.tenantId, tenantId),
+    {
       number: sql<number>`${shopSettingsTable.nextOrderNumber} - 1`,
       prefix: shopSettingsTable.orderNumberPrefix,
-    });
+    },
+  );
   if (!taken) {
     throw new Error("Taking an order number returned nothing");
   }

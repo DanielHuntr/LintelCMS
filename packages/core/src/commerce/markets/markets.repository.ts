@@ -1,6 +1,12 @@
 import { and, asc, eq, ne, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../database/client.js";
-import { type MarketRow, marketsTable, type NewMarketRow } from "./markets.table.js";
+import {
+  type MarketRow,
+  marketsTable as marketsDefinition,
+  type NewMarketRow,
+} from "./markets.table.js";
+import { deleteReturning, insertReturning } from "../../database/dialect/writes.js";
+import { tableFor } from "../../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for markets. */
 
@@ -8,6 +14,7 @@ export async function listMarketRows(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<MarketRow[]> {
+  const marketsTable = tableFor(database, marketsDefinition);
   return database
     .select()
     .from(marketsTable)
@@ -24,6 +31,7 @@ export async function findMarketRow(
   tenantId: string,
   marketId: string,
 ): Promise<MarketRow | undefined> {
+  const marketsTable = tableFor(database, marketsDefinition);
   const [row] = await database
     .select()
     .from(marketsTable)
@@ -36,7 +44,8 @@ export async function insertMarket(
   database: DatabaseOrTransaction,
   market: NewMarketRow,
 ): Promise<MarketRow> {
-  const [inserted] = await database.insert(marketsTable).values(market).returning();
+  const marketsTable = tableFor(database, marketsDefinition);
+  const [inserted] = await insertReturning(database, marketsTable, market);
   if (!inserted) {
     throw new Error("Saving the market returned nothing");
   }
@@ -49,6 +58,7 @@ export async function updateMarketRow(
   marketId: string,
   changes: Partial<Omit<MarketRow, "id" | "tenantId" | "createdAt" | "updatedAt">>,
 ): Promise<void> {
+  const marketsTable = tableFor(database, marketsDefinition);
   await database
     .update(marketsTable)
     .set(changes)
@@ -61,6 +71,7 @@ export async function clearOtherPrimaryMarkets(
   tenantId: string,
   primaryMarketId: string,
 ): Promise<void> {
+  const marketsTable = tableFor(database, marketsDefinition);
   await database
     .update(marketsTable)
     .set({ isPrimary: false })
@@ -72,9 +83,12 @@ export async function deleteMarketRow(
   tenantId: string,
   marketId: string,
 ): Promise<boolean> {
-  const deleted = await database
-    .delete(marketsTable)
-    .where(and(eq(marketsTable.tenantId, tenantId), eq(marketsTable.id, marketId)))
-    .returning({ id: marketsTable.id });
+  const marketsTable = tableFor(database, marketsDefinition);
+  const deleted = await deleteReturning(
+    database,
+    marketsTable,
+    and(eq(marketsTable.tenantId, tenantId), eq(marketsTable.id, marketId)),
+    { id: marketsTable.id },
+  );
   return deleted.length > 0;
 }

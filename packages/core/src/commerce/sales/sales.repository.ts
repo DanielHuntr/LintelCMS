@@ -1,13 +1,17 @@
 import { and, count, eq, gte, isNull, type SQL, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../database/client.js";
 import { DEFAULT_TENANT_ID } from "../../database/columns.js";
-import { ordersTable } from "../orders/orders.table.js";
+import { ordersTable as ordersDefinition } from "../orders/orders.table.js";
+import { tableFor } from "../../database/dialect/mysql-tables.js";
+import { utcDay } from "../../database/dialect/expressions.js";
 
 /** Database reads for the sales summary. Cancelled and test orders don't count; refunds come off. */
 
-const netSales = sql<number>`coalesce(sum(${ordersTable.totalAmount} - ${ordersTable.refundedAmount}), 0)`;
+function netSales(ordersTable: typeof ordersDefinition) {
+  return sql<number>`coalesce(sum(${ordersTable.totalAmount} - ${ordersTable.refundedAmount}), 0)`;
+}
 
-function ordersSince(since: Date): SQL | undefined {
+function ordersSince(ordersTable: typeof ordersDefinition, since: Date): SQL | undefined {
   return and(
     eq(ordersTable.tenantId, DEFAULT_TENANT_ID),
     gte(ordersTable.createdAt, since),
@@ -17,10 +21,11 @@ function ordersSince(since: Date): SQL | undefined {
 }
 
 export async function sumSalesByCurrency(database: DatabaseOrTransaction, since: Date) {
+  const ordersTable = tableFor(database, ordersDefinition);
   const rows = await database
-    .select({ currency: ordersTable.currency, amount: netSales, orderCount: count() })
+    .select({ currency: ordersTable.currency, amount: netSales(ordersTable), orderCount: count() })
     .from(ordersTable)
-    .where(ordersSince(since))
+    .where(ordersSince(ordersTable, since))
     .groupBy(ordersTable.currency);
   return rows.map((row) => ({ ...row, amount: Number(row.amount) }));
 }
@@ -31,11 +36,12 @@ export async function sumDailySales(
   since: Date,
   currency: string,
 ) {
-  const day = sql<string>`to_char(${ordersTable.createdAt} at time zone 'UTC', 'YYYY-MM-DD')`;
+  const ordersTable = tableFor(database, ordersDefinition);
+  const day = utcDay(database, ordersTable.createdAt);
   const rows = await database
-    .select({ date: day, amount: netSales, orderCount: count() })
+    .select({ date: day, amount: netSales(ordersTable), orderCount: count() })
     .from(ordersTable)
-    .where(and(ordersSince(since), eq(ordersTable.currency, currency)))
+    .where(and(ordersSince(ordersTable, since), eq(ordersTable.currency, currency)))
     .groupBy(day)
     .orderBy(day);
   return rows.map((row) => ({ ...row, amount: Number(row.amount) }));

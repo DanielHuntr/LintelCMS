@@ -28,4 +28,7 @@ export const mysqlPortedRepositories = [
   "dashboard/dashboard.repository.ts",
   "webhooks/webhooks.repository.ts",
   "webhooks/webhook-deliveries.repository.ts",
+  "commerce/sales/sales.repository.ts",
+  "commerce/markets/markets.repository.ts",
+  "commerce/settings/shop-settings.repository.ts",
 ];

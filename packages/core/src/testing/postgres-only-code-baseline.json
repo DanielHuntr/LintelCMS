@@ -56,9 +56,6 @@
     "returning": 5,
     "upsert": 1
   },
-  "commerce/markets/markets.repository.ts": {
-    "returning": 2
-  },
   "commerce/orders/orders.repository.ts": {
     "ilike": 2,
     "returning": 1
@@ -88,13 +85,6 @@
   "commerce/products/products.repository.ts": {
     "ilike": 2,
     "returning": 3
-  },
-  "commerce/sales/sales.repository.ts": {
-    "date function": 1
-  },
-  "commerce/settings/shop-settings.repository.ts": {
-    "returning": 1,
-    "upsert": 1
   },
   "commerce/shipping/shipping.repository.ts": {
     "returning": 5
