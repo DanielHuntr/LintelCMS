@@ -172,10 +172,6 @@
   "privacy/retention.repository.ts": {
     "json field access": 1
   },
-  "publishing/publishing.repository.ts": {
-    "returning": 5,
-    "upsert": 1
-  },
   "recycle-bin/recycle-bin.repository.ts": {
     "cast with ::": 1,
     "json field access": 3,
