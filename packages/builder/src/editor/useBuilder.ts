@@ -164,6 +164,9 @@ export function useBuilder({
             ? block && instanceBlueprint(block)
             : { type: id };
       if (!blueprint) return;
+      if (!place && kind === "template") {
+        return run(commands.insertSectionTemplate(context(), blueprint));
+      }
       if (!place) return run(commands.insertBlueprint(context(), blueprint));
       const node = createNode(blueprint, registry.catalogue, createId);
       return run(
