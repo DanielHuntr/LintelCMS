@@ -31,6 +31,7 @@ import { StarterSiteCard } from "./StarterSiteCard.js";
 export function TemplateLibraryPage() {
   const address = useSiteAddress();
   const siteAddress = address.data?.siteAddress ?? null;
+  const canUseTemplates = useCan("builder:design");
   const [chosen, setChosen] = useState<StarterSite | null>(null);
   const [applied, setApplied] = useState<{ site: StarterSite; result: AppliedStarterSite } | null>(
     null,
@@ -56,7 +57,11 @@ export function TemplateLibraryPage() {
       >
         {starterSites.map((site) => (
           <li key={site.id} className="flex">
-            <StarterSiteCard site={site} siteAddress={siteAddress} onUse={() => setChosen(site)} />
+            <StarterSiteCard
+              site={site}
+              siteAddress={siteAddress}
+              {...(canUseTemplates && { onUse: () => setChosen(site) })}
+            />
           </li>
         ))}
       </ul>

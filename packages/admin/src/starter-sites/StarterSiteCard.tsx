@@ -7,7 +7,8 @@ interface StarterSiteCardProps {
   site: StarterSite;
   /** Where the website serves its illustrations from; without it, a sketch of the home page. */
   siteAddress: string | null;
-  onUse: () => void;
+  /** Left out for someone who can't add designed pages, such as a client. */
+  onUse?: () => void;
 }
 
 /** Lowers only the first letter, so a list reads on from "Good for" and keeps "DJs". */
@@ -59,11 +60,13 @@ export function StarterSiteCard({ site, siteAddress, onUse }: StarterSiteCardPro
             />
           ))}
         </div>
-        <div className="mt-auto pt-2">
-          <Button variant="tinted" onClick={onUse} aria-describedby={headingId}>
-            {t("templates.use")}
-          </Button>
-        </div>
+        {onUse && (
+          <div className="mt-auto pt-2">
+            <Button variant="tinted" onClick={onUse} aria-describedby={headingId}>
+              {t("templates.use")}
+            </Button>
+          </div>
+        )}
       </div>
     </article>
   );

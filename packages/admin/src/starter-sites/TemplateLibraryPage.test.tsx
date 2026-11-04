@@ -35,6 +35,14 @@ async function openBakery(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("the template library", () => {
+  it("offers no templates to use to someone who can't design, such as a client", async () => {
+    mockApi(() => undefined);
+    renderScreen(<TemplateLibraryPage />, { permissions: ["entries:read", "entries:create"] });
+
+    await screen.findByRole("heading", { level: 1, name: "Templates" });
+    expect(screen.queryByRole("button", { name: /Use this template/ })).not.toBeInTheDocument();
+  });
+
   it("lists the templates and adds one's pages, then links to the builder", async () => {
     const user = userEvent.setup();
     const { calls } = mockApi(({ method, url }) => {
@@ -106,7 +114,9 @@ describe("the template library", () => {
   it("only offers what the person may do", async () => {
     const user = userEvent.setup();
     mockApi(() => undefined);
-    renderScreen(<TemplateLibraryPage />, { permissions: ["entries:read", "entries:create"] });
+    renderScreen(<TemplateLibraryPage />, {
+      permissions: ["entries:read", "entries:create", "builder:design"],
+    });
     await user.click((await screen.findAllByRole("button", { name: /Use this template/ }))[0]!);
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).queryByRole("switch")).not.toBeInTheDocument();
@@ -183,7 +193,9 @@ describe("the template library", () => {
     it("keeps Replace from people who can't delete pages", async () => {
       const user = userEvent.setup();
       answer();
-      renderScreen(<TemplateLibraryPage />, { permissions: ["entries:read", "entries:create"] });
+      renderScreen(<TemplateLibraryPage />, {
+        permissions: ["entries:read", "entries:create", "builder:design"],
+      });
       const dialog = await openBakery(user);
       expect(await within(dialog).findByRole("radio", { name: /Replace my pages/ })).toBeDisabled();
     });
