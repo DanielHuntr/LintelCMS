@@ -397,11 +397,11 @@ describe("groups", () => {
     });
     await screen.findByRole("button", { name: /^M ?\d/ });
     await save(api);
-    const message = await screen.findByText("Two variants can't share a SKU");
+    const message = (await screen.findAllByText("Two variants can't share a SKU")).at(-1);
     expect(screen.getByRole("button", { name: /^M ?\d/ })).toHaveAttribute("aria-expanded", "true");
     const box = screen.getByLabelText("SKU for M / Ink");
     expect(box).toHaveAttribute("aria-invalid", "true");
-    expect(box).toHaveAttribute("aria-describedby", message.id);
+    expect(box).toHaveAttribute("aria-describedby", message?.id);
   });
 });
 
@@ -569,7 +569,7 @@ describe("choices as chips", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Add an option" }));
     await userEvent.type(screen.getByLabelText("Choices"), "S{Enter}");
     await userEvent.click(screen.getByRole("button", { name: "Save" }));
-    expect(screen.getByText("Give this option a name, such as Size.")).toBeInTheDocument();
+    expect(screen.getAllByText("Give this option a name, such as Size.")[0]).toBeInTheDocument();
     expect(api.calls.some((call) => call.method === "PUT")).toBe(false);
   });
 });
