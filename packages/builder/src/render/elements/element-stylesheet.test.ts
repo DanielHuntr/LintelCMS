@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { elementStylesheet } from "./element-stylesheet.js";
 
 describe("element stylesheet", () => {
+  it("leaves out an Arc carousel with no pictures (LINTEL-UX-326)", () => {
+    expect(elementStylesheet).toContain(".lintel-arc-carousel:empty { display: none !important; }");
+  });
+
   it("keeps links in a consent notice in the notice's text colour, underlined (LINTEL-A11Y-024)", () => {
     // A site's `a { color: … }` is one element selector; the notice's rule must outrank it,
     // or a dark site link colour sits on the black video notice at 2.65:1.
