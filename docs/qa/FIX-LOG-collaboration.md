@@ -56,6 +56,8 @@ An independent read of the finished code, before merging. Each was confirmed aga
 | LINTEL-UX-378 | P2       | A batch sent twice around a dropped connection could show a value the server didn't have; an unanswered one stuck on "Saving…"    | Duplicates are flagged and not applied again; no answer in 15 seconds sends it again            | test  |
 | LINTEL-UX-379 | P2       | A store that failed wasn't tried again, and a person gone mid-request could stay on the page for good                             | Stores retry, rooms wait for them, and a closed connection finishes nothing                     | test  |
 
+Running the tests on a real Postgres server found one more, which the built-in database's speed had hidden: the connection read the person's details before it started listening, so anything a browser said straight after opening was lost. It now listens first (part of LINTEL-UX-379).
+
 ## Checked in a browser
 
 | Check                                                             | Desktop light | Desktop dark | 390px light | 390px dark |
