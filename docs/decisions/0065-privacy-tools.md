@@ -67,10 +67,24 @@ about an entry stay, because that's how its reviews are found.
 
 ## Consequences
 
-- Upgrading switches on two rules, so old baskets and activity logs older than the limit go in the
-  first hourly run. The security log's "only ever added" rule no longer holds; its README says so.
+- On a new install two rules are on, so baskets and activity logs older than the limit go. The
+  security log's "only ever added" rule no longer holds; its README says so. Upgrades are different:
+  see the update below.
 - Backups can't be changed, so erased data stays in them until they're replaced, and a restore
   brings it back. Outside companies keep their own records. The confirmation and docs say both.
 - Messages an automation wrote into a notification, and text typed into pages, aren't searched.
 - The policy check only looks for words. It can miss things, and says so.
 - The add-on manifest key may meet the same key from another branch; the shape is what matters.
+
+## Update, 4 November 2026: upgrades wait for the owner
+
+This record first said upgrading switches on two rules, so old baskets and activity logs would go
+in the first hourly run. That deleted things nobody on the site had chosen to delete, and it can't
+be undone, so it is changed.
+
+- An install that already has users when migration 0037 runs gets every rule saved as off, with
+  `retentionNeedsChoice`. The hourly job does nothing while that is set.
+- Settings → Privacy and the Dashboard say so until the owner saves a choice: turning a rule on, or
+  saying to keep them off.
+- New installs keep the defaults above. Someone who had already saved the setting keeps it.
+- A backup from before the rules restores the same way, for the same reason.

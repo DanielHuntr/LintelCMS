@@ -20,6 +20,17 @@ Each destination publishes one site (`siteId`, the default site when null).
 Passwords and keys are sealed with the server's secret key (`src/secrets`) and never sent
 back; responses say only which are saved. Plain FTP works but every response warns about it.
 
+## Where publishing may go
+
+`destination-safety.ts`. A live site can't publish to a private or local address: FTP and SFTP
+hosts, an S3 endpoint and the website's address go through the same checks as webhooks and apps,
+on what a name resolves to, when saved and again at each publish. A site that is itself on a
+local address may use them, and so may a server with `WEBHOOKS_ALLOW_PRIVATE_ADDRESSES`.
+
+"Folder on this server" writes straight to the disk, so only Owners can add, change, test,
+publish to or delete one. It refuses Lintel's own folders, anything that holds them, and system
+locations.
+
 ## A publish
 
 `publish-runs.service.ts`, one at a time per destination:

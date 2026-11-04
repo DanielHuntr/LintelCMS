@@ -89,6 +89,20 @@ export function scopeNeededForEvent(event: WebhookEventName): AppScope {
   return scopeForEvent[event];
 }
 
+/** What the app's installer must be able to do for the app to be told about an event. */
+const permissionForEvent: Readonly<Record<WebhookEventName, Permission>> = {
+  "entry.published": "entries:read",
+  "entry.unpublished": "entries:read",
+  "entry.deleted": "entries:read",
+  "asset.uploaded": "media:read",
+  "asset.deleted": "media:read",
+  "form.submitted": "forms:read",
+};
+
+export function permissionNeededForEvent(event: WebhookEventName): Permission {
+  return permissionForEvent[event];
+}
+
 export function isAppScope(name: string): name is AppScope {
   return (appScopeNames as readonly string[]).includes(name);
 }

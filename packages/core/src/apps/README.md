@@ -30,7 +30,8 @@ developers start with the docs page "Building an app".
   installer, with only its scopes' permissions that the installer also has (`app-scopes.ts`),
   checked on every request. No scope reaches settings, users, roles, webhooks, apps or a
   page's design (`builder:design`), so apps are content-only, like API tokens. An app whose
-  installer is deactivated stops working, and stops being sent events. `read_orders` and `write_orders` map to the
+  installer is deactivated stops working, and stops being sent events. It is only sent an
+  event its installer may see (`app-events.ts`). `read_orders` and `write_orders` map to the
   narrow `commerce:read-orders` and `commerce:handle-orders`, which only the orders routes
   accept.
 - **Be limited**: `app-rate-limit.ts` counts each app's requests, 240 a minute by default
@@ -79,6 +80,7 @@ ask before each send to an app (`appsMayUseLoopback`), so switching it off appli
 | `app-development-mode.ts` | Apps on this computer, while someone builds one                          |
 | `app-credentials.ts`      | Making and recognising client ids and secrets                            |
 | `app-session-tokens.ts`   | Signing and verifying session tokens (`@lintel/core/app-session-tokens`) |
+| `app-events.ts`           | Which apps may be told about an event                                    |
 | `app-rate-limit.ts`       | Each app's requests a minute                                             |
 | `apps.schema.ts`          | Zod schemas for requests and responses                                   |
 | `apps.routes.ts`          | The endpoints                                                            |

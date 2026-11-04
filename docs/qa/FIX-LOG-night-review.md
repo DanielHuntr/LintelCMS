@@ -49,3 +49,28 @@ LINTEL-CODE-020, 021 and 024 share one commit.
 5. **The companion and `isTest`.** Orders collected from it are never marked as tests, even when paid with Stripe or Mollie test keys. No real sale is hidden, but test sales count in the figures.
 6. **`read_forms` beyond the installer.** The API cuts an app's scopes down to its installer's permissions; webhooks don't. An installer with `settings:update` but not `forms:read` could still give an app form entries through `form.submitted`. Only a custom role can be like that.
 7. **READMEs.** New folders without one: `packages/cli/src/apps`, `packages/cli/src/commands`, `packages/builder/src/editor`, `packages/builder/src/i18n`, `packages/builder-model/src/components`, `packages/core/src/publishing/remotes`, `packages/motion/src/effects/*`. Whether each counts as a feature folder is a judgement call, so none were added.
+
+## Decisions built (4 November 2026)
+
+Daniel's answers to the decisions above, built on the same branch. Each regression test was seen failing first, apart from the READMEs, which have none. The list above stays as it was written; this says what became of it.
+
+| ID              | Severity | Commit     | Decision | Change in one line                                                                                                                  |
+| --------------- | -------- | ---------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| LINTEL-CODE-030 | P2       | `848ea222` | 1        | A name search lists each record with its email, kind and date; export and erase act only on those ticked                            |
+| LINTEL-CODE-031 | P2       | `f60e394f` | New      | Find a person, export and erase reach what a published website keeps                                                                |
+| LINTEL-CODE-032 | P2       | `181c1bf9` | 2        | A live site can't publish to private addresses; a folder on the server is for Owners, and refuses Lintel's and the system's folders |
+| LINTEL-CODE-033 | P2       | `31418d78` | 3        | After an upgrade every retention rule stays off until the owner chooses, with a notice                                              |
+| LINTEL-CODE-034 | P2       | `82c90261` | 4        | The companion's private files are PHP that stops at once, and older ones are moved                                                  |
+| LINTEL-CODE-035 | P3       | `fd8a8e08` | 5        | Companion orders paid with test keys are marked as tests                                                                            |
+| LINTEL-CODE-036 | P3       | `efd065a5` | 6        | An app is only sent events its installer may see                                                                                    |
+| LINTEL-CODE-037 | P3       | `cb08b561` | 7        | READMEs for five feature folders                                                                                                    |
+
+What to know about them:
+
+- **LINTEL-CODE-030.** Given both an email and a name, the API uses the email and ignores the name. By name, export and erase answer 400 unless `selected` lists records. An add-on's hooks have to opt in with `choosesRecords`; one that hasn't can only take everything it found, and part of it ticked answers 409 before anything is done.
+- **LINTEL-CODE-031.** The holds kept for 30 days weren't covered, and nor were orders and form entries not yet collected. Each published website is now asked through the companion with signed requests. Form entries are deleted there; holds and paid orders stay without the person, because a hold still counts against stock and an order is still a sale. Lintel collects such an order with no customer and emails nobody, and the same goes for a checkout erased while it was open. A website that can't be reached is listed and reported, not skipped. Websites published before this need publishing again to gain the two new actions; until then they show as not reached.
+- **LINTEL-CODE-032.** The address check runs when a destination is saved, and again at each test and publish. A server with `WEBHOOKS_ALLOW_PRIVATE_ADDRESSES` may use private addresses, as apps may. Names are looked up just before connecting, so a name that changes in that moment isn't caught: FTP, SFTP and S3 can't be pinned to the address checked the way webhooks are. Scheduled and automatic publishes to a folder keep running after an Admin is refused, because only people's requests are checked.
+- **LINTEL-CODE-033.** Migration 0037 holds an install that has users when it runs. An install that had already saved the `privacy` setting keeps what it saved, and a backup from before the rules restores held too. Decision 0065 has a dated section.
+- **LINTEL-CODE-034.** Each file starts `<?php exit; __halt_compiler();`, so nothing a visitor typed below it can run, which was tested with a form answer holding PHP. This relies on the server running PHP for those files. An nginx set up to run only `lintel-bridge.php` would send them as plain files, so the guide says to keep its `lintel-private` rule. `config.php` has always had that limit.
+
+**In a browser** (API 4771, admin 4772, a fresh data folder; desktop light and dark, 390px light): the tick boxes, and the notices on the Dashboard, Privacy and How long data is kept, in screenshots/night-review. The search results and the notice flag were stood in for, because a fresh site has neither. Erase stays disabled until something is ticked, and nothing scrolls sideways. That check showed the notice's link looked like plain text, so it is underlined now; the screenshots are from before that.

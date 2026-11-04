@@ -1,6 +1,7 @@
 import { LoadError } from "../api/LoadError.js";
 import { describeError } from "../api/describeError.js";
 import { BackLink } from "../design/BackLink.js";
+import { Button } from "../design/Button.js";
 import { LargeTitle } from "../design/LargeTitle.js";
 import { LoadingRegion } from "../design/LoadingRegion.js";
 import { Page } from "../design/Page.js";
@@ -61,6 +62,16 @@ export function RetentionPage() {
         <p role="alert" className="mb-4 text-footnote text-danger">
           {describeError(update.error)}
         </p>
+      )}
+      {retention.data?.needsChoice && (
+        <div className="mb-4 flex flex-col items-start gap-3 rounded-card bg-warning/14 p-4">
+          <p role="status" className="text-body text-label">
+            {t("privacy.retention.upgradeNotice")}
+          </p>
+          <Button variant="tinted" disabled={update.isPending} onClick={() => update.mutate({})}>
+            {t("privacy.retention.keepOff")}
+          </Button>
+        </div>
       )}
       {retention.data && (
         <div className="flex flex-col gap-1.5">

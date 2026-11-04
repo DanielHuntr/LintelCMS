@@ -1,6 +1,9 @@
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { FastifyInstance } from "fastify";
+import { isLocalAddress } from "../commerce/payments/local-address.js";
 import { createSecretBox, loadSecretKey, type SecretBox } from "../secrets/secret-box.js";
+import type { DestinationRules } from "./destination-safety.js";
 import type { PublishingDependencies } from "./publishing.service.js";
 
 declare module "fastify" {
@@ -19,6 +22,7 @@ export interface PublishProgress {
 
 export interface PublishingContext extends PublishingDependencies {
   api: FastifyInstance;
+  destinationRules: () => DestinationRules;
   /** Where each target's exported files are kept between publishes. */
   exportsFolder: string;
   /** Publishes under way, by target id. */
@@ -35,6 +39,9 @@ export interface PublishingOptions {
   bridgeTesting?: { stripeApiBase?: string; mollieApiBase?: string };
 }
 
+/** Lintel's own program, whichever way it was installed. */
+const PROGRAM_FOLDER = fileURLToPath(new URL("../../../../", import.meta.url));
+
 export function createPublishingContext(
   server: FastifyInstance,
   options: PublishingOptions = {},
@@ -46,6 +53,12 @@ export function createPublishingContext(
       return server.database;
     },
     secretBox: () => (box ??= createSecretBox(loadSecretKey(server.lintelFolder))),
+    destinationRules: () => ({
+      allowPrivateAddresses:
+        isLocalAddress(server.publicApiUrl) ||
+        server.webhooks.sender.allowPrivateAddresses === true,
+      lintelFolders: [PROGRAM_FOLDER, dirname(server.lintelFolder.dataFolder)],
+    }),
     exportsFolder:
       options.exportsFolder ?? join(dirname(server.lintelFolder.dataFolder), "published"),
     running: new Map(),

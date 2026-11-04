@@ -18,6 +18,32 @@ export class PublishRunNotFoundError extends HttpError {
   }
 }
 
+export class PrivateDestinationError extends HttpError {
+  constructor(host: string) {
+    super(
+      400,
+      "PRIVATE_DESTINATION",
+      `${host} is a private or local address, so a live site can't publish there. Use the address your hosting gave you.`,
+    );
+  }
+}
+
+export class UnsafeFolderError extends HttpError {
+  constructor(folder: string, reason: string) {
+    super(400, "UNSAFE_FOLDER", `Lintel can't publish to ${folder}: ${reason}.`);
+  }
+}
+
+export class FolderDestinationNeedsOwnerError extends HttpError {
+  constructor() {
+    super(
+      403,
+      "FOLDER_DESTINATION_NEEDS_OWNER",
+      "Only an Owner can use a folder on this server, because it writes straight to the server's disk.",
+    );
+  }
+}
+
 export class PublishTargetIncompleteError extends HttpError {
   constructor(missing: string) {
     super(

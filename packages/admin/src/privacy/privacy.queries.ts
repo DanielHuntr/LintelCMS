@@ -28,8 +28,8 @@ export function usePrivacyRequests() {
   return useQuery({ queryKey: privacyKeys.requests(), queryFn: listPrivacyRequests });
 }
 
-export function useRetention() {
-  return useQuery({ queryKey: privacyKeys.retention(), queryFn: getRetention });
+export function useRetention({ enabled = true }: { enabled?: boolean } = {}) {
+  return useQuery({ queryKey: privacyKeys.retention(), queryFn: getRetention, enabled });
 }
 
 export function useUpdateRetention() {

@@ -12,7 +12,9 @@ depends on how it is run, and the admin says so. The reasoning is in
   data the site can hold, worked out from what it has. Lintel's own kinds are in
   `core-sources.ts`; plugins and add-ons add theirs by declaring it (below).
 - **Find a person** (`person-requests.service.ts`): search by email (exact, any case) or a
-  whole name; export everything as one .zip (`personal-data.json` and a CSV per kind,
+  whole name, never both at once: an email is who someone is. A name search lists each record
+  with its email, kind and date, and export and erase then act only on the records ticked,
+  because two people can share a name. Export everything as one .zip (`personal-data.json` and a CSV per kind,
   `personal-data-archive.ts`); erase it by each kind's rule. Every export and erasure is
   recorded in `privacy_requests`: who on the team did it and when, never who it was for.
 - **Retention rules** (`retention.service.ts`): how long each kind is kept. They run every
@@ -38,6 +40,7 @@ box is saved with the exact words shown, the time and the page.
 | Security log                   | Kept as a record; email, name, IP address, browser and details removed                 |
 | Webhook and automation history | Deleted, except automation runs still going                                            |
 | Admin accounts                 | Kept: people who use the admin are removed in Users. Invitations are deleted           |
+| Published websites             | Form entries deleted; checkouts and paid orders kept there without the person          |
 | Plugins/add-ons                | Whatever the plugin's `erase` hook does                                                |
 | Backups                        | Can't be changed; erased data leaves them as older backups are replaced                |
 
@@ -45,7 +48,17 @@ Orders also lose the email from their history (`shop_order_events`), and checkou
 redemptions are cleared with them. Outside companies keep their own records, and messages an
 automation wrote into a notification aren't searched; the admin and docs say so.
 
+A website published as files keeps details of its own until Lintel collects them, and holds a
+checkout's name, email and address for 30 days. The search asks each one through the companion
+(`src/bridge/bridge-personal-data.ts`). A website that can't be reached is listed as not
+searched, and erasing says it missed it.
+
 ## Retention defaults
+
+These are for new installs. A site that was already running when the rules arrived keeps
+everything until its owner chooses: migration 0037 saves every rule as off, with
+`retentionNeedsChoice`, and the Privacy screen and Dashboard say so until a choice is saved
+(turning a rule on, or keeping them off). A backup from before the rules restores the same way.
 
 | Rule              | Default        | Why                                                   |
 | ----------------- | -------------- | ----------------------------------------------------- |
@@ -69,25 +82,27 @@ columns that hold personal data, and the `find`, `export` and `erase` hooks. An 
 also declare its tables in the `lintel-addon` section of its package.json. A column marked
 `personalData: true` under `tables` counts too, so it only has to be said once. A plugin or add-on
 with tables but no hooks is listed as one that "can't be searched", so the owner knows to
-look there by hand. `packages/plugin-example-bookings` is the example.
+look there by hand. Hooks that honour `only` (the ids ticked after a name search) say so with
+`choosesRecords: true`; without it, a name search can only take everything the plugin found.
+`packages/plugin-example-bookings` is the example.
 
 ## Endpoints
 
 All need `privacy:manage` (Owners and Admins). People are looked up with POST so their email
 never appears in an address or a log.
 
-| Method and path               | Body                | Success                                              |
-| ----------------------------- | ------------------- | ---------------------------------------------------- |
-| `GET /privacy/map`            | none                | 200 `{ kinds }`                                      |
-| `POST /privacy/people/find`   | `{ email?, name? }` | 200 `{ found, notSearched }`                         |
-| `POST /privacy/people/export` | `{ email?, name? }` | 200, a .zip                                          |
-| `POST /privacy/people/erase`  | `{ email?, name? }` | 200 `{ parts }`                                      |
-| `GET /privacy/requests`       | none                | 200 `{ requests }`                                   |
-| `GET /privacy/retention`      | none                | 200 `{ rules }`                                      |
-| `PUT /privacy/retention`      | any rules           | 200 `{ rules }`                                      |
-| `GET /privacy/policy`         | none                | 200 `{ sections, draft, privacyPage, notMentioned }` |
-| `GET /privacy/processors`     | none                | 200 `{ detected, added }`                            |
-| `PUT /privacy/processors`     | `{ processors }`    | 200 `{ detected, added }`                            |
+| Method and path               | Body                                | Success                                              |
+| ----------------------------- | ----------------------------------- | ---------------------------------------------------- |
+| `GET /privacy/map`            | none                                | 200 `{ kinds }`                                      |
+| `POST /privacy/people/find`   | `{ email }` or `{ name }`           | 200 `{ found, notSearched }`                         |
+| `POST /privacy/people/export` | `{ email }` or `{ name, selected }` | 200, a .zip                                          |
+| `POST /privacy/people/erase`  | `{ email }` or `{ name, selected }` | 200 `{ parts }`                                      |
+| `GET /privacy/requests`       | none                                | 200 `{ requests }`                                   |
+| `GET /privacy/retention`      | none                                | 200 `{ rules }`                                      |
+| `PUT /privacy/retention`      | any rules                           | 200 `{ rules }`                                      |
+| `GET /privacy/policy`         | none                                | 200 `{ sections, draft, privacyPage, notMentioned }` |
+| `GET /privacy/processors`     | none                                | 200 `{ detected, added }`                            |
+| `PUT /privacy/processors`     | `{ processors }`                    | 200 `{ detected, added }`                            |
 
 ## Files
 

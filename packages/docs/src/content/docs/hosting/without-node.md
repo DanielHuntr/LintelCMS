@@ -129,6 +129,11 @@ in a `lintel-private` folder **beside** your website folder, where nobody can do
 them. If your host doesn't allow that, Lintel puts the folder inside your website and
 protects it so it can't be opened from a browser.
 
+Everything in that folder is a PHP file that stops on its first line, so a browser that
+reaches one gets an empty page, whichever web server your host uses. Files left by an older
+version change to this the next time your site is used. On nginx, keep the `lintel-private`
+rule below as well: it matters if PHP only runs for `lintel-bridge.php`.
+
 If Lintel's own address is reachable from the internet, you can choose **Straight to
 Lintel** for forms instead, and the PHP file isn't needed for them.
 

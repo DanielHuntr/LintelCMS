@@ -1,6 +1,7 @@
 import type { AddonDeclarations } from "../addons/addon-declarations.js";
 import { declarationsOf } from "../addons/addon-tables.js";
 import type { LoadedAddon } from "../addons/load-addons.js";
+import { type BridgeWebsite, bridgePersonalDataSource } from "../bridge/bridge-personal-data.js";
 import type { Database } from "../database/client.js";
 import type { FormsContext } from "../forms/forms-context.js";
 import type { LintelPlugin } from "../plugins/plugin-definition.js";
@@ -27,6 +28,8 @@ export interface PrivacyContext {
   addons: readonly LoadedAddon[];
   /** Deleting form entries also deletes the files sent with them (see src/forms). */
   forms: () => FormsContext;
+  /** Websites published as files, which keep details of their own (see src/bridge). */
+  bridgeWebsites?: () => Promise<BridgeWebsite[]>;
 }
 
 export interface PersonalDataSource {
@@ -50,6 +53,7 @@ const builtInIds: ReadonlySet<string> = new Set(pluginRegistry.map((plugin) => p
 export function listPersonalDataSources(context: PrivacyContext): PersonalDataSource[] {
   return [
     ...coreSources(context),
+    ...(context.bridgeWebsites ? [bridgePersonalDataSource(context.bridgeWebsites)] : []),
     ...context.plugins
       .filter((plugin) => !builtInIds.has(plugin.id))
       .flatMap((plugin) => {

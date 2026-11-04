@@ -7,6 +7,7 @@ import { Page } from "../design/Page.js";
 import { formatDate } from "../i18n/formatting.js";
 import { t } from "../i18n/strings.js";
 import { FindPerson } from "./FindPerson.js";
+import { RetentionChoiceNotice } from "./RetentionChoiceNotice.js";
 import type { PrivacyRequest } from "./privacy.api.js";
 import { usePrivacyRequests } from "./privacy.queries.js";
 
@@ -22,6 +23,7 @@ export function PrivacyPage() {
     <Page width="readable">
       <BackLink to="/settings">{t("nav.settings")}</BackLink>
       <LargeTitle title={t("privacy.title")} subtitle={t("privacy.subtitle")} />
+      <RetentionChoiceNotice />
       <div className="flex flex-col gap-8">
         <FindPerson />
         <GroupedList header={t("privacy.rows.header")}>

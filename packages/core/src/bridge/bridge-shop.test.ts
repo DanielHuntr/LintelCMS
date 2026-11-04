@@ -6,6 +6,7 @@ import { startTestShop, stockTheShop, type TestShop } from "../commerce/testing/
 import { startPublish } from "../publishing/publish-runs.service.js";
 import { findPublishTargetRow, readSecrets } from "../publishing/publishing.service.js";
 import { useTestDatabase } from "../testing/test-database.js";
+import { unguardPrivateFile } from "./bridge-files.js";
 import { openEnvelope } from "./bridge-signing.js";
 import { pullFromBridge } from "./bridge-pull.service.js";
 import type { ShopCatalogue } from "./shop-catalogue.service.js";
@@ -54,7 +55,7 @@ describe("the shop on a site published as files", { timeout: 120_000 }, () => {
   it("publishes even before the shop sells anywhere, leaving the shop out", async () => {
     await publishToFolder();
     expect(existsSync(join(folder, "public_html", "shop"))).toBe(false);
-    expect(existsSync(join(folder, "lintel-private", "catalogue.json"))).toBe(false);
+    expect(existsSync(join(folder, "lintel-private", "catalogue.php"))).toBe(false);
   });
 
   it("publishes product pages and a signed catalogue, and takes the companion's orders into Orders", async () => {
@@ -68,7 +69,7 @@ describe("the shop on a site published as files", { timeout: 120_000 }, () => {
     expect(existsSync(join(folder, "public_html", "shop", "basket", "index.html"))).toBe(true);
     const catalogue = openEnvelope(
       secret,
-      readFileSync(join(folder, "lintel-private", "catalogue.json"), "utf8"),
+      unguardPrivateFile(readFileSync(join(folder, "lintel-private", "catalogue.php"), "utf8")),
     ) as ShopCatalogue;
     const variant = catalogue.variants[stocked.variantId];
     expect(variant?.prices[stocked.market.id]).toBe(4500);

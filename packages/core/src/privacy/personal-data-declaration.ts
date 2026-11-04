@@ -58,9 +58,10 @@ export type PersonalDataTable = z.input<typeof personalDataTableSchema>;
 export type PersonalDataDeclaration = z.output<typeof personalDataDeclarationSchema>;
 
 /**
- * The person being looked for. At least one is given. Email is matched exactly (ignoring
- * case); a name is matched as a whole name (ignoring case and spaces at the ends), never a
- * part of one, so "Ann" never finds "Anne".
+ * The person being looked for: an email, or a name, never both. Email is who someone is, and
+ * is matched exactly (ignoring case). A name is matched as a whole name (ignoring case and
+ * spaces at the ends), never a part of one, so "Ann" never finds "Anne". Two people can share
+ * a name, so a name only finds records: exporting or erasing then goes by the ones ticked.
  */
 export interface PersonLookup {
   email: string | null;
@@ -72,6 +73,11 @@ export interface PersonalDataHookContext {
   database: DatabaseOrTransaction;
   tenantId: string;
   person: PersonLookup;
+  /**
+   * Set when someone ticked records after searching by name: the `id`s `find` gave them.
+   * Hooks with `choosesRecords` must then work on those alone.
+   */
+  only?: ReadonlySet<string>;
 }
 
 /** One thing found about the person, for the list in Privacy. */
@@ -80,6 +86,8 @@ export interface FoundPersonalData {
   id: string;
   /** A short, plain line the site owner recognises: "Booking on 3 Nov 2026 at 10:00". */
   summary: string;
+  /** The email on the record, so two people with one name can be told apart. */
+  email?: string | null;
   /** When it was made, as an ISO date, or null. */
   date: string | null;
 }
@@ -100,6 +108,11 @@ export interface PersonalDataHooks {
   /** Everything held about the person, as plain rows: each becomes a row of a CSV too. */
   export(context: PersonalDataHookContext): Promise<Record<string, unknown>[]>;
   erase(context: PersonalDataHookContext): Promise<PersonalDataErasure>;
+  /**
+   * True when the hooks honour `only`. Without it, a name search can only take everything this
+   * plugin found for the name, and is refused if some of that wasn't ticked.
+   */
+  choosesRecords?: boolean;
 }
 
 /** `personalData` in `definePlugin`: the declaration, and optionally the hooks. */

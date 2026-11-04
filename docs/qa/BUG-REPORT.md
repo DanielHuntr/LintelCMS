@@ -1010,3 +1010,18 @@ Fixed since they were reported above:
 - LINTEL-UX-157 is fixed by LINTEL-UX-272.
 - LINTEL-UX-158 is fixed by LINTEL-UX-275.
 - LINTEL-UX-159 is fixed by LINTEL-UX-274.
+
+## Decisions from the night's review, built (4 November 2026)
+
+Fixed on `fix/night-review`; `FIX-LOG-night-review.md` has the commits.
+
+| ID              | Severity | Status | Summary                                                                                                    |
+| --------------- | -------- | ------ | ---------------------------------------------------------------------------------------------------------- |
+| LINTEL-CODE-030 | P2       | Fixed  | Finding someone by name treated two people with one name as one, and erased both                           |
+| LINTEL-CODE-031 | P2       | Fixed  | Find a person and erase didn't reach what a published website keeps, such as a checkout's name and address |
+| LINTEL-CODE-032 | P2       | Fixed  | Publishing could reach private addresses, and any Admin could write to any folder on the server            |
+| LINTEL-CODE-033 | P2       | Fixed  | The first retention run after an upgrade deleted things the owner never chose to delete                    |
+| LINTEL-CODE-034 | P2       | Fixed  | The companion's private files relied on `.htaccess`, which Nginx ignores                                   |
+| LINTEL-CODE-035 | P3       | Fixed  | Companion orders paid with test keys counted as real sales                                                 |
+| LINTEL-CODE-036 | P3       | Fixed  | An app could be sent form entries its installer may not see                                                |
+| LINTEL-CODE-037 | P3       | Fixed  | Five feature folders had no README                                                                         |

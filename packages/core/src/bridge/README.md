@@ -9,14 +9,19 @@ hosting that only runs PHP. It is copied into `dist/bridge` at build time and up
 Its settings and everything it keeps live in `lintel-private`, beside the website when the
 host allows it and otherwise inside it, protected by `.htaccess` and `web.config`:
 
-| File             | Written by    | What it holds                                                            |
-| ---------------- | ------------- | ------------------------------------------------------------------------ |
-| `config.php`     | Lintel        | The shared secret, the site's address, Stripe and Mollie keys            |
-| `forms.json`     | Lintel        | Each form's questions, signed                                            |
-| `catalogue.json` | Lintel        | Prices per market, stock, shipping, tax, discount codes, signed          |
-| `data/`          | the companion | Submissions and paid orders waiting for Lintel, stock holds, used nonces |
+| File            | Written by    | What it holds                                                            |
+| --------------- | ------------- | ------------------------------------------------------------------------ |
+| `config.php`    | Lintel        | The shared secret, the site's address, Stripe and Mollie keys            |
+| `forms.php`     | Lintel        | Each form's questions, signed                                            |
+| `catalogue.php` | Lintel        | Prices per market, stock, shipping, tax, discount codes, signed          |
+| `data/`         | the companion | Submissions and paid orders waiting for Lintel, stock holds, used nonces |
 
 Keys never go into the website's own files.
+
+`.htaccess` and `web.config` are only a second layer, because Nginx reads neither. Everything
+private is a `.php` file starting with `<?php exit; __halt_compiler();`, so a browser that
+reaches one gets an empty page on any server, and nothing a visitor typed can run. The
+companion moves `.json` files left by an older version behind that line on its next request.
 
 ## Forms
 
@@ -46,9 +51,19 @@ recorded: a hold stops counting against stock after 35 minutes, and its details 
 days so the order can be made. Stripe's `…async_payment_succeeded` counts as paid too, so add it
 to the webhook's events.
 
+Orders paid with test keys are marked as tests in Orders, from Stripe's `livemode` or Mollie's
+`mode`. When the provider doesn't say, the order counts as a real sale.
+
 Stock and discount codes sync each time Lintel publishes or collects: an order counts
 against the published stock until a catalogue made after Lintel collected it arrives.
 Buy-X-get-Y codes and automatic discounts only work in Lintel's own checkout.
+
+## People's details
+
+Settings → Privacy asks the companion what it holds about someone (`privacy-find`) and erases
+it (`privacy-erase`), with signed requests. Form entries are deleted. A checkout's hold and a
+paid order stay without the person, because the hold still counts against stock and the order
+is still a sale; Lintel collects such an order with no customer and emails nobody.
 
 ## Signing
 
@@ -64,6 +79,7 @@ and any nonce it has seen.
 | `bridge-signing.ts`         | Signed files and signed requests                         |
 | `bridge-publish.service.ts` | What a publish adds for forms and the shop               |
 | `bridge-pull.service.ts`    | Collecting submissions and orders                        |
+| `bridge-personal-data.ts`   | Find a person, export and erase on the website           |
 | `shop-catalogue.service.ts` | The signed catalogue                                     |
 | `shop-pages.ts`             | The shop's pages and the basket script                   |
 | `bridge.test.ts`            | The companion under PHP's own web server                 |
