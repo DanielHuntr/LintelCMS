@@ -891,6 +891,7 @@ Found while building six new starter sites; see "Starter sites: six more (batch 
 | LINTEL-UX-157 | P3       | Open   | The theme's soft grey is 4.25 to 4.43:1 on tinted paper in light mode: clock place names, table headings and form hints            |
 | LINTEL-UX-158 | P3       | Open   | A template footer with a clock zone not on the list is silently replaced by the standard footer; Melbourne isn't listed            |
 | LINTEL-UX-159 | P3       | Open   | Older templates fail the new checks: Atelier skips a heading level, Magazine lacks alt text, three keep header or footer in a page |
+
 ## Static publishing and deploy recipes (3 November 2026)
 
 | ID            | Severity | Status | Defect                                                                                                                                              |
@@ -902,6 +903,7 @@ Found while building six new starter sites; see "Starter sites: six more (batch 
 | LINTEL-UX-124 | P2       | Fixed  | Forms on the website drawn from Form sections posted to the API's own address, not the website's                                                    |
 | LINTEL-UX-125 | P2       | Fixed  | Timed jobs added since the cron request was written (backups, update checks, visitor counts) wouldn't have run from cron                            |
 | LINTEL-UX-126 | P3       | Fixed  | A message from the PHP companion isn't shown under a builder form, and only the last ticked box of a question reaches it                            |
+
 ## External apps (3 November 2026)
 
 Found while joining external apps to the release branch and checking Build → Apps in a browser. All fixed on `feature/external-apps`; see "External apps" in `FIX-LOG-ux.md`.
