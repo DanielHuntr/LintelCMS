@@ -3,7 +3,7 @@ import { collectionsTable as collectionsDefinition } from "../collections/collec
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { entriesTable as entriesDefinition } from "../entries/entries.table.js";
 import { sitesTable as sitesDefinition } from "../sites/sites.table.js";
-import { jsonText } from "../database/dialect/expressions.js";
+import { jsonText, orderNewestFirst } from "../database/dialect/expressions.js";
 import { jsonKeyListIncludes } from "../database/dialect/json-expressions.js";
 import { tableFor } from "../database/dialect/mysql-tables.js";
 
@@ -86,7 +86,7 @@ export async function listPublishedEntries(
     .where(publishedIn(database, filter))
     .orderBy(
       ...(newestFirst
-        ? [desc(entriesTable.publishedAt), desc(entriesTable.createdAt)]
+        ? [orderNewestFirst(database, entriesTable.publishedAt), desc(entriesTable.createdAt)]
         : [asc(entriesTable.sortOrder), asc(entriesTable.createdAt)]),
     )
     .limit(page.limit)

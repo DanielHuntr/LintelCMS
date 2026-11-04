@@ -287,6 +287,14 @@ function invalid(message: string): DescribedDatabaseError {
 }
 
 /**
+ * MySQL keeps text used in a key to a fixed length, 255 characters unless
+ * `mysql-tables.ts` says otherwise. Postgres has no such limit, so this can't happen there.
+ */
+export function isValueTooLong(error: unknown): boolean {
+  return findErrorCode(error) === "ER_DATA_TOO_LONG";
+}
+
+/**
  * True when a write broke a unique index, optionally a particular one. Services use it to
  * turn a lost race ("someone took that handle a moment ago") into a plain message.
  */

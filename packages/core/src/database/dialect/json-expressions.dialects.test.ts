@@ -266,6 +266,35 @@ describeOnEveryDatabase("Locks until a transaction ends", (handle) => {
   });
 });
 
+describeOnEveryDatabase("Deadlocks", (handle) => {
+  it.skipIf(handle.name === "built-in")("tries again when MySQL undoes a transaction", async () => {
+    const { database } = handle;
+    const entries = tableFor(database, entriesTable);
+    const first = await addTestEntry(database, { slug: "first" });
+    const second = await addTestEntry(database, { slug: "second" });
+    let attempts = 0;
+    let bothHoldOne: () => void = () => {};
+    let holding = 0;
+    const together = new Promise<void>((resolve) => {
+      bothHoldOne = resolve;
+    });
+
+    /** Takes one row, waits for the other side to do the same, then wants the other row. */
+    const crossing = (mine: string, theirs: string) =>
+      database.transaction(async (transaction) => {
+        attempts += 1;
+        await transaction.update(entries).set({ sortOrder: 1 }).where(eq(entries.id, mine));
+        holding += 1;
+        if (holding === 2) bothHoldOne();
+        await together;
+        await transaction.update(entries).set({ sortOrder: 2 }).where(eq(entries.id, theirs));
+      });
+
+    await Promise.all([crossing(first.id, second.id), crossing(second.id, first.id)]);
+    expect(attempts).toBe(3);
+  });
+});
+
 describeOnEveryDatabase("Raw queries", (handle) => {
   it("reads rows the same way on each driver", async () => {
     const { database } = handle;

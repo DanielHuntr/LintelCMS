@@ -1,4 +1,4 @@
-import { type SQL, type SQLWrapper, ilike, sql } from "drizzle-orm";
+import { type SQL, type SQLWrapper, desc, ilike, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../client.js";
 import { dialectOf } from "./database-dialect.js";
 
@@ -111,6 +111,13 @@ export function orderNullsLast(
   return dialectOf(database) === "postgres"
     ? sql`${expression} ${order} nulls last`
     : sql`${expression} is null, ${expression} ${order}`;
+}
+
+/** Descending, with nulls first as Postgres has them. MySQL puts them last. */
+export function orderNewestFirst(database: DatabaseOrTransaction, column: SQLWrapper): SQL {
+  return dialectOf(database) === "postgres"
+    ? desc(column)
+    : sql`${column} is null desc, ${column} desc`;
 }
 
 /** The UTC day of a timestamp, as "2026-11-04". */
