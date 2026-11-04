@@ -16,6 +16,7 @@ A first-time website maker's journeys, walked on a fresh install in real Chromiu
 | LINTEL-UX-306   | P2       | `62cdc88f`             | The canvas scrolls to what Insert adds                                                                           |
 | LINTEL-FUNC-036 | P2       | `4b117c61`             | A destination shows as published when the publish ends; its dates match the rest of the admin                    |
 | LINTEL-UX-304   | P2       | `88279843`             | "Market" is now "Where you sell" and "region" in the shop's screens, messages and guides; the API keeps its name |
+| LINTEL-UX-315   | P2       | `a73763c2`             | Back from a failed payment, the shopper's email and address are still there (`after-failed-payment.png`)         |
 | LINTEL-UX-300   | P3       | `3c3e37b7`             | The template dialog no longer promises to keep pages while replacing them                                        |
 | LINTEL-UX-301   | P3       | `3c3e37b7`             | "djs" is "DJs" again on the Longplay card                                                                        |
 | LINTEL-UX-303   | P3       | `e348b12f`             | The Make a component dialog doesn't show a colour's code                                                         |
@@ -42,7 +43,7 @@ A first-time website maker's journeys, walked on a fresh install in real Chromiu
 
 **Before:** after Choose delivery the only rate was ticked, but the total stayed at £24.00 until the payment page said £27.95.
 
-**After:** the ticked rate is sent as soon as rates are offered, and again whenever the choice changes. Browser run: `Subtotal £72.00 Delivery £3.95 Total £75.95` before Pay now.
+**After:** the ticked rate is sent as soon as rates are offered, and again whenever the choice changes. Browser run on a fresh basket, with the site's script rebuilt: `Subtotal £24.00, Delivery £3.95, Total £27.95` before Pay now (`after-basket-total.png`).
 
 **Tests:** `cart-views.test.ts`.
 
