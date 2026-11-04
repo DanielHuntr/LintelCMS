@@ -20,7 +20,7 @@ export function RetentionChoiceNotice() {
       <TriangleAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-warning" />
       <span>
         {t("privacy.retention.upgradeNotice")}{" "}
-        <Link to="/settings/privacy/retention" className="text-accent hover:underline">
+        <Link to="/settings/privacy/retention" className="text-accent underline">
           {t("privacy.retention.upgradeLink")}
         </Link>
       </span>

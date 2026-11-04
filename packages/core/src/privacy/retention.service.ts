@@ -60,10 +60,6 @@ const ruleKinds: Record<RetentionRuleId, { kinds: RetainedKind[]; pluginId: stri
   orders: { kinds: [retainedKinds.orders, retainedKinds.archivedOrders], pluginId: "commerce" },
 };
 
-export async function readRetentionRules(database: DatabaseOrTransaction): Promise<RetentionRules> {
-  return (await readSetting(database, "privacy")).retention;
-}
-
 export async function updateRetentionRules(
   database: DatabaseOrTransaction,
   changes: Partial<RetentionRules>,
