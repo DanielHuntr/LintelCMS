@@ -21,7 +21,7 @@ const lightPalette: Palette = {
   background: "#ffffff",
   surface: "#f5f5f7",
   text: "#1d1d1f",
-  textSecondary: "#6e6e73",
+  textSecondary: "#646469",
   border: "#d2d2d7",
 };
 
