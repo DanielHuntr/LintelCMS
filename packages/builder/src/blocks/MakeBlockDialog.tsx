@@ -290,7 +290,7 @@ function CandidateRow({
   const now =
     candidate.kind === "items"
       ? text("pageBuilder.blocks.listNow", { count: candidate.currentValue })
-      : candidate.currentValue
+      : readableValue(candidate.currentValue)
         ? text("pageBuilder.blocks.partNow", { value: shorten(candidate.currentValue) })
         : "";
   return (
@@ -357,6 +357,11 @@ function groupByElement(
     groups.set(candidate.nodeId, group);
   }
   return [...groups.values()].map((group) => [group.name, group.parts]);
+}
+
+/** A colour from the site's styles is stored as code, which means nothing to an editor. */
+export function readableValue(value: string): boolean {
+  return value !== "" && !value.startsWith("var(");
 }
 
 function shorten(value: string): string {

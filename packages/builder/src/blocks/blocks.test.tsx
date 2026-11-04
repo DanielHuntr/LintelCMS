@@ -13,6 +13,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { PageBuilder } from "../PageBuilder.js";
+import { readableValue } from "./MakeBlockDialog.js";
 import { createMemoryPreferenceStore } from "../preferences/builder-preferences.js";
 import { renderPage } from "../render/render-page.js";
 import { standardRegistry } from "../render/stand-in-components.js";
@@ -239,5 +240,13 @@ describe("the site's blocks in the builder", () => {
       { path: "name", label: "Name", kind: "text" },
       { path: "role", label: "Role", kind: "text" },
     ]);
+  });
+});
+
+describe("what a part holds now, in the Make a component dialog", () => {
+  it("leaves out a colour stored as code (LINTEL-UX-303)", () => {
+    expect(readableValue("var(--lintel-color-border)")).toBe(false);
+    expect(readableValue("")).toBe(false);
+    expect(readableValue("Four things to know")).toBe(true);
   });
 });
