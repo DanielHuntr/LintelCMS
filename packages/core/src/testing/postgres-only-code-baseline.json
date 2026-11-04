@@ -10,9 +10,6 @@
     "returning": 1,
     "upsert": 1
   },
-  "apps/apps.repository.ts": {
-    "returning": 2
-  },
   "backups/backups.repository.ts": {
     "returning": 1
   },
@@ -159,10 +156,6 @@
     "returning": 1,
     "upsert": 2
   },
-  "forms/forms.repository.ts": {
-    "filter clause": 1,
-    "returning": 1
-  },
   "forms/submissions.repository.ts": {
     "advisory lock": 1,
     "cast with ::": 4,
@@ -177,10 +170,6 @@
   },
   "importers/site-import.repository.ts": {
     "cast with ::": 1,
-    "returning": 2,
-    "upsert": 1
-  },
-  "invitations/invitations.repository.ts": {
     "returning": 2,
     "upsert": 1
   },

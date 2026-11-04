@@ -31,4 +31,7 @@ export const mysqlPortedRepositories = [
   "commerce/sales/sales.repository.ts",
   "commerce/markets/markets.repository.ts",
   "commerce/settings/shop-settings.repository.ts",
+  "forms/forms.repository.ts",
+  "invitations/invitations.repository.ts",
+  "apps/apps.repository.ts",
 ];
