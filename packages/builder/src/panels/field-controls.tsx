@@ -115,6 +115,7 @@ export function FieldControl({
           label={field.label}
           value={String(value ?? "")}
           accept={field.accept}
+          pickImage={pickImage}
           onChange={(address) => onChange(address)}
         />
       );

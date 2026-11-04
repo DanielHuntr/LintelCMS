@@ -1,5 +1,5 @@
 import { Box, ImagePlus, Images, Search, Upload, X } from "lucide-react";
-import { useId, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { Button } from "../design/Button.js";
 import { EmptyState } from "../design/EmptyState.js";
 import { TextField } from "../design/TextField.js";
@@ -23,8 +23,10 @@ interface MediaPickerDialogProps {
   currentAssetId: string | null;
   onChoose: (assetId: string) => void;
   onClose: () => void;
-  /** What to choose: a picture (the default) or a 3D model for the 3D model element. */
-  kind?: "picture" | "model";
+  /** What to choose: a picture (the default), a 3D model, or a Lottie or Rive animation. */
+  kind?: "picture" | "model" | "animation";
+  /** For an animation, the file types the element plays: [".json", ".lottie"]. */
+  accept?: readonly string[];
 }
 
 /**
@@ -37,20 +39,30 @@ export function MediaPickerDialog({
   onChoose,
   onClose,
   kind = "picture",
+  accept = [],
 }: MediaPickerDialogProps) {
   const isModel = kind === "model";
+  const isAnimation = kind === "animation";
+  const extensions = useMemo(
+    () => accept.map((extension) => extension.replace(".", "").toLowerCase()),
+    [accept],
+  );
   const titleId = useId();
   const fileInput = useRef<HTMLInputElement>(null);
   const dropArea = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState("");
   const [isFindingFreePhotos, setIsFindingFreePhotos] = useState(false);
-  const canAddFreePhotos = useCanAddFreePhotos() && !isModel;
+  const canAddFreePhotos = useCanAddFreePhotos() && kind === "picture";
   const debouncedSearch = useDebouncedValue(search, 250);
-  const images = useAssetList(debouncedSearch, isModel ? "model" : "image");
+  const images = useAssetList(
+    debouncedSearch,
+    isAnimation ? "animation" : isModel ? "model" : "image",
+  );
   const refreshLists = useRefreshAssetLists();
   const uploads = useUploadQueue({
-    imagesOnly: !isModel,
+    imagesOnly: kind === "picture",
     modelsOnly: isModel,
+    ...(isAnimation && { extensions }),
     onUploaded: (asset) => {
       void refreshLists();
       onChoose(asset.id);
@@ -58,7 +70,11 @@ export function MediaPickerDialog({
   });
   const isDraggingFiles = useFileDrop(uploads.addFiles, { target: dropArea });
   usePasteFiles(uploads.addFiles, { enabled: !isFindingFreePhotos });
-  const assets = images.data?.pages.flatMap((page) => page.assets) ?? [];
+  const assets = (images.data?.pages.flatMap((page) => page.assets) ?? []).filter(
+    (asset) =>
+      !isAnimation || extensions.includes(asset.filename.split(".").pop()?.toLowerCase() ?? ""),
+  );
+  const words = isAnimation ? "animation" : isModel ? "model" : null;
   const visibleUploads = uploads.items.filter((item) => item.status !== "done");
 
   return (
@@ -67,7 +83,7 @@ export function MediaPickerDialog({
         <header className="flex shrink-0 items-start gap-4 px-6 pt-5 pb-4">
           <div className="min-w-0 flex-1">
             <h2 id={titleId} className="text-title text-label">
-              {t(isModel ? "media.picker.model.dialogTitle" : "media.picker.dialogTitle")}
+              {t(words ? `media.picker.${words}.dialogTitle` : "media.picker.dialogTitle")}
             </h2>
             <p className="truncate text-footnote text-label-secondary">{fieldLabel}</p>
           </div>
@@ -118,7 +134,9 @@ export function MediaPickerDialog({
           <input
             ref={fileInput}
             type="file"
-            accept={isModel ? acceptedModelTypes : acceptedImageTypes}
+            accept={
+              isAnimation ? accept.join(",") : isModel ? acceptedModelTypes : acceptedImageTypes
+            }
             className="hidden"
             tabIndex={-1}
             aria-hidden="true"
@@ -141,18 +159,18 @@ export function MediaPickerDialog({
           ) : assets.length === 0 ? (
             <EmptyState
               size="page"
-              icon={debouncedSearch.trim() ? Search : isModel ? Box : ImagePlus}
+              icon={debouncedSearch.trim() ? Search : words ? Box : ImagePlus}
               title={
                 debouncedSearch.trim()
                   ? t("media.noResults.title")
-                  : t(isModel ? "media.picker.model.empty.title" : "media.picker.empty.title")
+                  : t(words ? `media.picker.${words}.empty.title` : "media.picker.empty.title")
               }
               description={
                 debouncedSearch.trim()
                   ? t("media.noResults.description", { search: debouncedSearch.trim() })
                   : t(
-                      isModel
-                        ? "media.picker.model.empty.description"
+                      words
+                        ? `media.picker.${words}.empty.description`
                         : "media.picker.empty.description",
                     )
               }
@@ -161,7 +179,7 @@ export function MediaPickerDialog({
             <>
               <AssetGrid
                 assets={assets}
-                label={t(isModel ? "media.picker.model.gridLabel" : "media.picker.gridLabel")}
+                label={t(words ? `media.picker.${words}.gridLabel` : "media.picker.gridLabel")}
                 currentAssetId={currentAssetId}
                 onActivate={(asset) => onChoose(asset.id)}
               />

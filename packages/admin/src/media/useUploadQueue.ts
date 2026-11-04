@@ -21,6 +21,8 @@ interface UploadQueueOptions {
   imagesOnly?: boolean;
   /** Only 3D models (.glb and .gltf), for the 3D model element. */
   modelsOnly?: boolean;
+  /** Only these file types ("json", "riv"), for an element that plays one kind of file. */
+  extensions?: readonly string[];
   /** Swapped in tests; the real one sends the file to the API. */
   upload?: typeof uploadAsset;
 }
@@ -34,6 +36,7 @@ export function useUploadQueue({
   onUploaded,
   imagesOnly = false,
   modelsOnly = false,
+  extensions,
   upload = uploadAsset,
 }: UploadQueueOptions = {}) {
   const [items, setItems] = useState<UploadItem[]>([]);
@@ -54,7 +57,11 @@ export function useUploadQueue({
     (files: readonly File[]) => {
       const added = files.map((file) => {
         nextKey.current += 1;
-        const problem = findUploadProblem(file, { imagesOnly, modelsOnly });
+        const problem = findUploadProblem(file, {
+          imagesOnly,
+          modelsOnly,
+          ...(extensions && { extensions }),
+        });
         const item: UploadItem = {
           key: `upload-${nextKey.current}`,
           name: file.name,
@@ -78,7 +85,7 @@ export function useUploadQueue({
           );
       }
     },
-    [imagesOnly, modelsOnly, updateItem, upload],
+    [imagesOnly, modelsOnly, extensions, updateItem, upload],
   );
 
   const dismiss = useCallback((key: string) => {

@@ -315,6 +315,7 @@ function ContentField({
             label={field.label}
             value={String(value ?? "")}
             accept={field.accept}
+            pickImage={pickImage}
             onChange={(address, assetId) =>
               onChange({ [field.prop]: address, assetId }, field.label)
             }

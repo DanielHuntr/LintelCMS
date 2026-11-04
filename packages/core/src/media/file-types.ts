@@ -66,6 +66,11 @@ const allowedFileTypes = [
 export type AllowedMimeType = (typeof allowedFileTypes)[number]["mimeType"];
 
 /** 3D models: .glb files (a .gltf is packed into one as it is uploaded). */
+/** Files for the Lottie and Rive elements. */
+export const animationMimeTypes: readonly string[] = allowedFileTypes
+  .filter((type) => type.kind === "animation")
+  .map((type) => type.mimeType);
+
 export function isModelMimeType(mimeType: string): boolean {
   return mimeType.startsWith("model/");
 }

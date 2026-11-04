@@ -531,6 +531,7 @@ export function useImagePicker() {
       fieldLabel={request.label}
       currentAssetId={request.currentAssetId}
       kind={request.kind}
+      {...(request.accept && { accept: request.accept })}
       onClose={() => finish(null)}
       onChoose={async (assetId) => {
         const asset = await getAsset(assetId).catch(() => null);

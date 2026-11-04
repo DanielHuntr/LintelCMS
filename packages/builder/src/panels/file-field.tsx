@@ -1,7 +1,8 @@
-import { Film, RotateCcw } from "lucide-react";
+import { Film, FolderOpen, RotateCcw } from "lucide-react";
 import { createContext, useContext, useId, useState } from "react";
 import { useBuilderText } from "../i18n/builder-text.js";
 import type { FileUploader } from "../style-panel/design-tools.js";
+import type { ImagePicker } from "./content-fields.js";
 import { inputClassName, Labelled } from "../ui/controls.js";
 
 /**
@@ -40,11 +41,14 @@ export function FileField({
   label,
   value,
   accept,
+  pickImage,
   onChange,
 }: {
   label: string;
   value: string;
   accept: readonly string[];
+  /** Opens the media library, for a file that's already there. */
+  pickImage?: ImagePicker | undefined;
   /** The address, and the media library's id when the file was uploaded here. */
   onChange: (value: string, assetId: string) => void;
 }) {
@@ -93,6 +97,27 @@ export function FileField({
                 : text("pageBuilder.file.fromLibrary")}
           </p>
           <div className="flex flex-wrap gap-1.5">
+            {pickImage && (
+              <button
+                type="button"
+                onClick={async () => {
+                  const picked = await pickImage({
+                    label,
+                    currentAssetId: null,
+                    kind: "animation",
+                    accept,
+                  });
+                  if (!picked) return;
+                  setProblem(null);
+                  setAddress(picked.src);
+                  onChange(picked.src, picked.assetId ?? "");
+                }}
+                className="flex h-8 items-center gap-1.5 rounded-control bg-fill px-2.5 text-footnote font-medium text-accent hover:bg-fill-strong focus-visible:focus-ring"
+              >
+                <FolderOpen aria-hidden="true" className="size-4" />
+                {text("pageBuilder.file.chooseFromMedia")}
+              </button>
+            )}
             {uploadFile && (
               <label
                 htmlFor={inputId}

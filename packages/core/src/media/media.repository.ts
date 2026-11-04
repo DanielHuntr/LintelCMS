@@ -12,6 +12,7 @@ import {
   type SQL,
   sql,
 } from "drizzle-orm";
+import { animationMimeTypes } from "./file-types.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { usersTable } from "../users/users.table.js";
 import { type AssetRow, assetsTable, type NewAssetRow } from "./media.table.js";
@@ -167,6 +168,9 @@ function listConditions(filter: AssetListFilter): SQL[] {
   }
   if (filter.kind === "model") {
     conditions.push(ilike(assetsTable.mimeType, "model/%"));
+  }
+  if (filter.kind === "animation") {
+    conditions.push(inArray(assetsTable.mimeType, [...animationMimeTypes]));
   }
   if (filter.missingAlt) {
     conditions.push(ilike(assetsTable.mimeType, "image/%"), sql`trim(${assetsTable.alt}) = ''`);

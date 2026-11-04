@@ -1,9 +1,15 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { readdir } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { useTestDatabase } from "../testing/test-database.js";
 import { makeTestPng, TEST_API_URL, useMediaTestServer } from "../testing/test-media.js";
 import { createTestUser, signInAndGetCookies } from "../testing/test-users.js";
 import { createAssetLookup } from "./asset-lookup.js";
+
+const sampleRive = fileURLToPath(
+  new URL("../../../motion/samples/sample-orbit.riv", import.meta.url),
+);
 
 describe("the media library", () => {
   const testDatabase = useTestDatabase();
@@ -20,6 +26,18 @@ describe("the media library", () => {
       credit: string;
     };
   }
+
+  it("lists the files the Lottie and Rive elements can play (LINTEL-UX-319)", async () => {
+    await uploadImage("beach.png", 1);
+    await media.upload("menu.csv", Buffer.from("dish,price\n"));
+    await media.upload("orbit.riv", readFileSync(sampleRive));
+
+    const animations = await request("GET", "/media?type=animation");
+
+    expect(animations.json().assets.map((asset: { filename: string }) => asset.filename)).toEqual([
+      "orbit.riv",
+    ]);
+  });
 
   it("lists newest first, with search and a type filter", async () => {
     await uploadImage("beach.png", 1);

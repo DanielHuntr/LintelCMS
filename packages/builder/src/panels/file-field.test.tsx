@@ -75,6 +75,27 @@ describe("the animation file field", () => {
     expect(screen.getByRole("alert").textContent).toContain(".json or .lottie");
   });
 
+  it("chooses a file already in Media (LINTEL-UX-319)", async () => {
+    const pickImage = vi.fn(async () => ({ src: "/media/hop.json", alt: "", assetId: "a1" }));
+    const onChange = vi.fn();
+    render(
+      <FileField
+        label="Animation file"
+        value=""
+        accept={[".json", ".lottie"]}
+        pickImage={pickImage}
+        onChange={onChange}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Choose from Media" }));
+
+    expect(pickImage).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "animation", accept: [".json", ".lottie"] }),
+    );
+    expect(onChange).toHaveBeenCalledWith("/media/hop.json", "a1");
+  });
+
   it("takes a typed address, but only a safe one", async () => {
     render(<Field uploader={null} />);
     expect(screen.queryByLabelText("Upload a file")).toBeNull();

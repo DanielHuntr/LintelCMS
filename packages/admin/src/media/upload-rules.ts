@@ -45,14 +45,16 @@ export const acceptedModelTypes = modelExtensions.map((extension) => `.${extensi
 /** Why this file can't be uploaded, in words for the person, or undefined when it's fine. */
 export function findUploadProblem(
   file: Pick<File, "name" | "size">,
-  options: { imagesOnly?: boolean; modelsOnly?: boolean } = {},
+  options: { imagesOnly?: boolean; modelsOnly?: boolean; extensions?: readonly string[] } = {},
 ): string | undefined {
   const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
-  const allowed: readonly string[] = options.imagesOnly
-    ? imageExtensions
-    : options.modelsOnly
-      ? modelExtensions
-      : allowedExtensions;
+  const allowed: readonly string[] =
+    options.extensions ??
+    (options.imagesOnly
+      ? imageExtensions
+      : options.modelsOnly
+        ? modelExtensions
+        : allowedExtensions);
 
   if (!file.name.includes(".") || !allowed.includes(extension)) {
     return options.modelsOnly

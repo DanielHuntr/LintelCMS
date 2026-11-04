@@ -3,6 +3,7 @@
  * to pick their animation. Part of `builderStrings`.
  */
 export const builderCreativeStrings = {
+  "pageBuilder.file.chooseFromMedia": "Choose from Media",
   "pageBuilder.file.upload": "Upload a file",
   "pageBuilder.file.change": "Upload a different file",
   "pageBuilder.file.uploading": "Uploading…",

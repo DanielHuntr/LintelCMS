@@ -4,7 +4,7 @@ import { photoCreditSchema } from "./photo-credit.js";
 /** The largest width or height a transform may ask for, so one request can't exhaust memory. */
 export const MAX_TRANSFORM_DIMENSION = 4000;
 
-export const assetKinds = ["image", "document", "model"] as const;
+export const assetKinds = ["image", "document", "model", "animation"] as const;
 export const transformFormats = ["webp", "avif", "jpeg", "png"] as const;
 
 /** Query strings send `?search=` for "no search"; treat an empty value as left out. */
@@ -46,7 +46,7 @@ export const SHARED_FOLDER = "shared";
 export const listAssetsQuerySchema = z.object({
   search: optionalQueryValue(z.string().trim().max(200)),
   type: optionalQueryValue(
-    z.enum(assetKinds, { error: 'The type should be "image", "document" or "model"' }),
+    z.enum(assetKinds, { error: 'The type should be "image", "document", "model" or "animation"' }),
   ),
   page: optionalQueryValue(z.coerce.number().int().min(1)).transform((page) => page ?? 1),
   perPage: optionalQueryValue(z.coerce.number().int().min(1).max(100)).transform(
