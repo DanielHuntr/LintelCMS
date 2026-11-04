@@ -6,7 +6,7 @@ export class CountryInAnotherMarketError extends HttpError {
     super(
       409,
       "COUNTRY_IN_ANOTHER_MARKET",
-      `${countryName(country)} is already in the ${marketName} market. A country can only be in one market.`,
+      `${countryName(country)} is already in ${marketName}. A country can only be in one region.`,
       { fields: { countries: `${countryName(country)} is already in ${marketName}` } },
     );
   }
