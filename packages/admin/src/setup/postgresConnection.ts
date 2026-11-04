@@ -1,5 +1,5 @@
 import { t } from "../i18n/strings.js";
-import type { PostgresConnection } from "./setup.api.js";
+import type { DatabaseKind, PostgresConnection } from "./setup.api.js";
 
 /** The Postgres fields as typed: the port is still text until it's checked. */
 export interface PostgresForm {
@@ -25,6 +25,29 @@ export const defaultPostgresForm: PostgresForm = {
   ssl: false,
   createIfMissing: true,
 };
+
+/** The usual values for MySQL and MariaDB. */
+export const defaultMysqlForm: PostgresForm = {
+  ...defaultPostgresForm,
+  port: "3306",
+  user: "root",
+};
+
+/**
+ * The form after someone picks another kind of server: what was left at one server's usual
+ * values moves to the other's, and anything they typed stays.
+ */
+export function formForDatabaseKind(form: PostgresForm, kind: DatabaseKind): PostgresForm {
+  const [from, to] =
+    kind === "mysql"
+      ? [defaultPostgresForm, defaultMysqlForm]
+      : [defaultMysqlForm, defaultPostgresForm];
+  return {
+    ...form,
+    port: form.port === from.port ? to.port : form.port,
+    user: form.user === from.user ? to.user : form.user,
+  };
+}
 
 /** The connection to send, or what to fix first. The password may be empty (trust auth). */
 export function readPostgresForm(

@@ -15,6 +15,7 @@ import {
 } from "./accountDetails.js";
 import { placeFinishProblem } from "./finishProblems.js";
 import {
+  formForDatabaseKind,
   readPostgresForm,
   placeDatabaseProblem,
   type ConnectionErrors,
@@ -123,7 +124,11 @@ export function SetupWizard({
     setConnectionErrors(result.errors ?? {});
     if (result.errors) return "failed";
     try {
-      await api.testDatabaseConnection(result.connection, codeToSend);
+      await api.testDatabaseConnection(
+        result.connection,
+        codeToSend,
+        answers.databaseKind === "mysql" ? "mysql" : "postgres",
+      );
       return "passed";
     } catch (error) {
       // Not finding the database is fine when Lintel is going to create it.
@@ -190,8 +195,8 @@ export function SetupWizard({
     setAccountErrors(placed.accountErrors);
     setConnectionErrors(placed.connectionErrors);
     setSiteNameError(placed.siteNameError);
-    const usesPostgres = placed.step === "database" && answers.databaseKind === "postgres";
-    flow.show(usesPostgres ? "postgres" : placed.step, "back");
+    const usesServer = placed.step === "database" && answers.databaseKind !== "built-in";
+    flow.show(usesServer ? "postgres" : placed.step, "back");
     setStatusMessage(placed.statusMessage);
   }
 
@@ -255,7 +260,12 @@ export function SetupWizard({
         return (
           <DatabaseScreen
             databaseKind={answers.databaseKind}
-            onDatabaseKindChange={(databaseKind) => change({ databaseKind })}
+            onDatabaseKindChange={(databaseKind) =>
+              change({
+                databaseKind,
+                postgres: formForDatabaseKind(answers.postgres, databaseKind),
+              })
+            }
             onContinue={() => flow.next()}
             onBack={flow.back}
             statusMessage={statusMessage}
@@ -264,6 +274,7 @@ export function SetupWizard({
       case "postgres":
         return (
           <PostgresScreen
+            kind={answers.databaseKind === "mysql" ? "mysql" : "postgres"}
             form={answers.postgres}
             errors={connectionErrors}
             onChange={(changes) => {
@@ -375,7 +386,7 @@ export function answersToSend(answers: SetupAnswers, status: SetupStatus): Setup
     : postgres.connection;
   return {
     database: {
-      kind: "postgres",
+      kind: answers.databaseKind,
       ...connection,
       createIfMissing: answers.postgres.createIfMissing,
     },
@@ -393,7 +404,12 @@ export function firstNameOf(name: string): string {
 export function summaryOf(answers: SetupAnswers, status: SetupStatus): string {
   const kind =
     status.database.chosenBy === "environment" ? status.database.kind : answers.databaseKind;
-  const database = kind === "postgres" ? t("done.postgres") : t("done.builtIn");
+  const database =
+    kind === "postgres"
+      ? t("done.postgres")
+      : kind === "mysql"
+        ? t("done.mysql")
+        : t("done.builtIn");
   const features = featuresForSiteType(answers.siteType).map(({ name }) => name);
   return t("done.summary", { database, features: features.join(", ") || t("done.noFeatures") });
 }

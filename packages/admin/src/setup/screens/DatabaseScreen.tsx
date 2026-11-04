@@ -20,6 +20,12 @@ const databaseChoices: readonly ChoiceCard<DatabaseKind>[] = [
     description: t("database.postgresDescription"),
     icon: Database,
   },
+  {
+    value: "mysql",
+    title: t("database.mysqlTitle"),
+    description: t("database.mysqlDescription"),
+    icon: Database,
+  },
 ];
 
 interface DatabaseScreenProps {
@@ -30,7 +36,7 @@ interface DatabaseScreenProps {
   statusMessage: string;
 }
 
-/** "Where should Lintel keep your content?" Built-in or the person's own PostgreSQL. */
+/** "Where should Lintel keep your content?" Built-in, or the person's own database server. */
 export function DatabaseScreen({
   databaseKind,
   onDatabaseKindChange,
@@ -55,7 +61,7 @@ export function DatabaseScreen({
         options={databaseChoices}
         value={databaseKind}
         onChange={onDatabaseKindChange}
-        columns={2}
+        columns={3}
       />
     </WizardScreen>
   );
