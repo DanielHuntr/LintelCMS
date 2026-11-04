@@ -10,6 +10,7 @@ export const magazineSite: StarterSite = {
   description:
     "A readable, editorial site for writing: a front page of stories, sections, an about page and a newsletter invitation.",
   suitedTo: "Writers, journals, newsletters and community magazines",
+  features: ["blog"],
   coverIllustration: "magazine-pages",
   theme: {
     brandColour: "#4f6f45",

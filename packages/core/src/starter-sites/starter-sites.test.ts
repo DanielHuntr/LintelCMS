@@ -67,6 +67,20 @@ describe("starting from a template", () => {
     expect(home.body).toContain('href="/menu"');
   });
 
+  it("switches on the blog the magazine's links lead to (LINTEL-FUNC-032)", async () => {
+    await owner("PUT", "/plugins", { enabled: [] });
+    const response = await owner("POST", "/starter-sites/magazine/apply", { publish: true });
+
+    expect(response.json().featuresSwitchedOn).toEqual(["Blog"]);
+    expect((await owner("GET", "/plugins")).json().plugins).toContainEqual(
+      expect.objectContaining({ id: "blog", enabled: true }),
+    );
+    const again = await owner("POST", "/starter-sites/magazine/apply", {
+      existingPages: "replace",
+    });
+    expect(again.json().featuresSwitchedOn).toEqual([]);
+  });
+
   it("makes Folio with its fonts, its motion and a home page that says who it is for", async () => {
     const response = await owner("POST", "/starter-sites/folio/apply", { publish: true });
     expect(response.statusCode, response.body).toBe(201);

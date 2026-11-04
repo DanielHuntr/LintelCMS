@@ -58,6 +58,11 @@ export interface StarterSite {
    * site's design variables, replacing one with the same id.
    */
   designVariables?: readonly DesignVariable[];
+  /**
+   * Features the template's pages link to or are built from, such as the blog's /blog.
+   * Switched on with the template, for someone who may change them.
+   */
+  features?: readonly string[];
   /** Home first; the menu lists them in this order. */
   pages: readonly StarterPage[];
   /**

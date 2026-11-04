@@ -67,6 +67,8 @@ export interface AppliedStarterSiteResponse {
   previousSectionsKept: boolean;
   /** The template's own collections made for it (listings, episodes), by handle. */
   collectionsMade: string[];
+  /** The names of the features the template needed that were off and are now on. */
+  featuresSwitchedOn: string[];
 }
 
 /** `GET /starter-sites/:id/existing-pages`: what applying would meet, for the admin's question. */

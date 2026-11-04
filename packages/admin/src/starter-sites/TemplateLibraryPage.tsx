@@ -292,6 +292,8 @@ function AppliedSummary({
         {result.skippedHome && ` ${t("templates.result.skippedHome")}`}
         {result.replacedCount > 0 &&
           ` ${t("templates.result.replaced", { count: result.replacedCount })}`}
+        {result.featuresSwitchedOn.length > 0 &&
+          ` ${t("templates.result.featuresOn", { features: result.featuresSwitchedOn.join(", ") })}`}
       </p>
       <ul className="flex flex-wrap gap-2">
         {result.pages.map((page) => (

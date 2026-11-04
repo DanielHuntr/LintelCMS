@@ -17,6 +17,7 @@ const applied = {
   skippedHome: false,
   replacedCount: 0,
   previousSectionsKept: false,
+  featuresSwitchedOn: [],
 };
 
 const existingPages = {
