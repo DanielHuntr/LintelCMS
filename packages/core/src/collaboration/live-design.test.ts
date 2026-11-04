@@ -9,6 +9,7 @@ import {
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ensurePagesCollection } from "../collections/default-collections.js";
+import { findEntryById, updateEntryRow } from "../entries/entries.repository.js";
 import { CLIENT_ROLE_HANDLE } from "../roles/built-in-roles.js";
 import { useTestDatabase } from "../testing/test-database.js";
 import { createPersonWithRole } from "../testing/test-people.js";
@@ -384,11 +385,11 @@ describe("editing a design together", () => {
     const children = page.root.children.map((child) =>
       child.id === "cta" ? { ...child, name: "Written behind the room's back" } : child,
     );
-    await database.database.execute(
-      `update entries set version = version + 1, data = data || '${JSON.stringify({
-        design: { ...page, root: { ...page.root, children } },
-      }).replace(/'/g, "''")}'::jsonb where id = '${entryId}'`,
-    );
+    const before = await findEntryById(database.database, entryId);
+    await updateEntryRow(database.database, entryId, {
+      version: (before?.version ?? 0) + 1,
+      data: { ...before?.data, design: { ...page, root: { ...page.root, children } } },
+    });
     send(browser, "a", [rename("hero", "Stored on top")]);
     await browser.next("changesAccepted");
     await store(browser, "a");

@@ -1109,6 +1109,7 @@ On `fix/open-p3`; see the follow-up in `FIX-LOG-open-p3.md`. This table gives th
 | LINTEL-UX-338 | P3       | Fixed  | The details of an add-on with no code said it runs inside the site with full access             |
 | LINTEL-UX-339 | P3       | Fixed  | On a site with no home page, a 404 showed the template's navigation and footer                  |
 | LINTEL-UX-335 | P3       | Fixed  | As well as being labelled, tables named only under `personalData` are in Export and Delete data |
+
 ## Working together (4 November 2026)
 
 Found while building `feature/collaboration`. All fixed there; the details are in

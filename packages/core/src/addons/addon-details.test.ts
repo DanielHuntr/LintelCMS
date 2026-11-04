@@ -112,7 +112,9 @@ describe("an add-on's details", () => {
     await database.execute(
       sql`drop table if exists postcards_sent, postcards_drafts, guestbook_signups`,
     );
-    await database.execute(sql`create table guestbook_signups (id text primary key, email text)`);
+    await database.execute(
+      sql`create table guestbook_signups (id varchar(64) primary key, email text)`,
+    );
     await database.execute(
       sql`create table postcards_sent (id varchar(64) primary key, sender_email text, message text)`,
     );
@@ -231,9 +233,9 @@ describe("an add-on's details", () => {
       emptied: ["postcards_sent", "guestbook_signups", "postcards_drafts"],
     });
     const signups = await testDatabase.database.execute(
-      sql`select count(*)::int as count from guestbook_signups`,
+      sql`select count(*) as count from guestbook_signups`,
     );
-    expect(rowsOf(signups)[0]?.count).toBe(0);
+    expect(Number(rowsOf(signups)[0]?.count)).toBe(0);
     const left = await testDatabase.database.execute(
       sql`select count(*) as count from postcards_sent`,
     );
