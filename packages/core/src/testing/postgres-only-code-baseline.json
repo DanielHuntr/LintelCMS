@@ -6,10 +6,6 @@
   "addons/addon-modules.ts": {
     "pg-core import": 1
   },
-  "analytics/analytics.repository.ts": {
-    "returning": 1,
-    "upsert": 1
-  },
   "backups/database-snapshot.repository.ts": {
     "cast with ::": 4,
     "jsonb function": 3,
@@ -121,10 +117,6 @@
     "cast with ::": 4,
     "json field access": 2,
     "jsonb function": 3
-  },
-  "experiments/experiments.repository.ts": {
-    "returning": 1,
-    "upsert": 2
   },
   "forms/submissions.repository.ts": {
     "advisory lock": 1,

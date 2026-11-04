@@ -1,16 +1,18 @@
 import { and, asc, desc, eq, inArray, ne, sql, sum } from "drizzle-orm";
-import { collectionsTable } from "../collections/collections.table.js";
+import { collectionsTable as collectionsDefinition } from "../collections/collections.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { entriesTable } from "../entries/entries.table.js";
+import { entriesTable as entriesDefinition } from "../entries/entries.table.js";
 import type { VersionKey } from "./experiments.schema.js";
 import {
-  experimentCountsTable,
+  experimentCountsTable as experimentCountsDefinition,
   type ExperimentRow,
-  experimentsTable,
+  experimentsTable as experimentsDefinition,
   type ExperimentVersionRow,
-  experimentVersionsTable,
+  experimentVersionsTable as experimentVersionsDefinition,
   type NewExperimentRow,
 } from "./experiments.table.js";
+import { insertReturning, upsert } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for A/B tests, their versions and their counts. Nothing else. */
 
@@ -21,6 +23,9 @@ export interface ExperimentWithPage {
 }
 
 function selectWithPage(database: DatabaseOrTransaction) {
+  const collectionsTable = tableFor(database, collectionsDefinition);
+  const entriesTable = tableFor(database, entriesDefinition);
+  const experimentsTable = tableFor(database, experimentsDefinition);
   return database
     .select({
       experiment: experimentsTable,
@@ -49,6 +54,7 @@ export async function listExperimentRows(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<ExperimentWithPage[]> {
+  const experimentsTable = tableFor(database, experimentsDefinition);
   const rows = await selectWithPage(database)
     .where(eq(experimentsTable.tenantId, tenantId))
     .orderBy(desc(experimentsTable.createdAt));
@@ -60,6 +66,7 @@ export async function findExperimentRow(
   tenantId: string,
   experimentId: string,
 ): Promise<ExperimentWithPage | undefined> {
+  const experimentsTable = tableFor(database, experimentsDefinition);
   const [row] = await selectWithPage(database).where(
     and(eq(experimentsTable.tenantId, tenantId), eq(experimentsTable.id, experimentId)),
   );
@@ -72,6 +79,7 @@ export async function findOpenExperimentRowForEntry(
   tenantId: string,
   entryId: string,
 ): Promise<ExperimentWithPage | undefined> {
+  const experimentsTable = tableFor(database, experimentsDefinition);
   const [row] = await selectWithPage(database)
     .where(
       and(
@@ -89,6 +97,7 @@ export async function listRunningExperimentRows(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<ExperimentRow[]> {
+  const experimentsTable = tableFor(database, experimentsDefinition);
   return database
     .select()
     .from(experimentsTable)
@@ -100,7 +109,8 @@ export async function insertExperimentRow(
   database: DatabaseOrTransaction,
   row: NewExperimentRow,
 ): Promise<ExperimentRow> {
-  const [inserted] = await database.insert(experimentsTable).values(row).returning();
+  const experimentsTable = tableFor(database, experimentsDefinition);
+  const [inserted] = await insertReturning(database, experimentsTable, row);
   if (!inserted) throw new Error("Saving the test returned nothing.");
   return inserted;
 }
@@ -111,6 +121,7 @@ export async function updateExperimentRow(
   experimentId: string,
   changes: Partial<NewExperimentRow>,
 ): Promise<void> {
+  const experimentsTable = tableFor(database, experimentsDefinition);
   await database
     .update(experimentsTable)
     .set(changes)
@@ -122,6 +133,7 @@ export async function deleteExperimentRow(
   tenantId: string,
   experimentId: string,
 ): Promise<void> {
+  const experimentsTable = tableFor(database, experimentsDefinition);
   await database
     .delete(experimentsTable)
     .where(and(eq(experimentsTable.tenantId, tenantId), eq(experimentsTable.id, experimentId)));
@@ -132,6 +144,7 @@ export async function listVersionRows(
   tenantId: string,
   experimentIds: readonly string[],
 ): Promise<ExperimentVersionRow[]> {
+  const experimentVersionsTable = tableFor(database, experimentVersionsDefinition);
   if (experimentIds.length === 0) return [];
   return database
     .select()
@@ -149,13 +162,11 @@ export async function saveVersionRow(
   database: DatabaseOrTransaction,
   row: { tenantId: string; experimentId: string; key: VersionKey; design: Record<string, unknown> },
 ): Promise<void> {
-  await database
-    .insert(experimentVersionsTable)
-    .values(row)
-    .onConflictDoUpdate({
-      target: [experimentVersionsTable.experimentId, experimentVersionsTable.key],
-      set: { design: row.design, updatedAt: new Date() },
-    });
+  const experimentVersionsTable = tableFor(database, experimentVersionsDefinition);
+  await upsert(database, experimentVersionsTable, row, {
+    target: [experimentVersionsTable.experimentId, experimentVersionsTable.key],
+    set: { design: row.design, updatedAt: new Date() },
+  });
 }
 
 export async function deleteVersionRow(
@@ -164,6 +175,7 @@ export async function deleteVersionRow(
   experimentId: string,
   key: VersionKey,
 ): Promise<void> {
+  const experimentVersionsTable = tableFor(database, experimentVersionsDefinition);
   await database
     .delete(experimentVersionsTable)
     .where(
@@ -187,20 +199,18 @@ export async function addToCounts(
     conversions: number;
   },
 ): Promise<void> {
-  await database
-    .insert(experimentCountsTable)
-    .values(row)
-    .onConflictDoUpdate({
-      target: [
-        experimentCountsTable.experimentId,
-        experimentCountsTable.versionKey,
-        experimentCountsTable.day,
-      ],
-      set: {
-        visitors: sql`${experimentCountsTable.visitors} + ${row.visitors}`,
-        conversions: sql`${experimentCountsTable.conversions} + ${row.conversions}`,
-      },
-    });
+  const experimentCountsTable = tableFor(database, experimentCountsDefinition);
+  await upsert(database, experimentCountsTable, row, {
+    target: [
+      experimentCountsTable.experimentId,
+      experimentCountsTable.versionKey,
+      experimentCountsTable.day,
+    ],
+    set: {
+      visitors: sql`${experimentCountsTable.visitors} + ${row.visitors}`,
+      conversions: sql`${experimentCountsTable.conversions} + ${row.conversions}`,
+    },
+  });
 }
 
 export async function sumCountsByVersion(
@@ -208,6 +218,7 @@ export async function sumCountsByVersion(
   tenantId: string,
   experimentId: string,
 ): Promise<Array<{ versionKey: VersionKey; visitors: number; conversions: number }>> {
+  const experimentCountsTable = tableFor(database, experimentCountsDefinition);
   const rows = await database
     .select({
       versionKey: experimentCountsTable.versionKey,

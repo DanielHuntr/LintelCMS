@@ -3,12 +3,14 @@ import type { DatabaseOrTransaction } from "../database/client.js";
 import type { RollupDimension } from "./analytics-events.js";
 import {
   type AnalyticsDailyRow,
-  analyticsDailyTable,
-  analyticsEventsTable,
-  analyticsSaltsTable,
+  analyticsDailyTable as analyticsDailyDefinition,
+  analyticsEventsTable as analyticsEventsDefinition,
+  analyticsSaltsTable as analyticsSaltsDefinition,
   type NewAnalyticsEvent,
 } from "./analytics.table.js";
 import type { DailyFigures, EventForRollup } from "./daily-rollups.js";
+import { deleteReturning, insertIfNew } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for visitor counts, nothing else. */
 
@@ -16,6 +18,7 @@ export async function insertEvent(
   database: DatabaseOrTransaction,
   event: NewAnalyticsEvent,
 ): Promise<void> {
+  const analyticsEventsTable = tableFor(database, analyticsEventsDefinition);
   await database.insert(analyticsEventsTable).values(event);
 }
 
@@ -26,10 +29,8 @@ export async function findOrCreateSalt(
   day: string,
   newSalt: string,
 ): Promise<string> {
-  await database
-    .insert(analyticsSaltsTable)
-    .values({ tenantId, day, salt: newSalt })
-    .onConflictDoNothing();
+  const analyticsSaltsTable = tableFor(database, analyticsSaltsDefinition);
+  await insertIfNew(database, analyticsSaltsTable, { tenantId, day, salt: newSalt });
   const [row] = await database
     .select({ salt: analyticsSaltsTable.salt })
     .from(analyticsSaltsTable)
@@ -44,6 +45,7 @@ export async function deleteSaltsExcept(
   tenantId: string,
   keepDay: string,
 ): Promise<void> {
+  const analyticsSaltsTable = tableFor(database, analyticsSaltsDefinition);
   await database
     .delete(analyticsSaltsTable)
     .where(and(eq(analyticsSaltsTable.tenantId, tenantId), ne(analyticsSaltsTable.day, keepDay)));
@@ -55,6 +57,7 @@ export async function listEventsForDay(
   siteId: string,
   day: string,
 ): Promise<EventForRollup[]> {
+  const analyticsEventsTable = tableFor(database, analyticsEventsDefinition);
   return database
     .select({
       kind: analyticsEventsTable.kind,
@@ -85,6 +88,7 @@ export async function listSiteIdsWithEvents(
   tenantId: string,
   days: readonly string[],
 ): Promise<string[]> {
+  const analyticsEventsTable = tableFor(database, analyticsEventsDefinition);
   const rows = await database
     .selectDistinct({ siteId: analyticsEventsTable.siteId })
     .from(analyticsEventsTable)
@@ -105,6 +109,7 @@ export async function replaceDailyFigures(
   day: string,
   figures: readonly DailyFigures[],
 ): Promise<void> {
+  const analyticsDailyTable = tableFor(database, analyticsDailyDefinition);
   await database.transaction(async (transaction) => {
     await transaction
       .delete(analyticsDailyTable)
@@ -136,6 +141,7 @@ export async function listDailyFigures(
   database: DatabaseOrTransaction,
   query: DailyFiguresQuery,
 ): Promise<AnalyticsDailyRow[]> {
+  const analyticsDailyTable = tableFor(database, analyticsDailyDefinition);
   return database
     .select()
     .from(analyticsDailyTable)
@@ -160,12 +166,13 @@ export async function deleteEventsBeforeDay(
   tenantId: string,
   firstKeptDay: string,
 ): Promise<number> {
-  const deleted = await database
-    .delete(analyticsEventsTable)
-    .where(
-      and(eq(analyticsEventsTable.tenantId, tenantId), lt(analyticsEventsTable.day, firstKeptDay)),
-    )
-    .returning({ id: analyticsEventsTable.id });
+  const analyticsEventsTable = tableFor(database, analyticsEventsDefinition);
+  const deleted = await deleteReturning(
+    database,
+    analyticsEventsTable,
+    and(eq(analyticsEventsTable.tenantId, tenantId), lt(analyticsEventsTable.day, firstKeptDay)),
+    { id: analyticsEventsTable.id },
+  );
   return deleted.length;
 }
 
@@ -174,6 +181,7 @@ export async function listDaysWithEvents(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<string[]> {
+  const analyticsEventsTable = tableFor(database, analyticsEventsDefinition);
   const rows = await database
     .selectDistinct({ day: analyticsEventsTable.day })
     .from(analyticsEventsTable)
