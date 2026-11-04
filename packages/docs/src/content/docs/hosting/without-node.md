@@ -145,9 +145,10 @@ To use it:
 
 1. Connect Stripe or Mollie in **Shop → Settings → Payments**.
 2. For Stripe, add a webhook in Stripe's dashboard to
-   `https://www.example.com/lintel-bridge.php?action=stripe-webhook` for the event
-   `checkout.session.completed`, and paste its signing secret into your destination in
-   **Settings → Publishing**. Mollie needs nothing extra.
+   `https://www.example.com/lintel-bridge.php?action=stripe-webhook` for the events
+   `checkout.session.completed` and `checkout.session.async_payment_succeeded` (the second
+   is for bank payments that take a few days), and paste its signing secret into your
+   destination in **Settings → Publishing**. Mollie needs nothing extra.
 3. Publish.
 
 Stock levels and discount codes are brought up to date each time you publish and each time
