@@ -125,6 +125,7 @@ let latestCart: Cart | null = null;
 
 export function renderCartViews(cart: Cart | null, onChange: (cart: Cart) => void): void {
   latestCart = cart;
+  if (cart) fillSavedDetails(cart);
   document.querySelectorAll<HTMLElement>('[data-behaviour~="cart"]').forEach((view) => {
     const lines = view.querySelector(".lintel-cart__lines");
     const sums = view.querySelector(".lintel-cart__totals");
@@ -228,6 +229,19 @@ function countryPicker(): HTMLSelectElement {
       // The page language's country stays; Choose delivery says if there's no delivery there.
     });
   return picker;
+}
+
+/**
+ * Someone back from a payment that failed, or returning to their basket, shouldn't type it
+ * all again. Only empty boxes are filled, so nothing being typed is overwritten.
+ */
+function fillSavedDetails(cart: Cart): void {
+  const form = document.querySelector<HTMLFormElement>(".lintel-cart__checkout-form");
+  for (const [name] of addressFields) {
+    const box = form?.elements.namedItem(name);
+    const saved = name === "email" ? cart.email : cart.shippingAddress?.[name];
+    if (box instanceof HTMLInputElement && !box.value && saved) box.value = saved;
+  }
 }
 
 /** The details form on the basket page: email and address, then delivery, then pay. */

@@ -115,6 +115,22 @@ describe("the basket page's delivery details", () => {
     );
   });
 
+  it("keeps what someone typed when they come back from a failed payment (LINTEL-UX-315)", () => {
+    renderCartViews(
+      cartWith({
+        email: "ada@example.com",
+        shippingAddress: { name: "Ada Lovelace", line1: "12 St James's Square", city: "London" },
+      }),
+      () => {},
+    );
+
+    const box = (name: string) =>
+      document.querySelector<HTMLInputElement>(`.lintel-cart__checkout-form [name="${name}"]`);
+    expect(box("email")?.value).toBe("ada@example.com");
+    expect(box("line1")?.value).toBe("12 St James's Square");
+    expect(box("postalCode")?.value).toBe("");
+  });
+
   it("counts the ticked delivery in the total before Pay now (LINTEL-FUNC-035)", async () => {
     const fetchMock = answerRequests({
       "PATCH /api/shop/carts/token-1": { body: cartWith() },
