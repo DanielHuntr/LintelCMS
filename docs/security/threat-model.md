@@ -93,7 +93,7 @@ Out of scope: someone with shell or database access to the server, and plugin co
 
 1. **Tenant isolation is a convention, not a guarantee.** Every table has `tenant_id`, but
    most queries look rows up by id alone. With one tenant per install that is harmless;
-   the cloud version must add the tenant to every query (and a test like the route test
+   an install with several tenants would have to add the tenant to every query (and a test like the route test
    that proves it) before a second tenant exists.
 2. **Plugins and future builder code blocks run as the server or in the admin's origin.**
    A malicious or careless plugin has full access. Keep plugins in-repo and reviewed until
