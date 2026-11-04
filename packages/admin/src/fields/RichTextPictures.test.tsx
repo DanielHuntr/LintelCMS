@@ -95,7 +95,8 @@ describe("pictures in rich text", () => {
     // The library's description is the starting point, ready to change.
     const description = await screen.findByLabelText("Picture description");
     expect(description).toHaveValue("Our shop on the high street");
-    expect(description).toHaveFocus();
+    // Focused a frame later, so the editor can finish first.
+    await waitFor(() => expect(description).toHaveFocus());
     expect(await screen.findByRole("img", { name: "Our shop on the high street" })).toBeVisible();
 
     await userEvent.clear(description);
