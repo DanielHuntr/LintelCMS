@@ -275,6 +275,7 @@ export async function updateEntryRowAtVersion(
   version: number,
   changes: Partial<Omit<NewEntry, "id" | "tenantId" | "collectionId" | "siteId">>,
 ): Promise<Entry | undefined> {
+  const entriesTable = tableFor(database, entriesDefinition);
   const [updated] = await updateReturning(
     database,
     entriesTable,
