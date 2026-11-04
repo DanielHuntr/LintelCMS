@@ -1,14 +1,17 @@
 import { and, count, eq, gte, isNotNull, isNull, lt, min, ne, or, type SQL } from "drizzle-orm";
 import type { AnyPgColumn, PgTable } from "drizzle-orm/pg-core";
-import { cartsTable } from "../commerce/carts/carts.table.js";
-import { checkoutsTable } from "../commerce/checkouts/checkouts.table.js";
-import { ordersTable } from "../commerce/orders/orders.table.js";
-import { archivedOrdersTable } from "../commerce/shopify-import/shopify-import.table.js";
+import { cartsTable as cartsDefinition } from "../commerce/carts/carts.table.js";
+import { checkoutsTable as checkoutsDefinition } from "../commerce/checkouts/checkouts.table.js";
+import { ordersTable as ordersDefinition } from "../commerce/orders/orders.table.js";
+import { archivedOrdersTable as archivedOrdersDefinition } from "../commerce/shopify-import/shopify-import.table.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { formSubmissionsTable, formsTable } from "../forms/forms.table.js";
-import { securityEventsTable } from "../security-log/security-events.table.js";
-import { webhookDeliveriesTable } from "../webhooks/webhooks.table.js";
-import { workflowRunsTable } from "../workflows/workflows.table.js";
+import {
+  formSubmissionsTable as formSubmissionsDefinition,
+  formsTable as formsDefinition,
+} from "../forms/forms.table.js";
+import { securityEventsTable as securityEventsDefinition } from "../security-log/security-events.table.js";
+import { webhookDeliveriesTable as webhookDeliveriesDefinition } from "../webhooks/webhooks.table.js";
+import { workflowRunsTable as workflowRunsDefinition } from "../workflows/workflows.table.js";
 import { columnFor, tableFor } from "../database/dialect/mysql-tables.js";
 import { jsonText } from "../database/dialect/expressions.js";
 
@@ -31,88 +34,92 @@ export interface RetainedKind {
 
 export const retainedKinds = {
   formEntries: {
-    table: formSubmissionsTable,
-    id: formSubmissionsTable.id,
-    dated: formSubmissionsTable.createdAt,
+    table: formSubmissionsDefinition,
+    id: formSubmissionsDefinition.id,
+    dated: formSubmissionsDefinition.createdAt,
     covers: (database: DatabaseOrTransaction, tenantId: string) =>
       and(
-        eq(tableFor(database, formSubmissionsTable).tenantId, tenantId),
-        isNull(tableFor(database, formsTable).retentionDays),
+        eq(tableFor(database, formSubmissionsDefinition).tenantId, tenantId),
+        isNull(tableFor(database, formsDefinition).retentionDays),
       ),
     joinForms: true,
   },
   carts: {
-    table: cartsTable,
-    id: cartsTable.id,
-    dated: cartsTable.updatedAt,
+    table: cartsDefinition,
+    id: cartsDefinition.id,
+    dated: cartsDefinition.updatedAt,
     covers: (database: DatabaseOrTransaction, tenantId: string) =>
-      eq(tableFor(database, cartsTable).tenantId, tenantId),
+      eq(tableFor(database, cartsDefinition).tenantId, tenantId),
   },
   expiredCheckouts: {
-    table: checkoutsTable,
-    id: checkoutsTable.id,
-    dated: checkoutsTable.createdAt,
+    table: checkoutsDefinition,
+    id: checkoutsDefinition.id,
+    dated: checkoutsDefinition.createdAt,
     covers: (database: DatabaseOrTransaction, tenantId: string) =>
       and(
-        eq(tableFor(database, checkoutsTable).tenantId, tenantId),
-        eq(tableFor(database, checkoutsTable).status, "expired"),
-        ne(tableFor(database, checkoutsTable).email, ""),
+        eq(tableFor(database, checkoutsDefinition).tenantId, tenantId),
+        eq(tableFor(database, checkoutsDefinition).status, "expired"),
+        ne(tableFor(database, checkoutsDefinition).email, ""),
       ),
   },
   securityEvents: {
-    table: securityEventsTable,
-    id: securityEventsTable.id,
-    dated: securityEventsTable.createdAt,
+    table: securityEventsDefinition,
+    id: securityEventsDefinition.id,
+    dated: securityEventsDefinition.createdAt,
     covers: (database: DatabaseOrTransaction, tenantId: string) =>
-      eq(tableFor(database, securityEventsTable).tenantId, tenantId),
+      eq(tableFor(database, securityEventsDefinition).tenantId, tenantId),
   },
   orders: {
-    table: ordersTable,
-    id: ordersTable.id,
-    dated: ordersTable.createdAt,
+    table: ordersDefinition,
+    id: ordersDefinition.id,
+    dated: ordersDefinition.createdAt,
     covers: (database: DatabaseOrTransaction, tenantId: string) =>
       and(
-        eq(tableFor(database, ordersTable).tenantId, tenantId),
-        ne(tableFor(database, ordersTable).email, ""),
+        eq(tableFor(database, ordersDefinition).tenantId, tenantId),
+        ne(tableFor(database, ordersDefinition).email, ""),
       ),
   },
   archivedOrders: {
-    table: archivedOrdersTable,
-    id: archivedOrdersTable.id,
-    dated: archivedOrdersTable.placedAt,
+    table: archivedOrdersDefinition,
+    id: archivedOrdersDefinition.id,
+    dated: archivedOrdersDefinition.placedAt,
     covers: (database: DatabaseOrTransaction, tenantId: string) =>
       and(
-        eq(tableFor(database, archivedOrdersTable).tenantId, tenantId),
+        eq(tableFor(database, archivedOrdersDefinition).tenantId, tenantId),
         // Some imported orders have an address but never had an email.
         or(
-          ne(tableFor(database, archivedOrdersTable).email, ""),
+          ne(tableFor(database, archivedOrdersDefinition).email, ""),
           ne(
-            jsonText(database, tableFor(database, archivedOrdersTable).shippingAddress, "name"),
+            jsonText(
+              database,
+              tableFor(database, archivedOrdersDefinition).shippingAddress,
+              "name",
+            ),
             "Removed",
           ),
         ),
       ),
   },
   webhookDeliveries: {
-    table: webhookDeliveriesTable,
-    id: webhookDeliveriesTable.id,
-    dated: webhookDeliveriesTable.createdAt,
+    table: webhookDeliveriesDefinition,
+    id: webhookDeliveriesDefinition.id,
+    dated: webhookDeliveriesDefinition.createdAt,
     covers: (database: DatabaseOrTransaction, tenantId: string) =>
       and(
-        eq(tableFor(database, webhookDeliveriesTable).tenantId, tenantId),
-        ne(tableFor(database, webhookDeliveriesTable).status, "pending"),
+        eq(tableFor(database, webhookDeliveriesDefinition).tenantId, tenantId),
+        ne(tableFor(database, webhookDeliveriesDefinition).status, "pending"),
       ),
   },
   // Runs about an entry are how its reviews are found, so they stay.
   workflowRuns: {
-    table: workflowRunsTable,
-    id: workflowRunsTable.id,
-    dated: workflowRunsTable.createdAt,
+    table: workflowRunsDefinition,
+    id: workflowRunsDefinition.id,
+    dated: workflowRunsDefinition.createdAt,
     covers: (database: DatabaseOrTransaction, tenantId: string) =>
       and(
-        eq(tableFor(database, workflowRunsTable).tenantId, tenantId),
-        isNotNull(tableFor(database, workflowRunsTable).finishedAt),
-        isNull(tableFor(database, workflowRunsTable).entryId),
+        eq(tableFor(database, workflowRunsDefinition).tenantId, tenantId),
+        isNotNull(tableFor(database, workflowRunsDefinition).finishedAt),
+        isNull(tableFor(database, workflowRunsDefinition).entryId),
       ),
   },
 } satisfies Record<string, RetainedKind>;
@@ -123,8 +130,8 @@ function fromKind<Selection extends Record<string, SQL | AnyPgColumn | SQL.Alias
   selection: Selection,
 ) {
   const query = database.select(selection).from(tableFor(database, kind.table));
-  const forms = tableFor(database, formsTable);
-  const submissions = tableFor(database, formSubmissionsTable);
+  const forms = tableFor(database, formsDefinition);
+  const submissions = tableFor(database, formSubmissionsDefinition);
   return kind.joinForms ? query.innerJoin(forms, eq(forms.id, submissions.formId)) : query;
 }
 
