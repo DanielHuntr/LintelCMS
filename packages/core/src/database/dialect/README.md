@@ -11,6 +11,8 @@ Nothing here changes Postgres. Every helper gives the same query Lintel ran befo
 
 ## How a table reaches MySQL
 
+The `pnpm` commands here are run in `packages/core`.
+
 The `*.table.ts` files stay the only description of a table. `mysql-tables.ts` works out
 each table's MySQL form from its Postgres table (the types are listed at the top of that
 file), so a new column needs no extra code. It stops with an error on a column type or

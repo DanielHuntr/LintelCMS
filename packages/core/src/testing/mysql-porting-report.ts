@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
-import { getTableName, is } from "drizzle-orm";
+import { is } from "drizzle-orm";
 import { PgTable } from "drizzle-orm/pg-core";
 import ts from "typescript";
 import * as schema from "../database/schema.js";
@@ -25,7 +25,7 @@ const QUERY_HELPERS = new Set([
 export interface RepositoryFacts {
   file: string;
   queries: number;
-  /** The exported variables' table names, as imported: `sitesTable`. */
+  /** The tables it imports, by their exported names: `sitesTable`. */
   tables: string[];
   exportedFunctions: string[];
   /** Tables used directly rather than through `tableFor`, with their line numbers. */
@@ -158,10 +158,4 @@ export function portingReport(): PortingReport {
       finished: reached.filter((table) => !stillPostgres.has(table)),
     },
   };
-}
-
-/** The table's name in the database, for reports. */
-export function databaseNameOf(variableName: string): string {
-  const table = (schema as Record<string, unknown>)[variableName];
-  return is(table, PgTable) ? getTableName(table) : variableName;
 }
