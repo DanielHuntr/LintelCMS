@@ -218,9 +218,6 @@
     "returning": 2,
     "upsert": 1
   },
-  "interface-languages/interface-languages.repository.ts": {
-    "upsert": 1
-  },
   "invitations/invitations.repository.ts": {
     "returning": 2,
     "upsert": 1
@@ -292,10 +289,6 @@
   },
   "sessions/sessions.repository.ts": {
     "returning": 4
-  },
-  "settings/settings.repository.ts": {
-    "returning": 1,
-    "upsert": 2
   },
   "setup/setup.repository.ts": {
     "advisory lock": 1,

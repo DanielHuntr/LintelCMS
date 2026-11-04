@@ -1,6 +1,8 @@
 import { and, eq } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { userInterfaceLanguagesTable } from "./interface-languages.table.js";
+import { userInterfaceLanguagesTable as userInterfaceLanguagesDefinition } from "./interface-languages.table.js";
+import { upsert } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for each person's interface language, nothing else. */
 
@@ -9,6 +11,7 @@ export async function findUserInterfaceLanguage(
   tenantId: string,
   userId: string,
 ): Promise<string | undefined> {
+  const userInterfaceLanguagesTable = tableFor(database, userInterfaceLanguagesDefinition);
   const [row] = await database
     .select({ language: userInterfaceLanguagesTable.language })
     .from(userInterfaceLanguagesTable)
@@ -28,13 +31,16 @@ export async function upsertUserInterfaceLanguage(
   userId: string,
   language: string,
 ): Promise<void> {
-  await database
-    .insert(userInterfaceLanguagesTable)
-    .values({ tenantId, userId, language })
-    .onConflictDoUpdate({
+  const userInterfaceLanguagesTable = tableFor(database, userInterfaceLanguagesDefinition);
+  await upsert(
+    database,
+    userInterfaceLanguagesTable,
+    { tenantId, userId, language },
+    {
       target: userInterfaceLanguagesTable.userId,
       set: { language, updatedAt: new Date() },
-    });
+    },
+  );
 }
 
 export async function deleteUserInterfaceLanguage(
@@ -42,6 +48,7 @@ export async function deleteUserInterfaceLanguage(
   tenantId: string,
   userId: string,
 ): Promise<void> {
+  const userInterfaceLanguagesTable = tableFor(database, userInterfaceLanguagesDefinition);
   await database
     .delete(userInterfaceLanguagesTable)
     .where(
