@@ -230,6 +230,7 @@ describe("the canvas in a real browser", () => {
       nodeId: wordId,
       prop: "text",
       text: "Words and pictures",
+      original: "Word",
     });
     await page.close();
   });

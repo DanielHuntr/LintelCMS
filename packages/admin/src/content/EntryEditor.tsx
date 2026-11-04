@@ -35,6 +35,13 @@ import {
   focusField,
   focusTargetFor,
 } from "./fieldErrors.js";
+import { ConflictDialog } from "../collaboration/ConflictDialog.js";
+import { describeEntryClashes } from "../collaboration/describeClashes.js";
+import { PeopleHere } from "../collaboration/PeopleHere.js";
+import { fieldBeingEdited, FieldPeopleContext } from "../collaboration/FieldPeople.js";
+import { useLiveActivity } from "../collaboration/useLiveActivity.js";
+import { useEntryLiveUpdates } from "../collaboration/useEntryLiveUpdates.js";
+import { usePeopleHere } from "../collaboration/usePeople.js";
 import { SaveIndicator } from "./SaveIndicator.js";
 import { useAutosave } from "./useAutosave.js";
 import { useEntryActions } from "./useEntryActions.js";
@@ -142,6 +149,7 @@ export function EntryEditor({
     onPublishBlocked: (error) => focusFirstFieldError(error),
   });
   const { entry } = actions;
+  const peopleHere = usePeopleHere(entry?.id, tab === "children" ? "children" : "content");
   const info = useEntryInfo(entry?.id);
   const refresh = useRefreshContent();
   const canPublish = useCan("entries:publish");
@@ -190,7 +198,7 @@ export function EntryEditor({
     draft: state.current,
     hasUnsavedChanges: isUnsaved,
     // A new entry isn't created until it has a title, so empty drafts don't pile up.
-    isEnabled: canSave && (entry !== undefined || title.trim() !== ""),
+    isEnabled: canSave && actions.conflict === null && (entry !== undefined || title.trim() !== ""),
     save: async (draft, options) => {
       const saved = await actions.save(draft, options);
       // The tree shows the name and the "changed since publishing" dot.
@@ -199,6 +207,14 @@ export function EntryEditor({
     },
   });
   const leaveWarning = useLeaveWarning(isUnsaved);
+  const { atWork, share } = useLiveActivity(entry?.id, peopleHere);
+  useEntryLiveUpdates({
+    entryId: entry?.id,
+    saved: state.saved,
+    current: state.current,
+    pageFields: blueprint.fields.filter((each) => each.type === "page").map((each) => each.handle),
+    actions,
+  });
 
   function focusFirstFieldError(error: unknown) {
     focusFieldProblem(fieldErrorsFrom(error));
@@ -399,285 +415,303 @@ export function EntryEditor({
   );
 
   return (
-    <div ref={setEditorElement} className={classNames("w-full", editorWidths[companion])}>
-      <h1 className="sr-only">{title || t("editor.untitled")}</h1>
-
-      <EntryEditorBar
-        breadcrumbs={<EntryBreadcrumbs collection={collection} entryId={entry?.id} title={title} />}
-        status={
-          <PageStatus entry={entry} state={entry ? pageStateOf(entry, isUnsaved) : "draft"} />
-        }
-        viewSwitch={switchSitsUnderBar ? undefined : viewSwitchControl}
-        isTight={barRoom.isTight}
-        onShowDetails={entry ? () => setIsShowingDetails(true) : undefined}
-        isPanelOpen={isPanelOpen}
-        panelId={panelId}
-        onTogglePanel={() => setCompanion((current) => (current === "panel" ? "none" : "panel"))}
-        viewPage={viewPage}
-        onDelete={entry && canDelete ? () => setIsConfirmingDelete(true) : undefined}
-        onDuplicate={entry && canCreate ? () => void duplicateEntry() : undefined}
-        onCopyToSite={
-          entry && canCreate && otherSites.length > 0 && collection.siteScope !== "shared"
-            ? () => void startCopyToSite()
-            : undefined
-        }
-        isPreviewOpen={isPreviewOpen}
-        previewId={previewId}
-        onTogglePreview={() =>
-          setCompanion((current) => (current === "preview" ? "panel" : "preview"))
-        }
-        saveIndicator={
-          <SaveIndicator
-            status={state.saveStatus}
-            hasUnsavedChanges={isUnsaved}
-            errorMessage={state.saveError}
-            onRetry={() => void saveExplicitly()}
-            fieldProblemCount={countFieldsWithErrors(state.fieldErrors)}
-            onShowProblems={() => focusFieldProblem(state.fieldErrors)}
+    <div
+      ref={setEditorElement}
+      className={classNames("w-full", editorWidths[companion])}
+      onFocus={(event) => share({ field: fieldBeingEdited(event.target) })}
+      onBlur={() => share({ field: null })}
+    >
+      <FieldPeopleContext value={atWork}>
+        <h1 className="sr-only">{title || t("editor.untitled")}</h1>
+        {actions.conflict && (
+          <ConflictDialog
+            personName={actions.conflict.latest.updatedBy?.name ?? null}
+            items={describeEntryClashes(actions.conflict, blueprint.fields, state.current)}
+            onKeepMine={actions.keepMine}
+            onUseTheirs={() => actions.useTheirs(state.current)}
           />
-        }
-        primaryAction={
-          canPublish && entry && reviewState.data?.mustSendForReview ? (
-            <SendForReviewButton
-              entryId={entry.id}
-              state={reviewState.data}
-              disabled={actions.isWorking}
-              beforeSending={() => (isUnsaved ? saveExplicitly() : undefined)}
-              look="toolbar"
+        )}
+
+        <EntryEditorBar
+          breadcrumbs={
+            <EntryBreadcrumbs collection={collection} entryId={entry?.id} title={title} />
+          }
+          status={
+            <PageStatus entry={entry} state={entry ? pageStateOf(entry, isUnsaved) : "draft"} />
+          }
+          viewSwitch={switchSitsUnderBar ? undefined : viewSwitchControl}
+          isTight={barRoom.isTight}
+          onShowDetails={entry ? () => setIsShowingDetails(true) : undefined}
+          isPanelOpen={isPanelOpen}
+          panelId={panelId}
+          onTogglePanel={() => setCompanion((current) => (current === "panel" ? "none" : "panel"))}
+          viewPage={viewPage}
+          onDelete={entry && canDelete ? () => setIsConfirmingDelete(true) : undefined}
+          onDuplicate={entry && canCreate ? () => void duplicateEntry() : undefined}
+          onCopyToSite={
+            entry && canCreate && otherSites.length > 0 && collection.siteScope !== "shared"
+              ? () => void startCopyToSite()
+              : undefined
+          }
+          isPreviewOpen={isPreviewOpen}
+          previewId={previewId}
+          onTogglePreview={() =>
+            setCompanion((current) => (current === "preview" ? "panel" : "preview"))
+          }
+          people={<PeopleHere people={peopleHere} />}
+          saveIndicator={
+            <SaveIndicator
+              status={state.saveStatus}
+              hasUnsavedChanges={isUnsaved}
+              errorMessage={state.saveError}
+              onRetry={() => void saveExplicitly()}
+              fieldProblemCount={countFieldsWithErrors(state.fieldErrors)}
+              onShowProblems={() => focusFieldProblem(state.fieldErrors)}
             />
-          ) : canPublish ? (
-            <PagePublishButton
-              state={publishState({
-                isLive: entry?.status === "published",
-                hasNewerChanges: isUnsaved || entry?.hasUnpublishedChanges === true,
-              })}
-              // A new entry has nothing to publish until it has a title.
-              disabled={actions.isWorking || (entry === undefined && title.trim() === "")}
-              onPublish={() => void publish()}
-            />
-          ) : (
-            <Button
-              onClick={() => void saveExplicitly({ saveVersion: true })}
-              disabled={!isUnsaved && entry !== undefined}
-            >
-              {t("editor.save")}
-            </Button>
-          )
-        }
-      />
-
-      <SentBackNote state={reviewState.data} className="mb-6" />
-      {bannerMessage && (
-        <div
-          role="alert"
-          className="mb-6 flex items-start gap-2.5 rounded-card bg-danger/10 px-4 py-3 text-footnote text-label"
-        >
-          <CircleAlert
-            aria-hidden="true"
-            strokeWidth={2}
-            className="mt-px size-4 shrink-0 text-danger"
-          />
-          <p className="flex-1">{bannerMessage}</p>
-          {actions.actionError && (
-            <button
-              type="button"
-              onClick={actions.dismissActionError}
-              aria-label={t("common.dismiss")}
-              className="-m-1 flex size-6 items-center justify-center rounded-full text-label-secondary hover:bg-fill focus-visible:focus-ring"
-            >
-              <X aria-hidden="true" strokeWidth={2} className="size-3.5" />
-            </button>
-          )}
-        </div>
-      )}
-
-      {views.length > 1 && switchSitsUnderBar && <div className="mb-5">{viewSwitchControl}</div>}
-
-      {showsChildren && entry ? (
-        <CollectionView
-          place={{ parentId: entry.id }}
-          placeName={title || t("editor.untitled")}
-          allLevels={false}
-        />
-      ) : (
-        <div className={classNames("grid items-start", editorColumns[companion])}>
-          <div
-            ref={documentElement}
-            // The document sits on a white page over the grey desk, like a document in Pages.
-            className="flex min-w-0 flex-col gap-9 rounded-panel bg-surface px-9 pt-8 pb-10"
-          >
-            <div className="flex flex-col gap-1">
-              <EntryTitleInput
-                label={titleField?.label ?? t("editor.titleFallback")}
-                onSubmit={designField && !entry ? () => void startDesigning() : undefined}
-                value={title}
-                onChange={(value) =>
-                  dispatch({ type: "fieldChanged", handle: titleFieldHandle, value })
-                }
-                error={state.fieldErrors[titleFieldHandle]}
+          }
+          primaryAction={
+            canPublish && entry && reviewState.data?.mustSendForReview ? (
+              <SendForReviewButton
+                entryId={entry.id}
+                state={reviewState.data}
+                disabled={actions.isWorking}
+                beforeSending={() => (isUnsaved ? saveExplicitly() : undefined)}
+                look="toolbar"
               />
-              <EntrySlugInput
-                routePattern={address.pattern}
-                fixedAddress={address.fixedAddress}
-                slug={state.current.slug}
-                onChange={(slug) => dispatch({ type: "slugChanged", slug })}
-                error={state.fieldErrors.slug}
-                viewPage={viewPage}
-              />
-            </div>
-
-            {designField ? (
-              <DesignFirstFields
-                key={state.formVersion}
-                designField={designField}
-                fields={blueprint.fields}
-                data={state.current.data}
-                errors={state.fieldErrors}
-                onChange={(handle, value) => dispatch({ type: "fieldChanged", handle, value })}
-                collectionHandle={collection.handle}
-                entryId={entry?.id}
-                hasTitle={title.trim() !== ""}
-                onStartDesigning={() => void startDesigning()}
-                isStarting={isStartingDesign}
+            ) : canPublish ? (
+              <PagePublishButton
+                state={publishState({
+                  isLive: entry?.status === "published",
+                  hasNewerChanges: isUnsaved || entry?.hasUnpublishedChanges === true,
+                })}
+                // A new entry has nothing to publish until it has a title.
+                disabled={actions.isWorking || (entry === undefined && title.trim() === "")}
+                onPublish={() => void publish()}
               />
             ) : (
-              <EntryFields
-                key={state.formVersion}
+              <Button
+                onClick={() => void saveExplicitly({ saveVersion: true })}
+                disabled={!isUnsaved && entry !== undefined}
+              >
+                {t("editor.save")}
+              </Button>
+            )
+          }
+        />
+
+        <SentBackNote state={reviewState.data} className="mb-6" />
+        {bannerMessage && (
+          <div
+            role="alert"
+            className="mb-6 flex items-start gap-2.5 rounded-card bg-danger/10 px-4 py-3 text-footnote text-label"
+          >
+            <CircleAlert
+              aria-hidden="true"
+              strokeWidth={2}
+              className="mt-px size-4 shrink-0 text-danger"
+            />
+            <p className="flex-1">{bannerMessage}</p>
+            {actions.actionError && (
+              <button
+                type="button"
+                onClick={actions.dismissActionError}
+                aria-label={t("common.dismiss")}
+                className="-m-1 flex size-6 items-center justify-center rounded-full text-label-secondary hover:bg-fill focus-visible:focus-ring"
+              >
+                <X aria-hidden="true" strokeWidth={2} className="size-3.5" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {views.length > 1 && switchSitsUnderBar && <div className="mb-5">{viewSwitchControl}</div>}
+
+        {showsChildren && entry ? (
+          <CollectionView
+            place={{ parentId: entry.id }}
+            placeName={title || t("editor.untitled")}
+            allLevels={false}
+          />
+        ) : (
+          <div className={classNames("grid items-start", editorColumns[companion])}>
+            <div
+              ref={documentElement}
+              // The document sits on a white page over the grey desk, like a document in Pages.
+              className="flex min-w-0 flex-col gap-9 rounded-panel bg-surface px-9 pt-8 pb-10"
+            >
+              <div className="flex flex-col gap-1">
+                <EntryTitleInput
+                  label={titleField?.label ?? t("editor.titleFallback")}
+                  onSubmit={designField && !entry ? () => void startDesigning() : undefined}
+                  value={title}
+                  onChange={(value) =>
+                    dispatch({ type: "fieldChanged", handle: titleFieldHandle, value })
+                  }
+                  error={state.fieldErrors[titleFieldHandle]}
+                />
+                <EntrySlugInput
+                  routePattern={address.pattern}
+                  fixedAddress={address.fixedAddress}
+                  slug={state.current.slug}
+                  onChange={(slug) => dispatch({ type: "slugChanged", slug })}
+                  error={state.fieldErrors.slug}
+                  viewPage={viewPage}
+                />
+              </div>
+
+              {designField ? (
+                <DesignFirstFields
+                  key={state.formVersion}
+                  designField={designField}
+                  fields={blueprint.fields}
+                  data={state.current.data}
+                  errors={state.fieldErrors}
+                  onChange={(handle, value) => dispatch({ type: "fieldChanged", handle, value })}
+                  collectionHandle={collection.handle}
+                  entryId={entry?.id}
+                  hasTitle={title.trim() !== ""}
+                  onStartDesigning={() => void startDesigning()}
+                  isStarting={isStartingDesign}
+                />
+              ) : (
+                <EntryFields
+                  key={state.formVersion}
+                  fields={blueprint.fields}
+                  data={state.current.data}
+                  errors={state.fieldErrors}
+                  onChange={(handle, value) => dispatch({ type: "fieldChanged", handle, value })}
+                />
+              )}
+            </div>
+
+            {isPanelOpen && (
+              <EntrySidePanel
+                id={panelId}
+                collection={collection}
+                entry={entry}
+                locale={entry?.locale ?? locale}
+                parentId={state.current.parentId}
+                onParentChange={(parentId) => dispatch({ type: "parentChanged", parentId })}
+                canPublish={canPublish}
+                isWorking={actions.isWorking}
+                onUnpublish={() => void actions.unpublish().then(afterPublishing)}
+                onSchedule={(publishAt) =>
+                  void saveExplicitly().then(
+                    async (saved) => saved && afterPublishing(await actions.schedule(publishAt)),
+                  )
+                }
+                onCompareWithLive={entry ? () => setIsComparingWithLive(true) : undefined}
+                onRestore={async (revisionId) => {
+                  await actions.restore(revisionId);
+                  await refresh(entry ? [entry.id] : []);
+                }}
+              >
+                {Boolean(collection.routePattern) && canDesign && (
+                  <TemplateChoiceSection
+                    collection={collection}
+                    value={state.current.data[TEMPLATE_CHOICE_KEY]}
+                    onChange={(value) =>
+                      dispatch({ type: "fieldChanged", handle: TEMPLATE_CHOICE_KEY, value })
+                    }
+                  />
+                )}
+                {entry && collection.structure === "tree" && Boolean(collection.routePattern) && (
+                  <PageMenuSection entryId={entry.id} pageTitle={title || t("editor.untitled")} />
+                )}
+                <PluginEditorPanels
+                  entryId={entry?.id}
+                  entryTitle={title}
+                  slug={state.current.slug}
+                  collection={{
+                    handle: collection.handle,
+                    name: collection.name,
+                    routePattern: collection.routePattern,
+                  }}
+                />
+              </EntrySidePanel>
+            )}
+
+            {isPreviewOpen && (
+              <EntryPreviewPane
+                id={previewId}
+                collection={collection}
+                entry={entry}
                 fields={blueprint.fields}
-                data={state.current.data}
-                errors={state.fieldErrors}
-                onChange={(handle, value) => dispatch({ type: "fieldChanged", handle, value })}
+                title={title}
+                onClose={() => setCompanion("panel")}
               />
             )}
           </div>
+        )}
 
-          {isPanelOpen && (
-            <EntrySidePanel
-              id={panelId}
-              collection={collection}
-              entry={entry}
-              locale={entry?.locale ?? locale}
-              parentId={state.current.parentId}
-              onParentChange={(parentId) => dispatch({ type: "parentChanged", parentId })}
-              canPublish={canPublish}
-              isWorking={actions.isWorking}
-              onUnpublish={() => void actions.unpublish().then(afterPublishing)}
-              onSchedule={(publishAt) =>
-                void saveExplicitly().then(
-                  async (saved) => saved && afterPublishing(await actions.schedule(publishAt)),
-                )
-              }
-              onCompareWithLive={entry ? () => setIsComparingWithLive(true) : undefined}
-              onRestore={async (revisionId) => {
-                await actions.restore(revisionId);
-                await refresh(entry ? [entry.id] : []);
-              }}
-            >
-              {Boolean(collection.routePattern) && canDesign && (
-                <TemplateChoiceSection
-                  collection={collection}
-                  value={state.current.data[TEMPLATE_CHOICE_KEY]}
-                  onChange={(value) =>
-                    dispatch({ type: "fieldChanged", handle: TEMPLATE_CHOICE_KEY, value })
-                  }
-                />
-              )}
-              {entry && collection.structure === "tree" && Boolean(collection.routePattern) && (
-                <PageMenuSection entryId={entry.id} pageTitle={title || t("editor.untitled")} />
-              )}
-              <PluginEditorPanels
-                entryId={entry?.id}
-                entryTitle={title}
-                slug={state.current.slug}
-                collection={{
-                  handle: collection.handle,
-                  name: collection.name,
-                  routePattern: collection.routePattern,
-                }}
-              />
-            </EntrySidePanel>
-          )}
-
-          {isPreviewOpen && (
-            <EntryPreviewPane
-              id={previewId}
-              collection={collection}
-              entry={entry}
-              fields={blueprint.fields}
-              title={title}
-              onClose={() => setCompanion("panel")}
-            />
-          )}
-        </div>
-      )}
-
-      <PublishWithParentDialog
-        open={parentQuestion !== null}
-        title={title || t("editor.untitled")}
-        ancestors={unpublishedAncestors}
-        isWorking={parentQuestion?.isWorking ?? false}
-        error={parentQuestion?.error ?? null}
-        onCancel={() => setParentQuestion(null)}
-        onPublishAlone={() => {
-          setParentQuestion(null);
-          void saveAndPublish();
-        }}
-        onPublishWithParent={() => void publishWithParent()}
-      />
-
-      {entry && (
-        <Dialog
-          open={isShowingDetails}
-          onClose={() => setIsShowingDetails(false)}
-          title={t("editor.details")}
-          size="sheet"
-        >
-          <InfoTab entry={entry} collection={collection} info={info} />
-        </Dialog>
-      )}
-
-      <ConfirmDialog
-        open={isConfirmingDelete}
-        title={t("editor.deleteTitle", { title: title || t("editor.untitled") })}
-        message={t("editor.deleteMessage")}
-        confirmLabel={t("tree.delete.confirm")}
-        cancelLabel={t("common.cancel")}
-        isDestructive
-        isWorking={actions.isWorking}
-        onCancel={() => setIsConfirmingDelete(false)}
-        onConfirm={() => void deleteEntry()}
-      />
-
-      {isComparingWithLive && entry && (
-        <CompareWithLiveDialog
-          entryId={entry.id}
-          fields={blueprint.fields}
-          current={state.current.data}
-          hasUnsavedChanges={isUnsaved}
-          viewPage={viewPage}
-          onClose={() => setIsComparingWithLive(false)}
+        <PublishWithParentDialog
+          open={parentQuestion !== null}
+          title={title || t("editor.untitled")}
+          ancestors={unpublishedAncestors}
+          isWorking={parentQuestion?.isWorking ?? false}
+          error={parentQuestion?.error ?? null}
+          onCancel={() => setParentQuestion(null)}
+          onPublishAlone={() => {
+            setParentQuestion(null);
+            void saveAndPublish();
+          }}
+          onPublishWithParent={() => void publishWithParent()}
         />
-      )}
 
-      {isCopyingToSite && entry && (
-        <CopyToSiteDialog
-          entryId={entry.id}
-          sites={otherSites}
-          onCopied={(copyId, site) => void openCopy(copyId, site.handle)}
-          onClose={() => setIsCopyingToSite(false)}
+        {entry && (
+          <Dialog
+            open={isShowingDetails}
+            onClose={() => setIsShowingDetails(false)}
+            title={t("editor.details")}
+            size="sheet"
+          >
+            <InfoTab entry={entry} collection={collection} info={info} />
+          </Dialog>
+        )}
+
+        <ConfirmDialog
+          open={isConfirmingDelete}
+          title={t("editor.deleteTitle", { title: title || t("editor.untitled") })}
+          message={t("editor.deleteMessage")}
+          confirmLabel={t("tree.delete.confirm")}
+          cancelLabel={t("common.cancel")}
+          isDestructive
+          isWorking={actions.isWorking}
+          onCancel={() => setIsConfirmingDelete(false)}
+          onConfirm={() => void deleteEntry()}
         />
-      )}
 
-      <ConfirmDialog
-        open={leaveWarning.isAsking}
-        title={t("editor.leaveTitle")}
-        message={t("editor.leaveMessage")}
-        confirmLabel={t("editor.leave")}
-        cancelLabel={t("editor.stay")}
-        isDestructive
-        onCancel={leaveWarning.stay}
-        onConfirm={leaveWarning.leave}
-      />
+        {isComparingWithLive && entry && (
+          <CompareWithLiveDialog
+            entryId={entry.id}
+            fields={blueprint.fields}
+            current={state.current.data}
+            hasUnsavedChanges={isUnsaved}
+            viewPage={viewPage}
+            onClose={() => setIsComparingWithLive(false)}
+          />
+        )}
+
+        {isCopyingToSite && entry && (
+          <CopyToSiteDialog
+            entryId={entry.id}
+            sites={otherSites}
+            onCopied={(copyId, site) => void openCopy(copyId, site.handle)}
+            onClose={() => setIsCopyingToSite(false)}
+          />
+        )}
+
+        <ConfirmDialog
+          open={leaveWarning.isAsking}
+          title={t("editor.leaveTitle")}
+          message={t("editor.leaveMessage")}
+          confirmLabel={t("editor.leave")}
+          cancelLabel={t("editor.stay")}
+          isDestructive
+          onCancel={leaveWarning.stay}
+          onConfirm={leaveWarning.leave}
+        />
+      </FieldPeopleContext>
     </div>
   );
 }

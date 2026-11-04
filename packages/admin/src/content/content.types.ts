@@ -58,6 +58,8 @@ export interface EntrySummary {
 export interface Entry extends EntrySummary {
   collectionHandle: string;
   data: EntryData;
+  /** Goes up with every change; a save says which one it started from. */
+  version: number;
   blueprint: Blueprint;
   /** Saved since it was last published: the site still shows the published version. */
   hasUnpublishedChanges: boolean;
@@ -79,7 +81,8 @@ export interface EntryPage {
   perPage: number;
 }
 
-export type RevisionKind = "edited" | "published" | "unpublished" | "scheduled" | "restored";
+export type RevisionKind =
+  "edited" | "published" | "unpublished" | "scheduled" | "restored" | "kept";
 
 export interface Revision {
   id: string;

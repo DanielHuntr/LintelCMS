@@ -20,7 +20,7 @@ import type { Site } from "../sites/sites.table.js";
 import { checkParent } from "./entry-ordering.service.js";
 import { createContentReferences, removeReferencesFromEntries } from "./entry-references.js";
 import { describeEntry } from "./entry-responses.js";
-import { EntryNotFoundError } from "./entries.errors.js";
+import { EntryChangedError, EntryNotFoundError } from "./entries.errors.js";
 import {
   clearOriginReferences,
   deleteEntryRow,
@@ -34,7 +34,7 @@ import {
   listTranslationFamily,
   moveChildrenToParent,
   type SlugScope,
-  updateEntryRow,
+  updateEntryRowAtVersion,
 } from "./entries.repository.js";
 import type {
   CreateEntryRequest,
@@ -159,7 +159,46 @@ export async function saveEntry(
   request: UpdateEntryRequest,
   context: EntryChangeContext,
 ): Promise<EntryResponse> {
+  // Values are merged over what was read, so a save that lost a race reads again rather than
+  // putting back what it read. With `baseVersion`, the person hears about it instead.
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await saveOverVersion(database, entryId, request, context);
+    } catch (error) {
+      if (!(error instanceof LostSaveRaceError)) throw error;
+      if (request.baseVersion !== undefined || attempt === MOST_SAVE_ATTEMPTS) {
+        throw await describeEntryChange(database, entryId);
+      }
+    }
+  }
+}
+
+const MOST_SAVE_ATTEMPTS = 3;
+
+class LostSaveRaceError extends Error {}
+
+async function describeEntryChange(
+  database: DatabaseOrTransaction,
+  entryId: string,
+): Promise<EntryChangedError> {
+  const current = await findEntry(database, entryId);
+  return new EntryChangedError({
+    version: current.version,
+    changedBy: current.updatedBy?.name ?? null,
+    changedAt: current.updatedAt,
+  });
+}
+
+async function saveOverVersion(
+  database: DatabaseOrTransaction,
+  entryId: string,
+  request: UpdateEntryRequest,
+  context: EntryChangeContext,
+): Promise<EntryResponse> {
   const entry = await findEntryOrFail(database, entryId);
+  if (request.baseVersion !== undefined && request.baseVersion !== entry.version) {
+    throw await describeEntryChange(database, entryId);
+  }
   const collection = await findCollectionByIdOrFail(database, entry.collectionId);
   const data = await validateForCollection(
     database,
@@ -192,12 +231,13 @@ export async function saveEntry(
 
   await withFriendlySlugConflict(collection.name, () =>
     database.transaction(async (transaction) => {
-      await updateEntryRow(transaction, entry.id, {
+      const updated = await updateEntryRowAtVersion(transaction, entry.id, entry.version, {
         data,
         slug,
         parentId: request.parentId === undefined ? entry.parentId : request.parentId,
         updatedBy: context.authorId,
       });
+      if (!updated) throw new LostSaveRaceError();
       const isMoved = request.parentId !== undefined && request.parentId !== entry.parentId;
       if (slug !== entry.slug || isMoved) await checkAddressIsFree(transaction, entry.id);
       await recordEdit(transaction, {

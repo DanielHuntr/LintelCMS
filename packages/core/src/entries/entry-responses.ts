@@ -64,6 +64,7 @@ export function describeEntry(
     data: entry.data,
     blueprint: describeBlueprint(blueprint),
     hasUnpublishedChanges: hasUnpublishedChanges(entry),
+    version: entry.version,
     translations,
     createdById: entry.createdBy,
   };
@@ -73,7 +74,7 @@ export function describeEntry(
  * Compares values rather than timestamps, so saving without changing anything (or
  * restoring the published version) doesn't claim there is something new to publish.
  */
-function hasUnpublishedChanges(entry: EntryWithDetails["entry"]): boolean {
+export function hasUnpublishedChanges(entry: EntryWithDetails["entry"]): boolean {
   return entry.publishedData !== null && !isDeepStrictEqual(entry.data, entry.publishedData);
 }
 

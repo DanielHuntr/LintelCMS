@@ -2,6 +2,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type DragEvent } from "react";
 import { Skeleton } from "../design/Skeleton.js";
 import { t } from "../i18n/strings.js";
+import { PeopleOnRow } from "../collaboration/PeopleHere.js";
+import { usePeopleOnPage } from "../collaboration/usePeople.js";
 import { useContentTree } from "./ContentTreeContext.js";
 import type { TreeNode, TreePlace } from "./contentTree.types.js";
 import { TREE_PAGE_SIZE, useTreeChildren } from "./contentTree.queries.js";
@@ -154,6 +156,7 @@ function EntryTreeItem({
 
   return (
     <TreeRow
+      trailing={<PeopleOnThisRow entryId={node.id} />}
       treeKey={node.id}
       parentKey={parentKey}
       depth={depth}
@@ -214,4 +217,8 @@ function EntryTreeItem({
       )}
     </TreeRow>
   );
+}
+
+function PeopleOnThisRow({ entryId }: { entryId: string }) {
+  return <PeopleOnRow people={usePeopleOnPage(entryId)} />;
 }

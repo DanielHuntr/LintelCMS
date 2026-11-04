@@ -20,6 +20,7 @@ import {
   SplitDoesNotMatchError,
   TooManyVersionsError,
   VersionNotFoundError,
+  VersionChangedError,
 } from "./experiments.errors.js";
 import {
   deleteExperimentRow,
@@ -158,11 +159,16 @@ export async function saveVersion(
   key: ChallengerKey,
   design: unknown,
   permissions: readonly string[],
+  /** When the version was saved, as the person saving last read it. */
+  baseUpdatedAt?: string | null,
 ): Promise<ExperimentResponse> {
   const row = await findChangeableExperiment(database, experimentId, "change a version", true);
   const versions = await listVersionRows(database, tenantId, [experimentId]);
   const existing = versions.find((version) => version.key === key);
   if (!existing) throw new VersionNotFoundError(key);
+  if (baseUpdatedAt !== undefined && baseUpdatedAt !== existing.updatedAt.toISOString()) {
+    throw new VersionChangedError(existing.updatedAt.toISOString());
+  }
   const checked = readDesign(design);
   if (!checked) throw new InvalidVersionDesignError("That design couldn't be read. Try again.");
   let page = checked;

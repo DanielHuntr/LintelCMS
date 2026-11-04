@@ -146,6 +146,7 @@
     "@fastify/multipart": "^10.1.6",
     "@fastify/rate-limit": "^11.2.1",
     "@fastify/static": "^10.1.8",
+    "@fastify/websocket": "^11.3.6",
     "@lintel/builder": "workspace:*",
     "@lintel/builder-model": "workspace:*",
     "@lintel/field-conditions": "workspace:*",
@@ -191,12 +192,14 @@
     "@types/nodemailer": "^8.0.2",
     "@types/qrcode": "^1.5.6",
     "@types/ssh2": "^1.15.6",
+    "@types/ws": "^8.18.2",
     "@types/yauzl": "^3.4.0",
     "@types/yazl": "^3.3.1",
     "drizzle-kit": "^0.31.11",
     "ftp-srv": "^4.6.3",
     "playwright": "1.63.0",
     "tsx": "^4.23.15",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "ws": "^8.22.1"
   }
 }

@@ -3,6 +3,7 @@ import { useShaderLibraryForBuilder } from "./useShaderLibraryForBuilder.js";
 import { useEntryReviewState } from "../client-editing/clientEditing.queries.js";
 import { SendForReviewButton, SentBackNote } from "../client-editing/SendForReview.js";
 import {
+  type CanvasPointer,
   type CanvasSite,
   type FileUploader,
   PageBuilder,
@@ -50,6 +51,11 @@ import { useBuilderData, useCanvasSite, useViewPageSite } from "../website/websi
 import { useEffectModules } from "./useEffectModules.js";
 import { useBuilderBlocks } from "../blocks/useBuilderBlocks.js";
 import { usePageDesignSaving } from "./usePageDesignSaving.js";
+import { ConflictDialog } from "../collaboration/ConflictDialog.js";
+import { describeDesignClashes } from "../collaboration/describeClashes.js";
+import { PeopleHere } from "../collaboration/PeopleHere.js";
+import { useLiveActivity } from "../collaboration/useLiveActivity.js";
+import { usePeopleHere } from "../collaboration/usePeople.js";
 import { SitePartProblems } from "./SitePartProblems.js";
 import { useSiteDesign } from "./useSiteDesign.js";
 import { useSiteMotion } from "./useSiteMotion.js";
@@ -84,6 +90,9 @@ export const canvasFrameScripts = {
   frame: besideTheAdmin("canvas-frame.js"),
   motion: besideTheAdmin("canvas-motion.js"),
 };
+
+const mergeNoteClasses =
+  "fixed bottom-4 left-1/2 z-40 max-w-xl -translate-x-1/2 rounded-card bg-surface-raised px-4 py-3 text-footnote text-label shadow-float";
 
 interface PageDesignPageProps {
   collectionHandle: string;
@@ -155,12 +164,28 @@ function PageDesigner({
   // Publishing the page also puts the navigation and footer changes live, for those who
   // may change them.
   const canPublishShared = useCan("builder:blocks");
+  // Before the saving below: someone has to be on the page before they can open its design.
+  const peopleHere = usePeopleHere(loadedEntry.id, "design");
   const saving = usePageDesignSaving(
     loadedEntry,
     fieldHandle,
+    "document" in opened ? opened.document : null,
     canPublishShared ? shared.publish : undefined,
   );
   const session = useSession();
+  const { atWork, share } = useLiveActivity(loadedEntry.id, peopleHere);
+  const canvasPeers = useMemo(
+    () =>
+      atWork.map(({ id, name, colour, pointer, selection }) => ({
+        id,
+        name,
+        colour,
+        pointer,
+        selectedId: selection[0] ?? null,
+      })),
+    [atWork],
+  );
+  const sharePointer = useCallback((pointer: CanvasPointer | null) => share({ pointer }), [share]);
   // A/B tests: Version B and C of the page open on the same canvas (see src/experiments).
   const experiments = useExperimentsInDesigner({
     entryId: loadedEntry.id,
@@ -172,12 +197,20 @@ function PageDesigner({
   const [currentRoot, setCurrentRoot] = useState<PageDocument["root"] | null>(
     "document" in opened ? opened.document.root : null,
   );
+  const selectInExperiments = experiments.select;
+  const selectionChanged = useCallback(
+    (nodeId: string | null) => {
+      selectInExperiments?.(nodeId);
+      share({ selection: nodeId ? [nodeId] : [] });
+    },
+    [selectInExperiments, share],
+  );
   const changeSavedDesign = saving.change;
   const changeExperimentDesign = experiments.change;
   const changeDesign = useCallback(
-    (document: PageDocument) => {
+    (document: PageDocument, isFromElsewhere = false) => {
       setCurrentRoot(document.root);
-      if (!changeExperimentDesign(document)) changeSavedDesign(document);
+      if (!changeExperimentDesign(document) && !isFromElsewhere) changeSavedDesign(document);
     },
     [changeSavedDesign, changeExperimentDesign],
   );
@@ -351,9 +384,16 @@ function PageDesigner({
       <ShaderLibraryContext value={shaderLibrary}>
         <PageBuilder
           key={experiments.editing}
-          initialDocument={experiments.initialDocument ?? opened.document}
+          initialDocument={
+            (experiments.isEditingVersion
+              ? experiments.initialDocument
+              : saving.currentDocument()) ?? opened.document
+          }
+          peers={experiments.isEditingVersion ? undefined : canvasPeers}
+          onPointerChange={sharePointer}
           onChange={changeDesign}
-          onSelectionChange={experiments.select}
+          incomingChanges={experiments.isEditingVersion ? undefined : saving.incomingChanges}
+          onSelectionChange={selectionChanged}
           title={title}
           toolbarTitleNote={
             <PageStatus
@@ -411,11 +451,21 @@ function PageDesigner({
           }
           toolbarEnd={
             <div className="ms-2 flex items-center gap-3" data-tour="publish">
+              <PeopleHere people={peopleHere} />
               {experiments.switcher}
               {experiments.isEditingVersion ? (
                 experiments.saveState
               ) : (
                 <>
+                  {saving.isReconnecting && (
+                    <span
+                      role="status"
+                      title={t("collab.reconnecting.more")}
+                      className="whitespace-nowrap text-footnote text-label-secondary"
+                    >
+                      {t("collab.reconnecting")}
+                    </span>
+                  )}
                   <SaveIndicator
                     status={saving.status}
                     hasUnsavedChanges={saving.hasUnsavedChanges}
@@ -460,6 +510,21 @@ function PageDesigner({
             {saving.errorMessage}
           </p>
         )}
+        {saving.conflict && (
+          <ConflictDialog
+            personName={saving.conflict.latest.updatedBy?.name ?? null}
+            items={describeDesignClashes(
+              saving.conflict.clashes,
+              saving.conflict.base,
+              saving.conflict.theirs,
+            )}
+            onKeepMine={saving.keepMine}
+            onUseTheirs={saving.useTheirs}
+          />
+        )}
+        <p role="status" className={saving.mergeNote ? mergeNoteClasses : "sr-only"}>
+          {saving.mergeNote}
+        </p>
         <SentBackNote
           state={reviewState.data}
           className="fixed bottom-4 left-4 z-30 max-w-md shadow-float"

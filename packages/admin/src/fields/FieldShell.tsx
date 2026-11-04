@@ -1,3 +1,4 @@
+import { FieldPerson } from "../collaboration/FieldPeople.js";
 import type { ReactNode } from "react";
 import { classNames } from "../design/classNames.js";
 import { t } from "../i18n/strings.js";
@@ -97,6 +98,7 @@ export function FieldShell({
     return (
       <div data-field-handle={field.handle} className="flex min-w-0 flex-col gap-1.5">
         {control}
+        <FieldPerson handle={field.handle} />
         {messages}
       </div>
     );
@@ -114,6 +116,7 @@ export function FieldShell({
         </legend>
         {helpAbove && helpText}
         {control}
+        <FieldPerson handle={field.handle} />
         {messages}
       </fieldset>
     );
@@ -129,6 +132,7 @@ export function FieldShell({
       </div>
       {helpAbove && helpText}
       {labelling === "label" && control}
+      <FieldPerson handle={field.handle} />
       {messages}
     </div>
   );

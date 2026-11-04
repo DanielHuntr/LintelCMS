@@ -4,7 +4,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { t } from "../i18n/strings.js";
 import { useCan } from "../session/SessionContext.js";
+import { ApiError } from "../api/client.js";
 import {
+  getSiteSections,
   publishSiteSections,
   type SiteSectionsDraft,
   updateSiteSections,
@@ -39,6 +41,11 @@ export function useSiteSections(): SiteSectionsState {
   const queryClient = useQueryClient();
   const [problem, setProblem] = useState<SitePartProblem | null>(null);
   const pending = useRef<SiteSectionsChange>({});
+  // Each section as last read, so someone else's newer one is never saved over unasked.
+  const revisions = useRef<SiteSectionsDraft["revisions"]>(undefined);
+  useEffect(() => {
+    revisions.current ??= saved.data?.revisions;
+  }, [saved.data]);
   // The save under way, so publishing can wait for it.
   const saving = useRef<Promise<boolean> | null>(null);
   const timer = useRef(0);
@@ -52,16 +59,31 @@ export function useSiteSections(): SiteSectionsState {
     const change = pending.current;
     if (Object.keys(change).length === 0) return Promise.resolve(true);
     pending.current = {};
-    const save = updateSiteSections(change)
+    const save = updateSiteSections(change, revisions.current)
       .then(
         (sections) => {
           setProblem(null);
+          revisions.current = sections.revisions;
           queryClient.setQueryData(websiteKeys.sections(), sections);
           return true;
         },
-        (error: unknown) => {
+        async (error: unknown) => {
           // Keep the change for the next try; a newer change to the same slot wins.
           pending.current = { ...change, ...pending.current };
+          if (error instanceof ApiError && error.code === "SITE_SECTION_CHANGED") {
+            // Saving is held back until this person says, so theirs doesn't go over the other.
+            setProblem({
+              message: t("pageDesign.siteSections.changedElsewhere"),
+              retry: () => {
+                void getSiteSections().then((latest) => {
+                  revisions.current = latest.revisions;
+                  void flushRef.current();
+                });
+              },
+              retryLabel: t("pageDesign.siteStyles.useMine"),
+            });
+            return false;
+          }
           setProblem({
             message: t("pageDesign.siteSections.notSaved", {
               message: error instanceof Error ? error.message : String(error),

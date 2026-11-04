@@ -1,15 +1,18 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Writable } from "node:stream";
 import { gunzipSync } from "node:zlib";
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import WebSocket from "ws";
 import { ensurePagesCollection } from "../collections/default-collections.js";
 import { forgetAnalyticsTags } from "../analytics/page-tag.js";
 import { LocalDiskStorage } from "../media/local-disk-storage.js";
 import { setEnabledPlugins } from "../plugins/plugins.service.js";
 import { useTestDatabase } from "../testing/test-database.js";
+import { createPersonWithRole } from "../testing/test-people.js";
 import { SESSION_COOKIE_NAME } from "../auth/session-cookie.js";
 import { createTestUser, TEST_PASSWORD } from "../testing/test-users.js";
 import { builtInPublicSite } from "../website/built-in-public-site.js";
@@ -70,6 +73,52 @@ describe("the production server", () => {
     const missingApi = await app.inject({ method: "GET", url: "/api/no-such-route" });
     expect(missingApi.statusCode).toBe(404);
     expect(missingApi.headers["content-type"]).toContain("application/json");
+  });
+
+  it("serves the live connection under the API's address", async () => {
+    const app = await start({ publicSite: builtInPublicSite });
+    await app.listen({ port: 0, host: "127.0.0.1" });
+    const { port } = app.server.address() as AddressInfo;
+    const refused = await new Promise<number>((resolve, reject) => {
+      const socket = new WebSocket(`ws://127.0.0.1:${port}/api/live`, {
+        headers: { origin: "https://example.com" },
+      });
+      socket.on("unexpected-response", (_request, response) => resolve(response.statusCode ?? 0));
+      socket.on("open", () => reject(new Error("It opened without a session")));
+      socket.on("error", () => undefined);
+    });
+    // Asking who you are, rather than falling through to the website.
+    expect(refused).toBe(401);
+  });
+
+  it("opens the live connection for someone signed in, past compression and the website", async () => {
+    const app = await start({ publicSite: builtInPublicSite });
+    await createPersonWithRole(testDatabase.database, "sam@example.com", "owner", "Sam Lee");
+    const signedIn = await app.inject({
+      method: "POST",
+      url: "/api/auth/sign-in",
+      payload: { email: "sam@example.com", password: TEST_PASSWORD },
+    });
+    const cookie = signedIn.cookies.find((each) => each.name === SESSION_COOKIE_NAME);
+    await app.listen({ port: 0, host: "127.0.0.1" });
+    const { port } = app.server.address() as AddressInfo;
+    const welcome = await new Promise<string>((resolve, reject) => {
+      const socket = new WebSocket(`ws://127.0.0.1:${port}/api/live`, {
+        headers: {
+          origin: "https://example.com",
+          cookie: `${SESSION_COOKIE_NAME}=${cookie?.value ?? ""}`,
+        },
+      });
+      socket.on("message", (data: Buffer) => {
+        resolve(data.toString());
+        socket.close();
+      });
+      socket.on("error", reject);
+      socket.on("unexpected-response", (_request, response) =>
+        reject(new Error(`Refused with ${response.statusCode}`)),
+      );
+    });
+    expect(JSON.parse(welcome)).toMatchObject({ type: "welcome" });
   });
 
   it("counts visitors on the production website too (LINTEL-FUNC-042)", async () => {

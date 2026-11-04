@@ -265,6 +265,25 @@ export async function updateEntryRow(
   return updated;
 }
 
+/**
+ * Saves changes only if the row is still at this version, so two saves can't both start from
+ * the same version. Undefined when another save got there first.
+ */
+export async function updateEntryRowAtVersion(
+  database: DatabaseOrTransaction,
+  entryId: string,
+  version: number,
+  changes: Partial<Omit<NewEntry, "id" | "tenantId" | "collectionId" | "siteId">>,
+): Promise<Entry | undefined> {
+  const [updated] = await updateReturning(
+    database,
+    entriesTable,
+    changes,
+    and(eq(entriesTable.id, entryId), eq(entriesTable.version, version)),
+  );
+  return updated;
+}
+
 export async function deleteEntryRow(
   database: DatabaseOrTransaction,
   entryId: string,

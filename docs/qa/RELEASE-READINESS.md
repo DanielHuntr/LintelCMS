@@ -271,3 +271,11 @@ Branch `fix/open-p3` (`FIX-LOG-open-p3.md`). The text above is unchanged.
 - LINTEL-UX-336 is a P2: dust or contours alone hid a section's own picture. Pages using them over a picture will now show it.
 - **Open from this pass:** 2 new P3s, LINTEL-UX-338 and 339.
 - Installed apps' sidebar pages stop showing for clients and Viewers, unless the app is installed again with `roles` that name them.
+
+## Update, 4 November 2026: working together
+
+Branch `feature/collaboration` (`FIX-LOG-collaboration.md`, LINTEL-UX-350 to 379). The text above is unchanged.
+
+- Saves to pages, A/B versions, and the navigation and footer can no longer overwrite someone else's without asking.
+- Blocks, menus, global settings, forms and media still save the last change.
+- Not yet checked in Firefox or Safari, on real Passenger hosting, or with more than three people.

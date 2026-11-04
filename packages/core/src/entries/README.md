@@ -6,23 +6,24 @@ publish, unpublish and restore is kept as a revision.
 
 ## Endpoints
 
-| Method and path                                   | Permission        | Body                            | Success                                               |
-| ------------------------------------------------- | ----------------- | ------------------------------- | ----------------------------------------------------- |
-| `GET /collections/:handle/entries`                | `entries:read`    | query below                     | 200 `{ entries, total, page, perPage }`               |
-| `POST /collections/:handle/entries`               | `entries:create`  | `{ data, slug?, parentId? }`    | 201 `Entry`                                           |
-| `GET /entries/:id`                                | `entries:read`    | none                            | 200 `Entry`                                           |
-| `PATCH /entries/:id`                              | `entries:update`  | `{ data?, slug?, parentId? }`   | 200 `Entry`                                           |
-| `POST /entries/:id/publish`                       | `entries:publish` | none                            | 200 `Entry`, or 400 `NOT_READY_TO_PUBLISH`            |
-| `POST /entries/:id/unpublish`                     | `entries:publish` | none                            | 200 `Entry`                                           |
-| `POST /entries/:id/schedule`                      | `entries:publish` | `{ publishAt }` (in the future) | 200 `Entry`                                           |
-| `GET /entries/scheduled`                          | `entries:read`    | `?from=&to=` (62 days at most)  | 200 `{ entries }` due then, soonest first             |
-| `GET /entries/:id/live`                           | `entries:read`    | none                            | 200 `{ publishedAt, data }` (null if never published) |
-| `DELETE /entries/:id`                             | `entries:delete`  | none                            | 204                                                   |
-| `POST /entries/:id/duplicate`                     | `entries:create`  | none                            | 201 `Entry`, a draft copy                             |
-| `GET /entries/:id/revisions`                      | `entries:read`    | none                            | 200 `{ revisions }`, newest first                     |
-| `GET /entries/:id/revisions/:revisionId`          | `entries:read`    | none                            | 200, with its `data`                                  |
-| `POST /entries/:id/revisions/:revisionId/restore` | `entries:update`  | none                            | 200 `Entry`                                           |
-| `POST /entries/:id/translations`                  | `entries:create`  | `{ locale }`                    | 201 `Entry`, or 409 `TRANSLATION_EXISTS`              |
+| Method and path                                   | Permission        | Body                                        | Success                                               |
+| ------------------------------------------------- | ----------------- | ------------------------------------------- | ----------------------------------------------------- |
+| `GET /collections/:handle/entries`                | `entries:read`    | query below                                 | 200 `{ entries, total, page, perPage }`               |
+| `POST /collections/:handle/entries`               | `entries:create`  | `{ data, slug?, parentId? }`                | 201 `Entry`                                           |
+| `GET /entries/:id`                                | `entries:read`    | none                                        | 200 `Entry`                                           |
+| `PATCH /entries/:id`                              | `entries:update`  | `{ data?, slug?, parentId?, baseVersion? }` | 200 `Entry`, or 409 `ENTRY_CHANGED`                   |
+| `POST /entries/:id/publish`                       | `entries:publish` | none                                        | 200 `Entry`, or 400 `NOT_READY_TO_PUBLISH`            |
+| `POST /entries/:id/unpublish`                     | `entries:publish` | none                                        | 200 `Entry`                                           |
+| `POST /entries/:id/schedule`                      | `entries:publish` | `{ publishAt }` (in the future)             | 200 `Entry`                                           |
+| `GET /entries/scheduled`                          | `entries:read`    | `?from=&to=` (62 days at most)              | 200 `{ entries }` due then, soonest first             |
+| `GET /entries/:id/live`                           | `entries:read`    | none                                        | 200 `{ publishedAt, data }` (null if never published) |
+| `DELETE /entries/:id`                             | `entries:delete`  | none                                        | 204                                                   |
+| `POST /entries/:id/duplicate`                     | `entries:create`  | none                                        | 201 `Entry`, a draft copy                             |
+| `GET /entries/:id/revisions`                      | `entries:read`    | none                                        | 200 `{ revisions }`, newest first                     |
+| `GET /entries/:id/revisions/:revisionId`          | `entries:read`    | none                                        | 200, with its `data`                                  |
+| `POST /entries/:id/revisions/:revisionId/restore` | `entries:update`  | none                                        | 200 `Entry`                                           |
+| `POST /entries/:id/revisions/keep`                | `entries:update`  | `{ data }`                                  | 204, sets a version aside in History                  |
+| `POST /entries/:id/translations`                  | `entries:create`  | `{ locale }`                                | 201 `Entry`, or 409 `TRANSLATION_EXISTS`              |
 
 The list takes `status` (`draft`, `published`, `scheduled`), `search` (in titles, any
 case), `page`, `perPage` (up to 100, default 25), `parentId` (direct children only) and
@@ -57,6 +58,15 @@ stale id never stops someone saving an unrelated change.
   the same way and must be free (`fields.slug` says so if not). Changing the title later
   keeps the slug, so addresses don't break.
 - The author is recorded as `updatedBy` and on the revision.
+
+## Two people saving
+
+Every change to an entry moves its `version` on, whatever makes it (`$onUpdate` on the column).
+The admin sends the `version` it started from as `baseVersion`. If the entry has moved on, the
+save is refused with 409 `ENTRY_CHANGED`, which says who saved it and when, and nothing is
+written. The write itself is conditional on the version, so two saves at the same moment can't
+both pass. Left out, a save goes over the latest, and two saves of different fields both stand.
+See `docs/decisions/0067-working-together-on-a-page.md`.
 
 ## Publishing
 

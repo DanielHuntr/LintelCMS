@@ -10,6 +10,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { id, tenantId, timestamps } from "../database/columns.js";
 import { collectionsTable } from "../collections/collections.table.js";
 import { sitesTable } from "../sites/sites.table.js";
@@ -34,6 +35,8 @@ export type EntryStatus = (typeof entryStatuses)[number];
  * - `originId` links translations: the French version of a page points at the English one.
  *   See docs/decisions/0007-translations-as-linked-entries.md.
  * - `parentId` builds the page tree for collections with a "tree" structure.
+ * - `version` goes up with every change to the row, whatever makes it, so someone saving can
+ *   say which version they started from and never overwrite a change they haven't seen.
  */
 export const entriesTable = pgTable(
   "entries",
@@ -57,6 +60,10 @@ export const entriesTable = pgTable(
     data: jsonb("data").$type<EntryData>().notNull().default({}),
     publishedData: jsonb("published_data").$type<EntryData>(),
     sortOrder: integer("sort_order").notNull().default(0),
+    version: integer("version")
+      .notNull()
+      .default(1)
+      .$onUpdate(() => sql`version + 1`),
     createdBy: uuid("created_by").references(() => usersTable.id, { onDelete: "set null" }),
     updatedBy: uuid("updated_by").references(() => usersTable.id, { onDelete: "set null" }),
     ...timestamps(),
@@ -86,12 +93,13 @@ export const revisionKinds = [
   "unpublished",
   "scheduled",
   "restored",
+  "kept",
 ] as const;
 export type RevisionKind = (typeof revisionKinds)[number];
 
 /**
  * The history of an entry, so editors can see what changed and roll back. `kind` says what
- * happened. Autosaves don't each make a revision: they keep updating one open "edited"
+ * happened; "kept" is a version someone set aside when they chose another person's changes. Autosaves don't each make a revision: they keep updating one open "edited"
  * revision per person (see revisions.service.ts and docs/decisions/0011).
  */
 export const revisionsTable = pgTable(

@@ -42,6 +42,8 @@ interface TreeRowProps {
   state?: NodeState;
   /** When a scheduled entry goes live, said with its state. */
   scheduledFor?: string | null;
+  /** Who else is on this page now, at the end of its row. */
+  trailing?: ReactNode;
   /** A count shown at the end, for folders whose items open as a list. */
   count?: { value: number; description: string };
   actions?: readonly ActionItem[];
@@ -84,6 +86,7 @@ export function TreeRow({
   state,
   scheduledFor,
   count,
+  trailing,
   actions,
   drag,
   onFocus,
@@ -238,6 +241,7 @@ export function TreeRow({
             {count.value}
           </span>
         )}
+        {trailing}
         {/* Live is the usual state, so only pages that need a second look get a mark. Screen
             readers still hear "Live" from the row's name. */}
         {state && state !== "published" && <StatusMark state={state} scheduledFor={scheduledFor} />}

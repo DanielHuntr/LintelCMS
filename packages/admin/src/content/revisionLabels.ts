@@ -7,6 +7,7 @@ const kindLabels: Record<Exclude<RevisionKind, "restored">, StringKey> = {
   published: "revisions.published",
   unpublished: "revisions.unpublished",
   scheduled: "revisions.scheduled",
+  kept: "revisions.kept",
 };
 
 /**

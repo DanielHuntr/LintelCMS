@@ -113,3 +113,20 @@ export class AddressTakenError extends HttpError {
     super(409, "ADDRESS_TAKEN", message, { fields: { slug: message } });
   }
 }
+
+/**
+ * Someone saved this entry after the person saving read it, so their save would overwrite
+ * changes they haven't seen. The admin fetches the entry and works out what clashes.
+ */
+export class EntryChangedError extends HttpError {
+  constructor(current: { version: number; changedBy: string | null; changedAt: string }) {
+    super(
+      409,
+      "ENTRY_CHANGED",
+      current.changedBy
+        ? `${current.changedBy} saved this while you were working on it.`
+        : "This was saved somewhere else while you were working on it.",
+      current,
+    );
+  }
+}

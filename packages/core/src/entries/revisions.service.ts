@@ -12,6 +12,7 @@ import {
   findEntryOrFail,
   validateForCollection,
 } from "./entries.service.js";
+import type { EntryData } from "./entries.table.js";
 import { recordEvent } from "./revision-log.js";
 import {
   findRevisionForEntry,
@@ -74,7 +75,18 @@ export async function restoreRevision(
     throw new RevisionNotFoundError();
   }
   const collection = await findCollectionByIdOrFail(database, entry.collectionId);
-  const data = await validateForCollection(database, collection, revision.data, context);
+  // Anyone who may edit can set a version aside, unchecked, so bringing one back is checked as
+  // a save is. Other revisions were checked when they were saved.
+  const data = await validateForCollection(
+    database,
+    collection,
+    revision.data,
+    context,
+    "saving",
+    revision.kind === "kept"
+      ? { previousData: entry.data, entryId: entry.id, locale: entry.locale }
+      : undefined,
+  );
   const blueprint = await findBlueprintByIdOrFail(database, collection.blueprintId);
   checkContentOnlyChange(blueprint.fields, entry.data, data, context.permissions);
 
@@ -89,4 +101,19 @@ export async function restoreRevision(
     });
   });
   return findEntry(database, entry.id);
+}
+
+/**
+ * Sets a version aside in History without saving it: what someone had when they chose another
+ * person's changes over theirs. It can be restored like any other version, and restoring
+ * checks it then. It joins nobody's open revision, so autosaves can't change it.
+ */
+export async function keepVersion(
+  database: DatabaseOrTransaction,
+  entryId: string,
+  data: EntryData,
+  authorId: string,
+): Promise<void> {
+  const entry = await findEntryOrFail(database, entryId);
+  await recordEvent(database, { entryId: entry.id, authorId, kind: "kept", data });
 }

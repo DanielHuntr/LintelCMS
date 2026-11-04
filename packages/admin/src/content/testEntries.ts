@@ -51,6 +51,7 @@ export function samplePost(overrides: Partial<Entry> = {}): Entry {
     publishedAt: null,
     scheduledFor: null,
     updatedBy: { id: "u1", name: "Ada Lovelace" },
+    version: 1,
     collectionHandle: "posts",
     data: { title: "Hello world", excerpt: "", category: null },
     blueprint: postBlueprint,

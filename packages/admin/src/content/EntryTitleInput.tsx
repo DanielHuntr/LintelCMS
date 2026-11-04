@@ -1,4 +1,5 @@
 import { useId, type KeyboardEvent } from "react";
+import { FieldPerson } from "../collaboration/FieldPeople.js";
 import { classNames } from "../design/classNames.js";
 import { titleFieldHandle } from "../fields/field.types.js";
 
@@ -29,6 +30,7 @@ export function EntryTitleInput({ label, value, onChange, error, onSubmit }: Ent
 
   return (
     <div data-field-handle={titleFieldHandle} className="flex flex-col gap-1">
+      <FieldPerson handle={titleFieldHandle} />
       {/* The placeholder shows the same words, so the visible cue is there until they type. */}
       <label htmlFor={inputId} className="sr-only">
         {label}

@@ -174,6 +174,21 @@ describe("A/B testing", { timeout: 30000 }, () => {
     expect(forPage.json().experiment.id).toBe(created.json().id);
   });
 
+  it("won't save a version over someone else's newer save", async () => {
+    const created = await admin("POST", "/experiments", { entryId: pageId });
+    const experiment = created.json();
+    const versionB = experiment.versions.find((each: { key: string }) => each.key === "b");
+    const save = (text: string) =>
+      admin("PUT", `/experiments/${experiment.id}/versions/b`, {
+        design: withHeading(versionB.design, text),
+        baseUpdatedAt: versionB.updatedAt,
+      });
+    expect((await save("First")).statusCode).toBe(200);
+    const second = await save("Second");
+    expect(second.statusCode).toBe(409);
+    expect(second.json()).toMatchObject({ code: "VERSION_CHANGED" });
+  });
+
   it("won't start without a goal", async () => {
     const created = await admin("POST", "/experiments", { entryId: pageId });
     const started = await admin("POST", `/experiments/${created.json().id}/start`);

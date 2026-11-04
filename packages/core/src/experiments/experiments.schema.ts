@@ -84,7 +84,11 @@ export const updateExperimentRequestSchema = z.object({
 });
 
 /** A page design, checked properly by the page's own rules when it is saved. */
-export const saveVersionRequestSchema = z.object({ design: z.record(z.string(), z.unknown()) });
+export const saveVersionRequestSchema = z.object({
+  design: z.record(z.string(), z.unknown()),
+  /** When the version was saved, as the admin last read it; a newer one is not saved over. */
+  baseUpdatedAt: z.iso.datetime().nullable().optional(),
+});
 
 export const chooseWinnerRequestSchema = z.object({ version: versionKeySchema });
 

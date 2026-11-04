@@ -35,6 +35,7 @@ import {
   copyEntryToSiteRequestSchema,
   translateEntryRequestSchema,
   updateEntryRequestSchema,
+  keepVersionRequestSchema,
 } from "../entries/entries.schema.js";
 import { formHandleParamsSchema } from "../forms/forms.schema.js";
 import { deliveredGlobalSetSchema, globalSetParamsSchema } from "../globals/globals.schema.js";
@@ -552,6 +553,16 @@ export const openApiOperations: Operation[] = [
     access: "entries:update",
     params: revisionParamsSchema,
     responses: { 200: entryResponse },
+  },
+  {
+    method: "post",
+    path: "/entries/{id}/revisions/keep",
+    tag: "Entries",
+    summary: "Set a version aside in History, without saving it",
+    access: "entries:update",
+    params: entryIdParamsSchema,
+    body: keepVersionRequestSchema,
+    responses: { 204: { description: "It's in History." } },
   },
   {
     method: "get",

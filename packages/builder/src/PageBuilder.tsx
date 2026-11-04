@@ -72,6 +72,8 @@ import {
   type UploadedPageFont,
 } from "./style-panel/font-choices.js";
 import type {
+  CanvasPeer,
+  CanvasPointer,
   ForwardedKey,
   MessageFromFrame,
   TextSelectionMessage,
@@ -85,7 +87,7 @@ import {
   stillThere,
 } from "./editor/multi-selection.js";
 import type { LayerSelectHow } from "./panels/LayersPanel.js";
-import { useBuilder } from "./editor/useBuilder.js";
+import { type IncomingChanges, useBuilder } from "./editor/useBuilder.js";
 import { Breadcrumbs } from "./frame/Breadcrumbs.js";
 import { EmptyPage } from "./frame/EmptyPage.js";
 import { Toolbar } from "./frame/Toolbar.js";
@@ -144,8 +146,11 @@ import { ContentEditingScreen } from "./client-editing/ContentEditingScreen.js";
 export interface PageBuilderProps {
   /** The page as stored. Read once; the builder owns it from then on. */
   initialDocument: PageDocument;
-  /** Called with each new version of the page, for the app to save. */
-  onChange: (document: PageDocument) => void;
+  /**
+   * Called with each new version of the page, for the app to save. `isFromElsewhere` says it is
+   * someone else's change arriving through `incomingChanges`, which has nothing to save.
+   */
+  onChange: (document: PageDocument, isFromElsewhere?: boolean) => void;
   /** The page's name, shown in the toolbar as the screen's heading. */
   title: string;
   /** Has the `builder:code` permission: Code elements can be added and their code edited. */
@@ -252,6 +257,12 @@ export interface PageBuilderProps {
    * Left out, neither is shown.
    */
   pageDrafting?: PageDrafting;
+  /** Changes made to this page by someone else, merged into what's on screen. */
+  incomingChanges?: IncomingChanges;
+  /** Other people on the page, marked on the canvas with their selection and pointer. */
+  peers?: readonly CanvasPeer[];
+  /** Told where this person's pointer is on the page, for the others to see. */
+  onPointerChange?: (pointer: CanvasPointer | null) => void;
   /** Told which element is selected (null for none), such as for trying another version of it. */
   onSelectionChange?: (nodeId: string | null) => void;
   /**
@@ -311,8 +322,10 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     onChange: sharedSections.onChange,
     blocks: blocks.library,
     sharesSiteSections: props.siteSections?.onChange !== undefined,
+    incomingChanges: props.incomingChanges,
+    dressIncoming: sharedSections.dressIncoming,
   });
-  const { onSelectionChange } = props;
+  const { onSelectionChange, onPointerChange } = props;
   useEffect(() => onSelectionChange?.(selectedId), [onSelectionChange, selectedId]);
   const [breakpoint, setBreakpoint] = useState<Breakpoint>("base");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -796,7 +809,12 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
         );
       }
       if (message.type === "hover") setHoveredId(message.nodeId);
-      if (message.type === "editText") actions.editText(message.nodeId, message.prop, message.text);
+      if (message.type === "pointer") {
+        onPointerChange?.(message.nodeId === null ? null : (message as CanvasPointer));
+      }
+      if (message.type === "editText") {
+        actions.editText(message.nodeId, message.prop, message.text, message.original);
+      }
       if (message.type === "key") runShortcut(message.key);
       if (message.type === "look") {
         setCanvasLook({
@@ -864,6 +882,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     },
     [
       actions,
+      onPointerChange,
       movingWith,
       pasteHere,
       selectedIds,
@@ -1145,6 +1164,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                     )}
                     {!isBlank && (
                       <Canvas
+                        peers={props.peers}
                         finishEditingRef={props.finishEditingRef}
                         html={rendered.html}
                         css={canvasCss}

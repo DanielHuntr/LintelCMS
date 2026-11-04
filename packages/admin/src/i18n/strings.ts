@@ -14,6 +14,7 @@ import { dashboardStrings } from "./dashboardStrings.js";
 import { pluginStrings } from "./pluginStrings.js";
 import { peopleStrings } from "./peopleStrings.js";
 import { pageDesignStrings } from "./pageDesignStrings.js";
+import { collaborationStrings } from "../collaboration/collaborationStrings.js";
 import { pageHomeStrings } from "../page-home/pageHomeStrings.js";
 import { contentModelSyncStrings } from "./contentModelSyncStrings.js";
 import { siteStrings } from "./siteStrings.js";
@@ -65,6 +66,7 @@ const english = {
   ...pluginStrings,
   ...peopleStrings,
   ...pageDesignStrings,
+  ...collaborationStrings,
   ...pageHomeStrings,
   ...pageFlowStrings,
   ...cookieNoticeStrings,
@@ -646,6 +648,7 @@ const english = {
   "revisions.published": "Published",
   "revisions.unpublished": "Unpublished",
   "revisions.scheduled": "Scheduled",
+  "revisions.kept": "Set aside when changes clashed",
   "revisions.restoredFrom": "Restored from {date}",
   "revisions.today": "Today",
   "revisions.yesterday": "Yesterday",

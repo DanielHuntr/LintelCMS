@@ -1,0 +1,1 @@
+ALTER TABLE `entries` ADD `version` int DEFAULT 1 NOT NULL;

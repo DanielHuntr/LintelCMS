@@ -151,3 +151,13 @@ export {
   type JsonSchema,
 } from "./page-drafts/draft-plan.js";
 export { sectionsFromDraftPlan } from "./page-drafts/draft-plan-sections.js";
+
+export * from "./live-editing/live-messages.js";
+export * from "./live-editing/page-changes.js";
+export {
+  LiveDocument,
+  maxBatchBytes,
+  type ChangeBatch,
+  type RemoteUpdate,
+} from "./live-editing/live-document.js";
+export { mergeText } from "./live-editing/merge-text.js";

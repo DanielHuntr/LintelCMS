@@ -267,6 +267,13 @@
       "when": 1793758402741,
       "tag": "0037_hold_retention_on_upgrades",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1793776563561,
+      "tag": "0038_entry_versions",
+      "breakpoints": true
     }
   ]
 }

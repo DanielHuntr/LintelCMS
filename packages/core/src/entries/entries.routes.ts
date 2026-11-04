@@ -97,6 +97,9 @@ export async function entriesRoutes(server: FastifyInstance) {
   server.patch("/entries/:id", canOnThisEntry("update"), async (request) => {
     const id = readEntryId(request.params);
     const changes = parseRequest(updateEntryRequestSchema, request.body);
+    // People designing this page have their latest stored first, so this save is checked
+    // against it, and the two merge rather than one undoing the other.
+    await server.collaboration.storeOpenDesigns(id);
     const before = await describeEntryForEvent(server.database, id);
     const beforeValues = await findEntryOrFail(server.database, id);
     const saved = await saveEntry(server.database, id, changes, changeContext(request));
@@ -123,6 +126,7 @@ export async function entriesRoutes(server: FastifyInstance) {
   server.post("/entries/:id/publish", canOnThisEntry("publish"), async (request) => {
     const id = readEntryId(request.params);
     await checkMayPublish(request, id);
+    await server.collaboration.storeOpenDesigns(id);
     const published = await publishEntry(server.database, id, changeContext(request));
     const entry = await describeEntryForEvent(server.database, id);
     await announceContentEvent(server, { name: "entry.published", entry }, actorOf(request));

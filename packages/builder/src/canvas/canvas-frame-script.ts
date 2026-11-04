@@ -159,7 +159,75 @@ export function runCanvasFrame(snap: typeof snapBox, fitGrid: typeof fitToGrid):
     overlay.appendChild(box);
   }
 
+  // Other people on the page. Their marks are kept between drawings, so pointers glide.
+  type PeerMarks = { box: HTMLElement; pointer: HTMLElement };
+  let peers: {
+    id: string;
+    name: string;
+    colour: string;
+    selectedId: string | null;
+    pointer: { nodeId: string; x: number; y: number } | null;
+  }[] = [];
+  const peerMarks = new Map<string, PeerMarks>();
+  const peerLayer = document.createElement("div");
+  peerLayer.className = "lintel-peers";
+  overlay.parentElement?.appendChild(peerLayer);
+
+  function peerTag(text: string, colour: string) {
+    const tag = document.createElement("span");
+    tag.className = "lintel-peer-tag";
+    tag.textContent = text;
+    tag.style.background = colour;
+    return tag;
+  }
+
+  function marksOf(peer: (typeof peers)[number]): PeerMarks {
+    const known = peerMarks.get(peer.id);
+    if (known) return known;
+    const box = document.createElement("div");
+    box.className = "lintel-peer-box";
+    box.style.outlineColor = peer.colour;
+    box.appendChild(peerTag(peer.name, peer.colour));
+    const pointer = document.createElement("div");
+    pointer.className = "lintel-peer-pointer";
+    pointer.style.color = peer.colour;
+    pointer.appendChild(peerTag(peer.name, peer.colour));
+    peerLayer.append(box, pointer);
+    const marks = { box, pointer };
+    peerMarks.set(peer.id, marks);
+    return marks;
+  }
+
+  function drawPeers() {
+    for (const [id, marks] of peerMarks) {
+      if (peers.some((peer) => peer.id === id)) continue;
+      marks.box.remove();
+      marks.pointer.remove();
+      peerMarks.delete(id);
+    }
+    for (const peer of peers) {
+      const { box, pointer } = marksOf(peer);
+      const selected = nodeElement(peer.selectedId);
+      box.hidden = !selected;
+      if (selected) {
+        const rect = selected.getBoundingClientRect();
+        box.style.left = `${rect.left + window.scrollX}px`;
+        box.style.top = `${rect.top + window.scrollY}px`;
+        box.style.width = `${rect.width}px`;
+        box.style.height = `${rect.height}px`;
+      }
+      const over = peer.pointer ? nodeElement(peer.pointer.nodeId) : null;
+      pointer.hidden = !over;
+      if (over && peer.pointer) {
+        const rect = over.getBoundingClientRect();
+        pointer.style.left = `${rect.left + window.scrollX + rect.width * peer.pointer.x}px`;
+        pointer.style.top = `${rect.top + window.scrollY + rect.height * peer.pointer.y}px`;
+      }
+    }
+  }
+
   function drawOutlines() {
+    drawPeers();
     if (rotating || dragging?.moved || gridDragging?.moved) return;
     overlay.replaceChildren();
     for (const nodeId of outline.highlightIds ?? []) {
@@ -545,7 +613,7 @@ export function runCanvasFrame(snap: typeof snapBox, fitGrid: typeof fitToGrid):
     const nodeId = nodeIdAt(element);
     const prop = element.getAttribute("data-lintel-text");
     if (keep && nodeId && prop && text !== editingOriginal) {
-      send({ type: "editText", nodeId, prop, text });
+      send({ type: "editText", nodeId, prop, text, original: editingOriginal });
     }
     if (!keep) element.innerText = editingOriginal;
     if (waitingRender) {
@@ -747,6 +815,9 @@ export function runCanvasFrame(snap: typeof snapBox, fitGrid: typeof fitToGrid):
       outline = event.data as typeof outline;
       drawOutlines();
       if (outline.selectedId !== previous) sendLook();
+    } else if (message.type === "peers") {
+      peers = (event.data as { peers: typeof peers }).peers;
+      drawPeers();
     } else if (message.type === "reveal" && message.nodeId) {
       nodeElement(message.nodeId)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
     } else if (message.type === "previewMotion" && message.nodeId) {
@@ -1104,7 +1175,27 @@ export function runCanvasFrame(snap: typeof snapBox, fitGrid: typeof fitToGrid):
   });
 
   let lastHovered: string | null = null;
+  let pointerSentAt = 0;
+  function sharePointer(event: MouseEvent) {
+    const now = event.timeStamp;
+    if (now - pointerSentAt < 50) return;
+    pointerSentAt = now;
+    const element =
+      event.target instanceof Element ? event.target.closest("[data-lintel-node]") : null;
+    const nodeId = element?.getAttribute("data-lintel-node");
+    if (!element || !nodeId) return;
+    const rect = element.getBoundingClientRect();
+    const share = (distance: number, size: number) =>
+      size > 0 ? Math.min(1, Math.max(0, distance / size)) : 0;
+    send({
+      type: "pointer",
+      nodeId,
+      x: share(event.clientX - rect.left, rect.width),
+      y: share(event.clientY - rect.top, rect.height),
+    });
+  }
   document.addEventListener("mousemove", (event) => {
+    sharePointer(event);
     const nodeId = nodeIdAt(event.target);
     if (nodeId === lastHovered) return;
     lastHovered = nodeId;
@@ -1113,6 +1204,7 @@ export function runCanvasFrame(snap: typeof snapBox, fitGrid: typeof fitToGrid):
   document.addEventListener("mouseleave", () => {
     lastHovered = null;
     send({ type: "hover", nodeId: null });
+    send({ type: "pointer", nodeId: null, x: 0, y: 0 });
   });
 
   document.addEventListener("keydown", (event) => {
@@ -1260,7 +1352,15 @@ const canvasStyles = `
 .lintel-grid-area span { position: absolute; left: 6px; top: 6px; padding: 1px 7px; border-radius: 4px; background: #0071e3; color: #fff; font: 600 11px/18px -apple-system, "Segoe UI", system-ui, sans-serif; }
 .lintel-grid-handle { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border: 2px solid #0071e3; border-radius: 3px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 0.3); pointer-events: auto; cursor: nwse-resize; touch-action: none; }
 a { cursor: default; }
-@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+.lintel-peers { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 2147483000; pointer-events: none; }
+.lintel-peer-box { position: absolute; outline: 2px solid; outline-offset: -1px; pointer-events: none; }
+.lintel-peer-tag { position: absolute; padding: 1px 6px; font: 600 11px/16px -apple-system, system-ui, sans-serif; color: #fff; border-radius: 4px; white-space: nowrap; }
+.lintel-peer-box .lintel-peer-tag { right: -1px; bottom: 100%; border-radius: 4px 4px 0 0; }
+.lintel-peer-pointer { position: absolute; width: 0; height: 0; transition: left 80ms linear, top 80ms linear; }
+.lintel-peer-pointer::before { content: ""; position: absolute; left: 0; top: 0; width: 13px; height: 16px; background: currentColor; clip-path: polygon(0 0, 100% 62%, 45% 66%, 22% 100%); filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.3)); }
+.lintel-peer-pointer .lintel-peer-tag { left: 12px; top: 14px; }
+.lintel-peers [hidden] { display: none; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } .lintel-peer-pointer { transition: none; } }
 `;
 
 /**

@@ -4,6 +4,7 @@ import {
   type PageDocument,
   type SiteSections,
   type SiteSectionsChange,
+  siteSectionSlotOf,
   siteSectionSlots,
   splitSiteSections,
   withSiteSections,
@@ -36,7 +37,7 @@ function signature(sections: SiteSections, slot: keyof SiteSections): string {
 export function useSiteSections(
   source: SiteSectionsSource | undefined,
   initialDocument: PageDocument,
-  onChange: (document: PageDocument) => void,
+  onChange: (document: PageDocument, isFromElsewhere?: boolean) => void,
 ) {
   const [opened] = useState(() => {
     if (!source) return { document: initialDocument, had: noSiteSections };
@@ -76,11 +77,11 @@ export function useSiteSections(
     };
   }
 
-  const handleChange = useCallback((document: PageDocument) => {
+  const handleChange = useCallback((document: PageDocument, isFromElsewhere?: boolean) => {
     const { source: current, onChange: changePage } = latest.current;
-    if (!current) return changePage(document);
+    if (!current) return changePage(document, isFromElsewhere);
     const split = splitSiteSections(document);
-    changePage(split.document);
+    changePage(split.document, isFromElsewhere);
     if (!current.onChange || !known.current) return;
     const change: SiteSectionsChange = {};
     for (const slot of siteSectionSlots) {
@@ -92,9 +93,26 @@ export function useSiteSections(
     if (Object.keys(change).length > 0) current.onChange(change);
   }, []);
 
+  /** A page from elsewhere, with the sections as they are on screen now. */
+  const dressIncoming = useCallback((page: PageDocument, current: PageDocument) => {
+    if (!latest.current.source) return page;
+    const dressed = withSiteSections(page, splitSiteSections(current).sections);
+    const isLocked = (id: string) => current.root.children.find((each) => each.id === id)?.locked;
+    return {
+      ...dressed,
+      root: {
+        ...dressed.root,
+        children: dressed.root.children.map((child) =>
+          siteSectionSlotOf(child.id) && isLocked(child.id) ? { ...child, locked: true } : child,
+        ),
+      },
+    };
+  }, []);
+
   return {
     initialDocument: opened.document,
     onChange: handleChange,
+    dressIncoming,
     /** What the site had when the page was opened, for the note when that changes. */
     had: { navigation: opened.had.navigation !== null, footer: opened.had.footer !== null },
   };

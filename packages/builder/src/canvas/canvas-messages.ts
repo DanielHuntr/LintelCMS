@@ -32,6 +32,8 @@ export type MessageToFrame =
       rotateLabel: string;
     }
   | { type: "reveal"; nodeId: string }
+  /** Other people on the page, to mark with their selection and pointer. */
+  | { type: "peers"; peers: readonly CanvasPeer[] }
   /** Plays an animation once on an element, as a preview; the page itself doesn't change. */
   | { type: "previewMotion"; nodeId: string; spec: MotionSpec }
   /**
@@ -63,6 +65,21 @@ export type MessageToFrame =
    * over the frame and says where it is; the frame answers with `insertOver`.
    */
   | { type: "insertPoint"; x: number; y: number };
+
+/** Someone else on the page. Their pointer is a share of the width and height of an element. */
+export interface CanvasPeer {
+  id: string;
+  name: string;
+  colour: string;
+  selectedId: string | null;
+  pointer: CanvasPointer | null;
+}
+
+export interface CanvasPointer {
+  nodeId: string;
+  x: number;
+  y: number;
+}
 
 export interface SceneMarkers {
   start: number;
@@ -100,7 +117,10 @@ export type MessageFromFrame =
   /** `add`: Shift (or Ctrl/Cmd) was held, to add the element to the selection or take it away. */
   | { type: "select"; nodeId: string | null; menuItem?: CanvasMenuItem; add?: boolean }
   | { type: "hover"; nodeId: string | null }
-  | { type: "editText"; nodeId: string; prop: string; text: string }
+  /** Where the pointer is on the page, for others to see. A null `nodeId`: it has left. */
+  | { type: "pointer"; nodeId: string | null; x: number; y: number }
+  /** `original`: the words when typing started, in case they changed on screen meanwhile. */
+  | { type: "editText"; nodeId: string; prop: string; text: string; original?: string }
   | { type: "key"; key: ForwardedKey }
   | { type: "paste"; html: string; text: string }
   /** Files dropped on the page, over the element `nodeId` (null: over no element). */
@@ -169,6 +189,7 @@ const frameMessageTypes = new Set([
   "editingFinished",
   "select",
   "hover",
+  "pointer",
   "editText",
   "key",
   "paste",
@@ -191,6 +212,9 @@ const frameMessageTypes = new Set([
 ]);
 
 /** Reads a message from the frame, or null if it isn't one of ours. */
+/** A share of an element's width or height. */
+const isShare = (value: unknown) => isFiniteNumber(value) && value >= 0 && value <= 1;
+
 export function readFrameMessage(data: unknown): MessageFromFrame | null {
   if (typeof data !== "object" || data === null || !("type" in data)) return null;
   const { type } = data as { type: unknown };
@@ -217,8 +241,15 @@ export function readFrameMessage(data: unknown): MessageFromFrame | null {
     }
     case "hover":
       return isOptionalId(message.nodeId) ? (message as MessageFromFrame) : null;
+    case "pointer":
+      return isOptionalId(message.nodeId) && isShare(message.x) && isShare(message.y)
+        ? (message as MessageFromFrame)
+        : null;
     case "editText":
-      return isText(message.nodeId) && isText(message.prop) && isText(message.text)
+      return isText(message.nodeId) &&
+        isText(message.prop) &&
+        isText(message.text) &&
+        (message.original === undefined || isText(message.original))
         ? (message as MessageFromFrame)
         : null;
     case "key":

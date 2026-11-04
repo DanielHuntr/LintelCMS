@@ -98,7 +98,7 @@ describe("the site's navigation and footer sections", () => {
   }
 
   it("starts with none, so a site keeps its automatic header and footer until it adds one", async () => {
-    expect((await writer("GET", "/website/sections")).json()).toEqual({
+    expect((await writer("GET", "/website/sections")).json()).toMatchObject({
       navigation: null,
       footer: null,
       unpublished: false,

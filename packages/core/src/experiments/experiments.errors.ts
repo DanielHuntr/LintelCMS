@@ -93,3 +93,15 @@ export class MayNotPublishError extends HttpError {
     );
   }
 }
+
+/** Someone saved this version of a test after the person saving opened it. */
+export class VersionChangedError extends HttpError {
+  constructor(updatedAt: string) {
+    super(
+      409,
+      "VERSION_CHANGED",
+      "Someone else saved this version while you were working on it. Try again to save yours over theirs, or reload the page to see theirs.",
+      { updatedAt },
+    );
+  }
+}
