@@ -8,7 +8,6 @@ import {
   emptyTables,
   findExistingTables,
   readAllRows,
-  rowsOf,
   type TableRow,
 } from "../backups/database-snapshot.repository.js";
 import type { DatabaseOrTransaction } from "../database/client.js";
@@ -29,6 +28,7 @@ import { csvCell } from "../forms/submissions-csv.js";
 import { AddonStillOnError, AddonTableNotFoundError } from "./addons.errors.js";
 import type { AddonDetails } from "./addons.schema.js";
 import type { AddonsState, LoadedAddon } from "./load-addons.js";
+import { currentSchema, measureTable, readRawRows } from "../database/dialect/raw-queries.js";
 
 /**
  * One add-on in full, for Build → Add-ons: what it says it keeps and does, set against what
@@ -61,28 +61,27 @@ function ownsTableName(pluginId: string, table: string): boolean {
 }
 
 async function listTableNames(database: DatabaseOrTransaction): Promise<string[]> {
-  const result = await database.execute(
-    sql`select table_name from information_schema.tables
-        where table_schema = current_schema() and table_type = 'BASE TABLE'`,
+  const rows = await readRawRows(
+    database,
+    sql`select table_name as table_name from information_schema.tables
+        where table_schema = ${currentSchema(database)} and table_type = 'BASE TABLE'`,
   );
-  return rowsOf(result).map((row) => String(row.table_name));
+  return rows.map((row) => String(row.table_name));
 }
 
 async function listColumnNames(database: DatabaseOrTransaction, table: string): Promise<string[]> {
-  const result = await database.execute(
-    sql`select column_name from information_schema.columns
-        where table_schema = current_schema() and table_name = ${table}`,
+  const rows = await readRawRows(
+    database,
+    sql`select column_name as column_name from information_schema.columns
+        where table_schema = ${currentSchema(database)} and table_name = ${table}`,
   );
-  return rowsOf(result).map((row) => String(row.column_name));
+  return rows.map((row) => String(row.column_name));
 }
 
 async function measure(database: DatabaseOrTransaction, table: string) {
   const rows = await countRows(database, table);
   try {
-    const result = await database.execute(
-      sql`select pg_total_relation_size(${table}::regclass)::bigint as bytes`,
-    );
-    return { rows, bytes: Number(rowsOf(result)[0]?.bytes ?? 0) };
+    return { rows, bytes: await measureTable(database, table) };
   } catch {
     return { rows, bytes: null };
   }

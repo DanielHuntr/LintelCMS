@@ -1,7 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { Database } from "../database/client.js";
-import { MIGRATIONS_FOLDER } from "../database/client.js";
+import { type Database, MIGRATIONS_FOLDER } from "../database/client.js";
+import { dialectOf } from "../database/dialect/database-dialect.js";
+import { MYSQL_MIGRATIONS_FOLDER } from "../database/dialect/mysql-database.js";
 import type { StorageDriver } from "../media/index.js";
 import { findNewestAppliedMigration, pingDatabase } from "./health.repository.js";
 
@@ -55,9 +56,9 @@ async function runCheck(problems: string[], check: () => Promise<void>): Promise
 }
 
 async function checkMigrationsApplied(context: ReadinessContext): Promise<void> {
-  const newestAvailable = await newestMigrationInFolder(
-    context.migrationsFolder ?? MIGRATIONS_FOLDER,
-  );
+  const ownFolder =
+    dialectOf(context.database) === "mysql" ? MYSQL_MIGRATIONS_FOLDER : MIGRATIONS_FOLDER;
+  const newestAvailable = await newestMigrationInFolder(context.migrationsFolder ?? ownFolder);
   const newestApplied = await findNewestAppliedMigration(context.database);
   if (newestApplied === undefined || newestApplied < newestAvailable) {
     throw new Error(

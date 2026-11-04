@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { ConfigError, loadConfig, loadProjectEnvFile } from "../config.js";
+import { isMysqlUrl } from "../database/database-errors.js";
 import { REPOSITORY_ROOT } from "../plugins/installed-plugins.js";
 import { DEFAULT_ADMIN_BUILD_FOLDER } from "../production/admin-app.js";
 import {
@@ -63,7 +64,11 @@ export async function runDoctorCommand(
     );
     const report = databaseUrl
       ? summarise(
-          withDatabaseCheck(found.checks, await checkDatabaseAddress(databaseUrl), "postgres"),
+          withDatabaseCheck(
+            found.checks,
+            await checkDatabaseAddress(databaseUrl),
+            isMysqlUrl(databaseUrl) ? "mysql" : "postgres",
+          ),
         )
       : found;
     say(checker.formatText(report));

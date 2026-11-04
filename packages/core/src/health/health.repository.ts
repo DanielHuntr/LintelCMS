@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import type { Database } from "../database/client.js";
+import { appliedMigrationsTable, readRawRows } from "../database/dialect/raw-queries.js";
 
 /** Database reads for `GET /ready`, nothing else. */
 
@@ -13,23 +14,10 @@ export async function pingDatabase(database: Database): Promise<void> {
  * undefined if no migration has run. `created_at` there is the journal's `when`.
  */
 export async function findNewestAppliedMigration(database: Database): Promise<number | undefined> {
-  const result: unknown = await database.execute(
-    sql`select max(created_at) as newest from drizzle.__drizzle_migrations`,
+  const [row] = await readRawRows(
+    database,
+    sql`select max(created_at) as newest from ${appliedMigrationsTable(database)}`,
   );
-  const newest = rowsOf(result)[0]?.newest;
+  const newest = row?.newest;
   return newest === null || newest === undefined ? undefined : Number(newest);
-}
-
-/** The built-in database answers `{ rows }`; postgres.js answers the rows themselves. */
-function rowsOf(result: unknown): Record<string, unknown>[] {
-  if (Array.isArray(result)) return result as Record<string, unknown>[];
-  if (
-    typeof result === "object" &&
-    result !== null &&
-    "rows" in result &&
-    Array.isArray(result.rows)
-  ) {
-    return result.rows as Record<string, unknown>[];
-  }
-  return [];
 }
