@@ -332,6 +332,13 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
   }, [many, selectedId, state.document.root]);
   const isMany = selectedIds.length > 1;
   const [revealId, setRevealId] = useState<string | null>(null);
+  // What Insert adds can land below the fold, where nothing would seem to have happened.
+  const revealInserted = useRef(false);
+  useEffect(() => {
+    if (!revealInserted.current || !selectedId) return;
+    revealInserted.current = false;
+    setRevealId(selectedId);
+  }, [selectedId]);
   const [leftTab, setLeftTab] = useState<LeftTab>("layers");
   const [insertFocusRequest, setInsertFocusRequest] = useState<InsertFocusRequest>();
   const [motionPreview, setMotionPreview] = useState<MotionPreview | null>(null);
@@ -1043,7 +1050,10 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                           canEditCode={canEditCode}
                           enabledPlugins={props.enabledPlugins}
                           blocks={props.blockMaster ? undefined : blocks.library}
-                          onInsert={(key) => actions.insert(key)}
+                          onInsert={(key) => {
+                            revealInserted.current = true;
+                            actions.insert(key);
+                          }}
                           onDragChange={(item) => {
                             insertDrag.current = item;
                             setIsInsertDragging(item !== null);
