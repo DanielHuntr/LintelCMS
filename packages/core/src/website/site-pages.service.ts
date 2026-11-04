@@ -519,7 +519,9 @@ export async function renderWithHead(
     dependencies.site,
   );
   const now = dependencies.now?.() ?? new Date();
-  const withSections = await withSiteSections(request, chrome);
+  // A template's navigation and footer go live while its pages are drafts, and they hold its
+  // sample name, so a site with nothing to show yet keeps the automatic ones with its own.
+  const withSections = view.kind === "emptySite" ? chrome : await withSiteSections(request, chrome);
   return renderPage(context, withSections, { view, head, path: request.path, ...options }, now);
 }
 

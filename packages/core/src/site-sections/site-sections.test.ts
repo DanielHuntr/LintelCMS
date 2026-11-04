@@ -160,6 +160,24 @@ describe("the site's navigation and footer sections", () => {
     expect(pages.body).not.toContain("site-navigation");
   });
 
+  // A template's sections hold its sample name, and go live while its pages wait as drafts.
+  it("keeps them off a site with no home page yet (LINTEL-UX-328)", async () => {
+    await putLive(starterSiteSections());
+
+    const empty = await visit("/");
+
+    expect(empty).toContain("This website has no home page yet");
+    expect(chromeOf(empty)).toEqual({
+      automaticHeader: 1,
+      automaticFooter: 1,
+      siteNavigation: 0,
+      siteFooter: 0,
+    });
+
+    await publish("Home", "home");
+    expect(chromeOf(await visit("/"))).toMatchObject({ siteNavigation: 1, siteFooter: 1 });
+  });
+
   it("leaves it off a page that hides it, and never doubles a page's own header", async () => {
     await publish("Home", "home");
     await publish("Hidden", "hidden", designed("questions", { hideSiteNavigation: true }));
