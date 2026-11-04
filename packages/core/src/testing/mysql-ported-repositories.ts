@@ -18,4 +18,6 @@ export const mysqlPortedRepositories = [
   "blueprints/blueprints.repository.ts",
   "two-factor/two-factor.repository.ts",
   "passkeys/passkeys.repository.ts",
+  "users/users.repository.ts",
+  "roles/roles.repository.ts",
 ];

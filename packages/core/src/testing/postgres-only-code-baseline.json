@@ -249,12 +249,6 @@
     "jsonb function": 1,
     "returning": 2
   },
-  "roles/roles.repository.ts": {
-    "array function": 2,
-    "cast with ::": 2,
-    "returning": 2,
-    "upsert": 2
-  },
   "search/search.repository.ts": {
     "full-text search": 4,
     "ilike": 3,
@@ -287,10 +281,6 @@
   },
   "users/authorship.repository.ts": {
     "returning": 1
-  },
-  "users/users.repository.ts": {
-    "ilike": 2,
-    "returning": 2
   },
   "webhooks/webhook-deliveries.repository.ts": {
     "returning": 2
