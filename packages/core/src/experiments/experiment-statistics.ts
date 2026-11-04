@@ -76,6 +76,8 @@ function chooseVerdict(
   enoughData: boolean,
 ): Verdict {
   if (original.visitors === 0 || challenger.visitors === 0) return "noData";
+  // Fewer visitors would read as a lead, with nobody having succeeded on either side.
+  if (original.conversions === 0 && challenger.conversions === 0) return "tooClose";
   if (enoughData && probabilityBetter >= CONFIDENT_PROBABILITY) return "better";
   if (enoughData && probabilityBetter <= 1 - CONFIDENT_PROBABILITY) return "worse";
   if (Math.abs(probabilityBetter - 0.5) < 0.05) return "tooClose";

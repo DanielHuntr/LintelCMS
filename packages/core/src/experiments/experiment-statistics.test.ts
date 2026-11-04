@@ -53,6 +53,12 @@ describe("how sure a test result is", () => {
     expect(comparison.rate).toBeCloseTo(0.13, 5);
   });
 
+  it("calls no successes on either side about the same (LINTEL-UX-331)", () => {
+    const original = { visitors: 17, conversions: 0 };
+    const b = { visitors: 7, conversions: 0 };
+    expect(compareWithOriginal(original, b, false).verdict).toBe("tooClose");
+  });
+
   it("says it's too early when the lead is real-looking but the sample small", () => {
     const original = { visitors: 40, conversions: 2 };
     const b = { visitors: 40, conversions: 8 };
