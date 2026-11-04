@@ -262,3 +262,11 @@ Branch `fix/night-review` (`FIX-LOG-night-review.md`, LINTEL-CODE-030 to 037). T
 - All seven decisions are built, along with reaching what published websites keep from Find a person and erase.
 - Sites published with the companion need publishing once more, for the new private files' names and the two privacy actions.
 - An upgraded site now keeps everything until its owner chooses retention rules.
+
+## Update, 4 November 2026: working together
+
+Branch `feature/collaboration` (`FIX-LOG-collaboration.md`, LINTEL-UX-350 to 379). The text above is unchanged.
+
+- Saves to pages, A/B versions, and the navigation and footer can no longer overwrite someone else's without asking.
+- Blocks, menus, global settings, forms and media still save the last change.
+- Not yet checked in Firefox or Safari, on real Passenger hosting, or with more than three people.

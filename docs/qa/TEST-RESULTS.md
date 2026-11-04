@@ -364,3 +364,14 @@ Targeted runs on Windows, not the full suite, which runs at merge:
 - Sizes: the core runtime is 9,791 bytes gzipped, under its 10,240 limit.
 
 The browser checks and what they don't cover are in `FIX-LOG-shader-studio.md`.
+
+## Working together (4 November 2026)
+
+Branch `feature/collaboration`. The details are in `FIX-LOG-collaboration.md`.
+
+- Browser: `packages/admin/e2e/collaboration.e2e.mjs`, 42 of 42 checks passed, in Chromium with two and three people signed in at once.
+- Core: 2,211 passed, 33 skipped (320 files passed, 6 skipped).
+- Admin: 1,069 passed (176 files) on its own. In the full run `HelpLauncher.test.tsx` failed once under load and passed alone: it is on the known flaky list.
+- Builder: 499 and 45 in a browser. Builder model: 515. Motion: 158. All other packages passed.
+- A real Postgres 17: `src/collaboration` and `src/entries`, 121 passed. `postgres-migrations.test.ts`, 4 passed, including an older database brought up to date.
+- Not run: `pnpm test:dialects` (MySQL and MariaDB). The MySQL migration is generated and `mysql-tables.test.ts` passes.
