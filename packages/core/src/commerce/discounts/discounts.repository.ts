@@ -139,8 +139,17 @@ export async function lockDiscountRows(
  * A use counts once the order is placed, and while its checkout is still open and within
  * its time; an abandoned checkout's hold stops counting by itself.
  */
-function countedUse(now: Date): SQL {
-  return sql`(${discountRedemptionsTable.status} = 'used' or (${discountRedemptionsTable.status} = 'held' and ${checkoutsTable.status} = 'open' and ${checkoutsTable.expiresAt} > ${now}))`;
+function countedUse(now: Date): SQL | undefined {
+  // Built from columns rather than raw SQL: a column turns `now` into what the driver takes,
+  // and the Postgres server's driver refuses a plain Date, which the built-in database accepts.
+  return or(
+    eq(discountRedemptionsTable.status, "used"),
+    and(
+      eq(discountRedemptionsTable.status, "held"),
+      eq(checkoutsTable.status, "open"),
+      gt(checkoutsTable.expiresAt, now),
+    ),
+  );
 }
 
 export async function countDiscountUsage(
