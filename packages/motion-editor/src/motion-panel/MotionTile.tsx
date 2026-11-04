@@ -114,7 +114,9 @@ function DemoDrawing({ demo }: { demo: MotionDemo }) {
       return (
         <span className="relative block size-6 overflow-hidden rounded-[4px] bg-label/15">
           <span className="motion-demo-shape motion-demo-scene absolute inset-0 block" />
-          <span className="motion-demo-extra motion-demo-scene motion-demo-specks absolute inset-0 block" />
+          <span className="motion-demo-extra motion-demo-specks absolute inset-0 block">
+            <span className="motion-demo-scene absolute inset-0 block" />
+          </span>
         </span>
       );
     case "pixels":

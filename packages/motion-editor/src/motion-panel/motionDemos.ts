@@ -181,21 +181,21 @@ const demos: Record<
   },
 };
 
-/** Textures some drawings use: woven light, contour rings and grain. */
-const grainTile = `url("data:image/svg+xml,${encodeURIComponent(
-  "<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='1'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(#g)'/></svg>",
+/** A little landscape, a sun and two hills: used as a mask, so it takes any colour. */
+const sceneTile = `url("data:image/svg+xml,${encodeURIComponent(
+  "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='16.5' cy='7' r='3.2'/><path d='M0 24v-8l6.5-6 5.5 6 3.5-3 8.5 7v4z'/></svg>",
 )}")`;
 /** The same noise as holes: what's under it shows through in specks, on any theme. */
 const speckTile = `url("data:image/svg+xml,${encodeURIComponent(
   "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><filter id='s'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='1'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 9 -4'/></filter><rect width='100%' height='100%' filter='url(#s)'/></svg>",
 )}")`;
+/** Textures some drawings use: woven light, contour rings and grain. */
 const textures =
   `.motion-demo-light{background-image:repeating-linear-gradient(62deg,transparent 0 5px,currentColor 5px 6px),repeating-linear-gradient(-58deg,transparent 0 7px,currentColor 7px 8px);opacity:.35}` +
   `.motion-demo-contours{background-image:repeating-radial-gradient(circle at 40% 60%,transparent 0 3px,currentColor 3px 4px);opacity:.4}` +
-  `.motion-demo-grain{background-image:${grainTile};opacity:.55;mix-blend-mode:multiply}` +
+  `.motion-demo-grain{background:currentColor;-webkit-mask-image:${speckTile};mask-image:${speckTile};mask-size:9px 9px;opacity:.5}` +
   `.motion-demo-glass{background-image:repeating-linear-gradient(90deg,currentColor 0 1px,transparent 1px 3px,color-mix(in srgb,currentColor 35%,transparent) 3px 5px,transparent 5px 6px);opacity:.5}` +
-  // A little landscape: a sun and two hills, in the colour of the words.
-  `.motion-demo-scene{background:radial-gradient(circle at 70% 28%,currentColor 0 14%,transparent 15%),linear-gradient(currentColor,currentColor) bottom/100% 30% no-repeat;clip-path:polygon(0 100%,0 62%,28% 40%,52% 66%,72% 50%,100% 72%,100% 100%,100% 0,0 0);opacity:.85}` +
+  `.motion-demo-scene{background:currentColor;-webkit-mask:${sceneTile} center/100% 100% no-repeat;mask:${sceneTile} center/100% 100% no-repeat}` +
   `.motion-demo-specks{-webkit-mask-image:${speckTile};mask-image:${speckTile};mask-size:12px 12px}` +
   `.motion-demo-red{color:#ff2d55;opacity:.9}.motion-demo-blue{color:#0a84ff;opacity:.9}` +
   `[data-motion-demo="pixels"] .motion-demo-block{animation:motion-demo-pixel 2.6s steps(1) infinite}` +

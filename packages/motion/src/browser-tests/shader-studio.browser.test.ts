@@ -410,6 +410,45 @@ void main(){gl_FragColor=vec4(on?tint:vec3(0.),1.);if(level==2)gl_FragColor.g=1.
     await page.close();
   });
 
+  it("measures the words against the still look that shows, not only the section's colour", async () => {
+    const { page } = await open(
+      [layer("silk", { one: "#2b2a33", two: "#e8e0f0" })],
+      section("background:#2b2a33;color:#fff"),
+      { withoutWebGl: true },
+    );
+    await waitFor(
+      async () => /\(0, 0, 0, 0\.[1-9]/.test(await veil(page)),
+      "a veil for the light folds",
+    );
+    await page.close();
+  });
+
+  it("takes away a veil meant for the drawing once the drawing has gone", async () => {
+    const white = `void main(){gl_FragColor=vec4(1.);}`;
+    const { page } = await open([custom(white)], section("background:#000;color:#fff"), {
+      beforePageLoads: () => {
+        const original = HTMLCanvasElement.prototype.getContext;
+        Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {
+          value(this: HTMLCanvasElement, kind: string, settings?: unknown) {
+            const made = original.call(this, kind as "2d", settings);
+            if (kind.startsWith("webgl")) Object.assign(window, { shared: made });
+            return made;
+          },
+        });
+      },
+    });
+    await waitFor(async () => /\(0, 0, 0, 0\.[1-9]/.test(await veil(page)), "a veil over white");
+    await page.evaluate(() => {
+      const gl = (window as unknown as { shared: WebGLRenderingContext }).shared;
+      gl.getExtension("WEBGL_lose_context")!.loseContext();
+    });
+    await waitFor(() => canvasHidden(page), "the drawing to step aside");
+    // Long enough for the page's next veil checks, which must not read the old drawing.
+    await page.waitForTimeout(4000);
+    expect(await veil(page)).toMatch(/\(0, 0, 0, 0\)|^$/);
+    await page.close();
+  });
+
   it("stops on a lost context, doesn't try that shader again, and lets looks come back", async () => {
     const { page } = await openEffectsPage(
       browser,

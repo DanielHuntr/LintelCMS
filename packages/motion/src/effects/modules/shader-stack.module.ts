@@ -291,15 +291,30 @@ const shaderStack: EffectBehaviour = (element, params, context: EffectContext) =
     });
   };
 
+  /** The colours of the still look that shows if nothing can be drawn (see `stackStaticCss`). */
+  const stillShades = (): Rgb[] => {
+    const layer = plan.layers.find(({ look }) => !laidOver.has(look ?? ""));
+    const look = layer?.look ? (looks[layer.look] ?? extraLooks[layer.look]) : undefined;
+    if (!layer || !look) return [];
+    return look.colours.flatMap((name, index) => {
+      const value = layer.values[name];
+      const fallback = look.defaults[index] ?? "";
+      const chosen = typeof value === "string" && value ? value : fallback;
+      return chosen ? [colourOf(element, chosen, fallback)] : [];
+    });
+  };
+
+  let drawingShows = false;
   let restoreBackground: (() => void) | undefined;
   cleanups.push(() => restoreBackground?.());
   /** The drawing steps aside: the plain background shows, and the words stay readable on it. */
   const fallBack = () => {
+    drawingShows = false;
     backdrop.canvas.style.visibility = "hidden";
     restoreBackground?.();
     restoreBackground = undefined;
     veil = -1;
-    setVeil([backgroundBehind(element)]);
+    setVeil([backgroundBehind(element), ...stillShades()]);
   };
 
   const renderer = shaderRenderer();
@@ -386,6 +401,7 @@ const shaderStack: EffectBehaviour = (element, params, context: EffectContext) =
     sizeCanvas(backdrop.canvas, element.clientWidth, element.clientHeight, ratio);
     const drew = painter.paint(backdrop.canvas, seed, steps());
     if (drew) {
+      drawingShows = true;
       backdrop.canvas.style.visibility = "";
       // Once the drawing shows, the static fallback under it steps aside.
       if (!ownPicture) restoreBackground ??= setStyles(element, { "background-image": "none" });
@@ -395,7 +411,8 @@ const shaderStack: EffectBehaviour = (element, params, context: EffectContext) =
 
   /** The veil only ever deepens as a drawing moves, so it never flickers. */
   const checkVeil = () => {
-    if (!plan.readable) return;
+    // A stopped drawing's canvas still holds its last picture, which nobody can see.
+    if (!plan.readable || !drawingShows) return;
     const shades = sampleDrawing(backdrop.canvas, backgroundBehind(element));
     if (shades.length === 0) return;
     const needed = scrimFor(shades, wordColours(element));
