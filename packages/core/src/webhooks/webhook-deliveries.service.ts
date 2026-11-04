@@ -18,6 +18,7 @@ import { listWebhooksForEvent } from "./webhooks.repository.js";
 import type { WebhookDeliveryList, WebhookDeliveryResponse } from "./webhooks.schema.js";
 import { findWebhook } from "./webhooks.service.js";
 import type { WebhookDeliveryRow, WebhookRow } from "./webhooks.table.js";
+import { findAppsAllowedEvent } from "../apps/app-events.js";
 
 /**
  * The delivery log: an event is written down for every webhook that wants it, then sent,
@@ -41,7 +42,13 @@ export async function queueWebhookEvent(
   now = new Date(),
   text?: string,
 ): Promise<number> {
-  const webhooks = await listWebhooksForEvent(database, DEFAULT_TENANT_ID, event);
+  const listed = await listWebhooksForEvent(database, DEFAULT_TENANT_ID, event);
+  const allowedApps = await findAppsAllowedEvent(
+    database,
+    listed.flatMap((webhook) => webhook.appId ?? []),
+    event,
+  );
+  const webhooks = listed.filter(({ appId }) => appId === null || allowedApps.has(appId));
   const deliveries = webhooks.map((webhook) => {
     const id = randomUUID();
     return {
