@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 import { useTestDatabase } from "../../testing/test-database.js";
 import { buildSiteServer, type SiteServer } from "../../website/site-server.js";
+import { customersTable } from "../customers/customers.table.js";
 import { ordersTable } from "../orders/orders.table.js";
 import {
   DELIVERY_ADDRESS,
@@ -266,6 +267,25 @@ describe("the test checkout", () => {
         cookies: { [TEST_SESSION_COOKIE]: good },
       });
       expect(page.body).not.toContain("data-lintel-test-banner");
+    },
+    SLOW_TEST,
+  );
+
+  it(
+    "keeps a customer who was there before the test, even with no orders",
+    async () => {
+      const { current, site, variantId, rateId } = await start();
+      const [imported] = await testDatabase.database
+        .insert(customersTable)
+        .values({ email: "tester@example.com", name: "Imported", createdAt: new Date(0) })
+        .returning();
+      await placeTestOrder(site, variantId, rateId, await openSession(current, site));
+
+      const deleted = await current.admin("DELETE", "/shop/test-orders");
+      expect(deleted.json()).toEqual({ deleted: 1 });
+
+      const customers = await testDatabase.database.select().from(customersTable);
+      expect(customers.map((customer) => customer.id)).toEqual([imported?.id]);
     },
     SLOW_TEST,
   );
