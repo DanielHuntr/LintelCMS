@@ -10,11 +10,60 @@ import { createEmptyPage } from "../document/page-document.schema.js";
 import { validatePageDocument } from "../document/validate-page.js";
 import { createNode } from "../tree/create-node.js";
 import { createCountingNodeIds } from "../tree/node-ids.js";
+import { clockComponent, clockPlaceName, clockPlaces } from "./clock-component.js";
+import { modelFileBytes } from "./model-component.js";
 import { standardCatalogue, standardComponents } from "./component-catalogue.js";
 import { componentCategories } from "./component-definition.js";
 import { embedAllowedHosts } from "./media-components.js";
 
 const createId = createCountingNodeIds("t");
+
+describe("a page's 3D models", () => {
+  const model = (src: string, bytes: number, hidden = false) => ({
+    ...createNode(
+      { type: "model3d", props: { model: { src, assetId: null, bytes } } },
+      standardCatalogue,
+      createCountingNodeIds(src),
+    ),
+    hidden,
+  });
+
+  it("weigh each file once, leaving out hidden ones", () => {
+    const page = createEmptyPage();
+    const root = {
+      ...page.root,
+      children: [
+        model("/a.glb", 100),
+        model("/a.glb", 100),
+        model("/b.glb", 50),
+        model("/c.glb", 9, true),
+      ],
+    };
+    expect(modelFileBytes(root)).toBe(150);
+  });
+});
+
+describe("the clock", () => {
+  const zoneIsAccepted = (zone: string) => clockComponent.propsSchema.safeParse({ zone }).success;
+
+  it("offers Melbourne", () => {
+    expect(clockPlaces.map((place) => place.city)).toContain("Melbourne");
+    expect(clockPlaceName("Australia/Melbourne")).toBe("Melbourne");
+  });
+
+  it("keeps a zone that isn't on the list, named after its city", () => {
+    expect(zoneIsAccepted("Australia/Adelaide")).toBe(true);
+    expect(zoneIsAccepted("America/Argentina/Buenos_Aires")).toBe(true);
+    expect(clockPlaceName("America/Argentina/Buenos_Aires")).toBe("Buenos Aires");
+    expect(zoneIsAccepted("local")).toBe(true);
+    expect(clockPlaceName("local")).toBe("");
+  });
+
+  it("turns down what can't be a zone", () => {
+    expect(zoneIsAccepted("</script>")).toBe(false);
+    expect(zoneIsAccepted("Nowhere")).toBe(false);
+  });
+});
 
 describe("the element library", () => {
   it.each(standardComponents.map((definition) => [definition.type, definition] as const))(

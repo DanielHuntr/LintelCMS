@@ -248,7 +248,12 @@ interface Piece {
 }
 
 /** One piece of furniture: its drawing, then its number, name and what it is made of. */
-function pieceCard(piece: Piece, styles: NodeStyles, linksTo?: string): NodeBlueprint {
+function pieceCard(
+  piece: Piece,
+  styles: NodeStyles,
+  linksTo?: string,
+  headingLevel = 3,
+): NodeBlueprint {
   return {
     type: "card",
     name: piece.name,
@@ -291,7 +296,7 @@ function pieceCard(piece: Piece, styles: NodeStyles, linksTo?: string): NodeBlue
           {
             type: "heading",
             name: "Piece name",
-            props: { text: piece.name, level: 3 },
+            props: { text: piece.name, level: headingLevel },
             styles: {
               base: {
                 fontFamily: displayFont,
@@ -388,9 +393,14 @@ function footer(): NodeBlueprint {
   return gridSection(
     "Footer",
     [
-      display("Wrenfold", 2, "Workshop name", "clamp(3rem, 9vw, 8rem)", {
-        base: { ...place(1, 7, 1) },
-      }),
+      // Words, not a heading: the footer is on every page, after each page's own headings.
+      {
+        ...display("Wrenfold", 2, "Workshop name", "clamp(3rem, 9vw, 8rem)", {
+          base: { ...place(1, 7, 1) },
+        }),
+        type: "text",
+        props: { text: "Wrenfold" },
+      },
       {
         type: "box",
         name: "Address",
@@ -878,6 +888,11 @@ const armchair: Piece = {
   alt: "Line drawing of the Hollin chair, here with arms",
 };
 
+/** A piece on the collection page, where it comes straight under the page's main heading. */
+function listedPiece(piece: Piece, styles: NodeStyles): NodeBlueprint {
+  return pieceCard(piece, styles, undefined, 2);
+}
+
 const collectionPage: StarterPage = {
   slug: "collection",
   title: "Collection",
@@ -891,23 +906,23 @@ const collectionPage: StarterPage = {
     gridSection(
       "Pieces",
       [
-        pieceCard(
+        listedPiece(
           { ...chair, details: "Ash and oak, from £1,450" },
           { base: place(1, 5, 1, 2), phone: phonePlace(1, 10) },
         ),
-        pieceCard(
+        listedPiece(
           { ...table, details: "Oak, from £6,200" },
           { base: { ...place(7, 6, 1, 2), marginTop: space(9) }, phone: phonePlace(3, 10) },
         ),
-        pieceCard(
+        listedPiece(
           { ...stool, details: "Ash, from £540" },
           { base: { ...place(2, 3, 3), marginTop: space(4) }, phone: phonePlace(1, 7) },
         ),
-        pieceCard(armchair, {
+        listedPiece(armchair, {
           base: { ...place(5, 4, 3, 2), marginTop: space(7) },
           phone: phonePlace(4, 9),
         }),
-        pieceCard(
+        listedPiece(
           { ...cabinet, details: "Oak, from £4,800" },
           {
             base: {
@@ -919,7 +934,7 @@ const collectionPage: StarterPage = {
             phone: { ...phonePlace(1, 9), marginTop: "0" },
           },
         ),
-        pieceCard(
+        listedPiece(
           { ...bench, details: "Oak, from £1,900" },
           { base: { ...place(9, 4, 5), marginTop: space(4) }, phone: phonePlace(2, 11) },
         ),

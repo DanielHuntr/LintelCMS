@@ -320,9 +320,22 @@ export function formatRule(
       cssName: string;
       alsoPrintedAs?: readonly string[];
     };
-    return [...alsoPrintedAs, cssName].map((name) => `${indent}  ${name}: ${value};`);
+    const printed = property === "color" ? readableBrandText(value, declarations) : value;
+    return [...alsoPrintedAs, cssName].map((name) => `${indent}  ${name}: ${printed};`);
   });
   return lines.length === 0 ? null : `${indent}${selector} {\n${lines.join("\n")}\n${indent}}`;
+}
+
+/**
+ * Brand-coloured text with no background of its own sits on the page or a panel, where a dark
+ * brand in dark mode is hard to read, so it takes the theme's readable tone of the brand. That
+ * is the brand itself whenever the brand reads well. Text with its own background is left
+ * alone: the two were chosen together.
+ */
+function readableBrandText(value: string, declarations: StyleDeclarations): string {
+  return value === "var(--lintel-color-brand)" && declarations.backgroundColor === undefined
+    ? "var(--lintel-color-brand-text, var(--lintel-color-brand))"
+    : value;
 }
 
 /** The node's own styles over the ones its settings imply, or undefined when both are empty. */

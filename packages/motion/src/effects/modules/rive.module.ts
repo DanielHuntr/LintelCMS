@@ -21,12 +21,41 @@ import { readText } from "../kit/params.js";
  * It plays the file's first state machine (or the one named), or else its first animation.
  * "Respond to" hover sets the state machine's switch (a boolean input, by name or the first)
  * while the pointer or keyboard focus is on it; click fires its trigger or flips its switch.
- * For less motion, the poster stays, or the first frame is drawn and held.
+ * For less motion, the poster stays, or the first frame is drawn and held, and a press does
+ * nothing, so it isn't offered as a button.
  */
 
 /** The runtime's own numbers for a state machine's switches and triggers. */
 const switchType = 59;
 const triggerType = 58;
+
+/** Its name when nobody has described it. */
+const unnamedButton = "Play the animation";
+
+/**
+ * Makes the element a button people can reach by keyboard, named with its description or
+ * else plainly. Pressing it works from now on, so it's done only once the animation is ready.
+ */
+function actAsButton(element: HTMLElement): () => void {
+  const before = {
+    role: element.getAttribute("role"),
+    hidden: element.getAttribute("aria-hidden"),
+    label: element.getAttribute("aria-label"),
+  };
+  const restore = (name: string, value: string | null) =>
+    value === null ? element.removeAttribute(name) : element.setAttribute(name, value);
+  element.setAttribute("role", "button");
+  element.setAttribute("tabindex", "0");
+  element.removeAttribute("aria-hidden");
+  element.setAttribute("aria-label", before.label || unnamedButton);
+  return () => {
+    element.removeAttribute("tabindex");
+    element.removeAttribute("aria-pressed");
+    restore("role", before.role);
+    restore("aria-hidden", before.hidden);
+    restore("aria-label", before.label);
+  };
+}
 
 const rivePlayer: EffectBehaviour = (element, params, context) => {
   if (context.reduced && hasPoster(element)) return;
@@ -88,7 +117,9 @@ const rivePlayer: EffectBehaviour = (element, params, context) => {
               }),
             );
           }
-          if (respondTo === "click") {
+          // Less motion holds it still, so there's nothing for a press to do: it stays a picture.
+          if (respondTo === "click" && !context.reduced) {
+            stops.push(actAsButton(element));
             const press = () => {
               play();
               const input = findInput();

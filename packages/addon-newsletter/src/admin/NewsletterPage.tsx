@@ -211,7 +211,9 @@ function ConnectionForm({ saved }: { saved: ConnectionSummary }) {
               disabled={!canChange}
               onCheckedChange={setDoubleOptIn}
             />
-            <p className="text-footnote text-label-secondary">{t("newsletter.doubleOptInHint")}</p>
+            <p className="text-footnote text-label-secondary">
+              {t(doubleOptIn ? "newsletter.doubleOptInHint" : "newsletter.consentTickHint")}
+            </p>
           </div>
           {showsBrevoExtras && (
             <>

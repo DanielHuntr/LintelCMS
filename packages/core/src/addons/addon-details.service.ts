@@ -19,6 +19,10 @@ import { findPluginJobRun } from "../plugins/plugin-jobs.js";
 import { listRegisteredPluginRoutes } from "../plugins/plugin-routes.js";
 import { PluginNotFoundError } from "../plugins/plugins.errors.js";
 import { isPluginEnabled } from "../plugins/plugins.service.js";
+import {
+  personalColumnsOf,
+  personalDataDeclarationSchema,
+} from "../privacy/personal-data-declaration.js";
 import { deleteSettingValue } from "../settings/settings.repository.js";
 import { declarationsOf, isLintelTable } from "./addon-tables.js";
 import { csvCell } from "../forms/submissions-csv.js";
@@ -42,6 +46,12 @@ function findAddon(catalogue: PluginCatalogue, addons: AddonsState, id: string):
   );
   if (!entry) throw new PluginNotFoundError(id);
   return { plugin: entry.plugin, addon: addons.loaded.find(({ plugin }) => plugin.id === id) };
+}
+
+/** What it says in `personalData`, in its code or its package.json, as Privacy reads it. */
+function ownPersonalData({ plugin, addon }: Found) {
+  const parsed = personalDataDeclarationSchema.safeParse(plugin.personalData);
+  return parsed.success ? parsed.data : addon?.addonPackage.manifest.personalData;
 }
 
 /** Tables are named after the plugin: "gift-cards" owns "gift_cards" and "gift_cards_…". */
@@ -129,6 +139,7 @@ export async function describeAddon(
   const { plugin, addon } = found;
   const declarations = declarationsOf(plugin, addon);
   const own = await findOwnTables(database, found);
+  const personalData = ownPersonalData(found);
 
   const tables = await Promise.all(
     own.declared.map(async (table) => {
@@ -140,7 +151,9 @@ export async function describeAddon(
         columns: table.columns.map((column) => ({
           name: column.name,
           purpose: column.purpose,
-          personalData: column.personalData ?? false,
+          personalData:
+            (column.personalData ?? false) ||
+            personalColumnsOf(personalData, table.name).includes(column.name),
           checked: columns.has(column.name),
         })),
         checked,

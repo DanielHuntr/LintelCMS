@@ -115,6 +115,15 @@ export async function signUp(
   return { message: signedUpMessage(confirmsByEmail(row)) };
 }
 
+/**
+ * Whether people need to tick a box to join from a form of the site's own: they do unless
+ * they'll confirm by email. Without a connection nobody is added, so nothing needs asking.
+ */
+export async function needsConsentTick(database: DatabaseOrTransaction): Promise<boolean> {
+  const row = await findConnectionRow(database, DEFAULT_TENANT_ID);
+  return row !== undefined && !confirmsByEmail(row);
+}
+
 /** Whether people get an email to confirm before they're on the list. */
 function confirmsByEmail(row: NewsletterConnectionRow): boolean {
   return row.doubleOptIn && (row.provider === "mailchimp" || row.brevoTemplateId !== null);

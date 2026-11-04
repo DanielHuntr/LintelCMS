@@ -140,14 +140,16 @@ export const portfolioSite: StarterSite = {
           text: "Tell me what you’re making, when you need it and roughly what you’d like to spend.",
           button: { label: "Write an email", href: "mailto:jules@example.com" },
         }),
-        simpleFooter({
-          text: "Based in Bristol, working with people everywhere.",
-          links: [
-            { label: "Work", href: "/work" },
-            { label: "About", href: "/about" },
-          ],
-        }),
       ],
     },
   ],
+  siteSections: {
+    footer: simpleFooter({
+      text: "Based in Bristol, working with people everywhere.",
+      links: [
+        { label: "Work", href: "/work" },
+        { label: "About", href: "/about" },
+      ],
+    }),
+  },
 };

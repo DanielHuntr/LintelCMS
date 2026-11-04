@@ -16,6 +16,7 @@ export const addonStrings = {
   "addons.version": "Version {version}",
   "addons.switch": "Use {name}",
   "addons.saving": "Saving…",
+  "addons.openScreen": "Open {name}",
   "addons.saved": "Saved",
   "addons.close": "Done",
   "addons.access": "Access",

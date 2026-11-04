@@ -30,7 +30,7 @@ export const magazineSite: StarterSite = {
           text: "Frost, bare branches and the surprising amount there is to do. Our longest read this month, with planting notes for the cold weeks.",
           primary: { label: "Read the story", href: "/blog" },
           secondary: { label: "Subscribe", href: "/newsletter" },
-          picture: { name: "magazine-leaf", alt: "A green leaf" },
+          picture: { name: "magazine-leaf", alt: "A green leaf on its stem" },
         }),
         gallery({
           label: "Latest",
@@ -44,13 +44,13 @@ export const magazineSite: StarterSite = {
             },
             {
               picture: "magazine-lamp",
-              alt: "A warm lamp",
+              alt: "A warm reading lamp",
               title: "Long evenings, good books",
               text: "Twelve readers share what they’re reading by the fire.",
             },
             {
               picture: "magazine-leaf",
-              alt: "A leaf",
+              alt: "A green leaf on its stem",
               title: "Soup from the last of the veg",
               text: "Three recipes for whatever is left in the crate.",
             },
@@ -64,26 +64,6 @@ export const magazineSite: StarterSite = {
           heading: "A letter every Sunday",
           text: "One email a week with our newest stories and a seasonal to-do list. Free, and easy to leave.",
           button: { label: "Subscribe", href: "/newsletter" },
-        }),
-        columnsFooter({
-          about:
-            "An independent magazine about living with the seasons, written by readers and friends.",
-          columns: [
-            {
-              heading: "Read",
-              links: [
-                { label: "All stories", href: "/blog" },
-                { label: "Sections", href: "/sections" },
-              ],
-            },
-            {
-              heading: "Join in",
-              links: [
-                { label: "Newsletter", href: "/newsletter" },
-                { label: "About us", href: "/about" },
-              ],
-            },
-          ],
         }),
       ],
     },
@@ -101,13 +81,13 @@ export const magazineSite: StarterSite = {
           heading: "Growing",
           text: "Practical notes from allotments, window boxes and back gardens, month by month.",
           more: { label: "Read growing stories", href: "/blog" },
-          picture: { name: "magazine-leaf", alt: "A leaf" },
+          picture: { name: "magazine-leaf", alt: "A green leaf on its stem" },
         }),
         story({
           heading: "Cooking",
           text: "Simple, seasonal recipes that make the most of what’s around right now.",
           more: { label: "Read cooking stories", href: "/blog" },
-          picture: { name: "magazine-lamp", alt: "A lamp" },
+          picture: { name: "magazine-lamp", alt: "A warm reading lamp" },
           pictureFirst: true,
           tone: "panel",
         }),
@@ -115,7 +95,7 @@ export const magazineSite: StarterSite = {
           heading: "Making",
           text: "Mending, building and crafting with what you have, from readers who love to tinker.",
           more: { label: "Read making stories", href: "/blog" },
-          picture: { name: "magazine-pages", alt: "Open pages" },
+          picture: { name: "magazine-pages", alt: "An open notebook" },
         }),
       ],
     },
@@ -163,4 +143,26 @@ export const magazineSite: StarterSite = {
       ],
     },
   ],
+  siteSections: {
+    footer: columnsFooter({
+      about:
+        "An independent magazine about living with the seasons, written by readers and friends.",
+      columns: [
+        {
+          heading: "Read",
+          links: [
+            { label: "All stories", href: "/blog" },
+            { label: "Sections", href: "/sections" },
+          ],
+        },
+        {
+          heading: "Join in",
+          links: [
+            { label: "Newsletter", href: "/newsletter" },
+            { label: "About us", href: "/about" },
+          ],
+        },
+      ],
+    }),
+  },
 };

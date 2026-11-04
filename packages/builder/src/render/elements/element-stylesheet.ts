@@ -234,7 +234,7 @@ const text = `
 :where(.lintel-marquee:hover .lintel-marquee__list, .lintel-marquee:focus-within .lintel-marquee__list) { animation-play-state: paused; }
 @keyframes lintel-scroll { to { translate: -100% 0; } }
 :where(.lintel-counter) { display: flex; flex-direction: column; gap: var(--lintel-space-1); }
-:where(.lintel-counter__value) { font-family: var(--lintel-font-heading); font-size: clamp(2.25rem, 5vw, 3.5rem); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; color: var(--lintel-color-brand); }
+:where(.lintel-counter__value) { font-family: var(--lintel-font-heading); font-size: clamp(2.25rem, 5vw, 3.5rem); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; color: var(--lintel-color-brand-text, var(--lintel-color-brand)); }
 :where(.lintel-counter__label) { color: var(--lintel-color-text-secondary); }
 :where(.lintel-badge) { display: inline-flex; align-items: center; gap: var(--lintel-space-1); inline-size: fit-content; padding: 0.15em 0.6em; border-radius: 999px; font-size: 0.8125rem; font-weight: 600; line-height: 1.5; background: var(--lintel-color-brand); color: var(--lintel-color-on-brand); }
 :where(.lintel-badge__icon) { inline-size: 0.9em; block-size: 0.9em; }
@@ -252,7 +252,7 @@ const text = `
 :where(.lintel-timeline__item) { position: relative; padding-inline-start: var(--lintel-space-6); display: flex; flex-direction: column; gap: var(--lintel-space-1); counter-increment: lintel-step; }
 :where(.lintel-timeline__item)::before { content: ""; position: absolute; inset-inline-start: -0.45rem; inset-block-start: 0.35rem; inline-size: 0.8rem; block-size: 0.8rem; border-radius: 999px; background: var(--lintel-color-brand); }
 :where(.lintel-timeline--numbered .lintel-timeline__item)::before { content: counter(lintel-step); inset-inline-start: -0.85rem; inset-block-start: 0; inline-size: 1.6rem; block-size: 1.6rem; display: grid; place-items: center; color: var(--lintel-color-on-brand); font-size: 0.8rem; font-weight: 700; }
-:where(.lintel-timeline__when) { font-size: 0.875rem; font-weight: 600; color: var(--lintel-color-brand); }
+:where(.lintel-timeline__when) { font-size: 0.875rem; font-weight: 600; color: var(--lintel-color-brand-text, var(--lintel-color-brand)); }
 :where(.lintel-timeline__title) { font-size: 1.125rem; }
 :where(.lintel-stars) { display: flex; gap: 2px; color: #e3a008; }
 :where(.lintel-stars svg) { inline-size: 1.1rem; block-size: 1.1rem; }
@@ -280,7 +280,7 @@ const text = `
 :where(.lintel-social__icon) { inline-size: 1em; block-size: 1em; }
 :where(.lintel-person) { display: flex; flex-direction: column; gap: var(--lintel-space-2); }
 :where(.lintel-person__photo) { inline-size: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--lintel-radius-medium); margin-bottom: var(--lintel-space-2); }
-:where(.lintel-person__role) { color: var(--lintel-color-brand); font-weight: 600; }
+:where(.lintel-person__role) { color: var(--lintel-color-brand-text, var(--lintel-color-brand)); font-weight: 600; }
 :where(.lintel-person__bio) { color: var(--lintel-color-text-secondary); }
 :where(.lintel-features) { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--lintel-space-6); grid-template-columns: repeat(var(--lintel-feature-columns, 3), minmax(0, 1fr)); }
 ${[1, 2, 3, 4].map((count) => `:where(.lintel-features--columns-${count}) { --lintel-feature-columns: ${count}; }`).join("\n")}

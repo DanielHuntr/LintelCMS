@@ -185,6 +185,18 @@ and then every `everyMinutes`; every server process runs them, so make a job saf
 twice. Each is given `database`, `readSettings()` and `log`. The events are listed in
 [Automations](/building/workflows/).
 
+An add-on that passes people on to someone else can make a form ask first. Return the words
+for a consent box, or `null` when the form needs none:
+
+```ts
+formConsent: async (form, database) =>
+  form.handle === "newsletter" ? "I'd like the newsletter." : null,
+```
+
+While the add-on is on, a consent box the form already has becomes required, and a form
+without one gets this one. The saved form doesn't change. `form.submitted` lists the boxes
+that were ticked in `submission.consents`.
+
 ## Terminal commands
 
 ```ts
@@ -204,7 +216,9 @@ add-on's commands.
 
 If an add-on keeps anything that can identify a person, declare it, so
 [Settings → Privacy](/using/privacy/) can list it, and give it the three hooks so people's
-requests reach it:
+requests reach it. Say which columns are personal once: here, or with `"personalData": true`
+on a column under [`tables`](#saying-what-it-keeps-and-does). Privacy and the Add-ons screen
+read both, so there's no need to repeat it.
 
 ```ts
 personalData: {
@@ -235,7 +249,8 @@ ignoring case, and a name only as a whole name, never part of one: erasing can't
 - `erase` returns `{ deleted, anonymised?, kept?, explanation? }`. Say in `explanation` why
   anything stayed. The hooks run while the add-on is switched off too, because its data stays.
 
-An add-on with no server code to run can declare its tables in package.json instead:
+An add-on with no server code to run can say so in package.json instead, under `tables` or as
+below:
 
 ```json
 "lintel-addon": {

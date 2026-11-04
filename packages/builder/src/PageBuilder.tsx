@@ -33,6 +33,7 @@ import {
   siteSectionSlotOf,
   type SiteSectionSlot,
   unmarkedOwnNavigation,
+  modelFileBytes,
 } from "@lintel/builder-model";
 import type { MotionSpec } from "@lintel/motion";
 import { type Translate as MotionText } from "@lintel/motion-editor";
@@ -331,6 +332,12 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     return selectedId ? [selectedId] : [];
   }, [many, selectedId, state.document.root]);
   const isMany = selectedIds.length > 1;
+  // Acting on one of several selected acts on them all; on any other element, just that one.
+  const movingWith = useCallback(
+    (nodeId: string): readonly string[] =>
+      isMany && selectedIds.includes(nodeId) ? selectedIds : [nodeId],
+    [isMany, selectedIds],
+  );
   const [revealId, setRevealId] = useState<string | null>(null);
   // What Insert adds can land below the fold, where nothing would seem to have happened.
   const revealInserted = useRef(false);
@@ -554,7 +561,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     const used = collectNodeEffects(root).flatMap(({ effects }) =>
       effects.flatMap((saved) => effectRegistry.find(saved.effect) ?? []),
     );
-    return measurePageWeight(used, props.siteEffects?.value);
+    return measurePageWeight(used, props.siteEffects?.value, modelFileBytes(root));
   }, [root, props.siteEffects?.value]);
 
   const selectFromPanel = useCallback(
@@ -598,6 +605,10 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
       if (isMany) {
         if (command === "remove") return (actions.many.remove(selectedIds), true);
         if (command === "duplicate") return (actions.many.duplicate(selectedIds), true);
+        if (command === "copy") return (actions.many.copy(selectedIds), true);
+        if (command === "cut") return (actions.many.cut(selectedIds), true);
+        if (command === "toggleHidden") return (actions.many.toggleHidden(selectedIds), true);
+        if (command === "toggleLocked") return (actions.many.toggleLocked(selectedIds), true);
         if (command === "moveUp" || command === "moveDown") {
           actions.many.move(selectedIds, command === "moveUp" ? "up" : "down");
           return true;
@@ -740,15 +751,18 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
         const moved = isLocked(state.document, message.nodeId)
           ? undefined
           : findNode(root, message.nodeId);
-        // Never into itself: what it holds can't be where it goes.
+        // Never into itself: what it, or anything moving with it, holds can't be where it goes.
+        const moving = movingWith(message.nodeId).flatMap((id) => findNode(root, id) ?? []);
         const chain = message.chain.filter(
-          (over) => moved !== undefined && findNode(moved, over.nodeId) === undefined,
+          (over) => moved !== undefined && moving.every((node) => !findNode(node, over.nodeId)),
         );
         showCanvasDrop(moved ? canvasDropTarget(root, catalogue, moved.type, chain) : null);
       }
       if (message.type === "moveDrop") {
         const target = canvasDropRef.current;
-        if (target) {
+        if (target && movingWith(message.nodeId).length > 1) {
+          actions.many.moveTo(selectedIds, target.place.parentId, target.place.index);
+        } else if (target) {
           actions.moveTo(message.nodeId, target.place.parentId, target.place.index);
           actions.select(message.nodeId);
         }
@@ -842,6 +856,8 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     },
     [
       actions,
+      movingWith,
+      selectedIds,
       runShortcut,
       breakpoint,
       text,
@@ -1035,10 +1051,22 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
                           onSelect={selectFromPanel}
                           onSelectWith={selectWith}
                           onHover={setHoveredId}
-                          onToggleHidden={actions.toggleHidden}
-                          onToggleLocked={actions.toggleLocked}
+                          onToggleHidden={(nodeId) =>
+                            movingWith(nodeId).length > 1
+                              ? actions.many.toggleHidden(selectedIds)
+                              : actions.toggleHidden(nodeId)
+                          }
+                          onToggleLocked={(nodeId) =>
+                            movingWith(nodeId).length > 1
+                              ? actions.many.toggleLocked(selectedIds)
+                              : actions.toggleLocked(nodeId)
+                          }
                           onRename={actions.rename}
-                          onMove={actions.moveTo}
+                          onMove={(nodeId, parentId, index) =>
+                            movingWith(nodeId).length > 1
+                              ? actions.many.moveTo(selectedIds, parentId, index)
+                              : actions.moveTo(nodeId, parentId, index)
+                          }
                           onInsertAt={(key, parentId, index) =>
                             actions.insert(key as `component:${string}`, { parentId, index })
                           }

@@ -11,6 +11,7 @@ import {
 import { recordConsents } from "../forms/consent-records.js";
 import { announceFormSubmitted } from "../forms/form-submitted.js";
 import { findFormRowByHandle } from "../forms/forms.repository.js";
+import { withRequiredConsent } from "../forms/required-consent.js";
 import { checkSubmissionValues, findSubmitterEmail } from "../forms/submission-values.js";
 import { insertSubmissionRow } from "../forms/submissions.repository.js";
 import { recordReceipt } from "../publishing/publishing.repository.js";
@@ -199,7 +200,8 @@ async function importSubmission(
 ): Promise<"imported" | "duplicate" | "problem"> {
   const form = await findFormRowByHandle(api.database, DEFAULT_TENANT_ID, submission.form);
   if (!form) return "problem";
-  const checked = checkSubmissionValues(form.fields, submission.values);
+  const fields = await withRequiredConsent(api.database, form);
+  const checked = checkSubmissionValues(fields, submission.values);
   // The companion already checked what matters; anything Lintel reads differently is kept as sent.
   const values =
     Object.keys(checked.messages).length === 0 ? checked.values : { ...submission.values };
@@ -223,7 +225,7 @@ async function importSubmission(
       assetIds: [],
       sourceUrl,
       consents: recordConsents(
-        form.fields,
+        fields,
         checked.values,
         sourceUrl,
         new Date(submission.receivedAt),

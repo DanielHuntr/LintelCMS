@@ -31,6 +31,7 @@ export const clockPlaces = [
   { zone: "Asia/Seoul", city: "Seoul" },
   { zone: "Asia/Tokyo", city: "Tokyo" },
   { zone: "Australia/Perth", city: "Perth" },
+  { zone: "Australia/Melbourne", city: "Melbourne" },
   { zone: "Australia/Sydney", city: "Sydney" },
   { zone: "Pacific/Auckland", city: "Auckland" },
   { zone: "America/Sao_Paulo", city: "São Paulo" },
@@ -43,15 +44,18 @@ export const clockPlaces = [
   { zone: "America/Vancouver", city: "Vancouver" },
 ] as const;
 
-const clockZones = clockPlaces.map((place) => place.zone) as unknown as readonly [
-  string,
-  ...string[],
-];
+/**
+ * "local" or any name shaped like a time zone. The list above is what the builder offers, not
+ * all that's allowed: a design with a zone that isn't on it, such as a template's footer, has
+ * to keep working rather than be turned down.
+ */
+const clockZonePattern = /^(local|[A-Za-z_]+(\/[A-Za-z0-9_+-]+)+)$/;
 
 /** The city's name for a time zone, or empty for the visitor's own time. */
 export function clockPlaceName(zone: string): string {
   if (zone === "local") return "";
-  return clockPlaces.find((place) => place.zone === zone)?.city ?? "";
+  const listed = clockPlaces.find((place) => place.zone === zone)?.city;
+  return listed ?? zone.split("/").at(-1)?.replaceAll("_", " ") ?? "";
 }
 
 /**
@@ -88,7 +92,10 @@ export const clockComponent = defineComponent({
   icon: "clock",
   category: "text",
   propsSchema: z.object({
-    zone: z.enum(clockZones, { error: "Choose a place from the list" }).default("Europe/London"),
+    zone: z
+      .string()
+      .regex(clockZonePattern, { error: "Choose a place from the list" })
+      .default("Europe/London"),
     hours: oneOf(["24", "12"], "The clock"),
     label: plainText(60, ""),
   }),

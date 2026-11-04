@@ -241,3 +241,7 @@ Branch `fix/night-qa` (`FIX-LOG-night-qa.md`). The text above is unchanged.
 - The three P1s were everyday flows that automated tests didn't reach: where a section lands in the builder (FUNC-033, FUNC-034) and a basket total without delivery (FUNC-035).
 - **Open:** 1 P2 (FUNC-037, translating a page before its parent, for Daniel to decide) and 14 P3. No P0 or P1 is open from this pass.
 - **Not covered:** a real payment, a real add-on or app install, FTP, SFTP and S3 publishing, WebKit and Firefox, a screen reader, contrast measurement. See `TEST-RESULTS.md`.
+
+## Overnight follow-ups (4 November 2026)
+
+LINTEL-UX-270 to 284 are fixed on `fix/overnight-followups`, and LINTEL-UX-157, 158 and 159 with them. LINTEL-UX-285 to 288 are open, all P3. No P1 was added.

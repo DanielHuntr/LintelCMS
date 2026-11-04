@@ -74,6 +74,19 @@ describe("text on a path", () => {
   });
 });
 
+describe("a Rive element that responds to a click, undescribed", () => {
+  it("is hidden from screen readers until its player makes it a named button", () => {
+    const rendered = renderPage(
+      page({ type: "riveAnimation", props: { respondTo: "click" } }),
+      standardRegistry,
+    );
+    const rive = parse(rendered.html).querySelector(".lintel-animation");
+    expect(rive?.getAttribute("aria-hidden")).toBe("true");
+    expect(rive?.hasAttribute("role")).toBe(false);
+    expect(rive?.hasAttribute("tabindex")).toBe(false);
+  });
+});
+
 describe("the Lottie and Rive elements", () => {
   it("draw their poster and hand their settings to their players as effects", () => {
     const rendered = renderPage(
@@ -98,8 +111,9 @@ describe("the Lottie and Rive elements", () => {
     expect(lottie?.querySelector("img.lintel-animation__poster")?.getAttribute("src")).toBe(
       "/media/still.png",
     );
-    expect(rive?.getAttribute("role")).toBe("button");
-    expect(rive?.getAttribute("tabindex")).toBe("0");
+    // Its player makes it a button once the animation can answer a press.
+    expect(rive?.getAttribute("role")).toBe("img");
+    expect(rive?.hasAttribute("tabindex")).toBe(false);
     expect(
       rendered.effects.map(({ module, behaviour, params }) => ({ module, behaviour, params })),
     ).toEqual([

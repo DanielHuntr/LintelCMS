@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 import { describeError } from "../api/describeError.js";
 import { Button } from "../design/Button.js";
 import { Dialog } from "../design/Dialog.js";
@@ -7,6 +7,7 @@ import { Toggle } from "../design/Toggle.js";
 import { enabledAfterToggle } from "../features/featureContent.js";
 import { listFeatures, saveEnabledFeatures } from "../features/features.api.js";
 import { t } from "../i18n/strings.js";
+import { useVisibleContributions } from "../plugins/AdminPluginsContext.js";
 import { useCan } from "../session/SessionContext.js";
 import { AddonAbout, Fold } from "./AddonAbout.js";
 import { AddonRemoval } from "./AddonRemoval.js";
@@ -30,6 +31,7 @@ export function AddonDetailsDialog({ addon, onClose }: AddonDetailsDialogProps) 
   const queryClient = useQueryClient();
   const router = useRouter();
   const addonId = addon.id;
+  const ownScreen = useAddonScreen(addonId);
 
   const toggle = useMutation({
     mutationFn: async (isOn: boolean) => {
@@ -87,6 +89,15 @@ export function AddonDetailsDialog({ addon, onClose }: AddonDetailsDialogProps) 
             {toggle.isError && <span className="text-danger">{describeError(toggle.error)}</span>}
           </p>
           <p className="text-footnote text-label-secondary">{whereFrom(addon)}</p>
+          {ownScreen && (
+            <Link
+              to={ownScreen}
+              onClick={onClose}
+              className="self-start text-footnote font-medium text-accent hover:underline focus-visible:focus-ring"
+            >
+              {t("addons.openScreen", { name: addon.name })}
+            </Link>
+          )}
           {addonId && failedAddonAdminHalves.has(addonId) && (
             <p className="text-footnote text-warning">{t("addons.adminFailed")}</p>
           )}
@@ -135,6 +146,20 @@ export function AddonDetailsDialog({ addon, onClose }: AddonDetailsDialogProps) 
       </div>
     </Dialog>
   );
+}
+
+/**
+ * Where the add-on's own screen is, for someone who may open it while it's on: its sidebar
+ * link, else its row in Settings, else a screen at a plain address.
+ */
+function useAddonScreen(addonId: string | null | undefined): string | undefined {
+  const own = <Item extends { pluginId: string }>(item: Item) => item.pluginId === addonId;
+  const sidebarItem = useVisibleContributions("sidebarItems").find(own);
+  const settingsRow = useVisibleContributions("settingsRows").find(own);
+  const screen = useVisibleContributions("screens")
+    .filter(own)
+    .find(({ path }) => !path.includes("$"));
+  return sidebarItem?.path ?? settingsRow?.to ?? screen?.path;
 }
 
 function whereFrom(addon: Addon): string {

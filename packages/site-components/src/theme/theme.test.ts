@@ -40,6 +40,33 @@ describe("theme colours", () => {
     expect(textColourOn("#ffd60a")).toBe("#111113");
   });
 
+  it("give small brand labels a tone that reads on the page and on panels", () => {
+    const tones = (brandColour: string, colourScheme: "light" | "dark") => {
+      const css = themeStylesheet({ ...defaultTheme, brandColour, colourScheme });
+      const read = (name: string) =>
+        new RegExp(`--lintel-color-${name}: (#[0-9a-f]{6});`).exec(css);
+      return {
+        text: read("brand-text")?.[1] ?? "",
+        background: read("background")?.[1] ?? "",
+        surface: read("surface")?.[1] ?? "",
+      };
+    };
+    const brands = ["#14213d", "#1a1a2e", "#3b0d11", "#7539fd", "#f2c230", "#000000", "#ffffff"];
+    for (const brand of brands) {
+      for (const scheme of ["light", "dark"] as const) {
+        const { text, background, surface } = tones(brand, scheme);
+        expect(contrastRatio(text, background), `${brand} ${scheme}`).toBeGreaterThanOrEqual(4.5);
+        expect(contrastRatio(text, surface), `${brand} ${scheme}`).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+    // Links get the same tone: they sit on panels as well.
+    const dark = themeStylesheet({ ...defaultTheme, brandColour: "#b1623f", colourScheme: "dark" });
+    const link = /--lintel-color-link: (#[0-9a-f]{6});/.exec(dark)?.[1] ?? "";
+    expect(contrastRatio(link, "#1c1c1e")).toBeGreaterThanOrEqual(4.5);
+    // A brand that already reads well stays exactly as chosen.
+    expect(tones("#14213d", "light").text).toBe("#14213d");
+  });
+
   it("darken a pale brand colour for links on white, and lighten it on black", () => {
     const onWhite = readableOn("#ffd60a", "#ffffff");
     expect(contrastRatio(onWhite, "#ffffff")).toBeGreaterThanOrEqual(4.5);

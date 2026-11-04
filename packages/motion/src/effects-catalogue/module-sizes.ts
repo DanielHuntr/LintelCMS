@@ -21,7 +21,7 @@ export const effectModuleBytes: Record<EffectModuleName, number> = {
   playground: 4773,
   pointer: 5251,
   ripple: 4389,
-  rive: 2568,
+  rive: 2734,
   scroll: 6022,
   "shader-backgrounds": 8050,
   "smooth-scroll": 2038,
@@ -32,9 +32,11 @@ export const effectModuleBytes: Record<EffectModuleName, number> = {
 
 /**
  * What a page also downloads, gzipped, once such an element nears the screen: the player
- * and, for Rive, its WebAssembly. Kept apart from the modules, which stay small.
+ * and, for Rive, its WebAssembly, or three.js for a 3D model. Kept apart from the modules,
+ * which stay small. A model's own file is counted from the page.
  */
 export const effectPlayerBytes: Partial<Record<EffectModuleName, number>> = {
   lottie: 49178,
+  model: 159187,
   rive: 414602,
 };

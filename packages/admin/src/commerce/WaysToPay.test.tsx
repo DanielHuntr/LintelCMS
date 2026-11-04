@@ -24,6 +24,8 @@ const settings: PaymentSettings = {
   webhookUrl: "https://shop.example.com/shop/stripe/webhook",
   webhookEvents: [],
   checkoutMode: "hosted",
+  siteIsLocal: false,
+  checksForPayments: false,
 };
 
 const stripe: ProviderWaysToPay = {

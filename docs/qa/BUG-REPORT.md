@@ -979,3 +979,34 @@ A first-time website maker's journeys on a fresh install, in real Chromium, on `
 | LINTEL-UX-327   | P3       | Open   | Visitors counts goals from automated browsers but not their visits: "form sent 2" beside 0 visitors, a 100% conversion rate   |
 | LINTEL-UX-329   | P3       | Open   | During a shop test with the cookie notice showing, the test bar covers the last line of the notice                            |
 | LINTEL-UX-328   | P3       | Open   | Templates as drafts with the look on: the first-visit intro and footer show the sample's name on the empty site               |
+## Overnight follow-ups (4 November 2026)
+
+On `fix/overnight-followups`; see "Overnight follow-ups" in `FIX-LOG-ux.md`. LINTEL-UX-289 wasn't needed.
+
+| ID            | Severity | Status | Summary                                                                                       |
+| ------------- | -------- | ------ | --------------------------------------------------------------------------------------------- |
+| LINTEL-UX-270 | P2       | Fixed  | With double opt-in off, the Newsletter form joined people to the list without asking          |
+| LINTEL-UX-271 | P2       | Fixed  | The builder's Newsletter element drew no consent box, so a required one stopped every sign-up |
+| LINTEL-UX-272 | P3       | Fixed  | The theme's soft grey fell short of AA on tinted paper (fixes LINTEL-UX-157)                  |
+| LINTEL-UX-273 | P2       | Fixed  | Brand-coloured labels and numbers could be unreadable with a dark brand in dark mode          |
+| LINTEL-UX-274 | P3       | Fixed  | Older templates failed the starter site checks (fixes LINTEL-UX-159)                          |
+| LINTEL-UX-275 | P3       | Fixed  | A footer with an unlisted clock zone was silently replaced (fixes LINTEL-UX-158)              |
+| LINTEL-UX-276 | P3       | Fixed  | Links on panels and dark footer bands, and Relay's green on its panel, fell short of AA       |
+| LINTEL-UX-277 | P2       | Fixed  | With several selected, Copy, Cut, Hide, Lock and dragging acted on one element                |
+| LINTEL-UX-278 | P3       | Fixed  | With different kinds selected, Style showed a box's controls                                  |
+| LINTEL-UX-279 | P2       | Fixed  | A Rive element set to respond to a click was a button that could have no name or do nothing   |
+| LINTEL-UX-280 | P3       | Fixed  | The page weight meter left out three.js and the model file                                    |
+| LINTEL-UX-281 | P3       | Fixed  | A model needing Draco uploaded and then never drew                                            |
+| LINTEL-UX-282 | P3       | Fixed  | An add-on's details dialog didn't link to its own screen                                      |
+| LINTEL-UX-283 | P2       | Fixed  | Personal columns marked under `tables` didn't reach the data map                              |
+| LINTEL-UX-284 | P3       | Fixed  | The install review said "Nothing of its own" for tables named only under `personalData`       |
+| LINTEL-UX-285 | P3       | Open   | The designer's canvas doesn't show a consent box added to the website's form                  |
+| LINTEL-UX-286 | P3       | Open   | The "Open …" link in an add-on's details has no underline until hovered                       |
+| LINTEL-UX-287 | P3       | Open   | The docs say an add-on needs no server code, but it can't load without `dist/server.js`       |
+| LINTEL-UX-288 | P3       | Open   | Pasting several lands them after the first selected, and only one stays selected              |
+
+Fixed since they were reported above:
+
+- LINTEL-UX-157 is fixed by LINTEL-UX-272.
+- LINTEL-UX-158 is fixed by LINTEL-UX-275.
+- LINTEL-UX-159 is fixed by LINTEL-UX-274.

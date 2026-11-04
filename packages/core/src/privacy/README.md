@@ -66,7 +66,8 @@ rule, and are left out of backups so a restore can't lose them.
 
 `personalData` in `definePlugin` (`personal-data-declaration.ts`) declares the tables and
 columns that hold personal data, and the `find`, `export` and `erase` hooks. An add-on can
-also declare its tables in the `lintel-addon` section of its package.json. A plugin or add-on
+also declare its tables in the `lintel-addon` section of its package.json. A column marked
+`personalData: true` under `tables` counts too, so it only has to be said once. A plugin or add-on
 with tables but no hooks is listed as one that "can't be searched", so the owner knows to
 look there by hand. `packages/plugin-example-bookings` is the example.
 
