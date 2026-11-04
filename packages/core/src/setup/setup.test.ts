@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { SESSION_COOKIE_NAME } from "../auth/session-cookie.js";
 import { buildServer } from "../server.js";
 import { findOrCreateDefaultSite } from "../sites/sites.service.js";
-import { testDatabaseUrl, useTestDatabase } from "../testing/test-database.js";
+import { testDatabaseKind, useTestDatabase } from "../testing/test-database.js";
 import { usersTable } from "../users/users.table.js";
 import { SETUP_CODE_HEADER } from "./setup-code.js";
 import { SetupAlreadyDoneError } from "./setup.errors.js";
@@ -63,7 +63,7 @@ describe("first-run setup", () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({
       needsSetup: true,
-      database: { kind: testDatabaseUrl ? "postgres" : "built-in", chosenBy: "default" },
+      database: { kind: testDatabaseKind, chosenBy: "default" },
       requiresSetupCode: false,
       siteSetupCompleted: false,
     });

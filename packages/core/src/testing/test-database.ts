@@ -28,6 +28,16 @@ declare module "vitest" {
  */
 export const testDatabaseUrl = process.env.TEST_DATABASE_URL || undefined;
 
+/** Whether this run is on MySQL or MariaDB (`pnpm test:mysql`). */
+export const testsRunOnMysql = testDatabaseUrl !== undefined && isMysqlUrl(testDatabaseUrl);
+
+/** What the server calls the database tests run on. */
+export const testDatabaseKind = testsRunOnMysql
+  ? "mysql"
+  : testDatabaseUrl
+    ? "postgres"
+    : "built-in";
+
 /**
  * A fresh, migrated database for one test. Starting from the template takes a fraction
  * of a second, where creating a built-in database from nothing takes a few.

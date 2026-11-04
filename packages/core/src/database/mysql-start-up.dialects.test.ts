@@ -184,7 +184,7 @@ describe.each(servers.filter(([, url]) => url))("Lintel starting on %s", (_name,
         url: "/setup/database/test",
         payload: details,
       });
-      expect(missing.statusCode).toBe(400);
+      expect(missing.statusCode).toBe(422);
       expect(missing.json<{ message: string }>().message).toContain("There's no database called");
 
       const finished = await server.inject({

@@ -8,7 +8,12 @@ import { ActiveDatabase, openStartupDatabase } from "../database/active-database
 import { type LintelFolder, lintelFolderAt } from "../database/database-choice.js";
 import { targetFromUrl } from "../database/database-errors.js";
 import { buildServer } from "../server.js";
-import { emptyAllTables, openTestDatabase, testDatabaseUrl } from "../testing/test-database.js";
+import {
+  emptyAllTables,
+  openTestDatabase,
+  testDatabaseUrl,
+  testsRunOnMysql,
+} from "../testing/test-database.js";
 
 /**
  * The setup screen's database step: testing a connection, and the database choice applied
@@ -142,138 +147,141 @@ describe("choosing the database during setup", () => {
     expect(response.json().message).toContain("DATABASE_URL");
   });
 
-  describe.skipIf(!testDatabaseUrl)("with a real Postgres server (TEST_DATABASE_URL)", () => {
-    // A user whose password has every character that breaks a hand-written URL.
-    const specialUser = "lintel_setup_test";
-    const specialPassword = "p#ss@w/rd 100%";
-    const createdDatabase = `lintel_setup_test_${process.pid}`;
-    const testServer = testDatabaseUrl ? targetFromUrl(testDatabaseUrl) : unreachableServer;
-    const testPassword = testDatabaseUrl
-      ? decodeURIComponent(new URL(testDatabaseUrl).password)
-      : "";
-    const testServerDetails = {
-      host: testServer.host,
-      port: testServer.port,
-      database: testServer.database,
-      user: testServer.user,
-      password: testPassword,
-      ssl: false,
-    };
-    let administrator: postgres.Sql;
+  describe.skipIf(!testDatabaseUrl || testsRunOnMysql)(
+    "with a real Postgres server (TEST_DATABASE_URL)",
+    () => {
+      // A user whose password has every character that breaks a hand-written URL.
+      const specialUser = "lintel_setup_test";
+      const specialPassword = "p#ss@w/rd 100%";
+      const createdDatabase = `lintel_setup_test_${process.pid}`;
+      const testServer = testDatabaseUrl ? targetFromUrl(testDatabaseUrl) : unreachableServer;
+      const testPassword = testDatabaseUrl
+        ? decodeURIComponent(new URL(testDatabaseUrl).password)
+        : "";
+      const testServerDetails = {
+        host: testServer.host,
+        port: testServer.port,
+        database: testServer.database,
+        user: testServer.user,
+        password: testPassword,
+        ssl: false,
+      };
+      let administrator: postgres.Sql;
 
-    beforeAll(async () => {
-      administrator = postgres(testDatabaseUrl!, { max: 1, onnotice: () => {} });
-      await dropCreated();
-      // CREATE ROLE can't take its password as a query parameter, so it is quoted here.
-      const quotedPassword = `'${specialPassword.replaceAll("'", "''")}'`;
-      await administrator.unsafe(
-        `create role ${specialUser} login createdb password ${quotedPassword}`,
-      );
-    });
-
-    afterAll(async () => {
-      await dropCreated();
-      await administrator.end();
-    });
-
-    async function dropCreated() {
-      await administrator`drop database if exists ${administrator(createdDatabase)} with (force)`;
-      await administrator`drop role if exists ${administrator(specialUser)}`;
-    }
-
-    it("connects with the right details", async () => {
-      const response = await test(testServerDetails);
-
-      expect(response.statusCode).toBe(200);
-      expect(response.json()).toEqual({ ok: true });
-    });
-
-    it("says when the password is wrong", async () => {
-      const response = await test({ ...testServerDetails, password: "not the password" });
-
-      expect(response.statusCode).toBe(422);
-      expect(response.json()).toMatchObject({
-        code: "DATABASE_AUTH_FAILED",
-        message: `Postgres turned down the password for "${testServer.user}".`,
+      beforeAll(async () => {
+        administrator = postgres(testDatabaseUrl!, { max: 1, onnotice: () => {} });
+        await dropCreated();
+        // CREATE ROLE can't take its password as a query parameter, so it is quoted here.
+        const quotedPassword = `'${specialPassword.replaceAll("'", "''")}'`;
+        await administrator.unsafe(
+          `create role ${specialUser} login createdb password ${quotedPassword}`,
+        );
       });
-    });
 
-    it("says when the database doesn't exist yet", async () => {
-      const response = await test({ ...testServerDetails, database: "lintel_does_not_exist" });
+      afterAll(async () => {
+        await dropCreated();
+        await administrator.end();
+      });
 
-      expect(response.statusCode).toBe(422);
-      expect(response.json()).toMatchObject({ code: "DATABASE_NOT_FOUND" });
-      expect(response.json().message).toContain('"lintel_does_not_exist"');
-    });
+      async function dropCreated() {
+        await administrator`drop database if exists ${administrator(createdDatabase)} with (force)`;
+        await administrator`drop role if exists ${administrator(specialUser)}`;
+      }
 
-    it(
-      "creates the database, switches to it and remembers it, with a password full of #, @ and /",
-      async () => {
-        const details = {
-          ...testServerDetails,
-          database: createdDatabase,
-          user: specialUser,
-          password: specialPassword,
-        };
+      it("connects with the right details", async () => {
+        const response = await test(testServerDetails);
 
-        const withoutCreating = await choose({ kind: "postgres", ...details });
-        expect(withoutCreating.json()).toMatchObject({
-          code: "DATABASE_NOT_FOUND",
-          step: "database",
+        expect(response.statusCode).toBe(200);
+        expect(response.json()).toEqual({ ok: true });
+      });
+
+      it("says when the password is wrong", async () => {
+        const response = await test({ ...testServerDetails, password: "not the password" });
+
+        expect(response.statusCode).toBe(422);
+        expect(response.json()).toMatchObject({
+          code: "DATABASE_AUTH_FAILED",
+          message: `Postgres turned down the password for "${testServer.user}".`,
         });
+      });
 
-        const response = await choose({ kind: "postgres", ...details, createIfMissing: true });
+      it("says when the database doesn't exist yet", async () => {
+        const response = await test({ ...testServerDetails, database: "lintel_does_not_exist" });
 
-        // The running server switched to it and finished setup there.
-        expect(response.statusCode).toBe(201);
-        expect(await databaseStatus()).toEqual({ kind: "postgres", chosenBy: "setup" });
-        const [owner] = await administrator<{ owner: string }[]>`
+        expect(response.statusCode).toBe(422);
+        expect(response.json()).toMatchObject({ code: "DATABASE_NOT_FOUND" });
+        expect(response.json().message).toContain('"lintel_does_not_exist"');
+      });
+
+      it(
+        "creates the database, switches to it and remembers it, with a password full of #, @ and /",
+        async () => {
+          const details = {
+            ...testServerDetails,
+            database: createdDatabase,
+            user: specialUser,
+            password: specialPassword,
+          };
+
+          const withoutCreating = await choose({ kind: "postgres", ...details });
+          expect(withoutCreating.json()).toMatchObject({
+            code: "DATABASE_NOT_FOUND",
+            step: "database",
+          });
+
+          const response = await choose({ kind: "postgres", ...details, createIfMissing: true });
+
+          // The running server switched to it and finished setup there.
+          expect(response.statusCode).toBe(201);
+          expect(await databaseStatus()).toEqual({ kind: "postgres", chosenBy: "setup" });
+          const [owner] = await administrator<{ owner: string }[]>`
           select pg_get_userbyid(datdba) as owner from pg_database where datname = ${createdDatabase}`;
-        expect(owner?.owner).toBe(specialUser);
+          expect(owner?.owner).toBe(specialUser);
 
-        // The choice is saved, readable only by its owner, and used on the next start.
-        const saved = JSON.parse(await readFile(lintelFolder.configFile, "utf8"));
-        expect(saved).toEqual({ database: { kind: "postgres", ...details } });
-        if (process.platform !== "win32") {
-          expect((await stat(lintelFolder.configFile)).mode & 0o777).toBe(0o600);
-        }
+          // The choice is saved, readable only by its owner, and used on the next start.
+          const saved = JSON.parse(await readFile(lintelFolder.configFile, "utf8"));
+          expect(saved).toEqual({ database: { kind: "postgres", ...details } });
+          if (process.platform !== "win32") {
+            expect((await stat(lintelFolder.configFile)).mode & 0o777).toBe(0o600);
+          }
 
-        const restarted = await openStartupDatabase({ databaseUrl: undefined, lintelFolder });
-        try {
-          expect(restarted.kind).toBe("postgres");
-          expect(restarted.chosenBy).toBe("setup");
-          const restartedServer = buildServer({
-            adminOrigin: "http://localhost:5173",
-            database: restarted,
-            lintelFolder,
-          });
-          const status = await restartedServer.inject({ method: "GET", url: "/setup/status" });
-          expect(status.json()).toMatchObject({
-            needsSetup: false,
-            database: { kind: "postgres", chosenBy: "setup" },
-          });
-          await restartedServer.close();
-        } finally {
-          await restarted.close();
-        }
-      },
-      SLOW_TEST_TIMEOUT,
-    );
+          const restarted = await openStartupDatabase({ databaseUrl: undefined, lintelFolder });
+          try {
+            expect(restarted.kind).toBe("postgres");
+            expect(restarted.chosenBy).toBe("setup");
+            const restartedServer = buildServer({
+              adminOrigin: "http://localhost:5173",
+              database: restarted,
+              lintelFolder,
+            });
+            const status = await restartedServer.inject({ method: "GET", url: "/setup/status" });
+            expect(status.json()).toMatchObject({
+              needsSetup: false,
+              database: { kind: "postgres", chosenBy: "setup" },
+            });
+            await restartedServer.close();
+          } finally {
+            await restarted.close();
+          }
+        },
+        SLOW_TEST_TIMEOUT,
+      );
 
-    it(
-      "prefers DATABASE_URL over the choice saved during setup",
-      async () => {
-        expect((await choose({ kind: "built-in" })).statusCode).toBe(201);
+      it(
+        "prefers DATABASE_URL over the choice saved during setup",
+        async () => {
+          expect((await choose({ kind: "built-in" })).statusCode).toBe(201);
 
-        const started = await openStartupDatabase({ databaseUrl: testDatabaseUrl, lintelFolder });
-        try {
-          expect(started.kind).toBe("postgres");
-          expect(started.chosenBy).toBe("environment");
-        } finally {
-          await started.close();
-        }
-      },
-      SLOW_TEST_TIMEOUT,
-    );
-  });
+          const started = await openStartupDatabase({ databaseUrl: testDatabaseUrl, lintelFolder });
+          try {
+            expect(started.kind).toBe("postgres");
+            expect(started.chosenBy).toBe("environment");
+          } finally {
+            await started.close();
+          }
+        },
+        SLOW_TEST_TIMEOUT,
+      );
+    },
+  );
 });
