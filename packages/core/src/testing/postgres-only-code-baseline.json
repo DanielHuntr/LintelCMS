@@ -14,12 +14,6 @@
   "backups/table-order.ts": {
     "pg-core import": 1
   },
-  "blocks/blocks.repository.ts": {
-    "cast with ::": 2,
-    "json field access": 1,
-    "returning": 1,
-    "upsert": 1
-  },
   "commerce/customers/customers.repository.ts": {
     "filter clause": 2,
     "ilike": 2,
