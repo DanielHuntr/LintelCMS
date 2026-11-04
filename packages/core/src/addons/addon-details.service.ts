@@ -20,7 +20,7 @@ import { listRegisteredPluginRoutes } from "../plugins/plugin-routes.js";
 import { PluginNotFoundError } from "../plugins/plugins.errors.js";
 import { isPluginEnabled } from "../plugins/plugins.service.js";
 import { deleteSettingValue } from "../settings/settings.repository.js";
-import { declarationsOf } from "./addon-tables.js";
+import { declarationsOf, isLintelTable } from "./addon-tables.js";
 import { AddonStillOnError, AddonTableNotFoundError } from "./addons.errors.js";
 import type { AddonDetails } from "./addons.schema.js";
 import type { AddonsState, LoadedAddon } from "./load-addons.js";
@@ -79,11 +79,16 @@ async function measure(database: DatabaseOrTransaction, table: string) {
 
 /** The tables this add-on keeps data in: those it declares and any others with its name. */
 async function findOwnTables(database: DatabaseOrTransaction, found: Found) {
-  const declared = declarationsOf(found.plugin, found.addon).tables;
+  const declared = declarationsOf(found.plugin, found.addon).tables.filter(
+    (table) => !isLintelTable(table.name),
+  );
   const inDatabase = await listTableNames(database);
   const declaredNames = new Set(declared.map((table) => table.name));
   const undeclared = inDatabase
-    .filter((name) => ownsTableName(found.plugin.id, name) && !declaredNames.has(name))
+    .filter(
+      (name) =>
+        ownsTableName(found.plugin.id, name) && !declaredNames.has(name) && !isLintelTable(name),
+    )
     .sort();
   const present = new Set(inDatabase);
   return { declared, undeclared, present };
