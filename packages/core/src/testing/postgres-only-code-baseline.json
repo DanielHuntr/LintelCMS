@@ -20,10 +20,6 @@
     "returning": 1,
     "upsert": 1
   },
-  "commerce/carts/carts.repository.ts": {
-    "returning": 3,
-    "upsert": 1
-  },
   "commerce/checkouts/checkouts.repository.ts": {
     "returning": 2
   },
@@ -56,9 +52,6 @@
     "ilike": 1,
     "json containment": 1,
     "jsonb function": 1
-  },
-  "commerce/product-collections/product-collections.repository.ts": {
-    "returning": 2
   },
   "commerce/products/products.repository.ts": {
     "ilike": 2,

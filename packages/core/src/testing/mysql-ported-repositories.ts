@@ -65,4 +65,6 @@ export const mysqlPortedRepositories = [
   "content-roots/content-roots.repository.ts",
   "content-model-sync/content-model-sync.repository.ts",
   "static-site/static-site.repository.ts",
+  "commerce/carts/carts.repository.ts",
+  "commerce/product-collections/product-collections.repository.ts",
 ];
