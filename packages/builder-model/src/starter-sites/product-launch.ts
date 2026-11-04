@@ -156,14 +156,16 @@ export const productLaunchSite: StarterSite = {
             },
           ],
         }),
-        simpleFooter({
-          text: "Tally is made by a small team in Leeds.",
-          links: [
-            { label: "Features", href: "/features" },
-            { label: "Pricing", href: "/pricing" },
-          ],
-        }),
       ],
     },
   ],
+  siteSections: {
+    footer: simpleFooter({
+      text: "Tally is made by a small team in Leeds.",
+      links: [
+        { label: "Features", href: "/features" },
+        { label: "Pricing", href: "/pricing" },
+      ],
+    }),
+  },
 };

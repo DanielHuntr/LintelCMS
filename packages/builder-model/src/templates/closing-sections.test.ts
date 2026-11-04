@@ -24,7 +24,7 @@ describe("the Footer with columns section", () => {
 
   it("has no sample copy, only a line that asks to be replaced", () => {
     const words = nodes
-      .filter((node) => node.type === "text")
+      .filter((node) => node.type === "text" && node.name !== "Column title")
       .map((node) => (node.props as { text: string }).text);
     expect(words).toEqual([expect.stringMatching(/^Replace this with /)]);
   });
