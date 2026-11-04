@@ -33,6 +33,7 @@ import {
   siteSectionSlotOf,
   type SiteSectionSlot,
   unmarkedOwnNavigation,
+  modelFileBytes,
 } from "@lintel/builder-model";
 import type { MotionSpec } from "@lintel/motion";
 import { type Translate as MotionText } from "@lintel/motion-editor";
@@ -553,7 +554,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     const used = collectNodeEffects(root).flatMap(({ effects }) =>
       effects.flatMap((saved) => effectRegistry.find(saved.effect) ?? []),
     );
-    return measurePageWeight(used, props.siteEffects?.value);
+    return measurePageWeight(used, props.siteEffects?.value, modelFileBytes(root));
   }, [root, props.siteEffects?.value]);
 
   const selectFromPanel = useCallback(

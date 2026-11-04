@@ -24,10 +24,17 @@ describe("the effect modules' sizes", () => {
   }, 30_000);
 
   it("count the Lottie and Rive players, so the meter tells the truth about them", async () => {
-    const { beside } = (await buildEffectModules()) as { beside: unknown };
+    const { beside, loadedLater } = (await buildEffectModules()) as {
+      beside: unknown;
+      loadedLater: unknown;
+    };
     const sizes = (
-      effectPlayerSizes as (files: unknown, gzip: typeof gzipSync) => Record<string, number>
-    )(beside, gzipSync);
+      effectPlayerSizes as (
+        files: unknown,
+        gzip: typeof gzipSync,
+        loadedLater: unknown,
+      ) => Record<string, number>
+    )(beside, gzipSync, loadedLater);
     for (const [name, bytes] of Object.entries(effectPlayerBytes)) {
       expect(Math.abs((sizes[name] ?? 0) - bytes) / bytes, name).toBeLessThan(0.1);
     }
@@ -36,5 +43,13 @@ describe("the effect modules' sizes", () => {
     expect(weightOf(lottiePlayerEffectId).bytes).toBeGreaterThan(45 * 1024);
     expect(weightOf(rivePlayerEffectId).bytes).toBeGreaterThan(350 * 1024);
     expect(weightOf(rivePlayerEffectId).warnings).toContain("heavyDownload");
+    expect(weightOf("model-viewer").bytes).toBeGreaterThan(100 * 1024);
+    expect(weightOf("model-viewer").warnings).toContain("heavyDownload");
   }, 30_000);
+
+  it("adds the files a page's elements load", () => {
+    const model = standardEffects.filter((effect) => effect.id === "model-viewer");
+    const code = measurePageWeight(model).bytes;
+    expect(measurePageWeight(model, undefined, 2_000_000).bytes).toBe(code + 2_000_000);
+  });
 });

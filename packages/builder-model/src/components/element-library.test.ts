@@ -11,11 +11,37 @@ import { validatePageDocument } from "../document/validate-page.js";
 import { createNode } from "../tree/create-node.js";
 import { createCountingNodeIds } from "../tree/node-ids.js";
 import { clockComponent, clockPlaceName, clockPlaces } from "./clock-component.js";
+import { modelFileBytes } from "./model-component.js";
 import { standardCatalogue, standardComponents } from "./component-catalogue.js";
 import { componentCategories } from "./component-definition.js";
 import { embedAllowedHosts } from "./media-components.js";
 
 const createId = createCountingNodeIds("t");
+
+describe("a page's 3D models", () => {
+  const model = (src: string, bytes: number, hidden = false) => ({
+    ...createNode(
+      { type: "model3d", props: { model: { src, assetId: null, bytes } } },
+      standardCatalogue,
+      createCountingNodeIds(src),
+    ),
+    hidden,
+  });
+
+  it("weigh each file once, leaving out hidden ones", () => {
+    const page = createEmptyPage();
+    const root = {
+      ...page.root,
+      children: [
+        model("/a.glb", 100),
+        model("/a.glb", 100),
+        model("/b.glb", 50),
+        model("/c.glb", 9, true),
+      ],
+    };
+    expect(modelFileBytes(root)).toBe(150);
+  });
+});
 
 describe("the clock", () => {
   const zoneIsAccepted = (zone: string) => clockComponent.propsSchema.safeParse({ zone }).success;

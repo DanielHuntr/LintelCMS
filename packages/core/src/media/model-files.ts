@@ -38,6 +38,8 @@ interface GltfDocument {
   [key: string]: unknown;
 }
 
+const DRACO = "KHR_draco_mesh_compression";
+
 const padding = (length: number) => (4 - (length % 4)) % 4;
 
 /** Whether readable text is a glTF document (rather than any other JSON). */
@@ -136,7 +138,11 @@ export function assertGlbIsReadable(contents: Buffer, filename: string): void {
   if (contents.readUInt32LE(16) !== JSON_CHUNK || 20 + jsonLength > contents.length) {
     throw new UnreadableModelError(filename, "unreadable");
   }
-  if (!looksLikeGltf(contents.subarray(20, 20 + jsonLength).toString("utf8"))) {
-    throw new UnreadableModelError(filename, "unreadable");
+  const text = contents.subarray(20, 20 + jsonLength).toString("utf8");
+  if (!looksLikeGltf(text)) throw new UnreadableModelError(filename, "unreadable");
+  // The viewer can't draw a model that needs Draco: its decoder is far bigger than the viewer.
+  const { extensionsRequired } = JSON.parse(text) as { extensionsRequired?: unknown };
+  if (Array.isArray(extensionsRequired) && extensionsRequired.includes(DRACO)) {
+    throw new UnreadableModelError(filename, "draco");
   }
 }
