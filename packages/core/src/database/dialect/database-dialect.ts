@@ -15,13 +15,15 @@ export interface DatabaseCapabilities {
   writesReturnRows: boolean;
   /** Whether an upsert can name the unique key it means, rather than firing on any. */
   upsertsNameTheirKey: boolean;
+  /** Whether an insert's values can read from the table being inserted into. */
+  insertsReadTheirOwnTable: boolean;
 }
 
 const capabilities: Record<DatabaseDialect, DatabaseCapabilities> = {
-  postgres: { writesReturnRows: true, upsertsNameTheirKey: true },
+  postgres: { writesReturnRows: true, upsertsNameTheirKey: true, insertsReadTheirOwnTable: true },
   // MariaDB has `returning` on inserts and deletes but not updates, and MySQL has none, so
   // both read rows back rather than Lintel keeping a third path.
-  mysql: { writesReturnRows: false, upsertsNameTheirKey: false },
+  mysql: { writesReturnRows: false, upsertsNameTheirKey: false, insertsReadTheirOwnTable: false },
 };
 
 /**

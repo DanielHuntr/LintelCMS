@@ -59,4 +59,6 @@ export const mysqlPortedRepositories = [
   "site-design/site-design.repository.ts",
   "analytics/analytics.repository.ts",
   "experiments/experiments.repository.ts",
+  "workflows/engine/workflow-runs.repository.ts",
+  "workflows/approvals/approvals.repository.ts",
 ];

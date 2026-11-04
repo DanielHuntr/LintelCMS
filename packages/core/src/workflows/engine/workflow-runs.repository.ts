@@ -1,13 +1,17 @@
-import { and, asc, desc, eq, inArray, lte, ne, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, getTableColumns, inArray, lte, ne, or, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../database/client.js";
 import {
   type NewWorkflowRunRow,
   type NewWorkflowStepLogRow,
   type WorkflowRunRow,
-  workflowRunsTable,
+  workflowRunsTable as workflowRunsDefinition,
   type WorkflowStepLogRow,
-  workflowStepLogsTable,
+  workflowStepLogsTable as workflowStepLogsDefinition,
 } from "../workflows.table.js";
+import { insertIfNewReturning, updateReturning } from "../../database/dialect/writes.js";
+import { tableFor } from "../../database/dialect/mysql-tables.js";
+import { capabilitiesOf } from "../../database/dialect/database-dialect.js";
+import { selectNewestPerGroup } from "../../database/dialect/reads.js";
 
 /** Database reads and writes for runs and their logs, nothing else. */
 
@@ -16,13 +20,10 @@ export async function insertRunUnlessDuplicate(
   database: DatabaseOrTransaction,
   run: NewWorkflowRunRow,
 ): Promise<WorkflowRunRow | undefined> {
-  const [inserted] = await database
-    .insert(workflowRunsTable)
-    .values(run)
-    .onConflictDoNothing({
-      target: [workflowRunsTable.workflowId, workflowRunsTable.idempotencyKey],
-    })
-    .returning();
+  const workflowRunsTable = tableFor(database, workflowRunsDefinition);
+  const [inserted] = await insertIfNewReturning(database, workflowRunsTable, run, {
+    target: [workflowRunsTable.workflowId, workflowRunsTable.idempotencyKey],
+  });
   return inserted;
 }
 
@@ -31,6 +32,7 @@ export async function findRunRow(
   tenantId: string,
   runId: string,
 ): Promise<WorkflowRunRow | undefined> {
+  const workflowRunsTable = tableFor(database, workflowRunsDefinition);
   const [run] = await database
     .select()
     .from(workflowRunsTable)
@@ -44,6 +46,7 @@ export async function findRunByIdempotencyKey(
   workflowId: string,
   idempotencyKey: string,
 ): Promise<WorkflowRunRow | undefined> {
+  const workflowRunsTable = tableFor(database, workflowRunsDefinition);
   const [run] = await database
     .select()
     .from(workflowRunsTable)
@@ -63,6 +66,7 @@ export async function listRunRows(
   workflowId: string,
   page: { limit: number; offset: number },
 ): Promise<{ rows: WorkflowRunRow[]; total: number }> {
+  const workflowRunsTable = tableFor(database, workflowRunsDefinition);
   const where = and(
     eq(workflowRunsTable.tenantId, tenantId),
     eq(workflowRunsTable.workflowId, workflowId),
@@ -86,14 +90,16 @@ export async function findLatestRunRows(
   database: DatabaseOrTransaction,
   workflowIds: string[],
 ): Promise<WorkflowRunRow[]> {
+  const workflowRunsTable = tableFor(database, workflowRunsDefinition);
   if (workflowIds.length === 0) {
     return [];
   }
-  return database
-    .selectDistinctOn([workflowRunsTable.workflowId])
-    .from(workflowRunsTable)
-    .where(inArray(workflowRunsTable.workflowId, workflowIds))
-    .orderBy(workflowRunsTable.workflowId, desc(workflowRunsTable.createdAt));
+  return selectNewestPerGroup(database, workflowRunsTable, {
+    fields: getTableColumns(workflowRunsTable),
+    groupBy: workflowRunsTable.workflowId,
+    newest: workflowRunsTable.createdAt,
+    where: inArray(workflowRunsTable.workflowId, workflowIds),
+  });
 }
 
 export async function listRunRowsForEntry(
@@ -102,6 +108,7 @@ export async function listRunRowsForEntry(
   entryId: string,
   workflowIds: string[],
 ): Promise<WorkflowRunRow[]> {
+  const workflowRunsTable = tableFor(database, workflowRunsDefinition);
   if (workflowIds.length === 0) {
     return [];
   }
@@ -123,17 +130,18 @@ export async function findDueRunIds(
   now: Date,
   limit: number,
 ): Promise<string[]> {
+  const workflowRunsTable = tableFor(database, workflowRunsDefinition);
   const rows = await database
     .select({ id: workflowRunsTable.id })
     .from(workflowRunsTable)
-    .where(dueCondition(now))
+    .where(dueCondition(workflowRunsTable, now))
     .orderBy(asc(workflowRunsTable.nextRunAt))
     .limit(limit);
   return rows.map((row) => row.id);
 }
 
 /** Queued or waiting runs whose time has come, and running ones whose server went away. */
-function dueCondition(now: Date) {
+function dueCondition(workflowRunsTable: typeof workflowRunsDefinition, now: Date) {
   return or(
     and(
       inArray(workflowRunsTable.status, ["queued", "waiting"]),
@@ -153,11 +161,13 @@ export async function claimDueRun(
   now: Date,
   leaseUntil: Date,
 ): Promise<WorkflowRunRow | undefined> {
-  const [run] = await database
-    .update(workflowRunsTable)
-    .set({ status: "running", leaseUntil, nextRunAt: null })
-    .where(and(eq(workflowRunsTable.id, runId), dueCondition(now)))
-    .returning();
+  const workflowRunsTable = tableFor(database, workflowRunsDefinition);
+  const [run] = await updateReturning(
+    database,
+    workflowRunsTable,
+    { status: "running", leaseUntil, nextRunAt: null },
+    and(eq(workflowRunsTable.id, runId), dueCondition(workflowRunsTable, now)),
+  );
   return run;
 }
 
@@ -167,6 +177,7 @@ export async function updateRunRow(
   runId: string,
   changes: Partial<NewWorkflowRunRow>,
 ): Promise<void> {
+  const workflowRunsTable = tableFor(database, workflowRunsDefinition);
   await database
     .update(workflowRunsTable)
     .set(changes)
@@ -179,21 +190,23 @@ export async function cancelRunRow(
   runId: string,
   now: Date,
 ): Promise<boolean> {
-  const cancelled = await database
-    .update(workflowRunsTable)
-    .set({ status: "cancelled", finishedAt: now, nextRunAt: null, leaseUntil: null })
-    .where(
-      and(
-        eq(workflowRunsTable.id, runId),
-        inArray(workflowRunsTable.status, ["queued", "running", "waiting"]),
-      ),
-    )
-    .returning({ id: workflowRunsTable.id });
+  const workflowRunsTable = tableFor(database, workflowRunsDefinition);
+  const cancelled = await updateReturning(
+    database,
+    workflowRunsTable,
+    { status: "cancelled", finishedAt: now, nextRunAt: null, leaseUntil: null },
+    and(
+      eq(workflowRunsTable.id, runId),
+      inArray(workflowRunsTable.status, ["queued", "running", "waiting"]),
+    ),
+    { id: workflowRunsTable.id },
+  );
   return cancelled.length > 0;
 }
 
 /** Makes a waiting run due now, for example once its approval is answered. */
 export async function wakeRun(database: DatabaseOrTransaction, runId: string, now: Date) {
+  const workflowRunsTable = tableFor(database, workflowRunsDefinition);
   await database
     .update(workflowRunsTable)
     .set({ nextRunAt: now })
@@ -204,7 +217,12 @@ export async function insertStepLog(
   database: DatabaseOrTransaction,
   log: NewWorkflowStepLogRow,
 ): Promise<void> {
-  const position = sql<number>`(select count(*) from ${workflowStepLogsTable} where ${workflowStepLogsTable.runId} = ${log.runId})`;
+  const workflowStepLogsTable = tableFor(database, workflowStepLogsDefinition);
+  const inThisRun = eq(workflowStepLogsTable.runId, log.runId);
+  // One run's steps go one at a time, so counting first is safe where it has to be done.
+  const position = capabilitiesOf(database).insertsReadTheirOwnTable
+    ? sql<number>`(select count(*) from ${workflowStepLogsTable} where ${inThisRun})`
+    : await database.$count(workflowStepLogsTable, inThisRun);
   await database.insert(workflowStepLogsTable).values({ ...log, position });
 }
 
@@ -212,6 +230,7 @@ export async function listStepLogRows(
   database: DatabaseOrTransaction,
   runId: string,
 ): Promise<WorkflowStepLogRow[]> {
+  const workflowStepLogsTable = tableFor(database, workflowStepLogsDefinition);
   return database
     .select()
     .from(workflowStepLogsTable)

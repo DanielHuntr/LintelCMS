@@ -174,14 +174,5 @@
     "cast with ::": 1,
     "returning": 3,
     "upsert": 1
-  },
-  "workflows/approvals/approvals.repository.ts": {
-    "returning": 2,
-    "upsert": 1
-  },
-  "workflows/engine/workflow-runs.repository.ts": {
-    "distinct on": 1,
-    "returning": 3,
-    "upsert": 1
   }
 }
