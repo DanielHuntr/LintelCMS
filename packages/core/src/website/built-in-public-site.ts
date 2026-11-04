@@ -1,3 +1,6 @@
+import { analyticsPlugin } from "../analytics/analytics.plugin.js";
+import { readAnalyticsTag } from "../analytics/page-tag.js";
+import { experimentSiteRoutes } from "../experiments/experiment-site.routes.js";
 import {
   testCheckoutSiteRoutes,
   testVisitReader,
@@ -40,8 +43,15 @@ export const builtInPublicSite: PublicSite = async (server, options) => {
   await server.register(siteApiRoutes, { api: server, apiPrefix: options.apiPrefix });
   const testCheckout = { api: server, ...options };
   await server.register(testCheckoutSiteRoutes, testCheckout);
+  // What tested pages' script reports while an A/B test runs (see src/experiments).
+  await server.register(experimentSiteRoutes, {
+    database: () => server.database,
+    measurement: () => server.experiments.measurement,
+  });
   await server.register(siteRoutes, {
     database: () => server.database,
+    // The Visitors plugin's beacon, while it is on (see src/analytics/page-tag.ts).
+    pageTag: (site) => readAnalyticsTag(server.database, analyticsPlugin, site),
     testVisit: testVisitReader(testCheckout),
     // Each site has its own pages, so each reads and caches its own (see site-for-address.ts).
     dependencies: (site) => ({
@@ -52,6 +62,7 @@ export const builtInPublicSite: PublicSite = async (server, options) => {
       builtInSiteUrl: server.website.builtInSiteUrl,
       site,
       cache: server.website.renderedPages.forSite(site.id),
+      liquidTemplates: server.website.liquidTemplates,
       publicApiUrl: server.publicApiUrl,
     }),
   });

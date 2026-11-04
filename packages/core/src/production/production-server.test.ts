@@ -6,7 +6,9 @@ import { gunzipSync } from "node:zlib";
 import type { FastifyInstance } from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ensurePagesCollection } from "../collections/default-collections.js";
+import { forgetAnalyticsTags } from "../analytics/page-tag.js";
 import { LocalDiskStorage } from "../media/local-disk-storage.js";
+import { setEnabledPlugins } from "../plugins/plugins.service.js";
 import { useTestDatabase } from "../testing/test-database.js";
 import { SESSION_COOKIE_NAME } from "../auth/session-cookie.js";
 import { createTestUser, TEST_PASSWORD } from "../testing/test-users.js";
@@ -68,6 +70,20 @@ describe("the production server", () => {
     const missingApi = await app.inject({ method: "GET", url: "/api/no-such-route" });
     expect(missingApi.statusCode).toBe(404);
     expect(missingApi.headers["content-type"]).toContain("application/json");
+  });
+
+  it("counts visitors on the production website too (LINTEL-FUNC-042)", async () => {
+    const app = await start({
+      publicSite: builtInPublicSite,
+      website: { builtInSiteUrl: "https://example.com" },
+    });
+    await app.ready();
+    await setEnabledPlugins(testDatabase.database, app.plugins, ["analytics"]);
+    forgetAnalyticsTags();
+
+    const home = await app.inject({ method: "GET", url: "/" });
+
+    expect(home.body).toContain("/_lintel/api/analytics/script.js");
   });
 
   it("serves a site with only a path prefix (/ie) on the same domain", async () => {
