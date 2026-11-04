@@ -10,9 +10,6 @@
     "returning": 1,
     "upsert": 1
   },
-  "api-tokens/api-tokens.repository.ts": {
-    "returning": 2
-  },
   "apps/apps.repository.ts": {
     "returning": 2
   },
@@ -274,9 +271,6 @@
     "ilike": 3,
     "json field access": 2,
     "jsonb function": 1
-  },
-  "seo/redirects.repository.ts": {
-    "returning": 2
   },
   "seo/seo.repository.ts": {
     "upsert": 1

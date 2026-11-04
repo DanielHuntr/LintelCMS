@@ -1,7 +1,13 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
-import { usersTable } from "../users/users.table.js";
-import { type ApiTokenRow, apiTokensTable, type NewApiTokenRow } from "./api-tokens.table.js";
+import { usersTable as usersDefinition } from "../users/users.table.js";
+import {
+  type ApiTokenRow,
+  apiTokensTable as apiTokensDefinition,
+  type NewApiTokenRow,
+} from "./api-tokens.table.js";
+import { deleteReturning, insertReturning } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for API tokens, nothing else. */
 
@@ -11,6 +17,8 @@ export async function listApiTokenRows(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<ApiTokenWithCreator[]> {
+  const apiTokensTable = tableFor(database, apiTokensDefinition);
+  const usersTable = tableFor(database, usersDefinition);
   const rows = await database
     .select({ token: apiTokensTable, creatorName: usersTable.name })
     .from(apiTokensTable)
@@ -24,7 +32,8 @@ export async function insertApiToken(
   database: DatabaseOrTransaction,
   token: NewApiTokenRow,
 ): Promise<ApiTokenRow> {
-  const [inserted] = await database.insert(apiTokensTable).values(token).returning();
+  const apiTokensTable = tableFor(database, apiTokensDefinition);
+  const [inserted] = await insertReturning(database, apiTokensTable, token);
   if (!inserted) {
     throw new Error("Saving the API token returned nothing");
   }
@@ -35,6 +44,7 @@ export async function findApiTokenByHash(
   database: DatabaseOrTransaction,
   tokenHash: string,
 ): Promise<ApiTokenRow | undefined> {
+  const apiTokensTable = tableFor(database, apiTokensDefinition);
   const [token] = await database
     .select()
     .from(apiTokensTable)
@@ -48,6 +58,7 @@ export async function recordApiTokenUse(
   tokenId: string,
   usedAt: Date,
 ): Promise<void> {
+  const apiTokensTable = tableFor(database, apiTokensDefinition);
   await database
     .update(apiTokensTable)
     .set({ lastUsedAt: usedAt })
@@ -60,9 +71,12 @@ export async function deleteApiTokenRow(
   tenantId: string,
   tokenId: string,
 ): Promise<{ id: string; name: string } | undefined> {
-  const [deleted] = await database
-    .delete(apiTokensTable)
-    .where(and(eq(apiTokensTable.tenantId, tenantId), eq(apiTokensTable.id, tokenId)))
-    .returning({ id: apiTokensTable.id, name: apiTokensTable.name });
+  const apiTokensTable = tableFor(database, apiTokensDefinition);
+  const [deleted] = await deleteReturning(
+    database,
+    apiTokensTable,
+    and(eq(apiTokensTable.tenantId, tenantId), eq(apiTokensTable.id, tokenId)),
+    { id: apiTokensTable.id, name: apiTokensTable.name },
+  );
   return deleted;
 }

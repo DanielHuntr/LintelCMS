@@ -1,7 +1,13 @@
 import { and, asc, eq, ne } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import type { RedirectStatus } from "./redirects.schema.js";
-import { type NewRedirectRow, type RedirectRow, redirectsTable } from "./seo.table.js";
+import {
+  type NewRedirectRow,
+  type RedirectRow,
+  redirectsTable as redirectsDefinition,
+} from "./seo.table.js";
+import { deleteReturning, insertReturning } from "../database/dialect/writes.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
 
 /** Database reads and writes for redirects, nothing else. */
 
@@ -10,6 +16,7 @@ export async function listRedirectRows(
   tenantId: string,
   status?: RedirectStatus,
 ): Promise<RedirectRow[]> {
+  const redirectsTable = tableFor(database, redirectsDefinition);
   return database
     .select()
     .from(redirectsTable)
@@ -27,6 +34,7 @@ export async function findRedirectRow(
   tenantId: string,
   redirectId: string,
 ): Promise<RedirectRow | undefined> {
+  const redirectsTable = tableFor(database, redirectsDefinition);
   const [row] = await database
     .select()
     .from(redirectsTable)
@@ -40,6 +48,7 @@ export async function findRedirectFrom(
   tenantId: string,
   fromPath: string,
 ): Promise<RedirectRow | undefined> {
+  const redirectsTable = tableFor(database, redirectsDefinition);
   const [row] = await database
     .select()
     .from(redirectsTable)
@@ -52,7 +61,8 @@ export async function insertRedirect(
   database: DatabaseOrTransaction,
   redirect: NewRedirectRow,
 ): Promise<RedirectRow> {
-  const [inserted] = await database.insert(redirectsTable).values(redirect).returning();
+  const redirectsTable = tableFor(database, redirectsDefinition);
+  const [inserted] = await insertReturning(database, redirectsTable, redirect);
   if (!inserted) {
     throw new Error("Saving the redirect returned nothing");
   }
@@ -65,6 +75,7 @@ export async function updateRedirectRow(
   redirectId: string,
   changes: Partial<Pick<RedirectRow, "fromPath" | "toPath" | "statusCode" | "status" | "source">>,
 ): Promise<void> {
+  const redirectsTable = tableFor(database, redirectsDefinition);
   await database
     .update(redirectsTable)
     .set(changes)
@@ -82,6 +93,7 @@ export async function retargetRedirects(
   newTarget: string,
   exceptRedirectId: string,
 ): Promise<void> {
+  const redirectsTable = tableFor(database, redirectsDefinition);
   await database
     .update(redirectsTable)
     .set({ toPath: newTarget })
@@ -100,10 +112,13 @@ export async function deleteRedirectRow(
   tenantId: string,
   redirectId: string,
 ): Promise<boolean> {
-  const deleted = await database
-    .delete(redirectsTable)
-    .where(and(eq(redirectsTable.tenantId, tenantId), eq(redirectsTable.id, redirectId)))
-    .returning({ id: redirectsTable.id });
+  const redirectsTable = tableFor(database, redirectsDefinition);
+  const deleted = await deleteReturning(
+    database,
+    redirectsTable,
+    and(eq(redirectsTable.tenantId, tenantId), eq(redirectsTable.id, redirectId)),
+    { id: redirectsTable.id },
+  );
   return deleted.length > 0;
 }
 
@@ -112,6 +127,7 @@ export async function deleteRedirectFrom(
   tenantId: string,
   fromPath: string,
 ): Promise<void> {
+  const redirectsTable = tableFor(database, redirectsDefinition);
   await database
     .delete(redirectsTable)
     .where(and(eq(redirectsTable.tenantId, tenantId), eq(redirectsTable.fromPath, fromPath)));
