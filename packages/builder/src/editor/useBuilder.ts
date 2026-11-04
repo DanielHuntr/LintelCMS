@@ -17,6 +17,7 @@ import {
   type NodeEffect,
   type StateTransition,
   createNode,
+  copyWithNewIds,
   findNode,
   findPath,
   findSectionTemplate,
@@ -179,26 +180,51 @@ export function useBuilder({
       );
     };
 
-    const pasteNodes = (nodes: PageNode[], label: string) => {
+    /**
+     * Pastes copies with one element selected as ever: inside it if it can hold them, or after
+     * it. With several selected they go after the last, so they stay together. Answers the
+     * ids of the copies.
+     */
+    const pasteNodes = (nodes: PageNode[], label: string, selectedIds: readonly string[]) => {
       const first = nodes[0];
-      const place = first ? commands.findInsertPlace(context(), first.type) : null;
-      if (!place) return announce(text("pageBuilder.refused.nothingToPaste"));
-      run(commands.insertNodes(context(), nodes, place, label));
+      const { root } = latest.current.document;
+      const place = !first
+        ? null
+        : selectedIds.length > 1
+          ? commands.findPlaceAfter(
+              context(),
+              multi.outermostInPageOrder(root, selectedIds).at(-1),
+              first.type,
+            )
+          : commands.findInsertPlace(context(), first.type);
+      if (!place) {
+        announce(text("pageBuilder.refused.nothingToPaste"));
+        return [];
+      }
+      const copies = nodes.map((node) => copyWithNewIds(node, createId));
+      return run(commands.placeNodes(context(), copies, place, label))
+        ? copies.map((copy) => copy.id)
+        : [];
     };
 
-    const importAndPaste = (html: string) => {
+    const importAndPaste = (html: string, selectedIds: readonly string[]) => {
       const imported = importHtml(html, {
         catalogue: registry.catalogue,
         createId,
         allowCode: canEditCode,
       });
-      if (imported.nodes.length === 0) return announce(text("pageBuilder.paste.nothingUsable"));
-      pasteNodes(
+      if (imported.nodes.length === 0) {
+        announce(text("pageBuilder.paste.nothingUsable"));
+        return [];
+      }
+      const pasted = pasteNodes(
         imported.nodes,
         text("pageBuilder.history.pasted", { count: imported.nodes.length }),
+        selectedIds,
       );
       if (imported.skipped > 0)
         announce(text("pageBuilder.paste.someLeftOut", { count: imported.skipped }));
+      return pasted;
     };
 
     const copySelected = async (andRemove: boolean) => {
@@ -449,14 +475,16 @@ export function useBuilder({
       },
       copy: () => void copySelected(false),
       cut: () => void copySelected(true),
-      paste: (pasted: { html: string; text: string }) => {
+      /** Answers the ids of what was pasted, so several can stay selected. */
+      paste: (pasted: { html: string; text: string }, selectedIds: readonly string[]): string[] => {
         const source = choosePasteSource(clipboard.current, pasted);
         if (source.kind === "builder")
-          pasteNodes(
+          return pasteNodes(
             source.nodes,
             text("pageBuilder.history.pasted", { count: source.nodes.length }),
+            selectedIds,
           );
-        else if (source.kind === "html") importAndPaste(source.html);
+        return source.kind === "html" ? importAndPaste(source.html, selectedIds) : [];
       },
       changeCode: (nodeId: string, code: { html: string; css: string; js: string }) =>
         run(

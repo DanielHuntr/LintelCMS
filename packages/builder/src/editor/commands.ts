@@ -80,6 +80,16 @@ export function findInsertPlace(
   if (selected && catalogue.canContain(selected.type, type) && !isLocked(document, selected.id)) {
     return { parentId: selected.id, index: selected.children.length };
   }
+  return findPlaceAfter(context, selected, type);
+}
+
+/** The nearest place after this element that can hold the type, or the end of the page. */
+export function findPlaceAfter(
+  context: CommandContext,
+  selected: PageNode | undefined,
+  type: string,
+): { parentId: string; index: number } | null {
+  const { document, catalogue } = context;
   for (
     let path = selected ? findPath(document.root, selected.id) : [];
     path.length > 1;
@@ -182,7 +192,7 @@ export function insertNodes(
 }
 
 /** Puts nodes that already have their own ids at a place. */
-function placeNodes(
+export function placeNodes(
   context: CommandContext,
   fresh: readonly PageNode[],
   place: { parentId: string; index: number },

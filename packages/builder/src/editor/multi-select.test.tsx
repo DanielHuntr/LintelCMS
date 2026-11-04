@@ -469,6 +469,52 @@ describe("several selected in the builder", () => {
     expect(latest().root.children[0]?.children[0]?.props.text).toBe("Harbour lights");
   });
 
+  it("pastes several after the last selected, in order, and selects them all (LINTEL-UX-288)", async () => {
+    const user = userEvent.setup();
+    const { latest } = renderBuilder(pageWith(rows()));
+    await user.click(projectRows()[0] as HTMLElement);
+    await user.keyboard("{Shift>}{ArrowDown}{/Shift}");
+    pressOnCanvas("c");
+
+    canvasSays({ type: "paste", html: "", text: "" });
+
+    const titles = latest().root.children.map((row) => row.children[0]?.props.text);
+    expect(titles).toEqual([
+      "Harbour lights",
+      "Paper cranes",
+      "Harbour lights",
+      "Paper cranes",
+      "North wind",
+      "Salt and stone",
+    ]);
+    const selected = projectRows().map((row) => row.getAttribute("aria-selected"));
+    expect(selected).toEqual(["false", "false", "true", "true", "false", "false"]);
+    pressOnCanvas("z");
+    expect(latest().root.children).toHaveLength(4);
+  });
+
+  it("selects all of a group pasted into the one element selected", async () => {
+    const user = userEvent.setup();
+    const { latest } = renderBuilder(pageWith(rows()));
+    await user.click(projectRows()[0] as HTMLElement);
+    await user.keyboard("{Shift>}{ArrowDown}{/Shift}");
+    pressOnCanvas("c");
+    await user.click(projectRows()[3] as HTMLElement);
+
+    canvasSays({ type: "paste", html: "", text: "" });
+
+    expect(latest().root.children).toHaveLength(4);
+    expect(
+      latest()
+        .root.children[3]?.children.map((child) => child.type)
+        .slice(-2),
+    ).toEqual(["box", "box"]);
+    const selected = layers()
+      .getAllByRole("treeitem")
+      .filter((row) => row.getAttribute("aria-selected") === "true");
+    expect(selected).toHaveLength(2);
+  });
+
   it("hides all of them from any of their rows in Layers", async () => {
     const user = userEvent.setup();
     const { latest } = renderBuilder(pageWith(rows()));

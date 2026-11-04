@@ -338,6 +338,14 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
       isMany && selectedIds.includes(nodeId) ? selectedIds : [nodeId],
     [isMany, selectedIds],
   );
+  const pasteHere = useCallback(
+    (pasted: { html: string; text: string }) => {
+      const ids = actions.paste(pasted, selectedIds);
+      const primary = ids[0];
+      if (primary && ids.length > 1) setMany({ primary, ids });
+    },
+    [actions, selectedIds],
+  );
   const [revealId, setRevealId] = useState<string | null>(null);
   // What Insert adds can land below the fold, where nothing would seem to have happened.
   const revealInserted = useRef(false);
@@ -800,7 +808,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
           gridColumns: message.gridColumns ?? 0,
         });
       }
-      if (message.type === "paste") actions.paste(message);
+      if (message.type === "paste") pasteHere(message);
       if (message.type === "dropFiles") {
         void pictures.placePictures(message.nodeId, message.files, "drop");
       }
@@ -857,6 +865,7 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
     [
       actions,
       movingWith,
+      pasteHere,
       selectedIds,
       runShortcut,
       breakpoint,
@@ -881,14 +890,14 @@ function PageBuilderScreen(props: PageBuilderProps & { text: Translate }) {
         void pictures.placePictures(selectedId, files, "paste");
         return;
       }
-      actions.paste({
+      pasteHere({
         html: event.clipboardData?.getData("text/html") ?? "",
         text: event.clipboardData?.getData("text/plain") ?? "",
       });
     }
     document.addEventListener("paste", handlePaste);
     return () => document.removeEventListener("paste", handlePaste);
-  }, [actions, pictures, selectedId]);
+  }, [pasteHere, pictures, selectedId]);
 
   const handleKeyDownRef = useRef(handleKeyDown);
   useLayoutEffect(() => {
