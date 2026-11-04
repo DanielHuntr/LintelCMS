@@ -11,6 +11,8 @@
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  /* Needed with the body's: on its own, the body's setting passes to the window and stops clipping. */
+  overflow-x: clip;
 }
 
 body.lintel-site {
@@ -26,6 +28,8 @@ body.lintel-site {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  /* Something waiting to slide in from the side must not make the page scroll sideways. */
+  overflow-x: clip;
 }
 
 .lintel-main {

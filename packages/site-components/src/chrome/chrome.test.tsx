@@ -6,6 +6,13 @@ import { Footer } from "./Footer.js";
 import { Header } from "./Header.js";
 import { socialLinkName } from "./social-links.js";
 
+describe("the page itself", () => {
+  it("never scrolls sideways for something waiting to slide in (LINTEL-FUNC-031)", () => {
+    const css = readFileSync(new URL("../styles/base.css", import.meta.url), "utf8");
+    expect(css).toMatch(/body.lintel-site {[^}]*overflow-x: clip;/);
+  });
+});
+
 describe("the header", () => {
   it("lines up with designed pages and keeps one row on a phone (LINTEL-A11Y-033)", () => {
     const css = readFileSync(new URL("../styles/header.css", import.meta.url), "utf8");
