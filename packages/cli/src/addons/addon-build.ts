@@ -8,6 +8,7 @@ import {
 import { AddonPackageError, readAddonPackage } from "@lintel/core/data-tools";
 import type { BuildOptions, Plugin } from "esbuild";
 import { CommandError, type Terminal } from "../terminal.js";
+import { breaksItsPromise, readAddonSourceForMysql } from "./addon-check.js";
 
 /**
  * `lintel addons build`: bundles an add-on's two halves with esbuild, from where the
@@ -45,6 +46,13 @@ export async function buildAddon(
   if (addonPackage.dataOnly && !manifest.admin) {
     options.terminal.say(`${addonPackage.packageName} has no code, so there's nothing to build.`);
     return { stop: async () => {} };
+  }
+  const portability = readAddonSourceForMysql(addonFolder);
+  if (breaksItsPromise(portability)) {
+    const list = portability.problems.map((problem) => `  ${problem}`).join("\n");
+    const message = `${addonPackage.packageName} would fail on MySQL and MariaDB:\n${list}`;
+    if (!options.watch) throw new CommandError(message);
+    options.terminal.warn(message);
   }
   const esbuild = await import("esbuild");
   const builds: BuildOptions[] = [];

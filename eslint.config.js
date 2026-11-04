@@ -34,7 +34,10 @@ export default tseslint.config(
   },
   {
     // Read by drizzle-kit, which needs a list of exports that an ES module can't give.
-    files: ["packages/core/src/database/dialect/mysql-schema.cjs"],
+    files: [
+      "packages/core/src/database/dialect/mysql-schema.cjs",
+      "packages/*/src/server/mysql-schema.cjs",
+    ],
     languageOptions: { sourceType: "commonjs" },
     rules: { "@typescript-eslint/no-require-imports": "off" },
   },

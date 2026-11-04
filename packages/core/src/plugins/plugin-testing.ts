@@ -4,9 +4,15 @@ import { join } from "node:path";
 import type { FastifyInstance, InjectOptions, LightMyRequestResponse } from "fastify";
 import { hashPassword } from "../auth/passwords.js";
 import { SESSION_COOKIE_NAME } from "../auth/session-cookie.js";
+import { emptyTables, withForeignKeysAtEase } from "../backups/database-snapshot.repository.js";
+import { listSchemaTables } from "../backups/table-order.js";
 import { ActiveDatabase } from "../database/active-database.js";
 import { openBuiltInDatabase } from "../database/built-in-database.js";
-import type { Database } from "../database/client.js";
+import type { Database, OpenedDatabase } from "../database/client.js";
+import { isMysqlUrl } from "../database/database-errors.js";
+import { openMysqlDatabase } from "../database/dialect/mysql-database.js";
+import { refusePostgresTablesOnMysql } from "../database/dialect/refuse-postgres-tables.js";
+import { connectToPostgres } from "../database/postgres-database.js";
 import { assignRoleToUser, insertRole } from "../roles/roles.repository.js";
 import { buildServer } from "../server.js";
 import { startSession } from "../sessions/sessions.service.js";
@@ -19,8 +25,11 @@ import type { LintelPlugin } from "./plugin-definition.js";
 import { isPluginEnabled, setEnabledPlugins } from "./plugins.service.js";
 
 /**
- * `@lintel/core/plugin-testing`: a real Lintel server for a plugin's tests, on a built-in
- * database held in memory, with the plugin installed and switched on.
+ * `@lintel/core/plugin-testing`: a real Lintel server for a plugin's tests, with the plugin
+ * installed and switched on. It uses a built-in database held in memory, or, when
+ * TEST_DATABASE_URL names one, a Postgres, MySQL or MariaDB server. That database is emptied
+ * first, so never point it at real data. On MySQL and MariaDB a query on a table that didn't
+ * come through `tableFor` fails at once.
  *
  *   const lintel = await startPluginTestServer({ plugins: [bookingsPlugin] });
  *   const asReceptionist = await lintel.signInWith(["bookings:read"]);
@@ -43,6 +52,8 @@ export type SignedInRequest = (options: InjectOptions) => Promise<LightMyRequest
 export interface PluginTestServer {
   server: FastifyInstance;
   database: Database;
+  /** Which kind of database this run is on. */
+  databaseKind: OpenedDatabase["kind"];
   /** Makes a person whose one role has exactly these permissions, and signs them in. */
   signInWith: (permissions: readonly string[]) => Promise<SignedInRequest>;
   setEnabledPlugins: (pluginIds: readonly string[]) => Promise<void>;
@@ -64,8 +75,9 @@ const TEST_PASSWORD = "a long and memorable password";
 export async function startPluginTestServer(
   options: PluginTestServerOptions,
 ): Promise<PluginTestServer> {
-  const opened = await openBuiltInDatabase();
+  const opened = await openDatabaseForPluginTests();
   await opened.applyMigrations();
+  if (opened.kind !== "built-in") await emptyDatabase(opened.database, listSchemaTables());
   const server = buildServer({
     adminOrigin: "http://localhost:5173",
     database: new ActiveDatabase(opened, "default"),
@@ -73,6 +85,10 @@ export async function startPluginTestServer(
     plugins: options.plugins,
   });
   await server.ready();
+  if (opened.kind !== "built-in") {
+    const ownTables = options.plugins.flatMap((plugin) => plugin.database?.tables ?? []);
+    await emptyDatabase(opened.database, ownTables);
+  }
   const enable = (pluginIds: readonly string[]) =>
     setEnabledPlugins(opened.database, server.plugins, pluginIds).then(() => undefined);
   await enable(options.enabled ?? options.plugins.map((plugin) => plugin.id));
@@ -81,6 +97,7 @@ export async function startPluginTestServer(
   return {
     server,
     database: opened.database,
+    databaseKind: opened.kind,
     setEnabledPlugins: enable,
     runJob: async (pluginId, jobId) => {
       const plugin = server.plugins.find(pluginId);
@@ -135,6 +152,22 @@ export async function startPluginTestServer(
       await opened.close();
     },
   };
+}
+
+async function openDatabaseForPluginTests(): Promise<OpenedDatabase> {
+  const url = process.env.TEST_DATABASE_URL;
+  if (!url) return openBuiltInDatabase();
+  if (!isMysqlUrl(url)) return connectToPostgres(url);
+  refusePostgresTablesOnMysql();
+  return openMysqlDatabase(url);
+}
+
+/** Test files on a database server share it, so each starts from nothing. */
+async function emptyDatabase(database: Database, tables: Parameters<typeof emptyTables>[1]) {
+  if (tables.length === 0) return;
+  await database.transaction((transaction) =>
+    withForeignKeysAtEase(transaction, () => emptyTables(transaction, tables)),
+  );
 }
 
 async function makePerson(

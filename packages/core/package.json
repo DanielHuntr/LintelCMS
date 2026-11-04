@@ -60,6 +60,11 @@
       "development": "./src/addons/addon-module-names.ts",
       "default": "./dist/addons/addon-module-names.js"
     },
+    "./postgres-only-rules": {
+      "types": "./dist/database/dialect/postgres-only-rules.d.ts",
+      "development": "./src/database/dialect/postgres-only-rules.ts",
+      "default": "./dist/database/dialect/postgres-only-rules.js"
+    },
     "./plugin-testing": {
       "types": "./dist/plugins/plugin-testing.d.ts",
       "development": "./src/plugins/plugin-testing.ts",
@@ -134,6 +139,7 @@
     "test:dialects": "node scripts/test-on-mysql.mjs",
     "test:postgres": "node scripts/test-on-postgres.mjs",
     "test:mysql": "node scripts/test-suite-on-mysql.mjs",
+    "test:addons": "node scripts/test-addons-on-databases.mjs",
     "test:hosting": "LINTEL_HOSTING_E2E=1 vitest run src/hosting/hosting-package.e2e.test.ts"
   },
   "dependencies": {

@@ -42,6 +42,7 @@ import { dialectOf } from "./database-dialect.js";
  * | date              | date                                                          |
  * | timestamptz       | datetime(3), always UTC (see `mysql-database.ts`)             |
  * | jsonb, arrays     | json. MariaDB's json is longtext with a validity check        |
+ * | bytea (custom)    | longblob, read back as a Uint8Array                           |
  */
 
 /** MySQL refuses identifiers longer than this. */
@@ -58,6 +59,13 @@ const jsonColumn = customType<{ data: unknown; driverData: string }>({
   dataType: () => "json",
   toDriver: (value) => JSON.stringify(withKeysInOrder(value)),
   fromDriver: (value) => JSON.parse(value) as unknown,
+});
+
+/** A plugin's raw bytes: `bytea` is a custom column on Postgres, as Drizzle has no type for it. */
+const bytesColumn = customType<{ data: Uint8Array; driverData: Buffer }>({
+  dataType: () => "longblob",
+  toDriver: (value) => Buffer.from(value),
+  fromDriver: (value) => new Uint8Array(value),
 });
 
 /**
@@ -258,6 +266,12 @@ function mysqlColumnOfType(tableName: string, column: AnyPgColumn, inKey: boolea
     case "PgJsonb":
     case "PgArray":
       return jsonColumn(name) as unknown as ColumnBuilder;
+    case "PgCustomColumn":
+      if (column.getSQLType() === "bytea") return bytesColumn(name) as unknown as ColumnBuilder;
+      throw new Error(
+        `${tableName}.${name} is a ${column.getSQLType()}, which has no MySQL type yet. ` +
+          "Add it to mysql-tables.ts.",
+      );
     default:
       throw new Error(
         `${tableName}.${name} is a ${column.columnType}, which has no MySQL type yet. ` +

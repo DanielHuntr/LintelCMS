@@ -4,6 +4,49 @@
   "private": true,
   "description": "An example Lintel plugin: appointments, and the people who made them.",
   "type": "module",
+  "lintel-addon": {
+    "id": "bookings",
+    "lintel": ">=1.0.0-rc.1",
+    "server": "dist/addon/server.js",
+    "admin": "dist/addon/admin.js",
+    "tables": [
+      {
+        "name": "bookings",
+        "purpose": "Each appointment: who, when and for how long.",
+        "columns": [
+          {
+            "name": "customer_name",
+            "purpose": "Who booked.",
+            "personalData": true
+          },
+          {
+            "name": "customer_email",
+            "purpose": "How to reach them.",
+            "personalData": true
+          },
+          {
+            "name": "starts_at",
+            "purpose": "When it starts."
+          },
+          {
+            "name": "duration_minutes",
+            "purpose": "How long it lasts."
+          },
+          {
+            "name": "notes",
+            "purpose": "Anything they or you added.",
+            "personalData": true
+          }
+        ]
+      }
+    ]
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "migrations",
+    "migrations-mysql"
+  ],
   "exports": {
     "./server": {
       "types": "./dist/server/index.d.ts",
@@ -16,7 +59,9 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.admin.json",
     "test": "vitest run",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "db:generate:mysql": "drizzle-kit generate --config drizzle.mysql.config.ts",
+    "build:addon": "tsx --conditions=development ../cli/src/main.ts addons build"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",
@@ -28,6 +73,23 @@
     "@tanstack/react-query": "^5.105.0",
     "lucide-react": "^1.66.0",
     "react": "^19.3.1"
+  },
+  "peerDependenciesMeta": {
+    "@lintel/admin": {
+      "optional": true
+    },
+    "@lintel/core": {
+      "optional": true
+    },
+    "@tanstack/react-query": {
+      "optional": true
+    },
+    "lucide-react": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@lintel/admin": "workspace:*",

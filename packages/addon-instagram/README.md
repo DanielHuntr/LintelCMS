@@ -91,3 +91,10 @@ pnpm --filter @lintel/addon-instagram db:generate --name <what_changed>   # afte
 | `src/admin/AltTextDialog.tsx`        | Describing a post's picture                                  |
 | `src/admin/instagram.api.ts`         | Calls to the add-on's routes                                 |
 | `src/admin/strings.ts`               | Its words                                                    |
+
+## Databases
+
+It runs on the built-in database, Postgres, MySQL and MariaDB. After changing a table, run
+`pnpm db:generate --name <what_changed>` and then `pnpm db:generate:mysql --name <what_changed>`.
+Its queries get their tables through `tableFor`, and `lintel addons check` reads them for
+anything only Postgres has. `pnpm test:addons` in `packages/core` runs its tests on real servers.

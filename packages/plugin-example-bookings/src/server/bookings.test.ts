@@ -1,6 +1,7 @@
 import { startPluginTestServer, type PluginTestServer } from "@lintel/core/plugin-testing";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { sql } from "drizzle-orm";
+import { tableFor } from "@lintel/core/plugin";
+import { bookingsTable } from "./bookings.table.js";
 import bookingsPlugin from "./index.js";
 
 /**
@@ -15,7 +16,7 @@ describe("the Bookings plugin", () => {
   });
   afterAll(() => lintel.close());
   beforeEach(async () => {
-    await lintel.database.execute(sql`truncate table bookings`);
+    await lintel.database.delete(tableFor(lintel.database, bookingsTable));
     await lintel.setEnabledPlugins(["bookings"]);
   });
 

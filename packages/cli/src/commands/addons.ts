@@ -8,6 +8,7 @@ import {
 } from "@lintel/core/data-tools";
 import { lintelVersion } from "@lintel/core/updates";
 import { buildAddon } from "../addons/addon-build.js";
+import { checkAddon } from "../addons/addon-check.js";
 import {
   addAddon,
   type AddonsContext,
@@ -29,6 +30,7 @@ const usage = [
   "  list                      the installed add-ons, and whether they work with this Lintel",
   "  new <name> [--folder <path>]  start a new add-on, with an example of each part",
   "  build [--watch]           bundle the add-on in this folder for Lintel to load",
+  "  check                     whether the add-on in this folder would run on MySQL and MariaDB",
   "  link <folder>             use an add-on straight from a folder you're working on",
   "  unlink <folder or id>     stop using a linked add-on",
 ].join("\n");
@@ -86,6 +88,8 @@ export function makeAddonsCommand(options: AddonsCommandOptions = {}): Command {
         }
         case "build":
           return build(terminal, values.watch);
+        case "check":
+          return checkAddon(addonFolderToBuild(terminal), terminal);
         case "new":
           await scaffoldAddon({
             name: required(target, "new <name>"),

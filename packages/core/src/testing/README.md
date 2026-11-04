@@ -44,9 +44,9 @@ describe("signing in", () => {
 
 For other databases (see `src/database/dialect/README.md`):
 
-| File                           | What it does                                                        |
-| ------------------------------ | ------------------------------------------------------------------- |
-| `every-database.ts`            | `describeOnEveryDatabase`, for `*.dialects.test.ts` files           |
-| `postgres-only-code.ts`        | Finds code only Postgres can run; its test keeps the list shrinking |
-| `mysql-ported-repositories.ts` | The repositories moved so far, and what each is held to             |
-| `mysql-porting-report.ts`      | The counts `pnpm dialect:report` prints                             |
+| File                           | What it does                                                               |
+| ------------------------------ | -------------------------------------------------------------------------- |
+| `every-database.ts`            | `describeOnEveryDatabase`, for `*.dialects.test.ts` files                  |
+| `postgres-only-code.ts`        | Runs `postgres-only-rules.ts` over core; its test keeps the list shrinking |
+| `mysql-ported-repositories.ts` | The repositories moved so far, and what each is held to                    |
+| `mysql-porting-report.ts`      | The counts `pnpm dialect:report` prints                                    |

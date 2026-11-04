@@ -1,10 +1,16 @@
 import { and, desc, eq, inArray, notInArray } from "drizzle-orm";
-import type { DatabaseOrTransaction } from "@lintel/core/plugin";
+import {
+  type DatabaseOrTransaction,
+  insertIfNew,
+  tableFor,
+  updateReturning,
+  upsertReturning,
+} from "@lintel/core/plugin";
 import {
   type InstagramAccountRow,
-  instagramAccountTable,
+  instagramAccountTable as instagramAccountDefinition,
   type InstagramPostRow,
-  instagramPostsTable,
+  instagramPostsTable as instagramPostsDefinition,
   type NewInstagramAccountRow,
   type NewInstagramPostRow,
 } from "./instagram.table.js";
@@ -15,6 +21,7 @@ export async function findAccountRow(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<InstagramAccountRow | undefined> {
+  const instagramAccountTable = tableFor(database, instagramAccountDefinition);
   const [row] = await database
     .select()
     .from(instagramAccountTable)
@@ -27,22 +34,19 @@ export async function saveAccountRow(
   database: DatabaseOrTransaction,
   row: NewInstagramAccountRow & { tenantId: string },
 ): Promise<InstagramAccountRow> {
-  const [saved] = await database
-    .insert(instagramAccountTable)
-    .values(row)
-    .onConflictDoUpdate({
-      target: instagramAccountTable.tenantId,
-      set: {
-        accessToken: row.accessToken,
-        instagramUserId: row.instagramUserId,
-        username: row.username,
-        tokenRefreshedAt: row.tokenRefreshedAt,
-        lastSyncedAt: row.lastSyncedAt ?? null,
-        lastError: row.lastError ?? null,
-        updatedAt: new Date(),
-      },
-    })
-    .returning();
+  const instagramAccountTable = tableFor(database, instagramAccountDefinition);
+  const [saved] = await upsertReturning(database, instagramAccountTable, row, {
+    target: instagramAccountTable.tenantId,
+    set: {
+      accessToken: row.accessToken,
+      instagramUserId: row.instagramUserId,
+      username: row.username,
+      tokenRefreshedAt: row.tokenRefreshedAt,
+      lastSyncedAt: row.lastSyncedAt ?? null,
+      lastError: row.lastError ?? null,
+      updatedAt: new Date(),
+    },
+  });
   return saved as InstagramAccountRow;
 }
 
@@ -53,6 +57,7 @@ export async function updateAccountRow(
     Pick<InstagramAccountRow, "accessToken" | "tokenRefreshedAt" | "lastSyncedAt" | "lastError">
   >,
 ): Promise<void> {
+  const instagramAccountTable = tableFor(database, instagramAccountDefinition);
   await database
     .update(instagramAccountTable)
     .set({ ...changes, updatedAt: new Date() })
@@ -63,6 +68,7 @@ export async function deleteAccountRow(
   database: DatabaseOrTransaction,
   tenantId: string,
 ): Promise<void> {
+  const instagramAccountTable = tableFor(database, instagramAccountDefinition);
   await database.delete(instagramAccountTable).where(eq(instagramAccountTable.tenantId, tenantId));
 }
 
@@ -72,6 +78,7 @@ export async function listPostRows(
   tenantId: string,
   limit?: number,
 ): Promise<Omit<InstagramPostRow, "image">[]> {
+  const instagramPostsTable = tableFor(database, instagramPostsDefinition);
   const query = database
     .select({
       id: instagramPostsTable.id,
@@ -97,6 +104,7 @@ export async function findPostPicture(
   tenantId: string,
   postId: string,
 ): Promise<Pick<InstagramPostRow, "image" | "imageType"> | undefined> {
+  const instagramPostsTable = tableFor(database, instagramPostsDefinition);
   const [row] = await database
     .select({ image: instagramPostsTable.image, imageType: instagramPostsTable.imageType })
     .from(instagramPostsTable)
@@ -110,6 +118,7 @@ export async function findKeptInstagramIds(
   tenantId: string,
   instagramIds: readonly string[],
 ): Promise<Set<string>> {
+  const instagramPostsTable = tableFor(database, instagramPostsDefinition);
   if (instagramIds.length === 0) return new Set();
   const rows = await database
     .select({ instagramId: instagramPostsTable.instagramId })
@@ -127,7 +136,8 @@ export async function insertPostRow(
   database: DatabaseOrTransaction,
   row: NewInstagramPostRow & { tenantId: string },
 ): Promise<void> {
-  await database.insert(instagramPostsTable).values(row).onConflictDoNothing();
+  const instagramPostsTable = tableFor(database, instagramPostsDefinition);
+  await insertIfNew(database, instagramPostsTable, row);
 }
 
 /** Instagram may change a caption; the picture and the editor's description stay. */
@@ -137,6 +147,7 @@ export async function updatePostDetails(
   instagramId: string,
   details: Pick<InstagramPostRow, "caption" | "permalink">,
 ): Promise<void> {
+  const instagramPostsTable = tableFor(database, instagramPostsDefinition);
   await database
     .update(instagramPostsTable)
     .set({ ...details, updatedAt: new Date() })
@@ -154,11 +165,14 @@ export async function updatePostAltText(
   postId: string,
   altText: string,
 ): Promise<boolean> {
-  const updated = await database
-    .update(instagramPostsTable)
-    .set({ altText, updatedAt: new Date() })
-    .where(and(eq(instagramPostsTable.tenantId, tenantId), eq(instagramPostsTable.id, postId)))
-    .returning({ id: instagramPostsTable.id });
+  const instagramPostsTable = tableFor(database, instagramPostsDefinition);
+  const updated = await updateReturning(
+    database,
+    instagramPostsTable,
+    { altText, updatedAt: new Date() },
+    and(eq(instagramPostsTable.tenantId, tenantId), eq(instagramPostsTable.id, postId)),
+    { id: instagramPostsTable.id },
+  );
   return updated.length > 0;
 }
 
@@ -168,6 +182,7 @@ export async function deletePostRowsExcept(
   tenantId: string,
   keptInstagramIds: readonly string[],
 ): Promise<void> {
+  const instagramPostsTable = tableFor(database, instagramPostsDefinition);
   await database
     .delete(instagramPostsTable)
     .where(

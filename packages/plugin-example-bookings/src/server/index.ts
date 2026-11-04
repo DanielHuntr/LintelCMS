@@ -26,6 +26,7 @@ export default definePlugin({
     tables: [bookingsTable],
     // The same folder from src (in development) and from dist.
     migrationsFolder: fileURLToPath(new URL("../../migrations", import.meta.url)),
+    mysqlMigrationsFolder: fileURLToPath(new URL("../../migrations-mysql", import.meta.url)),
   },
   routes: bookingsRoutes,
   // What it keeps and does, for Build → Add-ons and backups. An add-on writes the same in

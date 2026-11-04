@@ -24,13 +24,14 @@ export function addonTemplateFiles(values: TemplateValues): Record<string, strin
   const link = (name: string) =>
     `link:${join(values.lintelRoot, "packages", name).replaceAll("\\", "/")}`;
   const lintelRoot = values.lintelRoot.replaceAll("\\", "/").replace(/\/$/, "");
+  const camel = id.replace(/-([a-z0-9])/g, (_match, letter: string) => letter.toUpperCase());
 
   const packageFile = {
     name: `lintel-addon-${id}`,
     version: "0.1.0",
     description: `${title}: an add-on for Lintel.`,
     type: "module",
-    files: ["dist", "migrations"],
+    files: ["dist", "migrations", "migrations-mysql"],
     keywords: ["lintel-addon"],
     license: "MIT",
     "lintel-addon": {
@@ -51,7 +52,10 @@ export function addonTemplateFiles(values: TemplateValues): Record<string, strin
       build: "lintel addons build",
       dev: "lintel addons build --watch",
       test: "vitest run",
+      check: "lintel addons check",
       typecheck: "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.admin.json",
+      "db:generate": "drizzle-kit generate",
+      "db:generate:mysql": "drizzle-kit generate --config drizzle.mysql.config.ts",
     },
     devDependencies: {
       "@lintel/admin": link("admin"),
@@ -60,6 +64,8 @@ export function addonTemplateFiles(values: TemplateValues): Record<string, strin
       "@tanstack/react-query": "^5.105.0",
       "@types/node": "^26.6.6",
       "@types/react": "^19.3.0",
+      "drizzle-kit": "^0.31.11",
+      "drizzle-orm": "^0.45.4",
       "lucide-react": "^1.66.0",
       react: "^19.3.1",
       typescript: "^6.0.3",
@@ -75,7 +81,7 @@ export function addonTemplateFiles(values: TemplateValues): Record<string, strin
       {
         extends: `${lintelRoot}/tsconfig.base.json`,
         compilerOptions: { rootDir: ".", noEmit: true, types: ["node"] },
-        include: ["src/server", "vitest.config.ts"],
+        include: ["src/server", "vitest.config.ts", "drizzle.config.ts", "drizzle.mysql.config.ts"],
       },
       null,
       2,
@@ -107,8 +113,38 @@ export default defineConfig({
     include: ["src/server/**/*.test.ts"],
     // A Lintel server on a fresh built-in database takes a few seconds to start.
     hookTimeout: 120_000,
+    // Test files share a database server, when TEST_DATABASE_URL names one.
+    fileParallelism: !process.env.TEST_DATABASE_URL,
   },
 });
+`,
+    "drizzle.config.ts": `import { defineConfig } from "drizzle-kit";
+
+// \`npm run db:generate -- --name <what_changed>\` compares your tables with the migrations
+// folder. Lintel applies the migrations itself when the server starts.
+export default defineConfig({
+  dialect: "postgresql",
+  schema: "./src/server/*.table.ts",
+  out: "./migrations",
+});
+`,
+    "drizzle.mysql.config.ts": `import { defineConfig } from "drizzle-kit";
+
+// The same tables for MySQL and MariaDB. Run \`npm run db:generate:mysql -- --name <what_changed>\`
+// after \`db:generate\`.
+export default defineConfig({
+  dialect: "mysql",
+  schema: "./src/server/mysql-schema.cjs",
+  out: "./migrations-mysql",
+});
+`,
+    "src/server/mysql-schema.cjs": `// Each of your tables in its MySQL form, for drizzle-kit. Add a line for every table:
+//
+//   const { mysqlTableFor } = require("@lintel/core/plugin");
+//   const { ${camel}Table } = require("./${id}.table.ts");
+//
+//   module.exports = { ${camel}Table: mysqlTableFor(${camel}Table) };
+module.exports = {};
 `,
     "src/server/index.ts": `import { defineBlock, defineFieldtype, definePlugin, escapeHtml, text, textarea } from "@lintel/core/plugin";
 import { z } from "zod";
@@ -122,6 +158,15 @@ export default definePlugin({
   name: "${title}",
   description: "A rating field, a stars tag for templates and a callout for the builder.",
   version: "0.1.0",
+
+  // Tables of its own go here, with migrations for each kind of database, so it can run on
+  // all of them. The README says how. Name the MySQL folder only once its queries work there:
+  //
+  //   database: {
+  //     tables: [${camel}Table],
+  //     migrationsFolder: join(packageFolder(import.meta.url), "migrations"),
+  //     mysqlMigrationsFolder: join(packageFolder(import.meta.url), "migrations-mysql"),
+  //   },
 
   // Settings, with a form drawn for them on the Add-ons screen.
   settings: {
@@ -315,6 +360,33 @@ An add-on for Lintel, made with \`lintel addons new\`. It adds:
 \`personalData\`), \`publicRoutes\`, \`jobs\`, \`events\` and the \`hosts\` it talks to.
 Build → Add-ons shows them to site owners, checks what it can, and warns about anything
 it finds that isn't listed. Backups include the tables listed. Keep it up to date.
+
+## Adding a table
+
+Written this way, it runs on Postgres, the built-in database, MySQL and MariaDB. Put the table
+in \`src/server/${id}.table.ts\` as a Drizzle \`pgTable\`, with \`id()\`, \`tenantId()\` and
+\`timestamps()\` from \`@lintel/core/plugin\`, and a name starting \`${prefix}\`. Then:
+
+1. Add it to \`src/server/mysql-schema.cjs\`, and to \`database\` in src/server/index.ts.
+2. Run \`npm run db:generate -- --name <what_changed>\`, then \`npm run db:generate:mysql -- --name <what_changed>\`.
+3. Get the table through \`tableFor\` at the top of every function that queries it, and write
+   with \`insertReturning\`, \`updateReturning\`, \`deleteReturning\`, \`upsert\` and \`insertIfNew\`:
+
+\`\`\`ts
+import { type DatabaseOrTransaction, insertReturning, tableFor } from "@lintel/core/plugin";
+import { ${camel}Table as ${camel}Definition } from "./${id}.table.js";
+
+export async function saveRow(database: DatabaseOrTransaction, row: { name: string }) {
+  const table = tableFor(database, ${camel}Definition);
+  const [saved] = await insertReturning(database, table, row);
+  return saved;
+}
+\`\`\`
+
+\`npm run check\` reads the code and the migrations, and \`npm run build\` stops if the add-on
+says it runs on MySQL and has something only Postgres can run. Reading can't see everything,
+so run its tests there too: \`TEST_DATABASE_URL=mysql://... npm test\`. That database is emptied,
+so use a new one, made with the collation in Lintel's database docs.
 
 ## Working on it
 

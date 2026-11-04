@@ -2,10 +2,11 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
+import { postgresOnlyCodeIn as findPostgresOnlyCode } from "../database/dialect/postgres-only-rules.js";
 
 /**
- * Finds code that only Postgres can run, by reading the source rather than searching it, so
- * comments and ordinary strings don't count. See `postgres-only-code.test.ts`.
+ * Finds code that only Postgres can run across Lintel's own source, using the rules in
+ * `postgres-only-rules.ts`. See `postgres-only-code.test.ts`.
  */
 
 export const SOURCE_FOLDER = fileURLToPath(new URL("..", import.meta.url));
@@ -15,47 +16,6 @@ export const BASELINE_FILE = fileURLToPath(
 
 /** Each file's count of each kind of Postgres-only code. */
 export type PostgresOnlyCounts = Record<string, Record<string, number>>;
-
-/** Method calls with no MySQL form. */
-const METHODS = new Map([
-  ["returning", "returning"],
-  ["onConflictDoUpdate", "upsert"],
-  ["onConflictDoNothing", "upsert"],
-  ["selectDistinctOn", "distinct on"],
-]);
-
-/** Drizzle helpers with no MySQL form. */
-const DRIZZLE_IMPORTS = new Map([
-  ["ilike", "ilike"],
-  ["notIlike", "ilike"],
-  ["arrayContains", "array operators"],
-  ["arrayContained", "array operators"],
-  ["arrayOverlaps", "array operators"],
-]);
-
-/** What gives raw SQL away. The first text of each `sql` template is checked against all. */
-const RAW_SQL: Record<string, RegExp> = {
-  "cast with ::": /::\s*[a-z]/i,
-  "json field access": /->/,
-  "json containment": /@>/,
-  "jsonb function": /\bjsonb?_[a-z_]+\s*\(|\brow_to_json\b/i,
-  "array function": /\barray_[a-z]+\s*\(|\barray\[|=\s*any\s*\(/i,
-  "full-text search": /\bto_tsvector\b|\bto_tsquery\b|\bts_rank\b|@@/i,
-  "advisory lock": /\bpg_advisory/i,
-  "postgres function": /\bpg_[a-z_]+\s*\(|\bhashtext\b/i,
-  "filter clause": /\bfilter\s*\(\s*where\b/i,
-  "nulls ordering": /\bnulls\s+(last|first)\b/i,
-  "date function": /\bto_char\b|\bmake_interval\b|\bat\s+time\s+zone\b/i,
-  "ilike in sql": /\bilike\b/i,
-  "truncate cascade": /\btruncate\b/i,
-  "postgres catalogue": /\bshow\s+server_version\b|\bdrizzle\.__drizzle/i,
-};
-
-/**
- * A Date put straight into raw SQL works on the built-in database and fails on a Postgres
- * server, whose driver only takes text. Compare with a column instead, which converts it.
- */
-const DATE_NAMES = /^(now|since|cutoff|until|today)$|(At|Date|Time)$/;
 
 /** Folders and files that may hold Postgres-only code. */
 function isChecked(file: string): boolean {
@@ -76,73 +36,8 @@ function allFiles(folder: string): string[] {
   });
 }
 
-function templateText(node: ts.TemplateLiteral): string {
-  if (ts.isNoSubstitutionTemplateLiteral(node)) return node.text;
-  return [node.head.text, ...node.templateSpans.map((span) => span.literal.text)].join(" ${} ");
-}
-
-function isSqlTag(tag: ts.Expression): boolean {
-  return ts.isIdentifier(tag) && tag.text === "sql";
-}
-
 export function postgresOnlyCodeIn(fileName: string, source: string): Record<string, number> {
-  const parsed = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true);
-  const counts: Record<string, number> = {};
-  const count = (rule: string) => {
-    counts[rule] = (counts[rule] ?? 0) + 1;
-  };
-
-  const drizzleCalls = new Map<string, string>();
-
-  function visit(node: ts.Node): void {
-    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
-      const rule = METHODS.get(node.expression.name.text);
-      if (rule) count(rule);
-    }
-    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) {
-      const rule = drizzleCalls.get(node.expression.text);
-      if (rule) count(rule);
-    }
-    if (ts.isTaggedTemplateExpression(node) && isSqlTag(node.tag)) {
-      const text = templateText(node.template);
-      for (const [rule, pattern] of Object.entries(RAW_SQL)) {
-        if (pattern.test(text)) count(rule);
-      }
-      if (ts.isTemplateExpression(node.template)) {
-        for (const { expression } of node.template.templateSpans) {
-          if (ts.isIdentifier(expression) && DATE_NAMES.test(expression.text)) {
-            count("date in raw sql");
-          }
-        }
-      }
-    }
-    if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
-      visitImport(node);
-    }
-    if (ts.isStringLiteral(node) && /^23\d{3}$/.test(node.text)) count("postgres error code");
-    ts.forEachChild(node, visit);
-  }
-
-  function visitImport(node: ts.ImportDeclaration): void {
-    const from = (node.moduleSpecifier as ts.StringLiteral).text;
-    if (from === "drizzle-orm") {
-      const bindings = node.importClause?.namedBindings;
-      if (bindings && ts.isNamedImports(bindings)) {
-        for (const element of bindings.elements) {
-          const rule = DRIZZLE_IMPORTS.get((element.propertyName ?? element.name).text);
-          if (rule) drizzleCalls.set(element.name.text, rule);
-        }
-      }
-    }
-    if (from === "drizzle-orm/pg-core" && !fileName.endsWith(".table.ts")) {
-      if (!fileName.endsWith(".tables.ts") && !node.importClause?.isTypeOnly) {
-        count("pg-core import");
-      }
-    }
-  }
-
-  visit(parsed);
-  return counts;
+  return findPostgresOnlyCode(ts, fileName, source);
 }
 
 /** The whole of `packages/core/src`, keyed by path, leaving out files with nothing to report. */

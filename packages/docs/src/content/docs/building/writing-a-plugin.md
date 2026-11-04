@@ -107,7 +107,8 @@ plugins gives it `canRunHere: false`. To run there it needs three things:
 
 1. **Migrations for MySQL.** Your tables stay as they are. `mysqlTableFor` works out each
    one's MySQL form, so give drizzle-kit those in a second schema file, with a second config
-   that says `dialect: "mysql"` and `out: "./migrations-mysql"`:
+   that says `dialect: "mysql"` and `out: "./migrations-mysql"`, and generate them with
+   `drizzle-kit generate --config drizzle.mysql.config.ts`:
 
    ```js
    // src/server/mysql-schema.cjs
@@ -117,7 +118,7 @@ plugins gives it `canRunHere: false`. To run there it needs three things:
    module.exports = { bookingsTable: mysqlTableFor(bookingsTable) };
    ```
 
-   Then name that folder as well:
+   Then name that folder as well, and add it to `files` in package.json if you publish:
 
    ```ts
    database: {
@@ -131,20 +132,46 @@ plugins gives it `canRunHere: false`. To run there it needs three things:
 
    ```ts
    import { tableFor } from "@lintel/core/plugin";
+   import { bookingsTable as bookingsDefinition } from "./bookings.table.js";
 
-   const bookings = tableFor(database, bookingsTable);
+   const bookingsTable = tableFor(database, bookingsDefinition);
    ```
 
 3. **Nothing only Postgres has.** MySQL has no `returning`, `onConflictDoUpdate`, `ilike`,
    `->>` or `::` casts. `@lintel/core/plugin` exports what replaces them: `insertReturning`,
-   `updateReturning`, `deleteReturning`, `upsert`, `insertIfNew`, `likeIgnoringCase`,
-   `jsonText`, `jsonListIncludes`, `countWhere` and `orderNullsLast`.
+   `updateReturning`, `deleteReturning`, `upsert`, `upsertReturning`, `insertIfNew`,
+   `insertIfNewReturning`, `likeIgnoringCase`, `jsonText`, `jsonListIncludes`, `countWhere`
+   and `orderNullsLast`.
 
-Then run your tests on MySQL, because none of this is checked for you: naming a MySQL folder
-is your promise that the plugin works there. `pnpm test:mysql` covers Lintel's own code only.
+A `bytea` custom column becomes a `longblob` and still reads as a `Uint8Array`, and any other
+custom column type stops with an error, as it has no MySQL form.
 
-Built-in features need none of this. The bookings example and the Newsletter and Instagram
-add-ons haven't made this move, so they stay off on MySQL and MariaDB.
+### Checking it
+
+Naming a MySQL folder is a promise, and three things hold you to it:
+
+- **`lintel addons check`** reads your server code. It finds what only Postgres has, tables
+  that skip `tableFor`, and tables or columns your MySQL migrations don't make. A plugin
+  with no tables is held to it as well, as nothing else keeps that one off MySQL.
+- **`lintel addons build`** stops with the same list, so an add-on can't be published with
+  it. `lintel addons add` reads the installed bundle, and warns when it finds the same.
+- **Your tests on MySQL and MariaDB.** `startPluginTestServer` uses `TEST_DATABASE_URL` when
+  it's set, so the same tests run there, and a query on a table that skipped `tableFor` fails
+  at once. This is the part that counts: reading code can't see a query that is built up
+  as it runs, or one that's valid on MySQL and means something else.
+
+```bash
+TEST_DATABASE_URL="mysql://root:secret@127.0.0.1:3306/my_addon_test" npm test
+```
+
+That database is emptied first, so give it one of its own, made with the collation
+[the database page](/hosting/requirements/) says. Keep raw SQL out of your tests too:
+delete rows with `database.delete(tableFor(database, bookingsTable))`, not `truncate`.
+
+Built-in features need none of this. The Newsletter and Instagram add-ons and the bookings
+example have made the move: `pnpm test:addons` in `packages/core` runs their tests on
+Postgres 17, MySQL 8.4 and MariaDB 11.4, and installs each from a packed `.tgz` with
+`lintel addons add` and runs it there.
 
 ## 3. Write the routes
 

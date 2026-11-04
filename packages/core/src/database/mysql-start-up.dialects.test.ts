@@ -7,6 +7,7 @@ import { pgTable, text, uuid } from "drizzle-orm/pg-core";
 import { createConnection } from "mysql2/promise";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { restoreBackupArchive, writeBackupArchive } from "../backups/backup-archive.service.js";
+import { insertAllRows, readAllRows } from "../backups/database-snapshot.repository.js";
 import { checkReadiness } from "../health/readiness.service.js";
 import { definePlugin, type LintelPlugin } from "../plugins/plugin-definition.js";
 import { listPlugins, setEnabledPlugins } from "../plugins/plugins.service.js";
@@ -288,6 +289,29 @@ describe.each(servers.filter(([, url]) => url))("Lintel starting on %s", (_name,
       await active.database.insert(cards).values({ id: randomUUID(), owner: "Ada" });
       expect(await active.database.select().from(cards)).toHaveLength(1);
     });
+  });
+
+  it("keeps an add-on's own table in a backup, in the form Postgres writes", async () => {
+    const active = await start();
+    const { database } = active;
+    await database.execute(sql`create table stamps_cards (
+      id varchar(36) primary key, picture longblob, active boolean, details json,
+      stamped_at datetime(3), note longtext
+    )`);
+    // As `row_to_json` writes them, with a note that only looks like a time.
+    const fromPostgres = {
+      id: randomUUID(),
+      picture: "\\x89504e4700ff",
+      active: true,
+      details: { stamps: 3, shop: "Über" },
+      stamped_at: "2026-03-04T05:06:07.89+01:00",
+      note: "2026-03-04T05:06:07 was the day",
+    };
+    await insertAllRows(database, "stamps_cards", [fromPostgres]);
+
+    expect(await readAllRows(database, "stamps_cards")).toEqual([
+      { ...fromPostgres, stamped_at: "2026-03-04T04:06:07.890Z" },
+    ]);
   });
 
   async function fillAndBackUp(from: OpenedDatabase | ActiveDatabase, kind: "built-in" | "mysql") {

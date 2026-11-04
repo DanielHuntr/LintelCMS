@@ -91,6 +91,15 @@ export async function loadAddons(folder: string, options: LoadAddonsOptions): Pr
   return state;
 }
 
+/** One built add-on, on its own, for `lintel addons check`. Throws if it won't load. */
+export async function loadAddonInFolder(
+  folder: string,
+  lintelVersion: string,
+): Promise<LintelPlugin> {
+  shareServerModules();
+  return loadOne(await readAddonPackage(folder), lintelVersion, new Set());
+}
+
 async function loadOne(
   addonPackage: AddonPackage,
   lintelVersion: string,

@@ -1,6 +1,6 @@
 import { is } from "drizzle-orm";
 import { type AnyMySqlColumn, type MySqlTable, getTableConfig } from "drizzle-orm/mysql-core";
-import { PgTable } from "drizzle-orm/pg-core";
+import { PgTable, customType, pgTable } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import * as schema from "../schema.js";
 import { sitesTable } from "../../sites/sites.table.js";
@@ -64,6 +64,18 @@ describe("MySQL tables worked out from the Postgres ones", () => {
     expect(mysqlTableFor(sitesTable)).not.toBe(sitesTable);
     expect(Object.keys(sitesTable)).toEqual(before);
     expect(sitesTable.hostnames.getSQLType()).toBe("text[]");
+  });
+
+  it("makes a plugin's bytes a longblob, and refuses a custom type it doesn't know", () => {
+    const bytes = customType<{ data: Uint8Array; driverData: Uint8Array }>({
+      dataType: () => "bytea",
+    });
+    const vector = customType<{ data: string }>({ dataType: () => "vector(3)" });
+    const pictures = mysqlTableFor(pgTable("pictures", { image: bytes("image").notNull() }));
+    expect(pictures.image.getSQLType()).toBe("longblob");
+    expect(() => mysqlTableFor(pgTable("embeddings", { value: vector("value") }))).toThrow(
+      "embeddings.value is a vector(3)",
+    );
   });
 
   it("maps the types that matter", () => {

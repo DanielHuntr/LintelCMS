@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { isAbsolute } from "node:path";
+import { isAbsolute, join } from "node:path";
 import {
   type AddonPackage,
   AddonPackageError,
@@ -14,6 +14,7 @@ import {
   writeAddonsList,
 } from "@lintel/core/data-tools";
 import { CommandError, formatTable, type Terminal } from "../terminal.js";
+import { breaksItsPromise, readAddonBundleForMysql } from "./addon-check.js";
 
 /**
  * Installing add-ons into a site's add-ons folder (see packages/core/src/addons): npm does
@@ -82,12 +83,23 @@ export async function addAddon(
   });
   terminal.say(`Added ${packageName} ${addonPackage.version}.`);
   for (const line of describeAddonForReview(addonPackage)) terminal.say(line);
+  warnIfNotPortable(addonPackage, terminal);
   terminal.say(
     options.switchOn
       ? `${RESTART} It will be switched on.`
       : `${RESTART} Switch it on in Settings → Add-ons.`,
   );
   return addonPackage;
+}
+
+/** Sites on Postgres are fine either way, so this warns rather than refuses. */
+function warnIfNotPortable(addonPackage: AddonPackage, terminal: Terminal): void {
+  const serverFile = join(addonPackage.folder, addonPackage.manifest.server);
+  if (addonPackage.dataOnly || !existsSync(serverFile)) return;
+  const found = readAddonBundleForMysql(serverFile);
+  if (!breaksItsPromise(found)) return;
+  terminal.warn(`${addonPackage.packageName} may fail on MySQL and MariaDB:`);
+  for (const problem of found.problems) terminal.warn(`  ${problem}`);
 }
 
 /**

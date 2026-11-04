@@ -8,6 +8,8 @@
 //   LINTEL_TEST_ENGINES=mysql,mariadb   which to run
 //   LINTEL_TEST_SHARDS=4                how many databases per engine
 //   LINTEL_TEST_MYSQL_PORT, LINTEL_TEST_MARIADB_PORT   the ports
+//   LINTEL_TEST_MYSQL_IMAGE, LINTEL_TEST_MARIADB_IMAGE   the versions
+//   LINTEL_TEST_CONTAINER_PREFIX                        the start of the containers' names
 //
 // Arguments go to vitest: `pnpm test:mysql src/settings`. A summary of each run is written
 // to LINTEL_TEST_REPORT_FOLDER when it's set.
@@ -22,12 +24,13 @@ const WAIT_FOR_START_SECONDS = 180;
 const shards = Number(process.env.LINTEL_TEST_SHARDS ?? "4");
 const engines = (process.env.LINTEL_TEST_ENGINES ?? "mysql,mariadb").split(",");
 const reportFolder = process.env.LINTEL_TEST_REPORT_FOLDER;
+const prefix = process.env.LINTEL_TEST_CONTAINER_PREFIX ?? "lintel-suite";
 
 const servers = {
   mysql: {
     name: "mysql",
-    container: "lintel-suite-mysql",
-    image: "mysql:8.4",
+    container: `${prefix}-mysql`,
+    image: process.env.LINTEL_TEST_MYSQL_IMAGE ?? "mysql:8.4",
     port: process.env.LINTEL_TEST_MYSQL_PORT ?? "34184",
     environmentPrefix: "MYSQL",
     collation: "utf8mb4_0900_bin",
@@ -35,8 +38,8 @@ const servers = {
   },
   mariadb: {
     name: "mariadb",
-    container: "lintel-suite-mariadb",
-    image: "mariadb:11.4",
+    container: `${prefix}-mariadb`,
+    image: process.env.LINTEL_TEST_MARIADB_IMAGE ?? "mariadb:11.4",
     port: process.env.LINTEL_TEST_MARIADB_PORT ?? "34214",
     environmentPrefix: "MARIADB",
     collation: "utf8mb4_nopad_bin",

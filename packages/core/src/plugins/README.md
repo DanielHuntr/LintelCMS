@@ -52,7 +52,8 @@ deletes nothing.
 ## For plugin authors
 
 `plugin-api.ts` is `@lintel/core/plugin`: everything a plugin may import. `plugin-testing.ts`
-is `@lintel/core/plugin-testing`: a real server with the plugin installed, for its tests.
+is `@lintel/core/plugin-testing`: a real server with the plugin installed, for its tests, on
+the built-in database or whatever `TEST_DATABASE_URL` names.
 `packages/plugin-example-bookings` is the reference plugin.
 
 ## Files

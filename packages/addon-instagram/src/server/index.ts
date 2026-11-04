@@ -32,6 +32,7 @@ export function createInstagramAddon(options: { fetch: FetchFunction }) {
     database: {
       tables: [instagramAccountTable, instagramPostsTable],
       migrationsFolder: join(packageFolder(import.meta.url), "migrations"),
+      mysqlMigrationsFolder: join(packageFolder(import.meta.url), "migrations-mysql"),
     },
     routes: instagramRoutes(client),
 

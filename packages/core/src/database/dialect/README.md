@@ -20,7 +20,9 @@ default it doesn't know.
 `pnpm db:generate:mysql --name <what_changed>` writes the migration to `migrations-mysql`.
 `pnpm test:dialects` fails if you forget. Run it after `pnpm db:generate` whenever a table
 changes. A plugin's tables aren't included: a plugin brings its own MySQL migrations, or stays
-off there (see "Running on MySQL and MariaDB" in the plugin docs).
+off there (see "Running on MySQL and MariaDB" in the plugin docs). `lintel addons check` holds
+a plugin that brings them to the same rules as Lintel's own code, and `pnpm test:addons` runs
+Lintel's own add-ons on Postgres, MySQL and MariaDB, from their source and from a packed install.
 
 ## How a repository moves over
 
@@ -121,17 +123,19 @@ To remember when moving a query:
 
 ## Files
 
-| File                  | What it does                                               |
-| --------------------- | ---------------------------------------------------------- |
-| `database-dialect.ts` | Which dialect a database speaks, and what it can do        |
-| `mysql-tables.ts`     | Working out MySQL tables; `tableFor`                       |
-| `writes.ts`           | `returning`, upserts and insert-if-new on each database    |
-| `reads.ts`            | The newest row of each group                               |
-| `expressions.ts`      | JSON, lists, case, counting, ordering and date maths       |
-| `database-errors.ts`  | How each database reports a broken unique key              |
-| `json-expressions.ts` | Looking inside JSON, changing it and building it           |
-| `text-search.ts`      | Searching text and JSON for words                          |
-| `locks.ts`            | A lock that ends with the transaction                      |
-| `raw-queries.ts`      | Rows from `execute`, and what differs in catalogue queries |
-| `mysql-database.ts`   | Opening MySQL and MariaDB                                  |
-| `mysql-schema.cjs`    | Every table in MySQL's form, for drizzle-kit               |
+| File                        | What it does                                                                 |
+| --------------------------- | ---------------------------------------------------------------------------- |
+| `database-dialect.ts`       | Which dialect a database speaks, and what it can do                          |
+| `mysql-tables.ts`           | Working out MySQL tables; `tableFor`                                         |
+| `writes.ts`                 | `returning`, upserts and insert-if-new on each database                      |
+| `reads.ts`                  | The newest row of each group                                                 |
+| `expressions.ts`            | JSON, lists, case, counting, ordering and date maths                         |
+| `database-errors.ts`        | How each database reports a broken unique key                                |
+| `json-expressions.ts`       | Looking inside JSON, changing it and building it                             |
+| `text-search.ts`            | Searching text and JSON for words                                            |
+| `locks.ts`                  | A lock that ends with the transaction                                        |
+| `raw-queries.ts`            | Rows from `execute`, and what differs in catalogue queries                   |
+| `mysql-database.ts`         | Opening MySQL and MariaDB                                                    |
+| `mysql-schema.cjs`          | Every table in MySQL's form, for drizzle-kit                                 |
+| `postgres-only-rules.ts`    | What counts as Postgres-only; read by core's check and `lintel addons check` |
+| `refuse-postgres-tables.ts` | In tests, fails a query on a table that skipped `tableFor`                   |

@@ -61,9 +61,13 @@ describe("lintel addons new and build", () => {
       "src/server/index.test.ts",
       "src/admin/index.tsx",
       "README.md",
+      "drizzle.config.ts",
+      "drizzle.mysql.config.ts",
+      "src/server/mysql-schema.cjs",
     ]) {
       expect(existsSync(join(addonFolder, file))).toBe(true);
     }
+    expect(packageFile.files).toContain("migrations-mysql");
 
     await buildAddon(addonFolder, { watch: false, terminal, nodePaths: [ADMIN_PACKAGES] });
     const adminBundle = await readFile(join(addonFolder, "dist", "admin.js"), "utf8");

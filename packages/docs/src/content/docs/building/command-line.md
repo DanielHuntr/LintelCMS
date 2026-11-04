@@ -204,12 +204,14 @@ pnpm lintel addons remove <package or id>
 pnpm lintel addons list
 pnpm lintel addons new <name> [--folder <path>]
 pnpm lintel addons build [--watch]
+pnpm lintel addons check
 pnpm lintel addons link <folder>
 pnpm lintel addons unlink <folder or id>
 ```
 
-Installs and removes add-ons in the site's Lintel folder, and helps you build your own. Add-ons'
-own commands run as `pnpm lintel <add-on id>:<command>`. See
+Installs and removes add-ons in the site's Lintel folder, and helps you build your own. `check`
+reads the add-on in this folder for anything that would stop it running on MySQL and MariaDB,
+and `build` stops on the same. Add-ons' own commands run as `pnpm lintel <add-on id>:<command>`. See
 [Building add-ons](/building/building-addons/).
 
 ## apps

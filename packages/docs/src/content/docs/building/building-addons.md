@@ -40,8 +40,10 @@ npm run dev                                 # rebuilds dist/ whenever you save
 ```
 
 The new add-on has a Rating field with its editor, a Liquid tag and filter, a Callout
-element, a dashboard widget, an event handler, settings and tests. Lintel's own packages
-aren't published to npm yet, so the add-on links to the copy of Lintel it was made from.
+element, a dashboard widget, an event handler, settings and tests. It has no tables, and
+runs on every database. It comes ready for tables that do too: both drizzle-kit configs and
+their scripts, and its README says how. Lintel's own packages aren't published to npm yet,
+so the add-on links to the copy of Lintel it was made from.
 
 To try it in your site, link it and restart Lintel:
 
@@ -366,7 +368,8 @@ pnpm lintel addons remove star-ratings
 
 `add` installs the package into `addons/` in the site's Lintel folder (beside `data/`),
 checks it is an add-on that works with this version and switches it on at the next start.
-Use `--off` to leave it off. `add` also prints what the add-on says it keeps and does.
+Use `--off` to leave it off. `add` also prints what the add-on says it keeps and does, and
+warns if its code has something only Postgres can run while it says it runs on MySQL too.
 `remove` uninstalls it; anything it saved stays in the database, in case it comes back.
 To export or delete that data first, use "Removing it" in **Build → Add-ons**. Restart
 Lintel after either.

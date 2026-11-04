@@ -3,7 +3,9 @@
 //
 // The databases live in throwaway containers holding their data in memory, so there are no
 // volumes to clean up, and the containers are removed at the end, pass or fail.
-// LINTEL_TEST_MYSQL_PORT and LINTEL_TEST_MARIADB_PORT change the ports.
+// LINTEL_TEST_MYSQL_PORT and LINTEL_TEST_MARIADB_PORT change the ports,
+// LINTEL_TEST_MYSQL_IMAGE and LINTEL_TEST_MARIADB_IMAGE the versions, and
+// LINTEL_TEST_CONTAINER_PREFIX the start of the containers' names.
 // Arguments go to vitest: `pnpm test:dialects src/settings`.
 import { execFileSync, spawnSync } from "node:child_process";
 import { createConnection } from "mysql2/promise";
@@ -11,20 +13,21 @@ import { createConnection } from "mysql2/promise";
 const PASSWORD = "lintel-test";
 const DATABASE = "lintel_test";
 const WAIT_FOR_START_SECONDS = 120;
+const prefix = process.env.LINTEL_TEST_CONTAINER_PREFIX ?? "lintel-dialect-test";
 
 const servers = [
   {
     urlVariable: "TEST_MYSQL_URL",
-    container: "lintel-dialect-test-mysql",
-    image: "mysql:8.4",
+    container: `${prefix}-mysql`,
+    image: process.env.LINTEL_TEST_MYSQL_IMAGE ?? "mysql:8.4",
     port: process.env.LINTEL_TEST_MYSQL_PORT ?? "34084",
     environmentPrefix: "MYSQL",
     collation: "utf8mb4_0900_bin",
   },
   {
     urlVariable: "TEST_MARIADB_URL",
-    container: "lintel-dialect-test-mariadb",
-    image: "mariadb:11.4",
+    container: `${prefix}-mariadb`,
+    image: process.env.LINTEL_TEST_MARIADB_IMAGE ?? "mariadb:11.4",
     port: process.env.LINTEL_TEST_MARIADB_PORT ?? "34114",
     environmentPrefix: "MARIADB",
     collation: "utf8mb4_nopad_bin",

@@ -87,3 +87,10 @@ pnpm --filter @lintel/addon-newsletter db:generate --name <what_changed>
 | `src/admin/NewsletterPage.tsx`        | The Newsletter screen                                    |
 | `src/admin/newsletter.api.ts`         | Calls to the add-on's endpoints                          |
 | `src/admin/strings.ts`                | Its words                                                |
+
+## Databases
+
+It runs on the built-in database, Postgres, MySQL and MariaDB. After changing a table, run
+`pnpm db:generate --name <what_changed>` and then `pnpm db:generate:mysql --name <what_changed>`.
+Its queries get their tables through `tableFor`, and `lintel addons check` reads them for
+anything only Postgres has. `pnpm test:addons` in `packages/core` runs its tests on real servers.

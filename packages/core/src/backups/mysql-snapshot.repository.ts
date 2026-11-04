@@ -2,7 +2,7 @@ import { eq, getTableColumns, getTableName, sql } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
 import type { DatabaseOrTransaction } from "../database/client.js";
 import { mysqlTableFor } from "../database/dialect/mysql-tables.js";
-import { type RawRow, readRawRows } from "../database/dialect/raw-queries.js";
+import { type RawRow, currentSchema, readRawRows } from "../database/dialect/raw-queries.js";
 import { referencingTableNames } from "./table-order.js";
 
 /**
@@ -31,13 +31,64 @@ function columnsByName(table: PgTable) {
   );
 }
 
+type NamedColumnKind = "bytes" | "boolean" | "json" | "time" | "other";
+
+/**
+ * What each column of an add-on's table holds. Only its name is known here, so this asks the
+ * database. MariaDB's json is longtext with the collation it gives JSON, which isn't the one
+ * Lintel's text columns use.
+ */
+async function columnKindsOf(
+  database: DatabaseOrTransaction,
+  table: string,
+): Promise<Map<string, NamedColumnKind>> {
+  const rows = await readRawRows(
+    database,
+    sql`select column_name as name, data_type as type, column_type as full_type,
+               collation_name as collation
+        from information_schema.columns
+        where table_schema = ${currentSchema(database)} and table_name = ${table}`,
+  );
+  const kindOf = ({ type, full_type: fullType, collation }: RawRow): NamedColumnKind => {
+    if (/blob|binary/i.test(String(type))) return "bytes";
+    if (String(fullType).toLowerCase() === "tinyint(1)") return "boolean";
+    if (/^(datetime|timestamp)$/i.test(String(type))) return "time";
+    const isJson = String(type).toLowerCase() === "json";
+    return isJson || (/longtext/i.test(String(type)) && collation === "utf8mb4_bin")
+      ? "json"
+      : "other";
+  };
+  return new Map(rows.map((row) => [String(row.name), kindOf(row)]));
+}
+
+/** Rows as `row_to_json` writes them: bytes as `\\x` and hex, as bytea's text form is. */
+function archiveNamedValue(kind: NamedColumnKind | undefined, value: unknown): unknown {
+  if (value === null || value === undefined) return value;
+  if (value instanceof Uint8Array) return `\\x${Buffer.from(value).toString("hex")}`;
+  if (kind === "boolean") return Boolean(value);
+  // Drizzle's driver hands raw times over as text, and they're always UTC.
+  if (kind === "time" && typeof value === "string") {
+    return new Date(`${value.replace(" ", "T")}Z`).toISOString();
+  }
+  if (kind === "json" && typeof value === "string") return JSON.parse(value) as unknown;
+  return archiveValue(value);
+}
+
+async function readAllNamedRows(database: DatabaseOrTransaction, table: string): Promise<RawRow[]> {
+  const kinds = await columnKindsOf(database, table);
+  const rows = await readRawRows(database, sql`select * from ${sql.identifier(table)}`);
+  return rows.map((row) =>
+    Object.fromEntries(
+      Object.entries(row).map(([name, value]) => [name, archiveNamedValue(kinds.get(name), value)]),
+    ),
+  );
+}
+
 export async function readAllMysqlRows(
   database: DatabaseOrTransaction,
   table: SnapshotTable,
 ): Promise<RawRow[]> {
-  if (typeof table === "string") {
-    return readRawRows(database, sql`select * from ${sql.identifier(table)}`);
-  }
+  if (typeof table === "string") return readAllNamedRows(database, table);
   const columns = [...columnsByName(table)];
   const rows = await database.select().from(mysqlTableFor(table));
   return rows.map((row) =>
@@ -61,6 +112,13 @@ export async function emptyMysqlTables(
   }
 }
 
+/** Bytes as a backup holds them: `\\x` and hex. */
+function bytesFromArchive(value: unknown): unknown {
+  return typeof value === "string" && value.startsWith("\\x")
+    ? Buffer.from(value.slice(2), "hex")
+    : value;
+}
+
 /** A value from a backup, as a column of this kind wants it. */
 function columnValue(column: { dataType: string; columnType: string }, value: unknown): unknown {
   if (value === null || value === undefined) return value;
@@ -76,16 +134,15 @@ function chunksOf<T>(items: readonly T[]): T[][] {
 }
 
 /** A value for a raw insert: mysql2 can't take a list or an object as one value. */
-function rawValue(value: unknown): unknown {
-  if (typeof value === "object" && value !== null) return JSON.stringify(value);
+function rawValue(kind: NamedColumnKind | undefined, value: unknown): unknown {
+  if (value === null || value === undefined) return null;
+  if (kind === "bytes") return bytesFromArchive(value);
   // MySQL's datetime has no zone, and a raw value doesn't go through a column.
-  if (typeof value === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d/.test(value)) {
-    const moment = new Date(value);
-    if (!Number.isNaN(moment.getTime())) {
-      return moment.toISOString().replace("T", " ").replace("Z", "");
-    }
+  if (kind === "time") {
+    return new Date(String(value)).toISOString().replace("T", " ").replace("Z", "");
   }
-  return value;
+  if (kind === "json") return JSON.stringify(value);
+  return typeof value === "object" ? JSON.stringify(value) : value;
 }
 
 async function insertNamedTableRows(
@@ -94,6 +151,7 @@ async function insertNamedTableRows(
   rows: readonly RawRow[],
   names: readonly string[],
 ): Promise<void> {
+  const kinds = await columnKindsOf(database, table);
   const columnList = sql.join(
     names.map((name) => sql.identifier(name)),
     sql`, `,
@@ -102,7 +160,7 @@ async function insertNamedTableRows(
     const values = chunk.map(
       (row) =>
         sql`(${sql.join(
-          names.map((name) => sql`${rawValue(row[name] ?? null)}`),
+          names.map((name) => sql`${rawValue(kinds.get(name), row[name])}`),
           sql`, `,
         )})`,
     );

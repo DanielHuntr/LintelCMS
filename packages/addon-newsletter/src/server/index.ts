@@ -35,6 +35,7 @@ export function createNewsletterAddon(options: NewsletterAddonOptions = {}) {
     database: {
       tables: [newsletterConnectionTable],
       migrationsFolder: join(packageFolder(import.meta.url), "migrations"),
+      mysqlMigrationsFolder: join(packageFolder(import.meta.url), "migrations-mysql"),
     },
 
     routes: newsletterRoutes({ fetch: fetcher, signUpsPerMinute: options.signUpsPerMinute ?? 10 }),

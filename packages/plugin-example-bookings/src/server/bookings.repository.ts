@@ -1,14 +1,30 @@
 import { and, asc, eq, gte, inArray, lt, or, sql } from "drizzle-orm";
-import type { DatabaseOrTransaction, PersonLookup } from "@lintel/core/plugin";
-import { type BookingRow, bookingsTable, type NewBookingRow } from "./bookings.table.js";
+import {
+  type DatabaseOrTransaction,
+  deleteReturning,
+  insertReturning,
+  type PersonLookup,
+  tableFor,
+  updateReturning,
+} from "@lintel/core/plugin";
+import {
+  type BookingRow,
+  bookingsTable as bookingsDefinition,
+  type NewBookingRow,
+} from "./bookings.table.js";
 
-/** Database reads and writes for bookings, nothing else. */
+/**
+ * Database reads and writes for bookings, nothing else. Each function gets the table through
+ * `tableFor`, and writes through helpers such as `insertReturning`, so the same code runs on
+ * Postgres, MySQL and MariaDB.
+ */
 
 export async function listBookingRows(
   database: DatabaseOrTransaction,
   tenantId: string,
   span: { from?: Date; to?: Date },
 ): Promise<BookingRow[]> {
+  const bookingsTable = tableFor(database, bookingsDefinition);
   return database
     .select()
     .from(bookingsTable)
@@ -27,6 +43,7 @@ export async function findBookingRow(
   tenantId: string,
   bookingId: string,
 ): Promise<BookingRow | undefined> {
+  const bookingsTable = tableFor(database, bookingsDefinition);
   const [row] = await database
     .select()
     .from(bookingsTable)
@@ -39,7 +56,8 @@ export async function insertBookingRow(
   database: DatabaseOrTransaction,
   booking: NewBookingRow,
 ): Promise<BookingRow> {
-  const [inserted] = await database.insert(bookingsTable).values(booking).returning();
+  const bookingsTable = tableFor(database, bookingsDefinition);
+  const [inserted] = await insertReturning(database, bookingsTable, booking);
   if (!inserted) {
     throw new Error("The database did not return the new booking.");
   }
@@ -52,11 +70,13 @@ export async function updateBookingRow(
   bookingId: string,
   changes: Partial<NewBookingRow>,
 ): Promise<BookingRow | undefined> {
-  const [updated] = await database
-    .update(bookingsTable)
-    .set(changes)
-    .where(and(eq(bookingsTable.tenantId, tenantId), eq(bookingsTable.id, bookingId)))
-    .returning();
+  const bookingsTable = tableFor(database, bookingsDefinition);
+  const [updated] = await updateReturning(
+    database,
+    bookingsTable,
+    changes,
+    and(eq(bookingsTable.tenantId, tenantId), eq(bookingsTable.id, bookingId)),
+  );
   return updated;
 }
 
@@ -65,10 +85,13 @@ export async function deleteBookingRow(
   tenantId: string,
   bookingId: string,
 ): Promise<boolean> {
-  const deleted = await database
-    .delete(bookingsTable)
-    .where(and(eq(bookingsTable.tenantId, tenantId), eq(bookingsTable.id, bookingId)))
-    .returning({ id: bookingsTable.id });
+  const bookingsTable = tableFor(database, bookingsDefinition);
+  const deleted = await deleteReturning(
+    database,
+    bookingsTable,
+    and(eq(bookingsTable.tenantId, tenantId), eq(bookingsTable.id, bookingId)),
+    { id: bookingsTable.id },
+  );
   return deleted.length > 0;
 }
 
@@ -78,6 +101,7 @@ export async function listBookingRowsForPerson(
   tenantId: string,
   person: PersonLookup,
 ): Promise<BookingRow[]> {
+  const bookingsTable = tableFor(database, bookingsDefinition);
   const matches = [
     person.email
       ? sql`lower(${bookingsTable.customerEmail}) = ${person.email.toLowerCase()}`
@@ -97,10 +121,13 @@ export async function deleteBookingRows(
   database: DatabaseOrTransaction,
   bookingIds: readonly string[],
 ): Promise<number> {
+  const bookingsTable = tableFor(database, bookingsDefinition);
   if (bookingIds.length === 0) return 0;
-  const deleted = await database
-    .delete(bookingsTable)
-    .where(inArray(bookingsTable.id, [...bookingIds]))
-    .returning({ id: bookingsTable.id });
+  const deleted = await deleteReturning(
+    database,
+    bookingsTable,
+    inArray(bookingsTable.id, [...bookingIds]),
+    { id: bookingsTable.id },
+  );
   return deleted.length;
 }

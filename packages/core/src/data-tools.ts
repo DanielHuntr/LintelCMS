@@ -24,6 +24,8 @@ export {
 export { isVersionInRange } from "./addons/version-range.js";
 export { describeAddonForReview } from "./addons/addon-review.js";
 export { loadSiteAddons } from "./addons/site-addons.js";
+export { loadAddonInFolder } from "./addons/load-addons.js";
+export { findMysqlMigrationGaps } from "./addons/addon-mysql-migrations.js";
 export { listAddonTableNames } from "./addons/addon-tables.js";
 export { loadInstalledPlugins } from "./plugins/installed-plugins.js";
 export {

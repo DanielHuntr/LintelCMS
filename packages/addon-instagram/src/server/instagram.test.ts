@@ -1,4 +1,5 @@
 import { type PluginTestServer, startPluginTestServer } from "@lintel/core/plugin-testing";
+import { tableFor } from "@lintel/core/plugin";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { FetchFunction } from "./instagram-api.js";
 import { createInstagramAddon } from "./index.js";
@@ -277,7 +278,9 @@ describe("the Instagram add-on", () => {
     const tomorrow = new Date(Date.now() + 25 * 60 * 60 * 1000);
     expect(await refreshTokenIfDue(lintel.database, client, tomorrow)).toBe(true);
 
-    const [account] = await lintel.database.select().from(instagramAccountTable);
+    const [account] = await lintel.database
+      .select()
+      .from(tableFor(lintel.database, instagramAccountTable));
     expect(account?.accessToken).toBe(instagram.refreshedToken);
     expect(account?.tokenRefreshedAt.toISOString()).toBe(tomorrow.toISOString());
   });
@@ -287,7 +290,9 @@ describe("the Instagram add-on", () => {
 
     expect((await asOwner({ method: "DELETE", url: "/instagram/account" })).statusCode).toBe(204);
     expect((await asOwner({ method: "GET", url: "/instagram/posts" })).json().posts).toEqual([]);
-    expect(await lintel.database.select().from(instagramAccountTable)).toEqual([]);
+    expect(
+      await lintel.database.select().from(tableFor(lintel.database, instagramAccountTable)),
+    ).toEqual([]);
   });
 
   it("lets only people who can change settings connect an account", async () => {
