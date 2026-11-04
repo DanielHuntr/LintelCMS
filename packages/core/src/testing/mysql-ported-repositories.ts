@@ -55,4 +55,6 @@ export const mysqlPortedRepositories = [
   "publishing/publishing.repository.ts",
   "navigation/navigation.repository.ts",
   "client-editing/client-reviews.repository.ts",
+  "privacy/privacy.repository.ts",
+  "site-design/site-design.repository.ts",
 ];

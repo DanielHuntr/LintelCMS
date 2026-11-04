@@ -156,10 +156,6 @@
   "privacy/privacy-test-server.ts": {
     "returning": 1
   },
-  "privacy/privacy.repository.ts": {
-    "ilike": 1,
-    "returning": 1
-  },
   "privacy/retention.repository.ts": {
     "json field access": 1
   },
@@ -181,9 +177,6 @@
   "setup/setup.repository.ts": {
     "advisory lock": 1,
     "postgres function": 1
-  },
-  "site-design/site-design.repository.ts": {
-    "cast with ::": 2
   },
   "wordpress-import/wordpress-import.repository.ts": {
     "cast with ::": 1,
