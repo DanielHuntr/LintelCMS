@@ -1,3 +1,4 @@
+import type { Transaction } from "../../database/client.js";
 import type { ShopContext } from "../commerce.context.js";
 import { announceOrderPaid } from "../emails/order-notifications.js";
 import type { PlacementResult } from "../orders/order-placement.service.js";
@@ -11,6 +12,25 @@ import { createStripeTaxTransaction } from "./stripe-api.js";
  * PayPal and Mollie webhooks, Lintel's own checks with them, and the test checkout.
  */
 export type AfterCommit = () => Promise<void>;
+
+/**
+ * A transaction, then the follow-ups it asked for. MySQL can undo a transaction to break a
+ * deadlock and `work` then runs again, so only the attempt that committed counts: otherwise a
+ * customer would get two emails, the second about an order id that was undone.
+ */
+export async function transactionThenFollowUps<Result>(
+  shop: ShopContext,
+  label: string,
+  work: (transaction: Transaction, afterCommit: AfterCommit[]) => Promise<Result>,
+): Promise<Result> {
+  let afterCommit: AfterCommit[] = [];
+  const result = await shop.database.transaction((transaction) => {
+    afterCommit = [];
+    return work(transaction, afterCommit);
+  });
+  await runAfterCommit(shop, afterCommit, label);
+  return result;
+}
 
 export async function runAfterCommit(
   shop: ShopContext,

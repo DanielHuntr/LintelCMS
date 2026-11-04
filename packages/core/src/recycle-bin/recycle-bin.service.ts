@@ -249,6 +249,8 @@ export async function restoreFromRecycleBin(
   const liveEntryIds: string[] = [];
 
   await database.transaction(async (transaction) => {
+    // MySQL may run this again after a deadlock, and the first try's list was undone.
+    liveEntryIds.length = 0;
     // Stored parents first: the branch was saved in that order.
     for (const entry of entries) {
       const isTop = entry.id === item.entryId;

@@ -68,14 +68,22 @@ export async function runSiteImport(
       const batch = await listPendingItems(options.database, row.id, BATCH_SIZE);
       if (batch.length === 0) break;
       for (const item of batch) {
-        await options.database.transaction(async (transaction) => {
-          const result = await processItem(
-            { ...context, database: transaction, assetExists: assetExistsIn(transaction) },
-            item,
-          );
-          await finishItem(transaction, item.id, result);
+        if (item.kind === "media") {
+          // A download and a stored file can't be undone, and a transaction can run twice, so
+          // this isn't in one. If it stops half way, the same file gives the same asset.
+          const result = await processItem(context, item);
+          await finishItem(options.database, item.id, result);
           rememberTarget(context.targets, item, result);
-        });
+        } else {
+          await options.database.transaction(async (transaction) => {
+            const result = await processItem(
+              { ...context, database: transaction, assetExists: assetExistsIn(transaction) },
+              item,
+            );
+            await finishItem(transaction, item.id, result);
+            rememberTarget(context.targets, item, result);
+          });
+        }
         await updateImport(options.database, row.id, {
           progress: {
             done: await countFinishedItems(options.database, row.id),

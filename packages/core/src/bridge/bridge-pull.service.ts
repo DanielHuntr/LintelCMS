@@ -4,9 +4,8 @@ import { DEFAULT_TENANT_ID } from "../database/columns.js";
 import { insertCheckout } from "../commerce/checkouts/checkouts.repository.js";
 import { placeOrderForPayment } from "../commerce/orders/order-placement.service.js";
 import {
-  type AfterCommit,
   followUpPlacement,
-  runAfterCommit,
+  transactionThenFollowUps,
 } from "../commerce/payments/payment-follow-up.js";
 import { recordConsents } from "../forms/consent-records.js";
 import { announceFormSubmitted } from "../forms/form-submitted.js";
@@ -244,51 +243,56 @@ async function importOrder(
   targetId: string,
   order: z.infer<typeof orderSchema>,
 ): Promise<boolean> {
-  const afterCommit: AfterCommit[] = [];
-  const imported = await api.database.transaction(async (transaction) => {
-    if (
-      !(await recordReceipt(transaction, { targetId, itemId: `order:${order.id}`, kind: "order" }))
-    ) {
-      return false;
-    }
-    const checkout = await insertCheckout(transaction, {
-      tenantId: DEFAULT_TENANT_ID,
-      cartId: null,
-      marketId: order.marketId,
-      email: order.email,
-      shippingAddress: order.shippingAddress,
-      currency: order.currency,
-      lines: order.lines.map((line) => ({ ...line, imageId: line.imageId ?? null })),
-      shippingLine: order.shippingLine,
-      discounts: order.discounts,
-      subtotalAmount: order.subtotalAmount,
-      discountAmount: order.discountAmount,
-      shippingAmount: order.shippingAmount,
-      taxAmount: order.taxAmount,
-      totalAmount: order.totalAmount,
-      taxesIncluded: order.taxesIncluded,
-      taxCalculation: "manual",
-      paymentProvider: order.provider,
-      providerPaymentId: order.provider === "mollie" ? order.providerPaymentId : null,
-      stripePaymentIntentId: order.provider === "stripe" ? order.providerPaymentId : null,
-      expiresAt: new Date(order.paidAt),
-    });
-    const placed = await placeOrderForPayment(
-      transaction,
-      checkout.id,
-      {
-        provider: order.provider,
-        paymentIntentId: order.provider === "stripe" ? order.providerPaymentId : null,
-        providerPaymentId: order.providerPaymentId,
-        isTest: order.livemode === false,
-        amount: order.paidAmount,
-        currency: order.paidCurrency,
-      },
-      new Date(order.paidAt),
-    );
-    followUpPlacement(api.shop, placed, afterCommit);
-    return true;
-  });
-  await runAfterCommit(api.shop, afterCommit, `the website's order ${order.id}`);
-  return imported;
+  return transactionThenFollowUps(
+    api.shop,
+    `the website's order ${order.id}`,
+    async (transaction, afterCommit) => {
+      if (
+        !(await recordReceipt(transaction, {
+          targetId,
+          itemId: `order:${order.id}`,
+          kind: "order",
+        }))
+      ) {
+        return false;
+      }
+      const checkout = await insertCheckout(transaction, {
+        tenantId: DEFAULT_TENANT_ID,
+        cartId: null,
+        marketId: order.marketId,
+        email: order.email,
+        shippingAddress: order.shippingAddress,
+        currency: order.currency,
+        lines: order.lines.map((line) => ({ ...line, imageId: line.imageId ?? null })),
+        shippingLine: order.shippingLine,
+        discounts: order.discounts,
+        subtotalAmount: order.subtotalAmount,
+        discountAmount: order.discountAmount,
+        shippingAmount: order.shippingAmount,
+        taxAmount: order.taxAmount,
+        totalAmount: order.totalAmount,
+        taxesIncluded: order.taxesIncluded,
+        taxCalculation: "manual",
+        paymentProvider: order.provider,
+        providerPaymentId: order.provider === "mollie" ? order.providerPaymentId : null,
+        stripePaymentIntentId: order.provider === "stripe" ? order.providerPaymentId : null,
+        expiresAt: new Date(order.paidAt),
+      });
+      const placed = await placeOrderForPayment(
+        transaction,
+        checkout.id,
+        {
+          provider: order.provider,
+          paymentIntentId: order.provider === "stripe" ? order.providerPaymentId : null,
+          providerPaymentId: order.providerPaymentId,
+          isTest: order.livemode === false,
+          amount: order.paidAmount,
+          currency: order.paidCurrency,
+        },
+        new Date(order.paidAt),
+      );
+      followUpPlacement(api.shop, placed, afterCommit);
+      return true;
+    },
+  );
 }

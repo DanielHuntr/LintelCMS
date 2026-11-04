@@ -6,11 +6,7 @@ import type { ShopContext } from "../commerce.context.js";
 import { placeOrderForPayment } from "../orders/order-placement.service.js";
 import { findOrderRow } from "../orders/orders.repository.js";
 import type { OrderRow } from "../orders/orders.table.js";
-import {
-  type AfterCommit,
-  followUpPlacement,
-  runAfterCommit,
-} from "../payments/payment-follow-up.js";
+import { followUpPlacement, transactionThenFollowUps } from "../payments/payment-follow-up.js";
 
 /**
  * What the test payment page does. Paying goes through `placeOrderForPayment` and the same
@@ -36,9 +32,10 @@ export async function finishTestPayment(
   checkoutId: string,
   outcome: TestPaymentOutcome,
 ): Promise<TestPaymentOutcome | "gone"> {
-  const afterCommit: AfterCommit[] = [];
-  const finished = await shop.database.transaction(
-    async (transaction): Promise<TestPaymentOutcome | "gone"> => {
+  return transactionThenFollowUps(
+    shop,
+    `test checkout ${checkoutId}`,
+    async (transaction, afterCommit): Promise<TestPaymentOutcome | "gone"> => {
       const checkout = await lockCheckoutRow(transaction, DEFAULT_TENANT_ID, checkoutId);
       if (checkout?.paymentProvider !== "test") return "gone";
       if (checkout.status === "completed") return "paid";
@@ -63,8 +60,6 @@ export async function finishTestPayment(
       return "paid";
     },
   );
-  await runAfterCommit(shop, afterCommit, `test checkout ${checkoutId}`);
-  return finished;
 }
 
 /** The order a test checkout became, for the banner on the confirmation page. */

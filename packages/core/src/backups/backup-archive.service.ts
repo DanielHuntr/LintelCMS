@@ -105,7 +105,8 @@ export async function writeBackupArchive(
 
 /**
  * Reads every table in one read-only snapshot, so a page saved half way through a backup
- * is either wholly in it or not at all.
+ * is either wholly in it or not at all. It takes no locks, so it can't be undone to break a
+ * deadlock, which is why it can write to the archive as it goes.
  */
 async function addDatabase(
   database: Database,

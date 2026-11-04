@@ -6,7 +6,7 @@ import type { ShopContext } from "../../commerce.context.js";
 import { PaymentProviderError } from "../../commerce.errors.js";
 import { placeOrderForPayment } from "../../orders/order-placement.service.js";
 import { announceIfRefunded, settleProviderRefund } from "../../orders/refunds.service.js";
-import { type AfterCommit, followUpPlacement, runAfterCommit } from "../payment-follow-up.js";
+import { followUpPlacement, transactionThenFollowUps } from "../payment-follow-up.js";
 import { ProviderRequestError } from "../payment-provider.js";
 import { fromDecimalAmount } from "../provider-amounts.js";
 import {
@@ -67,37 +67,39 @@ export async function handleMollieWebhook(
   }
 
   const refunds = payment.status === "paid" ? await listMollieRefunds(client, payment.id) : [];
-  const afterCommit: AfterCommit[] = [];
-  await shop.database.transaction(async (transaction) => {
-    if (payment.status === "paid") {
-      const currency = payment.amount.currency.toUpperCase();
-      const result = await placeOrderForPayment(
-        transaction,
-        checkoutId,
-        {
-          provider: "mollie",
-          isTest: payment.mode === "test",
-          paymentIntentId: null,
-          providerPaymentId: payment.id,
-          amount: fromDecimalAmount(payment.amount.value, currency) ?? -1,
-          currency,
-        },
-        shop.now(),
-      );
-      followUpPlacement(shop, result, afterCommit);
-      for (const refund of refunds) {
-        const outcome = await settleProviderRefund(
+  await transactionThenFollowUps(
+    shop,
+    `Mollie payment ${payment.id}`,
+    async (transaction, afterCommit) => {
+      if (payment.status === "paid") {
+        const currency = payment.amount.currency.toUpperCase();
+        const result = await placeOrderForPayment(
           transaction,
-          refund.id,
-          mollieRefundStatus(refund.status),
+          checkoutId,
+          {
+            provider: "mollie",
+            isTest: payment.mode === "test",
+            paymentIntentId: null,
+            providerPaymentId: payment.id,
+            amount: fromDecimalAmount(payment.amount.value, currency) ?? -1,
+            currency,
+          },
+          shop.now(),
         );
-        afterCommit.push(() => announceIfRefunded(shop, outcome));
+        followUpPlacement(shop, result, afterCommit);
+        for (const refund of refunds) {
+          const outcome = await settleProviderRefund(
+            transaction,
+            refund.id,
+            mollieRefundStatus(refund.status),
+          );
+          afterCommit.push(() => announceIfRefunded(shop, outcome));
+        }
+      } else if (["expired", "canceled", "failed"].includes(payment.status)) {
+        await abandonCheckout(transaction, checkoutId);
       }
-    } else if (["expired", "canceled", "failed"].includes(payment.status)) {
-      await abandonCheckout(transaction, checkoutId);
-    }
-  });
-  await runAfterCommit(shop, afterCommit, `Mollie payment ${payment.id}`);
+    },
+  );
   return { received: true };
 }
 

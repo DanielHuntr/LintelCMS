@@ -71,8 +71,9 @@ export async function runWordPressImport(
         break;
       }
       for (const item of batch) {
-        if (item.kind === "product") {
-          // Saving a product opens its own transaction, so it isn't wrapped in one.
+        if (["product", "attachment", "image"].includes(item.kind)) {
+          // Saving a product opens its own transaction, so it isn't wrapped in one. Nor is a
+          // download and a stored file: they can't be undone, and a transaction can run twice.
           const result = await processItem(context, item);
           await finishItem(options.database, item.id, result);
           rememberTarget(context.targets, item, result.targetId, result.status);

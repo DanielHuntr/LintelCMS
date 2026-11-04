@@ -9,7 +9,7 @@ import { PaymentProviderError, ShopNotReadyError } from "../../commerce.errors.j
 import { placeOrderForPayment } from "../../orders/order-placement.service.js";
 import { announceIfRefunded, settleProviderRefund } from "../../orders/refunds.service.js";
 import { recordPaymentEventIfNew } from "../payment-accounts.repository.js";
-import { type AfterCommit, followUpPlacement, runAfterCommit } from "../payment-follow-up.js";
+import { followUpPlacement, transactionThenFollowUps } from "../payment-follow-up.js";
 import { ProviderRequestError } from "../payment-provider.js";
 import { fromDecimalAmount } from "../provider-amounts.js";
 import {
@@ -83,58 +83,60 @@ export async function handlePayPalWebhook(
     return { received: true, duplicate: false };
   }
 
-  const afterCommit: AfterCommit[] = [];
-  const isNew = await shop.database.transaction(async (transaction) => {
-    if (
-      !(await recordPaymentEventIfNew(transaction, {
-        provider: "paypal",
-        eventId: event.id,
-        type: event.event_type,
-      }))
-    ) {
-      return false;
-    }
-    switch (event.event_type) {
-      case "PAYMENT.CAPTURE.COMPLETED": {
-        const capture = payPalCaptureResourceSchema.parse(event.resource);
-        if (!capture.custom_id) return true;
-        const currency = capture.amount.currency_code.toUpperCase();
-        const result = await placeOrderForPayment(
-          transaction,
-          capture.custom_id,
-          {
-            provider: "paypal",
-            isTest: credentials.environment === "sandbox",
-            paymentIntentId: null,
-            providerPaymentId: capture.id,
-            amount: fromDecimalAmount(capture.amount.value, currency) ?? -1,
-            currency,
-          },
-          shop.now(),
-        );
-        followUpPlacement(shop, result, afterCommit);
-        return true;
+  const isNew = await transactionThenFollowUps(
+    shop,
+    `PayPal event ${event.id}`,
+    async (transaction, afterCommit) => {
+      if (
+        !(await recordPaymentEventIfNew(transaction, {
+          provider: "paypal",
+          eventId: event.id,
+          type: event.event_type,
+        }))
+      ) {
+        return false;
       }
-      case "PAYMENT.CAPTURE.DENIED": {
-        const capture = payPalCaptureResourceSchema.parse(event.resource);
-        if (capture.custom_id) await abandonCheckout(transaction, capture.custom_id);
-        return true;
+      switch (event.event_type) {
+        case "PAYMENT.CAPTURE.COMPLETED": {
+          const capture = payPalCaptureResourceSchema.parse(event.resource);
+          if (!capture.custom_id) return true;
+          const currency = capture.amount.currency_code.toUpperCase();
+          const result = await placeOrderForPayment(
+            transaction,
+            capture.custom_id,
+            {
+              provider: "paypal",
+              isTest: credentials.environment === "sandbox",
+              paymentIntentId: null,
+              providerPaymentId: capture.id,
+              amount: fromDecimalAmount(capture.amount.value, currency) ?? -1,
+              currency,
+            },
+            shop.now(),
+          );
+          followUpPlacement(shop, result, afterCommit);
+          return true;
+        }
+        case "PAYMENT.CAPTURE.DENIED": {
+          const capture = payPalCaptureResourceSchema.parse(event.resource);
+          if (capture.custom_id) await abandonCheckout(transaction, capture.custom_id);
+          return true;
+        }
+        case "PAYMENT.CAPTURE.REFUNDED": {
+          const refund = payPalRefundResourceSchema.parse(event.resource);
+          const outcome = await settleProviderRefund(
+            transaction,
+            refund.id,
+            payPalRefundStatus(refund.status),
+          );
+          afterCommit.push(() => announceIfRefunded(shop, outcome));
+          return true;
+        }
+        default:
+          return true;
       }
-      case "PAYMENT.CAPTURE.REFUNDED": {
-        const refund = payPalRefundResourceSchema.parse(event.resource);
-        const outcome = await settleProviderRefund(
-          transaction,
-          refund.id,
-          payPalRefundStatus(refund.status),
-        );
-        afterCommit.push(() => announceIfRefunded(shop, outcome));
-        return true;
-      }
-      default:
-        return true;
-    }
-  });
-  await runAfterCommit(shop, afterCommit, `PayPal event ${event.id}`);
+    },
+  );
   return { received: true, duplicate: !isNew };
 }
 
@@ -159,29 +161,31 @@ export async function confirmPayPalCheckout(
   const capture = order.purchase_units?.[0]?.payments?.captures?.[0];
   if (!capture) return;
 
-  const afterCommit: AfterCommit[] = [];
-  await shop.database.transaction(async (transaction) => {
-    if (capture.status === "COMPLETED") {
-      const currency = (capture.amount?.currency_code ?? "").toUpperCase();
-      const result = await placeOrderForPayment(
-        transaction,
-        checkout.id,
-        {
-          provider: "paypal",
-          isTest: credentials.environment === "sandbox",
-          paymentIntentId: null,
-          providerPaymentId: capture.id,
-          amount: capture.amount ? (fromDecimalAmount(capture.amount.value, currency) ?? -1) : -1,
-          currency,
-        },
-        shop.now(),
-      );
-      followUpPlacement(shop, result, afterCommit);
-    } else if (capture.status === "DECLINED" || capture.status === "FAILED") {
-      await abandonCheckout(transaction, checkout.id);
-    }
-  });
-  await runAfterCommit(shop, afterCommit, `PayPal order ${orderId}`);
+  await transactionThenFollowUps(
+    shop,
+    `PayPal order ${orderId}`,
+    async (transaction, afterCommit) => {
+      if (capture.status === "COMPLETED") {
+        const currency = (capture.amount?.currency_code ?? "").toUpperCase();
+        const result = await placeOrderForPayment(
+          transaction,
+          checkout.id,
+          {
+            provider: "paypal",
+            isTest: credentials.environment === "sandbox",
+            paymentIntentId: null,
+            providerPaymentId: capture.id,
+            amount: capture.amount ? (fromDecimalAmount(capture.amount.value, currency) ?? -1) : -1,
+            currency,
+          },
+          shop.now(),
+        );
+        followUpPlacement(shop, result, afterCommit);
+      } else if (capture.status === "DECLINED" || capture.status === "FAILED") {
+        await abandonCheckout(transaction, checkout.id);
+      }
+    },
+  );
 }
 
 /** Brings refunds PayPal hadn't finished up to date, as its webhook would. */

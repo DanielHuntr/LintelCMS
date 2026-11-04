@@ -8,7 +8,11 @@ import { ShopNotReadyError } from "../commerce.errors.js";
 import { placeOrderForPayment } from "../orders/order-placement.service.js";
 import { announceIfRefunded, recordStripeRefund } from "../orders/refunds.service.js";
 import { updateShopSettingsRow } from "../settings/shop-settings.repository.js";
-import { type AfterCommit, followUpPlacement, runAfterCommit } from "./payment-follow-up.js";
+import {
+  type AfterCommit,
+  followUpPlacement,
+  transactionThenFollowUps,
+} from "./payment-follow-up.js";
 import {
   retrieveStripeCheckoutSession,
   retrieveStripePaymentIntent,
@@ -80,16 +84,17 @@ export async function applyStripeEvent(
   shop: ShopContext,
   event: StripeEvent,
 ): Promise<{ received: true; duplicate: boolean }> {
-  const afterCommit: AfterCommit[] = [];
-  const isNew = await shop.database.transaction(async (transaction) => {
-    if (!(await recordStripeEventIfNew(transaction, event))) {
-      return false;
-    }
-    await handleEvent(shop, transaction, event, afterCommit);
-    return true;
-  });
-
-  await runAfterCommit(shop, afterCommit, `Stripe event ${event.id}`);
+  const isNew = await transactionThenFollowUps(
+    shop,
+    `Stripe event ${event.id}`,
+    async (transaction, afterCommit) => {
+      if (!(await recordStripeEventIfNew(transaction, event))) {
+        return false;
+      }
+      await handleEvent(shop, transaction, event, afterCommit);
+      return true;
+    },
+  );
   return { received: true, duplicate: !isNew };
 }
 
@@ -103,20 +108,19 @@ export async function confirmStripeCheckout(
   checkout: CheckoutRow,
 ): Promise<void> {
   const stripe = await shop.stripe();
-  const afterCommit: AfterCommit[] = [];
+  const label = `the Stripe payment for checkout ${checkout.id}`;
   if (checkout.stripeCheckoutSessionId) {
     const session = await retrieveStripeCheckoutSession(stripe, checkout.stripeCheckoutSessionId);
-    await shop.database.transaction((transaction) =>
+    await transactionThenFollowUps(shop, label, (transaction, afterCommit) =>
       placeForSession(shop, transaction, session, afterCommit),
     );
   } else if (checkout.stripePaymentIntentId) {
     const intent = await retrieveStripePaymentIntent(stripe, checkout.stripePaymentIntentId);
     if (intent.status !== "succeeded") return;
-    await shop.database.transaction((transaction) =>
+    await transactionThenFollowUps(shop, label, (transaction, afterCommit) =>
       placeForIntent(shop, transaction, intent, afterCommit),
     );
   }
-  await runAfterCommit(shop, afterCommit, `the Stripe payment for checkout ${checkout.id}`);
 }
 
 /** Only Stripe saying so makes a payment a test: with nothing said, it's a real sale. */

@@ -100,9 +100,10 @@ Handled here:
 - **JSON arrives as text** and is parsed by the column, because MariaDB's json is longtext.
 
 - **Each statement sees what's committed.** Connections use read committed, as Postgres does.
-- **A transaction MySQL undoes to break a deadlock is tried again,** up to four times. It can
-  run more than once, so do anything that leaves the database, such as sending an email,
-  after it.
+- **A transaction MySQL undoes to break a deadlock is tried again,** up to four times. Its
+  callback can run more than once, so anything that leaves the database, such as an email or a
+  stored file, goes after it, and anything it collects starts empty each time.
+  `transactions-run-twice.test.ts` reads every transaction for both.
 - **Keys in JSON are written in one order,** the one jsonb uses, so values read the same on
   every database. A change made in SQL, such as a renamed field, can leave them out of that
   order on MariaDB, whose json is text, so compare two columns with `jsonDiffers`, not `<>`.
