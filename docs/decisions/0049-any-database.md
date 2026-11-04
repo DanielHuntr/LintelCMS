@@ -622,3 +622,183 @@ example and the Newsletter and Instagram add-ons haven't made the move, so they 
   own concurrency tests.
 - MySQL 8.0, MariaDB 10.x and managed services with their own limits are untested.
 - The Docker image hasn't been built with this change.
+
+## Status update, end of 2026-11-04: closing the known limits
+
+Status: **Lintel runs on MySQL 8.0.16 or newer and MariaDB 10.11 or newer, with Newsletter,
+Instagram and the bookings example.** SQLite and SQL Server are as they were, and the two open
+questions are still open. Everything above stands as it was written. The section "What isn't
+proved" above is replaced by the one at the end of this one.
+
+### Results
+
+The whole core suite, on the last code commit. Each was run in a throwaway Docker container, with
+other work sharing the machine. The numbers come from each run's own report.
+
+| Database          | Command                | Passed | Failed | Skipped |
+| ----------------- | ---------------------- | -----: | -----: | ------: |
+| Built-in (PGlite) | `vitest run`, 3 shards |  2,749 |      0 |      51 |
+| Postgres 17.11    | `vitest run`, 3 shards |  2,758 |      0 |      42 |
+| MySQL 8.4.13      | `pnpm test:mysql`      |  2,761 |      0 |      39 |
+| MariaDB 11.4.13   | `pnpm test:mysql`      |  2,760 |      1 |      39 |
+| MySQL 8.0.46      | `pnpm test:mysql`      |  2,761 |      0 |      39 |
+| MariaDB 10.11.19  | `pnpm test:mysql`      |  2,761 |      0 |      39 |
+
+The one failure on MariaDB 11.4 was a five-second timeout in `starter-sites.test.ts` while five
+other test runs shared the machine. That file passed 27 of 27 alone afterwards, and the whole suite
+passed with none failed one commit earlier. The first run on the older two on this code had nine
+failures, from "Deriving bits failed" and sign-ins answering 500: the machine had run out of memory
+for hashing passwords, with over 100 Node processes on it. With two runs fewer beside it, both
+passed as shown. The built-in and Postgres suites were split three ways by hand so they'd finish
+on a busy machine: run whole, each had passed 30 minutes a third of the way through. `pnpm test:postgres` itself wasn't run.
+
+| Other runs                                        | Result                                                      |
+| ------------------------------------------------- | ----------------------------------------------------------- |
+| `pnpm test:dialects`, MySQL 8.4 and MariaDB 11.4  | 2,002 passed, 1 expected failure, 16 skipped                |
+| The same, MySQL 8.0 and MariaDB 10.11             | 2,002 passed, 1 expected failure, 16 skipped                |
+| `pnpm test:addons`, Postgres 17, 8.4 and 11.4     | Each server: 30 + 13 + 7 tests, then 4 from packed installs |
+| The same, MySQL 8.0 and MariaDB 10.11             | The same, on each                                           |
+| Migrations with `sql_require_primary_key` on, 8.4 | All 91 tables made                                          |
+
+The expected failure is the built-in database's JSON text, under "What isn't proved".
+
+### What changed, and why
+
+- **Add-ons.** Newsletter, Instagram and the bookings example have `migrations-mysql`, get every
+  table through `tableFor` and use the portable writes. `startPluginTestServer` now uses
+  `TEST_DATABASE_URL`, so their own tests run on each server, and a query on a table that skipped
+  `tableFor` fails there. `addons-packed.test.ts` builds each, packs it with npm, installs it with
+  `lintel addons add` and runs it from the installed files. For that, the bookings example gained
+  a `lintel-addon` section. A `bytea` custom column becomes `longblob`, and any other custom type
+  stops with an error.
+- **The promise is checked.** `lintel addons check` reads an add-on's server code with the same
+  rules as core's own check (`postgres-only-rules.ts`), finds tables that skip `tableFor`, and
+  compares its tables with its MySQL migrations. `lintel addons build` stops on the first two, and
+  `lintel addons add` reads the bundle and warns. It warns rather than refuses, as a site on
+  Postgres isn't harmed. The parser is handed in by the caller, so a running server never loads
+  TypeScript. An add-on with no tables is held to it too, as nothing else keeps that one off.
+  Reading can't see a query built as the code runs, so a site on MySQL still takes the author's
+  word for what the check can't read. The add-on's tests on MySQL are the rest of it.
+- **The scaffold** has no table, so it runs anywhere, and comes ready for one: both drizzle-kit
+  configs, `mysql-schema.cjs`, the scripts, `migrations-mysql` in `files`, and a README section.
+  We didn't add an example table, as its migrations would have to be written out in the template.
+- **Search matches the start of words.** `json_search` and `like` can't see where a word starts,
+  and a `regexp` over a whole JSON document can't skip keys without running into the server's
+  regexp limits on a long page. So the database finds every candidate, and `search/word-starts.ts`
+  decides, row by row, splitting text as Postgres's parser does: "example.com" is one word,
+  "support-port" is three, and "2026-11-04" holds no "11". Rows are read a page at a time until
+  the limit is met, so a search that matches inside many words and starts few reads more rows.
+- **`isPluginRunning`** replaces the separate checks. A plugin that can't run here is left in the
+  `enabledPlugins` setting, so it comes back on a move to Postgres, and nothing of it runs: routes,
+  jobs, event handlers, Liquid tags, form consent, the Add-ons list and Privacy. `GET /auth/me`
+  still lists it, so the admin can show its menu items, and they answer 404.
+- **`jsonDiffers`** compares a page's saved and published values. MariaDB has `json_equals`, and
+  MySQL's json compares by content, and neither has the other's. The two forms sit in executable
+  comments, which each engine keeps or skips, so no code needs to know which engine it's on. Only
+  columns go in, as a bound value can't sit in a comment.
+- **Deadlock retries.** All 74 transactions in core were traced by a script following calls by
+  name, and what it flagged was read by hand. Three could repeat something. Payment follow-ups were the
+  serious one: they were collected in a list outside the transaction, so a retry kept the undone
+  attempt's emails, events and tax records, naming an order that no longer existed. The bin's list
+  of live entries did the same, and imported pictures were downloaded and stored inside their
+  transaction. A backup writes to its archive inside one, and that stays, as a read-only snapshot
+  takes no locks and can't be chosen to break a deadlock. `transactions-run-twice.test.ts` reads
+  each callback's own code. It can't see into the functions a callback calls.
+- **`dashboard_layouts_one_owner` is enforced.** Error 3823 forbids a check on columns with `on
+delete` rules, and allows one on a generated column worked out from them. Migration 0003 is
+  written by hand, adds a virtual `owner_count`, and checks it, on MySQL and MariaDB alike. Drizzle
+  isn't told, so no query reads it, and `db:generate:mysql` sees no change. It mends any row that
+  would break the check first, and a test runs it on a database stopped at 0002 with such rows.
+- **Dialect tests for the last 22 repositories.** Every exported function is now called in a test
+  in its own folder, and `repositoriesRunByTheWholeSuite` is empty, so all 92 are held to it. They
+  found five bugs, listed in `docs/qa/FIX-LOG-mysql.md`, two of them on Postgres as well.
+
+### Versions
+
+The whole suite passed on MySQL 8.0.46 and MariaDB 10.11.19 with no change for those versions, so
+**the stated minimums move down.** The first run on them had eight failures on each. All were in
+the tests: five came from swapping tables in a dialect test, two from the server check warning
+about the old minimum, and one from the check reading `@@foreign_key_checks` as full-text search.
+
+MySQL's minimum is 8.0.16, because that is when it began to enforce checks, and migration 0003
+needs them. Only 8.0.46 ran. MariaDB's is 10.11: `json_equals` needs 10.7, and 10.11 is the oldest
+long-term version still looked after. Oracle's support for MySQL 8.0 has ended, so 8.4 is the one
+to recommend. Older ones still get a warning in the server check, not a refusal.
+
+### Managed services
+
+None was run. This comes from what each says it offers, and is on the requirements page.
+
+| Service                   | Expected   | Why                                                                                                                                                  |
+| ------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Amazon RDS MySQL, MariaDB | Should run | It lists MySQL 8.0 and 8.4, and MariaDB 10.11 and 11.4. Lintel uses no triggers, stored functions or `SUPER`, the usual trouble there.               |
+| Aurora MySQL 3            | Likely     | It follows MySQL 8.0, but its storage and locking are Amazon's own.                                                                                  |
+| DigitalOcean MySQL        | Should run | It keeps `sql_require_primary_key` on and users can't change it. Every Lintel table has a primary key: all 91 migrated with that setting on, on 8.4. |
+| Cloud SQL, Azure MySQL    | Should run | For the same reasons as RDS.                                                                                                                         |
+| PlanetScale               | No         | See below.                                                                                                                                           |
+
+**PlanetScale matters here.** Foreign keys are off unless they're turned on for each database,
+they work only on an unsharded one, and PlanetScale warns they slow busy databases down. Lintel
+has 95 foreign keys and relies on their cascades to clear rows up, and creating a table with one
+fails while they're off. Reports also say it refuses tables that point at each other, which
+`users` and `assets` do. We didn't try it, and we don't offer it.
+
+### Load
+
+`pnpm test:load` runs a real server (`dist/main.js`) over HTTP against each database, in 60 seconds
+after a 3-second warm-up. The site has 100 published pages. Viewers ask for pages and editors save
+them with no pause at all, every fifth save publishes and every tenth goes to one shared page.
+
+**50 viewers and 10 editors:**
+
+| Database     | Kind       | In all | Per second | Median | 95% | 99% | Slowest | 409 | 5xx |
+| ------------ | ---------- | -----: | ---------: | -----: | --: | --: | ------: | --: | --: |
+| postgres:17  | Page views |  6,934 |        116 |    444 | 556 | 658 |     900 |   0 |   0 |
+| postgres:17  | Saves      |  1,552 |         26 |    323 | 423 | 476 |     551 |  57 |   0 |
+| postgres:17  | Publishes  |    308 |          5 |    323 | 407 | 448 |     508 |   0 |   0 |
+| mysql:8.4    | Page views |  6,603 |        110 |    466 | 535 | 653 |     969 |   0 |   0 |
+| mysql:8.4    | Saves      |  1,573 |         26 |    311 | 431 | 482 |     579 |  61 |   0 |
+| mysql:8.4    | Publishes  |    312 |          5 |    320 | 434 | 453 |     543 |   0 |   0 |
+| mariadb:11.4 | Page views |  7,035 |        117 |    440 | 519 | 649 |     902 |   0 |   0 |
+| mariadb:11.4 | Saves      |  1,639 |         27 |    301 | 416 | 479 |     532 |  58 |   0 |
+| mariadb:11.4 | Publishes  |    323 |          5 |    310 | 420 | 444 |     513 |   0 |   0 |
+
+**200 viewers and 40 editors:**
+
+| Database     | Kind       | In all | Per second | Median |  95% |  99% | Slowest | 409 | 5xx |
+| ------------ | ---------- | -----: | ---------: | -----: | ---: | ---: | ------: | --: | --: |
+| postgres:17  | Page views |  6,788 |        113 |   1946 | 2247 | 2569 |    3766 |   0 |   0 |
+| postgres:17  | Saves      |  1,545 |         26 |   1352 | 1689 | 1830 |    2184 | 103 |   0 |
+| postgres:17  | Publishes  |    281 |          5 |   1272 | 1544 | 1603 |    1667 |   0 |   0 |
+| mysql:8.4    | Page views |  7,941 |        132 |   1574 | 1911 | 2311 |    3400 |   0 |   0 |
+| mysql:8.4    | Saves      |  1,803 |         30 |   1105 | 1424 | 1594 |    1855 | 142 |   0 |
+| mysql:8.4    | Publishes  |    360 |          6 |   1123 | 1397 | 1541 |    1582 |   0 |   0 |
+| mariadb:11.4 | Page views |  8,187 |        136 |   1600 | 1901 | 2243 |    3559 |   0 |   0 |
+| mariadb:11.4 | Saves      |  1,802 |         30 |   1140 | 1540 | 1698 |    1825 | 143 |   0 |
+| mariadb:11.4 | Publishes  |    360 |          6 |   1106 | 1316 | 1372 |    1750 |   0 |   0 |
+
+Times are in milliseconds, on one Windows machine with 16 cores, with Docker's databases holding
+data in memory and the test sharing the machine.
+
+- **The database wasn't what limited it.** All three served about the same, and going from 60 to
+  240 people added waiting and hardly any throughput. One Node process drawing pages is the limit.
+  So this shows MySQL and MariaDB keep up with Postgres at this size, not how far any can go.
+- There were **no server errors, no failed connections and no deadlocks**, on any of them. That
+  also means the retry itself didn't run under load: only `json-expressions.dialects.test.ts`
+  makes a real deadlock.
+- The 409s are saves refused because someone else's save got there first, which is how Lintel
+  protects a page. They came at about the same rate on all three.
+
+### What isn't proved
+
+- No managed service has been run, and no MySQL 8.0 before 8.0.46 or MariaDB 10.11 before 10.11.19.
+- A site on MySQL takes an add-on author's word for what `lintel addons check` can't read.
+- Search's order is close to Postgres's and not the same: `ts_rank` counts how often and how near
+  words are. Search reads rows into Node on MySQL, and how that behaves on a very large site
+  hasn't been measured.
+- `lintel addons check` and the transactions test read code. Neither follows every path.
+- The load test used one server process, on one machine, with data in memory. It says nothing
+  about disks, a network between the server and the database, or several server processes.
+- On the built-in database, a jsonb value that is text holding valid JSON reads back parsed. It
+  isn't new, and it's left alone, as Postgres and the built-in database were to stay as they are.
+- The Docker image hasn't been built with this change.

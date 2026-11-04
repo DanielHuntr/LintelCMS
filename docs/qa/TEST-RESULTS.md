@@ -396,3 +396,37 @@ Branch `feature/collaboration`. The details are in `FIX-LOG-collaboration.md`.
 - Builder: 499 and 45 in a browser. Builder model: 515. Motion: 158. All other packages passed.
 - A real Postgres 17: `src/collaboration` and `src/entries`, 121 passed. `postgres-migrations.test.ts`, 4 passed, including an older database brought up to date.
 - Not run: `pnpm test:dialects` (MySQL and MariaDB). The MySQL migration is generated and `mysql-tables.test.ts` passes.
+
+## MySQL and MariaDB, closing the limits (feature/mysql-addons, 4 November 2026)
+
+The whole core suite, on the last code commit. Each was run in a throwaway Docker container, with
+other work sharing the machine. The numbers come from each run's own report.
+
+| Database          | Command                | Passed | Failed | Skipped |
+| ----------------- | ---------------------- | -----: | -----: | ------: |
+| Built-in (PGlite) | `vitest run`, 3 shards |  2,749 |      0 |      51 |
+| Postgres 17.11    | `vitest run`, 3 shards |  2,758 |      0 |      42 |
+| MySQL 8.4.13      | `pnpm test:mysql`      |  2,761 |      0 |      39 |
+| MariaDB 11.4.13   | `pnpm test:mysql`      |  2,760 |      1 |      39 |
+| MySQL 8.0.46      | `pnpm test:mysql`      |  2,761 |      0 |      39 |
+| MariaDB 10.11.19  | `pnpm test:mysql`      |  2,761 |      0 |      39 |
+
+The one failure on MariaDB 11.4 was a five-second timeout in `starter-sites.test.ts` while five
+other test runs shared the machine. That file passed 27 of 27 alone afterwards, and the whole suite
+passed with none failed one commit earlier. The first run on the older two on this code had nine
+failures, from "Deriving bits failed" and sign-ins answering 500: the machine had run out of memory
+for hashing passwords, with over 100 Node processes on it. With two runs fewer beside it, both
+passed as shown. The built-in and Postgres suites were split three ways by hand so they'd finish
+on a busy machine: run whole, each had passed 30 minutes a third of the way through. `pnpm test:postgres` itself wasn't run.
+
+| Other runs                                        | Result                                                      |
+| ------------------------------------------------- | ----------------------------------------------------------- |
+| `pnpm test:dialects`, MySQL 8.4 and MariaDB 11.4  | 2,002 passed, 1 expected failure, 16 skipped                |
+| The same, MySQL 8.0 and MariaDB 10.11             | 2,002 passed, 1 expected failure, 16 skipped                |
+| `pnpm test:addons`, Postgres 17, 8.4 and 11.4     | Each server: 30 + 13 + 7 tests, then 4 from packed installs |
+| The same, MySQL 8.0 and MariaDB 10.11             | The same, on each                                           |
+| Migrations with `sql_require_primary_key` on, 8.4 | All 91 tables made                                          |
+
+The expected failure is the built-in database's JSON text, under "What isn't proved".
+
+Load numbers are in `docs/decisions/0049-any-database.md`.
