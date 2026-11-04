@@ -936,3 +936,46 @@ A second reading of `dde71e4d..9943c3c1` on `fix/night-review`. All fixed there;
 | LINTEL-CODE-027 | P3       | Fixed  | Add-on CSV exports let what a visitor typed run as a spreadsheet formula                                  |
 | LINTEL-CODE-028 | P3       | Fixed  | `lintel-check.php` asked for PHP 8.1 when the companion needs 7.4                                         |
 | LINTEL-CODE-029 | P3       | Fixed  | Two comments spoke of a hosted version of Lintel                                                          |
+## Overnight QA and UX pass (4 November 2026)
+
+A first-time website maker's journeys on a fresh install, in real Chromium, on `fix/night-qa` from `9943c3c1`. Fixes are in `FIX-LOG-night-qa.md`; screenshots in `screenshots/night-qa/`. Ranked by severity.
+
+| ID              | Severity | Status | Summary                                                                                                                       |
+| --------------- | -------- | ------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| LINTEL-FUNC-034 | P1       | Fixed  | A section from Insert goes inside what's selected: a column, or the section just added, so the second section of a page nests |
+| LINTEL-FUNC-033 | P1       | Fixed  | With nothing selected, a new section goes after the site's footer until the page is reopened                                  |
+| LINTEL-FUNC-035 | P1       | Fixed  | The basket total leaves out the ticked delivery until the payment page                                                        |
+| LINTEL-FUNC-031 | P2       | Fixed  | A published page scrolls sideways on a phone while something waits to slide in from the right (Bakery, Our story)             |
+| LINTEL-FUNC-032 | P2       | Fixed  | Blog and magazine publishes dead `/blog` links on a site with the blog off                                                    |
+| LINTEL-FUNC-036 | P2       | Fixed  | A destination still says "Not published yet" after publishing, until the page is reloaded                                     |
+| LINTEL-FUNC-037 | P2       | Open   | Translating a page before its parent makes it that language's home page: `/fr-FR` is "Our services". Needs Daniel's decision  |
+| LINTEL-UX-302   | P2       | Fixed  | New sites and templates without their own footer publish "Replace this with your small print…"                                |
+| LINTEL-UX-304   | P2       | Fixed  | "Market" in the shop: "To try it, you need a market", Add market, Primary                                                     |
+| LINTEL-UX-305   | P2       | Fixed  | A refused product save says only "Some boxes need fixing", with the boxes far below; "making the product active"              |
+| LINTEL-UX-306   | P2       | Fixed  | What Insert adds lands below the fold with the canvas left where it was, so nothing seems to happen                           |
+| LINTEL-UX-315   | P2       | Fixed  | Back from a failed payment, the shopper's email and address are gone                                                          |
+| LINTEL-UX-300   | P3       | Fixed  | The template dialog says "Pages you already have stay as they are" while Replace my pages is chosen                           |
+| LINTEL-UX-301   | P3       | Fixed  | Template cards lower every letter: "djs"                                                                                      |
+| LINTEL-UX-303   | P3       | Fixed  | Make a component shows `Now: var(--lintel-color-border)`                                                                      |
+| LINTEL-UX-307   | P3       | Fixed  | An A/B test says "No visitors yet" over a version with 8 visitors                                                             |
+| LINTEL-UX-308   | P3       | Fixed  | Media shows "646 byte"                                                                                                        |
+| LINTEL-UX-309   | P3       | Fixed  | Adding an unreachable app shows `getaddrinfo ENOTFOUND nothing.invalid`                                                       |
+| LINTEL-UX-310   | P3       | Fixed  | "Taxonomies" and "Hostnames…" in the content tree                                                                             |
+| LINTEL-UX-311   | P3       | Fixed  | A client who opens /design is offered Use this template, then refused with a design error                                     |
+| LINTEL-UX-312   | P3       | Fixed  | A page named after the site is titled "Mia's Studio \| Mia's Studio", as is the "no home page yet" page                       |
+| LINTEL-UX-313   | P3       | Fixed  | The API reference overflows at 390px (403px wide)                                                                             |
+| LINTEL-UX-314   | P3       | Fixed  | Updates says "plugins"; everywhere else says add-ons                                                                          |
+| LINTEL-UX-316   | P3       | Open   | Replace my pages with the look off keeps the old look's header button, which can lead to a replaced page (a 404)              |
+| LINTEL-UX-317   | P3       | Open   | Replace my pages leaves the old template's collections (Episodes, Listings) and their published samples behind                |
+| LINTEL-UX-318   | P3       | Open   | Static publishing leaves out the sample 3D models: `/_lintel/models/vase.glb` is a 404 (held by the Rive and 3D track)        |
+| LINTEL-UX-319   | P3       | Open   | Lottie and Rive offer Upload a file but no way to pick a file already in Media (held by the Rive and 3D track)                |
+| LINTEL-UX-320   | P3       | Open   | Rive's own warning about `stateMachine` is in the console on every page with a Rive animation (held by the Rive and 3D track) |
+| LINTEL-UX-321   | P3       | Open   | `InvalidStateError` from the page transition in the console when a page moves to the test payment page. Harmless              |
+| LINTEL-UX-322   | P3       | Open   | Insert search for "form" lists about 30 elements, from words in their descriptions; Form is first                             |
+| LINTEL-UX-323   | P3       | Open   | The first site is called "Default site" beside the site's own name, and a site at a path says "No domain yet"                 |
+| LINTEL-UX-324   | P3       | Open   | A client who types /settings or /build sees those screens (the data is refused); /users shows "This didn't load"              |
+| LINTEL-UX-325   | P3       | Open   | Settings → Your website says "Your website is live" on a site with no pages; This server says "sharp works"                   |
+| LINTEL-UX-326   | P3       | Open   | An Arc carousel published without pictures is a blank 380px gap                                                               |
+| LINTEL-UX-327   | P3       | Open   | Visitors counts goals from automated browsers but not their visits: "form sent 2" beside 0 visitors, a 100% conversion rate   |
+| LINTEL-UX-329   | P3       | Open   | During a shop test with the cookie notice showing, the test bar covers the last line of the notice                            |
+| LINTEL-UX-328   | P3       | Open   | Templates as drafts with the look on: the first-visit intro and footer show the sample's name on the empty site               |

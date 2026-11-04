@@ -6,6 +6,7 @@ import {
   createRandomNodeId,
   findChangedCode,
   findSectionTemplate,
+  footerCentred,
   type NodeBlueprint,
   noSiteSections,
   type PageDocument,
@@ -179,7 +180,8 @@ export function starterSiteSections(
       own.navigation ?? findSectionTemplate("navigation-logo-left")?.blueprint,
       "navigation",
     ),
-    footer: makeSection(own.footer ?? findSectionTemplate("footer-centred")?.blueprint, "footer"),
+    // No small print to begin with: words that say "replace this" would go live with the site.
+    footer: makeSection(own.footer ?? footerCentred({}), "footer"),
   };
 }
 

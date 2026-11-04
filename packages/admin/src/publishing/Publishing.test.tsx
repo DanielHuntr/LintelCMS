@@ -62,6 +62,36 @@ describe("Settings → Publishing", () => {
     });
   });
 
+  it("shows the destination as published once a publish ends (LINTEL-FUNC-036)", async () => {
+    const run = {
+      id: "r1",
+      targetId: "t1",
+      status: "succeeded",
+      startedAt: "2026-11-04T01:38:00Z",
+    };
+    let published = false;
+    mockApi(({ method, url }) => {
+      if (url.pathname === "/publishing/targets") {
+        return {
+          targets: [{ ...cpanel, lastPublishedAt: published ? "2026-11-04T01:38:44Z" : null }],
+        };
+      }
+      if (method === "POST" && url.pathname === "/publishing/targets/t1/publish") {
+        published = true;
+        return { ...run, status: "running" };
+      }
+      if (url.pathname === "/publishing/targets/t1/runs/r1") return run;
+      if (url.pathname === "/publishing/targets/t1/runs") return { runs: [] };
+      return undefined;
+    });
+    renderScreen(<PublishingPage />, { permissions: ["*"] });
+    expect(await screen.findByText("Not published yet")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Publish website" }));
+
+    expect(await screen.findByText(/^Last published/)).toBeInTheDocument();
+  });
+
   it("says plainly what works on the hosting, and what doesn't", async () => {
     mockApi(({ method, url }) => {
       if (url.pathname === "/publishing/targets" && method === "GET") return { targets: [cpanel] };

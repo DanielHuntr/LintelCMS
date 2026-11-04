@@ -29,7 +29,8 @@ import { applyStarterSiteSections } from "../site-sections/site-sections.service
 import { pageComponentCatalogue } from "../pages/page-components.js";
 import { createForm, listForms } from "../forms/forms.service.js";
 import { type FormTemplateId, formTemplateIds } from "../forms/form-templates.js";
-import { findEnabledPluginIds } from "../plugins/plugins.service.js";
+import type { PluginCatalogue } from "../plugins/plugin-catalogue.js";
+import { findEnabledPluginIds, setEnabledPlugins } from "../plugins/plugins.service.js";
 import { moveToRecycleBin } from "../recycle-bin/recycle-bin.service.js";
 import { hasPermission } from "../roles/permissions.js";
 import { readSiteDesign, saveSiteDesign } from "../site-design/site-design.service.js";
@@ -73,6 +74,8 @@ export interface StarterSiteContext extends EntryChangeContext {
   site?: Site | undefined;
   templates: readonly SiteTemplate[];
   builtInSiteUrl: string | null;
+  /** The features that can be switched on, for a template that needs some. */
+  plugins: PluginCatalogue;
 }
 
 export async function applyStarterSite(
@@ -98,6 +101,7 @@ export async function applyStarterSite(
   const replaced = isReplacing ? await replacePages(database, existing, context) : [];
   const keptHome = isReplacing ? null : existing.homeId;
 
+  const featuresSwitchedOn = await switchOnTemplateFeatures(database, site, context);
   const enabledPlugins = await findEnabledPluginIds(database);
   const forms = enabledPlugins.includes("forms")
     ? await ensureTemplateForms(database, site, context)
@@ -161,7 +165,27 @@ export async function applyStarterSite(
     replacedCount: replaced.length,
     previousSectionsKept,
     collectionsMade,
+    featuresSwitchedOn,
   };
+}
+
+/**
+ * Without these, a template's links lead nowhere (the magazine's /blog) and its shop sections
+ * are left out. Answers the names of the features that were off, to tell the person.
+ */
+async function switchOnTemplateFeatures(
+  database: DatabaseOrTransaction,
+  site: StarterSite,
+  context: StarterSiteContext,
+): Promise<string[]> {
+  if (!hasPermission(context.permissions, "settings:update")) return [];
+  const enabled = await findEnabledPluginIds(database);
+  const missing = (site.features ?? []).filter(
+    (id) => !enabled.includes(id) && context.plugins.has(id),
+  );
+  if (missing.length === 0) return [];
+  await setEnabledPlugins(database, context.plugins, [...enabled, ...missing]);
+  return missing.map((id) => context.plugins.find(id)?.name ?? id);
 }
 
 /** What a template would meet on the site: its pages, its home page, and taken addresses. */

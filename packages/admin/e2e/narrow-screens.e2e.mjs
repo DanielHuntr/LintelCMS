@@ -32,6 +32,7 @@ const screens = [
   "/settings",
   "/settings/updates",
   "/content-types",
+  "/build/api/reference",
 ];
 
 const status = await (await fetch(`${apiUrl}/setup/status`)).json();

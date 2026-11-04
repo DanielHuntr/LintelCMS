@@ -14,9 +14,9 @@ shop** is switched on, either in the setup wizard or later under **Settings → 
 The Shop's home page lists four things to do before your first sale. Each one links to the
 right screen, and gets a tick once it's done:
 
-1. **Choose where you sell.** Under **Settings → Markets**, add your home country and its
-   currency. This first market is your _primary_ market: you set prices in its currency.
-   Add more markets for other countries, each with its own currency. Lintel works out their
+1. **Choose where you sell.** Under **Settings → Where you sell**, add your home country and its
+   currency. This first region is your _main_ region: you set prices in its currency.
+   Add more regions for other countries, each with its own currency. Lintel works out their
    prices from yours with an exchange rate you give, and rounds them (to a whole number, or
    to .99) unless you set a price yourself.
 2. **Set your delivery prices.** Under **Settings → Delivery**, add an area (such as "UK")
@@ -55,7 +55,7 @@ them. If they give up, the items go back on sale after a short while.
   free delivery on orders of £75 or more.
 
 Each discount gives one of four things: a **percentage off**, an **amount off** (set in each
-of your currencies; leave one empty and that market isn't offered it), **free delivery**, or
+of your currencies; leave one empty and that region isn't offered it), **free delivery**, or
 **buy X, get Y**, such as buy 2, get 1 free. With buy X get Y, the cheapest items in each
 group are the ones discounted.
 
@@ -124,8 +124,8 @@ or [Mollie](https://www.mollie.com). Customers always pay on the provider's own 
 (or, with Stripe, a payment form that Stripe runs inside your page), so card numbers never
 reach your site. That keeps the paperwork for card security to a minimum.
 
-Each market uses one provider. Stripe is used unless you choose another: at the top of
-**Settings → Payments**, pick a provider for each market. Only connected providers can be
+Each region uses one provider. Stripe is used unless you choose another: at the top of
+**Settings → Payments**, pick a provider for each region. Only connected providers can be
 chosen. You might, for example, use Stripe in the UK and Mollie in the Netherlands, where
 many people pay with iDEAL.
 
@@ -196,7 +196,7 @@ Under **Settings → Tax**, choose how tax is worked out:
 - **With my own rates.** Set a rate for each country, such as 20% VAT for the UK. Countries
   without a rate pay no tax.
 
-Each market says whether its prices already include tax (usual in the UK and Europe) or have
+Each region says whether its prices already include tax (usual in the UK and Europe) or have
 tax added at checkout (usual in the US and Canada).
 
 ## Orders

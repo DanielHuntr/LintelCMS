@@ -115,6 +115,49 @@ describe("the basket page's delivery details", () => {
     );
   });
 
+  it("keeps what someone typed when they come back from a failed payment (LINTEL-UX-315)", () => {
+    renderCartViews(
+      cartWith({
+        email: "ada@example.com",
+        shippingAddress: { name: "Ada Lovelace", line1: "12 St James's Square", city: "London" },
+      }),
+      () => {},
+    );
+
+    const box = (name: string) =>
+      document.querySelector<HTMLInputElement>(`.lintel-cart__checkout-form [name="${name}"]`);
+    expect(box("email")?.value).toBe("ada@example.com");
+    expect(box("line1")?.value).toBe("12 St James's Square");
+    expect(box("postalCode")?.value).toBe("");
+  });
+
+  it("counts the ticked delivery in the total before Pay now (LINTEL-FUNC-035)", async () => {
+    const fetchMock = answerRequests({
+      "PATCH /api/shop/carts/token-1": { body: cartWith() },
+      "GET /api/shop/carts/token-1/shipping-rates": {
+        body: {
+          rates: [
+            { rateId: "rate-standard", name: "Standard", amount: pounds(495) },
+            { rateId: "rate-fast", name: "Next day", amount: pounds(895) },
+          ],
+        },
+      },
+    });
+    const sentRates = () =>
+      fetchMock.mock.calls
+        .map(([, init]) => JSON.parse(String((init as RequestInit | undefined)?.body ?? "{}")))
+        .flatMap((body: { shippingRateId?: string }) => body.shippingRateId ?? []);
+
+    const form = await chooseDelivery();
+    await vi.waitFor(() => expect(sentRates()).toEqual(["rate-standard"]));
+
+    const fast = form.querySelector<HTMLInputElement>('input[value="rate-fast"]');
+    if (!fast) throw new Error("The second rate is missing");
+    fast.checked = true;
+    fast.dispatchEvent(new Event("change", { bubbles: true }));
+    await vi.waitFor(() => expect(sentRates()).toEqual(["rate-standard", "rate-fast"]));
+  });
+
   it("shows the shop's own message when the API refuses", async () => {
     answerRequests({
       "PATCH /api/shop/carts/token-1": {

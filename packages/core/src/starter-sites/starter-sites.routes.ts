@@ -54,6 +54,7 @@ export async function starterSitesRoutes(server: FastifyInstance) {
         permissions: signedIn.permissions,
         templates: server.website.templates,
         builtInSiteUrl: server.website.builtInSiteUrl,
+        plugins: server.plugins,
         site: await resolveEditingSite(request),
       });
       for (const page of applied.pages.filter(({ published }) => published)) {

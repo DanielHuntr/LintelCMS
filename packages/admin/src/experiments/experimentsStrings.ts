@@ -20,7 +20,7 @@ export const experimentsStrings = {
   "experiments.list.loading": "Loading tests",
   "experiments.list.emptyTitle": "No tests yet",
   "experiments.list.emptyDescription":
-    "Open a page in the designer and choose “Try another version”. Change what you like, then come back here to start the test.",
+    "Open a page in the page builder and choose “Try another version”. Change what you like, then come back here to start the test.",
   "experiments.list.versions": "{count, plural, one {# version} other {# versions}}",
   "experiments.list.section": "One section",
   "experiments.list.footer":
@@ -117,7 +117,7 @@ export const experimentsStrings = {
   "experiments.results.publishConfirm": "Make it the page",
   "experiments.results.cancel": "Cancel",
 
-  "experiments.verdict.noData": "No visitors yet.",
+  "experiments.verdict.noData": "Not enough visitors to compare yet.",
   "experiments.verdict.aheadTooEarly": "{version} is ahead, but it’s too early to be sure.",
   "experiments.verdict.behindTooEarly": "{version} is behind, but it’s too early to be sure.",
   "experiments.verdict.tooClose": "{version} and the original are about the same so far.",

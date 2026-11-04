@@ -232,3 +232,12 @@ Branch `fix/night-review` (`FIX-LOG-night-review.md`). The text above is unchang
 
 - Two P1s are fixed: LINTEL-CODE-017 (an add-on's Delete data could empty Lintel's own tables) and LINTEL-CODE-018 (the PHP companion lost delayed payments). Sites published with the companion must add `checkout.session.async_payment_succeeded` to their Stripe webhook.
 - Seven decisions are left for Daniel, listed in the fix log. The one to look at first: finding a person by name treats two people with the same name as one, and erases both.
+
+## Update, 4 November 2026: overnight QA and UX pass
+
+Branch `fix/night-qa` (`FIX-LOG-night-qa.md`). The text above is unchanged.
+
+- A first-time website maker's journeys were walked in a real browser, from nothing to a published site, a test shop order, forms, privacy, creative pages and static publishing. 22 defects were fixed: 3 P1, 8 P2, 11 P3.
+- The three P1s were everyday flows that automated tests didn't reach: where a section lands in the builder (FUNC-033, FUNC-034) and a basket total without delivery (FUNC-035).
+- **Open:** 1 P2 (FUNC-037, translating a page before its parent, for Daniel to decide) and 14 P3. No P0 or P1 is open from this pass.
+- **Not covered:** a real payment, a real add-on or app install, FTP, SFTP and S3 publishing, WebKit and Firefox, a screen reader, contrast measurement. See `TEST-RESULTS.md`.

@@ -11,6 +11,7 @@ describe("page titles", () => {
     );
     expect(applyTitleTemplate("{title} | {siteName}", "About us", "")).toBe("About us");
     expect(applyTitleTemplate("{siteName} – {title}", "About us", " ")).toBe("About us");
+    expect(applyTitleTemplate("{title} | {siteName}", "Acme", "Acme")).toBe("Acme");
   });
 
   it("get advice on their length", () => {

@@ -276,7 +276,7 @@ describe("the Shop screens", () => {
       shop({ stripeConnected: true, provider: "paypal", productCount: 1 });
       renderScreen(<ShopHomePage />, withShop);
       expect(
-        await screen.findByText(/the way your markets take payment isn’t connected/),
+        await screen.findByText(/the way you take payment isn’t connected/),
       ).toBeInTheDocument();
       expect(screen.getByRole("link", { name: "Connect payments" })).toHaveAttribute(
         "href",

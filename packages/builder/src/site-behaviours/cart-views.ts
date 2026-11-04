@@ -125,6 +125,7 @@ let latestCart: Cart | null = null;
 
 export function renderCartViews(cart: Cart | null, onChange: (cart: Cart) => void): void {
   latestCart = cart;
+  if (cart) fillSavedDetails(cart);
   document.querySelectorAll<HTMLElement>('[data-behaviour~="cart"]').forEach((view) => {
     const lines = view.querySelector(".lintel-cart__lines");
     const sums = view.querySelector(".lintel-cart__totals");
@@ -230,6 +231,19 @@ function countryPicker(): HTMLSelectElement {
   return picker;
 }
 
+/**
+ * Someone back from a payment that failed, or returning to their basket, shouldn't type it
+ * all again. Only empty boxes are filled, so nothing being typed is overwritten.
+ */
+function fillSavedDetails(cart: Cart): void {
+  const form = document.querySelector<HTMLFormElement>(".lintel-cart__checkout-form");
+  for (const [name] of addressFields) {
+    const box = form?.elements.namedItem(name);
+    const saved = name === "email" ? cart.email : cart.shippingAddress?.[name];
+    if (box instanceof HTMLInputElement && !box.value && saved) box.value = saved;
+  }
+}
+
 /** The details form on the basket page: email and address, then delivery, then pay. */
 export function setUpCheckoutDetails(onChange: (cart: Cart) => void): void {
   const page = document.querySelector<HTMLElement>(
@@ -265,6 +279,13 @@ export function setUpCheckoutDetails(onChange: (cart: Cart) => void): void {
   page.append(area);
 
   let choosingRate = false;
+  // Shoppers see the total they'll pay before they press Pay now.
+  rates.addEventListener("change", (event) => {
+    const chosen = (event.target as HTMLInputElement).value;
+    updateCart({ shippingRateId: chosen }).then(onChange, (error: unknown) => {
+      message.textContent = shopperMessage(error, "Something went wrong. Please try again.");
+    });
+  });
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     message.textContent = "";
@@ -300,6 +321,9 @@ export function setUpCheckoutDetails(onChange: (cart: Cart) => void): void {
               ? "1 way to deliver. Check it, then choose Pay now."
               : `${offered.length} ways to deliver. Choose one, then choose Pay now.`;
           rates.querySelector<HTMLInputElement>("input:checked")?.focus();
+          // The first choice is already ticked, so the total should already include it.
+          const first = offered[0];
+          if (first) onChange(await updateCart({ shippingRateId: first.rateId }));
         }
         return;
       }

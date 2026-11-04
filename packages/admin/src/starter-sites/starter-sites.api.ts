@@ -47,6 +47,8 @@ export interface AppliedStarterSite {
   replacedCount: number;
   /** The template's menu and footer took the place of the site's, which were kept. */
   previousSectionsKept: boolean;
+  /** The names of features the template needed that were off and are now on. */
+  featuresSwitchedOn: string[];
 }
 
 /** Links the pages at the end of the main menu, for when it already had links. */

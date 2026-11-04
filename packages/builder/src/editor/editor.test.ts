@@ -108,6 +108,27 @@ describe("builder commands", () => {
     expect(childIds(nothingSelected.document, "page")).toEqual(["n1", "new1"]);
   });
 
+  it("puts ready-made sections on the page, above the site's footer (LINTEL-FUNC-033, LINTEL-FUNC-034)", () => {
+    const page = heroPage();
+    const footer = createNode({ type: "section" }, standardCatalogue, () => "site-footer");
+    const withFooter = {
+      ...page,
+      root: { ...page.root, children: [...page.root.children, footer] },
+    };
+    for (const selected of [null, "n1", "n3", "site-footer"]) {
+      const added = apply(
+        createEditorState(withFooter),
+        commands.insertSectionTemplate(context(withFooter, selected), { type: "section" }),
+      );
+      expect(childIds(added.document, "page")).toEqual(["n1", "new1", "site-footer"]);
+    }
+    const nothingSelected = apply(
+      createEditorState(withFooter),
+      commands.insertBlueprint(context(withFooter), { type: "section" }),
+    );
+    expect(childIds(nothingSelected.document, "page")).toEqual(["n1", "new1", "site-footer"]);
+  });
+
   it("puts a Header at the top of the page and a Footer at the bottom, whatever is selected", () => {
     const page = heroPage();
     const header = apply(

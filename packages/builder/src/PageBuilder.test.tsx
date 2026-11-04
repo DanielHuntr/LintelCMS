@@ -178,6 +178,25 @@ describe("the page builder", () => {
     expect(findNode(latest().root, "n5")?.props.label).toBe("Book now");
   });
 
+  it("brings what Insert adds into view (LINTEL-UX-306)", async () => {
+    const user = userEvent.setup();
+    renderBuilder(heroPage());
+    const frameWindow = document.querySelector("iframe")?.contentWindow as Window;
+    const post = vi.spyOn(frameWindow, "postMessage");
+    act(() => {
+      window.dispatchEvent(
+        new MessageEvent("message", { data: { type: "ready" }, source: frameWindow }),
+      );
+    });
+
+    await user.click(screen.getByRole("tab", { name: "Insert" }));
+    await user.click(screen.getByRole("radio", { name: "Elements" }));
+    await user.type(screen.getByRole("searchbox"), "Divider");
+    await user.click(screen.getByRole("button", { name: "Divider" }));
+
+    expect(post).toHaveBeenCalledWith({ type: "reveal", nodeId: "new1" }, "*");
+  });
+
   it("offers the Code element only with the code permission", async () => {
     const user = userEvent.setup();
     renderBuilder(heroPage());

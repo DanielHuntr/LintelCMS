@@ -31,6 +31,7 @@ import { StarterSiteCard } from "./StarterSiteCard.js";
 export function TemplateLibraryPage() {
   const address = useSiteAddress();
   const siteAddress = address.data?.siteAddress ?? null;
+  const canUseTemplates = useCan("builder:design");
   const [chosen, setChosen] = useState<StarterSite | null>(null);
   const [applied, setApplied] = useState<{ site: StarterSite; result: AppliedStarterSite } | null>(
     null,
@@ -56,7 +57,11 @@ export function TemplateLibraryPage() {
       >
         {starterSites.map((site) => (
           <li key={site.id} className="flex">
-            <StarterSiteCard site={site} siteAddress={siteAddress} onUse={() => setChosen(site)} />
+            <StarterSiteCard
+              site={site}
+              siteAddress={siteAddress}
+              {...(canUseTemplates && { onUse: () => setChosen(site) })}
+            />
           </li>
         ))}
       </ul>
@@ -292,6 +297,8 @@ function AppliedSummary({
         {result.skippedHome && ` ${t("templates.result.skippedHome")}`}
         {result.replacedCount > 0 &&
           ` ${t("templates.result.replaced", { count: result.replacedCount })}`}
+        {result.featuresSwitchedOn.length > 0 &&
+          ` ${t("templates.result.featuresOn", { features: result.featuresSwitchedOn.join(", ") })}`}
       </p>
       <ul className="flex flex-wrap gap-2">
         {result.pages.map((page) => (

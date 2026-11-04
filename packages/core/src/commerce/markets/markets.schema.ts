@@ -9,10 +9,10 @@ const countryListSchema = z
 
 const marketFields = {
   name: z
-    .string({ error: "Please give the market a name" })
+    .string({ error: "Please give the region a name" })
     .trim()
-    .min(1, { error: "Please give the market a name" })
-    .max(100, { error: "Market names can be at most 100 characters" }),
+    .min(1, { error: "Please give the region a name" })
+    .max(100, { error: "Region names can be at most 100 characters" }),
   currency: currencyCodeSchema,
   countries: countryListSchema,
   exchangeRate: z

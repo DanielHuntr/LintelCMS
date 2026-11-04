@@ -79,7 +79,7 @@ function checkVariants(product: ProductRequest, primaryCurrency: string | null):
     }
     if (product.status === "active" && primaryCurrency && !currencies.includes(primaryCurrency)) {
       problems[`${field}.prices`] =
-        `Give ${variantTitle(variant.optionValues)} a price in ${primaryCurrency} before making the product active`;
+        `Give ${variantTitle(variant.optionValues)} a price in ${primaryCurrency} before putting the product on sale`;
     }
     for (const price of variant.prices) {
       if (price.compareAtAmount !== null && price.compareAtAmount <= price.amount) {

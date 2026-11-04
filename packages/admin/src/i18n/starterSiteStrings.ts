@@ -13,7 +13,7 @@ export const starterSiteStrings = {
   "templates.use": "Use this template",
   "templates.confirmTitle": "Start from {name}?",
   "templates.confirmText":
-    "We’ll add {count} pages to Pages, ready to change in the page builder. Pages you already have stay as they are.",
+    "We’ll add {count, plural, one {# page} other {# pages}} to Pages, ready to change in the page builder.",
   "templates.useTheme":
     "Use this template’s colours, fonts, menu and footer, and motion for the website",
   "templates.useThemeHint": "Changes your live website now.",

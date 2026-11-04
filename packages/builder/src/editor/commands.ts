@@ -61,6 +61,12 @@ export function isLocked(document: PageDocument, nodeId: string): boolean {
   return findPath(document.root, nodeId).some((node) => node.locked);
 }
 
+/** The last place for something on the page: the site's footer stays below everything. */
+function endOfPage(root: PageNode): number {
+  const footer = root.children.findIndex((child) => siteSectionSlotOf(child.id) === "footer");
+  return footer === -1 ? root.children.length : footer;
+}
+
 /**
  * Where something new goes: inside the selected element when it can hold it (at the end),
  * otherwise straight after the selected element, otherwise at the end of the page.
@@ -82,12 +88,47 @@ export function findInsertPlace(
     const child = path.at(-1) as PageNode;
     const parent = path.at(-2) as PageNode;
     if (catalogue.canContain(parent.type, type) && !isLocked(document, parent.id)) {
-      return { parentId: parent.id, index: parent.children.indexOf(child) + 1 };
+      const after = parent.children.indexOf(child) + 1;
+      return {
+        parentId: parent.id,
+        index: parent.id === rootNodeId ? Math.min(after, endOfPage(parent)) : after,
+      };
     }
   }
   return catalogue.canContain("page", type)
-    ? { parentId: rootNodeId, index: document.root.children.length }
+    ? { parentId: rootNodeId, index: endOfPage(document.root) }
     : null;
+}
+
+/**
+ * Where a ready-made section goes: on the page itself, after the section holding what's
+ * selected. Inside a column it would be squashed, and a section just added is still selected.
+ */
+function findSectionPlace(context: CommandContext): { parentId: string; index: number } | null {
+  const { document, selectedId } = context;
+  if (isLocked(document, rootNodeId)) return null;
+  const top = selectedId ? findPath(document.root, selectedId)[1] : undefined;
+  const end = endOfPage(document.root);
+  return {
+    parentId: rootNodeId,
+    index: top ? Math.min(document.root.children.indexOf(top) + 1, end) : end,
+  };
+}
+
+/** Adds a section from the Sections list, whatever is selected. */
+export function insertSectionTemplate(
+  context: CommandContext,
+  blueprint: NodeBlueprint,
+): CommandResult {
+  const place = findEdgePlace(context, blueprint) ?? findSectionPlace(context);
+  if (!place) return insertBlueprint(context, blueprint);
+  const node = createNode(blueprint, context.catalogue, context.createId);
+  return placeNodes(
+    context,
+    [node],
+    place,
+    context.text("pageBuilder.history.added", { name: layerName(node, context.catalogue) }),
+  );
 }
 
 export function insertBlueprint(context: CommandContext, blueprint: NodeBlueprint): CommandResult {

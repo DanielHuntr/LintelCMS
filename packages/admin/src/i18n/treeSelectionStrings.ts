@@ -62,6 +62,7 @@ export const treeSelectionStrings = {
   "templates.existing.replaceNotAllowed": "You need permission to delete pages to replace them.",
   "templates.existing.choose": "What should happen to your pages",
   "templates.result.skippedHome": "Your home page stayed as it was.",
+  "templates.result.featuresOn": "This template needs {features}, so we switched it on.",
   "templates.result.replaced":
     "{count, plural, one {# page went to the recycle bin.} other {# pages went to the recycle bin.}}",
 } as const;

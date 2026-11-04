@@ -367,9 +367,9 @@ describe("the content tree", () => {
     const homeRow = await screen.findByRole("treeitem", { name: "Home, Draft" });
     fireEvent.contextMenu(homeRow.firstElementChild ?? homeRow);
     await userEvent.click(await screen.findByRole("menuitem", { name: "More" }));
-    await userEvent.click(await screen.findByRole("menuitem", { name: "Hostnames…" }));
+    await userEvent.click(await screen.findByRole("menuitem", { name: "Domain and path…" }));
 
-    const dialog = await screen.findByRole("dialog", { name: "Hostnames for “Home”" });
+    const dialog = await screen.findByRole("dialog", { name: "Domain and path for “Home”" });
     await within(dialog).findByText(
       "This is your home page, because it’s the first page at the top.",
     );
@@ -389,7 +389,7 @@ describe("the content tree", () => {
     const homeRow = await screen.findByRole("treeitem", { name: "Home, Draft" });
     fireEvent.contextMenu(homeRow.firstElementChild ?? homeRow);
     await screen.findByRole("menuitem", { name: "Create…" });
-    expect(screen.queryByRole("menuitem", { name: "Hostnames…" })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "Domain and path…" })).toBeNull();
   });
 });
 

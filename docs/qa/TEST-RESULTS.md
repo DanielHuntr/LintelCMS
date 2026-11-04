@@ -281,3 +281,32 @@ Windows, Node 24, with PHP 8.1 on the path so the companion's tests ran:
 - plugin-example-bookings 7, addon-newsletter 22, addon-instagram 13: all passed.
 - `pnpm typecheck`: 29 tasks clean. Admin, builder and the other packages' tests weren't run, as nothing in them changed.
 - Migrations 0032 to 0036 on a new database and on one stopped at 0031 with rows in it, on the built-in database only: both ended the same, and `db:generate` reports no changes.
+
+## Overnight QA and UX pass (fix/night-qa, 2026-11-04)
+
+Chromium through Playwright 1.63, Windows. API 4761, website 4762, admin 5761, Vite dev server, a new Lintel folder.
+
+| Journey                                                                                                          | Result                                                                                                         |
+| ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| First run: welcome, database, account, site name, kind, review, finish                                           | Pass                                                                                                           |
+| All 20 templates, published with the look: every page and link, one h1, no overflow                              | Pass after FUNC-031, FUNC-032. Atelier's h1 to h3 skip is the known UX-159                                     |
+| Templates with the look off or as drafts (Folio, Longwave, Longplay)                                             | Pass; UX-316, UX-317, UX-328 logged                                                                            |
+| Builder: tour (9 steps), Insert, inline text, Style, Animate, undo and redo, publish, Design and Content         | Pass after FUNC-033, FUNC-034, UX-306                                                                          |
+| Components: make, variants, a variant on a page, published                                                       | Pass (the Large variant's 56px heading on the live page)                                                       |
+| Multi-select, tree marks and menus                                                                               | Pass, light coverage; multi-select copy is held by another track                                               |
+| Shop: region, delivery, product with variant rows, Try your shop, failed payment, test order, Delete test orders | Pass after FUNC-035, UX-305, UX-315. Stock 7, then 4 with the test order, then 7 after deleting it             |
+| An ordinary visitor during a shop test                                                                           | Pass: "Coming soon", no basket button, no test bar, 403 on the test payment page                               |
+| Forms: new from Contact, on a page, sent, submissions                                                            | Pass                                                                                                           |
+| Cookie notice: Always, three choices, remembered, 390px, dark                                                    | Pass                                                                                                           |
+| Visitors: counted with a normal browser, not with an automated one                                               | Pass; UX-327 logged                                                                                            |
+| A/B test: version B, goal, start, results                                                                        | Pass after UX-307. Not run to an end. All simulated visitors shared one address, so only one version was seen  |
+| Privacy: find, export (zip), erase, then nothing found                                                           | Pass                                                                                                           |
+| Published creative page: 3D model, Lottie, Rive, text on a path, stickers, arc carousel                          | Pass, at desktop, 390px and dark. Reduced motion: the carousel becomes a scrolling row, and arrow keys move it |
+| Page transition and first-visit intro                                                                            | Seen working through templates. Custom cursor not exercised                                                    |
+| Add-ons and apps                                                                                                 | Screens and refusals only: no third-party add-on or app was installed                                          |
+| Static publishing to a folder                                                                                    | Pass: 134 files, pages open offline, no localhost addresses left. FUNC-036 fixed, UX-318 logged                |
+| Client content-only: invited, accepted, page editor, API refuses design changes                                  | Pass after UX-311; UX-324 logged. Not tried: changing an opened-up part, or sending it for approval            |
+| Languages and multisite                                                                                          | Language added, page translated, second site at /fr served; FUNC-037 open                                      |
+| Keyboard: 40 Tab presses on 7 main screens                                                                       | No traps; every stop shows a ring on itself or its row                                                         |
+
+Automated, at `a73763c2` on Windows: `pnpm test` 29 of 29 tasks, 4,281 passed, 20 skipped, none failed (core 1,633, admin 1,025, builder 478 and 45, builder-model 439). `pnpm typecheck` 29 of 29. Format and lint clean. Every admin screen (84 routes) was opened at desktop and 390px, light and dark: no overflow beyond UX-313 and no console errors of its own. Nine screens hit a server restart at 390px in light mode; two were reopened and were clean, and the other seven (six role pages and one submissions list) were not repeated. Overflow and console errors were checked by script on all of them; only a sample of the screenshots was looked at by eye.
