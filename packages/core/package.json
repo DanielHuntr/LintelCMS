@@ -115,6 +115,7 @@
     "build": "tsc -p tsconfig.build.json && node scripts/copy-bridge.mjs",
     "typecheck": "tsc --noEmit",
     "dialect:baseline": "tsx src/testing/update-postgres-only-baseline.ts",
+    "dialect:report": "tsx src/testing/print-mysql-porting-report.ts",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:generate:mysql": "drizzle-kit generate --config drizzle.mysql.config.ts",

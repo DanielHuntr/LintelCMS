@@ -450,7 +450,7 @@ CREATE TABLE `passkeys` (
 	`tenant_id` longtext NOT NULL DEFAULT ('default'),
 	`user_id` varchar(36) NOT NULL,
 	`name` longtext NOT NULL,
-	`credential_id` varchar(255) NOT NULL,
+	`credential_id` varchar(700) NOT NULL,
 	`public_key` longtext NOT NULL,
 	`counter` int NOT NULL DEFAULT 0,
 	`transports` json NOT NULL DEFAULT ('[]'),
@@ -530,7 +530,7 @@ CREATE TABLE `recycle_bin_items` (
 CREATE TABLE `redirects` (
 	`id` varchar(36) NOT NULL,
 	`tenant_id` varchar(64) NOT NULL DEFAULT 'default',
-	`from_path` varchar(255) NOT NULL,
+	`from_path` varchar(700) NOT NULL,
 	`to_path` longtext NOT NULL,
 	`status_code` int NOT NULL DEFAULT 301,
 	`status` varchar(255) NOT NULL DEFAULT 'active',

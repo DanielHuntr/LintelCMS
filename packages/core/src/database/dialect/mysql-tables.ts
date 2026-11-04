@@ -150,14 +150,20 @@ function keysOf(table: PgTable, mysqlColumns: AnyMySqlColumn[]) {
 }
 
 /**
- * How long text in a key may be. All the columns of one key must fit in 3,072 bytes, at 4
- * bytes a character, and a foreign key must match the column it refers to. A column name
- * means the same thing on every table here.
+ * Text in a key whose length differs from the default. All the columns of one key must fit
+ * in 3,072 bytes, at 4 bytes a character, and a foreign key must match the column it refers
+ * to. A column name means the same on every table here.
  */
-const SHORTER_KEY_TEXT: Record<string, number> = { tenant_id: 64, day: 16 };
+const KEY_TEXT_LENGTHS: Record<string, number> = {
+  tenant_id: 64,
+  day: 16,
+  // Addresses and passkey ids can be long, and these keys have room.
+  from_path: 700,
+  credential_id: 700,
+};
 
 function keyTextLength(column: string): number {
-  return SHORTER_KEY_TEXT[column] ?? DEFAULT_KEY_TEXT_LENGTH;
+  return KEY_TEXT_LENGTHS[column] ?? DEFAULT_KEY_TEXT_LENGTH;
 }
 
 /** Columns that must be varchar, because a key of some kind uses them. */

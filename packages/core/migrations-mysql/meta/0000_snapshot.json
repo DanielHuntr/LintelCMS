@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "7a922228-f1bf-4b88-a6da-8552f7b44430",
+  "id": "6c3709ac-ee11-48bd-921c-fd8d7c6fdd81",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "analytics_daily": {
@@ -3718,7 +3718,7 @@
         },
         "credential_id": {
           "name": "credential_id",
-          "type": "varchar(255)",
+          "type": "varchar(700)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -4385,7 +4385,7 @@
         },
         "from_path": {
           "name": "from_path",
-          "type": "varchar(255)",
+          "type": "varchar(700)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false

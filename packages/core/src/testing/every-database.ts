@@ -3,7 +3,11 @@ import { PgTable } from "drizzle-orm/pg-core";
 import { afterAll, beforeAll, beforeEach, describe } from "vitest";
 import type { Database } from "../database/client.js";
 import { openMysqlDatabase } from "../database/dialect/mysql-database.js";
+import { tableFor } from "../database/dialect/mysql-tables.js";
+import { insertReturning } from "../database/dialect/writes.js";
 import * as schema from "../database/schema.js";
+import { sitesTable } from "../sites/sites.table.js";
+import { usersTable } from "../users/users.table.js";
 import { emptyAllTables, openTestDatabase } from "./test-database.js";
 
 /**
@@ -104,4 +108,25 @@ export function describeOnEveryDatabase(
       tests(handle);
     });
   }
+}
+
+/** A person for rows that belong to one. */
+export async function addTestUser(database: Database, email = "ada@example.com") {
+  const [user] = await insertReturning(database, tableFor(database, usersTable), {
+    email,
+    name: "Ada",
+  });
+  if (!user) throw new Error("The test person was not saved.");
+  return user;
+}
+
+/** A site for rows that belong to one. */
+export async function addTestSite(database: Database, handle = "main") {
+  const [site] = await insertReturning(database, tableFor(database, sitesTable), {
+    handle,
+    name: handle,
+    domain: `${handle}.test`,
+  });
+  if (!site) throw new Error("The test site was not saved.");
+  return site;
 }
