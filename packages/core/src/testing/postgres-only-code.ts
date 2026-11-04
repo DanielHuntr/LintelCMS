@@ -51,6 +51,12 @@ const RAW_SQL: Record<string, RegExp> = {
   "postgres catalogue": /\bshow\s+server_version\b|\bdrizzle\.__drizzle/i,
 };
 
+/**
+ * A Date put straight into raw SQL works on the built-in database and fails on a Postgres
+ * server, whose driver only takes text. Compare with a column instead, which converts it.
+ */
+const DATE_NAMES = /^(now|since|cutoff|until|today)$|(At|Date|Time)$/;
+
 /** Folders and files that may hold Postgres-only code. */
 function isChecked(file: string): boolean {
   const path = file.replaceAll("\\", "/");
@@ -101,6 +107,13 @@ export function postgresOnlyCodeIn(fileName: string, source: string): Record<str
       const text = templateText(node.template);
       for (const [rule, pattern] of Object.entries(RAW_SQL)) {
         if (pattern.test(text)) count(rule);
+      }
+      if (ts.isTemplateExpression(node.template)) {
+        for (const { expression } of node.template.templateSpans) {
+          if (ts.isIdentifier(expression) && DATE_NAMES.test(expression.text)) {
+            count("date in raw sql");
+          }
+        }
       }
     }
     if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {

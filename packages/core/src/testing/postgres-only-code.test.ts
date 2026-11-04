@@ -50,7 +50,8 @@ describe("Postgres-only code", () => {
        sql\`\${a} desc nulls last\`;
        sql\`to_char(\${a}, 'YYYY')\`;
        sql\`\${a} = any(\${b})\`;
-       findErrorCode(error) === "23505";`,
+       findErrorCode(error) === "23505";
+       sql\`\${table.expiresAt} > \${now}\`;`,
     );
     expect(found).toMatchObject({
       ilike: 1,
@@ -65,6 +66,7 @@ describe("Postgres-only code", () => {
       "date function": 1,
       "array function": 1,
       "postgres error code": 1,
+      "date in raw sql": 1,
     });
   });
 
