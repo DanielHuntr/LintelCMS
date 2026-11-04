@@ -84,8 +84,12 @@ export function testSessionBanner(message: BannerMessage): string {
   const link = message.link
     ? `<a href="${escapeHtml(message.link.url)}" style="${BANNER_LINK_STYLE}">${escapeHtml(message.link.label)}</a>`
     : "";
-  return `<div aria-hidden="true" style="height:64px"></div><aside aria-label="Test session" data-lintel-test-banner style="${BANNER_STYLE}"><span role="status">${escapeHtml(message.text)}</span>${link}<form method="post" action="${TEST_SESSION_END_PATH}" style="margin:0"><button type="submit" style="${BANNER_BUTTON_STYLE}">End test</button></form></aside>`;
+  return `<style>${LIFT_COOKIE_NOTICE}</style><div aria-hidden="true" style="height:64px"></div><aside aria-label="Test session" data-lintel-test-banner style="${BANNER_STYLE}"><span role="status">${escapeHtml(message.text)}</span>${link}<form method="post" action="${TEST_SESSION_END_PATH}" style="margin:0"><button type="submit" style="${BANNER_BUTTON_STYLE}">End test</button></form></aside>`;
 }
+
+/** The notice and the test bar both sit at the foot of the screen; the bar would cover it. */
+const LIFT_COOKIE_NOTICE =
+  ".lintel-cookie-notice{inset-block-end:3.25rem}@media (max-width:40rem){.lintel-cookie-notice{inset-block-end:5.5rem}}";
 
 function escapeHtml(text: string): string {
   return text
