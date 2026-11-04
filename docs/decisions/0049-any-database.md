@@ -476,22 +476,22 @@ above.
 
 | What                                   | Done | Of all |
 | -------------------------------------- | ---: | -----: |
-| Repositories moved                     |   68 |     95 |
-| Query calls moved                      |  455 |    710 |
+| Repositories moved                     |   70 |     95 |
+| Query calls moved                      |  475 |    710 |
 | Tables with a MySQL form and migration |   89 |     89 |
-| Tables a moved repository uses         |   75 |     89 |
-| Tables used only by moved repositories |   43 |     89 |
-| Postgres-only items removed            |  159 |    325 |
+| Tables a moved repository uses         |   78 |     89 |
+| Tables used only by moved repositories |   44 |     89 |
+| Postgres-only items removed            |  164 |    325 |
 
 Four of the 95 "repositories" read and write files rather than the database, so they need no
 move. Also moved since the table above: workflows and runs, approvals, notifications,
 revisions, scheduled entries, entry publishing, SEO, menus, content roots, GraphQL reads,
 content model reads, publishing, the file export's reads, carts, checkouts, products,
 product collections, shipping, payment accounts, the media bin, backups' list, visitor
-counts, A/B tests, site and WordPress imports, client reviews, privacy requests, blocks.
+counts, A/B tests, site and WordPress imports, client reviews, privacy requests, blocks, customers, clearing test orders.
 
 Not moved: entries, the content tree, delivery, search, field changes and renames, form
-submissions, the recycle bin, media, orders, refunds, customers, discounts, inventory, the
+submissions, the recycle bin, media, orders, refunds, discounts, inventory, the
 Shopify import, personal data, setup, health and the backup archive itself. A moved
 repository can still be handed conditions from code that hasn't moved: `listProductRows`
 takes one from `product-collection-rules.ts`, which is Postgres-only.
